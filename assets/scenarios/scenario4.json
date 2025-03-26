@@ -10,6 +10,13 @@
             },
             "objects": [
                 {
+                    "type": "workstation",
+                    "name": "Crypto Analysis Station",
+                    "takeable": true,
+                    "inInventory": true,
+                    "observations": "A powerful workstation for cryptographic analysis"
+                  },  
+                {
                     "type": "pc",
                     "name": "Base64 Terminal",
                     "takeable": false,

@@ -15,6 +15,13 @@
         "requires": "Professor Bark",
         "objects": [
           {
+            "type": "workstation",
+            "name": "Crypto Analysis Station",
+            "takeable": true,
+            "inInventory": true,
+            "observations": "A powerful workstation for cryptographic analysis"
+          },              
+          {
             "type": "phone",
             "name": "Reception Phone",
             "takeable": false,
@@ -47,7 +54,7 @@
           "south": "reception"
         },
         "objects": [
-          {
+            {
             "type": "pc",
             "name": "Office Computer",
             "takeable": false,

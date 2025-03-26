@@ -213,18 +213,16 @@
         // List of available scenarios
         const scenarios = [
             {
-                id: "ceo_exfil",
-                title: "CEO Data Exfiltration",
-                description: "Infiltrate the CEO's office and exfiltrate sensitive company data. You'll need to bypass physical security and find ways to access restricted areas.",
-                difficulty: "medium",
-                file: "assets/scenarios/ceo_exfil.json"
-            },
-            {
-                id: "biometric_breach",
-                title: "Biometric Security Breach",
-                description: "Test the company's biometric security systems by collecting and spoofing fingerprint data to gain unauthorized access.",
-                difficulty: "hard",
-                file: "assets/scenarios/biometric_breach.json"
+                id: "encoding_lab",
+                title: "Encoding and Encryption Lab",
+                description: "Recover your legendary cookie recipe from mischievous squirrels by solving various encoding and encryption challenges.",
+                difficulty: "beginner",
+                file: "assets/scenarios/scenario4.json",
+                cybok: [
+                    { ka: "AC", topic: "Algorithms, Schemes and Protocols", keywords: ["Encoding vs Cryptography", "Caesar cipher", "Vigenere cipher", "SYMMETRIC CRYPTOGRAPHY - AES (ADVANCED ENCRYPTION STANDARD)"] },
+                    { ka: "F", topic: "Artifact Analysis", keywords: ["Encoding and alternative data formats"] },
+                    { ka: "WAM", topic: "Fundamental Concepts and Approaches", keywords: ["ENCODING", "BASE64"] }
+                ]
             },
             {
                 id: "captain_meow",
@@ -241,6 +239,13 @@
                     { ka: "AC", topic: "Encoding and Representation", keywords: ["Base64 Encoding", "Octal Encoding", "Hexadecimal (Hex) Encoding"] },
                     { ka: "AC", topic: "Algorithms, Schemes and Protocols", keywords: ["ADVANCED ENCRYPTION STANDARD (AES)", "ECB (ELECTRONIC CODE BOOK) BLOCK CIPHER MODE"] }
                 ]
+            },
+            {
+                id: "ceo_exfil",
+                title: "CEO Data Exfiltration",
+                description: "Infiltrate the CEO's office and exfiltrate sensitive company data. You'll need to bypass physical security and find ways to access restricted areas.",
+                difficulty: "medium",
+                file: "assets/scenarios/ceo_exfil.json"
             },
             {
                 id: "asymmetric_encryption",
@@ -268,16 +273,11 @@
                 ]
             },
             {
-                id: "encoding_lab",
-                title: "Encoding and Encryption Lab",
-                description: "Recover your legendary cookie recipe from mischievous squirrels by solving various encoding and encryption challenges.",
-                difficulty: "beginner",
-                file: "assets/scenarios/scenario4.json",
-                cybok: [
-                    { ka: "AC", topic: "Algorithms, Schemes and Protocols", keywords: ["Encoding vs Cryptography", "Caesar cipher", "Vigenere cipher", "SYMMETRIC CRYPTOGRAPHY - AES (ADVANCED ENCRYPTION STANDARD)"] },
-                    { ka: "F", topic: "Artifact Analysis", keywords: ["Encoding and alternative data formats"] },
-                    { ka: "WAM", topic: "Fundamental Concepts and Approaches", keywords: ["ENCODING", "BASE64"] }
-                ]
+                id: "biometric_breach",
+                title: "Biometric Security Breach",
+                description: "Test the company's biometric security systems by collecting and spoofing fingerprint data to gain unauthorized access.",
+                difficulty: "hard",
+                file: "assets/scenarios/biometric_breach.json"
             }
         ];
         

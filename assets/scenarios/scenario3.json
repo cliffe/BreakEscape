@@ -12,6 +12,13 @@
             "requires": "briefcase_key",
             "objects": [
                 {
+                    "type": "workstation",
+                    "name": "Crypto Analysis Station",
+                    "takeable": true,
+                    "inInventory": true,
+                    "observations": "A powerful workstation for cryptographic analysis"
+                  },  
+                {
                     "type": "pc",
                     "name": "AES Encrypted Terminal",
                     "takeable": false,
