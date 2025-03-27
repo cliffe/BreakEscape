@@ -1961,7 +1961,6 @@
 
                 if (pointer.y > inventoryBounds.y && pointer.y < inventoryBounds.y + inventoryBounds.height && 
                     pointer.x > inventoryBounds.x && pointer.x < inventoryBounds.x + inventoryBounds.width) {
-                    alert('INVENTORY ITEM CLICKED');
                     // Find clicked inventory item
                     const clickedItem = inventory.items.find(item => {
                         if (!item) return false;
