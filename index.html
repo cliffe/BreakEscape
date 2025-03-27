@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Office Adventure Game</title>
+    <title>Break Escape Game</title>
     <style>
         body {
             margin: 0;
@@ -1102,6 +1102,11 @@
             margin-top: 20px;
             font-size: 16px;
         }
+
+        #game-container {
+            transform: scale(1.25); /* Adjust the scale factor as needed */
+            transform-origin: center; /* Set the origin for scaling */
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/easystarjs@0.4.4/bin/easystar-0.4.4.js"></script>
@@ -1183,8 +1188,8 @@
     <script>
         const config = {
             type: Phaser.AUTO,
-            width: 1280,
-            height: 720,
+            width: window.innerWidth * 0.80,  // Set width to 75% of the window (for scaling)
+            height: window.innerHeight * 0.80, // Set height to 75% of the window (for scaling)
             parent: 'game-container',
             pixelArt: true,
             physics: {
@@ -1212,6 +1217,12 @@
         const PATH_UPDATE_INTERVAL = 500;
         const STUCK_THRESHOLD = 1;
         const STUCK_TIME = 500;
+        const INVENTORY_X_OFFSET = 50;
+        const INVENTORY_Y_OFFSET = 50;
+        const CLICK_INDICATOR_DURATION = 800; // milliseconds
+        const CLICK_INDICATOR_SIZE = 20; // pixels
+        const PLAYER_FEET_OFFSET_Y = 30; // Adjust based on your sprite's feet position
+
         // Hide rooms initially and on exit
         const hideRoomsInitially = true;
         const hideRoomsOnExit = false;
@@ -1924,17 +1935,33 @@
 
             // Setup camera
             this.cameras.main.startFollow(player);
-            this.cameras.main.setZoom(1.5);
+
+            // Add this new call after all rooms are created
+            processAllDoorCollisions.call(this);
+
+            // Initialize pathfinder
+            initializePathfinder.call(this);
+
+            // Initialize game systems
+            initializeInventory.call(this);
+            
+            // Process items marked with inInventory: true in the scenario data
+            processInitialInventoryItems.call(this);
+
+            // NOTE: Crypto workstation is now handled by processInitialInventoryItems
+            // based on inInventory flag in scenario data - addCryptoWorkstation.call(this);
+
 
             // Setup input with proper context
             this.input.on('pointerdown', (pointer) => {
-                // Check if click is in inventory area
-                const inventoryArea = {
-                    y: this.cameras.main.height - 70,
-                    height: 70
-                };
-                
-                if (pointer.y > inventoryArea.y) {
+                // Convert pointer position to world coordinates
+
+                // Calculate the inventory area based on the container's position and size
+                const inventoryBounds = inventory.container.getBounds();
+
+                if (pointer.y > inventoryBounds.y && pointer.y < inventoryBounds.y + inventoryBounds.height && 
+                    pointer.x > inventoryBounds.x && pointer.x < inventoryBounds.x + inventoryBounds.width) {
+                    alert('INVENTORY ITEM CLICKED');
                     // Find clicked inventory item
                     const clickedItem = inventory.items.find(item => {
                         if (!item) return false;
@@ -1957,24 +1984,6 @@
                 debugLog('CLICK DETECTED', { x: pointer.worldX, y: pointer.worldY }, 3);
                 movePlayerToPoint.call(this, pointer.worldX, pointer.worldY);
             });
-
-            // creates the inventory display
-            createInventoryDisplay.call(this);
-
-            // Add this new call after all rooms are created
-            processAllDoorCollisions.call(this);
-
-            // Initialize pathfinder
-            initializePathfinder.call(this);
-
-            // Initialize game systems
-            initializeInventory.call(this);
-            
-            // Process items marked with inInventory: true in the scenario data
-            processInitialInventoryItems.call(this);
-
-            // NOTE: Crypto workstation is now handled by processInitialInventoryItems
-            // based on inInventory flag in scenario data - addCryptoWorkstation.call(this);
 
             // Add this line after processAllDoorCollisions()
             setupDoorOverlapChecks.call(this);
@@ -2428,8 +2437,32 @@
             x = Phaser.Math.Clamp(x, worldBounds.x, worldBounds.x + worldBounds.width);
             y = Phaser.Math.Clamp(y, worldBounds.y, worldBounds.y + worldBounds.height);
             
+            // Create click indicator
+            createClickIndicator.call(this, x, y);
+            
             targetPoint = { x, y };
             isMoving = true;
+        }
+
+        // Add this new function to create a visual click indicator
+        function createClickIndicator(x, y) {
+            // Create a circle at the click position
+            const indicator = this.add.circle(x, y, CLICK_INDICATOR_SIZE, 0xffffff, 0.7);
+            indicator.setDepth(1000); // Above ground but below player
+            
+            // Add a pulsing animation
+            this.tweens.add({
+                targets: indicator,
+                scale: { from: 0.5, to: 1.5 },
+                alpha: { from: 0.7, to: 0 },
+                duration: CLICK_INDICATOR_DURATION,
+                ease: 'Sine.easeOut',
+                onComplete: () => {
+                    indicator.destroy();
+                }
+            });
+            
+
         }
 
         // updates the player's movement
@@ -2447,13 +2480,13 @@
                 return;
             }
 
-            // Cache player position
+            // Cache player position - adjust for feet position
             const px = player.x;
-            const py = player.y;
+            const py = player.y + PLAYER_FEET_OFFSET_Y; // Add offset to target the feet
             
             // Use squared distance for performance
             const dx = targetPoint.x - px;
-            const dy = targetPoint.y - py;
+            const dy = targetPoint.y - py; // Compare with feet position
             const distanceSq = dx * dx + dy * dy;
 
             // Reached target point
@@ -2474,7 +2507,7 @@
             if (movedX > ROOM_CHECK_THRESHOLD || movedY > ROOM_CHECK_THRESHOLD) {
                 updatePlayerRoom();
                 lastPlayerPosition.x = px;
-                lastPlayerPosition.y = py;
+                lastPlayerPosition.y = py - PLAYER_FEET_OFFSET_Y; // Store actual player position
             }
 
             // Normalize movement vector for consistent speed
@@ -2522,58 +2555,6 @@
                 player.isMoving = false;
                 player.anims.play(`idle-${player.direction}`, true);
             }
-        }
-
-        // creates the inventory display
-        // creates the background and slot outlines
-        function createInventoryDisplay() {
-            
-            // Create slot outlines
-            const slotsContainer = this.add.container(110, this.cameras.main.height - 60)
-                .setScrollFactor(0)
-                .setDepth(2001);
-            
-            // Create 10 slot outlines
-            for (let i = 0; i < 10; i++) {
-                const outline = this.add.rectangle(
-                    i * 60, 
-                    0,
-                    50,
-                    50,
-                    0x666666,
-                    0.3
-                );
-                outline.setStrokeStyle(1, 0x666666);
-                slotsContainer.add(outline);
-            }
-            
-            // Initialize inventory container with highest depth
-            inventory.container = this.add.container(110, this.cameras.main.height - 60)
-                .setScrollFactor(0)
-                .setDepth(2002);
-
-            // Modify the input event to check if clicking on inventory
-            this.input.on('pointerdown', (pointer) => {
-                // Convert pointer position to world coordinates
-                const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
-                
-                // Check if click is in inventory area
-                const inventoryArea = {
-                    x: 100,
-                    y: this.cameras.main.height - 70,
-                    width: this.cameras.main.width - 200,
-                    height: 70
-                };
-                
-                if (pointer.y > inventoryArea.y) {
-                    // Click is in inventory area, let the inventory sprites handle it
-                    return;
-                }
-                
-                // Otherwise, handle as movement click
-                debugLog('CLICK DETECTED', { x: worldPoint.x, y: worldPoint.y }, 3);
-                movePlayerToPoint.call(this, worldPoint.x, worldPoint.y);
-            });
         }
 
         // checks for object interactions
@@ -3224,17 +3205,18 @@
                     roomObj.setVisible(false);
                     roomObj.active = false;
                 }
+                sprite.setVisible(false);
                 
                 const scene = sprite.scene;
                 
                 // Create new sprite for inventory
                 const inventorySprite = scene.add.sprite(
-                    inventory.items.length * 60 + 100,
+                    inventory.items.length * 60,  // Remove the +100 offset
                     0,
                     sprite.name
                 );
                 
-                inventorySprite.setScale(0.8);
+                // inventorySprite.setScale(0.8);
                 inventorySprite.setInteractive({ useHandCursor: true, pixelPerfect: true });
                 inventorySprite.scenarioData = {
                     ...sprite.scenarioData,
@@ -3247,15 +3229,7 @@
 
                 // Add pointer events
                 inventorySprite.on('pointerdown', function(pointer) {
-                    // Check if this is the Bluetooth scanner
-                    if (this.scenarioData.type === "bluetooth_scanner") {
-                        // Toggle the Bluetooth scanner panel
-                        toggleBluetoothPanel();
-                        return;
-                    }
-                    
-                    // Handle other inventory items as before
-                    handleObjectInteraction(this);
+                    // Handle inventory item interaction
                 });
                 
                 inventorySprite.on('pointerover', function() {
@@ -3322,7 +3296,7 @@
             inventory.items = [];
             
             // Create slot outlines
-            const slotsContainer = this.add.container(110, this.cameras.main.height - 60) // Shifted 100px to the right
+            const slotsContainer = this.add.container(INVENTORY_X_OFFSET, this.cameras.main.height - INVENTORY_Y_OFFSET)
                 .setScrollFactor(0)
                 .setDepth(2001);
             
@@ -3340,8 +3314,8 @@
                 slotsContainer.add(outline);
             }
             
-            // Initialize inventory container
-            inventory.container = this.add.container(10, this.cameras.main.height - 60)
+            // Initialize inventory container - use the same X offset as slots
+            inventory.container = this.add.container(INVENTORY_X_OFFSET, this.cameras.main.height - INVENTORY_Y_OFFSET)
                 .setScrollFactor(0)
                 .setDepth(2001);
             
@@ -7315,6 +7289,14 @@
                 }
             });
         }
+
+        // Add event listener for window resize
+        window.addEventListener('resize', () => {
+            const width = window.innerWidth * 0.80;
+            const height = window.innerHeight * 0.80;
+            game.scale.resize(width, height);
+            // TODO: Adjust inventory display position based on new size
+        });
     </script>
 </body>
 </html> 
