@@ -1,9 +1,9 @@
 {
     "scenario_brief": "You are a curious traveler who stumbles upon Beckett, a ghost town shrouded in mystery. After entering the only standing building, the door slams shut, trapping you inside. A note from Mayor McFluffins warns: 'Fail to escape, and you’ll be turned into a llama.' Solve cryptographic puzzles and break the curse before time runs out, or grow fur and join the town’s eerie fate!",
-    "startRoom": "room_reception",
+    "startRoom": "room_start",
     "rooms": {
-      "room_reception": {
-        "type": "room_reception",
+      "room_start": {
+        "type": "room_office",
         "connections": {
           "north": "room_office"
         },
@@ -30,7 +30,7 @@
             "takeable": true,
             "readable": true,
             "observations": "Numbers are important, remember these to proceed:\n- Prime modulus (p): 23\n- Base (g): 5\n- Tim's private key (a): 3\n- Jullie's private key (b): 5\nCalculate Tim's public key, Jullie's public key, and the final shared secret key."
-        },
+          },
           {
             "type": "pc",
             "name": "Computer",
@@ -40,7 +40,7 @@
           },
           {
             "type": "safe",
-            "name": "Safe1",
+            "name": "Safe 1",
             "takeable": false,
             "locked": true,
             "lockType": "password",
@@ -58,7 +58,7 @@
             ]
           },
           {
-            "type": "safe2",
+            "type": "safe",
             "name": "Safe 2",
             "takeable": false,
             "locked": true,
@@ -77,13 +77,13 @@
             ]
           },
           {
-            "type": "safe3",
-            "name": "Safe 3",
+            "type": "suitcase",
+            "name": "Briefcase",
             "takeable": false,
             "locked": true,
             "lockType": "password",
             "requires": "19",
-            "observations": "A locked safe containing the key to the next room.",
+            "observations": "A locked briefcase containing the key to the next room.",
             "contents": [
               {
                 "type": "key",
@@ -99,7 +99,7 @@
       "room_office": {
         "type": "room_office",
         "connections": {
-          "south": "room_reception",
+          "south": "room_start",
           "north": "room_servers"
         },
         "locked": true,
@@ -150,13 +150,13 @@
                 "text": "-----BEGIN RSA PRIVATE KEY-----\nMIICXAIBAAKBgQCczVF4Oq+Njf1Olf/JNnZcSP0jbZVpdVJ+hySa7OPMSpjMsppb\nV1E8qytLIx+HfiU065I/Lhr0LhoKj+hWA3ceCUQa2GeSU+p8X5bseet6/hhrsBYV\nuT+4ajIQ8tDOi/0vrnSh+EMc912TpjAh1nEfeL65LXOwWHDf0rR8Uxv3AQIDAQAB\nAoGACiIVo/6s5im5Jzk32r2/h+a6ny2/hF1t25npsm5hKUxf1Aitw33g1Nod9eDa"
             },
             {
-                "type": "notes2",
+                "type": "notes",
                 "name": "Private Key Part 2",
                 "takeable": true,
                 "readable": true,
                 "observations": "8oNjLaiUnqsg2EtbaPfUVKysJ6WaFQ4BnFe6rKQH+kXDEjSOyMcQsoObO0Bcjk/3\nWpxdTH0qp71yHzg1D6h40cwSra5u/t/ZRFJI/08hBdbt8DECQQDPQwVS5hYfDfXa\ni5Rxwwp4EBZmvy8z/KXPJ+8sXfqi5pBkZTrQfWsiqCW2aRtnTUsC0b3HjRQxf2SV\n+1y9aqQpAkEAwaypvhpE7I2P1LgIPrgW2HM1wiP0oZiM9LizsDHYO/bKqSWL7hnS\n/s6NcQ5CLOyB3uxYBkDIovUSem6/Y6hXGQJBAKi/qaMAQLySEj0Y7gjdwzVT69lG",
                 "text": "Cfmq15ldq0cVUU62qJOFNCiyJLt36hSlaTFnZg5qlLjXbbyLO2s92BlErVkCQDaY\nH3kxGoC8HvFNtzVG21nEkEDbtdffksxhTHW8d0Hf/ZzUsq85pFqjiwd1h332ZV2b\nreyFUoltH/pXQagsCfECQFyG0RpJtc9ojIRUMOqDGQvoi8il4xM4yCiSKQAcLzuu\nqLrEVyNbKHcBf2Hn3xuEHs/DB6zCLVj/FJ7ZWONCJuU=\n-----END RSA PRIVATE KEY-----"
-            }            
+            }
         ]
       },
       "room_closet": {

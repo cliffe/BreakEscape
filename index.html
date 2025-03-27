@@ -2338,54 +2338,93 @@
                 if (objectsLayer && objectsLayer.objects) {
                     rooms[roomId].objects = {};
                     
+                    // Create a map of room objects by type for easy lookup
+                    const roomObjectsByType = {};
                     objectsLayer.objects.forEach(obj => {
-                        // Find matching object in scenario data
-                        const scenarioObject = gameScenario.rooms[roomId].objects.find(
-                            item => item.type === obj.name
-                        );
-                        
-                        // Check if this object should be active in the current scenario
-                        const isActiveObject = scenarioObject !== undefined;
-                        
-                        const sprite = this.add.sprite(
-                            position.x + obj.x,
-                            position.y + (obj.gid !== undefined ? obj.y - obj.height : obj.y),
-                            obj.name
-                        );
-                        
-                        sprite.setOrigin(0, 0);
-                        sprite.name = obj.name;
-                        sprite.setInteractive({ useHandCursor: true });
-                        sprite.setDepth(1001);
-                        sprite.originalAlpha = 1;
-                        sprite.active = isActiveObject;
-                        
-                        // Store scenario data with sprite for later use
-                        if (isActiveObject) {
-                            sprite.scenarioData = scenarioObject;
+                        if (!roomObjectsByType[obj.name]) {
+                            roomObjectsByType[obj.name] = [];
                         }
-                        
-                        // Initially hide all objects - they'll be shown when room is revealed
-                        sprite.setVisible(false);
-                        
-                        if (obj.rotation) {
-                            sprite.setRotation(Phaser.Math.DegToRad(obj.rotation));
-                        }
-                        
-                        rooms[roomId].objects[obj.name] = sprite;
-                        
-                        // Add click handler for all objects
-                        sprite.on('pointerdown', () => {
-                            if (isActiveObject) {
-                                debugLog('OBJECT CLICKED', { name: obj.name }, 2);
-                                handleObjectInteraction(sprite);
-                            } else {
-                                gameAlert("Nothing of note here", 'info', '', 2000);
-                            }
-                        });
+                        roomObjectsByType[obj.name].push(obj);
                     });
+                    
+                    // Process scenario objects first
+                    if (gameScenario.rooms[roomId].objects) {
+                        gameScenario.rooms[roomId].objects.forEach((scenarioObj, index) => {
+                            const objType = scenarioObj.type;
+                            // skip "inInventory": true,
+                            if (scenarioObj.inInventory) {
+                                return;
+                            }
+                            
+                            // Try to find a matching room object
+                            let roomObj = null;
+                            if (roomObjectsByType[objType] && roomObjectsByType[objType].length > 0) {
+                                // Take the first available room object of this type
+                                roomObj = roomObjectsByType[objType].shift();
+                            }
+                            
+                            let sprite;
+                            
+                            if (roomObj) {
+                                // Create sprite at the room object's position
+                                sprite = this.add.sprite(
+                                    position.x + roomObj.x,
+                                    position.y + (roomObj.gid !== undefined ? roomObj.y - roomObj.height : roomObj.y),
+                                    objType
+                                );
+                                
+                                if (roomObj.rotation) {
+                                    sprite.setRotation(Phaser.Math.DegToRad(roomObj.rotation));
+                                }
+                                
+                                // Create a unique key using the room object's ID
+                                sprite.objectId = `${objType}_${roomObj.id || index}`;
+                            } else {
+                                // No matching room object, create at random position
+                                // Assuming room size is 10x9 tiles of 48px each
+                                const roomWidth = 10 * 48;
+                                const roomHeight = 9 * 48;
+                                
+                                // Add some padding from the edges (2 tile width)
+                                const padding = 48*2;
+                                
+                                const randomX = position.x + padding + Math.random() * (roomWidth - padding * 2);
+                                const randomY = position.y + padding + Math.random() * (roomHeight - padding * 2);
+                                
+                                sprite = this.add.sprite(randomX, randomY, objType);
+                                console.log(`Created object ${objType} at random position (${randomX}, ${randomY})`);
+                            }
+                            
+                            // SIMPLIFIED NAMING APPROACH
+                            // Use a consistent format: roomId_type_index
+                            const objectId = `${roomId}_${objType}_${index}`;
+                            
+                            // Set common properties
+                            sprite.setOrigin(0, 0);
+                            sprite.name = objType;  // Keep name as the object type for texture loading
+                            sprite.objectId = objectId;  // Use our simplified ID format
+                            sprite.setInteractive({ useHandCursor: true });
+                            sprite.setDepth(1001);
+                            sprite.originalAlpha = 1;
+                            sprite.active = true;
+                            
+                            // Store scenario data with sprite
+                            sprite.scenarioData = scenarioObj;
+                            
+                            // Initially hide the object
+                            sprite.setVisible(false);
+                            
+                            // Store the object
+                            rooms[roomId].objects[objectId] = sprite;
+                            
+                            // Add click handler
+                            sprite.on('pointerdown', () => {
+                                debugLog('OBJECT CLICKED', { name: objType, id: objectId }, 2);
+                                handleObjectInteraction(sprite);
+                            });
+                        });
+                    }
                 }
-
             } catch (error) {
                 console.error(`Error creating room ${roomId}:`, error);
                 console.error('Error details:', error.stack);
@@ -2985,13 +3024,17 @@
             // Only log detailed object interactions at debug level 2+
             debugLog('OBJECT INTERACTION', { 
                 name: sprite.name, 
-                type: sprite.scenarioData?.type
+                id: sprite.objectId,
+                scenarioData: sprite.scenarioData
             }, 2);
             
             if (!sprite || !sprite.scenarioData) {
                 console.warn('Invalid sprite or missing scenario data');
                 return;
             }
+            
+            // Log the full object data to help debug
+            console.log("Interacting with object:", sprite.scenarioData);
             
             // Handle the Crypto Workstation
             if (sprite.scenarioData.type === "workstation") {
@@ -3010,7 +3053,8 @@
                 if (distanceSq > INTERACTION_RANGE_SQ) {
                     // Player is too far away to interact
                     debugLog('INTERACTION_OUT_OF_RANGE', { 
-                        objectName: sprite.name, 
+                        objectName: sprite.name,
+                        objectId: sprite.objectId,
                         distance: Math.sqrt(distanceSq),
                         maxRange: Math.sqrt(INTERACTION_RANGE_SQ)
                     }, 2);
@@ -3114,6 +3158,8 @@
                     }
                 }
             }
+
+            console.log("Interacting with object:", data);
             
             if (data.takeable) {
                 // If it's a note type item that's already been read and added to notes,
@@ -3122,10 +3168,10 @@
                     data.type === 'notes' && 
                     data.readable && 
                     data.text && 
-                    !data.hasSpecialPurpose; // Add this flag to notes that need to be in inventory
+                    !data.hasNoSpecialPurpose; // Add this flag to notes that need to be in inventory
                 
                 if (!isJustInformationalNote) {
-                    message += `This item can be taken\n\n`;
+                    // message += `This item can be taken\n\n`;
                     
                     if (!inventory || !Array.isArray(inventory.items)) {
                         console.error('Inventory not properly initialized');
@@ -3133,9 +3179,9 @@
                     }
                     
                     const isInRoom = currentRoom && 
-                                    rooms[currentRoom] && 
-                                    rooms[currentRoom].objects && 
-                                    rooms[currentRoom].objects[sprite.name];
+                        rooms[currentRoom] && 
+                        rooms[currentRoom].objects && 
+                        rooms[currentRoom].objects[sprite.objectId];
                             
                     const itemIdentifier = createItemIdentifier(sprite.scenarioData);
                             
@@ -3152,9 +3198,9 @@
                     if (currentRoom && 
                         rooms[currentRoom] && 
                         rooms[currentRoom].objects && 
-                        rooms[currentRoom].objects[sprite.name]) {
+                        rooms[currentRoom].objects[sprite.objectId]) {
                         
-                        const roomObj = rooms[currentRoom].objects[sprite.name];
+                        const roomObj = rooms[currentRoom].objects[sprite.objectId];
                         roomObj.setVisible(false);
                         roomObj.active = false;
                         
@@ -3181,47 +3227,58 @@
             }
             
             try {
-                // Check if the item is already in the inventory using the unique identifier
-                const itemIdentifier = createItemIdentifier(sprite.scenarioData);
-                console.log(`Checking if item ${itemIdentifier} is already in inventory`);
+                // Debug logging
+                console.log("Trying to add to inventory:", {
+                    objectId: sprite.objectId,
+                    name: sprite.name,
+                    type: sprite.scenarioData?.type,
+                    currentRoom: currentRoom
+                });
                 
+                // Check if the item is already in the inventory
+                const itemIdentifier = createItemIdentifier(sprite.scenarioData);
                 const isAlreadyInInventory = inventory.items.some(item => 
                     createItemIdentifier(item.scenarioData) === itemIdentifier
                 );
                 
                 if (isAlreadyInInventory) {
-                    console.log(`Item ${itemIdentifier} is already in inventory, not adding again`);
+                    console.log(`Item ${itemIdentifier} is already in inventory`);
                     return false;
                 }
                 
                 // Remove from room if it exists
-                if (currentRoom && 
-                    rooms[currentRoom] && 
-                    rooms[currentRoom].objects && 
-                    rooms[currentRoom].objects[sprite.name]) {
-                    
-                    const roomObj = rooms[currentRoom].objects[sprite.name];
-                    roomObj.setVisible(false);
-                    roomObj.active = false;
+                if (currentRoom && rooms[currentRoom] && rooms[currentRoom].objects) {
+                    // Try to find by objectId first
+                    if (rooms[currentRoom].objects[sprite.objectId]) {
+                        const roomObj = rooms[currentRoom].objects[sprite.objectId];
+                        roomObj.setVisible(false);
+                        roomObj.active = false;
+                        console.log(`Removed object ${sprite.objectId} from room`);
+                    }
                 }
+                
                 sprite.setVisible(false);
                 
                 const scene = sprite.scene;
                 
+                // SIMPLIFIED INVENTORY NAMING
+                // Use a consistent format: inventory_type_index
+                const inventoryId = `inventory_${sprite.name}_${inventory.items.length}`;
+                
                 // Create new sprite for inventory
                 const inventorySprite = scene.add.sprite(
-                    inventory.items.length * 60,  // Remove the +100 offset
+                    inventory.items.length * 60,
                     0,
                     sprite.name
                 );
                 
-                // inventorySprite.setScale(0.8);
                 inventorySprite.setInteractive({ useHandCursor: true, pixelPerfect: true });
                 inventorySprite.scenarioData = {
                     ...sprite.scenarioData,
                     foundIn: currentRoom ? gameScenario.rooms[currentRoom].name || currentRoom : 'unknown location'
                 };
                 inventorySprite.name = sprite.name;
+                inventorySprite.objectId = inventoryId;
                 
                 // Set depth higher than container
                 inventorySprite.setDepth(2003);
@@ -3229,6 +3286,7 @@
                 // Add pointer events
                 inventorySprite.on('pointerdown', function(pointer) {
                     // Handle inventory item interaction
+                    handleObjectInteraction(inventorySprite);
                 });
                 
                 inventorySprite.on('pointerover', function() {
@@ -3461,17 +3519,8 @@
 
         // Add this new helper function:
         function createItemIdentifier(scenarioData) {
-            // Combine multiple properties to create a unique identifier
-            const identifierParts = [
-                scenarioData.type,
-                scenarioData.name,
-                // Add more unique properties if available
-                scenarioData.key_id,         // For keys
-                scenarioData.requires,       // For locks
-                scenarioData.text           // For readable items
-            ].filter(Boolean); // Remove any undefined/null values
-            
-            return identifierParts.join('|');
+            // Just use type and name as the identifier
+            return `${scenarioData.type}|${scenarioData.name}`;
         }
 
         // Add this new function after the other function definitions
