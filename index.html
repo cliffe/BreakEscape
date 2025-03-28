@@ -7364,5 +7364,31 @@
             // TODO: Adjust inventory display position based on new size
         });
     </script>
+    <script>
+        // allow zooming on mobile devices
+        document.addEventListener('DOMContentLoaded', function() {
+            // Prevent Phaser from capturing touch events that should be used for zooming
+            const gameContainer = document.getElementById('game-container');
+            
+            // Allow zooming on the document level
+            document.addEventListener('gesturestart', function(e) {
+                e.preventDefault();
+                // Custom zoom handling can be added here if needed
+            });
+            
+            document.addEventListener('gesturechange', function(e) {
+                e.preventDefault();
+                // Custom zoom handling can be added here if needed
+            });
+            
+            // Prevent default touch behavior only within the game container
+            gameContainer.addEventListener('touchmove', function(e) {
+                // Only prevent default if it's not a multi-touch gesture (like pinch-to-zoom)
+                if (e.touches.length <= 1) {
+                    e.preventDefault();
+                }
+            }, { passive: false });
+        });
+    </script>
 </body>
 </html> 
