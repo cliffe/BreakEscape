@@ -1107,6 +1107,24 @@
             transform: scale(1.25); /* Adjust the scale factor as needed */
             transform-origin: center; /* Set the origin for scaling */
         }
+
+        /* Mobile device detection and responsive scaling */
+        @media (orientation: portrait) and (pointer: coarse) {
+            html, body {
+                width: 100%;
+                height: 100%;
+                overflow-x: hidden;
+                transform-origin: top left;
+            }
+            #game-container {
+                max-width: 100vw;
+                overflow: visible;
+            }
+            /* Increase font sizes by percentage */
+            .notification-title, .notification-message, .note-title, .bluetooth-device-name, .biometric-sample-name, .note-text, .bluetooth-device-details, .biometric-sample-details, #notes-title, #bluetooth-title, #biometrics-title, #notes-close, #bluetooth-close, #biometrics-close, .notification-close {
+                font-size: 200%;
+            }
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/easystarjs@0.4.4/bin/easystar-0.4.4.js"></script>
