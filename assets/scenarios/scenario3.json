@@ -30,7 +30,6 @@
                     "name": "Fun facts about me - ordering from favorite to least favorite",
                     "takeable": true,
                     "readable": true,
-                    "inInventory": true,
                     "text": "Favorite scientists: \n-Albert Einstein \n-Frank Tipler \n-Igor Novikov \n-Stephen Hawking \n \nFavorite theories: \n-Relativity Theory \n-Gödel’s Rotating Universe \n-Tipler’s Rotating Cylinder \n-Darwin's Theory of Evolution \nFavorite movie: \n-Back to the future \nPhone number: \n-07123456789"                
                 },
                 {

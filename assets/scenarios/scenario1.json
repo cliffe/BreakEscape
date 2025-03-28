@@ -59,7 +59,7 @@
             "name": "Office Computer",
             "takeable": false,
             "hasFingerprint": true,
-            "fingerprintOwner": "Mr Moo",
+            "fingerprintOwner": "Mrs Moo",
             "fingerprintDifficulty": "easy",
             "observations": "A computer with a cybersecurity alert on screen. There might be pawprints on the keyboard."
           },
@@ -81,9 +81,11 @@
       },
       
       "office2": {
-        
-        "type": "room_office",
-        "connections": {
+        "locked": true,
+            "lockType": "biometric",
+            "requires": "Mrs Moo",
+            "biometricMatchThreshold": 0.5,
+          "connections": {
           "north": "ceo",
           "south": "office1"
         },
@@ -95,7 +97,7 @@
             "takeable": true,
             "readable": true,
             "observations": "Deeper meaning into the image",
-            "text": "Professor Bark did not act alone, the hooveprint should be enough indication to who his alias is. To get the name, find the name hidden in the image using AES. The key is my favorite meal."
+            "text": "Professor Bark did not act alone, the hooveprint should be enough indication to who else is involved. To get the name, find the name hidden in the image using AES. The key is my favorite meal."
           },
           {
             "type": "pc",

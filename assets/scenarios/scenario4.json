@@ -28,7 +28,6 @@
                     "name": "Recipe Note",
                     "takeable": true,
                     "readable": true,
-                    "inInventory": true,
                     "text": "Cookies always start with the right ingredients! Step by step, you will gain an ingredient back from your recipe."
                 }
             ]

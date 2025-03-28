@@ -29,7 +29,7 @@
             "name": "Clue Note",
             "takeable": true,
             "readable": true,
-            "observations": "Numbers are important, remember these to proceed:\n- Prime modulus (p): 23\n- Base (g): 5\n- Tim's private key (a): 3\n- Jullie's private key (b): 5\nCalculate Tim's public key, Jullie's public key, and the final shared secret key."
+            "observations": "Safe one, next to the left door is Tim's public key, safe two is Julies's private key and the briefcase is the shared key. \nRemember: Public keys are (g^age MOD p)"
           },
           {
             "type": "pc",
