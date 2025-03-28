@@ -236,7 +236,7 @@
                             "takeable": true,
                             "readable": true,
                             "text": "Contract for sale of proprietary technology\nBank transfers from competing companies\nDetails of upcoming corporate espionage operations",
-                            "observations": "A folder containing damning evidence of corporate espionage"
+                            "observations": "A folder containing damning evidence of corporate espionage. Congratulations! You've recovered the incriminating documents. flag{ceo_exfil_flag}"
                         }
                     ]
                 }

@@ -239,14 +239,14 @@
                     "observations": "The director's phone with call history displayed"
                 },
                 {
-                    "type": "cabinet",
-                    "name": "Secure Cabinet",
+                    "type": "safe",
+                    "name": "Secure Cabinet Safe",
                     "takeable": false,
                     "locked": true,
                     "lockType": "key",
                     "requires": "safe_key",
                     "difficulty": "medium",
-                    "observations": "A high-security cabinet where the prototype would normally be stored",
+                    "observations": "A high-security cabinet safe where the prototype would normally be stored",
                     "contents": [
                         {
                             "type": "notes",
@@ -388,7 +388,7 @@
                             "takeable": true,
                             "readable": true,
                             "text": "PROJECT SENTINEL BIOMETRIC SCANNER PROTOTYPE\nSERIAL: PS-001-X\nCLASSIFICATION: TOP SECRET\n\nWARNING: Authorized handling only. Technology contains classified components.",
-                            "observations": "The stolen prototype device, ready to be smuggled out",
+                            "observations": "The stolen prototype device, ready to be smuggled out. Congratulations! You've recovered the prototype and secured the sensitive research data. flag{biometric_breach_flag}",
                             "important": true,
                             "isEndGoal": true
                         },
