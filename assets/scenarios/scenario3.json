@@ -99,7 +99,7 @@
             },
             "locked": true,
             "lockType": "password",
-            "requires": "6f118",
+            "requires": "6f8118",
             "objects": [
                 {
                     "type": "pc",
