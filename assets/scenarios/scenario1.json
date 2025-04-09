@@ -194,7 +194,7 @@
             "name": "safe",
             "takeable": false,
             "locked": true,
-            "password": "password",
+            "lockType": "password",
             "requires": "203.0.113.78",
             "contents": [
               {

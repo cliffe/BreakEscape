@@ -209,7 +209,7 @@
             "name": "A terminal with a flickering screen",
             "takeable": false,
             "requires": "password",
-            "observations": "Use RSA decryption (m = c^d mod n). For example, if c=3, calculate (3^53 mod 161). Do this for all ciphertext values to reveal the town's hex message."
+            "observations": "Use RSA decryption (m = c^d mod n). For example, if c=3, calculate (3^53 mod 161). Do this for all ciphertext values to reveal the town's hex message. '212,48,9,9,276,23,155,231' d=269 n=286"
           },
           {
             "type": "safe",
@@ -217,7 +217,7 @@
             "takeable": false,
             "locked": true,
             "lockType": "password",
-            "requires": "note",
+            "requires": "freedom!",
             "observations": "A locked safe containing part of the conversation.",
             "contents": [
               {
