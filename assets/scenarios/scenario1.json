@@ -10,9 +10,6 @@
         "connections": {
           "north": "office1"
         },
-        "locked": true,
-        "lockType": "password",
-        "requires": "Professor Bark",
         "objects": [
           {
             "type": "workstation",
@@ -26,7 +23,7 @@
             "name": "Reception Phone",
             "takeable": false,
             "readable": true,
-            "text": "The message is directing you towards finding the villain’s identity.",
+            "text": "The message is directing you towards finding the villain’s identity.\nRemember: only the first letter is capital",
             "observations": ".--. / .-. / --- / ..-. / ..-. / . / ... / --- / .-."
           },          
           {
@@ -53,6 +50,9 @@
           "north": ["office2", "office3"],
           "south": "reception"
         },
+        "locked": true,
+        "lockType": "password",
+        "requires": "Professor Bark",
         "objects": [
             {
             "type": "pc",
@@ -81,15 +81,15 @@
       },
       
       "office2": {
-        "locked": true,
-            "lockType": "biometric",
-            "requires": "Mrs Moo",
-            "biometricMatchThreshold": 0.5,
+         "type": "room_office",
           "connections": {
           "north": "ceo",
           "south": "office1"
         },
-        
+        "locked": true,
+        "lockType": "biometric",
+        "requires": "Mrs Moo",
+        "biometricMatchThreshold": 0.5,
         "objects": [
           {
             "type": "notes",
@@ -132,7 +132,10 @@
           "north": "server1",
           "south": "office1"
         },
-        
+        "locked": true,
+        "lockType": "biometric",
+        "requires": "Mrs Moo",
+        "biometricMatchThreshold": 0.5,
         "objects": [
           {
             "type": "pc",
@@ -150,7 +153,6 @@
             "observations": "Suspicious activity logged, passcode encrypted for safety purposes."
           }
         ]
-        
       },
       
       "ceo": {
@@ -192,7 +194,7 @@
             "name": "safe",
             "takeable": false,
             "locked": true,
-            "password": "password",
+            "lockType": "password",
             "requires": "203.0.113.78",
             "contents": [
               {

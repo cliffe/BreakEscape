@@ -8,8 +8,9 @@
   <name>Encoding and Encryption Lab</name>
   <author>Z. Cliffe Schreuders</author>
   <description>
-    # To be adjusted
+    Your legendary cookie recipe has been stolen by the mischievous squirrels led by Sir Acorn! Tracking them to their secret treehouse, the door slams shut behind you. A sign reads: 'Solve our riddles or forever be known as the Cookie Monster!' Crack the cryptographic challenges and reclaim your recipe before time runs out!
     
+    This scenario teaches foundational cryptography through Base64 decoding, hexadecimal conversion, Caesar cipher decryption, and AES/MD5 operations using CyberChef to reclaim a secret recipe.
   </description>
 
   <type>lab-sheet</type>
@@ -28,3 +29,4 @@
     <keyword>ENCODING</keyword>
     <keyword>BASE64</keyword>
   </CyBOK>
+  </scenario>
