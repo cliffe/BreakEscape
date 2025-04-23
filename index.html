@@ -4,6 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>Break Escape Game</title>
+    <!-- Google Fonts - Press Start 2P, VT323 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
     <style>
         body {
             margin: 0;
@@ -23,7 +27,7 @@
             left: 50%;
             transform: translate(-50%, -50%);
             color: white;
-            font-family: Arial, sans-serif;
+            font-family: 'Press Start 2P', cursive;
             font-size: 24px;
             display: none;
         }
@@ -33,10 +37,10 @@
             position: fixed;
             top: 20px;
             right: 20px;
-            width: 300px;
+            width: 500px;
             max-width: 80%;
             z-index: 2000;
-            font-family: Arial, sans-serif;
+            font-family: 'Press Start 2P', cursive;
             pointer-events: none;
         }
 
@@ -45,7 +49,6 @@
             color: white;
             padding: 15px 20px;
             margin-bottom: 10px;
-            border-radius: 5px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
             transition: all 0.3s ease;
             opacity: 0;
@@ -83,7 +86,8 @@
         }
 
         .notification-message {
-            font-size: 14px;
+            font-size: 20px;
+            font-family: 'VT323', monospace;
             line-height: 1.4;
         }
 
@@ -114,18 +118,17 @@
             position: fixed;
             bottom: 80px;
             right: 20px;
-            width: 350px;
+            width: 500px;
             max-height: 500px;
             background-color: rgba(0, 0, 0, 0.9);
             color: white;
-            border-radius: 5px;
             box-shadow: 0 2px 15px rgba(0, 0, 0, 0.5);
             z-index: 1999;
-            font-family: Arial, sans-serif;
+            font-family: 'Press Start 2P', cursive;
             display: none;
             overflow: hidden;
             transition: all 0.3s ease;
-            border: 1px solid #444;
+            border: 5px solid #444;
         }
 
         #notes-header {
@@ -139,7 +142,7 @@
 
         #notes-title {
             font-weight: bold;
-            font-size: 18px;
+            font-size: 15px;
             color: #3498db;
         }
 
@@ -164,7 +167,6 @@
             width: 100%;
             padding: 8px 10px;
             border: none;
-            border-radius: 3px;
             background-color: #222;
             color: white;
             font-size: 14px;
@@ -186,7 +188,6 @@
             padding: 5px 10px;
             margin-right: 5px;
             cursor: pointer;
-            border-radius: 3px;
             font-size: 12px;
             transition: all 0.2s;
         }
@@ -213,7 +214,6 @@
             cursor: pointer;
             transition: background-color 0.2s;
             padding: 10px;
-            border-radius: 3px;
         }
 
         .note-item:hover {
@@ -247,7 +247,8 @@
         }
 
         .note-text {
-            font-size: 13px;
+            font-size: 20px;
+            font-family: 'VT323', monospace;
             line-height: 1.4;
             white-space: pre-wrap;
             max-height: 80px;
@@ -272,7 +273,6 @@
             height: 60px;
             background-color: #3498db;
             color: white;
-            /* border-radius: 50%; */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -295,7 +295,6 @@
             right: -5px;
             background-color: #e74c3c;
             color: white;
-            border-radius: 50%;
             width: 24px;
             height: 24px;
             font-size: 14px;
@@ -400,10 +399,9 @@
             max-height: 500px;
             background-color: rgba(0, 0, 0, 0.9);
             color: white;
-            border-radius: 5px;
             box-shadow: 0 2px 15px rgba(0, 0, 0, 0.5);
             z-index: 1999;
-            font-family: Arial, sans-serif;
+            font-family: 'Press Start 2P', cursive;
             display: none;
             overflow: hidden;
             transition: all 0.3s ease;
@@ -446,7 +444,6 @@
             width: 100%;
             padding: 8px 10px;
             border: none;
-            border-radius: 3px;
             background-color: #222;
             color: white;
             font-size: 14px;
@@ -468,7 +465,6 @@
             padding: 5px 10px;
             margin-right: 5px;
             cursor: pointer;
-            border-radius: 3px;
             font-size: 12px;
             transition: all 0.2s;
         }
@@ -495,7 +491,6 @@
             cursor: pointer;
             transition: background-color 0.2s;
             padding: 10px;
-            border-radius: 3px;
         }
 
         .bluetooth-device:hover {
@@ -613,7 +608,6 @@
             right: -5px;
             background-color: #e74c3c;
             color: white;
-            border-radius: 50%;
             width: 24px;
             height: 24px;
             font-size: 14px;
@@ -632,7 +626,7 @@
             background-color: #2980b9;
             color: white;
             border: none;
-            border-radius: 3px;
+            /* border-radius: 3px; */
             font-size: 12px;
             cursor: pointer;
             transition: background-color 0.2s;
@@ -664,10 +658,10 @@
             max-height: 500px;
             background-color: rgba(0, 0, 0, 0.9);
             color: white;
-            border-radius: 5px;
+            /* border-radius: 5px; */
             box-shadow: 0 2px 15px rgba(0, 0, 0, 0.5);
             z-index: 1999;
-            font-family: Arial, sans-serif;
+            font-family: 'Press Start 2P', cursive;
             display: none;
             overflow: hidden;
             transition: all 0.3s ease;
@@ -710,7 +704,7 @@
             width: 100%;
             padding: 8px 10px;
             border: none;
-            border-radius: 3px;
+            /* border-radius: 3px; */
             background-color: #222;
             color: white;
             font-size: 14px;
@@ -732,7 +726,7 @@
             padding: 5px 10px;
             margin-right: 5px;
             cursor: pointer;
-            border-radius: 3px;
+            /* border-radius: 3px; */
             font-size: 12px;
             transition: all 0.2s;
         }
@@ -759,7 +753,7 @@
             cursor: pointer;
             transition: background-color 0.2s;
             padding: 10px;
-            border-radius: 3px;
+            /* border-radius: 3px; */
         }
 
         .biometric-sample:hover {
@@ -874,7 +868,7 @@
             right: -5px;
             background-color: #e74c3c;
             color: white;
-            border-radius: 50%;
+            /* border-radius: 50%; */
             width: 24px;
             height: 24px;
             font-size: 14px;
@@ -1108,6 +1102,9 @@
             transform: scale(1.25); /* Adjust the scale factor as needed */
             transform-origin: center; /* Set the origin for scaling */
         }
+        body {
+            font-family: 'Press Start 2P', cursive;
+        }
 
         /* Mobile device detection and responsive scaling */
         @media (orientation: portrait) and (pointer: coarse) {
@@ -1123,7 +1120,7 @@
             }
             /* Increase font sizes by percentage */
             .notification-title, .notification-message, .note-title, .bluetooth-device-name, .biometric-sample-name, .note-text, .bluetooth-device-details, .biometric-sample-details, #notes-title, #bluetooth-title, #biometrics-title, #notes-close, #bluetooth-close, #biometrics-close, .notification-close {
-                font-size: 200%;
+                font-size: 125%;
             }
         }
     </style>
