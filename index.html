@@ -1121,7 +1121,10 @@
             transform-origin: center; /* Set the origin for scaling */
         }
         body {
-            font-family: 'Press Start 2P', 'VT323';
+            font-family: 'VT323';
+        }
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Press Start 2P';
         }
 
         /* Mobile device detection and responsive scaling */
@@ -3155,7 +3158,9 @@
             }
             
             let message = `${data.name}\n\n`;
-            message += `Observations: ${data.observations}\n\n`;
+            if (data.observations) {
+                message += `Observations: ${data.observations}\n\n`;
+            }
             
             if (data.readable && data.text) {
                 message += `Text: ${data.text}\n\n`;
