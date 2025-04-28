@@ -2388,8 +2388,9 @@
                     const OBJECT_SCALES = {
                         'notes': 0.75,
                         'key': 0.75,
-                        'phone': 0.75,
-                        'tablet': 0.75
+                        'phone': 1,
+                        'tablet': 0.75,
+                        'bluetooth_scanner': 0.7
                     };
                     
                     // Process scenario objects first
@@ -4362,7 +4363,7 @@
                 if (distanceSq <= INTERACTION_RANGE_SQ) {
                     if (!obj.isHighlighted) {
                         obj.isHighlighted = true;
-                        obj.setTint(0xdddddd);  // Simple highlight without tween
+                        obj.setTint(0xADD8E6);  // Simple highlight without tween
                     }
                 } else if (obj.isHighlighted) {
                     obj.isHighlighted = false;
