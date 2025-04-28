@@ -2384,6 +2384,14 @@
                         roomObjectsByType[obj.name].push(obj);
                     });
                     
+                    // Define scale factors for different object types
+                    const OBJECT_SCALES = {
+                        'notes': 0.75,
+                        'key': 0.75,
+                        'phone': 0.75,
+                        'tablet': 0.75
+                    };
+                    
                     // Process scenario objects first
                     if (gameScenario.rooms[roomId].objects) {
                         gameScenario.rooms[roomId].objects.forEach((scenarioObj, index) => {
@@ -2430,6 +2438,11 @@
                                 
                                 sprite = this.add.sprite(randomX, randomY, objType);
                                 console.log(`Created object ${objType} at random position (${randomX}, ${randomY})`);
+                            }
+                            
+                            // Apply scaling based on object type
+                            if (OBJECT_SCALES[objType]) {
+                                sprite.setScale(OBJECT_SCALES[objType]);
                             }
                             
                             // SIMPLIFIED NAMING APPROACH
