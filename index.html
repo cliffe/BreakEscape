@@ -54,8 +54,8 @@
             position: fixed;
             top: 20px;
             right: 20px;
-            width: 500px;
-            max-width: 80%;
+            width: 600px;
+            max-width: 90%;
             z-index: 2000;
             font-family: 'Press Start 2P';
             pointer-events: none;
@@ -136,6 +136,7 @@
             bottom: 80px;
             right: 20px;
             width: 500px;
+            max-width: fit-content;
             max-height: 500px;
             background-color: rgba(0, 0, 0, 0.9);
             color: white;
@@ -844,8 +845,8 @@
         /* Toggle Buttons Container */
         #toggle-buttons-container {
             position: fixed;
-            bottom: 20px;
-            right: 20px;
+            bottom: 15px;
+            right: 15px;
             display: flex;
             flex-direction: row-reverse;
             z-index: 1998;
@@ -1144,6 +1145,74 @@
                 font-size: 125%;
             }
         }
+
+        #inventory-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            /* overflow-x: auto; */
+            padding: 0 20px;
+            z-index: 1000;
+        }
+
+        #inventory-container::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        #inventory-container::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        #inventory-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+        }
+
+        .inventory-slot {
+            min-width: 60px;
+            height: 60px;
+            margin: 0 5px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            background: rgba(0, 0, 0, 0.8);
+
+        }
+
+        .inventory-item {
+            max-width: 48px;
+            max-height: 48px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .inventory-item:hover {
+            transform: scale(1.1);
+        }
+
+        .inventory-tooltip {
+            position: absolute;
+            bottom: 100%;
+            left: -10px;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 14px;
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .inventory-item:hover + .inventory-tooltip {
+            opacity: 1;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/easystarjs@0.4.4/bin/easystar-0.4.4.js"></script>
@@ -1221,6 +1290,9 @@
         </div>
         <div id="biometrics-content"></div>
     </div>
+
+    <!-- Inventory Container -->
+    <div id="inventory-container"></div>
 
     <script>
         const config = {
@@ -1994,14 +2066,14 @@
                 // Convert pointer position to world coordinates
 
                 // Calculate the inventory area based on the container's position and size
-                const inventoryBounds = inventory.container.getBounds();
+                const inventoryBounds = inventory.container.getBoundingClientRect();
 
-                if (pointer.y > inventoryBounds.y && pointer.y < inventoryBounds.y + inventoryBounds.height && 
-                    pointer.x > inventoryBounds.x && pointer.x < inventoryBounds.x + inventoryBounds.width) {
+                if (pointer.y > inventoryBounds.top && pointer.y < inventoryBounds.bottom && 
+                    pointer.x > inventoryBounds.left && pointer.x < inventoryBounds.right) {
                     // Find clicked inventory item
                     const clickedItem = inventory.items.find(item => {
                         if (!item) return false;
-                        const bounds = item.getBounds();
+                        const bounds = item.getBoundingClientRect();
                         return Phaser.Geom.Rectangle.Contains(
                             bounds,
                             pointer.x,
@@ -3173,7 +3245,7 @@
             
             let message = `${data.name}\n\n`;
             if (data.observations) {
-                message += `Observations: ${data.observations}\n\n`;
+            message += `Observations: ${data.observations}\n\n`;
             }
             
             if (data.readable && data.text) {
@@ -3312,70 +3384,51 @@
                 
                 sprite.setVisible(false);
                 
-                const scene = sprite.scene;
+                // Find first empty slot
+                const slots = inventory.container.getElementsByClassName('inventory-slot');
+                let emptySlot = null;
+                for (const slot of slots) {
+                    if (!slot.hasChildNodes()) {
+                        emptySlot = slot;
+                        break;
+                    }
+                }
                 
-                // SIMPLIFIED INVENTORY NAMING
-                // Use a consistent format: inventory_type_index
-                const inventoryId = `inventory_${sprite.name}_${inventory.items.length}`;
+                if (!emptySlot) {
+                    console.warn('No empty inventory slots available');
+                    return false;
+                }
                 
-                // Create new sprite for inventory
-                const inventorySprite = scene.add.sprite(
-                    inventory.items.length * 60,
-                    0,
-                    sprite.name
-                );
+                // Create inventory item
+                const itemImg = document.createElement('img');
+                itemImg.className = 'inventory-item';
+                itemImg.src = `assets/objects/${sprite.name}.png`;
+                itemImg.alt = sprite.scenarioData.name;
                 
-                inventorySprite.setInteractive({ useHandCursor: true, pixelPerfect: true });
-                inventorySprite.scenarioData = {
+                // Create tooltip
+                const tooltip = document.createElement('div');
+                tooltip.className = 'inventory-tooltip';
+                tooltip.textContent = sprite.scenarioData.name;
+                
+                // Add item data
+                itemImg.scenarioData = {
                     ...sprite.scenarioData,
                     foundIn: currentRoom ? gameScenario.rooms[currentRoom].name || currentRoom : 'unknown location'
                 };
-                inventorySprite.name = sprite.name;
-                inventorySprite.objectId = inventoryId;
+                itemImg.name = sprite.name;
+                itemImg.objectId = `inventory_${sprite.name}_${inventory.items.length}`;
                 
-                // Set depth higher than container
-                inventorySprite.setDepth(2003);
-
-                // Add pointer events
-                inventorySprite.on('pointerdown', function(pointer) {
-                    // Handle inventory item interaction
-                    handleObjectInteraction(inventorySprite);
+                // Add click handler
+                itemImg.addEventListener('click', function() {
+                    handleObjectInteraction(this);
                 });
                 
-                inventorySprite.on('pointerover', function() {
-                    this.setTint(0xdddddd);
-                    
-                    // Show tooltip with item name
-                    const tooltipText = scene.add.text(
-                        this.x, 
-                        this.y - 40, 
-                        this.scenarioData.name, 
-                        { 
-                            fontSize: '14px',
-                            backgroundColor: '#000',
-                            padding: { x: 5, y: 3 },
-                            fixedWidth: 150,
-                            align: 'center'
-                        }
-                    ).setOrigin(0.5, 0.5).setDepth(2004);
-                    
-                    this.tooltip = tooltipText;
-                });
-                
-                inventorySprite.on('pointerout', function() {
-                    this.clearTint();
-                    
-                    if (this.tooltip) {
-                        this.tooltip.destroy();
-                        this.tooltip = null;
-                    }
-                });
+                // Add to slot
+                emptySlot.appendChild(itemImg);
+                emptySlot.appendChild(tooltip);
                 
                 // Add to inventory array
-                inventory.items.push(inventorySprite);
-                
-                // Add to container
-                inventory.container.add(inventorySprite);
+                inventory.items.push(itemImg);
                 
                 // Show notification
                 gameAlert(`Added ${sprite.scenarioData.name} to inventory`, 'success', 'Item Collected', 3000);
@@ -3399,37 +3452,91 @@
             }
         }
 
+        function removeFromInventory(item) {
+            try {
+                // Find the item in the inventory array
+                const itemIndex = inventory.items.indexOf(item);
+                if (itemIndex === -1) return false;
+                
+                // Remove from array
+                inventory.items.splice(itemIndex, 1);
+                
+                // Remove from DOM
+                const slot = item.parentElement;
+                if (slot) {
+                    slot.innerHTML = '';
+                }
+                
+                // Hide bluetooth toggle if we dropped the bluetooth scanner
+                if (item.scenarioData.type === "bluetooth_scanner") {
+                    const bluetoothToggle = document.getElementById('bluetooth-toggle');
+                    bluetoothToggle.style.display = 'none';
+                }
+                
+                // Hide biometrics toggle if we dropped the fingerprint kit
+                if (item.scenarioData.type === "fingerprint_kit") {
+                    const biometricsToggle = document.getElementById('biometrics-toggle');
+                    biometricsToggle.style.display = 'none';
+                }
+                
+                return true;
+            } catch (error) {
+                console.error('Error removing from inventory:', error);
+                return false;
+            }
+        }
+
+        function dropInventoryItem(item) {
+            try {
+                if (!item || !item.scenarioData) return false;
+                
+                // Get player position
+                const dropPos = {
+                    x: player.x,
+                    y: player.y
+                };
+                
+                // Create a new sprite at the drop position
+                const droppedItem = createInteractiveSprite(
+                    item.scenarioData,
+                    dropPos.x,
+                    dropPos.y,
+                    currentRoom
+                );
+                
+                if (!droppedItem) return false;
+                
+                // Remove from inventory
+                removeFromInventory(item);
+                
+                return true;
+            } catch (error) {
+                console.error('Error dropping inventory item:', error);
+                return false;
+            }
+        }
+
         // initializes inventory
         // creates the background and slot outlines
         function initializeInventory() {
             // Reset inventory state
             inventory.items = [];
             
-            // Create slot outlines
-            const slotsContainer = this.add.container(INVENTORY_X_OFFSET, this.cameras.main.height - INVENTORY_Y_OFFSET)
-                .setScrollFactor(0)
-                .setDepth(2001);
+            // Get the HTML inventory container
+            const inventoryContainer = document.getElementById('inventory-container');
+            inventoryContainer.innerHTML = '';
             
             // Create 10 slot outlines
             for (let i = 0; i < 10; i++) {
-                const outline = this.add.rectangle(
-                    i * 60, 
-                    0,
-                    50,  // slightly smaller than spacing
-                    50,
-                    0x666666,
-                    0.3
-                );
-                outline.setStrokeStyle(1, 0x666666);
-                slotsContainer.add(outline);
+                const slot = document.createElement('div');
+                slot.className = 'inventory-slot';
+                inventoryContainer.appendChild(slot);
             }
             
-            // Initialize inventory container - use the same X offset as slots
-            inventory.container = this.add.container(INVENTORY_X_OFFSET, this.cameras.main.height - INVENTORY_Y_OFFSET)
-                .setScrollFactor(0)
-                .setDepth(2001);
+            // Store reference to container
+            inventory.container = inventoryContainer;
             
-            debugLog('INVENTORY INITIALIZED', inventory, 2); // Debug log at level 2
+            debugLog('INVENTORY INITIALIZED', inventory, 2);
         }
         
         // Process all items marked with inInventory: true in the scenario data
@@ -6538,61 +6645,6 @@
         function hideSamplesUI() {
             const biometricsPanel = document.getElementById('biometrics-panel');
             biometricsPanel.style.display = 'none';
-        }
-
-        // Function to drop an inventory item
-        function dropInventoryItem(item) {
-            try {
-                if (!item || !item.scenarioData) return false;
-                
-                // Get player position
-                const dropPos = {
-                    x: player.x,
-                    y: player.y
-                };
-                
-                // Create a new sprite at the drop position
-                const droppedItem = createInteractiveSprite(
-                    item.scenarioData,
-                    dropPos.x,
-                    dropPos.y,
-                    currentRoom
-                );
-                
-                if (!droppedItem) return false;
-                
-                // Remove from inventory array
-                const itemIndex = inventory.items.indexOf(item);
-                if (itemIndex !== -1) {
-                    inventory.items.splice(itemIndex, 1);
-                }
-                
-                // Remove from inventory container
-                inventory.container.remove(item);
-                
-                // Destroy inventory sprite
-                item.destroy();
-                
-                // Recalculate inventory positions
-                updateInventoryPositions();
-                
-                // Hide bluetooth toggle if we dropped the bluetooth scanner
-                if (item.scenarioData.type === "bluetooth_scanner") {
-                    const bluetoothToggle = document.getElementById('bluetooth-toggle');
-                    bluetoothToggle.style.display = 'none';
-                }
-                
-                // Hide biometrics toggle if we dropped the fingerprint kit
-                if (item.scenarioData.type === "fingerprint_kit") {
-                    const biometricsToggle = document.getElementById('biometrics-toggle');
-                    biometricsToggle.style.display = 'none';
-                }
-                
-                return true;
-            } catch (error) {
-                console.error('Error dropping item:', error);
-                return false;
-            }
         }
 
         // Function to initialize the toggle buttons container
