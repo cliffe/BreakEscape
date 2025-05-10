@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Office Adventure Game - Scenario Selection</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #333;
+            font-family: Arial, sans-serif;
+            color: white;
+        }
+        
+        .container {
+            width: 80%;
+            max-width: 800px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #3498db;
+        }
+        
+        .scenario-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .scenario-card {
+            background: #444;
+            border-radius: 5px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 1px solid #555;
+        }
+        
+        .scenario-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            background: #4a4a4a;
+        }
+        
+        .scenario-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #3498db;
+        }
+        
+        .scenario-description {
+            font-size: 14px;
+            color: #ccc;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+        
+        .scenario-difficulty {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .difficulty-easy {
+            background: #2ecc71;
+            color: #fff;
+        }
+        
+        .difficulty-medium {
+            background: #f39c12;
+            color: #fff;
+        }
+        
+        .difficulty-hard {
+            background: #e74c3c;
+            color: #fff;
+        }
+        
+        .back-button {
+            display: block;
+            margin: 30px auto 0;
+            padding: 10px 20px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .back-button:hover {
+            background: #2980b9;
+        }
+        
+        .scenario-cybok {
+            margin-top: 10px;
+            margin-bottom: 15px;
+            font-size: 12px;
+            color: #aaa;
+        }
+        
+        .cybok-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #3498db;
+        }
+        
+        .cybok-list {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .cybok-list li {
+            margin-bottom: 3px;
+        }
+        
+        .scenario-cybok-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .cybok-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: bold;
+            background: #2c3e50;
+            color: #fff;
+            cursor: help;
+            position: relative;
+        }
+        
+        .cybok-badge:hover .cybok-tooltip {
+            display: block;
+        }
+        
+        .cybok-tooltip {
+            display: none;
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            width: 250px;
+            z-index: 100;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            font-weight: normal;
+            font-size: 11px;
+            margin-bottom: 5px;
+        }
+        
+        .cybok-tooltip:after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: rgba(0, 0, 0, 0.9) transparent transparent transparent;
+        }
+        
+        .cybok-tooltip-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #3498db;
+        }
+        
+        .cybok-tooltip-list {
+            margin: 0;
+            padding-left: 15px;
+            list-style-type: disc;
+        }
+        
+        .cybok-tooltip-list li {
+            margin-bottom: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Select a Scenario</h1>
+        
+        <div class="scenario-list" id="scenario-list">
+            <!-- Scenarios will be loaded here dynamically -->
+        </div>
+        
+        <button class="back-button" onclick="window.location.href='index.html'">Back to Main Game</button>
+    </div>
+
+    <script>
+        // List of available scenarios
+        const scenarios = [
+            {
+                id: "encoding_lab",
+                title: "Encoding and Encryption Lab",
+                description: "Recover your legendary cookie recipe from mischievous squirrels by solving various encoding and encryption challenges.",
+                difficulty: "beginner",
+                file: "assets/scenarios/scenario4.json",
+                cybok: [
+                    { ka: "AC", topic: "Algorithms, Schemes and Protocols", keywords: ["Encoding vs Cryptography", "Caesar cipher", "Vigenere cipher", "SYMMETRIC CRYPTOGRAPHY - AES (ADVANCED ENCRYPTION STANDARD)"] },
+                    { ka: "F", topic: "Artifact Analysis", keywords: ["Encoding and alternative data formats"] },
+                    { ka: "WAM", topic: "Fundamental Concepts and Approaches", keywords: ["ENCODING", "BASE64"] }
+                ]
+            },
+            {
+                id: "captain_meow",
+                title: "Captain Meow's Disappearance",
+                description: "Your beloved kitty sidekick, Captain Meow, has vanished without a trace! Follow the cryptic clues to find him before it's too late.",
+                difficulty: "medium",
+                file: "assets/scenarios/scenario1.json",
+                cybok: [
+                    { ka: "F", topic: "Operating System Analysis", keywords: ["Steganography", "Encoding and alternative data formats", "SEARCH FOR EVIDENCE", "METADATA"] },
+                    { ka: "POR", topic: "Privacy Technologies and Democratic Values", keywords: ["METADATA", "STEGANOGRAPHY"] },
+                    { ka: "AC", topic: "Cryptographic Implementation", keywords: ["Cryptographic Libraries", "ENCRYPTION - TOOLS"] },
+                    { ka: "AC", topic: "Physical Security", keywords: ["Fingerprint Authentication", "Bluetooth Security", "Physical Locks"] },
+                    { ka: "AC", topic: "Hashing and Integrity", keywords: ["Hash Functions", "MD5 Hash"] },
+                    { ka: "AC", topic: "Encoding and Representation", keywords: ["Base64 Encoding", "Octal Encoding", "Hexadecimal (Hex) Encoding"] },
+                    { ka: "AC", topic: "Algorithms, Schemes and Protocols", keywords: ["ADVANCED ENCRYPTION STANDARD (AES)", "ECB (ELECTRONIC CODE BOOK) BLOCK CIPHER MODE"] }
+                ]
+            },
+            {
+                id: "ceo_exfil",
+                title: "CEO Data Exfiltration",
+                description: "Infiltrate the CEO's office and exfiltrate sensitive company data. You'll need to bypass physical security and find ways to access restricted areas.",
+                difficulty: "medium",
+                file: "assets/scenarios/ceo_exfil.json"
+            },
+            {
+                id: "asymmetric_encryption",
+                title: "Asymmetric Encryption with RSA",
+                description: "Solve cryptographic puzzles using RSA and Diffie-Hellman to escape from a cursed ghost town before you're turned into a llama!",
+                difficulty: "intermediate",
+                file: "assets/scenarios/scenario2.json",
+                cybok: [
+                    { ka: "AC", topic: "Algorithms, Schemes and Protocols", keywords: ["CRYPTOGRAPHY - ASYMMETRIC - RSA", "DIFFIE-HELLMAN ALGORITHM"] },
+                    { ka: "AC", topic: "Public-Key Cryptography", keywords: ["public-key encryption", "public-key signatures", "RSA MODULUS", "RSA PROBLEM", "RSA TRANSFORM"] },
+                    { ka: "AC", topic: "Key Management", keywords: ["key generation"] },
+                    { ka: "AC", topic: "Cryptographic Implementation", keywords: ["Cryptographic Libraries", "ENCRYPTION - TOOLS"] }
+                ]
+            },
+            {
+                id: "symmetric_encryption",
+                title: "Symmetric Encryption with AES",
+                description: "Recover Dr. Knowitall's time machine blueprints by solving AES encryption puzzles before the self-destruct sequence activates.",
+                difficulty: "intermediate",
+                file: "assets/scenarios/scenario3.json",
+                cybok: [
+                    { ka: "AC", topic: "Algorithms, Schemes and Protocols", keywords: ["ADVANCED ENCRYPTION STANDARD (AES)", "ECB (ELECTRONIC CODE BOOK) BLOCK CIPHER MODE"] },
+                    { ka: "AC", topic: "Symmetric Cryptography", keywords: ["symmetric primitives", "symmetric encryption and authentication"] },
+                    { ka: "AC", topic: "Cryptographic Implementation", keywords: ["Cryptographic Libraries", "ENCRYPTION - TOOLS", "Hexadecimal Encoding"] }
+                ]
+            },
+            {
+                id: "biometric_breach",
+                title: "Biometric Security Breach",
+                description: "Test the company's biometric security systems by collecting and spoofing fingerprint data to gain unauthorized access.",
+                difficulty: "hard",
+                file: "assets/scenarios/biometric_breach.json"
+            }
+        ];
+        
+        // Function to create scenario cards
+        function createScenarioCards() {
+            const scenarioList = document.getElementById('scenario-list');
+            
+            // CyBOK Knowledge Area abbreviation mapping
+            const cybokFullNames = {
+                "IC": "Introduction to CyBOK",
+                "FM": "Formal Methods",
+                "RMG": "Risk Management & Governance",
+                "LR": "Law & Regulation",
+                "HF": "Human Factors",
+                "POR": "Privacy & Online Rights",
+                "MAT": "Malware & Attack Technologies",
+                "AB": "Adversarial Behaviours",
+                "SOIM": "Security Operations & Incident Management",
+                "F": "Forensics",
+                "C": "Cryptography",
+                "AC": "Applied Cryptography",
+                "OSV": "Operating Systems & Virtualisation Security",
+                "DSS": "Distributed Systems Security",
+                "AAA": "Authentication, Authorisation and Accountability",
+                "SS": "Software Security",
+                "WAM": "Web & Mobile Security",
+                "SSL": "Secure Software Lifecycle",
+                "NS": "Network Security",
+                "HS": "Hardware Security",
+                "CPS": "Cyber Physical Systems",
+                "PLT": "Physical Layer and Telecommunications Security"
+            };
+            
+            scenarios.forEach(scenario => {
+                const card = document.createElement('div');
+                card.className = 'scenario-card';
+                card.onclick = function() {
+                    launchScenario(scenario.file);
+                };
+                
+                const difficultyClass = `difficulty-${scenario.difficulty.toLowerCase()}`;
+                
+                let cybokHTML = '';
+                if (scenario.cybok) {
+                    // Group by Knowledge Area
+                    const kaGroups = {};
+                    scenario.cybok.forEach(item => {
+                        if (!kaGroups[item.ka]) {
+                            kaGroups[item.ka] = [];
+                        }
+                        kaGroups[item.ka].push(item);
+                    });
+                    
+                    const badgesHTML = Object.keys(kaGroups).map(ka => {
+                        const topics = kaGroups[ka];
+                        const kaFullName = cybokFullNames[ka] || ka;
+                        const tooltipContent = `
+                            <div class="cybok-tooltip-title">${kaFullName} Topics:</div>
+                            <ul class="cybok-tooltip-list">
+                                ${topics.map(item => `
+                                    <li>
+                                        <strong>${item.topic}</strong>
+                                        <ul>
+                                            ${item.keywords.map(keyword => `<li>${keyword}</li>`).join('')}
+                                        </ul>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        `;
+                        
+                        return `
+                            <div class="cybok-badge">
+                                CyBOK ${ka}
+                                <div class="cybok-tooltip">
+                                    ${tooltipContent}
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                    
+                    cybokHTML = `
+                        <div class="scenario-cybok-badges">
+                            ${badgesHTML}
+                        </div>
+                    `;
+                }
+                
+                card.innerHTML = `
+                    <div class="scenario-title">${scenario.title}</div>
+                    <div class="scenario-description">${scenario.description}</div>
+                    ${cybokHTML}
+                    <div class="scenario-difficulty ${difficultyClass}">${scenario.difficulty.toUpperCase()}</div>
+                `;
+                
+                scenarioList.appendChild(card);
+            });
+        }
+        
+        // Function to launch the game with selected scenario
+        function launchScenario(scenarioFile) {
+            window.location.href = `index.html?scenario=${encodeURIComponent(scenarioFile)}`;
+        }
+        
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', createScenarioCards);
+    </script>
+</body>
+</html> 

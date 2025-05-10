@@ -1,0 +1,173 @@
+{
+    "scenario_brief": "Your legendary cookie recipe has been stolen by the mischievous squirrels led by Sir Acorn! Tracking them to their secret treehouse, the door slams shut behind you. A sign reads: 'Solve our riddles or forever be known as the Cookie Monster!' Crack the cryptographic challenges and reclaim your recipe before time runs out!",
+    "startRoom": "room_reception",
+    
+    "rooms": {
+        "room_reception": {
+            "type": "room_reception",
+            "connections": {
+                "north": "room_office"
+            },
+            "objects": [
+                {
+                    "type": "workstation",
+                    "name": "Crypto Analysis Station",
+                    "takeable": true,
+                    "inInventory": true,
+                    "observations": "A powerful workstation for cryptographic analysis"
+                  },  
+                {
+                    "type": "pc",
+                    "name": "Base64 Terminal",
+                    "takeable": false,
+                    "requires": "password",
+                    "observations": "Decrypt this message: 'Y3VwIG9mIGZsb3Vy'"
+                },
+                {
+                    "type": "notes",
+                    "name": "Recipe Note",
+                    "takeable": true,
+                    "readable": true,
+                    "text": "Cookies always start with the right ingredients! Step by step, you will gain an ingredient back from your recipe."
+                }
+            ]
+        },
+
+        "room_office": {
+            "type": "room_office",
+            "connections": {
+                "north": "room_servers",
+                "south": "room_reception"
+            },
+            "locked": true,
+            "lockType": "password",
+            "requires": "cup of flour",
+            "objects": [
+                {
+                    "type": "pc",
+                    "name": "Caesar Cipher Terminal",
+                    "takeable": false,
+                    "requires": "password",
+                    "observations": "Decrypt this message: 'zkgyvuut ul yamgx'"
+                },
+                {
+                    "type": "notes",
+                    "name": "Cipher Clue",
+                    "takeable": true,
+                    "readable": true,
+                    "text": "A squirrel’s trick is always shifting things around…"
+                }
+            ]
+        },
+
+        "room_servers": {
+            "type": "room_servers",
+            "connections": {
+                "north": "room_closet",
+                "south": "room_office"
+            },
+            "locked": true,
+            "lockType": "password",
+            "requires": "teaspoon of sugar",
+            "objects": [
+                {
+                    "type": "pc",
+                    "name": "Encoding Puzzle",
+                    "takeable": false,
+                    "requires": "password",
+                    "observations": "Convert this cipher to text: '68 61 6c 66 20 61 20 63 75 70 20 6f 66 20 6d 69 6c 6b'"
+                },
+                {
+                    "type": "notes",
+                    "name": "Encoding Clue",
+                    "takeable": true,
+                    "readable": true,
+                    "text": "There are many ways to say the same thing… use the right format!"
+                }
+            ]
+        },
+
+        "room_closet": {
+            "type": "room_closet",
+            "connections": {
+                "north": "room_ceo",
+                "south": "room_servers"
+            },
+            "locked": true,
+            "lockType": "password",
+            "requires": "half a cup of milk",
+            "objects": [
+                {
+                    "type": "pc",
+                    "name": "Vigenère Cipher Terminal",
+                    "takeable": false,
+                    "requires": "password",
+                    "observations": "Decrypt this message: 'gqh dnlzw razk'"
+                },
+                {
+                    "type": "notes",
+                    "name": "Cipher Hint",
+                    "takeable": true,
+                    "readable": true,
+                    "text": "Squirrels love nuts. Use their favorite to unlock the next ingredient."
+                }
+            ]
+        },
+      
+        "room_ceo": {
+            "type": "room_ceo",
+            "connections": {
+                "south": "room_closet"
+            },
+            "locked": true,
+            "lockType": "password",
+            "requires": "two large eggs",
+            "objects": [
+                {
+                    "type": "pc",
+                    "name": "AES Encryption Safe",
+                    "takeable": false,
+                    "requires": "password",
+                    "observations": "Decrypt this AES message for the safe next to the pc: 'e66ffb8accddb124cb14ec6551f33ccc' \nCount up to 20 for the key and IV."
+                },
+                {
+                    "type": "safe",
+                    "name": "Final Recipe Vault",
+                    "takeable": false,
+                    "locked": true,
+                    "lockType": "password",
+                    "requires": "a bunch of love",
+                    "observations": "The final safe containing the stolen recipe!",
+                    "contents": [
+                        {
+                            "type": "notes",
+                            "name": "Clue to the next safe",
+                            "takeable": true,
+                            "readable": true,
+                            "text": "Use md5 hash to hash the name of the cookie made with these ingredients 'love cookies'"
+                        }
+                    ]
+                },
+                {
+                    "type": "safe1",
+                    "name": "Final Recipe Vault",
+                    "takeable": false,
+                    "locked": true,
+                    "lockType": "password",
+                    "requires": "2a4d3354d949c6d865c8c21a6340e7cf",
+                    "observations": " ",
+                    "contents": [
+                        {
+                            "type": "notes",
+                            "name": "Recovered Cookie Recipe",
+                            "takeable": true,
+                            "readable": true,
+                            "observations": "Congratulations! You've cracked our cryptographic traps and saved your recipe! \n flag{sampleflaghere}"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}
+

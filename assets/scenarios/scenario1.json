@@ -1,0 +1,247 @@
+{
+    "scenario_brief": "Your beloved kitty sidekick, Captain Meow, has vanished without a trace! As a renowned adventurer and detective, you suspect foul play. The last clue? A cryptic paw print left on your desk and a strange voicemail message on your phone. Can you crack the codes, follow the trail, and rescue Captain Meow before it’s too late?",
+    "endGoal": "Recover the stolen Project Sentinel prototype from the intruder's hidden exit route and secure all compromised data.",
+
+    "startRoom": "reception",
+   
+    "rooms": {
+      "reception": {
+        "type": "room_reception",
+        "connections": {
+          "north": "office1"
+        },
+        "objects": [
+          {
+            "type": "workstation",
+            "name": "Crypto Analysis Station",
+            "takeable": true,
+            "inInventory": true,
+            "observations": "A powerful workstation for cryptographic analysis"
+          },              
+          {
+            "type": "phone",
+            "name": "Reception Phone",
+            "takeable": false,
+            "readable": true,
+            "text": "The message is directing you towards finding the villain’s identity.\nRemember: only the first letter is capital",
+            "observations": ".--. / .-. / --- / ..-. / ..-. / . / ... / --- / .-."
+          },          
+          {
+            "type": "notes",
+            "name": "Hidden Clue Note",
+            "takeable": true,
+            "readable": true,
+            "text": "If you are reading this then I have been outsmarted and sadly captured...there are a series of clues I left behind for such circumstance, follow them to rescue me. I believe in you do not let me down :)",
+            "observations": "A cry for help?"
+          },
+          {
+            "type": "pc",
+            "name": "Reception Computer",
+            "takeable": false,
+            "requires": "password",
+            "observations": "QmFyay4="
+          }
+        ]
+      },
+      
+      "office1": {
+        "type": "room_office",
+        "connections": {
+          "north": ["office2", "office3"],
+          "south": "reception"
+        },
+        "locked": true,
+        "lockType": "password",
+        "requires": "Professor Bark",
+        "objects": [
+            {
+            "type": "pc",
+            "name": "Office Computer",
+            "takeable": false,
+            "hasFingerprint": true,
+            "fingerprintOwner": "Mrs Moo",
+            "fingerprintDifficulty": "easy",
+            "observations": "A computer with a cybersecurity alert on screen. There might be pawprints on the keyboard."
+          },
+          {
+            "type": "notes",
+            "name": "IT Memo",
+            "takeable": true,
+            "readable": true,
+            "text": "URGENT: Unusual activity detected from the CEO’s office. Security cameras captured a shadowy figure with a cat carrier.",
+            "observations": "A concerning observation on the surveillance cameras memo"
+          },
+          {
+            "type": "fingerprint_kit",
+            "name": "Fingerprint Kit",
+            "takeable": true,
+            "observations": "A kit used for collecting fingerprints from surfaces"
+          }
+        ]
+      },
+      
+      "office2": {
+         "type": "room_office",
+          "connections": {
+          "north": "ceo",
+          "south": "office1"
+        },
+        "locked": true,
+        "lockType": "biometric",
+        "requires": "Mrs Moo",
+        "biometricMatchThreshold": 0.5,
+        "objects": [
+          {
+            "type": "notes",
+            "name": "Shredded Note (Half)",
+            "takeable": true,
+            "readable": true,
+            "observations": "Deeper meaning into the image",
+            "text": "Professor Bark did not act alone, the hooveprint should be enough indication to who else is involved. To get the name, find the name hidden in the image using AES. The key is my favorite meal."
+          },
+          {
+            "type": "pc",
+            "name": "Image.jpeg",
+            "takeable": false,
+            "requires": "password",
+            "text": "",
+            "observations": "89504E470D0A1A0A0000000D49484452000000070000000608060000000F0E8476000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000000970485973000012740000127401DE661F780000001B49444154185763646060F80FC458011394C60AE82DC92EC2CE0000AE7E012D8347D0010000000049454E44AE4260827365637265740000000000000000000000003164623237653536373663363036316665373962386563343432373263326239"
+          },
+          {
+            "type": "tablet",
+            "name": "Captain Meow's Tablet",
+            "takeable": false,
+            "locked": true,
+            "lockType": "bluetooth",
+            "mac": "00:AB:CD:EF:12:34",
+            "observations": "-Fav meal: Tuna Fish Sandwich With Chives And A Side Of CocaCola And A Cup Of Milk -Fav color: Black -Fav number: Eight -Fav country: Meowland -Fav activity: Napping"
+          },
+          {
+            "type": "bluetooth_scanner",
+            "name": "Bluetooth Scanner",
+            "takeable": true,
+            "observations": "A device for detecting nearby Bluetooth signals.",
+            "canScanBluetooth": true,
+            "mac": "00:AB:CD:EF:12:34"
+          }
+        ]
+      },
+      "office3": {
+        "type": "room_office",
+        "connections": {
+          "north": "server1",
+          "south": "office1"
+        },
+        "locked": true,
+        "lockType": "biometric",
+        "requires": "Mrs Moo",
+        "biometricMatchThreshold": 0.5,
+        "objects": [
+          {
+            "type": "pc",
+            "name": "IT Staff Computer",
+            "takeable": false,
+            "requires": "password",
+            "observations": "146 157 165 162 40 145 151 147 150 164 40 164 167 157 40 156 151 156 145"
+          },
+          {
+            "type": "notes",
+            "name": "Dr Octopus data",
+            "takeable": true,
+            "readable": true,
+            "text": "We have noticed a security breached.",
+            "observations": "Suspicious activity logged, passcode encrypted for safety purposes."
+          }
+        ]
+      },
+      
+      "ceo": {
+        "type": "room_ceo",
+        "connections": {
+          "south": "office2"
+        },
+        "locked": true,
+        "lockType": "password",
+        "requires": "Mr Moo",
+        "objects": [
+          {
+            "type": "pc",
+            "name": "CEO Computer",
+            "takeable": false,
+            "observations": "To find me, locate the public IP address to locate me."
+          },
+          {
+            "type": "suitcase",
+            "name": "CEO Briefcase",
+            "takeable": false,
+            "locked": true,
+            "lockType": "key",
+            "requires": "briefcase_key",
+            "observations": "An expensive leather briefcase with a sturdy lock.",
+            "contents": [
+              {
+                "type": "notes",
+                "name": "Incriminating Documents",
+                "takeable": true,
+                "readable": true,
+                "text": "192.168.1.34   10.0.0.56   172.16.254.12   203.0.113.78   192.168.0.45   192.168.2.100   172.31.128.99   10.10.10.10",
+                "observations": "A bunch of IP addresses, follow the public IP address to find me."
+              }
+            ]
+          },
+          {
+            "type": "safe",
+            "name": "safe",
+            "takeable": false,
+            "locked": true,
+            "lockType": "password",
+            "requires": "203.0.113.78",
+            "contents": [
+              {
+                "type": "notes",
+                "name": "Flag",
+                "takeable": true,
+                "readable": true,
+                "text": "I knew you could do it! You found me! Here is your prize for rescuing me: \nflag{sampleflaghere}"              }
+            ]
+          }
+        ]
+      },
+      "server1": {
+        "type": "room_servers",
+        "connections": {
+          "south": "office3"
+        },
+        "locked": true,
+        "lockType": "pin",
+        "requires": "4829",
+        "objects": [
+          {
+            "type": "pc",
+            "name": "Server Terminal",
+            "takeable": false,
+            "observations": "Hash my name 'Captain Meow'"
+          },
+
+          {
+            "type": "safe",
+            "name": "Data safe",
+            "takeable": false,
+            "locked": true,
+            "lockType": "password",
+            "requires": "acffd84890456241cba3469e32fd46d3",
+            "observations": "A locked closet containing an important key. It requires a PIN to open.",
+            "contents": [
+              {
+                "type": "key",
+                "name": "Briefcase Key",
+                "takeable": true,
+                "key_id": "briefcase_key",
+                "observations": "A small key labeled 'Personal - Do Not Copy.'"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }

@@ -4,6 +4,10 @@
     "rooms": {
         "reception": {
             "type": "room_reception",
+            "locked": true,
+            "lockType": "key",
+            "requires": "ceo_office_key",
+            "difficulty": "easy",
             "connections": {
                 "north": "office1"
             },
@@ -48,12 +52,11 @@
                     "canScanBluetooth": true
                 },
                 {
-                    "type": "bluetooth_spoofer",
-                    "name": "Bluetooth Spoofer",
+                    "type": "workstation",
+                    "name": "Crypto Analysis Station",
                     "takeable": true,
-                    "observations": "A specialized device that can mimic Bluetooth signals from other devices",
-                    "canSpoofBluetooth": true,
-                    "mac": "00:11:22:33:44:55"
+                    "inInventory": true,
+                    "observations": "A powerful workstation for cryptographic analysis"
                 }
             ]
         },
@@ -71,7 +74,7 @@
                     "requires": "password",
                     "hasFingerprint": true,
                     "fingerprintOwner": "ceo",
-                    "fingerprintQuality": 0.9,
+                    "fingerprintDifficulty": "medium",
                     "observations": "A computer with a cybersecurity alert on screen. There might be fingerprints on the keyboard."
                 },
                 {
@@ -87,12 +90,6 @@
                     "name": "Fingerprint Kit",
                     "takeable": true,
                     "observations": "A kit used for collecting fingerprints from surfaces"
-                },
-                {
-                    "type": "spoofing_kit",
-                    "name": "Fingerprint Spoofing Kit",
-                    "takeable": true,
-                    "observations": "A specialized kit containing silicone, gelatin, and other materials for creating artificial fingerprints"
                 }
             ]
         },
@@ -138,7 +135,9 @@
                     "type": "pc",
                     "name": "IT Staff Computer",
                     "takeable": false,
-                    "requires": "password",
+                    "requires": "bluetooth",
+                    "lockType": "bluetooth",
+                    "mac": "00:11:22:33:44:55",
                     "observations": "An IT staff computer showing network security logs"
                 },
                 {
@@ -153,6 +152,7 @@
                     "type": "lockpick",
                     "name": "Lock Pick Kit",
                     "takeable": true,
+                    "inInventory": true,
                     "observations": "A professional lock picking kit with various picks and tension wrenches"
                 }
             ]
@@ -236,7 +236,7 @@
                             "takeable": true,
                             "readable": true,
                             "text": "Contract for sale of proprietary technology\nBank transfers from competing companies\nDetails of upcoming corporate espionage operations",
-                            "observations": "A folder containing damning evidence of corporate espionage"
+                            "observations": "A folder containing damning evidence of corporate espionage. Congratulations! You've recovered the incriminating documents. flag{ceo_exfil_flag}"
                         }
                     ]
                 }

@@ -1,0 +1,236 @@
+{
+    "scenario_brief": "You are a curious traveler who stumbles upon Beckett, a ghost town shrouded in mystery. After entering the only standing building, the door slams shut, trapping you inside. A note from Mayor McFluffins warns: 'Fail to escape, and you’ll be turned into a llama.' Solve cryptographic puzzles and break the curse before time runs out, or grow fur and join the town’s eerie fate!",
+    "startRoom": "room_start",
+    "rooms": {
+      "room_start": {
+        "type": "room_office",
+        "connections": {
+          "north": "room_office"
+        },
+        "locked": true,
+        "lockType": "key",
+        "requires": "briefcase_key",
+        "objects": [
+          {
+            "type": "workstation",
+            "name": "Crypto Analysis Station",
+            "takeable": true,
+            "inInventory": true,
+            "observations": "A powerful workstation for cryptographic analysis"
+          },  
+          {
+            "type": "phone",
+            "name": "Recorded Conversation",
+            "takeable": false,
+            "observations": "Llamas are all pure evil! Jullie and Tim are the two who started this curse. Tim is 3 years old, and Jullie is 5 years old. Remember their ages!"
+          },
+          {
+            "type": "notes",
+            "name": "Clue Note",
+            "takeable": true,
+            "readable": true,
+            "observations": "Safe one, next to the left door is Tim's public key, safe two is Julies's private key and the briefcase is the shared key. \nRemember: Public keys are (g^age MOD p)"
+          },
+          {
+            "type": "pc",
+            "name": "Computer",
+            "takeable": false,
+            "requires": "password",
+            "observations": "Numbers are important, remember these to proceed:\n- Prime modulus (p): 23\n- Base (g): 5\n- Tim's private key (a): (5^3) MOD 23\n- Jullie's private key (b): (5^5) MOD 23\nEnter the shared secret key to decrypt the next clue."
+          },
+          {
+            "type": "safe",
+            "name": "Safe 1",
+            "takeable": false,
+            "locked": true,
+            "lockType": "password",
+            "requires": "10",
+            "observations": "A locked safe containing part of the conversation.",
+            "contents": [
+              {
+                "type": "notes",
+                "name": "Conversation Part 1",
+                "takeable": true,
+                "readable": true,
+                "text": "Tim: Do you remember how to calculate your public key again?\nJullie: Not really...I always found the Diffie-Hellman key exchange so confusing lol\nTim: Just remember '(G^private) MOD P' and you'll be good.\n...",
+                "observations": "First part of the conversation."
+              }
+            ]
+          },
+          {
+            "type": "safe",
+            "name": "Safe 2",
+            "takeable": false,
+            "locked": true,
+            "lockType": "password",
+            "requires": "20",
+            "observations": "A locked safe containing the next part of the conversation.",
+            "contents": [
+              {
+                "type": "notes",
+                "name": "Conversation Part 2",
+                "takeable": true,
+                "readable": true,
+                "text": "Jullie: Thanks Tim, this way no one would be able to read our messages!\nTim: Exactly! We need to turn a lot of people into llamas or our plans are forever done for.\nJullie: Yeah, you're right. We need to stay focused and cover our tracks.\nTim: Don't forget our shared key. If you do, this is all for nothing, Jules.\nJullie: Yes, yes. The shared key is (B^a MOD p).",
+                "observations": "Second part of the conversation."
+              }
+            ]
+          },
+          {
+            "type": "suitcase",
+            "name": "Briefcase",
+            "takeable": false,
+            "locked": true,
+            "lockType": "password",
+            "requires": "19",
+            "observations": "A locked briefcase containing the key to the next room.",
+            "contents": [
+              {
+                "type": "key",
+                "name": "Briefcase Key",
+                "takeable": true,
+                "key_id": "briefcase_key",
+                "observations": "You've found the key to unlock the next room!"
+              }
+            ]
+          }
+        ]
+      },
+      "room_office": {
+        "type": "room_office",
+        "connections": {
+          "south": "room_start",
+          "north": "room_servers"
+        },
+        "locked": true,
+        "lockType": "key",
+        "requires": "briefcase_key",
+        "objects": [
+          {
+            "type": "notes",
+            "name": "Prime Numbers Hint",
+            "takeable": true,
+            "readable": true,
+            "text": "The city's foundation rests on prime pillars. Find the numbers that uphold its secrets. Here's a riddle to guide you:\n\n'I am a prime number, the smallest of my kind with two digits. My neighbor to the right is also prime, and together we hold the key.'",
+            "observations": "A hint about prime numbers."
+          },
+          {
+            "type": "pc",
+            "name": "RSA Modulus Computer",
+            "takeable": false,
+            "requires": "password",
+            "observations": "Calculate N by multiplying two prime numbers (p and q). The pin is the last 4 digits of N."
+          }
+        ]
+      },
+      "room_servers": {
+        "type": "room_servers",
+        "connections": {
+          "south": "room_office",
+          "north": "room_closet"
+        },
+        "locked": true,
+        "lockType": "password",
+        "requires": "0143",
+        "objects": [
+            {
+                "type": "pc",
+                "name": "Pop up message - decrypt message using private key",
+                "takeable": false,
+                "requires": "password",
+                "text": "Decrypt this base64 encrypted message using the private key.",
+                "observations": "jIYyQYFFzXNKgKS1Z744Sudq2KAXdRgSHlExns9MNVNlTZRlnBSm#vVGw6TeEjOhohJeGbFrWk5qNlPhvm0PmneIBbzZ9u4BwzaZ4vxHclLMDQ55e7tOByQ3KVjUgcxX1skW7qj1mPpic2IFsS1kyIyLE3ly1eNZxMCEy1S03bq0="
+            },
+            {
+                "type": "notes",
+                "name": "Private Key Part 1",
+                "takeable": true,
+                "readable": true,
+                "observations": "This note contains part of the private key required for decryption.",
+                "text": "-----BEGIN RSA PRIVATE KEY-----\nMIICXAIBAAKBgQCczVF4Oq+Njf1Olf/JNnZcSP0jbZVpdVJ+hySa7OPMSpjMsppb\nV1E8qytLIx+HfiU065I/Lhr0LhoKj+hWA3ceCUQa2GeSU+p8X5bseet6/hhrsBYV\nuT+4ajIQ8tDOi/0vrnSh+EMc912TpjAh1nEfeL65LXOwWHDf0rR8Uxv3AQIDAQAB\nAoGACiIVo/6s5im5Jzk32r2/h+a6ny2/hF1t25npsm5hKUxf1Aitw33g1Nod9eDa"
+            },
+            {
+                "type": "notes",
+                "name": "Private Key Part 2",
+                "takeable": true,
+                "readable": true,
+                "observations": "8oNjLaiUnqsg2EtbaPfUVKysJ6WaFQ4BnFe6rKQH+kXDEjSOyMcQsoObO0Bcjk/3\nWpxdTH0qp71yHzg1D6h40cwSra5u/t/ZRFJI/08hBdbt8DECQQDPQwVS5hYfDfXa\ni5Rxwwp4EBZmvy8z/KXPJ+8sXfqi5pBkZTrQfWsiqCW2aRtnTUsC0b3HjRQxf2SV\n+1y9aqQpAkEAwaypvhpE7I2P1LgIPrgW2HM1wiP0oZiM9LizsDHYO/bKqSWL7hnS\n/s6NcQ5CLOyB3uxYBkDIovUSem6/Y6hXGQJBAKi/qaMAQLySEj0Y7gjdwzVT69lG",
+                "text": "Cfmq15ldq0cVUU62qJOFNCiyJLt36hSlaTFnZg5qlLjXbbyLO2s92BlErVkCQDaY\nH3kxGoC8HvFNtzVG21nEkEDbtdffksxhTHW8d0Hf/ZzUsq85pFqjiwd1h332ZV2b\nreyFUoltH/pXQagsCfECQFyG0RpJtc9ojIRUMOqDGQvoi8il4xM4yCiSKQAcLzuu\nqLrEVyNbKHcBf2Hn3xuEHs/DB6zCLVj/FJ7ZWONCJuU=\n-----END RSA PRIVATE KEY-----"
+            }
+        ]
+      },
+      "room_closet": {
+        "type": "room_closet",
+        "connections": {
+          "south": "room_servers",
+          "north": "room_ceo"
+        },
+        "locked": true,
+        "lockType": "password",
+        "requires": "8835",
+        "objects": [
+          {
+            "type": "pc",
+            "name": "RSA Encryption Computer",
+            "takeable": false,
+            "requires": "password",
+            "text": "Mcfluffins has sent out a memo to all llama population spot which one is the real one and the first four charecters will help you proceed",
+            "observations": "Verify the correct rsa signature from hex. remember 'llamas are the best' -----BEGIN PUBLIC KEY-----MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDXSTdvKibflOrDlUuICO4I93xzuv5cKdM5QEcXMkJSPe0b/B7NQgOW4PumqwZw4sfEKgMIIAoW9BYErgQS38Ax6UelDaSIIGVtoqIXM8fDvchLXHqBh6L9rfxX5GsTybZqX5wQJtZRM8uAAldo98SByUMR6zjBp+ZTBLHLUt15vQIDAQAB-----END PUBLIC KEY-----"
+          },
+          {
+            "type": "notes",
+            "name": "First two digital signature",
+            "takeable": true,
+            "readable": true,
+            "text": "bd68b0b3e45ac3b2ed499c8014969ac4ab951653a67ca6bc085f8a10c1c4da220c0350f0c27b3fd727b86dbd36ee8f33b3476270cb819145d8a23456f9cf8c373e53e93bcdd1129a1df44c4792e6704f973820386db4306f84faca5f62657235e02e4259f9e9c080dc4a7da1268e671d90bec8435769b25f8f235fe9d1d1fce7",
+            "observations": "077228e6a71569c44ea0baa248f19048c2526a964d55d5c0bfaed061918f7fcae0c1729d8b3ad2f7717399dc04766308711b939fb28d3277a66669362cacef2e4e478bec1cfe8f72f6121bc0b1a41a0cb35353d722919e40dc04c20ecc534be3f427cabf5260829751948f2fc480399029fe961755c8483394feea60be092933"
+          },
+          {
+            "type": "notes",
+            "name": "Second two digital signature",
+            "takeable": true,
+            "readable": true,
+            "text": "30794e2409bd4db6a4891b1f74897cf10cf3704e685d4c89fb96956cf33889c7803ac9c5c818449827c36319b6a73691690ec4a2169c33aaff52c3114c3f4b4e16c7fb82f063ae0bfc84cfd9f3d1aadba960576d26cd61349ad0627107b4370106b6e30e66f28669aa0aa57c12ceba41c3a1d86858f1b4788c2a01dc68799cf1",
+            "observations": "d51e192f1e46fed49089b322d563a2089aa9ad5907b4f0c9e110ea58ef3a5f2dbfd7066d7a9bcab9335034e0b71d22d5ee9205fc31d025f70361bffa3322d901a65c3965b4770890bdddf0922dae6edf61157c68dd291e7ad81443b7c8ca98fbaa6b558024f586d36e777a904e5c400976bf9d0d659826a5cc96fde273e48246"
+          }
+        ]
+      },
+      "room_ceo": {
+        "type": "room_ceo",
+        "connections": {
+          "south": "room_closet"
+        },
+        "locked": true,
+        "lockType": "password",
+        "requires": "bd68",
+        "objects": [
+          {
+            "type": "pc",
+            "name": "A terminal with a flickering screen",
+            "takeable": false,
+            "requires": "password",
+            "observations": "Use RSA decryption (m = c^d mod n). For example, if c=3, calculate (3^53 mod 161). Do this for all ciphertext values to reveal the town's hex message. '212,48,9,9,276,23,155,231' d=269 n=286"
+          },
+          {
+            "type": "safe",
+            "name": "Safe",
+            "takeable": false,
+            "locked": true,
+            "lockType": "password",
+            "requires": "freedom!",
+            "observations": "A locked safe containing part of the conversation.",
+            "contents": [
+              {
+                "type": "notes",
+                "name": "Freedom",
+                "takeable": true,
+                "readable": true,
+                "text": "You have saved yourself from being turned into a llama...sadly.",
+                "observations": "flag{hereisaflagsample}"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }

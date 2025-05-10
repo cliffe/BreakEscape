@@ -1,0 +1,168 @@
+{
+    "scenario_brief": "You've discovered the workshop of the brilliant scientist, Dr. Knowitall, who has built a time machine. With him out, you plan to sneak in and grab the blueprints, but they're hidden behind a series of cryptographic puzzles. Entering the workshop triggers self-destruct countdown. You must solve the riddles quickly, or Dr. Knowitall's life's work will be lost forever!",
+    "startRoom": "room_reception",
+    "rooms": {
+        "room_reception": {
+            "type": "room_reception",
+            "connections": {
+                "north": "room_office"
+            },
+            "locked": true,
+            "lockType": "key",
+            "requires": "briefcase_key",
+            "objects": [
+                {
+                    "type": "workstation",
+                    "name": "Crypto Analysis Station",
+                    "takeable": true,
+                    "inInventory": true,
+                    "observations": "A powerful workstation for cryptographic analysis"
+                  },  
+                {
+                    "type": "pc",
+                    "name": "AES Encrypted Terminal",
+                    "takeable": false,
+                    "requires": "password",
+                    "observations": "A terminal displaying an encrypted message: '19e1363e815f0d10014f7804539cab9f'. \n Hex the answers to proceed, the key is my favorite scientist + a space and the IV is my favorite theory."
+                },
+                {
+                    "type": "notes",
+                    "name": "Fun facts about me - ordering from favorite to least favorite",
+                    "takeable": true,
+                    "readable": true,
+                    "text": "Favorite scientists: \n-Albert Einstein \n-Frank Tipler \n-Igor Novikov \n-Stephen Hawking \n \nFavorite theories: \n-Relativity Theory \n-Gödel’s Rotating Universe \n-Tipler’s Rotating Cylinder \n-Darwin's Theory of Evolution \nFavorite movie: \n-Back to the future \nPhone number: \n-07123456789"                
+                },
+                {
+                    "type": "safe",
+                    "name": "Safe1",
+                    "takeable": false,
+                    "locked": true,
+                    "lockType": "password",
+                    "requires": "TimeIsMoney_123",
+                    "observations": "A locked safe requiring a decrypted password.",
+                    "contents": [
+                        {
+                            "type": "key",
+                            "name": "Briefcase Key",
+                            "takeable": true,
+                            "key_id": "briefcase_key",
+                            "observations": "A key labeled 'Briefcase Key'."
+                        }
+                    ]
+                }
+            ]
+        },
+        "room_office": {
+            "type": "room_office",
+            "connections": {
+                "south": "room_reception",
+                "north": "room_servers"
+            },
+            "locked": true,
+            "lockType": "key",
+            "requires": "briefcase_key",
+            "objects": [
+                {
+                    "type": "pc",
+                    "name": "Render the image and input the colour to open the safe in all lower caps",
+                    "takeable": false,
+                    "text": "Render the image and input the colour to open the safe in all lower caps",
+                    "observations": "89504e470d0a1a0a0000000d4948445200000002000000250806000000681f38aa000000017352474200aece1ce90000000467414d410000b18f0bfc6105000000097048597300000ec300000ec301c76fa8640000001b494441542853637cf1f2ed7f20606062808251061090c360600000d66d0704a06be47e0000000049454e44ae426082"                
+                },
+                {
+                    "type": "safe",
+                    "name": "Final Safe",
+                    "takeable": false,
+                    "locked": true,
+                    "lockType": "password",
+                    "requires": "white",
+                    "observations": "A safe containing Dr. Knowitall’s image.",
+                    "contents": [
+                        {
+                            "type": "notes",
+                            "name": "CBC mode",
+                            "takeable": true,
+                            "readable": true,
+                            "text": "Since you've made it this far, encrypt the image you rendered with the same key and IV and the first six digits will lead you to the next cryptic puzzle.",
+                            "observations": "Thank you for doing my dirty work for me :)"
+                        }
+                    ]
+                }
+            ]
+        },
+
+        "room_servers": {
+            "type": "room_servers",
+            "connections": {
+                "south": "room_office",
+                "north": "room_closet"
+            },
+            "locked": true,
+            "lockType": "password",
+            "requires": "6f8118",
+            "objects": [
+                {
+                    "type": "pc",
+                    "name": "ECB pc",
+                    "takeable": false,
+                    "observations": "Encrypt this formula using the same key and IV but using ECB 'E = mc2'"
+                }
+            ]
+        },
+        "room_closet": {
+            "type": "room_closet",
+            "connections": {
+                "south": "room_servers",
+                "north": "room_ceo"
+            },
+            "locked": true,
+            "lockType": "password",
+            "requires": "7a7afe",
+            "objects": [
+                {
+                    "type": "pc",
+                    "name": "Authentication Terminal",
+                    "takeable": false,
+                    "requires": "password",
+                    "text":"shift 10",
+                    "observations": "Since I was TEN, I learnt to always shift my words, I deeply encourage you to do so too \n Dswo sc bovkdsfo, kxn cy sc iyeb ocmkzo. Dy pebdrob knfkxmo sx sx dro byywc. wi zryxo xewlob gsvv qesno iye."
+                }
+            ]
+        },
+        "room_ceo": {
+            "type": "room_ceo",
+            "connections": {
+                "south": "room_closet"
+            },
+            "locked": true,
+            "lockType": "password",
+            "requires": "07123456789",
+            "objects": [
+                {
+                    "type": "notes",
+                    "name": "Blueprints",
+                    "takeable": true,
+                    "readable": true,
+                    "observations": "Shift the phrase 'Its about time...literally' forward by 3 places. Convert letters to their alphabetic positions (A=1, B=2, ... Z=26) and sum them to find the checksum."
+                },
+                {
+                    "type": "safe",
+                    "name": "Final safe",
+                    "takeable": false,
+                    "locked": true,
+                    "lockType": "password",
+                    "requires": "289",
+                    "observations": "A locked safe requiring a decrypted password.",
+                    "contents": [
+                        {
+                            "type": "notes",
+                            "name": "Briefcase Key",
+                            "takeable": true,
+                            "observations": "Congratulations! You've recovered my time machine blueprints and stopped the self-destruct sequence.\n You outsmarted me and for that I believe you deserve these blueprints more than me! \n flag{timemachineflag123}."
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}
