@@ -241,11 +241,20 @@
                 ]
             },
             {
-                id: "ceo_exfil",
-                title: "CEO Data Exfiltration",
-                description: "Infiltrate the CEO's office and exfiltrate sensitive company data. You'll need to bypass physical security and find ways to access restricted areas.",
-                difficulty: "medium",
-                file: "assets/scenarios/ceo_exfil.json"
+                "id": "ceo_exfil",
+                "title": "CEO Data Exfiltration",
+                "description": "Infiltrate the CEO's office and exfiltrate sensitive company data. You'll need to bypass physical security and find ways to access restricted areas.",
+                "difficulty": "medium",
+                "file": "assets/scenarios/ceo_exfil.json",
+                "cybok": [
+                    { "ka": "F", "topic": "Artifact Analysis", "keywords": ["digital evidence", "document analysis"] },
+                    { "ka": "AAA", "topic": "Authorisation", "keywords": ["physical access control", "access control mechanisms"] },
+                    { "ka": "WAM", "topic": "Fundamental Concepts and Approaches", "keywords": ["BLUETOOTH SECURITY", "DEVICE PAIRING"] }
+                ],
+                "cybok_themes": [
+                    { "ka": "LR", "topic": "Computer Crimes", "keywords": ["crimes against information systems", "evidence and proof", "CORPORATE ESPIONAGE"] },
+                    { "ka": "F", "topic": "Definitions and Conceptual Models", "keywords": ["forensic science", "digital (forensic) trace", "conceptual models"] }
+                ]
             },
             {
                 id: "asymmetric_encryption",
@@ -273,11 +282,22 @@
                 ]
             },
             {
-                id: "biometric_breach",
-                title: "Biometric Security Breach",
-                description: "Test the company's biometric security systems by collecting and spoofing fingerprint data to gain unauthorized access.",
-                difficulty: "hard",
-                file: "assets/scenarios/biometric_breach.json"
+                "id": "biometric_breach",
+                "title": "Biometric Security Breach",
+                "description": "Test the company's biometric security systems by collecting and spoofing fingerprint data to gain unauthorized access.",
+                "difficulty": "hard",
+                "file": "assets/scenarios/biometric_breach.json",
+                "cybok": [
+                    { "ka": "F", "topic": "Operating System Analysis", "keywords": ["Data acquisition", "BIOMETRIC ANALYSIS", "FINGERPRINT COLLECTION"] },
+                    { "ka": "SOIM", "topic": "Monitor: Data Sources", "keywords": ["SECURITY LOGS", "ACCESS LOG ANALYSIS"] },
+                    { "ka": "AAA", "topic": "Authorisation", "keywords": ["ACCESS CONTROL", "BIOMETRIC ACCESS CONTROLS", "IDENTITY VERIFICATION"] },
+                    { "ka": "SOIM", "topic": "Execute: Mitigation and Countermeasures", "keywords": ["INCIDENT RESPONSE", "EVIDENCE RECOVERY"] }
+                ],
+                "cybok_themes": [
+                    { "ka": "LR", "topic": "Computer Crimes", "keywords": ["crimes against information systems", "evidence and proof", "INDUSTRIAL ESPIONAGE"] },
+                    { "ka": "AAA", "topic": "Authentication", "keywords": ["BIOMETRIC AUTHENTICATION", "identity management", "authentication in distributed systems"] },
+                    { "ka": "SOIM", "topic": "Human Factors: Incident Management", "keywords": ["incident response methodologies", "SECURITY INCIDENT INVESTIGATION"] }
+                ]
             }
         ];
         
