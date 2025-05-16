@@ -1360,7 +1360,7 @@
             if (title) {
                 notificationContent += `<div class="notification-title">${title}</div>`;
             }
-            notificationContent += `<div class="notification-message">${message}</div>`;
+            notificationContent += `<div class="notification-message">${message.replace(/\n/g, "<br>")}</div>`;
             notificationContent += `<div class="notification-close">×</div>`;
             
             if (duration > 0) {
@@ -3243,13 +3243,13 @@
                 return;
             }
             
-            let message = `${data.name}\n\n`;
+            let message = `${data.name} `;
             if (data.observations) {
-            message += `Observations: ${data.observations}\n\n`;
+            message += `Observations: ${data.observations}\n`;
             }
             
             if (data.readable && data.text) {
-                message += `Text: ${data.text}\n\n`;
+                message += `Text: ${data.text}\n`;
                 
                 // Add readable text as a note
                 if (data.text.trim().length > 0) {

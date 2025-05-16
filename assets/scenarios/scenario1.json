@@ -23,9 +23,9 @@
             "name": "Reception Phone",
             "takeable": false,
             "readable": true,
-            "text": "The message is directing you towards finding the villain’s identity.\nRemember: only the first letter is capital",
-            "observations": ".--. / .-. / --- / ..-. / ..-. / . / ... / --- / .-."
-          },          
+            "text": ".--. / .-. / --- / ..-. / ..-. / . / ... / --- / .-.",
+            "observations": "You hear a series of dots and dashes on the phone. The message is directing you towards finding the villain’s identity. Maybe the first letter would be capitalised."
+          },
           {
             "type": "notes",
             "name": "Hidden Clue Note",
@@ -38,8 +38,9 @@
             "type": "pc",
             "name": "Reception Computer",
             "takeable": false,
-            "requires": "password",
-            "observations": "QmFyay4="
+            "readable": true,
+            "text": "QmFyay4=",
+            "observations": "A locked computer with a mysterious message on the screen. It looks like a familiar encoding. There are pawprints on the desk."
           }
         ]
       },
