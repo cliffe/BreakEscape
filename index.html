@@ -3851,15 +3851,16 @@
 
                 case 'password':
                     debugLog('PASSWORD REQUESTED', null, 2);
-                    const passwordInput = prompt(`Enter password:`);
-                    if (passwordInput === lockRequirements.requires) {
-                        unlockTarget(lockable, type, lockable.layer); // Pass the layer here
-                        debugLog('PASSWORD SUCCESS', null, 1);
-                        gameAlert(`Correct password! The ${type} is now unlocked.`, 'success', 'Password Accepted', 4000);
-                    } else if (passwordInput !== null) {
-                        debugLog('PASSWORD FAIL', null, 2);
-                        gameAlert("Incorrect password.", 'error', 'Password Rejected', 3000);
-                    }
+                    showPasswordModal(function(passwordInput) {
+                        if (passwordInput === lockRequirements.requires) {
+                            unlockTarget(lockable, type, lockable.layer); // Pass the layer here
+                            debugLog('PASSWORD SUCCESS', null, 1);
+                            gameAlert(`Correct password! The ${type} is now unlocked.`, 'success', 'Password Accepted', 4000);
+                        } else if (passwordInput !== null) {
+                            debugLog('PASSWORD FAIL', null, 2);
+                            gameAlert("Incorrect password.", 'error', 'Password Rejected', 3000);
+                        }
+                    });
                     break;
 
                 case 'biometric':
@@ -7477,5 +7478,67 @@
             }, { passive: false });
         });
     </script>
+    <script>
+        function showPasswordModal(callback) {
+            const modal = document.getElementById('password-modal');
+            const input = document.getElementById('password-modal-input');
+            const show = document.getElementById('password-modal-show');
+            const okBtn = document.getElementById('password-modal-ok');
+            const cancelBtn = document.getElementById('password-modal-cancel');
+
+            // Reset input and checkbox
+            input.value = '';
+            show.checked = false;
+            input.type = 'password';
+            modal.style.display = 'flex';
+            input.focus();
+
+            function cleanup(result) {
+                modal.style.display = 'none';
+                okBtn.removeEventListener('click', onOk);
+                cancelBtn.removeEventListener('click', onCancel);
+                input.removeEventListener('keydown', onKeyDown);
+                show.removeEventListener('change', onShowChange);
+                callback(result);
+            }
+
+            function onOk() {
+                cleanup(input.value);
+            }
+            function onCancel() {
+                cleanup(null);
+            }
+            function onKeyDown(e) {
+                if (e.key === 'Enter') onOk();
+                if (e.key === 'Escape') onCancel();
+            }
+            function onShowChange() {
+                input.type = show.checked ? 'text' : 'password';
+            }
+
+            okBtn.addEventListener('click', onOk);
+            cancelBtn.addEventListener('click', onCancel);
+            input.addEventListener('keydown', onKeyDown);
+            show.addEventListener('change', onShowChange);
+        }
+    </script>
+    <!-- Password Modal -->
+    <div id="password-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); z-index:3000; align-items:center; justify-content:center;">
+        <div style="background:#222; color:#fff; border-radius:8px; padding:32px 24px 24px 24px; min-width:320px; box-shadow:0 0 20px #000; display:flex; flex-direction:column; align-items:center; position:relative;">
+            <div style="font-family:'Press Start 2P',monospace; font-size:18px; margin-bottom:18px;">
+                Enter Password
+            </div>
+            <input id="password-modal-input" type="password" style="font-size:20px; font-family:'VT323',monospace; padding:8px 12px; border-radius:4px; border:1px solid #444; background:#111; color:#fff; width:90%; margin-bottom:10px;" autocomplete="off" autofocus>
+            <div style="width:90%; display:flex; align-items:center; margin-bottom:8px;">
+                <input type="checkbox" id="password-modal-show" style="margin-right:6px;">
+                <label for="password-modal-show" style="font-size:14px; font-family:'VT323',monospace; color:#aaa; cursor:pointer;">Show password</label>
+            </div>
+            <div style="display:flex; gap:12px;">
+                <button id="password-modal-ok" style="font-size:16px; font-family:'Press Start 2P'; background:#3498db; color:#fff; border:none; border-radius:4px; padding:8px 18px; cursor:pointer;">OK</button>
+                <button id="password-modal-cancel" style="font-size:16px; font-family:'Press Start 2P'; background:#444; color:#fff; border:none; border-radius:4px; padding:8px 18px; cursor:pointer;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html> 
