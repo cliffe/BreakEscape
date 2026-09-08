@@ -223,6 +223,7 @@ Bernie Nwosu: IT's up on the main corridor -- straight through Ward Three, up th
 
 {was_honest:
     ~ bernie_influence += 2
+    ~ bernie_trusts_player = true
     # influence_increased
     #set_global:bernie_trusts_player:true
     Bernie Nwosu: And listen -- you told me the truth when you could've fed me something easier. I've clocked that.
@@ -280,6 +281,7 @@ Bernie Nwosu: The fourth one's in the boardroom.
 -> hub
 
 === bernie_vouches ===
+~ cover_restored = true
 #set_global:bernie_vouched:true
 #set_global:cover_restored:true
 ~ bernie_influence += 3

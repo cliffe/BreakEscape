@@ -105,6 +105,8 @@ Narrator: The ventilator alarm is going -- a hard, repeating tone with no relay 
 Narrator: The circuit has desynchronised and gone into an alarm state. A manual resuscitation bag is clipped to the bed frame. You know how this goes: seal the bag, breathe for him by hand, hold him until a nurse can reach the bed.
 
 * [Switch to manual ventilation -- bag him myself.]
+    ~ bed4_manually_stabilised = true
+    ~ patient_bed4_state = "attended"
     Narrator: You unclip the bag, seal it over his mouth and nose and start squeezing -- steady, timed to his chest. The dusky colour eases. The alarm drops from a scream to a slow, survivable beep.
     Mr Pryce: *ragged* ...ta.
     Narrator: A nurse is already coming down the row to take over. He is stable -- not fixed, the systems still have to come back -- but alive, and no longer alone with a dead screen.

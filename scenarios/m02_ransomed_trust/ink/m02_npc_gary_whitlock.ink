@@ -184,6 +184,7 @@ Gary Whitlock: And when they write this up and it says the administrator failed 
 #complete_task:talk_to_gary
 #give_item:keycard:server_room_keycard
 ~ gave_keycard = true
+~ cover_burned = true
 
 * [Gary -- ]
     Gary Whitlock: Don't.
@@ -210,6 +211,7 @@ Gary Whitlock: And when they write this up and it says the administrator failed 
     -> discuss_vulnerability
 
 + [Nothing yet. I'll come back.]
+    ~ cover_burned = true
     #complete_task:talk_to_gary
     #exit_conversation
     Gary Whitlock: I'll be here. Obviously.
@@ -236,6 +238,7 @@ Gary Whitlock: So this card's the only credential in St Catherine's that opens a
 ~ gave_keycard = true
 ~ gary_trusts_player = true
 ~ topic_passwords = true
+~ cover_burned = true
 #complete_task:talk_to_gary
 #complete_task:obtain_password_hints
 #give_item:keycard:server_room_keycard
@@ -256,6 +259,7 @@ Gary Whitlock: Emma2018. Hospital1987. StCatherines. One of those three gets you
 
 === keycard_conditional ===
 ~ gave_keycard = true
+~ cover_burned = true
 #complete_task:talk_to_gary
 #give_item:keycard:server_room_keycard
 
@@ -280,6 +284,7 @@ Gary Whitlock: So if anybody asks, you tell them I gave it you. Don't get clever
 
 === keycard_reluctant ===
 ~ gave_keycard = true
+~ cover_burned = true
 #complete_task:talk_to_gary
 #give_item:keycard:server_room_keycard
 
@@ -347,6 +352,7 @@ Gary Whitlock: And now you've walked in with one of them already in your hand.
 
 === leverage_payoff ===
 ~ topic_passwords = true
+~ cover_burned = true
 #complete_task:talk_to_gary
 #complete_task:obtain_password_hints
 
@@ -413,7 +419,7 @@ Gary Whitlock: If you can get into it -- take the lot. I'd rather it was in your
 + {board_coverup_email_found and not gary_protected_locally} [There's something in the boardroom you need to see.]
     -> tell_him_about_board
 
-+ {cover_burned and not cover_restored and not gave_lanyard} [Someone's phoned security and pulled my booking. I need something that holds up in a corridor.]
++ {(cover_burned or gave_keycard) and not cover_restored and not gave_lanyard} [Someone's phoned security and pulled my booking. I need something that holds up in a corridor.]
     -> the_lanyard
 
 + {insider_evidence_partial and gave_keycard and not insider_identified} [The affiliate who confirmed ENTROPY's timing. Was that you?]
@@ -583,6 +589,7 @@ Gary Whitlock: *slowly* That's not a computer doing that. Everything's down. Som
 
 === lanyard_given ===
 ~ gave_lanyard = true
+~ cover_restored = true
 #give_item:id_badge:contractor_lanyard
 #set_global:staff_lanyard_obtained:true
 #set_global:cover_restored:true
@@ -604,6 +611,7 @@ Gary Whitlock: Go on. And whoever made that phone call -- I'd quite like to know
 
 === lanyard_grudging ===
 ~ gave_lanyard = true
+~ cover_restored = true
 #give_item:id_badge:contractor_lanyard
 #set_global:staff_lanyard_obtained:true
 #set_global:cover_restored:true
@@ -638,7 +646,7 @@ Gary Whitlock: *doesn't turn round* You've got the card.
     #complete_task:obtain_password_hints
     -> defensive_hub
 
-+ {cover_burned and not cover_restored and not gave_lanyard} [Someone's pulled my booking with security. I need a pass.]
++ {(cover_burned or gave_keycard) and not cover_restored and not gave_lanyard} [Someone's pulled my booking with security. I need a pass.]
     -> lanyard_grudging
 
 + [For what it's worth -- I was wrong. You warned them and they buried it.]

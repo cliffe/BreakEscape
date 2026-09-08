@@ -232,6 +232,7 @@ Graham Reeves: So. You've found me. What happens now is entirely your call, agen
     -> choice_hostile
 
 === choice_arrest ===
+~ insider_confronted = true
 Graham Reeves: No fuss. Good.
 
 Graham Reeves: I told them a fuss was beneath the point.
@@ -253,6 +254,7 @@ Narrator: He offers his wrists without being asked. Whatever else he is, he came
 -> DONE
 
 === choice_expose ===
+~ insider_confronted = true
 Graham Reeves: Publish it?
 
 Graham Reeves: Then publish all of it. My name against the board's, in the same paragraph, same size type. That's the only version of this I'll sign.
@@ -270,6 +272,7 @@ Narrator: You log his identity into the SAFETYNET evidence package. He does not 
 -> DONE
 
 === choice_handover ===
+~ insider_confronted = true
 Graham Reeves: Straight to the agency. Cleaner.
 
 Graham Reeves: Fewer chances for either of us to say something we actually mean.
@@ -282,6 +285,7 @@ Narrator: You signal SAFETYNET. Reeves sits down at the boardroom table, folds h
 -> DONE
 
 === choice_hostile ===
+~ insider_confronted = true
 Narrator: He steps back from the terminal.
 
 Graham Reeves: Then we're past talking.
@@ -303,6 +307,7 @@ Graham Reeves: Everyone always is. Right up until the lights go out.
 // ===========================================
 
 === press_terminal_ambush ===
+~ insider_confronted = true
 Narrator: Your transmission clears the relay. Behind you, unhurried, the courteous supervisor steps between you and the door.
 
 Graham Reeves: I'm sorry. I can't let you leave here believing that was only careless budgeting.

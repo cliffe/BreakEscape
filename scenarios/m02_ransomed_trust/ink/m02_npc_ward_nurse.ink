@@ -247,6 +247,7 @@ Sister Doyle: If it's the emergency kit you're after -- far end of this ward, th
 
 === lanyard_given ===
 ~ gave_lanyard = true
+~ cover_restored = true
 #give_item:id_badge:bank_staff_lanyard
 #set_global:staff_lanyard_obtained:true
 #set_global:cover_restored:true

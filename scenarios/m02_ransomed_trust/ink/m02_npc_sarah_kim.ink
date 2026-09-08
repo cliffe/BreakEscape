@@ -183,6 +183,14 @@ Dr. Sarah Kim: And the server room -- I cannot help you at all. That reader is o
 // ===========================================
 
 === hub ===
+// Escape hatch. access_problem carries #complete_task:meet_dr_kim, the
+// access_it_systems aim unlock and the badge, but it sits only on the
+// the_deferral spine. A player who asks after Gary at explain_attack lands in
+// the hub having never passed through it, and the whole IT-access aim is dead.
+// This keeps the route open from the hub until she has actually explained it.
++ {not access_explained} [Before anything else -- I need to get into your IT department. What can you actually authorise?]
+    -> access_problem
+
 + {not topic_gary} [Tell me about Gary Whitlock.]
     -> discuss_gary
 
@@ -309,6 +317,7 @@ Dr. Sarah Kim: We put it down to a fault on the panel and moved on. We had a sca
 
 * [Somebody walked contractors through this building that night under cover of a drill nobody called.]
     ~ kim_influence += 5
+    ~ insider_evidence_partial = true
     # influence_increased
     Dr. Sarah Kim: *very slowly* And I signed the incident off as a panel fault.
     Dr. Sarah Kim: Find out who. Please.

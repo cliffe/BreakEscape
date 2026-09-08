@@ -321,7 +321,7 @@ boardroom_pin = "0417"
           "taskId": "submit_ssh_flag",
           "title": "Get a foothold on the backup server and submit the SSH flag",
           "type": "submit_flags",
-          "targetFlags": ["hospital_backup_server:flag_1"],
+          "targetFlags": ["flag_station_dropsite:hospital_backup_server-flag1"],
           "targetCount": 1,
           "currentCount": 0,
           "showProgress": true,
@@ -332,7 +332,7 @@ boardroom_pin = "0417"
           "taskId": "submit_proftpd_flag",
           "title": "Exploit the ProFTPD backdoor and submit the flag",
           "type": "submit_flags",
-          "targetFlags": ["hospital_backup_server:flag_2"],
+          "targetFlags": ["flag_station_dropsite:hospital_backup_server-flag2"],
           "targetCount": 1,
           "currentCount": 0,
           "showProgress": true,
@@ -343,7 +343,7 @@ boardroom_pin = "0417"
           "taskId": "submit_database_flag",
           "title": "Locate the encrypted database backup and submit the flag",
           "type": "submit_flags",
-          "targetFlags": ["hospital_backup_server:flag_3"],
+          "targetFlags": ["flag_station_dropsite:hospital_backup_server-flag3"],
           "targetCount": 1,
           "currentCount": 0,
           "showProgress": true,
@@ -354,7 +354,7 @@ boardroom_pin = "0417"
           "taskId": "submit_ghost_log_flag",
           "title": "Recover Ghost's operational log and submit the flag",
           "type": "submit_flags",
-          "targetFlags": ["hospital_backup_server:flag_4"],
+          "targetFlags": ["flag_station_dropsite:hospital_backup_server-flag4"],
           "targetCount": 1,
           "currentCount": 0,
           "showProgress": true,
@@ -822,7 +822,8 @@ boardroom_pin = "0417"
               "completeTask": "regain_freedom_of_movement"
             },
             {
-              "eventPattern": "item_picked_up:password_sticky_note",
+              "eventPattern": "global_variable_changed:password_hints_found",
+              "condition": "value === true",
               "onceOnly": true,
               "completeTask": "obtain_password_hints",
               "sendTimedMessage": { "delay": 1200, "message": "Shared admin credential on a sticky note. Emma2018, Hospital1987, StCatherines -- one of those gets you an SSH session on the backup box. Try the middle one first." }
@@ -895,7 +896,8 @@ boardroom_pin = "0417"
               "setGlobal": { "flag_ghost_log_submitted": true }
             },
             {
-              "eventPattern": "objective_task_completed:submit_ghost_log_flag",
+              "eventPattern": "global_variable_changed:flag_ghost_log_submitted",
+              "condition": "value === true",
               "onceOnly": true,
               "setGlobal": { "backdoor_fully_exploited": true },
               "sendTimedMessage": { "delay": 1500, "message": "That's the full backdoor chain -- SSH, ProFTPD, database, and Ghost's own operational logs. You've got everything ENTROPY had on this hospital. Now head to the Hospital Recovery Console in the server room and bring the patients' systems back online -- that's how we finish this." }
@@ -920,21 +922,23 @@ boardroom_pin = "0417"
               "setGlobal": { "flag_database_submitted": true }
             },
             {
-              "eventPattern": "objective_task_completed:submit_database_flag",
+              "eventPattern": "global_variable_changed:flag_database_submitted",
+              "condition": "value === true",
               "onceOnly": true,
               "setGlobal": { "insider_db_window_found": true },
               "completeTask": "unmask_db_window",
               "sendTimedMessage": { "delay": 2500, "message": "The backup logs show it -- the planted device went live during a 'fire drill' six weeks ago. An internal badge authorised the contractor sweep that installed it. Not an outsider. Someone with access authority here." }
             },
             {
-              "eventPattern": "objective_task_completed:submit_ghost_log_flag",
+              "eventPattern": "global_variable_changed:backdoor_fully_exploited",
+              "condition": "value === true",
               "onceOnly": true,
               "setGlobal": { "insider_badge_id_found": true },
               "completeTask": "unmask_ghost_badge",
               "sendTimedMessage": { "delay": 2600, "message": "Ghost's log names the badge -- #SC-4471 -- and the shift timestamps that confirmed their window. Find whose post that badge sits on and you've got your inside asset." }
             },
             {
-              "eventPattern": "objective_task_completed:submit_ghost_log_flag",
+              "eventPattern": "global_variable_changed:insider_badge_id_found",
               "condition": "globalVars.inspected_asset_post === true",
               "onceOnly": true,
               "setGlobal": { "insider_identified": true },
@@ -956,9 +960,9 @@ boardroom_pin = "0417"
               "sendTimedMessage": { "delay": 1500, "message": "That's Gary's proof -- he warned them six months out and they buried it. Hold onto it. If you decide to go public later, this is what clears his name." }
             },
             {
-              "eventPattern": "item_picked_up:offline_backup_encryption_keys",
+              "eventPattern": "global_variable_changed:offline_keys_recovered",
+              "condition": "value === true",
               "onceOnly": true,
-              "setGlobal": { "offline_keys_recovered": true },
               "sendTimedMessage": { "delay": 1000, "message": "The offline backup encryption keys. Those are your alternative to paying the ransom. Now get to the recovery console in the server room -- that's the last step." }
             },
             {
@@ -1069,7 +1073,8 @@ boardroom_pin = "0417"
               "targetKnot": "on_recovery_console"
             },
             {
-              "eventPattern": "item_picked_up:offline_backup_encryption_keys",
+              "eventPattern": "global_variable_changed:offline_keys_recovered",
+              "condition": "value === true",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 3000, "message": "You found the physical keys. Clever. 30 minutes to full recovery versus however long your manual restore takes. The patients are waiting." }
             }
@@ -1661,6 +1666,7 @@ boardroom_pin = "0417"
           "id": "password_sticky_note",
           "takeable": true,
           "readable": true,
+          "onRead": { "setVariable": { "password_hints_found": true } },
           "text": "Common passwords (embarrassing...):\nEmma2018\nHospital1987\nStCatherines\n\n(Need to improve password policy!)",
           "observations": "Password hints for SSH access -- Gary's shortcuts",
           "puzzle_graph_role": "clue",
@@ -1980,8 +1986,10 @@ boardroom_pin = "0417"
               "name": "Offline Backup Encryption Keys",
               "id": "offline_backup_encryption_keys",
               "takeable": true,
+              "readable": true,
+              "text": "ST. CATHERINE'S -- OFFLINE KEY ESCROW\n\nAES-256 recovery keys, air-gapped copy.\nGenerated: 2024-03-11. Never network-attached.\n\nWard imaging, PACS, pharmacy, patient records:\nall four key sets present and intact.\n\nRun these against the recovery console in the\nserver room. No ransom required.",
               "observations": "USB drive with offline backup decryption keys -- critical for recovery without paying ransom",
-              "onPickup": { "setVariable": { "offline_keys_recovered": true } },
+              "onRead": { "setVariable": { "offline_keys_recovered": true } },
               "puzzle_graph_role": "key",
               "puzzle_graph_unlocks": "hospital_recovery_console"
             }
@@ -2689,6 +2697,7 @@ boardroom_pin = "0417"
     "advised_board_refuse": false,
 
     "offline_keys_recovered": false,
+    "password_hints_found": false,
     "lore_cryptosecure_found": false,
     "lore_ghosts_manifesto_found": false,
     "lore_zds_invoice_found": false,

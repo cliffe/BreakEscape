@@ -138,6 +138,7 @@ Val Okonkwo: So whatever you told me an hour ago -- start again.
 
 === show_lanyard ===
 ~ cleared_after_burn = true
+~ cover_restored = true
 #set_global:cover_restored:true
 
 Narrator: She takes the lanyard, turns it over, checks the reverse, and hands it back.
@@ -166,6 +167,7 @@ Val Okonkwo: Go on. But you come past me on your way out and you tell me what yo
 
 === bernie_backs_you ===
 ~ cleared_after_burn = true
+~ cover_restored = true
 #set_global:cover_restored:true
 
 Val Okonkwo: Bernie's logged what?
@@ -195,6 +197,7 @@ Val Okonkwo: Go on. Quick.
 
 === earn_it ===
 ~ cleared_after_burn = true
+~ cover_restored = true
 #set_global:cover_restored:true
 
 Val Okonkwo: *doesn't answer straight away*
