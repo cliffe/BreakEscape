@@ -38,3 +38,14 @@ test/dummy/storage/*
 .spring.pid
 
 public/break_escape/assets/characters/wip/*
+# Playwright playtest harness (see .claude/skills/playtest-scenario)
+node_modules/
+package-lock.json
+
+# TTS audio cache — regenerated on demand, ~117MB of mp3
+tts_cache/
+
+# Playtest session logs — large, regenerable evidence. Reports and scripts
+# in tools/playtest are committed; the raw JSONL transcripts are not.
+tools/playtest/*.jsonl
+tools/playtest/pipes/
