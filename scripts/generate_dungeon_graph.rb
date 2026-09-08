@@ -31,6 +31,7 @@ LOCK_TYPE_LABELS = {
 SCENARIO_FILE = ARGV[0] or abort "Usage: ruby scripts/generate_dungeon_graph.rb <scenario.json.erb>"
 OUT_FILE      = File.join(File.dirname(SCENARIO_FILE), 'dungeon_graph.html')
 MD_FILE       = File.join(File.dirname(SCENARIO_FILE), 'dungeon_graph.md')
+JSON_FILE     = File.join(File.dirname(SCENARIO_FILE), 'dungeon_graph.json')
 SCENARIO_ID   = File.basename(File.dirname(SCENARIO_FILE))
 
 # ---------------------------------------------------------------------------
@@ -1101,6 +1102,17 @@ md = <<~MD
 MD
 
 File.write(MD_FILE, md)
+
+# Machine-readable puzzle graph, for tooling that needs the dependency order
+# rather than a picture of it — notably the playtest harness, which uses it to
+# check that a flag or lock is only reached after its prerequisites are held.
+File.write(JSON_FILE, JSON.pretty_generate(
+  'scenario' => File.basename(File.dirname(SCENARIO_FILE)),
+  'start_room' => scenario['startRoom'],
+  'nodes' => $nodes.map { |id, n| { 'id' => id, 'label' => n[:label], 'kind' => n[:klass], 'optional' => n[:optional] } },
+  'edges' => $edges.map { |e| { 'from' => e[:from], 'to' => e[:to], 'soft' => e[:dashed], 'label' => e[:label] }.compact }
+))
+puts "Written: #{JSON_FILE}"
 puts "Written: #{MD_FILE}"
 puts "Puzzle     — Nodes: #{$nodes.size}  Edges: #{$edges.size}"
 puts "Story      — Nodes: #{aim_nodes.size}  Edges: #{aim_edges.size}"
