@@ -42,7 +42,19 @@ export class NotesMinigame extends MinigameScene {
         this.collectedNotes = this.getCollectedNotes();
         this.autoAddToNotes = true;
     }
-    
+        /** Test bridge state (see MinigameScene.getTestState). */
+    getTestState() {
+        return {
+            ...super.getTestState(),
+            noteName: this.item?.scenarioData?.name || null,
+            noteContent: String(this.noteContent || '').slice(0, 2000),
+            observationText: String(this.observationText || '').slice(0, 1000),
+            noteIndex: this.currentNoteIndex,
+            noteCount: (this.collectedNotes || []).length
+        };
+    }
+
+
     init() {
         // Call parent init to set up common components
         super.init();

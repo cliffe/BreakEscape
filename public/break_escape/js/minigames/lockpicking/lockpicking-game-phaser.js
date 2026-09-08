@@ -207,7 +207,105 @@ export class LockpickingMinigamePhaser extends MinigameScene {
         this.lockGraphics = new LockGraphics(this);
     }
     
+    /**
+     * Test bridge state (see MinigameScene.getTestState).
+     *
+     * This minigame renders into its OWN nested Phaser canvas, so it has no DOM
+     * button surface. It is still drivable:
+     *
+     *  - keyMode (player holds a key): a single click on the key zone runs the
+     *    insertion animation, checks the cuts and completes the minigame by
+     *    itself. `keyTarget` below is that click point in canvas pixels — pass
+     *    it to __test.minigame.clickCanvas(x, y).
+     *  - pick mode: pin-management.js binds digits 1-8 to select a pin and
+     *    space to toggle tension, so __test.minigame.pressKey works. Whether a
+     *    pin has set is still only shown visually, so blind picking is
+     *    impractical — prefer the key route.
+     *
+     * NEVER return `this.lockable` or any other Phaser object from here: it is
+     * a live sprite with circular references and JSON-serialising it throws
+     * ("Converting circular structure to JSON"), which takes out the whole
+     * getState() call.
+     */
+    getTestState() {
+        const base = super.getTestState();
+
+        let keyTarget = null;
+        try {
+            const zone = this.keyClickZone;
+            const cam = this.scene?.cameras?.main;
+            if (this.keyMode && zone && cam && typeof zone.getBounds === 'function') {
+                const b = zone.getBounds();
+                keyTarget = {
+                    x: Math.round(b.centerX - cam.scrollX),
+                    y: Math.round(b.centerY - cam.scrollY)
+                };
+            }
+        } catch (err) {
+            keyTarget = null;
+        }
+
+        // When the player holds more than one key, a SELECTION screen precedes
+        // the insertion screen. Report each candidate's click point and label so
+        // an agent never has to reach into the live Phaser scene tree to find
+        // them (which is what happened before this existed).
+        let keySelection = null;
+        try {
+            const container = this.keySelectionContainer;
+            const cam = this.scene?.cameras?.main;
+            if (container && cam && Array.isArray(container.list)) {
+                const targets = container.list
+                    .filter(child => child?.input?.enabled && typeof child.getBounds === 'function'
+                                     && child.type !== 'Text')
+                    .map((child) => {
+                        const b = child.getBounds();
+                        return {
+                            x: Math.round(b.centerX - cam.scrollX),
+                            y: Math.round(b.centerY - cam.scrollY),
+                            width: Math.round(b.width),
+                            height: Math.round(b.height)
+                        };
+                    })
+                    // The container's own background is interactive too; drop
+                    // anything that spans most of the container.
+                    .filter(t => t.width < 300);
+                // Labels are separate Text objects sitting under each key.
+                const labels = container.list
+                    .filter(child => child?.type === 'Text' && typeof child.text === 'string')
+                    .map(t => t.text)
+                    .filter(t => t && !/select|choose/i.test(t));
+                if (targets.length) {
+                    keySelection = targets.map((t, i) => ({ ...t, label: labels[i] ?? null }));
+                }
+            }
+        } catch (err) {
+            keySelection = null;
+        }
+
+        return {
+            ...base,
+            keySelection,
+            // Plain strings/numbers only — see the warning above.
+            lockableName: typeof this.lockable === 'string'
+                ? this.lockable
+                : (this.lockable?.scenarioData?.name ?? null),
+            difficulty: this.difficulty,
+            keyMode: !!this.keyMode,
+            keyInserting: !!this.keyInserting,
+            pinCount: (this.pins || []).length,
+            pinsSet: (this.pins || []).filter(p => p?.isSet).length,
+            nestedCanvas: true,
+            keyTarget,
+            hint: keySelection
+                ? 'Key SELECTION screen: clickCanvas on the chosen keySelection[i] first; keyTarget appears afterwards.'
+                : this.keyMode
+                ? 'clickCanvas(keyTarget.x, keyTarget.y) inserts the key and completes the lock.'
+                : 'Pick mode: pressKey("1")-("8") selects a pin, pressKey(" ") toggles tension. Pin state is visual only.'
+        };
+    }
+
     // Method to get the lock's pin configuration for key generation
+
     init() {
         super.init();
         

@@ -9,35 +9,30 @@
 
 ## AUTOMATED WALKTHROUGH
 
-Two scripts provide automated testing of scenario tasks. They work by setting
-global variables and emitting the same events that real player interactions would
-produce, so NPC eventMappings, timers, and the objectives manager all react as
-they would in a real session.
+Use the **`playtest-scenario` skill** (`.claude/skills/playtest-scenario/`), which
+drives the real build in a headed browser through the `window.__test` bridge — see
+`docs/test-bridge.md`.
 
-| File | Purpose |
-|------|---------|
-| `public/break_escape/js/walkthrough-automation.js` | Core `WalkthroughRunner` class — reusable across all scenarios |
-| `scenarios/sis01_healthcare/walkthrough-steps.js` | Healthcare-specific steps (Aim 1 implemented) |
-
-### Quick start — browser console
-
-1. Load the game with the `sis01_healthcare` scenario and wait for the player to
-   appear in Ward 7.
-2. Open DevTools → Console.
-3. Paste the contents of `walkthrough-automation.js`, then
-   paste the contents of `walkthrough-steps.js`.
-4. Run:
-
-```js
-window.walkthroughRunner.run()
+```bash
+./start_server.sh
+node .claude/skills/playtest-scenario/scripts/playtest-session.js \
+  --url http://127.0.0.1:3000/break_escape/games/<id> --speed human
 ```
 
-The runner will execute all loaded steps sequentially and print a pass/fail
-summary. Each step includes a built-in assertion that verifies the expected state.
+> **Replaces the old console-paste runner.** This document previously described
+> `walkthrough-automation.js` plus `walkthrough-steps.js`, pasted into DevTools. Both
+> have been removed. That runner worked by setting globals and calling
+> `completeTask()` directly, so it never exercised the systems it appeared to test —
+> it bypassed the dual-auth minigame outright, and it could not have caught an item
+> out of reach, a lock that never resolves, or a conversation that dead-ends, because
+> nothing it did went through the input path. The task/mechanism table below is
+> retained from it, as a reference for what each aim is expected to fire.
 
-### What the walkthrough automates
+### What each aim is expected to fire
 
-The full happy-path walkthrough covers all 5 aims (29 steps). Each task step is followed by a separate assertion step.
+Assert on these when playtesting. Each row is the global or event chain that
+completes the task; the playtest reaches them by playing, not by setting them.
+
 
 | Aim | Task ID | Mechanism |
 |-----|---------|-----------|
@@ -58,42 +53,18 @@ The full happy-path walkthrough covers all 5 aims (29 steps). Each task step is 
 | 4 | `pump_dose_check` | `pump_dose_correct=true` → bed2_patient eventMapping → `completeTask` |
 | 5 | `attend_debrief` | `debrief_complete=true` → Dr Sharma eventMapping → `completeTask` |
 
-### Selective use
+### Things that were previously bypassed
 
-```js
-// Only run Aim 1 steps explicitly:
-window.walkthroughRunner.loadSteps(window.healthcareWalkthrough.aim1_assessWard);
-window.walkthroughRunner.run();
+The old runner set these directly, so they were never actually exercised. A real
+playtest must drive them through their minigames:
 
-// Ad-hoc helpers (available once walkthrough-automation.js is loaded):
-window.walkthroughRunner.api.assertGlobal('briefing_played', true);
-window.walkthroughRunner.api.assertTaskStatus('talk_to_sarah', 'completed');
-window.walkthroughRunner.api.dumpTasks();
-window.walkthroughRunner.api.dumpGlobals();
-```
-
-### Selective use from a specific aim onward
-
-```js
-// Resume from aim3 (after manually completing aims 1-2):
-const hw = window.healthcareWalkthrough;
-window.walkthroughRunner.loadSteps([
-  ...hw.aim3_authoriseIsolation,
-  ...hw.aim4_restoreOperations,
-  ...hw.aim5_ncscDebrief
-]);
-window.walkthroughRunner.run();
-```
-
-### Reliability notes
-
-| Category | Reliability | Reason |
-|----------|-------------|--------|
-| Global-variable-driven tasks | ~98% | Direct event chain, proven pattern |
-| Minigame `completionActions` tasks (`vpn_anomaly`, `verify_drug_library`) | ~95% | Engine fires actions directly; client state always correct |
-| Dual-auth panel | ~98% | Minigame bypassed; all 4 output globals set directly |
-| NPC cascade on `network_isolated` | 100% state / ~80% UI | Globals correct; 4 simultaneous person-chat windows may overlap |
-| Bed 4 timer prevention | 100% | `bed4_escalated=true` set before any 8-min threshold |
+| Area | What to actually do |
+|---|---|
+| Dual-auth isolation panel | Play the `dual-auth` minigame; do not assume the four authorisation globals |
+| VPN log viewer (`vpn_anomaly`) | Play the `log-filter` minigame to its `completionActions` |
+| Drug library integrity (`verify_drug_library`) | Play the `drug-library-integrity` minigame |
+| NPC cascade on `network_isolated` | Four person-chat windows can open at once — check they queue rather than overlap |
+| Bed 4 deterioration timer | Time-sensitive: reach `bed4_escalated` before the 8-minute threshold, so run this aim at `--speed fast` |
 
 ---
 

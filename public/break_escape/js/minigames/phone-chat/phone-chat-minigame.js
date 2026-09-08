@@ -65,7 +65,50 @@ export class PhoneChatMinigame extends MinigameScene {
     
     /**
      * Initialize the minigame UI and components
-     */
+     */    /** Test bridge state (see MinigameScene.getTestState). */
+    getTestState() {
+        const base = super.getTestState();
+        // The rendered buttons carry the plain '.choice-button' class (see
+        // phone-chat-ui.js) — not '.phone-chat-choice-button'/'.person-chat-choice-button',
+        // which never exist in the DOM and previously left choiceButtons always
+        // empty, so awaitingChoice was always false and choose()/clickText()
+        // could never select a phone conversation option.
+        const choiceButtons = Array.from(
+            this.container?.querySelectorAll('.choice-button') || []
+        ).filter(el => el.offsetParent !== null);
+        // The contact list is a separate stage before any dialogue exists: until
+        // a contact is opened there are no choices and no text, so a test driver
+        // sees an empty conversation and concludes the phone is broken. Expose
+        // the list as selectable controls so it can open one.
+        const contacts = Array.from(
+            this.container?.querySelectorAll('.contact-item') || []
+        ).filter(el => el.offsetParent !== null).map((el, i) => ({
+            index: i,
+            npcId: el.dataset.npcId || null,
+            label: (el.innerText || '').trim().replace(/\s+/g, ' ').slice(0, 200)
+        }));
+        return {
+            ...base,
+            npcId: this.currentNPCId || null,
+            phoneId: this.phoneId,
+            contacts,
+            awaitingContactSelection: contacts.length > 0 && !this.isConversationActive,
+            conversationActive: !!this.isConversationActive,
+            dialogue: {
+                npcId: this.currentNPCId || null,
+                text: (this.container?.querySelector('.phone-chat-dialogue-text, .person-chat-dialogue-text')?.innerText || '').trim(),
+                choices: choiceButtons.map((btn, i) => ({
+                    number: i + 1,
+                    index: i,
+                    text: (btn.innerText || '').trim().slice(0, 300)
+                })),
+                awaitingChoice: choiceButtons.length > 0,
+                ended: !!this.conversation?.storyEnded
+            }
+        };
+    }
+
+
     init() {
         // Set cancelText to "Close" before calling parent init
         if (!this.params.cancelText) {

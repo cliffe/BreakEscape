@@ -213,6 +213,50 @@ export class PersonChatMinigame extends MinigameScene {
     }
     
     /**
+     * Test bridge state (see MinigameScene.getTestState).
+     *
+     * Adds a `dialogue` block, which the main bridge lifts to the top level of
+     * getState() because it is the single most acted-on thing in the game.
+     * Choices are reported with the same 1-based numbers as their on-screen
+     * labels, so __test.minigame.choose(n) matches what a watcher sees.
+     */
+    getTestState() {
+        const base = super.getTestState();
+
+        const choiceButtons = this.ui?.getChoiceButtons?.() || [];
+        // Ink choice tags, where the author has added them, are the one handle
+        // that survives a dialogue rewrite. Currently rare in the scenarios,
+        // but pass them through so traces can prefer them when present.
+        const inkChoices = this.conversation?.currentChoices || [];
+        const choices = choiceButtons.map((btn, i) => ({
+            number: i + 1,
+            index: i,
+            text: (btn.innerText || '').trim().replace(/^\s*\d+[\.)]\s*/, '').slice(0, 300),
+            tags: Array.isArray(inkChoices[i]?.tags) ? inkChoices[i].tags.slice(0, 8) : []
+        }));
+
+        const continueBtn = this.ui?.elements?.continueButton;
+        const continueVisible = !!continueBtn && continueBtn.style.display !== 'none';
+
+        return {
+            ...base,
+            npcId: this.npcId || null,
+            npcName: this.npc?.name || null,
+            dialogue: {
+                npcId: this.npcId || null,
+                speaker: (this.ui?.elements?.speakerName?.innerText || '').trim() || null,
+                text: (this.ui?.elements?.dialogueText?.innerText || '').trim(),
+                choices,
+                // When choices are showing, choose(n). When only continue is
+                // showing, continue(). Both are key dispatches.
+                canContinue: continueVisible && choices.length === 0,
+                awaitingChoice: choices.length > 0,
+                ended: !!this.conversation?.storyEnded
+            }
+        };
+    }
+
+    /**
      * Set up event listeners for UI interactions
      */
     setupEventListeners() {

@@ -195,7 +195,10 @@
       vmActivationMode: '<%= BreakEscape::Mission.hacktivity_mode? ? @game.mission.vm_activation_mode.to_s : '' %>',
       missionConcludedAt: <%= raw(@game.mission_concluded_at&.iso8601.to_json) %>,
       missionId: <%= @game.mission_id %>,
-      missionDisplayName: <%= raw(@mission.display_name.to_json) %>
+      missionDisplayName: <%= raw(@mission.display_name.to_json) %>,
+      // Dev-only Playwright/agent test bridge (window.__test). Never true in
+      // production, so main.js never imports the bridge code there.
+      testBridge: <%= Rails.env.production? ? 'false' : 'true' %>
     };
     console.log('🔧 breakEscapeConfig initialized:', window.breakEscapeConfig);
     console.log('🎨 Player sprite from server:', window.breakEscapeConfig.playerSprite);

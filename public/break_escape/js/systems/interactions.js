@@ -106,7 +106,27 @@ function getInteractionDistance(playerSprite, targetX, targetY) {
     
     const dx = targetX - measureX;
     const dy = targetY - measureY;
-    return dx * dx + dy * dy; // Return squared distance for performance
+    const offsetDistSq = dx * dx + dy * dy;
+
+    // The offset exists to EXTEND reach in the facing direction. For a target
+    // only a few px away it did the opposite: the measure point sails past the
+    // target, so the distance grows as the player closes in, and an object the
+    // player is practically standing on is refused. Worst case is the
+    // up-diagonals, whose offset is 45px — approach from just below and a
+    // target 8px away measures 38px, over the 32px limit.
+    //
+    // Taking the smaller of the offset and plain centre distances keeps the
+    // extended reach while making the check monotonic (never refuses something
+    // for being too close). This cannot widen what is reachable overall:
+    // every caller — tryInteractWithNearest() and isObjectInInteractionRange()
+    // on the click paths — already gates candidates on the plain centre
+    // distance first, so this only stops the second check contradicting the
+    // first. Same candidates, minus the silent refusals.
+    const pdx = targetX - playerSprite.x;
+    const pdy = targetY - playerSprite.y;
+    const plainDistSq = pdx * pdx + pdy * pdy;
+
+    return Math.min(offsetDistSq, plainDistSq); // squared, for performance
 }
 
 // Update NPC talk icon positions every frame (even when not checking interactions)
@@ -1005,7 +1025,8 @@ export function handleObjectInteraction(sprite) {
                 stationId:         sprite.scenarioData.id || sprite.scenarioData.name || sprite.objectId,
                 stationName:       sprite.scenarioData.name,
                 mode:              sprite.scenarioData.mode || 'standard',
-                flags:             sprite.scenarioData.flags || [],
+                // Server sends a count, not the values (see Game#filter_requires_and_contents_recursive).
+                flagCount:         sprite.scenarioData.flagCount ?? (sprite.scenarioData.flags || []).length,
                 acceptsVms:        sprite.scenarioData.acceptsVms || [],
                 onAbort:           sprite.scenarioData.onAbort  || null,
                 onLaunch:          sprite.scenarioData.onLaunch || null,

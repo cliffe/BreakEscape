@@ -165,6 +165,15 @@ function initializeGame() {
     window.startLockpickingMinigame = startLockpickingMinigame;
     
     initializeDebugSystem();
+
+    // Dev-only test bridge (window.__test) for Playwright/agent-driven playtests.
+    // Dynamically imported so production builds never fetch or parse it.
+    if (window.breakEscapeConfig?.testBridge) {
+        import('./systems/test-bridge/index.js')
+            .then(({ installTestBridge }) => installTestBridge())
+            .catch(err => console.warn('[BreakEscape] test bridge failed to load:', err));
+    }
+
     initializeUI();
     initializeModals();
 

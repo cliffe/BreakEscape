@@ -24,7 +24,18 @@ export class PasswordMinigame extends MinigameScene {
         // Store the correct password for validation
         this.correctPassword = params.password || '';
     }
-    
+        /** Test bridge state (see MinigameScene.getTestState). */
+    getTestState() {
+        return {
+            ...super.getTestState(),
+            attemptsText: (this.attemptsDisplay?.innerText || '').trim() || null,
+            hasPasswordField: !!document.getElementById('password-field'),
+            // Type into field 0 then clickText('Submit'), or type(0, pw, {submit:true}).
+            entryHint: 'type(0, "<password>", { submit: true })'
+        };
+    }
+
+
     init() {
         // Call parent init to set up basic UI structure
         super.init();

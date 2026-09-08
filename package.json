@@ -1,0 +1,28 @@
+{
+  "name": "breakescape",
+  "version": "1.0.0",
+  "description": "Cyber security training escape room game as a mountable Rails Engine.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "lib": "lib",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cliffe/BreakEscape.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/cliffe/BreakEscape/issues"
+  },
+  "homepage": "https://github.com/cliffe/BreakEscape#readme",
+  "devDependencies": {
+    "playwright": "^1.49.1"
+  }
+}

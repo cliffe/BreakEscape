@@ -161,7 +161,9 @@ The file must follow this structure (matching the SIS01/SIS02 established format
 (Table of minigames with implementation status; console commands for manual testing)
 ```
 
-**Do not** include automated test scripts (no `WalkthroughRunner` or similar code). This file is for manual QA and AI solvability checking only.
+**Do not** embed automated test scripts in this file. It is prose for manual QA and AI solvability checking — the numbered steps and their stated outcomes (globals set, tasks completed, items given) are the contract.
+
+Automated execution is a separate concern: `/playtest-scenario` reads this file's numbered steps and plays them in a real browser through the `window.__test` bridge. Writing steps with explicit, assertable outcomes is what makes that possible, so keep stating them.
 
 After writing the file, confirm the path and line count.
 

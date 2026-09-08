@@ -13,7 +13,11 @@ export class FlagStationMinigame extends MinigameScene {
         super(container, params);
         this.stationId = params.stationId || 'flag-station';
         this.stationName = params.stationName || 'Flag Submission Terminal';
-        this.expectedFlags = params.flags || [];
+        // The server sends only a COUNT, never the flag values — they are the
+        // answers, and validation is server-side (POST /games/:id/flags).
+        // `params.flags` is retained purely as a fallback for any caller that
+        // still passes an array; never rely on its contents.
+        this.expectedFlagCount = params.flagCount ?? (params.flags || []).length;
         this.acceptsVms = params.acceptsVms || []; // List of VM names whose flags are accepted
         this.submittedFlags = params.submittedFlags || window.gameState?.submittedFlags || [];
         this.gameId = params.gameId || window.breakEscapeConfig?.gameId || window.gameConfig?.gameId;
@@ -26,6 +30,26 @@ export class FlagStationMinigame extends MinigameScene {
         this.launchConfirmText= params.launchConfirmText || 'Execute the operation?';
         this.choiceMade       = false;
     }
+    /**
+     * Test bridge state (see MinigameScene.getTestState).
+     *
+     * Note for playtests: the flags themselves are earned on a real VM, which
+     * the browser bridge cannot do. A runner reaching this minigame needs a
+     * flag value supplied by the operator, or must treat the step as blocked.
+     */
+    getTestState() {
+        return {
+            ...super.getTestState(),
+            stationId: this.stationId,
+            stationName: this.stationName,
+            expectedFlagCount: this.expectedFlagCount,
+            submittedFlags: Array.isArray(this.submittedFlags) ? this.submittedFlags.slice() : [],
+            isSubmitting: !!this.isSubmitting,
+            requiresExternalVm: true,
+            submitHint: 'type(0, "<flag>", { submit: true })'
+        };
+    }
+
 
     init() {
         this.params.title = this.stationName;
@@ -771,7 +795,7 @@ export class FlagStationMinigame extends MinigameScene {
     
     start() {
         super.start();
-        console.log('[FlagStation] Started with', this.expectedFlags.length, 'expected flags');
+        console.log('[FlagStation] Started with', this.expectedFlagCount, 'expected flags');
         
         // Disable WASD key capture from main game so text input works properly
         if (window.pauseKeyboardInput) {

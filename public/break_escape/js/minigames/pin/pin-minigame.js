@@ -38,7 +38,22 @@ export class PinMinigame extends MinigameScene {
         this.infoLeakToggleElement = null;
         this.pinCrackerIconElement = null;
     }
-    
+        /** Test bridge state (see MinigameScene.getTestState). */
+    getTestState() {
+        return {
+            ...super.getTestState(),
+            pinLength: this.pinLength,
+            entered: this.currentInput || '',
+            enteredLength: (this.currentInput || '').length,
+            attemptsUsed: (this.attempts || []).length,
+            maxAttempts: this.maxAttempts,
+            isLocked: !!this.isLocked
+            // Drive this with clickText('1')..clickText('9') on the keypad,
+            // exactly as a player taps it.
+        };
+    }
+
+
     init() {
         // Call parent init to set up common components
         super.init();

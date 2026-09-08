@@ -154,6 +154,79 @@ export class MinigameScene {
         }
     }
     
+    /**
+     * ── Test bridge hook ─────────────────────────────────────────────────────
+     *
+     * Return a JSON-safe snapshot of this minigame for window.__test.
+     *
+     * The base implementation reflects the overlay's DOM: the visible text,
+     * the clickable controls and any text fields. That is enough for an agent
+     * to drive ANY minigame generically, so a newly added minigame works with
+     * the test bridge without extra effort.
+     *
+     * Override this in a subclass when the minigame has state a human reads
+     * that the raw DOM does not express well (attempts remaining, which pin is
+     * set, whose dialogue line is showing). Call super.getTestState() and
+     * spread it so the generic controls stay available:
+     *
+     *     getTestState() {
+     *         return { ...super.getTestState(), attemptsLeft: this.attempts };
+     *     }
+     *
+     * Rules for overrides: return plain JSON only (no DOM nodes, no Phaser
+     * objects), and never mutate game state from here — this is read-only.
+     */
+    getTestState() {
+        const root = this.container;
+        if (!root) return { available: false };
+
+        const visible = (el) => {
+            if (!el) return false;
+            if (el.hidden) return false;
+            const style = window.getComputedStyle(el);
+            if (style.display === 'none' || style.visibility === 'hidden') return false;
+            const rect = el.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0;
+        };
+
+        const controls = Array.from(
+            root.querySelectorAll('button, [role="button"], a[href], .clickable, input[type="button"], input[type="submit"]')
+        ).filter(visible).slice(0, 60).map((el, i) => ({
+            index: i,
+            label: (el.innerText || el.value || el.getAttribute('aria-label') || '').trim().slice(0, 120),
+            id: el.id || null,
+            classes: el.className || null,
+            disabled: !!el.disabled
+        }));
+
+        const fields = Array.from(
+            root.querySelectorAll('input:not([type="button"]):not([type="submit"]), textarea, select')
+        ).filter(visible).slice(0, 30).map((el, i) => ({
+            index: i,
+            id: el.id || null,
+            name: el.name || null,
+            type: el.type || el.tagName.toLowerCase(),
+            placeholder: el.placeholder || null,
+            value: el.type === 'password' ? '[hidden]' : String(el.value ?? '').slice(0, 120)
+        }));
+
+        return {
+            available: true,
+            title: this.params?.title || null,
+            // A viewer opened from inside a container re-opens that container
+            // when it closes (window.pendingContainerReturn). Without this an
+            // agent reads the bounce-back as a stray minigame appearing from
+            // nowhere, or loops closing the same pair forever.
+            returnsToContainer: !!window.pendingContainerReturn,
+            isActive: !!this.gameState?.isActive,
+            isComplete: this.gameState?.isActive === false,
+            result: this.gameResult ?? null,
+            text: (root.innerText || '').trim().replace(/\n{3,}/g, '\n\n').slice(0, 2000),
+            controls,
+            fields
+        };
+    }
+
     cleanup() {
         this._eventListeners.forEach(({ element, eventType, handler }) => {
             element.removeEventListener(eventType, handler);

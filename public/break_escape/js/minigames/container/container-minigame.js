@@ -21,7 +21,64 @@ export class ContainerMinigame extends MinigameScene {
         // Auto-detect desktop mode for PC/tablet containers (not used in NPC mode)
         this.desktopMode = (this.mode !== 'npc') && (params.desktopMode || this.shouldUseDesktopMode());
     }
-    
+        /**
+     * Test bridge state (see MinigameScene.getTestState).
+     *
+     * Containers NEST. Clicking an item does one of two things:
+     *   - `kind: "take"` — the item goes straight into the inventory and the
+     *     container stays open.
+     *   - `kind: "view"` — the item is taken AND a viewer opens on top (notes,
+     *     text-file, …). Closing that viewer RE-OPENS this container, via
+     *     window.pendingContainerReturn.
+     *
+     * So an agent that closes a viewer must expect to land back here, not in
+     * the overworld. `returnsToContainer` on the viewer's own state says so.
+     *
+     * Items are read from the live DOM because the markup differs by mode:
+     * `.container-content-item` for bins and safes, `.desktop-icon` for PCs.
+     * Use minigame.take(nameOrIndex) rather than matching those classes yourself.
+     */
+    getTestState() {
+        const root = this.container;
+        const nodes = root
+            ? Array.from(root.querySelectorAll('.container-content-item, .desktop-icon'))
+                  .filter(el => el.offsetParent !== null)
+            : [];
+
+        const items = nodes.map((el, i) => {
+            const isDesktop = el.classList.contains('desktop-icon');
+            const name = (el.title || el.alt ||
+                          el.querySelector('.desktop-icon-label')?.textContent || '').trim();
+            // scenarioData for this entry, matched by name — tells us whether
+            // clicking opens a viewer or just pockets the item.
+            const data = (this.contents || []).find(c => (c?.name || '') === name) || {};
+            const opensViewer = !!(data.readable || data.noteContent || data.text ||
+                                   ['notes', 'note', 'text-file', 'document'].includes(data.type));
+            return {
+                index: i,
+                name,
+                type: data.type ?? null,
+                kind: opensViewer ? 'view' : 'take',
+                selector: isDesktop ? '.desktop-icon' : '.container-content-item'
+            };
+        });
+
+        return {
+            ...super.getTestState(),
+            mode: this.mode,
+            npcId: this.npcId || null,
+            containerName: this.containerItem?.scenarioData?.name || null,
+            items,
+            // Still listed for reference; `items` is what you act on.
+            contents: (this.contents || []).map(item => ({
+                id: item?.id ?? null,
+                name: item?.name ?? null,
+                type: item?.type ?? null
+            })),
+            takeHint: 'take("<item name>") — handles both container and desktop markup.'
+        };
+    }
+
     getContainerImageUrl() {
         const key = this.containerItem?.texture?.key;
         if (!key) return null;
