@@ -1032,13 +1032,23 @@ module BreakEscape
 
     # Server-side task completion driven by flag submission.
     # Called from submit_flag after a flag is validated and recorded.
-    # Finds all submit_flags tasks whose targetFlags include flag_id, updates
-    # submittedFlags, and marks tasks (and their parent aims) complete when all
-    # required flags have been submitted.
+    #
+    # flag_ids is the set of identifiers this one submission can satisfy — the
+    # station-qualified form and the legacy unqualified form (a bare String is
+    # still accepted). A submit_flags task matches if its targetFlags contains
+    # ANY of them.
+    #
+    # What gets recorded in submittedFlags is the matched targetFlags ENTRY, not
+    # the identifier that matched it. For an unqualified target the two strings
+    # are identical, so this is a no-op for every already-cached scenario_data —
+    # and it keeps the all-submitted check working against progress a live game
+    # persisted before this change, so a half-finished multi-flag task still
+    # completes when its remaining flag arrives.
     #
     # Returns { completed_tasks: [...taskIds], updated_tasks: [...taskIds] }
-    def process_flag_task_completions!(flag_id)
+    def process_flag_task_completions!(flag_ids)
       initialize_objectives
+      candidate_ids   = Array(flag_ids)
       completed_tasks = []
       updated_tasks   = []
 
@@ -1047,20 +1057,24 @@ module BreakEscape
 
         aim['tasks']&.each do |task|
           next unless task['type'] == 'submit_flags'
-          next unless Array(task['targetFlags']).include?(flag_id)
+
+          # Which of this task's targetFlags does this submission satisfy?
+          matched = Array(task['targetFlags']) & candidate_ids
+          next if matched.empty?
 
           task_id = task['taskId']
 
           # Skip already-completed tasks
           next if player_state.dig('objectivesState', 'tasks', task_id, 'status') == 'completed'
 
-          # Record this flagId in the task's submittedFlags (merge, not replace)
+          # Record the matched targetFlags entries in submittedFlags (merge, not
+          # replace) so stored progress stays in the same form as targetFlags.
           player_state['objectivesState']['tasks'][task_id] ||= {}
           task_state = player_state['objectivesState']['tasks'][task_id]
           task_state['submittedFlags'] ||= []
 
-          unless task_state['submittedFlags'].include?(flag_id)
-            task_state['submittedFlags'] << flag_id
+          matched.each do |entry|
+            task_state['submittedFlags'] << entry unless task_state['submittedFlags'].include?(entry)
           end
 
           # Check if all targetFlags are now submitted
@@ -1090,6 +1104,21 @@ module BreakEscape
     end
 
     private
+
+    # NOTE: targetFlags must be authored in the DISPLAY form the controller
+    # generates ("hospital_backup_server-flag1"), not the scenario reference
+    # form ("hospital_backup_server:flag_1"). The comparison above is a plain
+    # string match, so a reference-form entry silently never completes its task.
+    # Normalising here was tried and reverted: m01 is deployed and mixes both
+    # forms, so normalisation would newly complete its submit_ssh_flag task and
+    # unlock decrypt_entropy_intel earlier than live players see it.
+    #
+    # Two authored forms now work, and only these two:
+    #   "hospital_backup_server-flag1"                        any station (legacy)
+    #   "flag_station_dropsite:hospital_backup_server-flag1"  that station only
+    # The second is a station key (id, or name when the station has no id)
+    # prefixed to the display form. Do not confuse it with the scenario
+    # reference form "hospital_backup_server:flag_1", which still never matches.
 
     # Set mission_concluded_at when a missionConclusion aim completes, and
     # transition the game to completed status so Hacktivity shows it as done
@@ -1303,13 +1332,34 @@ module BreakEscape
         # Remove 'contents' if locked (lazy-loaded via separate endpoint)
         obj.delete('contents') if obj['locked']
 
+        # Strip flag values from flag-stations / launch-devices. The top-level
+        # 'flags' block is deleted in filtered_scenario_for_bootstrap, but each
+        # station carries its OWN ordered 'flags' array, which rode along in the
+        # lazy-loaded room payload and handed the player every answer.
+        #
+        # The client never needs the values: submission is validated server-side
+        # (POST /games/:id/flags) and the only client use was `.length`, so send
+        # the count instead. Entries may be references ("vm:flag_n") or literal
+        # values; strip either way rather than trying to tell them apart.
+        if obj['flags'].is_a?(Array)
+          obj['flagCount'] = obj['flags'].length
+          obj.delete('flags')
+        end
+        # hintOnlyFlags is a Hash of flag-ref => hint message. It is consumed
+        # entirely server-side (find_hint_only_message); the client never reads
+        # it, so remove it outright rather than keeping a count.
+        obj.delete('hintOnlyFlags')
+
         # Keep lockType - client needs it to show correct UI
         # Keep locked - client needs it to show lock status
 
-        # Recursively filter nested objects, NPCs, and tableItems
+        # Recursively filter nested objects, NPCs, tableItems and NPC-held items.
+        # itemsHeld matters: an NPC can carry a flag-station or launch-device
+        # (see find_flag_station_for_flag), so skipping it leaves a leak.
         obj['objects']&.each { |o| filter_requires_and_contents_recursive(o) }
         obj['npcs']&.each { |n| filter_requires_and_contents_recursive(n) }
         obj['tableItems']&.each { |t| filter_requires_and_contents_recursive(t) }
+        obj['itemsHeld']&.each { |i| filter_requires_and_contents_recursive(i) }
 
       when Array
         obj.each { |item| filter_requires_and_contents_recursive(item) }

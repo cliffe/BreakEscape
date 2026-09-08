@@ -247,5 +247,82 @@ module BreakEscape
       assert_nil filtered["rooms"]["start"]["objects"]
       assert_nil filtered["rooms"]["start"]["npcs"]
     end
+
+    # ── Flag-answer leak guard ──────────────────────────────────────────────
+    #
+    # Flag values are the answers. They are validated server-side, and the
+    # client only ever needs a count. A regression here hands every player the
+    # solutions via DevTools, silently — which is exactly what happened when
+    # flag-station objects carried their own `flags` array into lazily-loaded
+    # room payloads. These tests fail loudly if any client-facing payload ever
+    # carries a flag value again.
+
+    FLAG_VALUE_PATTERN = /flag\{[^}]*\}/i.freeze
+
+    def game_with_flag_scenario
+      scenario = @scenario_data.deep_dup
+      scenario['flags'] = {
+        'target_vm' => { 'flag_1' => 'flag{alpha_secret}', 'flag_2' => 'flag{beta_secret}' }
+      }
+      scenario['rooms']['next_room']['objects'] << {
+        'type' => 'flag-station',
+        'id' => 'dropsite',
+        'acceptsVms' => ['target_vm'],
+        'flags' => ['flag{alpha_secret}', 'target_vm:flag_2'],
+        'hintOnlyFlags' => { 'flag{alpha_secret}' => 'Used elsewhere' }
+      }
+      scenario['rooms']['next_room']['npcs'] = [
+        { 'id' => 'courier', 'displayName' => 'Courier',
+          'itemsHeld' => [
+            { 'type' => 'launch-device', 'id' => 'held_device',
+              'flags' => ['flag{beta_secret}'] }
+          ] }
+      ]
+
+      game = Game.new(mission: break_escape_missions(:ceo_exfil),
+                      player: break_escape_demo_users(:test_user),
+                      scenario_data: scenario)
+      game.save(validate: false)
+      game
+    end
+
+    test 'bootstrap payload contains no flag values' do
+      game = game_with_flag_scenario
+      assert_no_match FLAG_VALUE_PATTERN, game.filtered_scenario_for_bootstrap.to_json
+    end
+
+    test 'room payloads contain no flag values, including NPC-held stations' do
+      game = game_with_flag_scenario
+
+      game.scenario_data['rooms'].each_key do |room_id|
+        json = game.send(:filtered_room_data, room_id).to_json
+        assert_no_match FLAG_VALUE_PATTERN, json,
+                        "room '#{room_id}' leaked a flag value to the client"
+      end
+    end
+
+    test 'flag stations expose a count instead of the flag values' do
+      game = game_with_flag_scenario
+      room = game.send(:filtered_room_data, 'next_room')
+
+      station = room['objects'].find { |o| o['type'] == 'flag-station' }
+      assert station, 'flag-station should still be present'
+      assert_nil station['flags'], 'flag values must not reach the client'
+      assert_equal 2, station['flagCount'], 'client needs the count for its UI'
+      assert_nil station['hintOnlyFlags'], 'hint-only flags are server-side only'
+
+      # Non-secret fields the client genuinely uses must survive.
+      assert_equal ['target_vm'], station['acceptsVms']
+      assert_equal 'dropsite', station['id']
+    end
+
+    test 'NPC-held flag devices are filtered too' do
+      game = game_with_flag_scenario
+      room = game.send(:filtered_room_data, 'next_room')
+
+      held = room['npcs'].first['itemsHeld'].first
+      assert_nil held['flags'], 'NPC-held device leaked flag values'
+      assert_equal 1, held['flagCount']
+    end
   end
 end

@@ -963,6 +963,20 @@ module BreakEscape
         return render json: { success: false, message: 'No flag provided' }, status: :bad_request
       end
 
+      # Development-only convenience: allow test:flag:1, test:flag:2, ... as
+      # stand-ins for this station's real flags, so one playtest trace runs
+      # unchanged in BOTH environments — a standalone game whose flags came from
+      # flag-hint XML, and a Hacktivity game whose flags come from the real VM
+      # build. In neither case does the client ever see the flag values (see
+      # Game#filter_requires_and_contents_recursive).
+      #
+      # This is an ALIAS, not a bypass. It resolves to the real flag value and then
+      # every downstream check runs untouched: station-ownership, already-submitted,
+      # scenario validation, Hacktivity scoring, rewards and task completion. Real
+      # flags continue to work exactly as before, in every environment.
+      resolved_key, alias_used = resolve_test_flag_alias(flag_key, station_id)
+      flag_key = resolved_key
+
       # hintOnlyFlags: flags listed on a station that should be validated but NOT submitted —
       # used when a flag is "used elsewhere" (e.g. archive key or launch code) and the station
       # just wants to tell the player that without consuming the flag or scoring it in Hacktivity.
@@ -1011,6 +1025,7 @@ module BreakEscape
         # Find flag-station and generate flag identifier
         flag_station = find_flag_station_for_flag(flag_key)
         flag_id = generate_flag_identifier(flag_key, flag_station)
+        flag_ids = generate_flag_identifiers(flag_key, flag_station)
         vm_id = flag_station&.dig('acceptsVms', 0)
 
         # Find rewards for this flag in scenario
@@ -1021,8 +1036,8 @@ module BreakEscape
 
         # Server-side task/aim completion — runs after rewards so the final save!
         # captures all accumulated in-memory state changes
-        task_outcomes = flag_id \
-          ? @game.process_flag_task_completions!(flag_id)
+        task_outcomes = flag_ids.any? \
+          ? @game.process_flag_task_completions!(flag_ids)
           : { completed_tasks: [], updated_tasks: [] }
 
         # Notify the host app so it can route this through its own flag-scoring pipeline
@@ -1045,6 +1060,9 @@ module BreakEscape
         render json: {
           success:        true,
           message:        result[:message],
+          # Surfaced so a playtest report can never silently claim a VM step was
+          # completed with a real flag when a dev stand-in was used.
+          testFlagAlias:  alias_used,
           flag:           flag_key,
           flagId:         flag_id,
           vmId:           vm_id,
@@ -1899,6 +1917,72 @@ module BreakEscape
     #      metadata (acceptsVms, flagRewards) and the correct flag index.
     # Resolve a flag value that may be a reference ("vm_name:flag_n") or a literal.
     # Delegates to game.resolve_flag_ref for references; returns the string as-is otherwise.
+    # Is the flag{N} testing alias available? Never in production — this is the
+    # single gate, so keep it a plain environment check with no override.
+    def test_flag_aliases_enabled?
+      !Rails.env.production?
+    end
+
+    # Translate a flag{N} stand-in into the real flag value for the station being
+    # submitted to. Returns [flag_key, alias_used].
+    #
+    # N is 1-based and indexes the station's own ordered `flags` array, so
+    # flag{1} is "the first flag this station expects" — which is how the
+    # walkthroughs number them. Falls back to the scenario's overall flag order
+    # when the client did not say which station it is at.
+    #
+    # Anything that is not exactly flag{<digits>} is returned untouched, so real
+    # flag values (including any genuinely named flag{...}) are unaffected.
+    def resolve_test_flag_alias(flag_key, station_id)
+      return [flag_key, false] unless test_flag_aliases_enabled?
+
+      # Deliberately NOT flag{N}: SecGen flag-hint XML routinely uses flag{1},
+      # flag{2}, ... as the ACTUAL flag values, so a positional reading of that
+      # form would hijack real flags and silently submit the wrong one.
+      # `test:flag:N` cannot collide with any real flag.
+      match = flag_key.to_s.strip.match(/\Atest:flag:(\d+)\z/i)
+      return [flag_key, false] unless match
+
+      # Belt and braces: if this somehow IS a real flag value, it is itself.
+      real_flags = @game.send(:extract_valid_flags_from_scenario)
+      if real_flags.any? { |f| f.to_s.casecmp?(flag_key.to_s.strip) }
+        return [flag_key, false]
+      end
+
+      index = match[1].to_i
+      return [flag_key, false] if index < 1
+
+      candidates = test_flag_candidates(station_id)
+      real = candidates[index - 1]
+
+      if real.blank?
+        Rails.logger.warn "[BreakEscape][TestFlag] #{flag_key} has no match " \
+                          "(station=#{station_id.inspect}, #{candidates.length} flag(s) available)"
+        return [flag_key, false]
+      end
+
+      Rails.logger.warn "[BreakEscape][TestFlag] DEV ALIAS: #{flag_key} -> real flag " \
+                        "##{index} for station=#{station_id.inspect}. Not available in production."
+      [real, true]
+    end
+
+    # Ordered, resolved flag values a flag{N} alias can refer to.
+    def test_flag_candidates(station_id)
+      station = station_id.present? ? find_flag_station_by_id(station_id) : nil
+      refs = station && station['flags'].is_a?(Array) ? station['flags'] : nil
+
+      values =
+        if refs
+          refs.map { |ref| resolve_flag_value(ref) }
+        else
+          # No station context: fall back to every flag the scenario knows, in
+          # declaration order.
+          @game.send(:extract_valid_flags_from_scenario)
+        end
+
+      values.compact.reject(&:blank?)
+    end
+
     def resolve_flag_value(ref_or_value)
       return nil unless ref_or_value.is_a?(String)
       return @game.resolve_flag_ref(ref_or_value) if ref_or_value.match?(/\A[^:]+:flag_\d+\z/)
@@ -2006,6 +2090,12 @@ module BreakEscape
 
     # Generate a flag identifier in the format: {vmId}-flag{index}
     # Example: "desktop-flag1", "kali-flag2"
+    #
+    # This is the LEGACY, unqualified form. It numbers flags from 1 within the
+    # station's own flags array, so two stations accepting the same VM collide
+    # (m01's launch device and drop site both produce "shatter_server-flag1").
+    # Kept as-is because it is what every cached scenario_data already holds and
+    # what the client shows; see generate_flag_identifiers for the qualified form.
     def generate_flag_identifier(flag_key, flag_station)
       return nil unless flag_station
 
@@ -2019,6 +2109,26 @@ module BreakEscape
 
       # Generate identifier: "desktop-flag1" (1-indexed for display)
       "#{vm_id}-flag#{flag_index + 1}"
+    end
+
+    # The candidate identifiers a submission at this station can satisfy, most
+    # specific first:
+    #
+    #   "flag_station_dropsite:hospital_backup_server-flag1"  station-qualified
+    #   "hospital_backup_server-flag1"                        legacy, unqualified
+    #
+    # A submit_flags task matches on EITHER. A qualified target can only be
+    # produced by its own station, so a scenario that opts in gets strict
+    # station binding; one that does not opt in behaves exactly as before.
+    #
+    # station_key is the station id, falling back to its name when it has no id
+    # (m01's ENTROPY Launch Device is name-only).
+    def generate_flag_identifiers(flag_key, flag_station)
+      legacy = generate_flag_identifier(flag_key, flag_station)
+      return [] unless legacy
+
+      station_key = flag_station['id'].presence || flag_station['name'].presence
+      station_key ? ["#{station_key}:#{legacy}", legacy] : [legacy]
     end
 
     # Get current player's preference record

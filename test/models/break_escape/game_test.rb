@@ -339,6 +339,122 @@ module BreakEscape
         @game.update!(status: 'completed', completed_at: Time.current)
       end
     end
+
+    # targetFlags must be authored in the display form the controller generates
+    # ("vm-flagN"). These pin that contract: the display form completes the task,
+    # and the scenario reference form ("vm:flag_N") silently does not — which is
+    # what blocked every submit_flags task in m02 until its scenario was fixed.
+    test "submit_flags task completes when targetFlags use the vm-flagN display form" do
+      set_flag_objective('hospital_backup_server-flag1')
+
+      result = @game.process_flag_task_completions!('hospital_backup_server-flag1')
+
+      assert_equal ['submit_ssh_flag'], result[:completed_tasks]
+      assert_equal 'completed',
+                   @game.player_state.dig('objectivesState', 'tasks', 'submit_ssh_flag', 'status')
+    end
+
+    test "submit_flags task does NOT complete when targetFlags use the vm:flag_N reference form" do
+      set_flag_objective('hospital_backup_server:flag_1')
+
+      result = @game.process_flag_task_completions!('hospital_backup_server-flag1')
+
+      assert_empty result[:completed_tasks]
+    end
+
+    test "submit_flags task does not complete on a different flag" do
+      set_flag_objective('hospital_backup_server:flag_1')
+
+      result = @game.process_flag_task_completions!('hospital_backup_server-flag2')
+
+      assert_empty result[:completed_tasks]
+      assert_nil @game.player_state.dig('objectivesState', 'tasks', 'submit_ssh_flag', 'status')
+    end
+
+    # --- Station-qualified flag identifiers -------------------------------
+    # The controller now offers two candidate identifiers per submission:
+    # a station-qualified one ("<stationKey>:<vm>-flagN") and the legacy
+    # unqualified one ("<vm>-flagN"). A task matches on either, and the
+    # matched targetFlags entry (not the generated id) is what gets recorded,
+    # so progress persisted by the old code keeps counting.
+
+    test "legacy unqualified targetFlags still completes when candidates include a qualified id" do
+      set_flag_objective('hospital_backup_server-flag1')
+
+      result = @game.process_flag_task_completions!(
+        ['flag_station_dropsite:hospital_backup_server-flag1', 'hospital_backup_server-flag1']
+      )
+
+      assert_equal ['submit_ssh_flag'], result[:completed_tasks]
+      assert_equal ['hospital_backup_server-flag1'],
+                   @game.player_state.dig('objectivesState', 'tasks', 'submit_ssh_flag', 'submittedFlags')
+    end
+
+    test "qualified targetFlags completes when submitted at its own station" do
+      set_flag_objective('flag_station_dropsite:hospital_backup_server-flag1')
+
+      result = @game.process_flag_task_completions!(
+        ['flag_station_dropsite:hospital_backup_server-flag1', 'hospital_backup_server-flag1']
+      )
+
+      assert_equal ['submit_ssh_flag'], result[:completed_tasks]
+      assert_equal ['flag_station_dropsite:hospital_backup_server-flag1'],
+                   @game.player_state.dig('objectivesState', 'tasks', 'submit_ssh_flag', 'submittedFlags')
+    end
+
+    test "qualified targetFlags does NOT complete when the same flag id comes from another station" do
+      set_flag_objective('flag_station_dropsite:hospital_backup_server-flag1')
+
+      result = @game.process_flag_task_completions!(
+        ['ENTROPY Launch Device:hospital_backup_server-flag1', 'hospital_backup_server-flag1']
+      )
+
+      assert_empty result[:completed_tasks]
+      assert_nil @game.player_state.dig('objectivesState', 'tasks', 'submit_ssh_flag', 'status')
+    end
+
+    test "a multi-flag task with submittedFlags persisted in the old form still completes" do
+      @game.scenario_data = @game.scenario_data.merge(
+        'objectives' => [{
+          'aimId' => 'aim_flags',
+          'tasks' => [{
+            'taskId' => 'submit_ssh_flag',
+            'type' => 'submit_flags',
+            'targetFlags' => ['hospital_backup_server-flag1', 'hospital_backup_server-flag2']
+          }]
+        }]
+      )
+      # Progress as an old (pre-change) game would have persisted it.
+      @game.send(:initialize_objectives)
+      @game.player_state['objectivesState']['tasks']['submit_ssh_flag'] = {
+        'submittedFlags' => ['hospital_backup_server-flag1']
+      }
+      @game.save!
+
+      result = @game.process_flag_task_completions!(
+        ['flag_station_dropsite:hospital_backup_server-flag2', 'hospital_backup_server-flag2']
+      )
+
+      assert_equal ['submit_ssh_flag'], result[:completed_tasks]
+      assert_equal 'completed',
+                   @game.player_state.dig('objectivesState', 'tasks', 'submit_ssh_flag', 'status')
+    end
+
+    private
+
+    def set_flag_objective(target_flag)
+      @game.scenario_data = @game.scenario_data.merge(
+        'objectives' => [{
+          'aimId' => 'aim_flags',
+          'tasks' => [{
+            'taskId' => 'submit_ssh_flag',
+            'type' => 'submit_flags',
+            'targetFlags' => [target_flag]
+          }]
+        }]
+      )
+      @game.save!
+    end
   end
 
   # ---------------------------------------------------------------------------
