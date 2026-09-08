@@ -1807,9 +1807,9 @@ boardroom_pin = "0417"
               "description": "Database backup flag submitted - reveals offline key location"
             },
             {
-              "type": "emit_event",
-              "event_name": "ghost_log_flag_submitted",
-              "description": "Ghost's operational log submitted - LORE fragment unlocked"
+              "type": "unlock_object",
+              "objectId": "entropy_staging_cache",
+              "description": "Ghost's operational log submitted - ENTROPY Staging Cache unlocks automatically"
             }
           ]
         },
@@ -1924,8 +1924,7 @@ boardroom_pin = "0417"
           "takeable": false,
           "locked": true,
           "lockType": "flag",
-          "requires": "hospital_backup_server:flag_4",
-          "observations": "A hardened container bolted inside the rack, not on any hospital asset register. Ghost staged from here. The lock wants a verification string that only exists in the operational log on the backup server -- recover that flag and submit it at the drop-site to open this.",
+          "observations": "A hardened container bolted inside the rack, not on any hospital asset register. Ghost staged from here. It unlocks automatically once Ghost's operational log flag is submitted at the drop-site -- the drop-site is the only place that flag can be submitted.",
           "puzzle_graph_role": "lock",
           "puzzle_graph_aim": "unmask_inside_asset",
           "puzzle_graph_note": "Flag-locked container: forces the full VM chain (SSH -> ProFTPD -> database -> Ghost's log) before the mission's ideological payload is readable",

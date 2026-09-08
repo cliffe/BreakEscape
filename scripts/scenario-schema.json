@@ -897,13 +897,17 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["give_item", "unlock_door", "emit_event", "reveal_secret", "complete_task", "set_global"]
+          "enum": ["give_item", "unlock_door", "emit_event", "reveal_secret", "complete_task", "set_global", "unlock_object"]
         },
         "item_name": { "type": "string" },
         "target_room": { "type": "string" },
         "event_name": { "type": "string" },
         "taskId": { "type": "string" },
         "description": { "type": "string" },
+        "objectId": {
+          "type": "string",
+          "description": "Object id to unlock client- and server-side (used with type: 'unlock_object'). Already implemented by apply-actions.js/process_flag_rewards; this enum entry was missing from the schema."
+        },
         "key": {
           "type": "string",
           "description": "Global variable name to set (used with type: 'set_global')"
