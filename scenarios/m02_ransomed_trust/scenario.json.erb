@@ -891,15 +891,13 @@ boardroom_pin = "0417"
               "sendTimedMessage": { "delay": 5600, "message": "That foothold won't be root yet. If you hit files you can't read, I can send a privilege escalation field guide -- sudo enumeration and pivoting to the account that can. Ask when you need it." }
             },
             {
+              <%# Was chained through global_variable_changed:flag_ghost_log_submitted purely to
+                  dodge the once-only dedup bug (npc-manager.js keyed dedup on (npc, eventPattern),
+                  so a second onceOnly handler on the same pattern was dead). Now that dedup is
+                  per-handler, this fires directly off the flag submission. %>
               "eventPattern": "objective_task_completed:submit_ghost_log_flag",
               "onceOnly": true,
-              "setGlobal": { "flag_ghost_log_submitted": true }
-            },
-            {
-              "eventPattern": "global_variable_changed:flag_ghost_log_submitted",
-              "condition": "value === true",
-              "onceOnly": true,
-              "setGlobal": { "backdoor_fully_exploited": true },
+              "setGlobal": { "flag_ghost_log_submitted": true, "backdoor_fully_exploited": true },
               "sendTimedMessage": { "delay": 1500, "message": "That's the full backdoor chain -- SSH, ProFTPD, database, and Ghost's own operational logs. You've got everything ENTROPY had on this hospital. Now head to the Hospital Recovery Console in the server room and bring the patients' systems back online -- that's how we finish this." }
             },
             {
@@ -922,16 +920,20 @@ boardroom_pin = "0417"
               "setGlobal": { "flag_database_submitted": true }
             },
             {
-              "eventPattern": "global_variable_changed:flag_database_submitted",
-              "condition": "value === true",
+              <%# Was chained through global_variable_changed:flag_database_submitted purely to
+                  dodge the once-only dedup bug (three onceOnly handlers already shared this
+                  pattern here). Now fires directly off the flag submission. %>
+              "eventPattern": "objective_task_completed:submit_database_flag",
               "onceOnly": true,
               "setGlobal": { "insider_db_window_found": true },
               "completeTask": "unmask_db_window",
               "sendTimedMessage": { "delay": 2500, "message": "The backup logs show it -- the planted device went live during a 'fire drill' six weeks ago. An internal badge authorised the contractor sweep that installed it. Not an outsider. Someone with access authority here." }
             },
             {
-              "eventPattern": "global_variable_changed:backdoor_fully_exploited",
-              "condition": "value === true",
+              <%# Was chained through global_variable_changed:backdoor_fully_exploited purely to
+                  dodge the once-only dedup bug (this shares objective_task_completed:submit_ghost_log_flag
+                  with the handler above that also sets backdoor_fully_exploited). Fires directly. %>
+              "eventPattern": "objective_task_completed:submit_ghost_log_flag",
               "onceOnly": true,
               "setGlobal": { "insider_badge_id_found": true },
               "completeTask": "unmask_ghost_badge",

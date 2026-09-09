@@ -417,9 +417,10 @@ export default class NPCManager {
           ...(typeof config === 'string' ? { targetKnot: config } : config)
         }));
     
-    for (const mapping of mappingsArray) {
+    for (const [mappingIndex, mapping] of mappingsArray.entries()) {
       const eventPattern = mapping.eventPattern;
       const config = {
+        handlerIndex: mappingIndex, // per-handler dedup discriminator (see _handleEventMapping)
         knot: mapping.targetKnot || mapping.knot,
         bark: mapping.bark,
         once: mapping.onceOnly || mapping.once,
@@ -474,8 +475,11 @@ export default class NPCManager {
       return;
     }
     
-    // Check if event should be handled
-    const eventKey = `${npcId}:${eventPattern}`;
+    // Check if event should be handled.
+    // Dedup key is per-handler (npc + event pattern + this handler's index in the
+    // NPC's eventMappings array) so that onceOnly means "this handler fires once",
+    // not "the first handler on this (npc, pattern) pair wins and all siblings die".
+    const eventKey = `${npcId}:${eventPattern}:${config.handlerIndex}`;
     const triggered = this.triggeredEvents.get(eventKey) || { count: 0, lastTime: 0 };
     
     // Check if this is a once-only event that's already triggered
@@ -993,9 +997,14 @@ export default class NPCManager {
 
   // Check if an event has been triggered for an NPC
   hasTriggered(npcId, eventPattern) {
-    const eventKey = `${npcId}:${eventPattern}`;
-    const triggered = this.triggeredEvents.get(eventKey);
-    return triggered ? triggered.count > 0 : false;
+    // Keys are now per-handler (`${npcId}:${eventPattern}:${handlerIndex}`); this
+    // keeps the original meaning — "did anything on this (npc, pattern) pair fire?" —
+    // by matching any handler's key for that pair.
+    const prefix = `${npcId}:${eventPattern}:`;
+    for (const [key, triggered] of this.triggeredEvents) {
+      if (key.startsWith(prefix) && triggered.count > 0) return true;
+    }
+    return false;
   }
 
   // Schedule a timed message to be delivered after a delay
@@ -1362,7 +1371,12 @@ export default class NPCManager {
     // Remove NPC from registry
     this.npcs.delete(npcId);
     this.conversationHistory.delete(npcId);
-    this.triggeredEvents.delete(npcId);
+    // Keys are composite (`${npcId}:${eventPattern}:${handlerIndex}`), so a bare
+    // delete(npcId) never matched anything — delete every key for this NPC.
+    const npcEventPrefix = `${npcId}:`;
+    for (const key of this.triggeredEvents.keys()) {
+      if (key.startsWith(npcEventPrefix)) this.triggeredEvents.delete(key);
+    }
 
     console.log(`[NPCManager] Unregistered NPC: ${npcId}`);
   }

@@ -1118,6 +1118,143 @@ def check_objectives_wiring(json_data, base_dir)
     # Non-fatal — KO-resilience analysis is best-effort.
   end
 
+  # ─────────────────────────────────────────────────────────────
+  # CHECK 5  onceOnly handlers sharing (npc/object, eventPattern)
+  #
+  # npc-manager.js dedups onceOnly per handler (its index in eventMappings), not
+  # per (holder, eventPattern) pair — so every onceOnly handler on the same pair
+  # fires independently the first time ITS OWN condition passes. If two or more
+  # such handlers' conditions can be true at the same moment (including two with
+  # identical conditions), they will all fire when that happens. That may be
+  # intended (e.g. one silently completes a task while another sends a message)
+  # or it may be an authoring mistake expecting only one to win — flag it so the
+  # author decides, rather than finding out three playtests later.
+  # ─────────────────────────────────────────────────────────────
+  begin
+    parse_literal = lambda do |token|
+      t = token.strip
+      next true if t == 'true'
+      next false if t == 'false'
+      next nil if t == 'null'
+      next nil if t == 'undefined'
+      n = Float(t) rescue nil
+      next n if n && t != ''
+      m = t.match(/^['"](.*)['"]$/)
+      next m[1] if m
+      t
+    end
+
+    resolve_lhs = lambda do |token, env|
+      t = token.strip
+      next env[:value] if t == 'value'
+      next env[:name] if t == 'name'
+      m = t.match(/^globalVars\.(\w+)$/)
+      next env[:globalVars][m[1]] if m
+      nil
+    end
+
+    apply_op = lambda do |lhs, op, rhs|
+      case op
+      when '===' then lhs == rhs
+      when '!==' then lhs != rhs
+      when '>=' then lhs && rhs && lhs >= rhs
+      when '<=' then lhs && rhs && lhs <= rhs
+      when '>' then lhs && rhs && lhs > rhs
+      when '<' then lhs && rhs && lhs < rhs
+      else false
+      end
+    end
+
+    evaluate_single = lambda do |expr, env|
+      e = expr.strip
+      next !evaluate_single.call(e[1..-1].strip, env) if e.start_with?('!')
+      cmp = e.match(/^(value|name|globalVars\.\w+)\s*(===|!==|>=|<=|>|<)\s*(.+)$/)
+      if cmp
+        next apply_op.call(resolve_lhs.call(cmp[1], env), cmp[2], parse_literal.call(cmp[3]))
+      end
+      next !!resolve_lhs.call(e, env) if e =~ /^(value|name|globalVars\.\w+)$/
+      true # unsupported term (e.g. .includes(), data.*) — assume it could pass
+    end
+
+    eval_condition = lambda do |cond, env|
+      next true if cond.nil?
+      s = cond.strip
+      next s.split('&&').all? { |part| evaluate_single.call(part, env) } if s.include?('&&')
+      evaluate_single.call(s, env)
+    end
+
+    extract_vars = lambda do |cond|
+      return [] unless cond
+      cond.scan(/\b(?:value|globalVars\.\w+)\b/).uniq
+    end
+
+    # Returns the set of indices (within `handlers`) that would newly become live
+    # under the per-handler fix but are dominated (blocked) by an earlier handler
+    # under some reachable variable assignment — i.e. two+ handlers can pass at once.
+    find_overlapping = lambda do |handlers|
+      vars = handlers.flat_map { |h| extract_vars.call(h[:condition]) }.uniq
+      n = vars.length
+      overlapping = Set.new
+      total = [2**n, 4096].min
+      (0...total).each do |mask|
+        env = { globalVars: {}, value: nil, name: nil }
+        vars.each_with_index do |v, i|
+          val = mask[i] == 1
+          if v == 'value'
+            env[:value] = val
+          else
+            m = v.match(/^globalVars\.(\w+)$/)
+            env[:globalVars][m[1]] = val
+          end
+        end
+        passing = handlers.select { |h| eval_condition.call(h[:condition], env) }
+        overlapping.merge(passing.map { |h| h[:idx] }) if passing.size > 1
+      end
+      overlapping
+    end
+
+    check_mapping_group = lambda do |holder_label, mappings|
+      return unless mappings.is_a?(Array)
+      by_pattern = Hash.new { |h, k| h[k] = [] }
+      mappings.each_with_index do |m, idx|
+        next unless m.is_a?(Hash)
+        pattern = m['eventPattern']
+        next unless pattern
+        by_pattern[pattern] << { idx: idx, once: !!(m['onceOnly'] || m['once']), condition: m['condition'] }
+      end
+      by_pattern.each do |pattern, list|
+        next if list.size < 2
+        once_list = list.select { |h| h[:once] }
+        next if once_list.empty?
+        overlapping = find_overlapping.call(list)
+        overlapping_once = once_list.select { |h| overlapping.include?(h[:idx]) }
+        next if overlapping_once.empty?
+        idxs = overlapping_once.map { |h| h[:idx] }.sort.join(', ')
+        issues << "⚠️ WARNING: #{holder_label} has #{list.size} eventMappings for '#{pattern}' " \
+                  "(indices #{list.map { |h| h[:idx] }.join(', ')}), of which onceOnly handler(s) at " \
+                  "index #{idxs} can pass at the same time as another handler on the same pair " \
+                  "(including two with identical conditions). Each onceOnly handler now fires " \
+                  "independently the first time its own condition is met — if these are meant to be " \
+                  "mutually exclusive alternatives, make their conditions disjoint; if firing together " \
+                  "is intended, ignore this warning."
+      end
+    end
+
+    json_data['rooms']&.each do |room_id, room|
+      room['npcs']&.each do |npc|
+        check_mapping_group.call("NPC '#{npc['id']}' (room '#{room_id}')", npc['eventMappings'])
+      end
+      room['objects']&.each do |obj|
+        check_mapping_group.call("Object '#{obj['id']}' (room '#{room_id}')", obj['eventMappings'])
+      end
+    end
+    json_data['startItemsInInventory']&.each do |item|
+      check_mapping_group.call("Inventory item '#{item['id']}'", item['eventMappings'])
+    end
+  rescue => e
+    # Non-fatal — this is an authoring-quality warning, not a structural check.
+  end
+
   issues
 end
 
