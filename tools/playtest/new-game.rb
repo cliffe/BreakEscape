@@ -40,6 +40,17 @@ def scenario_flag_needs(mission)
   src.scan(/"([a-z0-9_]+):flag_(\d+)"/i) do |vm, n|
     needs[vm] = [needs[vm], n.to_i].max
   end
+  # targetFlags entries reference "station_id:vm_name-flagN" (a dash before
+  # "flag", not "vm:flag_N") — e.g. m02's
+  # "flag_station_dropsite:hospital_backup_server-flag4". Without this, the
+  # scan above never sees these references at all, so `needs` silently falls
+  # back to the flags_for_vm(...) minimum of 1 even when a scenario's own
+  # targetFlags reference flag2/flag3/flag4 — undercounting the flags a real
+  # playtest game needs seeded, and every submission past the first then
+  # returns "Invalid flag" for reasons indistinguishable from a scenario bug.
+  src.scan(/"[a-z0-9_]+:([a-z0-9_]+)-flag(\d+)"/i) do |vm, n|
+    needs[vm] = [needs[vm], n.to_i].max
+  end
   # A VM named in a helper but with no explicit flag_N reference still needs one.
   src.scan(/(?:flags_for_vm|vm_flags_json)\(\s*'([^']+)'/) do |(vm)|
     needs[vm] = [needs[vm], 1].max
