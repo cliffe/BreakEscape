@@ -29,9 +29,23 @@ jobs:
   test:
     runs-on: ubuntu-22.04
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Install packages
-        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y sqlite3 libsqlite3-dev
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y sqlite3 libsqlite3-dev libpq-dev
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -47,4 +61,9 @@ jobs:
       - name: Run tests
         env:
           RAILS_ENV: test
-        run: bin/rails test
+          BE_DB_USER: postgres
+          BE_DB_PASSWORD: postgres
+          BE_DB_HOST: localhost
+        run: |
+          bin/rails db:prepare
+          bin/rails test
