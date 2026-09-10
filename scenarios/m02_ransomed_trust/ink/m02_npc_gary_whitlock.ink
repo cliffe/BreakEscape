@@ -476,7 +476,7 @@ Gary Whitlock: ProFTPD one point three point three c. The compromised release.
 
 Gary Whitlock: Somebody put a backdoor in the actual source tree back in 2010 and it shipped to everyone who downloaded it. Unauthenticated remote code execution. You don't need a password, you need a port.
 
-Gary Whitlock: A clean version was out within days. We are still running the poisoned build, in 2025, on the box that holds every clinical backup in this hospital.
+Gary Whitlock: A clean version was out within days. We are still running the poisoned build, in 2024, on the box that holds every clinical backup in this hospital.
 
 + [Why is that box even reachable?]
     ~ gary_influence += 5
@@ -528,7 +528,7 @@ Gary Whitlock: *quietly* Best day of the year and I spent twenty minutes of it w
 + [Then get it back. Go home when this is done and don't bring it with you.]
     ~ gary_influence += 10
     # influence_increased
-    Gary Whitlock: *nods, doesn't trust himself to say anything for a second*
+    Narrator: He nods, and doesn't trust himself with anything else for a second.
     Gary Whitlock: Yeah. Yeah, alright.
     -> hub
 
@@ -653,7 +653,7 @@ Gary Whitlock: *doesn't turn round* You've got the card.
     ~ gary_defensive = false
     ~ gary_influence += 20
     # influence_increased
-    Gary Whitlock: *long silence*
+    Narrator: The ventilation fills a very long silence.
     Gary Whitlock: Say that in your report and we'll call it square.
     -> hub
 
@@ -672,7 +672,7 @@ Gary Whitlock: The affiliate. You think the affiliate is the bloke who sent seve
 
 Gary Whitlock: Have a think about that for a second. Go on. I'll wait.
 
-* [You're right. It doesn't add up. I'm sorry.]
++ [You're right. It doesn't add up. I'm sorry.]
     ~ gary_influence += 5
     # influence_increased
     Gary Whitlock: No, it doesn't.

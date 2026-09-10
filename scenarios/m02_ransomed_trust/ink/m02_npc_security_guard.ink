@@ -200,7 +200,7 @@ Val Okonkwo: Go on. Quick.
 ~ cover_restored = true
 #set_global:cover_restored:true
 
-Val Okonkwo: *doesn't answer straight away*
+Narrator: She doesn't answer straight away.
 
 Val Okonkwo: No. You don't.
 
@@ -253,7 +253,7 @@ Val Okonkwo: "Ask yourself who benefits" is what people say when they've got non
 -> lockpick_again
 
 === lockpick_first ===
-Narrator: You hear her before you see her. The torch beam arrives about a second ahead of she does.
+Narrator: You hear her before you see her. The torch beam arrives about a second before she does.
 
 Val Okonkwo: WHOA. Whoa whoa whoa. Away from the door.
 
@@ -309,7 +309,7 @@ Val Okonkwo: I gave you the benefit. I don't hand that out twice.
         -> hub
     }
 
-* [Then log it. I've got work to do.]
++ [Then log it. I've got work to do.]
     ~ influence -= 15
     # influence_decreased
     Val Okonkwo: Oh, I'm logging it.
@@ -398,8 +398,7 @@ Val Okonkwo: I've raised it twice. Twice I've been told it's "crisis protocol" b
 + [Six weeks ago there was a fire drill nobody scheduled. Was he on that night?]
     ~ influence += 10
     # influence_increased
-    Val Okonkwo: *stops dead*
-    Val Okonkwo: I was mid-round when the alarm went. And a drill is the one night everybody moves the same direction -- out. Down the stairs, into the car park, you know the drill, that's the whole point of the drill.
+    Val Okonkwo: *stops dead* I was mid-round when the alarm went. And a drill is the one night everybody moves the same direction -- out. Down the stairs, into the car park, you know the drill, that's the whole point of the drill.
     Val Okonkwo: Bernie's two "facilities" lads went the other way. Up the north corridor, towards the comms relay and the server room. Against the entire building.
     Val Okonkwo: I clocked it and I told myself facilities knew their own job. He smiled at me and said he'd sorted it.
     #set_global:insider_evidence_partial:true
@@ -442,7 +441,7 @@ Val Okonkwo: *steadily* I'm not going to be dramatic about it. But when they ask
     #exit_conversation
     -> hub
 
-* [Stay out of the boardroom until SAFETYNET arrive. He's not what he looks like.]
++ [Stay out of the boardroom until SAFETYNET arrive. He's not what he looks like.]
     ~ influence += 8
     # influence_increased
     Val Okonkwo: I've been doing this eleven years. I know exactly what he looks like.
@@ -478,7 +477,7 @@ Val Okonkwo: Hang on -- server room's authorised IT personnel only. That's not a
     #exit_conversation
     -> DONE
 
-* [Say nothing and walk past.]
++ [Say nothing and walk past.]
     ~ influence -= 15
     # influence_decreased
     Val Okonkwo: Oi! I said authorised only!

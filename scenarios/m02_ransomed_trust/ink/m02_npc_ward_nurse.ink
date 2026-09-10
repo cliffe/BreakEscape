@@ -108,7 +108,7 @@ Sister Doyle: Six beds in this bay. Two more bays down the corridor. Forty-seven
 === the_fear ===
 ~ showed_empathy = true
 
-Sister Doyle: *quietly, and she does not stop looking at bed two while she says it*
+Narrator: She says it quietly, and she does not stop looking at bed two while she says it.
 
 Sister Doyle: Not the big thing. The small one.
 
@@ -278,9 +278,7 @@ Sister Doyle: But you stood and looked at Mrs Hargreaves like she was a person a
     -> hub
 
 === lanyard_refused ===
-Sister Doyle: *not unkindly, but not turning round either*
-
-Sister Doyle: You want me to hand a hospital identity to a man I met an hour ago who's just told me security don't think he exists.
+Sister Doyle: *not unkindly, but not turning round either* You want me to hand a hospital identity to a man I met an hour ago who's just told me security don't think he exists.
 
 Sister Doyle: I've six critical beds and no monitoring. I cannot also be the one who decides who you are.
 
@@ -298,7 +296,7 @@ Narrator: She stops.
 
 Sister Doyle: Say that again.
 
-* [The offline keys. Your monitoring's coming back tonight.]
++ [The offline keys. Your monitoring's coming back tonight.]
     ~ influence += 3
     # influence_increased
     Narrator: She closes her eyes for about a second and a half. It is the first time all night she has looked away from that machine.

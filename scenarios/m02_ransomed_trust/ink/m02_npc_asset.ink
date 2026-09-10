@@ -166,9 +166,11 @@ Graham Reeves: No violence, no confrontation, nothing anyone will ever be able t
 Graham Reeves: You want to know why. They always want to know why.
 
 * [You held the door open for people who put a ward on generators.]
+    Graham Reeves: I held a door open. You'll want to be precise about that, because everyone else in this building held one too and none of them will be asked about it.
     -> monologue_1
 
 * [Eleven years on this post and you sold it. What did they pay you?]
+    Graham Reeves: *something tightens* Ask me the second question first next time. It's the one you actually want the answer to.
     -> monologue_1
 
 * [I don't need why. I need you away from that terminal.]
@@ -185,9 +187,11 @@ Graham Reeves: Less than the board spent on catering the meeting where they cut 
 Graham Reeves: I raised it. Not the catering -- the servers. I have been raising things in this building for eleven years. I was told to mind my post.
 
 * [Being ignored is not a licence.]
+    Graham Reeves: No. It's a condition. Licences are what people with titles issue each other.
     -> monologue_2
 
 * [So they came along and listened.]
+    Graham Reeves: *quietly* They asked me questions about my own building and then wrote the answers down. Do you know how long it had been?
     -> monologue_2
 
 * [Gary was ignored too. He wrote seven emails. He didn't do this.]

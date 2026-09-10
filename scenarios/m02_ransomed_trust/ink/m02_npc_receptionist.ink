@@ -323,7 +323,7 @@ Bernie Nwosu: I signed you in. That's on the page. That's what I've got.
     #exit_conversation
     -> hub
 
-* [Eleven years and you'd rather be right on paper than right.]
++ [Eleven years and you'd rather be right on paper than right.]
     ~ bernie_influence -= 2
     # influence_decreased
     Narrator: She turns back to her forms.
@@ -447,7 +447,7 @@ Bernie Nwosu: I let him.
     #exit_conversation
     -> hub
 
-* [Write it down. Exactly as you just said it, and sign it.]
++ [Write it down. Exactly as you just said it, and sign it.]
     ~ bernie_influence += 2
     # influence_increased
     Narrator: She is already reaching for a fresh sheet.

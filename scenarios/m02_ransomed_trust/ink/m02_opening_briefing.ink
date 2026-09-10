@@ -39,12 +39,15 @@ Agent HaX: St. Catherine's Regional went dark at 02:47 this morning. Every clini
 Agent HaX: Forty-seven people are on life support in there right now, running on backup generators. Twelve hours of power. Less, if anything trips. After that, the machines keeping them breathing start going quiet.
 
 * [Who did this?]
+    Agent HaX: I'll give you the name and then I'll give you the part that matters, and they're not the same answer.
     -> briefing_hub
 
 * [Why is SAFETYNET on a ransomware call? Isn't this one for the police?]
     -> why_us
 
 * [Then we shouldn't be standing here. What do you need?]
+    Director Magnus Netherton: *from the head of the table* Good.
+    Agent HaX: Ask me what you need on the way, then. The car's downstairs either way.
     -> briefing_hub
 
 // ===========================================
@@ -130,7 +133,7 @@ Agent HaX: The operative on the ground goes by Ghost. Cold. Methodical. Runs the
 
 Agent HaX: Two clocks, and they're both bad. The generators give you twelve hours before life support starts failing. And the hospital board votes on paying the ransom in about four.
 
-Agent HaX: If they pay, the systems come back fast -- and ENTROPY walks away eighty-seven thousand richer, funding the next hospital, the next council. If they refuse and you don't get those systems back in time, people die on the ward.
+Agent HaX: If they pay, the systems come back fast -- and ENTROPY walks away a hundred and fifty thousand richer, funding the next hospital, the next council. If they refuse and you don't get those systems back in time, people die on the ward.
 
 Agent HaX: Your job is to take that choice off the table. Recover the decryption keys yourself, and nobody has to decide between their patients and their principles.
 
@@ -166,9 +169,11 @@ Agent HaX: Their CTO, Dr. Sarah Kim, put out a call at one this morning for an e
 Agent HaX: So this isn't a false flag. You are genuinely booked, genuinely expected, and there is genuinely a line in their visitor log with your job title on it. She has no idea SAFETYNET is involved and no idea this is ENTROPY. To her you're a contractor on a very bad night. Keep it that way.
 
 + [Then what's the problem? I walk in the front door.]
+    Agent HaX: You do. That's the easy half, and it's the half everyone plans for.
     -> security_warning
 
 + [So how much access does being expected actually buy me?]
+    Agent HaX: Tonight? Rather less than it has ever bought anybody. Let me explain why.
     -> security_warning
 
 === security_warning ===

@@ -91,10 +91,12 @@ Dr. Sarah Kim: What I understood was the figure next to it. Eighty-five thousand
 
 * [And you deferred it.]
     ~ kim_guilt_revealed = true
+    Dr. Sarah Kim: I deferred it. Yes. Say the next bit as well, you've clearly got it ready.
     -> the_deferral
 
 * [What did you spend it on instead?]
     ~ kim_guilt_revealed = true
+    Narrator: She does not pretend not to understand the question.
     -> the_deferral
 
 * [Understood. Where's Gary now?]
@@ -344,13 +346,13 @@ Dr. Sarah Kim: We put it down to a fault on the panel and moved on. We had a sca
 === explain_board_vote ===
 ~ topic_ransom_vote = true
 
-Dr. Sarah Kim: Eighty-seven thousand pounds. Against forty-seven people on generators and a hospital that cannot tell you what anyone is allergic to.
+Dr. Sarah Kim: A hundred and fifty thousand pounds. Against forty-seven people on generators and a hospital that cannot tell you what anyone is allergic to.
 
 Dr. Sarah Kim: Six of the nine will vote to pay. They are not monsters. They are frightened people who have been told a number and a timescale by somebody very good at presenting both.
 
 Dr. Sarah Kim: And they are right, in the narrow sense. Paying is faster. Faster is fewer funerals tonight.
 
-Dr. Sarah Kim: It also puts eighty-seven thousand pounds into the hands of the people who did this, so that they can do it to somebody else in about a month.
+Dr. Sarah Kim: It also puts a hundred and fifty thousand pounds into the hands of the people who did this, so that they can do it to somebody else in about a month.
 
 Dr. Sarah Kim: They dial in the moment they've finished arguing among themselves. What do I tell them?
 
@@ -411,7 +413,7 @@ Dr. Sarah Kim: Somebody in this building understood that before you did, and bef
     Dr. Sarah Kim: *quietly* Get to it before they do anything else clever.
     -> hub
 
-* [Take the call when it comes. I'll handle the rest of it.]
++ [Take the call when it comes. I'll handle the rest of it.]
     Dr. Sarah Kim: Yes. Find something for me to hold up in there.
     -> hub
 
@@ -420,13 +422,13 @@ Dr. Sarah Kim: Somebody in this building understood that before you did, and bef
 // ===========================================
 
 === accuse_kim ===
-Dr. Sarah Kim: *absolutely still*
+Narrator: She goes absolutely still.
 
 Dr. Sarah Kim: I rang SAFETYNET at one o'clock this morning. I brought you into this building. I signed your badge with my own name on it.
 
 Dr. Sarah Kim: If I were working with these people, that would make me the least competent traitor in the history of the profession.
 
-* [You're right. That doesn't add up. I'm sorry.]
++ [You're right. That doesn't add up. I'm sorry.]
     ~ kim_influence -= 5
     # influence_decreased
     Dr. Sarah Kim: I made a catastrophic decision in March. I did not invite them in.

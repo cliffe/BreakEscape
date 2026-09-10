@@ -75,45 +75,43 @@ Ghost: Hospital response: "Budget constraints. Defer to next fiscal year."
 === player_threatens ===
 #speaker:ghost
 
-Ghost: Patients dying? No. Patients at risk. Calculated risk.
+Ghost: Forty feet. That's a very precise number for a man who's telling me numbers are the problem.
 
-Ghost: 0.3% per hour fatality probability. 47 patients. 12-hour window.
+Ghost: She was on that machine last night as well. And the night before. Nobody rang SAFETYNET about her then.
 
-Ghost: 1-2 deaths if they pay immediately. 4-6 if they delay for manual recovery.
+Ghost: I have not touched her. I have not been within two hundred miles of her. What I have done is switch off the screen that let this hospital pretend it was watching her, and now everybody can see how thin that watching always was.
 
-Ghost: We didn't create that risk. St. Catherine's negligence did. We're revealing consequences.
-
-* [You have spreadsheets of how many people will die?]
++ [You've worked out how many of them die. Haven't you.]
     -> ghost_confirms_calculations
 
-* [You're using human lives as leverage. That's evil.]
++ [That's a very long way of saying you're using her.]
     -> ghost_philosophy
 
 === ghost_confirms_calculations ===
 #speaker:ghost
 
-Ghost: Of course I calculated probabilities. This is risk assessment, not recklessness.
+Ghost: *without any hurry at all* I'm not going to recite it to you down a phone line. It's on my own machine, where you'll find it if you're any good.
 
-Ghost: St. Catherine's board never ran these numbers. They deferred £85,000 security spending for a £3.2 million MRI.
+Ghost: But yes. I sat down and I worked out what this would cost, in people, before I did it.
 
-Ghost: They gambled with patient safety. We're making the stakes visible.
+Ghost: The interesting part isn't that I did. It's that in March this board sat in a room and deferred eighty-five thousand pounds of server work against a three point two million pound scanner, and not one of them worked out what THAT would cost in people.
 
-* [This is terrorism, not education.]
-    Ghost: Terrorism is violence for political aims. This is consequence for negligence.
-    Ghost: We're the mirror showing them what they've always risked.
+Ghost: I showed my working. They didn't.
+
++ [Showing your working doesn't make it not murder.]
+    Ghost: No. It makes it accountable, which is a different thing and a rarer one.
+    Ghost: You'll notice nobody is going to be asked to account for the scanner.
     -> ghost_philosophy
 
-* [What do you want?]
++ [What do you actually want?]
     -> ransom_demand
 
 === ghost_justification ===
 #speaker:ghost
 
-Ghost: Justify? The math justifies itself.
+Ghost: Justify. That's a word for people who think this is an argument they can win on the phone.
 
-Ghost: St. Catherine's ignored Gary's warnings. They chose shiny equipment over patient data security.
-
-Ghost: Now they face consequences. Expensive, painful, unforgettable.
+Ghost: I'm not justifying anything. I'm invoicing.
 
 -> ghost_philosophy
 
@@ -128,15 +126,14 @@ Ghost: Consultants charge them a fortune for a report that goes in a drawer next
 
 Ghost: This board will triple their security budget inside a month. So will forty others, the moment they read about tonight. I have watched it happen before and the figures are consistent enough to be boring.
 
-* [You don't get to decide whose lives are worth risking.]
-    Ghost: I didn't decide. St. Catherine's board decided when they cut the security budget.
-    Ghost: We're just the consequence they tried to ignore.
++ [Nobody elected you to decide which wards find out the hard way.]
+    Ghost: Nobody elected the board either. They were appointed, and they decided, and the ward found out the hard way regardless.
+    Ghost: The only thing I've changed is the date.
     -> ransom_demand
 
-* [Utilitarian harm for long-term good. Slippery slope.]
-    Ghost: Perhaps. But someone has to force change. Systemic negligence doesn't fix itself.
-    Ghost: The alternative is more hospitals get attacked. More patients die.
-    Ghost: We're harsh teachers. But institutional change requires pain.
++ [You've built a whole philosophy out of being underpaid and ignored.]
+    Ghost: *a pause, and the courtesy has thinned when the voice comes back* That is the first thing you've said that was beneath you.
+    Ghost: Go and read what I've left on that server. Then say it again, if you still want to.
     -> ransom_demand
 
 // ===========================================
@@ -146,38 +143,34 @@ Ghost: This board will triple their security budget inside a month. So will fort
 === ransom_demand ===
 #speaker:ghost
 
-Ghost: Here's what happens next.
+Ghost: A hundred and fifty thousand pounds, in Bitcoin, to the address on their own screens. They'll have their keys inside the hour.
 
-Ghost: Pay £150,000 in Bitcoin. Systems restored in 2-4 hours. 1-2 patient deaths, statistical minimum.
+Ghost: It is, and I want you to sit with this, less than five per cent of what they spent on the scanner. They will find it down the back of a sofa and they will still tell the inquiry it was an impossible position.
 
-Ghost: Don't pay. Manual recovery takes 12 hours. 4-6 patient deaths. Malpractice lawsuits. Hospital reputation destroyed.
-
-Ghost: Your choice, SAFETYNET.
+Ghost: Or they don't pay, and you spend the night doing by hand what a key does in a minute. I'm not going to pretend I mind either way. One of those outcomes gets written up in the trade press. The other gets written up in a coroner's court.
 
 ~ ghost_persuasion_attempted = true
 #set_global:ghost_persuasion_attempted:true
 
-* [We're not funding terrorism. We'll recover independently.]
++ [We don't fund people like you. I'll get the keys myself.]
     -> ghost_warns_consequences
 
-* [We'll trace the payment. Find you. Arrest you.]
++ [You've left a payment trail. We'll follow it home.]
     -> ghost_laughs_at_threat
 
-* [We're done here.]
-    Ghost: Time's running out. Patients are counting on you.
++ [I've heard enough of this.]
+    Ghost: Of course. You know where I am -- I'm the one part of this hospital that's still up.
     #exit_conversation
     -> DONE
 
 === ghost_warns_consequences ===
 #speaker:ghost
 
-Ghost: Independent recovery. 12 hours. 4-6 deaths.
+Ghost: Then you'll do it the long way, and the long way has a shape to it. I've watched three hospitals do the long way.
 
-Ghost: Those deaths are on your conscience, not ours.
+Ghost: I'd only say this. When it's over, somebody will ask you why you didn't simply pay, and you will have a very good answer, and it will be a policy answer.
 
-Ghost: St. Catherine's negligence created this crisis. You could save them. You're choosing ideology over lives.
-
-Ghost: Remember that when families ask why their loved ones died.
+Ghost: Practise saying it to a relative. It sounds different out loud.
 
 #exit_conversation
 -> DONE
@@ -185,11 +178,13 @@ Ghost: Remember that when families ask why their loved ones died.
 === ghost_laughs_at_threat ===
 #speaker:ghost
 
-Ghost: Trace me? Crypto Anarchists handle our payment infrastructure.
+Ghost: You will, actually. The chain is public -- that's rather the point of it, and I've never understood colleagues who pretend otherwise.
 
-Ghost: Monero mixing across 47 wallets. Multi-hop transaction routing. Ghost Protocol guarantees anonymity.
+Ghost: What you'll follow it to is a swap service in a country that doesn't answer your letters, where it stops being Bitcoin and becomes something that doesn't keep a ledger you can read. After that you have a gap, and a forensics report that says "consistent with" a great many things.
 
-Ghost: Good luck, agent. You'll need it.
+Ghost: We don't handle that end in any case. Another part of the family does, and they're rather better at it than I am at this.
+
+Ghost: Follow it. Genuinely. It's the most useful thing you'll do tonight after the wards.
 
 #exit_conversation
 -> DONE
@@ -212,21 +207,19 @@ Ghost: Good luck, agent. You'll need it.
 === mid_mission_contact ===
 #speaker:ghost
 
-Ghost: Still working? Time's running out.
+Ghost: Still at it. Good -- I'd have thought less of you if you'd gone home.
 
-Ghost: 47 patients. Backup power failing. Families watching monitors.
+Ghost: I've been reading their estates paperwork while you work. Did you know there's a five-year plan in there that has this server being decommissioned in 2019?
 
-Ghost: £150,000 vs. human lives.
-
-* [This is psychological manipulation.]
-    Ghost: This is reality. 0.3% per hour. The clock doesn't care about your feelings.
++ [You want me talking to you. It slows me down.]
+    Ghost: It does, rather. Although you're the one who keeps picking the phone up.
     -> end_contact
 
-* [SAFETYNET will dismantle ENTROPY. You'll be arrested.]
-    Ghost: Maybe. But St. Catherine's will never ignore cybersecurity again. Mission accomplished.
++ [You'll be in a cell before that plan gets revised.]
+    Ghost: Very possibly. It'll get revised either way, is my point.
     -> end_contact
 
-* [I'm done talking. This call's over.]
++ [I'm not doing this. Not tonight.]
     -> end_contact
 
 === post_decision_contact ===
@@ -241,59 +234,54 @@ Ghost: £150,000 vs. human lives.
 === ransom_paid_response ===
 #speaker:ghost
 
-Ghost: Decryption keys delivered. Systems restoring.
+Ghost: Paid. The keys are already on their way and I'd expect their monitoring up before the next obs round.
 
-Ghost: St. Catherine's board approved a £250,000 security budget within 24 hours. More than triple what Gary requested.
+Ghost: They'll triple Gary Whitlock's budget by Friday. They'll give him the eighty-five thousand, and about a hundred and sixty more on top, and not one person in that room will say out loud why.
 
-Ghost: That's what this was for.
+Ghost: That is what it took. Six months of him asking politely, and one night of me.
 
-* [You killed people. That's terrorism.]
-    Ghost: Pre-existing complications, accelerated by system downtime. Medical records confirm it.
-    Ghost: Those patients were already dying. We changed the timeline, not the outcome.
-    Ghost: I've reviewed every case. I know their names.
++ [People died tonight. Say that part.]
+    Ghost: *no change in tone whatsoever* I know. I know which, and I know their ages, and I'm not going to perform being sorry for you.
+    Ghost: I'd only note that this hospital has had a mortality figure every single week of its existence, and this is the first week anyone outside it will read one.
     -> ghost_final_statement
 
-* [We're coming for you. ENTROPY won't last.]
-    Ghost: Maybe. But how many hospitals improve security before you find us?
-    Ghost: Every one of them is lives saved long-term. That's the arithmetic.
++ [You've just taught forty other boards that paying works.]
+    Ghost: *the first real interest in that voice all night* Now that is the actual objection, and you're the first one to make it.
+    Ghost: You may even be right. I've a column for it.
     -> ghost_final_statement
 
 === ransom_refused_response ===
 #speaker:ghost
 
-Ghost: Independent recovery. 4-6 patient deaths confirmed.
+Ghost: You did it by hand. All of it. I watched the restore counters go up for eleven hours and I'll admit I did not think you'd finish.
 
-Ghost: Ventilator complications. Dialysis failures. Cardiac arrests during extended downtime.
+Ghost: It cost them a night they'll be answering questions about for two years. It cost me a fee.
 
-Ghost: Those deaths are on your conscience. You could have paid. You chose ideology.
+Ghost: I'd like to know whether you think that trade was worth what it was paid in, but I don't suppose you'll tell me.
 
-* [YOU attacked the hospital. YOU encrypted patient records. This is YOUR fault.]
++ [You encrypted a hospital. Don't hand me the bill for it.]
     -> ghost_rejects_responsibility
 
-* [£150,000 denied. No funding for your next attack.]
++ [You got nothing. Not a penny of it.]
     -> ghost_acknowledges_loss
 
 === ghost_rejects_responsibility ===
 #speaker:ghost
 
-Ghost: I accept operational responsibility. But St. Catherine's created the vulnerability.
+Ghost: I'm not handing you a bill. I've never once said I didn't do it -- I'll say it to a court, at length, and I rather hope they let me.
 
-Ghost: Six months of ignored warnings. Budget negligence. Institutional failure.
-
-Ghost: We exploited it. They enabled it. The blame is shared whether you accept that or not.
+Ghost: What I won't do is stand in the dock on my own while nine people who deferred it in writing sit in the gallery being sad about it.
 
 -> ghost_final_statement
 
 === ghost_acknowledges_loss ===
 #speaker:ghost
 
-Ghost: £150,000 lost. Operational setback acknowledged.
+Ghost: Not a penny. You're right, and I'd rather you'd paid, and I'd be lying if I said the difference was nothing.
 
-Ghost: But St. Catherine's board approved £400,000 emergency security budget -- panic response.
+Ghost: It's just not the number I'm judged on.
 
-Ghost: Forty hospitals implementing emergency upgrades. Sector-wide impact achieved.
-
-Ghost: Educational outcome: success. Worth the cost.
+Ghost: They'll sign off four hundred thousand of emergency security work inside a fortnight, out of pure fright, and so will every board that reads about tonight. I couldn't have bought that for a hundred and fifty.
 
 -> ghost_final_statement
 
@@ -304,34 +292,26 @@ Ghost: Educational outcome: success. Worth the cost.
 === ghost_final_statement ===
 #speaker:ghost
 
-Ghost: Here's what you need to understand, SAFETYNET.
+Ghost: One last thing, and then I'll let you get on.
 
-Ghost: I calculated the risks. I planned the operation. I accept the consequences.
+Ghost: I planned it, I costed it, and if you find me I won't run and I won't deny a word of it. I'd quite like the trial. It's the only room left where somebody has to sit and listen to the whole thing.
 
-Ghost: If you arrest me, I'll go to prison without resistance.
-
-Ghost: Because St. Catherine's will never ignore cybersecurity again. Neither will forty other hospitals.
-
-Ghost: That's worth it. That's the mission. That's what ENTROPY is for.
-
-* [Calculated harm is still harm. You're a fanatic.]
-    Ghost: Fanaticism is believing despite evidence. I have statistical models, outcome projections, verified results.
-    Ghost: This is evidence-based ideology. There's a difference.
++ [You're a fanatic with a spreadsheet. That's all this is.]
+    Ghost: A fanatic is somebody who won't look at the results. I have looked at very little else for fourteen months.
+    Ghost: You may still be right. It isn't the sort of thing you get to be sure about from the inside.
     -> ghost_disconnects
 
-* [This isn't over. We're coming for the whole network.]
-    Ghost: Good luck. The Architect coordinates a network you haven't finished counting. We're everywhere.
-    Ghost: Shut down one, the rest remain. Hydra principle.
++ [You're not the last of these I'll take apart.]
+    Ghost: No. I should think not.
+    Ghost: *and there is something almost warm in it* Whoever you meet next won't have my manners. Try not to miss them.
     -> ghost_disconnects
 
 === ghost_disconnects ===
 #speaker:ghost
 
-Ghost: This conversation is over.
+Ghost: Go and see to your ward.
 
-Ghost: Remember: ENTROPY didn't create healthcare vulnerabilities. We just revealed them.
-
-Ghost: The real enemy is institutional negligence. We're the symptom, not the disease.
+Ghost: And when somebody in a committee room asks you what could have prevented all this, I'd like you to remember that the answer was eighty-five thousand pounds and a man asking seven times.
 
 > CHANNEL TERMINATED
 
@@ -345,7 +325,7 @@ Ghost: The real enemy is institutional negligence. We're the symptom, not the di
 === end_contact ===
 #speaker:ghost
 
-Ghost: Time's running out. Choose wisely.
+Ghost: Off you go.
 
 > CONTACT CLOSED
 
@@ -369,22 +349,20 @@ Ghost: The 1.3.3c backdoor. Fourteen years old and still listening. I wrote my o
 
 Ghost: Nobody patches what they don't understand.
 
-Ghost: We've been watching this network since 03:47. Every terminal you've accessed. Every room you've entered.
+Ghost: I have had a listening post on this network for six weeks. Tonight I have had it on you. Every terminal, every room.
 
 Ghost: Gary Whitlock. Dr. Kim. The ward nurse with the paper charts.
 
 Ghost: We know everything that's happened in this building tonight.
 
-* [What do you want from me?]
-    Ghost: Nothing from you. I want the board to understand what they chose.
-    Ghost: You're incidental to that. But since you're here -- do your job properly.
-    Ghost: Don't leave anything unfound.
++ [What do you want from me?]
+    Ghost: Nothing. You're not who this is addressed to.
+    Ghost: Though while you're in there -- do it properly. Don't leave anything unfound. I'd hate for this to be reported as a mystery.
     -> act1_end
 
-* [Get off this network. This is a hospital.]
-    Ghost: It is. 47 patients, backup power, paper charts.
-    Ghost: I know. I planned for all of it.
-    Ghost: We're watching. Carry on.
++ [Get off this network. This is a hospital.]
+    Ghost: It is. Six beds in the first bay, a woman on ECMO in the second one along, paper charts on the ends of all of them.
+    Ghost: I know. I read the ward returns before I did any of this. Carry on.
     -> act1_end
 
 === act1_end ===
@@ -412,15 +390,14 @@ Ghost: We can do that for four minutes. Four hours.
 
 Ghost: That's not a threat. It's a capability demonstration. You should understand your situation clearly.
 
-* [Are you threatening me?]
-    Ghost: Threats require intent to harm. I have no interest in harming you.
-    Ghost: I have interest in this lesson landing correctly.
-    Ghost: The difference matters.
++ [Was that meant to frighten me?]
+    Ghost: No. If I'd wanted you frightened I'd have done it an hour ago, when it would have cost you something.
+    Ghost: I wanted you accurate about where you're standing. There's a difference and it matters to me.
     -> act2_reveal
 
-* [What is it you actually want from this?]
-    Ghost: The board to face what they chose. The negligence on public record.
-    Ghost: The £150,000 is operational funding. The lesson is the point.
++ [What is it you actually want out of this?]
+    Ghost: That board, in a room, being asked what they chose and why, by somebody they can't defer.
+    Ghost: The hundred and fifty thousand pays for the next one. It isn't the point of this one.
     -> act2_reveal
 
 === act2_reveal ===
@@ -473,10 +450,12 @@ Ghost: The decryption keys. All of them. Free. No payment. No ransom. No ENTROPY
 
 Ghost: Clean recovery. Under an hour. Those patients have their systems before the next manual obs check.
 
-* [Nothing from you is free. What do you want?]
++ [Nothing from you is free. Name it.]
+    Ghost: No. Nothing is. I'd be insulted if you'd taken it at face value.
     -> ghost_states_terms
 
-* [I'm listening. Go on.]
++ [Go on, then. I'm listening.]
+    Ghost: *unhurried* You're the first person in this building tonight who's let me finish a sentence.
     -> ghost_states_terms
 
 === ghost_states_terms ===
@@ -488,21 +467,17 @@ Ghost: Upload them. Unredacted. To the press terminal in the conference room.
 
 Ghost: Public record. Journalist distribution. Permanent.
 
-Ghost: Not £150,000. The lesson.
+Ghost: Not the money. The lesson. The money was only ever how I made them take the lesson seriously.
 
-Ghost: I planned this operation for fourteen months.
+Ghost: Fourteen months I've had this. I knew what the downtime would cost in people before I wrote a line of it, and I ran it again, and again, hoping to find the arithmetic came out against me.
 
-Ghost: I knew the mortality calculations before I started. 0.3% per hour. 47 patients. 12-hour window.
+Ghost: It never did. Not once. Force this into daylight and the people who don't die over the next five years outnumber the people who die tonight, and they outnumber them badly.
 
-Ghost: I ran those numbers a hundred times.
+Ghost: The board ran a calculation too. They chose the scanner.
 
-Ghost: Every time, the long-term outcome held: force this lesson publicly, and two hundred to six hundred people don't die in the next five years from equivalent attacks.
+Ghost: They simply never had to show their working. That's the whole of it. That's the only thing I've ever wanted out of any of this.
 
-Ghost: The board made a calculation too. They chose the MRI.
-
-Ghost: They just didn't show their working.
-
-* [I accept. I'll upload the evidence. Give me the keys.]
++ [I accept. I'll upload the evidence. Give me the keys.]
     Ghost: Keys transmitted.
     Ghost: Conference room. Press terminal. Don't forget what you agreed to.
     Ghost: Include Gary Whitlock's emails specifically. The full six months. Not just the cover-up memo -- the timeline.
@@ -510,12 +485,12 @@ Ghost: They just didn't show their working.
     #set_global:ghost_deal_accepted:true
     -> act3_deal_accepted
 
-* [No deal. We don't negotiate with ENTROPY.]
++ [No deal. We don't negotiate with ENTROPY.]
     Ghost: Noted.
     -> act3_deal_refused
 
-* [I need time to think.]
-    Ghost: The patients are thinking too. They're just doing it on backup power.
++ [I need time to think.]
+    Ghost: Take it. I've waited fourteen months; I can wait while you decide what sort of person you are.
     -> act3_dismissed
 
 === act3_deal_accepted ===
@@ -533,11 +508,9 @@ Ghost: We'll be watching.
 === act3_deal_refused ===
 #speaker:ghost
 
-Ghost: Twelve hours. Statistical risk accumulates.
+Ghost: Then you'll do it the long way, and you already know what the long way costs, because you've been standing in it all night.
 
-Ghost: I'll remind you what 0.3% per hour actually means: by hour eight, you're looking at 2-4% cumulative fatality probability across 47 patients. That's not a statistic. That's names on a board.
-
-Ghost: For what it's worth -- you're the most capable agent SAFETYNET has sent into one of our operations.
+Ghost: For what it's worth -- and I accept it's worth very little from me -- you are the most capable person any agency has sent into one of these.
 
 Ghost: When your agency comes for us -- and I know they're coming -- I hope it's you leading it.
 
@@ -551,11 +524,9 @@ Ghost: You'll understand why we did this. Even if you never agree.
 === act3_dismissed ===
 #speaker:ghost
 
-Ghost: Think fast.
+Ghost: The offer doesn't expire. I'm not running a sale.
 
-Ghost: Conference room. Press terminal. The evidence is waiting.
-
-Ghost: So are the patients.
+Ghost: Conference room, when you've decided. The evidence has been sat in there since March.
 
 > GHOST PROTOCOL: CLOSED
 

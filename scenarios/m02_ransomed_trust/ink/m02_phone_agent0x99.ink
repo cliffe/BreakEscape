@@ -302,7 +302,7 @@ Narrator: A pause.
 #speaker:agent_0x99
 Agent HaX: Ghost gets exactly what they wanted without spending £150,000.
 
-Agent HaX: You're still the one making the final choice at that terminal. Ghost's deal doesn't override your judgment.
+Agent HaX: You're still the one making the final choice at that terminal. Ghost's deal doesn't override your judgement.
 
 + [Is it wrong to have taken it?]
     Agent HaX: I don't know. You took resources from a terrorist to save lives and deny them funding simultaneously.
@@ -505,7 +505,7 @@ Agent HaX: Sending vulnerability analysis guide.
 Agent HaX: You already have access. Now classify exposed services, match likely weakness classes, and avoid wasting time on dead paths.
 
 + [Got it]
-    Agent HaX: Exactly. Prioritize what is exploitable now, not everything that looks noisy.
+    Agent HaX: Exactly. Prioritise what is exploitable now, not everything that looks noisy.
     -> support_hub
 
 === request_scanning_exploitation_guide ===
@@ -581,13 +581,13 @@ Agent HaX: The answer's somewhere in the building. Check plaques, framed documen
 #speaker:agent_0x99
 ~ hint_ransom_given = true
 
-Agent HaX: You have both key types. That means independent recovery is genuinely on the table.
+Agent HaX: You have both key types. Independent recovery is genuinely on the table, which it wasn't an hour ago.
 
-Agent HaX: Pay the ransom: 1-2 patient deaths, £150,000 funds ENTROPY's next operation.
+Agent HaX: Now -- Ghost will have given you numbers. Deaths per hour, one figure for paying and a worse one for not. I want you to put those down.
 
-Agent HaX: Manual recovery: 4-6 patient deaths, ENTROPY gets nothing. The hospital recovers independently.
+Agent HaX: Not because they're comforting. Because nobody on earth can tell you how many people a six-hour delay kills in a specific ward on a specific night, and the person offering to is selling something.
 
-Agent HaX: Both choices save lives -- different timeframes, different costs. That's what makes it hard.
+Agent HaX: What's actually true is smaller and harder. Paying is faster, and it pays them. Doing it yourself is slower, and it doesn't. Everything past that is somebody's guess wearing a decimal point.
 
 + [What would you choose?]
     Agent HaX: I'm not going to answer that.
@@ -638,7 +638,7 @@ Agent HaX: This is what ENTROPY looks like across every cell we've uncovered. No
 
 + [How do you fight that?]
     Agent HaX: Evidence and consequences, long term.
-    Agent HaX: True believers lose credibility when their predicted outcomes don't materialize.
+    Agent HaX: True believers lose credibility when their predicted outcomes don't materialise.
     Agent HaX: If hospitals sector-wide improve security after this -- and attacks drop -- Ghost's ideology loses its proof of concept.
     Agent HaX: Frustrating timeline. But that's what works against ideological movements.
     -> support_hub

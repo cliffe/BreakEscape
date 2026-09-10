@@ -112,7 +112,7 @@ Agent HaX: {&What do you want to know?|What else?|Anything more before we get to
     -> q_the_phone_call
 * {pin_cracker_found and not asked_about_cracker} [That PIN-cracker I pulled off the inside asset -- has anyone looked at it?]
     -> q_pin_cracker
-* [Enough. Walk me through what it cost.]
++ [Enough. Walk me through what it cost.]
     -> mission_summary
 
 === q_pin_cracker ===
@@ -242,29 +242,29 @@ Agent HaX: We don't have a name. We have a philosophy, a signature, and now two 
 === ransom_paid_outcomes ===
 #speaker:agent_0x99
 
-Agent HaX: You paid the ransom. Systems restored in under four hours.
+Agent HaX: You paid. Monitoring was back inside four hours, which is about as fast as that building was ever going to move.
 
-Agent HaX: Patient outcomes: 2 fatalities. Cardiac events during system transition -- both had pre-existing complications.
+Agent HaX: Two people died in the night. Both were critical before any of this started, and the coroner will say so.
 
-Agent HaX: 45 patients survived. The coroner's office ruled the deaths statistically probable regardless of the attack.
+Agent HaX: Forty-five didn't. I'm not going to dress either of those numbers up for you.
 
-* [45 people are alive because we moved fast.]
-    Agent HaX: Yes. That's real. Those families don't have funerals.
-    Agent HaX: But the £150,000 is already gone. You should know where it went.
++ [Forty-five people got their morning because we moved fast.]
+    Agent HaX: They did. That's not a consolation prize, that's the job.
+    Agent HaX: The hundred and fifty thousand has already gone somewhere, though. You should know where.
     -> entropy_funding_discussion
 
-* [2 people died. That's not nothing.]
-    Agent HaX: No. It's not. They were elderly, critical -- but they were alive when we arrived.
-    Agent HaX: Medical review concluded the attack accelerated what would have happened anyway. I'm not sure that's the comfort it's supposed to be.
++ [Two people died. Say their part properly.]
+    Agent HaX: *she doesn't reach for the file* They were alive when you walked in. Both of them.
+    Agent HaX: The review will tell you the attack only brought forward what was coming. I've read that sentence a lot of times and I've never once found it does what it's meant to.
     -> ransom_paid_funding
 
-* [What does £150,000 actually buy them?]
++ [What does a hundred and fifty thousand actually buy them?]
     -> entropy_funding_discussion
 
 === ransom_paid_funding ===
 #speaker:agent_0x99
 
-Agent HaX: The £150,000. You should know where it goes.
+Agent HaX: The hundred and fifty thousand. You should know where it goes.
 
 -> entropy_funding_discussion
 
@@ -273,7 +273,7 @@ Agent HaX: The £150,000. You should know where it goes.
 
 Agent HaX: You ran the combined restore -- the keys off the backup server and the physical set out of the safe, together. Four hours. Systems back well inside the window.
 
-Agent HaX: Patient outcomes: 2 fatalities -- both critical before the attack, both ruled statistically probable regardless. The wards held.
+Agent HaX: Two died, both of them critical long before ENTROPY got anywhere near that building. The wards held.
 
 Agent HaX: And you paid ENTROPY nothing to get there. That is the closest thing to a clean result this night had in it. It cost you the legwork instead of costing them the win.
 
@@ -282,9 +282,9 @@ Agent HaX: And you paid ENTROPY nothing to get there. That is the closest thing 
 === manual_recovery_outcomes ===
 #speaker:agent_0x99
 
-Agent HaX: You went with the offline keys alone. Eleven hours, thirty-four minutes -- a full manual restore, right to the edge of the window.
+Agent HaX: Offline keys alone. Eleven hours and thirty-four minutes of manual restore, right up against the edge of the fuel.
 
-Agent HaX: Patient outcomes: 6 fatalities. Ventilator complications, dialysis failures, cardiac arrests during the extended downtime.
+Agent HaX: Six people died in that window. Ventilator complications, a dialysis failure, two cardiac arrests that nobody was watching a screen for.
 
 {patient_bed4_deceased:
     Agent HaX: One of the six was the ventilated gentleman in Bed 4. Mr Pryce. His circuit went into alarm with no relay to carry it to the desk, and by the time a nurse got down the row it was over. You were in the building when it happened. I'm not putting that on you -- but you should know it was one of the ones a faster route home might have reached.
@@ -302,22 +302,22 @@ Agent HaX: Patient outcomes: 6 fatalities. Ventilator complications, dialysis fa
 === manual_recovery_guilt ===
 #speaker:agent_0x99
 
-Agent HaX: 6 people died during a crisis Ghost created. Not you.
+Agent HaX: Six people died in a crisis Ghost built. You were the one carrying buckets.
 
-Agent HaX: Medical review: 4 of the 6 had terminal diagnoses -- life expectancy under six months regardless. 2 were critical ICU patients, 50/50 odds even without the attack.
+Agent HaX: The review will make a lot of the fact that four of them were already very ill. I'd rather you heard that from me than read it, and I'd rather you didn't lean on it.
 
-* [Ghost told me those deaths would be on my conscience.]
-    Agent HaX: Ghost designed that line for maximum effect. They calculated patient death probabilities specifically to weaponise your empathy.
-    Agent HaX: Don't let them win twice -- once with the attack, again with guilt.
++ [Ghost said those six would be on my conscience.]
+    Agent HaX: Of course they did. That line was written months before you existed to say it to.
+    Agent HaX: They don't get the attack and the guilt. Pick one to give them.
     -> manual_recovery_vindication
 
-* [I made the best decision I could]
++ [I made the call I could make with what I had.]
     -> manual_recovery_vindication
 
 === manual_recovery_vindication ===
 #speaker:agent_0x99
 
-Agent HaX: You denied ENTROPY £150,000. No operational funding for Ransomware Incorporated.
+Agent HaX: ENTROPY got nothing. Not a penny of operational funding for Ransomware Incorporated.
 
 Agent HaX: Ghost's next hospital target -- delayed. Possibly cancelled. And we have no transaction to trace, which means they have less financial signal to hide behind.
 
@@ -331,8 +331,8 @@ Agent HaX: Ghost's next hospital target -- delayed. Possibly cancelled. And we h
 #speaker:agent_0x99
 
 {paid_ransom:
-    Agent HaX: Paid in Bitcoin. HashChain Exchange, Monero mixing, multi-hop routing. The trail goes cold within hours.
-    Agent HaX: Ransomware Incorporated has operational funding for their next two or three operations.
+    Agent HaX: Paid in Bitcoin, and we watched it move for about six hours. Then it went through a swap service in a jurisdiction that doesn't answer us and came out the other side as something with no readable ledger.
+    Agent HaX: Which means Ransomware Incorporated is funded for their next two or three operations, and we have a very tidy report about the first six hours of it.
 }
 {not paid_ransom:
     Agent HaX: No transaction means no financial trail -- which cuts both ways. Less to trace, but they have less too.
@@ -748,9 +748,9 @@ Agent HaX: Here's what I'll say, {player_name()}.
     Agent HaX: You told Kim to pay, and that's how it ended. No surprises for her. She trusted your read, and your read held. That matters more than you'd think, next time you need someone on the inside to believe you.
 }
 
-Agent HaX: You faced a dilemma Ghost designed specifically to have no clean answer. Pay or don't pay -- both choices cost lives. Just different lives, different timeframes.
+Agent HaX: Ghost built that choice so that it couldn't be got right. That was the craft in it, more than the exploit.
 
-Agent HaX: You made a call under time pressure, with incomplete information, in a building full of people depending on you.
+Agent HaX: You made it anyway, at four in the morning, with half the facts and a corridor full of people watching you do it.
 
 * [I made the best decision I could with what I had.]
     Agent HaX: That's all this job ever gives you. Best decision, available information, time pressure.
@@ -764,9 +764,9 @@ Agent HaX: You made a call under time pressure, with incomplete information, in 
         Agent HaX: ENTROPY has funding. That's also real. Both things are true simultaneously.
     - else:
         {ward_recovering:
-            Agent HaX: You denied ENTROPY £150,000 and still had the wards back in four hours. Two died who were most likely going regardless. That is about as well as this ends.
+            Agent HaX: You gave ENTROPY nothing and still had the wards back in four hours. Two died who were most likely going regardless. That is about as well as this ends.
         - else:
-            Agent HaX: You denied ENTROPY £150,000. Long-term, that matters.
+            Agent HaX: ENTROPY went home empty-handed. Long-term, that matters.
             Agent HaX: Six people died in the downtime. That also matters.
         }
     }

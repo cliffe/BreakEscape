@@ -115,7 +115,7 @@ Narrator: The circuit has desynchronised and gone into an alarm state. A manual 
     #exit_conversation
     -> DONE
 
-* [Shout down the ward for a nurse and keep looking for a fix.]
++ [Shout down the ward for a nurse and keep looking for a fix.]
     Narrator: You call for help down the bay and step back. Whether a nurse reaches him before the machine wins is not something you can control from over here.
     #exit_conversation
     -> DONE
