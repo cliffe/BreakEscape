@@ -1276,6 +1276,121 @@ def check_objectives_wiring(json_data, base_dir)
     # Non-fatal — this is an authoring-quality warning, not a structural check.
   end
 
+  # ─────────────────────────────────────────────────────────────
+  # CHECK 6  a required task whose only completion route is one branch of a choice
+  #
+  # Three separate mission-blockers have had exactly this shape: a task that can
+  # only be completed by a single '#complete_task:' tag, sitting inside one
+  # branch of an ink choice. A player who picks any other branch can never
+  # complete it, and if an aim's requiresCompleted names it, the mission cannot
+  # conclude — which does not show up until someone plays the other branch.
+  #
+  # Only tasks with no other route are flagged. A task with a second tag, a
+  # scenario-side completeTask, a completesTask object or a taskOnKO has a way
+  # out, and server-validated types (collect_items, unlock_room, …) complete
+  # from gameplay rather than a tag.
+  # ─────────────────────────────────────────────────────────────
+  begin
+    # Task types the server completes from gameplay state, not from an ink tag.
+    self_completing_types = %w[collect_items unlock_room unlock_object enter_room submit_flags].freeze
+
+    # Every non-ink route that can complete a task.
+    other_routes = Hash.new { |h, k| h[k] = [] }
+    record_mappings = lambda do |label, mappings|
+      next unless mappings.is_a?(Array)
+      mappings.each do |m|
+        next unless m.is_a?(Hash)
+        t = m['completeTask']
+        other_routes[t] << label if t.is_a?(String)
+      end
+    end
+    walk_object = lambda do |obj, room_id|
+      next unless obj.is_a?(Hash)
+      label = "object '#{obj['id']}' (room '#{room_id}')"
+      record_mappings.call(label, obj['eventMappings'])
+      ct = obj['completesTask']
+      other_routes[ct] << "#{label} completesTask" if ct.is_a?(String)
+      obj['contents']&.each  { |c| walk_object.call(c, room_id) }
+      obj['itemsHeld']&.each { |c| walk_object.call(c, room_id) }
+    end
+
+    ink_dirs = Set.new
+    json_data['rooms']&.each do |room_id, room|
+      room['npcs']&.each do |npc|
+        label = "NPC '#{npc['id']}' (room '#{room_id}')"
+        record_mappings.call(label, npc['eventMappings'])
+        ko = npc['taskOnKO']
+        other_routes[ko] << "#{label} taskOnKO" if ko.is_a?(String)
+        sp = npc['storyPath']
+        ink_dirs << File.dirname(File.join(base_dir, sp)) if sp.is_a?(String)
+      end
+      room['objects']&.each { |obj| walk_object.call(obj, room_id) }
+    end
+    json_data['startItemsInInventory']&.each { |i| walk_object.call(i, 'inventory') }
+    json_data['timers']&.each_with_index do |t, i|
+      next unless t.is_a?(Hash)
+      ct = t['completeTask']
+      other_routes[ct] << "timer[#{i}]" if ct.is_a?(String)
+    end
+
+    # Ink '#complete_task:' tags, with whether each sits inside a choice branch.
+    # A tag is "under a choice" when the nearest enclosing line at lower
+    # indentation is a choice marker ('*' one-time or '+' sticky).
+    ink_tags = Hash.new { |h, k| h[k] = [] }
+    ink_dirs.each do |dir|
+      Dir.glob(File.join(dir, '*.ink')).sort.each do |ink_path|
+        lines = File.read(ink_path).lines
+        rel = ink_path.sub("#{base_dir}/", '')
+        lines.each_with_index do |line, idx|
+          m = line.match(/#\s*complete_task:([A-Za-z0-9_]+)/)
+          next unless m
+          indent = line[/\A[ \t]*/].length
+          under_choice = false
+          (idx - 1).downto(0) do |j|
+            prev = lines[j]
+            next if prev.strip.empty?
+            prev_indent = prev[/\A[ \t]*/].length
+            next if prev_indent >= indent
+            under_choice = !!(prev.strip =~ /\A[*+]/)
+            break
+          end
+          ink_tags[m[1]] << { file: rel, line: idx + 1, under_choice: under_choice }
+        end
+      end
+    end
+
+    # Which tasks does an aim actually gate its conclusion on?
+    required = Set.new
+    json_data['objectives']&.each do |aim|
+      req = aim['requiresCompleted']
+      req.each { |t| required << t } if req.is_a?(Array)
+    end
+
+    json_data['objectives']&.each_with_index do |aim, oi|
+      aim['tasks']&.each_with_index do |task, ti|
+        task_id = task['taskId']
+        next unless task_id
+        next if self_completing_types.include?(task['type'])
+        next unless required.include?(task_id)
+        next if other_routes[task_id].any?
+
+        tags = ink_tags[task_id]
+        next unless tags.length == 1
+        tag = tags.first
+        next unless tag[:under_choice]
+
+        issues << "⚠️ WARNING: objectives[#{oi}]/tasks[#{ti}] ('#{task_id}') is named in an aim's " \
+                  "requiresCompleted, but its only completion route is a single '#complete_task:#{task_id}' " \
+                  "tag at #{tag[:file]}:#{tag[:line]}, which sits inside one branch of a choice. A player " \
+                  "who picks a different branch can never complete it, and the aim can then never conclude. " \
+                  "Give it a second route — the tag at the top of the knot so every branch fires it, a " \
+                  "scenario-side completeTask, or taskOnKO on the NPC."
+      end
+    end
+  rescue => e
+    # Non-fatal — authoring-quality warning, must never break validation.
+  end
+
   issues
 end
 
