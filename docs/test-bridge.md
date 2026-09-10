@@ -155,6 +155,7 @@ The one call an agent needs before deciding its next move.
   scenario           number    mission id
   activeMinigame     object|null   BRANCH ON THIS FIRST — see below
   blockingUi         object|null   DOM modal covering the canvas — see below
+  missionEnd         object|null   end-of-mission credits are up — see below
   interactionMenu    object|null   tap-disambiguation menu — see below
   player             object    x, y, room, direction, isMoving, velocity,
                                hp, maxHp, isKO, interactionMode
@@ -240,6 +241,40 @@ guess when there is more than one button and no `labelMatch` is given, returning
 `reason: 'ambiguous-blocking-ui'` with the choices — because some of these are
 destructive (the session-resume overlay offers Resume / Restart / **New Session**,
 and picking wrong discards a save or reloads the page mid-run).
+
+### `missionEnd`
+
+Non-null once the end-of-mission credits overlay is showing (a scenario whose
+`conclusionScreen` is `bond_visualiser`). **This means stop playing.** It is a
+terminal state, not an obstacle:
+
+```json
+{
+  "creditsShowing": true,
+  "closable": false,
+  "creditsText": "MISSION COMPLETE\nRANSOMED TRUST\n…",
+  "note": "End-of-mission credits, and the scenario disabled closing. Nothing will dismiss this and no event is coming. The run is over.",
+  "hint": "Client-side end of the mission. Whether it CONCLUDED is a server fact: …"
+}
+```
+
+Scenarios open it with `autoStop` (music stops, overlay stays up) and usually
+`disableClose` (no × button, Esc ignored). When `closable` is false, nothing
+dismisses it and no further event is coming — waiting cannot terminate. Two
+playtests were lost waiting for it to clear, one of them concluding the game had
+hung on blocked audio.
+
+It also appears in `blockingUi`, whose `hint` changes to say so rather than
+telling you to dismiss it.
+
+**It does not mean the mission concluded.** That is a server fact, decided by
+`check_mission_conclusion` from persisted `requiresCompleted` tasks. The two can
+disagree — a game can reach the credits with a task whose write was lost, and
+then never conclude. When they disagree the server is right, so always confirm:
+
+```bash
+BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/verify-run.rb <game_id>
+```
 
 ### `interactionMenu`
 

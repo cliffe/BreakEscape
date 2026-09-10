@@ -196,6 +196,10 @@ function substituteFlags(node, at) {
       return {
         room: s.room,
         player: { x: Math.round(s.player.x), y: Math.round(s.player.y), hp: s.player.hp },
+        // Present only once the mission-end credits are up. It means stop
+        // playing -- not wait, not dismiss. Confirm the real outcome against
+        // the server's game record (status / mission_concluded_at).
+        missionEnd: s.missionEnd || undefined,
         activeMinigame: s.activeMinigame,
         blockingUi: s.blockingUi && { classes: s.blockingUi.classes,
                                       text: s.blockingUi.text.split('\n')[0],

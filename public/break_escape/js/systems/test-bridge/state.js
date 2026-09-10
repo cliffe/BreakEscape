@@ -134,6 +134,8 @@ export function detectBlockingUi() {
         }
     }
 
+    const credits = missionEndState();
+
     return {
         blocking: true,
         tag: panel.tagName,
@@ -141,7 +143,50 @@ export function detectBlockingUi() {
         classes: String(panel.className || '').slice(0, 120),
         text: (panel.innerText || '').trim().slice(0, 500),
         buttons,
-        hint: 'Main-world clicks land on this element, not the canvas. Dismiss it with __test.dismissBlockingUi().'
+        // The end-of-mission credits are not a modal in the way of play: they
+        // ARE the end of play, and when the scenario sets disableClose nothing
+        // can dismiss them. Telling an agent to dismiss it sends it into a wait
+        // loop that cannot terminate, which has cost several runs.
+        hint: credits
+            ? 'This is the end-of-mission credits overlay, not an obstacle. The mission is over; nothing dismisses it. Stop playing and check the game record on the server for status/mission_concluded_at.'
+            : 'Main-world clicks land on this element, not the canvas. Dismiss it with __test.dismissBlockingUi().'
+    };
+}
+
+/**
+ * The end-of-mission credits overlay (music/bond-visualiser.js), shown when a
+ * scenario's conclusionScreen is `bond_visualiser`.
+ *
+ * This is a terminal state, not a blocker to work around. A scenario opens it
+ * with `autoStop` (music stops, overlay stays up) and usually `disableClose`
+ * (no × button, Esc ignored), so nothing closes it and no amount of waiting
+ * changes anything. Two playtests were lost waiting for it to clear and one
+ * reported the game as hung on blocked audio.
+ *
+ * Whether the mission actually concluded is a SERVER fact, decided by
+ * check_mission_conclusion from persisted requiresCompleted tasks. This overlay
+ * only says the client reached the ending sequence — the two can disagree, and
+ * when they do the server is right.
+ */
+function missionEndState() {
+    const stage = document.querySelector('.bv-stage');
+    if (!stage) return null;
+    const overlay = stage.closest('.bv-overlay') || stage.parentElement;
+    const visible = !!overlay && overlay.getBoundingClientRect().width > 0;
+    if (!visible) return null;
+
+    const closeBtn = document.getElementById('bv-close-btn');
+    const closable = !!closeBtn && closeBtn.style.display !== 'none' &&
+                     closeBtn.getBoundingClientRect().width > 0;
+
+    return {
+        creditsShowing: true,
+        closable,
+        creditsText: (stage.innerText || '').trim().slice(0, 500) || null,
+        note: closable
+            ? 'End-of-mission credits. Closable via the ✕ CLOSE button if you need the canvas back.'
+            : 'End-of-mission credits, and the scenario disabled closing. Nothing will dismiss this and no event is coming. The run is over.',
+        hint: 'Client-side end of the mission. Whether it CONCLUDED is a server fact: check status and mission_concluded_at on the game record. They can disagree, and the server is authoritative.'
     };
 }
 
@@ -555,6 +600,10 @@ export function getState({ radius, limit } = {}) {
         // DOM UI on top of the canvas (tutorial prompt, modals). While this is
         // non-null, main-world pointer actions cannot reach the game.
         blockingUi: mg ? null : detectBlockingUi(),
+        // Non-null once the end-of-mission credits overlay is up. Treat it as
+        // "stop playing", never as something to wait out or dismiss -- and
+        // confirm the actual outcome against the server's game record.
+        missionEnd: missionEndState(),
         // The disambiguation menu the game shows when a tap lands near several
         // in-reach things. It consumes the next click, so an agent must pick
         // from it rather than clicking the world again.
