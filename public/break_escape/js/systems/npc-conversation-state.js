@@ -260,9 +260,33 @@ class NPCConversationStateManager {
      */
     syncGlobalVariablesFromStory(story) {
         if (!story || !window.gameState?.globalVariables) return [];
-        
+
+        // Push back ONLY what this story actually changed.
+        //
+        // Every ink file declares its own `VAR cover_burned = false`, so a
+        // loaded story holds a full copy of the globals it names. Scanning all
+        // of them and copying any that differ means a story that never touched
+        // a variable still overwrites it -- with whatever its own copy happens
+        // to hold. Closing Dr Kim's dialogue reset cover_burned to false after
+        // Agent 0x99 had set it true, which silently skipped Val Okonkwo's
+        // cover-challenge confrontation. Nothing errored; the beat just never
+        // happened.
+        //
+        // observeGlobalVariableChanges records the names this story assigned,
+        // and writes each through as it happens, so this is a safety net rather
+        // than the main path. The set is cleared afterwards so a value changed
+        // once cannot be re-pushed later, by which time someone else may
+        // legitimately own it.
+        //
+        // When the set is absent the observer never attached, and we have no
+        // information about what this story touched -- fall back to the old
+        // full scan rather than silently syncing nothing.
+        const touched = story.__beChangedGlobals;
+        const names = touched ? Array.from(touched) : Object.keys(window.gameState.globalVariables);
+
         const changed = [];
-        Object.keys(window.gameState.globalVariables).forEach(name => {
+        names.forEach(name => {
+            if (!(name in window.gameState.globalVariables)) return;
             if (story.variablesState.GlobalVariableExistsWithName(name)) {
                 // Use the indexer which automatically unwraps Ink's Value objects
                 // According to Ink source: this[variableName] returns (varContents as Runtime.Value).valueObject
@@ -277,7 +301,9 @@ class NPCConversationStateManager {
                 }
             }
         });
-        
+
+        touched?.clear();
+
         return changed;
     }
 
@@ -288,11 +314,17 @@ class NPCConversationStateManager {
      */
     observeGlobalVariableChanges(story, npcId) {
         if (!story?.variablesState) return;
-        
+
+        // Names this story has assigned. Its presence also tells
+        // syncGlobalVariablesFromStory that the observer attached, so an
+        // empty set means "changed nothing" rather than "unknown".
+        story.__beChangedGlobals = story.__beChangedGlobals || new Set();
+
         // Use Ink's built-in variable change observer
         story.variablesState.variableChangedEvent = (variableName, newValue) => {
             // Check if this is a global variable
             if (this.isGlobalVariable(variableName)) {
+                story.__beChangedGlobals.add(variableName);
                 console.log(`🌐 Global variable changed: ${variableName} = ${newValue} (from ${npcId})`);
                 
                 // Update window.gameState

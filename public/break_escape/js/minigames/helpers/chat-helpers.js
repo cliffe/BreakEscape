@@ -461,7 +461,16 @@ export async function processGameActionTags(tags, ui) {
                         window.gameState.globalVariables[varName] = parsedValue;
                         
                         console.log(`🌐 Set global variable: ${varName} = ${parsedValue} (was: ${oldValue})`);
-                        
+
+                        // Push it into every loaded Ink story too. A bare `~ var = x`
+                        // inside ink goes through variableChangedEvent, which broadcasts;
+                        // this tag wrote only to gameState, so other loaded stories kept
+                        // their own stale copy of the variable and could later push it
+                        // back over this value when their conversation closed.
+                        window.npcConversationStateManager?.broadcastGlobalVariableChange?.(
+                            varName, parsedValue, null
+                        );
+
                         // Emit event for any listeners (including NPCManager event mappings)
                         if (window.eventDispatcher) {
                             window.eventDispatcher.emit(`global_variable_changed:${varName}`, {
