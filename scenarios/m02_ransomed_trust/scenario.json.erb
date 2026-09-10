@@ -2623,6 +2623,15 @@ boardroom_pin = "0417"
     }
   ],
 
+<%# Globals that can never be true at the same time. The validator's onceOnly
+    overlap check (CHECK 5) assigns booleans independently, so without this it
+    reaches states the game cannot be in and reports handlers as colliding when
+    the scenario keeps them apart by construction. Kim's ransom_decision_input
+    sets both members on every branch, so at most one is ever true. %>
+  "mutuallyExclusiveGlobals": [
+    ["advised_board_pay", "advised_board_refuse"]
+  ],
+
   "globalVariables": {
     "player_name": "Agent 0x00",
     "briefing_played": false,

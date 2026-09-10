@@ -64,6 +64,15 @@
       "description": "Items that start in player inventory",
       "items": { "$ref": "#/definitions/item" }
     },
+    "mutuallyExclusiveGlobals": {
+      "type": "array",
+      "description": "Sets of global variable names that can never be true at the same time. The onceOnly overlap check reads these so it does not report handlers as colliding in states the scenario keeps unreachable by construction.",
+      "items": {
+        "type": "array",
+        "minItems": 2,
+        "items": { "type": "string" }
+      }
+    },
     "globalVariables": {
       "type": "object",
       "description": "Global Ink variables",

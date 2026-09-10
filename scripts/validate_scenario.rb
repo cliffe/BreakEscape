@@ -1188,6 +1188,18 @@ def check_objectives_wiring(json_data, base_dir)
       cond.scan(/\b(?:value|globalVars\.\w+)\b/).uniq
     end
 
+    # Globals the scenario declares as mutually exclusive: at most one member of
+    # each set is ever true at once. The brute force below assigns every boolean
+    # independently, so without this it reaches states the game cannot be in --
+    # advised_board_pay && advised_board_refuse both true -- and reports handlers
+    # as overlapping when the scenario keeps them apart by construction. A
+    # warning authors learn to ignore is worse than no warning, so let the
+    # scenario say so and skip those assignments.
+    exclusive_sets = begin
+      declared = json_data['mutuallyExclusiveGlobals']
+      declared.is_a?(Array) ? declared.select { |s| s.is_a?(Array) && s.size > 1 } : []
+    end
+
     # Returns the set of indices (within `handlers`) that would newly become live
     # under the per-handler fix but are dominated (blocked) by an earlier handler
     # under some reachable variable assignment — i.e. two+ handlers can pass at once.
@@ -1196,7 +1208,15 @@ def check_objectives_wiring(json_data, base_dir)
       n = vars.length
       overlapping = Set.new
       total = [2**n, 4096].min
+      # Positions within `vars` that a declared exclusive set covers. Sets that
+      # touch fewer than two of this group's variables constrain nothing here.
+      exclusive_positions = exclusive_sets.map { |set|
+        set.map { |g| vars.index("globalVars.#{g}") }.compact
+      }.select { |positions| positions.size > 1 }
       (0...total).each do |mask|
+        next if exclusive_positions.any? { |positions|
+          positions.count { |i| mask[i] == 1 } > 1
+        }
         env = { globalVars: {}, value: nil, name: nil }
         vars.each_with_index do |v, i|
           val = mask[i] == 1
@@ -1235,8 +1255,9 @@ def check_objectives_wiring(json_data, base_dir)
                   "index #{idxs} can pass at the same time as another handler on the same pair " \
                   "(including two with identical conditions). Each onceOnly handler now fires " \
                   "independently the first time its own condition is met — if these are meant to be " \
-                  "mutually exclusive alternatives, make their conditions disjoint; if firing together " \
-                  "is intended, ignore this warning."
+                  "mutually exclusive alternatives, make their conditions disjoint; if they are kept " \
+                  "apart by globals that can never be true together, declare those in the scenario's " \
+                  "top-level \"mutuallyExclusiveGlobals\"; if firing together is intended, ignore this warning."
       end
     end
 
