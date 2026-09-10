@@ -494,6 +494,26 @@ export class ObjectivesManager {
    * Complete a task (called by event handlers or ink tags)
    * @param {string} taskId - The task ID to complete
    */
+  /**
+   * POST a completion, retrying while the failure looks transient.
+   *
+   * Write contention is bursty and short-lived -- several ink tags landing in
+   * the same tick -- so a few spaced retries clear it. A genuine refusal
+   * ("NPC not encountered") comes back with success:false and no transient
+   * flag, and is returned on the first attempt without retrying.
+   */
+  async serverCompleteTaskWithRetry(taskId, attempts = 4) {
+    let last = { success: false, error: 'No attempt made' };
+    for (let i = 0; i < attempts; i++) {
+      last = await this.serverCompleteTask(taskId);
+      if (last.success || !last.transient) return last;
+      const delay = 150 * Math.pow(2, i); // 150ms, 300, 600, 1200
+      console.warn(`⏳ Transient failure completing ${taskId} (${last.error}); retrying in ${delay}ms`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+    return last;
+  }
+
   async completeTask(taskId) {
     const task = this.taskIndex[taskId];
     if (!task || task.status === 'completed' || task.status === 'completing') return;
@@ -505,7 +525,7 @@ export class ObjectivesManager {
 
     // Server validation
     try {
-      const response = await this.serverCompleteTask(taskId);
+      const response = await this.serverCompleteTaskWithRetry(taskId);
       if (!response.success) {
         console.warn(`⚠️ Server rejected task completion: ${response.error}`);
         task.status = 'active'; // Revert on server rejection
@@ -527,11 +547,17 @@ export class ObjectivesManager {
         }
       }
     } catch (error) {
+      // Completing locally after a failed sync is what stranded game 1021: the
+      // player sees the task done, the server never records it, and any
+      // conclusion gated on it can no longer be met. Leave the task active so a
+      // later trigger can retry it, and say so plainly.
       console.error('Failed to sync task completion with server:', error);
+      task.status = 'active';
       if (window.gameAlert) {
-        window.gameAlert('Could not sync progress. Please try again.', 'error', 'Sync Error');
+        window.gameAlert('Could not save that objective. It will retry -- keep playing.',
+                         'error', 'Sync Error');
       }
-      // Continue with client-side update anyway for UX
+      return;
     }
 
     // Update local state
@@ -748,10 +774,20 @@ export class ObjectivesManager {
         body: Object.keys(body).length > 0 ? JSON.stringify(body) : undefined
       });
       
+      // A 5xx is the server failing to record a completion it did not refuse --
+      // most often SQLite write contention when an ink line fires several tags
+      // at once. That is transient and must be retried, not treated as a
+      // refusal: game 1021 lost talk_to_gary to a 500 and could never conclude.
+      if (response.status >= 500) {
+        return { success: false, transient: true, error: `Server error ${response.status}` };
+      }
+
       return response.json();
     } catch (error) {
+      // fetch() rejects only on network failure, and a malformed body means we
+      // cannot tell what the server did. Both are retryable.
       console.error('Server task completion error:', error);
-      return { success: false, error: error.message };
+      return { success: false, transient: true, error: error.message };
     }
   }
   
