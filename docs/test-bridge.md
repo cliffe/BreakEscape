@@ -113,13 +113,26 @@ is knocked out, and everything gated behind that NPC becomes untestable. In m01 
 ENTROPY Launch Device sits in Derek Lawson's `itemsHeld` and is released only by
 beating him, so the launch-code path could not be reached by any automated run.
 
-`{"cmd":"debugKO","id":"derek_lawson"}` KOs a hostile NPC without fighting it.
+`{"cmd":"debugKO","id":"derek_lawson"}` KOs an NPC without fighting it.
+
+**A peaceful NPC is a valid target.** The player can attack anyone: when a punch
+lands on a non-hostile NPC, `player-combat.js` converts it to hostile and then
+damages it, so a KO needs no `#hostile:` ink tag and no `behavior.hostile` config.
+`debugKO` does the same conversion rather than refusing, and marks the result
+`convertedFromPeaceful: true` with a `via` string saying so — report those as PASS
+(assisted) like any other, and never as an NPC that was already hostile.
+
+This used to refuse with `not-hostile`, and that refusal was misread as proof that
+the `taskOnKO` fallbacks on m02's receptionist and ward nurses were dead code. They
+are not: KO'ing the receptionist sets `receptionist_ko` and completes
+`sign_in_at_reception`, both persisted. If a KO declaration looks unreachable, check
+the engine before concluding it is dead.
 
 What it does **not** skip:
 
 | Guard | Why |
 |---|---|
-| The NPC must have hostile state | Returns `not-hostile` otherwise — nothing to KO, and it will not invent combat where the scenario declares none |
+| The NPC must exist in the scene | Returns `unknown-npc` — it will not register combat state for a typo |
 | An already-downed NPC is refused | Returns `already-ko` rather than re-running the consequences |
 | Damage goes through the real `damageNPC` | So `globalVarOnKO`, `taskOnKO`, item drops, the death animation and the `NPC_KO` events all fire exactly as a fought KO does |
 

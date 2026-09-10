@@ -668,8 +668,17 @@ const bridge = {
      * that used it can never be read as having fought the NPC. If a report
      * claims a hostile NPC was defeated, the log must show how.
      *
-     * Returns `not-hostile` for an NPC with no hostile state (nothing to KO),
-     * and `already-ko` if it is already down.
+     * A peaceful NPC can be KO'd too, because in play the player can simply
+     * punch one: player-combat.js converts any non-hostile NPC it hits into a
+     * hostile one and then damages it. This used to refuse with `not-hostile`,
+     * which made the taskOnKO fallbacks on peaceful NPCs look like dead code —
+     * a playtest reported m02's receptionist and ward nurses as unreachable on
+     * exactly that evidence, and they are not. When a KO starts this way the
+     * result carries `convertedFromPeaceful: true` and `via` says so, so it can
+     * never be read as an NPC that was already hostile.
+     *
+     * Returns `already-ko` if the NPC is already down, and `unknown-npc` if it
+     * is not in the scene.
      */
     async debugKO(npcId) {
         const blocked = blockedByMinigame();
@@ -688,15 +697,20 @@ const bridge = {
             return result;
         }
 
-        // Only NPCs the scenario declares hostile may be KO'd. isNPCHostile and
-        // isNPCKO read the state map without creating an entry, so they are
-        // safe to call here; a declared-hostile NPC that has not yet engaged
-        // still qualifies.
+        // isNPCHostile and isNPCKO read the state map without creating an
+        // entry, so they are safe to call here; a declared-hostile NPC that has
+        // not yet engaged still qualifies.
         const declaredHostile = !!npc.behavior?.hostile;
-        if (!declaredHostile && !sys.isNPCHostile(npcId)) {
-            const result = fail('not-hostile', { npcId });
-            logAction('debugKO', { npcId }, result);
-            return result;
+        const alreadyHostile = declaredHostile || sys.isNPCHostile(npcId);
+
+        // A peaceful NPC is still a legitimate KO target: punching one in play
+        // converts it to hostile (player-combat.js) and then damages it. Do the
+        // same conversion here rather than refusing, so taskOnKO fallbacks on
+        // peaceful NPCs can actually be tested — refusing made them look like
+        // dead code to a run that had no other way to check.
+        if (!alreadyHostile) {
+            sys.setNPCHostile(npcId, true, npc.behavior?.config?.hostile);
+            await sleepFrames(2);
         }
         if (sys.isNPCKO(npcId)) {
             const result = fail('already-ko', { npcId });
@@ -717,7 +731,10 @@ const bridge = {
         const result = {
             ok: isKO,
             npcId,
-            via: 'debug-shortcut (combat not played)',
+            via: alreadyHostile
+                ? 'debug-shortcut (combat not played)'
+                : 'debug-shortcut (NPC was peaceful; converted to hostile as a player punch would, combat not played)',
+            convertedFromPeaceful: !alreadyHostile,
             hpBefore,
             isKO
         };
