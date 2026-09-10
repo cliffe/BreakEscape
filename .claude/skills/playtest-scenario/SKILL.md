@@ -76,6 +76,16 @@ Never reconstruct a trace from what you expected to happen. If a command was not
 
 ## Small things that have each cost a run
 
+- **The end-of-mission credits overlay never closes, and that is correct.** A
+  scenario whose conclusionScreen is `bond_visualiser` opens a fullscreen
+  `bv-stage` overlay with `autoStop: true` (music stops, visualiser stays open)
+  and `disableClose: true` (no × button, Esc blocked). Nothing closes it, by
+  design — it is the terminal state. Two runs have been lost waiting for it to
+  clear, one of them concluding the game had hung on blocked audio. It has not
+  hung. **Mission conclusion is decided server-side**, in `check_mission_conclusion`,
+  and depends only on every `requiresCompleted` task being persisted. Check the
+  game record; never wait on the screen.
+
 - `mg type(i, text, {submit:true})` sends Enter **and** clicks a submit button if
   Enter changed nothing. Flag stations ignore Enter entirely; before this, a
   submitted flag silently never arrived. Check `submittedVia` in the result.
