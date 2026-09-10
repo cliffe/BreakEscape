@@ -58,7 +58,25 @@ module BreakEscape
     # parallel SQL for the SQLite test adapter (no jsonb_set there) — so treat
     # this as a scoped, deliberate optimization to reach for if lock
     # contention is actually observed, not a default to prefer today.
-    around_action :with_game_lock, only: [:container, :sync_state, :update_room, :unlock, :complete_task, :update_task_progress, :submit_flag, :reset, :new_session]
+    # inventory and room are on this list because they were found off it, the
+    # expensive way. One ink line can fire #complete_task, #complete_task and
+    # #give_item together, which the client sends as three parallel POSTs. The
+    # two task writes took the lock; the unlocked inventory add read
+    # player_state before them and saved after, discarding both. Game 1022 lost
+    # seven tasks that way -- including talk_to_gary, a requiresCompleted gate,
+    # so the mission could never conclude -- while every request returned 200.
+    #
+    # The signature is a game whose tasks_completed counter exceeds the number
+    # of entries in objectivesState.tasks: the counter is its own column and
+    # survives the partial write, the JSON blob does not. Note this is not the
+    # SQLite BusyException that was blamed for the same symptom earlier. Moving
+    # to Postgres removed the error, not the race: the losing writer now
+    # succeeds silently, so a client-side retry never fires.
+    #
+    # room is here for the same reason -- track_npc_encounters appends to
+    # encounteredNPCs and saves, and npc_conversation tasks validate against
+    # that list, so losing an entry rejects a legitimate completion.
+    around_action :with_game_lock, only: [:container, :sync_state, :update_room, :unlock, :complete_task, :update_task_progress, :submit_flag, :reset, :new_session, :inventory, :room]
 
     # GET /games/new?mission_id=:id
     # Show VM set selection page for VM-required missions
