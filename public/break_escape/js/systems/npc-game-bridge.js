@@ -240,12 +240,21 @@ export class NPCGameBridge {
       // Await addToInventory so server inventory is confirmed before removing from NPC.
       // This prevents the race condition where validate_unlock is called before the
       // inventory POST /inventory request completes, causing a spurious 422.
-      const added = await window.addToInventory(tempSprite);
+      const addResult = await window.addToInventory(tempSprite);
 
-      if (!added) {
-        // addToInventory returns false for duplicates (already in inventory) or server rejection.
-        // Treat already-in-inventory as success; true failures are logged by addToInventory itself.
-        console.warn(`[NPCGameBridge] addToInventory returned false for ${item.type} from ${npcId} - may already be in inventory`);
+      // Only the NPC still holds this item, so if it did not reach the
+      // inventory it must stay with the NPC. Splicing regardless is what made
+      // a refused give_item destroy the item outright: gone from the NPC, never
+      // added to the player, and unobtainable for the rest of the run.
+      // result.ok covers 'already' as well as 'added' -- both mean the player
+      // has it and the NPC's copy is safe to drop.
+      if (!addResult || !addResult.ok) {
+        const reason = addResult ? addResult.reason : 'no result';
+        console.error(`[NPCGameBridge] ${item.type} from ${npcId} was not added (${reason}) - leaving it with the NPC so it can be given again`);
+        if (window.gameAlert) {
+          window.gameAlert(`Could not take ${item.name || item.type}. Try asking again.`, 'error', 'Item Not Received');
+        }
+        return;
       }
 
       // Play item pickup sound (same as picking up world items or taking from containers)

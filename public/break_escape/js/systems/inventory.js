@@ -295,10 +295,34 @@ function createInventorySprite(itemData) {
     }
 }
 
+/**
+ * Put an item in the player's inventory, validating with the server first.
+ *
+ * Returns a result object, not a boolean, because callers need to tell two
+ * very different outcomes apart:
+ *
+ *   { ok: true,  reason: 'added' }    slot created, item is held
+ *   { ok: true,  reason: 'already' }  was already held; source may be removed
+ *   { ok: false, reason: 'rejected' } the server refused it
+ *   { ok: false, reason: 'error' }    network or unexpected failure
+ *   { ok: false, reason: 'invalid' }  nothing usable was passed in
+ *   { ok: false, reason: 'no-ui' }    server accepted but the UI is missing
+ *
+ * `ok` answers the only question most callers have: is the item in the
+ * player's possession now? A caller that destroys the source -- an NPC
+ * splicing it out of itemsHeld, a container removing the row -- must check
+ * `ok` and do nothing when it is false. Returning a bare `false` for both
+ * "already held" (success) and "server refused" (failure) is what let
+ * giveItem() delete items outright: the NPC dropped the item and nothing
+ * received it.
+ *
+ * Note this is async. `if (addToInventory(x))` tests a Promise and is always
+ * true; callers must await the result before reading `ok`.
+ */
 export async function addToInventory(sprite) {
     if (!sprite || !sprite.scenarioData) {
         console.warn('Invalid sprite for inventory');
-        return false;
+        return { ok: false, reason: 'invalid' };
     }
 
     try {
@@ -372,8 +396,10 @@ export async function addToInventory(sprite) {
             if (window.gameAlert) {
                 window.gameAlert('Already in inventory', 'info', itemData.name || 'Item', 2000);
             }
-            
-            return false;
+
+            // The player holds it, so a caller that owns the source is safe to
+            // remove it. This is the case that must not look like a refusal.
+            return { ok: true, reason: 'already' };
         }
 
         // NEW: Validate with server before adding
@@ -405,7 +431,7 @@ export async function addToInventory(sprite) {
                     if (window.gameAlert) {
                         window.gameAlert(result.message || 'Cannot collect this item', 'error', 'Invalid Action', 3000);
                     }
-                    return false;
+                    return { ok: false, reason: 'rejected', message: result.message };
                 }
 
                 // Server accepted - continue with local inventory update
@@ -416,7 +442,7 @@ export async function addToInventory(sprite) {
                 if (window.gameAlert) {
                     window.gameAlert('Network error - please try again', 'error', 'Error', 3000);
                 }
-                return false;
+                return { ok: false, reason: 'error', message: error.message };
             }
         }
 
@@ -466,7 +492,10 @@ export async function addToInventory(sprite) {
         
         // Special handling for keys - group them together
         if (sprite.scenarioData.type === 'key') {
-            return addKeyToInventory(sprite);
+            // addKeyToInventory is synchronous and returns a bare boolean.
+            return addKeyToInventory(sprite)
+                ? { ok: true, reason: 'added' }
+                : { ok: false, reason: 'error' };
         }
 
         // Notes-family items (notes, notes2, ...) belong in the notepad, not the inventory UI.
@@ -474,14 +503,17 @@ export async function addToInventory(sprite) {
         // next load. We skip the visual slot and the item_picked_up event here (interactions.js
         // already emitted it before opening the notes minigame).
         if (/^notes\d*$/.test(sprite.scenarioData?.type)) {
-            return true;
+            return { ok: true, reason: 'added' };
         }
 
         // Create a new slot for this item
         const inventoryContainer = document.getElementById('inventory-container');
         if (!inventoryContainer) {
+            // The server already recorded it, so the item is not lost -- but
+            // without a slot the player cannot use it, so report failure and
+            // leave the source alone. Re-collecting is idempotent server-side.
             console.error('Inventory container not found');
-            return false;
+            return { ok: false, reason: 'no-ui' };
         }
         
         // Create a new slot
@@ -594,10 +626,10 @@ export async function addToInventory(sprite) {
             console.log('Crypto workstation added to inventory - modal function available');
         }
         
-        return true;
+        return { ok: true, reason: 'added' };
     } catch (error) {
         console.error('Error adding to inventory:', error);
-        return false;
+        return { ok: false, reason: 'error', message: error.message };
     }
 }
 

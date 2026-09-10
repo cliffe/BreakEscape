@@ -670,7 +670,10 @@ export class ContainerMinigame extends MinigameScene {
         }
     }
     
-    takeItem(item, itemElement) {
+    // async because addToInventory is: `if (addToInventory(...))` tests a
+    // Promise, which is always truthy, so this used to take the success branch
+    // even when the server refused the item and removed the row anyway.
+    async takeItem(item, itemElement) {
         console.log('Taking item from container:', item);
         
         // Create a temporary sprite-like object for the inventory system
@@ -685,7 +688,8 @@ export class ContainerMinigame extends MinigameScene {
         };
         
         // Add to inventory
-        if (addToInventory(tempSprite)) {
+        const addResult = await addToInventory(tempSprite);
+        if (addResult && addResult.ok) {
             if (window.playUISound) window.playUISound('item');
             // Remove from container display
             itemElement.parentElement.remove();
@@ -730,7 +734,8 @@ export class ContainerMinigame extends MinigameScene {
         }
     }
 
-    takeContainer() {
+    // async for the same reason as takeItem above.
+    async takeContainer() {
         console.log('Taking container:', this.containerItem);
         
         // Ensure container item has setVisible method if it doesn't already
@@ -741,7 +746,8 @@ export class ContainerMinigame extends MinigameScene {
         }
         
         // Add container to inventory
-        if (addToInventory(this.containerItem)) {
+        const addResult = await addToInventory(this.containerItem);
+        if (addResult && addResult.ok) {
             this.showMessage(`Added ${this.containerItem.scenarioData.name} to inventory`, 'success');
             
             // Close the minigame after a short delay

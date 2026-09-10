@@ -1469,8 +1469,17 @@ export function handleObjectInteraction(sprite) {
             identifier: createItemIdentifier(sprite.scenarioData)
         });
         playUISound('item');
+        // KNOWN BUG, deliberately left as-is: addToInventory is async, so this
+        // holds a Promise, which is always truthy -- the early return below has
+        // never once fired. Awaiting it would need handleObjectInteraction to
+        // become async, which changes what every caller gets back, and would
+        // make the early return start firing for the first time and suppress
+        // observation rendering that players currently see. That is a
+        // behavioural change to the pickup path and wants a playtest behind it,
+        // not a blind edit. Fixing it is tracked separately from the giveItem
+        // item-loss fix that changed addToInventory's return contract.
         const added = addToInventory(sprite);
-        
+
         // Only show the observation notification if item was NOT added (duplicate)
         // because addToInventory() already shows its own notification
         if (!added) {
