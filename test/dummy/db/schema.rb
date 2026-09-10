@@ -11,6 +11,9 @@
 # It's strongly recommended that you check this file into your version control system.
 
 ActiveRecord::Schema[7.0].define(version: 2026_05_25_000001) do
+  # These are extensions that must be enabled in order to support this database
+  enable_extension "plpgsql"
+
   create_table "break_escape_cyboks", force: :cascade do |t|
     t.string "ka"
     t.string "topic"
@@ -34,10 +37,10 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_25_000001) do
 
   create_table "break_escape_games", force: :cascade do |t|
     t.string "player_type", null: false
-    t.integer "player_id", null: false
-    t.integer "mission_id", null: false
-    t.json "scenario_data", null: false
-    t.json "player_state", default: "{\"currentRoom\":null,\"unlockedRooms\":[],\"unlockedObjects\":[],\"inventory\":[],\"encounteredNPCs\":[],\"globalVariables\":{},\"biometricSamples\":[],\"biometricUnlocks\":[],\"bluetoothDevices\":[],\"notes\":[],\"health\":100}", null: false
+    t.bigint "player_id", null: false
+    t.bigint "mission_id", null: false
+    t.jsonb "scenario_data", null: false
+    t.jsonb "player_state", default: {"notes"=>[], "health"=>100, "inventory"=>[], "currentRoom"=>nil, "unlockedRooms"=>[], "encounteredNPCs"=>[], "globalVariables"=>{}, "unlockedObjects"=>[], "biometricSamples"=>[], "biometricUnlocks"=>[], "bluetoothDevices"=>[]}, null: false
     t.string "status", default: "in_progress", null: false
     t.datetime "started_at"
     t.datetime "completed_at"
@@ -51,8 +54,10 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_25_000001) do
     t.integer "total_aims", default: 0, null: false
     t.datetime "mission_concluded_at"
     t.index ["mission_id"], name: "index_break_escape_games_on_mission_id"
+    t.index ["player_state"], name: "index_break_escape_games_on_player_state", using: :gin
     t.index ["player_type", "player_id", "mission_id"], name: "index_games_on_player_and_mission_non_unique"
     t.index ["player_type", "player_id"], name: "index_break_escape_games_on_player"
+    t.index ["scenario_data"], name: "index_break_escape_games_on_scenario_data", using: :gin
     t.index ["status"], name: "index_break_escape_games_on_status"
     t.index ["total_aims", "objectives_completed"], name: "index_games_on_aim_progress"
     t.index ["total_tasks", "tasks_completed"], name: "index_games_on_task_progress"
@@ -77,7 +82,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_25_000001) do
 
   create_table "break_escape_player_preferences", force: :cascade do |t|
     t.string "player_type", null: false
-    t.integer "player_id", null: false
+    t.bigint "player_id", null: false
     t.string "selected_sprite"
     t.string "in_game_name", default: "Zero", null: false
     t.datetime "created_at", null: false
