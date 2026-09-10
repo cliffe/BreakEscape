@@ -672,6 +672,33 @@ export class PhoneChatMinigame extends MinigameScene {
             return;
         }
 
+        // Process accumulated game action tags BEFORE the typing animation.
+        //
+        // The loop below runs for as long as the text takes to type out — tens
+        // of seconds on a long knot — and it returns early when the player
+        // closes the conversation. Processing tags after it therefore dropped
+        // every #give_item, #complete_task, #unlock_task and #set_global in the
+        // batch whenever someone closed mid-typeout, silently and permanently.
+        // person-chat-minigame.js has always processed tags first for exactly
+        // this reason; this brings the two into line.
+        //
+        // The exit check stays AFTER the loop on purpose: a knot can carry
+        // #exit_conversation alongside farewell text (m01's Agent HaX says
+        // "Copy that. Call anytime." after its exit tag), and closing here
+        // would cut that off.
+        console.log('🔍 Checking for tags to process...', {
+            hasTags: accumulatedTags.length > 0,
+            tagsLength: accumulatedTags.length,
+            tags: accumulatedTags
+        });
+
+        if (accumulatedTags.length > 0) {
+            console.log('✅ Processing tags:', accumulatedTags);
+            processGameActionTags(accumulatedTags, this.ui);
+        } else {
+            console.log('⚠️ No tags to process');
+        }
+
         // Display accumulated NPC messages one at a time with typing indicator
         for (let i = 0; i < accumulatedMessages.length; i++) {
             const message = accumulatedMessages[i];
@@ -684,20 +711,6 @@ export class PhoneChatMinigame extends MinigameScene {
             if (!this.isConversationActive) return;
             this.history.addMessage('npc', message.trim());
             if (i < accumulatedMessages.length - 1) await delay(INTER_MESSAGE_MS);
-        }
-
-        // Process all accumulated game action tags
-        console.log('🔍 Checking for tags to process...', {
-            hasTags: accumulatedTags.length > 0,
-            tagsLength: accumulatedTags.length,
-            tags: accumulatedTags
-        });
-
-        if (accumulatedTags.length > 0) {
-            console.log('✅ Processing tags:', accumulatedTags);
-            processGameActionTags(accumulatedTags, this.ui);
-        } else {
-            console.log('⚠️ No tags to process');
         }
 
         // Display choices if available
@@ -798,6 +811,24 @@ export class PhoneChatMinigame extends MinigameScene {
             }
         }
 
+        // Process accumulated game action tags BEFORE the typing animation, for
+        // the same reason as the continue path above: the loop returns early if
+        // the player closes mid-typeout, and tags processed after it were then
+        // lost outright. The exit check below still runs after the loop so
+        // farewell text following #exit_conversation is not cut off.
+        console.log('🔍 Checking for tags after choice...', {
+            hasTags: accumulatedTags.length > 0,
+            tagsLength: accumulatedTags.length,
+            tags: accumulatedTags
+        });
+
+        if (accumulatedTags.length > 0) {
+            console.log('✅ Processing tags after choice:', accumulatedTags);
+            processGameActionTags(accumulatedTags, this.ui);
+        } else {
+            console.log('⚠️ No tags to process after choice');
+        }
+
         // Display accumulated NPC messages one at a time with typing indicator
         for (let i = 0; i < accumulatedMessages.length; i++) {
             const message = accumulatedMessages[i];
@@ -810,21 +841,6 @@ export class PhoneChatMinigame extends MinigameScene {
             if (!this.isConversationActive) return;
             this.history.addMessage('npc', message.trim());
             if (i < accumulatedMessages.length - 1) await delay(INTER_MESSAGE_MS);
-        }
-
-        // Process all accumulated game action tags FIRST (before exit check)
-        // This ensures tags like #set_global are processed before conversation closes
-        console.log('🔍 Checking for tags after choice...', {
-            hasTags: accumulatedTags.length > 0,
-            tagsLength: accumulatedTags.length,
-            tags: accumulatedTags
-        });
-
-        if (accumulatedTags.length > 0) {
-            console.log('✅ Processing tags after choice:', accumulatedTags);
-            processGameActionTags(accumulatedTags, this.ui);
-        } else {
-            console.log('⚠️ No tags to process after choice');
         }
 
         // Check if the story output contains the exit_conversation tag
