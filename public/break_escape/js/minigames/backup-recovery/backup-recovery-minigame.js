@@ -6,6 +6,8 @@ const DEFAULT_SOURCES = [
         name: 'NAS Appliance',
         status: 'ENCRYPTED',
         etaLabel: 'Not recoverable',
+        compromised: true,
+        etaHours: null,
         marker: 'X',
         statusTone: 'danger',
         bannerTone: 'danger',
@@ -23,6 +25,8 @@ const DEFAULT_SOURCES = [
         name: 'Tape Library',
         status: 'CATALOGUE WIPED',
         etaLabel: '3-5 days estimate',
+        compromised: true,
+        etaHours: null,
         marker: 'X',
         statusTone: 'danger',
         bannerTone: 'danger',
@@ -40,6 +44,8 @@ const DEFAULT_SOURCES = [
         name: 'Vendor Cloud Backup',
         status: 'AVAILABLE',
         etaLabel: 'ETA: 18 HOURS',
+        compromised: false,
+        etaHours: 18,
         marker: '!',
         statusTone: 'success',
         bannerTone: 'warning',
@@ -150,6 +156,20 @@ export class BackupRecoveryMinigame extends MinigameScene {
         return normalized.length > 0 ? normalized : DEFAULT_SOURCES;
     }
 
+    /**
+     * A source may declare `requiresGlobal`: the name of a global variable that must be
+     * truthy before it can be chosen. Lets a scenario make a prerequisite real rather than
+     * writing it in a bullet the console never enforces. Sources with no `requiresGlobal`
+     * are always available, so existing scenarios are unaffected.
+     */
+    isSourceAvailable(source) {
+        if (!source || !source.requiresGlobal) {
+            return true;
+        }
+        const globals = window.gameState?.globalVariables || {};
+        return globals[source.requiresGlobal] === true;
+    }
+
     getSelectedSource() {
         return this.sources.find((source) => source.id === this.selectedSourceId) || null;
     }
@@ -159,7 +179,15 @@ export class BackupRecoveryMinigame extends MinigameScene {
             return;
         }
 
-        if (!this.sources.some((source) => source.id === sourceId)) {
+        const target = this.sources.find((source) => source.id === sourceId);
+        if (!target) {
+            return;
+        }
+
+        if (!this.isSourceAvailable(target)) {
+            // Locked out by an unmet prerequisite — show why rather than silently ignoring.
+            this.selectedSourceId = sourceId;
+            this.updateUI();
             return;
         }
 
@@ -191,6 +219,18 @@ export class BackupRecoveryMinigame extends MinigameScene {
             return;
         }
 
+        if (!this.isSourceAvailable(source)) {
+            if (window.gameAlert) {
+                window.gameAlert(
+                    source.requiresGlobalLabel || 'That source is not available yet.',
+                    'warning',
+                    'Source Unavailable',
+                    3500
+                );
+            }
+            return;
+        }
+
         this.isSubmitting = true;
         this.updateUI();
 
@@ -207,12 +247,13 @@ export class BackupRecoveryMinigame extends MinigameScene {
     commitSelection(source) {
         const globals = window.gameState?.globalVariables || {};
         const wasNetworkIsolatedAtRestoreStart = globals.network_isolated === true;
-        const isCompromised = source.id !== 'cloud_vendor';
+        const isCompromised = source.compromised === true;
+        const etaHours = Number.isFinite(source.etaHours) ? source.etaHours : null;
 
         // Write in strict order so listeners triggered by backup_restore_initiated
         // can safely read source and ETA values.
         this.setGlobalAndNotify('backup_recovery_source', source.id);
-        this.setGlobalAndNotify('recovery_eta_hours', source.id === 'cloud_vendor' ? 18 : 0);
+        this.setGlobalAndNotify('recovery_eta_hours', etaHours === null ? 0 : etaHours);
         this.setGlobalAndNotify('backup_restore_initiated', true);
 
         if (isCompromised) {
@@ -226,13 +267,13 @@ export class BackupRecoveryMinigame extends MinigameScene {
         return {
             selectedSource: source.id,
             backupRestoreInitiated: true,
-            recoveryEtaHours: source.id === 'cloud_vendor' ? 18 : null
+            recoveryEtaHours: etaHours
         };
     }
 
     showOutcomeScreen(source) {
         const globals = window.gameState?.globalVariables || {};
-        const isCompromised = source.id !== 'cloud_vendor';
+        const isCompromised = source.compromised === true;
         const wasNetworkIsolated = globals.network_isolated === true;
 
         let panelTone, headerText, statusText, bullets;
@@ -260,6 +301,21 @@ export class BackupRecoveryMinigame extends MinigameScene {
                     ? 'Network is isolated. Reinfection risk: mitigated.'
                     : 'WARNING: Network not isolated. Reinfection risk remains elevated.'
             ];
+        }
+
+        // A scenario may author its own outcome copy. Anything it omits falls back to
+        // the generic wording computed above, so existing scenarios are unaffected.
+        if (source.outcomeTone) {
+            panelTone = source.outcomeTone;
+        }
+        if (source.outcomeHeader) {
+            headerText = source.outcomeHeader;
+        }
+        if (source.outcomeStatus) {
+            statusText = source.outcomeStatus;
+        }
+        if (Array.isArray(source.outcomeBullets) && source.outcomeBullets.length > 0) {
+            bullets = source.outcomeBullets;
         }
 
         this.gameContainer.innerHTML = `
@@ -335,6 +391,15 @@ export class BackupRecoveryMinigame extends MinigameScene {
             };
         }
 
+        if (!this.isSourceAvailable(source)) {
+            return {
+                header: `UNAVAILABLE - ${source.name.toUpperCase()}`,
+                banner: source.requiresGlobalLabel || 'This source is not available yet.',
+                bannerTone: 'danger',
+                bullets: source.bullets || []
+            };
+        }
+
         return {
             header: `CONSEQUENCE ASSESSMENT - ${source.name.toUpperCase()}`,
             banner: source.bannerText,
@@ -350,8 +415,12 @@ export class BackupRecoveryMinigame extends MinigameScene {
         tileButtons.forEach((btn) => {
             const sourceId = btn.getAttribute('data-source-id');
             const isSelected = selected && selected.id === sourceId;
+            const source = this.sources.find((s) => s.id === sourceId);
+            const unavailable = !this.isSourceAvailable(source);
             btn.classList.toggle('is-selected', !!isSelected);
+            btn.classList.toggle('is-unavailable', unavailable);
             btn.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+            btn.setAttribute('aria-disabled', unavailable ? 'true' : 'false');
         });
 
         const panel = this.getPanelMarkup(selected);

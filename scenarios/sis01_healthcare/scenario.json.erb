@@ -2098,6 +2098,8 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
             "backupRecoverySources": [
               {
                 "id": "nas_encrypted",
+                "compromised": true,
+                "etaHours": null,
                 "name": "NAS Appliance",
                 "status": "ENCRYPTED",
                 "etaLabel": "Not recoverable",
@@ -2115,6 +2117,8 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               },
               {
                 "id": "tape_wiped",
+                "compromised": true,
+                "etaHours": null,
                 "name": "Tape Library",
                 "status": "CATALOGUE WIPED",
                 "etaLabel": "3-5 days estimate",
@@ -2132,6 +2136,8 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               },
               {
                 "id": "cloud_vendor",
+                "compromised": false,
+                "etaHours": 18,
                 "name": "Vendor Cloud Backup",
                 "status": "AVAILABLE",
                 "etaLabel": "ETA: 18 HOURS",

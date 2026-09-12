@@ -343,6 +343,9 @@ def export_json_with_tiled(tmj_path: Path, json_path: Path) -> bool:
 
     cmd = [
         str(TILED_BIN),
+        # AppImages need FUSE, which is unavailable in some sandboxes; extracting
+        # first works everywhere and costs a little startup time.
+        *(["--appimage-extract-and-run"] if TILED_BIN.name.endswith("AppImage") else []),
         "--embed-tilesets",
         "--export-map",
         "json",
@@ -1375,6 +1378,116 @@ def room_hospital_servers():
     )
 
 
+def room_hospital_staff():
+    """
+    2×2 GU hospital night staff / handover room on room6 tiles.
+
+    The one room in a ransomed hospital that still works: a paper handover board, a
+    sofa nobody has sat on since 02:47, a standalone clerk's PC that was switched off
+    when the encryption ran, and a kettle's worth of ordinary life. Doors on all four
+    sides (corridor S, CTO N, boardroom W, IT E), so the back wall is the only clear
+    span for wall hangings and the walkways must stay open through the middle.
+    """
+    oid = 1
+
+    # Clerk's desk, left of centre so the N door approach stays clear
+    desk = make_obj("tables", "hospital_desk2", 60.0, 190.0, oid)
+    oid += 1
+    # Low table by the seating, right side
+    side = make_obj("tables", "smalldesk1", 214.0, 206.0, oid)
+    oid += 1
+    tables = [desk, side]
+
+    items = []
+    # Back wall: the handover board is the room's whole point, dead centre
+    items.append(make_obj("objects", "chalkboard2", 128.0, 44.0, oid))
+    oid += 1
+    items.append(make_obj("objects", "hospital_chart_board1", 78.0, 48.0, oid))
+    oid += 1
+    items.append(make_obj("objects", "hospital_chart_board2", 206.0, 48.0, oid))
+    oid += 1
+    oid = place_ward_posters(
+        items,
+        oid,
+        [
+            ("chart2", 50.0, 44.0),
+            ("chart", 246.0, 46.0),
+        ],
+    )
+
+    # Seating — the social half of the room, east side
+    items.append(make_obj("objects", "sofa1", 210.0, 150.0, oid))
+    oid += 1
+    items.append(make_obj("objects", "hospital_chair1", 170.0, 196.0, oid))
+    oid += 1
+    items.append(make_obj("objects", "hospital_chair2", 252.0, 196.0, oid))
+    oid += 1
+
+    # Staff kit — lockers/cabinets down the west side, clear of the W door approach
+    items.append(make_obj("objects", "filing_cabinet", 40.0, 130.0, oid))
+    oid += 1
+    items.append(make_obj("objects", "medical_cabinet1", 40.0, 160.0, oid))
+    oid += 1
+    items.append(make_obj("objects", "bookcase", 262.0, 118.0, oid))
+    oid += 1
+
+    items.append(make_obj("objects", "office-misc-clock", 155.0, 46.0, oid))
+    oid += 1
+    items.append(make_obj("objects", "sanitizer_stand1", 100.0, 122.0, oid))
+    oid += 1
+    items.append(make_obj("objects", "bin2", 96.0, 236.0, oid))
+    oid += 1
+
+    # Floor plants — opposite corners, aesthetic, bottom rows fine
+    items.append(make_obj("objects", "plant-large11-top-ani2", 36.0, 300.0, oid))
+    oid += 1
+    items.append(make_obj("objects", "plant-large13-top-ani3", 268.0, 300.0, oid))
+    oid += 1
+
+    items.append(make_obj("objects", "lamp-stand1", 130.0, 268.0, oid))
+    oid += 1
+    items.append(make_obj("objects", "lamp-stand2", 170.0, 268.0, oid))
+    oid += 1
+
+    table_items = [
+        place_on_table(desk, "office-misc-cup3", x_frac=0.78, surface_frac=0.42, obj_id=oid),
+    ]
+    oid += 1
+    table_items.append(
+        place_on_table(side, "office-misc-smallplant", x_frac=0.50, surface_frac=0.22, obj_id=oid)
+    )
+    oid += 1
+
+    conditional_items = []
+    # Wall anchor for a pinned notice (rota / snag list) on a clear back-wall span
+    conditional_items.append(make_obj("objects", "notes5", 100.0, 56.0, oid))
+    oid += 1
+    conditional_items.append(make_obj("objects", "notes3", 232.0, 58.0, oid))
+    oid += 1
+
+    conditional_table_items = []
+    for name, xf, sf in [
+        ("workstation", 0.30, 0.34),
+        ("notes1", 0.55, 0.46),
+        ("notes2", 0.12, 0.44),
+    ]:
+        conditional_table_items.append(
+            place_on_table(desk, name, x_frac=xf, surface_frac=sf, obj_id=oid)
+        )
+        oid += 1
+
+    return build_room(
+        name="room_hospital_staff",
+        template_key="10x10",
+        tables=tables,
+        items=items,
+        table_items=table_items,
+        conditional_items=conditional_items,
+        conditional_table_items=conditional_table_items,
+        use_room6=True,
+    )
+
+
 def room_hospital_hall():
     """
     2×1 GU (10×6) hospital corridor on room6 tiles — a shallow through-hallway.
@@ -1461,6 +1574,7 @@ def main():
         "room_hospital_reception": room_hospital_reception,
         "room_hospital_servers": room_hospital_servers,
         "room_hospital_hall": room_hospital_hall,
+        "room_hospital_staff": room_hospital_staff,
     }
     # Optionally restrict to specific rooms (argv) so already-updated rooms are
     # not clobbered, e.g.  python3 scripts/generate_rooms.py room_hospital_hall
