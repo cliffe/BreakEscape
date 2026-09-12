@@ -49,6 +49,10 @@ module BreakEscape
       show?
     end
 
+    def conclude_mission?
+      show?
+    end
+
     def update_task_progress?
       show?
     end

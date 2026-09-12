@@ -95,6 +95,18 @@ function switchIfConditionMet(entry, data) {
 
     const fade = entry.fade !== false; // default true
 
+    // An entry carrying credits owns the visualiser itself, gated on the server
+    // agreeing the mission concluded. Suppress the auto-open that would
+    // otherwise fire from bond-visualiser.js the instant the playlist below
+    // switches to 'victory' -- that happens synchronously, long before the
+    // server answers, and on a refusal it put a fullscreen end-of-mission
+    // screen in front of a player who was simultaneously being told they were
+    // not finished.
+    const ownsVisualiser = !!entry.credits?.length;
+    if (ownsVisualiser && window.BondVisualiser?.setAutoOpenSuppressed) {
+        window.BondVisualiser.setAutoOpenSuppressed(true);
+    }
+
     // ── Music playback ────────────────────────────────────────────────────────
     if (entry.track && entry.playlist) {
         console.log(`${TAG} Trigger '${entry.trigger}' → track '${entry.track}' in '${entry.playlist}' (fade=${fade})`);
@@ -132,6 +144,10 @@ function switchIfConditionMet(entry, data) {
         });
 
         concludeMission().then((result) => {
+            // Decision made: restore normal auto-open behaviour for any later
+            // victory playlist change.
+            window.BondVisualiser?.setAutoOpenSuppressed?.(false);
+
             if (result.concluded) {
                 openCredits();
                 return;
@@ -162,21 +178,46 @@ async function concludeMission() {
     const gameId = window.breakEscapeConfig?.gameId;
     if (!gameId) return { concluded: true, missing: [] };
 
+    let response;
     try {
-        const response = await fetch(`/break_escape/games/${gameId}/conclude`, {
+        response = await fetch(`/break_escape/games/${gameId}/conclude`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || '',
             },
         });
+    } catch (err) {
+        // The request never arrived (offline, navigation, connection dropped).
+        // Fail open: the player reached the end of the story and must not lose
+        // the ending to a dropped packet.
+        console.warn(`${TAG} conclude request did not reach the server; showing credits anyway`, err);
+        return { concluded: true, missing: [] };
+    }
+
+    // A broken endpoint must be loud. This used to be swallowed by the catch
+    // above -- response.json() throws on a 500's HTML body -- so a server that
+    // never concluded the mission still rolled the credits, and the only trace
+    // was a game record stuck in in_progress that nothing pointed at. Credits
+    // still show (that is the fail-open choice, and it is the player's ending),
+    // but the failure is now stated rather than disguised as success.
+    if (!response.ok) {
+        console.error(
+            `${TAG} conclude endpoint returned HTTP ${response.status}. ` +
+            'Showing credits, but the server has NOT recorded this mission as concluded — ' +
+            'the game record will still say in_progress. This is a bug, not a player action.'
+        );
+        return { concluded: true, missing: [] };
+    }
+
+    try {
         const json = await response.json();
         return {
             concluded: !!(json.success || json.alreadyConcluded),
             missing: json.missing || [],
         };
     } catch (err) {
-        console.warn(`${TAG} conclude request failed; showing credits anyway`, err);
+        console.error(`${TAG} conclude endpoint returned a 200 that is not JSON; showing credits anyway`, err);
         return { concluded: true, missing: [] };
     }
 }

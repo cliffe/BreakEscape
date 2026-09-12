@@ -1588,8 +1588,17 @@ function _init() {
 }
 
 // ── Auto-open on victory playlist ─────────────────────────────────────────
+// Suppressed while a scenario's credits are waiting on the server to agree the
+// mission has concluded. Without this the overlay opens here the moment the
+// playlist switches -- synchronously, before that answer arrives -- so a player
+// whose mission was REFUSED still got a fullscreen end-of-mission screen, next
+// to a "Not Yet" toast telling them the opposite. The credits path owns the
+// overlay in that case; this listener only covers a victory playlist that no
+// credits are attached to.
+let _autoOpenSuppressed = false;
+
 window.addEventListener('musiccontroller:playlistchange', e => {
-    if (e.detail?.playlist === 'victory') {
+    if (e.detail?.playlist === 'victory' && !_autoOpenSuppressed) {
         BondVisualiser.open();
     }
 });
@@ -1623,6 +1632,13 @@ export const BondVisualiser = {
     toggle() { _open ? _close_overlay() : _open_overlay({}); },
     /** Returns true if the overlay is currently visible. */
     isOpen() { return _open; },
+    /**
+     * Suppress (or re-enable) the auto-open that fires when the music playlist
+     * switches to 'victory'. Set while a conclusion decision is pending, so the
+     * overlay cannot pre-empt a server refusal.
+     * @param {boolean} suppressed
+     */
+    setAutoOpenSuppressed(suppressed) { _autoOpenSuppressed = !!suppressed; },
 };
 
 // Expose globally for non-module contexts (e.g. scenario scripts, Ink)
