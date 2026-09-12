@@ -39,6 +39,8 @@ BreakEscape::Engine.routes.draw do
       post 'objectives/tasks/:task_id', to: 'games#complete_task', as: 'complete_task'
       put 'objectives/tasks/:task_id', to: 'games#update_task_progress', as: 'update_task_progress'
 
+      post 'conclude', to: 'games#conclude_mission'  # Client reports the story ended; server gates on concludeRequires
+
       # VM/Flag integration
       post 'flags', to: 'games#submit_flag'  # Submit CTF flag for validation
 

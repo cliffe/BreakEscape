@@ -1553,6 +1553,78 @@ def check_common_issues(json_data, valid_item_types = nil)
         issues << "❌ ERROR: #{aim_path} requiresCompleted references unknown taskId '#{task_id}'."
       end
     end
+
+    # The ending gate. The client decides when the story is over; concludeRequires
+    # is where the scenario declares the technical work the server will not let
+    # the story skip. Absent, the client is trusted outright -- fine for a
+    # scenario with no VM work, a real hole for one whose whole point is the CTF
+    # challenges, since the player could then reach the credits without them.
+    conclude_requires = aim['concludeRequires']
+    flag_task_ids = []
+    json_data['objectives']&.each do |a|
+      a['tasks']&.each do |t|
+        flag_task_ids << t['taskId'] if t['type'] == 'submit_flags'
+      end
+    end
+
+    if conclude_requires.nil?
+      if flag_task_ids.any?
+        issues << "⚠️ WARNING: #{aim_path} has missionConclusion:true but no concludeRequires, while the " \
+                  "scenario has #{flag_task_ids.size} submit_flags task(s) (#{flag_task_ids.join(', ')}). " \
+                  "The client is therefore trusted to end the mission outright and the player can reach the " \
+                  "credits without doing the VM work. A hard block belongs on the large technical " \
+                  "achievements -- the VM and CTF work the mission exists to teach -- and nowhere else. Do " \
+                  "not list story tasks here: story progress is scored, not gated, and micro-managing it is " \
+                  "how a finished run gets stranded short of its own ending. Declare the gate: " \
+                  "\"concludeRequires\": { \"tasksCompleted\": [#{flag_task_ids.map { |t| "\"#{t}\"" }.join(', ')}] }."
+      else
+        issues << "⚠️ WARNING: #{aim_path} has missionConclusion:true but no concludeRequires, so reaching the " \
+                  "end of the story is the whole condition for concluding. That is the right answer for a " \
+                  "scenario with no large technical work to gate on -- there is nothing here a player could " \
+                  "skip -- but state it deliberately rather than by omission."
+      end
+    else
+      unknown_keys = conclude_requires.keys - %w[tasksCompleted globals]
+      if unknown_keys.any?
+        issues << "❌ ERROR: #{aim_path} concludeRequires has unknown key(s): #{unknown_keys.join(', ')}. " \
+                  "Only 'tasksCompleted' and 'globals' are read by the server."
+      end
+
+      Array(conclude_requires['tasksCompleted']).each do |task_id|
+        unless all_task_ids.include?(task_id)
+          issues << "❌ ERROR: #{aim_path} concludeRequires.tasksCompleted references unknown taskId '#{task_id}' " \
+                    "— the gate can never be satisfied and the mission will never conclude."
+        end
+      end
+
+      declared_globals = json_data['globalVariables']&.keys || []
+      Array(conclude_requires['globals']).each do |var|
+        unless declared_globals.include?(var)
+          issues << "❌ ERROR: #{aim_path} concludeRequires.globals references '#{var}', which is not declared in " \
+                    "globalVariables — the gate can never be satisfied and the mission will never conclude."
+        end
+      end
+
+      # A gate listing story tasks is the failure mode this field exists to
+      # prevent: it withholds the ending for narrative bookkeeping, which is
+      # what stranded a finished m02 run in in_progress forever.
+      story_gate_tasks = Array(conclude_requires['tasksCompleted']) - flag_task_ids
+      if story_gate_tasks.any?
+        issues << "⚠️ WARNING: #{aim_path} concludeRequires.tasksCompleted names non-flag task(s): " \
+                  "#{story_gate_tasks.join(', ')}. A hard block should cover the large technical " \
+                  "achievements only. Story tasks belong in requiresCompleted, which scores them without " \
+                  "withholding the ending — a story task with one completion route becomes an unannounced " \
+                  "dead end here, and the player is given no way to know why the credits never came."
+      end
+
+      missing_flag_tasks = flag_task_ids - Array(conclude_requires['tasksCompleted'])
+      if missing_flag_tasks.any? && Array(conclude_requires['tasksCompleted']).any?
+        issues << "⚠️ WARNING: #{aim_path} concludeRequires.tasksCompleted omits submit_flags task(s): " \
+                  "#{missing_flag_tasks.join(', ')}. Those flags can be skipped and the mission will still " \
+                  "conclude. Correct for an optional or bonus flag; otherwise add them, since the VM work is " \
+                  "exactly what the gate is for."
+      end
+    end
   end
 
   # Collect targetGroup values from tasks (for collection_group cross-reference)

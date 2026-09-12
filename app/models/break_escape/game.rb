@@ -1129,13 +1129,13 @@ module BreakEscape
       return unless aim['missionConclusion']
       return unless mission_concluded_at.nil?
 
-      required_task_ids = Array(aim['requiresCompleted'])
-      if required_task_ids.any?
-        unmet = required_task_ids.reject do |req_id|
-          player_state.dig('objectivesState', 'tasks', req_id, 'status') == 'completed'
-        end
-        return false if unmet.any?  # gate blocked
-      end
+      # Gate on concludeRequires, NOT requiresCompleted. The ending is withheld
+      # only for declared technical work (VM flags); story tasks cost score when
+      # unfinished but never the ending. Gating on requiresCompleted stranded a
+      # finished m02 run in in_progress forever when one of its story tasks had
+      # a single completion route. A scenario that declares no concludeRequires
+      # is trusted outright.
+      return false if unmet_conclude_requirements(aim).any?  # gate blocked
 
       now = Time.current
       self.mission_concluded_at = now
@@ -1581,6 +1581,77 @@ module BreakEscape
       save!
 
       { success: true, message: 'Flag accepted!' }
+    end
+
+    # Conclude the mission because the client says the story has ended.
+    #
+    # The division of trust: the CLIENT decides when the story is over (it owns
+    # the debrief conversation, the credits, the narrative), and the SERVER
+    # decides whether the technical work that the story is not allowed to skip
+    # was actually done. The scenario declares that work on its
+    # missionConclusion aim as `concludeRequires`; when a scenario declares
+    # nothing, the client is trusted outright and reaching the end of the story
+    # is the whole condition.
+    #
+    # This deliberately does NOT gate on requiresCompleted. That field is a
+    # story-task list, and gating conclusion on it once stranded a finished m02
+    # run in `in_progress` forever because a single gate task had only one
+    # completion route. Story tasks feed the score (calculate_task_score is
+    # proportional, so unfinished work already costs marks); they do not decide
+    # whether the player is allowed to have reached the end.
+    #
+    # Returns { concluded:, already:, missing: } — `missing` lists the unmet
+    # requirements so the client can tell the player what is outstanding
+    # instead of showing credits that do not count.
+    def conclude_mission!
+      aim = scenario_data['objectives']&.find { |a| a['missionConclusion'] }
+      return { concluded: false, already: false, missing: ['no missionConclusion aim in scenario'] } if aim.nil?
+
+      if mission_concluded_at.present?
+        return { concluded: true, already: true, missing: [] }
+      end
+
+      missing = unmet_conclude_requirements(aim)
+      return { concluded: false, already: false, missing: missing } if missing.any?
+
+      now = Time.current
+      self.mission_concluded_at = now
+      self.status               = 'completed'
+      self.completed_at         = now
+      self.score                = calculate_task_score.round
+      save!
+
+      { concluded: true, already: false, missing: [] }
+    end
+
+    # Evaluate a missionConclusion aim's `concludeRequires` block. An absent or
+    # empty block means the scenario trusts the client and nothing is unmet.
+    #
+    #   "concludeRequires": {
+    #     "tasksCompleted": ["submit_ssh_flag", ...],   # server-validated flag tasks
+    #     "globals":        ["backdoor_fully_exploited"] # scenario globals
+    #   }
+    #
+    # tasksCompleted is the server-authoritative form: those task records are
+    # written only after validate_flag_submission has checked the flag against
+    # the scenario's targetFlags. globals are client-reported and so are the
+    # weaker form — use them for story state, not for gating technical work.
+    def unmet_conclude_requirements(aim)
+      requires = aim['concludeRequires']
+      return [] if requires.blank?
+
+      missing = []
+
+      Array(requires['tasksCompleted']).each do |task_id|
+        status = player_state.dig('objectivesState', 'tasks', task_id, 'status')
+        missing << "task:#{task_id}" unless status == 'completed'
+      end
+
+      Array(requires['globals']).each do |var|
+        missing << "global:#{var}" unless player_state.dig('globalVariables', var) == true
+      end
+
+      missing
     end
 
     # Check if flag was already submitted

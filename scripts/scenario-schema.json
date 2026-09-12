@@ -170,7 +170,24 @@
         "requiresCompleted": {
           "type": "array",
           "items": { "type": "string" },
-          "description": "Server-side gate: task IDs that must already be completed before mission_concluded_at is written. Prevents conclusion being recorded if prerequisite tasks were bypassed."
+          "description": "Story-task list for this conclusion aim: what the design intends the player to have done. Feeds the dungeon graph and reads as documentation. This NO LONGER gates the ending -- see concludeRequires. Unfinished tasks cost score, which is proportional, rather than withholding the conclusion."
+        },
+        "concludeRequires": {
+          "type": "object",
+          "description": "Server-side ending gate. The CLIENT decides when the story is over (it owns the debrief and the credits); this declares the technical work the server will not let the story skip. Gate on the large technical achievements only -- the VM and CTF work the mission exists to teach. Do NOT list story tasks: story progress is scored, not gated. Micro-managing it here withholds the ending for narrative bookkeeping, and a story task with a single completion route becomes an unannounced dead end -- that is exactly how a finished m02 run was stranded in in_progress forever. Omit the field entirely to trust the client outright, which is right when there is no large technical work to gate on.",
+          "properties": {
+            "tasksCompleted": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Task IDs that must be completed. The server-authoritative form: flag-submission task records are written only after the flag is validated against the scenario's targetFlags. Use this for VM/CTF work."
+            },
+            "globals": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Global variables that must be true. Client-reported, so the weaker form -- use for story state, not for gating technical work."
+            }
+          },
+          "additionalProperties": false
         },
         "conclusionScreen": {
           "type": "object",

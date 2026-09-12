@@ -971,6 +971,28 @@ module BreakEscape
     # matching task and can trigger check_mission_conclusion. Same cross-key
     # aggregation logic, same reasoning as complete_task; see the FUTURE
     # IMPROVEMENT note above.
+    # The client has reached the end of the story and wants the credits.
+    #
+    # The client is the authority on the narrative being over; the server is the
+    # authority on whether the scenario's declared technical work was done. See
+    # Game#conclude_mission!. A refusal is not an error — it is the answer
+    # "not yet", with the outstanding requirements named so the client can tell
+    # the player what is left rather than rolling credits that do not count.
+    def conclude_mission
+      authorize @game if defined?(Pundit)
+
+      result = with_game_lock { @game.conclude_mission! }
+
+      render json: {
+        success: result[:concluded],
+        alreadyConcluded: result[:already],
+        missing: result[:missing],
+        missionConcludedAt: @game.mission_concluded_at,
+        status: @game.status,
+        score: @game.score
+      }
+    end
+
     def submit_flag
       authorize @game if defined?(Pundit)
 

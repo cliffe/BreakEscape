@@ -465,6 +465,12 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
       "order": 9,
       "missionConclusion": true,
       "requiresCompleted": ["deactivate_launch"],
+      <%# Ending gate: the three VM flags are the technical work this mission is
+          not allowed to skip. Story tasks are not listed -- they cost score if
+          unfinished, they do not withhold the ending. %>
+      "concludeRequires": {
+        "tasksCompleted": ["submit_ssh_flag", "submit_linux_flag", "submit_sudo_flag"]
+      },
       "tasks": [
         {
           "taskId": "use_launch_device",

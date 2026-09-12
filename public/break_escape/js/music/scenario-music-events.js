@@ -117,12 +117,67 @@ function switchIfConditionMet(entry, data) {
             .filter(item => evaluateCondition(item.condition, data))
             .map(item => ({ text: item.text ?? '', style: item.style ?? '' }));
 
-        window.BondVisualiser.open({
+        // Credits mean the story is over, so this is also the moment the
+        // mission concludes. The client is trusted to decide the story ended;
+        // the server still gates on the scenario's concludeRequires (see
+        // Game#conclude_mission!). Credits therefore open only once the server
+        // has agreed, so MISSION COMPLETE can no longer print over a game the
+        // server still calls in_progress -- which is exactly what used to
+        // happen here, because this path opened the visualiser and never asked.
+        const openCredits = () => window.BondVisualiser.open({
             credits:      filteredLines,
             autoClose:    !!entry.stopAfterTrack,  // legacy: close when track ends
             autoStop:     !!entry.autoStop,         // new: stop music, keep vis open
             disableClose: !!entry.disableClose,
         });
+
+        concludeMission().then((result) => {
+            if (result.concluded) {
+                openCredits();
+                return;
+            }
+            // Refused: the scenario declared technical work that is not done.
+            // Say what is outstanding rather than rolling credits.
+            console.warn(`${TAG} Conclusion refused; missing:`, result.missing);
+            if (window.gameAlert) {
+                window.gameAlert(
+                    'Not finished yet -- there is outstanding work on their network before this is over.',
+                    'warning',
+                    'Not Yet',
+                    4000
+                );
+            }
+        });
+    }
+}
+
+/**
+ * Ask the server to conclude the mission. Resolves { concluded, missing }.
+ *
+ * A network failure resolves as concluded:true. The player has reached the end
+ * of the story and a dropped request must not cost them the ending; the server
+ * record reconciles on the next sync either way.
+ */
+async function concludeMission() {
+    const gameId = window.breakEscapeConfig?.gameId;
+    if (!gameId) return { concluded: true, missing: [] };
+
+    try {
+        const response = await fetch(`/break_escape/games/${gameId}/conclude`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || '',
+            },
+        });
+        const json = await response.json();
+        return {
+            concluded: !!(json.success || json.alreadyConcluded),
+            missing: json.missing || [],
+        };
+    } catch (err) {
+        console.warn(`${TAG} conclude request failed; showing credits anyway`, err);
+        return { concluded: true, missing: [] };
     }
 }
 
