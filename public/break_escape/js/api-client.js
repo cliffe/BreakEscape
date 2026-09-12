@@ -40,7 +40,15 @@ export class ApiClient {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-      throw new Error(error.error || `API Error: ${response.status}`);
+      const err = new Error(error.error || error.message || `API Error: ${response.status}`);
+      // The server answering "no" is not the same as the server being
+      // unreachable, and callers must be able to tell them apart. A wrong PIN
+      // comes back 422 with a JSON body; without this, every wrong answer was
+      // indistinguishable from a dropped connection, so PIN locks reported
+      // "Network error", refunded the attempt and never locked out at all.
+      err.status = response.status;
+      err.body = error;
+      throw err;
     }
 
     return response.json();

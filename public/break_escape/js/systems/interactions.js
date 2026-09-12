@@ -28,7 +28,12 @@ export function setGameInstance(gameInstance) {
         window.eventDispatcher.on('object_remotely_unlocked', ({ objectId }) => {
             let found = false;
             Object.values(rooms).forEach(room => {
-                (room.objects || []).forEach(obj => {
+                // room.objects is a map keyed by objectId (rooms.js:1736 declares
+                // it {}, rooms.js:437 fills it), not an array -- so the array
+                // default here threw TypeError on every remote unlock and the
+                // handler never reached the object. That is why a flag-submission
+                // unlock silently did nothing.
+                Object.values(room.objects || {}).forEach(obj => {
                     if (obj.scenarioData?.id === objectId || obj.objectId === objectId) {
                         obj.scenarioData.locked = false;
                         if (obj.lockOverlay) obj.lockOverlay.setVisible(false);

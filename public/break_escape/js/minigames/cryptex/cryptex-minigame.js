@@ -322,6 +322,12 @@ export class CryptexMinigame extends MinigameScene {
             this.serverResponse = response;
             return response.success;
         } catch (error) {
+            // A status means the server answered and said no -- that is a wrong
+            // combination, not a network problem. Only a request that never
+            // completed deserves the network message.
+            if (error?.status) {
+                return false;
+            }
             console.error('Server validation error:', error);
             this._setStatus('Network error. Try again.', 'wrong');
             return false;

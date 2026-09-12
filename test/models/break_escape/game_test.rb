@@ -480,7 +480,11 @@ module BreakEscape
           "status" => "active",
           "order" => 1,
           "missionConclusion" => true,
-          "requiresCompleted" => ["setup_task"],
+          # concludeRequires is the ending gate. requiresCompleted is kept here
+          # deliberately and names a task that is never completed in most of
+          # these tests -- proving it does NOT withhold the ending (see T10).
+          "concludeRequires" => { "tasksCompleted" => ["setup_task"] },
+          "requiresCompleted" => ["never_completed_story_task"],
           "conclusionScreen" => { "type" => "end_screen" },
           "tasks" => [
             { "taskId" => "conclusion_task", "title" => "Conclude", "type" => "custom", "status" => "active" }
@@ -551,9 +555,9 @@ module BreakEscape
       assert score > 0.0,   "Score should be > 0 when some tasks completed; got #{score}"
     end
 
-    # T5: requiresCompleted gate blocks conclusion when prerequisites not met,
-    # but the task itself still completes successfully
-    test "conclusion task is rejected when requiresCompleted not satisfied" do
+    # T5: the concludeRequires gate blocks conclusion when the declared work is
+    # not done, but the task itself still completes successfully
+    test "conclusion task is rejected when concludeRequires not satisfied" do
       result = @game.complete_task!('conclusion_task')
       assert_equal true, result[:success], "Task should succeed even when conclusion gate is blocked"
       assert_equal false, result[:missionConcluded], "Mission should not be concluded when gate is unmet"
@@ -568,14 +572,14 @@ module BreakEscape
     end
 
     # T7: conclusion task succeeds when prerequisites ARE met
-    test "conclusion task succeeds when requiresCompleted are all satisfied" do
+    test "conclusion task succeeds when concludeRequires are all satisfied" do
       @game.complete_task!('setup_task')
       result = @game.complete_task!('conclusion_task')
       assert result[:success]
     end
 
-    # T8: mission_concluded_at is written only after prerequisites are satisfied
-    test "mission_concluded_at not set if requiresCompleted not satisfied" do
+    # T8: mission_concluded_at is written only after the declared work is done
+    test "mission_concluded_at not set if concludeRequires not satisfied" do
       @game.complete_task!('conclusion_task') # blocked by guard
       assert_nil @game.reload.mission_concluded_at
     end
@@ -595,6 +599,27 @@ module BreakEscape
       result = @game.complete_task!('setup_task') # satisfies the gate, out of order
       assert result[:success]
       assert_not_nil @game.reload.mission_concluded_at, "mission should conclude once the gate task lands, even though the conclusion aim's own task completed first"
+      assert_equal 'completed', @game.status
+    end
+
+    # T10: story tasks must not withhold the ending.
+    #
+    # This is the m02 soft-lock, as a test. requiresCompleted named a story task
+    # whose only completion route was a single event mapping; a player who took
+    # another path finished the whole mission, saw the credits, and left the
+    # game stuck in in_progress with nothing to explain why. Story tasks feed the
+    # score -- which is proportional, so unfinished work already costs marks --
+    # and never the ending.
+    test "an unmet requiresCompleted story task does not block conclusion" do
+      assert_equal ["never_completed_story_task"],
+                   @game.scenario_data['objectives'].last['requiresCompleted'],
+                   'fixture guard: this story task is never completed in this test'
+
+      @game.complete_task!('setup_task')       # satisfies concludeRequires
+      result = @game.complete_task!('conclusion_task')
+
+      assert result[:missionConcluded], 'requiresCompleted must not gate the ending'
+      assert_not_nil @game.reload.mission_concluded_at
       assert_equal 'completed', @game.status
     end
   end

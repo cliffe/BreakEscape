@@ -3093,9 +3093,18 @@ function createNPCSpritesForRoom(roomId, roomData) {
                 currentScene = gameRef.scene.getScene('default') || 
                                gameRef.scene.scenes?.[0];
             }
+            // Same typeof guard as the branch above: window.game is not always a
+            // Phaser.Game. On a Scene, .scene is a ScenePlugin, which has get()
+            // and no getScene() -- calling it threw TypeError during room
+            // creation. Fall back through both shapes rather than assuming.
             if (!currentScene && window.game?.scene) {
-                currentScene = window.game.scene.getScene('default') || 
-                               window.game.scene.scenes?.[0];
+                const mgr = window.game.scene;
+                if (typeof mgr.getScene === 'function') {
+                    currentScene = mgr.getScene('default');
+                } else if (typeof mgr.get === 'function') {
+                    currentScene = mgr.get('default');
+                }
+                currentScene = currentScene || mgr.scenes?.[0];
             }
             
             console.log(`   currentScene: ${!!currentScene}, key: ${currentScene?.key}, isScene: ${currentScene?.add ? 'yes' : 'no'}`);

@@ -29,6 +29,7 @@ export class PinMinigame extends MinigameScene {
         this.currentInput = '';
         this.attempts = [];
         this.attemptCount = 0;
+        this.lastAttemptWasNetworkError = false;
         this.isLocked = false;
         
         // UI elements
@@ -286,7 +287,14 @@ export class PinMinigame extends MinigameScene {
             feedback: (this.infoLeakToggleElement?.checked || this.infoLeakMode) && this.correctPin ? this.calculateFeedback(this.currentInput) : null
         };
 
-        this.attempts.push(attempt);
+        // A request that never reached the server is not an attempt: it did not
+        // cost the player one (attemptCount was refunded above), so it must not
+        // appear in the history either.
+        if (this.lastAttemptWasNetworkError) {
+            this.lastAttemptWasNetworkError = false;
+        } else {
+            this.attempts.push(attempt);
+        }
         this.updateAttemptsDisplay();
 
         if (isCorrect) {
@@ -332,10 +340,25 @@ export class PinMinigame extends MinigameScene {
 
             return response.success;
         } catch (error) {
+            // A status means the server answered -- a wrong PIN comes back 422.
+            // That IS a real attempt: it must count, lock out at maxAttempts,
+            // and tell the player they were wrong rather than blaming the
+            // network. Only a genuinely failed request is refunded.
+            if (error?.status) {
+                console.log('Server rejected PIN attempt:', error.status);
+                return false;
+            }
+
             console.error('Server validation error:', error);
             this.showFailure("Network error. Please try again.", false, 3000);
             // Decrease attempts counter since this wasn't a real attempt
             this.attemptCount--;
+            // ...and say so, so the caller can keep the visible attempt history
+            // in step. Refunding attemptCount alone left the failed request in
+            // this.attempts, so the history and getState() reported more
+            // attempts used than the lock had actually counted -- which reads
+            // as the lock having been bypassed when it never was.
+            this.lastAttemptWasNetworkError = true;
             return false;
         }
     }

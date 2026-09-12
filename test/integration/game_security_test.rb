@@ -1040,7 +1040,10 @@ module BreakEscape
           "status" => "active",
           "order" => 1,
           "missionConclusion" => true,
-          "requiresCompleted" => ["npc_prep_task"],
+          # concludeRequires is the ending gate: the work a player must not be
+          # able to skip. requiresCompleted is story bookkeeping and is
+          # deliberately left off this aim -- it does not, and must not, gate.
+          "concludeRequires" => { "tasksCompleted" => ["npc_prep_task"] },
           "conclusionScreen" => { "type" => "end_screen" },
           "tasks" => [
             { "taskId" => "close_task", "title" => "Close", "type" => "custom", "status" => "active" }
@@ -1060,8 +1063,8 @@ module BreakEscape
       )
     end
 
-    # T5: requiresCompleted gate blocks conclusion but task still succeeds
-    test "SECURITY: conclusion task blocked when requiresCompleted not satisfied" do
+    # T5: the concludeRequires gate blocks conclusion but the task still succeeds
+    test "SECURITY: conclusion task blocked when concludeRequires not satisfied" do
       post complete_task_game_url(@game, task_id: 'close_task')
       assert_response :success
       json = JSON.parse(response.body)
@@ -1080,7 +1083,7 @@ module BreakEscape
     end
 
     # T7: conclusion task succeeds once prerequisites are met
-    test "conclusion task succeeds when requiresCompleted are all completed" do
+    test "conclusion task succeeds when concludeRequires are all completed" do
       # Satisfy the prerequisite by recording NPC encounter then completing task
       @game.player_state['encounteredNPCs'] << 'handler_npc'
       @game.save!
@@ -1094,7 +1097,7 @@ module BreakEscape
     end
 
     # T8: mission_concluded_at not written until prerequisites satisfied
-    test "SECURITY: mission_concluded_at is nil when requiresCompleted gate fails" do
+    test "SECURITY: mission_concluded_at is nil when concludeRequires gate fails" do
       post complete_task_game_url(@game, task_id: 'close_task')
       assert_nil @game.reload.mission_concluded_at
     end
