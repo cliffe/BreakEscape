@@ -1,0 +1,289 @@
+{
+  "scenario": "m05_insider_trading",
+  "start_room": "reception_lobby",
+  "nodes": [
+    {
+      "id": "door_server_hallway",
+      "label": "Server Hallway<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "server_hallway",
+      "label": "Server Hallway",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_server_room",
+      "label": "Server Room<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "server_room",
+      "label": "Server Room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_torres_office",
+      "label": "Torres Office<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "torres_office",
+      "label": "Torres Office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "open_office_area",
+      "label": "Open Office Area",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "server_password_sticky_note",
+      "label": "Server Password Sticky Note",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "npc_kevin_park",
+      "label": "Kevin Park",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "lockpick_set",
+      "label": "Lockpick Set",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "lock_patricia_filing_cabinet",
+      "label": "Patricia Filing Cabinet",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "torres_office_keycard",
+      "label": "Torres Office Keycard",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cloned_employee_badge",
+      "label": "Cloned Employee Badge",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "vmch_submit_flag1",
+      "label": "Submit Flag 1: Leaked Bludit admin credentials (recon)",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_flag1",
+      "label": "Flag1 Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "vmch_submit_flag2",
+      "label": "Submit Flag 2: Authenticated Bludit image-upload RCE",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_flag2",
+      "label": "Flag2 Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "vmch_submit_flag3",
+      "label": "Submit Flag 3: Torres' exfiltration staging manifest (user access)",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_flag3",
+      "label": "Flag3 Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "vmch_submit_flag4",
+      "label": "Submit Flag 4: The Architect's acquisition authorisation (root)",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_flag4",
+      "label": "Flag4 Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "reception_lobby",
+      "label": "Reception Lobby",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "main_corridor",
+      "label": "Main Corridor",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "patricia_office",
+      "label": "Patricia Office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "break_room",
+      "label": "Break Room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "research_lab",
+      "label": "Research Lab",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_server_hallway",
+      "to": "server_hallway",
+      "soft": false
+    },
+    {
+      "from": "door_server_room",
+      "to": "server_room",
+      "soft": false
+    },
+    {
+      "from": "door_torres_office",
+      "to": "torres_office",
+      "soft": false
+    },
+    {
+      "from": "open_office_area",
+      "to": "server_password_sticky_note",
+      "soft": false
+    },
+    {
+      "from": "server_password_sticky_note",
+      "to": "door_server_room",
+      "soft": false
+    },
+    {
+      "from": "open_office_area",
+      "to": "npc_kevin_park",
+      "soft": false
+    },
+    {
+      "from": "npc_kevin_park",
+      "to": "lockpick_set",
+      "soft": false
+    },
+    {
+      "from": "lockpick_set",
+      "to": "lock_patricia_filing_cabinet",
+      "soft": false
+    },
+    {
+      "from": "npc_kevin_park",
+      "to": "torres_office_keycard",
+      "soft": false
+    },
+    {
+      "from": "torres_office_keycard",
+      "to": "door_torres_office",
+      "soft": false
+    },
+    {
+      "from": "npc_kevin_park",
+      "to": "cloned_employee_badge",
+      "soft": false
+    },
+    {
+      "from": "cloned_employee_badge",
+      "to": "door_server_hallway",
+      "soft": false
+    },
+    {
+      "from": "patricia_office",
+      "to": "lock_patricia_filing_cabinet",
+      "soft": false
+    },
+    {
+      "from": "vmch_submit_flag1",
+      "to": "vmfl_submit_flag1",
+      "soft": false
+    },
+    {
+      "from": "vmch_submit_flag2",
+      "to": "vmfl_submit_flag2",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_flag1",
+      "to": "vmch_submit_flag2",
+      "soft": true
+    },
+    {
+      "from": "vmch_submit_flag3",
+      "to": "vmfl_submit_flag3",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_flag2",
+      "to": "vmch_submit_flag3",
+      "soft": true
+    },
+    {
+      "from": "vmch_submit_flag4",
+      "to": "vmfl_submit_flag4",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_flag3",
+      "to": "vmch_submit_flag4",
+      "soft": true
+    },
+    {
+      "from": "reception_lobby",
+      "to": "main_corridor",
+      "soft": false
+    },
+    {
+      "from": "reception_lobby",
+      "to": "patricia_office",
+      "soft": false
+    },
+    {
+      "from": "main_corridor",
+      "to": "break_room",
+      "soft": false
+    },
+    {
+      "from": "main_corridor",
+      "to": "open_office_area",
+      "soft": false
+    },
+    {
+      "from": "main_corridor",
+      "to": "research_lab",
+      "soft": false
+    }
+  ]
+}

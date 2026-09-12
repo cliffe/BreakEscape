@@ -1,0 +1,283 @@
+{
+  "scenario": "m03_ghost_in_the_machine",
+  "start_room": "reception_lobby",
+  "nodes": [
+    {
+      "id": "door_conference_room_01",
+      "label": "Conference Room 01<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "conference_room_01",
+      "label": "Conference Room 01",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_server_room",
+      "label": "Server Room<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "server_room",
+      "label": "Server Room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_executive_office",
+      "label": "Executive Office<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "executive_office",
+      "label": "Executive Office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "reception_lobby",
+      "label": "Reception Lobby",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "rfid_cloner",
+      "label": "RFID Cloner",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_pick_kit",
+      "label": "Lock Pick Kit",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_exec_filing_cabinet",
+      "label": "Exec Filing Cabinet",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_server_filing_cabinet",
+      "label": "Server Filing Cabinet",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_wall_safe_server",
+      "label": "Wall Safe<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "cyberchef_workstation",
+      "label": "CyberChef Workstation",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_victoria_computer",
+      "label": "Executive Computer<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "vmch_submit_network_scan_flag",
+      "label": "Map the training network and submit the scan flag",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_network_scan_flag",
+      "label": "Network Scan Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "vmch_submit_ftp_flag",
+      "label": "Pull the FTP intelligence and submit the flag",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_ftp_flag",
+      "label": "Ftp Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "vmch_submit_http_flag",
+      "label": "Decode the pricing intel and submit the flag",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_http_flag",
+      "label": "Http Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "vmch_submit_distcc_flag",
+      "label": "Exploit the legacy distcc service and submit the flag",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_distcc_flag",
+      "label": "Distcc Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "main_hallway",
+      "label": "Main Hallway",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "executive_wing_hallway",
+      "label": "Executive Wing Hallway",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "james_office",
+      "label": "James Office",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_conference_room_01",
+      "to": "conference_room_01",
+      "soft": false
+    },
+    {
+      "from": "door_server_room",
+      "to": "server_room",
+      "soft": false
+    },
+    {
+      "from": "door_executive_office",
+      "to": "executive_office",
+      "soft": false
+    },
+    {
+      "from": "reception_lobby",
+      "to": "rfid_cloner",
+      "soft": false
+    },
+    {
+      "from": "rfid_cloner",
+      "to": "door_conference_room_01",
+      "soft": false
+    },
+    {
+      "from": "rfid_cloner",
+      "to": "door_server_room",
+      "soft": false
+    },
+    {
+      "from": "reception_lobby",
+      "to": "lock_pick_kit",
+      "soft": false
+    },
+    {
+      "from": "lock_pick_kit",
+      "to": "door_executive_office",
+      "soft": false
+    },
+    {
+      "from": "lock_pick_kit",
+      "to": "lock_exec_filing_cabinet",
+      "soft": false
+    },
+    {
+      "from": "lock_pick_kit",
+      "to": "lock_server_filing_cabinet",
+      "soft": false
+    },
+    {
+      "from": "server_room",
+      "to": "lock_server_filing_cabinet",
+      "soft": false
+    },
+    {
+      "from": "server_room",
+      "to": "lock_wall_safe_server",
+      "soft": false
+    },
+    {
+      "from": "server_room",
+      "to": "cyberchef_workstation",
+      "soft": false
+    },
+    {
+      "from": "executive_office",
+      "to": "lock_exec_filing_cabinet",
+      "soft": false
+    },
+    {
+      "from": "executive_office",
+      "to": "lock_victoria_computer",
+      "soft": false
+    },
+    {
+      "from": "vmch_submit_network_scan_flag",
+      "to": "vmfl_submit_network_scan_flag",
+      "soft": false
+    },
+    {
+      "from": "vmch_submit_ftp_flag",
+      "to": "vmfl_submit_ftp_flag",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_network_scan_flag",
+      "to": "vmch_submit_ftp_flag",
+      "soft": true
+    },
+    {
+      "from": "vmch_submit_http_flag",
+      "to": "vmfl_submit_http_flag",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_ftp_flag",
+      "to": "vmch_submit_http_flag",
+      "soft": true
+    },
+    {
+      "from": "vmch_submit_distcc_flag",
+      "to": "vmfl_submit_distcc_flag",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_http_flag",
+      "to": "vmch_submit_distcc_flag",
+      "soft": true
+    },
+    {
+      "from": "reception_lobby",
+      "to": "main_hallway",
+      "soft": false
+    },
+    {
+      "from": "main_hallway",
+      "to": "executive_wing_hallway",
+      "soft": false
+    },
+    {
+      "from": "executive_wing_hallway",
+      "to": "james_office",
+      "soft": false
+    }
+  ]
+}

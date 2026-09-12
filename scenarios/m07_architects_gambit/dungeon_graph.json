@@ -1,0 +1,392 @@
+{
+  "scenario": "m07_architects_gambit",
+  "start_room": "security_checkpoint",
+  "nodes": [
+    {
+      "id": "door_server_room",
+      "label": "Server Hall -- Restricted<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "server_room",
+      "label": "Server Hall -- Restricted",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_scada_control",
+      "label": "SCADA Control -- Authorised Personnel<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "scada_control",
+      "label": "SCADA Control -- Authorised Personnel",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_generator_room",
+      "label": "Backup Generation Hall<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "generator_room",
+      "label": "Backup Generation Hall",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_cable_vault",
+      "label": "Underground Cable Vault<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "cable_vault",
+      "label": "Underground Cable Vault",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "security_checkpoint",
+      "label": "Security Checkpoint",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lock_pick_kit",
+      "label": "Lock Pick Kit",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "visitor_badge_printer",
+      "label": "Visitor Badge Printer",
+      "kind": "key",
+      "optional": true
+    },
+    {
+      "id": "audited_visitor_log",
+      "label": "Audited Visitor Log",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "npc_jake_morrison",
+      "label": "Jake Morrison",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "facility_access_badge_server_zone",
+      "label": "Facility Access Badge -- Server Zone",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "operations_floor",
+      "label": "Operations Floor",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "plant_maintenance_key",
+      "label": "Plant Maintenance Key",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "vm_access_terminal",
+      "label": "VM Access Terminal",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "safetynet_relay_terminal",
+      "label": "SAFETYNET Relay Terminal",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "npc_elena_rodriguez",
+      "label": "Elena Rodriguez",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "action_question_elena",
+      "label": "Get the SCADA control room password from Elena",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "lock_crisis_control_system",
+      "label": "Cascade Control System<br/>Flag lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "cascade_control_system",
+      "label": "Cascade Control System",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "signed_casualty_projection",
+      "label": "Signed Casualty Projection",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "plant_maintenance_log",
+      "label": "Plant Maintenance Log",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "recovered_site_reference_tomb_gamma",
+      "label": "Recovered Site Reference -- 'Tomb Gamma'",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "intercepted_mail_deployment_confirmed",
+      "label": "Intercepted Mail -- Deployment Confirmed",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "vmch_recover_coordination_traffic",
+      "label": "Mount the exposed NFS export and submit what is on it",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_recover_coordination_traffic",
+      "label": "Recover Coordination Traffic Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "vmch_intercept_c2_channel",
+      "label": "Enumerate the host's services and submit the command channel flag",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_intercept_c2_channel",
+      "label": "Intercept C2 Channel Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "vmch_escalate_on_attack_host",
+      "label": "Escalate to root on the attack host and submit the flag",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_escalate_on_attack_host",
+      "label": "Escalate On Attack Host Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "vmch_terminate_cascade_scripts",
+      "label": "Kill the running attack processes and lock out remote access",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_terminate_cascade_scripts",
+      "label": "Terminate Cascade Scripts Flag",
+      "kind": "flag",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_server_room",
+      "to": "server_room",
+      "soft": false
+    },
+    {
+      "from": "door_scada_control",
+      "to": "scada_control",
+      "soft": false
+    },
+    {
+      "from": "door_generator_room",
+      "to": "generator_room",
+      "soft": false
+    },
+    {
+      "from": "door_cable_vault",
+      "to": "cable_vault",
+      "soft": false
+    },
+    {
+      "from": "security_checkpoint",
+      "to": "lock_pick_kit",
+      "soft": true
+    },
+    {
+      "from": "lock_pick_kit",
+      "to": "door_generator_room",
+      "soft": true
+    },
+    {
+      "from": "security_checkpoint",
+      "to": "visitor_badge_printer",
+      "soft": true
+    },
+    {
+      "from": "visitor_badge_printer",
+      "to": "door_server_room",
+      "soft": true
+    },
+    {
+      "from": "security_checkpoint",
+      "to": "audited_visitor_log",
+      "soft": false
+    },
+    {
+      "from": "security_checkpoint",
+      "to": "npc_jake_morrison",
+      "soft": false
+    },
+    {
+      "from": "npc_jake_morrison",
+      "to": "facility_access_badge_server_zone",
+      "soft": false
+    },
+    {
+      "from": "facility_access_badge_server_zone",
+      "to": "door_server_room",
+      "soft": false
+    },
+    {
+      "from": "operations_floor",
+      "to": "plant_maintenance_key",
+      "soft": false
+    },
+    {
+      "from": "plant_maintenance_key",
+      "to": "door_generator_room",
+      "soft": false
+    },
+    {
+      "from": "server_room",
+      "to": "vm_access_terminal",
+      "soft": false
+    },
+    {
+      "from": "server_room",
+      "to": "safetynet_relay_terminal",
+      "soft": false
+    },
+    {
+      "from": "safetynet_relay_terminal",
+      "to": "door_scada_control",
+      "soft": false
+    },
+    {
+      "from": "server_room",
+      "to": "npc_elena_rodriguez",
+      "soft": false
+    },
+    {
+      "from": "npc_elena_rodriguez",
+      "to": "action_question_elena",
+      "soft": false
+    },
+    {
+      "from": "scada_control",
+      "to": "lock_crisis_control_system",
+      "soft": false
+    },
+    {
+      "from": "scada_control",
+      "to": "cascade_control_system",
+      "soft": false
+    },
+    {
+      "from": "scada_control",
+      "to": "signed_casualty_projection",
+      "soft": false
+    },
+    {
+      "from": "generator_room",
+      "to": "plant_maintenance_log",
+      "soft": false
+    },
+    {
+      "from": "plant_maintenance_log",
+      "to": "door_cable_vault",
+      "soft": false
+    },
+    {
+      "from": "cable_vault",
+      "to": "recovered_site_reference_tomb_gamma",
+      "soft": false
+    },
+    {
+      "from": "cable_vault",
+      "to": "intercepted_mail_deployment_confirmed",
+      "soft": false
+    },
+    {
+      "from": "vmch_recover_coordination_traffic",
+      "to": "vmfl_recover_coordination_traffic",
+      "soft": false
+    },
+    {
+      "from": "vmch_intercept_c2_channel",
+      "to": "vmfl_intercept_c2_channel",
+      "soft": false
+    },
+    {
+      "from": "vmfl_recover_coordination_traffic",
+      "to": "vmch_intercept_c2_channel",
+      "soft": true
+    },
+    {
+      "from": "vmfl_intercept_c2_channel",
+      "to": "door_scada_control",
+      "soft": false
+    },
+    {
+      "from": "vmch_escalate_on_attack_host",
+      "to": "vmfl_escalate_on_attack_host",
+      "soft": false
+    },
+    {
+      "from": "vmfl_intercept_c2_channel",
+      "to": "vmch_escalate_on_attack_host",
+      "soft": true
+    },
+    {
+      "from": "vmch_terminate_cascade_scripts",
+      "to": "vmfl_terminate_cascade_scripts",
+      "soft": false
+    },
+    {
+      "from": "vmfl_escalate_on_attack_host",
+      "to": "vmch_terminate_cascade_scripts",
+      "soft": true
+    },
+    {
+      "from": "vm_access_terminal",
+      "to": "vmch_recover_coordination_traffic",
+      "soft": false
+    },
+    {
+      "from": "security_checkpoint",
+      "to": "operations_floor",
+      "soft": false
+    }
+  ]
+}

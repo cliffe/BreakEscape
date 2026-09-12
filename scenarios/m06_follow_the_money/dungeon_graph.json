@@ -1,0 +1,540 @@
+{
+  "scenario": "m06_follow_the_money",
+  "start_room": "reception_lobby",
+  "nodes": [
+    {
+      "id": "door_server_room",
+      "label": "Server Room<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "server_room",
+      "label": "Server Room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_elena_office",
+      "label": "Dr. E. Volkov, CTO<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "elena_office",
+      "label": "Dr. E. Volkov, CTO",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_executive_wing",
+      "label": "Executive<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "executive_wing",
+      "label": "Executive",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "security_checkpoint",
+      "label": "Restricted",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "it_new_starter_checklist",
+      "label": "IT New Starter Checklist",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "trading_floor",
+      "label": "Trading Floor",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "daily_trading_report",
+      "label": "Daily Trading Report",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "rfid_badge_cloner",
+      "label": "RFID Badge Cloner",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "npc_dr_elena_volkov",
+      "label": "Dr. Elena Volkov",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cto_access_badge",
+      "label": "CTO Access Badge",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "password_dictionary_list",
+      "label": "Password Dictionary List",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_vm_launcher_hackme",
+      "label": "Vm Launcher Hackme",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "action_",
+      "label": "",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "hashchain_backend_server_terminal",
+      "label": "HashChain Backend Server Terminal",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_flag_station_financial",
+      "label": "Flag Station Financial",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "safetynet_financial_intelligence_drop",
+      "label": "SAFETYNET Financial Intelligence Drop",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "rack_inventory_sheet",
+      "label": "Rack Inventory Sheet",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "data_center",
+      "label": "Data Centre",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "the_architect_s_fund_allocation",
+      "label": "The Architect's Fund Allocation",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_executive_access_badge",
+      "label": "Executive Access Badge",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "wallet_recovery_keys",
+      "label": "Wallet Recovery Keys",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "executive_access_badge",
+      "label": "Executive Access Badge",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "blockchain_lab",
+      "label": "Blockchain Analysis",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "entropy_transaction_network_analysis",
+      "label": "ENTROPY Transaction Network Analysis",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_architects_fund_doc",
+      "label": "Architects Fund Doc",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "cryptography_research_notes",
+      "label": "Cryptography Research Notes",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "email_from_the_architect",
+      "label": "Email: From The Architect",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_executive_safe",
+      "label": "Executive Safe",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "satoshi_office",
+      "label": "CEO",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "crypto_anarchist_manifesto",
+      "label": "Crypto Anarchist Manifesto",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "executive_safe",
+      "label": "Executive Safe",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "npc_satoshi_nakamoto_ii",
+      "label": "Satoshi Nakamoto II",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "vmch_submit_flag1",
+      "label": "Crack the first server password and submit the flag",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_flag1",
+      "label": "Flag1 Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "lock_credential_reuse_available",
+      "label": "Credential Reuse Available",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "vmch_submit_flag2",
+      "label": "Reuse those credentials on the second server and submit the flag",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_flag2",
+      "label": "Flag2 Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "lock_financial_database_reachable",
+      "label": "Financial Database Reachable",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "vmch_submit_flag3",
+      "label": "Reach the financial database and submit the flag",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_flag3",
+      "label": "Flag3 Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "lock_full_network_access",
+      "label": "Full Network Access",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "vmch_submit_flag4",
+      "label": "Take the whole network and submit the final flag",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_flag4",
+      "label": "Flag4 Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "reception_lobby",
+      "label": "HashChain Exchange",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_server_room",
+      "to": "server_room",
+      "soft": false
+    },
+    {
+      "from": "door_elena_office",
+      "to": "elena_office",
+      "soft": false
+    },
+    {
+      "from": "door_executive_wing",
+      "to": "executive_wing",
+      "soft": false
+    },
+    {
+      "from": "security_checkpoint",
+      "to": "it_new_starter_checklist",
+      "soft": false
+    },
+    {
+      "from": "it_new_starter_checklist",
+      "to": "door_server_room",
+      "soft": false
+    },
+    {
+      "from": "trading_floor",
+      "to": "daily_trading_report",
+      "soft": false
+    },
+    {
+      "from": "trading_floor",
+      "to": "rfid_badge_cloner",
+      "soft": true
+    },
+    {
+      "from": "rfid_badge_cloner",
+      "to": "door_elena_office",
+      "soft": true
+    },
+    {
+      "from": "trading_floor",
+      "to": "npc_dr_elena_volkov",
+      "soft": false
+    },
+    {
+      "from": "npc_dr_elena_volkov",
+      "to": "cto_access_badge",
+      "soft": false
+    },
+    {
+      "from": "cto_access_badge",
+      "to": "door_elena_office",
+      "soft": false
+    },
+    {
+      "from": "npc_dr_elena_volkov",
+      "to": "password_dictionary_list",
+      "soft": false
+    },
+    {
+      "from": "password_dictionary_list",
+      "to": "lock_vm_launcher_hackme",
+      "soft": false
+    },
+    {
+      "from": "npc_dr_elena_volkov",
+      "to": "action_",
+      "soft": false
+    },
+    {
+      "from": "server_room",
+      "to": "hashchain_backend_server_terminal",
+      "soft": false
+    },
+    {
+      "from": "hashchain_backend_server_terminal",
+      "to": "lock_flag_station_financial",
+      "soft": false
+    },
+    {
+      "from": "server_room",
+      "to": "safetynet_financial_intelligence_drop",
+      "soft": false
+    },
+    {
+      "from": "server_room",
+      "to": "rack_inventory_sheet",
+      "soft": false
+    },
+    {
+      "from": "data_center",
+      "to": "the_architect_s_fund_allocation",
+      "soft": false
+    },
+    {
+      "from": "the_architect_s_fund_allocation",
+      "to": "lock_executive_access_badge",
+      "soft": false
+    },
+    {
+      "from": "data_center",
+      "to": "wallet_recovery_keys",
+      "soft": false
+    },
+    {
+      "from": "data_center",
+      "to": "executive_access_badge",
+      "soft": false
+    },
+    {
+      "from": "executive_access_badge",
+      "to": "door_executive_wing",
+      "soft": false
+    },
+    {
+      "from": "blockchain_lab",
+      "to": "entropy_transaction_network_analysis",
+      "soft": false
+    },
+    {
+      "from": "entropy_transaction_network_analysis",
+      "to": "lock_architects_fund_doc",
+      "soft": false
+    },
+    {
+      "from": "elena_office",
+      "to": "cryptography_research_notes",
+      "soft": false
+    },
+    {
+      "from": "elena_office",
+      "to": "email_from_the_architect",
+      "soft": false
+    },
+    {
+      "from": "email_from_the_architect",
+      "to": "lock_executive_safe",
+      "soft": false
+    },
+    {
+      "from": "satoshi_office",
+      "to": "crypto_anarchist_manifesto",
+      "soft": true
+    },
+    {
+      "from": "crypto_anarchist_manifesto",
+      "to": "lock_executive_safe",
+      "soft": true
+    },
+    {
+      "from": "satoshi_office",
+      "to": "lock_executive_safe",
+      "soft": false
+    },
+    {
+      "from": "satoshi_office",
+      "to": "executive_safe",
+      "soft": true
+    },
+    {
+      "from": "satoshi_office",
+      "to": "npc_satoshi_nakamoto_ii",
+      "soft": false
+    },
+    {
+      "from": "npc_satoshi_nakamoto_ii",
+      "to": "action_",
+      "soft": false
+    },
+    {
+      "from": "vmch_submit_flag1",
+      "to": "vmfl_submit_flag1",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_flag1",
+      "to": "lock_credential_reuse_available",
+      "soft": false
+    },
+    {
+      "from": "vmch_submit_flag2",
+      "to": "vmfl_submit_flag2",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_flag1",
+      "to": "vmch_submit_flag2",
+      "soft": true
+    },
+    {
+      "from": "vmfl_submit_flag2",
+      "to": "lock_financial_database_reachable",
+      "soft": false
+    },
+    {
+      "from": "vmch_submit_flag3",
+      "to": "vmfl_submit_flag3",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_flag2",
+      "to": "vmch_submit_flag3",
+      "soft": true
+    },
+    {
+      "from": "vmfl_submit_flag3",
+      "to": "lock_full_network_access",
+      "soft": false
+    },
+    {
+      "from": "vmch_submit_flag4",
+      "to": "vmfl_submit_flag4",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_flag3",
+      "to": "vmch_submit_flag4",
+      "soft": true
+    },
+    {
+      "from": "vmfl_submit_flag4",
+      "to": "blockchain_lab",
+      "soft": false
+    },
+    {
+      "from": "lock_vm_launcher_hackme",
+      "to": "hashchain_backend_server_terminal",
+      "soft": false
+    },
+    {
+      "from": "hashchain_backend_server_terminal",
+      "to": "vmch_submit_flag1",
+      "soft": false
+    },
+    {
+      "from": "reception_lobby",
+      "to": "security_checkpoint",
+      "soft": false
+    },
+    {
+      "from": "security_checkpoint",
+      "to": "trading_floor",
+      "soft": false
+    },
+    {
+      "from": "trading_floor",
+      "to": "blockchain_lab",
+      "soft": false
+    }
+  ]
+}

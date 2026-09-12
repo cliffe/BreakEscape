@@ -1,0 +1,426 @@
+{
+  "scenario": "m04_critical_failure",
+  "start_room": "main_entrance",
+  "nodes": [
+    {
+      "id": "door_engineering_workshop",
+      "label": "Engineering Workshop — Authorised Access Only<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "engineering_workshop",
+      "label": "Engineering Workshop — Authorised Access Only",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_battery_hall_2",
+      "label": "BATTERY HALL 2 / INVERTER ROOM — PPE REQUIRED<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "battery_hall_2",
+      "label": "BATTERY HALL 2 / INVERTER ROOM — PPE REQUIRED",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_plant_room",
+      "label": "Inverter / Plant Room — Authorised Access Only<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "plant_room",
+      "label": "Inverter / Plant Room — Authorised Access Only",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "main_entrance",
+      "label": "Albion Energy Storage — Reception",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lock_pick_kit",
+      "label": "Lock Pick Kit",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_security_equipment_locker",
+      "label": "Security Equipment Locker",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_extraction_gobag",
+      "label": "Extraction Gobag",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "operations_office",
+      "label": "Operations Office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "maintenance_work_orders",
+      "label": "Maintenance Work Orders",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "npc_robert_vance",
+      "label": "Robert Vance",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "facility_access_keycard_level_1",
+      "label": "Facility Access Keycard (Level 1)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "action_meet_robert_vance",
+      "label": "Win Vance's trust and gain facility access",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "scada_control_room",
+      "label": "SCADA Control Room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "scada_hmi_main_display",
+      "label": "SCADA HMI — Main Display",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "bms_jump_server_terminal",
+      "label": "BMS Jump Server Terminal",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "battery_hall_1",
+      "label": "BATTERY HALL 1 — RESTRICTED ACCESS — PPE REQUIRED",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "analog_thermometer_rack_bank_c_wall",
+      "label": "Analog Thermometer — Rack Bank C Wall",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "h_gas_detector_panel",
+      "label": "H₂ Gas Detector Panel",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "npc_entropy_operative_cipher",
+      "label": "ENTROPY Operative 'Cipher'",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "workshop_keycard_level_2",
+      "label": "Workshop Keycard (Level 2)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "npc_entropy_operative_relay",
+      "label": "ENTROPY Operative 'Relay'",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "master_keycard",
+      "label": "Master Keycard",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "lock_esd_pushbutton",
+      "label": "Emergency Shutdown Pushbutton — Rack Banks A-C",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "loading_dock",
+      "label": "Loading Dock",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "social_fabric_safehouse_card_encoded",
+      "label": "Social Fabric Safehouse Card (Encoded)",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "abandoned_extraction_go_bag",
+      "label": "Abandoned Extraction Go-Bag",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "vmch_submit_network_scan_flag",
+      "label": "Submit evidence from the exposed status page",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_network_scan_flag",
+      "label": "Network Scan Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "vmch_submit_ftp_intel_flag",
+      "label": "Submit the intelligence file from their FTP service",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_ftp_intel_flag",
+      "label": "Ftp Intel Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "vmch_submit_http_analysis_flag",
+      "label": "Submit the HTTP-analysis evidence",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_http_analysis_flag",
+      "label": "Http Analysis Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "vmch_submit_distcc_exploit_flag",
+      "label": "Submit proof of the distcc foothold",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_distcc_exploit_flag",
+      "label": "Distcc Exploit Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "security_office",
+      "label": "Security Office",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_engineering_workshop",
+      "to": "engineering_workshop",
+      "soft": false
+    },
+    {
+      "from": "door_battery_hall_2",
+      "to": "battery_hall_2",
+      "soft": false
+    },
+    {
+      "from": "door_plant_room",
+      "to": "plant_room",
+      "soft": false
+    },
+    {
+      "from": "main_entrance",
+      "to": "lock_pick_kit",
+      "soft": false
+    },
+    {
+      "from": "lock_pick_kit",
+      "to": "lock_security_equipment_locker",
+      "soft": false
+    },
+    {
+      "from": "lock_pick_kit",
+      "to": "lock_extraction_gobag",
+      "soft": false
+    },
+    {
+      "from": "operations_office",
+      "to": "maintenance_work_orders",
+      "soft": false
+    },
+    {
+      "from": "operations_office",
+      "to": "npc_robert_vance",
+      "soft": false
+    },
+    {
+      "from": "npc_robert_vance",
+      "to": "facility_access_keycard_level_1",
+      "soft": false
+    },
+    {
+      "from": "facility_access_keycard_level_1",
+      "to": "door_battery_hall_2",
+      "soft": false
+    },
+    {
+      "from": "npc_robert_vance",
+      "to": "action_meet_robert_vance",
+      "soft": false
+    },
+    {
+      "from": "scada_control_room",
+      "to": "scada_hmi_main_display",
+      "soft": false
+    },
+    {
+      "from": "engineering_workshop",
+      "to": "bms_jump_server_terminal",
+      "soft": false
+    },
+    {
+      "from": "security_office",
+      "to": "lock_security_equipment_locker",
+      "soft": false
+    },
+    {
+      "from": "battery_hall_1",
+      "to": "analog_thermometer_rack_bank_c_wall",
+      "soft": false
+    },
+    {
+      "from": "battery_hall_1",
+      "to": "h_gas_detector_panel",
+      "soft": false
+    },
+    {
+      "from": "battery_hall_1",
+      "to": "npc_entropy_operative_cipher",
+      "soft": false
+    },
+    {
+      "from": "npc_entropy_operative_cipher",
+      "to": "workshop_keycard_level_2",
+      "soft": false
+    },
+    {
+      "from": "workshop_keycard_level_2",
+      "to": "door_engineering_workshop",
+      "soft": false
+    },
+    {
+      "from": "battery_hall_2",
+      "to": "npc_entropy_operative_relay",
+      "soft": false
+    },
+    {
+      "from": "npc_entropy_operative_relay",
+      "to": "master_keycard",
+      "soft": false
+    },
+    {
+      "from": "master_keycard",
+      "to": "door_plant_room",
+      "soft": false
+    },
+    {
+      "from": "plant_room",
+      "to": "lock_esd_pushbutton",
+      "soft": false
+    },
+    {
+      "from": "loading_dock",
+      "to": "lock_extraction_gobag",
+      "soft": false
+    },
+    {
+      "from": "lock_extraction_gobag",
+      "to": "social_fabric_safehouse_card_encoded",
+      "soft": false
+    },
+    {
+      "from": "loading_dock",
+      "to": "abandoned_extraction_go_bag",
+      "soft": false
+    },
+    {
+      "from": "vmch_submit_network_scan_flag",
+      "to": "vmfl_submit_network_scan_flag",
+      "soft": false
+    },
+    {
+      "from": "vmch_submit_ftp_intel_flag",
+      "to": "vmfl_submit_ftp_intel_flag",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_network_scan_flag",
+      "to": "vmch_submit_ftp_intel_flag",
+      "soft": true
+    },
+    {
+      "from": "vmch_submit_http_analysis_flag",
+      "to": "vmfl_submit_http_analysis_flag",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_ftp_intel_flag",
+      "to": "vmch_submit_http_analysis_flag",
+      "soft": true
+    },
+    {
+      "from": "vmch_submit_distcc_exploit_flag",
+      "to": "vmfl_submit_distcc_exploit_flag",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_http_analysis_flag",
+      "to": "vmch_submit_distcc_exploit_flag",
+      "soft": true
+    },
+    {
+      "from": "bms_jump_server_terminal",
+      "to": "vmch_submit_network_scan_flag",
+      "soft": false
+    },
+    {
+      "from": "main_entrance",
+      "to": "operations_office",
+      "soft": false
+    },
+    {
+      "from": "operations_office",
+      "to": "scada_control_room",
+      "soft": false
+    },
+    {
+      "from": "operations_office",
+      "to": "security_office",
+      "soft": false
+    },
+    {
+      "from": "scada_control_room",
+      "to": "battery_hall_1",
+      "soft": false
+    }
+  ]
+}
