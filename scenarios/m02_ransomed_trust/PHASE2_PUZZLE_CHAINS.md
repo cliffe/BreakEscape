@@ -803,6 +803,13 @@ Every m02 ending therefore prints *"RESTORE FAILED — SOURCE COMPROMISED"* (B8)
 `:220` silently sets `backup_reinfected = true` on every run**. Harmless today, since m02
 never reads it, but the fix must cover it.
 
+> **Resolved after playtest.** The compromised-source half was fixed in the implementation
+> pass; the `backup_reinfected` half was not, and a playtest caught it still firing on the
+> clean `combined_recovery` ending. The cause is m02 never setting `network_isolated`, the
+> hook the minigame checks before scheduling reinfection — sis01 wires it and branches its
+> debrief on it, m02 inherited the minigame and never did. m02 now sets it alongside
+> `backdoor_fully_exploited`, when the player owns the full backdoor chain.
+
 **Fix:** add an optional `compromised` boolean to each entry in
 `minigameData.backupRecoverySources`. `resolveSources()` (`:136-150`) spreads
 `{...base, ...entry}` with no field whitelist, so scenario data passes straight through —

@@ -578,10 +578,29 @@ const bridge = {
         const canvas = document.querySelector('#game-container canvas') || window.game?.sys?.game?.canvas;
         const rect = canvas.getBoundingClientRect();
         const stack = document.elementsFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
-        const panel = stack[0].closest('[class*="modal"], [class*="overlay"], [class*="popup"], [class*="dialog"]') || stack[0];
+        let panel = stack[0].closest('[class*="modal"], [class*="overlay"], [class*="popup"], [class*="dialog"]') || stack[0];
 
-        const buttons = Array.from(panel.querySelectorAll('button, [role="button"], a[href]'))
+        let buttons = Array.from(panel.querySelectorAll('button, [role="button"], a[href]'))
             .filter(el => el.getBoundingClientRect().width > 0);
+
+        // Mirror detectBlockingUi's ancestor-climb: some overlays (e.g. the
+        // workstation's `.laptop-screen`) don't name themselves modal/overlay/
+        // popup/dialog, so the class-name heuristic above lands on a panel
+        // with no buttons even though real, clickable buttons exist just
+        // outside it. Climb up the same bounded number of hops before giving
+        // up, so anything detectBlockingUi() can report is also dismissable.
+        if (!buttons.length) {
+            let candidate = panel.parentElement;
+            for (let hops = 0; candidate && candidate !== document.body && hops < 4; hops++, candidate = candidate.parentElement) {
+                const found = Array.from(candidate.querySelectorAll('button, [role="button"], a[href]'))
+                    .filter(el => el.getBoundingClientRect().width > 0);
+                if (found.length > 0) {
+                    panel = candidate;
+                    buttons = found;
+                    break;
+                }
+            }
+        }
         if (!buttons.length) return fail('blocking-ui-has-no-buttons', { blocker });
 
         let target;

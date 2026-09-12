@@ -931,7 +931,15 @@ boardroom_pin = "0417"
                   per-handler, this fires directly off the flag submission. %>
               "eventPattern": "objective_task_completed:submit_ghost_log_flag",
               "onceOnly": true,
-              "setGlobal": { "flag_ghost_log_submitted": true, "backdoor_fully_exploited": true },
+              <%# network_isolated is the backup-recovery minigame's own hook: without it the
+                  minigame schedules a delayed reinfection even on a clean restore
+                  (backup-recovery-minigame.js scheduleDelayedReinfection). sis01 wires it and
+                  branches its debrief on the result; m02 inherited the minigame and never set it,
+                  so every m02 run silently flipped backup_reinfected true. Nothing in m02 reads
+                  that today, so no player ever saw it -- but it is a loaded gun for any future
+                  debrief line. Owning the full backdoor chain is the moment the attacker's route
+                  into this estate stops being theirs, so it is set here. %>
+              "setGlobal": { "flag_ghost_log_submitted": true, "backdoor_fully_exploited": true, "network_isolated": true },
               "sendTimedMessage": { "delay": 1500, "message": "That's the full backdoor chain -- SSH, ProFTPD, database, and Ghost's own operational logs. You've got everything ENTROPY had on this hospital. Now head to the Hospital Recovery Console in the server room and bring the patients' systems back online -- that's how we finish this." }
             },
             {
@@ -988,6 +996,29 @@ boardroom_pin = "0417"
               "setGlobal": { "insider_identified": true },
               "completeTask": "unmask_identify",
               "sendTimedMessage": { "delay": 2000, "message": "That post log seals it. Badge SC-4471 is Graham Reeves -- the night security supervisor stationed on that comms terminal. He authorised a fire drill facilities never scheduled, and the call that pulled your booking came from an extension on his post. He is the inside asset. Your call how you handle him." }
+            },
+            <%# Redundant naming routes. The post log is only one of three
+                independent pointers at Reeves (Val's notebook, the night rota,
+                the post log) and all three set insider_evidence_partial. Gating
+                unmask_identify on the post log ALONE soft-locked the mission
+                conclusion for any player who found one of the other two
+                instead: the aim gate never cleared and the game stayed
+                in_progress forever. Both orderings are wired, as above. %>
+            {
+              "eventPattern": "global_variable_changed:insider_evidence_partial",
+              "condition": "globalVars.insider_badge_id_found === true",
+              "onceOnly": true,
+              "setGlobal": { "insider_identified": true },
+              "completeTask": "unmask_identify",
+              "sendTimedMessage": { "delay": 2000, "message": "That is the name. Badge SC-4471 is Graham Reeves -- night security supervisor, posted on the comms terminal, and on nobody's rota. He authorised a contractor sweep facilities never scheduled, and the call that pulled your booking came from an extension on his post. He is the inside asset. Your call how you handle him." }
+            },
+            {
+              "eventPattern": "global_variable_changed:insider_badge_id_found",
+              "condition": "globalVars.insider_evidence_partial === true",
+              "onceOnly": true,
+              "setGlobal": { "insider_identified": true },
+              "completeTask": "unmask_identify",
+              "sendTimedMessage": { "delay": 4200, "message": "Badge SC-4471 -- and you already have the name to put against it. Graham Reeves, night security supervisor, standing beside the comms terminal being helpful all night. He authorised the sweep, he pulled your booking, and he appears on no rota anybody will admit to. Your call how you handle him." }
             },
             {
               "eventPattern": "item_picked_up:notes",
@@ -1166,7 +1197,7 @@ boardroom_pin = "0417"
           "name": "Reception Desk Visitor Log",
           "takeable": false,
           "readable": true,
-          "text": "ST. CATHERINE'S REGIONAL -- NIGHT VISITOR LOG (PAPER FALLBACK)\n\n22:40  M. WEBB (IT Systems) -- on site, no sign-out\n23:15  DR S. KIM (CTO) -- on site\n01:02  ~~EXTERNAL SECURITY CONSULTANT -- emergency response -- auth: DR S. KIM~~\n       ^ struck through. Different biro. No initials against the amendment.\n03:20  G. REEVES (night security supervisor) -- \"posted\", declined to sign\n\nB.N. note in the margin: \"Who crossed this out? Not me.\"",
+          "text": "ST. CATHERINE'S REGIONAL -- NIGHT VISITOR LOG (PAPER FALLBACK)\n\n22:40  G. WHITLOCK (IT Systems) -- on site, no sign-out\n23:15  DR S. KIM (CTO) -- on site\n01:02  ~~EXTERNAL SECURITY CONSULTANT -- emergency response -- auth: DR S. KIM~~\n       ^ struck through. Different biro. No initials against the amendment.\n03:20  G. REEVES (night security supervisor) -- \"posted\", declined to sign\n\nB.N. note in the margin: \"Who crossed this out? Not me.\"",
           "observations": "The paper fallback log. Your booking is on it -- and somebody has scored a line through it in different ink, with no initials against the change.",
           "observationDisplay": "gameDisplay",
           "onRead": { "setVariable": { "noticed_struck_booking": true } },
@@ -2802,6 +2833,7 @@ boardroom_pin = "0417"
     "flag_database_submitted": false,
     "flag_ghost_log_submitted": false,
     "backdoor_fully_exploited": false,
+    "network_isolated": false,
 
     "lockpicking_guide_offered": false,
     "lockpicking_guide_requested": false,

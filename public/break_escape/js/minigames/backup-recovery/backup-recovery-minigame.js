@@ -460,8 +460,15 @@ export class BackupRecoveryMinigame extends MinigameScene {
                 confirmBtn.textContent = `DECISION LOCKED: ${lockedLabel}`;
                 confirmBtn.disabled = true;
             } else {
-                confirmBtn.textContent = this.isSubmitting ? 'CONFIRMING...' : baseLabel;
-                confirmBtn.disabled = this.isSubmitting || !selected;
+                // An unavailable source must not present a live-looking button.
+                // handleConfirm() already refuses and explains, but a button
+                // that looks clickable reads as a broken control rather than a
+                // locked one.
+                const blocked = !!selected && !this.isSourceAvailable(selected);
+                confirmBtn.textContent = this.isSubmitting
+                    ? 'CONFIRMING...'
+                    : (blocked ? 'SOURCE UNAVAILABLE' : baseLabel);
+                confirmBtn.disabled = this.isSubmitting || !selected || blocked;
             }
         }
     }
