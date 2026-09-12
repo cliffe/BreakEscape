@@ -77,7 +77,7 @@ Agent HaX: {player_name()}. You're in. Good.
 
 Agent HaX: Forty-seven on generators, twelve hours of fuel, and a board vote in four.
 
-Agent HaX: Front desk first -- get yourself into their paper log, because the electronic one no longer exists. Then Dr. Kim. She's up on the main corridor, past the ward. She called us in.
+Agent HaX: Front desk first -- get yourself into their paper log, because the electronic one no longer exists. Then Dr. Kim. She's past the ward, up through the handover room. She called us in.
 
 + [Understood]
     -> support_hub

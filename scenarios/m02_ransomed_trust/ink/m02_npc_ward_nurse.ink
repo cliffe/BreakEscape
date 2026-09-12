@@ -282,7 +282,7 @@ Sister Doyle: *not unkindly, but not turning round either* You want me to hand a
 
 Sister Doyle: I've six critical beds and no monitoring. I cannot also be the one who decides who you are.
 
-Sister Doyle: Try IT -- up the link and along the main corridor. Gary is in there, and he's the sort who'd rather be sacked for helping than for nothing.
+Sister Doyle: Try IT -- up the link, along the main corridor, then through the handover room. Gary is in there, and he's the sort who'd rather be sacked for helping than for nothing.
 
 #exit_conversation
 -> hub

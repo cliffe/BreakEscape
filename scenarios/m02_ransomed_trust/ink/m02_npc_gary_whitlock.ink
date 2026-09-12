@@ -28,6 +28,7 @@ VAR gary_defensive = false
 VAR gary_trusts_player = false
 VAR gave_keycard = false
 VAR gave_lanyard = false
+VAR lanyard_refused = false   // he said no once; askable again only if you've earned it since
 VAR topic_warnings = false
 VAR topic_vulnerability = false
 VAR topic_family = false
@@ -419,7 +420,7 @@ Gary Whitlock: If you can get into it -- take the lot. I'd rather it was in your
 + {board_coverup_email_found and not gary_protected_locally} [There's something in the boardroom you need to see.]
     -> tell_him_about_board
 
-+ {(cover_burned or gave_keycard) and not cover_restored and not gave_lanyard} [Someone's phoned security and pulled my booking. I need something that holds up in a corridor.]
++ {(cover_burned or gave_keycard) and not cover_restored and not gave_lanyard and (not lanyard_refused or gary_influence >= 15)} [Someone's phoned security and pulled my booking. I need something that holds up in a corridor.]
     -> the_lanyard
 
 + {insider_evidence_partial and gave_keycard and not insider_identified} [The affiliate who confirmed ENTROPY's timing. Was that you?]
@@ -609,18 +610,32 @@ Gary Whitlock: Go on. And whoever made that phone call -- I'd quite like to know
     #exit_conversation
     -> hub
 
+// He has a blank contractor pass in the drawer and will not part with it for someone he
+// has no reason to trust. Earn him (>= 15) and the same drawer opens. This is the low
+// road: the player has to go back out and find another way to stand up a corridor.
 === lanyard_grudging ===
-~ gave_lanyard = true
-~ cover_restored = true
-#give_item:id_badge:contractor_lanyard
-#set_global:staff_lanyard_obtained:true
-#set_global:cover_restored:true
+~ lanyard_refused = true
 
-Narrator: He pulls open a drawer, roots about, and drops a blank contractor lanyard on the desk.
+Narrator: His hand goes to the second drawer down, and stops there.
 
-Gary Whitlock: Take it. Not for you -- for the ward.
+Gary Whitlock: There's a blank contractor pass in that drawer. I'm not giving it to you.
 
-Gary Whitlock: And when they ask me later whether I gave an unidentified man a hospital pass during a live incident, I'm going to say yes, because I'm not lying about anything else tonight either.
+Gary Whitlock: An hour ago you were on the visitor system. You're not now. I don't know which of those is the lie and I'm not in a position to find out.
+
++ [Forty-seven people on that ward say you should.]
+    Gary Whitlock: *not unkindly* They do. And if I'm wrong about you, they're the ones it lands on, so you'll forgive me for wanting better than a good sentence.
+    -> lanyard_refused_out
+
++ [Fair. I'd have said no as well.]
+    ~ gary_influence += 5
+    # influence_increased
+    Gary Whitlock: *a beat* Then you're the first person tonight who's understood the position I'm in.
+    -> lanyard_refused_out
+
+=== lanyard_refused_out ===
+Gary Whitlock: There's a nurse on Ward Three who's been signing agency staff in and out all night. Sister Doyle. She has a drawer of her own.
+
+Gary Whitlock: Whether she opens it for you is between you and her.
 
 #exit_conversation
 -> hub

@@ -25,6 +25,7 @@ VAR topic_attack_vector = false
 VAR topic_gary = false
 VAR topic_ransom_vote = false
 VAR topic_fire_drill = false
+VAR topic_escrow = false
 VAR player_warned_kim = false
 VAR access_explained = false
 VAR advised_on_vote = false
@@ -208,6 +209,9 @@ Dr. Sarah Kim: And the server room -- I cannot help you at all. That reader is o
 + [What's the code for the boardroom?]
     -> boardroom_code
 
++ {not topic_escrow} [There's an offline key escrow in the emergency store. What's on that safe?]
+    -> escrow_safe
+
 + {topic_gary and not player_warned_kim} [Whatever happens tonight, Gary doesn't carry this alone. I want that on the record.]
     -> protect_gary
 
@@ -328,6 +332,33 @@ Dr. Sarah Kim: We put it down to a fault on the panel and moved on. We had a sca
 
 * [Noted. I'll come back to it.]
     -> hub
+
+// F3: the safe hint as an admission rather than assistance. Redundant with the estates
+// snag list, Sister Doyle and the lobby plaque -- so this is characterisation, not a gate.
+=== escrow_safe ===
+~ topic_escrow = true
+#set_global:found_safe_pin_clue:true
+
+Dr. Sarah Kim: A four-digit keypad.
+
+Narrator: She does not look up from the window.
+
+Dr. Sarah Kim: Estates put it on the audit snag list. Three times. Item nineteen, if you want the reference -- I could give you the reference for most things by now.
+
++ [What's the code?]
+    Dr. Sarah Kim: The year we were founded. It's cut into the plaque you walked past on your way in, at about chest height, in brass.
+    Dr. Sarah Kim: Twenty years of it being on that snag list and nobody ever quite got to item nineteen. Including me. Especially me.
+    -> escrow_safe_out
+
++ [Three times, and it's still on the default.]
+    Dr. Sarah Kim: Yes.
+    Dr. Sarah Kim: It's the founding year. It's on the plaque in the lobby. I'm telling you that quickly because there is no version of saying it slowly that sounds better.
+    -> escrow_safe_out
+
+=== escrow_safe_out ===
+Dr. Sarah Kim: If those keys are still in there, they are the only thing in this building that ENTROPY does not have a copy of.
+
+-> hub
 
 === boardroom_code ===
 {topic_ransom_vote:

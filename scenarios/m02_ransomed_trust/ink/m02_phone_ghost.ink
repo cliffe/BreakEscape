@@ -222,6 +222,38 @@ Ghost: I've been reading their estates paperwork while you work. Did you know th
 + [I'm not doing this. Not tonight.]
     -> end_contact
 
+// F4: fires when the player picks up the ENTROPY keypad oracle. Ghost is unbothered and
+// interested, per the Phase 1 pass that stripped the nagging -- the register is a
+// colleague reading a good result, not a threat.
+=== on_cracker_taken ===
+#speaker:ghost
+
+Ghost: You've found the case behind the rack.
+
+Ghost: I'd assumed that would go in a skip with everything else they never inventory.
+
++ [Your man left it. He didn't get to use it.]
+    Ghost: No. He didn't.
+    Ghost: *a pause, and something shifts in it* That is the first thing you've told me tonight that I didn't already know.
+    -> cracker_out
+
++ [It's a nice piece of kit. I'll be keeping it.]
+    Ghost: It is, and you will, and I find I don't mind as much as I ought to.
+    -> cracker_out
+
++ [You sent someone into a hospital to empty a safe.]
+    Ghost: I sent someone to make sure a decision got made on the merits rather than on a set of keys nobody had checked in eleven years.
+    Ghost: You may call that the same thing. I'd only argue with you about the word, not the act.
+    -> cracker_out
+
+=== cracker_out ===
+Ghost: Go on, then. Take it round the building and see what opens.
+
+Ghost: I'd rather you did it that way than the other way, if you want the truth. It's the only part of tonight where you and I are doing the same job.
+
+#exit_conversation
+-> END
+
 === post_decision_contact ===
 #speaker:ghost
 

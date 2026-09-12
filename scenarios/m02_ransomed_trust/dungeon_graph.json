@@ -279,10 +279,34 @@
       "optional": false
     },
     {
-      "id": "recovery_instructions_encoded",
-      "label": "Recovery Instructions (Encoded)",
+      "id": "handwritten_note_taped_inside_the_rack",
+      "label": "Handwritten Note, Taped Inside the Rack",
       "kind": "item",
       "optional": false
+    },
+    {
+      "id": "lock_entropy_field_case",
+      "label": "Sealed Equipment Case<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "pin_cracker",
+      "label": "PIN Cracker",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "entropy_asset_tag",
+      "label": "ENTROPY Asset Tag",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "sealed_equipment_case",
+      "label": "Sealed Equipment Case",
+      "kind": "lock",
+      "optional": true
     },
     {
       "id": "lock_entropy_staging_cache",
@@ -327,30 +351,6 @@
       "optional": false
     },
     {
-      "id": "lock_entropy_field_case",
-      "label": "Sealed Equipment Case<br/>Key lock",
-      "kind": "lock",
-      "optional": false
-    },
-    {
-      "id": "pin_cracker",
-      "label": "PIN Cracker",
-      "kind": "item",
-      "optional": true
-    },
-    {
-      "id": "entropy_asset_tag",
-      "label": "ENTROPY Asset Tag",
-      "kind": "item",
-      "optional": false
-    },
-    {
-      "id": "sealed_equipment_case",
-      "label": "Sealed Equipment Case",
-      "kind": "lock",
-      "optional": true
-    },
-    {
       "id": "dr_kim_office",
       "label": "CTO Office",
       "kind": "room",
@@ -375,7 +375,7 @@
       "optional": true
     },
     {
-      "id": "lock_dr_kim_s_safe",
+      "id": "lock_dr_kim_safe",
       "label": "Dr. Kim's Safe<br/>PIN lock",
       "kind": "lock",
       "optional": false
@@ -477,6 +477,36 @@
       "optional": false
     },
     {
+      "id": "staff_room",
+      "label": "Night Handover",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "night_handover_board",
+      "label": "Night Handover Board",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "estates_audit_snag_list",
+      "label": "Estates Audit Snag List",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "staff_noticeboard",
+      "label": "Staff Noticeboard",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "ward_clerk_s_laptop",
+      "label": "Ward Clerk's Laptop",
+      "kind": "item",
+      "optional": false
+    },
+    {
       "id": "ward_approach",
       "label": "Ward Approach",
       "kind": "room",
@@ -563,24 +593,6 @@
     {
       "id": "ward_hall",
       "label": "Ward Link",
-      "kind": "room",
-      "optional": false
-    },
-    {
-      "id": "office_hall_mid",
-      "label": "Offices",
-      "kind": "room",
-      "optional": false
-    },
-    {
-      "id": "office_hall_west",
-      "label": "Boardroom Landing",
-      "kind": "room",
-      "optional": false
-    },
-    {
-      "id": "office_hall_east",
-      "label": "IT Wing",
       "kind": "room",
       "optional": false
     }
@@ -823,8 +835,33 @@
     },
     {
       "from": "server_room",
-      "to": "recovery_instructions_encoded",
+      "to": "handwritten_note_taped_inside_the_rack",
       "soft": false
+    },
+    {
+      "from": "server_room",
+      "to": "lock_entropy_field_case",
+      "soft": false
+    },
+    {
+      "from": "lock_entropy_field_case",
+      "to": "pin_cracker",
+      "soft": true
+    },
+    {
+      "from": "pin_cracker",
+      "to": "lock_emergency_storage_safe",
+      "soft": true
+    },
+    {
+      "from": "lock_entropy_field_case",
+      "to": "entropy_asset_tag",
+      "soft": false
+    },
+    {
+      "from": "server_room",
+      "to": "sealed_equipment_case",
+      "soft": true
     },
     {
       "from": "server_room",
@@ -867,31 +904,6 @@
       "soft": false
     },
     {
-      "from": "emergency_equipment_storage",
-      "to": "lock_entropy_field_case",
-      "soft": false
-    },
-    {
-      "from": "lock_entropy_field_case",
-      "to": "pin_cracker",
-      "soft": true
-    },
-    {
-      "from": "pin_cracker",
-      "to": "lock_emergency_storage_safe",
-      "soft": true
-    },
-    {
-      "from": "lock_entropy_field_case",
-      "to": "entropy_asset_tag",
-      "soft": false
-    },
-    {
-      "from": "emergency_equipment_storage",
-      "to": "sealed_equipment_case",
-      "soft": true
-    },
-    {
       "from": "dr_kim_office",
       "to": "lock_kim_office_terminal",
       "soft": false
@@ -918,11 +930,11 @@
     },
     {
       "from": "dr_kim_office",
-      "to": "lock_dr_kim_s_safe",
+      "to": "lock_dr_kim_safe",
       "soft": false
     },
     {
-      "from": "lock_dr_kim_s_safe",
+      "from": "lock_dr_kim_safe",
       "to": "zero_day_syndicate_invoice",
       "soft": false
     },
@@ -990,6 +1002,41 @@
       "from": "office_corridor",
       "to": "ward_board",
       "soft": false
+    },
+    {
+      "from": "staff_room",
+      "to": "night_handover_board",
+      "soft": false
+    },
+    {
+      "from": "staff_room",
+      "to": "estates_audit_snag_list",
+      "soft": false
+    },
+    {
+      "from": "estates_audit_snag_list",
+      "to": "lock_emergency_storage_safe",
+      "soft": false
+    },
+    {
+      "from": "staff_room",
+      "to": "staff_noticeboard",
+      "soft": false
+    },
+    {
+      "from": "staff_room",
+      "to": "ward_clerk_s_laptop",
+      "soft": false
+    },
+    {
+      "from": "staff_room",
+      "to": "spare_contractor_lanyard",
+      "soft": true
+    },
+    {
+      "from": "spare_contractor_lanyard",
+      "to": "lock_lock_guard_challenge",
+      "soft": true
     },
     {
       "from": "ward_approach",
@@ -1093,7 +1140,7 @@
     },
     {
       "from": "dr_kim_office",
-      "to": "office_hall_mid",
+      "to": "staff_room",
       "soft": false
     },
     {
@@ -1108,17 +1155,7 @@
     },
     {
       "from": "office_corridor",
-      "to": "office_hall_mid",
-      "soft": false
-    },
-    {
-      "from": "office_hall_west",
-      "to": "office_hall_mid",
-      "soft": false
-    },
-    {
-      "from": "office_hall_mid",
-      "to": "office_hall_east",
+      "to": "staff_room",
       "soft": false
     },
     {

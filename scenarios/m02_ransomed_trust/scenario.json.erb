@@ -83,7 +83,7 @@ gary_warning_email = "From: Gary Whitlock (IT Systems)\nTo: Dr. Sarah Kim (CTO)\
 
 board_reply_email = "From: Dr. Sarah Kim (CTO)\nTo: Gary Whitlock (IT Systems)\nDate: 21 May\nSubject: RE: URGENT -- ProFTPD backdoor on backup server\n\nGary,\n\nNoted, and I do understand. The board reviewed it on Tuesday. The position is that the imaging replacement takes precedence this cycle and infrastructure security is deferred to FY25.\n\nI would ask you not to escalate this again outside the department. It does not help either of us.\n\nSarah"
 
-recovery_instructions_encoded = rot13("FULL RECOVERY REQUIRES OFFLINE + ONLINE KEYS--12-HOUR PROCESS IF MANUAL, INSTANT IF RANSOM PAID.")
+recovery_instructions_encoded = rot13("SITE NOTE -- RECOVERY POSTURE. THEIR ESCROW COPY IS OFFLINE AND I CANNOT REACH IT. OFFLINE SET ALONE = 12 HOURS. OFFLINE SET PLUS MY KEY MATERIAL = 4. THEY WILL NOT WORK THAT OUT IN TIME, SO THEY WILL PAY.")
 
 # Board room door code -- also written in Dr. Kim's desk diary and spoken by Kim.
 boardroom_pin = "0417"
@@ -166,8 +166,8 @@ boardroom_pin = "0417"
           { "text": "" },
           { "text": "── PERSONNEL ──",                                     "style": "section-header" },
           { "text": "OFFLINE BACKUP KEYS RECOVERED — Independent recovery pathway available", "style": "entry", "condition": "globalVars.offline_keys_recovered" },
-          { "text": "MARCUS WEBB: Vindicated — Career protected by agent documentation", "style": "entry", "condition": "globalVars.gary_protected" },
-          { "text": "MARCUS WEBB: Scapegoated — Position lost, career damaged",          "style": "entry", "condition": "!globalVars.gary_protected" },
+          { "text": "GARY WHITLOCK: Vindicated — Career protected by agent documentation", "style": "entry", "condition": "globalVars.gary_protected" },
+          { "text": "GARY WHITLOCK: Scapegoated — Position lost, career damaged",          "style": "entry", "condition": "!globalVars.gary_protected" },
           { "text": "COVER BURNED: Booking pulled from the visitor system mid-operation", "style": "warning", "condition": "globalVars.cover_burned && !globalVars.cover_restored" },
           { "text": "COVER RE-ESTABLISHED: Access regained without incident",           "style": "entry", "condition": "globalVars.cover_restored" },
           { "text": "BERNIE NWOSU: Vouched for the agent when the paperwork vanished",  "style": "entry", "condition": "globalVars.bernie_vouched" },
@@ -450,6 +450,7 @@ boardroom_pin = "0417"
         "access_server_room",
         "submit_proftpd_flag",
         "submit_ghost_log_flag",
+        "unmask_identify",
         "initiate_backup_recovery",
         "make_ransom_decision",
         "decide_hospital_exposure"
@@ -789,7 +790,7 @@ boardroom_pin = "0417"
               "eventPattern": "objective_task_completed:meet_dr_kim",
               "onceOnly": true,
               "setGlobal": { "dr_kim_met": true },
-              "sendTimedMessage": { "delay": 1500, "message": "Kim's vouched for you as far as she's able, which is verbally and no further. Gary Whitlock is your next problem -- IT department, east of reception, behind an override lock. He knows exactly how they got in, and he's holding the only card that still opens the server room." }
+              "sendTimedMessage": { "delay": 1500, "message": "Kim's vouched for you as far as she's able, which is verbally and no further. Gary Whitlock is your next problem -- IT department, off the handover room at the top of the main corridor, behind an override lock. He knows exactly how they got in, and he's holding the only card that still opens the server room." }
             },
             {
               "eventPattern": "objective_task_completed:talk_to_gary",
@@ -803,23 +804,56 @@ boardroom_pin = "0417"
               "onceOnly": true,
               "sendTimedMessage": { "delay": 11000, "message": "This wasn't the board and it wasn't Kim -- she'd have called me. Someone in that building watched you get as far as IT and decided to slow you down. Which tells me they know exactly what you're about to reach.\n\nPractical problem first: 'I'm the consultant, Dr Kim authorised me' is now a lie the guard can disprove. Get something that stands up -- a real staff lanyard, or somebody willing to vouch for you out loud. Then get to that server room." }
             },
+<%# Gary's own spare carries a distinct id so it is a distinct object; taking it off him
+    (theft, or off the floor after a KO) must restore cover exactly as the staff-room
+    spare does. His dialogue gift sets the globals via ink tags instead. %>
             {
-              "eventPattern": "item_picked_up:contractor_lanyard",
+              "eventPattern": "item_picked_up:id_badge",
+              "condition": "data.itemId === 'gary_contractor_lanyard'",
+              "onceOnly": true,
+              "setGlobal": { "staff_lanyard_obtained": true, "cover_restored": true },
+              "sendTimedMessage": { "delay": 1200, "message": "Blank contractor pass, real hospital stock. That's your standing back -- however you came by it." }
+            },
+            {
+              "eventPattern": "item_picked_up:id_badge",
+              "condition": "data.itemId === 'contractor_lanyard'",
               "onceOnly": true,
               "setGlobal": { "staff_lanyard_obtained": true, "cover_restored": true },
               "sendTimedMessage": { "delay": 1200, "message": "Blank contractor pass, real hospital stock. That's your standing back. Nobody has ever questioned one of those and that is exactly the sort of thing Gary has been writing emails about." }
             },
             {
-              "eventPattern": "item_picked_up:bank_staff_lanyard",
+              "eventPattern": "item_picked_up:id_badge",
+              "condition": "data.itemId === 'bank_staff_lanyard'",
               "onceOnly": true,
               "setGlobal": { "staff_lanyard_obtained": true, "cover_restored": true },
               "sendTimedMessage": { "delay": 1200, "message": "Agency lanyard off the ward. Green ribbon, no photograph, and at four in the morning that is most of the battle. Use it and don't linger." }
             },
             {
+<%# Safety net only: a player who reached the server room by a route that never set
+    cover_restored is not left permanently burned. It must NOT complete
+    regain_freedom_of_movement -- that task gates this event, and completing it here
+    made the task impossible to fail. %>
               "eventPattern": "objective_task_completed:access_server_room",
               "onceOnly": true,
-              "setGlobal": { "cover_restored": true },
-              "completeTask": "regain_freedom_of_movement"
+              "setGlobal": { "cover_restored": true }
+            },
+            {
+              "eventPattern": "global_variable_changed:read_handover_board",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "Friday. Three ten in the morning, every door on this floor on free egress for half an hour, authorised by the night security supervisor and not mentioned to the ward.\n\nNobody plants hardware in a server room during a fire drill by coincidence. Find out who signs himself off as N/S Supervisor." }
+            },
+            {
+              "eventPattern": "global_variable_changed:found_safe_pin_clue",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1400, "message": "Founding year on the escrow safe, flagged at three separate audits and never changed. Same species of problem as the backup server: somebody wrote it down, somebody filed it, nobody acted.\n\nThe plaque's in the lobby. You walked past it on the way in." }
+            },
+            {
+              "eventPattern": "global_variable_changed:read_operator_note",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "That's their operator's own handwriting, and it's the most useful thing in the building. Two numbers in it: twelve hours on the offline set alone, four if you pair it with what you pull off their backup server. Ghost wrote that down because Ghost was certain nobody here would work it out in time.\n\nProve them wrong." }
             },
             {
               "eventPattern": "global_variable_changed:password_hints_found",
@@ -956,7 +990,8 @@ boardroom_pin = "0417"
               "sendTimedMessage": { "delay": 2000, "message": "That post log seals it. Badge SC-4471 is Graham Reeves -- the night security supervisor stationed on that comms terminal. He authorised a fire drill facilities never scheduled, and the call that pulled your booking came from an extension on his post. He is the inside asset. Your call how you handle him." }
             },
             {
-              "eventPattern": "item_picked_up:gary_vindication_email",
+              "eventPattern": "item_picked_up:notes",
+              "condition": "data.itemId === 'gary_vindication_email'",
               "onceOnly": true,
               "completeTask": "investigate_gary_office",
               "sendTimedMessage": { "delay": 1500, "message": "That's Gary's proof -- he warned them six months out and they buried it. Hold onto it. If you decide to go public later, this is what clears his name." }
@@ -1046,7 +1081,8 @@ boardroom_pin = "0417"
           },
           "eventMappings": [
             {
-              "eventPattern": "item_picked_up:ghost_terminal_device",
+              "eventPattern": "item_picked_up:phone",
+              "condition": "data.itemId === 'ghost_terminal_device'",
               "onceOnly": true,
               "conversationMode": "phone-chat",
               "targetKnot": "start"
@@ -1061,6 +1097,12 @@ boardroom_pin = "0417"
               "onceOnly": true,
               "conversationMode": "phone-chat",
               "targetKnot": "on_proftpd_exploited"
+            },
+            {
+              "eventPattern": "item_picked_up:pin-cracker",
+              "onceOnly": true,
+              "conversationMode": "phone-chat",
+              "targetKnot": "on_cracker_taken"
             },
             {
               "eventPattern": "objective_task_completed:submit_database_flag",
@@ -1215,6 +1257,7 @@ boardroom_pin = "0417"
               "type": "id_badge",
               "name": "Bank Staff Lanyard",
               "takeable": true,
+              "id": "bank_staff_lanyard",
               "key_id": "bank_staff_lanyard",
               "observations": "A spare agency-nurse lanyard from the ward office drawer. Not your name, not your face -- but it is real hospital issue, and at three in the morning that is most of the battle.",
               "puzzle_graph_role": "key",
@@ -1554,7 +1597,7 @@ boardroom_pin = "0417"
       "difficulty": "easy",
       "door_sign": "IT Department",
       "connections": {
-        "south": "office_hall_east"
+        "west": "staff_room"
       },
       "npcs": [
         {
@@ -1590,10 +1633,11 @@ boardroom_pin = "0417"
             },
             {
               "type": "id_badge",
+              "id": "gary_contractor_lanyard",
               "name": "Spare Contractor Lanyard",
               "takeable": true,
               "key_id": "contractor_lanyard",
-              "observations": "A blank contractor lanyard from Gary's drawer -- the sort IT issue to hardware engineers. Real hospital stock, no name on it.",
+              "observations": "A blank contractor lanyard from Gary's drawer -- the sort IT issue to hardware engineers. Real hospital stock, no name on it. He will not hand it to somebody he has no reason to trust.",
               "puzzle_graph_role": "key",
               "puzzle_graph_unlocks": "lock_guard_challenge",
               "puzzle_graph_optional": true
@@ -1657,7 +1701,7 @@ boardroom_pin = "0417"
           "sprite": "notes3",
           "takeable": false,
           "readable": true,
-          "text": "A squared-up stack of printed emails, all sent BY M. Whitlock. Warnings one through seven, in order, with the send dates highlighted.\n\nNo replies in the stack. He has printed only his own half of it.\n\nOn the top sheet, in biro: \"IF ANYONE ASKS LATER.\"",
+          "text": "A squared-up stack of printed emails, all sent BY G. Whitlock. Warnings one through seven, in order, with the send dates highlighted.\n\nNo replies in the stack. He has printed only his own half of it.\n\nOn the top sheet, in biro: \"IF ANYONE ASKS LATER.\"",
           "observations": "The stack of emails on his desk -- his side of the correspondence only, printed out at some point tonight. The replies, and the board's deferral, are not here. Those are in the locked filing cabinet.",
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "signals_the_filing_cabinet_holds_the_other_half_of_the_paper_trail"
@@ -1726,8 +1770,8 @@ boardroom_pin = "0417"
               "name": "CryptoSecure Recovery Services Document",
               "takeable": true,
               "readable": true,
-              "text": "CRYPTOSECURE RECOVERY SERVICES\nCryptocurrency-Based Data Recovery Specialists\n\nCLIENT TESTIMONIAL LOG - OPERATION TRIAGE\nQ1-Q2 2024 OPERATIONS\n\nHospital victims who paid ransom, then used our 'legitimate' recovery portal.\nWe handle both sides: we encrypt, you pay, we decrypt.\n\n[LORE: Ransomware Inc. front company -- same group operates both sides of the ransom process]",
-              "observations": "LORE Fragment: Ransomware Incorporated's legitimate front company",
+              "text": "CRYPTOSECURE RECOVERY SERVICES\nCryptocurrency-Based Data Recovery Specialists\n\nCLIENT TESTIMONIAL LOG - OPERATION TRIAGE\nQ1-Q2 2024 OPERATIONS\n\nHospital victims who paid ransom, then used our 'legitimate' recovery portal.\nWe handle both sides: we encrypt, you pay, we decrypt.",
+              "observations": "A client testimonial log, printed on headed paper. Read the letterhead, then read who the clients are.",
               "onPickup": { "setVariable": { "lore_cryptosecure_found": true } }
             }
           ]
@@ -1819,7 +1863,7 @@ boardroom_pin = "0417"
           "type": "workstation",
           "id": "cyberchef_workstation",
           "name": "CyberChef Workstation",
-          "takeable": false,
+          "takeable": true,
           "observations": "Encoding/decoding workstation with Base64, ROT13, and Hex tools. Use this to decode the ransomware messages you've found.",
           "puzzle_graph_role": "tool",
           "puzzle_graph_note": "Portable CyberChef tool -- required to decode the Base64 ransomware note and ROT13 recovery instructions"
@@ -1837,6 +1881,17 @@ boardroom_pin = "0417"
               {
                 "id": "ransom_payment",
                 "name": "Ransom Payment (Ghost's Decryption)",
+                "compromised": false,
+                "etaHours": 1,
+                "outcomeTone": "warning",
+                "outcomeHeader": "RESTORE INITIATED -- KEY SUPPLIED BY THE ATTACKER",
+                "outcomeStatus": "CLINICAL SYSTEMS DECRYPTING -- ETA 30 MINUTES",
+                "outcomeBullets": [
+                  "The key works. It was always going to work -- selling working keys is the business model.",
+                  "Monitoring is back on the ward before the generators are tested.",
+                  "£150,000 has left St. Catherine's and will not be recovered.",
+                  "Ransomware Incorporated records this site as a payer. So will everyone they sell the list to."
+                ],
                 "status": "AVAILABLE -- 30 MINUTES",
                 "etaLabel": "30 minutes",
                 "marker": "!",
@@ -1854,6 +1909,19 @@ boardroom_pin = "0417"
               {
                 "id": "offline_keys_only",
                 "name": "Offline Backup Keys (Physical Safe)",
+                "compromised": false,
+                "etaHours": 12,
+                "requiresGlobal": "offline_keys_recovered",
+                "requiresGlobalLabel": "Offline backup keys not recovered -- the escrow safe is still shut.",
+                "outcomeTone": "warning",
+                "outcomeHeader": "RESTORE INITIATED -- OFFLINE KEY ESCROW",
+                "outcomeStatus": "MANUAL RESTORATION RUNNING -- ETA 12 HOURS",
+                "outcomeBullets": [
+                  "Air-gapped keys accepted. The restore is clean -- nothing from the attacker touches this.",
+                  "Twelve hours of manual clinical operations, on generators, with the ward running on paper.",
+                  "ENTROPY is paid nothing and learns nothing.",
+                  "The long way round. Everyone in this building will feel every hour of it."
+                ],
                 "status": "AVAILABLE IF SAFE CRACKED",
                 "etaLabel": "12 hours manual restore",
                 "marker": "~",
@@ -1871,6 +1939,19 @@ boardroom_pin = "0417"
               {
                 "id": "combined_recovery",
                 "name": "Combined Recovery (VM Keys + Physical Keys)",
+                "compromised": false,
+                "etaHours": 4,
+                "requiresGlobal": "offline_keys_recovered",
+                "requiresGlobalLabel": "Offline backup keys not recovered -- the escrow safe is still shut.",
+                "outcomeTone": "success",
+                "outcomeHeader": "RESTORE INITIATED -- OFFLINE ESCROW PLUS RECOVERED KEY MATERIAL",
+                "outcomeStatus": "CLINICAL SYSTEMS DECRYPTING -- ETA 4 HOURS",
+                "outcomeBullets": [
+                  "Both key sets accepted. The escrow copy verifies what you pulled off their own server.",
+                  "Four hours, inside the generator window, with no payment and no attacker key.",
+                  "ENTROPY is paid nothing, and you keep everything you took off their backup server.",
+                  "This is the outcome the board deferred £85,000 to avoid needing."
+                ],
                 "status": "OPTIMAL -- REQUIRES BOTH KEY TYPES",
                 "etaLabel": "4 hours",
                 "marker": "OK",
@@ -1910,13 +1991,56 @@ boardroom_pin = "0417"
         },
         {
           "type": "notes",
-          "name": "Recovery Instructions (Encoded)",
+          "id": "operator_site_note",
+          "name": "Handwritten Note, Taped Inside the Rack",
           "takeable": true,
           "readable": true,
-          "text": "<%= recovery_instructions_encoded %>\n\n(ROT13 encoded -- use the CyberChef workstation to decode)",
-          "observations": "Encoded note taped to the server rack -- ROT13 cipher",
+          "text": "<%= recovery_instructions_encoded %>",
+          "observations": "Not hospital paper. Taped inside the rack door at head height, where somebody working the cabinet would see it and nobody walking past would. The letters are wrong but the word lengths look right -- whoever wrote it was hiding it from a passing glance, not from you.",
+          "onRead": { "setVariable": { "read_operator_note": true } },
           "puzzle_graph_role": "clue",
-          "puzzle_graph_reveals": "recovery_requires_both_key_types_and_ransom_vs_manual_tradeoff"
+          "puzzle_graph_reveals": "operator_crib_confirms_combined_recovery_is_four_hours_and_that_ghost_expects_them_to_pay"
+        },
+        {
+          "type": "safe",
+          "id": "entropy_field_case",
+          "name": "Sealed Equipment Case",
+          "takeable": false,
+          "locked": true,
+          "lockType": "key",
+          "keyPins": [55, 30, 60, 40],
+          "difficulty": "medium",
+          "observations": "A hard-shell case pushed in behind the rack legs, where the cable slack is. Matte black, no hospital asset sticker, no dust on it -- it has been here days, not years. The latch is a cheap four-pin tumbler, and there is no key for it on any hook in this building. If you want inside, you pick it.",
+          "puzzle_graph_role": "lock",
+          "puzzle_graph_aim": "unmask_inside_asset",
+          "puzzle_graph_optional": true,
+          "contents": [
+            {
+              "type": "pin-cracker",
+              "id": "pin_cracker",
+              "name": "PIN Cracker",
+              "takeable": true,
+              "observations": "Not SAFETYNET kit -- the matte casing is ENTROPY's, the same moulding as the network bridge someone planted in IT. It clamps over a four-digit keypad and turns the lock against itself: every wrong code you try, it reads the response and tells you how many digits were right in place, and how many were right but in the wrong slot. You get three goes before it locks you out, so think between them. Whoever stashed it was sent to reach the offline keys before you did, and had not got round to it. Take it back through the hospital and turn their own tool on the locks they were saving it for.",
+              "onPickup": { "setVariable": { "pin_cracker_found": true } },
+              "puzzle_graph_role": "tool",
+              "puzzle_graph_unlocks": "emergency_storage_safe",
+              "puzzle_graph_optional": true
+            },
+            {
+              "type": "notes",
+              "id": "entropy_asset_tag",
+              "name": "ENTROPY Asset Tag",
+              "takeable": true,
+              "readable": true,
+              "text": "ENTROPY // FIELD ASSET  R-4\n  keypad oracle, gen-3\n  battery 61%  |  cycles logged: 0\n\n  RETURN TO HANDLER AFTER USE.\n  Do not leave on site.\n\n  tasked: EMERG-STORE strongbox\n  objective: offline key custody --\n  recover or deny before restore window\n",
+              "observations": "A property tag zip-tied to the cracker. Someone on ENTROPY's payroll signed this device out, was told to bring it back, and was sent to this exact safe -- to take the offline keys, or make sure nobody else could. They got physically inside the building to do it. That is your inside asset, and this is them.",
+              "observationDisplay": "gameDisplay",
+              "onRead": { "setVariable": { "insider_evidence_partial": true } },
+              "puzzle_graph_role": "clue",
+              "puzzle_graph_aim": "unmask_inside_asset",
+              "puzzle_graph_reveals": "entropy_affiliate_was_physically_on_site_targeting_the_offline_keys"
+            }
+          ]
         },
         {
           "type": "safe",
@@ -1997,47 +2121,6 @@ boardroom_pin = "0417"
           ]
         },
         {
-          "type": "safe",
-          "id": "entropy_field_case",
-          "name": "Sealed Equipment Case",
-          "takeable": false,
-          "locked": true,
-          "lockType": "key",
-          "keyPins": [55, 30, 60, 40],
-          "difficulty": "medium",
-          "observations": "A hard-shell case wedged in behind the medical shelves. Matte black, no hospital asset sticker, no dust on it -- it has been here days, not years. The latch is a cheap four-pin tumbler, and there is no key for it on any hook in this building. If you want inside, you pick it.",
-          "puzzle_graph_role": "lock",
-          "puzzle_graph_aim": "recover_offline_keys",
-          "puzzle_graph_optional": true,
-          "contents": [
-            {
-              "type": "pin-cracker",
-              "id": "pin_cracker",
-              "name": "PIN Cracker",
-              "takeable": true,
-              "observations": "Not SAFETYNET kit -- the matte casing is ENTROPY's, the same moulding as the network bridge someone planted in IT. It clamps over a four-digit keypad and turns the lock against itself: every wrong code you try, it reads the response and tells you how many digits were right in place, and how many were right but in the wrong slot. That leak alone collapses ten thousand combinations down to a handful of guesses. Mastermind, in silicon. Whoever stashed it was here to reach the offline keys before you were -- so turn their own tool on their own safe.",
-              "onPickup": { "setVariable": { "pin_cracker_found": true } },
-              "puzzle_graph_role": "tool",
-              "puzzle_graph_unlocks": "emergency_storage_safe",
-              "puzzle_graph_optional": true
-            },
-            {
-              "type": "notes",
-              "id": "entropy_asset_tag",
-              "name": "ENTROPY Asset Tag",
-              "takeable": true,
-              "readable": true,
-              "text": "ENTROPY // FIELD ASSET  R-4\n  keypad oracle, gen-3\n  battery 61%  |  cycles logged: 0\n\n  RETURN TO HANDLER AFTER USE.\n  Do not leave on site.\n\n  tasked: EMERG-STORE strongbox\n  objective: offline key custody --\n  recover or deny before restore window\n",
-              "observations": "A property tag zip-tied to the cracker. Someone on ENTROPY's payroll signed this device out, was told to bring it back, and was sent to this exact safe -- to take the offline keys, or make sure nobody else could. They got physically inside the building to do it. That is your inside asset, and this is them.",
-              "observationDisplay": "gameDisplay",
-              "onRead": { "setVariable": { "insider_evidence_partial": true } },
-              "puzzle_graph_role": "clue",
-              "puzzle_graph_aim": "unmask_inside_asset",
-              "puzzle_graph_reveals": "entropy_affiliate_was_physically_on_site_targeting_the_offline_keys"
-            }
-          ]
-        },
-        {
           "type": "notes",
           "name": "Medical Supply Shelves",
           "takeable": false,
@@ -2057,7 +2140,7 @@ boardroom_pin = "0417"
       "locked": false,
       "door_sign": "CTO Office",
       "connections": {
-        "south": "office_hall_mid"
+        "south": "staff_room"
       },
       "npcs": [
         {
@@ -2094,7 +2177,7 @@ boardroom_pin = "0417"
               "key_id": "kim_statement",
               "takeable": true,
               "readable": true,
-              "text": "STATEMENT OF FACT -- S. KIM, Chief Technology Officer, St. Catherine's Regional\n\nThe security remediation of the backup server was costed by M. Whitlock (IT Systems) at \u00a385,000 and formally escalated by him on seven occasions between May and November.\n\nIt was deferred on my recommendation. The decision was mine. Mr Whitlock discharged his responsibilities in full and was instructed by me, in writing, to stop escalating outside the department.\n\nAny characterisation of this incident as an implementation failure on his part is factually incorrect and I will say so under oath.\n\nSigned, S. Kim.",
+              "text": "STATEMENT OF FACT -- S. KIM, Chief Technology Officer, St. Catherine's Regional\n\nThe security remediation of the backup server was costed by G. Whitlock (IT Systems) at \u00a385,000 and formally escalated by him on seven occasions between May and November.\n\nIt was deferred on my recommendation. The decision was mine. Mr Whitlock discharged his responsibilities in full and was instructed by me, in writing, to stop escalating outside the department.\n\nAny characterisation of this incident as an implementation failure on his part is factually incorrect and I will say so under oath.\n\nSigned, S. Kim.",
               "observations": "Kim's handwritten statement taking the budget decision onto her own name. Signed. This is what stops Gary carrying it alone.",
               "puzzle_graph_role": "clue",
               "puzzle_graph_optional": true,
@@ -2131,14 +2214,14 @@ boardroom_pin = "0417"
           "name": "Dr. Kim's Desk Diary",
           "takeable": false,
           "readable": true,
-          "text": "Open on the desk, this week's page.\n\nTue -- Board, 09:00. Boardroom keypad <%= boardroom_pin %> (CHANGE THIS)\nWed -- Estates: emergency store safe still on the founding year. Flag at audit.\nThu -- M. Whitlock 1:1. Postponed (again).\nFri -- ?\n\nBottom of the page, pressed hard enough to score the paper: \"Should have listened in May.\"",
+          "text": "Open on the desk, this week's page.\n\nTue -- Board, 09:00. Boardroom keypad <%= boardroom_pin %> (CHANGE THIS)\nWed -- Estates snag list. Read it this time.\nThu -- G. Whitlock 1:1. Postponed (again).\nFri -- ?\n\nBottom of the page, pressed hard enough to score the paper: \"Should have listened in May.\"",
           "observations": "Her working diary. Two access codes she has been meaning to change for months, and a line at the bottom she wrote for nobody but herself.",
           "observationDisplay": "gameDisplay",
           "onRead": { "setVariable": { "found_boardroom_code": true } },
           "puzzle_graph_role": "clue",
           "puzzle_graph_unlocks": ["emergency_storage_safe", "conference_room"],
           "puzzle_graph_optional": true,
-          "puzzle_graph_reveals": "boardroom_pin_and_confirmation_that_the_safe_pin_is_the_founding_year",
+          "puzzle_graph_reveals": "boardroom_pin_and_a_pointer_at_the_estates_snag_list",
           "puzzle_graph_links": [
             { "from": "action_meet_dr_kim", "to": "conference_room" },
             { "from": "action_meet_dr_kim", "to": "it_department", "dashed": true }
@@ -2163,20 +2246,21 @@ boardroom_pin = "0417"
         },
         {
           "type": "safe",
+          "id": "dr_kim_safe",
           "name": "Dr. Kim's Safe",
           "takeable": false,
           "locked": true,
           "lockType": "pin",
           "requires": "1987",
-          "observations": "Executive safe behind a framed certificate -- same PIN as the emergency storage",
+          "observations": "A small executive safe, set into the wall behind a framed certificate. Four-digit keypad, hospital estates issue -- the same model as the one in the emergency store.",
           "contents": [
             {
               "type": "notes",
               "name": "Zero Day Syndicate Invoice",
               "takeable": true,
               "readable": true,
-              "text": "ZERO DAY SYNDICATE - INVOICE #ZDS-2024-0847\n\nCLIENT: Ransomware Incorporated (Ghost)\nPROJECT: Healthcare Sector Exploit Package\nTARGET: St. Catherine's Regional Medical\n\nDELIVERABLES:\n- ProFTPD 1.3.3c Backdoor Exploit: $25,000\n- Reconnaissance (214 hospitals): $15,000\n- Target Selection Consultation: $10,000\n- Deployment Guide: $5,000\n\nTOTAL: $55,000 (15% ENTROPY discount applied)\n\nARCHITECT APPROVAL: CONFIRMED\n\n[LORE: Zero Day Syndicate sold this exploit to Ghost specifically targeting St. Catherine's because of Gary's documented warnings -- 'maximum educational impact'. The Architect personally approved the operation.]",
-              "observations": "LORE Fragment: Zero Day Syndicate sold the ProFTPD exploit to Ransomware Inc. -- and The Architect approved it",
+              "text": "ZERO DAY SYNDICATE - INVOICE #ZDS-2024-0847\n\nCLIENT: Ransomware Incorporated (Ghost)\nPROJECT: Healthcare Sector Exploit Package\nTARGET: St. Catherine's Regional Medical\n\nDELIVERABLES:\n- ProFTPD 1.3.3c Backdoor Exploit: $25,000\n- Reconnaissance (214 hospitals): $15,000\n- Target Selection Consultation: $10,000\n- Deployment Guide: $5,000\n\nTOTAL: $55,000 (15% ENTROPY discount applied)\n\nARCHITECT APPROVAL: CONFIRMED",
+              "observations": "An invoice. Somebody sold somebody the way into this hospital, itemised, with a discount line and a sign-off.",
               "onPickup": { "setVariable": { "lore_zds_invoice_found": true } },
               "puzzle_graph_role": "clue",
               "puzzle_graph_aim": "exploit_entropy_backdoor",
@@ -2199,7 +2283,7 @@ boardroom_pin = "0417"
       "difficulty": "medium",
       "door_sign": "Boardroom",
       "connections": {
-        "south": "office_hall_west"
+        "east": "staff_room"
       },
       "npcs": [
         {
@@ -2476,7 +2560,7 @@ boardroom_pin = "0417"
       "door_sign": "Main Corridor",
       "connections": {
         "south": "ward_hall",
-        "north": "office_hall_mid",
+        "north": "staff_room",
         "west": "security_office"
       },
       "npcs": [],
@@ -2486,7 +2570,7 @@ boardroom_pin = "0417"
           "name": "Ward Board",
           "takeable": false,
           "readable": true,
-          "text": "ST. CATHERINE'S -- CORRIDOR DIRECTORY\n\nBoardroom .................... off this corridor, west landing (KEYPAD)\nExecutive / CTO .............. off this corridor, centre landing\nIT Systems ................... off this corridor, east landing (OVERRIDE KEY)\nSecurity Office .............. west end of this corridor\nServer Room .................. through Security Office (RESTRICTED)\nWard 3 (Critical Care) ....... down the ward link, south\nEmergency Equipment Store .... far end of Ward 3\nReception .................... through Ward 3, ward approach\n\nHandwritten underneath, in biro: \"ALL READERS DOWN -- overrides at reception, sign them out, DO NOT PROP DOORS.\"",
+          "text": "ST. CATHERINE'S -- CORRIDOR DIRECTORY\n\nNight Handover Room .......... north off this corridor\nBoardroom .................... through Handover, west (KEYPAD)\nExecutive / CTO .............. through Handover, north\nIT Systems ................... through Handover, east (OVERRIDE KEY)\nSecurity Office .............. west end of this corridor\nServer Room .................. through Security Office (RESTRICTED)\nWard 3 (Critical Care) ....... down the ward link, south\nEmergency Equipment Store .... far end of Ward 3\nReception .................... through Ward 3, ward approach\n\nHandwritten underneath, in biro: \"ALL READERS DOWN -- overrides at reception, sign them out, DO NOT PROP DOORS.\"",
           "observations": "The corridor directory. Somebody has added the state of the access control system underneath in biro.",
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "map_orientation_and_confirmation_that_overrides_live_at_reception"
@@ -2494,39 +2578,80 @@ boardroom_pin = "0417"
       ]
     },
 
-    "office_hall_west": {
-      "type": "room_hospital_hall",
-      "door_sign": "Boardroom Landing",
-      "connections": {
-        "east": "office_hall_mid",
-        "north": "conference_room"
+    "staff_room": {
+      "type": "room_hospital_staff",
+      "dimensions": {
+        "width": 10,
+        "height": 10
       },
-      "npcs": [],
-      "objects": []
-    },
-
-    "office_hall_mid": {
-      "type": "room_hospital_hall",
-      "door_sign": "Offices",
+      "door_sign": "Night Handover",
       "connections": {
         "south": "office_corridor",
-        "west": "office_hall_west",
-        "east": "office_hall_east",
-        "north": "dr_kim_office"
+        "north": "dr_kim_office",
+        "west": "conference_room",
+        "east": "it_department"
       },
       "npcs": [],
-      "objects": []
-    },
-
-    "office_hall_east": {
-      "type": "room_hospital_hall",
-      "door_sign": "IT Wing",
-      "connections": {
-        "west": "office_hall_mid",
-        "north": "it_department"
-      },
-      "npcs": [],
-      "objects": []
+      "objects": [
+        {
+          "type": "notes",
+          "id": "handover_whiteboard",
+          "name": "Night Handover Board",
+          "sprite": "chalkboard2",
+          "takeable": false,
+          "readable": true,
+          "text": "WARD 3 / EXEC -- NIGHT HANDOVER, WEEK COMMENCING MON\n\nMon  Quiet. Bed 4 unsettled, see notes.\nTue  Agency x2. Lift 2 still out.\nWed  Estates in re: store room. Didn't come.\nThu  Quiet.\nFri  03:10-03:40 FIRE DRILL, Ward 3 + Exec corridor.\n     Doors on free egress for the duration. Auth: N/S Supervisor.\n     NOBODY told the ward. Second time.\n\nSat  -- (this column left blank)\n\nAcross the bottom, in a different hand and pressed hard:\n\"02:47. Everything went at once. If you are reading this and the screens are still dead, we are on paper. Charts in the trolley, drug round by torch if the lights go. Do not wait for IT.\"",
+          "observations": "A wipe-clean weekly grid, half of it rubbed out and rewritten. The bottom two lines are newer than the rest and were written by somebody in a hurry.",
+          "onRead": { "setVariable": { "read_handover_board": true } },
+          "puzzle_graph_role": "clue",
+          "puzzle_graph_aim": "unmask_inside_asset",
+          "puzzle_graph_reveals": "fire_drill_window_and_that_the_night_security_supervisor_authorised_it"
+        },
+        {
+          "type": "notes",
+          "id": "estates_audit_snag_list",
+          "name": "Estates Audit Snag List",
+          "sprite": "notes5",
+          "takeable": false,
+          "readable": true,
+          "text": "ESTATES -- INTERNAL AUDIT, OUTSTANDING SNAGS\nPinned for staff awareness. Do not remove.\n\n  17  Lift 2 -- intermittent. Contractor booked.\n  18  Ward 3 side door -- closer too fast.\n  19  Emergency equipment store, keypad safe --\n      STILL SET TO THE HOSPITAL FOUNDING YEAR.\n      Raised at the last three audits. Flag again.\n  20  Boardroom keypad -- shared with too many people.\n  21  Fire drill log -- Friday's drill not countersigned\n      by the ward. Chase N/S Supervisor.\n\nSigned off: nobody. Circulated: nobody.",
+          "observations": "An audit snag list pinned to the staff noticeboard, where the people who have to live with the snags can read them. Item 19 has been underlined by somebody who has clearly given up.",
+          "onRead": { "setVariable": { "found_safe_pin_clue": true } },
+          "puzzle_graph_role": "clue",
+          "puzzle_graph_unlocks": "emergency_storage_safe",
+          "puzzle_graph_reveals": "the_emergency_store_safe_pin_is_the_founding_year"
+        },
+        {
+          "type": "notes",
+          "name": "Staff Noticeboard",
+          "sprite": "notes3",
+          "takeable": false,
+          "readable": true,
+          "text": "PINNED, IN LAYERS:\n\n- Flu jab clinic, Tuesdays, ground floor.\n- \"Whoever keeps taking the good chair: I know.\"\n- Bank shift rates, effective April. Somebody has written \"ha\" next to the night rate.\n- Retirement collection for Maureen, 11 years on Ward 3. Envelope in the drawer.\n- A photograph of the ward team at somebody's leaving do. Sister Doyle is in it, not smiling, holding a paper plate.",
+          "observations": "The ordinary business of a hospital, pinned up in layers over years. Nothing on this board has anything to do with tonight, which is the only reason it is worth reading.",
+          "puzzle_graph_role": "flavour"
+        },
+        {
+          "type": "workstation",
+          "id": "cyberchef_workstation",
+          "name": "Ward Clerk's Laptop",
+          "takeable": true,
+          "observations": "The ward clerk's laptop, standalone and not on the domain -- it was shut when the encryption ran and it is the only machine in this building that still does what you ask it. Your own analysis tools will run on it: Base64, ROT13, hex, the lot. Take it.",
+          "puzzle_graph_role": "tool",
+          "puzzle_graph_note": "Portable decoding workstation. Deliberately placed mid-game (depth 6), after the player has met encoded material they could not read."
+        },
+        {
+          "type": "id_badge",
+          "id": "contractor_lanyard",
+          "name": "Spare Contractor Lanyard",
+          "takeable": true,
+          "key_id": "contractor_lanyard",
+          "observations": "A blank contractor lanyard in its wrapper, left on the side with somebody's reading glasses. IT issue, real hospital stock, no name on it. Somebody meant to take this back downstairs and didn't.",
+          "puzzle_graph_role": "key",
+          "puzzle_graph_unlocks": "lock_guard_challenge",
+          "puzzle_graph_optional": true
+        }
+      ]
     },
 
     "ward_hall": {
@@ -2715,6 +2840,9 @@ boardroom_pin = "0417"
 
     "pin_attempts": 0,
     "decoded_ransomware_note": false,
+    "read_operator_note": false,
+    "read_handover_board": false,
+    "found_safe_pin_clue": false,
     "decoded_recovery_instructions": false,
 
     "guard_detections": 0,

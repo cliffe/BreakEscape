@@ -13,7 +13,7 @@
     {
       "ka": "SS",
       "topic": "Categories of Vulnerabilities",
-      "keywords": ["CVEs and CWEs", "ProFTPD CVE-2010-4652", "Backup systems", "File system security"]
+      "keywords": ["CVEs and CWEs", "Supply chain compromise", "ProFTPD 1.3.3c backdoored source release (OSVDB-69562)", "Backup systems", "File system security"]
     },
     {
       "ka": "SOIM",
