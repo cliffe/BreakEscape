@@ -397,10 +397,10 @@ Applies to both rooms and objects (safes, PCs, briefcases, doors, etc.):
 
 | `lockType` | `requires` value | Notes |
 |-----------|-----------------|-------|
-| `key` | `key_id` string matching a key item's `key_id` | Also requires `keyPins` array on **both** the lock and the matching key item (e.g., `[45, 25, 55, 35]`) |
+| `key` | a string naming this lock, matched against a key item's `opens_lock` | Also requires `keyPins` array on **both** the lock and the matching key item (e.g., `[45, 25, 55, 35]`) |
 | `pin` | 4-digit PIN string (e.g., `"2468"`) | Player enters PIN in numeric keypad mini-game |
 | `password` | Password string (e.g., `"Marketing123"`) | Player types password; `showKeyboard: true` shows on-screen keys; `maxAttempts: 3` limits tries; `postitNote` + `showPostit: true` shows a hint post-it |
-| `rfid` | `key_id` of a keycard / rfid item | Player must scan a keycard using the `rfid_cloner` or by carrying the card |
+| `rfid` | a string naming this lock, matched against a keycard's `card_id` or `opens_lock` | Player must scan a keycard using the `rfid_cloner` or by carrying the card |
 | `bluetooth` | Bluetooth device MAC address | Requires `bluetooth_scanner` tool; device must be discovered |
 | `biometric` | Fingerprint owner name | Requires `fingerprint_kit`; `biometricMatchThreshold` (0.0–1.0) sets difficulty |
 | `flag` | `"vm_name:flag_id"` string | Unlocked by submitting a VM flag at a `flag-station`; supports `flagRewards` array |
@@ -669,17 +669,35 @@ These items are carried in the player's inventory to unlock doors, containers, o
 
 | Type | Notes |
 |------|-------|
-| `key` | Physical key. Must have `key_id` and `keyPins` array. |
-| `keycard` | RFID keycard. Must have `key_id`. Variants: `keycard-ceo`, `keycard-maintenance`, `keycard-security`. |
+| `key` | Physical key. Must have `opens_lock` and `keyPins` array. |
+| `keycard` | RFID keycard. Must have `opens_lock` (or `card_id`). Variants: `keycard-ceo`, `keycard-maintenance`, `keycard-security`. |
 | `id_badge` | Visitor or staff badge (narrative/inventory item). |
 | `key-ring` | Decorative key-ring item. |
+
+#### Item identity: `type`, `id`, `opens_lock`
+
+Three fields, three jobs. Keeping them apart is what stops a mapping silently never firing.
+
+| Field | Answers | Notes |
+|---|---|---|
+| `type` | *What class of thing is it?* | Shared by many items (`notes`, `lab-workstation`, `key`). Picks the sprite, and `#give_item:<type>` matches on it. `item_picked_up:<type>` is emitted with the **type**, never the id. |
+| `id` | *Which object is this?* | Unique. The `#give_item` selector, `data.itemId` on pickup events, and inventory de-duplication all use it. Give every item an `id` when its NPC or room holds more than one of a type. |
+| `opens_lock` | *Which lock does it open?* | Only on things that open something. **Many-to-one**: two spare keys to the same door share one `opens_lock` and keep distinct `id`s. Matched against a lock's `requires`. |
+
+Common mistakes the validator now catches:
+
+- `key_id` in a scenario — renamed to `opens_lock`. The engine still reads it (via `window.lockRef`) **only** so missions started before the rename can finish; a game snapshots its `scenario_data` at creation.
+- An `opens_lock` no lock `requires` — a typo, or an identity that belongs in `id`.
+- A key lock nothing can open.
+- An `item_picked_up:` mapping keyed on an id — the event carries the **type**. Disambiguate with `"condition": "data.itemId === '<id>'"`.
+
 
 ```json
 {
   "type": "key",
   "name": "Derek's Office Key",
   "takeable": true,
-  "key_id": "derek_office_key",
+  "opens_lock": "derek_office_key",
   "keyPins": [35, 55, 45, 25],
   "observations": "Spare key to Derek Lawson's office"
 }
@@ -1047,9 +1065,9 @@ Contacts in the player's phone. Not rendered in the world — they exist only in
 
 The handler (a phone NPC like Agent HaX) can hand the player optional **Field Guides** — in-universe lab sheets that teach the technique a challenge needs. The established pattern (see `m01_first_contact` and `m02_ransomed_trust`) gates each guide behind **exposure to the relevant challenge element**, then delivers it **on request** so the player is never spammed:
 
-1. **Hold the guide.** Add a `lab-workstation` item to the handler's `itemsHeld`, with a `key_id`, a `name`, and a `labUrl` pointing at the published lab sheet (a markdown file in the `HacktivityLabSheets` repo with `game_fragment: true` and a matching `permalink`):
+1. **Hold the guide.** Add a `lab-workstation` item to the handler's `itemsHeld`, with an `id`, a `name`, and a `labUrl` pointing at the published lab sheet (a markdown file in the `HacktivityLabSheets` repo with `game_fragment: true` and a matching `permalink`):
    ```json
-   { "type": "lab-workstation", "key_id": "m02_scanning_exploitation_field_guide",
+   { "type": "lab-workstation", "id": "m02_scanning_exploitation_field_guide",
      "name": "SAFETYNET Field Guide: Scanning and Exploitation",
      "takeable": true,
      "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/m02_ransomed_trust/safetynet-field-guide-scanning-and-exploitation/" }

@@ -148,7 +148,7 @@ export function handleUnlock(lockable, type) {
                     return {
                         scenarioData: keyData,
                         name: 'key',
-                        objectId: `key_ring_${keyData.key_id || keyData.name}`
+                        objectId: `key_ring_${window.lockRef(keyData) || keyData.name}`
                     };
                 });
                 playerKeys = playerKeys.concat(keyRingKeys);
@@ -504,8 +504,8 @@ export function handleUnlock(lockable, type) {
                 item.scenarioData.type === 'keycard'
             );
 
-            // Helper to get card ID (standard: card_id, legacy: key_id)
-            const getCardId = (cardData) => cardData.card_id || cardData.key_id;
+            // Helper to get card ID (standard: card_id, else the lock it opens)
+            const getCardId = (cardData) => cardData.card_id || window.lockRef(cardData);
 
             // Find a matching physical keycard
             const matchingKeycard = keycards.find(card =>

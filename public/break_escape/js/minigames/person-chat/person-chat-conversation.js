@@ -215,7 +215,7 @@ export default class PersonChatConversation {
                 // Basic card info
                 this.inkEngine.setVariable(`${prefix}_protocol`, protocol);
                 this.inkEngine.setVariable(`${prefix}_name`, card.name || 'Card');
-                this.inkEngine.setVariable(`${prefix}_card_id`, card.card_id || card.key_id || '');
+                this.inkEngine.setVariable(`${prefix}_card_id`, card.card_id || window.lockRef(card) || '');
 
                 // Security level (low, medium, high)
                 let security = 'low';

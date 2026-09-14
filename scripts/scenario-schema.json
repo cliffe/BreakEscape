@@ -792,7 +792,8 @@
             { "type": "array", "items": { "type": "string" } }
           ]
         },
-        "key_id": { "type": "string" },
+        "opens_lock": { "type": "string", "description": "The lock this item opens -- a reference to a lock's 'requires' value, NOT this item's own name. Many-to-one: two spare keys to the same door share one opens_lock and keep distinct 'id's. If the value does not name a lock, it is an identity and belongs in 'id'." },
+        "key_id": { "type": "string", "description": "DEPRECATED -- renamed to 'opens_lock'. Read by the engine only so missions started before the rename can finish; the validator errors on it in a scenario file." },
         "keyPins": {
           "type": "array",
           "items": { "type": "integer" }

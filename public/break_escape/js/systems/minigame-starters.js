@@ -157,7 +157,7 @@ export function startLockpickingMinigame(lockable, scene, difficulty = 'medium',
                 }
                 
                 keys.push({
-                    id: key.scenarioData.key_id,
+                    id: window.lockRef(key.scenarioData),
                     name: key.scenarioData.name,
                     cuts: cuts || []
                 });
@@ -183,7 +183,7 @@ export function startLockpickingMinigame(lockable, scene, difficulty = 'medium',
                     }
                     
                     keys.push({
-                        id: keyData.key_id,
+                        id: window.lockRef(keyData),
                         name: keyData.name,
                         cuts: cuts || []
                     });
@@ -213,7 +213,7 @@ export function startKeySelectionMinigame(lockable, type, playerKeys, requiredKe
     if (!window.MinigameFramework) {
         console.error('MinigameFramework not available');
         // Fallback to simple key selection
-        const correctKey = playerKeys.find(key => key.scenarioData.key_id === requiredKeyId);
+        const correctKey = playerKeys.find(key => window.lockRef(key.scenarioData) === requiredKeyId);
         if (correctKey) {
             window.gameAlert(`You used the ${correctKey.scenarioData.name} to unlock the ${type}.`, 'success', 'Unlock Successful', 4000);
             if (unlockTargetCallback) {
@@ -252,7 +252,7 @@ export function startKeySelectionMinigame(lockable, type, playerKeys, requiredKe
     }
     
     // Find the key that matches this lock
-    const matchingKey = playerKeys.find(key => doesKeyMatchLock(key.scenarioData.key_id, lockId));
+    const matchingKey = playerKeys.find(key => doesKeyMatchLock(window.lockRef(key.scenarioData), lockId));
     
     let keysToShow = playerKeys;
     if (matchingKey) {
@@ -296,11 +296,11 @@ export function startKeySelectionMinigame(lockable, type, playerKeys, requiredKe
         }
         
         return {
-            id: key.scenarioData.key_id,
+            id: window.lockRef(key.scenarioData),
             name: key.scenarioData.name,
             cuts: cuts,
             pinCount: cuts.length || key.scenarioData.pinCount || 4, // Use cuts length or default to 4 pins
-            matchesLock: doesKeyMatchLock(key.scenarioData.key_id, lockId) // Add flag for matching
+            matchesLock: doesKeyMatchLock(window.lockRef(key.scenarioData), lockId) // Add flag for matching
         };
     });
     
@@ -460,7 +460,7 @@ export function startKeySelectionMinigame(lockable, type, playerKeys, requiredKe
                 }
                 
                 return {
-                    id: key.scenarioData.key_id,
+                    id: window.lockRef(key.scenarioData),
                     name: key.scenarioData.name,
                     cuts: cuts,
                     pinCount: cuts.length || key.scenarioData.pinCount || 4

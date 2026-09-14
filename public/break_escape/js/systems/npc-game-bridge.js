@@ -206,7 +206,9 @@ export class NPCGameBridge {
         }
 
         const selector = itemSelector.toLowerCase();
-        return [item.id, item.key_id, item.name].some(value =>
+        // opens_lock is the lock this item opens; key_id is its pre-rename name,
+        // kept so a mission started before the rename still resolves its selectors.
+        return [item.id, item.opens_lock, item.key_id, item.name].some(value =>
           value && String(value).toLowerCase() === selector
         );
       });

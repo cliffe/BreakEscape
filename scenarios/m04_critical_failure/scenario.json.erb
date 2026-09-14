@@ -475,7 +475,7 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
           "itemsHeld": [
             {
               "type": "lab-workstation",
-              "key_id": "safetynet_field_guide_rfid_cloning",
+              "id": "safetynet_field_guide_rfid_cloning",
               "name": "SAFETYNET Field Guide: RFID Cloning",
               "takeable": true,
               "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/rfid-cloning/",
@@ -483,7 +483,7 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
             },
             {
               "type": "lab-workstation",
-              "key_id": "safetynet_field_guide_lockpicking",
+              "id": "safetynet_field_guide_lockpicking",
               "name": "SAFETYNET Field Guide: Lockpicking",
               "takeable": true,
               "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/lockpicking/",
@@ -491,7 +491,7 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
             },
             {
               "type": "lab-workstation",
-              "key_id": "safetynet_field_guide_recon_network_mapping",
+              "id": "safetynet_field_guide_recon_network_mapping",
               "name": "SAFETYNET Field Guide: Reconnaissance and Network Mapping",
               "takeable": true,
               "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/reconnaissance-and-network-mapping/",
@@ -499,7 +499,7 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
             },
             {
               "type": "lab-workstation",
-              "key_id": "safetynet_field_guide_vuln_analysis",
+              "id": "safetynet_field_guide_vuln_analysis",
               "name": "SAFETYNET Field Guide: Vulnerability Analysis and Attack Surface",
               "takeable": true,
               "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/vulnerability-analysis-and-attack-surface/",
@@ -507,7 +507,7 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
             },
             {
               "type": "lab-workstation",
-              "key_id": "safetynet_field_guide_distcc",
+              "id": "safetynet_field_guide_distcc",
               "name": "SAFETYNET Field Guide: distcc Exploitation",
               "takeable": true,
               "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/distcc-exploitation/",
@@ -515,7 +515,7 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
             },
             {
               "type": "lab-workstation",
-              "key_id": "safetynet_field_guide_cyberchef",
+              "id": "safetynet_field_guide_cyberchef",
               "name": "SAFETYNET Field Guide: Encoding and Decoding with CyberChef",
               "takeable": true,
               "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/encoding-and-decoding-with-cyberchef/",
@@ -740,7 +740,7 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
               "type": "keycard",
               "name": "Facility Access Keycard (Level 1)",
               "takeable": true,
-              "key_id": "facility_keycard_level1",
+              "opens_lock": "facility_keycard_level1",
               "observations": "Standard RFID access keycard for most facility areas",
               "puzzle_graph_role": "key",
               "puzzle_graph_unlocks": "battery_hall_2"
@@ -956,7 +956,7 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
               "type": "keycard",
               "name": "Spare Keycard (Level 1)",
               "takeable": true,
-              "key_id": "facility_keycard_level1",
+              "opens_lock": "facility_keycard_level1",
               "observations": "Backup facility access keycard"
             },
             {
@@ -1004,7 +1004,7 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
               "type": "keycard",
               "name": "Workshop Keycard (Level 2)",
               "takeable": true,
-              "key_id": "server_room_keycard",
+              "opens_lock": "server_room_keycard",
               "observations": "High-level access keycard for the engineering workshop",
               "puzzle_graph_role": "key",
               "puzzle_graph_unlocks": "engineering_workshop"
@@ -1132,7 +1132,7 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
               "type": "keycard",
               "name": "Master Keycard",
               "takeable": true,
-              "key_id": "master_keycard",
+              "opens_lock": "master_keycard",
               "observations": "Master access keycard for all areas including the Plant Room",
               "puzzle_graph_role": "key",
               "puzzle_graph_unlocks": "plant_room"

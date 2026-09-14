@@ -520,11 +520,11 @@ archives_password = "TrustNoOne"
             }
           ],
           "itemsHeld": [
-            { "type": "lab-workstation", "key_id": "m08_recon_field_guide", "name": "SAFETYNET Field Guide: Reconnaissance and Network Mapping", "takeable": true, "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/reconnaissance-and-network-mapping/" },
-            { "type": "lab-workstation", "key_id": "m08_scanning_field_guide", "name": "SAFETYNET Field Guide: Scanning and Exploitation", "takeable": true, "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/scanning-and-exploitation/" },
-            { "type": "lab-workstation", "key_id": "m08_infoleak_field_guide", "name": "SAFETYNET Field Guide: Information Leakage", "takeable": true, "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/information-leakage-and-the-pin-oracle/" },
-            { "type": "lab-workstation", "key_id": "m08_vulnanalysis_field_guide", "name": "SAFETYNET Field Guide: Vulnerability Analysis", "takeable": true, "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/vulnerability-analysis-and-attack-surface/" },
-            { "type": "lab-workstation", "key_id": "m08_privesc_field_guide", "name": "SAFETYNET Field Guide: Privilege Escalation", "takeable": true, "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/privilege-escalation/" }
+            { "type": "lab-workstation", "id": "m08_recon_field_guide", "name": "SAFETYNET Field Guide: Reconnaissance and Network Mapping", "takeable": true, "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/reconnaissance-and-network-mapping/" },
+            { "type": "lab-workstation", "id": "m08_scanning_field_guide", "name": "SAFETYNET Field Guide: Scanning and Exploitation", "takeable": true, "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/scanning-and-exploitation/" },
+            { "type": "lab-workstation", "id": "m08_infoleak_field_guide", "name": "SAFETYNET Field Guide: Information Leakage", "takeable": true, "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/information-leakage-and-the-pin-oracle/" },
+            { "type": "lab-workstation", "id": "m08_vulnanalysis_field_guide", "name": "SAFETYNET Field Guide: Vulnerability Analysis", "takeable": true, "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/vulnerability-analysis-and-attack-surface/" },
+            { "type": "lab-workstation", "id": "m08_privesc_field_guide", "name": "SAFETYNET Field Guide: Privilege Escalation", "takeable": true, "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/privilege-escalation/" }
           ]
         }
       ],
@@ -549,7 +549,7 @@ archives_password = "TrustNoOne"
                 "id": "cloned_server_badge",
                 "name": "Cloned Server-Zone Badge",
                 "takeable": true,
-                "key_id": "server_zone_badge",
+                "opens_lock": "server_zone_badge",
                 "observations": "A server-zone badge you printed yourself, on SAFETYNET's own stock. Valid until somebody audits the print queue, which nobody has done in months."
               }
             }
@@ -596,7 +596,7 @@ archives_password = "TrustNoOne"
               "type": "keycard",
               "name": "Director's Access Keycard -- All Zones",
               "takeable": true,
-              "key_id": "server_zone_badge",
+              "opens_lock": "server_zone_badge",
               "observations": "Netherton's own keycard, handed to you across the desk. It opens every zone in the Citadel, which is the point -- he wants exactly one person moving freely tonight, and it is not the mole.",
               "puzzle_graph_role": "key",
               "puzzle_graph_unlocks": "server_room"
@@ -633,7 +633,7 @@ archives_password = "TrustNoOne"
               "id": "interrogation_key",
               "name": "Interrogation Room Key",
               "takeable": true,
-              "key_id": "interrogation_key",
+              "opens_lock": "interrogation_key",
               "keyPins": [30, 55, 20, 45],
               "observations": "The physical key to the interrogation suite. Netherton keeps it in the safe so that using it is a decision, not a habit.",
               "puzzle_graph_role": "key",

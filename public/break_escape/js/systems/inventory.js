@@ -11,8 +11,8 @@ import { setHudLabel, clearHudLabel } from '../ui/info-label.js';
 // Helper function to create a unique identifier for an item
 export function createItemIdentifier(scenarioData) {
     if (!scenarioData) return 'unknown';
-    // Use id or key_id if available for more precise matching
-    const itemId = scenarioData.id || scenarioData.key_id || '';
+    // Identity is 'id'; a key that carries only the lock it opens falls back to that.
+    const itemId = scenarioData.id || window.lockRef(scenarioData) || '';
     const itemName = scenarioData.name || 'unnamed';
     const itemType = scenarioData.type || 'unknown';
     
@@ -168,9 +168,9 @@ export function processInitialInventoryItems() {
             }
             
             // Check if item already exists in inventory (by ID, type, or name)
-            const itemId = itemData.id || itemData.key_id;
+            const itemId = itemData.id || window.lockRef(itemData);
             const alreadyExists = window.inventory.items.some(existing => {
-                const existingId = existing.scenarioData?.id || existing.scenarioData?.key_id;
+                const existingId = existing.scenarioData?.id || window.lockRef(existing.scenarioData);
                 const existingType = existing.scenarioData?.type || existing.name;
                 const existingName = existing.scenarioData?.name;
                 
@@ -215,9 +215,9 @@ export function processInitialInventoryItems() {
             }
             
             // Check if item already exists in inventory (by ID, type, or name)
-            const itemId = itemData.id || itemData.key_id;
+            const itemId = itemData.id || window.lockRef(itemData);
             const alreadyExists = window.inventory.items.some(existing => {
-                const existingId = existing.scenarioData?.id || existing.scenarioData?.key_id;
+                const existingId = existing.scenarioData?.id || window.lockRef(existing.scenarioData);
                 const existingType = existing.scenarioData?.type || existing.name;
                 const existingName = existing.scenarioData?.name;
                 
@@ -264,7 +264,7 @@ function createInventorySprite(itemData) {
             },
             // Copy critical properties for easy access
             keyPins: itemData.keyPins,  // Preserve keyPins for keys
-            key_id: itemData.key_id,    // Preserve key_id for keys
+            key_id: window.lockRef(itemData),    // the lock this item opens (keys)
             locked: itemData.locked,
             lockType: itemData.lockType,
             requires: itemData.requires,
@@ -347,8 +347,8 @@ export async function addToInventory(sprite) {
             }
             
             // Also check by id/key_id if both items have them
-            const itemId = itemData.id || itemData.key_id;
-            const existingId = item.scenarioData.id || item.scenarioData.key_id;
+            const itemId = itemData.id || window.lockRef(itemData);
+            const existingId = item.scenarioData.id || window.lockRef(item.scenarioData);
             if (itemId && existingId && itemId === existingId) {
                 return true;
             }
@@ -534,7 +534,7 @@ export async function addToInventory(sprite) {
         
         // Explicitly preserve critical lock-related properties
         itemImg.keyPins = sprite.keyPins || sprite.scenarioData?.keyPins;
-        itemImg.key_id = sprite.key_id || sprite.scenarioData?.key_id;
+        itemImg.key_id = sprite.key_id || window.lockRef(sprite.scenarioData);
         itemImg.lockType = sprite.scenarioData?.lockType;
         itemImg.locked = sprite.scenarioData?.locked;
         itemImg.requires = sprite.scenarioData?.requires;
@@ -595,7 +595,7 @@ export async function addToInventory(sprite) {
             window.eventDispatcher.emit(`item_picked_up:${sprite.scenarioData.type}`, {
                 itemType: sprite.scenarioData.type,
                 itemName: sprite.scenarioData.name,
-                itemId: sprite.scenarioData.id,
+                itemId: sprite.scenarioData.id || window.lockRef(sprite.scenarioData),
                 collectionGroup: sprite.scenarioData.collection_group || null,
                 roomId: window.currentPlayerRoom
             });
@@ -645,7 +645,7 @@ function addKeyToInventory(sprite) {
     }
     
     // DEBUG: Check properties before adding
-    const keyId = sprite.scenarioData?.key_id || sprite.key_id;
+    const keyId = window.lockRef(sprite.scenarioData) || sprite.key_id;
     const keyPins = sprite.scenarioData?.keyPins || sprite.keyPins;
     console.log(`🔑 BEFORE adding key to ring (sprite object):`, {
         sprite_key_id: sprite.key_id,

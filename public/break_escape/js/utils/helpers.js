@@ -198,3 +198,23 @@ window.openCryptoWorkstationInNewTab = openCryptoWorkstationInNewTab;
 window.openLabWorkstation = openLabWorkstation;
 window.closeLabWorkstation = closeLabWorkstation;
 window.openLabWorkstationInNewTab = openLabWorkstationInNewTab; 
+/**
+ * Which lock does this item open?
+ *
+ * `opens_lock` names the LOCK, not the item -- it is a many-to-one reference, so
+ * two spare keys to the same door share one `opens_lock` and keep distinct `id`s.
+ * (`id` names the object, `type` names its class.)
+ *
+ * The `key_id` fallback is BACKWARD COMPATIBILITY ONLY. A game snapshots its
+ * scenario_data when it is created (game.rb, before_create
+ * :generate_scenario_data_with_context), so missions started before the rename
+ * still carry the old field and must keep playing to the end.
+ *
+ * Scenario files must use `opens_lock`; the validator errors on `key_id`. Never
+ * silence a validator error by leaning on this fallback. Once the last
+ * pre-rename game has finished, drop the `?? data.key_id` and this note.
+ */
+export function lockRef(data) {
+    return data?.opens_lock ?? data?.key_id;
+}
+window.lockRef = lockRef;

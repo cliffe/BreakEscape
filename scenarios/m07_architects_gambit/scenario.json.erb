@@ -726,35 +726,35 @@ scada_password = "CascadeWindow19"
           "itemsHeld": [
             {
               "type": "lab-workstation",
-              "key_id": "m07_rfid_field_guide",
+              "id": "m07_rfid_field_guide",
               "name": "SAFETYNET Field Guide: RFID Cloning",
               "takeable": true,
               "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/rfid-cloning/"
             },
             {
               "type": "lab-workstation",
-              "key_id": "m07_lockpicking_field_guide",
+              "id": "m07_lockpicking_field_guide",
               "name": "SAFETYNET Field Guide: Lockpicking",
               "takeable": true,
               "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/lockpicking/"
             },
             {
               "type": "lab-workstation",
-              "key_id": "m07_recon_field_guide",
+              "id": "m07_recon_field_guide",
               "name": "SAFETYNET Field Guide: Reconnaissance and Network Mapping",
               "takeable": true,
               "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/reconnaissance-and-network-mapping/"
             },
             {
               "type": "lab-workstation",
-              "key_id": "m07_scanning_field_guide",
+              "id": "m07_scanning_field_guide",
               "name": "SAFETYNET Field Guide: Scanning and Exploitation",
               "takeable": true,
               "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/scanning-and-exploitation/"
             },
             {
               "type": "lab-workstation",
-              "key_id": "m07_privesc_field_guide",
+              "id": "m07_privesc_field_guide",
               "name": "SAFETYNET Field Guide: Privilege Escalation",
               "takeable": true,
               "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/privilege-escalation/"
@@ -813,7 +813,7 @@ scada_password = "CascadeWindow19"
               "type": "keycard",
               "name": "Facility Access Badge -- Server Zone",
               "takeable": true,
-              "key_id": "server_zone_badge",
+              "opens_lock": "server_zone_badge",
               "observations": "Morrison's badge. It opens the server zone, which a checkpoint guard's badge has no business doing, and the renewal stamp on the back is dated the same month a maintenance contractor called Mercer stopped needing an escort.",
               "puzzle_graph_role": "key",
               "puzzle_graph_unlocks": "server_room"
@@ -846,7 +846,7 @@ scada_password = "CascadeWindow19"
                 "id": "printed_contractor_badge",
                 "name": "Printed Contractor Badge",
                 "takeable": true,
-                "key_id": "server_zone_badge",
+                "opens_lock": "server_zone_badge",
                 "observations": "A contractor badge you printed yourself, on the facility's own stock, with the facility's own signing key. Valid until somebody audits the printer queue."
               }
             }
@@ -892,7 +892,7 @@ scada_password = "CascadeWindow19"
           "id": "generator_maintenance_key",
           "name": "Plant Maintenance Key",
           "takeable": true,
-          "key_id": "generator_maintenance_key",
+          "opens_lock": "generator_maintenance_key",
           "keyPins": [40, 25, 55, 30],
           "observations": "A stubby mechanical key on a tagged fob, left in the tray on the shift supervisor's desk. The tag says PLANT / GEN HALL. The supervisor is in the north car park.",
           "puzzle_graph_role": "key",

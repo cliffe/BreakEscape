@@ -98,8 +98,8 @@ export class RFIDMinigame extends MinigameScene {
     handleCardTap(card) {
         console.log('📡 Card tapped:', card.scenarioData?.name);
 
-        // Get card ID (standard: card_id, legacy: key_id)
-        const cardId = card.scenarioData?.card_id || card.scenarioData?.key_id;
+        // Get card ID (standard: card_id, else the lock the card opens)
+        const cardId = card.scenarioData?.card_id || window.lockRef(card.scenarioData);
         const isCorrect = !this.isLockingAttempt || this.requiredCardIds.includes(cardId);
 
         if (isCorrect) {
@@ -129,8 +129,8 @@ export class RFIDMinigame extends MinigameScene {
     handleEmulate(savedCard) {
         console.log('📡 Emulating card:', savedCard.name);
 
-        // Get card ID (standard: card_id, legacy: key_id)
-        const cardId = savedCard.card_id || savedCard.key_id;
+        // Get card ID (standard: card_id, else the lock the card opens)
+        const cardId = savedCard.card_id || window.lockRef(savedCard);
         const isCorrect = !this.isLockingAttempt || this.requiredCardIds.includes(cardId);
 
         // Check if UID-only emulation (MIFARE DESFire without master key)

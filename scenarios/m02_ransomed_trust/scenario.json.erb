@@ -615,7 +615,7 @@ boardroom_pin = "0417"
               "type": "key",
               "name": "IT Department Override Key",
               "takeable": true,
-              "key_id": "it_override_key",
+              "opens_lock": "it_override_key",
               "keyPins": [35, 45, 25, 55],
               "observations": "The mechanical override for the IT department door, kept on the reception key hook since the badge readers went down",
               "puzzle_graph_role": "key",
@@ -654,7 +654,7 @@ boardroom_pin = "0417"
           "itemsHeld": [
             {
               "type": "lab-workstation",
-              "key_id": "m02_scanning_field_guide",
+              "id": "m02_scanning_field_guide",
               "name": "SAFETYNET Field Guide: Reconnaissance and Network Mapping",
               "takeable": true,
               "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/reconnaissance-and-network-mapping/",
@@ -662,7 +662,7 @@ boardroom_pin = "0417"
             },
             {
               "type": "lab-workstation",
-              "key_id": "m02_vulnerability_field_guide",
+              "id": "m02_vulnerability_field_guide",
               "name": "SAFETYNET Field Guide: Vulnerability Analysis and Attack Surface",
               "takeable": true,
               "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/vulnerability-analysis-and-attack-surface/",
@@ -670,7 +670,7 @@ boardroom_pin = "0417"
             },
             {
               "type": "lab-workstation",
-              "key_id": "m02_exploitation_field_guide",
+              "id": "m02_exploitation_field_guide",
               "name": "SAFETYNET Field Guide: ProFTPD Exploitation Workflow",
               "takeable": true,
               "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/proftpd-exploitation-workflow/",
@@ -678,7 +678,7 @@ boardroom_pin = "0417"
             },
             {
               "type": "lab-workstation",
-              "key_id": "m02_scanning_exploitation_field_guide",
+              "id": "m02_scanning_exploitation_field_guide",
               "name": "SAFETYNET Field Guide: Scanning and Exploitation",
               "takeable": true,
               "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/scanning-and-exploitation/",
@@ -686,7 +686,7 @@ boardroom_pin = "0417"
             },
             {
               "type": "lab-workstation",
-              "key_id": "m02_lockpicking_field_guide",
+              "id": "m02_lockpicking_field_guide",
               "name": "SAFETYNET Field Guide: Lockpicking",
               "takeable": true,
               "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/lockpicking/",
@@ -694,7 +694,7 @@ boardroom_pin = "0417"
             },
             {
               "type": "lab-workstation",
-              "key_id": "m02_ssh_bruteforce_field_guide",
+              "id": "m02_ssh_bruteforce_field_guide",
               "name": "SAFETYNET Field Guide: SSH Access and Bruteforce",
               "takeable": true,
               "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/ssh-access-and-bruteforce/",
@@ -702,7 +702,7 @@ boardroom_pin = "0417"
             },
             {
               "type": "lab-workstation",
-              "key_id": "m02_privilege_escalation_field_guide",
+              "id": "m02_privilege_escalation_field_guide",
               "name": "SAFETYNET Field Guide: Privilege Escalation",
               "takeable": true,
               "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/privilege-escalation/",
@@ -710,7 +710,7 @@ boardroom_pin = "0417"
             },
             {
               "type": "lab-workstation",
-              "key_id": "m02_infoleak_field_note",
+              "id": "m02_infoleak_field_note",
               "name": "SAFETYNET Field Note: Information Leakage & the PIN Oracle",
               "takeable": true,
               "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/information-leakage-and-the-pin-oracle/",
@@ -1292,7 +1292,6 @@ boardroom_pin = "0417"
               "name": "Bank Staff Lanyard",
               "takeable": true,
               "id": "bank_staff_lanyard",
-              "key_id": "bank_staff_lanyard",
               "observations": "A spare agency-nurse lanyard from the ward office drawer. Not your name, not your face -- but it is real hospital issue, and at three in the morning that is most of the battle.",
               "puzzle_graph_role": "key",
               "puzzle_graph_unlocks": "lock_guard_challenge",
@@ -1660,17 +1659,16 @@ boardroom_pin = "0417"
               "type": "keycard",
               "name": "Server Room Keycard",
               "takeable": true,
-              "key_id": "server_room_keycard",
+              "opens_lock": "server_room_keycard",
               "observations": "Gary's RFID card for the server room. The reader on that door is on an isolated controller, so this is the only credential in the building that still opens anything.",
               "puzzle_graph_role": "key",
               "puzzle_graph_unlocks": "server_room"
             },
             {
               "type": "id_badge",
-              "id": "gary_contractor_lanyard",
               "name": "Spare Contractor Lanyard",
               "takeable": true,
-              "key_id": "contractor_lanyard",
+              "id": "gary_contractor_lanyard",
               "observations": "A blank contractor lanyard from Gary's drawer -- the sort IT issue to hardware engineers. Real hospital stock, no name on it. He will not hand it to somebody he has no reason to trust.",
               "puzzle_graph_role": "key",
               "puzzle_graph_unlocks": "lock_guard_challenge",
@@ -2208,7 +2206,7 @@ boardroom_pin = "0417"
             {
               "type": "notes",
               "name": "Dr. Kim's Signed Statement",
-              "key_id": "kim_statement",
+              "id": "kim_statement",
               "takeable": true,
               "readable": true,
               "text": "STATEMENT OF FACT -- S. KIM, Chief Technology Officer, St. Catherine's Regional\n\nThe security remediation of the backup server was costed by G. Whitlock (IT Systems) at \u00a385,000 and formally escalated by him on seven occasions between May and November.\n\nIt was deferred on my recommendation. The decision was mine. Mr Whitlock discharged his responsibilities in full and was instructed by me, in writing, to stop escalating outside the department.\n\nAny characterisation of this incident as an implementation failure on his part is factually incorrect and I will say so under oath.\n\nSigned, S. Kim.",
@@ -2515,7 +2513,7 @@ boardroom_pin = "0417"
             {
               "type": "notes",
               "name": "Val's Pocket Notebook",
-              "key_id": "val_notebook",
+              "id": "val_notebook",
               "takeable": true,
               "readable": true,
               "text": "NIGHT LOG -- V. OKONKWO\n\n22:40  Whitlock (IT) in. Told him to go home. He didn't.\n23:15  Dr Kim in. Looked through me.\n01:02  Ext. consultant expected -- Kim's authorisation, per reception.\n03:20  Reeves on his post again. Sensitive comms, apparently.\n       Not on my rota. Not on ANY rota I've ever been given.\n       Asked Sandra in Estates. She's never heard of him either.\n       Raised it twice. Told twice it's \"crisis protocol\".\n\nNote to self: get that in writing before someone asks me why I let him stand there all night.",
@@ -2679,7 +2677,6 @@ boardroom_pin = "0417"
           "id": "contractor_lanyard",
           "name": "Spare Contractor Lanyard",
           "takeable": true,
-          "key_id": "contractor_lanyard",
           "observations": "A blank contractor lanyard in its wrapper, left on the side with somebody's reading glasses. IT issue, real hospital stock, no name on it. Somebody meant to take this back downstairs and didn't.",
           "puzzle_graph_role": "key",
           "puzzle_graph_unlocks": "lock_guard_challenge",

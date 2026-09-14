@@ -68,7 +68,7 @@ function assignKeysToLocks() {
             return {
                 scenarioData: keyData,
                 name: 'key',
-                objectId: `key_ring_${keyData.key_id || keyData.name}`
+                objectId: `key_ring_${window.lockRef(keyData) || keyData.name}`
             };
         });
         playerKeys = playerKeys.concat(keyRingKeys);
@@ -113,7 +113,7 @@ function assignKeysToLocks() {
         const keyId = lock.requiredKeyId;
         
         // Find the key in player inventory
-        const key = playerKeys.find(k => k.scenarioData.key_id === keyId);
+        const key = playerKeys.find(k => window.lockRef(k.scenarioData) === keyId);
         
         if (key) {
             // Get the actual scenario keyPins for this lock
@@ -239,7 +239,7 @@ if (window.inventory && window.inventory.items) {
 
 // Function to generate key cuts that match a specific lock's pin configuration
 export function generateKeyCutsForLock(key, lockable, overrideKeyPins = null) {
-    const keyId = key.scenarioData.key_id;
+    const keyId = window.lockRef(key.scenarioData);
     
     // First, try to use provided keyPins override, then lockable's keyPins
     let keyPinsToUse = overrideKeyPins;
@@ -296,7 +296,7 @@ export function generateKeyCutsForLock(key, lockable, overrideKeyPins = null) {
     if (!lockConfig) {
         console.log(`No predefined mapping for key ${keyId} and no saved lock configuration for ${lockId}, generating default cuts`);
         // Generate random cuts based on the key_id for consistency
-        let seed = key.scenarioData.key_id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        let seed = String(window.lockRef(key.scenarioData) || '').split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
         const random = (min, max) => {
             const x = Math.sin(seed++) * 10000;
             return Math.floor((x - Math.floor(x)) * (max - min + 1)) + min;

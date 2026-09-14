@@ -329,7 +329,7 @@ def check_unknown_fields(json_data)
     text textVariants
     voice ttsVoice sender timestamp avatar sprite
     collection_group onRead onPickup onInteract
-    lockType requires key_id keyPins card_id difficulty
+    lockType requires opens_lock key_id keyPins card_id difficulty
     passwordHint showHint showKeyboard maxAttempts
     postitNote showPostit
     hasFingerprint fingerprintOwner fingerprintDifficulty
@@ -702,14 +702,16 @@ def check_ink_files(json_data, base_dir, scenario_dir = nil)
             matches_selector = items_held.any? do |item|
               next false unless item['type'] == item_type
 
-              candidates = [item['id'], item['key_id'], item['name']].compact.map(&:to_s)
+              # opens_lock is accepted because giveItem matches a selector against it
+              # (npc-game-bridge.js) as well as against id and name.
+              candidates = [item['id'], item['opens_lock'], item['key_id'], item['name']].compact.map(&:to_s)
               candidates.include?(item_selector)
             end
 
             unless matches_selector
               issues << "❌ INVALID: '#{source_ink_path}' line #{i + 1}: '#give_item:#{item_spec}' but " \
                         "NPC '#{npc_path}' has no itemsHeld entry matching type '#{item_type}' and selector '#{item_selector}' " \
-                        "(selector checks id, key_id, or name)."
+                        "(selector checks id, opens_lock, or name)."
             end
           end
         end
@@ -1398,6 +1400,77 @@ def check_objectives_wiring(json_data, base_dir)
 end
 
 # Check for common issues and structural problems
+# ─────────────────────────────────────────────────────────────
+# Lock credentials: 'opens_lock' names the LOCK an item opens.
+#
+# It is a many-to-one reference -- two spare keys to the same door share one
+# 'opens_lock' and keep distinct 'id's. 'id' names the object; 'opens_lock'
+# names what it opens; 'type' names its class.
+#
+# The field used to be called 'key_id', and because the name said nothing about
+# locks, 49 of its 82 uses had drifted into being plain identity strings on
+# items that open nothing (field guides, notes, lanyards). Those are 'id' now.
+#
+# The engine reads it through window.lockRef() (utils/helpers.js), which falls
+# back to key_id ONLY so missions started before the rename can finish -- a game
+# snapshots its scenario_data at creation. A scenario file must not use key_id.
+# ─────────────────────────────────────────────────────────────
+def check_lock_credentials(json_data)
+  issues = []
+
+  # Locks that are opened by carrying an item. Every other lockType ('password',
+  # 'pin', 'biometric', 'flag', ...) puts a secret in 'requires', not an item.
+  credential_requires = { 'key' => Set.new, 'rfid' => Set.new }
+  walk_locks = lambda do |node|
+    case node
+    when Array then node.each { |n| walk_locks.call(n) }
+    when Hash
+      lt = node['lockType']
+      credential_requires[lt] << node['requires'] if credential_requires.key?(lt) && node['requires']
+      node.each_value { |v| walk_locks.call(v) }
+    end
+  end
+  walk_locks.call(json_data)
+  all_credentials = credential_requires.values.reduce(Set.new, :|)
+
+  key_items = []     # [name, opens_lock] for items whose type is a physical key
+  walk_items = lambda do |node|
+    case node
+    when Array then node.each { |n| walk_items.call(n) }
+    when Hash
+      if node.key?('key_id')
+        issues << "❌ INVALID: item '#{node['name'] || node['key_id']}' uses 'key_id', which was renamed to " \
+                  "'opens_lock' (the lock this item opens). If the value does not name a lock, it is an " \
+                  "identity and belongs in 'id' instead. key_id survives in the engine only so missions " \
+                  "started before the rename can finish -- it must not appear in a scenario."
+      end
+      key_items << [node['name'] || node['opens_lock'], node['opens_lock']] if node['opens_lock'] && node['type'] == 'key'
+      node.each_value { |v| walk_items.call(v) }
+    end
+  end
+  walk_items.call(json_data)
+
+  # A key that opens nothing. Scoped to type 'key': an rfid credential is often
+  # a clone produced at runtime by the RFID minigame, with no scenario-side lock.
+  key_items.each do |name, opens|
+    next if all_credentials.include?(opens)
+    issues << "⚠️ WARNING: key '#{name}' has opens_lock '#{opens}', but no lock 'requires' it. Either the " \
+              "lock is missing, the value is a typo, or this is really an identity and belongs in 'id'. " \
+              "A deliberate decoy key is the one legitimate case -- say so in a comment."
+  end
+
+  # A key lock with no key. This is a soft-lock unless the door is meant to be
+  # picked or opened another way.
+  declared = key_items.map(&:last).to_set
+  credential_requires['key'].each do |req|
+    next if declared.include?(req)
+    issues << "⚠️ WARNING: a lock requires key '#{req}', but no item declares opens_lock '#{req}'. Unless " \
+              "that door is meant to be lockpicked only, nothing in the scenario can open it."
+  end
+
+  issues
+end
+
 def check_common_issues(json_data, valid_item_types = nil)
   issues = []
 
@@ -1866,11 +1939,14 @@ def check_common_issues(json_data, valid_item_types = nil)
             end
           end
 
-          # Check for items with id field (should use type field for #give_item tags)
+          # Held items are matched by '#give_item:<type>[:<selector>]': the type
+          # picks the class, the optional selector picks which one when an NPC
+          # holds several of that type. 'id' IS the selector (it also becomes
+          # data.itemId on item_picked_up), so it is required here, not banned.
           if obj['itemsHeld']
             obj['itemsHeld'].each_with_index do |item, item_idx|
-              if item['id']
-                issues << "❌ INVALID: '#{path}/itemsHeld[#{item_idx}]' has 'id' field - items should NOT have 'id' field. Use 'type' field to match #give_item tag parameter"
+              unless item['type']
+                issues << "❌ INVALID: '#{path}/itemsHeld[#{item_idx}]' has no 'type' field - #give_item matches on type."
               end
             end
           end
@@ -2176,11 +2252,14 @@ def check_common_issues(json_data, valid_item_types = nil)
             end
           end
 
-          # Check for items with id field in NPC itemsHeld
+          # '#give_item:<type>[:<selector>]' matches on type, then on the optional
+          # selector (id / key_id / name). 'id' on a held item IS that selector,
+          # so it is expected here. What breaks play is several items of one type
+          # with no way to tell them apart -- the first one always wins.
           if npc['itemsHeld']
             npc['itemsHeld'].each_with_index do |item, item_idx|
-              if item['id']
-                issues << "❌ INVALID: '#{path}/itemsHeld[#{item_idx}]' has 'id' field - items should NOT have 'id' field. Use 'type' field to match #give_item tag parameter (e.g., type: 'id_badge' matches #give_item:id_badge)"
+              unless item['type']
+                issues << "❌ INVALID: '#{path}/itemsHeld[#{item_idx}]' has no 'type' field - #give_item matches on type."
               end
 
               # Check item type against known asset files
@@ -3187,6 +3266,7 @@ def main
     # Check for common issues and structural problems
     puts "Checking for common issues..."
     common_issues = check_common_issues(json_data, valid_item_types)
+    common_issues += check_lock_credentials(json_data)
 
     # Check for recommended fields
     puts "Checking recommended fields..."

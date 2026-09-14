@@ -567,7 +567,7 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
           "itemsHeld": [
             {
               "type": "lab-workstation",
-              "key_id": "safetynet_field_guide_rfid_cloning",
+              "id": "safetynet_field_guide_rfid_cloning",
               "name": "SAFETYNET Field Guide: RFID Cloning",
               "takeable": true,
               "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/rfid-cloning/",
@@ -575,7 +575,7 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
             },
             {
               "type": "lab-workstation",
-              "key_id": "safetynet_field_guide_bludit_cms",
+              "id": "safetynet_field_guide_bludit_cms",
               "name": "SAFETYNET Field Guide: Bludit CMS Exploitation",
               "takeable": true,
               "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/bludit-cms-exploitation/",
@@ -583,7 +583,7 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
             },
             {
               "type": "lab-workstation",
-              "key_id": "safetynet_field_guide_lockpicking",
+              "id": "safetynet_field_guide_lockpicking",
               "name": "SAFETYNET Field Guide: Lockpicking",
               "takeable": true,
               "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/lockpicking/",
@@ -591,7 +591,7 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
             },
             {
               "type": "lab-workstation",
-              "key_id": "safetynet_field_guide_recon_network_mapping",
+              "id": "safetynet_field_guide_recon_network_mapping",
               "name": "SAFETYNET Field Guide: Reconnaissance and Network Mapping",
               "takeable": true,
               "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/reconnaissance-and-network-mapping/",
@@ -605,12 +605,14 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
               "sendTimedMessage": { "delay": 1500, "message": "Nice find on the lockpick. Call me if you want a rundown on using it." }
             },
             {
-              "eventPattern": "item_picked_up:medical_bills",
+              "eventPattern": "item_picked_up:notes",
+              "condition": "data.itemId === 'medical_bills'",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 1500, "message": "$380,000 in medical debt. That's ENTROPY's textbook vulnerability. Call me — I want to talk about it." }
             },
             {
-              "eventPattern": "item_picked_up:personal_journal",
+              "eventPattern": "item_picked_up:notes",
+              "condition": "data.itemId === 'personal_journal'",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 1500, "message": "A personal journal. Call me once you've read it." }
             },
@@ -821,7 +823,7 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
             {
               "type": "keycard",
               "name": "Employee Badge",
-              "key_id": "employee_badge",
+              "opens_lock": "employee_badge",
               "takeable": true,
               "observations": "Kevin's employee badge - could be cloned"
             },
@@ -841,7 +843,7 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
             {
               "type": "keycard",
               "name": "Torres Office Keycard",
-              "key_id": "office_keycard",
+              "opens_lock": "office_keycard",
               "takeable": true,
               "puzzle_graph_unlocks": "torres_office",
               "observations": "Spare keycard for David Torres' office - Kevin has access to all offices for IT support"
@@ -849,7 +851,7 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
             {
               "type": "keycard",
               "name": "Cloned Employee Badge",
-              "key_id": "employee_badge",
+              "opens_lock": "employee_badge",
               "takeable": true,
               "puzzle_graph_unlocks": "server_hallway",
               "observations": "A cloned copy of Kevin's employee RFID badge - grants access to the server hallway"
@@ -1057,7 +1059,7 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
             {
               "type": "keycard",
               "name": "Research Lab Badge",
-              "key_id": "research_lab_badge",
+              "opens_lock": "research_lab_badge",
               "takeable": true,
               "observations": "A duplicate research badge Dr. Chen issues to trusted collaborators"
             }

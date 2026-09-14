@@ -181,7 +181,7 @@ export class ObjectivesManager {
           const keyRingItems = window.inventory?.keyRing?.keys || [];
           const matchingKeys = keyRingItems.filter(key => {
             const keyType = key.scenarioData?.type;
-            const keyId = key.scenarioData?.key_id || key.scenarioData?.id;
+            const keyId = window.lockRef(key.scenarioData) || key.scenarioData?.id;
             const keyName = key.scenarioData?.name;
             
             let matches = false;

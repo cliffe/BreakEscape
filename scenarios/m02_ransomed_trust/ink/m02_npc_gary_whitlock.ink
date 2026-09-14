@@ -591,7 +591,7 @@ Gary Whitlock: *slowly* That's not a computer doing that. Everything's down. Som
 === lanyard_given ===
 ~ gave_lanyard = true
 ~ cover_restored = true
-#give_item:id_badge:contractor_lanyard
+#give_item:id_badge:gary_contractor_lanyard
 #set_global:staff_lanyard_obtained:true
 #set_global:cover_restored:true
 
