@@ -164,7 +164,7 @@ export function detectBlockingUi() {
  * reported the game as hung on blocked audio.
  *
  * Whether the mission actually concluded is a SERVER fact, decided by
- * check_mission_conclusion from persisted requiresCompleted tasks. This overlay
+ * check_mission_conclusion from persisted concludeRequires tasks. This overlay
  * only says the client reached the ending sequence — the two can disagree, and
  * when they do the server is right.
  */

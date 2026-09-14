@@ -363,14 +363,18 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
       "unlockCondition": { "aimCompleted": "exploit_infrastructure" },
       "missionConclusion": true,
       "conclusionScreen": { "type": "bond_visualiser" },
-      "requiresCompleted": [
-        "confront_torres",
-        "make_critical_choice",
-        "submit_flag1",
-        "submit_flag2",
-        "submit_flag3",
-        "submit_flag4"
-      ],
+      <%# Ending gate: the mandatory flag nodes from the dungeon graph -- the
+          technical work this mission is not allowed to skip. Story tasks are
+          not listed: they cost score if unfinished, they never withhold the
+          ending. See README_scenario_design.md#concluderequires. %>
+      "concludeRequires": {
+        "tasksCompleted": [
+          "submit_flag1",
+          "submit_flag2",
+          "submit_flag3",
+          "submit_flag4"
+        ]
+      },
       "tasks": [
         {
           "taskId": "identify_torres",

@@ -46,7 +46,7 @@ but start from them:
 |---|---|
 | **`puzzle_graph_*` keys are documentation only.** Nothing in the engine reads them | `grep -r puzzle_graph public/break_escape/js/` → 0 hits |
 | **AND gates are not a mechanic.** `puzzle_graph_and_with` renders a diagram node; the real lock is still a plain PIN | `generate_dungeon_graph.rb:255-283`; `validate_scenario.rb` merely tolerates the key |
-| **The only engine-enforced convergence** is `unlockCondition.aimsCompleted` and `requiresCompleted` on the mission-conclusion aim | `objectives-manager.js:684-690` |
+| **The only engine-enforced convergence** is `unlockCondition.aimsCompleted` (client, `objectives-manager.js:684-690`) and `concludeRequires` on the mission-conclusion aim (server, `game.rb:unmet_conclude_requirements`) | `objectives-manager.js:684-690`; `game.rb:1640` |
 | **`item_picked_up:` emits the item TYPE, not its id.** Mappings keyed on id never fire | `inventory.js:595`, `interactions.js:1436`, `container-minigame.js:496`; dispatcher is exact-match + trailing-`*` only, `npc-events.js:45-58` |
 | **Room positions are BFS from `startRoom`**, and only unprocessed rooms get positions — nothing back-propagates | `rooms.js:1545-1640`, `:1607` |
 | **Door side flips on `((gridX+gridY)%2)`**; a grid unit is 5 tiles | `doors.js:180-186`, `constants.js:19` |
@@ -54,7 +54,11 @@ but start from them:
 | **Doors are sprite-placed from `connections`**, not baked into room templates; 4-way rooms are fine | `rooms.js:1768-1770`, `doors.js:313-347` |
 
 **Consequence for planning:** never propose "add an AND gate". The honest convergence
-primitive is adding a task to `requiresCompleted`.
+primitives are `unlockCondition.aimsCompleted` for staging, and — for the ending only —
+adding a task to `concludeRequires`. Note the limit on the second: `concludeRequires` is
+for large technical work (the mandatory flag nodes in the dungeon graph). Do **not** reach
+for it to force story convergence; story tasks there create unannounced dead ends. To make
+a story thread matter, give it consequences and score, not a gate.
 
 ---
 
@@ -83,10 +87,11 @@ is the payoff).
 
 ### 3a. Are the mission's own choices actually required?
 
-**Start here — it found the biggest problems in m02 by a wide margin.** Read
-`requiresCompleted` on the mission-conclusion aim and list what is *absent*. In m02 the
-offline-keys safe and the entire insider thread were both optional, which made a moral
-dilemma decorative and a whole aim skippable.
+**Start here — it found the biggest problems in m02 by a wide margin.** Read the
+mission-conclusion aim's own `tasks` (plus `concludeRequires`, which covers the technical
+work) and list what is *absent*. In m02 the offline-keys safe and the entire insider thread
+were both optional, which made a moral dilemma decorative and a whole aim skippable. The
+fix for that is rarely a gate — it is making the thread carry consequence and score.
 
 Also check that "Prerequisite:" text in minigame data is enforced rather than decorative.
 

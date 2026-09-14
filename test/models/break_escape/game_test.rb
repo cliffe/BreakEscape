@@ -471,7 +471,8 @@ module BreakEscape
           "status" => "active",
           "order" => 0,
           "tasks" => [
-            { "taskId" => "setup_task", "title" => "Setup", "type" => "custom", "status" => "active" }
+            { "taskId" => "setup_task", "title" => "Setup", "type" => "custom", "status" => "active" },
+            { "taskId" => "story_task", "title" => "Story beat", "type" => "custom", "status" => "active" }
           ]
         },
         {
@@ -480,11 +481,10 @@ module BreakEscape
           "status" => "active",
           "order" => 1,
           "missionConclusion" => true,
-          # concludeRequires is the ending gate. requiresCompleted is kept here
-          # deliberately and names a task that is never completed in most of
-          # these tests -- proving it does NOT withhold the ending (see T10).
+          # concludeRequires is the ending gate and names only technical work.
+          # story_task on setup_aim is deliberately never completed in these
+          # tests -- proving story progress does NOT withhold the ending (T10).
           "concludeRequires" => { "tasksCompleted" => ["setup_task"] },
-          "requiresCompleted" => ["never_completed_story_task"],
           "conclusionScreen" => { "type" => "end_screen" },
           "tasks" => [
             { "taskId" => "conclusion_task", "title" => "Conclude", "type" => "custom", "status" => "active" }
@@ -585,7 +585,7 @@ module BreakEscape
     end
 
     # T9: regression test for the out-of-order gate bug — the conclusion aim's
-    # own task can complete BEFORE its requiresCompleted gate task (e.g. two
+    # own task can complete BEFORE its concludeRequires gate task (e.g. two
     # client requests racing, or simply a player finishing tasks in a
     # different order than the scenario author assumed). Without
     # recheck_pending_mission_conclusions!, completing the gate task
@@ -604,21 +604,21 @@ module BreakEscape
 
     # T10: story tasks must not withhold the ending.
     #
-    # This is the m02 soft-lock, as a test. requiresCompleted named a story task
+    # This is the m02 soft-lock, as a test. The ending gate named a story task
     # whose only completion route was a single event mapping; a player who took
     # another path finished the whole mission, saw the credits, and left the
     # game stuck in in_progress with nothing to explain why. Story tasks feed the
     # score -- which is proportional, so unfinished work already costs marks --
     # and never the ending.
-    test "an unmet requiresCompleted story task does not block conclusion" do
-      assert_equal ["never_completed_story_task"],
-                   @game.scenario_data['objectives'].last['requiresCompleted'],
-                   'fixture guard: this story task is never completed in this test'
+    test "an unfinished story task does not block conclusion" do
+      assert_not_includes @game.scenario_data['objectives'].last['concludeRequires']['tasksCompleted'],
+                          'story_task',
+                          'fixture guard: story_task must not be in the ending gate'
 
       @game.complete_task!('setup_task')       # satisfies concludeRequires
-      result = @game.complete_task!('conclusion_task')
+      result = @game.complete_task!('conclusion_task')   # story_task left undone
 
-      assert result[:missionConcluded], 'requiresCompleted must not gate the ending'
+      assert result[:missionConcluded], 'story progress must not gate the ending'
       assert_not_nil @game.reload.mission_concluded_at
       assert_equal 'completed', @game.status
     end

@@ -395,17 +395,18 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
       "order": 5,
       "missionConclusion": true,
       "conclusionScreen": { "type": "bond_visualiser" },
-      "requiresCompleted": [
-        "meet_elena",
-        "access_server_room",
-        "submit_flag1",
-        "submit_flag4",
-        "find_transaction_records",
-        "discover_architects_fund",
-        "confront_satoshi",
-        "decide_asset_strategy",
-        "decide_elena_fate"
-      ],
+      <%# Ending gate: the mandatory flag nodes from the dungeon graph -- the
+          technical work this mission is not allowed to skip. Story tasks are
+          not listed: they cost score if unfinished, they never withhold the
+          ending. See README_scenario_design.md#concluderequires. %>
+      "concludeRequires": {
+        "tasksCompleted": [
+          "submit_flag1",
+          "submit_flag2",
+          "submit_flag3",
+          "submit_flag4"
+        ]
+      },
       "tasks": [
         {
           "taskId": "confront_satoshi",

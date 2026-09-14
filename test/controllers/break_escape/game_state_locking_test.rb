@@ -10,7 +10,7 @@ module BreakEscape
   # #complete_task and #give_item together, and the client sends those as three
   # parallel POSTs. The two task writes held the lock; the inventory add did
   # not, read player_state before them and saved after, dropping both. Game
-  # 1022 lost seven tasks that way, one of which was a requiresCompleted gate,
+  # 1022 lost seven tasks that way, one of which was an ending gate at the time,
   # so the mission could never conclude -- and all three requests returned 200.
   #
   # A test that exercised this by racing real threads would be flaky and would

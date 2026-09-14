@@ -131,11 +131,11 @@ module BreakEscape
     # Story tasks must NOT gate
     # =========================================================================
 
-    test 'requiresCompleted does not withhold the ending' do
+    test 'unfinished story tasks do not withhold the ending' do
       # The m02 soft-lock: every aim complete, credits shown, and the game stuck
       # in in_progress forever because one story task had a single completion
       # route. Story tasks cost score, never the ending.
-      game = create_game(gated_scenario(requires_completed: %w[talk_to_someone read_a_note]),
+      game = create_game(gated_scenario(story_tasks: %w[talk_to_someone read_a_note]),
                          tasks: { 'submit_ssh_flag' => 'completed', 'submit_sudo_flag' => 'completed' })
 
       post conclude_game_url(game)
@@ -189,7 +189,7 @@ module BreakEscape
       }
     end
 
-    def gated_scenario(requires_completed: nil)
+    def gated_scenario(story_tasks: [])
       aim = {
         'aimId' => 'finish', 'title' => 'Finish', 'status' => 'active',
         'missionConclusion' => true,
@@ -199,7 +199,9 @@ module BreakEscape
           { 'taskId' => 'submit_sudo_flag', 'title' => 'sudo flag', 'type' => 'submit_flags', 'status' => 'active' }
         ]
       }
-      aim['requiresCompleted'] = requires_completed if requires_completed
+      story_tasks.each do |tid|
+        aim['tasks'] << { 'taskId' => tid, 'title' => tid, 'type' => 'manual', 'status' => 'active' }
+      end
       base_scenario(aim)
     end
 

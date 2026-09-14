@@ -237,7 +237,7 @@ scada_password = "CascadeWindow19"
 <%# ---------------------------------------------------------------------------
     OBJECTIVES (WP2). Task ids are fixed by CONTRACT.md S8 and must not be
     renamed -- ink packages reference them in #complete_task tags, and taskOnKO
-    / requiresCompleted reference them here.
+    / concludeRequires reference them here.
 
     Aim chain: commit_the_team -> reach_the_control_network -> {below_ground
     (side branch), reach_the_control_room -> take_the_attack_host ->
@@ -447,15 +447,18 @@ scada_password = "CascadeWindow19"
       "order": 5,
       "unlockCondition": { "aimCompleted": "take_the_attack_host" },
       "missionConclusion": true,
-      "requiresCompleted": [
-        "assign_tactical_team",
-        "breach_server_room",
-        "reach_scada_control",
-        "escalate_on_attack_host",
-        "terminate_cascade_scripts",
-        "shut_down_the_cascade",
-        "take_the_debrief"
-      ],
+      <%# Ending gate: the mandatory flag nodes from the dungeon graph -- the
+          technical work this mission is not allowed to skip. Story tasks are
+          not listed: they cost score if unfinished, they never withhold the
+          ending. See README_scenario_design.md#concluderequires. %>
+      "concludeRequires": {
+        "tasksCompleted": [
+          "recover_coordination_traffic",
+          "intercept_c2_channel",
+          "escalate_on_attack_host",
+          "terminate_cascade_scripts"
+        ]
+      },
       "conclusionScreen": { "type": "bond_visualiser" },
       "tasks": [
         {
@@ -1144,8 +1147,8 @@ scada_password = "CascadeWindow19"
     unlock-system.js emits `item_unlocked` ONLY inside the
     `if (scenarioData.contents)` branch (unlock-system.js:718-741). A flag-locked
     object with no contents unlocks silently, the task never completes, and
-    because shut_down_the_cascade is in requiresCompleted the mission conclusion
-    can never be recorded.
+    because shut_down_the_cascade gates progress toward the conclusion aim, the
+    mission conclusion can never be recorded.
     So the abort produces a printed confirmation. The console prints it, the
     engine emits the event, the task completes, and the task's onComplete sets
     grid_saved and mission_complete -- from the terminal, never from a

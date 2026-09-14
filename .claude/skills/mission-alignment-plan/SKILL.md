@@ -53,7 +53,7 @@ Every subagent must be pointed at the same references so the plan is measured ag
 
 - Agent HaX hub: `scenarios/m02_ransomed_trust/ink/m02_phone_agent0x99.ink` — a `support_hub` knot whose choices are gated on **progress global variables**, e.g. `{cover_burned and not cover_restored and not cover_advice_given} [...]`, plus field-guide offers gated `{<x>_guide_offered and not <x>_guide_hint_given}` with `#give_item:lab-workstation:<key>`. This is the mechanism the user means by "guidance from Agent HaX added to the main dialogue hub based on progress globals."
 - Music: the top-level `"music"` block with a `"track"` and event-driven changes in `m01`/`m02` scenario.json.erb.
-- Conclusion: `"conclusionScreen": { "type": "bond_visualiser" }` with a `missionConclusion` aim and a `requiresCompleted` gate.
+- Conclusion: `"conclusionScreen": { "type": "bond_visualiser" }` with a `missionConclusion` aim and a `concludeRequires` gate (technical work only).
 
 ## Step 2 — the alignment rubric (the contract)
 
@@ -62,7 +62,7 @@ Both the planner and the reviewer work this ten-row rubric. For each row the pla
 | #   | Dimension                                          | What "good" looks like (anchor)                                                                                                                                                                                | Common early-draft gap                                                         |
 | --- | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
 | 1   | **Canon & stakes**                                 | Threat matches the escalated bible; lives visibly at risk (m01 Derek monologue, m02 ward).                                                                                                                     | Written under the softer old bible; abstract stakes.                           |
-| 2   | **Aims & objective staging**                       | Sequenced unlocks, action-oriented titles, no dead zones, spoiler-safe reveal (all tasks show when an aim unlocks), `missionConclusion` + `requiresCompleted`.                                                 | All aims active at start; task titles leak answers; no sequencing.             |
+| 2   | **Aims & objective staging**                       | Sequenced unlocks, action-oriented titles, no dead zones, spoiler-safe reveal (all tasks show when an aim unlocks), `missionConclusion` + `concludeRequires`.                                                 | All aims active at start; task titles leak answers; no sequencing.             |
 | 3   | **Agent HaX support hub**                          | `support_hub` in the phone ink, choices gated `{progress_global and not X_discussed}`; field guides exposure-gated via `_guide_offered`/`_hint_given`.                                                         | HaX barely present; no progress-driven hub; guides time-gated or absent.       |
 | 4   | **Ink / dialogue craft**                           | Attribution + narrator voice; hub structure; first-person choices that carry consequences; no CYOA combat/terminals. (`npc-dialog-review`)                                                                     | Menu-label choices, flat branches, narration mis-voiced.                       |
 | 5   | **Moral choices & consequences**                   | Branches wired to the debrief / `bond_visualiser`; reframed for the hard canon.                                                                                                                                | Choices with no downstream payoff; sympathetic framing that contradicts canon. |
@@ -124,7 +124,7 @@ Write `scenarios/<mission>/ALIGNMENT_PLAN.md` (this is the one file this skill c
 (Canon calls and design forks that block or shape implementation.)
 
 ## Risks & regressions to guard
-(What must not break; which invariants to re-check — e.g. critical path, requiresCompleted.)
+(What must not break; which invariants to re-check — e.g. critical path, concludeRequires.)
 
 ## Verification plan
 (Which review skills/scripts to run after each phase.)

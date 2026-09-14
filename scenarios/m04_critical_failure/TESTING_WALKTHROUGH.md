@@ -68,7 +68,7 @@ main_entrance (guard)                              [start / reception]
 
 ## Aim 5 — Stop the Thermal Runaway  *(mission conclusion)*
 [Unlocks after: `map_the_attack` complete]
-`missionConclusion: true` — `requiresCompleted: [identify_scada_anomalies, confront_voltage, disable_attack_vectors]` → `bond_visualiser`.
+`missionConclusion: true` — `concludeRequires.tasksCompleted: [submit_network_scan_flag, submit_ftp_intel_flag, submit_http_analysis_flag, submit_distcc_exploit_flag]` → `bond_visualiser`.
 
 11. **Battery Hall 2 — Relay** — Neutralise → `globalVarOnKO: operative_relay_defeated` → **completes `neutralize_operative_relay`**, sets `operatives_defeated = 2`. Drops **Master Keycard**. *KO-safety:* `taskOnKO`.
 12. **Plant Room** — Enter with Master [rfid]. Static blocks; Voltage at the command laptop.
@@ -139,7 +139,7 @@ Every **puzzle-graph gating node** maps to a critical-path step. The three ⚠�
 - **Timer path (COSTLY SUCCESS):** `anomaly_detected` starts T+22m `h2_advisory` (`hydrogen_alarm`, `urgency_stage 3`) and T+40m `racks_vent` (`racks_vented`, `casualties_occurred`, `urgency_stage 4`). The run **does not end** — the player can still reach the ESD; debrief branches on `racks_vented`.
 - **KO everyone:** Vance (spare Level 1), Cipher, Relay all have `taskOnKO` + recoverable drops; Voltage KO sets `voltage_captured`; a KO'd Vance is acknowledged via `robert_vance_ko` in the debrief.
 - **Out-of-order KO:** `operatives_defeated` is set absolutely (1 then 2); Voltage's line now reads "put two of my people down" so it can't mis-name on a Relay-before-Cipher order.
-- **Both endings** satisfy `requiresCompleted: [identify_scada_anomalies, confront_voltage, disable_attack_vectors]`.
+- **Both endings** satisfy `concludeRequires` (the four flag tasks); the story tasks `identify_scada_anomalies`, `confront_voltage` and `disable_attack_vectors` are scored, not gated.
 
 ## Development Status
 

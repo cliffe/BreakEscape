@@ -1001,7 +1001,7 @@ module BreakEscape
   end
 
   # =========================================================================
-  # Mission Conclusion — server-side requiresCompleted gate
+  # Mission Conclusion — server-side concludeRequires gate
   # =========================================================================
   class MissionConclusionSecurityTest < ActionDispatch::IntegrationTest
     include Engine.routes.url_helpers
@@ -1041,8 +1041,8 @@ module BreakEscape
           "order" => 1,
           "missionConclusion" => true,
           # concludeRequires is the ending gate: the work a player must not be
-          # able to skip. requiresCompleted is story bookkeeping and is
-          # deliberately left off this aim -- it does not, and must not, gate.
+          # able to skip. Story tasks are deliberately absent from it -- story
+          # progress is scored, and must never withhold the ending.
           "concludeRequires" => { "tasksCompleted" => ["npc_prep_task"] },
           "conclusionScreen" => { "type" => "end_screen" },
           "tasks" => [

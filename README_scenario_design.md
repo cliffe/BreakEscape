@@ -874,7 +874,7 @@ Keep FX restrained on speaking characters — heavy distortion fights the voice 
 
 The player can attack **any** person NPC at any time, and **KO is permanent** — there is no respawn. A well-built scenario stays both *completable* and *narratively coherent* no matter who the player knocks out. `m01_first_contact` is the reference: every conversation-gated task has a knockout fallback, and every plot-relevant NPC's KO feeds the debrief. Two fields carry this:
 
-- **`taskOnKO`** — completes a task when the NPC is knocked out. The rule that actually matters: **a KO must never block mission completion.** If an NPC's conversation is the *only* way to complete a task on the **critical path** (required to finish the mission — the `missionConclusion` aim's `requiresCompleted` tasks, plus the non-optional tasks of every aim its `unlockCondition` chain depends on), it **must** have a `taskOnKO` (or `eventMapping`) fallback, or KO'ing it soft-locks the mission. It is **fine** for a KO to permanently close off a *side / lore* objective (a non-critical aim) — that can be an intended consequence of the player's choice; m01's `meet_kevin` is exactly this. **`taskOnKO` names only ONE task** — if an NPC's ink completes *two* critical tasks, wire the second one's completion through an `eventMapping` with `completeTask` on a phone/handler NPC keyed to the NPC's KO global (`global_variable_changed:<name>_ko`). See the `obtain_password_hints` wiring in `m02_ransomed_trust`. The validator reports a critical-path case as a **warning** and a side-objective case as a **suggestion**.
+- **`taskOnKO`** — completes a task when the NPC is knocked out. The rule that actually matters: **a KO must never block mission completion.** If an NPC's conversation is the *only* way to complete a task on the **critical path** (required to finish the mission — the `missionConclusion` aim's `concludeRequires.tasksCompleted`, plus the non-optional tasks of every aim its `unlockCondition` chain depends on), it **must** have a `taskOnKO` (or `eventMapping`) fallback, or KO'ing it soft-locks the mission. It is **fine** for a KO to permanently close off a *side / lore* objective (a non-critical aim) — that can be an intended consequence of the player's choice; m01's `meet_kevin` is exactly this. **`taskOnKO` names only ONE task** — if an NPC's ink completes *two* critical tasks, wire the second one's completion through an `eventMapping` with `completeTask` on a phone/handler NPC keyed to the NPC's KO global (`global_variable_changed:<name>_ko`). See the `obtain_password_hints` wiring in `m02_ransomed_trust`. The validator reports a critical-path case as a **warning** and a side-objective case as a **suggestion**.
 - **`globalVarOnKO`** — sets a global on KO so the closing debrief and end-credits can *acknowledge* the KO rather than contradicting it (e.g. "SARAH O'BRIEN: Removed — No ENTROPY connection"). A villain or secret NPC should have its KO drive the *same* resolution state a peaceful path would (e.g. an antagonist's `globalVarOnKO` reusing the `<villain>_confronted` global). For a hidden asset, add a debrief branch for the "neutralised without being identified" case.
 
 The win condition itself (usually a `mission_complete` global set from a terminal/decision, not a conversation) should never route solely through an NPC that can be KO'd. The validator's objective-wiring check flags a KO-vulnerable **critical-path** task as a warning (a real soft-lock) and a KO-vulnerable **side-objective** task as a suggestion (acceptable if intended).
@@ -1178,15 +1178,30 @@ Mark exactly **one** aim as the mission-conclusion aim with `missionConclusion: 
 
 Set on the final aim. At most one aim per scenario may carry this flag. The validator errors if more than one aim has it.
 
-#### `requiresCompleted`
+#### `concludeRequires`
 
 ```json
-"requiresCompleted": ["inform_safetynet_operation_shatter", "deactivate_launch"]
+"concludeRequires": {
+  "tasksCompleted": ["submit_ssh_flag", "submit_linux_flag", "submit_sudo_flag"]
+}
 ```
 
-Server-side prerequisite guard. The server refuses to write `mission_concluded_at` unless every listed task ID is already completed. This prevents a player bypassing earlier tasks and claiming mission completion via a race condition or tampered request. Listed task IDs must exist in the scenario (the validator errors if they do not).
+The ending gate. The **client** decides when the story is over — it owns the debrief and the credits — and calls `POST /games/:id/conclude`. This field declares the technical work the **server** will not let the story skip. The server refuses to write `mission_concluded_at` until every listed task is completed. Listed task IDs must exist (the validator errors if they do not).
 
-This is a **soft-lock**: the tasks in the conclusion aim itself remain freely completable regardless of the guard. The guard only blocks `mission_concluded_at` from being written.
+**What belongs in it:** the large technical achievements only — the VM and CTF work the mission exists to teach. The reliable way to derive the list is the scenario's own dungeon graph: the flag nodes marked mandatory (`ruby scripts/generate_dungeon_graph.rb`, then the non-optional `kind: "flag"` nodes) are exactly the work no route can avoid.
+
+**What must not:** story tasks. Story progress is *scored*, not gated — `calculate_task_score` is proportional, so unfinished work already costs marks. Gating on it withholds the ending for narrative bookkeeping, and a story task with a single completion route becomes an unannounced dead end. That is precisely how a finished m02 run once sat in `in_progress` forever, credits shown, with nothing to explain why.
+
+Two supported keys:
+
+| Key | Strength | Use for |
+|---|---|---|
+| `tasksCompleted` | Server-authoritative — those task records are written only after `validate_flag_submission` checks the flag | Technical work (flag submissions) |
+| `globals` | Weaker, client-reported | Story state, never technical gating |
+
+Omit the field entirely, or declare `"concludeRequires": {}`, to trust the client outright. That is the right answer for a scenario with no large technical work — declare the empty object to say so deliberately.
+
+> **Note:** `requiresCompleted` was the previous form of this gate and is **no longer read by anything**. The validator errors if a scenario still declares it. Aim completion is unaffected: an aim still completes when its own non-optional tasks are done.
 
 #### `conclusionScreen`
 

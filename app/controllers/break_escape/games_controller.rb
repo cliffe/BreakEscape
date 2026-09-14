@@ -63,8 +63,9 @@ module BreakEscape
     # #give_item together, which the client sends as three parallel POSTs. The
     # two task writes took the lock; the unlocked inventory add read
     # player_state before them and saved after, discarding both. Game 1022 lost
-    # seven tasks that way -- including talk_to_gary, a requiresCompleted gate,
-    # so the mission could never conclude -- while every request returned 200.
+    # seven tasks that way -- including talk_to_gary, an ending gate at the
+    # time, so the mission could never conclude -- while every request
+    # returned 200.
     #
     # The signature is a game whose tasks_completed counter exceeds the number
     # of entries in objectivesState.tasks: the counter is its own column and

@@ -291,7 +291,18 @@ operational_log_content = "TRANSACTION LOG - Q3 2024\n\n[2024-09-15 14:32:11] Pr
       "order": 5,
       "missionConclusion": true,
       "unlockCondition": { "aimCompleted": "act2_breach_server_room" },
-      "requiresCompleted": ["submit_distcc_flag", "victoria_choice_made"],
+      <%# Ending gate: the mandatory flag nodes from the dungeon graph -- the
+          technical work this mission is not allowed to skip. Story tasks are
+          not listed: they cost score if unfinished, they never withhold the
+          ending. See README_scenario_design.md#concluderequires. %>
+      "concludeRequires": {
+        "tasksCompleted": [
+          "submit_network_scan_flag",
+          "submit_ftp_flag",
+          "submit_http_flag",
+          "submit_distcc_flag"
+        ]
+      },
       "conclusionScreen": { "type": "bond_visualiser" },
       "tasks": [
         {

@@ -1039,15 +1039,18 @@ def check_objectives_wiring(json_data, base_dir)
       end
     end
 
-    # Task ids required for mission completion. For an aim with requiresCompleted (the
-    # conclusion aim), only those tasks are strictly required; for the rest, all
+    # Task ids required for mission completion. For the conclusion aim, only the
+    # tasks in concludeRequires are strictly required; for every other aim, all
     # non-optional tasks must complete for the aim to count as completed.
     critical_task_ids = Set.new
     critical_aim_ids.each do |aid|
       aim = aims_by_id[aid]
       next unless aim
-      if aim['requiresCompleted']
-        Array(aim['requiresCompleted']).each { |tid| critical_task_ids << tid }
+      gate = aim.dig('concludeRequires', 'tasksCompleted')
+      if aim['missionConclusion'] && gate.is_a?(Array) && gate.any?
+        # The conclusion aim is gated only on its declared technical work; its
+        # remaining tasks cost score but never block the ending.
+        gate.each { |tid| critical_task_ids << tid }
       else
         aim['tasks']&.each { |t| critical_task_ids << t['taskId'] unless t['optional'] }
       end
@@ -1282,7 +1285,7 @@ def check_objectives_wiring(json_data, base_dir)
   # Three separate mission-blockers have had exactly this shape: a task that can
   # only be completed by a single '#complete_task:' tag, sitting inside one
   # branch of an ink choice. A player who picks any other branch can never
-  # complete it, and if an aim's requiresCompleted names it, the mission cannot
+  # complete it, and if an aim's concludeRequires names it, the mission cannot
   # conclude — which does not show up until someone plays the other branch.
   #
   # Only tasks with no other route are flagged. A task with a second tag, a
@@ -1362,7 +1365,7 @@ def check_objectives_wiring(json_data, base_dir)
     # Which tasks does an aim actually gate its conclusion on?
     required = Set.new
     json_data['objectives']&.each do |aim|
-      req = aim['requiresCompleted']
+      req = aim.dig('concludeRequires', 'tasksCompleted')
       req.each { |t| required << t } if req.is_a?(Array)
     end
 
@@ -1380,7 +1383,7 @@ def check_objectives_wiring(json_data, base_dir)
         next unless tag[:under_choice]
 
         issues << "⚠️ WARNING: objectives[#{oi}]/tasks[#{ti}] ('#{task_id}') is named in an aim's " \
-                  "requiresCompleted, but its only completion route is a single '#complete_task:#{task_id}' " \
+                  "concludeRequires, but its only completion route is a single '#complete_task:#{task_id}' " \
                   "tag at #{tag[:file]}:#{tag[:line]}, which sits inside one branch of a choice. A player " \
                   "who picks a different branch can never complete it, and the aim can then never conclude. " \
                   "Give it a second route — the tag at the top of the knot so every branch fires it, a " \
@@ -1531,26 +1534,37 @@ def check_common_issues(json_data, valid_item_types = nil)
     global_variables_defined.merge(json_data['globalVariables'].keys)
   end
 
-  # Collect all valid task IDs from objectives (for taskOnKO and requiresCompleted cross-reference)
+  # Collect all valid task IDs from objectives (for taskOnKO and concludeRequires cross-reference)
   all_task_ids = Set.new
   json_data['objectives']&.each do |obj|
     obj['tasks']&.each { |t| all_task_ids.add(t['taskId']) if t['taskId'] }
   end
 
-  # Validate missionConclusion / requiresCompleted / conclusionScreen on aims
+  # Validate missionConclusion / concludeRequires / conclusionScreen on aims
   mission_conclusion_aims = json_data['objectives']&.select { |a| a['missionConclusion'] } || []
   if mission_conclusion_aims.size > 1
     issues << "❌ ERROR: Multiple aims have missionConclusion:true (#{mission_conclusion_aims.map { |a| a['aimId'] }.join(', ')}). At most one aim per scenario may be the conclusion aim."
   end
+  # requiresCompleted was the old ending gate. It is no longer read by anything:
+  # concludeRequires replaced it. Flag it so a stale list cannot sit in a
+  # scenario looking like it still gates the ending when it gates nothing.
+  json_data['objectives']&.each do |aim|
+    next unless aim.key?('requiresCompleted')
+    issues << "❌ ERROR: objectives/#{aim['aimId']} declares 'requiresCompleted', which no longer gates " \
+              "anything. The ending gate is 'concludeRequires': { \"tasksCompleted\": [...] } on the " \
+              "missionConclusion aim. Remove requiresCompleted, and move any genuinely required technical " \
+              "work into concludeRequires."
+  end
+
   json_data['objectives']&.each do |aim|
     aim_path = "objectives/#{aim['aimId']}"
     next unless aim['missionConclusion']
     if aim['conclusionScreen'].nil?
       issues << "⚠️ WARNING: #{aim_path} has missionConclusion:true but no conclusionScreen — the player will see no end-of-mission overlay."
     end
-    (aim['requiresCompleted'] || []).each do |task_id|
+    Array(aim.dig('concludeRequires', 'tasksCompleted')).each do |task_id|
       unless all_task_ids.include?(task_id)
-        issues << "❌ ERROR: #{aim_path} requiresCompleted references unknown taskId '#{task_id}'."
+        issues << "❌ ERROR: #{aim_path} concludeRequires.tasksCompleted references unknown taskId '#{task_id}'."
       end
     end
 
@@ -1578,10 +1592,11 @@ def check_common_issues(json_data, valid_item_types = nil)
                   "how a finished run gets stranded short of its own ending. Declare the gate: " \
                   "\"concludeRequires\": { \"tasksCompleted\": [#{flag_task_ids.map { |t| "\"#{t}\"" }.join(', ')}] }."
       else
-        issues << "⚠️ WARNING: #{aim_path} has missionConclusion:true but no concludeRequires, so reaching the " \
-                  "end of the story is the whole condition for concluding. That is the right answer for a " \
+        issues << "💡 SUGGESTION: #{aim_path} has missionConclusion:true but no concludeRequires, so reaching " \
+                  "the end of the story is the whole condition for concluding. That is the right answer for a " \
                   "scenario with no large technical work to gate on -- there is nothing here a player could " \
-                  "skip -- but state it deliberately rather than by omission."
+                  "skip. To say so deliberately rather than by omission, declare an empty gate: " \
+                  "\"concludeRequires\": {}."
       end
     else
       unknown_keys = conclude_requires.keys - %w[tasksCompleted globals]
@@ -1612,9 +1627,9 @@ def check_common_issues(json_data, valid_item_types = nil)
       if story_gate_tasks.any?
         issues << "⚠️ WARNING: #{aim_path} concludeRequires.tasksCompleted names non-flag task(s): " \
                   "#{story_gate_tasks.join(', ')}. A hard block should cover the large technical " \
-                  "achievements only. Story tasks belong in requiresCompleted, which scores them without " \
-                  "withholding the ending — a story task with one completion route becomes an unannounced " \
-                  "dead end here, and the player is given no way to know why the credits never came."
+                  "achievements only. Leave story tasks out of the gate: they are already scored " \
+                  "proportionally, and a story task with one completion route becomes an unannounced " \
+                  "dead end here, with no way for the player to know why the credits never came."
       end
 
       missing_flag_tasks = flag_task_ids - Array(conclude_requires['tasksCompleted'])

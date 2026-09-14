@@ -966,10 +966,10 @@ module BreakEscape
       process_task_completion(task)
 
       # Check if aim is now complete (may set mission_concluded_at)
-      # Returns false when a missionConclusion aim's requiresCompleted gate is unmet
+      # Returns false when a missionConclusion aim's concludeRequires gate is unmet
       conclusion_result = check_aim_completion(task['aimId'])
 
-      # This task may be a requiresCompleted gate task for a *different*
+      # This task may be a concludeRequires gate task for a *different*
       # missionConclusion aim that already finished its own tasks earlier
       # and was blocked pending this one — re-check those too.
       recheck_pending_mission_conclusions!
@@ -1129,12 +1129,12 @@ module BreakEscape
       return unless aim['missionConclusion']
       return unless mission_concluded_at.nil?
 
-      # Gate on concludeRequires, NOT requiresCompleted. The ending is withheld
-      # only for declared technical work (VM flags); story tasks cost score when
-      # unfinished but never the ending. Gating on requiresCompleted stranded a
-      # finished m02 run in in_progress forever when one of its story tasks had
-      # a single completion route. A scenario that declares no concludeRequires
-      # is trusted outright.
+      # The ending is withheld only for the technical work the scenario declares
+      # in concludeRequires (the mandatory flag nodes from its dungeon graph).
+      # Story tasks cost score when unfinished but never the ending: gating on a
+      # story-task list once stranded a finished m02 run in in_progress forever,
+      # because one gate task had a single completion route. A scenario that
+      # declares no concludeRequires is trusted outright.
       return false if unmet_conclude_requirements(aim).any?  # gate blocked
 
       now = Time.current
@@ -1145,7 +1145,7 @@ module BreakEscape
     end
 
     # Re-evaluate any missionConclusion aims whose own tasks are already
-    # complete but whose requiresCompleted gate wasn't satisfied at the time
+    # complete but whose concludeRequires gate wasn't satisfied at the time
     # they first tried to conclude. A gate task can belong to a *different*
     # aim and complete afterward — check_aim_completion only re-runs
     # check_mission_conclusion for the aim owning the task that just
@@ -1593,10 +1593,10 @@ module BreakEscape
     # nothing, the client is trusted outright and reaching the end of the story
     # is the whole condition.
     #
-    # This deliberately does NOT gate on requiresCompleted. That field is a
-    # story-task list, and gating conclusion on it once stranded a finished m02
-    # run in `in_progress` forever because a single gate task had only one
-    # completion route. Story tasks feed the score (calculate_task_score is
+    # It deliberately does NOT gate on story progress. Gating conclusion on a
+    # story-task list once stranded a finished m02 run in `in_progress` forever
+    # because a single gate task had only one completion route. Story tasks feed
+    # the score (calculate_task_score is
     # proportional, so unfinished work already costs marks); they do not decide
     # whether the player is allowed to have reached the end.
     #

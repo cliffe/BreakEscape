@@ -96,7 +96,7 @@ Mini-games handle modal display, pause/resume, and return callbacks automaticall
 - Tasks have: `taskId`, `title`, `type` (collect_items/unlock_room/npc_conversation/submit_flags/custom/manual/…)
 - `completeTask(taskId)` calls the server first; on `!response.success` the task is **reverted to active** and `window.gameAlert` shows the server error — the player sees the rejection immediately
 - **Mission Conclusion** — mark exactly one aim with `missionConclusion: true`:
-  - `requiresCompleted: ["taskId1", "taskId2"]` — server-side gate: listed tasks must be done before `mission_concluded_at` is written. A failed gate returns a `warning` alert to the player.
+  - `concludeRequires: { "tasksCompleted": ["submit_ssh_flag", …] }` — server-side ending gate: listed tasks must be done before `mission_concluded_at` is written. A failed gate returns a `warning` alert to the player. List the **large technical work only** (the mandatory flag nodes from the dungeon graph); story tasks are scored, never gated. Omit or use `{}` to trust the client. (`requiresCompleted` was the old name and now errors in the validator.)
   - `conclusionScreen: { "type": "end_screen" | "bond_visualiser" }` — which overlay to show on conclusion and on reload
   - Score is the raw formula `(tasks/total)×70 + (aims/total)×30` — never forced to 100 % by the conclusion flag
 - On page reload, `main.js` checks `window.breakEscapeConfig.missionConcludedAt` and replays the `conclusionScreen` via `objectivesManager.handleMissionConcluded(aim)` once `game_loaded` fires

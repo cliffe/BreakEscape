@@ -177,7 +177,7 @@ Split out of the old single insider aim on 2026-08-18. Its task titles name the 
 33. **Boardroom — Hospital Communications Terminal** — Now unlocked (needs `backdoor_fully_exploited` **and** `ransom_decision_made`) → transmit or suppress → **task `decide_hospital_exposure` complete**, `exposed_hospital` set, **`mission_complete` set**
 34. **Closing debrief** — `closing_debrief_trigger` fires on `mission_complete` → person-chat debrief → `#complete_mission` → bond visualiser + credits
 
-**Server-side conclusion guard (`requiresCompleted`):** `talk_to_gary`, `access_server_room`, `submit_proftpd_flag`, `submit_ghost_log_flag`, `initiate_backup_recovery`, `make_ransom_decision`, `decide_hospital_exposure`. The VM chain cannot be skipped.
+**Server-side ending gate (`concludeRequires.tasksCompleted`):** `submit_ssh_flag`, `submit_proftpd_flag`, `submit_database_flag`, `submit_ghost_log_flag` — the four mandatory flag nodes in the dungeon graph. The VM chain cannot be skipped. Story tasks (`talk_to_gary`, `unmask_identify`, `make_ransom_decision`, `decide_hospital_exposure`, …) are deliberately **not** gated: they cost score when unfinished but never withhold the ending.
 
 ---
 
@@ -275,7 +275,7 @@ New enacted-consequence layer on the ward and the endgame. To QA:
 
 The `DECISION_WEIGHT_PLAN.md` changes touch the recovery console, the press terminal, the ward, and the insider thread. After implementing, re-verify every one of these still holds:
 
-- [ ] **Critical path stays 4 hops** and `requiresCompleted` (step 168) is unchanged — mission completion is never gated on any new timer or patient global.
+- [ ] **Critical path stays 4 hops** and `concludeRequires` is unchanged (the four flag tasks) — mission completion is never gated on any new timer, patient global or story task.
 - [ ] **Press-terminal gates intact:** transmit still refused before `backdoor_fully_exploited` (relay_locked_investigation) and before `ransom_decision_made` (relay_locked_incident).
 - [ ] **`#complete_task:decide_hospital_exposure` still fires on transmit** — the Reeves ambush (step 28, edge case 243) hangs off it. Never-identify-Reeves must still trigger `press_terminal_ambush` → `insider_asset_escaped`.
 - [ ] **Reeves `setVisible:false` stays on the ARRESTED path only** (`insider_asset_arrested`), never on `insider_asset_escaped` (would delete the hostile fight). Phase 7 is dropped for this reason.

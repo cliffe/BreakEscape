@@ -298,7 +298,18 @@ archives_password = "TrustNoOne"
       "status": "locked",
       "order": 5,
       "missionConclusion": true,
-      "requiresCompleted": ["confront_nightshade"],
+      <%# Ending gate: the mandatory flag nodes from the dungeon graph -- the
+          technical work this mission is not allowed to skip. Story tasks are
+          not listed: they cost score if unfinished, they never withhold the
+          ending. See README_scenario_design.md#concluderequires. %>
+      "concludeRequires": {
+        "tasksCompleted": [
+          "recover_gitlist_exposure",
+          "recover_stashed_credentials",
+          "recover_home_flag",
+          "escalate_to_root"
+        ]
+      },
       "conclusionScreen": { "type": "bond_visualiser" },
       "unlockCondition": { "aimCompleted": "confront_the_mole" },
       "tasks": [
@@ -1060,7 +1071,7 @@ archives_password = "TrustNoOne"
           "observations": "An agent holding a magazine he is not reading, listening to every conversation in the room."
         },
         {
-          "_comment": "Closing debrief NPC -- Director Netherton, arriving in the break room once the fate is decided. Gated by the final aim's requiresCompleted (confront_the_mole) and the disposition terminal. Reads the player's choice; branches the debrief; completes take_the_debrief; triggers the victory playlist and the bond_visualiser on conversation end.",
+          "_comment": "Closing debrief NPC -- Director Netherton, arriving in the break room once the fate is decided. Gated by the final aim's own tasks (confront_the_mole) and the disposition terminal. Reads the player's choice; branches the debrief; completes take_the_debrief; triggers the victory playlist and the bond_visualiser on conversation end.",
           "id": "closing_debrief",
           "displayName": "Director Magnus Netherton",
           "npcType": "person",

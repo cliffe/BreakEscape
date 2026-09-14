@@ -83,7 +83,7 @@ Never reconstruct a trace from what you expected to happen. If a command was not
   design — it is the terminal state. Two runs have been lost waiting for it to
   clear, one of them concluding the game had hung on blocked audio. It has not
   hung. **Mission conclusion is decided server-side**, in `check_mission_conclusion`,
-  and depends only on every `requiresCompleted` task being persisted. Check the
+  and depends only on every `concludeRequires.tasksCompleted` task being persisted. Check the
   game record; never wait on the screen.
 
 - `mg type(i, text, {submit:true})` sends Enter **and** clicks a submit button if

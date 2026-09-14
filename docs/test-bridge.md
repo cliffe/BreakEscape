@@ -281,7 +281,7 @@ It also appears in `blockingUi`, whose `hint` changes to say so rather than
 telling you to dismiss it.
 
 **It does not mean the mission concluded.** That is a server fact, decided by
-`check_mission_conclusion` from persisted `requiresCompleted` tasks. The two can
+`check_mission_conclusion` from persisted `concludeRequires` tasks. The two can
 disagree — a game can reach the credits with a task whose write was lost, and
 then never conclude. When they disagree the server is right, so always confirm:
 

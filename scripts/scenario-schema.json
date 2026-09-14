@@ -167,11 +167,6 @@
           "type": "boolean",
           "description": "When true, completing this aim records mission_concluded_at on the server. At most one aim per scenario should have this flag."
         },
-        "requiresCompleted": {
-          "type": "array",
-          "items": { "type": "string" },
-          "description": "Story-task list for this conclusion aim: what the design intends the player to have done. Feeds the dungeon graph and reads as documentation. This NO LONGER gates the ending -- see concludeRequires. Unfinished tasks cost score, which is proportional, rather than withholding the conclusion."
-        },
         "concludeRequires": {
           "type": "object",
           "description": "Server-side ending gate. The CLIENT decides when the story is over (it owns the debrief and the credits); this declares the technical work the server will not let the story skip. Gate on the large technical achievements only -- the VM and CTF work the mission exists to teach. Do NOT list story tasks: story progress is scored, not gated. Micro-managing it here withholds the ending for narrative bookkeeping, and a story task with a single completion route becomes an unannounced dead end -- that is exactly how a finished m02 run was stranded in in_progress forever. Omit the field entirely to trust the client outright, which is right when there is no large technical work to gate on.",

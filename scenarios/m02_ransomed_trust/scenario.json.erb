@@ -446,10 +446,10 @@ boardroom_pin = "0417"
       "unlockCondition": { "aimCompleted": "exploit_entropy_backdoor" },
       "missionConclusion": true,
       <%# Ending gate: the four VM flags are the technical work this mission is
-          not allowed to skip. requiresCompleted below is kept as the story-task
-          list (it feeds the dungeon graph and reads as the design intent) but no
-          longer withholds the ending -- gating on it stranded a finished run in
-          in_progress forever when unmask_identify had a single completion route. %>
+          not allowed to skip -- the mandatory flag nodes in the dungeon graph.
+          Story tasks are deliberately absent: they cost score if unfinished, and
+          gating on one stranded a finished run in in_progress forever when
+          unmask_identify had a single completion route. %>
       "concludeRequires": {
         "tasksCompleted": [
           "submit_ssh_flag",
@@ -458,16 +458,6 @@ boardroom_pin = "0417"
           "submit_ghost_log_flag"
         ]
       },
-      "requiresCompleted": [
-        "talk_to_gary",
-        "access_server_room",
-        "submit_proftpd_flag",
-        "submit_ghost_log_flag",
-        "unmask_identify",
-        "initiate_backup_recovery",
-        "make_ransom_decision",
-        "decide_hospital_exposure"
-      ],
       "conclusionScreen": { "type": "bond_visualiser" },
       "tasks": [
         {

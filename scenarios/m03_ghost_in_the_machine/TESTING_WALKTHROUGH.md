@@ -81,12 +81,12 @@ Player starts with: phone, **RFID Cloner**, **Lock Pick Kit**.
 ---
 
 ## Aim: Moral Engagement (`moral_choices`) *(mission conclusion)*
-[Unlocks after: `act2_breach_server_room` complete. `requiresCompleted`: `submit_distcc_flag`, `victoria_choice_made`]
+[Unlocks after: `act2_breach_server_room` complete. `concludeRequires.tasksCompleted`: `submit_network_scan_flag`, `submit_ftp_flag`, `submit_http_flag`, `submit_distcc_flag`]
 
 18. **James Office — Danny Foster** *(optional task)* — Entering fires the `james_choice_cutscene` (evidence documents) → protect / expose / leave → **`#complete_task:james_choice_made`** + `james_protected`/`james_exposed`. A live **Danny Foster** NPC is also present to confront (the cutscene owns the fate; the NPC has a `taskOnKO` backstop).
 19. **Return to Victoria (after hours)** — With `night_confrontation_ready` (set by the distcc flag), her `start` diverts to `nighttime_confrontation`. Choose a fate: **cold-recruit / arrest / escape** → `#set_global:victoria_fate:<x>` + `victoria_<x>` + **`#set_global:victoria_choice_made:true`** + **`#complete_task:victoria_choice_made`**.
    - *KO path*: handler sets `victoria_choice_made` (night-KO immediately; day-KO deferred to `submit_distcc_flag`) with `victoria_fate: ko`.
-20. **Win** — `global_variable_changed:victoria_choice_made` fires the **closing_debrief** NPC (four-fate branch: recruited/arrested/escaped/KO) + spy-action music → debrief → **`#mission_complete`** → victory credits. `requiresCompleted` (`submit_distcc_flag` + `victoria_choice_made`) both satisfied.
+20. **Win** — `global_variable_changed:victoria_choice_made` fires the **closing_debrief** NPC (four-fate branch: recruited/arrested/escaped/KO) + spy-action music → debrief → **`#mission_complete`** → victory credits. `concludeRequires` (the four flag tasks) satisfied. `victoria_choice_made` drives the ending branch but does not gate it.
 
 ---
 
