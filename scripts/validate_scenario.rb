@@ -1420,20 +1420,30 @@ def check_lock_credentials(json_data)
 
   # Locks that are opened by carrying an item. Every other lockType ('password',
   # 'pin', 'biometric', 'flag', ...) puts a secret in 'requires', not an item.
+  # An rfid lock's 'requires' may be a single id or (unlock-system.js) an array
+  # of accepted ids -- flatten either into the set.
   credential_requires = { 'key' => Set.new, 'rfid' => Set.new }
   walk_locks = lambda do |node|
     case node
     when Array then node.each { |n| walk_locks.call(n) }
     when Hash
       lt = node['lockType']
-      credential_requires[lt] << node['requires'] if credential_requires.key?(lt) && node['requires']
+      if credential_requires.key?(lt) && node['requires']
+        Array(node['requires']).each { |r| credential_requires[lt] << r }
+      end
       node.each_value { |v| walk_locks.call(v) }
     end
   end
   walk_locks.call(json_data)
-  all_credentials = credential_requires.values.reduce(Set.new, :|)
 
-  key_items = []     # [name, opens_lock] for items whose type is a physical key
+  # [name, credential, lockType] for items whose type is a physical key or an
+  # RFID/keycard/fob credential. A physical key is matched by 'opens_lock'
+  # (falling back to 'key_id' -- ItemIdentity.lock_ref). An RFID/keycard is
+  # matched by 'card_id' first, falling back to 'opens_lock'/'key_id'
+  # (unlock-system.js getCardId) -- so card_id is the credential that
+  # actually satisfies the door when both are present.
+  key_items = []
+  credential_item_types = { 'key' => 'key', 'keycard' => 'rfid', 'rfid' => 'rfid', 'fob' => 'rfid' }
   walk_items = lambda do |node|
     case node
     when Array then node.each { |n| walk_items.call(n) }
@@ -1444,28 +1454,35 @@ def check_lock_credentials(json_data)
                   "identity and belongs in 'id' instead. key_id survives in the engine only so missions " \
                   "started before the rename can finish -- it must not appear in a scenario."
       end
-      key_items << [node['name'] || node['opens_lock'], node['opens_lock']] if node['opens_lock'] && node['type'] == 'key'
+      lt = credential_item_types[node['type']]
+      if lt
+        credential = lt == 'rfid' ? (node['card_id'] || node['opens_lock']) : node['opens_lock']
+        key_items << [node['name'] || credential, credential, lt] if credential
+      end
       node.each_value { |v| walk_items.call(v) }
     end
   end
   walk_items.call(json_data)
 
-  # A key that opens nothing. Scoped to type 'key': an rfid credential is often
-  # a clone produced at runtime by the RFID minigame, with no scenario-side lock.
-  key_items.each do |name, opens|
-    next if all_credentials.include?(opens)
-    issues << "⚠️ WARNING: key '#{name}' has opens_lock '#{opens}', but no lock 'requires' it. Either the " \
-              "lock is missing, the value is a typo, or this is really an identity and belongs in 'id'. " \
-              "A deliberate decoy key is the one legitimate case -- say so in a comment."
+  # A credential item that opens nothing.
+  key_items.each do |name, credential, lock_kind|
+    next if credential_requires[lock_kind].include?(credential)
+    issues << "⚠️ WARNING: key '#{name}' has credential '#{credential}', but no #{lock_kind} lock 'requires' it. " \
+              "Either the lock is missing, the value is a typo, or this is really an identity and belongs in " \
+              "'id'. A deliberate decoy key is the one legitimate case -- say so in a comment."
   end
 
-  # A key lock with no key. This is a soft-lock unless the door is meant to be
-  # picked or opened another way.
-  declared = key_items.map(&:last).to_set
-  credential_requires['key'].each do |req|
-    next if declared.include?(req)
-    issues << "⚠️ WARNING: a lock requires key '#{req}', but no item declares opens_lock '#{req}'. Unless " \
-              "that door is meant to be lockpicked only, nothing in the scenario can open it."
+  # A key/RFID lock with no matching credential item. This is a soft-lock
+  # unless the door is meant to be opened another way (e.g. lockpicked).
+  declared = { 'key' => Set.new, 'rfid' => Set.new }
+  key_items.each { |_name, credential, lt| declared[lt] << credential }
+  %w[key rfid].each do |lock_kind|
+    credential_requires[lock_kind].each do |req|
+      next if declared[lock_kind].include?(req)
+      field = lock_kind == 'rfid' ? "card_id (or opens_lock)" : 'opens_lock'
+      issues << "⚠️ WARNING: a lock requires #{lock_kind} '#{req}', but no item declares #{field} '#{req}'. " \
+                "Unless that door is meant to be lockpicked only, nothing in the scenario can open it."
+    end
   end
 
   issues
