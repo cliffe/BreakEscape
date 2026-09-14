@@ -9,6 +9,15 @@
 
 ---
 
+> **Superseded in part, 2026-09-14.** The code quoted below is as it stood at the
+> review date and is kept verbatim as the record. Since then `key_id` has been
+> split into `id` (which object this is) and `opens_lock` (which lock it opens).
+> The identity checks quoted here now run through `BreakEscape::ItemIdentity`,
+> and `item_add_params` permits `id` and `opens_lock` as well. The findings and
+> the reasoning still hold; only the field names have moved.
+
+---
+
 ## Executive Summary
 
 The room state sync system has been **SECURED** with the following status:

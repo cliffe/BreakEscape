@@ -25,7 +25,7 @@ File: `scenario.json`
     {
       "type": "key",
       "name": "Office Key",
-      "key_id": "office_key",        // Must match "requires" in lock
+      "opens_lock": "office_key",    // Must match "requires" in lock
       "keyPins": [32, 28, 35, 30],   // Must match lock's keyPins
       "observations": "A brass key"
     }
@@ -45,7 +45,7 @@ File: `scenario.json`
     {
       "type": "key",
       "name": "CEO Key",
-      "key_id": "ceo_key",
+      "opens_lock": "ceo_key",
       "keyPins": [40, 35, 38, 32, 36]
     }
   ]
@@ -138,7 +138,7 @@ key = {
   scenarioData: {
     type: 'key',
     name: 'Office Key',
-    key_id: 'office_key',
+    opens_lock: 'office_key',
     keyPins: [32, 28, 35, 30],   // Lock pin heights this key opens
     observations: 'A brass key'
   },
@@ -179,7 +179,7 @@ lockRequirements = {
    {
      "type": "key",
      "name": "Storage Key",
-     "key_id": "storage_key",      // Must match "requires"
+     "opens_lock": "storage_key",  // Must match "requires"
      "keyPins": [30, 32, 28, 35]   // Must match lock exactly
    }
    ```
@@ -262,7 +262,7 @@ window.DISABLE_LOCKS = true  // Disables all locks temporarily
 
 | Error | Cause | Solution |
 |-------|-------|----------|
-| Key doesn't unlock door | `key_id` doesn't match `requires` | Ensure exact match |
+| Key doesn't unlock door | `opens_lock` doesn't match the lock's `requires` | Ensure exact match |
 | Wrong pins in lock | `keyPins` mismatch | Key's keyPins must match lock's keyPins |
 | Key doesn't appear in inventory | Item not in `startItemsInInventory` | Add it to scenario or container |
 | Conversation tag not working | Tag format incorrect | Use `# action:param` format |

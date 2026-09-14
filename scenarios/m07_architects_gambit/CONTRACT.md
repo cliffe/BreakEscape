@@ -122,8 +122,8 @@ or a `#` tag use these ids verbatim.
 | Room | Object id | `type` | What it is |
 |---|---|---|---|
 | `security_checkpoint` | `badge_printer` | `workstation` | Redundant RFID source; `give_item` yields `printed_contractor_badge` |
-| | `printed_contractor_badge` | `keycard` | Given by the printer; `key_id: server_zone_badge` |
-| | `morrison_server_badge` | `keycard` | Morrison's `itemsHeld` badge; `key_id: server_zone_badge` |
+| | `printed_contractor_badge` | `keycard` | Given by the printer; `opens_lock: server_zone_badge` |
+| | `morrison_server_badge` | `keycard` | Morrison's `itemsHeld` badge; `opens_lock: server_zone_badge` |
 | | `visitor_log` | `notes` | Morrison renewed Mercer's credentials |
 | | `checkpoint_evacuation_board` | `smartscreen` | Muster board |
 | `operations_floor` | `generator_maintenance_key` | `key` | Primary source for the key lock |
@@ -299,13 +299,13 @@ inert — declared, never touched by any ink file. In particular `crisis_choice`
 ## 7. Field guides
 
 Exposure-gated offers, delivered on request from the hub, per the m01/m02 pattern:
-`#give_item:lab-workstation:<key_id>` behind `{<x>_guide_offered and not <x>_guide_hint_given}`,
-with matching `itemsHeld` on `agent_0x99` carrying `key_id`, `name`, `labUrl`. **WP6 owns
+`#give_item:lab-workstation:<id>` behind `{<x>_guide_offered and not <x>_guide_hint_given}`,
+with matching `itemsHeld` on `agent_0x99` carrying `id`, `name`, `labUrl`. **WP6 owns
 `itemsHeld`**; these are the ids it must use.
 
 All five lab sheets verified present in `HacktivityLabSheets/_labs/safetynet/`.
 
-| Guide | `key_id` | Offered when | Lab sheet file | `labUrl` |
+| Guide | `id` | Offered when | Lab sheet file | `labUrl` |
 |---|---|---|---|---|
 | RFID cloning | `m07_rfid_field_guide` | player first hits the badge door | `rfid-cloning.md` | `https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/rfid-cloning/` |
 | Lockpicking | `m07_lockpicking_field_guide` | player first hits the key lock | `lockpicking.md` | `https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/lockpicking/` |
@@ -459,5 +459,5 @@ A flag reward carries exactly one `set_global`. Secondary payloads hang off `eve
 flag2 → `scada_password_found`; flag3 → `redirect_window_closed`.
 
 ### `#give_item` tag format — corrected 2026-08-29
-`#give_item:<item type>:<key_id>` — the first field is the **item type** (`keycard`, `lab-workstation`,
+`#give_item:<item type>:<id>` — the first field is the **item type** (`keycard`, `lab-workstation`,
 `key`, `id_badge`), **not** the NPC id. WP7 used the NPC id and the item silently failed to resolve.

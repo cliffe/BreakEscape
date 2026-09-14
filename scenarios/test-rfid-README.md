@@ -166,7 +166,7 @@ const scenarioUrl = 'scenarios/test-rfid.json';
 - Look for errors in console
 
 **If door doesn't unlock:**
-- Verify the keycard's `key_id` matches door's `requires`
+- Verify the keycard's `card_id` matches the door's `requires`
 - Check that you're using the correct card (Master Keycard)
 - Ensure unlock-system.js has the rfid case
 

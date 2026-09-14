@@ -7,7 +7,7 @@
 
 | Secret | Value | Where the player finds it | Redundant source |
 |---|---|---|---|
-| Server-zone badge | `server_zone_badge` (RFID key_id) | Jake Morrison's `itemsHeld`, by talking him down or by KO | badge printer, `security_checkpoint` |
+| Server-zone badge | `server_zone_badge` (the badge's `opens_lock`) | Jake Morrison's `itemsHeld`, by talking him down or by KO | badge printer, `security_checkpoint` |
 | Generator maintenance key | `generator_maintenance_key` | operations floor | lockpick in starting inventory |
 | Cable vault PIN | **4703** | maintenance log, `generator_room` | Elena Rodriguez |
 | SCADA control password | **CascadeWindow19** | Elena Rodriguez | netcat C2 channel, VM flag 2 |

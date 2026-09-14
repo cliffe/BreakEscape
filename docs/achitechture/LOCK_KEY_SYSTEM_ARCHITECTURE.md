@@ -135,7 +135,7 @@ The `keyPins` array directly corresponds to the pintumbler lock's key pin length
     {
       "type": "key",
       "name": "Office Key",
-      "key_id": "office_key",
+      "opens_lock": "office_key",
       "keyPins": [32, 28, 35, 30],  // Matches lock's pin heights
       "observations": "A brass key with a distinctive cut"
     }
@@ -151,7 +151,7 @@ The `keyPins` array directly corresponds to the pintumbler lock's key pin length
     {
       "type": "key",
       "name": "Briefcase Key",
-      "key_id": "briefcase_key",
+      "opens_lock": "briefcase_key",
       "keyPins": [40, 35, 38, 32, 36],  // 5-pin lock
       "observations": "Found inside the safe"
     }
@@ -259,7 +259,7 @@ inventoryItem = {
   scenarioData: {
     type: "key",
     name: "Office Key",
-    key_id: "office_key",
+    opens_lock: "office_key",
     keyPins: [32, 28, 35, 30],
     locked: false,
     lockType: "key",
@@ -486,7 +486,7 @@ window.NPCGameBridge.showNPCInventory(npcId, ['lockpick', 'workstation'])
     {
       "type": "keycard",
       "name": "CEO Keycard",
-      "key_id": "ceo_keycard",
+      "card_id": "ceo_keycard",
       "accessLevel": 3,
       "accessRooms": ["ceo_office", "server_room"],
       "observations": "A magnetic keycard for building access"
@@ -504,7 +504,7 @@ case 'keycard':
   // Check inventory for matching keycard
   const keycard = window.inventory.items.find(item =>
     item.scenarioData?.type === 'keycard' &&
-    item.scenarioData?.key_id === requiredCardId &&
+    (item.scenarioData?.card_id || window.lockRef(item.scenarioData)) === requiredCardId &&
     (item.scenarioData?.accessLevel || 1) >= requiredLevel
   );
   

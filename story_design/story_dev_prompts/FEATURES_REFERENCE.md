@@ -68,7 +68,7 @@ Available room types (determines visual theme):
   "type": "room_office",
   "locked": true,
   "lockType": "key",
-  "requires": "key_id",
+  "requires": "office_key",   // the credential name; a key points at it with opens_lock
   "door_sign": "Optional door label",
   "connections": {
     "north": "room_id",
@@ -206,7 +206,8 @@ All objects share these base properties:
   "type": "key",
   "name": "Key Name",
   "takeable": true,
-  "key_id": "unique_key_id",
+  "opens_lock": "office_key",   // which lock this key opens, NOT this key's own name
+  "id": "brass_office_key",     // optional: only if something needs to address this exact key
   "keyPins": [100, 0, 100, 0],  // For lockpicking minigame
   "observations": "Description"
 }
@@ -310,7 +311,7 @@ All objects share these base properties:
   "takeable": false,
   "locked": true,
   "lockType": "key",
-  "requires": "key_id",
+  "requires": "safe_key",
   "keyPins": [50, 25, 0, 75],
   "difficulty": "medium",
   "contents": [ /* objects inside */ ],
@@ -325,7 +326,7 @@ All objects share these base properties:
 ### Available Lock Types
 
 1. **`key`** - Requires specific key item
-   - `requires`: key_id (string)
+   - `requires`: the lock's credential name (string); a key matches it with `opens_lock`
    - `keyPins`: [array of 4 numbers] for lockpicking minigame
    - `difficulty`: "easy", "medium", "hard"
 
@@ -719,7 +720,7 @@ Four security levels from weakest to strongest:
       "objects": [
         {
           "type": "key",
-          "key_id": "final_key",
+          "opens_lock": "final_key",
           "takeable": true
         }
       ]
@@ -895,7 +896,7 @@ Four security levels from weakest to strongest:
 
 | Lock Type | Requires | Tools Needed | Difficulty |
 |-----------|----------|--------------|------------|
-| key | key_id | Key or Lockpick | Varies |
+| key | credential name (key's `opens_lock`) | Key or Lockpick | Varies |
 | pin | "1234" | None (or PIN cracker for hints) | Easy |
 | password | "password" | None | Easy |
 | bluetooth | "bluetooth" | Bluetooth Scanner | Medium |

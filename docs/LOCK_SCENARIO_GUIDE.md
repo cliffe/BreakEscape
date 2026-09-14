@@ -41,7 +41,7 @@ Add these properties to lockable objects:
 "requires": "office_key",
 "keyPins": [45, 35, 25, 55]  // Optional: for lockpicking
 ```
-**Player needs:** `type: "key"` with matching `key_id`
+**Player needs:** `type: "key"` with `opens_lock` matching the lock's `requires`
 
 ### `lockpick` - Lockpickable (No Key Exists)
 ```json
@@ -99,7 +99,7 @@ Add these properties to lockable objects:
 {
   "type": "key",
   "name": "Office Key",
-  "key_id": "office_key",
+  "opens_lock": "office_key",
   "keyPins": [45, 35, 25, 55],
   "takeable": true
 }

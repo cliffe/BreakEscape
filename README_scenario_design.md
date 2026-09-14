@@ -686,7 +686,8 @@ Three fields, three jobs. Keeping them apart is what stops a mapping silently ne
 
 Common mistakes the validator now catches:
 
-- `key_id` in a scenario — renamed to `opens_lock`. The engine still reads it (via `window.lockRef`) **only** so missions started before the rename can finish; a game snapshots its `scenario_data` at creation.
+- `key_id` in a scenario — renamed to `opens_lock`. Both sides still read it **only** so missions started before the rename can finish; a game snapshots its `scenario_data` at creation. The fallback lives in exactly two places: `window.lockRef` (`js/utils/helpers.js`) on the client and `BreakEscape::ItemIdentity` (`lib/break_escape/item_identity.rb`) on the server. Never quiet a validator error by leaning on either.
+- Remember the server half. A key unlock is validated by Rails against the lock's `requires`, so a key that reaches the inventory without an `opens_lock` the server can see will fail at the door even though the client looked happy.
 - An `opens_lock` no lock `requires` — a typo, or an identity that belongs in `id`.
 - A key lock nothing can open.
 - An `item_picked_up:` mapping keyed on an id — the event carries the **type**. Disambiguate with `"condition": "data.itemId === '<id>'"`.
@@ -1073,7 +1074,7 @@ The handler (a phone NPC like Agent HaX) can hand the player optional **Field Gu
      "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/m02_ransomed_trust/safetynet-field-guide-scanning-and-exploitation/" }
    ```
 2. **Offer on exposure.** An `eventMapping` fires when the player first reaches the challenge element (e.g. `object_interacted` with `data.objectType === 'vm-launcher'` — "do they have the Kali box yet?", or `item_picked_up:lockpick`, or `room_entered:server_room`). It sets a `<x>_guide_offered` global and sends a message offering the guide.
-3. **Deliver on request.** In the handler's ink, a `support_hub` choice gated `{<x>_guide_offered and not <x>_guide_hint_given}` routes to a knot that fires `#give_item:lab-workstation:<key_id>` (the `key_id` must match an item in `itemsHeld`, or the give silently fails — the validator checks this).
+3. **Deliver on request.** In the handler's ink, a `support_hub` choice gated `{<x>_guide_offered and not <x>_guide_hint_given}` routes to a knot that fires `#give_item:lab-workstation:<id>` (the `id` must match an item in `itemsHeld`, or the give silently fails — the validator checks this).
 
 Keep the offer/request globals in `globalVariables` (`<x>_guide_offered`, `<x>_guide_requested`). Gate on genuine exposure, not on time — a guide should appear because the player has walked into the thing it explains.
 

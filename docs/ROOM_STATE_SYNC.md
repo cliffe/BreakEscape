@@ -56,7 +56,7 @@ const item = {
     type: 'key',
     name: 'Office Key',
     scenarioData: {
-        key_id: 'office_key',
+        opens_lock: 'office_key',
         takeable: true
     },
     x: npc.x + 50,  // Position near NPC

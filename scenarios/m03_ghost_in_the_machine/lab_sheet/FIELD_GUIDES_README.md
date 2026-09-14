@@ -13,7 +13,7 @@ This folder contains source markdown for optional in-game field guides delivered
 2. `SAFETYNET_FIELD_GUIDE_Network_Exploitation.md`
 
 ## Offer Timing (milestone-driven)
-| Guide | Offered when (eventMapping) | Hub flag | `#give_item` key_id |
+| Guide | Offered when (eventMapping) | Hub flag | `#give_item` id |
 |-------|-----------------------------|----------|---------------------|
 | Lockpicking | `room_entered:executive_wing_hallway` (player at the locked executive office) | `lockpicking_guide_offered` | `m03_lockpicking_field_guide` |
 | Network Exploitation | `room_entered:server_room` (player at the VM/drop-site terminal) | `netexploit_guide_offered` | `m03_netexploit_field_guide` |

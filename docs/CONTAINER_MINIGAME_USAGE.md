@@ -57,7 +57,8 @@ window.startContainerMinigame(containerItem, contents, isTakeable);
             "type": "key",
             "name": "Safe Key",
             "takeable": true,
-            "key_id": "safe_key:52,29,44,37",
+            "opens_lock": "safe_key",
+            "keyPins": [52, 29, 44, 37],
             "observations": "A heavy-duty safe key hidden behind server equipment"
         }
     ]
@@ -69,7 +70,7 @@ Each item in the `contents` array should have:
 - `type`: The item type (used for image path: `assets/objects/{type}.png`)
 - `name`: Display name for the item
 - `takeable`: Whether the item can be taken by the player
-- Additional properties as needed (observations, text, key_id, etc.)
+- Additional properties as needed (observations, text, `id`, `opens_lock`, etc.)
 
 ## Integration with Unlock System
 

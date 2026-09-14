@@ -44,7 +44,7 @@ When player interacts with a locked door/object:
 
 | Method | Server Validates |
 |--------|------------------|
-| `key` | Player has matching `key_id` in inventory |
+| `key` | Player holds an item whose `opens_lock` matches the lock's `requires` |
 | `lockpick` | Player has lockpick in inventory |
 | `pin`/`password` | `attempt` matches room's `requires` |
 | `rfid`/`biometric`/`bluetooth` | Trusted (client validated item possession) |

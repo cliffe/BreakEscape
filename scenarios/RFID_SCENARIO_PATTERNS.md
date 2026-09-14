@@ -82,7 +82,7 @@ Some dialogue here.
 **Key Points:**
 - `requires` is an **array** of card_ids
 - `acceptsUIDOnly` for DESFire UID emulation
-- Use card_id, not key_id
+- Use `card_id`, not `opens_lock` (and never `key_id`, which the validator rejects)
 
 ## ❌ Incorrect Patterns (DO NOT USE)
 
@@ -115,7 +115,7 @@ Some dialogue here.
 
 **Problems:**
 - Manual hex entry required
-- Uses old `key_id` instead of `card_id`
+- Uses the removed `key_id` field instead of `card_id` (the validator errors on it)
 - Doesn't work with new protocol system
 - More complex for scenario designers
 
