@@ -264,7 +264,7 @@ function createInventorySprite(itemData) {
             },
             // Copy critical properties for easy access
             keyPins: itemData.keyPins,  // Preserve keyPins for keys
-            key_id: window.lockRef(itemData),    // the lock this item opens (keys)
+            opens_lock: window.lockRef(itemData),  // the lock this item opens (keys)
             locked: itemData.locked,
             lockType: itemData.lockType,
             requires: itemData.requires,
@@ -277,7 +277,7 @@ function createInventorySprite(itemData) {
         
         console.log('Created inventory sprite:', {
             name: sprite.name,
-            key_id: sprite.key_id,
+            opens_lock: sprite.opens_lock,
             keyPins: sprite.keyPins,
             locked: sprite.locked,
             lockType: sprite.lockType
@@ -337,7 +337,7 @@ export async function addToInventory(sprite) {
         const itemIdentifier = createItemIdentifier(sprite.scenarioData);
         const itemData = sprite.scenarioData;
         
-        // More robust duplicate check - compare by identifier, or by id/key_id if available
+        // More robust duplicate check - compare by identifier, or by id/opens_lock if available
         const isAlreadyInInventory = window.inventory.items.some(item => {
             if (!item || !item.scenarioData) return false;
             
@@ -346,7 +346,7 @@ export async function addToInventory(sprite) {
                 return true;
             }
             
-            // Also check by id/key_id if both items have them
+            // Also check by id/opens_lock if both items have them
             const itemId = itemData.id || window.lockRef(itemData);
             const existingId = item.scenarioData.id || window.lockRef(item.scenarioData);
             if (itemId && existingId && itemId === existingId) {
@@ -357,7 +357,7 @@ export async function addToInventory(sprite) {
         });
 
         if (isAlreadyInInventory) {
-            console.log(`Item ${itemIdentifier} (id: ${itemData.id || itemData.key_id || 'none'}) is already in inventory - removing from environment`);
+            console.log(`Item ${itemIdentifier} (id: ${itemData.id || window.lockRef(itemData) || 'none'}) is already in inventory - removing from environment`);
             
             // Remove from environment even if already in inventory
             if (window.currentPlayerRoom && rooms[window.currentPlayerRoom] && rooms[window.currentPlayerRoom].objects) {
@@ -534,7 +534,7 @@ export async function addToInventory(sprite) {
         
         // Explicitly preserve critical lock-related properties
         itemImg.keyPins = sprite.keyPins || sprite.scenarioData?.keyPins;
-        itemImg.key_id = sprite.key_id || window.lockRef(sprite.scenarioData);
+        itemImg.opens_lock = sprite.opens_lock || window.lockRef(sprite.scenarioData);
         itemImg.lockType = sprite.scenarioData?.lockType;
         itemImg.locked = sprite.scenarioData?.locked;
         itemImg.requires = sprite.scenarioData?.requires;
@@ -645,14 +645,14 @@ function addKeyToInventory(sprite) {
     }
     
     // DEBUG: Check properties before adding
-    const keyId = window.lockRef(sprite.scenarioData) || sprite.key_id;
+    const keyId = window.lockRef(sprite.scenarioData) || sprite.opens_lock;
     const keyPins = sprite.scenarioData?.keyPins || sprite.keyPins;
     console.log(`🔑 BEFORE adding key to ring (sprite object):`, {
-        sprite_key_id: sprite.key_id,
+        sprite_opens_lock: sprite.opens_lock,
         sprite_keyPins: sprite.keyPins,
-        scenarioData_key_id: sprite.scenarioData?.key_id,
+        scenarioData_opens_lock: window.lockRef(sprite.scenarioData),
         scenarioData_keyPins: sprite.scenarioData?.keyPins,
-        resolved_key_id: keyId,
+        resolved_opens_lock: keyId,
         resolved_keyPins: keyPins
     });
     
@@ -661,7 +661,7 @@ function addKeyToInventory(sprite) {
     
     // Log key storage with keyPins
     console.log(`✓ Key "${sprite.scenarioData?.name}" added to key ring:`, {
-        key_id: keyId,
+        opens_lock: keyId,
         keyPins: keyPins,
         locked: sprite.scenarioData?.locked,
         lockType: sprite.scenarioData?.lockType

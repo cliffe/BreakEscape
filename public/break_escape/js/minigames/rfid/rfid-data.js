@@ -226,7 +226,7 @@ export class RFIDDataManager {
             rfid_card_number: cardNumber,
             rfid_protocol: 'EM4100',
             type: 'keycard',
-            key_id: `card_${hex.toLowerCase()}`
+            opens_lock: `card_${hex.toLowerCase()}`
         };
     }
 

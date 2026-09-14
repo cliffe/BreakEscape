@@ -295,7 +295,7 @@ export function generateKeyCutsForLock(key, lockable, overrideKeyPins = null) {
     // If no saved config, generate a default configuration
     if (!lockConfig) {
         console.log(`No predefined mapping for key ${keyId} and no saved lock configuration for ${lockId}, generating default cuts`);
-        // Generate random cuts based on the key_id for consistency
+        // Generate random cuts based on the lock reference for consistency
         let seed = String(window.lockRef(key.scenarioData) || '').split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
         const random = (min, max) => {
             const x = Math.sin(seed++) * 10000;
@@ -324,7 +324,7 @@ export function generateKeyCutsForLock(key, lockable, overrideKeyPins = null) {
         cuts.push(KeyCutCalculator.calculateCutDepth(keyPinLength));
     }
     
-    console.log(`Generated cuts for key ${key.scenarioData.key_id}:`, cuts);
+    console.log(`Generated cuts for key ${window.lockRef(key.scenarioData)}:`, cuts);
     return cuts;
 }
 

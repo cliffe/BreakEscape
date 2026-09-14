@@ -249,7 +249,7 @@ export default class PersonChatConversation {
                     this.inkEngine.setVariable(`${prefix}_hex`, '');
                 }
 
-                console.log(`✅ Synced ${prefix}: ${protocol} (card_id: ${card.card_id || card.key_id})`);
+                console.log(`✅ Synced ${prefix}: ${protocol} (card_id: ${card.card_id || window.lockRef(card)})`);
             } catch (err) {
                 console.warn(`⚠️ Could not sync card protocol for ${prefix}:`, err.message);
             }

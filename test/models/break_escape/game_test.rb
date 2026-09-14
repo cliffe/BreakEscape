@@ -66,7 +66,7 @@ module BreakEscape
         }
       }
       @game.player_state['inventory'] = [
-        { 'type' => 'key', 'key_id' => 'office1_key', 'name' => 'Office Key' }
+        { 'type' => 'key', 'opens_lock' => 'office1_key', 'name' => 'Office Key' }
       ]
 
       result = @game.validate_unlock('door', 'office1', '', 'key')
@@ -84,7 +84,7 @@ module BreakEscape
         }
       }
       @game.player_state['inventory'] = [
-        { 'type' => 'key', 'key_id' => 'wrong_key', 'name' => 'Wrong Key' }
+        { 'type' => 'key', 'opens_lock' => 'wrong_key', 'name' => 'Wrong Key' }
       ]
 
       result = @game.validate_unlock('door', 'office1', '', 'key')
@@ -137,7 +137,7 @@ module BreakEscape
         }
       }
       @game.player_state['inventory'] = [
-        { 'type' => 'key', 'key_id' => 'office1_key', 'name' => 'Office Key' }
+        { 'type' => 'key', 'opens_lock' => 'office1_key', 'name' => 'Office Key' }
       ]
 
       result = @game.validate_unlock('door', 'office1', '', 'lockpick')
@@ -175,7 +175,7 @@ module BreakEscape
         }
       }
       @game.player_state['inventory'] = [
-        { 'type' => 'key', 'key_id' => 'office1_key', 'name' => 'Office Key' },
+        { 'type' => 'key', 'opens_lock' => 'office1_key', 'name' => 'Office Key' },
         { 'type' => 'lockpick', 'name' => 'Lock Pick Kit' }
       ]
 
@@ -243,7 +243,7 @@ module BreakEscape
 
     test "has_lockpick_in_inventory should not find non-lockpick items" do
       @game.player_state['inventory'] = [
-        { 'type' => 'key', 'key_id' => 'office1_key', 'name' => 'Office Key' }
+        { 'type' => 'key', 'opens_lock' => 'office1_key', 'name' => 'Office Key' }
       ]
 
       assert_not @game.has_lockpick_in_inventory?, "Should not find non-lockpick items as lockpick"

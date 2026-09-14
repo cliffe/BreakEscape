@@ -94,7 +94,7 @@ export function applyActions(actions, { source = 'scenario', gameId = null } = {
                         scenarioData: action.item,
                         texture: { key: action.item.type },
                         keyPins: action.item.keyPins,
-                        key_id: window.lockRef(action.item) || action.item.keyId,
+                        opens_lock: window.lockRef(action.item) || action.item.keyId,
                         setVisible: function() { return this; }
                     };
                     console.log('[applyActions] give_item:', action.item.name);

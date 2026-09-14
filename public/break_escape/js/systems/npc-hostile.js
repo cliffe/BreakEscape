@@ -316,9 +316,9 @@ function dropNPCItems(npcId) {
     if (item.type === 'key') {
       console.log(`🔑 Dropped key "${item.name}":`, {
         source: 'npc-hostile.js dropNPCItems',
-        item_key_id: item.key_id,
+        item_opens_lock: item.opens_lock,
         item_keyPins: item.keyPins,
-        droppedItemData_key_id: droppedItemData.key_id,
+        droppedItemData_opens_lock: droppedItemData.opens_lock,
         droppedItemData_keyPins: droppedItemData.keyPins
       });
     }
