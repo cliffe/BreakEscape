@@ -143,10 +143,15 @@ Only after production is migrated and a migrated game has been played.
    leg and the matching paragraph.
 3. `npc-game-bridge.js` — remove `item.key_id` from the selector array and
    trim the comment above it.
-4. `test/models/break_escape/game_test.rb` — delete
+4. `scripts/scenario-schema.json` — remove the `key_id` property from the
+   `item` definition. It is marked DEPRECATED rather than removed today, which
+   is right while the runtime still reads the field; once it doesn't, a schema
+   that still names it is just misleading. (`scripts/validate_scenario.rb`
+   already rejects `key_id` outright — that check stays.)
+5. `test/models/break_escape/game_test.rb` — delete
    `"has_key_in_inventory still honours key_id for games started before the
    rename"`. It is now testing for a thing that must not work.
-5. Run `bin/rails test` and re-validate the missions.
+6. Run `bin/rails test` and re-validate the missions.
 
 Leave `RFID_SCENARIO_PATTERNS.md` alone: its `key_id` examples are labelled
 anti-patterns and should keep saying the validator rejects the field.
