@@ -13,7 +13,9 @@ namespace :break_escape do
       bundle exec rake app:break_escape:migrate_key_id[dry]    # report only
       bundle exec rake app:break_escape:migrate_key_id         # apply
 
-    TAKE A DATABASE BACKUP FIRST.
+    TAKE A DATABASE BACKUP FIRST. The runbook -- backup, dry run, reading the
+    conflict report, verifying, and deleting the fallbacks afterwards -- is
+    docs/MIGRATION_key_id_to_opens_lock.md. Follow it rather than this summary.
   DESC
   task :migrate_key_id, [:mode] => :environment do |_task, args|
     dry = args[:mode].to_s.downcase.start_with?('dry')
