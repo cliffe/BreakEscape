@@ -140,14 +140,16 @@ module BreakEscape
 
       Rails.logger.info "[BreakEscape] Checking for key #{key_id} in inventory (#{inventory.length} items)"
 
-      # Check for key with matching key_id
+      # A key names the lock it opens in opens_lock. Match on that first; an
+      # item's own id is accepted too, because scenarios predating the
+      # opens_lock/id split used one field for both jobs.
       found = inventory.any? do |item|
-        is_match = item['scenarioData']&.dig('key_id') == key_id ||
-                   item['scenarioData']&.dig('id') == key_id ||
-                   item['key_id'] == key_id ||
-                   item['id'] == key_id
+        data = item['scenarioData'] || item
+        candidates = BreakEscape::ItemIdentity.identity_candidates(data)
+        candidates |= BreakEscape::ItemIdentity.identity_candidates(item)
+        is_match = candidates.include?(key_id.to_s)
 
-        item_key_id = item['scenarioData']&.dig('key_id') || item['key_id']
+        item_key_id = BreakEscape::ItemIdentity.lock_ref(data) || BreakEscape::ItemIdentity.lock_ref(item)
         item_name = item['scenarioData']&.dig('name') || item['name']
         Rails.logger.debug "[BreakEscape] Inventory item: name=#{item_name}, key_id=#{item_key_id}, is_match=#{is_match}"
         is_match
@@ -496,14 +498,14 @@ module BreakEscape
 
       # Normalize item data (handle both string and symbol keys)
       item_type = item['type'] || item[:type]
-      item_id = item['key_id'] || item[:key_id] || item['id'] || item[:id]
+      item_id = BreakEscape::ItemIdentity.identity_candidates(item).first
       item_name = item['name'] || item[:name]
 
       inventory.any? do |inv_item|
         # Inventory items are stored as flat objects (not nested in scenarioData)
         # Handle both string and symbol keys
         inv_type = inv_item['type'] || inv_item[:type]
-        inv_id = inv_item['key_id'] || inv_item[:key_id] || inv_item['id'] || inv_item[:id]
+        inv_id = BreakEscape::ItemIdentity.identity_candidates(inv_item).first
         inv_name = inv_item['name'] || inv_item[:name]
 
         # Must match type
@@ -534,12 +536,12 @@ module BreakEscape
       return false unless npc_data['itemsHeld'].present?
 
       item_type = item['type']
-      item_id = item['key_id'] || item['id']
+      item_id = BreakEscape::ItemIdentity.identity_candidates(item).first
       item_name = item['name']
 
       npc_data['itemsHeld'].any? do |held_item|
         held_type = held_item['type']
-        held_id = held_item['key_id'] || held_item['id']
+        held_id = BreakEscape::ItemIdentity.identity_candidates(held_item).first
         held_name = held_item['name']
 
         # Must match type

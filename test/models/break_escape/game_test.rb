@@ -198,13 +198,39 @@ module BreakEscape
       assert result, "Should allow access to unlocked doors"
     end
 
-    test "has_key_in_inventory should find keys by key_id" do
+    test "has_key_in_inventory should find keys by opens_lock" do
+      @game.player_state['inventory'] = [
+        { 'type' => 'key', 'opens_lock' => 'office1_key', 'name' => 'Office Key' }
+      ]
+
+      assert @game.has_key_in_inventory?('office1_key'), "Should find key by opens_lock"
+      assert_not @game.has_key_in_inventory?('wrong_key'), "Should not find missing key"
+    end
+
+    test "has_key_in_inventory should find keys carrying opens_lock in scenarioData" do
+      # How the client actually stores a picked-up key.
+      @game.player_state['inventory'] = [
+        { 'type' => 'key', 'name' => 'Office Key',
+          'scenarioData' => { 'type' => 'key', 'opens_lock' => 'office1_key' } }
+      ]
+
+      assert @game.has_key_in_inventory?('office1_key'), "Should read opens_lock out of scenarioData"
+    end
+
+    test "has_key_in_inventory still honours key_id for games started before the rename" do
       @game.player_state['inventory'] = [
         { 'type' => 'key', 'key_id' => 'office1_key', 'name' => 'Office Key' }
       ]
 
-      assert @game.has_key_in_inventory?('office1_key'), "Should find key by key_id"
-      assert_not @game.has_key_in_inventory?('wrong_key'), "Should not find missing key"
+      assert @game.has_key_in_inventory?('office1_key'), "Pre-rename snapshots must keep working"
+    end
+
+    test "has_key_in_inventory should not accept an unrelated key that opens another lock" do
+      @game.player_state['inventory'] = [
+        { 'type' => 'key', 'opens_lock' => 'store_room_key', 'id' => 'spare_brass_key' }
+      ]
+
+      assert_not @game.has_key_in_inventory?('office1_key'), "A key for another lock must not open this one"
     end
 
     test "has_lockpick_in_inventory should find lockpicks" do

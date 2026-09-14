@@ -1374,7 +1374,7 @@ module BreakEscape
 
       # Normalize item data (handle both string and symbol keys)
       item_type = item['type'] || item[:type]
-      item_id = item['key_id'] || item[:key_id] || item['id'] || item[:id]
+      item_id = BreakEscape::ItemIdentity.identity_candidates(item).first
       item_name = item['name'] || item[:name]
 
       Rails.logger.debug "[BreakEscape] Checking if item in inventory: type=#{item_type}, id=#{item_id}, name=#{item_name}"
@@ -1383,7 +1383,7 @@ module BreakEscape
         # Inventory items are stored as flat objects (not nested in scenarioData)
         # Handle both string and symbol keys
         inv_type = inv_item['type'] || inv_item[:type]
-        inv_id = inv_item['key_id'] || inv_item[:key_id] || inv_item['id'] || inv_item[:id]
+        inv_id = BreakEscape::ItemIdentity.identity_candidates(inv_item).first
         inv_name = inv_item['name'] || inv_item[:name]
 
         Rails.logger.debug "[BreakEscape] Comparing with inventory item: type=#{inv_type}, id=#{inv_id}, name=#{inv_name}"
@@ -1420,8 +1420,8 @@ module BreakEscape
 
     def validate_item_collectible(item)
       item_type = item['type']
-      # Use key_id for keys (more unique), fall back to id for other items
-      item_id = item['key_id'] || item['id']
+      # A key is addressed by the lock it opens; everything else by its id.
+      item_id = BreakEscape::ItemIdentity.identity_candidates(item).first
       item_name = item['name']
 
       Rails.logger.info "[BreakEscape] validate_item_collectible: type=#{item_type}, id=#{item_id}, name=#{item_name}"
@@ -1502,7 +1502,7 @@ module BreakEscape
       @game.player_state['room_states']&.each do |room_id, room_state|
         room_state['objects_added']&.each do |added_obj|
           next unless added_obj['type'] == item_type
-          next unless added_obj['key_id'] == item_id || added_obj['id'] == item_id ||
+          next unless added_obj['opens_lock'] == item_id || added_obj['key_id'] == item_id || added_obj['id'] == item_id ||
                       added_obj['name'] == item_name || added_obj['name'] == item_id ||
                       item_id.nil?
           return { item: added_obj, location: { type: 'room', room_id: room_id } }
@@ -1513,7 +1513,7 @@ module BreakEscape
       @game.scenario_data['rooms'].each do |room_id, room_data|
         if room_data['locked'] == false || @game.player_state['unlockedRooms'].include?(room_id)
           room_data['objects']&.each do |obj|
-            if obj['type'] == item_type && (obj['key_id'] == item_id || obj['id'] == item_id || obj['name'] == item_name || obj['name'] == item_id)
+            if obj['type'] == item_type && (obj['opens_lock'] == item_id || obj['key_id'] == item_id || obj['id'] == item_id || obj['name'] == item_name || obj['name'] == item_id)
               return { item: obj, location: { type: 'room', room_id: room_id } }
             end
           end
@@ -1523,13 +1523,13 @@ module BreakEscape
       # Priority 2: Items in any room (including locked ones - will validate in main method)
       @game.scenario_data['rooms'].each do |room_id, room_data|
         room_data['objects']&.each do |obj|
-          if obj['type'] == item_type && (obj['key_id'] == item_id || obj['id'] == item_id || obj['name'] == item_name || obj['name'] == item_id)
+          if obj['type'] == item_type && (obj['opens_lock'] == item_id || obj['key_id'] == item_id || obj['id'] == item_id || obj['name'] == item_name || obj['name'] == item_id)
             return { item: obj, location: { type: 'room', room_id: room_id } }
           end
 
           # Search nested contents in room objects
           obj['contents']&.each do |content|
-            if content['type'] == item_type && (content['key_id'] == item_id || content['id'] == item_id || content['name'] == item_name || content['name'] == item_id)
+            if content['type'] == item_type && (content['opens_lock'] == item_id || content['key_id'] == item_id || content['id'] == item_id || content['name'] == item_name || content['name'] == item_id)
               return { item: content, location: { type: 'container', container_id: obj['id'] || obj['name'] } }
             end
           end
@@ -1537,7 +1537,7 @@ module BreakEscape
           # Search flag-station itemsHeld (flag reward items)
           if obj['type'] == 'flag-station' && obj['itemsHeld'].present?
             obj['itemsHeld'].each do |held_item|
-              if held_item['type'] == item_type && (held_item['key_id'] == item_id || held_item['keyId'] == item_id || held_item['id'] == item_id || held_item['name'] == item_name || held_item['name'] == item_id)
+              if held_item['type'] == item_type && (held_item['opens_lock'] == item_id || held_item['key_id'] == item_id || held_item['keyId'] == item_id || held_item['id'] == item_id || held_item['name'] == item_name || held_item['name'] == item_id)
                 return { item: held_item, location: { type: 'flag_station', flag_station_id: obj['id'] || obj['name'], room_id: room_id } }
               end
             end
@@ -1549,7 +1549,7 @@ module BreakEscape
           next unless npc['itemsHeld'].present?
 
           npc['itemsHeld'].each do |held_item|
-            if held_item['type'] == item_type && (held_item['key_id'] == item_id || held_item['id'] == item_id || held_item['name'] == item_name || held_item['name'] == item_id)
+            if held_item['type'] == item_type && (held_item['opens_lock'] == item_id || held_item['key_id'] == item_id || held_item['id'] == item_id || held_item['name'] == item_name || held_item['name'] == item_id)
               return { item: held_item, location: { type: 'npc', npc_id: npc['id'], room_id: room_id } }
             end
           end
@@ -1562,7 +1562,7 @@ module BreakEscape
     def find_item_in_scenario(item_type, item_id, item_name = nil)
       # First check startItemsInInventory (items the player begins with)
       @game.scenario_data['startItemsInInventory']&.each do |item|
-        if item['type'] == item_type && (item['key_id'] == item_id || item['id'] == item_id || item['name'] == item_name || item['name'] == item_id)
+        if item['type'] == item_type && (item['opens_lock'] == item_id || item['key_id'] == item_id || item['id'] == item_id || item['name'] == item_name || item['name'] == item_id)
           return item
         end
       end
@@ -1571,13 +1571,13 @@ module BreakEscape
       @game.scenario_data['rooms'].each do |room_id, room_data|
         # Search room objects
         room_data['objects']&.each do |obj|
-          if obj['type'] == item_type && (obj['key_id'] == item_id || obj['id'] == item_id || obj['name'] == item_name || obj['name'] == item_id)
+          if obj['type'] == item_type && (obj['opens_lock'] == item_id || obj['key_id'] == item_id || obj['id'] == item_id || obj['name'] == item_name || obj['name'] == item_id)
             return obj
           end
 
           # Search nested contents
           obj['contents']&.each do |content|
-            if content['type'] == item_type && (content['key_id'] == item_id || content['id'] == item_id || content['name'] == item_name || content['name'] == item_id)
+            if content['type'] == item_type && (content['opens_lock'] == item_id || content['key_id'] == item_id || content['id'] == item_id || content['name'] == item_name || content['name'] == item_id)
               return content
             end
           end
@@ -1742,7 +1742,7 @@ module BreakEscape
       params.require(:data).permit(
         :id, :type, :name, :texture, :x, :y, :takeable, :interactable,
         scenarioData: [
-          :type, :name, :takeable, :key_id, :observations, :active, :visible, :interactable,
+          :type, :name, :takeable, :id, :opens_lock, :key_id, :observations, :active, :visible, :interactable,
           keyPins: []
         ]
       ).to_h
