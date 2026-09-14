@@ -794,7 +794,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               }
             },
             {
-              "eventPattern": "item_picked_up:cyberchef_workstation",
+              "eventPattern": "item_picked_up:workstation",
               "onceOnly": true,
               "setGlobal": { "cyberchef_guide_offered": true },
               "sendTimedMessage": {
@@ -849,7 +849,8 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               }
             },
             {
-              "eventPattern": "item_picked_up:contingency_files",
+              "eventPattern": "global_variable_changed:contingency_file_read",
+              "condition": "value === true",
               "onceOnly": true,
               "sendTimedMessage": {
                 "delay": 2000,
@@ -970,7 +971,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               }
             },
             {
-              "eventPattern": "item_picked_up:entropy_launch_device",
+              "eventPattern": "item_picked_up:launch-device",
               "onceOnly": true,
               "sendTimedMessage": {
                 "delay": 1500,
