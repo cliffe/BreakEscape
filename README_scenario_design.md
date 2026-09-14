@@ -54,7 +54,7 @@ The validator performs three phases:
    - Task `targetNPC`, `targetRoom`, `targetObject` cross-references
    - `collection_group` on items without a matching task `targetGroup`, and vice-versa
    - Music events referencing undefined NPCs or global variables
-   - Items with an `id` field inside `itemsHeld` (should use `type` only)
+   - Several `itemsHeld` entries sharing a `type` with no `id` to tell them apart (`#give_item` matches on `type` first, then `id`/`opens_lock`/`name`; without a distinguishing `id` the first one always wins)
    - `vm-launcher` missing `vm` or `hacktivityMode` fields
    - `launch-device` missing required fields
    - **Minigame configuration** (`minigameData`) with undeclared fields or missing required fields per `scripts/minigame-data-schemas.json`
@@ -837,7 +837,7 @@ In-world characters with sprites that the player can walk up to and interact wit
 | `voice` | TTS voice for dialogue and barks: `{ "name": "...", "style": "...", "language": "en-GB" }`. Optional `fx` subfield applies Web Audio distortion — see Casting Voices and Voice FX below |
 | `globalVarOnKO` | Global variable name to set `true` when NPC is knocked out |
 | `taskOnKO` | Task ID to complete when NPC is knocked out |
-| `itemsHeld` | Items dropped when NPC is knocked out (do NOT give items an `id` field here — use `type` only) |
+| `itemsHeld` | Items dropped when NPC is knocked out. Give an item an `id` when the NPC holds more than one of the same `type` — `#give_item` matches on `type` first, then disambiguates against `id`/`opens_lock`/`name`, and with no `id` the first matching item always wins. |
 | `behavior.hostile` | Makes NPC chase and attack. Fields: `chaseSpeed`, `attackDamage`, `pauseToAttack` |
 | `behavior.patrol` | Patrol configuration (see Patrol Behaviour below) |
 | `behavior.immovable` | `true` — NPC cannot be pushed or displaced by collisions (e.g. a patient in a bed) |
