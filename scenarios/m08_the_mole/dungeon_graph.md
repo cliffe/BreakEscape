@@ -421,11 +421,11 @@ flowchart TD
   rc_npc_athena_3("ATHENA")
   rc_npc_athena_4("ATHENA")
   rc_npc_agent_hax_5("Agent HaX")
-  rc_obj6_6{"SAFETYNET Field Guide: Reconnaissance and Network Mapping"}
-  rc_obj7_7{"SAFETYNET Field Guide: Scanning and Exploitation"}
-  rc_obj8_8{"SAFETYNET Field Guide: Information Leakage"}
-  rc_obj9_9{"SAFETYNET Field Guide: Vulnerability Analysis"}
-  rc_obj10_10{"SAFETYNET Field Guide: Privilege Escalation"}
+  rc_m08_recon_field_guide_6{"SAFETYNET Field Guide: Reconnaissance and Network Mapping"}
+  rc_m08_scanning_field_guide_7{"SAFETYNET Field Guide: Scanning and Exploitation"}
+  rc_m08_infoleak_field_guide_8{"SAFETYNET Field Guide: Information Leakage"}
+  rc_m08_vulnanalysis_field_guide_9{"SAFETYNET Field Guide: Vulnerability Analysis"}
+  rc_m08_privesc_field_guide_10{"SAFETYNET Field Guide: Privilege Escalation"}
   rc_suspect_dossiers_11{"Suspect Dossiers"}
   rc_director_safe_12[["Director's Safe"]]
   rc_interrogation_key_13{"Interrogation Room Key"}
@@ -471,11 +471,11 @@ flowchart TD
   main_lobby --> rc_npc_athena_3
   main_lobby --> rc_npc_athena_4
   main_lobby --> rc_npc_agent_hax_5
-  rc_npc_agent_hax_5 --> rc_obj6_6
-  rc_npc_agent_hax_5 --> rc_obj7_7
-  rc_npc_agent_hax_5 --> rc_obj8_8
-  rc_npc_agent_hax_5 --> rc_obj9_9
-  rc_npc_agent_hax_5 --> rc_obj10_10
+  rc_npc_agent_hax_5 --> rc_m08_recon_field_guide_6
+  rc_npc_agent_hax_5 --> rc_m08_scanning_field_guide_7
+  rc_npc_agent_hax_5 --> rc_m08_infoleak_field_guide_8
+  rc_npc_agent_hax_5 --> rc_m08_vulnanalysis_field_guide_9
+  rc_npc_agent_hax_5 --> rc_m08_privesc_field_guide_10
   director_office --> rc_suspect_dossiers_11
   director_office --> rc_director_safe_12
   rc_director_safe_12 --> rc_interrogation_key_13
@@ -510,7 +510,7 @@ flowchart TD
 
   class main_lobby,director_office,operations_floor,intel_analysis,cryptography_lab,break_room room
   class server_room,security_archives,interrogation_room lock
-  class rc_badge_printer_1,rc_security_notice_2,rc_obj6_6,rc_obj7_7,rc_obj8_8,rc_obj9_9,rc_obj10_10,rc_suspect_dossiers_11,rc_interrogation_key_13,rc_nightshade_profile_14,rc_obj16_16,rc_nightshade_personnel_record_17,rc_operations_board_18,rc_tactical_board_21,rc_phantom_notes_22,rc_vm_launcher_gitlist_24,rc_flag_station_evidence_relay_25,rc_server_access_logs_26,rc_database_catalog_27,rc_historical_leaks_28,rc_cyberchef_workstation_29,rc_encrypted_backup_31,rc_deep_state_manual_32,rc_evidence_display_34,rc_disposition_terminal_35,rc_password_sticky_note_37,rc_timeline_reconstruction_38 item
+  class rc_badge_printer_1,rc_security_notice_2,rc_m08_recon_field_guide_6,rc_m08_scanning_field_guide_7,rc_m08_infoleak_field_guide_8,rc_m08_vulnanalysis_field_guide_9,rc_m08_privesc_field_guide_10,rc_suspect_dossiers_11,rc_interrogation_key_13,rc_nightshade_profile_14,rc_obj16_16,rc_nightshade_personnel_record_17,rc_operations_board_18,rc_tactical_board_21,rc_phantom_notes_22,rc_vm_launcher_gitlist_24,rc_flag_station_evidence_relay_25,rc_server_access_logs_26,rc_database_catalog_27,rc_historical_leaks_28,rc_cyberchef_workstation_29,rc_encrypted_backup_31,rc_deep_state_manual_32,rc_evidence_display_34,rc_disposition_terminal_35,rc_password_sticky_note_37,rc_timeline_reconstruction_38 item
   class rc_npc_athena_3,rc_npc_athena_4,rc_npc_agent_hax_5,rc_npc_director_magnus_netherton_15,rc_npc_agent_0x23_cipher_19,rc_npc_junior_analyst_20,rc_npc_agent_0x88_phantom_23,rc_npc_agent_0x47_nightshade_33,rc_npc_agent_0x47_nightshade_36,rc_npc_agent_hax_39,rc_npc_off_duty_agent_40,rc_npc_director_magnus_netherton_41 npc
   class rc_director_safe_12,rc_nightshade_desk_30 container
   class node_start start

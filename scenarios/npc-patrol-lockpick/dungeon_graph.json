@@ -1,0 +1,25 @@
+{
+  "scenario": "npc-patrol-lockpick",
+  "start_room": "patrol_corridor",
+  "nodes": [
+    {
+      "id": "door_secure_vault",
+      "label": "Secure Vault<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "secure_vault",
+      "label": "Secure Vault",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_secure_vault",
+      "to": "secure_vault",
+      "soft": false
+    }
+  ]
+}

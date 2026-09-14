@@ -1,0 +1,59 @@
+{
+  "scenario": "test_mixed_room_sizes",
+  "start_room": "reception",
+  "nodes": [
+    {
+      "id": "door_hall",
+      "label": "Hall<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "hall",
+      "label": "Hall",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_closet",
+      "label": "Closet<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "closet",
+      "label": "Closet",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_ceo",
+      "label": "Ceo<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "ceo",
+      "label": "Ceo",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_hall",
+      "to": "hall",
+      "soft": false
+    },
+    {
+      "from": "door_closet",
+      "to": "closet",
+      "soft": false
+    },
+    {
+      "from": "door_ceo",
+      "to": "ceo",
+      "soft": false
+    }
+  ]
+}

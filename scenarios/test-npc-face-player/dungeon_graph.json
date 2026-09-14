@@ -1,0 +1,10 @@
+{
+  "scenario": "test-npc-face-player",
+  "start_room": "test_face_player",
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
+}

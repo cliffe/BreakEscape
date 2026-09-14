@@ -14,7 +14,7 @@
 | Physical locks | 4 |
 | AND-gate convergences | 3 |
 | Rooms | 3 |
-| Puzzle graph nodes / edges | 34 / 38 |
+| Puzzle graph nodes / edges | 34 / 36 |
 | Story graph nodes / edges | 13 / 15 |
 
 ## Critical Path
@@ -140,8 +140,6 @@ flowchart TD
   filing_cabinet_key --> lock_engineering_filing_cabinet
   engineering_workshop -.-> it_ot_boundary_rules_document
   engineering_workshop -.-> shared_file_server_access_extract_albion_trent_water
-  battery_hall_1 --> scada_control_room
-  engineering_workshop --> scada_control_room
 
   class door_battery_hall_1,door_engineering_workshop,lock_engineering_filing_cabinet,lock_sis_config_panel lock
   class battery_hall_1,engineering_workshop,scada_control_room room
@@ -321,8 +319,6 @@ flowchart TD
   filing_cabinet_key --> lock_engineering_filing_cabinet
   engineering_workshop -.-> it_ot_boundary_rules_document
   engineering_workshop -.-> shared_file_server_access_extract_albion_trent_water
-  battery_hall_1 --> scada_control_room
-  engineering_workshop --> scada_control_room
   aim_assess_control_room -.-> aim_conduct_walkdown
   aim_conduct_walkdown -.-> aim_verify_anomaly
   aim_verify_anomaly -.-> aim_contact_marcus_investigate

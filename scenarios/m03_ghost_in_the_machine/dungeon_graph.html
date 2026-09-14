@@ -430,14 +430,14 @@
   rc_npc_director_magnus_netherton_4("Director Magnus Netherton")
   rc_npc_agent_0x47_nightshade_5("Agent 0x47 'Nightshade'")
   rc_npc_receptionist_6("Receptionist")
-  rc_obj7_7{"Visitor Badge"}
+  rc_visitor_badge_7{"Visitor Badge"}
   rc_obj8_8{"Staff Access Badge"}
   rc_npc_agent_0x99_9("Agent 0x99")
-  rc_obj10_10{"SAFETYNET Field Guide: RFID Cloning"}
-  rc_obj11_11{"SAFETYNET Field Guide: Lockpicking"}
-  rc_obj12_12{"SAFETYNET Field Guide: Reconnaissance and Network Mapping"}
-  rc_obj13_13{"SAFETYNET Field Guide: distcc Exploitation"}
-  rc_obj14_14{"SAFETYNET Field Guide: Encoding and Decoding with CyberChef"}
+  rc_m03_rfid_field_guide_10{"SAFETYNET Field Guide: RFID Cloning"}
+  rc_m03_lockpicking_field_guide_11{"SAFETYNET Field Guide: Lockpicking"}
+  rc_m03_recon_field_guide_12{"SAFETYNET Field Guide: Reconnaissance and Network Mapping"}
+  rc_m03_netexploit_field_guide_13{"SAFETYNET Field Guide: distcc Exploitation"}
+  rc_m03_cyberchef_field_guide_14{"SAFETYNET Field Guide: Encoding and Decoding with CyberChef"}
   rc_npc_agent_0x99_15("Agent 0x99")
   rc_npc_security_guard_16("Security Guard")
   rc_obj17_17{"Presentation Materials"}
@@ -472,14 +472,14 @@
   reception_lobby --> rc_npc_director_magnus_netherton_4
   reception_lobby --> rc_npc_agent_0x47_nightshade_5
   reception_lobby --> rc_npc_receptionist_6
-  rc_npc_receptionist_6 --> rc_obj7_7
+  rc_npc_receptionist_6 --> rc_visitor_badge_7
   rc_npc_receptionist_6 --> rc_obj8_8
   reception_lobby --> rc_npc_agent_0x99_9
-  rc_npc_agent_0x99_9 --> rc_obj10_10
-  rc_npc_agent_0x99_9 --> rc_obj11_11
-  rc_npc_agent_0x99_9 --> rc_obj12_12
-  rc_npc_agent_0x99_9 --> rc_obj13_13
-  rc_npc_agent_0x99_9 --> rc_obj14_14
+  rc_npc_agent_0x99_9 --> rc_m03_rfid_field_guide_10
+  rc_npc_agent_0x99_9 --> rc_m03_lockpicking_field_guide_11
+  rc_npc_agent_0x99_9 --> rc_m03_recon_field_guide_12
+  rc_npc_agent_0x99_9 --> rc_m03_netexploit_field_guide_13
+  rc_npc_agent_0x99_9 --> rc_m03_cyberchef_field_guide_14
   reception_lobby --> rc_npc_agent_0x99_15
   main_hallway --> rc_npc_security_guard_16
   conference_room_01 --> rc_obj17_17
@@ -504,7 +504,7 @@
 
   class reception_lobby,main_hallway,executive_wing_hallway,james_office room
   class conference_room_01,server_room,executive_office lock
-  class rc_obj1_1,rc_obj2_2,rc_obj7_7,rc_obj8_8,rc_obj10_10,rc_obj11_11,rc_obj12_12,rc_obj13_13,rc_obj14_14,rc_obj17_17,rc_obj18_18,rc_obj20_20,rc_server_filing_cabinet_21,rc_wall_safe_server_22,rc_obj23_23,rc_vm_launcher_zero_day_24,rc_cyberchef_workstation_25,rc_flag_station_dropsite_26,rc_exec_filing_cabinet_27,rc_victoria_computer_28,rc_obj29_29,rc_obj30_30,rc_obj31_31,rc_obj32_32,rc_obj33_33 item
+  class rc_obj1_1,rc_obj2_2,rc_visitor_badge_7,rc_obj8_8,rc_m03_rfid_field_guide_10,rc_m03_lockpicking_field_guide_11,rc_m03_recon_field_guide_12,rc_m03_netexploit_field_guide_13,rc_m03_cyberchef_field_guide_14,rc_obj17_17,rc_obj18_18,rc_obj20_20,rc_server_filing_cabinet_21,rc_wall_safe_server_22,rc_obj23_23,rc_vm_launcher_zero_day_24,rc_cyberchef_workstation_25,rc_flag_station_dropsite_26,rc_exec_filing_cabinet_27,rc_victoria_computer_28,rc_obj29_29,rc_obj30_30,rc_obj31_31,rc_obj32_32,rc_obj33_33 item
   class rc_npc_agent_0x99_3,rc_npc_director_magnus_netherton_4,rc_npc_agent_0x47_nightshade_5,rc_npc_receptionist_6,rc_npc_agent_0x99_9,rc_npc_agent_0x99_15,rc_npc_security_guard_16,rc_npc_victoria_sterling_19,rc_npc_danny_foster_34,rc_npc_agent_0x99_35 npc
   class node_start start`
     };

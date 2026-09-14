@@ -1,0 +1,25 @@
+{
+  "scenario": "test-multiroom-npc",
+  "start_room": "reception",
+  "nodes": [
+    {
+      "id": "reception",
+      "label": "Reception",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "office1",
+      "label": "Office1",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "reception",
+      "to": "office1",
+      "soft": false
+    }
+  ]
+}

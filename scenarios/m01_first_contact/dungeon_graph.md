@@ -540,10 +540,10 @@ flowchart TD
   rc_obj6_6{"Visitor Badge"}
   rc_obj7_7{"Main Office Key"}
   rc_npc_agent_hax_8("Agent HaX")
-  rc_obj9_9{"SAFETYNET Field Guide: SSH Access and Linux Basics"}
-  rc_obj10_10{"SAFETYNET Field Guide: Privilege Escalation via Sudo"}
-  rc_obj11_11{"SAFETYNET Field Guide: Encoding and Decoding with CyberChef"}
-  rc_obj12_12{"SAFETYNET Field Guide: Lockpicking"}
+  rc_safetynet_field_guide_ssh_basics_9{"SAFETYNET Field Guide: SSH Access and Linux Basics"}
+  rc_safetynet_field_guide_priv_escalation_10{"SAFETYNET Field Guide: Privilege Escalation via Sudo"}
+  rc_safetynet_field_guide_encoding_decoding_cyberchef_11{"SAFETYNET Field Guide: Encoding and Decoding with CyberChef"}
+  rc_safetynet_field_guide_lockpicking_12{"SAFETYNET Field Guide: Lockpicking"}
   rc_npc_agent_hax_13("Agent HaX")
   rc_obj14_14[["Main Filing Cabinet"]]
   rc_obj15_15{"Pencil Cup"}
@@ -635,10 +635,10 @@ flowchart TD
   rc_npc_sarah_o_brien_5 --> rc_obj6_6
   rc_npc_sarah_o_brien_5 --> rc_obj7_7
   reception_area --> rc_npc_agent_hax_8
-  rc_npc_agent_hax_8 --> rc_obj9_9
-  rc_npc_agent_hax_8 --> rc_obj10_10
-  rc_npc_agent_hax_8 --> rc_obj11_11
-  rc_npc_agent_hax_8 --> rc_obj12_12
+  rc_npc_agent_hax_8 --> rc_safetynet_field_guide_ssh_basics_9
+  rc_npc_agent_hax_8 --> rc_safetynet_field_guide_priv_escalation_10
+  rc_npc_agent_hax_8 --> rc_safetynet_field_guide_encoding_decoding_cyberchef_11
+  rc_npc_agent_hax_8 --> rc_safetynet_field_guide_lockpicking_12
   reception_area --> rc_npc_agent_hax_13
   main_office_area --> rc_obj14_14
   rc_obj14_14 --> rc_obj15_15
@@ -711,7 +711,7 @@ flowchart TD
 
   class reception_area,storage_closet,break_room,conference_room,hallway_west,hallway_east,manager_office,kevin_office,maya_office room
   class main_office_area,it_room,derek_office,server_room lock
-  class rc_reception_desk_phone_1,rc_obj2_2,rc_obj3_3,rc_obj6_6,rc_obj7_7,rc_obj9_9,rc_obj10_10,rc_obj11_11,rc_obj12_12,rc_obj15_15,rc_obj16_16,rc_obj17_17,rc_obj18_18,rc_obj19_19,rc_obj20_20,rc_obj22_22,rc_obj24_24,rc_obj25_25,rc_obj26_26,rc_obj27_27,rc_obj28_28,rc_obj30_30,rc_obj31_31,rc_obj32_32,rc_entropy_launch_device_34,rc_obj35_35,rc_obj37_37,rc_obj38_38,rc_obj40_40,rc_obj41_41,rc_obj43_43,rc_obj44_44,rc_obj45_45,rc_obj47_47,rc_obj48_48,rc_cyberchef_workstation_49,rc_obj50_50,rc_obj51_51,rc_patricia_desk_phone_52,rc_obj53_53,rc_obj55_55,rc_obj56_56,rc_obj57_57,rc_obj58_58,rc_obj59_59,rc_obj60_60,rc_obj63_63,rc_obj64_64,rc_obj65_65,rc_contingency_files_66,rc_obj67_67,rc_obj68_68,rc_obj70_70,rc_obj72_72,rc_obj73_73,rc_obj74_74,rc_obj75_75,rc_vm_launcher_intro_linux_76,rc_flag_station_dropsite_77,rc_obj79_79,rc_obj80_80,rc_obj81_81 item
+  class rc_reception_desk_phone_1,rc_obj2_2,rc_obj3_3,rc_obj6_6,rc_obj7_7,rc_safetynet_field_guide_ssh_basics_9,rc_safetynet_field_guide_priv_escalation_10,rc_safetynet_field_guide_encoding_decoding_cyberchef_11,rc_safetynet_field_guide_lockpicking_12,rc_obj15_15,rc_obj16_16,rc_obj17_17,rc_obj18_18,rc_obj19_19,rc_obj20_20,rc_obj22_22,rc_obj24_24,rc_obj25_25,rc_obj26_26,rc_obj27_27,rc_obj28_28,rc_obj30_30,rc_obj31_31,rc_obj32_32,rc_entropy_launch_device_34,rc_obj35_35,rc_obj37_37,rc_obj38_38,rc_obj40_40,rc_obj41_41,rc_obj43_43,rc_obj44_44,rc_obj45_45,rc_obj47_47,rc_obj48_48,rc_cyberchef_workstation_49,rc_obj50_50,rc_obj51_51,rc_patricia_desk_phone_52,rc_obj53_53,rc_obj55_55,rc_obj56_56,rc_obj57_57,rc_obj58_58,rc_obj59_59,rc_obj60_60,rc_obj63_63,rc_obj64_64,rc_obj65_65,rc_contingency_files_66,rc_obj67_67,rc_obj68_68,rc_obj70_70,rc_obj72_72,rc_obj73_73,rc_obj74_74,rc_obj75_75,rc_vm_launcher_intro_linux_76,rc_flag_station_dropsite_77,rc_obj79_79,rc_obj80_80,rc_obj81_81 item
   class rc_npc_agent_hax_4,rc_npc_sarah_o_brien_5,rc_npc_agent_hax_8,rc_npc_agent_hax_13,rc_npc_derek_lawson_33,rc_npc_kevin_park_42,rc_npc_maya_chen_61 npc
   class rc_obj14_14,rc_obj21_21,rc_derek_storage_safe_23,rc_obj29_29,rc_obj36_36,rc_obj39_39,rc_patricia_briefcase_46,rc_obj54_54,rc_derek_computer_62,rc_derek_personal_safe_69,rc_derek_cabinet_71,rc_entropy_encrypted_archive_78 container
   class node_start start

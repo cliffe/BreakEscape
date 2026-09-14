@@ -435,10 +435,10 @@
   rc_npc_director_magnus_netherton_3("Director Magnus Netherton")
   rc_npc_agent_0x47_nightshade_4("Agent 0x47 'Nightshade'")
   rc_npc_agent_0x99_haxolottle_5("Agent 0x99 'Haxolottle'")
-  rc_obj6_6{"SAFETYNET Field Guide: RFID Cloning"}
-  rc_obj7_7{"SAFETYNET Field Guide: Bludit CMS Exploitation"}
-  rc_obj8_8{"SAFETYNET Field Guide: Lockpicking"}
-  rc_obj9_9{"SAFETYNET Field Guide: Reconnaissance and Network Mapping"}
+  rc_safetynet_field_guide_rfid_cloning_6{"SAFETYNET Field Guide: RFID Cloning"}
+  rc_safetynet_field_guide_bludit_cms_7{"SAFETYNET Field Guide: Bludit CMS Exploitation"}
+  rc_safetynet_field_guide_lockpicking_8{"SAFETYNET Field Guide: Lockpicking"}
+  rc_safetynet_field_guide_recon_network_mapping_9{"SAFETYNET Field Guide: Reconnaissance and Network Mapping"}
   rc_npc_the_recruiter_10("The Recruiter")
   rc_npc_agent_0x99_11("Agent 0x99")
   rc_entropy_pamphlet_12{"Insider Threat Initiative Pamphlet"}
@@ -482,10 +482,10 @@
   reception_lobby --> rc_npc_director_magnus_netherton_3
   reception_lobby --> rc_npc_agent_0x47_nightshade_4
   reception_lobby --> rc_npc_agent_0x99_haxolottle_5
-  rc_npc_agent_0x99_haxolottle_5 --> rc_obj6_6
-  rc_npc_agent_0x99_haxolottle_5 --> rc_obj7_7
-  rc_npc_agent_0x99_haxolottle_5 --> rc_obj8_8
-  rc_npc_agent_0x99_haxolottle_5 --> rc_obj9_9
+  rc_npc_agent_0x99_haxolottle_5 --> rc_safetynet_field_guide_rfid_cloning_6
+  rc_npc_agent_0x99_haxolottle_5 --> rc_safetynet_field_guide_bludit_cms_7
+  rc_npc_agent_0x99_haxolottle_5 --> rc_safetynet_field_guide_lockpicking_8
+  rc_npc_agent_0x99_haxolottle_5 --> rc_safetynet_field_guide_recon_network_mapping_9
   reception_lobby --> rc_npc_the_recruiter_10
   reception_lobby --> rc_npc_agent_0x99_11
   break_room --> rc_entropy_pamphlet_12
@@ -517,7 +517,7 @@
 
   class reception_lobby,main_corridor,break_room,open_office_area,research_lab,patricia_office,data_center room
   class server_hallway,server_room,torres_office lock
-  class rc_obj1_1,rc_obj6_6,rc_obj7_7,rc_obj8_8,rc_obj9_9,rc_entropy_pamphlet_12,rc_server_password_note_14,rc_obj15_15,rc_obj17_17,rc_obj18_18,rc_obj19_19,rc_obj20_20,rc_obj21_21,rc_vm_launcher_bludit_22,rc_flag_station_evidence_23,rc_medical_bills_24,rc_personal_journal_25,rc_obj28_28,rc_obj29_29,rc_security_incident_log_30,rc_patricia_filing_cabinet_31,rc_obj33_33,rc_obj34_34,rc_obj35_35,rc_upload_schedule_36,rc_data_package_manifest_37 item
+  class rc_obj1_1,rc_safetynet_field_guide_rfid_cloning_6,rc_safetynet_field_guide_bludit_cms_7,rc_safetynet_field_guide_lockpicking_8,rc_safetynet_field_guide_recon_network_mapping_9,rc_entropy_pamphlet_12,rc_server_password_note_14,rc_obj15_15,rc_obj17_17,rc_obj18_18,rc_obj19_19,rc_obj20_20,rc_obj21_21,rc_vm_launcher_bludit_22,rc_flag_station_evidence_23,rc_medical_bills_24,rc_personal_journal_25,rc_obj28_28,rc_obj29_29,rc_security_incident_log_30,rc_patricia_filing_cabinet_31,rc_obj33_33,rc_obj34_34,rc_obj35_35,rc_upload_schedule_36,rc_data_package_manifest_37 item
   class rc_npc_agent_0x99_2,rc_npc_director_magnus_netherton_3,rc_npc_agent_0x47_nightshade_4,rc_npc_agent_0x99_haxolottle_5,rc_npc_the_recruiter_10,rc_npc_agent_0x99_11,rc_npc_lisa_park_13,rc_npc_kevin_park_16,rc_npc_david_torres_26,rc_npc_dr_sarah_chen_27,rc_npc_patricia_morgan_32 npc
   class node_start start`
     };

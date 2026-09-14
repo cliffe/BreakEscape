@@ -480,11 +480,11 @@
   rc_checkpoint_evacuation_board_3{"Evacuation Status Board"}
   rc_npc_director_magnus_netherton_4("Director Magnus Netherton")
   rc_npc_agent_hax_5("Agent HaX")
-  rc_obj6_6{"SAFETYNET Field Guide: RFID Cloning"}
-  rc_obj7_7{"SAFETYNET Field Guide: Lockpicking"}
-  rc_obj8_8{"SAFETYNET Field Guide: Reconnaissance and Network Mapping"}
-  rc_obj9_9{"SAFETYNET Field Guide: Scanning and Exploitation"}
-  rc_obj10_10{"SAFETYNET Field Guide: Privilege Escalation"}
+  rc_m07_rfid_field_guide_6{"SAFETYNET Field Guide: RFID Cloning"}
+  rc_m07_lockpicking_field_guide_7{"SAFETYNET Field Guide: Lockpicking"}
+  rc_m07_recon_field_guide_8{"SAFETYNET Field Guide: Reconnaissance and Network Mapping"}
+  rc_m07_scanning_field_guide_9{"SAFETYNET Field Guide: Scanning and Exploitation"}
+  rc_m07_privesc_field_guide_10{"SAFETYNET Field Guide: Privilege Escalation"}
   rc_npc_jake_morrison_11("Jake Morrison")
   rc_obj12_12{"Facility Access Badge -- Server Zone"}
   rc_generator_maintenance_key_13{"Plant Maintenance Key"}
@@ -521,11 +521,11 @@
   security_checkpoint --> rc_checkpoint_evacuation_board_3
   security_checkpoint --> rc_npc_director_magnus_netherton_4
   security_checkpoint --> rc_npc_agent_hax_5
-  rc_npc_agent_hax_5 --> rc_obj6_6
-  rc_npc_agent_hax_5 --> rc_obj7_7
-  rc_npc_agent_hax_5 --> rc_obj8_8
-  rc_npc_agent_hax_5 --> rc_obj9_9
-  rc_npc_agent_hax_5 --> rc_obj10_10
+  rc_npc_agent_hax_5 --> rc_m07_rfid_field_guide_6
+  rc_npc_agent_hax_5 --> rc_m07_lockpicking_field_guide_7
+  rc_npc_agent_hax_5 --> rc_m07_recon_field_guide_8
+  rc_npc_agent_hax_5 --> rc_m07_scanning_field_guide_9
+  rc_npc_agent_hax_5 --> rc_m07_privesc_field_guide_10
   security_checkpoint --> rc_npc_jake_morrison_11
   rc_npc_jake_morrison_11 --> rc_obj12_12
   operations_floor --> rc_generator_maintenance_key_13
@@ -554,7 +554,7 @@
 
   class security_checkpoint,operations_floor room
   class server_room,scada_control,generator_room,cable_vault lock
-  class rc_badge_printer_1,rc_visitor_log_2,rc_checkpoint_evacuation_board_3,rc_obj6_6,rc_obj7_7,rc_obj8_8,rc_obj9_9,rc_obj10_10,rc_obj12_12,rc_generator_maintenance_key_13,rc_situation_board_14,rc_substation_map_15,rc_ops_floor_workstation_16,rc_vm_launcher_attack_terminal_17,rc_flag_station_safetynet_relay_18,rc_scada_backup_server_19,rc_rack_cabling_note_20,rc_obj23_23,rc_cascade_countdown_display_24,rc_casualty_projection_25,rc_maintenance_log_29,rc_backup_transfer_switch_30,rc_genset_control_panel_31,rc_vault_trunk_runs_32,rc_tomb_gamma_dossier_33,rc_mole_intercept_evidence_34 item
+  class rc_badge_printer_1,rc_visitor_log_2,rc_checkpoint_evacuation_board_3,rc_m07_rfid_field_guide_6,rc_m07_lockpicking_field_guide_7,rc_m07_recon_field_guide_8,rc_m07_scanning_field_guide_9,rc_m07_privesc_field_guide_10,rc_obj12_12,rc_generator_maintenance_key_13,rc_situation_board_14,rc_substation_map_15,rc_ops_floor_workstation_16,rc_vm_launcher_attack_terminal_17,rc_flag_station_safetynet_relay_18,rc_scada_backup_server_19,rc_rack_cabling_note_20,rc_obj23_23,rc_cascade_countdown_display_24,rc_casualty_projection_25,rc_maintenance_log_29,rc_backup_transfer_switch_30,rc_genset_control_panel_31,rc_vault_trunk_runs_32,rc_tomb_gamma_dossier_33,rc_mole_intercept_evidence_34 item
   class rc_npc_director_magnus_netherton_4,rc_npc_agent_hax_5,rc_npc_jake_morrison_11,rc_npc_elena_rodriguez_21,rc_npc_dr_james_mercer_26,rc_npc_director_magnus_netherton_27,rc_npc_the_architect_28,rc_npc_thomas_park_35 npc
   class rc_crisis_control_system_22 container
   class node_start start`

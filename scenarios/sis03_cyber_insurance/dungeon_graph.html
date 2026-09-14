@@ -142,7 +142,7 @@
       <tr><th>AND-gate convergences</th><td class="val">3</td></tr>
       <tr><th>Physical locks (puzzle)</th><td class="val">8</td></tr>
       <tr><th>Rooms</th><td class="val">2</td></tr>
-      <tr><th>Puzzle nodes / edges</th><td class="val">29 / 30</td></tr>
+      <tr><th>Puzzle nodes / edges</th><td class="val">29 / 29</td></tr>
       <tr><th>Story nodes / edges</th><td class="val">7 / 5</td></tr>
     </table>
   </div>
@@ -230,7 +230,6 @@
   coverage_recommendation_form --> andgate2
   andgate3 --> door_meridian_evidence_archive
   forensic_data_platform_terminal --> andgate3
-  meridian_evidence_archive --> meridian_claims_suite
 
   class door_meridian_evidence_archive,lock_lock_underwriting_cabinet,lock_lock_make_recommendation,lock_lock_warranty_assessment,lock_lock_act_of_war_decision,lock_underwriting_cabinet,lock_lock_coverage_decision,lock_lock_closing_debrief lock
   class meridian_evidence_archive,meridian_claims_suite room
@@ -358,7 +357,6 @@
   coverage_recommendation_form --> andgate2
   andgate3 --> door_meridian_evidence_archive
   forensic_data_platform_terminal --> andgate3
-  meridian_evidence_archive --> meridian_claims_suite
   aim_initial_briefing -.-> aim_investigate_claim
   aim_investigate_claim -.-> aim_access_evidence_archive
   aim_access_evidence_archive -.-> aim_assess_warranties
@@ -453,8 +451,9 @@
   rc_evidence_packet_b_13{"Exhibit B — OT/ICS Forensics Summary"}
   rc_evidence_packet_c_14{"Exhibit C — Warranty Compliance Evidence"}
   rc_ncsc_brief_envelope_15{"NCSC Attribution Brief (TLP:AMBER)"}
-  rc_underwriting_cabinet_16[["Underwriting File Cabinet (UW-CAB)"]]
-  rc_underwriting_file_17{"Meridian Underwriting File — MC-2023-ALBE-007"}
+  rc_network_diagram_pinboard_16{"Network Architecture Diagram (Annotated)"}
+  rc_underwriting_cabinet_17[["Underwriting File Cabinet (UW-CAB)"]]
+  rc_underwriting_file_18{"Meridian Underwriting File — MC-2023-ALBE-007"}
 
   meridian_claims_suite --> meridian_evidence_archive
   meridian_claims_suite --> rc_claims_management_system_1
@@ -472,14 +471,15 @@
   meridian_evidence_archive --> rc_evidence_packet_b_13
   meridian_evidence_archive --> rc_evidence_packet_c_14
   meridian_evidence_archive --> rc_ncsc_brief_envelope_15
-  meridian_evidence_archive --> rc_underwriting_cabinet_16
-  rc_underwriting_cabinet_16 --> rc_underwriting_file_17
+  meridian_evidence_archive --> rc_network_diagram_pinboard_16
+  meridian_evidence_archive --> rc_underwriting_cabinet_17
+  rc_underwriting_cabinet_17 --> rc_underwriting_file_18
 
   class meridian_claims_suite room
   class meridian_evidence_archive lock
-  class rc_claims_management_system_1,rc_policy_binder_2,rc_claim_file_3,rc_simon_hartley_report_envelope_4,rc_coverage_decision_form_5,rc_warranty_checklist_6,rc_fdp_terminal_7,rc_evidence_packet_a_12,rc_evidence_packet_b_13,rc_evidence_packet_c_14,rc_ncsc_brief_envelope_15,rc_underwriting_file_17 item
+  class rc_claims_management_system_1,rc_policy_binder_2,rc_claim_file_3,rc_simon_hartley_report_envelope_4,rc_coverage_decision_form_5,rc_warranty_checklist_6,rc_fdp_terminal_7,rc_evidence_packet_a_12,rc_evidence_packet_b_13,rc_evidence_packet_c_14,rc_ncsc_brief_envelope_15,rc_network_diagram_pinboard_16,rc_underwriting_file_18 item
   class rc_npc_eleanor_vance_8,rc_npc_james_whitworth_9,rc_npc_simon_hartley_10,rc_npc_robert_ngata_11 npc
-  class rc_underwriting_cabinet_16 container
+  class rc_underwriting_cabinet_17 container
   class node_start start`
     };
     const rendered = {};

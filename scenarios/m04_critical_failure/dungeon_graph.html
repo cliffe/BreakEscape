@@ -490,12 +490,12 @@
   rc_npc_agent_0x47_nightshade_5("Agent 0x47 'Nightshade'")
   rc_npc_security_guard_6("Security Guard")
   rc_npc_agent_hax_7("Agent HaX")
-  rc_obj8_8{"SAFETYNET Field Guide: RFID Cloning"}
-  rc_obj9_9{"SAFETYNET Field Guide: Lockpicking"}
-  rc_obj10_10{"SAFETYNET Field Guide: Reconnaissance and Network Mapping"}
-  rc_obj11_11{"SAFETYNET Field Guide: Vulnerability Analysis and Attack Surface"}
-  rc_obj12_12{"SAFETYNET Field Guide: distcc Exploitation"}
-  rc_obj13_13{"SAFETYNET Field Guide: Encoding and Decoding with CyberChef"}
+  rc_safetynet_field_guide_rfid_cloning_8{"SAFETYNET Field Guide: RFID Cloning"}
+  rc_safetynet_field_guide_lockpicking_9{"SAFETYNET Field Guide: Lockpicking"}
+  rc_safetynet_field_guide_recon_network_mapping_10{"SAFETYNET Field Guide: Reconnaissance and Network Mapping"}
+  rc_safetynet_field_guide_vuln_analysis_11{"SAFETYNET Field Guide: Vulnerability Analysis and Attack Surface"}
+  rc_safetynet_field_guide_distcc_12{"SAFETYNET Field Guide: distcc Exploitation"}
+  rc_safetynet_field_guide_cyberchef_13{"SAFETYNET Field Guide: Encoding and Decoding with CyberChef"}
   rc_npc_robert_vance_14("Robert Vance")
   rc_npc_agent_hax_15("Agent HaX")
   rc_obj16_16{"Vance's BMS Monitoring Terminal"}
@@ -557,12 +557,12 @@
   main_entrance --> rc_npc_agent_0x47_nightshade_5
   main_entrance --> rc_npc_security_guard_6
   main_entrance --> rc_npc_agent_hax_7
-  rc_npc_agent_hax_7 --> rc_obj8_8
-  rc_npc_agent_hax_7 --> rc_obj9_9
-  rc_npc_agent_hax_7 --> rc_obj10_10
-  rc_npc_agent_hax_7 --> rc_obj11_11
-  rc_npc_agent_hax_7 --> rc_obj12_12
-  rc_npc_agent_hax_7 --> rc_obj13_13
+  rc_npc_agent_hax_7 --> rc_safetynet_field_guide_rfid_cloning_8
+  rc_npc_agent_hax_7 --> rc_safetynet_field_guide_lockpicking_9
+  rc_npc_agent_hax_7 --> rc_safetynet_field_guide_recon_network_mapping_10
+  rc_npc_agent_hax_7 --> rc_safetynet_field_guide_vuln_analysis_11
+  rc_npc_agent_hax_7 --> rc_safetynet_field_guide_distcc_12
+  rc_npc_agent_hax_7 --> rc_safetynet_field_guide_cyberchef_13
   main_entrance --> rc_npc_robert_vance_14
   main_entrance --> rc_npc_agent_hax_15
   operations_office --> rc_obj16_16
@@ -611,7 +611,7 @@
 
   class main_entrance,operations_office,scada_control_room,security_office,battery_hall_1,loading_dock room
   class engineering_workshop,battery_hall_2,plant_room lock
-  class rc_obj1_1,rc_obj2_2,rc_obj8_8,rc_obj9_9,rc_obj10_10,rc_obj11_11,rc_obj12_12,rc_obj13_13,rc_obj16_16,rc_obj17_17,rc_obj18_18,rc_obj19_19,rc_obj21_21,rc_scada_hmi_display_22,rc_obj23_23,rc_obj24_24,rc_vm_launcher_bms_jump_server_25,rc_flag_station_dropsite_26,rc_obj27_27,rc_obj28_28,rc_obj29_29,rc_obj30_30,rc_obj31_31,rc_obj33_33,rc_obj34_34,rc_analog_thermometer_35,rc_rack_status_panel_36,rc_hydrogen_detector_37,rc_obj38_38,rc_obj40_40,rc_obj41_41,rc_obj42_42,rc_obj43_43,rc_obj44_44,rc_obj46_46,rc_obj47_47,rc_esd_pushbutton_48,rc_obj49_49,rc_obj50_50,rc_obj51_51,rc_obj54_54,rc_obj55_55,rc_obj56_56,rc_obj58_58 item
+  class rc_obj1_1,rc_obj2_2,rc_safetynet_field_guide_rfid_cloning_8,rc_safetynet_field_guide_lockpicking_9,rc_safetynet_field_guide_recon_network_mapping_10,rc_safetynet_field_guide_vuln_analysis_11,rc_safetynet_field_guide_distcc_12,rc_safetynet_field_guide_cyberchef_13,rc_obj16_16,rc_obj17_17,rc_obj18_18,rc_obj19_19,rc_obj21_21,rc_scada_hmi_display_22,rc_obj23_23,rc_obj24_24,rc_vm_launcher_bms_jump_server_25,rc_flag_station_dropsite_26,rc_obj27_27,rc_obj28_28,rc_obj29_29,rc_obj30_30,rc_obj31_31,rc_obj33_33,rc_obj34_34,rc_analog_thermometer_35,rc_rack_status_panel_36,rc_hydrogen_detector_37,rc_obj38_38,rc_obj40_40,rc_obj41_41,rc_obj42_42,rc_obj43_43,rc_obj44_44,rc_obj46_46,rc_obj47_47,rc_esd_pushbutton_48,rc_obj49_49,rc_obj50_50,rc_obj51_51,rc_obj54_54,rc_obj55_55,rc_obj56_56,rc_obj58_58 item
   class rc_npc_agent_hax_3,rc_npc_director_magnus_netherton_4,rc_npc_agent_0x47_nightshade_5,rc_npc_security_guard_6,rc_npc_agent_hax_7,rc_npc_robert_vance_14,rc_npc_agent_hax_15,rc_npc_robert_vance_20,rc_npc_entropy_operative_cipher_39,rc_npc_entropy_operative_relay_45,rc_npc_voltage_critical_mass_leader_52,rc_npc_entropy_operative_static_53 npc
   class rc_security_equipment_locker_32,rc_extraction_gobag_57 container
   class node_start start`
