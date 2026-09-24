@@ -31,11 +31,11 @@ This is where most real scenario defects live — a clue in a container that can
 
 Every report carries this table, above the step results. One row per secret the run used — every key, PIN, code, passphrase and flag.
 
-| Secret | Value used | In-game source | Obtained at | Earned? |
-| --- | --- | --- | --- | --- |
-| Main Office Key | (item) | Sarah O'Brien, reception — dialogue reward | step 2 | yes |
-| IT room PIN | `2468` | Maintenance Checklist, main office desk | step 4 | yes |
-| Derek's safe PIN | `1337` | — never found a source in this run | — | **no** |
+| Secret                  | Value used | In-game source                                                      | Obtained at                                                      | Earned?                                     |
+| ----------------------- | ---------- | ------------------------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------- |
+| Main Office Key         | (item)     | Sarah O'Brien, reception — dialogue reward                          | step 2                                                           | yes                                         |
+| IT room PIN             | `2468`     | Maintenance Checklist, main office desk                             | step 4                                                           | yes                                         |
+| Derek's safe PIN        | `1337`     | — never found a source in this run                                  | —                                                                | **no**                                      |
 | `shatter_server:flag_2` | `<flag:2>` | My Passwords list (storage safe) → SSH to 172.16.0.2 → VM challenge | password list at step 12; **VM work not possible in standalone** | **no — prerequisite held, flag not earned** |
 
 Columns:
@@ -76,28 +76,12 @@ Never reconstruct a trace from what you expected to happen. If a command was not
 
 ## Small things that have each cost a run
 
-- **The end-of-mission credits overlay never closes, and that is correct.** A
-  scenario whose conclusionScreen is `bond_visualiser` opens a fullscreen
-  `bv-stage` overlay with `autoStop: true` (music stops, visualiser stays open)
-  and `disableClose: true` (no × button, Esc blocked). Nothing closes it, by
-  design — it is the terminal state. Two runs have been lost waiting for it to
-  clear, one of them concluding the game had hung on blocked audio. It has not
-  hung. **Mission conclusion is decided server-side**, in `check_mission_conclusion`,
-  and depends only on every `concludeRequires.tasksCompleted` task being persisted. Check the
-  game record; never wait on the screen.
-
-- `mg type(i, text, {submit:true})` sends Enter **and** clicks a submit button if
-  Enter changed nothing. Flag stations ignore Enter entirely; before this, a
-  submitted flag silently never arrived. Check `submittedVia` in the result.
-- `mg clickControl` takes an index **or** a label substring —
-  `clickControl("submit")`. Prefer the label: indices shift as a minigame
-  re-renders. A failure lists the controls that were available.
-- A container shows "Loading contents..." for a beat after opening. `mg getState`
-  now waits that out; a state read during it reports an empty safe.
-- An unlocked door can still be shut, and `enter` opens it before walking
-  through. An unlocked door that has *vanished* is normal — see above.
-- `converse` stops once the conversation stops saying anything new, so hub NPCs
-  no longer burn the whole turn budget. Pass `choices` when you need a branch.
+- **The end-of-mission credits overlay never closes, and that is correct.** A scenario whose conclusionScreen is `bond_visualiser` opens a fullscreen `bv-stage` overlay with `autoStop: true` (music stops, visualiser stays open) and `disableClose: true` (no × button, Esc blocked). Nothing closes it, by design — it is the terminal state. Two runs have been lost waiting for it to clear, one of them concluding the game had hung on blocked audio. It has not hung. **Mission conclusion is decided server-side**, in `check_mission_conclusion`, and depends only on every `concludeRequires.tasksCompleted` task being persisted. Check the game record; never wait on the screen.
+- `mg type(i, text, {submit:true})` sends Enter **and** clicks a submit button if Enter changed nothing. Flag stations ignore Enter entirely; before this, a submitted flag silently never arrived. Check `submittedVia` in the result.
+- `mg clickControl` takes an index **or** a label substring — `clickControl("submit")`. Prefer the label: indices shift as a minigame re-renders. A failure lists the controls that were available.
+- A container shows "Loading contents..." for a beat after opening. `mg getState` now waits that out; a state read during it reports an empty safe.
+- An unlocked door can still be shut, and `enter` opens it before walking through. An unlocked door that has *vanished* is normal — see above.
+- `converse` stops once the conversation stops saying anything new, so hub NPCs no longer burn the whole turn budget. Pass `choices` when you need a branch.
 
 ## Token discipline
 
@@ -134,14 +118,9 @@ Create the game with the **checked-in helper**, never by hand:
 BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb <scenario_name>
 ```
 
-`<scenario_name>` is the directory under `scenarios/` — `m02_ransomed_trust`. A
-numeric mission id works too; a name that doesn't exist prints the list.
+`<scenario_name>` is the directory under `scenarios/` — `m02_ransomed_trust`. A numeric mission id works too; a name that doesn't exist prints the list.
 
-One argument is the whole of setup. The helper reads the scenario to find which
-VM it draws flags from and how many it references, synthesises distinctive
-stand-in values, seeds them the way the standalone new-game form does (before
-`save!`, so the ERB renders with them), and writes them out as a flag-hints XML
-for the session's `--flags`. It prints:
+One argument is the whole of setup. The helper reads the scenario to find which VM it draws flags from and how many it references, synthesises distinctive stand-in values, seeds them the way the standalone new-game form does (before `save!`, so the ERB renders with them), and writes them out as a flag-hints XML for the session's `--flags`. It prints:
 
 ```
 MISSION=m02_ransomed_trust (id 46)
@@ -154,23 +133,13 @@ PREFLIGHT OK
 FLAGS_XML=tools/playtest/m02_ransomed_trust-flags-game987.xml
 ```
 
-Pass `URL` to `--url` and `FLAGS_XML` to `--flags`. **If it aborts, stop and
-report it — do not play on.** With no valid flags every submission returns
-`Invalid flag` and the back half of a VM mission is unreachable; that failure
-looks exactly like a scenario bug and is not one. A `PREFLIGHT WARN` means fewer
-flags rendered than the scenario references — usually a VM name mismatch.
+Pass `URL` to `--url` and `FLAGS_XML` to `--flags`. **If it aborts, stop and report it — do not play on.** With no valid flags every submission returns `Invalid flag` and the back half of a VM mission is unreachable; that failure looks exactly like a scenario bug and is not one. A `PREFLIGHT WARN` means fewer flags rendered than the scenario references — usually a VM name mismatch.
 
-Pass a flag-hints XML as a second argument only when the exact values matter — a
-real SecGen build, or reproducing someone else's run. Never use `flag{1}`..`flag{4}`:
-when something goes wrong, a generic value is indistinguishable from the others
-in a response body.
+Pass a flag-hints XML as a second argument only when the exact values matter — a real SecGen build, or reproducing someone else's run. Never use `flag{1}`..`flag{4}`: when something goes wrong, a generic value is indistinguishable from the others in a response body.
 
-A scenario with no VM flags needs no special handling; `VALID_FLAGS=0` with no
-`FLAGS_EXPECTED` is correct there.
+A scenario with no VM flags needs no special handling; `VALID_FLAGS=0` with no `FLAGS_EXPECTED` is correct there.
 
-The generated XML is named after the game, so it stays matched to the run that
-used it — `<scenario>-flags-game<id>.xml`. Keep it alongside the session log;
-together they say exactly what that run was given.
+The generated XML is named after the game, so it stays matched to the run that used it — `<scenario>-flags-game<id>.xml`. Keep it alongside the session log; together they say exactly what that run was given.
 
 Note `bin/rails runner` chokes on some inline scripts (`IndexError: string not matched`) — pass a file path, which is what the helper is.
 
@@ -214,9 +183,7 @@ Not every scenario has one (m01_first_contact does not). Fall back in this order
    ```
 
    Parse `Step` → number, `Action` → what to do, `Result` → the assertion. Bolded values in the Action column are the literal inputs (PINs, codes). A `—` step number marks an *alternative* route, not a required one. Look for a "Puzzle Solutions Reference" section too — PINs, keys and codes collected in one place.
-2. **`scenarios/<name>/dungeon_graph.md`** — lock/key dependency order. Useful for deciding what must happen before what, but it is not a step list on its own.
-   Alongside it, `scenarios/<name>/dungeon_graph.json` holds the same puzzle graph in machine-readable form (`nodes` / `edges`, `soft: true` meaning an optional or narrative edge). Both are regenerated by `ruby scripts/validate_scenario.rb <scenario>`; regenerate before a run so the graph matches the scenario you are playing.
-
+2. **`scenarios/<name>/dungeon_graph.md`** — lock/key dependency order. Useful for deciding what must happen before what, but it is not a step list on its own. Alongside it, `scenarios/<name>/dungeon_graph.json` holds the same puzzle graph in machine-readable form (`nodes` / `edges`, `soft: true` meaning an optional or narrative edge). Both are regenerated by `ruby scripts/validate_scenario.rb <scenario>`; regenerate before a run so the graph matches the scenario you are playing.
 3. **An ad hoc list from the user** — a description of what to try, in order.
 
 Say which source you used at the top of the report; a reader needs to know whether "step 9" refers to a walkthrough or a solution guide.
@@ -237,9 +204,9 @@ node .claude/skills/playtest-scenario/scripts/playtest-session.js \
   --log tools/playtest/<scenario>-session.jsonl
 ```
 
-| Option    | Effect                                                                                                   |
-| --------- | -------------------------------------------------------------------------------------------------------- |
-| `--flags` | `FLAGS_XML` from `new-game.rb` — the flag values that game was seeded with. A comma-separated list also works |
+| Option    | Effect                                                                                                                                                    |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--flags` | `FLAGS_XML` from `new-game.rb` — the flag values that game was seeded with. A comma-separated list also works                                             |
 | `--log`   | Where the session log goes. Defaults to `tools/playtest/session-<timestamp>.jsonl`; `--no-log` disables it — never do that for a run you intend to report |
 
 `--flags` is what makes a non-VM playthrough possible. Pass the XML once at startup and write `<flag:1>`, `<flag:2>`, … in the trace wherever a flag value is needed; the harness substitutes the real value before dispatch and records the substitution in the log. `{"cmd":"flags"}` reports what was configured and every token used so far — that list is the raw material for the flag rows of the earned-secrets table.
@@ -270,82 +237,42 @@ Speed changes pacing only. Waits stay deterministic in both, so `fast` is not le
 
 ### Locks and doors: `lock` and `enter`
 
-`{"cmd":"lock"}` solves the lock minigame that is currently open — it picks the
-key (add `"key":"Main Office"` to choose among several), clicks the keyhole, and
-waits for the unlock to finish. For PIN and password locks pass
-`{"cmd":"lock","code":"2468"}`; it handles both a typed field and a keypad that
-has to be tapped digit by digit. Do not click canvas coordinates by hand: the
-coordinates a lock reports are **centres**, reading them as top-left corners
-silently does nothing, and that mistake has cost a run.
+`{"cmd":"lock"}` solves the lock minigame that is currently open — it picks the key (add `"key":"Main Office"` to choose among several), clicks the keyhole, and waits for the unlock to finish. For PIN and password locks pass `{"cmd":"lock","code":"2468"}`; it handles both a typed field and a keypad that has to be tapped digit by digit. Do not click canvas coordinates by hand: the coordinates a lock reports are **centres**, reading them as top-left corners silently does nothing, and that mistake has cost a run.
 
-`{"cmd":"enter","room":"main_office_area"}` walks through to an adjacent room.
-Use it rather than `moveTo` coordinates. Two things make doors awkward and both
-have ended runs:
+`{"cmd":"enter","room":"main_office_area"}` walks through to an adjacent room. Use it rather than `moveTo` coordinates. Two things make doors awkward and both have ended runs:
 
 - Rooms load lazily, so the destination does not exist until you are in it.
-- **An unlocked door is removed from the scene.** `moveToNear("door:...")` then
-  fails with `unknown-entity`, which reads like a broken door and is not one.
-  The session remembers doorways from earlier `room` calls and walks through the
-  remembered gap — so send `{"cmd":"room"}` in a room before trying to leave it.
+- **An unlocked door is removed from the scene.** `moveToNear("door:...")` then fails with `unknown-entity`, which reads like a broken door and is not one. The session remembers doorways from earlier `room` calls and walks through the remembered gap — so send `{"cmd":"room"}` in a room before trying to leave it.
 
-The normal sequence for a locked door is: `room` → `moveToNear` the door →
-`interact` → `lock` → `enter`.
+The normal sequence for a locked door is: `room` → `moveToNear` the door → `interact` → `lock` → `enter`.
 
 ### Finding things: `room`, not `brief`
 
-`brief` lists only what is within about six tiles, capped at 25 entries. That is
-right for deciding what to do next and wrong for finding anything: stand in a
-doorway and you will see two chairs and conclude the desk you want is not in the
-scenario.
+`brief` lists only what is within about six tiles, capped at 25 entries. That is right for deciding what to do next and wrong for finding anything: stand in a doorway and you will see two chairs and conclude the desk you want is not in the scenario.
 
-`{"cmd":"room"}` lists every interactable in the current room at any distance —
-objects, doors and NPCs, with ids and coordinates. Pass `{"id":"<room_id>"}` for
-another room. Use it on entering a room, then `moveToNear` the id you want.
+`{"cmd":"room"}` lists every interactable in the current room at any distance — objects, doors and NPCs, with ids and coordinates. Pass `{"id":"<room_id>"}` for another room. Use it on entering a room, then `moveToNear` the id you want.
 
-`visible: false` means the object exists but has not been revealed yet. That is
-content gated behind something, not a missing object — do not report it as absent.
+`visible: false` means the object exists but has not been revealed yet. That is content gated behind something, not a missing object — do not report it as absent.
 
 ### Conversations: use `converse`, not a hand-rolled loop
 
-`{"cmd":"converse","id":"<npc_id>"}` opens a conversation and drives it to the
-end in one command: it continues while the dialogue continues, takes each choice
-branch it has not taken before, closes the minigame, and returns the transcript,
-the branches it chose, and the inventory afterwards.
+`{"cmd":"converse","id":"<npc_id>"}` opens a conversation and drives it to the end in one command: it continues while the dialogue continues, takes each choice branch it has not taken before, closes the minigame, and returns the transcript, the branches it chose, and the inventory afterwards.
 
-Use it for every NPC. An unfinished conversation input-locks the main world, so
-every later movement and interaction is refused with `minigame-active` — three
-runs have died exactly this way, marching through a hundred commands into a game
-that stopped listening. `converse` cannot leave one open.
+Use it for every NPC. An unfinished conversation input-locks the main world, so every later movement and interaction is refused with `minigame-active` — three runs have died exactly this way, marching through a hundred commands into a game that stopped listening. `converse` cannot leave one open.
 
-- `choices: ["^Yes", "audit"]` — regexes tried in order when you need a specific
-  branch. Otherwise it exhausts the branches and stops.
+- `choices: ["^Yes", "audit"]` — regexes tried in order when you need a specific branch. Otherwise it exhausts the branches and stops.
 - `exhaustedBranches: true` means the conversation was a hub with nothing new left.
 - `hitTurnLimit: true` means it ran to `maxTurns` — report it; it may be a loop.
-- `ok: false, reason: "no-dialogue-appeared"` means the target opened something
-  that is not a conversation. Phones are the common case: they open a **contact
-  list** first. Read `contacts` from `mg getState`, then
-  `{"cmd":"mg","action":"clickText","args":["<contact name>"]}` to open the
-  message, and read the transcript from the state text.
+- `ok: false, reason: "no-dialogue-appeared"` means the target opened something that is not a conversation. Phones are the common case: they open a **contact list** first. Read `contacts` from `mg getState`, then `{"cmd":"mg","action":"clickText","args":["<contact name>"]}` to open the message, and read the transcript from the state text.
 
 ### Clustered targets and the disambiguation menu
 
-Where interactables sit close together — a memo on the desk beside the NPC you
-want — the engine gathers everything within 32px of the click and, with more
-than one, raises a disambiguation menu. This is the normal path, not an error:
-`interact(id)` drives the menu itself and picks your target by name, reporting
-`mode: "via-interaction-menu"`. `moveToNear` warns you to expect it with
-`viaMenu: true` and names the rival in `nearestCandidate`.
+Where interactables sit close together — a memo on the desk beside the NPC you want — the engine gathers everything within 32px of the click and, with more than one, raises a disambiguation menu. This is the normal path, not an error: `interact(id)` drives the menu itself and picks your target by name, reporting `mode: "via-interaction-menu"`. `moveToNear` warns you to expect it with `viaMenu: true` and names the rival in `nearestCandidate`.
 
 Two consequences worth knowing:
 
-- **Plain centre distance is the binding measure**, not `interactDistance`. A
-  target outside 32px plain is not gathered at all, so it can neither be clicked
-  nor appear in the menu — however close `interactDistance` looks. That is what
-  `arrived-but-outside-plain-range` means.
-- **`moveTo` walks on the keyboard when the destination is near an
-  interactable**, because a world click there would open it instead of moving.
-  You will see `via: "keyboard(avoids-click-trigger)"` and `avoidedTrigger`.
-  It is slower and can report `blocked`; that is a real obstruction, not a bug.
+- **Plain centre distance is the binding measure**, not `interactDistance`. A target outside 32px plain is not gathered at all, so it can neither be clicked nor appear in the menu — however close `interactDistance` looks. That is what `arrived-but-outside-plain-range` means.
+- **`moveTo` walks on the keyboard when the destination is near an interactable**, because a world click there would open it instead of moving. You will see `via: "keyboard(avoids-click-trigger)"` and `avoidedTrigger`. It is slower and can report `blocked`; that is a real obstruction, not a bug.
 
 ### `ok: true` is not enough — check `mismatch`
 
@@ -382,24 +309,15 @@ Then, per walkthrough step, the loop is: **read `brief` → act → wait determi
 {"cmd":"waitFor","kind":"task","id":"sign_in_at_reception","timeoutMs":8000}
 ```
 
-**Send one command, read its result, then choose the next.** Do not queue the
-mission up front. This is the single most common way a run dies: an early
-`ok:false` goes unread, the world is input-locked behind an open minigame, and
-the run sends hundreds more commands into a game that stopped listening. Five
-runs have ended this way, one of them 200 commands past the refusal. Treat every
-`ok:false` as a stop-and-fix.
+**Send one command, read its result, then choose the next.** Do not queue the mission up front. This is the single most common way a run dies: an early `ok:false` goes unread, the world is input-locked behind an open minigame, and the run sends hundreds more commands into a game that stopped listening. Five runs have ended this way, one of them 200 commands past the refusal. Treat every `ok:false` as a stop-and-fix.
 
-Prefer the high-level commands — `room`, `converse`, `lock`, `enter` — over
-hand-rolled `mg` sequences. Each of them exists because the hand-rolled version
-failed a run.
+Prefer the high-level commands — `room`, `converse`, `lock`, `enter` — over hand-rolled `mg` sequences. Each of them exists because the hand-rolled version failed a run.
 
 Full command list is in the header of `scripts/playtest-session.js`.
 
 ### Driving dialogue
 
-Use `converse` (above) for whole conversations. The manual actions here are for
-when a step turns on one specific line or branch — asserting what an NPC says,
-or steering a choice that gates a later step.
+Use `converse` (above) for whole conversations. The manual actions here are for when a step turns on one specific line or branch — asserting what an NPC says, or steering a choice that gates a later step.
 
 `brief().dialogue` gives you `speaker`, `text`, and `choices` as `"1. …"` strings matching the on-screen numbers.
 
@@ -454,13 +372,13 @@ If `interact` reports `ok: true` but `brief()` shows **no** active minigame and 
 
 Missions like m02 include steps performed on a real VM (SSH in, exploit ProFTPD, recover a flag) and submitted through the `flag-station` minigame. The browser bridge cannot do this work. When you reach such a step, **ask the user** which they want, unless they set a policy up front:
 
-| Policy               | Behaviour                                                                                                                                                                        |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `session` (default)  | Submit `<flag:N>`, substituted from the `--flags` XML given at session start. The normal choice for any non-VM playthrough                                                       |
-| `pause`              | Stop and wait for the user to do the VM work themselves, then continue. Only meaningful where VMs actually exist — and the only policy that can produce a solvability pass       |
-| `test-flags`         | Submit the positional stand-in `test:flag:1`, `test:flag:2`, … Use only when no real flags were seeded; it proves the station wiring and nothing else                            |
-| `skip`               | Mark **BLOCKED** and continue, so the rest of the path still gets exercised. Downstream steps gated on that flag are BLOCKED too — say so rather than reporting them as failures |
-| `stop`               | End the run there and report everything up to that point                                                                                                                         |
+| Policy              | Behaviour                                                                                                                                                                        |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `session` (default) | Submit `<flag:N>`, substituted from the `--flags` XML given at session start. The normal choice for any non-VM playthrough                                                       |
+| `pause`             | Stop and wait for the user to do the VM work themselves, then continue. Only meaningful where VMs actually exist — and the only policy that can produce a solvability pass       |
+| `test-flags`        | Submit the positional stand-in `test:flag:1`, `test:flag:2`, … Use only when no real flags were seeded; it proves the station wiring and nothing else                            |
+| `skip`              | Mark **BLOCKED** and continue, so the rest of the path still gets exercised. Downstream steps gated on that flag are BLOCKED too — say so rather than reporting them as failures |
+| `stop`              | End the run there and report everything up to that point                                                                                                                         |
 
 Under `session` and `test-flags`, still go and get the flag's **in-game prerequisite** first — for m01, the "My Passwords" list in the storage safe. The flag value itself cannot be earned without a VM, but the route to it can, and the earned-secrets table must show which half the run covered.
 
