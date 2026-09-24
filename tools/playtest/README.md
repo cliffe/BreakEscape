@@ -12,7 +12,26 @@ Helpers for driving the game through the dev-only `window.__test` bridge. See `d
 
   Set `HEADED=0` for headless.
 
-The interactive session harness lives with the skill: `.claude/skills/playtest-scenario/scripts/playtest-session.js`.
+- `new-game.rb` — creates a playtest game and its flag-hints XML. One argument, the scenario name.
+
+- `session-start.sh` / `cmd.sh` / `session-stop.sh` — keep one browser open across many tool calls and drive it a command at a time.
+
+  ```bash
+  tools/playtest/session-start.sh --url http://127.0.0.1:3000/break_escape/games/1047 \
+    --speed human --flags tools/playtest/<scenario>-flags-game1047.xml \
+    --log tools/playtest/<scenario>-session.jsonl
+  tools/playtest/cmd.sh 1047 '{"cmd":"brief"}'
+  tools/playtest/session-stop.sh 1047
+  ```
+
+  The session tag is the game id. Each session gets its own `pipes-<tag>/` and
+  `<tag>.pid`, both gitignored — there is no need to copy these scripts per run.
+
+The interactive session harness itself lives with the skill: `.claude/skills/playtest-scenario/scripts/playtest-session.js`.
+
+## What is committed
+
+Reports (`*-report.md`, review notes), traces, flag XMLs (`<scenario>-flags-game<id>.xml`) and the scripts here. Not committed: session JSONL logs, `pipes-*/`, `*.pid` — regenerable scratch.
 
 ## Requirements
 

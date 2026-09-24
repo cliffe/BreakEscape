@@ -45,7 +45,11 @@ package-lock.json
 # TTS audio cache — regenerated on demand, ~117MB of mp3
 tts_cache/
 
-# Playtest session logs — large, regenerable evidence. Reports and scripts
-# in tools/playtest are committed; the raw JSONL transcripts are not.
+# Playtest session scratch — large or per-run, all regenerable. Reports, flag
+# XMLs and checked-in scripts under tools/playtest are committed; the raw
+# transcripts and the plumbing one run needs to talk to its browser are not.
 tools/playtest/*.jsonl
 tools/playtest/pipes/
+tools/playtest/pipes-*/
+tools/playtest/*.pid
+tools/playtest/cmd[0-9]*.sh

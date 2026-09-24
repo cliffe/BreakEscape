@@ -211,6 +211,34 @@ node .claude/skills/playtest-scenario/scripts/playtest-session.js \
 
 `--flags` is what makes a non-VM playthrough possible. Pass the XML once at startup and write `<flag:1>`, `<flag:2>`, … in the trace wherever a flag value is needed; the harness substitutes the real value before dispatch and records the substitution in the log. `{"cmd":"flags"}` reports what was configured and every token used so far — that list is the raw material for the flag rows of the earned-secrets table.
 
+### Keeping the session alive between tool calls
+
+The harness holds one browser for the whole playtest, so it must outlive the
+call that starts it. Do not launch it and pipe a single command in — that closes
+stdin, the browser dies, and the next command starts a fresh game. Use the
+checked-in pair:
+
+```bash
+tools/playtest/session-start.sh \
+  --url <URL from new-game.rb> \
+  --speed human \
+  --flags <FLAGS_XML from new-game.rb> \
+  --log tools/playtest/<scenario>-session.jsonl
+
+tools/playtest/cmd.sh <game id> '{"cmd":"brief"}'
+tools/playtest/session-stop.sh <game id>
+```
+
+`session-start.sh` passes every argument through to `playtest-session.js`, keys
+the session on the game id in `--url`, and prints `SESSION=<tag>` once the
+browser reports ready. `cmd.sh` sends one JSON command and prints the reply.
+`session-stop.sh` syncs before quitting and removes the scratch.
+
+Its working files — `tools/playtest/pipes-<tag>/` and `<tag>.pid` — are
+gitignored and belong to that run alone. Do not write a per-run copy of these
+scripts; that is how `cmd1047.sh`, `cmd1048.sh` and friends accumulated. What is
+kept from a run is the report, the trace, the flags XML and the session log.
+
 **The browser is headed by default — the user is meant to watch it.** Only pass `--headless` if the user explicitly asks, or if there is no display.
 
 Movement is already legible to a watcher: `moveTo` issues a real canvas click, so the game's own click indicator and pathfinding animation play exactly as they do for a human. Do not add a separate movement marker.
