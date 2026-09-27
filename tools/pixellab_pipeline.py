@@ -21,7 +21,6 @@ Everything for one character lives in a work directory (default tmp/pixellab/<na
   bust/b01.png ...    stage 1 candidates, plus bust/contact.png
   talk/t01/f00.png .. stage 2 candidates (one folder per variant), plus talk/contact.png
   visemes/i01/*.png   optional stage 2 alternative: named mouth shapes, inpainted on the mouth
-                      (visemes/m01 when made with --method vocal)
   character/c01/*.png stage 3 candidates (8 rotations each), plus character/contact.png
 
 Typical run (see .claude/skills/pixellab-character-pipeline/SKILL.md for the full workflow):
@@ -521,7 +520,7 @@ def mouth_face_box(frames, width=42, above=9, below=12):
     """Estimate a box to paste mouths onto the bust: from under the eyes to the chin.
 
     Only this region is taken from the generated frames, so the bust keeps its own eyes,
-    hair and body. That matters: vocal-animation tends to close the eyes, and some
+    hair and body. That matters: the models tend to close the eyes, and some
     animations re-render every pixel slightly (collar, lanyard), which makes a
     union-of-changes box (build_talk_sheet's default) swallow the whole image.
 
@@ -594,8 +593,7 @@ def talk_contact(run):
     for j in run.jobs("visemes", "completed"):
         frames = [(Path(p).stem, Image.open(run.dir / p).convert("RGBA")) for p in j["outputs"]]
         cells = [("bust", bust)] + frames
-        crop = j["params"].get("crop")
-        rows.append((f"{j['variant']}  visemes, crop {crop or 'none'} (use {j['variant']}:<name>)", cells))
+        rows.append((f"{j['variant']}  visemes (use {j['variant']}:<name>)", cells))
         box = change_box(bust, [im for _, im in frames])
         if box:
             rows.append((f"{j['variant']} mouth zoom {box}",
@@ -621,44 +619,16 @@ def head_box(bust, side):
 
 
 def cmd_visemes(args):
-    """Named mouth shapes for lip sync: inpainted on the bust (default) or from /vocal-animation.
+    """Named mouth shapes for lip sync, inpainted on the bust (variants iNN).
 
-    --method inpaint (default, variants iNN): one /inpaint-image-pro-flash call per shape,
-    masked to the mouth only, so the nose, jaw and the mouth's position on a turned head stay
-    exactly as drawn. About 6 generations per shape.
-
-    --method vocal (variants mNN): /vocal-animation redraws the whole lower face. It assumes a
-    face looking straight at the camera, so on three-quarter busts it tends to lose the nose
-    and move the mouth towards the centre. --crop sends only the head. Each returned mouth is
-    pasted back into a full-size copy of the bust, so the results drop straight into
-    `pick ... --frames m01:<id>` like any other talk frame.
+    One /inpaint-image-pro-flash call per shape, masked to the mouth only, so the nose, jaw
+    and the mouth's position on a turned head stay exactly as drawn. About 6 generations per
+    shape. (/vocal-animation was tried first and dropped: it assumes a face looking straight
+    at the camera, and on three-quarter busts it lost the nose and moved the mouth.)
     """
     run = Run(args.name, args.workdir).require()
     bust = Image.open(run.dir / "bust" / f"{run.picked('bust')}.png").convert("RGBA")
-    if args.method == "inpaint":
-        return visemes_inpaint(run, bust, args)
-    crop = None
-    if args.crop == "auto":
-        crop = head_box(bust, args.crop_size)
-    elif args.crop:
-        crop = tuple(int(v) for v in args.crop.split(","))
-    portrait = bust.crop(crop) if crop else bust
-    body = {"portrait": b64_image(portrait), "mood": args.mood, "viseme_count": args.count,
-            "no_background": True}
-    if args.dry_run:
-        print(f"crop: {crop or 'none'} -> portrait {portrait.size}")
-        return dry_run("/vocal-animation", body)
-    api = PixelLab()
-    vid = run.next_ids("visemes", "m", 1)[0]
-    (run.dir / "visemes").mkdir(exist_ok=True)
-    portrait.save(run.dir / "visemes" / f"{vid}_sent.png")
-    resp = api.post("/vocal-animation", body)
-    job = run.add_job(stage="visemes", variant=vid, endpoint="/vocal-animation",
-                      job_id=resp["background_job_id"], usage=resp.get("usage"),
-                      params={"mood": args.mood, "count": args.count, "crop": crop})
-    print(f"submitted {vid} (crop {crop or 'none'}): job {job['job_id']}")
-    collect(run, api, "visemes")
-    report_stage(run, "talk")
+    return visemes_inpaint(run, bust, args)
 
 
 # What each shape must look like, matching the letter classes in lip-sync.js.
@@ -956,22 +926,18 @@ def save_inpaint_visemes(run, api, job):
 def write_viseme_sheet(run, job, assets, backup, face=None, swaps=None, omit=None):
     """Install <name>_visemes.png (one row of mouth shapes) and <name>_visemes.json.
 
-    Like the 2x2 talk sheet, every cell is the picked bust with only the face box replaced,
-    so the body can't jitter between shapes. 'rest' is the bust itself. The engine reads it
-    through the NPC's "spriteVisemes" field (see docs/SPRITE_SYSTEM.md).
-
-    Inpaint variants skip the box: each frame differs from the bust only inside its own
-    mask (bigger for the open shapes, so the jaw can drop), so frames go in whole. swaps ("round=i02,teeth=i03")
+    'rest' is the bust itself. Each frame differs from the bust only inside its own mask
+    (bigger for the open shapes, so the jaw can drop), so frames go in whole; --face pastes
+    only that box instead. The engine reads the sheet through the NPC's "spriteVisemes"
+    field (see docs/SPRITE_SYSTEM.md). swaps ("round=i02,teeth=i03")
     take single shapes from other inpaint variants, so one bad shape can be redone alone.
     """
-    sys.path.insert(0, str(TALK_SCRIPTS))
-    import numpy as np
-    from build_talk_sheet import auto_face_box
     bust = Image.open(run.dir / "bust" / f"{run.picked('bust')}.png").convert("RGBA")
-    inpaint = job.get("endpoint") == "/inpaint-image-pro-flash"
-    order = job.get("viseme_order") or [Path(p).stem for p in job["outputs"]]
-    if inpaint:
-        order = ["rest"] + [s for s in MOUTH_SHAPES if s in order or (swaps and f"{s}=" in swaps)]
+    if job.get("endpoint") != "/inpaint-image-pro-flash":
+        sys.exit(f"{job['variant']} was made with {job.get('endpoint')}, which is no longer supported; "
+                 f"run `visemes {run.name}` again")
+    order = [Path(p).stem for p in job["outputs"]]
+    order = ["rest"] + [s for s in MOUTH_SHAPES if s in order or (swaps and f"{s}=" in swaps)]
     order = [s for s in order if s not in (omit or "").split(",")]  # the game falls back to the nearest shape
     frames = {Path(p).stem: Image.open(run.dir / p).convert("RGBA") for p in job["outputs"]}
     sources = {s: job["variant"] for s in frames}
@@ -981,20 +947,13 @@ def write_viseme_sheet(run, job, assets, backup, face=None, swaps=None, omit=Non
         path = run.dir / "visemes" / other / f"{shape}.png"
         if not oj or not path.exists():
             sys.exit(f"--swap {spec}: no completed variant {other} with a '{shape}' shape")
-        if inpaint and oj.get("params", {}).get("mouth") != job["params"]["mouth"]:
+        if oj.get("params", {}).get("mouth") != job["params"]["mouth"]:
             print(f"  warning: {other} used mouth mask {oj['params'].get('mouth')}, "
                   f"{job['variant']} used {job['params']['mouth']}")
         frames[shape] = Image.open(path).convert("RGBA")
         sources[shape] = other
-    base = np.asarray(bust, dtype=np.int16)
-    if face:
-        box = tuple(int(v) for v in face.split(","))
-    elif inpaint:
-        box = tuple(job["params"]["mouth"])
-    else:
-        box = (mouth_face_box([f for n, f in frames.items() if n != "rest"])
-               or auto_face_box(base, [np.asarray(f, dtype=np.int16) for f in frames.values()]))
-    whole = inpaint and not face  # each inpaint frame is already the bust outside its own mask
+    box = tuple(int(v) for v in face.split(",")) if face else tuple(job["params"]["mouth"])
+    whole = not face  # each inpaint frame is already the bust outside its own mask
     if not whole:
         face_box_preview(run, bust, [f for n, f in frames.items() if n != "rest"], tuple(map(int, box)))
     size = bust.width
@@ -1010,63 +969,18 @@ def write_viseme_sheet(run, job, assets, backup, face=None, swaps=None, omit=Non
     png = backup(assets / f"{run.name}_visemes.png")
     sheet.save(png)
     meta = backup(assets / f"{run.name}_visemes.json")
-    if inpaint:
-        params = {j["variant"]: j.get("params", {}) for j in run.jobs("visemes")}
+    params = {j["variant"]: j.get("params", {}) for j in run.jobs("visemes")}
 
-        def how(shape):
-            v = sources[shape]
-            d = params[v].get("drop", {}).get(shape) if params[v].get("jaw") else None
-            return f"{shape}:{v}" + (f" (chin -{d}px, jaw mask +{params[v]['jaw']} rows)" if d else "")
-        source = (f"pixellab /inpaint-image-pro-flash, mouth mask {job['params']['mouth']}; "
-                  + ", ".join(how(s) for s in order if s in sources))
-    else:
-        source = (f"pixellab /vocal-animation {job['job_id']} "
-                  f"(crop {job['params'].get('crop')}), face box {list(map(int, box))}")
+    def how(shape):
+        v = sources[shape]
+        d = params[v].get("drop", {}).get(shape) if params[v].get("jaw") else None
+        return f"{shape}:{v}" + (f" (chin -{d}px, jaw mask +{params[v]['jaw']} rows)" if d else "")
+    source = (f"pixellab /inpaint-image-pro-flash, mouth mask {job['params']['mouth']}; "
+              + ", ".join(how(s) for s in order if s in sources))
     meta.write_text(json.dumps({"frameSize": size, "visemes": order, "source": source},
                                indent=2) + "\n")
     print(f"{'whole inpaint frames' if whole else f'face box {tuple(map(int, box))}'}; wrote {png} ({len(order)} shapes: {', '.join(order)}) and {meta.name}")
     print(f'scenario NPC: "spriteVisemes": "assets/characters/{run.name}_visemes.png"  (keep spriteTalk as the fallback)')
-
-
-def save_visemes(run, job, r):
-    """Save raw frames under raw/, and full-bust frames (crop pasted back) as the outputs."""
-    out = run.dir / "visemes" / job["variant"]
-    (out / "raw").mkdir(parents=True, exist_ok=True)
-    bust = Image.open(run.dir / "bust" / f"{run.picked('bust')}.png").convert("RGBA")
-    crop = job["params"].get("crop")
-    job["outputs"] = []
-    for key, img in (r.get("visemes") or {}).items():
-        im = decode_image(img)
-        im.save(out / "raw" / f"{key}.png")
-        if crop:
-            x0, y0, x1, y1 = crop
-            if im.size != (x1 - x0, y1 - y0):
-                print(f"  note: viseme {key} came back {im.size}, crop was {(x1 - x0, y1 - y0)}; resizing")
-                im = im.resize((x1 - x0, y1 - y0), Image.NEAREST)
-            full = bust.copy()
-            full.paste(im, (x0, y0))  # hard paste; build_talk_sheet later keeps only the face box
-            im = full
-        p = out / f"{key}.png"
-        im.save(p)
-        job["outputs"].append(str(p.relative_to(run.dir)))
-    if not job["outputs"]:
-        raise RuntimeError(f"vocal job completed with no visemes: {json.dumps(r)[:300]}")
-    job["viseme_order"] = r.get("viseme_order")
-    record_usage(job, r.get("usage"))  # the POST reports no usage; the finished job does
-
-
-def poll_visemes(api, job_id):
-    start = time.time()
-    while True:
-        r = api.get(f"/vocal-animation/{job_id}")
-        if r["status"] == "completed":
-            return r
-        if r["status"] == "failed":
-            raise RuntimeError(f"vocal job {job_id} failed")
-        if time.time() - start > POLL_TIMEOUT:
-            raise TimeoutError(f"vocal job {job_id} still running; run `collect` later")
-        print(f"  visemes {job_id[:8]}: {len(r.get('completed_visemes') or [])} done")
-        time.sleep(POLL_SECONDS)
 
 
 # ------------------------------------------------------- stage 3: walk character
@@ -1676,8 +1590,6 @@ def collect(run, api, stage=None):
         try:
             if job.get("endpoint") == "/inpaint-image-pro-flash":
                 save_inpaint_visemes(run, api, job)
-            elif job["stage"] == "visemes":
-                save_visemes(run, job, poll_visemes(api, job["job_id"]))
             else:
                 last, usage = api.wait_job(job["job_id"], job["variant"])
                 record_usage(job, usage)
@@ -1707,10 +1619,10 @@ def cmd_collect(args):
 # ------------------------------------------------------------------------ pick
 
 def resolve_frame(run, spec, default_variant):
-    """'5' -> talk/<default>/f05.png;  't02:3' -> talk/t02/f03.png;  'm01:AA' -> visemes/m01/AA.png"""
+    """'5' -> talk/<default>/f05.png;  't02:3' -> talk/t02/f03.png;  'i01:round' -> visemes/i01/round.png"""
     variant, _, frame = spec.rpartition(":")
     variant = variant or default_variant
-    folder = run.dir / ("visemes" if variant[:1] in ("m", "i") else "talk") / variant
+    folder = run.dir / ("visemes" if variant[:1] == "i" else "talk") / variant
     path = folder / (f"f{int(frame):02d}.png" if frame.isdigit() else f"{frame}.png")
     if not path.exists():
         sys.exit(f"no frame {spec} ({path})")
@@ -1751,7 +1663,7 @@ def cmd_pick(args):
         if args.frames:
             specs = args.frames.split(",")
             if len(specs) != 3:
-                sys.exit("--frames takes exactly three open-mouth frames, e.g. 3,5,7 or t01:3,t02:5,m01:AA")
+                sys.exit("--frames takes exactly three open-mouth frames, e.g. 3,5,7 or t01:3,t02:5,i01:round")
             cmd += ["--frames", *[str(resolve_frame(run, s, vid)) for s in specs], "--pick", "1,2,3"]
         else:
             # Let build_talk_sheet choose the three most distinct mouths. f00 is the model's
@@ -1896,30 +1808,23 @@ def main():
     p.set_defaults(func=cmd_talk)
 
     p = sub.add_parser("visemes", help="stage 2 alternative: named mouth shapes for lip sync "
-                                        "(inpaint: ~6 generations per shape; vocal: ~3-5 in all)")
+                                        "(inpainted, ~6 generations per shape)")
     p.add_argument("name")
-    p.add_argument("--method", choices=["inpaint", "vocal"], default="inpaint",
-                   help="inpaint (default): mask the mouth and redraw only it, once per shape. "
-                        "vocal: /vocal-animation, which suits faces looking straight ahead")
-    p.add_argument("--mouth", help="inpaint: x0,y0,x1,y1 mouth mask on the bust (default: guessed from "
+    p.add_argument("--mouth", help="x0,y0,x1,y1 mouth mask on the bust (default: guessed from "
                                    "lip colour). Check visemes/mouth_box_preview.png")
     p.add_argument("--jaw", type=int, default=5,
-                   help="inpaint: rows below the mouth box that open shapes may redraw so the chin can "
+                   help="rows below the mouth box that open shapes may redraw so the chin can "
                         "drop (default 5; 0 = lips only)")
     p.add_argument("--drop", type=float, default=1.0,
-                   help=f"inpaint: scale for how far the chin is moved down before open shapes are drawn "
+                   help=f"scale for how far the chin is moved down before open shapes are drawn "
                         f"({', '.join(f'{k} {v}px' for k, v in JAW_DROP.items())} at 128px; 0 = don't move it)")
-    p.add_argument("--eyes", help="inpaint: x0,y0,x1,y1 over both eyes; adds a 'blink' frame (eyes shut) "
+    p.add_argument("--eyes", help="x0,y0,x1,y1 over both eyes; adds a 'blink' frame (eyes shut) "
                                   "that the portrait shows every few seconds while the mouth rests")
-    p.add_argument("--shapes", help=f"inpaint: comma list from {','.join(MOUTH_SHAPES)} "
+    p.add_argument("--shapes", help=f"comma list from {','.join(MOUTH_SHAPES)} "
                                     f"(default {','.join(DEFAULT_SHAPES)}, plus blink with --eyes)")
-    p.add_argument("--subject", help="inpaint: who is speaking, e.g. 'a woman in her fifties' "
+    p.add_argument("--subject", help="who is speaking, e.g. 'a woman in her fifties' "
                                      "(default 'the same character')")
     p.add_argument("--seed", type=int)
-    p.add_argument("--count", type=int, choices=[3, 5, 7, 12], default=7, help="vocal only")
-    p.add_argument("--mood", default="neutral", choices=["neutral", "happy", "angry", "sad", "surprised"], help="vocal only")
-    p.add_argument("--crop", help="vocal only: send only the head: 'auto' or x0,y0,x1,y1 (default: whole bust)")
-    p.add_argument("--crop-size", type=int, default=64, help="square side for --crop auto (default 64)")
     p.add_argument("--dry-run", action="store_true")
     p.set_defaults(func=cmd_visemes)
 
@@ -1977,8 +1882,8 @@ def main():
     p = sub.add_parser("pick", help="choose a variant and move it into the game assets")
     p.add_argument("name")
     p.add_argument("stage", choices=["bust", "talk", "visemes", "character"])
-    p.add_argument("variant", help="e.g. b03, t01, m01, c01")
-    p.add_argument("--frames", help="talk only: three open-mouth frames, e.g. 3,5,7 or t01:3,t02:6,m01:AA (default auto)")
+    p.add_argument("variant", help="e.g. b03, t01, i01, c01")
+    p.add_argument("--frames", help="talk only: three open-mouth frames, e.g. 3,5,7 or t01:3,t02:6,i01:round (default auto)")
     p.add_argument("--face", help="talk/visemes: x0,y0,x1,y1 face box override (inpaint visemes default to the mouth mask)")
     p.add_argument("--swap", help="visemes only: take single shapes from other variants, e.g. round=i02,teeth=i03")
     p.add_argument("--omit", help="visemes only: leave shapes out, e.g. closed (the game then uses rest)")
