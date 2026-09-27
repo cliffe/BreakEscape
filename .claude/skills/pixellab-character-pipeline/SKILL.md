@@ -11,7 +11,7 @@ One script, [tools/pixellab_pipeline.py](../../../tools/pixellab_pipeline.py), d
 | ------------------ | ---------------------- | ------------------------------------------------------------- | ------------------------------------------------------------ |
 | 1 bust             | `bust`                 | `/create-image-pixflux` (init image = Gemini art, same prompt) | `<name>_talk_init.png` 128×128                               |
 | 2a talk            | `talk`                 | `/animate-with-text-v3` (bust as first *and* last frame)      | `<name>_talk.png` 2×2 sheet                                  |
-| 2b lip sync        | `visemes`              | `/vocal-animation` (named mouth shapes)                       | `<name>_visemes.png` + `.json`                               |
+| 2b lip sync        | `visemes`              | `/inpaint-image-pro-flash` on the mouth (or `/vocal-animation`) | `<name>_visemes.png` + `.json`                               |
 | 3 walk character   | `character`            | `/create-character-pro` (`create_from_concept`, style character) | a PixelLab character id                                   |
 | 4 animations       | `animate`              | `/characters/animations` (template mode)                      | the standard 6 × 8 directions on that character              |
 | 5 review / repair  | `qa`, `fix`            | `/edit-images-v2` only for `fix --use ai`                     | contact sheets; committed frame overrides                    |
@@ -21,7 +21,7 @@ One script, [tools/pixellab_pipeline.py](../../../tools/pixellab_pipeline.py), d
 
 ## Rules
 
-- Check `balance` first. Tell the user the planned spend before any paid command, and get a yes before anything costing about 20 generations (`character`, `fix --use ai`). Every paid command takes `--dry-run`.
+- Check `balance` first. Tell the user the planned spend before any paid command, and get a yes before anything costing about 20 generations or more (`character`, `fix --use ai`, a full inpaint `visemes` set). Every paid command takes `--dry-run`.
 - At every choice point, **Read the contact sheet image yourself**. Show it to the user with your assessment, then wait for their pick unless they said to choose.
 - Never delete PixelLab characters, and never overwrite a game asset silently. `pick` and `import --force` back up whatever they replace.
 - A killed run leaves jobs `submitted`. `collect <name>` finishes them without paying again (for `animate`, just rerun it; it resumes from its in-flight log). Don't rerun a paid stage command to recover.
@@ -64,12 +64,17 @@ python3 tools/pixellab_pipeline.py pick <name> talk t01 --frames 2,4,5     # or 
 The engine supports an NPC field `"spriteVisemes": "assets/characters/<key>_visemes.png"`. While TTS plays, the portrait shows a mouth shape for each letter group of the spoken line, stretched to the audio's length. It falls back to `spriteTalk` if the files are missing (details in docs/SPRITE_SYSTEM.md). The text-to-mouth rules mirror PixelLab's free `/lip-sync` plan, ported to JavaScript, so there are no runtime API calls.
 
 ```bash
-python3 tools/pixellab_pipeline.py visemes <name> --crop auto      # ~3-5 generations, ~6 minutes
-python3 tools/pixellab_pipeline.py pick <name> visemes m01
+python3 tools/pixellab_pipeline.py visemes <name> --dry-run --subject "a woman in her fifties"   # free: writes the mask preview
+python3 tools/pixellab_pipeline.py visemes <name> --subject "a woman in her fifties"             # 6 shapes, ~36 generations, ~3 minutes
+python3 tools/pixellab_pipeline.py visemes <name> --mouth 63,30,74,38 --shapes teeth,small_open  # redo weak shapes only -> i02
+python3 tools/pixellab_pipeline.py pick <name> visemes i01 --swap teeth=i02,small_open=i02
 ```
 
-- `--crop auto` sends a 64×64 head crop, so the face fills the model's frame. It gives bigger, clearer mouths and changes only the head. Without it the whole bust is re-rendered with subtler mouths. Both kinds of run appear in the talk contact sheet with mouth-zoom rows. Compare them there.
-- `pick ... visemes` writes `<name>_visemes.png` (one row of 128px cells, `rest` = the bust itself) and `<name>_visemes.json` (the column names). Only the face box is pasted, as with the talk sheet.
+**Use the default `--method inpaint`.** It masks the mouth on the picked bust and asks `/inpaint-image-pro-flash` for one named shape per call (prompts in `MOUTH_SHAPES`, matched to the letter classes in lip-sync.js). Every pixel outside the mask is kept, so the nose, jaw and the mouth's off-centre position on a three-quarter head survive. `--method vocal` (`/vocal-animation`, variants `mNN`) is cheaper (~3–5 generations for all seven) but assumes a face looking straight at the camera: on our three-quarter busts it lost the nose and pulled the mouth up and towards the centre (see Bernie's `replaced/` sheets).
+
+- **The mask.** Without `--mouth` it is guessed from red/pink lip pixels in the upper half of the figure. Always Read `visemes/mouth_box_preview.png` (gridded, pixel coordinates labelled) before paying: the lips and 3–4 rows below them inside for the dropped jaw, the nostrils outside. Dark or skin-toned lips (six of the eight m02 busts) aren't found by colour: the command then stops and writes `visemes/face_grid.png`; Read it and pass `--mouth x0,y0,x1,y1` (Gary: about `61,34,73,41`). Deriving the mouth from the old talk sheet was tried and rejected: older sheets change more than the mouth, so it landed on noses and sunglasses. The mask is limited to the bust's opaque pixels, so a corner over the background can't grow stray pixels by the chin.
+- **What to expect** (Bernie, first pass): `round`, `medium_open`, `wide_open` good first time; `teeth` and `small_open` came back too close to rest and were fine on a second take; `closed` goes to a thin pressed line without lip colour on every take, which reads acceptably for m/b/p. Judge them in a mouth close-up **over a dark background** too, since the dialogue panel is dark.
+- `pick ... visemes` writes `<name>_visemes.png` (one row of 128px cells, `rest` = the bust itself) and `<name>_visemes.json` (the column names and which variant each shape came from). The game looks columns up by name, so order doesn't matter. For inpaint variants only the mask is pasted; for vocal ones, the face box (see above).
 - Add `spriteVisemes` to the NPC and keep `spriteTalk` as the fallback. Only edit scenarios when the user asked.
 - Lip sync follows TTS audio, so an NPC whose lines get no audio stays on `rest`. Co-speakers (an NPC with a voice but no `storyPath`, whose lines are inside another NPC's story, e.g. Netherton in HaX's briefing) are validated against every Ink story in the mission. Before that fix they were refused with a 403 and stayed silent.
 
@@ -144,7 +149,8 @@ After changing a scenario, run the validator (validate-scenario skill). If the u
 | --------------------------------- | -------------------- |
 | bust (pixflux)                    | 1 per variant        |
 | talk (animate v3, 8 frames)       | 2 per variant        |
-| visemes (vocal-animation, 7)      | ~3–5 per run (from the balance; the API doesn't report it) |
+| visemes, inpaint (default)        | 6 per shape (~36 for all six) |
+| visemes, vocal-animation (7)      | ~3–5 per run (from the balance; the API doesn't report it) |
 | character (Pro)                   | 20–40 per variant    |
 | animate (template)                | 1 per direction      |
 | fix --use ai (edit-images-v2)     | 20 per call (up to 16 frames) |
