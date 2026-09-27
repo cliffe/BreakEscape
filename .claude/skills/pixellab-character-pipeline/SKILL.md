@@ -7,15 +7,15 @@ description: Takes a Break Escape character from a reframed Gemini concept portr
 
 One script, [tools/pixellab_pipeline.py](../../../tools/pixellab_pipeline.py), drives every step. `python3 tools/pixellab_pipeline.py <command> --help` documents every flag. Images go from disk to HTTP inside the script. **Never** pass images to the PixelLab MCP as base64 for this work, because that path corrupts uploads silently (see character-talk-animation).
 
-| Stage              | Command                | API                                                           | Produces                                                     |
-| ------------------ | ---------------------- | ------------------------------------------------------------- | ------------------------------------------------------------ |
-| 1 bust             | `bust`                 | `/create-image-pixflux` (init image = Gemini art, same prompt) | `<name>_talk_init.png` 128×128                               |
-| 2a talk            | `talk`                 | `/animate-with-text-v3` (bust as first *and* last frame)      | `<name>_talk.png` 2×2 sheet                                  |
-| 2b lip sync        | `visemes`              | `/inpaint-image-pro-flash` on the mouth and eyes             | `<name>_visemes.png` + `.json`                               |
-| 3 walk character   | `character`            | `/create-character-pro` (`create_from_concept`, style character) | a PixelLab character id                                   |
-| 4 animations       | `animate`              | `/characters/animations` (template mode)                      | the standard 6 × 8 directions on that character              |
-| 5 review / repair  | `qa`, `fix`            | `/edit-images-v2` only for `fix --use ai`                     | contact sheets; committed frame overrides                    |
-| 6 import           | `import`               | `/characters/{id}/zip`                                        | `<key>.png/.json/_headshot.png`, game.js preload, manifest   |
+| Stage             | Command     | API                                                              | Produces                                                   |
+| ----------------- | ----------- | ---------------------------------------------------------------- | ---------------------------------------------------------- |
+| 1 bust            | `bust`      | `/create-image-pixflux` (init image = Gemini art, same prompt)   | `<name>_talk_init.png` 128×128                             |
+| 2a talk           | `talk`      | `/animate-with-text-v3` (bust as first *and* last frame)         | `<name>_talk.png` 2×2 sheet                                |
+| 2b lip sync       | `visemes`   | `/inpaint-image-pro-flash` on the mouth and eyes                 | `<name>_visemes.png` + `.json`                             |
+| 3 walk character  | `character` | `/create-character-pro` (`create_from_concept`, style character) | a PixelLab character id                                    |
+| 4 animations      | `animate`   | `/characters/animations` (template mode)                         | the standard 6 × 8 directions on that character            |
+| 5 review / repair | `qa`, `fix` | `/edit-images-v2` only for `fix --use ai`                        | contact sheets; committed frame overrides                  |
+| 6 import          | `import`    | `/characters/{id}/zip`                                           | `<key>.png/.json/_headshot.png`, game.js preload, manifest |
 
 `animate`, `import`, `qa` and `fix` also work on characters made outside the pipeline. Give them a pixellab.ai URL, a character id, or an already-imported key.
 
@@ -43,7 +43,7 @@ Work files live in `tmp/pixellab/<name>/` (git-ignored). `state.json` there reco
 
 `--strength` trades faithfulness for crispness. Tested on four concepts: **250** stays on-model but looks softer, like a painted downscale. **150** looks crisper and more pixel-art, but drifts: it added a moustache, turned a green blouse blue, and made a face younger. Default to 250. Try a pair at 150 when softness matters, and check hard for drift. `--guidance` (1–20) sets how hard the prompt pulls. `--engine pixelart [--faithful]` switches to the web UI's *Image to pixel art*. The web UI's "AI freedom" slider has **no public-API equivalent**, and its image-to-image output is crisper than anything the API parameters produced. **If the user already has a web-UI bust, add it as candidate `b00`** (`init --concept … --bust <file>`); for Bernie it beat every API variant.
 
-**Concepts with a solid non-magenta background** (older Gemini renders) can be keyed with `reframe_portrait.py --bg-color R,G,B`, sampling the corner colour. Check the result over magenta: a dark garment close to the background colour gets holes punched in it. When that happens, don't loosen the tolerance. Send the unkeyed concept instead; the bust stage removes the background itself.
+**The concept doesn't need a transparent background.** `bust` asks PixelLab to remove it (`remove_complex_background`), so an opaque Gemini render goes in as it is, once `reframe_portrait.py` has flipped and cropped it. Check each bust's alpha edge in the contact sheet: hair or a dark garment against a similar background can lose its outline.
 
 `pick <name> bust b03` installs `<name>_talk_init.png`.
 
@@ -113,6 +113,7 @@ python3 tools/pixellab_pipeline.py qa <key>
 ```
 
 This writes one contact sheet per animation to `tmp/pixellab/_qa/<key>/` (a row per direction: rotation first, then the frames, all at native size and aligned on the figure). **Looking at the sheets is the detector.** In a review of 10 characters, the automatic hints found about 4 real defects among 127 flags and missed most of the real ones. That's why only FACING, JUMP and CANVAS are still flagged. Read every sheet (delegate to a subagent for a whole cast) and compare each row with its rotation, looking for:
+
 1. A frame or strip facing the wrong way.
 2. Colours, skin tone or clothing not in the rotation.
 3. Missing or added details (hair, tie, gloves).
@@ -123,13 +124,13 @@ Punches and falls often turn towards the camera on N/NE/NW. That's a pattern in 
 
 Fix with the cheapest method that works, and show the user the before/after sheet each command prints:
 
-| Problem                                        | Fix                                                                                   | Cost |
-| ---------------------------------------------- | ------------------------------------------------------------------------------------- | ---- |
-| One or two bad frames in a strip               | `fix <key> breathing-idle south 1 --use frame:2` (copy a good frame)                  | free |
-| Side view off-model, opposite side is good      | `fix <key> walk east all --use mirror` (opposite side, flipped). Check for one-sided details: badge, lanyard, holster | free |
-| Hand-edited frame                              | `fix <key> walk north 3 --use file:path.png`                                          | free |
-| Whole strip facing wrong / poses unusable      | `reroll <key> breathing-idle south --tries 2`, then `--accept tNN`                    | 1 per take |
-| Whole strip off-model, poses fine, no good mirror | `fix <key> walk north all --use ai` (edit against the rotation; poses kept)        | ~20 per call |
+| Problem                                           | Fix                                                                                                                   | Cost         |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | ------------ |
+| One or two bad frames in a strip                  | `fix <key> breathing-idle south 1 --use frame:2` (copy a good frame)                                                  | free         |
+| Side view off-model, opposite side is good        | `fix <key> walk east all --use mirror` (opposite side, flipped). Check for one-sided details: badge, lanyard, holster | free         |
+| Hand-edited frame                                 | `fix <key> walk north 3 --use file:path.png`                                                                          | free         |
+| Whole strip facing wrong / poses unusable         | `reroll <key> breathing-idle south --tries 2`, then `--accept tNN`                                                    | 1 per take   |
+| Whole strip off-model, poses fine, no good mirror | `fix <key> walk north all --use ai` (edit against the rotation; poses kept)                                           | ~20 per call |
 
 - `reroll` is non-destructive. Each take is generated in a temporary group, downloaded, and the temporary group deleted, so the character's original animation is untouched. It prints a sheet of the current strip against every take. On Val's south idle, take 1 had one frame flipped to a back view, and take 2 was clean.
 - `fix` and `reroll --accept` write frames to `tools/pixellab_overrides/<key>/<template>/<direction>/`, which is **committed** and reapplied by every `import`. Rebuild with `import <key> --offline --force`.
@@ -153,15 +154,15 @@ After changing a scenario, run the validator (validate-scenario skill). If the u
 
 ## Cost (measured September 2026)
 
-| Call                              | Generations          |
-| --------------------------------- | -------------------- |
-| bust (pixflux)                    | 1 per variant        |
-| talk (animate v3, 8 frames)       | 2 per variant        |
-| visemes (inpaint)                 | 6 per shape (~36 for all six) |
-| character (Pro)                   | 20–40 per variant    |
-| animate (template)                | 1 per direction      |
-| fix --use ai (edit-images-v2)     | 20 per call (up to 16 frames) |
-| reroll (template, one direction)  | 1 per take           |
-| ZIP export, reads, dry runs       | free                 |
+| Call                             | Generations                   |
+| -------------------------------- | ----------------------------- |
+| bust (pixflux)                   | 1 per variant                 |
+| talk (animate v3, 8 frames)      | 2 per variant                 |
+| visemes (inpaint)                | 6 per shape (~36 for all six) |
+| character (Pro)                  | 20–40 per variant             |
+| animate (template)               | 1 per direction               |
+| fix --use ai (edit-images-v2)    | 20 per call (up to 16 frames) |
+| reroll (template, one direction) | 1 per take                    |
+| ZIP export, reads, dry runs      | free                          |
 
 The script records each job's reported usage and prints running totals. Quote those numbers once a run has started.

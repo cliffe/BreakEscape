@@ -305,9 +305,6 @@ def cmd_init(args):
         return init_from_bust(run, args)
     concept = Path(args.concept)
     im = Image.open(concept).convert("RGBA")
-    if im.split()[3].getextrema() == (255, 255):
-        print("WARNING: concept has no transparency. Run reframe_portrait.py on it first "
-              "(character-talk-animation Step 1b), or busts will carry the magenta background.")
     prompt_file = args.prompt_file
     if not prompt_file and not args.prompt:
         # character-talk-animation saves the Gemini prompt beside the portrait.

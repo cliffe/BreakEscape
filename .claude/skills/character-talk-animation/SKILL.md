@@ -54,10 +54,9 @@ and its exact colour, hair colour + texture + how it is worn, any accessory.]
 Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
 Dialog view of character
 Dramatic lighting
-In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a solid plain magenta background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
 Slightly anime. Neutral expression.
 Square aspect ratio
-solid uniform magenta background, no gradient, no pattern
 ```
 
 Notes:
@@ -66,14 +65,14 @@ Notes:
 - **"three-quarter turn"** is load-bearing — a straight-on, camera-facing pose reads flat and doesn't match the rest of the dialogue cast.
 - **Do not try to fix orientation in the prompt.** The cast faces *right*, but Gemini is unreliable at honouring a left/right instruction and its default output for this prompt faces left. Leave the prompt as written and mirror the result with `--flip` in Step 1b — that is the reliable way to guarantee the character faces right.
 - **"hips up, including the waistline, belt, pockets and top of the trousers"** is load-bearing — cropping at the chest loses the waist/trouser detail that should be visible in frame, and a head-only crop leaves nothing for the body at all, so the 128px conversion loses the outfit entirely.
-- Keep the last five lines verbatim. They are what makes the output match the existing cast (`female_scientist`, `female_office_worker`, `female_spy`).
-- **Ask for a solid magenta background, never "transparent."** Gemini cannot actually produce transparency — asking for it just gets a fake checkerboard baked into RGB with alpha=255 throughout. Worse, that checkerboard's shade varies between generations and looks like real image content (white lab coats, skin highlights), so any brightness-based heuristic trying to key it out will eat into the character instead of the background — this happened for real on `female_nurse1` and `male_scientist` and shredded both portraits. A solid, saturated, off-palette colour like magenta has no ambiguity: Step 1b keys exactly that one RGB value, nothing else, so it can't be confused with clothing or skin. If the render comes back with any gradient, shadow, or pattern in the background instead of a flat colour, re-roll — Step 1b needs a genuinely uniform colour to key correctly.
+- Keep the last four lines verbatim. They are what makes the output match the existing cast (`female_scientist`, `female_office_worker`, `female_spy`).
+- **Don't ask for a transparent background, or for any particular colour.** Gemini can't produce transparency: asking for it bakes a fake checkerboard into the image. The background doesn't need removing here either: the PixelLab bust stage removes it (`remove_complex_background`). The prompt text also goes to PixelLab as the bust description, so naming a colour ("magenta") risks pulling it into the pixel art. "A plain background" just keeps the edges easy to find for the crop in Step 1b.
 
 Review the image before continuing. Re-roll if: the expression is not neutral, the pose is straight-on rather than angled, the crop stops above the waist or is head-only or full-body, the hands are mangled and visible, or the character does not read as the same person as the walk sprite.
 
 **Gemini also reliably ignores "zoom out" / "pan down" edit instructions on its own output** — if the first pass is too tightly cropped, don't try to fix it with a `gemini_edit_image` reframe request; regenerate from scratch with a prompt that front-loads "waist up" instead.
 
-## Step 1b — key out the background and reframe (always run this, never skip)
+## Step 1b — flip and reframe (always run this, never skip)
 
 Run this on every `<name>_nonpixelart.png`, immediately after Step 1, before showing it as done:
 
@@ -82,28 +81,14 @@ python3 .claude/skills/character-talk-animation/scripts/reframe_portrait.py \
   public/break_escape/assets/characters/<name>_nonpixelart.png --flip
 ```
 
-It does three things in one pass, all mandatory:
+It does two things:
 
-1. **`--flip` mirrors the character so it faces right**, the cast convention. Gemini's default output for this prompt faces left, so pass `--flip` every time unless a given render already came out facing right. (If the background colour isn't magenta, also pass `--bg-color`, e.g. a solid grey render needs `--bg-color 90,90,90` — sample the actual corner with `Image.open(path).getpixel((5,5))` first.)
-2. **Keys the solid background to true alpha transparency.** It flood-fills inward from the image border over pixels close to the exact chroma-key colour (default `255,0,255`, tolerance 40), not a brightness heuristic — so it cannot be confused with a white lab coat, a pale stethoscope, or a skin highlight the way a "near-neutral" test could. Flood filling from the border (rather than keying every matching pixel image-wide) is still there as a second layer of safety in case a stray near-magenta pixel ever turns up inside the artwork.
-3. **Reframes so the character fills the square**, cropping to the character's own bounding box rather than leaving Gemini's padding in. This is also the fix for the "ignores zoom out" problem above — do this instead of another Gemini round-trip.
+1. **`--flip` mirrors the character so it faces right**, the cast convention. Gemini's default output for this prompt faces left, so pass `--flip` every time unless a given render already came out facing right.
+2. **Reframes so the character fills the square**, cropping to the character's bounding box instead of leaving Gemini's padding in. This is also the fix for the "ignores zoom out" problem above; use it instead of another Gemini round-trip. The box is found by sampling the background colour from the corners and flood-filling inward from the border, so the background has to be reasonably plain. The background stays in the image: the output is opaque, and that's fine.
 
-If the Gemini render used a background colour other than magenta for some reason, pass it explicitly: `--bg-color 0,255,0` (green) etc. — don't just rerun with the default and hope.
+If it prints `background not found (not plain enough?): not cropped`, the render has a gradient or vignette. Pass the colour yourself (`--bg-color R,G,B`, sampled from the background next to the character), or re-roll Step 1 if the character is badly framed. Don't raise `--tolerance` far: past the background it starts matching pale clothing.
 
-A run with `character bbox: x0-1023 y0-1023 of (1024, 1024)` means the flood fill matched nothing and the image is still fully opaque — check the actual background colour (`Image.open(path).getpixel((5,5))`) before assuming this step failed; if Gemini didn't render a flat, uniform, close-to-magenta background, don't try to loosen `--tolerance` to compensate — that reintroduces exactly the "eats real content" failure mode this script was rewritten to avoid. Re-roll Step 1 instead.
-
-**If Step 1b visibly shreds real image content** (parts of the face, clothing folds, or highlights turn transparent instead of just the background), that means Step 1's render did not actually use a clean uniform background colour — do not try to patch it by adjusting tolerance or re-running; delete the bad output and regenerate from Step 1.
-
-Verify before moving on:
-
-```bash
-python3 -c "
-from PIL import Image
-im = Image.open('public/break_escape/assets/characters/<name>_nonpixelart.png').convert('RGBA')
-print(im.split()[3].getextrema())"
-```
-
-Anything other than `(0, 255)` means the background is still opaque — do not proceed to Step 2 until this passes.
+Read the result before moving on: the character faces right, the crop runs from just above the head to the hips, and nothing of the figure is cut off at the sides. (`--key` also makes the background transparent. The pipeline doesn't need it, and it punches holes in garments close to the background colour.)
 
 ## Step 2 — pixel art, talk sheet and walk character (pixellab-character-pipeline)
 

@@ -1,29 +1,28 @@
 #!/usr/bin/env python3
-"""Key out a Gemini portrait's solid chroma-key background and crop so the
-character fills the frame.
+"""Crop a Gemini portrait so the character fills the square, and mirror it to face right.
 
-Gemini ignores "transparent background" but reliably paints a genuinely solid,
-uniform colour when asked for one (e.g. "solid magenta background") — unlike its fake
-checkerboard, which varies in shade between generations and is visually similar to
-light/dark neutral clothing, making brightness-band heuristics key out real image
-content (see git history of this file for what that looked like: white lab coats and
-specular highlights on skin shredded into transparency).
+The background doesn't need to be transparent: the PixelLab bust stage removes it
+(background_removal_task "remove_complex_background"). It is only used here to find the
+character's bounding box. By default its colour is sampled from the four corners, and the
+pixels close to it that connect to the border are treated as background. Flood-filling from
+the border, rather than matching the colour anywhere, keeps a similar colour inside the
+character (a white lab coat on a pale background) from counting as background.
 
-A solid, saturated, off-palette colour (default magenta, 255,0,255) is trivial to key
-exactly: match pixels close to that one known RGB value, nothing else. Flood-fill from
-the border rather than keying every matching pixel anywhere in the image, so a
-coincidental magenta-ish pixel inside the character (unlikely, but not impossible)
-can't get cut out.
+If the background isn't plain enough to find (a gradient or vignette), the character's box
+comes out as the whole image and nothing is cropped; the script says so.
+
+--key also writes the background as alpha 0. It isn't needed for the pipeline, and on a
+garment close to the background colour it punches holes, so check the result over a
+contrasting colour if you use it.
 
 The Break Escape dialogue cast faces RIGHT (three-quarter turn toward the right of
 the frame). Gemini is unreliable at honouring a left/right instruction in the prompt,
-so orientation is fixed here instead: pass --flip to mirror the character horizontally
-after keying. Gemini's default output for this prompt faces left, so --flip is the
-normal case, not the exception.
+so orientation is fixed here instead: pass --flip to mirror the character horizontally.
+Gemini's default output for this prompt faces left, so --flip is the normal case.
 
 Usage:
   reframe_portrait.py <portrait.png> [-o out.png] [--size 1024]
-                       [--bg-color 255,0,255] [--tolerance 40] [--flip]
+                       [--bg-color auto|R,G,B] [--tolerance 40] [--key] [--flip]
 """
 import argparse
 from collections import deque
@@ -33,7 +32,7 @@ from PIL import Image
 
 
 def background_mask(rgb, bg_color, tolerance):
-    """Border-connected pixels close to the known chroma-key colour."""
+    """Border-connected pixels close to the background colour."""
     h, w = rgb.shape[:2]
     dist = np.sqrt(((rgb - np.array(bg_color)) ** 2).sum(axis=2))
     bgish = dist <= tolerance
@@ -67,33 +66,41 @@ def main():
     ap.add_argument("-o", "--out", help="defaults to overwriting the input")
     ap.add_argument("--size", type=int, default=1024, help="output edge length")
     ap.add_argument(
-        "--bg-color", default="255,0,255",
-        help="R,G,B of the solid chroma-key background requested from Gemini (default magenta)",
+        "--bg-color", default="auto",
+        help="R,G,B of the background, or 'auto' (default) to take the median of the four corners",
     )
     ap.add_argument(
         "--tolerance", type=float, default=40,
         help="max RGB Euclidean distance from --bg-color still counted as background",
     )
+    ap.add_argument("--key", action="store_true",
+                    help="also make the background transparent (not needed for the PixelLab bust)")
     ap.add_argument(
         "--flip", action="store_true",
         help="mirror horizontally so the character faces right (the cast convention). "
              "Gemini's default output for this prompt faces left, so this is usually wanted.",
     )
     args = ap.parse_args()
-    bg_color = tuple(int(c) for c in args.bg_color.split(","))
-
     src = Image.open(args.image).convert("RGB")
     rgb = np.array(src).astype(int)
+    if args.bg_color == "auto":
+        k = 8
+        corners = np.concatenate([rgb[:k, :k], rgb[:k, -k:], rgb[-k:, :k], rgb[-k:, -k:]]).reshape(-1, 3)
+        bg_color = tuple(int(v) for v in np.median(corners, axis=0))
+    else:
+        bg_color = tuple(int(c) for c in args.bg_color.split(","))
+    print(f"background colour: {bg_color}")
     bg = background_mask(rgb, bg_color, args.tolerance)
 
-    alpha = np.where(bg, 0, 255).astype(np.uint8)
-    rgba = Image.fromarray(np.dstack([np.array(src), alpha]), "RGBA")
-
-    ys, xs = np.nonzero(alpha)
+    ys, xs = np.nonzero(~bg)
     if len(ys) == 0:
-        raise SystemExit("no foreground found — background keying failed")
+        raise SystemExit("the whole image matched the background colour; check --bg-color")
     x0, x1, y0, y1 = xs.min(), xs.max(), ys.min(), ys.max()
     print(f"character bbox: x{x0}-{x1} y{y0}-{y1} of {src.size}")
+    if (x0, y0, x1 + 1, y1 + 1) == (0, 0, *src.size):
+        print("background not found (not plain enough?): not cropped")
+    alpha = np.where(bg & args.key, 0, 255).astype(np.uint8)
+    rgba = Image.fromarray(np.dstack([np.array(src), alpha]), "RGBA")
 
     # Square crop the height of the character, centred on it horizontally. The character
     # is normally cut off at the bottom edge already, so height is the binding dimension.
