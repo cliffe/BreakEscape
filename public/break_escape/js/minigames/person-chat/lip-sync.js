@@ -15,6 +15,9 @@
  *   other letters/digits  → small_open
  *   space / punctuation   → rest   (sentence ends . ! ? hold longer)
  *
+ * A sheet may also have a "blink" column (eyes shut, mouth at rest). isBlinking() gives a
+ * blink schedule for the portrait to show it whenever the mouth is resting.
+ *
  * @module lip-sync
  */
 
@@ -152,5 +155,41 @@ export function buildVisemeColumnMap(names) {
         }
         map[viseme] = col ?? restCol;
     }
+    if (index.has('blink')) map.blink = index.get('blink'); // no fallback: no column, no blink
     return map;
+}
+
+export const BLINK_MS = 130;
+const BLINK_SLOT_MS = 4000;
+
+/**
+ * Whether the eyes are shut at time nowMs, on an irregular schedule of one blink per 4 s
+ * slot, placed 1–3 s into the slot, so blinks come 2–6 s apart and look unplanned. Pure
+ * and stateless: the same (nowMs, seed) always gives the same answer, so each portrait can
+ * pass its own seed to avoid two speakers blinking in unison.
+ * @param {number} nowMs
+ * @param {number} [seed=0]
+ * @returns {boolean}
+ */
+export function isBlinking(nowMs, seed = 0) {
+    if (!Number.isFinite(nowMs)) return false;
+    const slot = Math.floor(nowMs / BLINK_SLOT_MS);
+    // Integer hash of (slot, seed) → 0..1
+    let h = Math.imul(slot ^ Math.imul(seed | 0, 0x9e3779b1), 0x85ebca6b);
+    h ^= h >>> 13;
+    h = Math.imul(h, 0xc2b2ae35);
+    h ^= h >>> 16;
+    const offset = 1000 + ((h >>> 0) / 0xffffffff) * 2000;
+    const t = nowMs - slot * BLINK_SLOT_MS;
+    return t >= offset && t < offset + BLINK_MS;
+}
+
+/**
+ * Small stable number from a string (an NPC id), for isBlinking's seed.
+ * @param {string} text
+ */
+export function seedFrom(text) {
+    let h = 0;
+    for (const ch of String(text ?? '')) h = (Math.imul(h, 31) + ch.codePointAt(0)) | 0;
+    return h;
 }

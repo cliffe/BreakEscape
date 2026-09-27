@@ -13,7 +13,8 @@ import assert from 'node:assert/strict';
 const here = dirname(fileURLToPath(import.meta.url));
 const src = readFileSync(join(here, '../../public/break_escape/js/minigames/person-chat/lip-sync.js'), 'utf8');
 const {
-    textToVisemes, scaleTimeline, timelineDuration, visemeAt, buildVisemeColumnMap, DEFAULT_STEP_MS
+    textToVisemes, scaleTimeline, timelineDuration, visemeAt, buildVisemeColumnMap, DEFAULT_STEP_MS,
+    isBlinking, seedFrom, BLINK_MS
 } = await import('data:text/javascript;base64,' + Buffer.from(src).toString('base64'));
 
 const names = steps => steps.map(s => s.viseme);
@@ -95,4 +96,30 @@ test('column map: smaller or unfamiliar sets degrade gracefully', () => {
     assert.equal(blair.teeth, 2);
     assert.equal(blair.wide_open, 3);
     assert.equal(blair.round, 5);
+});
+
+test('column map: blink only when the sheet has it', () => {
+    assert.equal(buildVisemeColumnMap(['rest', 'small_open', 'blink']).blink, 2);
+    assert.equal(buildVisemeColumnMap(['rest', 'small_open']).blink, undefined);
+    // a sheet without 'closed' (Bernie's) rests on m/b/p
+    assert.equal(buildVisemeColumnMap(['rest', 'teeth', 'round', 'blink']).closed, 0);
+});
+
+test('blinks: one short blink per 4 s slot, 2-6 s apart, varying with the seed', () => {
+    const starts = seed => {
+        const out = [];
+        for (let t = 0; t < 60000; t += 10) {
+            if (isBlinking(t, seed) && !isBlinking(t - 10, seed)) out.push(t);
+        }
+        return out;
+    };
+    const a = starts(0);
+    assert.equal(a.length, 15);
+    for (let i = 1; i < a.length; i++) {
+        const gap = a[i] - a[i - 1];
+        assert.ok(gap >= 2000 - BLINK_MS && gap <= 6000, `gap ${gap}`);
+    }
+    const b = starts(seedFrom('receptionist'));
+    assert.notDeepEqual(a, b);
+    assert.equal(isBlinking(NaN), false);
 });

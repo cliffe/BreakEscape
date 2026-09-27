@@ -9,7 +9,7 @@
  */
 
 import { ASSETS_PATH } from '../../config.js';
-import { textToVisemes, scaleTimeline, visemeAt, buildVisemeColumnMap } from './lip-sync.js';
+import { textToVisemes, scaleTimeline, visemeAt, buildVisemeColumnMap, isBlinking, seedFrom } from './lip-sync.js';
 
 // Sprite sheets with no derivable portrait (e.g. prop sprites like hospital beds).
 // Remembered after the first failed lookup so later conversations skip the 404s.
@@ -462,15 +462,19 @@ export default class PersonChatPortraits {
      * audio's duration when known (90 ms per step otherwise), and indexed by the audio
      * element's playback position. Reading the position each frame, rather than scheduling
      * timers, keeps it in step with pauses and skips and leaves nothing to clean up.
-     * Shows "rest" when silent.
+     * Shows "rest" when silent. Whenever the mouth is at rest (silent, or a pause in the
+     * line) and the sheet has a "blink" column, the eyes shut briefly every few seconds.
      * @private
      */
     _getCurrentVisemeColumn() {
         const sheet = this.visemeSheet;
         if (!sheet) return 0; // sheet still loading for this speaker
         const rest = sheet.columnFor.rest;
+        const blink = sheet.columnFor.blink;
+        const restOrBlink = () =>
+            (blink !== undefined && isBlinking(Date.now(), seedFrom(this.npc?.id)) ? blink : rest);
         const tts = this.ttsManager;
-        if (this._narratorMode || !tts?.isPlaying() || !tts.currentText) return rest;
+        if (this._narratorMode || !tts?.isPlaying() || !tts.currentText) return restOrBlink();
 
         const audio = tts.audio;
         const duration = audio && Number.isFinite(audio.duration) ? audio.duration * 1000 : null;
@@ -480,7 +484,8 @@ export default class PersonChatPortraits {
             this._visemeTimeline = scaleTimeline(textToVisemes(tts.currentText), duration);
         }
         const viseme = visemeAt(this._visemeTimeline, (audio?.currentTime || 0) * 1000);
-        return sheet.columnFor[viseme] ?? rest;
+        const col = sheet.columnFor[viseme] ?? rest;
+        return col === rest ? restOrBlink() : col;
     }
 
     /**

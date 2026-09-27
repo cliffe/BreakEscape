@@ -672,14 +672,22 @@ MOUTH_SHAPES = {
     "small_open": "lips parted by a small dark opening about two pixels tall, clearly more open than a "
                   "closed mouth, no teeth showing",
     "medium_open": "mouth half open as when saying 'eh': a dark mouth interior with a hint of upper teeth",
-    "wide_open": "mouth open wide as when saying 'ah', jaw dropped: a tall dark mouth interior filling the "
-                 "space between the lips, at most a sliver of upper teeth",
+    "wide_open": "mouth open for a clear 'ah' in ordinary conversation, relaxed, not shouting: a dark "
+                 "mouth interior between the lips, at most a sliver of upper teeth",
+    # Not a mouth: eyes shut for the portrait's idle blink (mask from --eyes, see shape_mask).
+    "blink": "eyes closed mid-blink: each upper eyelid lowered so the eye is a dark curved lash line, "
+             "eyebrows, skin tone and shading unchanged",
 }
+# 'closed' comes out as a thin line without lip colour on every take; the resting mouth is
+# already closed lips, so by default the sheet leaves 'closed' out and the game falls back
+# to 'rest' for m/b/p. Ask for it with --shapes closed,... to try anyway.
+DEFAULT_SHAPES = ("teeth", "round", "small_open", "medium_open", "wide_open")
 # Shapes whose jaw drops, and by how many pixels at a 128px bust (scaled by --drop). The
 # model won't move a jaw when asked, so drop_jaw() moves the chin down first and the model
 # only draws the open mouth into the gap and blends the seams.
-JAW_DROP = {"medium_open": 1, "wide_open": 3}
+JAW_DROP = {"medium_open": 1, "wide_open": 2}  # 3px on wide_open read as a shout
 JAW_SHAPES = tuple(JAW_DROP)
+EYES_KEEP = ("Only the eyes change: the mouth, nose, hair and face shape stay exactly as they are.")
 MOUTH_KEEP = ("Only the mouth changes. Keep the same lip colour, skin tone, outline and pixel-art shading; "
               "the head is turned, so the mouth stays exactly where it is, not centred.")
 
@@ -790,6 +798,8 @@ def shape_mask(bust, params, shape):
     the jaw line can then spread into the background beside and below the chin.
     """
     jaw = params.get("jaw", 0)
+    if shape == "blink":
+        return mouth_mask(bust, params["eyes"])  # the same opaque-only box mask, over the eyes
     if jaw and shape in JAW_SHAPES:
         m = Image.new("L", bust.size, 0)
         x0, y0, x1, y1 = jaw_box(bust, params["mouth"], jaw)
@@ -819,18 +829,26 @@ def visemes_inpaint(run, bust, args):
           f"preview: {preview}\n"
           "  check: red = lips plus a row or two below, nostrils outside; "
           "orange = the chin and a few rows of neck below it.")
-    shapes = args.shapes.split(",") if args.shapes else list(MOUTH_SHAPES)
+    shapes = args.shapes.split(",") if args.shapes else list(DEFAULT_SHAPES) + (["blink"] if args.eyes else [])
     unknown = [s for s in shapes if s not in MOUTH_SHAPES]
     if unknown:
         sys.exit(f"unknown shape(s) {unknown}; choose from {list(MOUTH_SHAPES)}")
+    eyes = tuple(int(v) for v in args.eyes.split(",")) if args.eyes else None
+    if "blink" in shapes:
+        if not eyes:
+            sys.exit("blink needs --eyes x0,y0,x1,y1: both eyes and their lids, eyebrows outside "
+                     "(read the grid in visemes/face_grid.png or mouth_box_preview.png)")
+        print(f"eyes mask {eyes}; preview: {mouth_box_preview(run, bust, eyes, 'eyes_box_preview.png')}\n"
+              "  check: both eyes and lids inside, eyebrows and nose outside.")
     subject = args.subject or "the same character"
     drop = {k: max(1, round(v * args.drop * bust.width / 128)) for k, v in JAW_DROP.items()} if args.drop else {}
     params = {"mouth": list(box), "jaw": args.jaw, "drop": drop, "shapes": shapes,
-              "subject": subject, "seed": args.seed}
+              "eyes": list(eyes) if eyes else None, "subject": subject, "seed": args.seed}
 
     def body(shape):
         b = {"image": b64_image(drop_jaw(bust, params, shape)), "mask_image": b64_image(shape_mask(bust, params, shape).convert("RGB")),
-             "description": f"{subject}, {MOUTH_SHAPES[shape]}. {MOUTH_KEEP}",
+             "description": f"{subject}, {MOUTH_SHAPES[shape]}. "
+                            f"{EYES_KEEP if shape == 'blink' else MOUTH_KEEP}",
              "output_method": "Modify current layer", "no_background": False}
         if args.seed is not None:
             b["seed"] = args.seed
@@ -890,7 +908,7 @@ def save_inpaint_visemes(run, api, job):
     record_usage(job, {"type": "generations", "generations": total})
 
 
-def write_viseme_sheet(run, job, assets, backup, face=None, swaps=None):
+def write_viseme_sheet(run, job, assets, backup, face=None, swaps=None, omit=None):
     """Install <name>_visemes.png (one row of mouth shapes) and <name>_visemes.json.
 
     Like the 2x2 talk sheet, every cell is the picked bust with only the face box replaced,
@@ -909,6 +927,7 @@ def write_viseme_sheet(run, job, assets, backup, face=None, swaps=None):
     order = job.get("viseme_order") or [Path(p).stem for p in job["outputs"]]
     if inpaint:
         order = ["rest"] + [s for s in MOUTH_SHAPES if s in order or (swaps and f"{s}=" in swaps)]
+    order = [s for s in order if s not in (omit or "").split(",")]  # the game falls back to the nearest shape
     frames = {Path(p).stem: Image.open(run.dir / p).convert("RGBA") for p in job["outputs"]}
     sources = {s: job["variant"] for s in frames}
     for spec in filter(None, (swaps or "").split(",")):
@@ -1716,8 +1735,9 @@ def cmd_pick(args):
         print(f"next: pixellab_pipeline.py character {run.name} --variants 1")
 
     elif stage == "visemes":
-        write_viseme_sheet(run, job, assets, backup, args.face, args.swap)
-        run.state["picks"]["visemes"] = vid + (f" ({args.swap})" if args.swap else "")
+        write_viseme_sheet(run, job, assets, backup, args.face, args.swap, args.omit)
+        run.state["picks"]["visemes"] = " ".join(filter(None, [vid, args.swap and f"swap {args.swap}",
+                                                               args.omit and f"omit {args.omit}"]))
 
     elif stage == "character":
         run.state["picks"]["character"] = {"variant": vid, "character_id": job["character_id"]}
@@ -1844,7 +1864,10 @@ def main():
     p.add_argument("--drop", type=float, default=1.0,
                    help=f"inpaint: scale for how far the chin is moved down before open shapes are drawn "
                         f"({', '.join(f'{k} {v}px' for k, v in JAW_DROP.items())} at 128px; 0 = don't move it)")
-    p.add_argument("--shapes", help=f"inpaint: comma list, default all of {','.join(MOUTH_SHAPES)}")
+    p.add_argument("--eyes", help="inpaint: x0,y0,x1,y1 over both eyes; adds a 'blink' frame (eyes shut) "
+                                  "that the portrait shows every few seconds while the mouth rests")
+    p.add_argument("--shapes", help=f"inpaint: comma list from {','.join(MOUTH_SHAPES)} "
+                                    f"(default {','.join(DEFAULT_SHAPES)}, plus blink with --eyes)")
     p.add_argument("--subject", help="inpaint: who is speaking, e.g. 'a woman in her fifties' "
                                      "(default 'the same character')")
     p.add_argument("--seed", type=int)
@@ -1913,6 +1936,7 @@ def main():
     p.add_argument("--frames", help="talk only: three open-mouth frames, e.g. 3,5,7 or t01:3,t02:6,m01:AA (default auto)")
     p.add_argument("--face", help="talk/visemes: x0,y0,x1,y1 face box override (inpaint visemes default to the mouth mask)")
     p.add_argument("--swap", help="visemes only: take single shapes from other variants, e.g. round=i02,teeth=i03")
+    p.add_argument("--omit", help="visemes only: leave shapes out, e.g. closed (the game then uses rest)")
     p.set_defaults(func=cmd_pick)
 
     for name, fn, hlp in [("status", cmd_status, "show jobs, picks and the next stage"),

@@ -164,7 +164,11 @@ Asset format (produced by `tools/pixellab_pipeline.py`):
   full bust with one mouth shape; the body is identical in every cell.
 - `<key>_visemes.json` beside it: `{"frameSize": 128, "visemes": ["rest", "closed", "small_open",
   "medium_open", "wide_open", "round", "teeth"]}`, where `visemes[i]` names column `i`. Smaller
-  or differently named sets work too; missing shapes fall back to the nearest one, then `rest`.
+  or differently named sets work too; missing shapes fall back to the nearest one, then `rest`
+  (Bernie's sheet has no `closed`: her resting mouth is already closed lips).
+- An optional `blink` column (eyes shut, mouth at rest) makes the portrait blink for 130 ms every
+  2–6 s whenever the mouth is resting, including pauses mid-line. Each NPC's id seeds its own
+  schedule, so two portraits never blink in step.
 
 ## Adding New Characters
 
