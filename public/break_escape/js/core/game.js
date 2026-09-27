@@ -603,6 +603,38 @@ export function preload() {
         `characters/male_nerd.png?v=${ASSETS_VERSION}`,
         `characters/male_nerd.json?v=${ASSETS_VERSION}`);
 
+    // PixelLab API imports (tools/pixellab_pipeline.py import --register)
+    this.load.atlas('bernie_nwosu',
+        `characters/bernie_nwosu.png?v=${ASSETS_VERSION}`,
+        `characters/bernie_nwosu.json?v=${ASSETS_VERSION}`);
+    this.load.atlas('graham_reeves',
+        `characters/graham_reeves.png?v=${ASSETS_VERSION}`,
+        `characters/graham_reeves.json?v=${ASSETS_VERSION}`);
+    this.load.atlas('sarah_kim',
+        `characters/sarah_kim.png?v=${ASSETS_VERSION}`,
+        `characters/sarah_kim.json?v=${ASSETS_VERSION}`);
+    this.load.atlas('male_security_guard_v2',
+        `characters/male_security_guard_v2.png?v=${ASSETS_VERSION}`,
+        `characters/male_security_guard_v2.json?v=${ASSETS_VERSION}`);
+    this.load.atlas('female_security_guard_v2',
+        `characters/female_security_guard_v2.png?v=${ASSETS_VERSION}`,
+        `characters/female_security_guard_v2.json?v=${ASSETS_VERSION}`);
+    this.load.atlas('male_hacker_hood_v2',
+        `characters/male_hacker_hood_v2.png?v=${ASSETS_VERSION}`,
+        `characters/male_hacker_hood_v2.json?v=${ASSETS_VERSION}`);
+    this.load.atlas('female_nurse1_v2',
+        `characters/female_nurse1_v2.png?v=${ASSETS_VERSION}`,
+        `characters/female_nurse1_v2.json?v=${ASSETS_VERSION}`);
+    this.load.atlas('female_nurse2_v2',
+        `characters/female_nurse2_v2.png?v=${ASSETS_VERSION}`,
+        `characters/female_nurse2_v2.json?v=${ASSETS_VERSION}`);
+    this.load.atlas('female_hacker_hood_v2',
+        `characters/female_hacker_hood_v2.png?v=${ASSETS_VERSION}`,
+        `characters/female_hacker_hood_v2.json?v=${ASSETS_VERSION}`);
+    this.load.atlas('gary_whitlock',
+        `characters/gary_whitlock.png?v=${ASSETS_VERSION}`,
+        `characters/gary_whitlock.json?v=${ASSETS_VERSION}`);
+
     // Animated plant textures are loaded above
     
     // Load swivel chair rotation images

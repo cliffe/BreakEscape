@@ -1,0 +1,92 @@
+{
+  "bernie_nwosu": {
+    "character_id": "923f3e6c-10c0-4f2e-afe9-4d65cbc9c55e",
+    "name": "A Black British woman of Nigerian heritage in her ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-26"
+  },
+  "female_hacker_hood_v2": {
+    "character_id": "c14d8060-5196-4812-adb8-5efff2d3b67b",
+    "name": "Woman, light skin tone, hacker. Wearing an all-bla...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-26"
+  },
+  "female_nurse1_v2": {
+    "character_id": "78997eba-8b6e-42bd-8502-35144cfac60f",
+    "name": "Nurse RN. A professional and friendly female healt...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-26"
+  },
+  "female_nurse2_v2": {
+    "character_id": "ac1ee7cd-57c9-4780-bee1-c740f289a33a",
+    "name": "Female curves. Nurse RN. A professional and friend...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-26"
+  },
+  "female_security_guard_v2": {
+    "character_id": "a394dbab-dc0e-4c6e-b74a-85a5e4c7b568",
+    "name": "Security Guard\nWoman, light skin tone, security gu...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-26"
+  },
+  "gary_whitlock": {
+    "character_id": "2b2d5800-1695-4dcd-bdc4-593bc34e4b43",
+    "name": "Gary Whitlock A white British man in his late thir...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-26"
+  },
+  "graham_reeves": {
+    "character_id": "4909ebbd-79c1-47fb-99be-7889d50af44b",
+    "name": "A white British man in his early fifties, a plain-...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-26"
+  },
+  "male_hacker_hood_v2": {
+    "character_id": "0a8f0fec-6ac0-42d2-b19d-b970b6b479d8",
+    "name": "Hacker in a hoodie. Hood up, black obscured face s...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-26"
+  },
+  "male_security_guard_v2": {
+    "character_id": "7f4b98d0-6ef6-4064-8f01-c032e0cd8050",
+    "name": "Man, light skin tone, security guard. Wearing a da...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-26"
+  },
+  "sarah_kim": {
+    "character_id": "1792c7b7-4189-4a22-857e-4a0a738bd83d",
+    "name": "An East Asian (Korean) woman in her forties, the C...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-26"
+  }
+}
