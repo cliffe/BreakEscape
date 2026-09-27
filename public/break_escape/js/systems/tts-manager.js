@@ -22,6 +22,7 @@ class TTSManager {
         this.onEndedCallback = null;
         this.playing = false;
         this._hasSrc = false; // Whether audio.src has been set to a real URL
+        this.currentText = null; // Line now playing — read by portraits for lip-sync
 
         // Web Audio: one MediaElementSource per <audio> element, shared context
         this._mediaElementSource = null;
@@ -111,6 +112,7 @@ class TTSManager {
                 this.audio.addEventListener('error', onError);
             });
 
+            this.currentText = text;
             this.playing = true;
 
             // Resume shared context if suspended (autoplay policy)
@@ -155,6 +157,7 @@ class TTSManager {
      * Stop current playback
      */
     stop() {
+        this.currentText = null;
         if (this.playing) {
             this.audio.pause();
             this.audio.currentTime = 0;

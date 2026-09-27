@@ -144,9 +144,40 @@ sprites map to `hacker-talk.png` / `hacker-red-talk.png`). If that file is missi
 tries `{spriteSheet}_headshot.png`, and only then falls back to rendering a sprite sheet frame.
 So a character only needs an explicit `spriteTalk` when its portrait is named off-convention.
 
+A `spriteTalk` that is a square sheet of 256px or more is read as a 2×2 grid: frame 0 is the
+closed mouth, and frames 1–3 cycle while TTS audio is playing.
+
+## Lip-sync Portraits (`spriteVisemes`)
+
+`spriteVisemes` is optional and turns on lip-sync mode. While a line plays, the portrait shows
+mouth shapes worked out from the line's text (see `js/minigames/person-chat/lip-sync.js`), stretched
+over the TTS audio's length, and shows `rest` when silent. If the field is absent or either file
+fails to load, the portrait falls back to `spriteTalk` as above.
+
+```json
+"spriteVisemes": "assets/characters/bernie_nwosu_visemes.png"
+```
+
+Asset format (produced by `tools/pixellab_pipeline.py`):
+
+- `<key>_visemes.png`: one row of `frameSize`×`frameSize` cells (128px, transparent), each the
+  full bust with one mouth shape; the body is identical in every cell.
+- `<key>_visemes.json` beside it: `{"frameSize": 128, "visemes": ["rest", "closed", "small_open",
+  "medium_open", "wide_open", "round", "teeth"]}`, where `visemes[i]` names column `i`. Smaller
+  or differently named sets work too; missing shapes fall back to the nearest one, then `rest`.
+
 ## Adding New Characters
 
-### From PixelLab
+### From PixelLab (API, preferred)
+
+```bash
+python3 tools/pixellab_pipeline.py animate <pixellab.ai character URL>          # fill in the standard six animations
+python3 tools/pixellab_pipeline.py import <URL> --key <spriteSheet key> --register
+```
+
+`import` downloads the character ZIP, renames web-UI animation folders to template ids, reapplies committed frame fixes from `tools/pixellab_overrides/`, pads 60×60 Pro frames to 80×80 (feet on row 69, to match the collision box), writes `<key>.png/.json/_headshot.png`, and adds the `this.load.atlas` line to `game.js`. Then use `"spriteSheet": "<key>"`. See `.claude/skills/pixellab-character-pipeline/SKILL.md` for reviewing and repairing bad frames (`qa`, `fix`).
+
+### From PixelLab (manual ZIP download)
 
 1. Export character animations from PixelLab
 2. Run the conversion script:

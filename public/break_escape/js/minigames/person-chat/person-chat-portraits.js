@@ -9,10 +9,62 @@
  */
 
 import { ASSETS_PATH } from '../../config.js';
+import { textToVisemes, scaleTimeline, visemeAt, buildVisemeColumnMap } from './lip-sync.js';
 
 // Sprite sheets with no derivable portrait (e.g. prop sprites like hospital beds).
 // Remembered after the first failed lookup so later conversations skip the 404s.
 const spritesWithoutTalkImage = new Set();
+
+// spriteVisemes path → loaded sheet ({ image, frameSize, columns }) or null when it failed.
+// Pending loads live in visemeSheetLoads so speaker switches never fetch a sheet twice.
+const visemeSheets = new Map();
+const visemeSheetLoads = new Map();
+
+/**
+ * Resolve a scenario asset path ("assets/…" or relative) to a URL.
+ * @param {string} path
+ * @returns {string}
+ */
+function resolveAssetUrl(path) {
+    if (path.startsWith('/') || path.startsWith('http')) return path;
+    return path.startsWith('assets/') ? `/break_escape/${path}` : `${ASSETS_PATH}/${path}`;
+}
+
+/**
+ * Load a lip-sync viseme sheet: `<key>_visemes.png` (one row of frameSize×frameSize cells)
+ * plus `<key>_visemes.json` beside it naming each column. Resolves to null on any failure.
+ * @param {string} path - spriteVisemes value
+ * @returns {Promise<Object|null>}
+ */
+function loadVisemeSheet(path) {
+    if (visemeSheetLoads.has(path)) return visemeSheetLoads.get(path);
+
+    const imageLoad = new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('image failed to load'));
+        img.src = resolveAssetUrl(path);
+    });
+    const metaLoad = fetch(resolveAssetUrl(path.replace(/\.png$/i, '.json')))
+        .then(r => { if (!r.ok) throw new Error(`JSON HTTP ${r.status}`); return r.json(); });
+
+    const load = Promise.all([imageLoad, metaLoad]).then(([image, meta]) => {
+        const frameSize = meta.frameSize || 128;
+        const names = Array.isArray(meta.visemes) ? meta.visemes : [];
+        const columns = Math.min(names.length, Math.floor(image.width / frameSize));
+        if (columns < 1 || image.height < frameSize) throw new Error('sheet does not match its JSON');
+        const sheet = { image, frameSize, columns, columnFor: buildVisemeColumnMap(names.slice(0, columns)) };
+        visemeSheets.set(path, sheet);
+        return sheet;
+    }).catch(error => {
+        console.warn(`⚠️ Viseme sheet unavailable (${path}): ${error.message} — using spriteTalk`);
+        visemeSheets.set(path, null);
+        return null;
+    });
+    visemeSheetLoads.set(path, load);
+    return load;
+}
 
 export default class PersonChatPortraits {
     /**
@@ -65,6 +117,12 @@ export default class PersonChatPortraits {
         this._loadingSpriteTalkImage = false; // Guard against duplicate loads
         this._lastRenderedTalkFrame = -1;  // Sentinel – forces first render
         this._narratorMode = false; // When true, suppress mouth animation (narrator lines)
+
+        // Lip-sync mode (optional spriteVisemes sheet; replaces the 2×2 talk cycle when loaded)
+        this.visemeSheet = null;      // Loaded sheet for the current speaker, or null
+        this._visemesPending = false; // Sheet still loading: hold rendering so the talk image doesn't flash
+        this._visemeTimeline = null;  // Cached timeline for the line now playing
+        this._visemeTimelineKey = null;
         
         console.log(`🖼️ Portrait renderer created for NPC: ${npc.id}${background ? ` with background: ${background}` : ''}`);
     }
@@ -253,9 +311,10 @@ export default class PersonChatPortraits {
             const parallaxActive = !!this.backgroundImage && elapsed < PARALLAX_DURATION;
 
             // Mouth animation: only re-render when the frame index actually changes
-            // (frame changes at ~10 fps while speaking; once to frame 0 when it stops)
-            const currentFrame = this._getCurrentTalkFrame();
-            const frameChanged = this._isTalkSheet() &&
+            // (talk sheet ~5 fps while speaking, lip-sync once per viseme step;
+            // once back to the rest frame when it stops)
+            const currentFrame = this.visemeSheet ? this._getCurrentVisemeColumn() : this._getCurrentTalkFrame();
+            const frameChanged = (this.visemeSheet || this._isTalkSheet()) &&
                                  currentFrame !== this._lastRenderedTalkFrame;
 
             if (parallaxActive || frameChanged) {
@@ -328,6 +387,8 @@ export default class PersonChatPortraits {
         console.log(`🔍 setupSpriteInfo - this.npc.id: ${this.npc.id}, this.npc.spriteTalk: ${this.npc.spriteTalk}`);
         console.log(`🔍 setupSpriteInfo - full NPC object:`, this.npc);
 
+        this._setupVisemeSheet();
+
         // Check for a talk portrait: explicit spriteTalk, or derived from spriteSheet
         const talkImageSrc = this._resolveTalkImageSrc();
         if (talkImageSrc) {
@@ -368,6 +429,60 @@ export default class PersonChatPortraits {
     }
     
     /**
+     * Pick up the current speaker's spriteVisemes sheet (lip-sync mode), loading it if needed.
+     * The player portrait is always static, so it never uses lip-sync.
+     * @private
+     */
+    _setupVisemeSheet() {
+        const path = this.npc.id !== 'player' ? this.npc.spriteVisemes : null;
+        this._visemeTimeline = null;
+        this._visemeTimelineKey = null;
+        this.visemeSheet = null;
+        this._visemesPending = false;
+        if (!path) return;
+
+        if (visemeSheets.has(path)) {
+            this.visemeSheet = visemeSheets.get(path); // null when it failed before
+            return;
+        }
+
+        this._visemesPending = true;
+        loadVisemeSheet(path).then(sheet => {
+            if (this.npc.spriteVisemes !== path || this.npc.id === 'player') return; // speaker changed meanwhile
+            this.visemeSheet = sheet;
+            this._visemesPending = false;
+            this._lastRenderedTalkFrame = -1;
+            this.render();
+        });
+    }
+
+    /**
+     * Returns which column of the viseme sheet to display this render cycle.
+     * While TTS plays, the line's text is turned into a viseme timeline, stretched over the
+     * audio's duration when known (90 ms per step otherwise), and indexed by the audio
+     * element's playback position. Reading the position each frame, rather than scheduling
+     * timers, keeps it in step with pauses and skips and leaves nothing to clean up.
+     * Shows "rest" when silent.
+     * @private
+     */
+    _getCurrentVisemeColumn() {
+        const sheet = this.visemeSheet;
+        const rest = sheet.columnFor.rest;
+        const tts = this.ttsManager;
+        if (this._narratorMode || !tts?.isPlaying() || !tts.currentText) return rest;
+
+        const audio = tts.audio;
+        const duration = audio && Number.isFinite(audio.duration) ? audio.duration * 1000 : null;
+        const key = `${duration}|${tts.currentText}`;
+        if (key !== this._visemeTimelineKey) {
+            this._visemeTimelineKey = key;
+            this._visemeTimeline = scaleTimeline(textToVisemes(tts.currentText), duration);
+        }
+        const viseme = visemeAt(this._visemeTimeline, (audio?.currentTime || 0) * 1000);
+        return sheet.columnFor[viseme] ?? rest;
+    }
+
+    /**
      * Register the TTSManager so mouth animation can be driven by real audio amplitude.
      * Call this after portrait initialisation from the parent minigame.
      * @param {TTSManager} manager
@@ -399,6 +514,7 @@ export default class PersonChatPortraits {
      * @private
      */
     _getTalkFrameSize() {
+        if (this.visemeSheet) return this.visemeSheet.frameSize;
         if (!this.spriteTalkImage) return 0;
         return this._isTalkSheet()
             ? this.spriteTalkImage.width / 2
@@ -583,6 +699,22 @@ export default class PersonChatPortraits {
             this.ctx.fillStyle = '#000';
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
             
+            // Lip-sync mode: draw the current viseme column
+            if (this.visemeSheet) {
+                const scale = this.calculateSpriteTalkScale();
+                if (this.backgroundImage && scale) {
+                    this.drawBackground(scale);
+                }
+                const size = this.visemeSheet.frameSize;
+                this.drawPortraitFrame(this.visemeSheet.image,
+                    this._getCurrentVisemeColumn() * size, 0, size, size);
+                return;
+            }
+            // Viseme sheet still loading: keep the frame empty rather than flash the talk image
+            if (this._visemesPending) {
+                return;
+            }
+
             // If using spriteTalk image, render that instead
             if (this.useSpriteTalk) {
                 // console.log(`🎨 Rendering spriteTalk image path`);
@@ -779,23 +911,35 @@ export default class PersonChatPortraits {
      * @param {number}           frameIndex - 0-3 for sheet; ignored for single-frame
      */
     drawSpriteTalkImage(img, frameIndex = 0) {
+        // Determine source crop rectangle
+        let srcX, srcY, srcW, srcH;
+        if (this._isTalkSheet()) {
+            srcW = img.width / 2;
+            srcH = img.height / 2;
+            srcX = (frameIndex % 2) * srcW;         // col 0 or 1
+            srcY = Math.floor(frameIndex / 2) * srcH; // row 0 or 1
+        } else {
+            // Single-frame – use the whole image
+            srcX = 0; srcY = 0; srcW = img.width; srcH = img.height;
+        }
+        this.drawPortraitFrame(img, srcX, srcY, srcW, srcH);
+    }
+
+    /**
+     * Draw a source rectangle of a portrait image (talk sheet frame or viseme column)
+     * contain-fitted to the canvas, shifted and flipped for the speaker's side.
+     * @param {HTMLImageElement} img
+     * @param {number} srcX
+     * @param {number} srcY
+     * @param {number} srcW
+     * @param {number} srcH
+     */
+    drawPortraitFrame(img, srcX, srcY, srcW, srcH) {
         if (!this.ctx || !this.canvas) return;
 
         try {
             const canvasWidth = this.canvas.width;
             const canvasHeight = this.canvas.height;
-
-            // Determine source crop rectangle
-            let srcX, srcY, srcW, srcH;
-            if (this._isTalkSheet()) {
-                srcW = img.width / 2;
-                srcH = img.height / 2;
-                srcX = (frameIndex % 2) * srcW;         // col 0 or 1
-                srcY = Math.floor(frameIndex / 2) * srcH; // row 0 or 1
-            } else {
-                // Single-frame – use the whole image
-                srcX = 0; srcY = 0; srcW = img.width; srcH = img.height;
-            }
 
             // Scale the frame to fit the canvas (contain style)
             const scale = Math.min(canvasWidth / srcW, canvasHeight / srcH);

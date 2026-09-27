@@ -9,7 +9,8 @@
     "test": "test"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:js": "node test/js/lip-sync.test.mjs"
   },
   "repository": {
     "type": "git",

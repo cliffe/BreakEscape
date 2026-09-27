@@ -379,6 +379,7 @@
         },
         "spriteSheet": { "type": "string" },
         "spriteTalk": { "type": "string" },
+        "spriteVisemes": { "type": "string", "description": "Optional lip-sync sheet (assets/characters/<key>_visemes.png, one row of mouth shapes) with a matching .json beside it naming each column. Falls back to spriteTalk when absent or unloadable." },
         "spriteConfig": {
           "type": "object",
           "properties": {

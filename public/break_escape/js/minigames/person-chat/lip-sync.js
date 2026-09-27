@@ -1,0 +1,156 @@
+/**
+ * Lip-sync - text → viseme timeline for dialogue portraits
+ *
+ * Mirrors the plan PixelLab's /v2/lip-sync endpoint produces from a line of text, so a
+ * `<key>_visemes.png` sheet (one mouth shape per column) can be driven locally without
+ * an API call per line. Pure functions, no DOM or Phaser — unit tested by
+ * test/js/lip-sync.test.mjs (run with `node test/js/lip-sync.test.mjs`).
+ *
+ * Letter classes (runs of the same viseme collapse into one step):
+ *   m b p                 → closed
+ *   f v s z x, c+e/i/y    → teeth
+ *   o u w                 → round
+ *   a                     → wide_open
+ *   e                     → medium_open
+ *   other letters/digits  → small_open
+ *   space / punctuation   → rest   (sentence ends . ! ? hold longer)
+ *
+ * @module lip-sync
+ */
+
+export const DEFAULT_STEP_MS = 90;
+export const SENTENCE_END_HOLD = 2; // "." / "!" / "?" rests last this many steps
+
+/**
+ * Classify one character (lower-case, accents stripped) given the character after it.
+ * @param {string} ch
+ * @param {string} next
+ * @returns {string} viseme name
+ */
+function classifyChar(ch, next) {
+    if ('mbp'.includes(ch)) return 'closed';
+    if ('fvszx'.includes(ch)) return 'teeth';
+    if (ch === 'c' && next && 'eiy'.includes(next)) return 'teeth'; // soft c: "city", "face"
+    if ('ouw'.includes(ch)) return 'round';
+    if (ch === 'a') return 'wide_open';
+    if (ch === 'e') return 'medium_open';
+    if (/[\p{L}\p{N}]/u.test(ch)) return 'small_open';
+    return 'rest';
+}
+
+/**
+ * Convert a line of dialogue into a viseme timeline.
+ * Always starts and finishes on "rest"; an empty line is a single rest step.
+ * @param {string} text
+ * @param {Object} [options]
+ * @param {number} [options.stepMs=90] - Duration of one step
+ * @param {number} [options.sentenceHold=2] - Multiplier for rests containing . ! ?
+ * @returns {Array<{viseme: string, duration: number}>}
+ */
+export function textToVisemes(text, options = {}) {
+    const stepMs = options.stepMs ?? DEFAULT_STEP_MS;
+    const sentenceHold = options.sentenceHold ?? SENTENCE_END_HOLD;
+
+    // Strip accents so "café" reads as "cafe"
+    const chars = Array.from(String(text ?? '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase());
+
+    const steps = [{ viseme: 'rest', duration: stepMs }];
+    for (let i = 0; i < chars.length; i++) {
+        const viseme = classifyChar(chars[i], chars[i + 1]);
+        const last = steps[steps.length - 1];
+        if (last.viseme !== viseme) {
+            steps.push({ viseme, duration: stepMs });
+        }
+        // A rest run that contains sentence-end punctuation holds a little longer
+        if (viseme === 'rest' && /[.!?]/.test(chars[i])) {
+            steps[steps.length - 1].duration = stepMs * sentenceHold;
+        }
+    }
+    if (steps[steps.length - 1].viseme !== 'rest') {
+        steps.push({ viseme: 'rest', duration: stepMs });
+    }
+    return steps;
+}
+
+/**
+ * Total duration of a timeline in ms.
+ * @param {Array<{duration: number}>} steps
+ */
+export function timelineDuration(steps) {
+    return steps.reduce((sum, s) => sum + s.duration, 0);
+}
+
+/**
+ * Stretch or squash a timeline so it spans totalMs, keeping each step's relative length.
+ * Returns the steps unchanged when totalMs is not a usable number.
+ * @param {Array<{viseme: string, duration: number}>} steps
+ * @param {number} totalMs
+ */
+export function scaleTimeline(steps, totalMs) {
+    const current = timelineDuration(steps);
+    if (!Number.isFinite(totalMs) || totalMs <= 0 || current <= 0) return steps;
+    const factor = totalMs / current;
+    return steps.map(s => ({ viseme: s.viseme, duration: s.duration * factor }));
+}
+
+/**
+ * Viseme to show at elapsedMs into the timeline ("rest" before the start and after the end).
+ * @param {Array<{viseme: string, duration: number}>} steps
+ * @param {number} elapsedMs
+ * @returns {string}
+ */
+export function visemeAt(steps, elapsedMs) {
+    if (!(elapsedMs >= 0)) return 'rest';
+    let t = 0;
+    for (const step of steps) {
+        t += step.duration;
+        if (elapsedMs < t) return step.viseme;
+    }
+    return 'rest';
+}
+
+// Preferred substitutes when a sheet lacks a viseme, most similar first. Aliases cover
+// the Preston Blair style names some viseme sets use (MBP, FV, WQ, AI, O, U, E).
+const VISEME_FALLBACKS = {
+    rest:        ['rest', 'closed', 'mbp'],
+    closed:      ['closed', 'mbp', 'rest'],
+    teeth:       ['teeth', 'fv', 'small_open', 'closed', 'rest'],
+    round:       ['round', 'o', 'u', 'wq', 'small_open', 'medium_open'],
+    wide_open:   ['wide_open', 'ai', 'open', 'medium_open', 'small_open'],
+    medium_open: ['medium_open', 'e', 'open', 'wide_open', 'small_open'],
+    small_open:  ['small_open', 'medium_open', 'open', 'e']
+};
+
+/**
+ * Build a lookup from requested viseme name to a column index in a sheet whose columns
+ * are named by `names`. Missing visemes fall back to the nearest available shape, then
+ * to any "*open*" column, then to rest (or column 0).
+ * @param {string[]} names - visemes[i] names column i
+ * @returns {Object<string, number>} requested viseme → column index
+ */
+export function buildVisemeColumnMap(names) {
+    const index = new Map();
+    names.forEach((name, i) => {
+        const key = String(name).toLowerCase();
+        if (!index.has(key)) index.set(key, i);
+    });
+    const find = candidates => {
+        for (const c of candidates) {
+            if (index.has(c)) return index.get(c);
+        }
+        return undefined;
+    };
+
+    const restCol = find(VISEME_FALLBACKS.rest) ?? 0;
+    const anyOpen = [...index.keys()].find(k => k.includes('open'));
+
+    const map = {};
+    for (const [viseme, candidates] of Object.entries(VISEME_FALLBACKS)) {
+        let col = find(candidates);
+        if (col === undefined && viseme !== 'rest' && viseme !== 'closed' && anyOpen !== undefined) {
+            col = index.get(anyOpen);
+        }
+        map[viseme] = col ?? restCol;
+    }
+    return map;
+}
