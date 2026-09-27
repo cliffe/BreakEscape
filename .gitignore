@@ -53,3 +53,6 @@ tools/playtest/pipes/
 tools/playtest/pipes-*/
 tools/playtest/*.pid
 tools/playtest/cmd[0-9]*.sh
+
+# Python bytecode (tools/, skill scripts)
+__pycache__/

@@ -467,6 +467,7 @@ export default class PersonChatPortraits {
      */
     _getCurrentVisemeColumn() {
         const sheet = this.visemeSheet;
+        if (!sheet) return 0; // sheet still loading for this speaker
         const rest = sheet.columnFor.rest;
         const tts = this.ttsManager;
         if (this._narratorMode || !tts?.isPlaying() || !tts.currentText) return rest;

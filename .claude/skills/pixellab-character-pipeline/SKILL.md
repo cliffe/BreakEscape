@@ -41,7 +41,9 @@ Work files live in `tmp/pixellab/<name>/` (git-ignored). `state.json` there reco
 
 `bust <name> --variants 4` (about 1 generation each). Defaults match the manual process: 128px, `--strength 250`, the full Gemini prompt, and a transparent background. Look for: the same person as the concept, the three-quarter pose kept, the mouth closed, correct colours, and a clean alpha.
 
-If the result is too far from the concept, raise `--strength` (300–400). If it looks like a blurry downscale, lower it (150–200). `--guidance` (1–20) sets how hard the prompt pulls. `--engine pixelart [--faithful]` switches to the web UI's *Image to pixel art*. The web UI's "AI freedom" slider has **no public-API equivalent**, so don't claim the settings are identical.
+`--strength` trades faithfulness for crispness. Tested on four concepts: **250** stays on-model but looks softer, like a painted downscale. **150** looks crisper and more pixel-art, but drifts: it added a moustache, turned a green blouse blue, and made a face younger. Default to 250. Try a pair at 150 when softness matters, and check hard for drift. `--guidance` (1–20) sets how hard the prompt pulls. `--engine pixelart [--faithful]` switches to the web UI's *Image to pixel art*. The web UI's "AI freedom" slider has **no public-API equivalent**, and its image-to-image output is crisper than anything the API parameters produced. **If the user already has a web-UI bust, add it as candidate `b00`** (`init --concept … --bust <file>`); for Bernie it beat every API variant.
+
+**Concepts with a solid non-magenta background** (older Gemini renders) can be keyed with `reframe_portrait.py --bg-color R,G,B`, sampling the corner colour. Check the result over magenta: a dark garment close to the background colour gets holes punched in it. When that happens, don't loosen the tolerance. Send the unkeyed concept instead; the bust stage removes the background itself.
 
 `pick <name> bust b03` installs `<name>_talk_init.png`.
 
@@ -53,7 +55,9 @@ If the result is too far from the concept, raise `--strength` (300–400). If it
 python3 tools/pixellab_pipeline.py pick <name> talk t01 --frames 2,4,5     # or t01:2,t02:4,m01:round
 ```
 
-`pick` builds the sheet with `build_talk_sheet.py`, pasting only the face box so the body stays pixel-identical, then runs `check_talk_sheet.py`. A few pixels of WARN "below the head line" is usually collar inside the face box. Look before re-picking, or pass `--face x0,y0,x1,y1`.
+`pick` builds the sheet with `build_talk_sheet.py`, pasting only the face box so the body stays pixel-identical, then runs `check_talk_sheet.py`.
+
+**Check the face box preview every time.** `pick` (talk and visemes) writes `tmp/pixellab/<name>/face_box_preview.png`, with the box drawn on the bust and on the most open mouth. The box should run from just under the eyes to the chin: the mouth inside, the eyes and collar outside. The eyes matter because the models blink: vocal-animation often closes them, and pasting them in gives a character who shuts their eyes to speak. The collar matters because some runs re-render every pixel slightly. The automatic estimate is only accurate to about 5px, which is the gap between the eyes and the mouth, so pass `--face x0,y0,x1,y1` whenever the preview is off (Bernie: `46,25,82,44`). Expect a few hundred changed pixels per frame, confined to the box.
 
 ## Stage 2b: lip sync (named mouth shapes)
 
@@ -67,6 +71,7 @@ python3 tools/pixellab_pipeline.py pick <name> visemes m01
 - `--crop auto` sends a 64×64 head crop, so the face fills the model's frame. It gives bigger, clearer mouths and changes only the head. Without it the whole bust is re-rendered with subtler mouths. Both kinds of run appear in the talk contact sheet with mouth-zoom rows. Compare them there.
 - `pick ... visemes` writes `<name>_visemes.png` (one row of 128px cells, `rest` = the bust itself) and `<name>_visemes.json` (the column names). Only the face box is pasted, as with the talk sheet.
 - Add `spriteVisemes` to the NPC and keep `spriteTalk` as the fallback. Only edit scenarios when the user asked.
+- Lip sync follows TTS audio, so an NPC whose lines get no audio stays on `rest`. Co-speakers (an NPC with a voice but no `storyPath`, whose lines are inside another NPC's story, e.g. Netherton in HaX's briefing) are validated against every Ink story in the mission. Before that fix they were refused with a 403 and stayed silent.
 
 ## Stage 3: walk character
 

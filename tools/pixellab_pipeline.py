@@ -251,7 +251,9 @@ class Run:
     def save(self):
         with self.lock:
             self.dir.mkdir(parents=True, exist_ok=True)
-            self.state_path.write_text(json.dumps(self.state, indent=2))
+            # default=: numpy ints and the like must never stop a paid job id being recorded
+            self.state_path.write_text(json.dumps(self.state, indent=2, default=lambda o: o.item()
+                                                  if hasattr(o, "item") else str(o)))
 
     def next_ids(self, stage, prefix, n):
         taken = {j["variant"] for j in self.state["jobs"] if j["stage"] == stage}
@@ -329,6 +331,14 @@ def cmd_init(args):
         "picks": {},
     }
     run.save()
+    if args.bust:
+        # An existing bust (e.g. a manual web-UI result) joins the bust candidates as b00.
+        existing = Image.open(args.bust).convert("RGBA")
+        (run.dir / "bust").mkdir(exist_ok=True)
+        existing.save(run.dir / "bust" / "b00.png")
+        run.add_job(stage="bust", variant="b00", endpoint="adopted", status="completed",
+                    outputs=["bust/b00.png"], params={"source": str(args.bust)})
+        print(f"added {args.bust} as bust candidate b00")
     print(f"Initialised {run.dir}")
     print(f"description (used for the walk character):\n  {description}")
     print(f"next: pixellab_pipeline.py bust {args.name} --variants 4")
@@ -501,9 +511,63 @@ def change_box(base, frames, side=40):
         return None
     ys, xs = np.indices(acc.shape)
     cx, cy = int((xs * acc).sum() / acc.sum()), int((ys * acc).sum() / acc.sum())
-    x0 = min(max(0, cx - side // 2), base.width - side)
-    y0 = min(max(0, cy - side // 2), base.height - side)
+    x0 = int(min(max(0, cx - side // 2), base.width - side))
+    y0 = int(min(max(0, cy - side // 2), base.height - side))
     return (x0, y0, x0 + side, y0 + side)
+
+
+def mouth_face_box(frames, width=42, above=9, below=12):
+    """Estimate a box to paste mouths onto the bust: from under the eyes to the chin.
+
+    Only this region is taken from the generated frames, so the bust keeps its own eyes,
+    hair and body. That matters: vocal-animation tends to close the eyes, and some
+    animations re-render every pixel slightly (collar, lanyard), which makes a
+    union-of-changes box (build_talk_sheet's default) swallow the whole image.
+
+    The estimate compares the two generated frames that differ most from each other, which
+    share the model's re-render drift, so their difference is mostly the mouth. It is only
+    accurate to about 5 px, which is the distance between the eyes and the mouth, so `pick`
+    always writes face_box_preview.png: check it, and pass --face when the box is off.
+    """
+    import numpy as np
+    arrs = [np.asarray(f.convert("RGBA"), dtype=np.float32)[..., :3] for f in frames]
+    arrs = [a for a in arrs if a.shape == arrs[0].shape]
+    if len(arrs) < 2:
+        return None
+    h = arrs[0].shape[0]
+    best, pair = -1, None
+    for i in range(len(arrs)):
+        for j in range(i + 1, len(arrs)):
+            d = np.abs(arrs[i] - arrs[j]).sum(axis=2)[: int(h * 0.6)]
+            if d.sum() > best:
+                best, pair = d.sum(), d
+    d = pair
+    if not (d > 0).any():
+        return None
+    d[d < np.percentile(d[d > 0], 90)] = 0
+    ys, xs = np.nonzero(d)
+    w = d[ys, xs]
+    cx, cy = int((xs * w).sum() / w.sum()), int((ys * w).sum() / w.sum())
+    width_px = arrs[0].shape[1]
+    x0 = int(min(max(0, cx - width // 2), width_px - width))
+    y0 = int(min(max(0, cy - above), h - above - below))
+    return (x0, y0, x0 + width, y0 + above + below)
+
+
+def face_box_preview(run, bust, frames, box):
+    """Save the face box drawn on the bust and on the most-changed frame, for checking."""
+    import numpy as np
+    b = np.asarray(bust.convert("RGBA"), dtype=np.int32)
+    most = max(frames, key=lambda f: np.abs(np.asarray(f.convert("RGBA"), dtype=np.int32) - b).sum()
+               if f.size == bust.size else -1)
+    cells = []
+    for label, im in (("bust", bust), ("most open", most)):
+        im = im.convert("RGBA").copy()
+        ImageDraw.Draw(im).rectangle([box[0], box[1], box[2] - 1, box[3] - 1], outline=(255, 0, 0, 255))
+        cells.append((label, im))
+    path = contact_sheet([(f"face box {box}: mouth and chin inside, eyes outside?", cells)],
+                         run.dir / "face_box_preview.png", cell=bust.width, scale=3)
+    print(f"face box preview: {path}  (check it; override with --face x0,y0,x1,y1)")
 
 
 def square_crop(im, box):
@@ -550,8 +614,8 @@ def head_box(bust, side):
     top = rows[0]
     head = alpha[top:top + side // 2]  # upper part of the head only, so shoulders don't pull x
     cx = int(np.nonzero(head)[1].mean())
-    x0 = min(max(0, cx - side // 2), bust.width - side)
-    y0 = min(max(0, top - 2), bust.height - side)
+    x0 = int(min(max(0, cx - side // 2), bust.width - side))
+    y0 = int(min(max(0, int(top) - 2), bust.height - side))
     return (x0, y0, x0 + side, y0 + side)
 
 
@@ -605,7 +669,9 @@ def write_viseme_sheet(run, job, assets, backup, face=None):
     if face:
         box = tuple(int(v) for v in face.split(","))
     else:
-        box = auto_face_box(base, [np.asarray(f, dtype=np.int16) for f in frames.values()])
+        box = (mouth_face_box([f for n, f in frames.items() if n != "rest"])
+               or auto_face_box(base, [np.asarray(f, dtype=np.int16) for f in frames.values()]))
+    face_box_preview(run, bust, [f for n, f in frames.items() if n != "rest"], tuple(map(int, box)))
     size = bust.width
     sheet = Image.new("RGBA", (size * len(order), size), (0, 0, 0, 0))
     for i, name in enumerate(order):
@@ -1351,8 +1417,19 @@ def cmd_pick(args):
             # Let build_talk_sheet choose the three most distinct mouths. f00 is the model's
             # copy of the first frame, so leave it out of the candidates.
             cmd += ["--frames", *[str(run.dir / p) for p in job["outputs"][1:]]]
-        if args.face:
-            cmd += ["--face", args.face]
+        face = args.face
+        if not face:
+            used = ([resolve_frame(run, sp, vid) for sp in args.frames.split(",")] if args.frames
+                    else [run.dir / p for p in job["outputs"][1:]])
+            box = mouth_face_box([Image.open(p).convert("RGBA") for p in used])
+            face = ",".join(map(str, box)) if box else None
+        if face:
+            box = tuple(int(v) for v in face.split(","))
+            face_box_preview(run, Image.open(bust).convert("RGBA"),
+                             [Image.open(p).convert("RGBA") for p in (
+                                 [resolve_frame(run, sp, vid) for sp in args.frames.split(",")]
+                                 if args.frames else [run.dir / q for q in job["outputs"][1:]])], box)
+            cmd += ["--face", face]
         subprocess.run(cmd, check=True)
         check = subprocess.run([sys.executable, str(TALK_SCRIPTS / "check_talk_sheet.py"), str(dest)])
         run.state["picks"]["talk"] = {"variant": vid, "frames": args.frames or "auto",
@@ -1455,7 +1532,8 @@ def main():
     p = sub.add_parser("init", help="start a run from a reframed Gemini portrait")
     p.add_argument("name")
     p.add_argument("--concept", help="<name>_nonpixelart.png after reframe_portrait.py")
-    p.add_argument("--bust", help="instead of --concept: adopt an existing bust or 2x2 talk sheet (for lip sync only)")
+    p.add_argument("--bust", help="alone: adopt an existing bust or 2x2 talk sheet (lip sync only); "
+                                  "with --concept: add an existing bust as candidate b00")
     p.add_argument("--prompt-file", help="the exact Gemini prompt (default: <concept stem>_prompt.txt beside it)")
     p.add_argument("--prompt", help="the Gemini prompt inline (instead of --prompt-file)")
     p.add_argument("--description", help="walk-character description (default: first two prompt lines)")
