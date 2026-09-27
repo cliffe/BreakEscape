@@ -533,11 +533,13 @@ module BreakEscape
           return render_error('Text not found in NPC story or barks', :forbidden)
         end
       elsif npc['voice'].is_a?(Hash)
-        # Scenario-only NPC with voice config but no Ink story — validate against
-        # the bark texts declared in the scenario (eventMappings / timedMessages).
-        unless ScenarioBarkValidator.validate(npc, text)
+        # Scenario-only NPC with voice config but no Ink story of its own. Its lines are
+        # either scenario barks (eventMappings / timedMessages), or it is a co-speaker whose
+        # lines live in another NPC's Ink story (e.g. a director speaking inside a briefing
+        # cutscene). Accept both; the text must still come from this mission's own content.
+        unless ScenarioBarkValidator.validate(npc, text) || text_in_scenario_ink_stories?(text)
           Rails.logger.warn "[TTS] Bark text validation failed for NPC #{npc_id}: #{text.truncate(60)}"
-          return render_error('Text not found in NPC barks', :forbidden)
+          return render_error('Text not found in NPC barks or scenario stories', :forbidden)
         end
       elsif npc['voice'].is_a?(String)
         # Room object with a fixed voice message — validate directly
@@ -1668,6 +1670,19 @@ module BreakEscape
       end
 
       nil
+    end
+
+    # True when text appears in any NPC's Ink story in this game's scenario.
+    # Used for co-speaker NPCs, which have a voice but speak inside another NPC's story.
+    def text_in_scenario_ink_stories?(text)
+      story_paths = []
+      @game.scenario_data['rooms']&.each_value do |room_data|
+        room_data['npcs']&.each { |other| story_paths << other['storyPath'] if other['storyPath'] }
+      end
+      story_paths.uniq.any? do |story_path|
+        json_path = resolve_and_compile_ink(story_path)
+        json_path && InkTextValidator.validate(json_path.to_s, text)
+      end
     end
 
     # Resolve ink path and compile if necessary
