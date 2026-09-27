@@ -9,5 +9,5 @@
     "medium_open",
     "wide_open"
   ],
-  "source": "pixellab /inpaint-image-pro-flash, mouth mask [63, 30, 74, 38], closed:i01, teeth:i02, round:i01, small_open:i02, medium_open:i01, wide_open:i01"
+  "source": "pixellab /inpaint-image-pro-flash, mouth mask [63, 30, 74, 38]; closed:i01, teeth:i02, round:i01, small_open:i02, medium_open:i04 (chin -1px, jaw mask +5 rows), wide_open:i04 (chin -3px, jaw mask +5 rows)"
 }

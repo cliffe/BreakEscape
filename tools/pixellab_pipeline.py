@@ -672,9 +672,14 @@ MOUTH_SHAPES = {
     "small_open": "lips parted by a small dark opening about two pixels tall, clearly more open than a "
                   "closed mouth, no teeth showing",
     "medium_open": "mouth half open as when saying 'eh': a dark mouth interior with a hint of upper teeth",
-    "wide_open": "mouth open wide as when saying 'ah': jaw dropped, a tall dark mouth interior, "
-                 "at most a sliver of upper teeth",
+    "wide_open": "mouth open wide as when saying 'ah', jaw dropped: a tall dark mouth interior filling the "
+                 "space between the lips, at most a sliver of upper teeth",
 }
+# Shapes whose jaw drops, and by how many pixels at a 128px bust (scaled by --drop). The
+# model won't move a jaw when asked, so drop_jaw() moves the chin down first and the model
+# only draws the open mouth into the gap and blends the seams.
+JAW_DROP = {"medium_open": 1, "wide_open": 3}
+JAW_SHAPES = tuple(JAW_DROP)
 MOUTH_KEEP = ("Only the mouth changes. Keep the same lip colour, skin tone, outline and pixel-art shading; "
               "the head is turned, so the mouth stays exactly where it is, not centred.")
 
@@ -701,9 +706,12 @@ def suggest_mouth_box(bust):
     return (int(xs.min()) - 2, int(ys.min()) - 1, int(xs.max()) + 3, int(ys.max()) + 4)
 
 
-def mouth_box_preview(run, bust, box, out_name="mouth_box_preview.png", outline=True):
-    """A gridded close-up around box, labelled with pixel coordinates, the box outlined as the mask."""
+def mouth_box_preview(run, bust, box, out_name="mouth_box_preview.png", outline=True, jaw=None):
+    """A gridded close-up around box, labelled with pixel coordinates, the box outlined as the
+    mask (red) and the open shapes' jaw mask in orange."""
     x0, y0, x1, y1 = box
+    if jaw:
+        x0, y0, x1, y1 = min(x0, jaw[0]), min(y0, jaw[1]), max(x1, jaw[2]), max(y1, jaw[3])
     pad, z = 12, 12
     cx0, cy0 = max(0, x0 - pad), max(0, y0 - pad - 6)
     cx1, cy1 = min(bust.width, x1 + pad), min(bust.height, y1 + pad)
@@ -719,9 +727,10 @@ def mouth_box_preview(run, bust, box, out_name="mouth_box_preview.png", outline=
         if y % 5 == 0:
             d.line([(0, (y - cy0) * z), (im.width, (y - cy0) * z)], fill=(0, 180, 255, 120))
             d.text((2, (y - cy0) * z + 2), str(y), fill=(255, 0, 0, 255))
-    if outline:
-        d.rectangle([(x0 - cx0) * z, (y0 - cy0) * z, (x1 - cx0) * z - 1, (y1 - cy0) * z - 1],
-                    outline=(255, 0, 0, 255), width=2)
+    for b, colour in ((jaw, (255, 150, 0, 255)), (box if outline else None, (255, 0, 0, 255))):
+        if b:
+            d.rectangle([(b[0] - cx0) * z, (b[1] - cy0) * z, (b[2] - cx0) * z - 1, (b[3] - cy0) * z - 1],
+                        outline=colour, width=2)
     path = run.dir / "visemes" / out_name
     path.parent.mkdir(parents=True, exist_ok=True)
     im.save(path)
@@ -734,6 +743,59 @@ def mouth_mask(bust, box):
     mask = Image.new("L", bust.size, 0)
     ImageDraw.Draw(mask).rectangle([box[0], box[1], box[2] - 1, box[3] - 1], fill=255)
     return ImageChops.multiply(mask, bust.split()[3].point(lambda a: 255 if a else 0))
+
+
+def jaw_box(bust, box, jaw):
+    """The mouth box widened 3px each side and extended `jaw` rows down past the chin."""
+    x0, y0, x1, y1 = box
+    return (max(0, x0 - 3), y0, min(bust.width, x1 + 3), min(bust.height, y1 + jaw))
+
+
+def drop_jaw(bust, params, shape):
+    """The bust with everything below the lip line moved down, inside the jaw box.
+
+    The moved block is a column narrower than the jaw box on each side, so its seams (and
+    the stretched gap above it) fall inside the mask for the model to redraw. The chin ends
+    up over the top of the neck, as a real jaw drop does.
+    """
+    drop = params.get("drop", {}).get(shape, 0)
+    if not drop or not params.get("jaw"):
+        return bust
+    mx0, my0, mx1, my1 = params["mouth"]
+    jx0, jy0, jx1, jy1 = jaw_box(bust, params["mouth"], params["jaw"])
+    split = my0 + (my1 - my0) * 2 // 5  # between the lips, near the top of the mouth box
+    x0, x1 = jx0 + 2, jx1 - 2
+    block = bust.crop((x0, split, x1, jy1 - drop))
+    out = bust.copy()
+    out.paste(Image.new("RGBA", block.size, (0, 0, 0, 0)), (x0, split + drop))  # clear, then place
+    out.paste(block, (x0, split + drop))
+    return out
+
+
+def unwhiten(frame, source, mask):
+    """Pro Flash paints transparent areas pure white; put the transparency back there."""
+    import numpy as np
+    f = np.array(frame)
+    src_clear = np.asarray(source)[..., 3] == 0
+    white = (f[..., :3] >= 245).all(axis=2)
+    f[src_clear & white & (np.asarray(mask) > 0)] = 0
+    return Image.fromarray(f)
+
+
+def shape_mask(bust, params, shape):
+    """The inpaint mask for one shape.
+
+    Most shapes only move the lips, so their mask is the mouth box clipped to the figure.
+    Open shapes (JAW_SHAPES) must move the chin down, so theirs is the jaw box, unclipped:
+    the jaw line can then spread into the background beside and below the chin.
+    """
+    jaw = params.get("jaw", 0)
+    if jaw and shape in JAW_SHAPES:
+        m = Image.new("L", bust.size, 0)
+        x0, y0, x1, y1 = jaw_box(bust, params["mouth"], jaw)
+        ImageDraw.Draw(m).rectangle([x0, y0, x1 - 1, y1 - 1], fill=255)
+        return m
+    return mouth_mask(bust, params["mouth"])
 
 
 def visemes_inpaint(run, bust, args):
@@ -752,18 +814,22 @@ def visemes_inpaint(run, bust, args):
             sys.exit(f"couldn't find the lips by colour. Read {grid} (pixel coordinates every 5px) "
                      "and pass --mouth x0,y0,x1,y1: the lips plus 3-4 rows "
                      "below them, the nostrils outside.")
-    preview = mouth_box_preview(run, bust, box)
-    print(f"mouth mask {box} ({how}); preview: {preview}\n"
-          "  check: lips and the few rows below them inside, nose tip and eyes outside.")
+    preview = mouth_box_preview(run, bust, box, jaw=jaw_box(bust, box, args.jaw) if args.jaw else None)
+    print(f"mouth mask {box} ({how}), jaw mask {jaw_box(bust, box, args.jaw)} for {', '.join(JAW_SHAPES)}; "
+          f"preview: {preview}\n"
+          "  check: red = lips plus a row or two below, nostrils outside; "
+          "orange = the chin and a few rows of neck below it.")
     shapes = args.shapes.split(",") if args.shapes else list(MOUTH_SHAPES)
     unknown = [s for s in shapes if s not in MOUTH_SHAPES]
     if unknown:
         sys.exit(f"unknown shape(s) {unknown}; choose from {list(MOUTH_SHAPES)}")
-    mask = mouth_mask(bust, box).convert("RGB")
     subject = args.subject or "the same character"
+    drop = {k: max(1, round(v * args.drop * bust.width / 128)) for k, v in JAW_DROP.items()} if args.drop else {}
+    params = {"mouth": list(box), "jaw": args.jaw, "drop": drop, "shapes": shapes,
+              "subject": subject, "seed": args.seed}
 
     def body(shape):
-        b = {"image": b64_image(bust), "mask_image": b64_image(mask),
+        b = {"image": b64_image(drop_jaw(bust, params, shape)), "mask_image": b64_image(shape_mask(bust, params, shape).convert("RGB")),
              "description": f"{subject}, {MOUTH_SHAPES[shape]}. {MOUTH_KEEP}",
              "output_method": "Modify current layer", "no_background": False}
         if args.seed is not None:
@@ -780,22 +846,21 @@ def visemes_inpaint(run, bust, args):
         ids[shape] = api.post("/inpaint-image-pro-flash", body(shape))["background_job_id"]
     job = run.add_job(stage="visemes", variant=vid, endpoint="/inpaint-image-pro-flash",
                       job_id=",".join(ids.values()), job_ids=ids,
-                      params={"mouth": list(box), "shapes": shapes, "subject": subject, "seed": args.seed})
+                      params=params)
     print(f"submitted {vid}: {len(ids)} inpaint jobs ({', '.join(shapes)})")
     collect(run, api, "visemes")
     report_stage(run, "talk")
 
 
 def save_inpaint_visemes(run, api, job):
-    """Wait for each shape's job; keep only the masked box, pasted onto the bust.
+    """Wait for each shape's job; keep only its masked pixels, pasted onto the bust.
 
-    Pro Flash preserves unmasked pixels already; the paste makes that a guarantee, so the
-    sheet can never pick up a stray change elsewhere on the face.
+    Pro Flash preserves unmasked pixels already; the paste makes that a guarantee, so each
+    saved frame is the bust everywhere outside that shape's own mask.
     """
     out = run.dir / "visemes" / job["variant"]
     out.mkdir(parents=True, exist_ok=True)
     bust = Image.open(run.dir / "bust" / f"{run.picked('bust')}.png").convert("RGBA")
-    x0, y0, x1, y1 = job["params"]["mouth"]
     total, outputs, order = 0.0, [], []
 
     def one(item):
@@ -811,8 +876,10 @@ def save_inpaint_visemes(run, api, job):
             raise RuntimeError(f"{shape} came back {im.size}, bust is {bust.size}")
         (out / "raw").mkdir(exist_ok=True)
         im.save(out / "raw" / f"{shape}.png")
-        full = bust.copy()
-        full.paste(im, (0, 0), mouth_mask(bust, (x0, y0, x1, y1)))
+        source = drop_jaw(bust, job["params"], shape)  # what was sent: the bust, chin moved for open shapes
+        mask = shape_mask(bust, job["params"], shape)
+        full = source.copy()
+        full.paste(unwhiten(im, source, mask), (0, 0), mask)
         p = out / f"{shape}.png"
         full.save(p)
         outputs.append(str(p.relative_to(run.dir)))
@@ -830,7 +897,8 @@ def write_viseme_sheet(run, job, assets, backup, face=None, swaps=None):
     so the body can't jitter between shapes. 'rest' is the bust itself. The engine reads it
     through the NPC's "spriteVisemes" field (see docs/SPRITE_SYSTEM.md).
 
-    For inpaint variants the box defaults to the mouth mask. swaps ("round=i02,teeth=i03")
+    Inpaint variants skip the box: each frame differs from the bust only inside its own
+    mask (bigger for the open shapes, so the jaw can drop), so frames go in whole. swaps ("round=i02,teeth=i03")
     take single shapes from other inpaint variants, so one bad shape can be redone alone.
     """
     sys.path.insert(0, str(TALK_SCRIPTS))
@@ -862,26 +930,37 @@ def write_viseme_sheet(run, job, assets, backup, face=None, swaps=None):
     else:
         box = (mouth_face_box([f for n, f in frames.items() if n != "rest"])
                or auto_face_box(base, [np.asarray(f, dtype=np.int16) for f in frames.values()]))
-    face_box_preview(run, bust, [f for n, f in frames.items() if n != "rest"], tuple(map(int, box)))
+    whole = inpaint and not face  # each inpaint frame is already the bust outside its own mask
+    if not whole:
+        face_box_preview(run, bust, [f for n, f in frames.items() if n != "rest"], tuple(map(int, box)))
     size = bust.width
     sheet = Image.new("RGBA", (size * len(order), size), (0, 0, 0, 0))
     for i, name in enumerate(order):
         cell = bust.copy()
         if name != "rest" and name in frames:
-            cell.paste(frames[name].crop(box), box[:2])  # hard paste, as build_talk_sheet does
+            if whole:
+                cell = frames[name]
+            else:
+                cell.paste(frames[name].crop(box), box[:2])  # hard paste, as build_talk_sheet does
         sheet.paste(cell, (i * size, 0))
     png = backup(assets / f"{run.name}_visemes.png")
     sheet.save(png)
     meta = backup(assets / f"{run.name}_visemes.json")
     if inpaint:
-        source = (f"pixellab /inpaint-image-pro-flash, mouth mask {list(map(int, box))}, "
-                  + ", ".join(f"{s}:{sources[s]}" for s in order if s in sources))
+        params = {j["variant"]: j.get("params", {}) for j in run.jobs("visemes")}
+
+        def how(shape):
+            v = sources[shape]
+            d = params[v].get("drop", {}).get(shape) if params[v].get("jaw") else None
+            return f"{shape}:{v}" + (f" (chin -{d}px, jaw mask +{params[v]['jaw']} rows)" if d else "")
+        source = (f"pixellab /inpaint-image-pro-flash, mouth mask {job['params']['mouth']}; "
+                  + ", ".join(how(s) for s in order if s in sources))
     else:
         source = (f"pixellab /vocal-animation {job['job_id']} "
                   f"(crop {job['params'].get('crop')}), face box {list(map(int, box))}")
     meta.write_text(json.dumps({"frameSize": size, "visemes": order, "source": source},
                                indent=2) + "\n")
-    print(f"face box {tuple(map(int, box))}; wrote {png} ({len(order)} shapes: {', '.join(order)}) and {meta.name}")
+    print(f"{'whole inpaint frames' if whole else f'face box {tuple(map(int, box))}'}; wrote {png} ({len(order)} shapes: {', '.join(order)}) and {meta.name}")
     print(f'scenario NPC: "spriteVisemes": "assets/characters/{run.name}_visemes.png"  (keep spriteTalk as the fallback)')
 
 
@@ -1759,6 +1838,12 @@ def main():
                         "vocal: /vocal-animation, which suits faces looking straight ahead")
     p.add_argument("--mouth", help="inpaint: x0,y0,x1,y1 mouth mask on the bust (default: guessed from "
                                    "lip colour). Check visemes/mouth_box_preview.png")
+    p.add_argument("--jaw", type=int, default=5,
+                   help="inpaint: rows below the mouth box that open shapes may redraw so the chin can "
+                        "drop (default 5; 0 = lips only)")
+    p.add_argument("--drop", type=float, default=1.0,
+                   help=f"inpaint: scale for how far the chin is moved down before open shapes are drawn "
+                        f"({', '.join(f'{k} {v}px' for k, v in JAW_DROP.items())} at 128px; 0 = don't move it)")
     p.add_argument("--shapes", help=f"inpaint: comma list, default all of {','.join(MOUTH_SHAPES)}")
     p.add_argument("--subject", help="inpaint: who is speaking, e.g. 'a woman in her fifties' "
                                      "(default 'the same character')")
