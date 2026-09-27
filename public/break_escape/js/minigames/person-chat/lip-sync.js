@@ -96,6 +96,57 @@ export function scaleTimeline(steps, totalMs) {
     return steps.map(s => ({ viseme: s.viseme, duration: s.duration * factor }));
 }
 
+// Shortest time a mouth shape stays up once the line is timed to its audio. Letter-level
+// steps run ~80 ms in normal speech, which reads as the mouth flickering; hand-animated lip
+// sync holds each shape for about 2 frames at 12 fps.
+export const MIN_HOLD_MS = 140;
+
+// Which shape survives when two short steps merge: the ones the eye catches win (lips
+// closing on m/b/p, open vowels) over the in-between consonant shape.
+const VISEME_WEIGHT = {
+    closed: 5, wide_open: 4, round: 4, medium_open: 3, teeth: 3, rest: 2, small_open: 1
+};
+
+/**
+ * Merge steps shorter than minMs into their neighbours so no shape flashes by. The total
+ * duration is unchanged. Each merged step shows whichever of its shapes weighs most, and the
+ * first and last steps stay "rest".
+ * @param {Array<{viseme: string, duration: number}>} steps
+ * @param {number} [minMs=MIN_HOLD_MS]
+ * @returns {Array<{viseme: string, duration: number}>}
+ */
+export function holdTimeline(steps, minMs = MIN_HOLD_MS) {
+    if (!(minMs > 0) || steps.length < 3) return steps.map(s => ({ ...s }));
+    const weight = v => VISEME_WEIGHT[v] ?? 1;
+    const first = { ...steps[0] };
+    const last = { ...steps[steps.length - 1] };
+    const out = [];
+    for (const step of steps.slice(1, -1)) {
+        const prev = out[out.length - 1];
+        if (prev && prev.duration < minMs) {
+            if (weight(step.viseme) > weight(prev.viseme)) prev.viseme = step.viseme;
+            prev.duration += step.duration;
+        } else {
+            out.push({ ...step });
+        }
+    }
+    // A short tail joins the step before it
+    if (out.length > 1 && out[out.length - 1].duration < minMs) {
+        const tail = out.pop();
+        const prev = out[out.length - 1];
+        if (weight(tail.viseme) > weight(prev.viseme)) prev.viseme = tail.viseme;
+        prev.duration += tail.duration;
+    }
+    // Neighbours that ended up the same shape become one step
+    const merged = [];
+    for (const step of [first, ...out, last]) {
+        const prev = merged[merged.length - 1];
+        if (prev && prev.viseme === step.viseme) prev.duration += step.duration;
+        else merged.push(step);
+    }
+    return merged;
+}
+
 /**
  * Viseme to show at elapsedMs into the timeline ("rest" before the start and after the end).
  * @param {Array<{viseme: string, duration: number}>} steps

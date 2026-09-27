@@ -9,7 +9,7 @@
  */
 
 import { ASSETS_PATH } from '../../config.js';
-import { textToVisemes, scaleTimeline, visemeAt, buildVisemeColumnMap, isBlinking, seedFrom } from './lip-sync.js';
+import { textToVisemes, scaleTimeline, holdTimeline, visemeAt, buildVisemeColumnMap, isBlinking, seedFrom } from './lip-sync.js';
 
 // Sprite sheets with no derivable portrait (e.g. prop sprites like hospital beds).
 // Remembered after the first failed lookup so later conversations skip the 404s.
@@ -459,7 +459,8 @@ export default class PersonChatPortraits {
     /**
      * Returns which column of the viseme sheet to display this render cycle.
      * While TTS plays, the line's text is turned into a viseme timeline, stretched over the
-     * audio's duration when known (90 ms per step otherwise), and indexed by the audio
+     * audio's duration when known (90 ms per step otherwise), with shapes held at least
+     * MIN_HOLD_MS (see holdTimeline), and indexed by the audio
      * element's playback position. Reading the position each frame, rather than scheduling
      * timers, keeps it in step with pauses and skips and leaves nothing to clean up.
      * Shows "rest" when silent. Whenever the mouth is at rest (silent, or a pause in the
@@ -481,7 +482,8 @@ export default class PersonChatPortraits {
         const key = `${duration}|${tts.currentText}`;
         if (key !== this._visemeTimelineKey) {
             this._visemeTimelineKey = key;
-            this._visemeTimeline = scaleTimeline(textToVisemes(tts.currentText), duration);
+            // Time to the audio first, then merge steps too short to see
+            this._visemeTimeline = holdTimeline(scaleTimeline(textToVisemes(tts.currentText), duration));
         }
         const viseme = visemeAt(this._visemeTimeline, (audio?.currentTime || 0) * 1000);
         const col = sheet.columnFor[viseme] ?? rest;

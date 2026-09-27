@@ -14,7 +14,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const src = readFileSync(join(here, '../../public/break_escape/js/minigames/person-chat/lip-sync.js'), 'utf8');
 const {
     textToVisemes, scaleTimeline, timelineDuration, visemeAt, buildVisemeColumnMap, DEFAULT_STEP_MS,
-    isBlinking, seedFrom, BLINK_MS
+    isBlinking, seedFrom, BLINK_MS, holdTimeline, MIN_HOLD_MS
 } = await import('data:text/javascript;base64,' + Buffer.from(src).toString('base64'));
 
 const names = steps => steps.map(s => s.viseme);
@@ -122,4 +122,27 @@ test('blinks: one short blink per 4 s slot, 2-6 s apart, varying with the seed',
     const b = starts(seedFrom('receptionist'));
     assert.notDeepEqual(a, b);
     assert.equal(isBlinking(NaN), false);
+});
+
+test('holdTimeline: no shape shorter than the hold, same total, rests at the ends', () => {
+    const line = 'Good evening. Visiting hours are over, so unless you have a pass, I cannot let you through.';
+    const raw = scaleTimeline(textToVisemes(line), 5200); // about as long as the TTS takes
+    const held = holdTimeline(raw);
+    assert.ok(raw.some(s => s.duration < MIN_HOLD_MS));
+    assert.ok(held.slice(1, -1).every(s => s.duration >= MIN_HOLD_MS - 1e-9));
+    assert.ok(Math.abs(timelineDuration(held) - 5200) < 1e-6);
+    assert.equal(held[0].viseme, 'rest');
+    assert.equal(held[held.length - 1].viseme, 'rest');
+    assert.ok(held.length < raw.length * 0.7, `${held.length} vs ${raw.length}`);
+    for (let i = 1; i < held.length; i++) assert.notEqual(held[i].viseme, held[i - 1].viseme);
+});
+
+test('holdTimeline: closed lips win a merge over an in-between shape', () => {
+    const held = holdTimeline([
+        { viseme: 'rest', duration: 90 }, { viseme: 'small_open', duration: 80 },
+        { viseme: 'closed', duration: 80 }, { viseme: 'wide_open', duration: 200 },
+        { viseme: 'rest', duration: 90 }
+    ]);
+    assert.deepEqual(held.map(s => s.viseme), ['rest', 'closed', 'wide_open', 'rest']);
+    assert.deepEqual(holdTimeline(textToVisemes('Hi'), 0).length, textToVisemes('Hi').length);
 });
