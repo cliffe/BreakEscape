@@ -18,22 +18,22 @@
     "imported": "2026-09-26"
   },
   "female_nurse1_v2": {
-    "character_id": "78997eba-8b6e-42bd-8502-35144cfac60f",
-    "name": "Nurse RN. A professional and friendly female healt...",
-    "size": {
-      "width": 60,
-      "height": 60
-    },
-    "imported": "2026-09-26"
-  },
-  "female_nurse2_v2": {
     "character_id": "ac1ee7cd-57c9-4780-bee1-c740f289a33a",
     "name": "Female curves. Nurse RN. A professional and friend...",
     "size": {
       "width": 60,
       "height": 60
     },
-    "imported": "2026-09-26"
+    "imported": "2026-09-27"
+  },
+  "female_nurse2_v2": {
+    "character_id": "78997eba-8b6e-42bd-8502-35144cfac60f",
+    "name": "Nurse RN. A professional and friendly female healt...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-27"
   },
   "female_security_guard_v2": {
     "character_id": "a394dbab-dc0e-4c6e-b74a-85a5e4c7b568",

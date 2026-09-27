@@ -1,0 +1,13 @@
+{
+  "frameSize": 128,
+  "visemes": [
+    "rest",
+    "round",
+    "teeth",
+    "closed",
+    "wide_open",
+    "small_open",
+    "medium_open"
+  ],
+  "source": "pixellab /vocal-animation f0416edf-c0cd-4bbc-8e0a-86316b6f61c0 (crop [33, 3, 97, 67]), face box [52, 30, 84, 42]"
+}
