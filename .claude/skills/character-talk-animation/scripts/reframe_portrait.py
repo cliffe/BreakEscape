@@ -8,6 +8,8 @@ pixels close to it that connect to the border are treated as background. Flood-f
 the border, rather than matching the colour anywhere, keeps a similar colour inside the
 character (a white lab coat on a pale background) from counting as background.
 
+An input that already has transparency keeps it, and its alpha gives the box.
+
 If the background isn't plain enough to find (a gradient or vignette), the character's box
 comes out as the whole image and nothing is cropped; the script says so.
 
@@ -81,16 +83,25 @@ def main():
              "Gemini's default output for this prompt faces left, so this is usually wanted.",
     )
     args = ap.parse_args()
-    src = Image.open(args.image).convert("RGB")
+    rgba_in = Image.open(args.image).convert("RGBA")
+    src = rgba_in.convert("RGB")
     rgb = np.array(src).astype(int)
-    if args.bg_color == "auto":
+    alpha_in = np.array(rgba_in)[..., 3]
+    if alpha_in.min() < 255:
+        # Already cut out (an older keyed render): its alpha is the background.
+        bg = alpha_in == 0
+        bg_color = None
+    elif args.bg_color == "auto":
         k = 8
         corners = np.concatenate([rgb[:k, :k], rgb[:k, -k:], rgb[-k:, :k], rgb[-k:, -k:]]).reshape(-1, 3)
         bg_color = tuple(int(v) for v in np.median(corners, axis=0))
     else:
         bg_color = tuple(int(c) for c in args.bg_color.split(","))
-    print(f"background colour: {bg_color}")
-    bg = background_mask(rgb, bg_color, args.tolerance)
+    if bg_color is not None:
+        print(f"background colour: {bg_color}")
+        bg = background_mask(rgb, bg_color, args.tolerance)
+    else:
+        print("input already has transparency: using it as the background")
 
     ys, xs = np.nonzero(~bg)
     if len(ys) == 0:
@@ -99,7 +110,7 @@ def main():
     print(f"character bbox: x{x0}-{x1} y{y0}-{y1} of {src.size}")
     if (x0, y0, x1 + 1, y1 + 1) == (0, 0, *src.size):
         print("background not found (not plain enough?): not cropped")
-    alpha = np.where(bg & args.key, 0, 255).astype(np.uint8)
+    alpha = alpha_in if bg_color is None else np.where(bg & args.key, 0, 255).astype(np.uint8)
     rgba = Image.fromarray(np.dstack([np.array(src), alpha]), "RGBA")
 
     # Square crop the height of the character, centred on it horizontally. The character
