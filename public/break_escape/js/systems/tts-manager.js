@@ -12,17 +12,19 @@
 
 import { ApiClient } from '../api-client.js';
 import MusicController from '../music/music-controller.js';
+import { envelopeFromSamples, alignToEnvelope } from '../minigames/person-chat/lip-sync.js';
 
 class TTSManager {
     constructor() {
         this.audio = new Audio();
         this.enabled = true;
         this.volume = 0.8;
-        this.preloadCache = new Map(); // "npcId|text" -> objectURL
+        this.preloadCache = new Map(); // "npcId|text" -> { url: objectURL, blob } (blob kept for lip-sync)
         this.onEndedCallback = null;
         this.playing = false;
         this._hasSrc = false; // Whether audio.src has been set to a real URL
         this.currentText = null; // Line now playing — read by portraits for lip-sync
+        this.lipSync = null;     // { text, timeline } fitted to the line's audio (see _alignLipSync)
 
         // Web Audio: one MediaElementSource per <audio> element, shared context
         this._mediaElementSource = null;
@@ -72,20 +74,23 @@ class TTSManager {
             const key = this._cacheKey(npcId, text);
 
             // Check preload cache first
-            let audioUrl = this.preloadCache.get(key);
+            let audioUrl, blob;
+            const cached = this.preloadCache.get(key);
 
-            if (audioUrl) {
+            if (cached) {
                 // Consume from preload cache
                 this.preloadCache.delete(key);
+                ({ url: audioUrl, blob } = cached);
             } else {
                 // Fetch from server
-                const blob = await ApiClient.getTTS(npcId, text);
+                blob = await ApiClient.getTTS(npcId, text);
                 if (!blob) return null;
                 audioUrl = URL.createObjectURL(blob);
             }
 
             this.audio.src = audioUrl;
             this._hasSrc = true;
+            this._alignLipSync(blob, audioUrl, text); // async; portraits use text timing until it lands
 
             // Wait for metadata to get duration
             const duration = await new Promise((resolve, reject) => {
@@ -145,7 +150,7 @@ class TTSManager {
         try {
             const blob = await ApiClient.getTTS(npcId, text);
             if (blob) {
-                this.preloadCache.set(key, URL.createObjectURL(blob));
+                this.preloadCache.set(key, { url: URL.createObjectURL(blob), blob });
                 console.log(`[TTS] Preloaded: "${text.substring(0, 40)}..."`);
             }
         } catch (error) {
@@ -158,6 +163,7 @@ class TTSManager {
      */
     stop() {
         this.currentText = null;
+        this.lipSync = null;
         if (this.playing) {
             this.audio.pause();
             this.audio.currentTime = 0;
@@ -215,7 +221,7 @@ class TTSManager {
      */
     destroy() {
         this.stop();
-        for (const url of this.preloadCache.values()) {
+        for (const { url } of this.preloadCache.values()) {
             URL.revokeObjectURL(url);
         }
         this.preloadCache.clear();
@@ -229,6 +235,30 @@ class TTSManager {
         this._amplitudeBuffer = null;
         this._ttsAudioRouted = false;
         this._activeFXProfile = null;
+    }
+
+    /**
+     * Decode the line's audio and fit its mouth shapes to the loudness curve, so they change
+     * when the sounds happen rather than being spread evenly over the line. Runs beside
+     * playback; the result is only kept if that line is still the one loaded. Any failure
+     * leaves lipSync null and the portrait falls back to text timing.
+     *
+     * Reads the Blob itself: fetch() on its blob: URL is refused by the page's CSP
+     * (connect-src has no blob:).
+     * @private
+     */
+    async _alignLipSync(blob, audioUrl, text) {
+        try {
+            const ctx = MusicController?.context;
+            if (!ctx?.decodeAudioData || !blob?.arrayBuffer) return;
+            const buffer = await ctx.decodeAudioData(await blob.arrayBuffer());
+            if (this.audio.src !== audioUrl) return; // a newer line has started
+            const envelope = envelopeFromSamples(buffer.getChannelData(0), buffer.sampleRate);
+            const timeline = alignToEnvelope(text, envelope);
+            if (timeline) this.lipSync = { text, timeline };
+        } catch (error) {
+            console.warn('[TTS] Lip-sync alignment unavailable:', error.message);
+        }
     }
 
     /**

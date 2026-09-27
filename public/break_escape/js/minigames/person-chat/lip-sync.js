@@ -96,10 +96,10 @@ export function scaleTimeline(steps, totalMs) {
     return steps.map(s => ({ viseme: s.viseme, duration: s.duration * factor }));
 }
 
-// Shortest time a mouth shape stays up once the line is timed to its audio. Letter-level
-// steps run ~80 ms in normal speech, which reads as the mouth flickering; hand-animated lip
-// sync holds each shape for about 2 frames at 12 fps.
-export const MIN_HOLD_MS = 140;
+// Shortest time a mouth shape stays up when the line is only stretched over the audio's
+// length (no loudness curve to align to). Letter-level steps run ~75 ms in normal speech,
+// which flickers; holding much longer drifts away from the words.
+export const MIN_HOLD_MS = 100; // text-only fallback; audio-aligned lines use 60
 
 // Which shape survives when two short steps merge: the ones the eye catches win (lips
 // closing on m/b/p, open vowels) over the in-between consonant shape.
@@ -108,9 +108,11 @@ const VISEME_WEIGHT = {
 };
 
 /**
- * Merge steps shorter than minMs into their neighbours so no shape flashes by. The total
- * duration is unchanged. Each merged step shows whichever of its shapes weighs most, and the
- * first and last steps stay "rest".
+ * Merge steps shorter than minMs so no shape flashes by. The total duration is unchanged.
+ * Consecutive short steps pool until they reach minMs and show whichever of their shapes
+ * weighs most; a leftover too short to stand alone joins the heavier neighbour. Steps that
+ * are already long enough keep their shape, so a real pause never turns into a mouth shape.
+ * The first and last steps stay as they are ("rest").
  * @param {Array<{viseme: string, duration: number}>} steps
  * @param {number} [minMs=MIN_HOLD_MS]
  * @returns {Array<{viseme: string, duration: number}>}
@@ -118,28 +120,34 @@ const VISEME_WEIGHT = {
 export function holdTimeline(steps, minMs = MIN_HOLD_MS) {
     if (!(minMs > 0) || steps.length < 3) return steps.map(s => ({ ...s }));
     const weight = v => VISEME_WEIGHT[v] ?? 1;
-    const first = { ...steps[0] };
-    const last = { ...steps[steps.length - 1] };
     const out = [];
+    let pool = null;
     for (const step of steps.slice(1, -1)) {
-        const prev = out[out.length - 1];
-        if (prev && prev.duration < minMs) {
-            if (weight(step.viseme) > weight(prev.viseme)) prev.viseme = step.viseme;
-            prev.duration += step.duration;
-        } else {
-            out.push({ ...step });
+        if (step.duration >= minMs) {
+            const next = { ...step };
+            if (pool) { // leftover: into the heavier side
+                const prev = out[out.length - 1];
+                if (prev && weight(prev.viseme) >= weight(next.viseme)) prev.duration += pool.duration;
+                else next.duration += pool.duration;
+                pool = null;
+            }
+            out.push(next);
+            continue;
         }
+        if (!pool) pool = { ...step };
+        else {
+            pool.duration += step.duration;
+            if (weight(step.viseme) > weight(pool.viseme)) pool.viseme = step.viseme;
+        }
+        if (pool.duration >= minMs) { out.push(pool); pool = null; }
     }
-    // A short tail joins the step before it
-    if (out.length > 1 && out[out.length - 1].duration < minMs) {
-        const tail = out.pop();
-        const prev = out[out.length - 1];
-        if (weight(tail.viseme) > weight(prev.viseme)) prev.viseme = tail.viseme;
-        prev.duration += tail.duration;
+    if (pool) {
+        if (out.length) out[out.length - 1].duration += pool.duration;
+        else out.push(pool);
     }
     // Neighbours that ended up the same shape become one step
     const merged = [];
-    for (const step of [first, ...out, last]) {
+    for (const step of [{ ...steps[0] }, ...out, { ...steps[steps.length - 1] }]) {
         const prev = merged[merged.length - 1];
         if (prev && prev.viseme === step.viseme) prev.duration += step.duration;
         else merged.push(step);
@@ -208,6 +216,203 @@ export function buildVisemeColumnMap(names) {
     }
     if (index.has('blink')) map.blink = index.get('blink'); // no fallback: no column, no blink
     return map;
+}
+
+// ------------------------------------------------------------ audio alignment
+//
+// The text alone says which shapes come in which order, not when: speech speeds up, slows
+// down and pauses. So the shapes are fitted to the line's loudness curve, decoded from the
+// TTS audio (TTSManager does that per line). Open vowels land on loud stretches, closed
+// lips and fricatives in the dips, punctuation on silences, and near-silent frames always
+// show rest.
+
+export const ENVELOPE_FRAME_MS = 20;
+
+/**
+ * Loudness curve: RMS of each frameMs slice of the samples.
+ * @param {Float32Array|number[]} samples - mono PCM, -1..1
+ * @param {number} sampleRate
+ * @param {number} [frameMs=ENVELOPE_FRAME_MS]
+ * @returns {Float32Array}
+ */
+export function envelopeFromSamples(samples, sampleRate, frameMs = ENVELOPE_FRAME_MS) {
+    const size = Math.max(1, Math.round(sampleRate * frameMs / 1000));
+    const n = Math.floor(samples.length / size);
+    const env = new Float32Array(n);
+    for (let f = 0; f < n; f++) {
+        let sum = 0;
+        for (let i = f * size; i < (f + 1) * size; i++) sum += samples[i] * samples[i];
+        env[f] = Math.sqrt(sum / size);
+    }
+    return env;
+}
+
+// Loudness each unit expects, 0 (silence) to 1 (the line's loud peaks).
+const UNIT_ENERGY = {
+    pause: 0, gap: 0.35,
+    closed: 0.15, teeth: 0.4, small_open: 0.55, round: 0.7, medium_open: 0.75, wide_open: 0.9, rest: 0.35
+};
+const SILENT = 0.08; // normalised loudness below which a frame is silence
+
+/**
+ * The line as alignment units, in order: 'sound' (letters, one viseme per run), 'gap'
+ * (a space between words, often not a pause in speech) and 'pause' (punctuation, usually
+ * a real silence). Each carries a weight: roughly how long it should last relative to the
+ * others (letters in the run; 2 for , ; : --, 4 for . ! ?).
+ * @param {string} text
+ * @returns {Array<{kind: string, viseme: string, weight: number}>}
+ */
+export function textToUnits(text) {
+    const chars = Array.from(String(text ?? '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase());
+    const units = [];
+    const add = (kind, viseme, weight) => {
+        const last = units[units.length - 1];
+        if (last && kind === 'pause' && last.kind === 'gap') units.pop();             // "word ," → pause
+        const prev = units[units.length - 1];
+        if (prev && kind === 'gap' && prev.kind === 'pause') return;                   // ", word" → pause
+        if (prev && prev.kind === kind && prev.viseme === viseme) {
+            prev.weight = kind === 'pause' ? Math.max(prev.weight, weight) : prev.weight + weight;
+            return;
+        }
+        units.push({ kind, viseme, weight });
+    };
+    for (let i = 0; i < chars.length; i++) {
+        const ch = chars[i];
+        if (/\s/.test(ch)) add('gap', 'rest', 0.3);
+        else if (/[\p{L}\p{N}]/u.test(ch)) add('sound', classifyChar(ch, chars[i + 1]), 1);
+        else if (/[.!?]/.test(ch)) add('pause', 'rest', 4);
+        else if (/[,;:]/.test(ch) || (ch === '-' && (chars[i + 1] === '-' || chars[i - 1] === '-'))) add('pause', 'rest', 2);
+        else if (ch === '-') add('gap', 'rest', 0.3);                                  // "half-ten"
+        // apostrophes, quotes, asterisks: no sound of their own
+    }
+    return units;
+}
+
+/**
+ * Fit the line's units to its loudness curve. Returns a timeline spanning the whole audio
+ * (envelope.length * frameMs), or null when there is nothing usable to align to.
+ *
+ * Each unit gets a contiguous run of frames, in order. A run costs how far the frames'
+ * loudness is from the unit's expected loudness, plus a penalty for straying far from the
+ * unit's expected length (its weight's share of the voiced or silent time). The cheapest
+ * split is found by dynamic programming over (unit, end frame, run length).
+ *
+ * @param {string} text
+ * @param {Float32Array|number[]} envelope - from envelopeFromSamples
+ * @param {number} [frameMs=ENVELOPE_FRAME_MS]
+ * @param {Object} [options]
+ * @param {number} [options.minHoldMs=60] - merge shapes shorter than this (anti-flicker only)
+ * @returns {Array<{viseme: string, duration: number}>|null}
+ */
+export function alignToEnvelope(text, envelope, frameMs = ENVELOPE_FRAME_MS, options = {}) {
+    const T = envelope?.length || 0;
+    const units = [{ kind: 'pause', viseme: 'rest', weight: 2 }, ...textToUnits(text),
+                   { kind: 'pause', viseme: 'rest', weight: 2 }];
+    const N = units.length;
+    if (T < N || N < 3) return null;
+
+    const sorted = Float32Array.from(envelope).sort();
+    const ref = sorted[Math.floor(0.95 * (T - 1))];
+    if (!(ref > 0)) return null;
+    const e = Float32Array.from(envelope, v => Math.min(1, v / ref));
+
+    const voiced = e.reduce((n, v) => n + (v >= SILENT ? 1 : 0), 0);
+    const sumW = kinds => units.reduce((s, u) => s + (kinds.includes(u.kind) ? u.weight : 0), 0);
+    const soundW = sumW(['sound', 'gap']) || 1;
+    const pauseW = sumW(['pause']) || 1;
+    const expected = u => u.kind === 'pause' ? 0 : UNIT_ENERGY[u.kind === 'gap' ? 'gap' : u.viseme] ?? 0.5;
+    const prior = u => Math.max(1, u.kind === 'pause'
+        ? u.weight / pauseW * Math.max(T - voiced, 1)
+        : u.weight / soundW * Math.max(voiced, 1));
+    const lambda = u => (u.kind === 'pause' ? 0.2 : u.kind === 'gap' ? 0.3 : 0.5);
+
+    // prefix[k][t] = sum over frames < t of |energy_k - e|, one row per distinct energy
+    const prefixes = new Map();
+    const prefixFor = level => {
+        if (!prefixes.has(level)) {
+            const p = new Float64Array(T + 1);
+            for (let t = 0; t < T; t++) p[t + 1] = p[t] + Math.abs(level - e[t]);
+            prefixes.set(level, p);
+        }
+        return prefixes.get(level);
+    };
+
+    const W = T + 1;
+    const best = new Float64Array((N + 1) * W).fill(Infinity);
+    const runLen = new Int32Array((N + 1) * W);
+    const logL = Float64Array.from({ length: T + 1 }, (_, L) => (L ? Math.log(L) : 0));
+    // Each unit must end within a band around where its prior lengths put it (at least 2 s
+    // or 12% of the line either side), which keeps long lines fast.
+    const priors = units.map(prior);
+    const scale = T / priors.reduce((a, b) => a + b, 0);
+    const band = Math.max(Math.round(2000 / frameMs), Math.round(0.12 * T));
+    let priorEnd = 0;
+    best[0] = 0;
+    for (let k = 1; k <= N; k++) {
+        const u = units[k - 1];
+        const P = prefixFor(expected(u));
+        const d = priors[k - 1];
+        const logD = Math.log(d);
+        const lam = lambda(u);
+        const cap = u.kind === 'pause' ? 1500 : 500;
+        const Lmax = Math.max(2, Math.min(T, Math.ceil(Math.max(4 * d, cap / frameMs))));
+        priorEnd += d * scale;
+        const tFirst = Math.max(k, Math.floor(priorEnd) - band);
+        const tLast = k === N ? T : Math.min(T - (N - k), Math.ceil(priorEnd) + band); // a frame for each later unit
+        for (let t = tFirst; t <= tLast; t++) {
+            let bestCost = Infinity, bestL = 0;
+            const Ltop = Math.min(Lmax, t - (k - 1));
+            for (let L = 1; L <= Ltop; L++) {
+                const prev = best[(k - 1) * W + t - L];
+                if (prev === Infinity) continue;
+                const r = logL[L] - logD;
+                const c = prev + (P[t] - P[t - L]) + lam * r * r;
+                if (c < bestCost) { bestCost = c; bestL = L; }
+            }
+            best[k * W + t] = bestCost;
+            runLen[k * W + t] = bestL;
+        }
+    }
+    if (best[N * W + T] === Infinity) return null;
+
+    // Walk back to each unit's run, then paint one viseme per frame
+    const frames = new Array(T);
+    let t = T;
+    const runs = [];
+    for (let k = N; k >= 1; k--) {
+        const L = runLen[k * W + t];
+        runs.push({ unit: units[k - 1], start: t - L, end: t });
+        t -= L;
+    }
+    runs.reverse();
+    let lastSound = 'small_open';
+    for (const { unit, start, end } of runs) {
+        let v = 'rest';
+        if (unit.kind === 'sound') {
+            v = lastSound = unit.viseme;
+        } else if (unit.kind === 'gap') {
+            let sum = 0;
+            for (let i = start; i < end; i++) sum += e[i];
+            v = sum / (end - start) < 0.15 ? 'rest' : lastSound; // a word break the speaker ran through
+        }
+        for (let i = start; i < end; i++) frames[i] = v;
+    }
+    // Two or more near-silent frames in a row always rest
+    for (let i = 0; i < T; i++) {
+        if (e[i] < SILENT * 0.6 && ((i > 0 && e[i - 1] < SILENT * 0.6) || (i + 1 < T && e[i + 1] < SILENT * 0.6))) {
+            frames[i] = 'rest';
+        }
+    }
+
+    const steps = [];
+    for (const v of frames) {
+        const last = steps[steps.length - 1];
+        if (last && last.viseme === v) last.duration += frameMs;
+        else steps.push({ viseme: v, duration: frameMs });
+    }
+    if (steps[0].viseme !== 'rest') steps.unshift({ viseme: 'rest', duration: 0 });
+    if (steps[steps.length - 1].viseme !== 'rest') steps.push({ viseme: 'rest', duration: 0 });
+    return holdTimeline(steps, options.minHoldMs ?? 60);
 }
 
 export const BLINK_MS = 130;

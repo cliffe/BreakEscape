@@ -458,9 +458,9 @@ export default class PersonChatPortraits {
 
     /**
      * Returns which column of the viseme sheet to display this render cycle.
-     * While TTS plays, the line's text is turned into a viseme timeline, stretched over the
-     * audio's duration when known (90 ms per step otherwise), with shapes held at least
-     * MIN_HOLD_MS (see holdTimeline), and indexed by the audio
+     * While TTS plays, the line's text is turned into a viseme timeline fitted to the audio's
+     * loudness (tts.lipSync, see alignToEnvelope); before that is ready it is stretched over
+     * the audio's duration and gated by the live level. The timeline is indexed by the audio
      * element's playback position. Reading the position each frame, rather than scheduling
      * timers, keeps it in step with pauses and skips and leaves nothing to clean up.
      * Shows "rest" when silent. Whenever the mouth is at rest (silent, or a pause in the
@@ -479,13 +479,17 @@ export default class PersonChatPortraits {
 
         const audio = tts.audio;
         const duration = audio && Number.isFinite(audio.duration) ? audio.duration * 1000 : null;
-        const key = `${duration}|${tts.currentText}`;
+        // Prefer shapes fitted to the audio (TTSManager decodes each line); until that lands,
+        // or if it failed, spread the text over the line and close the mouth in quiet moments.
+        const aligned = tts.lipSync?.text === tts.currentText ? tts.lipSync.timeline : null;
+        const key = `${duration}|${tts.currentText}|${aligned ? 'audio' : 'text'}`;
         if (key !== this._visemeTimelineKey) {
             this._visemeTimelineKey = key;
-            // Time to the audio first, then merge steps too short to see
-            this._visemeTimeline = holdTimeline(scaleTimeline(textToVisemes(tts.currentText), duration));
+            this._visemeTimeline = aligned ||
+                holdTimeline(scaleTimeline(textToVisemes(tts.currentText), duration));
         }
-        const viseme = visemeAt(this._visemeTimeline, (audio?.currentTime || 0) * 1000);
+        let viseme = visemeAt(this._visemeTimeline, (audio?.currentTime || 0) * 1000);
+        if (!aligned && tts._analyser && !tts.isSpeaking()) viseme = 'rest';
         const col = sheet.columnFor[viseme] ?? rest;
         return col === rest ? restOrBlink() : col;
     }

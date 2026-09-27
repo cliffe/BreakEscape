@@ -150,9 +150,12 @@ closed mouth, and frames 1–3 cycle while TTS audio is playing.
 ## Lip-sync Portraits (`spriteVisemes`)
 
 `spriteVisemes` is optional and turns on lip-sync mode. While a line plays, the portrait shows
-mouth shapes worked out from the line's text (see `js/minigames/person-chat/lip-sync.js`), stretched
-over the TTS audio's length with each shape held at least 140 ms (`MIN_HOLD_MS`), and shows `rest`
-when silent. If the field is absent or either file
+mouth shapes worked out from the line's text (see `js/minigames/person-chat/lip-sync.js`), and shows
+`rest` when silent. The TTS manager decodes each line's audio and `alignToEnvelope` fits the shapes
+to its loudness curve: open vowels on loud stretches, closed lips and f/v/s in the dips, punctuation
+on silences, and anything near-silent at rest. Until that is ready (a few ms), or if decoding fails,
+the shapes are spread evenly over the line, held at least 100 ms, and closed whenever the live level
+drops. If the field is absent or either file
 fails to load, the portrait falls back to `spriteTalk` as above.
 
 ```json

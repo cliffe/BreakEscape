@@ -14,7 +14,8 @@ const here = dirname(fileURLToPath(import.meta.url));
 const src = readFileSync(join(here, '../../public/break_escape/js/minigames/person-chat/lip-sync.js'), 'utf8');
 const {
     textToVisemes, scaleTimeline, timelineDuration, visemeAt, buildVisemeColumnMap, DEFAULT_STEP_MS,
-    isBlinking, seedFrom, BLINK_MS, holdTimeline, MIN_HOLD_MS
+    isBlinking, seedFrom, BLINK_MS, holdTimeline, MIN_HOLD_MS,
+    envelopeFromSamples, textToUnits, alignToEnvelope
 } = await import('data:text/javascript;base64,' + Buffer.from(src).toString('base64'));
 
 const names = steps => steps.map(s => s.viseme);
@@ -145,4 +146,59 @@ test('holdTimeline: closed lips win a merge over an in-between shape', () => {
     ]);
     assert.deepEqual(held.map(s => s.viseme), ['rest', 'closed', 'wide_open', 'rest']);
     assert.deepEqual(holdTimeline(textToVisemes('Hi'), 0).length, textToVisemes('Hi').length);
+});
+
+test('envelopeFromSamples: RMS per frame', () => {
+    const sr = 1000; // 20 samples per 20 ms frame
+    const samples = new Float32Array(60);
+    samples.fill(0.5, 20, 40);
+    assert.deepEqual(Array.from(envelopeFromSamples(samples, sr, 20)), [0, 0.5, 0]);
+});
+
+test('textToUnits: sounds, word gaps and punctuation pauses', () => {
+    const u = textToUnits("Ma, it's -- no.");
+    // "Ma" , "it's" -- "no" .   (spaces next to punctuation fold into the pause)
+    assert.deepEqual(u.map(x => x.kind), ['sound', 'sound', 'pause', 'sound', 'sound', 'pause', 'sound', 'sound', 'pause']);
+    assert.deepEqual(textToUnits('no way').map(x => x.kind), ['sound', 'sound', 'gap', 'sound', 'sound', 'sound']);
+    assert.equal(u[2].weight, 2);                       // comma
+    assert.equal(u[u.length - 1].weight, 4);            // full stop
+    assert.ok(!u.some(x => x.kind === 'gap' && x.weight > 1));
+});
+
+test('alignToEnvelope: silences rest, loud stretches talk', () => {
+    const env = [...Array(10).fill(0), ...Array(15).fill(0.8), ...Array(20).fill(0), ...Array(15).fill(0.8), ...Array(10).fill(0)];
+    const tl = alignToEnvelope('Mama. Mama.', env, 20);
+    assert.ok(Math.abs(timelineDuration(tl) - env.length * 20) < 1e-6);
+    for (const [ms, want] of [[100, 'rest'], [700, 'rest'], [1300, 'rest']]) assert.equal(visemeAt(tl, ms), want, `${ms} ms`);
+    for (const ms of [300, 1000]) assert.notEqual(visemeAt(tl, ms), 'rest', `${ms} ms`);
+    assert.equal(alignToEnvelope('Hi', [], 20), null);
+    assert.equal(alignToEnvelope('Hi there', new Array(50).fill(0), 20), null);
+});
+
+test('alignToEnvelope on a real TTS line: pauses land on silences', async () => {
+    const fx = JSON.parse(readFileSync(join(here, 'fixtures/bernie_line_envelope.json'), 'utf8'));
+    const env = fx.envelope;
+    const t0 = performance.now();
+    const tl = alignToEnvelope(fx.text, env, fx.frameMs);
+    assert.ok(performance.now() - t0 < 500, 'fast enough to run per line');
+    const peak = Math.max(...env);
+    // Silences of 100 ms or more are pauses; shorter dips are consonant closures inside words
+    const quiet = env.map(v => v < 0.02 * peak);
+    const inPause = quiet.map((q, i) => {
+        if (!q) return false;
+        let a = i, b = i;
+        while (a > 0 && quiet[a - 1]) a--;
+        while (b < quiet.length - 1 && quiet[b + 1]) b++;
+        return (b - a + 1) * fx.frameMs >= 100;
+    });
+    let silentFrames = 0, silentResting = 0, loudFrames = 0, loudTalking = 0;
+    env.forEach((v, i) => {
+        const shape = visemeAt(tl, i * fx.frameMs + fx.frameMs / 2);
+        if (inPause[i]) { silentFrames++; if (shape === 'rest') silentResting++; }
+        if (v > 0.4 * peak) { loudFrames++; if (shape !== 'rest') loudTalking++; }
+    });
+    assert.ok(silentResting / silentFrames > 0.9, `silent frames at rest: ${silentResting}/${silentFrames}`);
+    assert.ok(loudTalking / loudFrames > 0.95, `loud frames talking: ${loudTalking}/${loudFrames}`);
+    const rate = tl.length / (timelineDuration(tl) / 1000);
+    assert.ok(rate > 4 && rate < 12, `changes per second ${rate.toFixed(1)}`);
 });
