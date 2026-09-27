@@ -3,11 +3,9 @@
   "visemes": [
     "rest",
     "round",
-    "teeth",
-    "closed",
+    "medium_open",
     "wide_open",
-    "small_open",
-    "medium_open"
+    "blink"
   ],
-  "source": "pixellab /vocal-animation 61f3848c-cc5d-4a65-93cf-042ae74639fb (crop [37, 0, 101, 64]), face box [50, 29, 82, 41]"
+  "source": "pixellab /inpaint-image-pro-flash, mouth mask [65, 31, 79, 38]; round:i02, medium_open:i01 (chin -1px, jaw mask +5 rows), wide_open:i01 (chin -2px, jaw mask +5 rows), blink:i01"
 }

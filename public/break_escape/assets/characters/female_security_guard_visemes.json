@@ -2,12 +2,12 @@
   "frameSize": 128,
   "visemes": [
     "rest",
-    "round",
     "teeth",
-    "closed",
-    "wide_open",
+    "round",
     "small_open",
-    "medium_open"
+    "medium_open",
+    "wide_open",
+    "blink"
   ],
-  "source": "pixellab /vocal-animation 02a239f4-1fce-448c-9714-513bc42acfd1 (crop [33, 0, 97, 64]), face box [50, 28, 82, 41]"
+  "source": "pixellab /inpaint-image-pro-flash, mouth mask [66, 34, 78, 40]; teeth:i01, round:i01, small_open:i01, medium_open:i01 (chin -1px, jaw mask +5 rows), wide_open:i01 (chin -2px, jaw mask +5 rows), blink:i01"
 }
