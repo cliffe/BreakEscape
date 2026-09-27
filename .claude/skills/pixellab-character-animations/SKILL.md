@@ -7,6 +7,8 @@ description: Brings one or more existing PixelLab characters up to the project's
 
 Adds the project's six stock animations, in all 8 directions, to characters that **already exist** in the PixelLab account. This does not create characters; it only animates existing ones.
 
+**Prefer the scripted route:** `python3 tools/pixellab_pipeline.py animate <url|id> [--dry-run]` (see the pixellab-character-pipeline skill) does everything below over the REST API. It finds the gaps, extends existing groups, keeps the 8 slots full, retries failures and verifies the result, in one command, without the MCP's large `get_character` replies. Then `import` brings the character into the game. The MCP procedure below is the fallback, and the reference for why the scripted route behaves as it does.
+
 ## The standard set
 
 Six PixelLab **stock template** animations, matching the house set used by the m01–m08 NPC sprites:

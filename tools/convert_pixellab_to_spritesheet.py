@@ -39,6 +39,7 @@ def normalize_anim_type(raw_name):
         'Falling_Back_Death-2077851e' -> 'falling-back-death'
         'animation-96bfd644'          -> 'walk'
         'walk'                        -> 'walk'   (already normalised)
+        'jab_attack'                  -> 'lead-jab' (web-UI display name)
     """
     # Strip trailing -XXXXXXXX hash (8 hex chars)
     name = re.sub(r'-[0-9a-f]{8}$', '', raw_name)
@@ -47,7 +48,33 @@ def normalize_anim_type(raw_name):
     # PixelLab uses the bare name 'animation' for unrecognised animations, which are walk cycles
     if name == 'animation':
         name = 'walk'
-    return name
+    # Web-UI animations are exported under their display names, not template ids.
+    # 'animating' is left alone: it has been seen for idle, so it can't be guessed.
+    return DISPLAY_NAME_ALIASES.get(name, name)
+
+
+DISPLAY_NAME_ALIASES = {
+    'walking': 'walk',
+    'cross-punch-attack': 'cross-punch',
+    'jab-attack': 'lead-jab',
+    'taking-a-punch': 'taking-punch',
+    'falling-backward': 'falling-back-death',
+}
+
+
+def resolve_export_root(character_dir):
+    """
+    Return the folder that holds animations/ (and rotations/).
+
+    Web-UI exports put animations/ directly in the character folder. API exports
+    (GET /v2/characters/{id}/zip) nest it one level down, in a folder named after
+    the character state, e.g. 'Idle/animations/Walk/east/frame_000.png'.
+    """
+    character_dir = Path(character_dir)
+    if (character_dir / 'animations').exists():
+        return character_dir
+    nested = [d for d in sorted(character_dir.iterdir()) if (d / 'animations').is_dir()]
+    return nested[0] if nested else character_dir
 
 
 def scan_character_animations(character_dir):
@@ -69,11 +96,11 @@ def scan_character_animations(character_dir):
     }
     """
     character_dir = Path(character_dir)
-    animations_dir = character_dir / 'animations'
-    
+    animations_dir = resolve_export_root(character_dir) / 'animations'
+
     if not animations_dir.exists():
         return None
-    
+
     character_data = {
         'character_name': character_dir.name,
         'animations': {}
@@ -117,10 +144,62 @@ def get_frame_size(frames):
     return (0, 0)
 
 
-def create_sprite_sheet(character_data, output_path, padding=2):
+# The engine's collision boxes assume 80x80 frames with the feet near y=69
+# (npc-sprites.js body offset 30,66; player.js 31,66). Newer PixelLab characters,
+# e.g. Pro-mode ones, come out at 60x60 with the same on-screen figure height, so
+# smaller frames are padded onto this canvas rather than changing the engine.
+DEFAULT_CANVAS = 80
+DEFAULT_FEET_Y = 69
+
+
+def frame_offsets(character_data, canvas, feet_y):
+    """
+    Where to paste each frame on the canvas, keyed by source frame size.
+
+    Frames are placed so the figure is centred horizontally and its feet land
+    on feet_y. PixelLab characters usually share one frame size, but directions
+    backfilled later can come back on a different canvas (e.g. 76x76 or 80x80
+    south strips on a 60x60 character), so each size gets its own offset,
+    from the median standing pose of that size. Within one size the offset is
+    shared, so animations don't jitter.
+
+    Returns ({(w, h): (x, y)}, (canvas_w, canvas_h)). With canvas=0, or when
+    every frame already is canvas-sized, frames are pasted unchanged.
+    """
+    anims = character_data['animations']
+    # Every animation starts from a standing pose, so the first frame of each strip gives a
+    # feet line and centre. Take the median per frame size, so one odd strip (or a patched
+    # frame) can't shift the whole character.
+    samples = {}
+    for directions in anims.values():
+        for frames in directions.values():
+            if not frames:
+                continue
+            with Image.open(frames[0]) as img:
+                samples.setdefault(img.size, []).append(img.getbbox())
+            for f in frames[1:]:
+                with Image.open(f) as img:
+                    samples.setdefault(img.size, [])
+    if not canvas or all(size == (canvas, canvas) for size in samples):
+        return {size: (0, 0) for size in samples}, next(iter(samples))
+    offsets = {}
+    for (w, h), boxes in samples.items():
+        boxes = [b for b in boxes if b]
+        if not boxes:
+            offsets[(w, h)] = ((canvas - w) // 2, (canvas - h) // 2)
+            continue
+        feet = sorted(b[3] for b in boxes)[len(boxes) // 2]
+        centre_x = sorted((b[0] + b[2]) // 2 for b in boxes)[len(boxes) // 2]
+        offsets[(w, h)] = (canvas // 2 - centre_x, feet_y - feet)
+    return offsets, (canvas, canvas)
+
+
+def create_sprite_sheet(character_data, output_path, padding=2,
+                        canvas=DEFAULT_CANVAS, feet_y=DEFAULT_FEET_Y):
     """
     Create a sprite sheet from all animation frames.
-    
+
+    Frames smaller than `canvas` are padded up to it (see frame_offset).
     Returns metadata about frame positions for the atlas JSON.
     """
     # Collect all frames in order
@@ -143,7 +222,10 @@ def create_sprite_sheet(character_data, output_path, padding=2):
         raise ValueError("No frames found!")
     
     # Get frame dimensions (assume all frames are same size)
-    frame_width, frame_height = get_frame_size(all_frames)
+    offsets, (frame_width, frame_height) = frame_offsets(character_data, canvas, feet_y)
+    if list(offsets.values()) != [(0, 0)]:
+        for size, off in offsets.items():
+            print(f"  Placing {size[0]}x{size[1]} frames on {frame_width}x{frame_height} at offset {off}")
     
     # Calculate sprite sheet dimensions
     # Try to make it roughly square
@@ -169,7 +251,12 @@ def create_sprite_sheet(character_data, output_path, padding=2):
         
         # Paste frame onto sprite sheet
         with Image.open(frame_path) as frame_img:
-            sprite_sheet.paste(frame_img, (x, y))
+            frame_img = frame_img.convert('RGBA')
+            ox, oy = offsets[frame_img.size]
+            # Paste through a cell-sized layer so an oversized frame can't bleed into neighbours
+            cell = Image.new('RGBA', (frame_width, frame_height), (0, 0, 0, 0))
+            cell.paste(frame_img, (ox, oy))
+            sprite_sheet.paste(cell, (x, y))
         
         # Store frame position for atlas
         atlas_frames[metadata['name']] = {
@@ -202,7 +289,7 @@ def create_sprite_sheet(character_data, output_path, padding=2):
     print(f"  Frames: {num_frames}")
     print(f"  Frame size: {frame_width}x{frame_height}")
     
-    return atlas_frames, frame_width, frame_height
+    return atlas_frames, frame_width, frame_height, offsets
 
 
 def create_phaser_atlas(character_data, atlas_frames, sprite_sheet_filename, output_path, frame_width, frame_height):
@@ -272,8 +359,15 @@ def create_phaser_atlas(character_data, atlas_frames, sprite_sheet_filename, out
         print(f"    - {anim_key}: {frame_count} frames")
 
 
-def process_character(character_dir, output_dir):
-    """Process a single character directory."""
+def process_character(character_dir, output_dir, key=None, padding=2,
+                      canvas=DEFAULT_CANVAS, feet_y=DEFAULT_FEET_Y):
+    """
+    Process a single character directory into <key>.png, <key>.json and
+    <key>_headshot.png in output_dir.
+
+    key defaults to a name derived from the folder (see sprite_name_map).
+    tools/pixellab_pipeline.py calls this directly with an explicit key.
+    """
     character_dir = Path(character_dir)
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -308,7 +402,7 @@ def process_character(character_dir, output_dir):
         'red_t-shirt_jeans_sneakers_short_beard_glasses_ner_(3)': 'male_nerd',
     }
     char_name = character_data['character_name']
-    clean_name = sprite_name_map.get(char_name, char_name.lower().replace(' ', '_').replace('.', '').replace('_', '_'))
+    clean_name = key or sprite_name_map.get(char_name, char_name.lower().replace(' ', '_').replace('.', '').replace('_', '_'))
 
     # Create output files
     sprite_sheet_filename = f"{clean_name}.png"
@@ -320,9 +414,12 @@ def process_character(character_dir, output_dir):
     # Also update headshot filename to use clean_name
     
     # Create sprite sheet
-    atlas_frames, frame_width, frame_height = create_sprite_sheet(
+    atlas_frames, frame_width, frame_height, offsets = create_sprite_sheet(
         character_data,
-        sprite_sheet_path
+        sprite_sheet_path,
+        padding=padding,
+        canvas=canvas,
+        feet_y=feet_y,
     )
 
     # Create atlas JSON
@@ -341,7 +438,7 @@ def process_character(character_dir, output_dir):
     try:
         south_source = None
         # 1. Check character_dir/rotations/south.png
-        rotations_south = character_dir / 'rotations' / 'south.png'
+        rotations_south = resolve_export_root(character_dir) / 'rotations' / 'south.png'
         if rotations_south.exists():
             south_source = rotations_south
         else:
@@ -361,7 +458,18 @@ def process_character(character_dir, output_dir):
                 south_source = south_frames[0]
 
         if south_source:
-            with Image.open(south_source) as south_img:
+            with Image.open(south_source) as raw_south:
+                # Apply the same padding as the atlas so the crop lands on the head
+                south_img = Image.new('RGBA', (frame_width, frame_height), (0, 0, 0, 0))
+                raw = raw_south.convert('RGBA')
+                # Rotations may not share a size with any animation frame; place them the same way
+                off = offsets.get(raw.size)
+                if off is None and set(offsets.values()) == {(0, 0)}:
+                    off = (0, 0)  # padding disabled (--canvas 0): paste unchanged
+                if off is None:
+                    bb = raw.getbbox() or (0, 0, raw.width, raw.height)
+                    off = (frame_width // 2 - (bb[0] + bb[2]) // 2, feet_y - bb[3])
+                south_img.paste(raw, off)
                 # Calculate center top crop
                 img_width, img_height = south_img.size
                 headshot_size = 32
@@ -401,6 +509,18 @@ def main():
         default=2,
         help='Padding between frames in pixels (default: 2)'
     )
+    parser.add_argument(
+        '--canvas',
+        type=int,
+        default=DEFAULT_CANVAS,
+        help=f'Pad smaller frames up to this square size, 0 to disable (default: {DEFAULT_CANVAS})'
+    )
+    parser.add_argument(
+        '--feet-y',
+        type=int,
+        default=DEFAULT_FEET_Y,
+        help=f'Row the feet land on when padding (default: {DEFAULT_FEET_Y})'
+    )
     
     args = parser.parse_args()
     
@@ -429,7 +549,8 @@ def main():
     success_count = 0
     for char_dir in character_dirs:
         try:
-            if process_character(char_dir, output_dir):
+            if process_character(char_dir, output_dir, padding=args.padding,
+                                 canvas=args.canvas, feet_y=args.feet_y):
                 success_count += 1
         except Exception as e:
             print(f"✗ Error processing {char_dir.name}: {e}")

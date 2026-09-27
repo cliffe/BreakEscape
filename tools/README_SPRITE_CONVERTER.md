@@ -10,6 +10,14 @@ For Phaser.js games, sprite sheets are essential for:
 - **Rendering**: Faster frame switching during animations
 - **Loading**: Quicker initial load times
 
+## Normally run for you
+
+`tools/pixellab_pipeline.py import` downloads a character from the PixelLab API and calls this converter with an explicit key, so the manual steps below are only needed for a ZIP downloaded from the web UI. The converter handles both layouts: web exports (`<character>/animations/...`) and API exports, which nest everything under a state folder (`<character>/Idle/animations/...`).
+
+Frames are placed on `--canvas` (default 80) cells, centred, with the feet on row `--feet-y` (default 69). The placement is measured per source frame size, from the median first (standing) frame of every strip, because backfilled directions can come back on a different canvas from the rest. PixelLab Pro characters are 60×60, and the engine's collision boxes assume 80×80 frames. Pass `--canvas 0` to turn this off.
+
+Known web-UI display names (`walking`, `cross-punch-attack`, `jab-attack`, `taking-a-punch`, `falling-backward`) are mapped to template ids. `animating` is ambiguous and is left alone; the pipeline's `import` resolves it by matching pixels against the API.
+
 ## Installation
 
 The script requires Python 3.6+ and Pillow (PIL):

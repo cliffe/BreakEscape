@@ -1,0 +1,149 @@
+---
+name: pixellab-character-pipeline
+description: Takes a Break Escape character from a reframed Gemini concept portrait to in-game assets through the PixelLab REST API (tools/pixellab_pipeline.py). It makes the pixel-art dialogue bust, the 2x2 talk sheet and/or a lip-sync viseme sheet, and an 8-direction walk character with the standard six animations. It then reviews and repairs bad animation frames and imports the atlas into the game. It generates alternatives and stops for a choice between stages. Trigger when a `<name>_nonpixelart.png` exists and the user asks to "make the pixel art version", "do the talk animation", "add lip sync", "run the PixelLab pipeline" or "create the walk sprite from the portrait", when they paste pixellab.ai character URLs and ask to "import" them or "add them to a mission", when they ask to "check/fix the animation frames", or to continue after character-talk-animation Step 1b.
+---
+
+# PixelLab character pipeline
+
+One script, [tools/pixellab_pipeline.py](../../../tools/pixellab_pipeline.py), drives every step. `python3 tools/pixellab_pipeline.py <command> --help` documents every flag. Images go from disk to HTTP inside the script. **Never** pass images to the PixelLab MCP as base64 for this work, because that path corrupts uploads silently (see character-talk-animation).
+
+| Stage              | Command                | API                                                           | Produces                                                     |
+| ------------------ | ---------------------- | ------------------------------------------------------------- | ------------------------------------------------------------ |
+| 1 bust             | `bust`                 | `/create-image-pixflux` (init image = Gemini art, same prompt) | `<name>_talk_init.png` 128×128                               |
+| 2a talk            | `talk`                 | `/animate-with-text-v3` (bust as first *and* last frame)      | `<name>_talk.png` 2×2 sheet                                  |
+| 2b lip sync        | `visemes`              | `/vocal-animation` (named mouth shapes)                       | `<name>_visemes.png` + `.json`                               |
+| 3 walk character   | `character`            | `/create-character-pro` (`create_from_concept`, style character) | a PixelLab character id                                   |
+| 4 animations       | `animate`              | `/characters/animations` (template mode)                      | the standard 6 × 8 directions on that character              |
+| 5 review / repair  | `qa`, `fix`            | `/edit-images-v2` only for `fix --use ai`                     | contact sheets; committed frame overrides                    |
+| 6 import           | `import`               | `/characters/{id}/zip`                                        | `<key>.png/.json/_headshot.png`, game.js preload, manifest   |
+
+`animate`, `import`, `qa` and `fix` also work on characters made outside the pipeline. Give them a pixellab.ai URL, a character id, or an already-imported key.
+
+## Rules
+
+- Check `balance` first. Tell the user the planned spend before any paid command, and get a yes before anything costing about 20 generations (`character`, `fix --use ai`). Every paid command takes `--dry-run`.
+- At every choice point, **Read the contact sheet image yourself**. Show it to the user with your assessment, then wait for their pick unless they said to choose.
+- Never delete PixelLab characters, and never overwrite a game asset silently. `pick` and `import --force` back up whatever they replace.
+- A killed run leaves jobs `submitted`. `collect <name>` finishes them without paying again (for `animate`, just rerun it; it resumes from its in-flight log). Don't rerun a paid stage command to recover.
+
+## Stage 0: init
+
+```bash
+# new character, from the reframed Gemini portrait (prompt read from <stem>_prompt.txt beside it)
+python3 tools/pixellab_pipeline.py init <name> --concept public/break_escape/assets/characters/<name>_nonpixelart.png
+# existing character that already has a talk sheet, to add lip sync only
+python3 tools/pixellab_pipeline.py init <name> --bust public/break_escape/assets/characters/<name>_talk.png
+```
+
+Work files live in `tmp/pixellab/<name>/` (git-ignored). `state.json` there records every job, its parameters, cost and pick. `status <name>` summarises it.
+
+## Stage 1: bust
+
+`bust <name> --variants 4` (about 1 generation each). Defaults match the manual process: 128px, `--strength 250`, the full Gemini prompt, and a transparent background. Look for: the same person as the concept, the three-quarter pose kept, the mouth closed, correct colours, and a clean alpha.
+
+If the result is too far from the concept, raise `--strength` (300–400). If it looks like a blurry downscale, lower it (150–200). `--guidance` (1–20) sets how hard the prompt pulls. `--engine pixelart [--faithful]` switches to the web UI's *Image to pixel art*. The web UI's "AI freedom" slider has **no public-API equivalent**, so don't claim the settings are identical.
+
+`pick <name> bust b03` installs `<name>_talk_init.png`.
+
+## Stage 2a: talk sheet (the current engine default)
+
+`talk <name> --variants 2` (about 2 generations each, 1–3 minutes). The house talk prompt is the default `--action`. The API returns 9 frames. `f00` is a copy of the start frame, so choose from `f01`–`f08`. The contact sheet has a **mouth-zoom** row under each variant: choose three clearly different shapes (for example "ah", "oo", "ee") with the eyes and head still.
+
+```bash
+python3 tools/pixellab_pipeline.py pick <name> talk t01 --frames 2,4,5     # or t01:2,t02:4,m01:round
+```
+
+`pick` builds the sheet with `build_talk_sheet.py`, pasting only the face box so the body stays pixel-identical, then runs `check_talk_sheet.py`. A few pixels of WARN "below the head line" is usually collar inside the face box. Look before re-picking, or pass `--face x0,y0,x1,y1`.
+
+## Stage 2b: lip sync (named mouth shapes)
+
+The engine supports an NPC field `"spriteVisemes": "assets/characters/<key>_visemes.png"`. While TTS plays, the portrait shows a mouth shape for each letter group of the spoken line, stretched to the audio's length. It falls back to `spriteTalk` if the files are missing (details in docs/SPRITE_SYSTEM.md). The text-to-mouth rules mirror PixelLab's free `/lip-sync` plan, ported to JavaScript, so there are no runtime API calls.
+
+```bash
+python3 tools/pixellab_pipeline.py visemes <name> --crop auto      # ~3-5 generations, ~6 minutes
+python3 tools/pixellab_pipeline.py pick <name> visemes m01
+```
+
+- `--crop auto` sends a 64×64 head crop, so the face fills the model's frame. It gives bigger, clearer mouths and changes only the head. Without it the whole bust is re-rendered with subtler mouths. Both kinds of run appear in the talk contact sheet with mouth-zoom rows. Compare them there.
+- `pick ... visemes` writes `<name>_visemes.png` (one row of 128px cells, `rest` = the bust itself) and `<name>_visemes.json` (the column names). Only the face box is pasted, as with the talk sheet.
+- Add `spriteVisemes` to the NPC and keep `spriteTalk` as the fallback. Only edit scenarios when the user asked.
+
+## Stage 3: walk character
+
+```bash
+python3 tools/pixellab_pipeline.py character <name> --dry-run
+python3 tools/pixellab_pipeline.py character <name> --variants 1      # 20-40 generations EACH
+```
+
+It sends the concept as `concept_image`, Gary Whitlock (`2b2d5800-…`) as `style_character_id`, and the style character's size (60px), low top-down. `--style-character <id>` uses another cast member. `--bust-reference` also sends the bust, but it replaces the style character's south sprite as the style centre. Every variant becomes a real character in the account; `pick` lists the unpicked ones for the user to delete by hand.
+
+## Stage 4: standard animations
+
+```bash
+python3 tools/pixellab_pipeline.py animate <name|id|url> --dry-run    # shows exactly what is missing
+python3 tools/pixellab_pipeline.py animate <name|id|url>
+```
+
+This is the house set from the pixellab-character-animations skill: `breathing-idle` 4f, `walk` 6f, `cross-punch` 6f, `lead-jab` 3f, `taking-punch` 6f, `falling-back-death` 7f, in all 8 directions, template mode, 1 generation per direction (48 for a new character). It fills **only the gaps**. New directions go into the existing group for that template, so animations are never split. It keeps the 8 job slots full as they free up (the rolling 7+1 pattern, automatically), retries failed directions, then re-reads the character and reports anything still missing. The web UI shares the same 8 slots.
+
+## Stage 5: review and repair frames
+
+PixelLab often gets a frame, or a whole direction, wrong. Examples found on the mission 2 cast: a south idle facing away in all 4 frames; a single idle frame flipped to a back view; teal trousers across a north walk; lighter skin on one side view; a missing ponytail; an added tie or gloves. Re-rolling can repeat the error, so the tools let you patch or choose between takes.
+
+```bash
+python3 tools/pixellab_pipeline.py qa <key>
+```
+
+This writes one contact sheet per animation to `tmp/pixellab/_qa/<key>/` (a row per direction: rotation first, then the frames, all at native size and aligned on the figure). **Looking at the sheets is the detector.** In a review of 10 characters, the automatic hints found about 4 real defects among 127 flags and missed most of the real ones. That's why only FACING, JUMP and CANVAS are still flagged. Read every sheet (delegate to a subagent for a whole cast) and compare each row with its rotation, looking for:
+1. A frame or strip facing the wrong way.
+2. Colours, skin tone or clothing not in the rotation.
+3. Missing or added details (hair, tie, gloves).
+4. Broken anatomy.
+5. A frame that breaks the motion.
+
+Punches and falls often turn towards the camera on N/NE/NW. That's a pattern in the stock templates: fix only the worst cases. CANVAS just means a strip came back on a different frame size; the converter places each size separately.
+
+Fix with the cheapest method that works, and show the user the before/after sheet each command prints:
+
+| Problem                                        | Fix                                                                                   | Cost |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------- | ---- |
+| One or two bad frames in a strip               | `fix <key> breathing-idle south 1 --use frame:2` (copy a good frame)                  | free |
+| Side view off-model, opposite side is good      | `fix <key> walk east all --use mirror` (opposite side, flipped). Check for one-sided details: badge, lanyard, holster | free |
+| Hand-edited frame                              | `fix <key> walk north 3 --use file:path.png`                                          | free |
+| Whole strip facing wrong / poses unusable      | `reroll <key> breathing-idle south --tries 2`, then `--accept tNN`                    | 1 per take |
+| Whole strip off-model, poses fine, no good mirror | `fix <key> walk north all --use ai` (edit against the rotation; poses kept)        | ~20 per call |
+
+- `reroll` is non-destructive. Each take is generated in a temporary group, downloaded, and the temporary group deleted, so the character's original animation is untouched. It prints a sheet of the current strip against every take. On Val's south idle, take 1 had one frame flipped to a back view, and take 2 was clean.
+- `fix` and `reroll --accept` write frames to `tools/pixellab_overrides/<key>/<template>/<direction>/`, which is **committed** and reapplied by every `import`. Rebuild with `import <key> --offline --force`.
+
+## Stage 6: import into the game
+
+```bash
+python3 tools/pixellab_pipeline.py import <name|id|url> --key <spriteSheet key> --register
+python3 tools/pixellab_pipeline.py import <key> --offline --force     # rebuild after `fix`
+```
+
+- Downloads the ZIP from the API. Nested state folders and web-UI display names (`walking`, `jab_attack`, `animating` ...) are handled: each folder is matched to its template by comparing its pixels with the API frames. Without this, NPCs with display-name folders never animate.
+- Applies the committed overrides, then converts with `tools/convert_pixellab_to_spritesheet.py`. Frames smaller than 80×80 (Pro characters are 60×60) are placed on 80×80 cells, centred with the feet on row 69, because the engine's collision boxes assume that layout. Strips on a different canvas size (backfills can come back at 76 or 80px) get their own placement, from the median standing pose.
+- `--register` adds `this.load.atlas(...)` under "PixelLab API imports" in `game.js` preload. The NPC then only needs `"spriteSheet": "<key>"`.
+- Refuses an incomplete character (run `animate` first) unless `--allow-incomplete`. Refuses to overwrite files without `--force`.
+- Records key → character id in `tools/pixellab_characters.json` (committed), so `import <key>` re-imports by key later.
+
+**Choosing keys.** A named NPC gets their own key (`bernie_nwosu`). A new take on a generic type gets a new key (`female_nurse1_v2`), because the old keys (`female_nurse1` …) are shared by several missions. Changing an NPC's `spriteSheet` doesn't change their dialogue portrait: `spriteTalk` stays as it was. Say so, because the walk sprite and the portrait may no longer match.
+
+After changing a scenario, run the validator (validate-scenario skill). If the user wants to see it in game, use playtest-scenario.
+
+## Cost (measured September 2026)
+
+| Call                              | Generations          |
+| --------------------------------- | -------------------- |
+| bust (pixflux)                    | 1 per variant        |
+| talk (animate v3, 8 frames)       | 2 per variant        |
+| visemes (vocal-animation, 7)      | ~3–5 per run (from the balance; the API doesn't report it) |
+| character (Pro)                   | 20–40 per variant    |
+| animate (template)                | 1 per direction      |
+| fix --use ai (edit-images-v2)     | 20 per call (up to 16 frames) |
+| reroll (template, one direction)  | 1 per take           |
+| lip-sync plan, ZIP export, reads  | free                 |
+
+The script records each job's reported usage and prints running totals. Quote those numbers once a run has started.

@@ -23,8 +23,8 @@ For a source sprite `<name>.png`:
 | File                     | Produced by                   | Purpose                                                                   |
 | ------------------------ | ----------------------------- | ------------------------------------------------------------------------- |
 | `<name>_nonpixelart.png` | **this skill**                | Gemini illustration, square, waist-up, source of truth for the conversion |
-| `<name>_talk_init.png`   | **the user**, via pixellab.ai | 128×128 pixel-art bust                                                    |
-| `<name>_talk.png`        | **the user**, via pixellab.ai | the final 2×2 talk sheet                                                  |
+| `<name>_talk_init.png`   | pixellab-character-pipeline, or the user via pixellab.ai | 128×128 pixel-art bust                                                    |
+| `<name>_talk.png`        | pixellab-character-pipeline, or the user via pixellab.ai | the final 2×2 talk sheet                                                  |
 
 All go in `public/break_escape/assets/characters/`.
 
@@ -84,10 +84,9 @@ python3 .claude/skills/character-talk-animation/scripts/reframe_portrait.py \
 
 It does three things in one pass, all mandatory:
 
-0. **`--flip` mirrors the character so it faces right**, the cast convention. Gemini's default output for this prompt faces left, so pass `--flip` every time unless a given render already came out facing right. (If the background colour isn't magenta, also pass `--bg-color`, e.g. a solid grey render needs `--bg-color 90,90,90` — sample the actual corner with `Image.open(path).getpixel((5,5))` first.)
-
-1. **Keys the solid background to true alpha transparency.** It flood-fills inward from the image border over pixels close to the exact chroma-key colour (default `255,0,255`, tolerance 40), not a brightness heuristic — so it cannot be confused with a white lab coat, a pale stethoscope, or a skin highlight the way a "near-neutral" test could. Flood filling from the border (rather than keying every matching pixel image-wide) is still there as a second layer of safety in case a stray near-magenta pixel ever turns up inside the artwork.
-2. **Reframes so the character fills the square**, cropping to the character's own bounding box rather than leaving Gemini's padding in. This is also the fix for the "ignores zoom out" problem above — do this instead of another Gemini round-trip.
+1. **`--flip` mirrors the character so it faces right**, the cast convention. Gemini's default output for this prompt faces left, so pass `--flip` every time unless a given render already came out facing right. (If the background colour isn't magenta, also pass `--bg-color`, e.g. a solid grey render needs `--bg-color 90,90,90` — sample the actual corner with `Image.open(path).getpixel((5,5))` first.)
+2. **Keys the solid background to true alpha transparency.** It flood-fills inward from the image border over pixels close to the exact chroma-key colour (default `255,0,255`, tolerance 40), not a brightness heuristic — so it cannot be confused with a white lab coat, a pale stethoscope, or a skin highlight the way a "near-neutral" test could. Flood filling from the border (rather than keying every matching pixel image-wide) is still there as a second layer of safety in case a stray near-magenta pixel ever turns up inside the artwork.
+3. **Reframes so the character fills the square**, cropping to the character's own bounding box rather than leaving Gemini's padding in. This is also the fix for the "ignores zoom out" problem above — do this instead of another Gemini round-trip.
 
 If the Gemini render used a background colour other than magenta for some reason, pass it explicitly: `--bg-color 0,255,0` (green) etc. — don't just rerun with the default and hope.
 
@@ -106,20 +105,13 @@ print(im.split()[3].getextrema())"
 
 Anything other than `(0, 255)` means the background is still opaque — do not proceed to Step 2 until this passes.
 
-## Step 2 — hand off to the user
+## Step 2 — pixel art, talk sheet and walk character (pixellab-character-pipeline)
 
-Tell the user the portrait is ready at `<name>_nonpixelart.png`, and ask them to:
+Save the exact Gemini prompt beside the portrait as `<name>_nonpixelart_prompt.txt`, then continue with the **pixellab-character-pipeline** skill. It drives `tools/pixellab_pipeline.py` over the PixelLab REST API, which reads images from disk and so avoids the MCP upload problem described below. It produces `<name>_talk_init.png`, `<name>_talk.png` (and/or a lip-sync `<name>_visemes.png` for the `spriteVisemes` field) and a PixelLab walk character, with alternatives to choose from at each stage.
 
-1. Open **pixellab.ai → Image to pixel art**.
-2. Upload `<name>_nonpixelart.png`.
-3. Set **Output Scale ÷8** (1024→128) and **reference/init strength ~500**.
-4. Remove the background.
-5. Save the result as `<name>_talk_init.png` (128×128, alpha-transparent) in `public/break_escape/assets/characters/`.
-6. From that same bust, use PixelLab's animation tooling (or ask this skill to resume) to generate a talking/mouth-movement animation, and save frames or the finished `<name>_talk.png` sheet back into the same folder.
+The manual route is still available if the user prefers the web UI: Image to image with the portrait as reference and the same prompt, then Animate → Interpolate frames (v3) with the bust as first and last frame, saving the results as described in "Resuming after the user's manual step" below.
 
-Once the user has produced `<name>_talk_init.png` and/or raw animation frames, this skill can resume to composite the final 2×2 sheet — see "Resuming after the user's manual step" below.
-
-## Why this stops at Step 2 (do not re-attempt full automation without reading this)
+## Why not the MCP for Step 2 (read before trying it)
 
 PixelLab's "Image to pixel art" tool (with Output Scale and init-strength controls) is **not exposed through any MCP tool** — confirmed against the full 64-tool list at `https://api.pixellab.ai/mcp/docs`. The closest MCP equivalents (`create_portrait_character`, `create_1_direction_object` + `animate_object`) take inline base64 image uploads only, and that upload path is unreliable enough to make full automation not worth attempting:
 
