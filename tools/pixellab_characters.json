@@ -62,6 +62,15 @@
     },
     "imported": "2026-09-26"
   },
+  "male_hacker_hood_down_v2": {
+    "character_id": "fa5a8818-00da-475c-87fb-4b21d84e39b2",
+    "name": "Make portrait for Hacker\nMan, light skin tone, hac...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-27"
+  },
   "male_hacker_hood_v2": {
     "character_id": "0a8f0fec-6ac0-42d2-b19d-b970b6b479d8",
     "name": "Hacker in a hoodie. Hood up, black obscured face s...",
