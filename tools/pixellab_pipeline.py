@@ -361,7 +361,7 @@ def init_from_bust(run, args):
     run.add_job(stage="bust", variant="b00", endpoint="adopted", status="completed",
                 outputs=["bust/b00.png"], params={"source": str(args.bust)})
     print(f"Initialised {run.dir} from existing bust {args.bust} ({im.size[0]}x{im.size[1]}), picked as b00")
-    print(f"next: pixellab_pipeline.py visemes {args.name} --crop auto")
+    print(f"next: pixellab_pipeline.py visemes {args.name} --dry-run   (writes the mask previews; then add --mouth/--eyes)")
 
 
 # --------------------------------------------------------------- stage 1: pixel-art bust
@@ -672,8 +672,8 @@ MOUTH_SHAPES = {
     "small_open": "lips parted by a small dark opening about two pixels tall, clearly more open than a "
                   "closed mouth, no teeth showing",
     "medium_open": "mouth half open as when saying 'eh': a dark mouth interior with a hint of upper teeth",
-    "wide_open": "mouth open for a clear 'ah' in ordinary conversation, relaxed, not shouting: a dark "
-                 "mouth interior between the lips, at most a sliver of upper teeth",
+    "wide_open": "mouth clearly open for the vowel 'ah' in ordinary conversation: a dark open mouth about "
+                 "twice the height of the closed lips, upper teeth just visible, relaxed, not shouting",
     # Not a mouth: eyes shut for the portrait's idle blink (mask from --eyes, see shape_mask).
     "blink": "eyes closed mid-blink: each upper eyelid lowered so the eye is a dark curved lash line, "
              "eyebrows, skin tone and shading unchanged",
@@ -687,6 +687,7 @@ DEFAULT_SHAPES = ("teeth", "round", "small_open", "medium_open", "wide_open")
 # only draws the open mouth into the gap and blends the seams.
 JAW_DROP = {"medium_open": 1, "wide_open": 2}  # 3px on wide_open read as a shout
 JAW_SHAPES = tuple(JAW_DROP)
+MIN_CHANGED_PIXELS = 8  # fewer changed pixels than this and a shape reads as the resting mouth
 EYES_KEEP = ("Only the eyes change: the mouth, nose, hair and face shape stay exactly as they are.")
 MOUTH_KEEP = ("Only the mouth changes. Keep the same lip colour, skin tone, outline and pixel-art shading; "
               "the head is turned, so the mouth stays exactly where it is, not centred.")
@@ -780,13 +781,45 @@ def drop_jaw(bust, params, shape):
     return out
 
 
-def unwhiten(frame, source, mask):
-    """Pro Flash paints transparent areas pure white; put the transparency back there."""
+def unwhiten(frame, source, mask, mouth=None):
+    """Clean up the model's output inside the mask before it is pasted onto the bust.
+
+    Pro Flash fills transparency with white, so light, grey pixels there go back to
+    transparent, and so does any new pixel left with no filled neighbour (a stray speck
+    beside the jaw). A jaw line that really moved into the background stays: it is dark
+    and joined to the face.
+    """
     import numpy as np
     f = np.array(frame)
     src_clear = np.asarray(source)[..., 3] == 0
-    white = (f[..., :3] >= 245).all(axis=2)
-    f[src_clear & white & (np.asarray(mask) > 0)] = 0
+    rgb = f[..., :3].astype(np.int32)
+    greyish_light = (rgb.min(axis=2) >= 190) & (rgb.max(axis=2) - rgb.min(axis=2) <= 40)
+    new = src_clear & (np.asarray(mask) > 0) & (f[..., 3] > 0)
+    f[new & greyish_light] = 0
+    filled = f[..., 3] > 0
+    padded = np.pad(filled, 1)
+    neighbours = sum(padded[1 + dy:padded.shape[0] - 1 + dy, 1 + dx:padded.shape[1] - 1 + dx]
+                     for dy in (-1, 0, 1) for dx in (-1, 0, 1) if dy or dx)
+    f[new & filled & (neighbours == 0)] = 0
+    # A lone changed pixel anywhere (e.g. a light speck on a dark collar) is noise: the mouth
+    # and jaw edits always come in clusters
+    src = np.asarray(source)
+    changed = (np.abs(f.astype(np.int32) - src.astype(np.int32)).sum(axis=2) > 60) & (np.asarray(mask) > 0)
+    cp = np.pad(changed, 1)
+    near = sum(cp[1 + dy:cp.shape[0] - 1 + dy, 1 + dx:cp.shape[1] - 1 + dx]
+               for dy in (-1, 0, 1) for dx in (-1, 0, 1) if dy or dx)
+    lone = changed & (near == 0)
+    f[lone] = src[lone]
+    # Teeth belong in the mouth box: light pixels the model adds in the jaw-only part of the
+    # mask (chin, neck, hair beside the jaw) are specks, not teeth
+    if mouth:
+        x0, y0, x1, y1 = mouth
+        outside = np.ones(changed.shape, bool)
+        outside[y0:y1, x0:x1] = False
+        rgb = f[..., :3].astype(np.int32)
+        light = (rgb.min(axis=2) >= 170) & (src[..., :3].astype(np.int32).min(axis=2) < 150)
+        speck = changed & outside & light
+        f[speck] = src[speck]
     return Image.fromarray(f)
 
 
@@ -897,7 +930,8 @@ def save_inpaint_visemes(run, api, job):
         source = drop_jaw(bust, job["params"], shape)  # what was sent: the bust, chin moved for open shapes
         mask = shape_mask(bust, job["params"], shape)
         full = source.copy()
-        full.paste(unwhiten(im, source, mask), (0, 0), mask)
+        mouth = None if shape == "blink" else job["params"]["mouth"]  # closing lids add light pixels
+        full.paste(unwhiten(im, source, mask, mouth), (0, 0), mask)
         p = out / f"{shape}.png"
         full.save(p)
         outputs.append(str(p.relative_to(run.dir)))
@@ -906,6 +940,17 @@ def save_inpaint_visemes(run, api, job):
     job["outputs"] = outputs
     job["viseme_order"] = ["rest"] + order
     record_usage(job, {"type": "generations", "generations": total})
+    # A shape the model left (nearly) unchanged is a re-roll, and easy to miss by eye
+    import numpy as np
+    base = np.asarray(bust, dtype=np.int32)
+    changed = {sh: int((np.abs(np.asarray(Image.open(run.dir / o).convert("RGBA"), dtype=np.int32)
+                               - base).sum(axis=2) > 60).sum()) for sh, o in zip(order, outputs)}
+    job["changed_pixels"] = changed
+    same = [sh for sh, n in changed.items() if n < MIN_CHANGED_PIXELS]
+    print(f"  {job['variant']} pixels changed per shape: {changed}")
+    if same:
+        print(f"  WARNING {job['variant']}: {', '.join(same)} barely differ from rest; re-roll with "
+              f"--shapes {','.join(same)}")
 
 
 def write_viseme_sheet(run, job, assets, backup, face=None, swaps=None, omit=None):
