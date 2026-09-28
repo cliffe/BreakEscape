@@ -40,7 +40,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_25_000001) do
     t.bigint "player_id", null: false
     t.bigint "mission_id", null: false
     t.jsonb "scenario_data", null: false
-    t.jsonb "player_state", default: {"notes"=>[], "health"=>100, "inventory"=>[], "currentRoom"=>nil, "unlockedRooms"=>[], "encounteredNPCs"=>[], "globalVariables"=>{}, "unlockedObjects"=>[], "biometricSamples"=>[], "biometricUnlocks"=>[], "bluetoothDevices"=>[]}, null: false
+    t.jsonb "player_state", default: { "notes"=>[], "health"=>100, "inventory"=>[], "currentRoom"=>nil, "unlockedRooms"=>[], "encounteredNPCs"=>[], "globalVariables"=>{}, "unlockedObjects"=>[], "biometricSamples"=>[], "biometricUnlocks"=>[], "bluetoothDevices"=>[] }, null: false
     t.string "status", default: "in_progress", null: false
     t.datetime "started_at"
     t.datetime "completed_at"

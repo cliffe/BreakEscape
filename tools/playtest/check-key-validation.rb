@@ -30,10 +30,15 @@ ARGV.each do |gid|
     if %w[key rfid keycard].include?(lock_type)
       accepted = game.has_key_in_inventory?(requires)
       verdict = accepted ? 'ACCEPTS' : 'REFUSES'
-      flag = if accepted && !unlocked then '   <- server would open it; the run never did'
-             elsif !accepted && unlocked then '   <- UNLOCKED BUT SERVER NOW REFUSES (regression)'
-             elsif !accepted then '   <- server refuses'
-             else '' end
+      flag = if accepted && !unlocked
+               '   <- server would open it; the run never did'
+      elsif !accepted && unlocked
+               '   <- UNLOCKED BUT SERVER NOW REFUSES (regression)'
+      elsif !accepted
+               '   <- server refuses'
+      else
+               ''
+      end
       puts format('  %-22s %-10s requires=%-24s server %s  room_unlocked=%s%s',
                   room_id, lock_type, requires, verdict, unlocked, flag)
     else

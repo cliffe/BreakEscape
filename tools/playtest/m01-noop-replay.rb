@@ -43,9 +43,9 @@ games.each do |game|
       # Mirror production: the new code path offers both candidate identifiers.
       ids = if ctrl.respond_to?(:generate_flag_identifiers, true)
               ctrl.send(:generate_flag_identifiers, value, station)
-            else
+      else
               [fid].compact
-            end
+      end
       outcomes = ids.any? ? game.process_flag_task_completions!(ids) : { completed_tasks: [], updated_tasks: [] }
       entry[:flags] << {
         ref: ref,
