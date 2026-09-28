@@ -81,13 +81,16 @@ export function preload() {
     this.load.tilemapTiledJSON('room_hospital_reception', 'rooms/room_hospital_reception.json'); // Hospital reception (room6)
     this.load.tilemapTiledJSON('room_hospital_meeting', 'rooms/room_hospital_meeting.json'); // Hospital conference room (room6)
     this.load.tilemapTiledJSON('room_hospital_servers', 'rooms/room_hospital_servers.json'); // Hospital server room (room6)
-    this.load.tilemapTiledJSON('room_hospital_hall', 'rooms/room_hospital_hall.json'); // Hospital corridor (room6, 2x1 GU, baked-in south wall)
+    this.load.tilemapTiledJSON('room_hospital_hall', 'rooms/room_hospital_hall.json'); // Hospital corridor (2x1 GU, baked-in south wall)
+    this.load.tilemapTiledJSON('room_hospital_hall_ward', 'rooms/room_hospital_hall_ward.json'); // Hospital corridor variant: trolley bed, IV pump, alarm panel
+    this.load.tilemapTiledJSON('room_hospital_hall_waiting', 'rooms/room_hospital_hall_waiting.json'); // Hospital corridor variant: row of waiting seats
     this.load.tilemapTiledJSON('room_hospital_staff', 'rooms/room_hospital_staff.json'); // Hospital night staff / handover room (room6, 2x2 GU, doors on all four sides)
 
     // Load room images (now using smaller 32px scale images)
     this.load.image('room_reception', 'tiles/rooms/room1.png');
     this.load.image('room18', 'tiles/rooms/room18.png');
     this.load.image('room6', 'tiles/rooms/room6.png');
+    this.load.image('room_hospital', 'tiles/rooms/room_hospital.png'); // clinical recolour of room6, same tile layout
     this.load.image('room14', 'tiles/rooms/room14.png');
     this.load.image('room19', 'tiles/rooms/room19.png');
     this.load.image('door_32', 'tiles/door_32.png');
@@ -122,6 +125,7 @@ export function preload() {
     this.load.image('smalldesk2', 'tables/smalldesk2.png');
     this.load.image('reception_table1', 'tables/reception_table1.png');
     this.load.image('hospital_desk1', 'tables/hospital_desk1.png');
+    this.load.image('hospital_conference_table', 'tables/hospital_conference_table.png');
     this.load.image('hospital_desk2', 'tables/hospital_desk2.png');
 
     // Load object sprites - keeping existing ones for backward compatibility

@@ -59,6 +59,12 @@
       "w": 62,
       "h": 48,
       "gid": 104
+    },
+    "hospital_conference_table": {
+      "id": 2,
+      "w": 126,
+      "h": 55,
+      "gid": 105
     }
   },
   "objects": {

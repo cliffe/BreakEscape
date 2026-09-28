@@ -226,7 +226,9 @@ The `type` field of each room must match a file in `public/break_escape/assets/r
 | `room_hospital_cto_office` | Hospital executive office (1×1 GU) |
 | `room_hospital_meeting` | Hospital boardroom / meeting room (2×2 GU) |
 | `room_hospital_servers` | Hospital server room (2×2 GU) |
-| `room_hospital_hall` | Hospital corridor (2×1 GU) — clinical room6 tiles, baked-in south wall for a standalone through-hallway |
+| `room_hospital_hall` | Hospital corridor (2×1 GU) — clinical room_hospital tiles, baked-in south wall for a standalone through-hallway |
+| `room_hospital_hall_ward` | Hospital corridor variant (2×1 GU) — parked trolley bed, IV pump, nurse-call panel; same slots as `room_hospital_hall` |
+| `room_hospital_hall_waiting` | Hospital corridor variant (2×1 GU) — row of waiting seats; same slots as `room_hospital_hall` |
 | `small_office_room1_1x1gu` | Small private office (1×1 GU) |
 | `small_office_room2_1x1gu` | Small private office variant 2 |
 | `small_office_room3_1x1gu` | Small private office variant 3 |

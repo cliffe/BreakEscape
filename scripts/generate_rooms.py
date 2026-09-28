@@ -41,7 +41,12 @@ Layers (required):
   (optional empty "Object Layer 1")
 
 Usage:
-  python3 scripts/generate_rooms.py
+  python3 scripts/generate_rooms.py [room ...]      # regenerate (all, or named rooms)
+  python3 scripts/generate_rooms.py --check [room ...]  # validate existing .json only
+
+Review what a room looks like without launching the game:
+  python3 scripts/render_room_preview.py 'room_hospital_*' --sheet [--grid]
+  (writes PNGs + contact_sheet.png to scripts/room_gen/previews/)
 
 Exports game JSON via:
   ~/bin/Tiled-1.11.2_Linux_Qt-6_x86_64.AppImage --embed-tilesets --export-map json <tmj> <json>
@@ -272,6 +277,21 @@ def place_ward_posters(items: list, oid: int, placements: list[tuple[str, float,
     return oid
 
 
+def room_tilesets(name: str) -> list[dict]:
+    """
+    Hospital rooms use room_hospital.png, a clinical recolour of room6 with the
+    same tile layout (see room_gen/make_hospital_tileset.py), so only the
+    tileset's name/texture key and image change; gids stay on ROOM6_FIRSTGID.
+    """
+    tilesets = copy.deepcopy(TILESETS)
+    if name.startswith("room_hospital"):
+        for ts in tilesets:
+            if ts.get("name") == "room6":
+                ts["name"] = "room_hospital"
+                ts["image"] = ts["image"].replace("room6.png", "room_hospital.png")
+    return tilesets
+
+
 def build_room(
     *,
     name: str,
@@ -327,7 +347,7 @@ def build_room(
         "renderorder": "right-down",
         "tiledversion": "1.11.2",
         "tileheight": TILE,
-        "tilesets": copy.deepcopy(TILESETS),
+        "tilesets": room_tilesets(name),
         "tilewidth": TILE,
         "type": "map",
         "version": "1.10",
@@ -685,6 +705,75 @@ def room_lab():
     )
 
 
+WALL_TOP_PX = 12        # top of the back-wall band in the room art
+FLOOR_TOP_PX = 70       # first floor pixel row under the back wall
+SIDE_WALL_PX = 24       # floor furniture should not lean further onto the side walls
+FOOTPRINT_PX = 12       # bottom strip of a floor sprite treated as its floor contact
+
+
+def is_wall_mounted(name: str) -> bool:
+    """Things fixed to a wall: inside the back-wall band or on a side-wall strip."""
+    return (
+        (is_wall_hanging(name) and not name.startswith("chalkboard"))
+        or name.startswith("notes")
+        or name in ("office-misc-clock", "smartscreen", "alarm_panel", "emergency-button")
+    )
+
+
+def sprite_bounds_warnings(room: dict, layers: dict, gid_to_name: dict) -> list[str]:
+    """
+    Catch what reads as broken in a render: sprites past the map edge, floor
+    objects standing on the back wall, wall art hanging off the wall band,
+    furniture pushed into the side walls, and overlapping footprints.
+    """
+    warnings = []
+    map_w, map_h = room["width"] * TILE, room["height"] * TILE
+    floor_objs, wall_objs = [], []
+    for lname in ("tables", "items", "conditional_items"):
+        for o in layers[lname].get("objects", []):
+            if not o.get("gid"):
+                continue
+            n = gid_to_name.get(o["gid"], f"gid{o['gid']}")
+            left, right = o["x"], o["x"] + o["width"]
+            top, bottom = o["y"] - o["height"], o["y"]
+            label = f"{n} (#{o['id']} {lname})"
+            if left < 0 or right > map_w or top < 0 or bottom > map_h:
+                warnings.append(f"{label} extends off the map ({left:.0f},{top:.0f})-({right:.0f},{bottom:.0f})")
+            if is_wall_mounted(n):
+                on_back = top >= WALL_TOP_PX - 4 and bottom <= FLOOR_TOP_PX + 2
+                on_side = left < SIDE_WALL_PX + 4 or right > map_w - SIDE_WALL_PX - 4
+                if not (on_back or on_side):
+                    warnings.append(f"{label} is off the walls (y {top:.0f}-{bottom:.0f}, x {left:.0f}-{right:.0f})")
+                corner = DOOR_CORNER_TILES * TILE
+                if on_back and not on_side and (left < corner or right > map_w - corner):
+                    warnings.append(f"{label} on the back wall where a N door is drawn (x {left:.0f}-{right:.0f})")
+                wall_objs.append((label, left, right, top, bottom))
+                continue
+            if bottom < FLOOR_TOP_PX - 6:
+                warnings.append(f"{label} stands on the back wall (foot y={bottom:.0f} < {FLOOR_TOP_PX})")
+            if top < WALL_TOP_PX - 4:
+                warnings.append(f"{label} pokes above the back wall (top y={top:.0f})")
+            # wall safes may sit on a side wall; floor plants lean by design
+            if not (is_floor_plant(n) or n.startswith("safe")) and (left < SIDE_WALL_PX or right > map_w - SIDE_WALL_PX):
+                warnings.append(f"{label} pushed into a side wall (x {left:.0f}-{right:.0f})")
+            foot_top = bottom - min(FOOTPRINT_PX, o["height"])
+            floor_objs.append((label, left, right, foot_top, bottom))
+
+    def overlap(a, b, slack):
+        return (min(a[2], b[2]) - max(a[1], b[1]) > slack
+                and min(a[4], b[4]) - max(a[3], b[3]) > slack)
+
+    for i, a in enumerate(floor_objs):
+        for b in floor_objs[i + 1:]:
+            if overlap(a, b, 2):
+                warnings.append(f"footprints overlap: {a[0]} / {b[0]}")
+    for i, a in enumerate(wall_objs):
+        for b in wall_objs[i + 1:]:
+            if overlap(a, b, 1):
+                warnings.append(f"wall items overlap: {a[0]} / {b[0]}")
+    return warnings
+
+
 def validate_room(room: dict, stem: str):
     """Basic structural + table-surface checks."""
     layers = {l["name"]: l for l in room["layers"]}
@@ -757,6 +846,12 @@ def validate_room(room: dict, stem: str):
     for kind in ("objects", "tables"):
         for name, info in CATALOG[kind].items():
             gid_to_name[info["gid"]] = name
+    # Hand-made maps can embed differently numbered collection tilesets, so
+    # names from the map's own tiles win over the catalog's gids.
+    for ts in room["tilesets"]:
+        for t in ts.get("tiles", []):
+            if "image" in t:
+                gid_to_name[ts["firstgid"] + t["id"]] = Path(t["image"]).stem
 
     def names_in(layer_name):
         return [gid_to_name.get(o["gid"], f"gid{o['gid']}") for o in layers[layer_name].get("objects", [])]
@@ -827,7 +922,10 @@ def validate_room(room: dict, stem: str):
 
     # Bottom 2 tile rows may be obscured by a southern neighbour.
     # Aesthetic props (plants, lamps, bins) are allowed there.
-    bottom_y0 = (room["height"] - 2) * TILE
+    # Corridors (6 rows) bake their own south wall and nothing covers them, so
+    # only that wall row is off limits there.
+    bottom_rows = 1 if room["height"] <= 6 else 2
+    bottom_y0 = (room["height"] - bottom_rows) * TILE
     for lname in ("tables", "items", "conditional_items"):
         for o in layers[lname].get("objects", []):
             if o["y"] < bottom_y0:
@@ -838,6 +936,8 @@ def validate_room(room: dict, stem: str):
             warnings.append(
                 f"{n} foot in bottom 2 rows on {lname} (y={o['y']:.0f} >= {bottom_y0})"
             )
+
+    warnings += sprite_bounds_warnings(room, layers, gid_to_name)
 
     n_objs = sum(
         len(layers[n].get("objects", []))
@@ -1282,7 +1382,10 @@ def room_hospital_servers():
     # Admin desk mid-south of racks (clear of door corners)
     desk = make_obj("tables", "hospital_desk1", 140.0, 200.0, oid)
     oid += 1
-    tables = [desk]
+    # Side table for the backup/recovery console (m02 backup_recovery object)
+    console_table = make_obj("tables", "smalldesk2", 210.0, 204.0, oid)
+    oid += 1
+    tables = [desk, console_table]
 
     items = []
     # Server racks along clear mid back-wall
@@ -1295,26 +1398,13 @@ def room_hospital_servers():
     items.append(make_obj("objects", "servers4", 220.0, 78.0, oid))
     oid += 1
 
-    items.append(make_obj("objects", "smartscreen", 145.0, 52.0, oid))
-    oid += 1
-    items.append(make_obj("objects", "hospital_chart_board2", 100.0, 48.0, oid))
-    oid += 1
-    oid = place_ward_posters(
-        items,
-        oid,
-        [
-            ("chart2", 80.0, 42.0),
-            ("chart", 170.0, 44.0),
-            ("chart2", 200.0, 42.0),
-            ("chart", 235.0, 48.0),
-        ],
-    )
+    # The racks fill the back wall, so wall art would only peek out behind them;
+    # a single chart goes on the west side wall between the W door slots instead.
+    oid = place_ward_posters(items, oid, [("chart2", 12.0, 150.0)])
 
     items.append(make_obj("objects", "hospital_chair1", 160.0, 230.0, oid))
     oid += 1
     items.append(make_obj("objects", "sanitizer_stand1", 120.0, 180.0, oid))
-    oid += 1
-    items.append(make_obj("objects", "sanitizer_stand2", 200.0, 180.0, oid))
     oid += 1
     items.append(make_obj("objects", "crash_cart1", 250.0, 200.0, oid))
     oid += 1
@@ -1332,9 +1422,9 @@ def room_hospital_servers():
     items.append(make_obj("objects", "plant-large12-top-ani4", 220.0, 300.0, oid))
     oid += 1
 
-    items.append(make_obj("objects", "lamp-stand1", 100.0, 250.0, oid))
+    items.append(make_obj("objects", "lamp-stand1", 190.0, 262.0, oid))
     oid += 1
-    items.append(make_obj("objects", "lamp-stand2", 130.0, 250.0, oid))
+    items.append(make_obj("objects", "lamp-stand2", 220.0, 262.0, oid))
     oid += 1
 
     table_items = [
@@ -1350,13 +1440,16 @@ def room_hospital_servers():
         make_obj("objects", "safe4", 68.0, 200.0, oid),
     ]
     oid += 1
-    conditional_items.append(make_obj("objects", "safe4", 68.0, 230.0, oid))
+    conditional_items.append(make_obj("objects", "safe4", 96.0, 200.0, oid))
     oid += 1
 
     conditional_table_items = []
     for name, xf, sf in [
         ("workstation", 0.45, 0.32),
-        ("vm-launcher-kali", 0.70, 0.35),
+        # slot names must match the scenario type once trailing digits are
+        # stripped (core/rooms.js), so "vm-launcher", not "vm-launcher-kali"
+        ("vm-launcher", 0.70, 0.35),
+        ("pin-cracker", 0.10, 0.46),
         ("notes1", 0.25, 0.48),
         ("notes3", 0.85, 0.45),
         ("flag-station", 0.55, 0.28),
@@ -1365,6 +1458,10 @@ def room_hospital_servers():
             place_on_table(desk, name, x_frac=xf, surface_frac=sf, obj_id=oid)
         )
         oid += 1
+    conditional_table_items.append(
+        place_on_table(console_table, "backup_recovery", x_frac=0.5, surface_frac=0.45, obj_id=oid)
+    )
+    oid += 1
 
     return build_room(
         name="room_hospital_servers",
@@ -1393,60 +1490,49 @@ def room_hospital_staff():
     # Clerk's desk, left of centre so the N door approach stays clear
     desk = make_obj("tables", "hospital_desk2", 60.0, 190.0, oid)
     oid += 1
-    # Low table by the seating, right side
-    side = make_obj("tables", "smalldesk1", 214.0, 206.0, oid)
+    # Low table in front of the sofa, right side (clear of the E door at row 7)
+    side = make_obj("tables", "smalldesk1", 206.0, 222.0, oid)
     oid += 1
     tables = [desk, side]
 
     items = []
-    # Back wall: the handover board is the room's whole point, dead centre
-    items.append(make_obj("objects", "chalkboard2", 128.0, 44.0, oid))
+    # Back wall, left to right. Only x 64-256 is safe: the corners are where the
+    # N doors get drawn. The centre is left for the scenario's handover board
+    # (a notes object drawn as chalkboard2), which takes the first notes slot.
+    items.append(make_obj("objects", "hospital_chart_board1", 64.0, 48.0, oid))
     oid += 1
-    items.append(make_obj("objects", "hospital_chart_board1", 78.0, 48.0, oid))
-    oid += 1
-    items.append(make_obj("objects", "hospital_chart_board2", 206.0, 48.0, oid))
-    oid += 1
-    oid = place_ward_posters(
-        items,
-        oid,
-        [
-            ("chart2", 50.0, 44.0),
-            ("chart", 246.0, 46.0),
-        ],
-    )
-
-    # Seating — the social half of the room, east side
-    items.append(make_obj("objects", "sofa1", 210.0, 150.0, oid))
-    oid += 1
-    items.append(make_obj("objects", "hospital_chair1", 170.0, 196.0, oid))
-    oid += 1
-    items.append(make_obj("objects", "hospital_chair2", 252.0, 196.0, oid))
+    items.append(make_obj("objects", "hospital_chart_board2", 196.0, 54.0, oid))
     oid += 1
 
-    # Staff kit — lockers/cabinets down the west side, clear of the W door approach
-    items.append(make_obj("objects", "filing_cabinet", 40.0, 130.0, oid))
+    # Staff kit against the back wall, behind the clerk's desk
+    items.append(make_obj("objects", "medical_cabinet1", 70.0, 134.0, oid))
     oid += 1
-    items.append(make_obj("objects", "medical_cabinet1", 40.0, 160.0, oid))
+    items.append(make_obj("objects", "filing_cabinet", 124.0, 128.0, oid))
     oid += 1
-    items.append(make_obj("objects", "bookcase", 262.0, 118.0, oid))
+    items.append(make_obj("objects", "sanitizer_stand1", 156.0, 124.0, oid))
     oid += 1
-
-    items.append(make_obj("objects", "office-misc-clock", 155.0, 46.0, oid))
-    oid += 1
-    items.append(make_obj("objects", "sanitizer_stand1", 100.0, 122.0, oid))
-    oid += 1
-    items.append(make_obj("objects", "bin2", 96.0, 236.0, oid))
+    items.append(make_obj("objects", "bin2", 134.0, 190.0, oid))
     oid += 1
 
-    # Floor plants — opposite corners, aesthetic, bottom rows fine
+    # Seating — the social half of the room, east side, pulled off the side wall
+    items.append(make_obj("objects", "bookcase", 208.0, 112.0, oid))
+    oid += 1
+    items.append(make_obj("objects", "sofa1", 204.0, 168.0, oid))
+    oid += 1
+    items.append(make_obj("objects", "lamp-stand1", 188.0, 150.0, oid))
+    oid += 1
+    items.append(make_obj("objects", "lamp-stand2", 262.0, 150.0, oid))
+    oid += 1
+    items.append(make_obj("objects", "hospital_chair1", 186.0, 214.0, oid))
+    oid += 1
+    items.append(make_obj("objects", "hospital_chair2", 258.0, 214.0, oid))
+    oid += 1
+
+    # Floor plants — opposite bottom corners, aesthetic, bottom rows fine.
+    # The animated sprites are 64px wide, so x <= 220 keeps them on the map.
     items.append(make_obj("objects", "plant-large11-top-ani2", 36.0, 300.0, oid))
     oid += 1
-    items.append(make_obj("objects", "plant-large13-top-ani3", 268.0, 300.0, oid))
-    oid += 1
-
-    items.append(make_obj("objects", "lamp-stand1", 130.0, 268.0, oid))
-    oid += 1
-    items.append(make_obj("objects", "lamp-stand2", 170.0, 268.0, oid))
+    items.append(make_obj("objects", "plant-large13-top-ani3", 220.0, 300.0, oid))
     oid += 1
 
     table_items = [
@@ -1457,12 +1543,18 @@ def room_hospital_staff():
         place_on_table(side, "office-misc-smallplant", x_frac=0.50, surface_frac=0.22, obj_id=oid)
     )
     oid += 1
+    # Slot for a dropped ID badge (m02 staff_room), else it lands on the floor
+    id_badge_slot = place_on_table(side, "id_badge", x_frac=0.22, surface_frac=0.48, obj_id=oid)
+    oid += 1
 
     conditional_items = []
-    # Wall anchor for a pinned notice (rota / snag list) on a clear back-wall span
-    conditional_items.append(make_obj("objects", "notes5", 100.0, 56.0, oid))
+    # Scenario sprites are drawn from a slot's top-left, whatever their size.
+    # First notes slot: the handover board (chalkboard2, 44x56) — top-left at
+    # (140, 14) puts its feet on the skirting at y=70, centred on the wall.
+    conditional_items.append(make_obj("objects", "notes5", 140.0, 46.0, oid))
     oid += 1
-    conditional_items.append(make_obj("objects", "notes3", 232.0, 58.0, oid))
+    # Second: a pinned notice (snag list, notes5 25x32) left of the board.
+    conditional_items.append(make_obj("objects", "notes3", 112.0, 48.0, oid))
     oid += 1
 
     conditional_table_items = []
@@ -1475,6 +1567,7 @@ def room_hospital_staff():
             place_on_table(desk, name, x_frac=xf, surface_frac=sf, obj_id=oid)
         )
         oid += 1
+    conditional_table_items.append(id_badge_slot)
 
     return build_room(
         name="room_hospital_staff",
@@ -1488,85 +1581,127 @@ def room_hospital_staff():
     )
 
 
-def room_hospital_hall():
+def _hospital_hall(name: str, wall: list, props: list) -> dict:
     """
-    2×1 GU (10×6) hospital corridor on room6 tiles — a shallow through-hallway.
+    2×1 GU (10×6) hospital corridor on hospital tiles — a shallow through-hallway.
 
     Unlike the full-size hospital rooms, a corridor has no room to its south to
     cover its bottom edge, so the south wall must be baked in: the room layer's
-    bottom row uses room6's south-wall band (via room6_hall_floor) and the walls
-    collision layer carries the office south wall (91–100, from the template).
-    Kept deliberately sparse — chart boards on the back wall, sanitizer stands,
-    a crash cart, floor plants — so the walkway stays clear.
+    bottom row uses the sheet's south-wall band (via room6_hall_floor) and the
+    walls collision layer carries the office south wall (91–100, from the template).
+
+    Every variant shares the same scenario slots (a wall notes anchor between the
+    boards plus three floor pickups) so scenarios can swap variants freely; only
+    the dressing differs. wall/props are (sprite, x, y) lists. Keep x 64-256 on the
+    back wall (corners are where N doors are drawn), keep the side-door rows
+    (y 64-100 at x < 64 and x > 256) clear, and keep the walkway open.
     """
     oid = 1
-
-    tables: list[dict] = []
-    table_items: list[dict] = []
-    conditional_table_items: list[dict] = []
-
     items = []
-    # Back-wall chart boards + posters (wall hangings; clear of NW/NE door corners)
-    items.append(make_obj("objects", "hospital_chart_board1", 110.0, 46.0, oid))
-    oid += 1
-    items.append(make_obj("objects", "hospital_chart_board2", 170.0, 46.0, oid))
-    oid += 1
-    oid = place_ward_posters(
-        items,
-        oid,
-        [
-            ("chart2", 82.0, 42.0),
-            ("chart", 210.0, 44.0),
-            ("chart2", 238.0, 42.0),
-        ],
-    )
-
-    # Sanitizer stands + bin (aesthetic props — fine near the south wall)
-    items.append(make_obj("objects", "sanitizer_stand1", 70.0, 122.0, oid))
-    oid += 1
-    items.append(make_obj("objects", "sanitizer_stand2", 250.0, 122.0, oid))
-    oid += 1
-    items.append(make_obj("objects", "bin2", 150.0, 120.0, oid))
-    oid += 1
-
-    # Crash cart parked along the corridor (feet above the bottom 2 rows: y < 128)
-    items.append(make_obj("objects", "crash_cart1", 128.0, 124.0, oid))
-    oid += 1
-
-    # Floor plants — pair on opposite ends (aesthetic; bottom rows OK)
-    items.append(make_obj("objects", "plant-large11-top-ani1", 44.0, 150.0, oid))
-    oid += 1
-    items.append(make_obj("objects", "plant-large12-top-ani3", 268.0, 150.0, oid))
-    oid += 1
+    for sprite, x, y in wall + props:
+        items.append(make_obj("objects", sprite, x, y, oid))
+        oid += 1
 
     conditional_items = []
     # Notes slot on the back wall (a posted corridor notice / directory) — gives
     # scenario notes objects a wall anchor instead of a fallback position.
-    conditional_items.append(make_obj("objects", "notes5", 145.0, 55.0, oid))
+    conditional_items.append(make_obj("objects", "notes5", 140.0, 52.0, oid))
     oid += 1
-    for name, x, y in [
+    for sprite, x, y in [
         ("fingerprint-brush-red", 150.0, 100.0),
         ("bag14", 90.0, 116.0),
         ("briefcase8", 214.0, 118.0),
     ]:
-        conditional_items.append(make_obj("objects", name, x, y, oid))
+        conditional_items.append(make_obj("objects", sprite, x, y, oid))
         oid += 1
 
     return build_room(
-        name="room_hospital_hall",
+        name=name,
         template_key="10x6_hall",
-        tables=tables,
+        tables=[],
         items=items,
-        table_items=table_items,
+        table_items=[],
         conditional_items=conditional_items,
-        conditional_table_items=conditional_table_items,
+        conditional_table_items=[],
         room_override=room6_hall_floor(10, 6),
     )
 
 
+# Back wall shared by the corridors: two chart boards with the notes slot between
+HALL_BOARDS = [
+    ("hospital_chart_board1", 90.0, 46.0),
+    ("hospital_chart_board2", 172.0, 52.0),
+]
+
+
+def room_hospital_hall():
+    """Admin-side corridor: sanitizer stands, a parked crash cart, floor plants."""
+    return _hospital_hall(
+        "room_hospital_hall",
+        wall=HALL_BOARDS + [
+            ("chart2", 66.0, 42.0),
+            ("chart", 214.0, 44.0),
+            ("chart2", 232.0, 42.0),
+        ],
+        props=[
+            ("sanitizer_stand1", 70.0, 122.0),
+            ("sanitizer_stand2", 250.0, 122.0),
+            ("bin2", 180.0, 120.0),
+            ("crash_cart1", 128.0, 124.0),  # feet above the south wall band
+            ("plant-large11-top-ani1", 44.0, 150.0),
+            ("plant-large12-top-ani3", 220.0, 150.0),
+        ],
+    )
+
+
+def room_hospital_hall_ward():
+    """
+    Clinical corridor outside a ward: an empty trolley bed parked against the
+    wall, an IV pump beside it, a slim crash cart and a nurse-call alarm panel.
+    """
+    return _hospital_hall(
+        "room_hospital_hall_ward",
+        wall=HALL_BOARDS + [
+            ("alarm_panel", 68.0, 44.0),
+            ("emergency-button", 222.0, 40.0),
+            ("chart", 242.0, 44.0),
+        ],
+        props=[
+            # the trolley bed is 63px tall, so it parks at the east end, out of
+            # the walkway; the south wall band still covers its wheels
+            ("bed_empty", 214.0, 152.0),
+            ("infusion_pump", 190.0, 128.0),
+            ("crash_cart2", 120.0, 124.0),
+            ("sanitizer_stand1", 66.0, 124.0),
+            ("bin2", 168.0, 120.0),
+        ],
+    )
+
+
+def room_hospital_hall_waiting():
+    """Outpatient-style corridor: a row of seats under the boards, plants at the ends."""
+    return _hospital_hall(
+        "room_hospital_hall_waiting",
+        wall=HALL_BOARDS + [
+            ("chart2", 66.0, 42.0),
+            ("chart", 222.0, 44.0),
+        ],
+        props=[
+            ("hospital_chair_south", 100.0, 104.0),
+            ("hospital_chair_south", 120.0, 104.0),
+            ("hospital_chair_south", 176.0, 104.0),
+            ("hospital_chair_south", 196.0, 104.0),
+            ("sanitizer_stand2", 150.0, 110.0),
+            ("plant-large13-top-ani2", 40.0, 156.0),
+            ("plant-large11-top-ani3", 216.0, 156.0),
+        ],
+    )
+
 def main():
     # Hand-maintained (do not regenerate — edit .tmj in Tiled, then export JSON):
     #   room_hospital_office, room_hospital_cto_office, room_hospital_meeting
+    # room_hospital_reception's .json has also been hand-edited since it was
+    # generated (45 objects vs the builder's 34) — regenerating it loses that.
     builders = {
         "small_office_room4_1x1gu": room_small_office_4,
         "room_security": room_security,
@@ -1574,11 +1709,19 @@ def main():
         "room_hospital_reception": room_hospital_reception,
         "room_hospital_servers": room_hospital_servers,
         "room_hospital_hall": room_hospital_hall,
+        "room_hospital_hall_ward": room_hospital_hall_ward,
+        "room_hospital_hall_waiting": room_hospital_hall_waiting,
         "room_hospital_staff": room_hospital_staff,
     }
     # Optionally restrict to specific rooms (argv) so already-updated rooms are
     # not clobbered, e.g.  python3 scripts/generate_rooms.py room_hospital_hall
     requested = sys.argv[1:]
+    # --check: validate the existing .json maps (incl. hand-maintained ones)
+    # without regenerating, e.g.  python3 scripts/generate_rooms.py --check room_hospital_office
+    if requested and requested[0] == "--check":
+        for stem in requested[1:] or list(builders):
+            validate_room(load_json(ROOMS_DIR / f"{stem}.json"), stem)
+        return
     if requested:
         unknown = [r for r in requested if r not in builders]
         if unknown:

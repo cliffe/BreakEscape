@@ -2747,11 +2747,11 @@
         {
          "columns":10,
          "firstgid":701,
-         "image":"..\/tiles\/rooms\/room6.png",
+         "image":"..\/tiles\/rooms\/room_hospital.png",
          "imageheight":320,
          "imagewidth":320,
          "margin":0,
-         "name":"room6",
+         "name":"room_hospital",
          "spacing":0,
          "tilecount":100,
          "tileheight":32,

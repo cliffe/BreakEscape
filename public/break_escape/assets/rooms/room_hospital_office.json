@@ -271,8 +271,8 @@
                  "type":"",
                  "visible":true,
                  "width":41,
-                 "x":194.49215143121,
-                 "y":168.661126500462
+                 "x":188,
+                 "y":240
                 }, 
                 {
                  "gid":312,
@@ -356,6 +356,9 @@
          "id":11,
          "name":"conditional_table_items",
          "objects":[
+{"gid":305,"height":16,"id":42,"name":"","rotation":0,"type":"","visible":true,"width":16,"x":96,"y":130},
+{"gid":305,"height":16,"id":43,"name":"","rotation":0,"type":"","visible":true,"width":16,"x":195,"y":130},
+
                 {
                  "gid":365,
                  "height":27,
@@ -505,7 +508,7 @@
          "y":0
         }],
  "nextlayerid":14,
- "nextobjectid":42,
+ "nextobjectid":44,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.2",
@@ -2948,11 +2951,11 @@
         {
          "columns":10,
          "firstgid":701,
-         "image":"..\/tiles\/rooms\/room6.png",
+         "image":"..\/tiles\/rooms\/room_hospital.png",
          "imageheight":320,
          "imagewidth":320,
          "margin":0,
-         "name":"room6",
+         "name":"room_hospital",
          "spacing":0,
          "tilecount":100,
          "tileheight":32,

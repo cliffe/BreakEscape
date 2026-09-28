@@ -534,6 +534,8 @@
          "id":11,
          "name":"conditional_table_items",
          "objects":[
+{"gid":305,"height":16,"id":51,"name":"","rotation":0,"type":"","visible":true,"width":16,"x":112,"y":88},
+
                 {
                  "gid":370,
                  "height":28,
@@ -683,7 +685,7 @@
          "y":0
         }],
  "nextlayerid":14,
- "nextobjectid":51,
+ "nextobjectid":52,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.2",
@@ -3126,11 +3128,11 @@
         {
          "columns":10,
          "firstgid":701,
-         "image":"..\/tiles\/rooms\/room6.png",
+         "image":"..\/tiles\/rooms\/room_hospital.png",
          "imageheight":320,
          "imagewidth":320,
          "margin":0,
-         "name":"room6",
+         "name":"room_hospital",
          "spacing":0,
          "tilecount":100,
          "tileheight":32,

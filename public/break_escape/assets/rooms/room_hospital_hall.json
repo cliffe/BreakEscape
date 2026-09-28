@@ -78,7 +78,7 @@
                  "type":"",
                  "visible":true,
                  "width":45,
-                 "x":110,
+                 "x":90,
                  "y":46
                 }, 
                 {
@@ -90,8 +90,8 @@
                  "type":"",
                  "visible":true,
                  "width":38,
-                 "x":170,
-                 "y":46
+                 "x":172,
+                 "y":52
                 }, 
                 {
                  "gid":475,
@@ -102,7 +102,7 @@
                  "type":"",
                  "visible":true,
                  "width":19,
-                 "x":82,
+                 "x":66,
                  "y":42
                 }, 
                 {
@@ -114,7 +114,7 @@
                  "type":"",
                  "visible":true,
                  "width":12,
-                 "x":210,
+                 "x":214,
                  "y":44
                 }, 
                 {
@@ -126,7 +126,7 @@
                  "type":"",
                  "visible":true,
                  "width":19,
-                 "x":238,
+                 "x":232,
                  "y":42
                 }, 
                 {
@@ -162,7 +162,7 @@
                  "type":"",
                  "visible":true,
                  "width":16,
-                 "x":150,
+                 "x":180,
                  "y":120
                 }, 
                 {
@@ -199,7 +199,7 @@
                  "type":"",
                  "visible":true,
                  "width":64,
-                 "x":268,
+                 "x":220,
                  "y":150
                 }],
          "opacity":1,
@@ -222,8 +222,8 @@
                  "type":"",
                  "visible":true,
                  "width":25,
-                 "x":145,
-                 "y":55
+                 "x":140,
+                 "y":52
                 }, 
                 {
                  "gid":115,
@@ -2744,11 +2744,11 @@
         {
          "columns":10,
          "firstgid":701,
-         "image":"..\/tiles\/rooms\/room6.png",
+         "image":"..\/tiles\/rooms\/room_hospital.png",
          "imageheight":320,
          "imagewidth":320,
          "margin":0,
-         "name":"room6",
+         "name":"room_hospital",
          "spacing":0,
          "tilecount":100,
          "tileheight":32,
