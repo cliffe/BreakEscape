@@ -229,6 +229,8 @@ The `type` field of each room must match a file in `public/break_escape/assets/r
 | `room_hospital_hall` | Hospital corridor (2×1 GU) — clinical room_hospital tiles, baked-in south wall for a standalone through-hallway |
 | `room_hospital_hall_ward` | Hospital corridor variant (2×1 GU) — parked trolley bed, IV pump, nurse-call panel; same slots as `room_hospital_hall` |
 | `room_hospital_hall_waiting` | Hospital corridor variant (2×1 GU) — row of waiting seats; same slots as `room_hospital_hall` |
+| `room_hospital_waiting_1x1gu` | Small hospital waiting area / vestibule (1×1 GU) — seats along both side walls, side doors on row 2; no scenario slots |
+| `room_hospital_storage_1x1gu` | Small hospital store room (1×1 GU) — drugs cabinet, crash cart, boxed supplies; slots: floor `safe`, wall `notes` |
 | `small_office_room1_1x1gu` | Small private office (1×1 GU) |
 | `small_office_room2_1x1gu` | Small private office variant 2 |
 | `small_office_room3_1x1gu` | Small private office variant 3 |

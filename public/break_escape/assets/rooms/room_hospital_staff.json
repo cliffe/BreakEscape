@@ -80,7 +80,7 @@
                  "visible":true,
                  "width":62,
                  "x":60,
-                 "y":190
+                 "y":173
                 }, 
                 {
                  "gid":109,
@@ -91,8 +91,44 @@
                  "type":"",
                  "visible":true,
                  "width":50,
-                 "x":206,
-                 "y":222
+                 "x":74,
+                 "y":248
+                }, 
+                {
+                 "gid":109,
+                 "height":41,
+                 "id":3,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":50,
+                 "x":198,
+                 "y":210
+                }, 
+                {
+                 "gid":841,
+                 "height":40,
+                 "id":4,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":47,
+                 "x":150,
+                 "y":110
+                }, 
+                {
+                 "gid":842,
+                 "height":29,
+                 "id":5,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":22,
+                 "x":197,
+                 "y":99
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -106,137 +142,100 @@
          "name":"items",
          "objects":[
                 {
-                 "gid":314,
-                 "height":32,
-                 "id":3,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":45,
-                 "x":64,
-                 "y":48
-                }, 
-                {
-                 "gid":315,
-                 "height":39,
-                 "id":4,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":38,
-                 "x":196,
-                 "y":54
-                }, 
-                {
-                 "gid":306,
-                 "height":63,
-                 "id":5,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":52,
-                 "x":70,
-                 "y":134
-                }, 
-                {
-                 "gid":380,
-                 "height":54,
+                 "gid":848,
+                 "height":29,
                  "id":6,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":27,
-                 "x":124,
-                 "y":128
+                 "width":22,
+                 "x":223,
+                 "y":99
                 }, 
                 {
-                 "gid":312,
-                 "height":46,
+                 "gid":844,
+                 "height":30,
                  "id":7,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":18,
-                 "x":156,
-                 "y":124
+                 "width":20,
+                 "x":152,
+                 "y":62
                 }, 
                 {
-                 "gid":125,
-                 "height":21,
+                 "gid":845,
+                 "height":19,
                  "id":8,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":16,
-                 "x":134,
-                 "y":190
+                 "width":12,
+                 "x":176,
+                 "y":56
                 }, 
                 {
-                 "gid":339,
-                 "height":50,
+                 "gid":845,
+                 "height":19,
                  "id":9,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":43,
-                 "x":208,
-                 "y":112
+                 "width":12,
+                 "x":189,
+                 "y":56
                 }, 
                 {
-                 "gid":348,
-                 "height":59,
+                 "gid":846,
+                 "height":31,
                  "id":10,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":53,
-                 "x":204,
-                 "y":168
+                 "width":42,
+                 "x":214,
+                 "y":52
                 }, 
                 {
-                 "gid":164,
-                 "height":30,
+                 "gid":826,
+                 "height":21,
                  "id":11,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":12,
-                 "x":188,
-                 "y":150
+                 "width":30,
+                 "x":68,
+                 "y":50
                 }, 
                 {
-                 "gid":163,
-                 "height":29,
+                 "gid":380,
+                 "height":54,
                  "id":12,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":14,
-                 "x":262,
-                 "y":150
-                },
-            
+                 "width":27,
+                 "x":28,
+                 "y":173
+                }, 
                 {
-                 "gid":308,
-                 "height":32,
+                 "gid":823,
+                 "height":22,
                  "id":13,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":17,
-                 "x":186,
-                 "y":214
+                 "width":15,
+                 "x":126,
+                 "y":173
                 }, 
                 {
                  "gid":309,
@@ -247,32 +246,69 @@
                  "type":"",
                  "visible":true,
                  "width":17,
-                 "x":258,
-                 "y":214
+                 "x":56,
+                 "y":246
                 }, 
                 {
-                 "gid":402,
-                 "height":75,
+                 "gid":308,
+                 "height":32,
                  "id":15,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":64,
-                 "x":36,
-                 "y":300
-                }, 
+                 "width":17,
+                 "x":125,
+                 "y":246
+                },
+            
                 {
-                 "gid":392,
-                 "height":88,
+                 "gid":309,
+                 "height":32,
                  "id":16,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":64,
-                 "x":220,
-                 "y":300
+                 "width":17,
+                 "x":180,
+                 "y":208
+                }, 
+                {
+                 "gid":308,
+                 "height":32,
+                 "id":17,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":17,
+                 "x":249,
+                 "y":208
+                }, 
+                {
+                 "gid":317,
+                 "height":32,
+                 "id":18,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":215,
+                 "y":182
+                }, 
+                {
+                 "gid":806,
+                 "height":47,
+                 "id":19,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":270,
+                 "y":232
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -286,28 +322,28 @@
          "name":"conditional_items",
          "objects":[
                 {
-                 "gid":409,
-                 "height":32,
-                 "id":20,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":25,
-                 "x":140,
-                 "y":46
-                }, 
-                {
-                 "gid":212,
-                 "height":11,
-                 "id":21,
+                 "gid":849,
+                 "height":18,
+                 "id":26,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":14,
-                 "x":112,
-                 "y":48
+                 "x":236,
+                 "y":54
+                }, 
+                {
+                 "gid":849,
+                 "height":18,
+                 "id":27,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":14,
+                 "x":116,
+                 "y":50
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -323,50 +359,50 @@
                 {
                  "gid":381,
                  "height":18,
-                 "id":22,
+                 "id":28,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":24,
                  "x":66.6,
-                 "y":158.32
+                 "y":141.32
                 }, 
                 {
                  "gid":304,
                  "height":16,
-                 "id":23,
+                 "id":29,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":16,
                  "x":86.1,
-                 "y":164.08
+                 "y":147.08
                 }, 
                 {
                  "gid":305,
                  "height":16,
-                 "id":24,
+                 "id":30,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":16,
                  "x":59.44,
-                 "y":163.12
+                 "y":146.12
                 }, 
                 {
                  "gid":386,
                  "height":16,
-                 "id":19,
+                 "id":25,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":10,
-                 "x":212,
-                 "y":200.68
+                 "x":84,
+                 "y":226.68
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -382,26 +418,62 @@
                 {
                  "gid":202,
                  "height":14,
-                 "id":17,
+                 "id":20,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":16,
-                 "x":100.36,
-                 "y":162.16
+                 "x":101.6,
+                 "y":145.16
                 }, 
                 {
-                 "gid":214,
+                 "gid":835,
                  "height":15,
-                 "id":18,
+                 "id":21,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":8,
-                 "x":227,
-                 "y":190.02
+                 "width":20,
+                 "x":102,
+                 "y":219.3
+                }, 
+                {
+                 "gid":217,
+                 "height":11,
+                 "id":22,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":11,
+                 "x":210,
+                 "y":185.4
+                }, 
+                {
+                 "gid":847,
+                 "height":14,
+                 "id":23,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":15,
+                 "x":153.78,
+                 "y":84.4
+                }, 
+                {
+                 "gid":843,
+                 "height":18,
+                 "id":24,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":22,
+                 "x":197,
+                 "y":75.22
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -421,7 +493,7 @@
          "y":0
         }],
  "nextlayerid":14,
- "nextobjectid":25,
+ "nextobjectid":31,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.2",
@@ -465,7 +537,7 @@
          "margin":0,
          "name":"tables",
          "spacing":0,
-         "tilecount":10,
+         "tilecount":11,
          "tileheight":74,
          "tiles":[
                 {
@@ -479,6 +551,12 @@
                  "image":"..\/tables\/hospital_desk2.png",
                  "imageheight":48,
                  "imagewidth":62
+                }, 
+                {
+                 "id":2,
+                 "image":"..\/tables\/hospital_conference_table.png",
+                 "imageheight":55,
+                 "imagewidth":126
                 }, 
                 {
                  "id":3,
@@ -521,7 +599,8 @@
                  "image":"..\/tables\/desk2.png",
                  "imageheight":39,
                  "imagewidth":44
-                }, 
+                },
+            
                 {
                  "id":11,
                  "image":"..\/tables\/desk3.png",
@@ -2873,6 +2952,327 @@
          "tilecount":100,
          "tileheight":32,
          "tilewidth":32
+        }, 
+        {
+         "columns":0,
+         "firstgid":801,
+         "grid":
+            {
+             "height":1,
+             "orientation":"orthogonal",
+             "width":1
+            },
+         "margin":0,
+         "name":"objects\/hospital_extras",
+         "spacing":0,
+         "tilecount":50,
+         "tileheight":60,
+         "tiles":[
+                {
+                 "id":0,
+                 "image":"..\/objects\/iv_stand1.png",
+                 "imageheight":60,
+                 "imagewidth":25
+                }, 
+                {
+                 "id":1,
+                 "image":"..\/objects\/vending_machine1.png",
+                 "imageheight":60,
+                 "imagewidth":42
+                }, 
+                {
+                 "id":2,
+                 "image":"..\/objects\/supply_shelves1.png",
+                 "imageheight":60,
+                 "imagewidth":50
+                }, 
+                {
+                 "id":3,
+                 "image":"..\/objects\/privacy_screen1.png",
+                 "imageheight":57,
+                 "imagewidth":60
+                }, 
+                {
+                 "id":4,
+                 "image":"..\/objects\/stretcher1.png",
+                 "imageheight":45,
+                 "imagewidth":58
+                }, 
+                {
+                 "id":5,
+                 "image":"..\/objects\/water_cooler1.png",
+                 "imageheight":47,
+                 "imagewidth":24
+                }, 
+                {
+                 "id":6,
+                 "image":"..\/objects\/wheelchair1.png",
+                 "imageheight":44,
+                 "imagewidth":38
+                }, 
+                {
+                 "id":7,
+                 "image":"..\/objects\/oxygen_cylinder1.png",
+                 "imageheight":45,
+                 "imagewidth":23
+                }, 
+                {
+                 "id":8,
+                 "image":"..\/objects\/linen_cart1.png",
+                 "imageheight":39,
+                 "imagewidth":42
+                }, 
+                {
+                 "id":9,
+                 "image":"..\/objects\/chairs_stacked1.png",
+                 "imageheight":45,
+                 "imagewidth":20
+                },
+            
+                {
+                 "id":10,
+                 "image":"..\/objects\/monitor_stand1.png",
+                 "imageheight":45,
+                 "imagewidth":17
+                }, 
+                {
+                 "id":11,
+                 "image":"..\/objects\/bedside_locker1.png",
+                 "imageheight":42,
+                 "imagewidth":24
+                }, 
+                {
+                 "id":12,
+                 "image":"..\/objects\/coffee_station1.png",
+                 "imageheight":41,
+                 "imagewidth":26
+                }, 
+                {
+                 "id":13,
+                 "image":"..\/objects\/first_aid_cabinet1.png",
+                 "imageheight":36,
+                 "imagewidth":28
+                }, 
+                {
+                 "id":14,
+                 "image":"..\/objects\/instrument_trolley1.png",
+                 "imageheight":41,
+                 "imagewidth":37
+                }, 
+                {
+                 "id":15,
+                 "image":"..\/objects\/step_stool1.png",
+                 "imageheight":35,
+                 "imagewidth":28
+                }, 
+                {
+                 "id":16,
+                 "image":"..\/objects\/mop_bucket1.png",
+                 "imageheight":44,
+                 "imagewidth":29
+                }, 
+                {
+                 "id":17,
+                 "image":"..\/objects\/fire_extinguisher1.png",
+                 "imageheight":28,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":18,
+                 "image":"..\/objects\/wet_floor_sign1.png",
+                 "imageheight":29,
+                 "imagewidth":21
+                }, 
+                {
+                 "id":19,
+                 "image":"..\/objects\/sharps_bin1.png",
+                 "imageheight":26,
+                 "imagewidth":16
+                },
+            
+                {
+                 "id":20,
+                 "image":"..\/objects\/first_aid_kit1.png",
+                 "imageheight":20,
+                 "imagewidth":22
+                }, 
+                {
+                 "id":21,
+                 "image":"..\/objects\/sanitiser_dispenser1.png",
+                 "imageheight":27,
+                 "imagewidth":14
+                }, 
+                {
+                 "id":22,
+                 "image":"..\/objects\/pedal_bin1.png",
+                 "imageheight":22,
+                 "imagewidth":15
+                }, 
+                {
+                 "id":23,
+                 "image":"..\/objects\/clinical_waste_bin1.png",
+                 "imageheight":25,
+                 "imagewidth":18
+                }, 
+                {
+                 "id":24,
+                 "image":"..\/objects\/medicine_fridge1.png",
+                 "imageheight":31,
+                 "imagewidth":18
+                }, 
+                {
+                 "id":25,
+                 "image":"..\/objects\/rota_board1.png",
+                 "imageheight":21,
+                 "imagewidth":30
+                }, 
+                {
+                 "id":26,
+                 "image":"..\/objects\/xray_lightbox1.png",
+                 "imageheight":26,
+                 "imagewidth":22
+                }, 
+                {
+                 "id":27,
+                 "image":"..\/objects\/fire_alarm_point1.png",
+                 "imageheight":20,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":28,
+                 "image":"..\/objects\/exit_sign1.png",
+                 "imageheight":15,
+                 "imagewidth":26
+                }, 
+                {
+                 "id":29,
+                 "image":"..\/objects\/binders1.png",
+                 "imageheight":22,
+                 "imagewidth":20
+                },
+            
+                {
+                 "id":30,
+                 "image":"..\/objects\/gloves_box1.png",
+                 "imageheight":15,
+                 "imagewidth":18
+                }, 
+                {
+                 "id":31,
+                 "image":"..\/objects\/clipboard_chart1.png",
+                 "imageheight":20,
+                 "imagewidth":15
+                }, 
+                {
+                 "id":32,
+                 "image":"..\/objects\/stethoscope1.png",
+                 "imageheight":22,
+                 "imagewidth":18
+                }, 
+                {
+                 "id":33,
+                 "image":"..\/objects\/kettle1.png",
+                 "imageheight":18,
+                 "imagewidth":15
+                }, 
+                {
+                 "id":34,
+                 "image":"..\/objects\/mugs_tray1.png",
+                 "imageheight":15,
+                 "imagewidth":20
+                }, 
+                {
+                 "id":35,
+                 "image":"..\/objects\/test_tube_rack1.png",
+                 "imageheight":22,
+                 "imagewidth":19
+                }, 
+                {
+                 "id":36,
+                 "image":"..\/objects\/doctors_bag1.png",
+                 "imageheight":16,
+                 "imagewidth":20
+                }, 
+                {
+                 "id":37,
+                 "image":"..\/objects\/bp_monitor1.png",
+                 "imageheight":17,
+                 "imagewidth":19
+                }, 
+                {
+                 "id":38,
+                 "image":"..\/objects\/sanitiser_bottle1.png",
+                 "imageheight":20,
+                 "imagewidth":10
+                }, 
+                {
+                 "id":39,
+                 "image":"..\/objects\/eye_chart1.png",
+                 "imageheight":24,
+                 "imagewidth":16
+                },
+            
+                {
+                 "id":40,
+                 "image":"..\/objects\/kitchen_counter_sink1.png",
+                 "imageheight":40,
+                 "imagewidth":47
+                }, 
+                {
+                 "id":41,
+                 "image":"..\/objects\/undercounter_fridge1.png",
+                 "imageheight":29,
+                 "imagewidth":22
+                }, 
+                {
+                 "id":42,
+                 "image":"..\/objects\/microwave1.png",
+                 "imageheight":18,
+                 "imagewidth":22
+                }, 
+                {
+                 "id":43,
+                 "image":"..\/objects\/hot_water_boiler1.png",
+                 "imageheight":30,
+                 "imagewidth":20
+                }, 
+                {
+                 "id":44,
+                 "image":"..\/objects\/soap_dispenser1.png",
+                 "imageheight":19,
+                 "imagewidth":12
+                }, 
+                {
+                 "id":45,
+                 "image":"..\/objects\/notice_board1.png",
+                 "imageheight":31,
+                 "imagewidth":42
+                }, 
+                {
+                 "id":46,
+                 "image":"..\/objects\/dirty_mugs1.png",
+                 "imageheight":14,
+                 "imagewidth":15
+                }, 
+                {
+                 "id":47,
+                 "image":"..\/objects\/yellow_bin1.png",
+                 "imageheight":29,
+                 "imagewidth":22
+                }, 
+                {
+                 "id":48,
+                 "image":"..\/objects\/notes6.png",
+                 "imageheight":18,
+                 "imagewidth":14
+                }, 
+                {
+                 "id":49,
+                 "image":"..\/objects\/directory_sign1.png",
+                 "imageheight":26,
+                 "imagewidth":34
+                }],
+         "tilewidth":60
         }],
  "tilewidth":32,
  "type":"map",

@@ -84,6 +84,8 @@ export function preload() {
     this.load.tilemapTiledJSON('room_hospital_hall', 'rooms/room_hospital_hall.json'); // Hospital corridor (2x1 GU, baked-in south wall)
     this.load.tilemapTiledJSON('room_hospital_hall_ward', 'rooms/room_hospital_hall_ward.json'); // Hospital corridor variant: trolley bed, IV pump, alarm panel
     this.load.tilemapTiledJSON('room_hospital_hall_waiting', 'rooms/room_hospital_hall_waiting.json'); // Hospital corridor variant: row of waiting seats
+    this.load.tilemapTiledJSON('room_hospital_waiting_1x1gu', 'rooms/room_hospital_waiting_1x1gu.json'); // Small hospital waiting area / vestibule (1x1 GU)
+    this.load.tilemapTiledJSON('room_hospital_storage_1x1gu', 'rooms/room_hospital_storage_1x1gu.json'); // Small hospital store room (1x1 GU)
     this.load.tilemapTiledJSON('room_hospital_staff', 'rooms/room_hospital_staff.json'); // Hospital night staff / handover room (room6, 2x2 GU, doors on all four sides)
 
     // Load room images (now using smaller 32px scale images)
@@ -185,6 +187,10 @@ export function preload() {
     this.load.image('crash-cart-rotate6', 'objects/crash-cart-rotate6.png');
     this.load.image('crash-cart-rotate7', 'objects/crash-cart-rotate7.png');
     this.load.image('crash-cart-rotate8', 'objects/crash-cart-rotate8.png');
+    // 8-direction wheelchair rotation frames — wheelchair1 swaps to these the same way.
+    for (let i = 1; i <= 8; i++) {
+        this.load.image(`wheelchair-rotate${i}`, `objects/wheelchair-rotate${i}.png`);
+    }
     this.load.image('sanitizer_stand1', 'objects/sanitizer_stand1.png');
     this.load.image('sanitizer_stand2', 'objects/sanitizer_stand2.png');
     this.load.image('hospital_chart_board1', 'objects/hospital_chart_board1.png');
@@ -480,7 +486,9 @@ export function preload() {
     this.load.spritesheet('bed2', 'objects/bed2.png', { frameWidth: 35, frameHeight: 72 });
     this.load.spritesheet('bed3', 'objects/bed3.png', { frameWidth: 35, frameHeight: 78 });
     this.load.spritesheet('bed4', 'objects/bed4.png', { frameWidth: 37, frameHeight: 72 });
+    this.load.spritesheet('bed_mr_pryce', 'objects/bed_mr_pryce.png', { frameWidth: 35, frameHeight: 72 }); // bed4 repainted as m02's Mr Pryce: olive skin, ventilator mask (PixelLab edit)
     this.load.spritesheet('bed5', 'objects/bed5.png', { frameWidth: 38, frameHeight: 72 });
+    this.load.spritesheet('bed_ms_chen', 'objects/bed_ms_chen.png', { frameWidth: 38, frameHeight: 72 }); // bed5 repainted as m02's Ms Chen (PixelLab edit)
     this.load.spritesheet('bed6', 'objects/bed6.png', { frameWidth: 46, frameHeight: 76 });
     this.load.image('curtain-divider', 'objects/curtain-divider.png');
     this.load.image('chart', 'objects/chart.png');
@@ -501,6 +509,57 @@ export function preload() {
 
     // Minigame type sprites (placeholder pc.png until custom assets are ready)
     this.load.image('infusion_pump',           'objects/infusion_pump.png');
+    // PixelLab Create Object batches (scripts/room_gen/import_pixellab_objects.py), tileset objects/hospital_extras
+    this.load.image('iv_stand1', 'objects/iv_stand1.png');
+    this.load.image('vending_machine1', 'objects/vending_machine1.png');
+    this.load.image('supply_shelves1', 'objects/supply_shelves1.png');
+    this.load.image('privacy_screen1', 'objects/privacy_screen1.png');
+    this.load.image('stretcher1', 'objects/stretcher1.png');
+    this.load.image('water_cooler1', 'objects/water_cooler1.png');
+    this.load.image('wheelchair1', 'objects/wheelchair1.png');
+    this.load.image('oxygen_cylinder1', 'objects/oxygen_cylinder1.png');
+    this.load.image('linen_cart1', 'objects/linen_cart1.png');
+    this.load.image('chairs_stacked1', 'objects/chairs_stacked1.png');
+    this.load.image('monitor_stand1', 'objects/monitor_stand1.png');
+    this.load.image('bedside_locker1', 'objects/bedside_locker1.png');
+    this.load.image('coffee_station1', 'objects/coffee_station1.png');
+    this.load.image('first_aid_cabinet1', 'objects/first_aid_cabinet1.png');
+    this.load.image('instrument_trolley1', 'objects/instrument_trolley1.png');
+    this.load.image('step_stool1', 'objects/step_stool1.png');
+    this.load.image('mop_bucket1', 'objects/mop_bucket1.png');
+    this.load.image('fire_extinguisher1', 'objects/fire_extinguisher1.png');
+    this.load.image('wet_floor_sign1', 'objects/wet_floor_sign1.png');
+    this.load.image('sharps_bin1', 'objects/sharps_bin1.png');
+    this.load.image('first_aid_kit1', 'objects/first_aid_kit1.png');
+    this.load.image('sanitiser_dispenser1', 'objects/sanitiser_dispenser1.png');
+    this.load.image('pedal_bin1', 'objects/pedal_bin1.png');
+    this.load.image('clinical_waste_bin1', 'objects/clinical_waste_bin1.png');
+    this.load.image('medicine_fridge1', 'objects/medicine_fridge1.png');
+    this.load.image('rota_board1', 'objects/rota_board1.png');
+    this.load.image('xray_lightbox1', 'objects/xray_lightbox1.png');
+    this.load.image('fire_alarm_point1', 'objects/fire_alarm_point1.png');
+    this.load.image('exit_sign1', 'objects/exit_sign1.png');
+    this.load.image('binders1', 'objects/binders1.png');
+    this.load.image('gloves_box1', 'objects/gloves_box1.png');
+    this.load.image('clipboard_chart1', 'objects/clipboard_chart1.png');
+    this.load.image('stethoscope1', 'objects/stethoscope1.png');
+    this.load.image('kettle1', 'objects/kettle1.png');
+    this.load.image('mugs_tray1', 'objects/mugs_tray1.png');
+    this.load.image('test_tube_rack1', 'objects/test_tube_rack1.png');
+    this.load.image('doctors_bag1', 'objects/doctors_bag1.png');
+    this.load.image('bp_monitor1', 'objects/bp_monitor1.png');
+    this.load.image('sanitiser_bottle1', 'objects/sanitiser_bottle1.png');
+    this.load.image('eye_chart1', 'objects/eye_chart1.png');
+    this.load.image('kitchen_counter_sink1', 'objects/kitchen_counter_sink1.png');
+    this.load.image('undercounter_fridge1', 'objects/undercounter_fridge1.png');
+    this.load.image('microwave1', 'objects/microwave1.png');
+    this.load.image('hot_water_boiler1', 'objects/hot_water_boiler1.png');
+    this.load.image('soap_dispenser1', 'objects/soap_dispenser1.png');
+    this.load.image('notice_board1', 'objects/notice_board1.png');
+    this.load.image('dirty_mugs1', 'objects/dirty_mugs1.png');
+    this.load.image('yellow_bin1', 'objects/yellow_bin1.png');
+    this.load.image('notes6', 'objects/notes6.png');
+    this.load.image('directory_sign1', 'objects/directory_sign1.png');
     this.load.image('backup_recovery',         'objects/backup_recovery.png');
     this.load.image('dual_auth',               'objects/dual_auth.png');
     this.load.image('ehr-terminal',            'objects/ehr-terminal.png');

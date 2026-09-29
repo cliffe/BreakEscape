@@ -425,7 +425,11 @@ function setDepthAndStore(sprite, position, roomId, isTableItem = false, scenari
             elevation = itemBottomY < backWallThreshold ? (backWallThreshold - itemBottomY) : 0;
         }
         
-        const objectDepth = objectBottomY + 0.5 + elevation;
+        // Every back-wall item lands on the same depth (bottom + elevation = threshold),
+        // so break the tie by feet position: a sheet pinned over a board's lower edge
+        // draws on top of it. At most 0.064, well under the 1px step between floor rows.
+        const wallTieBreak = elevation > 0 ? (objectBottomY - position.y) * 0.001 : 0;
+        const objectDepth = objectBottomY + 0.5 + elevation + wallTieBreak;
         sprite.setDepth(objectDepth);
         sprite.elevation = elevation;
     }
@@ -702,6 +706,16 @@ function registerSpriteVariantListeners(sprite, scenarioObj, roomId) {
 }
 
 // ===== END: ITEM POOL MANAGEMENT (PHASE 2 IMPROVEMENTS) =====
+
+// Static tileset props that become 8-direction swivel props at runtime.
+// base: rotation texture prefix (frames <base>1..8, ordered S, SW, W, NW, N, NE, E, SE).
+// frameNumber: starting frame that matches the static image's facing.
+// offsetX/offsetY: shift applied after the texture swap so the starting frame
+// lands on the static image's pixels.
+const STATIC_SWIVEL_PROPS = {
+    crash_cart1: { base: 'crash-cart-rotate', frameNumber: 1 },
+    wheelchair1: { base: 'wheelchair-rotate', frameNumber: 2, offsetX: -11, offsetY: -8 },
+};
 
 // Define scale factors for different object types
 const OBJECT_SCALES = {
@@ -1887,6 +1901,10 @@ export function createRoom(roomId, roomData, position) {
         // in processScenarioObjectsWithConditionalMatching(). They will be handled there
         // with proper priority ordering (regular table items before conditional ones).
         
+        // Tiled objects already turned into sprites by the scenario pass below, so
+        // the regular-items loop doesn't build a second, hidden copy of each one
+        const processedTiledItems = new Set();
+
         // Process scenario objects with conditional item matching first
         const usedItems = processScenarioObjectsWithConditionalMatching(roomId, roomData, position, objectsByLayer, map);
         
@@ -1909,6 +1927,11 @@ export function createRoom(roomId, roomData, position) {
                     return;
                 }
                 
+                // Already created as an unreserved item by the scenario pass
+                if (processedTiledItems.has(obj)) {
+                    return;
+                }
+
                 // Skip if this exact item was used by scenario objects
                 // BUT: Create it anyway if we haven't used ALL items of this type
                 if (imageName && usedItems.has(imageName)) {
@@ -2273,6 +2296,7 @@ export function createRoom(roomId, roomData, position) {
                 
                 // Use processObject to create sprite with all properties (collision, animation, etc.)
                 const result = processObject(tiledItem, position, roomId, 'item', map);
+                processedTiledItems.add(tiledItem);
                 if (result && result.sprite) {
                     // Store unreserved items so they're revealed
                     rooms[roomId].objects[result.sprite.objectId] = result.sprite;
@@ -2417,23 +2441,22 @@ export function createRoom(roomId, roomData, position) {
                     
                     // Check if this is a wheeled, spinnable prop.
                     // Swivel props are named "<base>-rotate<N>" with 8 rotation frames
-                    // (chairs). The static crash cart (crash_cart1) is treated as a
-                    // swivel prop too — it swaps to the 8-direction cart sheet at runtime,
-                    // so every existing crash_cart1 placement rolls and spins like a chair.
+                    // (chairs). Some static props placed from a tileset are treated as
+                    // swivel props too: they swap to an 8-direction sheet at runtime, so
+                    // every existing placement rolls and spins like a chair.
                     const rotateMatch = imageName.match(/^(.*)-rotate(\d+)$/);
-                    const isCrashCart = imageName === 'crash_cart1';
-                    if ((imageName.startsWith('chair-') && !imageName.startsWith('chair-waiting')) || rotateMatch || isCrashCart) {
+                    const staticSwivel = STATIC_SWIVEL_PROPS[imageName];
+                    if ((imageName.startsWith('chair-') && !imageName.startsWith('chair-waiting')) || rotateMatch || staticSwivel) {
                         sprite.hasWheels = true;
 
-                        // Check if this is a swivel prop (rotating chair or crash cart)
-                        if (rotateMatch || isCrashCart) {
+                        // Check if this is a swivel prop (rotating chair, crash cart, wheelchair)
+                        if (rotateMatch || staticSwivel) {
                             sprite.isSwivelChair = true;
 
                             // Determine the rotation base and starting frame
                             let base, frameNumber;
-                            if (isCrashCart) {
-                                base = 'crash-cart-rotate';
-                                frameNumber = 1;
+                            if (staticSwivel) {
+                                ({ base, frameNumber } = staticSwivel);
                             } else {
                                 base = `${rotateMatch[1]}-rotate`;
                                 frameNumber = parseInt(rotateMatch[2]);
@@ -2445,10 +2468,14 @@ export function createRoom(roomId, roomData, position) {
                             sprite.originalTexture = `${base}${frameNumber}`; // Rotation texture name
                             sprite.spinDirection = 0; // -1 for counter-clockwise, 1 for clockwise, 0 for no spin
 
-                            // Swap the static crash cart to its rotation sheet so its
+                            // Swap the static prop to its rotation sheet so its
                             // dimensions (used for elevation + collision box below) match.
-                            if (isCrashCart && gameRef.textures.exists(sprite.originalTexture)) {
+                            // The rotation frames sit on a larger canvas; the per-prop
+                            // offset lines the starting frame up with the static image.
+                            if (staticSwivel && gameRef.textures.exists(sprite.originalTexture)) {
                                 sprite.setTexture(sprite.originalTexture);
+                                sprite.x += staticSwivel.offsetX || 0;
+                                sprite.y += staticSwivel.offsetY || 0;
                             }
                         }
 
@@ -2499,7 +2526,9 @@ export function createRoom(roomId, roomData, position) {
                     const itemBottomY = sprite.y + sprite.height;
                     const elevation = itemBottomY < backWallThreshold ? (backWallThreshold - itemBottomY) : 0;
                     
-                    const objectDepth = objectBottomY + 0.5 + elevation;
+                    // Tie-break back-wall items by feet position (see setDepthAndStore)
+                    const wallTieBreak = elevation > 0 ? (itemBottomY - roomTopY) * 0.001 : 0;
+                    const objectDepth = objectBottomY + 0.5 + elevation + wallTieBreak;
                     sprite.setDepth(objectDepth);
                     
                     // Store elevation for debugging

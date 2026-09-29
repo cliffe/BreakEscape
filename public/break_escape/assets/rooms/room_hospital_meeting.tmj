@@ -534,30 +534,6 @@
      "y": 120
     },
     {
-     "gid": 402,
-     "height": 75,
-     "id": 21,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 64,
-     "x": 36,
-     "y": 300
-    },
-    {
-     "gid": 399,
-     "height": 75,
-     "id": 22,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 64,
-     "x": 220,
-     "y": 300
-    },
-    {
      "gid": 312,
      "height": 46,
      "id": 37,
@@ -652,30 +628,6 @@
      "width": 24,
      "x": 66.1532779316713,
      "y": 70.8217913204063
-    },
-    {
-     "gid": 357,
-     "height": 16,
-     "id": 31,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 26,
-     "x": 106.648199445983,
-     "y": 63.8642659279778
-    },
-    {
-     "gid": 357,
-     "height": 16,
-     "id": 32,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 26,
-     "x": 192.243767313019,
-     "y": 66.0803324099723
     }
    ],
    "opacity": 1,
@@ -784,6 +736,30 @@
      "width": 17,
      "x": 180,
      "y": 168
+    },
+    {
+     "gid": 357,
+     "height": 16,
+     "id": 31,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 26,
+     "x": 99,
+     "y": 156
+    },
+    {
+     "gid": 357,
+     "height": 16,
+     "id": 32,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 26,
+     "x": 197,
+     "y": 156
     }
    ],
    "opacity": 1,
@@ -796,56 +772,7 @@
    "draworder": "topdown",
    "id": 12,
    "name": "table_items",
-   "objects": [
-    {
-     "gid": 183,
-     "height": 14,
-     "id": 25,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 9,
-     "x": 100,
-     "y": 156
-    },
-    {
-     "gid": 193,
-     "height": 15,
-     "id": 26,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 14,
-     "x": 128,
-     "y": 156
-    },
-    {
-     "gid": 183,
-     "height": 14,
-     "id": 27,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 9,
-     "x": 207,
-     "y": 156
-    },
-    {
-     "gid": 193,
-     "height": 15,
-     "id": 28,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 14,
-     "x": 190,
-     "y": 156
-    }
-   ],
+   "objects": [],
    "opacity": 1,
    "type": "objectgroup",
    "visible": true,

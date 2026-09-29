@@ -280,7 +280,7 @@ Recover decryption keys and advise hospital board on ransom payment decision bef
     Dr. Kim's Office:     2 × 2 GU   (room_office)
     Conference Room:      2 × 2 GU   (room_meeting)
     Patient Ward:         4 × 2 GU   (room_hospital_ward, double-wide)
-    Emergency Storage:    1 × 1 GU   (small_room_storage_1x1gu)
+    Emergency Storage:    1 × 1 GU   (room_hospital_storage_1x1gu)
     Hallway North/South:  2 × 1 GU   (hall_1x2gu)
 
     LOCK TYPES & DIFFICULTY

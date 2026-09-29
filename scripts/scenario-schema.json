@@ -295,6 +295,8 @@
             "room_hospital_hall",
             "room_hospital_hall_ward",
             "room_hospital_hall_waiting",
+            "room_hospital_waiting_1x1gu",
+            "room_hospital_storage_1x1gu",
             "room_hospital_staff",
             "room_lab",
             "small_room_1x1gu",

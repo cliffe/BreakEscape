@@ -2269,6 +2269,306 @@
       "w": 16,
       "h": 32,
       "gid": 317
+    },
+    "iv_stand1": {
+      "id": 0,
+      "w": 25,
+      "h": 60,
+      "gid": 801
+    },
+    "vending_machine1": {
+      "id": 1,
+      "w": 42,
+      "h": 60,
+      "gid": 802
+    },
+    "supply_shelves1": {
+      "id": 2,
+      "w": 50,
+      "h": 60,
+      "gid": 803
+    },
+    "privacy_screen1": {
+      "id": 3,
+      "w": 60,
+      "h": 57,
+      "gid": 804
+    },
+    "stretcher1": {
+      "id": 4,
+      "w": 58,
+      "h": 45,
+      "gid": 805
+    },
+    "water_cooler1": {
+      "id": 5,
+      "w": 24,
+      "h": 47,
+      "gid": 806
+    },
+    "wheelchair1": {
+      "id": 6,
+      "w": 38,
+      "h": 44,
+      "gid": 807
+    },
+    "oxygen_cylinder1": {
+      "id": 7,
+      "w": 23,
+      "h": 45,
+      "gid": 808
+    },
+    "linen_cart1": {
+      "id": 8,
+      "w": 42,
+      "h": 39,
+      "gid": 809
+    },
+    "chairs_stacked1": {
+      "id": 9,
+      "w": 20,
+      "h": 45,
+      "gid": 810
+    },
+    "monitor_stand1": {
+      "id": 10,
+      "w": 17,
+      "h": 45,
+      "gid": 811
+    },
+    "bedside_locker1": {
+      "id": 11,
+      "w": 24,
+      "h": 42,
+      "gid": 812
+    },
+    "coffee_station1": {
+      "id": 12,
+      "w": 26,
+      "h": 41,
+      "gid": 813
+    },
+    "first_aid_cabinet1": {
+      "id": 13,
+      "w": 28,
+      "h": 36,
+      "gid": 814
+    },
+    "instrument_trolley1": {
+      "id": 14,
+      "w": 37,
+      "h": 41,
+      "gid": 815
+    },
+    "step_stool1": {
+      "id": 15,
+      "w": 28,
+      "h": 35,
+      "gid": 816
+    },
+    "mop_bucket1": {
+      "id": 16,
+      "w": 29,
+      "h": 44,
+      "gid": 817
+    },
+    "fire_extinguisher1": {
+      "id": 17,
+      "w": 16,
+      "h": 28,
+      "gid": 818
+    },
+    "wet_floor_sign1": {
+      "id": 18,
+      "w": 21,
+      "h": 29,
+      "gid": 819
+    },
+    "sharps_bin1": {
+      "id": 19,
+      "w": 16,
+      "h": 26,
+      "gid": 820
+    },
+    "first_aid_kit1": {
+      "id": 20,
+      "w": 22,
+      "h": 20,
+      "gid": 821
+    },
+    "sanitiser_dispenser1": {
+      "id": 21,
+      "w": 14,
+      "h": 27,
+      "gid": 822
+    },
+    "pedal_bin1": {
+      "id": 22,
+      "w": 15,
+      "h": 22,
+      "gid": 823
+    },
+    "clinical_waste_bin1": {
+      "id": 23,
+      "w": 18,
+      "h": 25,
+      "gid": 824
+    },
+    "medicine_fridge1": {
+      "id": 24,
+      "w": 18,
+      "h": 31,
+      "gid": 825
+    },
+    "rota_board1": {
+      "id": 25,
+      "w": 30,
+      "h": 21,
+      "gid": 826
+    },
+    "xray_lightbox1": {
+      "id": 26,
+      "w": 22,
+      "h": 26,
+      "gid": 827
+    },
+    "fire_alarm_point1": {
+      "id": 27,
+      "w": 16,
+      "h": 20,
+      "gid": 828
+    },
+    "exit_sign1": {
+      "id": 28,
+      "w": 26,
+      "h": 15,
+      "gid": 829
+    },
+    "binders1": {
+      "id": 29,
+      "w": 20,
+      "h": 22,
+      "gid": 830
+    },
+    "gloves_box1": {
+      "id": 30,
+      "w": 18,
+      "h": 15,
+      "gid": 831
+    },
+    "clipboard_chart1": {
+      "id": 31,
+      "w": 15,
+      "h": 20,
+      "gid": 832
+    },
+    "stethoscope1": {
+      "id": 32,
+      "w": 18,
+      "h": 22,
+      "gid": 833
+    },
+    "kettle1": {
+      "id": 33,
+      "w": 15,
+      "h": 18,
+      "gid": 834
+    },
+    "mugs_tray1": {
+      "id": 34,
+      "w": 20,
+      "h": 15,
+      "gid": 835
+    },
+    "test_tube_rack1": {
+      "id": 35,
+      "w": 19,
+      "h": 22,
+      "gid": 836
+    },
+    "doctors_bag1": {
+      "id": 36,
+      "w": 20,
+      "h": 16,
+      "gid": 837
+    },
+    "bp_monitor1": {
+      "id": 37,
+      "w": 19,
+      "h": 17,
+      "gid": 838
+    },
+    "sanitiser_bottle1": {
+      "id": 38,
+      "w": 10,
+      "h": 20,
+      "gid": 839
+    },
+    "eye_chart1": {
+      "id": 39,
+      "w": 16,
+      "h": 24,
+      "gid": 840
+    },
+    "kitchen_counter_sink1": {
+      "id": 40,
+      "w": 47,
+      "h": 40,
+      "gid": 841
+    },
+    "undercounter_fridge1": {
+      "id": 41,
+      "w": 22,
+      "h": 29,
+      "gid": 842
+    },
+    "microwave1": {
+      "id": 42,
+      "w": 22,
+      "h": 18,
+      "gid": 843
+    },
+    "hot_water_boiler1": {
+      "id": 43,
+      "w": 20,
+      "h": 30,
+      "gid": 844
+    },
+    "soap_dispenser1": {
+      "id": 44,
+      "w": 12,
+      "h": 19,
+      "gid": 845
+    },
+    "notice_board1": {
+      "id": 45,
+      "w": 42,
+      "h": 31,
+      "gid": 846
+    },
+    "dirty_mugs1": {
+      "id": 46,
+      "w": 15,
+      "h": 14,
+      "gid": 847
+    },
+    "yellow_bin1": {
+      "id": 47,
+      "w": 22,
+      "h": 29,
+      "gid": 848
+    },
+    "notes6": {
+      "id": 48,
+      "w": 14,
+      "h": 18,
+      "gid": 849
+    },
+    "directory_sign1": {
+      "id": 49,
+      "w": 34,
+      "h": 26,
+      "gid": 850
     }
   }
 }
