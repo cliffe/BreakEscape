@@ -362,7 +362,7 @@
      "type": "",
      "visible": true,
      "width": 62,
-     "x": 60.0,
+     "x": 86.0,
      "y": 173.0
     },
     {
@@ -498,33 +498,45 @@
      "y": 50.0
     },
     {
-     "gid": 380,
-     "height": 54,
+     "gid": 871,
+     "height": 62,
      "id": 12,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 27,
-     "x": 28.0,
-     "y": 173.0
+     "width": 50,
+     "x": 30.0,
+     "y": 180.0
     },
     {
-     "gid": 823,
-     "height": 22,
+     "gid": 316,
+     "height": 26,
      "id": 13,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
+     "width": 16,
+     "x": 109.0,
+     "y": 196.0
+    },
+    {
+     "gid": 823,
+     "height": 22,
+     "id": 14,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
      "width": 15,
-     "x": 126.0,
+     "x": 152.0,
      "y": 173.0
     },
     {
      "gid": 309,
      "height": 32,
-     "id": 14,
+     "id": 15,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -536,7 +548,7 @@
     {
      "gid": 308,
      "height": 32,
-     "id": 15,
+     "id": 16,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -548,7 +560,7 @@
     {
      "gid": 309,
      "height": 32,
-     "id": 16,
+     "id": 17,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -560,7 +572,7 @@
     {
      "gid": 308,
      "height": 32,
-     "id": 17,
+     "id": 18,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -572,7 +584,7 @@
     {
      "gid": 317,
      "height": 32,
-     "id": 18,
+     "id": 19,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -584,7 +596,7 @@
     {
      "gid": 806,
      "height": 47,
-     "id": 19,
+     "id": 20,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -608,7 +620,7 @@
     {
      "gid": 849,
      "height": 18,
-     "id": 26,
+     "id": 27,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -620,7 +632,7 @@
     {
      "gid": 849,
      "height": 18,
-     "id": 27,
+     "id": 28,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -644,29 +656,17 @@
     {
      "gid": 381,
      "height": 18,
-     "id": 28,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 24,
-     "x": 66.6,
-     "y": 141.32
-    },
-    {
-     "gid": 304,
-     "height": 16,
      "id": 29,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 16,
-     "x": 86.1,
-     "y": 147.08
+     "width": 24,
+     "x": 92.6,
+     "y": 141.32
     },
     {
-     "gid": 305,
+     "gid": 304,
      "height": 16,
      "id": 30,
      "name": "",
@@ -674,13 +674,25 @@
      "type": "",
      "visible": true,
      "width": 16,
-     "x": 59.44,
+     "x": 112.1,
+     "y": 147.08
+    },
+    {
+     "gid": 305,
+     "height": 16,
+     "id": 31,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 16,
+     "x": 85.44,
      "y": 146.12
     },
     {
      "gid": 386,
      "height": 16,
-     "id": 25,
+     "id": 26,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -704,19 +716,19 @@
     {
      "gid": 202,
      "height": 14,
-     "id": 20,
+     "id": 21,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 16,
-     "x": 101.6,
+     "x": 127.6,
      "y": 145.16
     },
     {
      "gid": 835,
      "height": 15,
-     "id": 21,
+     "id": 22,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -728,7 +740,7 @@
     {
      "gid": 217,
      "height": 11,
-     "id": 22,
+     "id": 23,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -740,7 +752,7 @@
     {
      "gid": 847,
      "height": 14,
-     "id": 23,
+     "id": 24,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -752,7 +764,7 @@
     {
      "gid": 843,
      "height": 18,
-     "id": 24,
+     "id": 25,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -781,7 +793,7 @@
   }
  ],
  "nextlayerid": 14,
- "nextobjectid": 31,
+ "nextobjectid": 32,
  "orientation": "orthogonal",
  "renderorder": "right-down",
  "tiledversion": "1.11.2",
@@ -3214,7 +3226,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 66,
+   "tilecount": 79,
    "tileheight": 60,
    "tiles": [
     {
@@ -3612,6 +3624,84 @@
      "image": "../objects/wall_clock1.png",
      "imageheight": 26,
      "imagewidth": 25
+    },
+    {
+     "id": 66,
+     "image": "../objects/server_rack1.png",
+     "imageheight": 55,
+     "imagewidth": 30
+    },
+    {
+     "id": 67,
+     "image": "../objects/server_rack2.png",
+     "imageheight": 59,
+     "imagewidth": 30
+    },
+    {
+     "id": 68,
+     "image": "../objects/ups_cabinet1.png",
+     "imageheight": 56,
+     "imagewidth": 31
+    },
+    {
+     "id": 69,
+     "image": "../objects/aircon_unit1.png",
+     "imageheight": 63,
+     "imagewidth": 32
+    },
+    {
+     "id": 70,
+     "image": "../objects/staff_lockers1.png",
+     "imageheight": 62,
+     "imagewidth": 50
+    },
+    {
+     "id": 71,
+     "image": "../objects/clinical_sink1.png",
+     "imageheight": 60,
+     "imagewidth": 38
+    },
+    {
+     "id": 72,
+     "image": "../objects/sideboard1.png",
+     "imageheight": 46,
+     "imagewidth": 44
+    },
+    {
+     "id": 73,
+     "image": "../objects/bedhead_panel1.png",
+     "imageheight": 25,
+     "imagewidth": 28
+    },
+    {
+     "id": 74,
+     "image": "../objects/bedhead_panel2.png",
+     "imageheight": 19,
+     "imagewidth": 28
+    },
+    {
+     "id": 75,
+     "image": "../objects/ppe_dispenser1.png",
+     "imageheight": 28,
+     "imagewidth": 26
+    },
+    {
+     "id": 76,
+     "image": "../objects/fire_action_notice1.png",
+     "imageheight": 28,
+     "imagewidth": 22
+    },
+    {
+     "id": 77,
+     "image": "../objects/comms_cabinet1.png",
+     "imageheight": 29,
+     "imagewidth": 28
+    },
+    {
+     "id": 78,
+     "image": "../objects/no_smoking_sign1.png",
+     "imageheight": 26,
+     "imagewidth": 22
     }
    ],
    "tilewidth": 60

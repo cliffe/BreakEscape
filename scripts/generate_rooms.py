@@ -726,7 +726,7 @@ def is_wall_mounted(name: str) -> bool:
     return (
         (is_wall_hanging(name) and not name.startswith("chalkboard"))
         or name.startswith("notes")
-        or name in ("office-misc-clock", "smartscreen", "alarm_panel", "emergency-button")
+        or name in ("office-misc-clock", "smartscreen", "alarm_panel", "emergency-button", "thermometer")
         or name.rstrip("0123456789") in WALL_MOUNTED_EXTRAS
     )
 
@@ -743,6 +743,11 @@ WALL_MOUNTED_EXTRAS = {
     "health_poster",
     "leaflet_holder",
     "wall_clock",
+    "bedhead_panel",
+    "ppe_dispenser",
+    "fire_action_notice",
+    "comms_cabinet",
+    "no_smoking_sign",
 }
 
 
@@ -1390,23 +1395,22 @@ def room_hospital_servers():
     tables = [desk, console_table]
 
     items = []
-    # Server racks along clear mid back-wall
-    items.append(make_obj("objects", "servers3", 72.0, 78.0, oid))
-    oid += 1
-    items.append(make_obj("objects", "servers3", 130.0, 78.0, oid))
-    oid += 1
-    items.append(make_obj("objects", "servers4", 190.0, 78.0, oid))
-    oid += 1
-    items.append(make_obj("objects", "servers4", 220.0, 78.0, oid))
+    # Back row of racks along the clear mid back wall (x 72-254; both back-wall
+    # corners carry N doors), glass-door and mesh-door racks alternating, with the
+    # room's air-conditioning unit standing at the end of the row
+    for i, name in enumerate(["server_rack1", "server_rack2", "server_rack1",
+                              "server_rack2", "server_rack1"]):
+        items.append(make_obj("objects", name, 72.0 + 30 * i, 82.0, oid))
+        oid += 1
+    items.append(make_obj("objects", "aircon_unit1", 222.0, 82.0, oid))
     oid += 1
 
     # The racks fill the back wall, so wall art would only peek out behind them;
-    # a single chart goes on the west side wall between the W door slots instead.
-    oid = place_ward_posters(items, oid, [("chart2", 12.0, 150.0)])
+    # a temperature sensor goes on the west side wall between the W door slots.
+    items.append(make_obj("objects", "thermometer", 13.0, 150.0, oid))
+    oid += 1
 
     items.append(make_obj("objects", "hospital_chair_north", 162.0, 226.0, oid))  # at the desk, facing it
-    oid += 1
-    items.append(make_obj("objects", "sanitizer_stand1", 120.0, 180.0, oid))
     oid += 1
     # fire point (no crash cart in a server room): call point on the east wall
     # below the E door row, extinguisher standing beneath it
@@ -1421,12 +1425,13 @@ def room_hospital_servers():
     items.append(make_obj("objects", "power_panel1", 290.0, 186.0, oid))
     oid += 1
 
-    # Second row of racks (glass drugs cabinets don't belong in a server room)
-    items.append(make_obj("objects", "servers3", 72.0, 130.0, oid))
-    oid += 1
-    items.append(make_obj("objects", "servers3", 220.0, 130.0, oid))
-    oid += 1
-
+    # Second row: two more racks on the west, and the UPS battery cabinets on the
+    # east, next to the UPS panel they report to (kept west of x 258, out of the
+    # E door row). Glass drugs cabinets don't belong in a server room.
+    for name, x in [("server_rack2", 72.0), ("server_rack1", 102.0),
+                    ("ups_cabinet1", 196.0), ("ups_cabinet1", 227.0)]:
+        items.append(make_obj("objects", name, x, 142.0, oid))
+        oid += 1
 
     table_items = [
         place_on_table(desk, "office-misc-fan2", x_frac=0.12, surface_frac=0.20, obj_id=oid),
@@ -1502,8 +1507,8 @@ def room_hospital_staff():
         microwave on it, yellow bin; boiler, soap dispensers, notice board).
       - y 118-150 across the right half, and y 70-118 across the left half, stay
         open as the W-E walkway; a N-S aisle (x ~142-180) runs to the S door.
-      - Left zone: the clerk's desk (scenario workstation + notes) with a filing
-        cabinet and bin, and the low tea table (id_badge slot) below it.
+      - Left zone: the clerk's desk (scenario workstation + notes) with staff
+        lockers and a bin, and the low tea table (id_badge slot) below it.
       - Right zone: a second table with a chair on three sides.
     Every chair faces its table: hospital_chair2 faces east, hospital_chair1
     faces west, hospital_chair_south faces the viewer, hospital_chair_north is
@@ -1512,7 +1517,7 @@ def room_hospital_staff():
     oid = 1
 
     # Clerk's desk, left zone, clear of the walkway under the notices
-    desk = make_obj("tables", "hospital_desk2", 60.0, 173.0, oid)
+    desk = make_obj("tables", "hospital_desk2", 86.0, 173.0, oid)
     oid += 1
     # Low tea table below it (id_badge slot + mugs)
     side = make_obj("tables", "smalldesk1", 74.0, 248.0, oid)
@@ -1546,10 +1551,13 @@ def room_hospital_staff():
     items.append(make_obj("objects", "rota_board1", 68.0, 50.0, oid))
     oid += 1
 
-    # Clerk's corner
-    items.append(make_obj("objects", "filing_cabinet", 28.0, 173.0, oid))
+    # Clerk's corner: a bank of staff lockers against the west wall (below the
+    # W door row), the clerk's chair pulled up to the desk, a bin beside it
+    items.append(make_obj("objects", "staff_lockers1", 30.0, 180.0, oid))
     oid += 1
-    items.append(make_obj("objects", "pedal_bin1", 126.0, 173.0, oid))
+    items.append(make_obj("objects", "hospital_chair_north", 109.0, 196.0, oid))  # faces the desk
+    oid += 1
+    items.append(make_obj("objects", "pedal_bin1", 152.0, 173.0, oid))
     oid += 1
 
     # Tea table: a chair either side, both turned in
@@ -1675,8 +1683,9 @@ HALL_BOARDS = [
 
 
 def room_hospital_hall():
-    """Admin-side corridor: sanitizer stands, a vending machine and a fire point
-    (call point on the wall with the extinguisher standing under it). A ward
+    """Admin-side corridor: a sanitizer stand and a wall dispenser, a vending machine
+    and a fire point (call point and fire action notice on the wall, the
+    extinguisher standing under them). A ward
     directory sign takes the first board's place (scenarios: "as-type:directory_sign")."""
     return _hospital_hall(
         "room_hospital_hall",
@@ -1685,11 +1694,14 @@ def room_hospital_hall():
             HALL_BOARDS[1],
             ("chart2", 66.0, 42.0),
             ("fire_alarm_point1", 213.0, 50.0),
-            ("chart2", 232.0, 42.0),
+            # fire action notice beside the call point, as by every UK fire point
+            ("fire_action_notice1", 232.0, 48.0),
         ],
         props=[
             ("sanitizer_stand1", 70.0, 122.0),
-            ("sanitizer_stand2", 250.0, 122.0),
+            # the east end gets a wall dispenser (below the E door row) rather
+            # than a second floor stand
+            ("sanitiser_dispenser1", 294.0, 128.0),
             ("pedal_bin1", 170.0, 122.0),
             # back flat against the wall: top edge on the skirting (y 70)
             ("vending_machine1", 124.0, 130.0),

@@ -293,16 +293,16 @@
      "y": 50.0
     },
     {
-     "gid": 475,
-     "height": 21,
+     "gid": 877,
+     "height": 28,
      "id": 5,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 19,
+     "width": 22,
      "x": 232.0,
-     "y": 42.0
+     "y": 48.0
     },
     {
      "gid": 312,
@@ -317,16 +317,16 @@
      "y": 122.0
     },
     {
-     "gid": 313,
-     "height": 46,
+     "gid": 822,
+     "height": 27,
      "id": 7,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 21,
-     "x": 250.0,
-     "y": 122.0
+     "width": 14,
+     "x": 294.0,
+     "y": 128.0
     },
     {
      "gid": 823,
@@ -2899,7 +2899,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 50,
+   "tilecount": 79,
    "tileheight": 60,
    "tiles": [
     {
@@ -3201,6 +3201,180 @@
      "image": "../objects/directory_sign1.png",
      "imageheight": 26,
      "imagewidth": 34
+    },
+    {
+     "id": 50,
+     "image": "../objects/whiteboard1.png",
+     "imageheight": 28,
+     "imagewidth": 44
+    },
+    {
+     "id": 51,
+     "image": "../objects/whiteboard2.png",
+     "imageheight": 28,
+     "imagewidth": 44
+    },
+    {
+     "id": 52,
+     "image": "../objects/key_cabinet1.png",
+     "imageheight": 24,
+     "imagewidth": 20
+    },
+    {
+     "id": 53,
+     "image": "../objects/plaque1.png",
+     "imageheight": 17,
+     "imagewidth": 24
+    },
+    {
+     "id": 54,
+     "image": "../objects/power_panel1.png",
+     "imageheight": 22,
+     "imagewidth": 18
+    },
+    {
+     "id": 55,
+     "image": "../objects/health_poster1.png",
+     "imageheight": 21,
+     "imagewidth": 16
+    },
+    {
+     "id": 56,
+     "image": "../objects/health_poster2.png",
+     "imageheight": 21,
+     "imagewidth": 16
+    },
+    {
+     "id": 57,
+     "image": "../objects/health_poster3.png",
+     "imageheight": 21,
+     "imagewidth": 16
+    },
+    {
+     "id": 58,
+     "image": "../objects/health_poster4.png",
+     "imageheight": 21,
+     "imagewidth": 16
+    },
+    {
+     "id": 59,
+     "image": "../objects/health_poster5.png",
+     "imageheight": 21,
+     "imagewidth": 16
+    },
+    {
+     "id": 60,
+     "image": "../objects/health_poster6.png",
+     "imageheight": 21,
+     "imagewidth": 16
+    },
+    {
+     "id": 61,
+     "image": "../objects/leaflet_holder1.png",
+     "imageheight": 33,
+     "imagewidth": 29
+    },
+    {
+     "id": 62,
+     "image": "../objects/magazine_rack1.png",
+     "imageheight": 31,
+     "imagewidth": 38
+    },
+    {
+     "id": 63,
+     "image": "../objects/magazine_rack2.png",
+     "imageheight": 42,
+     "imagewidth": 26
+    },
+    {
+     "id": 64,
+     "image": "../objects/toy_box1.png",
+     "imageheight": 28,
+     "imagewidth": 30
+    },
+    {
+     "id": 65,
+     "image": "../objects/wall_clock1.png",
+     "imageheight": 26,
+     "imagewidth": 25
+    },
+    {
+     "id": 66,
+     "image": "../objects/server_rack1.png",
+     "imageheight": 55,
+     "imagewidth": 30
+    },
+    {
+     "id": 67,
+     "image": "../objects/server_rack2.png",
+     "imageheight": 59,
+     "imagewidth": 30
+    },
+    {
+     "id": 68,
+     "image": "../objects/ups_cabinet1.png",
+     "imageheight": 56,
+     "imagewidth": 31
+    },
+    {
+     "id": 69,
+     "image": "../objects/aircon_unit1.png",
+     "imageheight": 63,
+     "imagewidth": 32
+    },
+    {
+     "id": 70,
+     "image": "../objects/staff_lockers1.png",
+     "imageheight": 62,
+     "imagewidth": 50
+    },
+    {
+     "id": 71,
+     "image": "../objects/clinical_sink1.png",
+     "imageheight": 60,
+     "imagewidth": 38
+    },
+    {
+     "id": 72,
+     "image": "../objects/sideboard1.png",
+     "imageheight": 46,
+     "imagewidth": 44
+    },
+    {
+     "id": 73,
+     "image": "../objects/bedhead_panel1.png",
+     "imageheight": 25,
+     "imagewidth": 28
+    },
+    {
+     "id": 74,
+     "image": "../objects/bedhead_panel2.png",
+     "imageheight": 19,
+     "imagewidth": 28
+    },
+    {
+     "id": 75,
+     "image": "../objects/ppe_dispenser1.png",
+     "imageheight": 28,
+     "imagewidth": 26
+    },
+    {
+     "id": 76,
+     "image": "../objects/fire_action_notice1.png",
+     "imageheight": 28,
+     "imagewidth": 22
+    },
+    {
+     "id": 77,
+     "image": "../objects/comms_cabinet1.png",
+     "imageheight": 29,
+     "imagewidth": 28
+    },
+    {
+     "id": 78,
+     "image": "../objects/no_smoking_sign1.png",
+     "imageheight": 26,
+     "imagewidth": 22
     }
    ],
    "tilewidth": 60

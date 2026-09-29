@@ -2665,6 +2665,84 @@
       "w": 25,
       "h": 26,
       "gid": 866
+    },
+    "server_rack1": {
+      "id": 66,
+      "w": 30,
+      "h": 55,
+      "gid": 867
+    },
+    "server_rack2": {
+      "id": 67,
+      "w": 30,
+      "h": 59,
+      "gid": 868
+    },
+    "ups_cabinet1": {
+      "id": 68,
+      "w": 31,
+      "h": 56,
+      "gid": 869
+    },
+    "aircon_unit1": {
+      "id": 69,
+      "w": 32,
+      "h": 63,
+      "gid": 870
+    },
+    "staff_lockers1": {
+      "id": 70,
+      "w": 50,
+      "h": 62,
+      "gid": 871
+    },
+    "clinical_sink1": {
+      "id": 71,
+      "w": 38,
+      "h": 60,
+      "gid": 872
+    },
+    "sideboard1": {
+      "id": 72,
+      "w": 44,
+      "h": 46,
+      "gid": 873
+    },
+    "bedhead_panel1": {
+      "id": 73,
+      "w": 28,
+      "h": 25,
+      "gid": 874
+    },
+    "bedhead_panel2": {
+      "id": 74,
+      "w": 28,
+      "h": 19,
+      "gid": 875
+    },
+    "ppe_dispenser1": {
+      "id": 75,
+      "w": 26,
+      "h": 28,
+      "gid": 876
+    },
+    "fire_action_notice1": {
+      "id": 76,
+      "w": 22,
+      "h": 28,
+      "gid": 877
+    },
+    "comms_cabinet1": {
+      "id": 77,
+      "w": 28,
+      "h": 29,
+      "gid": 878
+    },
+    "no_smoking_sign1": {
+      "id": 78,
+      "w": 22,
+      "h": 26,
+      "gid": 879
     }
   }
 }

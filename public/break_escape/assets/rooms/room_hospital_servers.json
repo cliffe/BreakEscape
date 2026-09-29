@@ -106,69 +106,93 @@
          "name":"items",
          "objects":[
                 {
-                 "gid":340,
-                 "height":54,
+                 "gid":867,
+                 "height":55,
                  "id":3,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":54,
+                 "width":30,
                  "x":72,
-                 "y":78
+                 "y":82
                 }, 
                 {
-                 "gid":340,
-                 "height":54,
+                 "gid":868,
+                 "height":59,
                  "id":4,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":54,
-                 "x":130,
-                 "y":78
+                 "width":30,
+                 "x":102,
+                 "y":82
                 }, 
                 {
-                 "gid":389,
-                 "height":47,
+                 "gid":867,
+                 "height":55,
                  "id":5,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":26,
-                 "x":190,
-                 "y":78
+                 "width":30,
+                 "x":132,
+                 "y":82
                 }, 
                 {
-                 "gid":389,
-                 "height":47,
+                 "gid":868,
+                 "height":59,
                  "id":6,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":26,
-                 "x":220,
-                 "y":78
+                 "width":30,
+                 "x":162,
+                 "y":82
                 }, 
                 {
-                 "gid":475,
-                 "height":21,
+                 "gid":867,
+                 "height":55,
                  "id":7,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":19,
-                 "x":12,
+                 "width":30,
+                 "x":192,
+                 "y":82
+                }, 
+                {
+                 "gid":870,
+                 "height":63,
+                 "id":8,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":32,
+                 "x":222,
+                 "y":82
+                }, 
+                {
+                 "gid":454,
+                 "height":16,
+                 "id":9,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":13,
                  "y":150
                 }, 
                 {
                  "gid":316,
                  "height":26,
-                 "id":8,
+                 "id":10,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -178,21 +202,9 @@
                  "y":226
                 }, 
                 {
-                 "gid":312,
-                 "height":46,
-                 "id":9,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":18,
-                 "x":120,
-                 "y":180
-                }, 
-                {
                  "gid":828,
                  "height":20,
-                 "id":10,
+                 "id":11,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -204,7 +216,7 @@
                 {
                  "gid":818,
                  "height":28,
-                 "id":11,
+                 "id":12,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -212,11 +224,12 @@
                  "width":16,
                  "x":274,
                  "y":196
-                }, 
+                },
+            
                 {
                  "gid":116,
                  "height":16,
-                 "id":12,
+                 "id":13,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -224,12 +237,11 @@
                  "width":13,
                  "x":250,
                  "y":230
-                },
-            
+                }, 
                 {
                  "gid":855,
                  "height":22,
-                 "id":13,
+                 "id":14,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -239,28 +251,52 @@
                  "y":186
                 }, 
                 {
-                 "gid":340,
-                 "height":54,
-                 "id":14,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":54,
-                 "x":72,
-                 "y":130
-                }, 
-                {
-                 "gid":340,
-                 "height":54,
+                 "gid":868,
+                 "height":59,
                  "id":15,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":54,
-                 "x":220,
-                 "y":130
+                 "width":30,
+                 "x":72,
+                 "y":142
+                }, 
+                {
+                 "gid":867,
+                 "height":55,
+                 "id":16,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":30,
+                 "x":102,
+                 "y":142
+                }, 
+                {
+                 "gid":869,
+                 "height":56,
+                 "id":17,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":31,
+                 "x":196,
+                 "y":142
+                }, 
+                {
+                 "gid":869,
+                 "height":56,
+                 "id":18,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":31,
+                 "x":227,
+                 "y":142
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -276,7 +312,7 @@
                 {
                  "gid":300,
                  "height":26,
-                 "id":18,
+                 "id":21,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -288,7 +324,7 @@
                 {
                  "gid":301,
                  "height":33,
-                 "id":19,
+                 "id":22,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -311,7 +347,7 @@
                 {
                  "gid":381,
                  "height":18,
-                 "id":20,
+                 "id":23,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -323,7 +359,7 @@
                 {
                  "gid":382,
                  "height":23,
-                 "id":21,
+                 "id":24,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -335,7 +371,7 @@
                 {
                  "gid":405,
                  "height":13,
-                 "id":22,
+                 "id":25,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -347,7 +383,7 @@
                 {
                  "gid":304,
                  "height":16,
-                 "id":23,
+                 "id":26,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -359,7 +395,7 @@
                 {
                  "gid":212,
                  "height":11,
-                 "id":24,
+                 "id":27,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -371,7 +407,7 @@
                 {
                  "gid":387,
                  "height":19,
-                 "id":25,
+                 "id":28,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -383,7 +419,7 @@
                 {
                  "gid":492,
                  "height":24,
-                 "id":26,
+                 "id":29,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -406,7 +442,7 @@
                 {
                  "gid":187,
                  "height":17,
-                 "id":16,
+                 "id":19,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -418,7 +454,7 @@
                 {
                  "gid":206,
                  "height":12,
-                 "id":17,
+                 "id":20,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -445,7 +481,7 @@
          "y":0
         }],
  "nextlayerid":14,
- "nextobjectid":27,
+ "nextobjectid":30,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.2",
@@ -2917,8 +2953,8 @@
          "margin":0,
          "name":"objects\/hospital_extras",
          "spacing":0,
-         "tilecount":55,
-         "tileheight":60,
+         "tilecount":79,
+         "tileheight":63,
          "tiles":[
                 {
                  "id":0,
@@ -3254,6 +3290,152 @@
                  "image":"..\/objects\/power_panel1.png",
                  "imageheight":22,
                  "imagewidth":18
+                }, 
+                {
+                 "id":55,
+                 "image":"..\/objects\/health_poster1.png",
+                 "imageheight":21,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":56,
+                 "image":"..\/objects\/health_poster2.png",
+                 "imageheight":21,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":57,
+                 "image":"..\/objects\/health_poster3.png",
+                 "imageheight":21,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":58,
+                 "image":"..\/objects\/health_poster4.png",
+                 "imageheight":21,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":59,
+                 "image":"..\/objects\/health_poster5.png",
+                 "imageheight":21,
+                 "imagewidth":16
+                },
+            
+                {
+                 "id":60,
+                 "image":"..\/objects\/health_poster6.png",
+                 "imageheight":21,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":61,
+                 "image":"..\/objects\/leaflet_holder1.png",
+                 "imageheight":33,
+                 "imagewidth":29
+                }, 
+                {
+                 "id":62,
+                 "image":"..\/objects\/magazine_rack1.png",
+                 "imageheight":31,
+                 "imagewidth":38
+                }, 
+                {
+                 "id":63,
+                 "image":"..\/objects\/magazine_rack2.png",
+                 "imageheight":42,
+                 "imagewidth":26
+                }, 
+                {
+                 "id":64,
+                 "image":"..\/objects\/toy_box1.png",
+                 "imageheight":28,
+                 "imagewidth":30
+                }, 
+                {
+                 "id":65,
+                 "image":"..\/objects\/wall_clock1.png",
+                 "imageheight":26,
+                 "imagewidth":25
+                }, 
+                {
+                 "id":66,
+                 "image":"..\/objects\/server_rack1.png",
+                 "imageheight":55,
+                 "imagewidth":30
+                }, 
+                {
+                 "id":67,
+                 "image":"..\/objects\/server_rack2.png",
+                 "imageheight":59,
+                 "imagewidth":30
+                }, 
+                {
+                 "id":68,
+                 "image":"..\/objects\/ups_cabinet1.png",
+                 "imageheight":56,
+                 "imagewidth":31
+                }, 
+                {
+                 "id":69,
+                 "image":"..\/objects\/aircon_unit1.png",
+                 "imageheight":63,
+                 "imagewidth":32
+                },
+            
+                {
+                 "id":70,
+                 "image":"..\/objects\/staff_lockers1.png",
+                 "imageheight":62,
+                 "imagewidth":50
+                }, 
+                {
+                 "id":71,
+                 "image":"..\/objects\/clinical_sink1.png",
+                 "imageheight":60,
+                 "imagewidth":38
+                }, 
+                {
+                 "id":72,
+                 "image":"..\/objects\/sideboard1.png",
+                 "imageheight":46,
+                 "imagewidth":44
+                }, 
+                {
+                 "id":73,
+                 "image":"..\/objects\/bedhead_panel1.png",
+                 "imageheight":25,
+                 "imagewidth":28
+                }, 
+                {
+                 "id":74,
+                 "image":"..\/objects\/bedhead_panel2.png",
+                 "imageheight":19,
+                 "imagewidth":28
+                }, 
+                {
+                 "id":75,
+                 "image":"..\/objects\/ppe_dispenser1.png",
+                 "imageheight":28,
+                 "imagewidth":26
+                }, 
+                {
+                 "id":76,
+                 "image":"..\/objects\/fire_action_notice1.png",
+                 "imageheight":28,
+                 "imagewidth":22
+                }, 
+                {
+                 "id":77,
+                 "image":"..\/objects\/comms_cabinet1.png",
+                 "imageheight":29,
+                 "imagewidth":28
+                }, 
+                {
+                 "id":78,
+                 "image":"..\/objects\/no_smoking_sign1.png",
+                 "imageheight":26,
+                 "imagewidth":22
                 }],
          "tilewidth":60
         }],

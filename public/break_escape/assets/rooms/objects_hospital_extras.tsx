@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="66" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="79" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../objects/iv_stand1.png" width="25" height="60"/>
@@ -198,5 +198,44 @@
  </tile>
  <tile id="65">
   <image source="../objects/wall_clock1.png" width="25" height="26"/>
+ </tile>
+ <tile id="66">
+  <image source="../objects/server_rack1.png" width="30" height="55"/>
+ </tile>
+ <tile id="67">
+  <image source="../objects/server_rack2.png" width="30" height="59"/>
+ </tile>
+ <tile id="68">
+  <image source="../objects/ups_cabinet1.png" width="31" height="56"/>
+ </tile>
+ <tile id="69">
+  <image source="../objects/aircon_unit1.png" width="32" height="63"/>
+ </tile>
+ <tile id="70">
+  <image source="../objects/staff_lockers1.png" width="50" height="62"/>
+ </tile>
+ <tile id="71">
+  <image source="../objects/clinical_sink1.png" width="38" height="60"/>
+ </tile>
+ <tile id="72">
+  <image source="../objects/sideboard1.png" width="44" height="46"/>
+ </tile>
+ <tile id="73">
+  <image source="../objects/bedhead_panel1.png" width="28" height="25"/>
+ </tile>
+ <tile id="74">
+  <image source="../objects/bedhead_panel2.png" width="28" height="19"/>
+ </tile>
+ <tile id="75">
+  <image source="../objects/ppe_dispenser1.png" width="26" height="28"/>
+ </tile>
+ <tile id="76">
+  <image source="../objects/fire_action_notice1.png" width="22" height="28"/>
+ </tile>
+ <tile id="77">
+  <image source="../objects/comms_cabinet1.png" width="28" height="29"/>
+ </tile>
+ <tile id="78">
+  <image source="../objects/no_smoking_sign1.png" width="22" height="26"/>
  </tile>
 </tileset>
