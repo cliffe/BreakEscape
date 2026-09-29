@@ -29,6 +29,7 @@ VAR topic_escrow = false
 VAR player_warned_kim = false
 VAR access_explained = false
 VAR advised_on_vote = false
+VAR kim_statement_given = false   // protect_gary and board_coverup both hand it over; only once
 
 // Synced from globalVars by engine at call-open
 VAR insider_evidence_partial = false
@@ -264,7 +265,10 @@ Dr. Sarah Kim: And the thing that will finish me, when I am old, is that he will
 # influence_increased
 #complete_task:learn_about_scapegoating
 #set_global:gary_protected:true
-#give_item:notes:kim_statement
+{not kim_statement_given:
+    ~ kim_statement_given = true
+    #give_item:notes:kim_statement
+}
 
 Dr. Sarah Kim: You want it in writing.
 
@@ -288,6 +292,10 @@ Dr. Sarah Kim: If they want a name on this, they can have the correct one.
 ~ player_warned_kim = true
 #complete_task:learn_about_scapegoating
 #set_global:gary_protected:true
+{not kim_statement_given:
+    ~ kim_statement_given = true
+    #give_item:notes:kim_statement
+}
 
 Narrator: You describe the email. Board chair to Legal. Reframe as implementation failure. Termination paperwork. Non-disparagement agreement.
 
@@ -325,9 +333,9 @@ Dr. Sarah Kim: We put it down to a fault on the panel and moved on. We had a sca
     ~ kim_influence += 5
     ~ insider_evidence_partial = true
     # influence_increased
+    #set_global:insider_evidence_partial:true
     Dr. Sarah Kim: *very slowly* And I signed the incident off as a panel fault.
     Dr. Sarah Kim: Find out who. Please.
-    #set_global:insider_evidence_partial:true
     -> hub
 
 * [Noted. I'll come back to it.]
@@ -361,13 +369,13 @@ Dr. Sarah Kim: If those keys are still in there, they are the only thing in this
 -> hub
 
 === boardroom_code ===
+#set_global:found_boardroom_code:true
 {topic_ransom_vote:
     Dr. Sarah Kim: Nought-four-one-seven. It has been nought-four-one-seven since I arrived and it is written in my desk diary, which tells you a great deal about this institution's relationship with security.
 - else:
     Dr. Sarah Kim: Nought-four-one-seven. Why -- ah. Because the board papers are in there and you want to know what they knew.
     Dr. Sarah Kim: Go on then. There is nothing in that room I am proud of.
 }
-#set_global:found_boardroom_code:true
 -> hub
 
 // ===========================================

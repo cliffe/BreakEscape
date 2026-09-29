@@ -178,12 +178,12 @@ Gary Whitlock: Then they signed off three point two million on a scanner.
 
 Narrator: He picks the keycard off the desk and puts it down again in front of you, hard enough that it skids.
 
+#complete_task:talk_to_gary
+#give_item:keycard:server_room_keycard
 Gary Whitlock: Server room. Take it. That's what you came for.
 
 Gary Whitlock: And when they write this up and it says the administrator failed to maintain his estate -- you'll know. You'll have known and said nothing. Same as the rest of them.
 
-#complete_task:talk_to_gary
-#give_item:keycard:server_room_keycard
 ~ gave_keycard = true
 ~ cover_burned = true
 
@@ -310,7 +310,7 @@ Gary Whitlock: Doesn't mean I've warmed to you.
 ~ gary_influence += 30
 # influence_increased
 
-Narrator: You put the seventh warning on the desk between you. Dated 17 May. Copied to the board secretariat. Answered four days later with a deferral and a request that he stop escalating.
+Narrator: You put the seventh warning on the desk between you. Dated 8 November. Copied to the board secretariat. Answered four days later with a deferral and a request that he stop escalating.
 
 Narrator: Gary looks at his own words on somebody else's paper for a long moment.
 
@@ -655,10 +655,10 @@ Gary Whitlock: *doesn't turn round* You've got the card.
     -> show_the_email
 
 + {not topic_passwords} [The backup server's on a shared credential. What is it?]
-    Gary Whitlock: It's on the note. On the monitor. Where I've kept it for four years like the disgrace I am.
-    Gary Whitlock: Help yourself. You've clearly got opinions about my housekeeping.
     ~ topic_passwords = true
     #complete_task:obtain_password_hints
+    Gary Whitlock: It's on the note. On the monitor. Where I've kept it for four years like the disgrace I am.
+    Gary Whitlock: Help yourself. You've clearly got opinions about my housekeeping.
     -> defensive_hub
 
 + {(cover_burned or gave_keycard) and not cover_restored and not gave_lanyard} [Someone's pulled my booking with security. I need a pass.]

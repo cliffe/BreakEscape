@@ -136,7 +136,7 @@ Narrator: He tips his head very slightly towards the internal phone on the wall 
 
 Graham Reeves: You'll want to ask about the telephone.
 
-Graham Reeves: I rang control at four minutes past four and told them there was no consultant booked. That was all. Eleven words.
+Graham Reeves: I rang control at ten to four and told them there was no consultant booked. That was all. Eleven words.
 
 Graham Reeves: No violence, no confrontation, nothing anyone will ever be able to charge me with. I simply removed your standing, and a man with no standing spends his night explaining himself in corridors instead of reading logs.
 
@@ -169,7 +169,7 @@ Graham Reeves: You want to know why. They always want to know why.
     Graham Reeves: I held a door open. You'll want to be precise about that, because everyone else in this building held one too and none of them will be asked about it.
     -> monologue_1
 
-* [Eleven years on this post and you sold it. What did they pay you?]
+* [Six months on this post and you sold it. What did they pay you?]
     Graham Reeves: *something tightens* Ask me the second question first next time. It's the one you actually want the answer to.
     -> monologue_1
 
@@ -184,7 +184,7 @@ Graham Reeves: Do you know what this hospital pays a night security supervisor t
 
 Graham Reeves: Less than the board spent on catering the meeting where they cut Gary Whitlock's security budget. I know that because I stood outside that room, and I carried the trays out afterwards.
 
-Graham Reeves: I raised it. Not the catering -- the servers. I have been raising things in this building for eleven years. I was told to mind my post.
+Graham Reeves: I raised it. Not the catering -- the servers. I have been raising things in this building since the day I arrived. I was told to mind my post.
 
 * [Being ignored is not a licence.]
     Graham Reeves: No. It's a condition. Licences are what people with titles issue each other.
@@ -320,7 +320,7 @@ You: Who are you?
 
 Graham Reeves: The man who made sure it happened on schedule. Badge SC-4471. A fire drill six weeks ago that facilities never called.
 
-Graham Reeves: And the telephone call at four minutes past four, which I imagine cost you rather a lot of your evening.
+Graham Reeves: And the telephone call at ten to four, which I imagine cost you rather a lot of your evening.
 
 Narrator: The realisation lands about half a second too late. He is already moving.
 

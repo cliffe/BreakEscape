@@ -200,7 +200,6 @@ Sister Doyle: We're managing. I want to be very clear that "managing" is not a c
 
 === timeline ===
 ~ spoke_about_timeline = true
-#complete_task:gather_pin_clues
 
 Sister Doyle: Generators are good for twelve hours from lockdown. We're four in.
 
@@ -215,6 +214,7 @@ Narrator: She flicks a page over on the clipboard.
 Sister Doyle: If it's the emergency kit you're after -- far end of this ward, through the door at the back. Backup gear's in there.
 
 {showed_empathy:
+    #complete_task:gather_pin_clues
     Sister Doyle: There's a PIN safe on it. In twenty years that override has never once been changed, and it's the year this place was founded -- it's on the plaque in the lobby if you want to feel clever about it.
     Sister Doyle: Take it. If knowing that gets those monitors back one minute sooner then I don't care who I'm not supposed to tell.
 - else:

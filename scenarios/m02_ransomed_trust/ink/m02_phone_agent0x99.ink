@@ -348,7 +348,7 @@ Agent HaX: That email is going to matter at the press terminal. Keep it in mind.
 #speaker:agent_0x99
 ~ hint_start_given = true
 
-Agent HaX: Front desk, then west.
+Agent HaX: Front desk, then through the ward to the offices.
 
 Agent HaX: The night coordinator on reception is holding every mechanical override key in that building on a hook behind her, because Estates dumped them on her this morning. That includes IT. She is the first lock in this mission and she is a person, not a door.
 
@@ -571,7 +571,7 @@ Agent HaX: The answer's somewhere in the building. Check plaques, framed documen
     -> support_hub
 
 + [What if I can't find the PIN?]
-    Agent HaX: Then you go in the noisy way. There's a sealed case in that storage room -- not hospital kit, no key for it in the building. Pick the latch; your picks will do it. Whoever left it there wanted that safe as badly as you do.
+    Agent HaX: Then you go in the noisy way. There's a sealed case in the server room, pushed in behind the rack -- not hospital kit, no key for it in the building. Pick the latch; your picks will do it. Whoever left it there wanted that safe as badly as you do.
     -> support_hub
 
 + [Got it]

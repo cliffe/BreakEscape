@@ -30,6 +30,8 @@ VAR warned_player = false
 VAR caught_lockpicking = false
 VAR lockpick_confrontations = 0
 VAR talked_about_reeves = false
+VAR asked_about_drill = false
+VAR val_notebook_given = false   // her notebook is offered on every route, but handed over once
 VAR talked_about_attack = false
 VAR cleared_after_burn = false
 
@@ -350,6 +352,9 @@ Val Okonkwo: I'm going to ask you once more, properly, and then I'm going to sto
 + {not talked_about_reeves} [Is there anyone in this building tonight who shouldn't be?]
     -> discuss_reeves
 
++ {talked_about_reeves and not val_notebook_given} [About Reeves -- have you got any of that written down?]
+    -> reeves_notebook
+
 + {talked_about_reeves and insider_identified} [Graham Reeves is ENTROPY's man inside. You were right.]
     -> reeves_vindicated
 
@@ -395,7 +400,11 @@ Val Okonkwo: He is not on my rota. He has never been on my rota. I've asked Esta
 
 Val Okonkwo: I've raised it twice. Twice I've been told it's "crisis protocol" by people who won't put it in an email.
 
-+ [Six weeks ago there was a fire drill nobody scheduled. Was he on that night?]
+-> reeves_questions
+
+=== reeves_questions ===
++ {not asked_about_drill} [Six weeks ago there was a fire drill nobody scheduled. Was he on that night?]
+    ~ asked_about_drill = true
     ~ influence += 10
     # influence_increased
     Val Okonkwo: *stops dead* I was mid-round when the alarm went. And a drill is the one night everybody moves the same direction -- out. Down the stairs, into the car park, you know the drill, that's the whole point of the drill.
@@ -403,19 +412,10 @@ Val Okonkwo: I've raised it twice. Twice I've been told it's "crisis protocol" b
     Val Okonkwo: I clocked it and I told myself facilities knew their own job. He smiled at me and said he'd sorted it.
     #set_global:insider_evidence_partial:true
     Val Okonkwo: Six weeks that's itched at me. Two men walking the wrong way through a fire.
-    -> hub
+    -> reeves_questions
 
-+ [You've got all this written down?]
-    ~ influence += 5
-    # influence_increased
-    #give_item:notes:val_notebook
-    #set_global:insider_evidence_partial:true
-    Narrator: She taps her breast pocket.
-
-    Val Okonkwo: Every shift. Dates, times, who told me to drop it.
-    Val Okonkwo: Here. Take the whole thing -- I've been waiting eight weeks for somebody to want it.
-    Narrator: She tears the used pages out and folds them into your hand without any ceremony at all.
-    -> hub
++ {not val_notebook_given} [You've got all this written down?]
+    -> reeves_notebook
 
 + [Keep it to yourself for now. Don't let him know you've told me.]
     ~ influence += 5
@@ -423,6 +423,19 @@ Val Okonkwo: I've raised it twice. Twice I've been told it's "crisis protocol" b
     Val Okonkwo: *quietly* Right you are.
     Val Okonkwo: You'll tell me though. When you know.
     -> hub
+
+=== reeves_notebook ===
+~ val_notebook_given = true
+~ influence += 5
+# influence_increased
+#give_item:notes:val_notebook
+#set_global:insider_evidence_partial:true
+Narrator: She taps her breast pocket.
+
+Val Okonkwo: Every shift. Dates, times, who told me to drop it.
+Val Okonkwo: Here. Take the whole thing -- I've been waiting eight weeks for somebody to want it.
+Narrator: She tears the used pages out and folds them into your hand without any ceremony at all.
+-> hub
 
 === reeves_vindicated ===
 Narrator: She takes it in without any visible satisfaction at all.

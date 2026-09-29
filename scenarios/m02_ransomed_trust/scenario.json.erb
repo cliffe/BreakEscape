@@ -79,7 +79,7 @@ end
 # Narrative Content Variables
 ransomware_note = "YOUR PATIENT RECORDS ARE ENCRYPTED. 47 PATIENTS ON LIFE SUPPORT. 12 HOURS OF BACKUP POWER. PAY £150,000 IN BITCOIN OR WATCH THEM DIE. - RANSOMWARE INCORPORATED"
 
-gary_warning_email = "From: Gary Whitlock (IT Systems)\nTo: Dr. Sarah Kim (CTO)\nCC: Board Secretariat\nDate: 17 May\nSubject: URGENT -- ProFTPD 1.3.3c backdoor on backup server\n\nDr Kim,\n\nSeventh time of asking. The backup server is still running ProFTPD 1.3.3c -- the trojaned source release from 2010. That build carries a backdoor in its own source code, which gives an attacker remote code execution with no credentials at all. A clean version has been available since 2010.\n\nThis box holds every clinical backup we have. If it goes, the wards go with it.\n\nI have costed the remediation at £85,000. That is the whole ask. I am not asking for a project, I am asking for a server that is not fourteen years out of date.\n\nPlease put this in front of the board as CRITICAL and not as an IT wish-list item.\n\nGary"
+gary_warning_email = "From: Gary Whitlock (IT Systems)\nTo: Dr. Sarah Kim (CTO)\nCC: Board Secretariat\nDate: 8 November\nSubject: URGENT -- ProFTPD 1.3.3c backdoor on backup server\n\nDr Kim,\n\nSeventh time of asking. The backup server is still running ProFTPD 1.3.3c -- the trojaned source release from 2010. That build carries a backdoor in its own source code, which gives an attacker remote code execution with no credentials at all. A clean version has been available since 2010.\n\nThis box holds every clinical backup we have. If it goes, the wards go with it.\n\nI have costed the remediation at £85,000. That is the whole ask. I am not asking for a project, I am asking for a server that is not fourteen years out of date.\n\nPlease put this in front of the board as CRITICAL and not as an IT wish-list item.\n\nGary"
 
 board_reply_email = "From: Dr. Sarah Kim (CTO)\nTo: Gary Whitlock (IT Systems)\nDate: 21 May\nSubject: RE: URGENT -- ProFTPD backdoor on backup server\n\nGary,\n\nNoted, and I do understand. The board reviewed it on Tuesday. The position is that the imaging replacement takes precedence this cycle and infrastructure security is deferred to FY25.\n\nI would ask you not to escalate this again outside the department. It does not help either of us.\n\nSarah"
 
@@ -779,7 +779,7 @@ boardroom_pin = "0417"
             {
               "eventPattern": "objective_task_completed:sign_in_at_reception",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "Signed in. That paper badge makes you a guest, not staff -- it won't open a single internal door. Kim's the one who called you in; she's west of reception. Start there." }
+              "sendTimedMessage": { "delay": 1500, "message": "Signed in. That paper badge makes you a guest, not staff -- it won't open a single internal door. Kim's the one who called you in; her office is through the ward, up past the night handover room. Start there." }
             },
             {
               "eventPattern": "global_variable_changed:decoded_ransomware_note",
@@ -848,12 +848,13 @@ boardroom_pin = "0417"
               "eventPattern": "global_variable_changed:read_handover_board",
               "condition": "value === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "Friday. Three ten in the morning, every door on this floor on free egress for half an hour, authorised by the night security supervisor and not mentioned to the ward.\n\nNobody plants hardware in a server room during a fire drill by coincidence. Find out who signs himself off as N/S Supervisor." }
+              "sendTimedMessage": { "delay": 1500, "message": "Friday. Half two in the morning, every door on this floor on free egress for half an hour, authorised by the night security supervisor and not mentioned to the ward.\n\nNobody plants hardware in a server room during a fire drill by coincidence. Find out who signs himself off as N/S Supervisor." }
             },
             {
               "eventPattern": "global_variable_changed:found_safe_pin_clue",
               "condition": "value === true",
               "onceOnly": true,
+              "completeTask": "gather_pin_clues",
               "sendTimedMessage": { "delay": 1400, "message": "Founding year on the escrow safe, flagged at three separate audits and never changed. Same species of problem as the backup server: somebody wrote it down, somebody filed it, nobody acted.\n\nThe plaque's in the lobby. You walked past it on the way in." }
             },
             {
@@ -1779,8 +1780,8 @@ boardroom_pin = "0417"
           "name": "Photo Frame - Emma's Birthday",
           "takeable": true,
           "readable": true,
-          "text": "Photo of young girl with birthday cake.\nHandwritten on back: 'Emma - 7th birthday! 05/17/2018'",
-          "observations": "Gary's daughter Emma - birthday 2018 (check if relevant to the PIN puzzle)",
+          "text": "Photo of a toddler in a high chair with a birthday cake.\nHandwritten on back: 'Emma - 1st birthday! 17/05/2018'",
+          "observations": "Gary's daughter Emma - first birthday, 2018 (check if relevant to the PIN puzzle)",
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "red_herring_emma_birthday_not_the_safe_pin"
         },
@@ -1802,7 +1803,7 @@ boardroom_pin = "0417"
               "takeable": true,
               "readable": true,
               "text": <%= gary_warning_email.to_json %>,
-              "observations": "The seventh warning. Dated 17 May, sent to Dr. Kim and copied to the board secretariat. Show this to Gary and he will know you have actually read his file.",
+              "observations": "The seventh warning. Dated 8 November, sent to Dr. Kim and copied to the board secretariat. Show this to Gary and he will know you have actually read his file.",
               "onPickup": { "setVariable": { "gary_evidence_recovered": true } },
               "puzzle_graph_role": "clue",
               "puzzle_graph_unlocks": "lock_gary_cooperation",
@@ -2617,7 +2618,7 @@ boardroom_pin = "0417"
           "readDisplay": "gameDisplay",
           "takeable": false,
           "readable": true,
-          "text": "MECHANICAL OVERRIDE CABINET\n\nSigned out 06:15 -- ALL KEYS -- to Reception (B. Nwosu) per Estates instruction.\n\nRemaining in cabinet: none.\n\nNOTE PINNED INSIDE THE DOOR:\n\"Server room is NOT on this cabinet. That door runs off its own offline reader and only takes a card that already exists. No card, no entry, no exceptions, and no I cannot make you one.\"",
+          "text": "MECHANICAL OVERRIDE CABINET\n\nSigned out 03:15 -- ALL KEYS -- to Reception (B. Nwosu) per Estates instruction.\n\nRemaining in cabinet: none.\n\nNOTE PINNED INSIDE THE DOOR:\n\"Server room is NOT on this cabinet. That door runs off its own offline reader and only takes a card that already exists. No card, no entry, no exceptions, and no I cannot make you one.\"",
           "observations": "The override key cabinet, hanging open and completely empty -- everything went down to Bernie on reception this morning. The note inside the door explains why the server room is the one door nobody can help you with.",
           "observationDisplay": "gameDisplay",
           "puzzle_graph_role": "clue",
@@ -2696,7 +2697,7 @@ boardroom_pin = "0417"
           "position": "as-type:rota_board",
           "takeable": false,
           "readable": true,
-          "text": "WARD 3 / EXEC -- NIGHT HANDOVER, WEEK COMMENCING MON\n\nMon  Quiet. Bed 4 unsettled, see notes.\nTue  Agency x2. Lift 2 still out.\nWed  Estates in re: store room. Didn't come.\nThu  Quiet.\nFri  03:10-03:40 FIRE DRILL, Ward 3 + Exec corridor.\n     Doors on free egress for the duration. Auth: N/S Supervisor.\n     NOBODY told the ward. Second time.\n\nSat  -- (this column left blank)\n\nAcross the bottom, in a different hand and pressed hard:\n\"02:47. Everything went at once. If you are reading this and the screens are still dead, we are on paper. Charts in the trolley, drug round by torch if the lights go. Do not wait for IT.\"",
+          "text": "WARD 3 / EXEC -- NIGHT HANDOVER, WEEK COMMENCING MON\n\nMon  Quiet. Bed 4 unsettled, see notes.\nTue  Agency x2. Lift 2 still out.\nWed  Estates in re: store room. Didn't come.\nThu  Quiet.\nFri  02:30-03:00 FIRE DRILL, Ward 3 + Exec corridor.\n     Doors on free egress for the duration. Auth: N/S Supervisor.\n     NOBODY told the ward. Second time.\n\nSat  -- (this column left blank)\n\nAcross the bottom, in a different hand and pressed hard:\n\"02:47. Everything went at once. If you are reading this and the screens are still dead, we are on paper. Charts in the trolley, drug round by torch if the lights go. Do not wait for IT.\"",
           "observations": "A wipe-clean weekly grid, half of it rubbed out and rewritten. The bottom two lines are newer than the rest and were written by somebody in a hurry.",
           "onRead": { "setVariable": { "read_handover_board": true } },
           "puzzle_graph_role": "clue",
@@ -2730,7 +2731,7 @@ boardroom_pin = "0417"
         },
         {
           "type": "workstation",
-          "id": "cyberchef_workstation",
+          "id": "ward_clerk_laptop",
           "name": "Ward Clerk's Laptop",
           "takeable": true,
           "observations": "The ward clerk's laptop, standalone and not on the domain -- it was shut when the encryption ran and it is the only machine in this building that still does what you ask it. Your own analysis tools will run on it: Base64, ROT13, hex, the lot. Take it.",

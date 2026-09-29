@@ -38,10 +38,9 @@ Ghost: Took you rather longer than I'd allowed for. I'd pencilled in ninety minu
 
 Ghost: It went on this network six weeks ago, during a fire drill. It has been listening ever since -- through the budget meetings, through the patch that never happened, through a man in IT sending his seventh email.
 
-Ghost: And I want you to sit with the word "drill" for a moment, because a drill is a thing somebody has to authorise.
-
 ~ ghost_contacted_player = true
 #set_global:ghost_contacted_player:true
+Ghost: And I want you to sit with the word "drill" for a moment, because a drill is a thing somebody has to authorise.
 
 * [Somebody let you in.]
     Ghost: *the pause is deliberate* Somebody agreed with me. That is not the same thing and I'd thank you to keep the distinction.
@@ -147,10 +146,9 @@ Ghost: A hundred and fifty thousand pounds, in Bitcoin, to the address on their 
 
 Ghost: It is, and I want you to sit with this, less than five per cent of what they spent on the scanner. They will find it down the back of a sofa and they will still tell the inquiry it was an impossible position.
 
-Ghost: Or they don't pay, and you spend the night doing by hand what a key does in a minute. I'm not going to pretend I mind either way. One of those outcomes gets written up in the trade press. The other gets written up in a coroner's court.
-
 ~ ghost_persuasion_attempted = true
 #set_global:ghost_persuasion_attempted:true
+Ghost: Or they don't pay, and you spend the night doing by hand what a key does in a minute. I'm not going to pretend I mind either way. One of those outcomes gets written up in the trade press. The other gets written up in a coroner's court.
 
 + [We don't fund people like you. I'll get the keys myself.]
     -> ghost_warns_consequences

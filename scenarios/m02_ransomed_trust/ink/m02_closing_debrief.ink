@@ -682,7 +682,7 @@ Agent HaX: One last section, and then I'll let you go. The people.
 }
 
 {receptionist_ko:
-    Agent HaX: Bernadette Nwosu, night reception. You put her out cold behind her own desk and lifted the override key off her belt. Sixty-one, thirty years on that desk, never a mark on her.
+    Agent HaX: Bernadette Nwosu, night reception. You put her out cold behind her own desk and lifted the override key off the hook. Sixty-one, eleven years on that desk, never a mark on her.
     Agent HaX: She's fine. She never saw who did it. That is not the same as it not having happened.
 }
 
@@ -710,7 +710,7 @@ Agent HaX: One last section, and then I'll let you go. The people.
 }
 
 {gary_ko:
-    Agent HaX: Gary Whitlock came round in an ambulance with a keycard gone and a fair idea of who took it. The man who'd been right about everything for two years -- and the night's answer was to put him down and step over him. He knows. He hasn't said. That is a debt, not an acquittal.
+    Agent HaX: Gary Whitlock came round in an ambulance with a keycard gone and a fair idea of who took it. The man who'd been right about everything for six months -- and the night's answer was to put him down and step over him. He knows. He hasn't said. That is a debt, not an acquittal.
 }
 
 {gary_protected:

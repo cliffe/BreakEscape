@@ -1244,10 +1244,18 @@ export class PersonChatMinigame extends MinigameScene {
                 } else if (nextLine.text && nextLine.text.trim()) {
                     this.displayAccumulatedDialogue(nextLine);
                 } else if (nextLine.choices && nextLine.choices.length > 0) {
-                    // Back to choices - display them
+                    // Back to choices - display them. Tags written after a knot's last
+                    // line (give_item, complete_task...) arrive here with no text, and
+                    // displayAccumulatedDialogue never sees them, so run them first.
+                    if (nextLine.tags && nextLine.tags.length > 0) {
+                        await processGameActionTags(nextLine.tags, this.ui);
+                    }
                     console.log(`📋 Back to choices: ${nextLine.choices.length} options available`);
                     this.ui.showChoices(nextLine.choices);
                 } else if (nextLine.hasEnded) {
+                    if (nextLine.tags && nextLine.tags.length > 0) {
+                        await processGameActionTags(nextLine.tags, this.ui);
+                    }
                     // Story ended - save state and show message
                     if (this.inkEngine && this.inkEngine.story) {
                         npcConversationStateManager.saveNPCState(this.npcId, this.inkEngine.story);
