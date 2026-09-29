@@ -1384,7 +1384,7 @@ boardroom_pin = "0417"
           "displayName": "Mr Pryce",
           "npcType": "person",
           "position": { "x": 3.088, "y": 6.646 },
-          "spriteSheet": "bed4",
+          "spriteSheet": "bed_mr_pryce",
           "spriteConfig": { "idleFrame": 0 },
           "spriteTalk": "assets/characters/mr_pryce_talk.png",
           "storyPath": "scenarios/m02_ransomed_trust/ink/m02_npc_patient_bed4.json",
@@ -1430,6 +1430,7 @@ boardroom_pin = "0417"
           "spriteSheet": "bed2",
           "spriteConfig": { "idleFrame": 0 },
           "spriteTalk": "assets/characters/mrs_hargreaves_talk.png",
+          "spriteVisemes": "assets/characters/mrs_hargreaves_visemes.png",
           "storyPath": "scenarios/m02_ransomed_trust/ink/m02_npc_patient_bed2.json",
           "currentKnot": "start",
           "voice": {
@@ -1468,9 +1469,10 @@ boardroom_pin = "0417"
           "displayName": "Ms Chen",
           "npcType": "person",
           "position": { "x": 7.708, "y": 6.583 },
-          "spriteSheet": "bed5",
+          "spriteSheet": "bed_ms_chen",
           "spriteConfig": { "idleFrame": 0 },
           "spriteTalk": "assets/characters/ms_chen_talk.png",
+          "spriteVisemes": "assets/characters/ms_chen_visemes.png",
           "storyPath": "scenarios/m02_ransomed_trust/ink/m02_npc_patient_bed5.json",
           "currentKnot": "start",
           "voice": {
@@ -1554,6 +1556,7 @@ boardroom_pin = "0417"
         {
           "type": "notes",
           "name": "Bed 4 Ventilator Panel",
+          "position": "as-type:vitals-monitor",
           "takeable": false,
           "readable": true,
           "text": "VENTILATOR — BED 4 (T. PRYCE)\n\nMode: SIMV | Rate: 14 | FiO2: 40%\nStatus: RUNNING (backup power)\n\nCentral monitoring: OFFLINE\nRemote alarm relay: UNAVAILABLE\nLast nurse observation: 14 min ago (paper)",
@@ -1598,6 +1601,7 @@ boardroom_pin = "0417"
         {
           "type": "notes",
           "name": "Paper Patient Chart - Bed 3",
+          "position": "as-type:clipboard_chart",
           "takeable": false,
           "readable": true,
           "text": "PATIENT: A. Rahman, DOB: 1944-03-15\nWARD: St. Catherine's - Bed 3\nCONDITION: ECMO (heart-lung bypass)\nBACKUP POWER: Active\n\nNURSE NOTE: Electronic monitoring offline. Manual obs every 15 minutes. Patient stable but ECMO requires constant monitoring. Do NOT leave unsupervised.\n\nFAMILY: Daughter calling every hour. Please update when you can.",
@@ -1606,6 +1610,7 @@ boardroom_pin = "0417"
         {
           "type": "notes",
           "name": "Emergency Ops Board",
+          "position": "as-type:rota_board",
           "takeable": false,
           "readable": true,
           "text": "EMERGENCY OPERATIONS -- CURRENT STATUS\n\nPatients on backup power: 47\n  - Ventilators: 23\n  - ECMO (heart-lung support): 12\n  - Dialysis: 12\n\nBackup generator time remaining: 12 HRS\nStatistical fatality risk: 0.3% per hour\n\nALL STAFF: Paper MAR charts only. No electronic prescribing until systems restored.",
@@ -2130,7 +2135,7 @@ boardroom_pin = "0417"
     },
 
     "emergency_equipment_storage": {
-      "type": "small_room_storage_1x1gu",
+      "type": "room_hospital_storage_1x1gu",
       "door_sign": "Emergency Storage",
       "connections": {
         "west": "hospital_ward"
@@ -2166,6 +2171,7 @@ boardroom_pin = "0417"
         {
           "type": "notes",
           "name": "Medical Supply Shelves",
+          "position": "as-type:medical_cabinet",
           "takeable": false,
           "readable": true,
           "text": "Emergency medical supplies organized by expiration date.\nBandages, IV equipment, emergency medications.",
@@ -2589,7 +2595,7 @@ boardroom_pin = "0417"
           "puzzle_graph_reveals": "reeves_is_on_no_rota_third_independent_entry_into_the_insider_thread"
         },
         {
-          "type": "chair-exec-rotate3",
+          "type": "hospital_chair_north",
           "name": "Val's Chair",
           "takeable": false,
           "observations": "Pushed back from the desk and cold. She has not sat down since two."
@@ -2614,6 +2620,7 @@ boardroom_pin = "0417"
         {
           "type": "notes",
           "name": "Ward Board",
+          "position": "as-type:directory_sign",
           "takeable": false,
           "readable": true,
           "text": "ST. CATHERINE'S -- CORRIDOR DIRECTORY\n\nNight Handover Room .......... north off this corridor\nBoardroom .................... through Handover, west (KEYPAD)\nExecutive / CTO .............. through Handover, north\nIT Systems ................... through Handover, east (OVERRIDE KEY)\nSecurity Office .............. west end of this corridor\nServer Room .................. through Security Office (RESTRICTED)\nWard 3 (Critical Care) ....... down the ward link, south\nEmergency Equipment Store .... far end of Ward 3\nReception .................... through Ward 3, ward approach\n\nHandwritten underneath, in biro: \"ALL READERS DOWN -- overrides at reception, sign them out, DO NOT PROP DOORS.\"",
@@ -2643,7 +2650,7 @@ boardroom_pin = "0417"
           "type": "notes",
           "id": "handover_whiteboard",
           "name": "Night Handover Board",
-          "sprite": "chalkboard2",
+          "position": "as-type:rota_board",
           "takeable": false,
           "readable": true,
           "text": "WARD 3 / EXEC -- NIGHT HANDOVER, WEEK COMMENCING MON\n\nMon  Quiet. Bed 4 unsettled, see notes.\nTue  Agency x2. Lift 2 still out.\nWed  Estates in re: store room. Didn't come.\nThu  Quiet.\nFri  03:10-03:40 FIRE DRILL, Ward 3 + Exec corridor.\n     Doors on free egress for the duration. Auth: N/S Supervisor.\n     NOBODY told the ward. Second time.\n\nSat  -- (this column left blank)\n\nAcross the bottom, in a different hand and pressed hard:\n\"02:47. Everything went at once. If you are reading this and the screens are still dead, we are on paper. Charts in the trolley, drug round by torch if the lights go. Do not wait for IT.\"",
@@ -2657,7 +2664,6 @@ boardroom_pin = "0417"
           "type": "notes",
           "id": "estates_audit_snag_list",
           "name": "Estates Audit Snag List",
-          "sprite": "notes5",
           "takeable": false,
           "readable": true,
           "text": "ESTATES -- INTERNAL AUDIT, OUTSTANDING SNAGS\nPinned for staff awareness. Do not remove.\n\n  17  Lift 2 -- intermittent. Contractor booked.\n  18  Ward 3 side door -- closer too fast.\n  19  Emergency equipment store, keypad safe --\n      STILL SET TO THE HOSPITAL FOUNDING YEAR.\n      Raised at the last three audits. Flag again.\n  20  Boardroom keypad -- shared with too many people.\n  21  Fire drill log -- Friday's drill not countersigned\n      by the ward. Chase N/S Supervisor.\n\nSigned off: nobody. Circulated: nobody.",
@@ -2670,7 +2676,7 @@ boardroom_pin = "0417"
         {
           "type": "notes",
           "name": "Staff Noticeboard",
-          "sprite": "notes3",
+          "position": "as-type:notice_board",
           "takeable": false,
           "readable": true,
           "text": "PINNED, IN LAYERS:\n\n- Flu jab clinic, Tuesdays, ground floor.\n- \"Whoever keeps taking the good chair: I know.\"\n- Bank shift rates, effective April. Somebody has written \"ha\" next to the night rate.\n- Retirement collection for Maureen, 11 years on Ward 3. Envelope in the drawer.\n- A photograph of the ward team at somebody's leaving do. Sister Doyle is in it, not smiling, holding a paper plate.",
@@ -2715,7 +2721,7 @@ boardroom_pin = "0417"
     },
 
     "ward_vestibule": {
-      "type": "small_room_1x1gu",
+      "type": "room_hospital_waiting_1x1gu",
       "door_sign": "Ward Vestibule",
       "connections": {
         "west": "reception_lobby",
