@@ -1585,7 +1585,8 @@ class NPCBehavior {
         // Check if this NPC uses atlas-based animations (8 native directions)
         // by checking if the direct left-facing animation exists
         const directAnimKey = `npc-${this.npcId}-${state}-${direction}`;
-        const hasNativeLeftAnimations = this.scene?.anims?.exists(directAnimKey);
+        // (an animation with no frames throws when played, so it doesn't count)
+        const hasNativeLeftAnimations = (this.scene?.anims?.get(directAnimKey)?.frames?.length || 0) > 0;
 
         let animDirection = direction;
         let flipX = false;

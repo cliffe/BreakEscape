@@ -71,7 +71,7 @@ export function createNPCSprite(scene, npc, roomData) {
             }
         } else {
             // Legacy sprite - use configured frame or default to 20
-            initialFrame = config.idleFrame || 20;
+            initialFrame = config.idleFrame ?? 20;   // ?? so a configured frame 0 is kept
         }
         
         // Create sprite
@@ -140,9 +140,11 @@ export function createNPCSprite(scene, npc, roomData) {
             setupNPCAnimations(scene, sprite, spriteSheet, config, npc.id);
         }
 
-        // Start idle animation (default facing down)
+        // Start idle animation (default facing down); static props have none
         const idleAnimKey = `npc-${npc.id}-idle`;
-        if (scene.anims.exists(idleAnimKey)) {
+        if (npc.behavior?.staticSprite === true) {
+            // stays on its initial frame
+        } else if (scene.anims.exists(idleAnimKey)) {
             const anim = scene.anims.get(idleAnimKey);
             if (anim && anim.frames && anim.frames.length > 0) {
                 sprite.play(idleAnimKey, true);
@@ -426,9 +428,11 @@ function setupAtlasAnimations(scene, sprite, spriteSheet, config, npcId) {
         if (scene.anims.exists(idleSouthKey)) {
             const sourceAnim = scene.anims.get(idleSouthKey);
             if (sourceAnim && sourceAnim.frames && sourceAnim.frames.length > 0) {
+                // An animation's own frames can't be passed back to anims.create: Phaser
+                // 3.60 reads {key, frame} and silently drops AnimationFrame objects
                 scene.anims.create({
                     key: idleDownKey,
-                    frames: sourceAnim.frames,
+                    frames: sourceAnim.frames.map(f => ({ key: f.textureKey, frame: f.textureFrame })),
                     frameRate: sourceAnim.frameRate,
                     repeat: sourceAnim.repeat
                 });
@@ -486,7 +490,8 @@ export function setupNPCAnimations(scene, sprite, spriteSheet, config, npcId) {
     const animPrefix = config.animPrefix || 'idle';
 
     // ===== IDLE ANIMATIONS (8 directions) =====
-    // Idle animations for 5 base directions (left uses right with flipX)
+    // Idle animations for 5 base directions. There are deliberately no left keys:
+    // npc-behavior.js plays the right-facing animation flipped when a left one is missing
     const idleAnimations = [
         { dir: 'right', frame: 0 },
         { dir: 'down', frame: 5 },
@@ -503,29 +508,6 @@ export function setupNPCAnimations(scene, sprite, spriteSheet, config, npcId) {
                 frames: [{ key: spriteSheet, frame: anim.frame }],
                 frameRate: config.idleFrameRate || 4,
                 repeat: -1
-            });
-        }
-    });
-
-    // Create mirrored idle animations for left directions
-    // These use the same animation keys but will be flipped with sprite.setFlipX(true)
-    const leftIdleAnimations = [
-        { dir: 'left', mirrorDir: 'right' },
-        { dir: 'up-left', mirrorDir: 'up-right' },
-        { dir: 'down-left', mirrorDir: 'down-right' }
-    ];
-
-    leftIdleAnimations.forEach(anim => {
-        const animKey = `npc-${npcId}-idle-${anim.dir}`;
-        const mirrorKey = `npc-${npcId}-idle-${anim.mirrorDir}`;
-        if (!scene.anims.exists(animKey) && scene.anims.exists(mirrorKey)) {
-            // Create alias - left directions will use right animations with flipX
-            const mirrorAnim = scene.anims.get(mirrorKey);
-            scene.anims.create({
-                key: animKey,
-                frames: mirrorAnim.frames,
-                frameRate: mirrorAnim.frameRate,
-                repeat: mirrorAnim.repeat
             });
         }
     });
@@ -582,30 +564,8 @@ export function setupNPCAnimations(scene, sprite, spriteSheet, config, npcId) {
         }
     });
 
-    // Create mirrored walk animations for left directions
-    const leftWalkAnimations = [
-        { dir: 'left', mirrorDir: 'right' },
-        { dir: 'up-left', mirrorDir: 'up-right' },
-        { dir: 'down-left', mirrorDir: 'down-right' }
-    ];
-
-    leftWalkAnimations.forEach(anim => {
-        const animKey = `npc-${npcId}-walk-${anim.dir}`;
-        const mirrorKey = `npc-${npcId}-walk-${anim.mirrorDir}`;
-        if (!scene.anims.exists(animKey) && scene.anims.exists(mirrorKey)) {
-            // Create alias - left directions will use right animations with flipX
-            const mirrorAnim = scene.anims.get(mirrorKey);
-            scene.anims.create({
-                key: animKey,
-                frames: mirrorAnim.frames,
-                frameRate: mirrorAnim.frameRate,
-                repeat: mirrorAnim.repeat
-            });
-        }
-    });
-
     console.log(`📊 Walk animations summary for ${npcId}:`);
-    ['right', 'down', 'up', 'up-right', 'down-right', 'left', 'up-left', 'down-left'].forEach(dir => {
+    ['right', 'down', 'up', 'up-right', 'down-right'].forEach(dir => {   // left = right, flipped
         const key = `npc-${npcId}-walk-${dir}`;
         console.log(`   ${dir}: ${scene.anims.exists(key) ? '✅' : '❌'} ${key}`);
     });

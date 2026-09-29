@@ -488,10 +488,10 @@ export function preload() {
     this.load.image('vitals-monitor9', 'objects/vitals-monitor9.png');
 
     // Hospital ward furniture — loaded as spritesheets so frame 0 is accessible when used as NPC sprites
-    this.load.spritesheet('bed1', 'objects/bed1.png', { frameWidth: 36, frameHeight: 72 });
-    this.load.spritesheet('bed2', 'objects/bed2.png', { frameWidth: 35, frameHeight: 72 });
+    this.load.spritesheet('bed1', 'objects/bed1.png', { frameWidth: 37, frameHeight: 72 });
+    this.load.spritesheet('bed2', 'objects/bed2.png', { frameWidth: 36, frameHeight: 72 });
     this.load.spritesheet('bed3', 'objects/bed3.png', { frameWidth: 35, frameHeight: 78 });
-    this.load.spritesheet('bed4', 'objects/bed4.png', { frameWidth: 37, frameHeight: 72 });
+    this.load.spritesheet('bed4', 'objects/bed4.png', { frameWidth: 35, frameHeight: 72 });
     this.load.spritesheet('bed_mr_pryce', 'objects/bed_mr_pryce.png', { frameWidth: 35, frameHeight: 72 }); // bed4 repainted as m02's Mr Pryce: olive skin, ventilator mask (PixelLab edit)
     this.load.spritesheet('bed5', 'objects/bed5.png', { frameWidth: 38, frameHeight: 72 });
     this.load.spritesheet('bed_ms_chen', 'objects/bed_ms_chen.png', { frameWidth: 38, frameHeight: 72 }); // bed5 repainted as m02's Ms Chen (PixelLab edit)
