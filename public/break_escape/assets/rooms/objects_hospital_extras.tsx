@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="79" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="87" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../objects/iv_stand1.png" width="25" height="60"/>
@@ -237,5 +237,29 @@
  </tile>
  <tile id="78">
   <image source="../objects/no_smoking_sign1.png" width="22" height="26"/>
+ </tile>
+ <tile id="79">
+  <image source="../objects/bedhead_unit1.png" width="26" height="44"/>
+ </tile>
+ <tile id="80">
+  <image source="../objects/cylinder_rack1.png" width="43" height="40"/>
+ </tile>
+ <tile id="81">
+  <image source="../objects/suppression_cylinders1.png" width="42" height="44"/>
+ </tile>
+ <tile id="82">
+  <image source="../objects/cleaning_trolley1.png" width="41" height="45"/>
+ </tile>
+ <tile id="83">
+  <image source="../objects/suppression_panel1.png" width="14" height="19"/>
+ </tile>
+ <tile id="84">
+  <image source="../objects/aed_cabinet1.png" width="21" height="24"/>
+ </tile>
+ <tile id="85">
+  <image source="../objects/cctv_camera1.png" width="23" height="18"/>
+ </tile>
+ <tile id="86">
+  <image source="../objects/nurse_call_display1.png" width="25" height="17"/>
  </tile>
 </tileset>

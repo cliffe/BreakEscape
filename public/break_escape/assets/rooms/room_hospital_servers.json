@@ -251,9 +251,33 @@
                  "y":186
                 }, 
                 {
+                 "gid":884,
+                 "height":19,
+                 "id":15,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":14,
+                 "x":293,
+                 "y":124
+                }, 
+                {
+                 "gid":882,
+                 "height":44,
+                 "id":16,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":42,
+                 "x":34,
+                 "y":250
+                }, 
+                {
                  "gid":868,
                  "height":59,
-                 "id":15,
+                 "id":17,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -265,7 +289,7 @@
                 {
                  "gid":867,
                  "height":55,
-                 "id":16,
+                 "id":18,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -277,7 +301,7 @@
                 {
                  "gid":869,
                  "height":56,
-                 "id":17,
+                 "id":19,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -289,7 +313,7 @@
                 {
                  "gid":869,
                  "height":56,
-                 "id":18,
+                 "id":20,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -312,7 +336,7 @@
                 {
                  "gid":300,
                  "height":26,
-                 "id":21,
+                 "id":23,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -324,7 +348,7 @@
                 {
                  "gid":301,
                  "height":33,
-                 "id":22,
+                 "id":24,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -347,7 +371,7 @@
                 {
                  "gid":381,
                  "height":18,
-                 "id":23,
+                 "id":25,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -359,7 +383,7 @@
                 {
                  "gid":382,
                  "height":23,
-                 "id":24,
+                 "id":26,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -371,7 +395,7 @@
                 {
                  "gid":405,
                  "height":13,
-                 "id":25,
+                 "id":27,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -383,7 +407,7 @@
                 {
                  "gid":304,
                  "height":16,
-                 "id":26,
+                 "id":28,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -395,7 +419,7 @@
                 {
                  "gid":212,
                  "height":11,
-                 "id":27,
+                 "id":29,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -407,7 +431,7 @@
                 {
                  "gid":387,
                  "height":19,
-                 "id":28,
+                 "id":30,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -419,7 +443,7 @@
                 {
                  "gid":492,
                  "height":24,
-                 "id":29,
+                 "id":31,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -442,7 +466,7 @@
                 {
                  "gid":187,
                  "height":17,
-                 "id":19,
+                 "id":21,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -454,7 +478,7 @@
                 {
                  "gid":206,
                  "height":12,
-                 "id":20,
+                 "id":22,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -481,7 +505,7 @@
          "y":0
         }],
  "nextlayerid":14,
- "nextobjectid":30,
+ "nextobjectid":32,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.2",
@@ -2953,7 +2977,7 @@
          "margin":0,
          "name":"objects\/hospital_extras",
          "spacing":0,
-         "tilecount":79,
+         "tilecount":87,
          "tileheight":63,
          "tiles":[
                 {
@@ -3436,6 +3460,55 @@
                  "image":"..\/objects\/no_smoking_sign1.png",
                  "imageheight":26,
                  "imagewidth":22
+                }, 
+                {
+                 "id":79,
+                 "image":"..\/objects\/bedhead_unit1.png",
+                 "imageheight":44,
+                 "imagewidth":26
+                },
+            
+                {
+                 "id":80,
+                 "image":"..\/objects\/cylinder_rack1.png",
+                 "imageheight":40,
+                 "imagewidth":43
+                }, 
+                {
+                 "id":81,
+                 "image":"..\/objects\/suppression_cylinders1.png",
+                 "imageheight":44,
+                 "imagewidth":42
+                }, 
+                {
+                 "id":82,
+                 "image":"..\/objects\/cleaning_trolley1.png",
+                 "imageheight":45,
+                 "imagewidth":41
+                }, 
+                {
+                 "id":83,
+                 "image":"..\/objects\/suppression_panel1.png",
+                 "imageheight":19,
+                 "imagewidth":14
+                }, 
+                {
+                 "id":84,
+                 "image":"..\/objects\/aed_cabinet1.png",
+                 "imageheight":24,
+                 "imagewidth":21
+                }, 
+                {
+                 "id":85,
+                 "image":"..\/objects\/cctv_camera1.png",
+                 "imageheight":18,
+                 "imagewidth":23
+                }, 
+                {
+                 "id":86,
+                 "image":"..\/objects\/nurse_call_display1.png",
+                 "imageheight":17,
+                 "imagewidth":25
                 }],
          "tilewidth":60
         }],

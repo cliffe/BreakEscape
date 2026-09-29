@@ -748,6 +748,10 @@ WALL_MOUNTED_EXTRAS = {
     "fire_action_notice",
     "comms_cabinet",
     "no_smoking_sign",
+    "suppression_panel",
+    "aed_cabinet",
+    "cctv_camera",
+    "nurse_call_display",
 }
 
 
@@ -1424,6 +1428,13 @@ def room_hospital_servers():
     # console (m02 "Backup Power Indicator"); both back-wall corners carry N doors
     items.append(make_obj("objects", "power_panel1", 290.0, 186.0, oid))
     oid += 1
+    # gas fire suppression: the HOLD/ABORT station by the E door (between the
+    # door row and the call point), the red extinguishant cylinders standing in
+    # the open south-west corner
+    items.append(make_obj("objects", "suppression_panel1", 293.0, 124.0, oid))
+    oid += 1
+    items.append(make_obj("objects", "suppression_cylinders1", 34.0, 250.0, oid))
+    oid += 1
 
     # Second row: two more racks on the west, and the UPS battery cabinets on the
     # east, next to the UPS panel they report to (kept west of x 258, out of the
@@ -1747,7 +1758,8 @@ def room_hospital_hall_waiting():
         "room_hospital_hall_waiting",
         wall=HALL_BOARDS + [
             ("health_poster4", 66.0, 44.0),
-            ("health_poster6", 222.0, 44.0),
+            # public-access defibrillator on the corridor wall
+            ("aed_cabinet1", 224.0, 48.0),
         ],
         props=[
             ("hospital_chair_south", 100.0, 104.0),
@@ -1757,6 +1769,8 @@ def room_hospital_hall_waiting():
             ("water_cooler1", 146.0, 112.0),
             # hand sanitiser on the west side wall, just below the door row
             ("sanitiser_dispenser1", 13.0, 128.0),
+            # the night cleaner's trolley parked against the wall, east of the seats
+            ("cleaning_trolley1", 213.0, 116.0),
         ],
     )
 
@@ -1775,9 +1789,10 @@ def room_hospital_waiting_1x1gu():
     items = []
     for sprite, x, y in [
         # back wall notices
-        ("hospital_chart_board1", 40.0, 48.0),
-        ("health_poster5", 92.0, 44.0),
-        ("health_poster1", 114.0, 44.0),
+        ("hospital_chart_board1", 34.0, 48.0),
+        # patient leaflets and a no-smoking sign, as at any ward entrance
+        ("leaflet_holder1", 84.0, 58.0),
+        ("no_smoking_sign1", 118.0, 48.0),
         # side-wall posters below the doors
         ("chart2", 12.0, 142.0),
         ("chart", 135.0, 140.0),
@@ -1793,6 +1808,7 @@ def room_hospital_waiting_1x1gu():
         ("hospital_chair_south", 88.0, 152.0),
         ("water_cooler1", 110.0, 158.0),  # lower right, off the paths, above the bottom row
         ("sanitiser_dispenser1", 133.0, 120.0),  # east side wall, under the door row
+        ("pedal_bin1", 36.0, 156.0),  # lower left, by the seats
     ]:
         items.append(make_obj("objects", sprite, x, y, oid))
         oid += 1
@@ -1822,16 +1838,16 @@ def room_hospital_storage_1x1gu():
     for sprite, x, y in [
         ("first_aid_cabinet1", 92.0, 60.0),
         ("medical_cabinet2", 74.0, 132.0),
-        ("crash_cart2", 102.0, 176.0),
-        ("office-misc-box1", 70.0, 168.0),
-        ("office-misc-box1", 80.0, 178.0),
-        ("office-misc-box1", 66.0, 182.0),
+        # oxygen cylinders chained in their rack beside the safe, the crash
+        # cart parked in the south-east corner
+        ("cylinder_rack1", 65.0, 180.0),
+        ("crash_cart2", 108.0, 178.0),
     ]:
         items.append(make_obj("objects", sprite, x, y, oid))
         oid += 1
     conditional_items = []
     for sprite, x, y in [
-        ("safe1", 36.0, 172.0),   # PIN safe on the floor, lower left
+        ("safe1", 32.0, 172.0),   # PIN safe on the floor, lower left
         ("notes6", 70.0, 50.0),   # stock list taped to the back wall, clear of the NW door
     ]:
         conditional_items.append(make_obj("objects", sprite, x, y, oid))

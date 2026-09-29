@@ -524,8 +524,8 @@
                  "type":"",
                  "visible":true,
                  "width":16,
-                 "x":300,
-                 "y":248
+                 "x":289,
+                 "y":250
                 }, 
                 {
                  "gid":809,
@@ -682,6 +682,66 @@
                  "width":24,
                  "x":324,
                  "y":120
+                }, 
+                {
+                 "gid":880,
+                 "height":44,
+                 "id":244,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":26,
+                 "x":85,
+                 "y":189
+                }, 
+                {
+                 "gid":880,
+                 "height":44,
+                 "id":245,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":26,
+                 "x":234,
+                 "y":187
+                }, 
+                {
+                 "gid":880,
+                 "height":44,
+                 "id":246,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":26,
+                 "x":344,
+                 "y":185
+                }, 
+                {
+                 "gid":812,
+                 "height":42,
+                 "id":247,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":307,
+                 "y":252
+                }, 
+                {
+                 "gid":887,
+                 "height":17,
+                 "id":248,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":25,
+                 "x":489,
+                 "y":36
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -784,7 +844,7 @@
          "y":0
         }],
  "nextlayerid":11,
- "nextobjectid":244,
+ "nextobjectid":249,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.2",
@@ -3025,7 +3085,7 @@
          "margin":0,
          "name":"objects\/hospital_extras",
          "spacing":0,
-         "tilecount":79,
+         "tilecount":87,
          "tileheight":60,
          "tiles":[
                 {
@@ -3501,6 +3561,54 @@
                  "image":"..\/objects\/no_smoking_sign1.png",
                  "imageheight":26,
                  "imagewidth":22
+                }, 
+                {
+                 "id":79,
+                 "image":"..\/objects\/bedhead_unit1.png",
+                 "imageheight":44,
+                 "imagewidth":26
+                }, 
+                {
+                 "id":80,
+                 "image":"..\/objects\/cylinder_rack1.png",
+                 "imageheight":40,
+                 "imagewidth":43
+                }, 
+                {
+                 "id":81,
+                 "image":"..\/objects\/suppression_cylinders1.png",
+                 "imageheight":44,
+                 "imagewidth":42
+                }, 
+                {
+                 "id":82,
+                 "image":"..\/objects\/cleaning_trolley1.png",
+                 "imageheight":45,
+                 "imagewidth":41
+                }, 
+                {
+                 "id":83,
+                 "image":"..\/objects\/suppression_panel1.png",
+                 "imageheight":19,
+                 "imagewidth":14
+                }, 
+                {
+                 "id":84,
+                 "image":"..\/objects\/aed_cabinet1.png",
+                 "imageheight":24,
+                 "imagewidth":21
+                }, 
+                {
+                 "id":85,
+                 "image":"..\/objects\/cctv_camera1.png",
+                 "imageheight":18,
+                 "imagewidth":23
+                }, 
+                {
+                 "id":86,
+                 "image":"..\/objects\/nurse_call_display1.png",
+                 "imageheight":17,
+                 "imagewidth":25
                 }],
          "tilewidth":60
         }],

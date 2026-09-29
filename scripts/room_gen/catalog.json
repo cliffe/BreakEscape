@@ -2743,6 +2743,54 @@
       "w": 22,
       "h": 26,
       "gid": 879
+    },
+    "bedhead_unit1": {
+      "id": 79,
+      "w": 26,
+      "h": 44,
+      "gid": 880
+    },
+    "cylinder_rack1": {
+      "id": 80,
+      "w": 43,
+      "h": 40,
+      "gid": 881
+    },
+    "suppression_cylinders1": {
+      "id": 81,
+      "w": 42,
+      "h": 44,
+      "gid": 882
+    },
+    "cleaning_trolley1": {
+      "id": 82,
+      "w": 41,
+      "h": 45,
+      "gid": 883
+    },
+    "suppression_panel1": {
+      "id": 83,
+      "w": 14,
+      "h": 19,
+      "gid": 884
+    },
+    "aed_cabinet1": {
+      "id": 84,
+      "w": 21,
+      "h": 24,
+      "gid": 885
+    },
+    "cctv_camera1": {
+      "id": 85,
+      "w": 23,
+      "h": 18,
+      "gid": 886
+    },
+    "nurse_call_display1": {
+      "id": 86,
+      "w": 25,
+      "h": 17,
+      "gid": 887
     }
   }
 }
