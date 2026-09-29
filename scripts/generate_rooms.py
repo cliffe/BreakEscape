@@ -734,6 +734,10 @@ WALL_MOUNTED_EXTRAS = {
     "first_aid_cabinet", "sanitiser_dispenser", "rota_board", "xray_lightbox",
     "fire_alarm_point", "exit_sign", "eye_chart",
     "hot_water_boiler", "soap_dispenser", "notice_board", "directory_sign",
+    "whiteboard",
+    "key_cabinet",
+    "plaque",
+    "power_panel",
 }
 
 
@@ -1399,6 +1403,10 @@ def room_hospital_servers():
     items.append(make_obj("objects", "fire_extinguisher1", 274.0, 196.0, oid))
     oid += 1
     items.append(make_obj("objects", "bin11", 250.0, 230.0, oid))
+    oid += 1
+    # UPS status panel on the east wall under the call point, by the recovery
+    # console (m02 "Backup Power Indicator"); both back-wall corners carry N doors
+    items.append(make_obj("objects", "power_panel1", 300.0, 186.0, oid))
     oid += 1
 
     # Second row of racks (glass drugs cabinets don't belong in a server room)

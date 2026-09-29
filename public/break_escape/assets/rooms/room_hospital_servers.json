@@ -227,9 +227,21 @@
                 },
             
                 {
+                 "gid":855,
+                 "height":22,
+                 "id":13,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":18,
+                 "x":300,
+                 "y":186
+                }, 
+                {
                  "gid":340,
                  "height":54,
-                 "id":13,
+                 "id":14,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -241,7 +253,7 @@
                 {
                  "gid":340,
                  "height":54,
-                 "id":14,
+                 "id":15,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -264,7 +276,7 @@
                 {
                  "gid":300,
                  "height":26,
-                 "id":17,
+                 "id":18,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -276,7 +288,7 @@
                 {
                  "gid":301,
                  "height":33,
-                 "id":18,
+                 "id":19,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -299,7 +311,7 @@
                 {
                  "gid":381,
                  "height":18,
-                 "id":19,
+                 "id":20,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -311,7 +323,7 @@
                 {
                  "gid":382,
                  "height":23,
-                 "id":20,
+                 "id":21,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -323,7 +335,7 @@
                 {
                  "gid":405,
                  "height":13,
-                 "id":21,
+                 "id":22,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -335,7 +347,7 @@
                 {
                  "gid":304,
                  "height":16,
-                 "id":22,
+                 "id":23,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -347,7 +359,7 @@
                 {
                  "gid":212,
                  "height":11,
-                 "id":23,
+                 "id":24,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -359,7 +371,7 @@
                 {
                  "gid":387,
                  "height":19,
-                 "id":24,
+                 "id":25,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -371,7 +383,7 @@
                 {
                  "gid":492,
                  "height":24,
-                 "id":25,
+                 "id":26,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -394,7 +406,7 @@
                 {
                  "gid":187,
                  "height":17,
-                 "id":15,
+                 "id":16,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -406,7 +418,7 @@
                 {
                  "gid":206,
                  "height":12,
-                 "id":16,
+                 "id":17,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -433,7 +445,7 @@
          "y":0
         }],
  "nextlayerid":14,
- "nextobjectid":26,
+ "nextobjectid":27,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.2",
@@ -2905,7 +2917,7 @@
          "margin":0,
          "name":"objects\/hospital_extras",
          "spacing":0,
-         "tilecount":50,
+         "tilecount":55,
          "tileheight":60,
          "tiles":[
                 {
@@ -3211,6 +3223,37 @@
                  "image":"..\/objects\/directory_sign1.png",
                  "imageheight":26,
                  "imagewidth":34
+                },
+            
+                {
+                 "id":50,
+                 "image":"..\/objects\/whiteboard1.png",
+                 "imageheight":28,
+                 "imagewidth":44
+                }, 
+                {
+                 "id":51,
+                 "image":"..\/objects\/whiteboard2.png",
+                 "imageheight":28,
+                 "imagewidth":44
+                }, 
+                {
+                 "id":52,
+                 "image":"..\/objects\/key_cabinet1.png",
+                 "imageheight":24,
+                 "imagewidth":20
+                }, 
+                {
+                 "id":53,
+                 "image":"..\/objects\/plaque1.png",
+                 "imageheight":17,
+                 "imagewidth":24
+                }, 
+                {
+                 "id":54,
+                 "image":"..\/objects\/power_panel1.png",
+                 "imageheight":22,
+                 "imagewidth":18
                 }],
          "tilewidth":60
         }],

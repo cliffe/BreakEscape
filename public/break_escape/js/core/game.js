@@ -566,6 +566,11 @@ export function preload() {
     this.load.image('yellow_bin1', 'objects/yellow_bin1.png');
     this.load.image('notes6', 'objects/notes6.png');
     this.load.image('directory_sign1', 'objects/directory_sign1.png');
+    this.load.image('whiteboard1', 'objects/whiteboard1.png');
+    this.load.image('whiteboard2', 'objects/whiteboard2.png');
+    this.load.image('key_cabinet1', 'objects/key_cabinet1.png');
+    this.load.image('plaque1', 'objects/plaque1.png');
+    this.load.image('power_panel1', 'objects/power_panel1.png');
     this.load.image('backup_recovery',         'objects/backup_recovery.png');
     this.load.image('dual_auth',               'objects/dual_auth.png');
     this.load.image('ehr-terminal',            'objects/ehr-terminal.png');

@@ -94,16 +94,16 @@
          "name":"items",
          "objects":[
                 {
-                 "gid":314,
-                 "height":32,
+                 "gid":854,
+                 "height":17,
                  "id":2,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":45,
-                 "x":164.5,
-                 "y":62
+                 "width":24,
+                 "x":174,
+                 "y":52
                 }, 
                 {
                  "gid":315,
@@ -641,7 +641,7 @@
          "y":0
         }],
  "nextlayerid":14,
- "nextobjectid":56,
+ "nextobjectid":57,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.2",
@@ -3106,7 +3106,7 @@
          "margin":0,
          "name":"objects\/hospital_extras",
          "spacing":0,
-         "tilecount":48,
+         "tilecount":55,
          "tileheight":60,
          "tiles":[
                 {
@@ -3396,6 +3396,48 @@
                  "image":"..\/objects\/yellow_bin1.png",
                  "imageheight":29,
                  "imagewidth":22
+                }, 
+                {
+                 "id":48,
+                 "image":"..\/objects\/notes6.png",
+                 "imageheight":18,
+                 "imagewidth":14
+                }, 
+                {
+                 "id":49,
+                 "image":"..\/objects\/directory_sign1.png",
+                 "imageheight":26,
+                 "imagewidth":34
+                }, 
+                {
+                 "id":50,
+                 "image":"..\/objects\/whiteboard1.png",
+                 "imageheight":28,
+                 "imagewidth":44
+                }, 
+                {
+                 "id":51,
+                 "image":"..\/objects\/whiteboard2.png",
+                 "imageheight":28,
+                 "imagewidth":44
+                }, 
+                {
+                 "id":52,
+                 "image":"..\/objects\/key_cabinet1.png",
+                 "imageheight":24,
+                 "imagewidth":20
+                }, 
+                {
+                 "id":53,
+                 "image":"..\/objects\/plaque1.png",
+                 "imageheight":17,
+                 "imagewidth":24
+                }, 
+                {
+                 "id":54,
+                 "image":"..\/objects\/power_panel1.png",
+                 "imageheight":22,
+                 "imagewidth":18
                 }],
          "tilewidth":60
         }],
