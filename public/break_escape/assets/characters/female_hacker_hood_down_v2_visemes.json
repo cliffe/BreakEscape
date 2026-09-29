@@ -1,0 +1,12 @@
+{
+  "frameSize": 128,
+  "visemes": [
+    "rest",
+    "teeth",
+    "small_open",
+    "medium_open",
+    "wide_open",
+    "blink"
+  ],
+  "source": "pixellab /inpaint-image-pro-flash, mouth mask [69, 36, 77, 40]; teeth:i02, small_open:i01, medium_open:i01 (chin -1px, jaw mask +5 rows), wide_open:i01 (chin -2px, jaw mask +5 rows), blink:i01"
+}

@@ -8,6 +8,16 @@
     },
     "imported": "2026-09-26"
   },
+  "female_hacker_hood_down_v2": {
+    "character_id": "41542288-ce3e-4823-8c10-51c1586622ed",
+    "name": "A young woman hacker with dark brown hair tied up ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-29",
+    "idle_from": "9b005e8f-8923-41eb-b2dd-c70f963f68e9"
+  },
   "female_hacker_hood_v2": {
     "character_id": "c14d8060-5196-4812-adb8-5efff2d3b67b",
     "name": "Woman, light skin tone, hacker. Wearing an all-bla...",
@@ -72,13 +82,14 @@
     "imported": "2026-09-27"
   },
   "male_hacker_hood_v2": {
-    "character_id": "0a8f0fec-6ac0-42d2-b19d-b970b6b479d8",
+    "character_id": "e50525a5-0139-439f-83a5-31461054c3ac",
     "name": "Hacker in a hoodie. Hood up, black obscured face s...",
     "size": {
       "width": 60,
       "height": 60
     },
-    "imported": "2026-09-26"
+    "imported": "2026-09-29",
+    "idle_from": "b57e62b8-2e5a-4eff-982b-303a4b7f576f"
   },
   "male_security_guard_v2": {
     "character_id": "7f4b98d0-6ef6-4064-8f01-c032e0cd8050",

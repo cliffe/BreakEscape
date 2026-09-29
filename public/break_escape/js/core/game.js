@@ -641,6 +641,9 @@ export function preload() {
     this.load.atlas('male_hacker_hood_down_v2',
         `characters/male_hacker_hood_down_v2.png?v=${ASSETS_VERSION}`,
         `characters/male_hacker_hood_down_v2.json?v=${ASSETS_VERSION}`);
+    this.load.atlas('female_hacker_hood_down_v2',
+        `characters/female_hacker_hood_down_v2.png?v=${ASSETS_VERSION}`,
+        `characters/female_hacker_hood_down_v2.json?v=${ASSETS_VERSION}`);
 
     // Animated plant textures are loaded above
     
