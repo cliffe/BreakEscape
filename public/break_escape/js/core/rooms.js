@@ -712,9 +712,18 @@ function registerSpriteVariantListeners(sprite, scenarioObj, roomId) {
 // frameNumber: starting frame that matches the static image's facing.
 // offsetX/offsetY: shift applied after the texture swap so the starting frame
 // lands on the static image's pixels.
+// body (optional): collision box {w, h, x, y} in rotation-frame pixels, used in place
+// of the generic chair box (bottom third, 5px inset) when that box doesn't fit the prop.
 const STATIC_SWIVEL_PROPS = {
     crash_cart1: { base: 'crash-cart-rotate', frameNumber: 1 },
     wheelchair1: { base: 'wheelchair-rotate', frameNumber: 2, offsetX: -11, offsetY: -8 },
+    linen_cart1: { base: 'linen-cart-rotate', frameNumber: 1, offsetX: 2, offsetY: -2 },
+    // corridor IV stand (the ward's bedside infusion_pump sprites stay static)
+    iv_stand1: { base: 'iv-stand-rotate', frameNumber: 1, offsetX: 0, offsetY: -2,
+        body: { w: 20, h: 10, x: 3, y: 52 } },
+    // frames are 64x63; a bed-sized box round its middle that suits every facing
+    bed_empty: { base: 'bed-empty-rotate', frameNumber: 1, offsetX: -13, offsetY: 0,
+        body: { w: 40, h: 28, x: 12, y: 26 } },
 };
 
 // Define scale factors for different object types
@@ -2476,6 +2485,7 @@ export function createRoom(roomId, roomData, position) {
                                 sprite.setTexture(sprite.originalTexture);
                                 sprite.x += staticSwivel.offsetX || 0;
                                 sprite.y += staticSwivel.offsetY || 0;
+                                sprite.swivelBody = staticSwivel.body || null;
                             }
                         }
 
@@ -2596,8 +2606,14 @@ export function createRoom(roomId, roomData, position) {
                                 const offsetX = 5; // 5px inset from left
                                 const offsetY = chairHeight - collisionHeight; // Bottom third
                                 
-                                sprite.body.setSize(collisionWidth, collisionHeight);
-                                sprite.body.setOffset(offsetX, offsetY);
+                                if (sprite.swivelBody) {
+                                    const b = sprite.swivelBody;
+                                    sprite.body.setSize(b.w, b.h);
+                                    sprite.body.setOffset(b.x, b.y);
+                                } else {
+                                    sprite.body.setSize(collisionWidth, collisionHeight);
+                                    sprite.body.setOffset(offsetX, offsetY);
+                                }
                                 
                                 // Set physics properties for bouncing
                                 sprite.body.setBounce(0.3, 0.3);

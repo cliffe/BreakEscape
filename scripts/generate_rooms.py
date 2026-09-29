@@ -1682,7 +1682,7 @@ def room_hospital_hall():
 def room_hospital_hall_ward():
     """
     Clinical corridor outside a ward: an empty trolley bed parked against the
-    wall, an IV pump beside it, a slim crash cart and a nurse-call alarm panel.
+    wall, an IV stand beside it, a slim crash cart and a nurse-call alarm panel.
     """
     return _hospital_hall(
         "room_hospital_hall_ward",
@@ -1694,8 +1694,11 @@ def room_hospital_hall_ward():
         props=[
             # the trolley bed is 63px tall, so it parks at the east end, out of
             # the walkway; the south wall band still covers its wheels
+            # bed_empty and iv_stand1 roll and spin when pushed (8-direction swap in
+            # rooms.js); the stand is iv_stand1, not infusion_pump, so the ward's
+            # bedside pumps stay static
             ("bed_empty", 214.0, 152.0),
-            ("infusion_pump", 190.0, 128.0),
+            ("iv_stand1", 189.0, 128.0),
             # crash_cart1 rolls and spins when pushed (8-direction swap in rooms.js)
             ("crash_cart1", 36.0, 124.0),
             ("wheelchair1", 110.0, 126.0),
