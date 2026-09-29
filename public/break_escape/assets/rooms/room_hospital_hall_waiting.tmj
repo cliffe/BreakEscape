@@ -245,15 +245,15 @@
    "name": "items",
    "objects": [
     {
-     "gid": 314,
-     "height": 32,
+     "gid": 894,
+     "height": 28,
      "id": 1,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 45,
-     "x": 90.0,
+     "width": 40,
+     "x": 93.0,
      "y": 46.0
     },
     {
@@ -2911,7 +2911,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 87,
+   "tilecount": 95,
    "tileheight": 60,
    "tiles": [
     {
@@ -3435,6 +3435,54 @@
      "image": "../objects/nurse_call_display1.png",
      "imageheight": 17,
      "imagewidth": 25
+    },
+    {
+     "id": 87,
+     "image": "../objects/filing_cabinet_steel1.png",
+     "imageheight": 61,
+     "imagewidth": 29
+    },
+    {
+     "id": 88,
+     "image": "../objects/binder_shelves1.png",
+     "imageheight": 60,
+     "imagewidth": 48
+    },
+    {
+     "id": 89,
+     "image": "../objects/kvm_cart1.png",
+     "imageheight": 61,
+     "imagewidth": 37
+    },
+    {
+     "id": 90,
+     "image": "../objects/checkin_kiosk1.png",
+     "imageheight": 60,
+     "imagewidth": 27
+    },
+    {
+     "id": 91,
+     "image": "../objects/drinks_vending1.png",
+     "imageheight": 61,
+     "imagewidth": 42
+    },
+    {
+     "id": 92,
+     "image": "../objects/cctv_monitors1.png",
+     "imageheight": 34,
+     "imagewidth": 46
+    },
+    {
+     "id": 93,
+     "image": "../objects/info_screen1.png",
+     "imageheight": 28,
+     "imagewidth": 40
+    },
+    {
+     "id": 94,
+     "image": "../objects/handwash_poster1.png",
+     "imageheight": 38,
+     "imagewidth": 31
     }
    ],
    "tilewidth": 60

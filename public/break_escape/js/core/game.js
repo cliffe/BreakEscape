@@ -603,6 +603,14 @@ export function preload() {
     this.load.image('aed_cabinet1', 'objects/aed_cabinet1.png');
     this.load.image('cctv_camera1', 'objects/cctv_camera1.png');
     this.load.image('nurse_call_display1', 'objects/nurse_call_display1.png');
+    this.load.image('filing_cabinet_steel1', 'objects/filing_cabinet_steel1.png');
+    this.load.image('binder_shelves1', 'objects/binder_shelves1.png');
+    this.load.image('kvm_cart1', 'objects/kvm_cart1.png');
+    this.load.image('checkin_kiosk1', 'objects/checkin_kiosk1.png');
+    this.load.image('drinks_vending1', 'objects/drinks_vending1.png');
+    this.load.image('cctv_monitors1', 'objects/cctv_monitors1.png');
+    this.load.image('info_screen1', 'objects/info_screen1.png');
+    this.load.image('handwash_poster1', 'objects/handwash_poster1.png');
     this.load.image('backup_recovery',         'objects/backup_recovery.png');
     this.load.image('dual_auth',               'objects/dual_auth.png');
     this.load.image('ehr-terminal',            'objects/ehr-terminal.png');

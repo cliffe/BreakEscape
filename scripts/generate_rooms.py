@@ -752,6 +752,9 @@ WALL_MOUNTED_EXTRAS = {
     "aed_cabinet",
     "cctv_camera",
     "nurse_call_display",
+    "cctv_monitors",
+    "info_screen",
+    "handwash_poster",
 }
 
 
@@ -1443,6 +1446,13 @@ def room_hospital_servers():
                     ("ups_cabinet1", 196.0), ("ups_cabinet1", 227.0)]:
         items.append(make_obj("objects", name, x, 142.0, oid))
         oid += 1
+    # KVM crash cart parked in the gap in the second row, in front of the back racks
+    items.append(make_obj("objects", "kvm_cart1", 146.0, 142.0, oid))
+    oid += 1
+    # spare-parts shelving (boxed drives, PSUs, cables) along the open south side
+    for x in (104.0, 156.0):
+        items.append(make_obj("objects", "supply_shelves1", x, 290.0, oid))
+        oid += 1
 
     table_items = [
         place_on_table(desk, "office-misc-fan2", x_frac=0.12, surface_frac=0.20, obj_id=oid),
@@ -1713,11 +1723,13 @@ def room_hospital_hall():
             # the east end gets a wall dispenser (below the E door row) rather
             # than a second floor stand
             ("sanitiser_dispenser1", 294.0, 128.0),
-            ("pedal_bin1", 170.0, 122.0),
-            # back flat against the wall: top edge on the skirting (y 70)
-            ("vending_machine1", 124.0, 130.0),
-            # beside the call point, clear of the briefcase slot at x 214
-            ("fire_extinguisher1", 192.0, 122.0),
+            # a vending corner: snack and hot-drinks machines side by side, backs
+            # flat against the wall (top edge on the skirting, y 70), bin beside them
+            ("vending_machine1", 104.0, 130.0),
+            ("drinks_vending1", 148.0, 131.0),
+            ("pedal_bin1", 192.0, 122.0),
+            # under the fire action notice, clear of the briefcase slot at x 214
+            ("fire_extinguisher1", 236.0, 122.0),
         ],
     )
 
@@ -1729,10 +1741,15 @@ def room_hospital_hall_ward():
     """
     return _hospital_hall(
         "room_hospital_hall_ward",
-        wall=HALL_BOARDS + [
-            ("alarm_panel", 68.0, 44.0),
-            ("emergency-button", 222.0, 40.0),
-            ("chart", 242.0, 44.0),
+        wall=[
+            ("alarm_panel", 66.0, 44.0),
+            # ward-entrance hand-wash basin (as in the ward) with the hand-washing
+            # poster beside it, where the other corridors hang their boards
+            ("clinical_sink1", 86.0, 86.0),
+            ("handwash_poster1", 172.0, 52.0),
+            ("emergency-button", 210.0, 40.0),
+            # CCTV camera high on the wall, watching the ward door
+            ("cctv_camera1", 230.0, 32.0),
         ],
         props=[
             # the trolley bed is 63px tall, so it parks at the east end, out of
@@ -1744,8 +1761,8 @@ def room_hospital_hall_ward():
             ("iv_stand1", 189.0, 128.0),
             # crash_cart1 rolls and spins when pushed (8-direction swap in rooms.js)
             ("crash_cart1", 36.0, 124.0),
-            ("wheelchair1", 110.0, 126.0),
-            ("clinical_waste_bin1", 164.0, 122.0),
+            ("wheelchair1", 126.0, 126.0),
+            ("clinical_waste_bin1", 166.0, 122.0),
             # hand sanitiser on the east side wall, just below the ward door row
             ("sanitiser_dispenser1", 294.0, 128.0),
         ],
@@ -1753,10 +1770,13 @@ def room_hospital_hall_ward():
 
 
 def room_hospital_hall_waiting():
-    """Outpatient-style corridor: a row of seats under the boards either side of a water cooler."""
+    """Outpatient-style corridor: a row of seats under a "now calling" screen and a board, either side of a water cooler."""
     return _hospital_hall(
         "room_hospital_hall_waiting",
-        wall=HALL_BOARDS + [
+        wall=[
+            # outpatients "now calling" screen above the seats
+            ("info_screen1", 93.0, 46.0),
+            HALL_BOARDS[1],
             ("health_poster4", 66.0, 44.0),
             # public-access defibrillator on the corridor wall
             ("aed_cabinet1", 224.0, 48.0),

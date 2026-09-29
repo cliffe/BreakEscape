@@ -2791,6 +2791,54 @@
       "w": 25,
       "h": 17,
       "gid": 887
+    },
+    "filing_cabinet_steel1": {
+      "id": 87,
+      "w": 29,
+      "h": 61,
+      "gid": 888
+    },
+    "binder_shelves1": {
+      "id": 88,
+      "w": 48,
+      "h": 60,
+      "gid": 889
+    },
+    "kvm_cart1": {
+      "id": 89,
+      "w": 37,
+      "h": 61,
+      "gid": 890
+    },
+    "checkin_kiosk1": {
+      "id": 90,
+      "w": 27,
+      "h": 60,
+      "gid": 891
+    },
+    "drinks_vending1": {
+      "id": 91,
+      "w": 42,
+      "h": 61,
+      "gid": 892
+    },
+    "cctv_monitors1": {
+      "id": 92,
+      "w": 46,
+      "h": 34,
+      "gid": 893
+    },
+    "info_screen1": {
+      "id": 93,
+      "w": 40,
+      "h": 28,
+      "gid": 894
+    },
+    "handwash_poster1": {
+      "id": 94,
+      "w": 31,
+      "h": 38,
+      "gid": 895
     }
   }
 }

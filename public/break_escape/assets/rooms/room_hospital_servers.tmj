@@ -604,6 +604,42 @@
      "width": 31,
      "x": 227.0,
      "y": 142.0
+    },
+    {
+     "gid": 890,
+     "height": 61,
+     "id": 21,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 37,
+     "x": 146.0,
+     "y": 142.0
+    },
+    {
+     "gid": 803,
+     "height": 60,
+     "id": 22,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 50,
+     "x": 104.0,
+     "y": 290.0
+    },
+    {
+     "gid": 803,
+     "height": 60,
+     "id": 23,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 50,
+     "x": 156.0,
+     "y": 290.0
     }
    ],
    "opacity": 1,
@@ -620,7 +656,7 @@
     {
      "gid": 300,
      "height": 26,
-     "id": 23,
+     "id": 26,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -632,7 +668,7 @@
     {
      "gid": 301,
      "height": 33,
-     "id": 24,
+     "id": 27,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -656,7 +692,7 @@
     {
      "gid": 381,
      "height": 18,
-     "id": 25,
+     "id": 28,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -668,7 +704,7 @@
     {
      "gid": 382,
      "height": 23,
-     "id": 26,
+     "id": 29,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -680,7 +716,7 @@
     {
      "gid": 405,
      "height": 13,
-     "id": 27,
+     "id": 30,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -692,7 +728,7 @@
     {
      "gid": 304,
      "height": 16,
-     "id": 28,
+     "id": 31,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -704,7 +740,7 @@
     {
      "gid": 212,
      "height": 11,
-     "id": 29,
+     "id": 32,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -716,7 +752,7 @@
     {
      "gid": 387,
      "height": 19,
-     "id": 30,
+     "id": 33,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -728,7 +764,7 @@
     {
      "gid": 492,
      "height": 24,
-     "id": 31,
+     "id": 34,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -752,7 +788,7 @@
     {
      "gid": 187,
      "height": 17,
-     "id": 21,
+     "id": 24,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -764,7 +800,7 @@
     {
      "gid": 206,
      "height": 12,
-     "id": 22,
+     "id": 25,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -793,7 +829,7 @@
   }
  ],
  "nextlayerid": 14,
- "nextobjectid": 32,
+ "nextobjectid": 35,
  "orientation": "orthogonal",
  "renderorder": "right-down",
  "tiledversion": "1.11.2",
@@ -3226,7 +3262,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 87,
+   "tilecount": 95,
    "tileheight": 60,
    "tiles": [
     {
@@ -3750,6 +3786,54 @@
      "image": "../objects/nurse_call_display1.png",
      "imageheight": 17,
      "imagewidth": 25
+    },
+    {
+     "id": 87,
+     "image": "../objects/filing_cabinet_steel1.png",
+     "imageheight": 61,
+     "imagewidth": 29
+    },
+    {
+     "id": 88,
+     "image": "../objects/binder_shelves1.png",
+     "imageheight": 60,
+     "imagewidth": 48
+    },
+    {
+     "id": 89,
+     "image": "../objects/kvm_cart1.png",
+     "imageheight": 61,
+     "imagewidth": 37
+    },
+    {
+     "id": 90,
+     "image": "../objects/checkin_kiosk1.png",
+     "imageheight": 60,
+     "imagewidth": 27
+    },
+    {
+     "id": 91,
+     "image": "../objects/drinks_vending1.png",
+     "imageheight": 61,
+     "imagewidth": 42
+    },
+    {
+     "id": 92,
+     "image": "../objects/cctv_monitors1.png",
+     "imageheight": 34,
+     "imagewidth": 46
+    },
+    {
+     "id": 93,
+     "image": "../objects/info_screen1.png",
+     "imageheight": 28,
+     "imagewidth": 40
+    },
+    {
+     "id": 94,
+     "image": "../objects/handwash_poster1.png",
+     "imageheight": 38,
+     "imagewidth": 31
     }
    ],
    "tilewidth": 60

@@ -70,40 +70,40 @@
          "name":"items",
          "objects":[
                 {
-                 "gid":314,
-                 "height":32,
+                 "gid":458,
+                 "height":23,
                  "id":1,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":45,
-                 "x":90,
-                 "y":46
+                 "width":17,
+                 "x":66,
+                 "y":44
                 }, 
                 {
-                 "gid":315,
-                 "height":39,
+                 "gid":872,
+                 "height":60,
                  "id":2,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":38,
-                 "x":172,
-                 "y":52
+                 "x":86,
+                 "y":86
                 }, 
                 {
-                 "gid":458,
-                 "height":23,
+                 "gid":895,
+                 "height":38,
                  "id":3,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":17,
-                 "x":68,
-                 "y":44
+                 "width":31,
+                 "x":172,
+                 "y":52
                 }, 
                 {
                  "gid":459,
@@ -114,20 +114,20 @@
                  "type":"",
                  "visible":true,
                  "width":16,
-                 "x":222,
+                 "x":210,
                  "y":40
                 }, 
                 {
-                 "gid":476,
-                 "height":17,
+                 "gid":886,
+                 "height":18,
                  "id":5,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":12,
-                 "x":242,
-                 "y":44
+                 "width":23,
+                 "x":230,
+                 "y":32
                 }, 
                 {
                  "gid":473,
@@ -174,7 +174,7 @@
                  "type":"",
                  "visible":true,
                  "width":38,
-                 "x":110,
+                 "x":126,
                  "y":126
                 }, 
                 {
@@ -186,7 +186,7 @@
                  "type":"",
                  "visible":true,
                  "width":18,
-                 "x":164,
+                 "x":166,
                  "y":122
                 },
             
@@ -2773,8 +2773,8 @@
          "margin":0,
          "name":"objects\/hospital_extras",
          "spacing":0,
-         "tilecount":55,
-         "tileheight":60,
+         "tilecount":95,
+         "tileheight":63,
          "tiles":[
                 {
                  "id":0,
@@ -3110,6 +3110,250 @@
                  "image":"..\/objects\/power_panel1.png",
                  "imageheight":22,
                  "imagewidth":18
+                }, 
+                {
+                 "id":55,
+                 "image":"..\/objects\/health_poster1.png",
+                 "imageheight":21,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":56,
+                 "image":"..\/objects\/health_poster2.png",
+                 "imageheight":21,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":57,
+                 "image":"..\/objects\/health_poster3.png",
+                 "imageheight":21,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":58,
+                 "image":"..\/objects\/health_poster4.png",
+                 "imageheight":21,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":59,
+                 "image":"..\/objects\/health_poster5.png",
+                 "imageheight":21,
+                 "imagewidth":16
+                },
+            
+                {
+                 "id":60,
+                 "image":"..\/objects\/health_poster6.png",
+                 "imageheight":21,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":61,
+                 "image":"..\/objects\/leaflet_holder1.png",
+                 "imageheight":33,
+                 "imagewidth":29
+                }, 
+                {
+                 "id":62,
+                 "image":"..\/objects\/magazine_rack1.png",
+                 "imageheight":31,
+                 "imagewidth":38
+                }, 
+                {
+                 "id":63,
+                 "image":"..\/objects\/magazine_rack2.png",
+                 "imageheight":42,
+                 "imagewidth":26
+                }, 
+                {
+                 "id":64,
+                 "image":"..\/objects\/toy_box1.png",
+                 "imageheight":28,
+                 "imagewidth":30
+                }, 
+                {
+                 "id":65,
+                 "image":"..\/objects\/wall_clock1.png",
+                 "imageheight":26,
+                 "imagewidth":25
+                }, 
+                {
+                 "id":66,
+                 "image":"..\/objects\/server_rack1.png",
+                 "imageheight":55,
+                 "imagewidth":30
+                }, 
+                {
+                 "id":67,
+                 "image":"..\/objects\/server_rack2.png",
+                 "imageheight":59,
+                 "imagewidth":30
+                }, 
+                {
+                 "id":68,
+                 "image":"..\/objects\/ups_cabinet1.png",
+                 "imageheight":56,
+                 "imagewidth":31
+                }, 
+                {
+                 "id":69,
+                 "image":"..\/objects\/aircon_unit1.png",
+                 "imageheight":63,
+                 "imagewidth":32
+                },
+            
+                {
+                 "id":70,
+                 "image":"..\/objects\/staff_lockers1.png",
+                 "imageheight":62,
+                 "imagewidth":50
+                }, 
+                {
+                 "id":71,
+                 "image":"..\/objects\/clinical_sink1.png",
+                 "imageheight":60,
+                 "imagewidth":38
+                }, 
+                {
+                 "id":72,
+                 "image":"..\/objects\/sideboard1.png",
+                 "imageheight":46,
+                 "imagewidth":44
+                }, 
+                {
+                 "id":73,
+                 "image":"..\/objects\/bedhead_panel1.png",
+                 "imageheight":25,
+                 "imagewidth":28
+                }, 
+                {
+                 "id":74,
+                 "image":"..\/objects\/bedhead_panel2.png",
+                 "imageheight":19,
+                 "imagewidth":28
+                }, 
+                {
+                 "id":75,
+                 "image":"..\/objects\/ppe_dispenser1.png",
+                 "imageheight":28,
+                 "imagewidth":26
+                }, 
+                {
+                 "id":76,
+                 "image":"..\/objects\/fire_action_notice1.png",
+                 "imageheight":28,
+                 "imagewidth":22
+                }, 
+                {
+                 "id":77,
+                 "image":"..\/objects\/comms_cabinet1.png",
+                 "imageheight":29,
+                 "imagewidth":28
+                }, 
+                {
+                 "id":78,
+                 "image":"..\/objects\/no_smoking_sign1.png",
+                 "imageheight":26,
+                 "imagewidth":22
+                }, 
+                {
+                 "id":79,
+                 "image":"..\/objects\/bedhead_unit1.png",
+                 "imageheight":44,
+                 "imagewidth":26
+                },
+            
+                {
+                 "id":80,
+                 "image":"..\/objects\/cylinder_rack1.png",
+                 "imageheight":40,
+                 "imagewidth":43
+                }, 
+                {
+                 "id":81,
+                 "image":"..\/objects\/suppression_cylinders1.png",
+                 "imageheight":44,
+                 "imagewidth":42
+                }, 
+                {
+                 "id":82,
+                 "image":"..\/objects\/cleaning_trolley1.png",
+                 "imageheight":45,
+                 "imagewidth":41
+                }, 
+                {
+                 "id":83,
+                 "image":"..\/objects\/suppression_panel1.png",
+                 "imageheight":19,
+                 "imagewidth":14
+                }, 
+                {
+                 "id":84,
+                 "image":"..\/objects\/aed_cabinet1.png",
+                 "imageheight":24,
+                 "imagewidth":21
+                }, 
+                {
+                 "id":85,
+                 "image":"..\/objects\/cctv_camera1.png",
+                 "imageheight":18,
+                 "imagewidth":23
+                }, 
+                {
+                 "id":86,
+                 "image":"..\/objects\/nurse_call_display1.png",
+                 "imageheight":17,
+                 "imagewidth":25
+                }, 
+                {
+                 "id":87,
+                 "image":"..\/objects\/filing_cabinet_steel1.png",
+                 "imageheight":61,
+                 "imagewidth":29
+                }, 
+                {
+                 "id":88,
+                 "image":"..\/objects\/binder_shelves1.png",
+                 "imageheight":60,
+                 "imagewidth":48
+                }, 
+                {
+                 "id":89,
+                 "image":"..\/objects\/kvm_cart1.png",
+                 "imageheight":61,
+                 "imagewidth":37
+                },
+            
+                {
+                 "id":90,
+                 "image":"..\/objects\/checkin_kiosk1.png",
+                 "imageheight":60,
+                 "imagewidth":27
+                }, 
+                {
+                 "id":91,
+                 "image":"..\/objects\/drinks_vending1.png",
+                 "imageheight":61,
+                 "imagewidth":42
+                }, 
+                {
+                 "id":92,
+                 "image":"..\/objects\/cctv_monitors1.png",
+                 "imageheight":34,
+                 "imagewidth":46
+                }, 
+                {
+                 "id":93,
+                 "image":"..\/objects\/info_screen1.png",
+                 "imageheight":28,
+                 "imagewidth":40
+                }, 
+                {
+                 "id":94,
+                 "image":"..\/objects\/handwash_poster1.png",
+                 "imageheight":38,
+                 "imagewidth":31
                 }],
          "tilewidth":60
         }],

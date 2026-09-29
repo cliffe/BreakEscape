@@ -154,39 +154,52 @@
                  "y":128
                 }, 
                 {
-                 "gid":823,
-                 "height":22,
+                 "gid":802,
+                 "height":60,
                  "id":8,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":15,
-                 "x":170,
-                 "y":122
+                 "width":42,
+                 "x":104,
+                 "y":130
                 }, 
                 {
-                 "gid":802,
-                 "height":60,
+                 "gid":892,
+                 "height":61,
                  "id":9,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":42,
-                 "x":124,
-                 "y":130
+                 "x":148,
+                 "y":131
                 }, 
                 {
-                 "gid":818,
-                 "height":28,
+                 "gid":823,
+                 "height":22,
                  "id":10,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":16,
+                 "width":15,
                  "x":192,
+                 "y":122
+                },
+            
+                {
+                 "gid":818,
+                 "height":28,
+                 "id":11,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":236,
                  "y":122
                 }],
          "opacity":1,
@@ -203,7 +216,7 @@
                 {
                  "gid":849,
                  "height":18,
-                 "id":11,
+                 "id":12,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -215,7 +228,7 @@
                 {
                  "gid":115,
                  "height":24,
-                 "id":12,
+                 "id":13,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -227,7 +240,7 @@
                 {
                  "gid":234,
                  "height":21,
-                 "id":13,
+                 "id":14,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -239,7 +252,7 @@
                 {
                  "gid":256,
                  "height":17,
-                 "id":14,
+                 "id":15,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -288,7 +301,7 @@
          "y":0
         }],
  "nextlayerid":14,
- "nextobjectid":15,
+ "nextobjectid":16,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.2",
@@ -2760,7 +2773,7 @@
          "margin":0,
          "name":"objects\/hospital_extras",
          "spacing":0,
-         "tilecount":79,
+         "tilecount":95,
          "tileheight":63,
          "tiles":[
                 {
@@ -3243,6 +3256,104 @@
                  "image":"..\/objects\/no_smoking_sign1.png",
                  "imageheight":26,
                  "imagewidth":22
+                }, 
+                {
+                 "id":79,
+                 "image":"..\/objects\/bedhead_unit1.png",
+                 "imageheight":44,
+                 "imagewidth":26
+                },
+            
+                {
+                 "id":80,
+                 "image":"..\/objects\/cylinder_rack1.png",
+                 "imageheight":40,
+                 "imagewidth":43
+                }, 
+                {
+                 "id":81,
+                 "image":"..\/objects\/suppression_cylinders1.png",
+                 "imageheight":44,
+                 "imagewidth":42
+                }, 
+                {
+                 "id":82,
+                 "image":"..\/objects\/cleaning_trolley1.png",
+                 "imageheight":45,
+                 "imagewidth":41
+                }, 
+                {
+                 "id":83,
+                 "image":"..\/objects\/suppression_panel1.png",
+                 "imageheight":19,
+                 "imagewidth":14
+                }, 
+                {
+                 "id":84,
+                 "image":"..\/objects\/aed_cabinet1.png",
+                 "imageheight":24,
+                 "imagewidth":21
+                }, 
+                {
+                 "id":85,
+                 "image":"..\/objects\/cctv_camera1.png",
+                 "imageheight":18,
+                 "imagewidth":23
+                }, 
+                {
+                 "id":86,
+                 "image":"..\/objects\/nurse_call_display1.png",
+                 "imageheight":17,
+                 "imagewidth":25
+                }, 
+                {
+                 "id":87,
+                 "image":"..\/objects\/filing_cabinet_steel1.png",
+                 "imageheight":61,
+                 "imagewidth":29
+                }, 
+                {
+                 "id":88,
+                 "image":"..\/objects\/binder_shelves1.png",
+                 "imageheight":60,
+                 "imagewidth":48
+                }, 
+                {
+                 "id":89,
+                 "image":"..\/objects\/kvm_cart1.png",
+                 "imageheight":61,
+                 "imagewidth":37
+                },
+            
+                {
+                 "id":90,
+                 "image":"..\/objects\/checkin_kiosk1.png",
+                 "imageheight":60,
+                 "imagewidth":27
+                }, 
+                {
+                 "id":91,
+                 "image":"..\/objects\/drinks_vending1.png",
+                 "imageheight":61,
+                 "imagewidth":42
+                }, 
+                {
+                 "id":92,
+                 "image":"..\/objects\/cctv_monitors1.png",
+                 "imageheight":34,
+                 "imagewidth":46
+                }, 
+                {
+                 "id":93,
+                 "image":"..\/objects\/info_screen1.png",
+                 "imageheight":28,
+                 "imagewidth":40
+                }, 
+                {
+                 "id":94,
+                 "image":"..\/objects\/handwash_poster1.png",
+                 "imageheight":38,
+                 "imagewidth":31
                 }],
          "tilewidth":60
         }],

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="87" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="95" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../objects/iv_stand1.png" width="25" height="60"/>
@@ -261,5 +261,29 @@
  </tile>
  <tile id="86">
   <image source="../objects/nurse_call_display1.png" width="25" height="17"/>
+ </tile>
+ <tile id="87">
+  <image source="../objects/filing_cabinet_steel1.png" width="29" height="61"/>
+ </tile>
+ <tile id="88">
+  <image source="../objects/binder_shelves1.png" width="48" height="60"/>
+ </tile>
+ <tile id="89">
+  <image source="../objects/kvm_cart1.png" width="37" height="61"/>
+ </tile>
+ <tile id="90">
+  <image source="../objects/checkin_kiosk1.png" width="27" height="60"/>
+ </tile>
+ <tile id="91">
+  <image source="../objects/drinks_vending1.png" width="42" height="61"/>
+ </tile>
+ <tile id="92">
+  <image source="../objects/cctv_monitors1.png" width="46" height="34"/>
+ </tile>
+ <tile id="93">
+  <image source="../objects/info_screen1.png" width="40" height="28"/>
+ </tile>
+ <tile id="94">
+  <image source="../objects/handwash_poster1.png" width="31" height="38"/>
  </tile>
 </tileset>
