@@ -2839,6 +2839,48 @@
       "w": 31,
       "h": 38,
       "gid": 895
+    },
+    "photocopier1": {
+      "id": 95,
+      "w": 35,
+      "h": 46,
+      "gid": 896
+    },
+    "coat_stand1": {
+      "id": 96,
+      "w": 21,
+      "h": 45,
+      "gid": 897
+    },
+    "dishwasher1": {
+      "id": 97,
+      "w": 22,
+      "h": 29,
+      "gid": 898
+    },
+    "shredder1": {
+      "id": 98,
+      "w": 18,
+      "h": 24,
+      "gid": 899
+    },
+    "filing_cabinet_locked1": {
+      "id": 99,
+      "w": 29,
+      "h": 61,
+      "gid": 900
+    },
+    "hospital_chair_north2": {
+      "id": 100,
+      "w": 16,
+      "h": 26,
+      "gid": 901
+    },
+    "pigeonholes1": {
+      "id": 101,
+      "w": 28,
+      "h": 27,
+      "gid": 902
     }
   }
 }

@@ -755,6 +755,7 @@ WALL_MOUNTED_EXTRAS = {
     "cctv_monitors",
     "info_screen",
     "handwash_poster",
+    "pigeonholes",
 }
 
 
@@ -1525,7 +1526,8 @@ def room_hospital_staff():
       - Back wall, x 64-146: the scenario's handover board and snag list, with
         clear floor underneath so the player can walk up and read them.
       - Back wall, x 146-256: kitchenette (counter + sink, fridge with the
-        microwave on it, yellow bin; boiler, soap dispensers, notice board).
+        microwave on it, dishwasher; boiler, soap dispensers, notice board),
+        with staff pigeon-holes between the handover board and the boiler.
       - y 118-150 across the right half, and y 70-118 across the left half, stay
         open as the W-E walkway; a N-S aisle (x ~142-180) runs to the S door.
       - Left zone: the clerk's desk (scenario workstation + notes) with staff
@@ -1553,11 +1555,13 @@ def room_hospital_staff():
     oid += 1
     fridge = make_obj("objects", "undercounter_fridge1", 197.0, 99.0, oid)
     oid += 1
-    tables = [desk, side, table_r, counter, fridge]
+    # Dishwasher beside the fridge, finishing the kitchen run (replaces a yellow
+    # clinical-waste bin that had no business in a tea room)
+    dishwasher = make_obj("objects", "dishwasher1", 219.0, 99.0, oid)
+    oid += 1
+    tables = [desk, side, table_r, counter, fridge, dishwasher]
 
     items = []
-    items.append(make_obj("objects", "yellow_bin1", 223.0, 99.0, oid))
-    oid += 1
     # Wall fixtures above the counter: boiler over the left end, a pair of soap
     # dispensers right of the sink, the notice board over the bin
     items.append(make_obj("objects", "hot_water_boiler1", 152.0, 60.0, oid))
@@ -1570,6 +1574,9 @@ def room_hospital_staff():
     oid += 1
     # Handover whiteboard at the west end of the back wall
     items.append(make_obj("objects", "rota_board1", 68.0, 50.0, oid))
+    oid += 1
+    # Staff pigeon-holes between the whiteboard and the boiler
+    items.append(make_obj("objects", "pigeonholes1", 118.0, 58.0, oid))
     oid += 1
 
     # Clerk's corner: a bank of staff lockers against the west wall (below the
@@ -1598,6 +1605,9 @@ def room_hospital_staff():
     # Water cooler in the SE corner, out of the E door's path
     items.append(make_obj("objects", "water_cooler1", 270.0, 232.0, oid))
     oid += 1
+    # Coat stand against the east wall above the cooler, below the E door row
+    items.append(make_obj("objects", "coat_stand1", 272.0, 182.0, oid))
+    oid += 1
 
     table_items = [
         place_on_table(desk, "office-misc-cup3", x_frac=0.80, surface_frac=0.42, obj_id=oid),
@@ -1619,11 +1629,11 @@ def room_hospital_staff():
     conditional_items = []
     # Wall notes slots (taped sheets). The first hangs over the notice board's
     # lower edge, drawn on top of it (bottom y 54 > the board's 52); the second
-    # sits between the whiteboard and the boiler. The whiteboard and notice board
+    # sits between the whiteboard and the pigeon-holes. The whiteboard and notice board
     # themselves are plain items that scenarios claim with "as-type:".
     conditional_items.append(make_obj("objects", "notes6", 236.0, 54.0, oid))
     oid += 1
-    conditional_items.append(make_obj("objects", "notes6", 116.0, 50.0, oid))
+    conditional_items.append(make_obj("objects", "notes6", 101.0, 50.0, oid))
     oid += 1
 
     conditional_table_items = []

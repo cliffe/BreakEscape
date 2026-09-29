@@ -611,6 +611,13 @@ export function preload() {
     this.load.image('cctv_monitors1', 'objects/cctv_monitors1.png');
     this.load.image('info_screen1', 'objects/info_screen1.png');
     this.load.image('handwash_poster1', 'objects/handwash_poster1.png');
+    this.load.image('photocopier1', 'objects/photocopier1.png');
+    this.load.image('coat_stand1', 'objects/coat_stand1.png');
+    this.load.image('dishwasher1', 'objects/dishwasher1.png');
+    this.load.image('shredder1', 'objects/shredder1.png');
+    this.load.image('filing_cabinet_locked1', 'objects/filing_cabinet_locked1.png');
+    this.load.image('hospital_chair_north2', 'objects/hospital_chair_north2.png');
+    this.load.image('pigeonholes1', 'objects/pigeonholes1.png');
     this.load.image('backup_recovery',         'objects/backup_recovery.png');
     this.load.image('dual_auth',               'objects/dual_auth.png');
     this.load.image('ehr-terminal',            'objects/ehr-terminal.png');

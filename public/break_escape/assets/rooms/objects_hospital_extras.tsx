@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="95" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="102" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../objects/iv_stand1.png" width="25" height="60"/>
@@ -285,5 +285,26 @@
  </tile>
  <tile id="94">
   <image source="../objects/handwash_poster1.png" width="31" height="38"/>
+ </tile>
+ <tile id="95">
+  <image source="../objects/photocopier1.png" width="35" height="46"/>
+ </tile>
+ <tile id="96">
+  <image source="../objects/coat_stand1.png" width="21" height="45"/>
+ </tile>
+ <tile id="97">
+  <image source="../objects/dishwasher1.png" width="22" height="29"/>
+ </tile>
+ <tile id="98">
+  <image source="../objects/shredder1.png" width="18" height="24"/>
+ </tile>
+ <tile id="99">
+  <image source="../objects/filing_cabinet_locked1.png" width="29" height="61"/>
+ </tile>
+ <tile id="100">
+  <image source="../objects/hospital_chair_north2.png" width="16" height="26"/>
+ </tile>
+ <tile id="101">
+  <image source="../objects/pigeonholes1.png" width="28" height="27"/>
  </tile>
 </tileset>
