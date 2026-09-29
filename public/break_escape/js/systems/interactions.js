@@ -1283,7 +1283,8 @@ export function handleObjectInteraction(sprite) {
     }
 
     // Handle container items (suitcase, briefcase, bags, bins, etc.) - check BEFORE lock check
-    if (data.type === 'suitcase' || data.type === 'briefcase' || data.type === 'bag1' || data.type === 'bin1' || data.contents) {
+    // hasContents: the server strips a locked container's contents and marks it instead
+    if (data.type === 'suitcase' || data.type === 'briefcase' || data.type === 'bag1' || data.type === 'bin1' || data.contents || data.hasContents) {
         console.log('CONTAINER ITEM INTERACTION', data);
 
         // SECURITY: Always validate with server

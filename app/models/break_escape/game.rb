@@ -1331,8 +1331,13 @@ module BreakEscape
           obj.delete('requires')
         end
 
-        # Remove 'contents' if locked (lazy-loaded via separate endpoint)
-        obj.delete('contents') if obj['locked']
+        # Remove 'contents' if locked (lazy-loaded via separate endpoint), but
+        # mark it so the client still treats it as a container once unlocked
+        # (e.g. remotely, by a flag reward) and fetches the contents
+        if obj['locked'] && obj.key?('contents')
+          obj.delete('contents')
+          obj['hasContents'] = true
+        end
 
         # Strip flag values from flag-stations / launch-devices. The top-level
         # 'flags' block is deleted in filtered_scenario_for_bootstrap, but each
