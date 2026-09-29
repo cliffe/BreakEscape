@@ -1333,6 +1333,8 @@ def export_root_for(key):
     export_dir = DEFAULT_WORKDIR / "_export" / key
     if not export_dir.exists():
         sys.exit(f"no export for {key}; run `import <character> --key {key}` first")
+    if (export_dir / ".state_folder").exists():
+        return export_dir / (export_dir / ".state_folder").read_text().strip()
     return next(p for p in [export_dir, *sorted(export_dir.iterdir())] if (p / "animations").is_dir())
 
 
@@ -1512,11 +1514,25 @@ def cmd_import(args):
     manifest = json.loads(IMPORT_MANIFEST.read_text()) if IMPORT_MANIFEST.exists() else {}
     if args.target in manifest:  # an already-imported key
         args.key = args.key or args.target
+        args.idle_from = args.idle_from or manifest[args.target].get("idle_from")
         args.target = manifest[args.target]["character_id"]
     cid = resolve_character(args.target, args.workdir)
     api = PixelLab()
     character = api.get(f"/characters/{cid}")
-    missing, _ = missing_animations(character, list(STANDARD_ANIMATIONS))
+    # --idle-from: breathing-idle comes from another state of the same character (e.g. a
+    # "hands in pockets" state), every other animation from this one.
+    idle_cid = resolve_character(args.idle_from, args.workdir) if args.idle_from else None
+    idle_char = api.get(f"/characters/{idle_cid}") if idle_cid else None
+    if idle_char and "breathing-idle" not in animation_inventory(idle_char):
+        # A web-UI custom animation ("custom-<prompt>") named "Breathing Idle" stands in for
+        # the template, e.g. female_hacker_hood_down_v2's hands-in-pockets state.
+        for anim in idle_char.get("animations") or []:
+            if (anim.get("display_name") or "").strip().lower().replace("_", " ") == "breathing idle":
+                anim["animation_type"] = "breathing-idle"
+    templates =[t for t in STANDARD_ANIMATIONS if not (idle_cid and t == "breathing-idle")]
+    missing, _ = missing_animations(character, templates)
+    if idle_char:
+        missing += [f"{idle_cid[:8]}:{m}" for m in missing_animations(idle_char, ["breathing-idle"])[0]]
     if missing and not args.allow_incomplete:
         sys.exit(f"{len(missing)} standard direction(s) missing: {missing[:6]}...\n"
                  f"run `animate {args.target}` first, or pass --allow-incomplete")
@@ -1538,11 +1554,48 @@ def cmd_import(args):
     with zipfile.ZipFile(io.BytesIO(r.content)) as z:
         z.extractall(export_dir)
     print(f"downloaded {len(r.content) // 1024} KB for {character['name'][:50]}")
-    root = next(p for p in [export_dir, *sorted(export_dir.iterdir())] if (p / "animations").is_dir())
+    root = state_folder(export_dir, cid)
+    (export_dir / ".state_folder").write_text(root.name)  # read by the converter and `qa`
     canonicalise_animation_folders(root, character, api)
+    if idle_char:
+        take_idle_from_state(root, state_folder(export_dir, idle_cid, idle_char, api), idle_char, api)
     apply_overrides(key, root)
 
     return convert_and_record(args, key, cid, character, export_dir)
+
+
+def state_folder(export_dir, cid, character=None, api=None):
+    """The folder holding one state's frames. A character's ZIP carries every state in its
+    group (one folder each, listed in metadata.json); fall back to the first folder with
+    animations for older single-state exports."""
+    meta = export_dir / "metadata.json"
+    if meta.exists():
+        for st in json.loads(meta.read_text()).get("states", []):
+            if st["character"]["id"] == cid:
+                return export_dir / st["folder"]
+    if character is not None:
+        # A state from another group: download its own ZIP beside the main export.
+        sub = export_dir / f"_state_{cid[:8]}"
+        r = api.session.get(f"{API}/characters/{cid}/zip", timeout=600)
+        if not r.ok:
+            sys.exit(f"ZIP export of {cid} failed: {r.status_code} {r.text[:300]}")
+        import zipfile
+        with zipfile.ZipFile(io.BytesIO(r.content)) as z:
+            z.extractall(sub)
+        return state_folder(sub, cid)
+    return next(p for p in [export_dir, *sorted(export_dir.iterdir())] if (p / "animations").is_dir())
+
+
+def take_idle_from_state(root, idle_root, idle_char, api):
+    """Replace root's breathing-idle with the one from another state's folder."""
+    canonicalise_animation_folders(idle_root, idle_char, api)
+    src = idle_root / "animations" / "breathing-idle"
+    if not src.is_dir():
+        sys.exit(f"state {idle_char['id']} has no breathing-idle animation; animate it first")
+    dest = root / "animations" / "breathing-idle"
+    shutil.rmtree(dest, ignore_errors=True)
+    shutil.copytree(src, dest)
+    print(f"breathing-idle taken from state '{idle_char.get('state_name') or idle_char['id'][:8]}'")
 
 
 def convert_and_record(args, key, cid, character, export_dir):
@@ -1563,6 +1616,8 @@ def convert_and_record(args, key, cid, character, export_dir):
     manifest[key] = {"character_id": cid, "name": character["name"],
                      "size": character.get("size"),
                      "imported": datetime.now(timezone.utc).date().isoformat()}
+    if getattr(args, "idle_from", None):
+        manifest[key]["idle_from"] = resolve_character(args.idle_from, args.workdir)
     IMPORT_MANIFEST.write_text(json.dumps(dict(sorted(manifest.items())), indent=2) + "\n")
     print(f"recorded {key} -> {cid} in {IMPORT_MANIFEST.relative_to(REPO)}")
     if args.register:
@@ -1679,6 +1734,8 @@ def cmd_pick(args):
                                  [resolve_frame(run, sp, vid) for sp in args.frames.split(",")]
                                  if args.frames else [run.dir / q for q in job["outputs"][1:]])], box)
             cmd += ["--face", face]
+        if args.mouth:
+            cmd += ["--mouth", args.mouth]
         subprocess.run(cmd, check=True)
         check = subprocess.run([sys.executable, str(TALK_SCRIPTS / "check_talk_sheet.py"), str(dest)])
         run.state["picks"]["talk"] = {"variant": vid, "frames": args.frames or "auto",
@@ -1848,6 +1905,8 @@ def main():
     p.add_argument("--register", action="store_true", help="add the atlas to game.js preload")
     p.add_argument("--force", action="store_true", help="replace existing <key> files (backed up first)")
     p.add_argument("--allow-incomplete", action="store_true", help="import even if standard animations are missing")
+    p.add_argument("--idle-from", help="another state (id or URL) to take breathing-idle from, e.g. a "
+                   "'hands in pockets' state; remembered in the manifest for later re-imports")
     p.set_defaults(func=cmd_import)
 
     p.add_argument("--offline", action="store_true", help="reconvert the last download (after `fix`) without downloading")
@@ -1882,6 +1941,9 @@ def main():
     p.add_argument("variant", help="e.g. b03, t01, i01, c01")
     p.add_argument("--frames", help="talk only: three open-mouth frames, e.g. 3,5,7 or t01:3,t02:6,i01:round (default auto)")
     p.add_argument("--face", help="talk/visemes: x0,y0,x1,y1 face box override (inpaint visemes default to the mouth mask)")
+    p.add_argument("--mouth", help="talk only: cx,cy,rx,ry lips ellipse; paste only that instead of the face box. "
+                   "Recommended: the talk model redraws the cheeks and chin a shade off, which shows in game "
+                   "as a flickering rectangle round the lower face")
     p.add_argument("--swap", help="visemes only: take single shapes from other variants, e.g. round=i02,teeth=i03")
     p.add_argument("--omit", help="visemes only: leave shapes out, e.g. closed (the game then uses rest)")
     p.set_defaults(func=cmd_pick)

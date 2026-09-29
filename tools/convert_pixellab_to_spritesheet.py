@@ -62,6 +62,9 @@ DISPLAY_NAME_ALIASES = {
 }
 
 
+ROOT_MARKER = ".state_folder"
+
+
 def resolve_export_root(character_dir):
     """
     Return the folder that holds animations/ (and rotations/).
@@ -73,6 +76,11 @@ def resolve_export_root(character_dir):
     character_dir = Path(character_dir)
     if (character_dir / 'animations').exists():
         return character_dir
+    # A ZIP carries every state of the character's group; pixellab_pipeline import
+    # records which state it converted in ROOT_MARKER.
+    marker = character_dir / ROOT_MARKER
+    if marker.exists():
+        return character_dir / marker.read_text().strip()
     nested = [d for d in sorted(character_dir.iterdir()) if (d / 'animations').is_dir()]
     return nested[0] if nested else character_dir
 

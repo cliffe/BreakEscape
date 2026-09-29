@@ -55,6 +55,9 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--face", help="x0,y0,x1,y1 face box override (base-image coords)")
     ap.add_argument("--pick", help="comma-separated 1-based indices into --frames to force")
+    ap.add_argument("--mouth", help="cx,cy,rx,ry: paste only this ellipse (the lips) instead of "
+                    "the whole face box. Talk models redraw the cheeks and chin a shade off, "
+                    "which shows as a flickering rectangle; the ellipse keeps the bust's skin.")
     args = ap.parse_args()
 
     base_im = Image.open(args.base).convert("RGBA")
@@ -110,8 +113,16 @@ def main():
         src = Image.open(names[i]).convert("RGBA")
         if src.size != size:
             src = src.resize(size, Image.NEAREST)
-        face = src.crop((x0, y0, x1, y1))
-        frame.paste(face, (x0, y0))  # hard paste: replace, do not alpha-blend
+        if args.mouth:
+            cx, cy, rx, ry = (float(v) for v in args.mouth.split(","))
+            yy, xx = np.mgrid[0:size[1], 0:size[0]]
+            inside = ((xx + 0.5 - cx) / rx) ** 2 + ((yy + 0.5 - cy) / ry) ** 2 <= 1.0
+            out = np.array(frame)
+            out[inside] = np.array(src)[inside]  # hard replace inside the lips ellipse
+            frame = Image.fromarray(out)
+        else:
+            face = src.crop((x0, y0, x1, y1))
+            frame.paste(face, (x0, y0))  # hard paste: replace, do not alpha-blend
         changed = int(diff_mask(base, np.array(frame).astype(np.int16)).sum())
         print(f"frame {slot} <- {names[i]}: {changed} px changed")
         sheet.paste(frame, (px, py))
