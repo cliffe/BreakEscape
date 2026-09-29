@@ -5,20 +5,27 @@ module BreakEscape
     # Associations
     belongs_to :player, polymorphic: true
 
-    # Constants - Available sprite sheets (must match game.js preload and assets on disk)
+    # Constants - Available sprite sheets (must match game.js preload and assets on disk).
+    # A <key>_v2 entry is a redrawn version of <key>; it counts as <key> for validSprites.
     AVAILABLE_SPRITES = %w[
       female_hacker_hood
+      female_hacker_hood_v2
       female_hacker_hood_down
+      female_hacker_hood_down_v2
       female_office_worker
       female_security_guard
+      female_security_guard_v2
       female_telecom
       female_spy
       female_scientist
       female_blowse
       male_hacker_hood
+      male_hacker_hood_v2
       male_hacker_hood_down
+      male_hacker_hood_down_v2
       male_office_worker
       male_security_guard
+      male_security_guard_v2
       male_telecom
       male_spy
       male_scientist
@@ -53,8 +60,26 @@ module BreakEscape
 
       # Check if sprite matches any pattern
       valid_sprites.any? do |pattern|
-        sprite_matches_pattern?(selected_sprite, pattern)
+        self.class.sprite_matches_pattern?(selected_sprite, pattern)
       end
+    end
+
+    # Pattern matching for sprite validation
+    # Supports:
+    # - Exact match: "female_hacker"
+    # - Wildcard: "female_*" (all female sprites)
+    # - Wildcard: "*_hacker" (all hacker sprites)
+    # - Wildcard: "*" (all sprites)
+    # A redrawn "<key>_v2" sprite also matches any pattern its "<key>" matches, so a
+    # scenario listing "male_hacker_hood" accepts "male_hacker_hood_v2" as well.
+    def self.sprite_matches_pattern?(sprite, pattern)
+      return true if pattern == '*'
+
+      # Convert wildcard pattern to regex
+      regex_pattern = Regexp.escape(pattern).gsub('\*', '.*')
+      regex = /\A#{regex_pattern}\z/
+
+      sprite.match?(regex) || sprite.delete_suffix('_v2').match?(regex)
     end
 
     # Check if player has selected a sprite
@@ -74,22 +99,6 @@ module BreakEscape
       self.in_game_name = 'Zero' if in_game_name.blank?
 
       # NOTE: selected_sprite left NULL - player MUST choose before first game
-    end
-
-    # Pattern matching for sprite validation
-    # Supports:
-    # - Exact match: "female_hacker"
-    # - Wildcard: "female_*" (all female sprites)
-    # - Wildcard: "*_hacker" (all hacker sprites)
-    # - Wildcard: "*" (all sprites)
-    def sprite_matches_pattern?(sprite, pattern)
-      return true if pattern == '*'
-
-      # Convert wildcard pattern to regex
-      regex_pattern = Regexp.escape(pattern).gsub('\*', '.*')
-      regex = /\A#{regex_pattern}\z/
-
-      sprite.match?(regex)
     end
   end
 end

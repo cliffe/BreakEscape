@@ -401,6 +401,7 @@ export default class PersonChatPortraits {
             this._loadingSpriteTalkImage = false; // Reset lazy-load flag
             this._lastRenderedTalkFrame = -1;  // Force re-render after load
             this._headshotFallbackAttempted = false; // Reset fallback flag for new speaker
+            this._baseTalkFallbackAttempted = false;
             // For NPCs with spriteTalk, flip the image to face right
             this.flipped = this.npc.id !== 'player';
             return;
@@ -865,6 +866,14 @@ export default class PersonChatPortraits {
 
         img.onerror = () => {
             this._loadingSpriteTalkImage = false;
+            // A redrawn <key>_v2 sprite without a talk sheet of its own uses the original
+            // <key>_talk.png, as scenarios do explicitly for v2 NPCs (female_nurse1_v2)
+            if (!this._baseTalkFallbackAttempted && this.talkImageSrc && /_v2_talk\.\w+$/.test(this.talkImageSrc)) {
+                this._baseTalkFallbackAttempted = true;
+                this.talkImageSrc = this.talkImageSrc.replace(/_v2_talk(\.\w+)$/, '_talk$1');
+                this._startLoadingSpriteTalkImage();
+                return;
+            }
             // If _talk.png failed, try the _headshot.png equivalent before giving up
             if (!this._headshotFallbackAttempted && this.talkImageSrc && /[_-]talk\.\w+$/.test(this.talkImageSrc)) {
                 this._headshotFallbackAttempted = true;

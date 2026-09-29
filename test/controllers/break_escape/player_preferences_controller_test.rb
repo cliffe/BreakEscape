@@ -246,7 +246,52 @@ module BreakEscape
       assert_includes sprites, 'female_hacker_hood'
       assert_includes sprites, 'male_spy'
       assert_includes sprites, 'female_scientist'
-      assert sprites.length >= 16, "Expected at least 16 sprites, got #{sprites.length}"
+      assert_includes sprites, 'male_hacker_hood_down_v2'
+      assert sprites.length >= 22, "Expected at least 22 sprites, got #{sprites.length}"
+    end
+
+    test 'every available sprite has an atlas and a headshot on disk' do
+      dir = Engine.root.join('public/break_escape/assets/characters')
+      PlayerPreference::AVAILABLE_SPRITES.each do |sprite|
+        %W[#{sprite}.png #{sprite}.json #{sprite}_headshot.png].each do |file|
+          assert File.exist?(dir.join(file)), "Missing #{file} for menu sprite '#{sprite}'"
+        end
+      end
+    end
+
+    test 'an exact validSprites name also accepts its _v2 redraw, and nothing else' do
+      scenario = { 'validSprites' => %w[male_hacker_hood female_hacker_hood_down] }
+      @preference.update!(selected_sprite: 'male_hacker_hood_v2')
+      assert @preference.sprite_valid_for_scenario?(scenario)
+      @preference.update!(selected_sprite: 'female_hacker_hood_down_v2')
+      assert @preference.sprite_valid_for_scenario?(scenario)
+      @preference.update!(selected_sprite: 'male_hacker_hood_down_v2')
+      assert_not @preference.sprite_valid_for_scenario?(scenario)
+      @preference.update!(selected_sprite: 'male_security_guard_v2')
+      assert_not @preference.sprite_valid_for_scenario?(scenario)
+    end
+
+    test 'configuration screen shows v2 hacker sprites as selectable under an exact validSprites list' do
+      game = Game.create!(
+        mission: break_escape_missions(:ceo_exfil),
+        player: @player,
+        scenario_data: { 'startRoom' => 'lobby', 'rooms' => {}, 'validSprites' => %w[male_hacker_hood female_hacker_hood] },
+        player_state: {
+          'currentRoom' => 'lobby', 'unlockedRooms' => ['lobby'],
+          'unlockedObjects' => [], 'inventory' => [], 'encounteredNPCs' => [],
+          'globalVariables' => {}, 'biometricSamples' => [], 'biometricUnlocks' => [],
+          'bluetoothDevices' => [], 'notes' => [], 'health' => 100
+        }
+      )
+
+      get configuration_url(game_id: game.id)
+      assert_response :success
+      assert_select 'label.sprite-card[data-sprite="male_hacker_hood_v2"]', count: 1
+      assert_select 'label.invalid[data-sprite="male_hacker_hood_v2"]', count: 0
+      assert_select 'label.invalid[data-sprite="female_hacker_hood_v2"]', count: 0
+      assert_select 'label.invalid[data-sprite="male_security_guard_v2"]', count: 1
+      assert_select 'img.sprite-headshot[src^="/break_escape/assets/characters/female_security_guard_v2_headshot.png"]',
+                    count: 1
     end
 
     test 'each available sprite is accepted by update' do
