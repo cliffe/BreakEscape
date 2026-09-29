@@ -122,32 +122,8 @@
                  "type":"",
                  "visible":true,
                  "width":38,
-                 "x":123.5,
-                 "y":61.5
-                }, 
-                {
-                 "gid":380,
-                 "height":54,
-                 "id":9,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":27,
-                 "x":70,
-                 "y":76
-                }, 
-                {
-                 "gid":339,
-                 "height":50,
-                 "id":10,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":43,
-                 "x":214,
-                 "y":76
+                 "x":124,
+                 "y":60
                 }, 
                 {
                  "gid":308,
@@ -400,7 +376,7 @@
                  "type":"",
                  "visible":true,
                  "width":19,
-                 "x":290.5,
+                 "x":289,
                  "y":191.5
                 },
             
@@ -413,7 +389,7 @@
                  "type":"",
                  "visible":true,
                  "width":19,
-                 "x":11.5,
+                 "x":13,
                  "y":211
                 }, 
                 {
@@ -425,8 +401,8 @@
                  "type":"",
                  "visible":true,
                  "width":26,
-                 "x":292,
-                 "y":118
+                 "x":262,
+                 "y":44
                 }, 
                 {
                  "gid":828,
@@ -437,7 +413,7 @@
                  "type":"",
                  "visible":true,
                  "width":16,
-                 "x":8,
+                 "x":13,
                  "y":186
                 }, 
                 {
@@ -453,16 +429,100 @@
                  "y":244
                 }, 
                 {
-                 "gid":380,
-                 "height":54,
-                 "id":55,
+                 "gid":856,
+                 "height":21,
+                 "id":57,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":27,
-                 "x":99,
-                 "y":76
+                 "width":16,
+                 "x":42,
+                 "y":50
+                }, 
+                {
+                 "gid":857,
+                 "height":21,
+                 "id":58,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":62,
+                 "y":50
+                }, 
+                {
+                 "gid":862,
+                 "height":33,
+                 "id":60,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":29,
+                 "x":208,
+                 "y":58
+                }, 
+                {
+                 "gid":858,
+                 "height":21,
+                 "id":61,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":242,
+                 "y":50
+                }, 
+                {
+                 "gid":863,
+                 "height":31,
+                 "id":62,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":38,
+                 "x":36,
+                 "y":150
+                }, 
+                {
+                 "gid":864,
+                 "height":42,
+                 "id":63,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":26,
+                 "x":260,
+                 "y":182
+                }, 
+                {
+                 "gid":865,
+                 "height":28,
+                 "id":64,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":30,
+                 "x":254,
+                 "y":244
+                }, 
+                {
+                 "gid":866,
+                 "height":26,
+                 "id":65,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":25,
+                 "x":90,
+                 "y":44
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -498,18 +558,6 @@
                  "width":24,
                  "x":10,
                  "y":160
-                }, 
-                {
-                 "gid":311,
-                 "height":56,
-                 "id":29,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":24,
-                 "x":258,
-                 "y":205
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -649,7 +697,7 @@
          "y":0
         }],
  "nextlayerid":14,
- "nextobjectid":57,
+ "nextobjectid":66,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.2",
@@ -3114,7 +3162,7 @@
          "margin":0,
          "name":"objects\/hospital_extras",
          "spacing":0,
-         "tilecount":55,
+         "tilecount":66,
          "tileheight":60,
          "tiles":[
                 {
@@ -3446,6 +3494,72 @@
                  "image":"..\/objects\/power_panel1.png",
                  "imageheight":22,
                  "imagewidth":18
+                }, 
+                {
+                 "id":55,
+                 "image":"..\/objects\/health_poster1.png",
+                 "imageheight":21,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":56,
+                 "image":"..\/objects\/health_poster2.png",
+                 "imageheight":21,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":57,
+                 "image":"..\/objects\/health_poster3.png",
+                 "imageheight":21,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":58,
+                 "image":"..\/objects\/health_poster4.png",
+                 "imageheight":21,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":59,
+                 "image":"..\/objects\/health_poster5.png",
+                 "imageheight":21,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":60,
+                 "image":"..\/objects\/health_poster6.png",
+                 "imageheight":21,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":61,
+                 "image":"..\/objects\/leaflet_holder1.png",
+                 "imageheight":33,
+                 "imagewidth":29
+                }, 
+                {
+                 "id":62,
+                 "image":"..\/objects\/magazine_rack1.png",
+                 "imageheight":31,
+                 "imagewidth":38
+                }, 
+                {
+                 "id":63,
+                 "image":"..\/objects\/magazine_rack2.png",
+                 "imageheight":42,
+                 "imagewidth":26
+                }, 
+                {
+                 "id":64,
+                 "image":"..\/objects\/toy_box1.png",
+                 "imageheight":28,
+                 "imagewidth":30
+                }, 
+                {
+                 "id":65,
+                 "image":"..\/objects\/wall_clock1.png",
+                 "imageheight":26,
+                 "imagewidth":25
                 }],
          "tilewidth":60
         }],

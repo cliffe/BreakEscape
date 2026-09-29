@@ -199,7 +199,7 @@
                  "type":"",
                  "visible":true,
                  "width":14,
-                 "x":300,
+                 "x":294,
                  "y":128
                 }],
          "opacity":1,
@@ -2773,7 +2773,7 @@
          "margin":0,
          "name":"objects\/hospital_extras",
          "spacing":0,
-         "tilecount":50,
+         "tilecount":55,
          "tileheight":60,
          "tiles":[
                 {
@@ -3079,6 +3079,37 @@
                  "image":"..\/objects\/directory_sign1.png",
                  "imageheight":26,
                  "imagewidth":34
+                },
+            
+                {
+                 "id":50,
+                 "image":"..\/objects\/whiteboard1.png",
+                 "imageheight":28,
+                 "imagewidth":44
+                }, 
+                {
+                 "id":51,
+                 "image":"..\/objects\/whiteboard2.png",
+                 "imageheight":28,
+                 "imagewidth":44
+                }, 
+                {
+                 "id":52,
+                 "image":"..\/objects\/key_cabinet1.png",
+                 "imageheight":24,
+                 "imagewidth":20
+                }, 
+                {
+                 "id":53,
+                 "image":"..\/objects\/plaque1.png",
+                 "imageheight":17,
+                 "imagewidth":24
+                }, 
+                {
+                 "id":54,
+                 "image":"..\/objects\/power_panel1.png",
+                 "imageheight":22,
+                 "imagewidth":18
                 }],
          "tilewidth":60
         }],

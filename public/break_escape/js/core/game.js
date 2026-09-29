@@ -571,6 +571,17 @@ export function preload() {
     this.load.image('key_cabinet1', 'objects/key_cabinet1.png');
     this.load.image('plaque1', 'objects/plaque1.png');
     this.load.image('power_panel1', 'objects/power_panel1.png');
+    this.load.image('health_poster1', 'objects/health_poster1.png');
+    this.load.image('health_poster2', 'objects/health_poster2.png');
+    this.load.image('health_poster3', 'objects/health_poster3.png');
+    this.load.image('health_poster4', 'objects/health_poster4.png');
+    this.load.image('health_poster5', 'objects/health_poster5.png');
+    this.load.image('health_poster6', 'objects/health_poster6.png');
+    this.load.image('leaflet_holder1', 'objects/leaflet_holder1.png');
+    this.load.image('magazine_rack1', 'objects/magazine_rack1.png');
+    this.load.image('magazine_rack2', 'objects/magazine_rack2.png');
+    this.load.image('toy_box1', 'objects/toy_box1.png');
+    this.load.image('wall_clock1', 'objects/wall_clock1.png');
     this.load.image('backup_recovery',         'objects/backup_recovery.png');
     this.load.image('dual_auth',               'objects/dual_auth.png');
     this.load.image('ehr-terminal',            'objects/ehr-terminal.png');

@@ -2599,6 +2599,72 @@
       "w": 18,
       "h": 22,
       "gid": 855
+    },
+    "health_poster1": {
+      "id": 55,
+      "w": 16,
+      "h": 21,
+      "gid": 856
+    },
+    "health_poster2": {
+      "id": 56,
+      "w": 16,
+      "h": 21,
+      "gid": 857
+    },
+    "health_poster3": {
+      "id": 57,
+      "w": 16,
+      "h": 21,
+      "gid": 858
+    },
+    "health_poster4": {
+      "id": 58,
+      "w": 16,
+      "h": 21,
+      "gid": 859
+    },
+    "health_poster5": {
+      "id": 59,
+      "w": 16,
+      "h": 21,
+      "gid": 860
+    },
+    "health_poster6": {
+      "id": 60,
+      "w": 16,
+      "h": 21,
+      "gid": 861
+    },
+    "leaflet_holder1": {
+      "id": 61,
+      "w": 29,
+      "h": 33,
+      "gid": 862
+    },
+    "magazine_rack1": {
+      "id": 62,
+      "w": 38,
+      "h": 31,
+      "gid": 863
+    },
+    "magazine_rack2": {
+      "id": 63,
+      "w": 26,
+      "h": 42,
+      "gid": 864
+    },
+    "toy_box1": {
+      "id": 64,
+      "w": 30,
+      "h": 28,
+      "gid": 865
+    },
+    "wall_clock1": {
+      "id": 65,
+      "w": 25,
+      "h": 26,
+      "gid": 866
     }
   }
 }

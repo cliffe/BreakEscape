@@ -714,7 +714,9 @@ def room_lab():
 
 
 WALL_TOP_PX = 12        # top of the back-wall band in the room art
-FLOOR_TOP_PX = 70       # first floor pixel row under the back wall
+WALL_FRAME_PX = 12      # white-and-black frame round the room edge (x or y 0-11)
+WALL_BASE_PX = 61       # skirting starts here: wall hangings end above it
+FLOOR_TOP_PX = 66       # first floor pixel row under the back wall (hospital tileset)
 SIDE_WALL_PX = 24       # floor furniture should not lean further onto the side walls
 FOOTPRINT_PX = 12       # bottom strip of a floor sprite treated as its floor contact
 
@@ -738,6 +740,9 @@ WALL_MOUNTED_EXTRAS = {
     "key_cabinet",
     "plaque",
     "power_panel",
+    "health_poster",
+    "leaflet_holder",
+    "wall_clock",
 }
 
 
@@ -765,6 +770,12 @@ def sprite_bounds_warnings(room: dict, layers: dict, gid_to_name: dict) -> list[
                 on_side = left < SIDE_WALL_PX + 4 or right > map_w - SIDE_WALL_PX - 4
                 if not (on_back or on_side):
                     warnings.append(f"{label} is off the walls (y {top:.0f}-{bottom:.0f}, x {left:.0f}-{right:.0f})")
+                # hangings sit on the wall face: inside the frame, above the skirting
+                if (top < WALL_FRAME_PX or left < WALL_FRAME_PX or right > map_w - WALL_FRAME_PX
+                        or bottom > map_h - WALL_FRAME_PX):
+                    warnings.append(f"{label} overlaps the wall frame ({left:.0f},{top:.0f})-({right:.0f},{bottom:.0f})")
+                elif on_back and not on_side and bottom > WALL_BASE_PX:
+                    warnings.append(f"{label} hangs over the skirting (bottom y={bottom:.0f} > {WALL_BASE_PX})")
                 corner = DOOR_CORNER_TILES * TILE
                 if on_back and not on_side and (left < corner or right > map_w - corner):
                     warnings.append(f"{label} on the back wall where a N door is drawn (x {left:.0f}-{right:.0f})")
@@ -772,8 +783,8 @@ def sprite_bounds_warnings(room: dict, layers: dict, gid_to_name: dict) -> list[
                 continue
             if bottom < FLOOR_TOP_PX - 6:
                 warnings.append(f"{label} stands on the back wall (foot y={bottom:.0f} < {FLOOR_TOP_PX})")
-            if top < WALL_TOP_PX - 4:
-                warnings.append(f"{label} pokes above the back wall (top y={top:.0f})")
+            if top < WALL_FRAME_PX:
+                warnings.append(f"{label} overlaps the wall frame (top y={top:.0f})")
             # wall safes may sit on a side wall; floor plants lean by design
             if not (is_floor_plant(n) or n.startswith("safe")) and (left < SIDE_WALL_PX or right > map_w - SIDE_WALL_PX):
                 warnings.append(f"{label} pushed into a side wall (x {left:.0f}-{right:.0f})")
@@ -934,7 +945,8 @@ def validate_room(room: dict, stem: str):
     for lname in ("tables", "items", "conditional_items"):
         for o in layers[lname].get("objects", []):
             n = gid_to_name.get(o["gid"], f"id{o['id']}")
-            if is_wall_hanging(n):
+            # wall items get their own N-door warning in sprite_bounds_warnings
+            if is_wall_hanging(n) or is_wall_mounted(n):
                 continue
             for i, rect in enumerate(corners):
                 if foot_in_rect(o, rect):
@@ -1398,7 +1410,7 @@ def room_hospital_servers():
     oid += 1
     # fire point (no crash cart in a server room): call point on the east wall
     # below the E door row, extinguisher standing beneath it
-    items.append(make_obj("objects", "fire_alarm_point1", 300.0, 150.0, oid))
+    items.append(make_obj("objects", "fire_alarm_point1", 292.0, 150.0, oid))
     oid += 1
     items.append(make_obj("objects", "fire_extinguisher1", 274.0, 196.0, oid))
     oid += 1
@@ -1406,7 +1418,7 @@ def room_hospital_servers():
     oid += 1
     # UPS status panel on the east wall under the call point, by the recovery
     # console (m02 "Backup Power Indicator"); both back-wall corners carry N doors
-    items.append(make_obj("objects", "power_panel1", 300.0, 186.0, oid))
+    items.append(make_obj("objects", "power_panel1", 290.0, 186.0, oid))
     oid += 1
 
     # Second row of racks (glass drugs cabinets don't belong in a server room)
@@ -1522,7 +1534,7 @@ def room_hospital_staff():
     oid += 1
     # Wall fixtures above the counter: boiler over the left end, a pair of soap
     # dispensers right of the sink, the notice board over the bin
-    items.append(make_obj("objects", "hot_water_boiler1", 152.0, 62.0, oid))
+    items.append(make_obj("objects", "hot_water_boiler1", 152.0, 60.0, oid))
     oid += 1
     items.append(make_obj("objects", "soap_dispenser1", 176.0, 56.0, oid))
     oid += 1
@@ -1712,7 +1724,7 @@ def room_hospital_hall_ward():
             ("wheelchair1", 110.0, 126.0),
             ("clinical_waste_bin1", 164.0, 122.0),
             # hand sanitiser on the east side wall, just below the ward door row
-            ("sanitiser_dispenser1", 300.0, 128.0),
+            ("sanitiser_dispenser1", 294.0, 128.0),
         ],
     )
 
@@ -1722,8 +1734,8 @@ def room_hospital_hall_waiting():
     return _hospital_hall(
         "room_hospital_hall_waiting",
         wall=HALL_BOARDS + [
-            ("chart2", 66.0, 42.0),
-            ("chart", 222.0, 44.0),
+            ("health_poster4", 66.0, 44.0),
+            ("health_poster6", 222.0, 44.0),
         ],
         props=[
             ("hospital_chair_south", 100.0, 104.0),
@@ -1732,7 +1744,7 @@ def room_hospital_hall_waiting():
             ("hospital_chair_south", 196.0, 104.0),
             ("water_cooler1", 146.0, 112.0),
             # hand sanitiser on the west side wall, just below the door row
-            ("sanitiser_dispenser1", 6.0, 128.0),
+            ("sanitiser_dispenser1", 13.0, 128.0),
         ],
     )
 
@@ -1752,11 +1764,11 @@ def room_hospital_waiting_1x1gu():
     for sprite, x, y in [
         # back wall notices
         ("hospital_chart_board1", 40.0, 48.0),
-        ("chart2", 92.0, 42.0),
-        ("chart", 116.0, 44.0),
+        ("health_poster5", 92.0, 44.0),
+        ("health_poster1", 114.0, 44.0),
         # side-wall posters below the doors
         ("chart2", 12.0, 142.0),
-        ("chart", 137.0, 140.0),
+        ("chart", 135.0, 140.0),
         # a back-to-back seating block in the middle, below the door walkway:
         # a row facing the back wall's notices (chair_north, seen from behind)
         # with a row facing south tucked against its back. Open walkways of
@@ -1768,7 +1780,7 @@ def room_hospital_waiting_1x1gu():
         ("hospital_chair_south", 72.0, 152.0),
         ("hospital_chair_south", 88.0, 152.0),
         ("water_cooler1", 110.0, 158.0),  # lower right, off the paths, above the bottom row
-        ("sanitiser_dispenser1", 140.0, 120.0),  # east side wall, under the door row
+        ("sanitiser_dispenser1", 133.0, 120.0),  # east side wall, under the door row
     ]:
         items.append(make_obj("objects", sprite, x, y, oid))
         oid += 1

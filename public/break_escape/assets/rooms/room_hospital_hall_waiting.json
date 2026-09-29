@@ -94,26 +94,26 @@
                  "y":52
                 }, 
                 {
-                 "gid":475,
+                 "gid":859,
                  "height":21,
                  "id":3,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":19,
+                 "width":16,
                  "x":66,
-                 "y":42
+                 "y":44
                 }, 
                 {
-                 "gid":476,
-                 "height":17,
+                 "gid":861,
+                 "height":21,
                  "id":4,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":12,
+                 "width":16,
                  "x":222,
                  "y":44
                 }, 
@@ -186,7 +186,7 @@
                  "type":"",
                  "visible":true,
                  "width":14,
-                 "x":6,
+                 "x":13,
                  "y":128
                 }],
          "opacity":1,
@@ -2760,7 +2760,7 @@
          "margin":0,
          "name":"objects\/hospital_extras",
          "spacing":0,
-         "tilecount":50,
+         "tilecount":66,
          "tileheight":60,
          "tiles":[
                 {
@@ -3066,6 +3066,104 @@
                  "image":"..\/objects\/directory_sign1.png",
                  "imageheight":26,
                  "imagewidth":34
+                },
+            
+                {
+                 "id":50,
+                 "image":"..\/objects\/whiteboard1.png",
+                 "imageheight":28,
+                 "imagewidth":44
+                }, 
+                {
+                 "id":51,
+                 "image":"..\/objects\/whiteboard2.png",
+                 "imageheight":28,
+                 "imagewidth":44
+                }, 
+                {
+                 "id":52,
+                 "image":"..\/objects\/key_cabinet1.png",
+                 "imageheight":24,
+                 "imagewidth":20
+                }, 
+                {
+                 "id":53,
+                 "image":"..\/objects\/plaque1.png",
+                 "imageheight":17,
+                 "imagewidth":24
+                }, 
+                {
+                 "id":54,
+                 "image":"..\/objects\/power_panel1.png",
+                 "imageheight":22,
+                 "imagewidth":18
+                }, 
+                {
+                 "id":55,
+                 "image":"..\/objects\/health_poster1.png",
+                 "imageheight":21,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":56,
+                 "image":"..\/objects\/health_poster2.png",
+                 "imageheight":21,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":57,
+                 "image":"..\/objects\/health_poster3.png",
+                 "imageheight":21,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":58,
+                 "image":"..\/objects\/health_poster4.png",
+                 "imageheight":21,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":59,
+                 "image":"..\/objects\/health_poster5.png",
+                 "imageheight":21,
+                 "imagewidth":16
+                },
+            
+                {
+                 "id":60,
+                 "image":"..\/objects\/health_poster6.png",
+                 "imageheight":21,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":61,
+                 "image":"..\/objects\/leaflet_holder1.png",
+                 "imageheight":33,
+                 "imagewidth":29
+                }, 
+                {
+                 "id":62,
+                 "image":"..\/objects\/magazine_rack1.png",
+                 "imageheight":31,
+                 "imagewidth":38
+                }, 
+                {
+                 "id":63,
+                 "image":"..\/objects\/magazine_rack2.png",
+                 "imageheight":42,
+                 "imagewidth":26
+                }, 
+                {
+                 "id":64,
+                 "image":"..\/objects\/toy_box1.png",
+                 "imageheight":28,
+                 "imagewidth":30
+                }, 
+                {
+                 "id":65,
+                 "image":"..\/objects\/wall_clock1.png",
+                 "imageheight":26,
+                 "imagewidth":25
                 }],
          "tilewidth":60
         }],

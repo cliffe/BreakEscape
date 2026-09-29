@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="55" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="66" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../objects/iv_stand1.png" width="25" height="60"/>
@@ -165,5 +165,38 @@
  </tile>
  <tile id="54">
   <image source="../objects/power_panel1.png" width="18" height="22"/>
+ </tile>
+ <tile id="55">
+  <image source="../objects/health_poster1.png" width="16" height="21"/>
+ </tile>
+ <tile id="56">
+  <image source="../objects/health_poster2.png" width="16" height="21"/>
+ </tile>
+ <tile id="57">
+  <image source="../objects/health_poster3.png" width="16" height="21"/>
+ </tile>
+ <tile id="58">
+  <image source="../objects/health_poster4.png" width="16" height="21"/>
+ </tile>
+ <tile id="59">
+  <image source="../objects/health_poster5.png" width="16" height="21"/>
+ </tile>
+ <tile id="60">
+  <image source="../objects/health_poster6.png" width="16" height="21"/>
+ </tile>
+ <tile id="61">
+  <image source="../objects/leaflet_holder1.png" width="29" height="33"/>
+ </tile>
+ <tile id="62">
+  <image source="../objects/magazine_rack1.png" width="38" height="31"/>
+ </tile>
+ <tile id="63">
+  <image source="../objects/magazine_rack2.png" width="26" height="42"/>
+ </tile>
+ <tile id="64">
+  <image source="../objects/toy_box1.png" width="30" height="28"/>
+ </tile>
+ <tile id="65">
+  <image source="../objects/wall_clock1.png" width="25" height="26"/>
  </tile>
 </tileset>

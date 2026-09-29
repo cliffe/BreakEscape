@@ -41,7 +41,8 @@ The preview draws every map sprite, conditional slots included, but **not** scen
 Look at each room as a visitor would. Things the user has flagged in past rounds (hospital, September 2026) — check for each:
 
 - **Theme fit.** Objects must belong in that kind of room: no garden-style lamp stands, school chalkboards on easels, glass drugs cabinets in offices or server rooms, or plants in clinical areas. Replace, don't just delete: bookcases/filing cabinets in offices, a second rack row in a server room, a whiteboard for a handover board.
-- **Against the wall.** Vending machines and bookcases stand flat against the north wall, their top edge on the skirting (y≈70), unless they deliberately divide a space (two bookcases forming a nook).
+- **Wall items stay on the wall face.** Every room is edged by a white frame with a black border (x or y 0–11 in room pixels). Nothing hung on a wall may overlap it. Back-wall hangings (posters, boards, signs, clocks) fit between the frame and the skirting where the wall meets the floor: top y ≥ 12, bottom y ≤ 61. Side-wall items fit in the green strip between the frame and the floor edge: x 12–30 on the west wall, and from `width − 30` to `width − 12` on the east. Anything wider than about 18px, such as an exit sign, goes on the back wall. `--check` reports "overlaps the wall frame" and "hangs over the skirting".
+- **Against the wall.** Vending machines and bookcases stand flat against the north wall, their feet just below the skirting (y≈66 or more), unless they deliberately divide a space (two bookcases forming a nook).
 - **Seating faces its table or desk.** Use the facing variants (`hospital_chair1` faces W, `hospital_chair2` E, `hospital_chair_south`, `hospital_chair_north`). Waiting areas get at least one back-to-back double row.
 - **Kit faces what it serves.** e.g. bedside monitors turned towards their beds; a back view reads as clutter.
 - **Realistic detail**, sparingly: fire alarm call point with an extinguisher under it, exit sign, sanitiser dispensers by doors, notice boards, bins of the right kind (clinical waste, pedal, yellow).
@@ -59,7 +60,7 @@ Look at each room as a visitor would. Things the user has flagged in past rounds
 
 ### Moving and swapping furniture
 
-Coordinates: `x` = left edge, `y` = feet (bottom), room pixels. Back wall band y 0–70.
+Coordinates: `x` = left edge, `y` = feet (bottom), room pixels. Frame y 0–11, back wall face y 12–60, skirting y 61–63, black line y 64–65 (level with the base of north doors), floor from y 66.
 
 - Builder room: edit the builder (`make_obj(layer, name, x, y, oid)`, `place_on_table(table, name, x_frac, surface_frac)`), then regenerate that room and diff the object list if the builder hasn't been run for a while (someone may have hand-edited the output).
 - Hand room, one change: `room_edit.py ROOM move|sprite|add|delete|relayer ...`. Several changes: import `Room` in a short script and call `save()` once. Untouched bytes stay identical; a missing tileset (or an embedded copy older than a new tile) is added or refreshed automatically.
