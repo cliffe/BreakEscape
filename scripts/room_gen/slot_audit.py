@@ -20,10 +20,22 @@ lands on: overrides are drawn from the slot's top-left, so a taller texture hang
 down (a chalkboard on a notes slot ends up standing on the wall). tableItems with
 no slot are fine: rooms.js lays them out on their table.
 
+--notes reviews how each readable "notes" object is presented. Only loose papers
+should open as a notebook page. The review flags:
+  FIXED  a note that lands on a fixture (an as-type or sprite that isn't a notes
+         sprite: board, sign, plaque, panel, screen...) without "readDisplay":
+         "gameDisplay", or one that is takeable
+  OPEN   furniture you would open (cabinet, locker, drawer...) written as a note
+         about its contents: make it a container with "contents"
+  LIVE   a note with textVariants that still copies into notes: add
+         "addToNotes": false so no stale snapshot is kept
+These are prompts to look, not errors, and don't change the exit status.
+
 Usage:
   slot_audit.py scenarios/m02_ransomed_trust/scenario.json.erb [more.erb ...]
   slot_audit.py --all            # every scenario
   slot_audit.py --verbose ...    # also list which slot each object takes
+  slot_audit.py --notes ...      # also review how notes objects are presented
 """
 import collections
 import json
@@ -141,8 +153,53 @@ def audit(scenario, verbose=False):
     return problems
 
 
+OPEN_WORDS = re.compile(r"\b(cabinet|locker|drawer|cupboard|filing|shelf|shelves|box|crate|fridge|cart|"
+                        r"trolley|bag|chest|wardrobe|bin)s?\b", re.I)
+
+
+def notes_review(scenario):
+    """Print FIXED / OPEN / LIVE prompts for readable notes objects; returns how many."""
+    hints = 0
+    for rid, room in scenario.get("rooms", {}).items():
+        objs = []
+        for o in room.get("objects", []):
+            objs.append(o)
+            if o.get("type") == "table" and isinstance(o.get("tableItems"), list):
+                objs += o["tableItems"]
+        lines = []
+        for o in objs:
+            if o.get("type") != "notes" or not o.get("readable", True):
+                continue
+            name = o.get("name", "")
+            pos = o.get("position")
+            # what it lands on decides: a notes sprite is a loose paper, anything
+            # else (as-type or a sprite override) is a fixture read where it is
+            if isinstance(pos, str) and pos.startswith("as-type:"):
+                lands_on = pos[8:]
+            elif isinstance(o.get("sprite"), str):
+                lands_on = base_type(o["sprite"])
+            else:
+                lands_on = "notes"
+            in_place = o.get("readDisplay") == "gameDisplay"
+            fixture = lands_on != "notes"
+            if fixture and not in_place:
+                lines.append(f'  FIXED  "{name}": read in place? add "readDisplay": "gameDisplay"')
+            if fixture and o.get("takeable"):
+                lines.append(f'  FIXED  "{name}": a fixture should not be takeable')
+            if OPEN_WORDS.search(name) and not in_place and "contents" not in o:
+                lines.append(f'  OPEN   "{name}": furniture to open? make it a container with "contents"')
+            if o.get("textVariants") and o.get("addToNotes", True) is not False:
+                lines.append(f'  LIVE   "{name}": has textVariants; add "addToNotes": false')
+        if lines:
+            print(f"{rid} (notes review)")
+            print("\n".join(lines))
+            hints += len(lines)
+    return hints
+
+
 def main(argv):
     verbose = "--verbose" in argv
+    notes = "--notes" in argv
     args = [a for a in argv if not a.startswith("--")]
     if "--all" in argv:
         args = sorted(str(p) for p in (ROOT / "scenarios").glob("*/scenario.json.erb"))
@@ -152,7 +209,10 @@ def main(argv):
     for erb in args:
         print(f"== {erb}")
         try:
-            total += audit(render(erb), verbose)
+            scenario = render(erb)
+            total += audit(scenario, verbose)
+            if notes:
+                print(f"{notes_review(scenario)} notes prompt(s)")
         except Exception as e:
             print(f"  could not render: {e}")
     print(f"{total} problem(s)")

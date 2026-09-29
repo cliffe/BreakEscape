@@ -49,7 +49,7 @@ Look at each room as a visitor would. Things the user has flagged in past rounds
 - **Kitchens and counters.** Put counters and fridges in the **tables** layer so mugs and microwaves (table_items) group with them and draw on top.
 - **Keep clear:** the back-wall corners where N doors are drawn, side-door rows (y 64–100), the walkway, and the bottom two rows (covered by the room to the south, if there is one).
 - **Every scenario object has a proper slot** (below). An object with no slot lands at a random spot, which looks like dropped clutter.
-- **How each thing reads when used.**
+- **How each thing reads when used.** Only loose papers should be plain notes. Go through every `"type": "notes"` object in the mission and ask what it is in the room: a sheet of paper, a fixture on the wall, a device, or a piece of furniture. `slot_audit.py --notes` lists the ones to look at: FIXED (lands on a non-notes fixture but opens as a notebook page, or is takeable), OPEN (a note describing furniture you'd open) and LIVE (a changing display still copied into notes). These are prompts to judge, not errors: a name like "Board Liability Email" or "Safety Case" isn't furniture. Past fixes in m02: the plaque, whiteboards, ops board, noticeboard, UPS panel and key cabinet read in place; the storage room's supply cabinet became a container holding a first aid kit, gloves and a stock sheet.
   - A readable `notes` object opens as a notebook page and is saved to notes, which is right for loose papers. Fixed things you read in place (signs, directories, whiteboards, plaques, device panels) get `"readDisplay": "gameDisplay"`: a modal with the observation and text, plus a quiet copy in notes.
   - Add `"addToNotes": false` for flavour, or for live displays whose `textVariants` change, so no stale snapshot is kept.
   - Keep them `"takeable": false`.
@@ -101,7 +101,7 @@ This does catalog.json, tilesets_ref.json, `objects_hospital_extras.tsx` (the ge
 ## 4. Verify
 
 1. `python3 scripts/generate_rooms.py --check <hand rooms>` and re-render the changed rooms; look at them.
-2. `python3 scripts/room_gen/slot_audit.py scenarios/<mission>/scenario.json.erb` → 0 problems. (`--all` shows old problems in other scenarios; report them but leave them unless asked.)
+2. `python3 scripts/room_gen/slot_audit.py --notes scenarios/<mission>/scenario.json.erb` → 0 problems, and each notes prompt either fixed or left for a reason you can state. (`--all` shows old problems in other scenarios; report them but leave them unless asked.)
 3. `ruby scripts/validate_scenario.rb` on the mission and on every scenario sharing a changed room type. Restore unrelated files the validator rewrites.
 4. JS changes: copy the file to `<scratch>/x.mjs` and `node --check` it (the game files are ES modules).
 5. In game: spawn a playtest subagent with `model: "sonnet"` that follows the playtest-scenario skill. Tell it to:
