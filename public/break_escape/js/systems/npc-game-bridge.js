@@ -14,6 +14,39 @@ export class NPCGameBridge {
   }
 
   /**
+   * Put a notes item an NPC handed over into the notepad and fire its onRead,
+   * matching what interactions.js does when a note is read in the world.
+   */
+  _receiveNote(item) {
+    const text = item.text || item.observations || '';
+    if (text && window.addNote) {
+      const body = item.observations && item.text ? `${item.text}\n\nObservation: ${item.observations}` : text;
+      const added = window.addNote(item.name || 'Note', body, !!item.important);
+      if (added && window.gameAlert) {
+        window.gameAlert(`Added "${item.name}" to your notes.`, 'info', 'Note Added', 3000);
+      }
+    }
+
+    const readAction = item.onRead || item.onPickup;
+    if (readAction?.setVariable && window.gameState?.globalVariables) {
+      Object.entries(readAction.setVariable).forEach(([varName, value]) => {
+        const oldValue = window.gameState.globalVariables[varName];
+        window.gameState.globalVariables[varName] = value;
+        window.npcConversationStateManager?.broadcastGlobalVariableChange(varName, value, null);
+        window.eventDispatcher?.emit(`global_variable_changed:${varName}`, { name: varName, value, oldValue });
+      });
+    }
+
+    window.eventDispatcher?.emit(`item_picked_up:${item.type}`, {
+      itemType: item.type,
+      itemName: item.name,
+      itemId: item.id,
+      collectionGroup: item.collection_group || null,
+      roomId: window.currentPlayerRoom
+    });
+  }
+
+  /**
    * Log an action for debugging and auditing
    */
   _logAction(action, params, result) {
@@ -261,6 +294,13 @@ export class NPCGameBridge {
 
       // Play item pickup sound (same as picking up world items or taking from containers)
       if (window.playUISound) window.playUISound('item');
+
+      // Notes-family gifts have no inventory slot (inventory.js skips them), so
+      // put them in the notepad the way reading a note in the world does,
+      // and fire their onRead, or the player never sees what they were given.
+      if (/^notes\d*$/.test(item.type)) {
+        this._receiveNote(item);
+      }
 
       // Remove from NPC's inventory (after server confirms)
       npc.itemsHeld.splice(itemIndex, 1);
