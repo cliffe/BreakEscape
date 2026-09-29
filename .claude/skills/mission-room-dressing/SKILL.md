@@ -8,6 +8,7 @@ description: Review and improve how a Break Escape mission's rooms look — furn
 Make a mission's rooms look like the place they're meant to be, and make every scenario object land somewhere sensible. Work in rounds: **survey → critique → fix → verify**, then report and go round again if asked. The tools live in `scripts/room_gen/` and `scripts/generate_rooms.py`; this file says how to use them and what to look for.
 
 Standing rules:
+
 - Never rescale pixel art, up or down. If a sprite is the wrong size, regenerate it at the right size (memory: no-downscaling-pixel-art).
 - Ask before spending about 20 PixelLab generations or more (one props batch is ~20). Prefer PixelLab over Gemini. Check `python3 tools/pixellab_pipeline.py balance` first.
 - Never send images to the PixelLab MCP as base64; the scripts below upload over REST.
@@ -47,6 +48,11 @@ Look at each room as a visitor would. Things the user has flagged in past rounds
 - **Kitchens and counters.** Put counters and fridges in the **tables** layer so mugs and microwaves (table_items) group with them and draw on top.
 - **Keep clear:** the back-wall corners where N doors are drawn, side-door rows (y 64–100), the walkway, and the bottom two rows (covered by the room to the south, if there is one).
 - **Every scenario object has a proper slot** (below). An object with no slot lands at a random spot, which looks like dropped clutter.
+- **How each thing reads when used.**
+  - A readable `notes` object opens as a notebook page and is saved to notes, which is right for loose papers. Fixed things you read in place (signs, directories, whiteboards, plaques, device panels) get `"readDisplay": "gameDisplay"`: a modal with the observation and text, plus a quiet copy in notes.
+  - Add `"addToNotes": false` for flavour, or for live displays whose `textVariants` change, so no stale snapshot is kept.
+  - Keep them `"takeable": false`.
+  - Furniture you'd open (cabinets, lockers, drawers) should be a container, `"contents": [...]` with `"locked": false` if it's open, not a note describing its contents. Fill it with takeable items that have their own sprite, `"type": "<object name>"` such as `first_aid_kit1`, plus an `id` each. Don't add puzzle shortcuts without checking the mission's puzzle graph.
 - **Pushable props.** A wheelchair or cart can roll and spin when pushed: add it to `STATIC_SWIVEL_PROPS` in `public/break_escape/js/core/rooms.js` (8 rotation frames `<key>-rotate1..8`, order S, SW, W, NW, N, NE, E, SE, loaded in `game.js`; see `wheelchair1`).
 
 ## 3. Fix
@@ -75,13 +81,13 @@ Coordinates: `x` = left edge, `y` = feet (bottom), room pixels. Back wall band y
 
 Before making anything, search what exists: `scripts/room_gen/catalog.json` (every placeable object with size) and `public/break_escape/assets/objects/`. Then pick the cheapest way that looks right:
 
-| Need | How | Cost |
-| --- | --- | --- |
-| Flat, simple wall item (taped note, sign, label) | Draw it by hand with PIL at native size, using the palette and outline of neighbouring sprites (sample with `getcolors`). Check at 8× next to its neighbours; small arrowheads need 2px arms or they read as crosses. | free |
-| Real prop or furniture | `pixellab_props.py props OUT --canvas N --refs a,b --items items.json` (dry-run first). Batch items of similar size on one canvas; 2 phrasings each. Read `contact.png`, pick frames, install with `import_pixellab_objects.py` (trims only). | ~20 per batch |
-| Conversation background (person-chat `background`) | `pixellab_props.py background OUT --prompt ... --variants 2`, 320×320 like `assets/backgrounds/hq1.png`. Match hq1's dark, moody lighting. | ~1 each |
-| Pushable 8-direction prop | 8 rotation frames at the prop's size, then `STATIC_SWIVEL_PROPS` (above). | varies |
-| Character portraits, walk sprites | Use the pixellab-character-pipeline / character-talk-animation skills. | |
+| Need                                               | How                                                                                                                                                                                                                                           | Cost          |
+| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| Flat, simple wall item (taped note, sign, label)   | Draw it by hand with PIL at native size, using the palette and outline of neighbouring sprites (sample with `getcolors`). Check at 8× next to its neighbours; small arrowheads need 2px arms or they read as crosses.                         | free          |
+| Real prop or furniture                             | `pixellab_props.py props OUT --canvas N --refs a,b --items items.json` (dry-run first). Batch items of similar size on one canvas; 2 phrasings each. Read `contact.png`, pick frames, install with `import_pixellab_objects.py` (trims only). | ~20 per batch |
+| Conversation background (person-chat `background`) | `pixellab_props.py background OUT --prompt ... --variants 2`, 320×320 like `assets/backgrounds/hq1.png`. Match hq1's dark, moody lighting.                                                                                                    | ~1 each       |
+| Pushable 8-direction prop                          | 8 rotation frames at the prop's size, then `STATIC_SWIVEL_PROPS` (above).                                                                                                                                                                     | varies        |
+| Character portraits, walk sprites                  | Use the pixellab-character-pipeline / character-talk-animation skills.                                                                                                                                                                        |               |
 
 Register every new object in one step:
 
@@ -98,6 +104,7 @@ This does catalog.json, tilesets_ref.json, `objects_hospital_extras.tsx` (the ge
 3. `ruby scripts/validate_scenario.rb` on the mission and on every scenario sharing a changed room type. Restore unrelated files the validator rewrites.
 4. JS changes: copy the file to `<scratch>/x.mjs` and `node --check` it (the game files are ES modules).
 5. In game: spawn a playtest subagent with `model: "sonnet"` that follows the playtest-scenario skill. Tell it to:
+
    - write only in the scratchpad
    - edit nothing in the repo
    - stop only processes it started, by PID (a broad `pkill` once killed another session)

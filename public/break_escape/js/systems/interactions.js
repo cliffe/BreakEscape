@@ -1408,9 +1408,22 @@ export function handleObjectInteraction(sprite) {
         }
     }
     
-    if (data.readable && resolvedText) {
+    // Fixed things you read in place (signs, boards, plaques, device panels):
+    // "readDisplay": "gameDisplay" shows the text in a modal instead of opening it as a
+    // notebook page. A copy is still saved to notes unless "addToNotes": false (use that
+    // for flavour, or for live displays whose text changes with textVariants).
+    let readInPlace = false;
+    if (data.readable && resolvedText && data.readDisplay === 'gameDisplay') {
+        readInPlace = true;
+        if (data.addToNotes !== false && window.addNote) {
+            const addedNote = window.addNote(data.name, resolvedText, data.important || false);
+            if (addedNote) {
+                window.gameAlert(`Added "${data.name}" to your notes.`, 'info', 'Note Added', 3000);
+            }
+        }
+    } else if (data.readable && resolvedText) {
         message += `Text: ${resolvedText}\n`;
-        
+
         // All notes-family items (notes, notes2, notes3, ...) use the notes minigame.
         // They go to notepad (autoAddToNotes in the minigame), never to inventory UI.
         // We still call addToInventory so the server registers the collection —
@@ -1554,6 +1567,13 @@ export function handleObjectInteraction(sprite) {
                 });
             }
         });
+    }
+
+    if (readInPlace && window.gameDisplay) {
+        const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const body = (resolvedObservations ? `<em>${esc(resolvedObservations)}</em>\n\n` : '') + esc(resolvedText);
+        window.gameDisplay(body, esc(data.name || sprite.name));
+        return;
     }
 
     // Show observation — use observationDisplay or onInteract.display (deprecated)

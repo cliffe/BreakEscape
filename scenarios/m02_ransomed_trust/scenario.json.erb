@@ -1216,6 +1216,7 @@ boardroom_pin = "0417"
         {
           "type": "notes",
           "name": "Hospital Founding Plaque",
+          "readDisplay": "gameDisplay",
           "takeable": false,
           "readable": true,
           "text": "ST. CATHERINE'S REGIONAL MEDICAL CENTRE\n\nFounded 1987\n\nServing this community for over thirty-five years",
@@ -1556,6 +1557,8 @@ boardroom_pin = "0417"
         {
           "type": "notes",
           "name": "Bed 4 Ventilator Panel",
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
           "position": "as-type:vitals-monitor",
           "takeable": false,
           "readable": true,
@@ -1610,6 +1613,8 @@ boardroom_pin = "0417"
         {
           "type": "notes",
           "name": "Emergency Ops Board",
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
           "position": "as-type:rota_board",
           "takeable": false,
           "readable": true,
@@ -1827,6 +1832,7 @@ boardroom_pin = "0417"
         {
           "type": "notes",
           "name": "Network Diagram Whiteboard",
+          "readDisplay": "gameDisplay",
           "takeable": false,
           "readable": true,
           "text": "HOSPITAL NETWORK DIAGRAM\n\nBackup Server:\n- ProFTPD 1.3.3c\n- Port 21 (FTP)\n- IP: 192.168.100.50\n- Status: VULNERABLE (1.3.3c source backdoor)\n\nGary's note: 'WARNED THEM 6 MONTHS AGO!!!'",
@@ -2020,6 +2026,8 @@ boardroom_pin = "0417"
         {
           "type": "notes",
           "name": "Backup Power Indicator",
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
           "takeable": false,
           "readable": true,
           "text": "EMERGENCY POWER STATUS\n\nBackup Generator: ACTIVE\nTime Remaining: 12 HOURS\n\nCritical Systems on Backup:\n- 47 Life Support Patients\n- Emergency Lighting\n- Core Medical Equipment\n\nWARNING: Systems will fail when backup power depletes",
@@ -2169,13 +2177,38 @@ boardroom_pin = "0417"
           ]
         },
         {
-          "type": "notes",
-          "name": "Medical Supply Shelves",
+          "type": "medical_cabinet",
+          "id": "emergency_supply_cabinet",
+          "name": "Emergency Supply Cabinet",
           "position": "as-type:medical_cabinet",
           "takeable": false,
-          "readable": true,
-          "text": "Emergency medical supplies organized by expiration date.\nBandages, IV equipment, emergency medications.",
-          "observations": "Storage shelves with emergency medical equipment"
+          "locked": false,
+          "observations": "A glass-fronted supply cabinet, restocked by hand since the system went down. Everything is sorted by expiry date.",
+          "contents": [
+            {
+              "type": "first_aid_kit1",
+              "id": "storage_first_aid_kit",
+              "name": "Emergency First Aid Kit",
+              "takeable": true,
+              "observations": "A sealed green first aid kit: dressings, tape, a foil blanket."
+            },
+            {
+              "type": "gloves_box1",
+              "id": "storage_nitrile_gloves",
+              "name": "Box of Nitrile Gloves",
+              "takeable": true,
+              "observations": "Medium, powder-free. Handy if you'd rather not leave prints."
+            },
+            {
+              "type": "notes",
+              "id": "storage_stock_check",
+              "name": "Paper Stock Check",
+              "takeable": true,
+              "readable": true,
+              "text": "EMERGENCY STORE -- MANUAL STOCK CHECK\n(pharmacy system offline: count by hand, every 4 hrs)\n\n02:00  IV giving sets 14, saline 1L 22, gloves M 6 boxes\n       O2 masks 30, defib pads 4 pairs  -- R.K.\n04:00  IV giving sets 9, saline 1L 15, gloves M 5 boxes\n       defib pads 3 pairs  -- R.K.\n\nWard 7 is going through giving sets fast. Order more when\nordering works again.",
+              "observations": "A clipboard sheet from the cabinet shelf: hand counts every four hours since the pharmacy system went down."
+            }
+          ]
         }
       ]
     },
@@ -2395,6 +2428,8 @@ boardroom_pin = "0417"
         {
           "type": "notes",
           "name": "Conference Whiteboard",
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
           "takeable": false,
           "readable": true,
           "text": "FY2024 BUDGET ALLOCATION\n\nIT Security: £85K --> £50K (CUT 40%)\nMRI Equipment: £3.2M (APPROVED)\n\nBoard priorities: Patient care equipment > Infrastructure security",
@@ -2574,6 +2609,7 @@ boardroom_pin = "0417"
         {
           "type": "notes",
           "name": "Key Cabinet (Empty)",
+          "readDisplay": "gameDisplay",
           "takeable": false,
           "readable": true,
           "text": "MECHANICAL OVERRIDE CABINET\n\nSigned out 06:15 -- ALL KEYS -- to Reception (B. Nwosu) per Estates instruction.\n\nRemaining in cabinet: none.\n\nNOTE PINNED INSIDE THE DOOR:\n\"Server room is NOT on this cabinet. That door runs off its own offline reader and only takes a card that already exists. No card, no entry, no exceptions, and no I cannot make you one.\"",
@@ -2620,6 +2656,7 @@ boardroom_pin = "0417"
         {
           "type": "notes",
           "name": "Ward Board",
+          "readDisplay": "gameDisplay",
           "position": "as-type:directory_sign",
           "takeable": false,
           "readable": true,
@@ -2650,6 +2687,7 @@ boardroom_pin = "0417"
           "type": "notes",
           "id": "handover_whiteboard",
           "name": "Night Handover Board",
+          "readDisplay": "gameDisplay",
           "position": "as-type:rota_board",
           "takeable": false,
           "readable": true,
@@ -2676,6 +2714,8 @@ boardroom_pin = "0417"
         {
           "type": "notes",
           "name": "Staff Noticeboard",
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
           "position": "as-type:notice_board",
           "takeable": false,
           "readable": true,

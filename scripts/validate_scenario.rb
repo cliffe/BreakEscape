@@ -325,7 +325,7 @@ def check_unknown_fields(json_data)
   # Known item (object) fields — any unknown field should be inside minigameData
   known_item_fields = %w[
     type id name takeable readable interactable active locked important
-    position observations observationVariants observationDisplay
+    position observations observationVariants observationDisplay readDisplay addToNotes
     text textVariants
     voice ttsVoice sender timestamp avatar sprite
     collection_group onRead onPickup onInteract

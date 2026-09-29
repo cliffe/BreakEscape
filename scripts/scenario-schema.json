@@ -708,6 +708,15 @@
           "description": "Display mode for observation text: 'gameDisplay' for modal dialog, or omit for toast notification",
           "enum": ["gameDisplay"]
         },
+        "readDisplay": {
+          "type": "string",
+          "description": "For readable objects fixed in place (signs, boards, plaques, device panels): 'gameDisplay' shows the text in a modal instead of opening it as a notebook page.",
+          "enum": ["gameDisplay"]
+        },
+        "addToNotes": {
+          "type": "boolean",
+          "description": "With readDisplay: false stops the text being saved to the player's notes (flavour, or live displays whose text changes). Default true."
+        },
         "observationVariants": {
           "type": "array",
           "description": "Optional runtime observation variants resolved in order by condition against globalVars.",
