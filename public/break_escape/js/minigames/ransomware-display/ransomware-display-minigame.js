@@ -1,4 +1,7 @@
 import { MinigameScene } from '../framework/base-minigame.js';
+import { ASSETS_PATH, ASSETS_VERSION } from '../../config.js';
+
+const ICON_BASE = `${ASSETS_PATH}/icons`;
 
 const TIMER_DURATION_MS = 72 * 60 * 60 * 1000;
 
@@ -129,7 +132,11 @@ export class RansomwareDisplayMinigame extends MinigameScene {
         this.gameContainer.innerHTML = `
             <div class="ransomware-display-bg">
                 <div class="ransomware-display-panel">
-                    <div class="ransomware-display-icon">☠️ // 🔒</div>
+                    <div class="ransomware-display-icon">
+                        <img class="ransomware-display-icon-img" src="${ICON_BASE}/ransom_skull.png?v=${ASSETS_VERSION}" alt="Skull and crossbones" width="72" height="72">
+                        <span class="ransomware-display-icon-sep" aria-hidden="true">//</span>
+                        <img class="ransomware-display-icon-img" src="${ICON_BASE}/ransom_padlock.png?v=${ASSETS_VERSION}" alt="Padlock" width="72" height="72">
+                    </div>
                     <h2 class="ransomware-display-title">YOUR FILES HAVE BEEN ENCRYPTED</h2>
                     <pre class="ransomware-display-body">${organisation}
 ${encryptedSystems}

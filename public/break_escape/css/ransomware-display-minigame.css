@@ -54,10 +54,22 @@
 
 .ransomware-display-icon {
     color: #ff8080;
-    font-size: 64px;
+    font-size: 32px;
     line-height: 1;
-    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
     margin-bottom: 14px;
+}
+
+/* 24x24 pixel-art icons shown at an integer 3x (72px). */
+.ransomware-display-icon-img {
+    width: 72px;
+    height: 72px;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+    flex: none;
 }
 
 .ransomware-display-title {
