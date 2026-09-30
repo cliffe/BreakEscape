@@ -1782,8 +1782,8 @@ def room_hospital_hall_ward():
             ("alarm_panel", 66.0, 44.0),
             # ward-entrance hand-wash basin (as in the ward) with the hand-washing
             # poster beside it, where the other corridors hang their boards
-            # it stands on the floor against the wall, its top edge on the skirting
-            ("clinical_sink1", 86.0, 122.0),
+            # wall-hung: its pedestal base sits just below the floor line
+            ("clinical_sink1", 86.0, 74.0),
             ("handwash_poster1", 172.0, 52.0),
             ("emergency-button", 210.0, 40.0),
             # CCTV camera high on the wall, watching the ward door

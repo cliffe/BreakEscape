@@ -266,7 +266,7 @@
      "visible": true,
      "width": 38,
      "x": 86.0,
-     "y": 122.0
+     "y": 74.0
     },
     {
      "gid": 895,
@@ -2923,7 +2923,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 121,
+   "tilecount": 122,
    "tileheight": 60,
    "tiles": [
     {
@@ -3651,6 +3651,12 @@
      "image": "../objects/wall_rail2.png",
      "imageheight": 6,
      "imagewidth": 128
+    },
+    {
+     "id": 121,
+     "image": "../objects/checkin_kiosk_locked1.png",
+     "imageheight": 43,
+     "imagewidth": 24
     }
    ],
    "tilewidth": 60
