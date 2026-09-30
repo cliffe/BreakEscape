@@ -236,7 +236,7 @@
                  "visible":true,
                  "width":16,
                  "x":274,
-                 "y":196
+                 "y":238
                 }, 
                 {
                  "gid":116,
@@ -3026,7 +3026,7 @@
          "margin":0,
          "name":"objects\/hospital_extras",
          "spacing":0,
-         "tilecount":115,
+         "tilecount":121,
          "tileheight":63,
          "tiles":[
                 {
@@ -3729,6 +3729,43 @@
                  "image":"..\/objects\/wall_rail1.png",
                  "imageheight":6,
                  "imagewidth":192
+                }, 
+                {
+                 "id":115,
+                 "image":"..\/objects\/it_workbench1.png",
+                 "imageheight":58,
+                 "imagewidth":60
+                }, 
+                {
+                 "id":116,
+                 "image":"..\/objects\/exec_desk1.png",
+                 "imageheight":46,
+                 "imagewidth":80
+                }, 
+                {
+                 "id":117,
+                 "image":"..\/objects\/radio_charger1.png",
+                 "imageheight":18,
+                 "imagewidth":26
+                }, 
+                {
+                 "id":118,
+                 "image":"..\/objects\/window_blinds1.png",
+                 "imageheight":32,
+                 "imagewidth":40
+                }, 
+                {
+                 "id":119,
+                 "image":"..\/objects\/cctv_monitors2.png",
+                 "imageheight":34,
+                 "imagewidth":46
+                },
+            
+                {
+                 "id":120,
+                 "image":"..\/objects\/wall_rail2.png",
+                 "imageheight":6,
+                 "imagewidth":128
                 }],
          "tilewidth":192
         }],

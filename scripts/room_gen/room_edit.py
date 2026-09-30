@@ -18,6 +18,8 @@ CLI (one operation per call; object ids come from `list`):
   room_edit.py ROOM add LAYER NAME X Y       # append; prints the new id
   room_edit.py ROOM delete ID [ID ...]
   room_edit.py ROOM relayer ID LAYER         # move to another layer, appended last
+  room_edit.py ROOM floor NAME               # point the room6-layout floor tileset at
+                                             # tiles/rooms/NAME.png (e.g. room_hospital_carpet)
 
 Several edits at once, from Python:
   import sys; sys.path.insert(0, 'scripts/room_gen'); from room_edit import Room
@@ -25,6 +27,9 @@ Several edits at once, from Python:
 
 Sprites not yet in the room's tilesets are pulled in from tilesets_ref.json; an
 embedded tileset copy that predates newly registered tiles is refreshed in place.
+Both Tiled's multi-line object blocks and the one-object-per-line entries some
+hand-edited maps carry (room_hospital_office, _reception) can be moved, deleted
+and appended to.
 """
 import copy
 import json
@@ -135,6 +140,9 @@ class Doc:
     def block_span(self, oid):
         pat = re.compile(r'(?m)^( *)\{\n *"gid":\d+,\n *"height":[\d.]+,\n *"id":%d,\n(?:.*\n)*?\1\}' % oid)
         hits = list(pat.finditer(self.text))
+        if not hits:  # some hand-edited maps carry one-object-per-line entries
+            pat = re.compile(r'(?m)^( *)\{"gid":\d+,"height":[\d.]+,"id":%d,[^\n]*\}' % oid)
+            hits = list(pat.finditer(self.text))
         assert len(hits) == 1, (self.path.name, oid, len(hits))
         return hits[0]
 
@@ -142,7 +150,7 @@ class Doc:
         mt = self.block_span(oid)
         blk = mt.group(0)
         for k, v in kv.items():
-            blk, n = re.subn(r'"%s":[^,\n]*' % k, f'"{k}":' + (_num(v) if k in ("x", "y") else _s(v)), blk, count=1)
+            blk, n = re.subn(r'"%s":[^,\n}]*' % k, f'"{k}":' + (_num(v) if k in ("x", "y") else _s(v)), blk, count=1)
             assert n == 1, (oid, k)
         self.text = self.text[:mt.start()] + blk + self.text[mt.end():]
 
@@ -169,9 +177,17 @@ class Doc:
             b = (om.start() - line_start) + 7
             self.text = self.text[:om.start()] + '"objects":[\n' + _tiled_obj(obj, b) + "]" + self.text[om.end():]
             return
-        b = len(re.match(r" *", self.text[om.end():]).group(0))
-        close = re.compile(r"(?m)^%s\}\]" % (" " * b)).search(self.text, om.end())
-        pos = close.start() + b + 1
+        # find the array's closing bracket by parsing it (entries may be multi-line
+        # Tiled blocks or one-object-per-line), then append before it
+        arr_start = om.start() + len('"objects":')
+        _, end = json.JSONDecoder().raw_decode(self.text, arr_start)
+        first = re.match(r" *", self.text[om.end():]).group(0)
+        if self.text.startswith("{\n", om.end() + len(first)):
+            b = len(first)  # indent of the existing Tiled blocks
+        else:
+            line_start = self.text.rfind("\n", 0, om.start()) + 1
+            b = (om.start() - line_start) + 7
+        pos = end - 1
         self.text = self.text[:pos] + ", \n" + _tiled_obj(obj, b) + self.text[pos:]
 
     def _tileset_block(self, firstgid):
@@ -307,6 +323,19 @@ class Room:
             d.set_next_id(oid + 1)
         return oid
 
+    def floor(self, name):
+        """Swap the floor/wall sheet (room6 or a room_hospital* recolour, same tile
+        layout) for another variant; the tile gids stay the same."""
+        if not (ROOT / "public/break_escape/assets/tiles/rooms" / f"{name}.png").exists():
+            raise SystemExit(f"no tiles/rooms/{name}.png (make it first, e.g. make_hospital_tileset.py)")
+        for d in self.docs:
+            ts = next((t for t in d.m["tilesets"] if "image" in t
+                       and re.fullmatch(r"room6|room_hospital(_[a-z]+)?", Path(t["image"]).stem)), None)
+            if ts is None:
+                raise SystemExit(f"{d.path.name}: no room6-layout floor tileset")
+            new = dict(ts, name=name, image=ts["image"].rsplit("/", 1)[0] + f"/{name}.png")
+            d.put_tileset(new)
+
     def save(self):
         nxt = max(max(d.m["nextobjectid"] for d in self.docs),
                   1 + max(o["id"] for d in self.docs for lay in d.m["layers"] for o in lay.get("objects", [])))
@@ -336,6 +365,8 @@ def main(argv):
             room.delete(int(a))
     elif op == "relayer":
         room.relayer(int(args[0]), args[1])
+    elif op == "floor":
+        room.floor(args[0])
     else:
         sys.exit(f"unknown operation {op!r}\n{__doc__}")
     room.save()

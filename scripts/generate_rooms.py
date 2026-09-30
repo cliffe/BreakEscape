@@ -302,7 +302,9 @@ def room_tilesets(name: str) -> list[dict]:
 
 
 # Hospital rooms whose floor is not the clinical vinyl (same walls and tile
-# layout; made by room_gen/make_hospital_tileset.py, preloaded in game.js)
+# layout; made by room_gen/make_hospital_tileset.py, preloaded in game.js).
+# Hand rooms set theirs with `room_edit.py ROOM floor NAME` (the offices and
+# conference room use room_hospital_carpet, Dr Kim's office room_hospital_exec).
 HOSPITAL_FLOOR_VARIANTS = {
     "room_hospital_servers": "room_hospital_raised",  # raised access floor
     "room_hospital_staff": "room_hospital_kitchen",   # flecked kitchen safety vinyl
@@ -1440,10 +1442,11 @@ def room_hospital_servers():
     items.append(make_obj("objects", "hospital_chair_north", 162.0, 226.0, oid))  # at the desk, facing it
     oid += 1
     # fire point (no crash cart in a server room): call point on the east wall
-    # below the E door row, extinguisher standing beneath it
+    # below the E door row, extinguisher standing against the wall further down,
+    # below the UPS panel, so the panel can be reached from the floor in front
     items.append(make_obj("objects", "fire_alarm_point1", 292.0, 150.0, oid))
     oid += 1
-    items.append(make_obj("objects", "fire_extinguisher1", 274.0, 196.0, oid))
+    items.append(make_obj("objects", "fire_extinguisher1", 274.0, 238.0, oid))
     oid += 1
     items.append(make_obj("objects", "bin11", 250.0, 230.0, oid))
     oid += 1
@@ -1781,9 +1784,10 @@ def room_hospital_hall_ward():
             ("emergency-button", 210.0, 40.0),
             # CCTV camera high on the wall, watching the ward door
             ("cctv_camera1", 230.0, 32.0),
-            # trolley bumper rail along the wall at bed height, between the two
-            # N door corners (the sink stands in front of it)
-            ("wall_rail1", 64.0, 58.0),
+            # trolley bumper rail at bed height, from the basin's east edge to the
+            # NE door corner (wall_rail2 is the 128px cut; the rail stops at the basin
+            # rather than running behind its splashback)
+            ("wall_rail2", 128.0, 58.0),
         ],
         props=[
             # the trolley bed is 63px tall, so it parks at the east end, out of

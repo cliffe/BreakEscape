@@ -9,6 +9,12 @@ than use it directly this script repaints room6's exact geometry with the edit's
 palette and lays the floor on the 32px tile grid. Tile indices stay identical to
 room6, so a room can switch by pointing its room6 tileset at the new image.
 
+It also writes the floor variants: _carpet (offices, conference room), _exec
+(carpet plus a rug, Dr Kim's office), _raised (server room) and _kitchen (staff
+room). Builder rooms pick one in HOSPITAL_FLOOR_VARIANTS (generate_rooms.py);
+hand rooms with `room_edit.py ROOM floor NAME`. A new variant also needs its
+this.load.image line in game.js.
+
 Usage: python3 scripts/room_gen/make_hospital_tileset.py
 """
 
@@ -25,6 +31,11 @@ OUT_CARPET = ROOT / "public/break_escape/assets/tiles/rooms/room_hospital_carpet
 OUT_RAISED = ROOT / "public/break_escape/assets/tiles/rooms/room_hospital_raised.png"
 # Same walls, warm flecked safety-vinyl sheet with welded seams: staff room / kitchen
 OUT_KITCHEN = ROOT / "public/break_escape/assets/tiles/rooms/room_hospital_kitchen.png"
+# The carpet with a rug under the desk: executive office (room_hospital_office_cto).
+# Room maps lay this 320px sheet out 1:1 (cell x,y of a 10x10 room uses sheet
+# cell x,y), so the rug lands at the same pixels in the room and draws under
+# every sprite.
+OUT_EXEC = ROOT / "public/break_escape/assets/tiles/rooms/room_hospital_exec.png"
 
 # Palette sampled from the PixelLab edit
 BACK_WALL = (180, 218, 206)
@@ -181,6 +192,51 @@ def make_kitchen(hospital):
     print(f"wrote {OUT_KITCHEN}")
 
 
+# Rug: navy field, burgundy border between cream lines, a small diamond lattice.
+RUG_BOX = (100, 98, 220, 198)  # x0, y0, x1, y1 (exclusive), room pixels; under Dr Kim's desk and visitor chairs
+RUG_EDGE = (40, 30, 38)
+RUG_CREAM = (214, 200, 168)
+RUG_RED = (122, 38, 46)
+RUG_RED_DARK = (100, 30, 38)
+RUG_NAVY = (40, 52, 84)
+RUG_NAVY_LIGHT = (58, 72, 108)
+
+
+def rug_pixel(x, y):
+    x0, y0, x1, y1 = RUG_BOX
+    d = min(x - x0, y - y0, x1 - 1 - x, y1 - 1 - y)  # distance in from the rug edge
+    if d == 0:
+        return RUG_EDGE
+    if d in (1, 10):
+        return RUG_CREAM
+    if 2 <= d <= 9:
+        # border band: burgundy with a row of cream dots down its middle
+        horiz = min(y - y0, y1 - 1 - y) == d  # on the top or bottom run
+        along = (x - x0) if horiz else (y - y0)
+        if d == 5 and along % 6 < 2:
+            return RUG_CREAM
+        return RUG_RED_DARK if d in (2, 9) else RUG_RED
+    if d == 11:
+        return RUG_RED
+    # field: navy with a diamond lattice
+    lx, ly = x - x0 - 12, y - y0 - 12
+    if (lx + ly) % 12 == 0 or (lx - ly) % 12 == 0:
+        return RUG_NAVY_LIGHT
+    h = (x * 73856093) ^ (y * 19349663)
+    return RUG_NAVY_LIGHT if h % 47 == 0 else RUG_NAVY
+
+
+def make_exec(carpet):
+    out = carpet.copy()
+    op = out.load()
+    x0, y0, x1, y1 = RUG_BOX
+    for y in range(y0, y1):
+        for x in range(x0, x1):
+            op[x, y] = (*rug_pixel(x, y), op[x, y][3])
+    out.save(OUT_EXEC)
+    print(f"wrote {OUT_EXEC}")
+
+
 def main():
     src = Image.open(SRC).convert("RGBA")
     out = src.copy()
@@ -210,6 +266,7 @@ def main():
     out.save(OUT)
     print(f"wrote {OUT}")
     make_carpet(out)
+    make_exec(Image.open(OUT_CARPET).convert("RGBA"))
     make_raised(out)
     make_kitchen(out)
 

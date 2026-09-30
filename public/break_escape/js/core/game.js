@@ -97,6 +97,7 @@ export function preload() {
     this.load.image('room6', 'tiles/rooms/room6.png');
     this.load.image('room_hospital', 'tiles/rooms/room_hospital.png'); // clinical recolour of room6, same tile layout
     this.load.image('room_hospital_carpet', 'tiles/rooms/room_hospital_carpet.png'); // same walls, carpet tiles (offices, conference room)
+    this.load.image('room_hospital_exec', 'tiles/rooms/room_hospital_exec.png'); // carpet with a rug under the desk (Dr Kim's office)
     this.load.image('room_hospital_raised', 'tiles/rooms/room_hospital_raised.png'); // same walls, raised access floor (server room)
     this.load.image('room_hospital_kitchen', 'tiles/rooms/room_hospital_kitchen.png'); // same walls, flecked kitchen safety vinyl (staff room)
     this.load.image('room14', 'tiles/rooms/room14.png');
@@ -642,6 +643,7 @@ export function preload() {
     this.load.image('radio_charger1', 'objects/radio_charger1.png');
     this.load.image('window_blinds1', 'objects/window_blinds1.png');
     this.load.image('cctv_monitors2', 'objects/cctv_monitors2.png');
+    this.load.image('wall_rail2', 'objects/wall_rail2.png');
     this.load.image('backup_recovery',         'objects/backup_recovery.png');
     this.load.image('dual_auth',               'objects/dual_auth.png');
     this.load.image('ehr-terminal',            'objects/ehr-terminal.png');

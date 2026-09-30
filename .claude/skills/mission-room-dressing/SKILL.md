@@ -10,7 +10,7 @@ Make a mission's rooms look like the place they're meant to be, and make every s
 Standing rules:
 
 - Never rescale pixel art, up or down. If a sprite is the wrong size, regenerate it at the right size (memory: no-downscaling-pixel-art).
-- Ask before spending about 20 PixelLab generations or more (one props batch is ~20). Prefer PixelLab over Gemini. Check `python3 tools/pixellab_pipeline.py balance` first.
+- Ask before spending about 20 PixelLab generations or more (a real props batch has cost 20–30+). Prefer PixelLab over Gemini. Check `python3 tools/pixellab_pipeline.py balance` before and after every batch: other agents may be spending from the same account.
 - Never send images to the PixelLab MCP as base64; the scripts below upload over REST.
 - Don't commit unless asked. Keep assumptions in the user's assumptions-log format.
 
@@ -23,7 +23,7 @@ python3 scripts/room_gen/slot_audit.py --verbose scenarios/<mission>/scenario.js
 The verbose audit lists each scenario room, its map `type`, and which map sprite each object takes. Then work out, for each room type, how it's maintained:
 
 - **Builder rooms**: listed in the `builders` dict at the bottom of `scripts/generate_rooms.py`. Edit the builder function, then `python3 scripts/generate_rooms.py <room>` (regenerates .json via Tiled and .tmj, and validates). Only name the rooms you mean: with no arguments it regenerates every builder room.
-- **Hand-maintained rooms**: no builder, or a builder that must not be re-run (e.g. room_hospital_office, cto_office, meeting, reception, ward). Edit with `scripts/room_gen/room_edit.py`, never by re-dumping the JSON.
+- **Hand-maintained rooms**: no builder, or a builder that must not be re-run (e.g. room_hospital_office and its _it, _cto and _security copies, cto_office, meeting, reception, ward). Edit with `scripts/room_gen/room_edit.py`, never by re-dumping the JSON.
 - `grep -l '"type": "<room type>"' scenarios/*/scenario.json.erb` shows which other scenarios share a room type. Changes reach all of them, so re-audit and re-validate those too.
 
 ## 1. Survey
@@ -47,7 +47,9 @@ Look at each room as a visitor would. Things the user has flagged in past rounds
 - **Kit faces what it serves.** e.g. bedside monitors turned towards their beds; a back view reads as clutter.
 - **Realistic detail**, sparingly: fire alarm call point with an extinguisher under it, exit sign, sanitiser dispensers by doors, notice boards, bins of the right kind (clinical waste, pedal, yellow).
 - **Kitchens and counters.** Put counters and fridges in the **tables** layer so mugs and microwaves (table_items) group with them and draw on top.
-- **Keep clear:** the back-wall corners where N doors are drawn, side-door rows (y 64–100), the walkway, and the bottom two rows (covered by the room to the south, if there is one).
+- **Keep clear:** the back-wall corners where N doors are drawn, side-door rows (y 64–100), the line a player walks in from each door, the walkway, and the bottom two rows (covered by the room to the south, if there is one). Nothing on the floor may stand in front of a wall fixture the player has to read: a fire extinguisher in front of the server room's UPS panel kept the player more than 32px away, so the panel never opened.
+- **NPCs against furniture.** Check each NPC's `position` and patrol `waypoints` (tiles; ×32 gives x and the feet y) against the map. m02's conference supervisor stood on a bin; move the prop (a map edit) rather than the NPC where you can, since NPC positions may be referenced by the story.
+- **Interactables need room.** A tap gathers every in-reach interactable whose bounds contain it or whose `x,y` (the sprite's top-left, for map slots) is within 32px, and more than one opens a pick-one menu. Two readable papers side by side, or a note tucked beside a PC, read as one click that asks a question. Space them so each top-left is 32px or more from the others' centres; on a crowded desk move a prop elsewhere (m02's planted device went onto the IT workbench). Pairs that belong together, such as a note pinned on a board, can share a menu.
 - **Every scenario object has a proper slot** (below). An object with no slot lands at a random spot, which looks like dropped clutter.
 - **How each thing reads when used.** Only loose papers should be plain notes. Go through every `"type": "notes"` object in the mission and ask what it is in the room: a sheet of paper, a fixture on the wall, a device, or a piece of furniture. `slot_audit.py --notes` lists the ones to look at: FIXED (lands on a non-notes fixture but opens as a notebook page, or is takeable), OPEN (a note describing furniture you'd open) and LIVE (a changing display still copied into notes). These are prompts to judge, not errors: a name like "Board Liability Email" or "Safety Case" isn't furniture. Past fixes in m02: the plaque, whiteboards, ops board, noticeboard, UPS panel and key cabinet read in place; the storage room's supply cabinet became a container holding a first aid kit, gloves and a stock sheet.
   - A readable `notes` object opens as a notebook page and is saved to notes, which is right for loose papers. Fixed things you read in place (signs, directories, whiteboards, plaques, device panels) get `"readDisplay": "gameDisplay"`: a modal with the observation and text, plus a quiet copy in notes.
@@ -63,16 +65,27 @@ Look at each room as a visitor would. Things the user has flagged in past rounds
 Coordinates: `x` = left edge, `y` = feet (bottom), room pixels. Frame y 0–11, back wall face y 12–60, skirting y 61–63, black line y 64–65 (level with the base of north doors), floor from y 66.
 
 - Builder room: edit the builder (`make_obj(layer, name, x, y, oid)`, `place_on_table(table, name, x_frac, surface_frac)`), then regenerate that room and diff the object list if the builder hasn't been run for a while (someone may have hand-edited the output).
-- Hand room, one change: `room_edit.py ROOM move|sprite|add|delete|relayer ...`. Several changes: import `Room` in a short script and call `save()` once. Untouched bytes stay identical; a missing tileset (or an embedded copy older than a new tile) is added or refreshed automatically.
+- Hand room, one change: `room_edit.py ROOM move|sprite|add|delete|relayer|floor ...`. Several changes: import `Room` in a short script and call `save()` once. Untouched bytes stay identical; a missing tileset (or an embedded copy older than a new tile) is added or refreshed automatically.
+- `room_edit.py` handles Tiled's multi-line object blocks and the one-object-per-line entries in some hand-edited maps (room_hospital_office, _reception).
 - Then `python3 scripts/generate_rooms.py --check ROOM` for hand rooms. Warnings about door corners, overlaps and the bottom rows are hints: fix the ones that show, and say why you left the rest.
+
+### Floors
+
+Hospital floors are recolours of room6 with the same tile layout, made by `scripts/room_gen/make_hospital_tileset.py`: clinical vinyl (`room_hospital`), `_carpet` (offices, conference room), `_exec` (carpet with a rug under Dr Kim's desk), `_raised` (server room, perforated cold aisle) and `_kitchen` (staff room). A 10×10 room lays the 320px sheet out 1:1, so a rug or mark painted into a variant lands at the same room pixels and draws under every sprite; that is how to add a floor decal without depth problems. Builder rooms pick a variant in `HOSPITAL_FLOOR_VARIANTS` (`generate_rooms.py`); hand rooms with `room_edit.py ROOM floor NAME`. A new variant also needs its `this.load.image` line in `game.js`. `room_edit.py floor` only works on rooms whose floor tileset is room6 or a `room_hospital*` sheet (not the ward, which uses room1).
+
+### One map type, several rooms
+
+When one map type serves several scenario rooms that should look different (m02 used room_hospital_office for IT, Dr Kim and security), split it into per-room map types rather than piling up conditional fixtures: copy the .json and .tmj, then register the new type in `game.js` (`tilemapTiledJSON`), the room-type enum in `scripts/scenario-schema.json`, the room table in `README_scenario_design.md`, and the hand-maintained list above `builders` in `generate_rooms.py`. Point the scenario room's `type` at it.
 
 ### Where scenario objects land (rooms.js `TiledItemPool`)
 
 - A scenario object claims an unreserved map sprite whose **base type** (image name minus trailing digits) equals its `type`. Map sprites nobody claims are drawn as decor; unclaimed *conditional* sprites are not drawn.
 - Layer search order: `items`, `table_items`, `conditional_items`, `conditional_table_items`. Within a layer, **array order** decides: the first unreserved sprite wins. To make a particular sprite the one that gets claimed, move the others later (`room_edit.py relayer ID items` appends to the end).
-- **`"position": "as-type:X"`** claims a sprite of base type X instead: the best way to make a readable object *be* a real fixture. m02's ward: the ventilator panel is `as-type:vitals-monitor` (the monitor by bed 4), the ops board `as-type:rota_board`, the staff noticeboard `as-type:notice_board`, the corridor directory `as-type:directory_sign`; elsewhere `whiteboard`, `plaque`, `key_cabinet` and `power_panel`. Add a decor sprite to the map if there isn't one; if only one scenario room sharing that map should show it, put it in `conditional_items` (m02's key cabinet appears in the security office only).
+- **`"position": "as-type:X"`** claims a sprite of base type X instead: the best way to make a readable object *be* a real fixture. m02's ward: the ventilator panel is `as-type:vitals-monitor` (the monitor by bed 4), the ops board `as-type:rota_board`, the staff noticeboard `as-type:notice_board`, the corridor directory `as-type:directory_sign`; elsewhere `whiteboard`, `plaque`, `key_cabinet` and `power_panel`. Add a decor sprite to the map if there isn't one; if only one scenario room sharing that map should show it, put it in `conditional_items` (m02's key cabinet did this until the offices got separate maps).
 - **`"sprite": "K"`** tries K as a base-type key, then falls back to `type`, and swaps the texture. It is drawn from the **slot's top-left**, so a texture taller than the slot hangs down (a 56px chalkboard on a 32px notes slot stood on the floor). Prefer as-type onto a real sprite; if you do override, make the slot the same sprite.
 - Explicit `"position": {"x": tiles, "y": tiles}` moves an object after matching.
+- An unclaimed decor sprite is hidden when another sprite with the **same image name** was claimed, so a second visible copy needs a distinct image (a mirrored or recoloured variant, registered as a new object).
+- A flavour object claims a sprite without adding a puzzle step: `"takeable": false`, the sprite's base type as `type` (or `as-type:`), and either `observations` only or `readDisplay: "gameDisplay"` with `"addToNotes": false`. Use one to give a fixture a name and a line of description (m02: the security office's spare monitor, Val's chair), or to make a `conditional_items` sprite appear in just the one scenario room that has it.
 - `tableItems` of a `type: "table"` object never land at random: unmatched ones are laid out on their table.
 - All back-wall items share one base depth, so overlapping wall items tie-break by feet y (0.001/px): to pin a note over a board, give the note a lower `y` bottom edge than the board's (feet 54 over a board at 52).
 
@@ -116,6 +129,8 @@ This does catalog.json, tilesets_ref.json, `objects_hospital_extras.tsx` (the ge
    - try walking through doors you changed
 
    Earlier prompts are in the scratchpad history; the useful pattern is a numbered checklist with pass/fail and evidence per item.
+
+   Harness quirks seen in the hospital rounds: the first `enter` through a north or east door often stops short, so retry (or `moveTo` level with the gap); `interact` clicks the sprite's top-left, so it can raise a menu a player tapping the middle would not; a gameDisplay modal can open after `interact` reports `no-effect-confirmed`, so check `blockingUi`; reading a note removes it from that saved game, so re-check a desk layout in a fresh game; the maps are loaded when the page opens, so restart the session after a map edit. For a layout check, unlock every room server-side and say so in the report.
 
 ## 5. Report
 
