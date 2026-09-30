@@ -1260,7 +1260,29 @@ boardroom_pin = "0417"
             "groupName": "Ransomware Incorporated",
             "supportPortal": "ransom1nc0rp0rated.onion"
           }
-        }
+        }<%# Self check-in kiosks: flavour only (no puzzle role). They claim the two
+    checkin_kiosk_locked1 map sprites and show the same ransom note in place. %>
+<% %w[reception_kiosk_1 reception_kiosk_2].each do |kiosk_id| %>,
+        {
+          "type": "pc",
+          "id": "<%= kiosk_id %>",
+          "name": "Self Check-in Kiosk",
+          "position": "as-type:checkin_kiosk_locked",
+          "takeable": false,
+          "locked": true,
+          "lockType": "ransomware_display",
+          "observations": "An outpatient self check-in kiosk. The touchscreen shows the same red Ransomware Incorporated lock as every other screen in the building, so the queue has moved to the front desk.",
+          "minigameData": {
+            "organisation": "St. Catherine's Regional Medical Centre",
+            "encryptedSystems": "Patient self check-in | Appointment arrivals | Outpatient queue",
+            "ransomAmount": "£150,000",
+            "ransomBitcoin": "payable in BTC at prevailing rate",
+            "walletAddress": "bc1q7cyrfmckn2ewz5m78ts6jt9lcfhfwcvzefm27k",
+            "timerHours": 12,
+            "groupName": "Ransomware Incorporated",
+            "supportPortal": "ransom1nc0rp0rated.onion"
+          }
+        }<% end %>
       ]
     },
 

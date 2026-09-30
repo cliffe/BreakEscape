@@ -644,6 +644,7 @@ export function preload() {
     this.load.image('window_blinds1', 'objects/window_blinds1.png');
     this.load.image('cctv_monitors2', 'objects/cctv_monitors2.png');
     this.load.image('wall_rail2', 'objects/wall_rail2.png');
+    this.load.image('checkin_kiosk_locked1', 'objects/checkin_kiosk_locked1.png');
     this.load.image('backup_recovery',         'objects/backup_recovery.png');
     this.load.image('dual_auth',               'objects/dual_auth.png');
     this.load.image('ehr-terminal',            'objects/ehr-terminal.png');

@@ -1577,11 +1577,12 @@ def room_hospital_staff():
     # layer (hospital_extras gids) so the mugs and microwave group onto them.
     counter = make_obj("objects", "kitchen_counter_sink1", 150.0, 110.0, oid)
     oid += 1
-    fridge = make_obj("objects", "undercounter_fridge1", 197.0, 99.0, oid)
+    # fridge and dishwasher stand on the same line as the counter units (feet y 110)
+    fridge = make_obj("objects", "undercounter_fridge1", 197.0, 110.0, oid)
     oid += 1
     # Dishwasher beside the fridge, finishing the kitchen run (replaces a yellow
     # clinical-waste bin that had no business in a tea room)
-    dishwasher = make_obj("objects", "dishwasher1", 219.0, 99.0, oid)
+    dishwasher = make_obj("objects", "dishwasher1", 219.0, 110.0, oid)
     oid += 1
     tables = [desk, side, table_r, counter, fridge, dishwasher]
 
@@ -1663,7 +1664,7 @@ def room_hospital_staff():
     conditional_table_items = []
     for name, xf, sf in [
         ("workstation", 0.30, 0.34),
-        ("notes1", 0.55, 0.46),
+        ("notes1", 0.55, 0.42),
         ("notes2", 0.12, 0.44),
     ]:
         conditional_table_items.append(
@@ -1761,9 +1762,11 @@ def room_hospital_hall():
             # flat against the wall (top edge on the skirting, y 70), bin beside them
             ("vending_machine1", 104.0, 130.0),
             ("drinks_vending1", 148.0, 131.0),
-            ("pedal_bin1", 192.0, 122.0),
-            # under the fire action notice, clear of the briefcase slot at x 214
-            ("fire_extinguisher1", 236.0, 122.0),
+            # bin tucked against the wall beside the drinks machine, not mid-corridor
+            ("pedal_bin1", 192.0, 90.0),
+            # under the fire action notice, standing just below the north wall
+            # (top edge on the skirting)
+            ("fire_extinguisher1", 236.0, 94.0),
         ],
     )
 
@@ -1779,7 +1782,8 @@ def room_hospital_hall_ward():
             ("alarm_panel", 66.0, 44.0),
             # ward-entrance hand-wash basin (as in the ward) with the hand-washing
             # poster beside it, where the other corridors hang their boards
-            ("clinical_sink1", 86.0, 86.0),
+            # it stands on the floor against the wall, its top edge on the skirting
+            ("clinical_sink1", 86.0, 122.0),
             ("handwash_poster1", 172.0, 52.0),
             ("emergency-button", 210.0, 40.0),
             # CCTV camera high on the wall, watching the ward door
@@ -1800,7 +1804,8 @@ def room_hospital_hall_ward():
             # crash_cart1 rolls and spins when pushed (8-direction swap in rooms.js)
             ("crash_cart1", 36.0, 124.0),
             ("wheelchair1", 126.0, 126.0),
-            ("clinical_waste_bin1", 166.0, 122.0),
+            # against the wall under the bumper rail, not mid-corridor
+            ("clinical_waste_bin1", 166.0, 92.0),
             # hand sanitiser on the east side wall, just below the ward door row
             ("sanitiser_dispenser1", 294.0, 128.0),
         ],

@@ -411,7 +411,7 @@
      "visible": true,
      "width": 22,
      "x": 197.0,
-     "y": 99.0
+     "y": 110.0
     },
     {
      "gid": 898,
@@ -423,7 +423,7 @@
      "visible": true,
      "width": 22,
      "x": 219.0,
-     "y": 99.0
+     "y": 110.0
     }
    ],
    "opacity": 1,
@@ -699,7 +699,7 @@
      "visible": true,
      "width": 16,
      "x": 112.1,
-     "y": 147.08
+     "y": 145.16
     },
     {
      "gid": 305,
@@ -795,7 +795,7 @@
      "visible": true,
      "width": 22,
      "x": 197.0,
-     "y": 75.22
+     "y": 86.22
     }
    ],
    "opacity": 1,
@@ -3250,7 +3250,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 119,
+   "tilecount": 121,
    "tileheight": 60,
    "tiles": [
     {
@@ -3966,6 +3966,18 @@
      "image": "../objects/window_blinds1.png",
      "imageheight": 32,
      "imagewidth": 40
+    },
+    {
+     "id": 119,
+     "image": "../objects/cctv_monitors2.png",
+     "imageheight": 34,
+     "imagewidth": 46
+    },
+    {
+     "id": 120,
+     "image": "../objects/wall_rail2.png",
+     "imageheight": 6,
+     "imagewidth": 128
     }
    ],
    "tilewidth": 60
