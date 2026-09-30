@@ -1,6 +1,6 @@
 ---
 name: mission-room-dressing
-description: Review and improve how a Break Escape mission's rooms look — furniture layout, props, wall fixtures, where scenario objects land, and new or replacement object/background art — in a loop of render, critique, fix and playtest. Trigger when the user asks to "improve the rooms", "make the <mission> rooms look better", "dress/redecorate a room", "fix the layout", "add props/furniture/a kitchenette", "replace an out-of-place object", "things are landing in random places", "make an object pushable", "add a background", or to keep iterating on a mission's look and assets.
+description: Review and improve how a Break Escape mission's rooms look — furniture layout, props, wall fixtures, where scenario objects land, and new or replacement object/background art — in a loop of render, critique, fix and playtest. Trigger when the user asks to "improve the rooms", "make the <mission> rooms look better", "dress/redecorate a room", "fix the layout", "add props/furniture/a kitchenette", "replace an out-of-place object", "things are landing in random places", "make an object pushable", "add a background", "the floor doesn't meet the doors", "the wall is the wrong height", or to keep iterating on a mission's look and assets.
 ---
 
 # Mission room dressing
@@ -9,6 +9,7 @@ Make a mission's rooms look like the place they're meant to be, and make every s
 
 Standing rules:
 
+- North walls are always 2 tiles high: the floor starts at y=64, level with the bottom of north doors. Never build on a sheet or map that fails `check_room_walls.py` (see Room geometry).
 - Never rescale pixel art, up or down. If a sprite is the wrong size, regenerate it at the right size (memory: no-downscaling-pixel-art).
 - Ask before spending about 20 PixelLab generations or more (a real props batch has cost 20–30+). Prefer PixelLab over Gemini. Check `python3 tools/pixellab_pipeline.py balance` before and after every batch: other agents may be spending from the same account.
 - Never send images to the PixelLab MCP as base64; the scripts below upload over REST.
@@ -18,6 +19,7 @@ Standing rules:
 
 ```bash
 python3 scripts/room_gen/slot_audit.py --verbose scenarios/<mission>/scenario.json.erb
+python3 scripts/room_gen/check_room_walls.py --scenario scenarios/<mission>/scenario.json.erb   # every map should read 64
 ```
 
 The verbose audit lists each scenario room, its map `type`, and which map sprite each object takes. Then work out, for each room type, how it's maintained:
@@ -41,6 +43,7 @@ The preview draws every map sprite, conditional slots included, but **not** scen
 Look at each room as a visitor would. Things the user has flagged in past rounds (hospital, September 2026) — check for each:
 
 - **Theme fit.** Objects must belong in that kind of room: no garden-style lamp stands, school chalkboards on easels, glass drugs cabinets in offices or server rooms, or plants in clinical areas. Replace, don't just delete: bookcases/filing cabinets in offices, a second rack row in a server room, a whiteboard for a handover board.
+- **Floor meets the doors.** The floor line must sit at the bottom of every north door (rows 62–63, floor from 64). A strip of wall or skirting between a door's base and the floor, or a second lower line under the first, means the room sheet is off the standard: fix the sheet with `raise_back_wall()` (Room geometry), never by moving doors or props.
 - **Wall items stay on the wall face.** Every room is edged by a white frame with a black border (x or y 0–11 in room pixels). Nothing hung on a wall may overlap it. Back-wall hangings (posters, boards, signs, clocks) fit between the frame and the skirting where the wall meets the floor: top y ≥ 12, bottom y ≤ 59. Side-wall items fit in the green strip between the frame and the floor edge: x 12–30 on the west wall, and from `width − 30` to `width − 12` on the east. Anything wider than about 18px, such as an exit sign, goes on the back wall. `--check` reports "overlaps the wall frame" and "hangs over the skirting".
 - **Against the wall.** Vending machines and bookcases stand flat against the north wall, their feet just below the floor line (y≈64 or more), unless they deliberately divide a space (two bookcases forming a nook). Wall-hung fixtures that reach the floor (clinical sinks on a pedestal) go the same way: feet a few pixels below the floor line (y≈72–76), the basin and splashback up the wall. A sink with its feet out on the floor reads as floating in the room.
 - **Seating faces its table or desk.** Use the facing variants (`hospital_chair1` faces W, `hospital_chair2` E, `hospital_chair_south`, `hospital_chair_north`). Waiting areas get at least one back-to-back double row.
