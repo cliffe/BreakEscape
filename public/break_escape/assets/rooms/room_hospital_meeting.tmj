@@ -378,8 +378,8 @@
    "name": "items",
    "objects": [
     {
-     "gid": 379,
-     "height": 34,
+     "gid": 912,
+     "height": 36,
      "id": 3,
      "name": "",
      "rotation": 0,
@@ -450,16 +450,16 @@
      "y": 152
     },
     {
-     "gid": 476,
-     "height": 17,
+     "gid": 911,
+     "height": 31,
      "id": 9,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 12,
-     "x": 232.954755309326,
-     "y": 39.8744228993536
+     "width": 44,
+     "x": 238,
+     "y": 56
     },
     {
      "gid": 316,
@@ -518,8 +518,8 @@
      "type": "",
      "visible": true,
      "width": 16,
-     "x": 244,
-     "y": 120
+     "x": 186.0,
+     "y": 102.0
     },
     {
      "gid": 317,
@@ -580,6 +580,30 @@
      "width": 44,
      "x": 138.0,
      "y": 100.0
+    },
+    {
+     "gid": 913,
+     "height": 45,
+     "id": 47,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 26,
+     "x": 42,
+     "y": 128
+    },
+    {
+     "gid": 810,
+     "height": 45,
+     "id": 48,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 20,
+     "x": 266,
+     "y": 160
     }
    ],
    "opacity": 1,
@@ -780,7 +804,7 @@
   }
  ],
  "nextlayerid": 14,
- "nextobjectid": 47,
+ "nextobjectid": 49,
  "orientation": "orthogonal",
  "renderorder": "right-down",
  "tiledversion": "1.11.2",
@@ -3192,11 +3216,11 @@
   {
    "columns": 10,
    "firstgid": 701,
-   "image": "../tiles/rooms/room_hospital.png",
+   "image": "../tiles/rooms/room_hospital_carpet.png",
    "imageheight": 320,
    "imagewidth": 320,
    "margin": 0,
-   "name": "room_hospital",
+   "name": "room_hospital_carpet",
    "spacing": 0,
    "tilecount": 100,
    "tileheight": 32,
@@ -3213,7 +3237,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 79,
+   "tilecount": 114,
    "tileheight": 60,
    "tiles": [
     {
@@ -3689,6 +3713,216 @@
      "image": "../objects/no_smoking_sign1.png",
      "imageheight": 26,
      "imagewidth": 22
+    },
+    {
+     "id": 79,
+     "image": "../objects/bedhead_unit1.png",
+     "imageheight": 44,
+     "imagewidth": 26
+    },
+    {
+     "id": 80,
+     "image": "../objects/cylinder_rack1.png",
+     "imageheight": 40,
+     "imagewidth": 43
+    },
+    {
+     "id": 81,
+     "image": "../objects/suppression_cylinders1.png",
+     "imageheight": 44,
+     "imagewidth": 42
+    },
+    {
+     "id": 82,
+     "image": "../objects/cleaning_trolley1.png",
+     "imageheight": 45,
+     "imagewidth": 41
+    },
+    {
+     "id": 83,
+     "image": "../objects/suppression_panel1.png",
+     "imageheight": 19,
+     "imagewidth": 14
+    },
+    {
+     "id": 84,
+     "image": "../objects/aed_cabinet1.png",
+     "imageheight": 24,
+     "imagewidth": 21
+    },
+    {
+     "id": 85,
+     "image": "../objects/cctv_camera1.png",
+     "imageheight": 18,
+     "imagewidth": 23
+    },
+    {
+     "id": 86,
+     "image": "../objects/nurse_call_display1.png",
+     "imageheight": 17,
+     "imagewidth": 25
+    },
+    {
+     "id": 87,
+     "image": "../objects/filing_cabinet_steel1.png",
+     "imageheight": 61,
+     "imagewidth": 29
+    },
+    {
+     "id": 88,
+     "image": "../objects/binder_shelves1.png",
+     "imageheight": 60,
+     "imagewidth": 48
+    },
+    {
+     "id": 89,
+     "image": "../objects/kvm_cart1.png",
+     "imageheight": 61,
+     "imagewidth": 37
+    },
+    {
+     "id": 90,
+     "image": "../objects/checkin_kiosk1.png",
+     "imageheight": 60,
+     "imagewidth": 27
+    },
+    {
+     "id": 91,
+     "image": "../objects/drinks_vending1.png",
+     "imageheight": 61,
+     "imagewidth": 42
+    },
+    {
+     "id": 92,
+     "image": "../objects/cctv_monitors1.png",
+     "imageheight": 34,
+     "imagewidth": 46
+    },
+    {
+     "id": 93,
+     "image": "../objects/info_screen1.png",
+     "imageheight": 28,
+     "imagewidth": 40
+    },
+    {
+     "id": 94,
+     "image": "../objects/handwash_poster1.png",
+     "imageheight": 38,
+     "imagewidth": 31
+    },
+    {
+     "id": 95,
+     "image": "../objects/photocopier1.png",
+     "imageheight": 46,
+     "imagewidth": 35
+    },
+    {
+     "id": 96,
+     "image": "../objects/coat_stand1.png",
+     "imageheight": 45,
+     "imagewidth": 21
+    },
+    {
+     "id": 97,
+     "image": "../objects/dishwasher1.png",
+     "imageheight": 29,
+     "imagewidth": 22
+    },
+    {
+     "id": 98,
+     "image": "../objects/shredder1.png",
+     "imageheight": 24,
+     "imagewidth": 18
+    },
+    {
+     "id": 99,
+     "image": "../objects/filing_cabinet_locked1.png",
+     "imageheight": 61,
+     "imagewidth": 29
+    },
+    {
+     "id": 100,
+     "image": "../objects/hospital_chair_north2.png",
+     "imageheight": 26,
+     "imagewidth": 16
+    },
+    {
+     "id": 101,
+     "image": "../objects/pigeonholes1.png",
+     "imageheight": 27,
+     "imagewidth": 28
+    },
+    {
+     "id": 102,
+     "image": "../objects/network_rack1.png",
+     "imageheight": 59,
+     "imagewidth": 34
+    },
+    {
+     "id": 103,
+     "image": "../objects/storage_array1.png",
+     "imageheight": 59,
+     "imagewidth": 30
+    },
+    {
+     "id": 104,
+     "image": "../objects/tape_library1.png",
+     "imageheight": 59,
+     "imagewidth": 30
+    },
+    {
+     "id": 105,
+     "image": "../objects/patient_hoist1.png",
+     "imageheight": 51,
+     "imagewidth": 40
+    },
+    {
+     "id": 106,
+     "image": "../objects/drug_trolley1.png",
+     "imageheight": 47,
+     "imagewidth": 34
+    },
+    {
+     "id": 107,
+     "image": "../objects/bedside_cabinet_slim1.png",
+     "imageheight": 27,
+     "imagewidth": 16
+    },
+    {
+     "id": 108,
+     "image": "../objects/security_monitor1.png",
+     "imageheight": 29,
+     "imagewidth": 24
+    },
+    {
+     "id": 109,
+     "image": "../objects/cable_tray1.png",
+     "imageheight": 14,
+     "imagewidth": 150
+    },
+    {
+     "id": 110,
+     "image": "../objects/year_planner1.png",
+     "imageheight": 31,
+     "imagewidth": 44
+    },
+    {
+     "id": 111,
+     "image": "../objects/conference_screen1.png",
+     "imageheight": 36,
+     "imagewidth": 48
+    },
+    {
+     "id": 112,
+     "image": "../objects/flip_chart1.png",
+     "imageheight": 45,
+     "imagewidth": 26
+    },
+    {
+     "id": 113,
+     "image": "../objects/supply_boxes1.png",
+     "imageheight": 40,
+     "imagewidth": 29
     }
    ],
    "tilewidth": 60

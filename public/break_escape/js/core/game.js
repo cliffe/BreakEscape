@@ -93,6 +93,8 @@ export function preload() {
     this.load.image('room18', 'tiles/rooms/room18.png');
     this.load.image('room6', 'tiles/rooms/room6.png');
     this.load.image('room_hospital', 'tiles/rooms/room_hospital.png'); // clinical recolour of room6, same tile layout
+    this.load.image('room_hospital_carpet', 'tiles/rooms/room_hospital_carpet.png'); // same walls, carpet tiles (offices, conference room)
+    this.load.image('room_hospital_raised', 'tiles/rooms/room_hospital_raised.png'); // same walls, raised access floor (server room)
     this.load.image('room14', 'tiles/rooms/room14.png');
     this.load.image('room19', 'tiles/rooms/room19.png');
     this.load.image('door_32', 'tiles/door_32.png');
@@ -626,6 +628,11 @@ export function preload() {
     this.load.image('bedside_cabinet_slim1', 'objects/bedside_cabinet_slim1.png');
     this.load.image('security_monitor1', 'objects/security_monitor1.png');
     this.load.image('cable_tray1', 'objects/cable_tray1.png');
+    this.load.image('year_planner1', 'objects/year_planner1.png');
+    this.load.image('conference_screen1', 'objects/conference_screen1.png');
+    this.load.image('flip_chart1', 'objects/flip_chart1.png');
+    this.load.image('supply_boxes1', 'objects/supply_boxes1.png');
+    this.load.image('wall_rail1', 'objects/wall_rail1.png');
     this.load.image('backup_recovery',         'objects/backup_recovery.png');
     this.load.image('dual_auth',               'objects/dual_auth.png');
     this.load.image('ehr-terminal',            'objects/ehr-terminal.png');

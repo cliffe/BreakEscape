@@ -19,6 +19,10 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "public/break_escape/assets/tiles/rooms/room6.png"
 OUT = ROOT / "public/break_escape/assets/tiles/rooms/room_hospital.png"
+# Same walls, blue-grey carpet tiles: offices and the conference room (non-clinical areas)
+OUT_CARPET = ROOT / "public/break_escape/assets/tiles/rooms/room_hospital_carpet.png"
+# Same walls, raised access floor with a row of perforated vent tiles: server room
+OUT_RAISED = ROOT / "public/break_escape/assets/tiles/rooms/room_hospital_raised.png"
 
 # Palette sampled from the PixelLab edit
 BACK_WALL = (180, 218, 206)
@@ -55,6 +59,90 @@ def floor_pixel(x, y):
     return FLOOR
 
 
+# Carpet tiles: each 32px tile has a woven grain, laid quarter-turned like real
+# office carpet tiles (grain alternates horizontal/vertical in a checkerboard).
+CARPET = (133, 143, 158)
+CARPET_DARK = (121, 131, 146)
+CARPET_LIGHT = (146, 155, 169)
+CARPET_SEAM = (113, 122, 137)
+
+
+def carpet_pixel(x, y):
+    tx, ty = x // TILE, y // TILE
+    lx, ly = x % TILE, y % TILE
+    if lx == 0 or ly == 0:
+        return CARPET_SEAM
+    h = (x * 73856093) ^ (y * 19349663)
+    # grain: every third row (or column) is a shade darker
+    along = ly if (tx + ty) % 2 == 0 else lx
+    across = lx if (tx + ty) % 2 == 0 else ly
+    if along % 3 == 0 and (across + along) % 4 != 0:
+        c = CARPET_DARK
+    else:
+        c = CARPET
+    if h % 23 == 0:
+        c = CARPET_LIGHT
+    elif h % 29 == 0:
+        c = CARPET_DARK
+    return c
+
+
+def make_carpet(hospital):
+    out = hospital.copy()
+    op = out.load()
+    for y in range(out.height):
+        for x in range(out.width):
+            if is_floor(x, y):
+                c = carpet_pixel(x, y)
+                if y < FLOOR_TOP + 3:
+                    c = tuple(int(v * 0.88) for v in c)
+                op[x, y] = (*c, op[x, y][3])
+    out.save(OUT_CARPET)
+    print(f"wrote {OUT_CARPET}")
+
+
+# Raised access floor: bevelled grey 32px panels; the tile row y 128-160 (row 4,
+# the cold aisle in front of room_hospital_servers' second rack row) is perforated.
+RAISED = (196, 200, 204)
+RAISED_HI = (222, 225, 228)
+RAISED_SH = (168, 173, 178)
+RAISED_SEAM = (126, 132, 139)
+RAISED_HOLE = (138, 145, 153)
+PERFORATED_ROWS = {4}
+
+
+def raised_pixel(x, y):
+    tx, ty = x // TILE, y // TILE
+    lx, ly = x % TILE, y % TILE
+    if lx == 0 or ly == 0:
+        return RAISED_SEAM
+    if lx == 1 or ly == 1:
+        return RAISED_HI
+    if lx == TILE - 1 or ly == TILE - 1:
+        return RAISED_SH
+    if ty in PERFORATED_ROWS and 1 <= tx <= 8 and 5 <= lx <= 27 and 5 <= ly <= 27:
+        if (lx - 5) % 3 == 0 and (ly - 5) % 3 == 0:
+            return RAISED_HOLE
+    h = (x * 73856093) ^ (y * 19349663)
+    if h % 41 == 0:
+        return RAISED_SH
+    return RAISED
+
+
+def make_raised(hospital):
+    out = hospital.copy()
+    op = out.load()
+    for y in range(out.height):
+        for x in range(out.width):
+            if is_floor(x, y):
+                c = raised_pixel(x, y)
+                if y < FLOOR_TOP + 3:
+                    c = tuple(int(v * 0.9) for v in c)
+                op[x, y] = (*c, op[x, y][3])
+    out.save(OUT_RAISED)
+    print(f"wrote {OUT_RAISED}")
+
+
 def main():
     src = Image.open(SRC).convert("RGBA")
     out = src.copy()
@@ -83,6 +171,8 @@ def main():
                 op[x, y] = (*SIDE_WALL, a)
     out.save(OUT)
     print(f"wrote {OUT}")
+    make_carpet(out)
+    make_raised(out)
 
 
 if __name__ == "__main__":

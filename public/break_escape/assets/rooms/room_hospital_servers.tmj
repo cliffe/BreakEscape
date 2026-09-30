@@ -3253,11 +3253,11 @@
   {
    "columns": 10,
    "firstgid": 701,
-   "image": "../tiles/rooms/room_hospital.png",
+   "image": "../tiles/rooms/room_hospital_raised.png",
    "imageheight": 320,
    "imagewidth": 320,
    "margin": 0,
-   "name": "room_hospital",
+   "name": "room_hospital_raised",
    "spacing": 0,
    "tilecount": 100,
    "tileheight": 32,
@@ -3274,7 +3274,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 110,
+   "tilecount": 115,
    "tileheight": 60,
    "tiles": [
     {
@@ -3936,6 +3936,36 @@
      "image": "../objects/cable_tray1.png",
      "imageheight": 14,
      "imagewidth": 150
+    },
+    {
+     "id": 110,
+     "image": "../objects/year_planner1.png",
+     "imageheight": 31,
+     "imagewidth": 44
+    },
+    {
+     "id": 111,
+     "image": "../objects/conference_screen1.png",
+     "imageheight": 36,
+     "imagewidth": 48
+    },
+    {
+     "id": 112,
+     "image": "../objects/flip_chart1.png",
+     "imageheight": 45,
+     "imagewidth": 26
+    },
+    {
+     "id": 113,
+     "image": "../objects/supply_boxes1.png",
+     "imageheight": 40,
+     "imagewidth": 29
+    },
+    {
+     "id": 114,
+     "image": "../objects/wall_rail1.png",
+     "imageheight": 6,
+     "imagewidth": 192
     }
    ],
    "tilewidth": 60

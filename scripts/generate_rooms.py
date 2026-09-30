@@ -293,11 +293,19 @@ def room_tilesets(name: str) -> list[dict]:
     """
     tilesets = copy.deepcopy(TILESETS)
     if name.startswith("room_hospital"):
+        floor = HOSPITAL_FLOOR_VARIANTS.get(name, "room_hospital")
         for ts in tilesets:
             if ts.get("name") == "room6":
-                ts["name"] = "room_hospital"
-                ts["image"] = ts["image"].replace("room6.png", "room_hospital.png")
+                ts["name"] = floor
+                ts["image"] = ts["image"].replace("room6.png", f"{floor}.png")
     return tilesets
+
+
+# Hospital rooms whose floor is not the clinical vinyl (same walls and tile
+# layout; made by room_gen/make_hospital_tileset.py, preloaded in game.js)
+HOSPITAL_FLOOR_VARIANTS = {
+    "room_hospital_servers": "room_hospital_raised",  # raised access floor
+}
 
 
 def build_room(
@@ -757,6 +765,9 @@ WALL_MOUNTED_EXTRAS = {
     "handwash_poster",
     "pigeonholes",
     "cable_tray",
+    "year_planner",
+    "conference_screen",
+    "wall_rail",
 }
 
 
@@ -1768,6 +1779,9 @@ def room_hospital_hall_ward():
             ("emergency-button", 210.0, 40.0),
             # CCTV camera high on the wall, watching the ward door
             ("cctv_camera1", 230.0, 32.0),
+            # trolley bumper rail along the wall at bed height, between the two
+            # N door corners (the sink stands in front of it)
+            ("wall_rail1", 64.0, 58.0),
         ],
         props=[
             # the trolley bed is 63px tall, so it parks at the east end, out of
@@ -1798,6 +1812,8 @@ def room_hospital_hall_waiting():
             ("health_poster4", 66.0, 44.0),
             # public-access defibrillator on the corridor wall
             ("aed_cabinet1", 224.0, 48.0),
+            # trolley bumper rail, as in the ward corridor
+            ("wall_rail1", 64.0, 58.0),
         ],
         props=[
             # one row of four seats (the staff room and the vestibule already have
@@ -1876,8 +1892,12 @@ def room_hospital_storage_1x1gu():
     oid = 1
     items = []
     for sprite, x, y in [
-        ("first_aid_cabinet1", 92.0, 60.0),
-        ("medical_cabinet2", 74.0, 132.0),
+        # the glass supply cabinet stands flat against the back wall on the
+        # right, clear of the west door (the wall first-aid cabinet it replaced
+        # left no back-wall space outside the N door corners)
+        ("medical_cabinet2", 69.0, 80.0),  # foot centre x 95, just west of the NE footprint
+        # boxed deliveries on a sack-truck dolly under the cabinet's east end
+        ("supply_boxes1", 96.0, 124.0),
         # oxygen cylinders chained in their rack beside the safe, the crash
         # cart parked in the south-east corner
         ("cylinder_rack1", 65.0, 180.0),
@@ -1888,7 +1908,7 @@ def room_hospital_storage_1x1gu():
     conditional_items = []
     for sprite, x, y in [
         ("safe1", 32.0, 172.0),   # PIN safe on the floor, lower left
-        ("notes6", 70.0, 50.0),   # stock list taped to the back wall, clear of the NW door
+        ("notes6", 64.0, 50.0),   # stock list taped to the back wall, clear of the NW door
     ]:
         conditional_items.append(make_obj("objects", sprite, x, y, oid))
         oid += 1
