@@ -138,7 +138,7 @@
                  "type":"",
                  "visible":true,
                  "width":16,
-                 "x":120,
+                 "x":116,
                  "y":104
                 }, 
                 {
@@ -150,7 +150,7 @@
                  "type":"",
                  "visible":true,
                  "width":16,
-                 "x":176,
+                 "x":132,
                  "y":104
                 }, 
                 {
@@ -162,25 +162,13 @@
                  "type":"",
                  "visible":true,
                  "width":16,
-                 "x":196,
+                 "x":148,
                  "y":104
-                }, 
-                {
-                 "gid":806,
-                 "height":47,
-                 "id":9,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":24,
-                 "x":146,
-                 "y":112
                 }, 
                 {
                  "gid":822,
                  "height":27,
-                 "id":10,
+                 "id":9,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -188,12 +176,11 @@
                  "width":14,
                  "x":13,
                  "y":128
-                },
-            
+                }, 
                 {
                  "gid":883,
                  "height":45,
-                 "id":11,
+                 "id":10,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -201,6 +188,19 @@
                  "width":41,
                  "x":213,
                  "y":116
+                },
+            
+                {
+                 "gid":819,
+                 "height":29,
+                 "id":11,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":21,
+                 "x":186,
+                 "y":120
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -2773,7 +2773,7 @@
          "margin":0,
          "name":"objects\/hospital_extras",
          "spacing":0,
-         "tilecount":95,
+         "tilecount":110,
          "tileheight":63,
          "tiles":[
                 {
@@ -3354,8 +3354,99 @@
                  "image":"..\/objects\/handwash_poster1.png",
                  "imageheight":38,
                  "imagewidth":31
+                }, 
+                {
+                 "id":95,
+                 "image":"..\/objects\/photocopier1.png",
+                 "imageheight":46,
+                 "imagewidth":35
+                }, 
+                {
+                 "id":96,
+                 "image":"..\/objects\/coat_stand1.png",
+                 "imageheight":45,
+                 "imagewidth":21
+                }, 
+                {
+                 "id":97,
+                 "image":"..\/objects\/dishwasher1.png",
+                 "imageheight":29,
+                 "imagewidth":22
+                }, 
+                {
+                 "id":98,
+                 "image":"..\/objects\/shredder1.png",
+                 "imageheight":24,
+                 "imagewidth":18
+                }, 
+                {
+                 "id":99,
+                 "image":"..\/objects\/filing_cabinet_locked1.png",
+                 "imageheight":61,
+                 "imagewidth":29
+                },
+            
+                {
+                 "id":100,
+                 "image":"..\/objects\/hospital_chair_north2.png",
+                 "imageheight":26,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":101,
+                 "image":"..\/objects\/pigeonholes1.png",
+                 "imageheight":27,
+                 "imagewidth":28
+                }, 
+                {
+                 "id":102,
+                 "image":"..\/objects\/network_rack1.png",
+                 "imageheight":59,
+                 "imagewidth":34
+                }, 
+                {
+                 "id":103,
+                 "image":"..\/objects\/storage_array1.png",
+                 "imageheight":59,
+                 "imagewidth":30
+                }, 
+                {
+                 "id":104,
+                 "image":"..\/objects\/tape_library1.png",
+                 "imageheight":59,
+                 "imagewidth":30
+                }, 
+                {
+                 "id":105,
+                 "image":"..\/objects\/patient_hoist1.png",
+                 "imageheight":51,
+                 "imagewidth":40
+                }, 
+                {
+                 "id":106,
+                 "image":"..\/objects\/drug_trolley1.png",
+                 "imageheight":47,
+                 "imagewidth":34
+                }, 
+                {
+                 "id":107,
+                 "image":"..\/objects\/bedside_cabinet_slim1.png",
+                 "imageheight":27,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":108,
+                 "image":"..\/objects\/security_monitor1.png",
+                 "imageheight":29,
+                 "imagewidth":24
+                }, 
+                {
+                 "id":109,
+                 "image":"..\/objects\/cable_tray1.png",
+                 "imageheight":14,
+                 "imagewidth":150
                 }],
-         "tilewidth":60
+         "tilewidth":150
         }],
  "tilewidth":32,
  "type":"map",

@@ -2881,6 +2881,54 @@
       "w": 28,
       "h": 27,
       "gid": 902
+    },
+    "network_rack1": {
+      "id": 102,
+      "w": 34,
+      "h": 59,
+      "gid": 903
+    },
+    "storage_array1": {
+      "id": 103,
+      "w": 30,
+      "h": 59,
+      "gid": 904
+    },
+    "tape_library1": {
+      "id": 104,
+      "w": 30,
+      "h": 59,
+      "gid": 905
+    },
+    "patient_hoist1": {
+      "id": 105,
+      "w": 40,
+      "h": 51,
+      "gid": 906
+    },
+    "drug_trolley1": {
+      "id": 106,
+      "w": 34,
+      "h": 47,
+      "gid": 907
+    },
+    "bedside_cabinet_slim1": {
+      "id": 107,
+      "w": 16,
+      "h": 27,
+      "gid": 908
+    },
+    "security_monitor1": {
+      "id": 108,
+      "w": 24,
+      "h": 29,
+      "gid": 909
+    },
+    "cable_tray1": {
+      "id": 109,
+      "w": 150,
+      "h": 14,
+      "gid": 910
     }
   }
 }

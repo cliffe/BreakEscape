@@ -363,6 +363,18 @@
                  "width":29,
                  "x":28,
                  "y":252
+                }, 
+                {
+                 "gid":897,
+                 "height":45,
+                 "id":57,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":21,
+                 "x":270,
+                 "y":185
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -377,6 +389,7 @@
          "objects":[
 {"gid":305,"height":16,"id":42,"name":"","rotation":0,"type":"","visible":true,"width":16,"x":96,"y":130},
 {"gid":305,"height":16,"id":43,"name":"","rotation":0,"type":"","visible":true,"width":16,"x":195,"y":130},
+{"gid":909,"height":29,"id":58,"name":"","rotation":0,"type":"","visible":true,"width":24,"x":190,"y":118},
 
                 {
                  "gid":365,
@@ -503,7 +516,7 @@
          "y":0
         }],
  "nextlayerid":14,
- "nextobjectid":57,
+ "nextobjectid":59,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.2",
@@ -2968,7 +2981,7 @@
          "margin":0,
          "name":"objects\/hospital_extras",
          "spacing":0,
-         "tilecount":102,
+         "tilecount":110,
          "tileheight":60,
          "tiles":[
                 {
@@ -3582,6 +3595,54 @@
                  "image":"..\/objects\/pigeonholes1.png",
                  "imageheight":27,
                  "imagewidth":28
+                }, 
+                {
+                 "id":102,
+                 "image":"..\/objects\/network_rack1.png",
+                 "imageheight":59,
+                 "imagewidth":34
+                }, 
+                {
+                 "id":103,
+                 "image":"..\/objects\/storage_array1.png",
+                 "imageheight":59,
+                 "imagewidth":30
+                }, 
+                {
+                 "id":104,
+                 "image":"..\/objects\/tape_library1.png",
+                 "imageheight":59,
+                 "imagewidth":30
+                }, 
+                {
+                 "id":105,
+                 "image":"..\/objects\/patient_hoist1.png",
+                 "imageheight":51,
+                 "imagewidth":40
+                }, 
+                {
+                 "id":106,
+                 "image":"..\/objects\/drug_trolley1.png",
+                 "imageheight":47,
+                 "imagewidth":34
+                }, 
+                {
+                 "id":107,
+                 "image":"..\/objects\/bedside_cabinet_slim1.png",
+                 "imageheight":27,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":108,
+                 "image":"..\/objects\/security_monitor1.png",
+                 "imageheight":29,
+                 "imagewidth":24
+                }, 
+                {
+                 "id":109,
+                 "image":"..\/objects\/cable_tray1.png",
+                 "imageheight":14,
+                 "imagewidth":150
                 }],
          "tilewidth":60
         }],

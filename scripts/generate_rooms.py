@@ -756,6 +756,7 @@ WALL_MOUNTED_EXTRAS = {
     "info_screen",
     "handwash_poster",
     "pigeonholes",
+    "cable_tray",
 }
 
 
@@ -1404,13 +1405,18 @@ def room_hospital_servers():
 
     items = []
     # Back row of racks along the clear mid back wall (x 72-254; both back-wall
-    # corners carry N doors), glass-door and mesh-door racks alternating, with the
-    # room's air-conditioning unit standing at the end of the row
+    # corners carry N doors), mixed kit rather than one rack repeated: glass- and
+    # mesh-door racks, a disk storage array and a tape library at the end of the
+    # row, then the room's air-conditioning unit
     for i, name in enumerate(["server_rack1", "server_rack2", "server_rack1",
-                              "server_rack2", "server_rack1"]):
+                              "storage_array1", "tape_library1"]):
         items.append(make_obj("objects", name, 72.0 + 30 * i, 82.0, oid))
         oid += 1
     items.append(make_obj("objects", "aircon_unit1", 222.0, 82.0, oid))
+    oid += 1
+    # overhead cable tray on the back wall above the row, a bundle dropping into
+    # each cabinet (drawn behind the cabinets, so only the tray and drops show)
+    items.append(make_obj("objects", "cable_tray1", 70.0, 27.0, oid))
     oid += 1
 
     # The racks fill the back wall, so wall art would only peek out behind them;
@@ -1443,7 +1449,9 @@ def room_hospital_servers():
     # Second row: two more racks on the west, and the UPS battery cabinets on the
     # east, next to the UPS panel they report to (kept west of x 258, out of the
     # E door row). Glass drugs cabinets don't belong in a server room.
-    for name, x in [("server_rack2", 72.0), ("server_rack1", 102.0),
+    # The second rack is the open network rack: patch panels and switches with the
+    # patch leads that fan out to the rest of the room.
+    for name, x in [("server_rack2", 72.0), ("network_rack1", 102.0),
                     ("ups_cabinet1", 196.0), ("ups_cabinet1", 227.0)]:
         items.append(make_obj("objects", name, x, 142.0, oid))
         oid += 1
@@ -1780,7 +1788,7 @@ def room_hospital_hall_ward():
 
 
 def room_hospital_hall_waiting():
-    """Outpatient-style corridor: a row of seats under a "now calling" screen and a board, either side of a water cooler."""
+    """Outpatient-style corridor: a row of seats under a "now calling" screen, the night cleaner's trolley and wet-floor sign beside them."""
     return _hospital_hall(
         "room_hospital_hall_waiting",
         wall=[
@@ -1792,15 +1800,17 @@ def room_hospital_hall_waiting():
             ("aed_cabinet1", 224.0, 48.0),
         ],
         props=[
+            # one row of four seats (the staff room and the vestibule already have
+            # the water coolers)
             ("hospital_chair_south", 100.0, 104.0),
-            ("hospital_chair_south", 120.0, 104.0),
-            ("hospital_chair_south", 176.0, 104.0),
-            ("hospital_chair_south", 196.0, 104.0),
-            ("water_cooler1", 146.0, 112.0),
+            ("hospital_chair_south", 116.0, 104.0),
+            ("hospital_chair_south", 132.0, 104.0),
+            ("hospital_chair_south", 148.0, 104.0),
             # hand sanitiser on the west side wall, just below the door row
             ("sanitiser_dispenser1", 13.0, 128.0),
             # the night cleaner's trolley parked against the wall, east of the seats
             ("cleaning_trolley1", 213.0, 116.0),
+            ("wet_floor_sign1", 186.0, 120.0),
         ],
     )
 

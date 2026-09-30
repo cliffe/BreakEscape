@@ -742,6 +742,42 @@
                  "width":25,
                  "x":489,
                  "y":36
+                }, 
+                {
+                 "gid":908,
+                 "height":27,
+                 "id":249,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":42,
+                 "y":232
+                }, 
+                {
+                 "gid":907,
+                 "height":47,
+                 "id":251,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":34,
+                 "x":484,
+                 "y":236
+                }, 
+                {
+                 "gid":906,
+                 "height":51,
+                 "id":252,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":40,
+                 "x":522,
+                 "y":246
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -844,7 +880,7 @@
          "y":0
         }],
  "nextlayerid":11,
- "nextobjectid":249,
+ "nextobjectid":253,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.2",
@@ -3085,7 +3121,7 @@
          "margin":0,
          "name":"objects\/hospital_extras",
          "spacing":0,
-         "tilecount":87,
+         "tilecount":110,
          "tileheight":60,
          "tiles":[
                 {
@@ -3609,6 +3645,144 @@
                  "image":"..\/objects\/nurse_call_display1.png",
                  "imageheight":17,
                  "imagewidth":25
+                }, 
+                {
+                 "id":87,
+                 "image":"..\/objects\/filing_cabinet_steel1.png",
+                 "imageheight":61,
+                 "imagewidth":29
+                }, 
+                {
+                 "id":88,
+                 "image":"..\/objects\/binder_shelves1.png",
+                 "imageheight":60,
+                 "imagewidth":48
+                }, 
+                {
+                 "id":89,
+                 "image":"..\/objects\/kvm_cart1.png",
+                 "imageheight":61,
+                 "imagewidth":37
+                }, 
+                {
+                 "id":90,
+                 "image":"..\/objects\/checkin_kiosk1.png",
+                 "imageheight":60,
+                 "imagewidth":27
+                }, 
+                {
+                 "id":91,
+                 "image":"..\/objects\/drinks_vending1.png",
+                 "imageheight":61,
+                 "imagewidth":42
+                }, 
+                {
+                 "id":92,
+                 "image":"..\/objects\/cctv_monitors1.png",
+                 "imageheight":34,
+                 "imagewidth":46
+                }, 
+                {
+                 "id":93,
+                 "image":"..\/objects\/info_screen1.png",
+                 "imageheight":28,
+                 "imagewidth":40
+                }, 
+                {
+                 "id":94,
+                 "image":"..\/objects\/handwash_poster1.png",
+                 "imageheight":38,
+                 "imagewidth":31
+                }, 
+                {
+                 "id":95,
+                 "image":"..\/objects\/photocopier1.png",
+                 "imageheight":46,
+                 "imagewidth":35
+                }, 
+                {
+                 "id":96,
+                 "image":"..\/objects\/coat_stand1.png",
+                 "imageheight":45,
+                 "imagewidth":21
+                }, 
+                {
+                 "id":97,
+                 "image":"..\/objects\/dishwasher1.png",
+                 "imageheight":29,
+                 "imagewidth":22
+                }, 
+                {
+                 "id":98,
+                 "image":"..\/objects\/shredder1.png",
+                 "imageheight":24,
+                 "imagewidth":18
+                }, 
+                {
+                 "id":99,
+                 "image":"..\/objects\/filing_cabinet_locked1.png",
+                 "imageheight":61,
+                 "imagewidth":29
+                }, 
+                {
+                 "id":100,
+                 "image":"..\/objects\/hospital_chair_north2.png",
+                 "imageheight":26,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":101,
+                 "image":"..\/objects\/pigeonholes1.png",
+                 "imageheight":27,
+                 "imagewidth":28
+                }, 
+                {
+                 "id":102,
+                 "image":"..\/objects\/network_rack1.png",
+                 "imageheight":59,
+                 "imagewidth":34
+                }, 
+                {
+                 "id":103,
+                 "image":"..\/objects\/storage_array1.png",
+                 "imageheight":59,
+                 "imagewidth":30
+                }, 
+                {
+                 "id":104,
+                 "image":"..\/objects\/tape_library1.png",
+                 "imageheight":59,
+                 "imagewidth":30
+                }, 
+                {
+                 "id":105,
+                 "image":"..\/objects\/patient_hoist1.png",
+                 "imageheight":51,
+                 "imagewidth":40
+                }, 
+                {
+                 "id":106,
+                 "image":"..\/objects\/drug_trolley1.png",
+                 "imageheight":47,
+                 "imagewidth":34
+                }, 
+                {
+                 "id":107,
+                 "image":"..\/objects\/bedside_cabinet_slim1.png",
+                 "imageheight":27,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":108,
+                 "image":"..\/objects\/security_monitor1.png",
+                 "imageheight":29,
+                 "imagewidth":24
+                }, 
+                {
+                 "id":109,
+                 "image":"..\/objects\/cable_tray1.png",
+                 "imageheight":14,
+                 "imagewidth":150
                 }],
          "tilewidth":60
         }],

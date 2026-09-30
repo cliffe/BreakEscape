@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="102" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="110" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../objects/iv_stand1.png" width="25" height="60"/>
@@ -306,5 +306,29 @@
  </tile>
  <tile id="101">
   <image source="../objects/pigeonholes1.png" width="28" height="27"/>
+ </tile>
+ <tile id="102">
+  <image source="../objects/network_rack1.png" width="34" height="59"/>
+ </tile>
+ <tile id="103">
+  <image source="../objects/storage_array1.png" width="30" height="59"/>
+ </tile>
+ <tile id="104">
+  <image source="../objects/tape_library1.png" width="30" height="59"/>
+ </tile>
+ <tile id="105">
+  <image source="../objects/patient_hoist1.png" width="40" height="51"/>
+ </tile>
+ <tile id="106">
+  <image source="../objects/drug_trolley1.png" width="34" height="47"/>
+ </tile>
+ <tile id="107">
+  <image source="../objects/bedside_cabinet_slim1.png" width="16" height="27"/>
+ </tile>
+ <tile id="108">
+  <image source="../objects/security_monitor1.png" width="24" height="29"/>
+ </tile>
+ <tile id="109">
+  <image source="../objects/cable_tray1.png" width="150" height="14"/>
  </tile>
 </tileset>
