@@ -175,7 +175,7 @@ Dr. Sarah Kim: And the server room -- I cannot help you at all. That reader is o
 
 + [So my route is Gary.]
     Dr. Sarah Kim: Your route is Gary.
-    Dr. Sarah Kim: Far end of this corridor, behind the override lock. He has been in there since half past ten and I have not had the courage to walk down and knock.
+    Dr. Sarah Kim: Through the handover room, the door on the east side, behind the override lock. He has been in there since half past ten and I have not had the courage to go and knock.
     -> hub
 
 + [Then what have you actually got?]
@@ -204,7 +204,7 @@ Dr. Sarah Kim: And the server room -- I cannot help you at all. That reader is o
 + {topic_ransom_vote and not advised_on_vote} [You asked what to tell them. Ask me again -- I'll answer properly this time.]
     -> ransom_decision_input
 
-+ {not topic_fire_drill} [Six weeks ago there was a fire drill at two in the morning. Whose was it?]
++ {not topic_fire_drill} [Six weeks ago there was a fire drill at half two in the morning. Whose was it?]
     -> fire_drill
 
 + [What's the code for the boardroom?]
@@ -249,7 +249,7 @@ Dr. Sarah Kim: And the thing that will finish me, when I am old, is that he will
 
 + [Was it?]
     Dr. Sarah Kim: *pause* No.
-    Dr. Sarah Kim: But I deferred his budget, I told him to stop escalating, and I have not been down that corridor once tonight. At some point the difference stops mattering.
+    Dr. Sarah Kim: But I deferred his budget, I told him to stop escalating, and I have not been through that door once tonight. At some point the difference stops mattering.
     -> hub
 
 + [Then go and tell him it wasn't. It'll cost you nothing and it's worth a great deal.]
