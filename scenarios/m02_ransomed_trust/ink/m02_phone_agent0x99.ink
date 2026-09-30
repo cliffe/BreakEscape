@@ -33,6 +33,8 @@ VAR flag_proftpd_submitted = false
 VAR flag_database_submitted = false
 VAR flag_ghost_log_submitted = false
 VAR offline_keys_recovered = false
+VAR restore_manifest_obtained = false
+VAR ghost_key_material_obtained = false
 VAR lockpicking_guide_offered = false
 VAR ssh_guide_offered = false
 VAR privesc_guide_offered = false
@@ -178,7 +180,7 @@ Agent HaX: Front desk first -- get yourself into their paper log, because the el
     -> hint_pin_safe
 
 // Decision phase: moral support
-+ {offline_keys_recovered and not ransom_decision_made and not hint_ransom_given} [Can you help me think through the ransom decision?]
++ {restore_manifest_obtained and not ransom_decision_made and not hint_ransom_given} [Can you help me think through the ransom decision?]
     -> hint_ransom_decision
 
 // Ghost deal option when approaching recovery console
@@ -581,7 +583,15 @@ Agent HaX: The answer's somewhere in the building. Check plaques, framed documen
 #speaker:agent_0x99
 ~ hint_ransom_given = true
 
-Agent HaX: You have both key types. Independent recovery is genuinely on the table, which it wasn't an hour ago.
+{offline_keys_recovered and ghost_key_material_obtained:
+    Agent HaX: You have both key sets. Independent recovery is genuinely on the table, which it wasn't an hour ago.
+- else:
+    {offline_keys_recovered:
+        Agent HaX: You have the escrow set. That's twelve hours on its own. Ghost's key material out of the staging cache would make it four.
+    - else:
+        Agent HaX: Right now the console will take a restore manifest and a ransom payment, and that's all. The escrow keys in the storage safe are what give you a choice.
+    }
+}
 
 Agent HaX: Now -- Ghost will have given you numbers. Deaths per hour, one figure for paying and a worse one for not. I want you to put those down.
 
@@ -695,13 +705,21 @@ Agent HaX: That's the last decision of this mission.
     Agent HaX: Gary is your route to the server room, and cooperation gets you three things where theft only gets you one.
     -> support_hub
 }
-{flag_ssh_submitted and not offline_keys_recovered:
-    Agent HaX: Two tracks in the server room: VM exploitation for digital keys, and the physical safe for offline keys.
-    Agent HaX: You want both for independent recovery.
+{flag_ssh_submitted and not restore_manifest_obtained:
+    Agent HaX: Two tracks. Keep working down their backup server -- the database backup on it is what gets the recovery console a clean restore point, and it won't restore anything without one.
+    Agent HaX: And the safe in emergency storage has the offline keys. You want both for independent recovery.
     -> support_hub
 }
-{offline_keys_recovered and not ransom_decision_made:
-    Agent HaX: You have everything you need. Recovery console in the server room.
+{restore_manifest_obtained and not ransom_decision_made and not offline_keys_recovered:
+    Agent HaX: The console has its restore point. The escrow keys in the emergency storage safe are what stop the ransom being your only way through it.
+    -> support_hub
+}
+{restore_manifest_obtained and not ransom_decision_made and offline_keys_recovered and not ghost_key_material_obtained and flag_ghost_log_submitted:
+    Agent HaX: Escrow keys and a restore point -- that's twelve hours. Ghost's key material is in the staging cache in the rack. Take it and you've got four.
+    -> support_hub
+}
+{restore_manifest_obtained and not ransom_decision_made and offline_keys_recovered:
+    Agent HaX: You have what the console needs to restore without paying. Recovery console in the server room.
     Agent HaX: Take the decision you can live with. But remember the clock.
     -> support_hub
 }

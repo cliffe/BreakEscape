@@ -39,18 +39,33 @@
 # - Flag-locked container (VM progress unlocks physical loot)
 # - Moral dilemma interface (ransom decision)
 # - Ransomware display minigame (infected terminals)
-# - Backup recovery minigame (restore hospital systems)
+# - Backup recovery minigame (restore hospital systems), fed by flag rewards:
+#   flag 3 pays out a Verified Restore Manifest (no restore of any kind without
+#   it) and flag 4 opens the staging cache holding Ghost's key material (the
+#   four-hour combined restore)
 #
 # ROOM LAYOUT (verified overlap-free by scripts/validate_scenario.rb):
 #
-#   [Server Room]--[Security Office]--[========= Office Corridor =========]
-#    (locked-rfid)   (Val patrols)      |          |          |
-#                                  [Boardroom] [CTO Office] [IT Dept]
-#                                  (locked-pin)  (OPEN)    (locked-key)
-#                                            |
-#                                      [Ward Link]--[== Patient Ward ==]--[Emergency Storage]
-#                                                          |                  (PIN safe)
-#                                                   [Ward Approach]--[Reception]  START
+#                                      [CTO Office]
+#                                      (open, Kim)
+#                                           |
+#               [Boardroom]---------[Night Handover]---------[IT Department]
+#               (locked-pin)         (staff_room)             (locked-key)
+#                                           |
+#   [Server Room]--[Security Office]--[====== Main Corridor ======]
+#    (locked-rfid)   (Val patrols)                |
+#                                            [Ward Link]--[==== Patient Ward ====]--[Emergency Storage]
+#                                                                        |              (PIN safe)
+#                          [Reception]--[Ward Vestibule]--[== Ward Approach ==]
+#                            START
+#
+#   By id: reception_lobby -> ward_vestibule -> ward_approach -> hospital_ward
+#   (+ emergency_equipment_storage east) -> ward_hall -> office_corridor ->
+#   staff_room, the night handover room (dr_kim_office north, it_department east,
+#   conference_room -- the Boardroom -- west). security_office sits west of the
+#   corridor, and server_room west of security.
+#   The three offices use their own room types: room_hospital_office_it,
+#   room_hospital_office_cto and room_hospital_office_security.
 #
 #   DOOR SIDES (predicted from doors.js placement maths, see scratchpad/doorsim.py):
 #     Patient Ward  south -> RIGHT  == the player enters at the ward's BOTTOM-RIGHT.
@@ -789,6 +804,12 @@ boardroom_pin = "0417"
               "sendTimedMessage": { "delay": 1500, "message": "Note decoded -- 'Ransomware Incorporated', £150,000 in Bitcoin, 12-hour clock. That's our adversary. Get into the server room and work the backup box." }
             },
             {
+              "eventPattern": "global_variable_changed:read_ransom_cto",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 4500, "message": "Read what they left on Kim's screen. Not a demand -- a note about Gary's emails. Ghost wants more than the money out of tonight. Remember that when it comes to deciding what goes public." }
+            },
+            {
               "eventPattern": "room_entered:hospital_ward",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 1500, "message": "Those are the patients at risk. Real people. Let's get them their systems back." }
@@ -848,14 +869,25 @@ boardroom_pin = "0417"
               "eventPattern": "global_variable_changed:read_handover_board",
               "condition": "value === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "Friday. Half two in the morning, every door on this floor on free egress for half an hour, authorised by the night security supervisor and not mentioned to the ward.\n\nNobody plants hardware in a server room during a fire drill by coincidence. Find out who signs himself off as N/S Supervisor." }
+              "sendTimedMessage": { "delay": 1500, "message": "Look at the times on that board. Friday's 'drill' ran half two to three, every door on this floor on free egress -- and the whole estate went dark at 02:47. Right in the middle of it. Nobody told the ward, and it says second time.\n\nThat's not a drill. That's somebody holding the doors open, and it's the first thing on paper that says the help came from inside. Signed off by the N/S Supervisor. Find out who signs himself that." }
             },
             {
               "eventPattern": "global_variable_changed:found_safe_pin_clue",
-              "condition": "value === true",
+              "condition": "value === true && !globalVars.escrow_safe_opened",
               "onceOnly": true,
               "completeTask": "gather_pin_clues",
               "sendTimedMessage": { "delay": 1400, "message": "Founding year on the escrow safe, flagged at three separate audits and never changed. Same species of problem as the backup server: somebody wrote it down, somebody filed it, nobody acted.\n\nThe plaque's in the lobby. You walked past it on the way in." }
+            },
+<%# The safe opening IS the code worked out, however the player got there -- the
+    lobby plaque, the pin-cracker, a lucky guess. Without this, solving it from the
+    plaque alone left gather_pin_clues open and "The Keys In The Safe" unfinishable.
+    escrow_safe_opened also silences the snag-list "the plaque's in the lobby" nudge
+    for a player who has already been in the safe. %>
+            {
+              "eventPattern": "objective_task_completed:crack_safe_pin",
+              "onceOnly": true,
+              "setGlobal": { "escrow_safe_opened": true },
+              "completeTask": "gather_pin_clues"
             },
             {
               "eventPattern": "global_variable_changed:read_operator_note",
@@ -948,7 +980,23 @@ boardroom_pin = "0417"
                   debrief line. Owning the full backdoor chain is the moment the attacker's route
                   into this estate stops being theirs, so it is set here. %>
               "setGlobal": { "flag_ghost_log_submitted": true, "backdoor_fully_exploited": true, "network_isolated": true },
-              "sendTimedMessage": { "delay": 1500, "message": "That's the full backdoor chain -- SSH, ProFTPD, database, and Ghost's own operational logs. You've got everything ENTROPY had on this hospital. Now head to the Hospital Recovery Console in the server room and bring the patients' systems back online -- that's how we finish this." }
+              "sendTimedMessage": { "delay": 1500, "message": "That's the full backdoor chain -- SSH, ProFTPD, database, and Ghost's own operational logs. You've got everything ENTROPY had on this hospital, and their staging cache in the rack has just opened. Ghost's own key material should be in there. Take it.\n\nThen the Hospital Recovery Console. Bring the patients' systems back online -- that's how we finish this." }
+            },
+<%# Flag-reward artefacts. The console reads the inventory for these items; the
+    globals only drive HaX's lines, the console's observation text and the Ink. %>
+            {
+              "eventPattern": "item_picked_up:text_file",
+              "condition": "data.itemId === 'verified_restore_manifest'",
+              "onceOnly": true,
+              "setGlobal": { "restore_manifest_obtained": true },
+              "sendTimedMessage": { "delay": 6000, "message": "The drop-site's cut you a restore manifest from that catalogue -- it's in your kit. Read it. Every snapshot since Tuesday night carries their dropper, which is why the recovery console has refused to touch anything.\n\nIt will now. What's left is which keys you hand it, and how fast that gets the wards back." }
+            },
+            {
+              "eventPattern": "item_picked_up:text_file",
+              "condition": "data.itemId === 'entropy_key_material'",
+              "onceOnly": true,
+              "setGlobal": { "ghost_key_material_obtained": true },
+              "sendTimedMessage": { "delay": 1500, "message": "Ghost's own key material -- the thing they meant to sell back to St. Catherine's for a hundred and fifty grand. Wrapped, useless on its own, which is why it was sitting in a box in the rack. Put it next to the offline escrow set from the storage safe and the console can run the four-hour restore." }
             },
             {
               "eventPattern": "global_variable_changed:gary_ko",
@@ -957,12 +1005,22 @@ boardroom_pin = "0417"
               "completeTask": "obtain_password_hints",
               "sendTimedMessage": { "delay": 2000, "message": "Gary is down -- you won't be getting those password hints out of him now. Doesn't matter: he wrote them on a sticky note by his monitor. Grab it. Same weak credentials unlock the backup server over SSH." }
             },
+<%# Seven different things set insider_evidence_partial (the Proposal, the Night
+    Rota, Val's notebook and drill answer, Kim's fire_drill knot, the ENTROPY Asset Tag,
+    the Night Handover Board), so the line must fit all of them. The task completion is
+    split from the message: the handover board already sends its own reading of the
+    evidence, and once the badge is known the naming handler below says it better. %>
             {
               "eventPattern": "global_variable_changed:insider_evidence_partial",
               "condition": "value === true",
               "onceOnly": true,
-              "completeTask": "unmask_gather_evidence",
-              "sendTimedMessage": { "delay": 1500, "message": "So Ghost wasn't bluffing. That affiliate note is real -- someone on staff fed them the operational timing. Keep pulling on it. The technical evidence you're recovering should narrow down who." }
+              "completeTask": "unmask_gather_evidence"
+            },
+            {
+              "eventPattern": "global_variable_changed:insider_evidence_partial",
+              "condition": "value === true && !globalVars.read_handover_board && !globalVars.insider_badge_id_found",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "That goes in the file. Somebody on the staff here has been working for ENTROPY, and they have had the run of this building at night. Keep pulling. What you take off their backup server should tell us which badge." }
             },
             {
               "eventPattern": "objective_task_completed:submit_database_flag",
@@ -1039,7 +1097,7 @@ boardroom_pin = "0417"
               "eventPattern": "global_variable_changed:offline_keys_recovered",
               "condition": "value === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1000, "message": "The offline backup encryption keys. Those are your alternative to paying the ransom. Now get to the recovery console in the server room -- that's the last step." }
+              "sendTimedMessage": { "delay": 1000, "message": "The offline escrow keys. That's your alternative to paying the ransom -- twelve hours on their own, four if you can pair them with the key material Ghost has been sitting on. The recovery console in the server room will take them once it has a clean restore point to work from." }
             },
             {
               "eventPattern": "global_variable_changed:pin_cracker_found",
@@ -1258,7 +1316,12 @@ boardroom_pin = "0417"
             "walletAddress": "bc1q7cyrfmckn2ewz5m78ts6jt9lcfhfwcvzefm27k",
             "timerHours": 12,
             "groupName": "Ransomware Incorporated",
-            "supportPortal": "ransom1nc0rp0rated.onion"
+            "supportPortal": "ransom1nc0rp0rated.onion",
+            "extraLines": [
+              "HOST  SCR-RECEP-01 / front desk",
+              "Locked on this host: 18,402 patient registrations.",
+              "Your front desk is a clipboard now. Get used to it."
+            ]
           }
         }<%# Self check-in kiosks: flavour only (no puzzle role). They claim the two
     checkin_kiosk_locked1 map sprites and show the same ransom note in place. %>
@@ -1280,7 +1343,11 @@ boardroom_pin = "0417"
             "walletAddress": "bc1q7cyrfmckn2ewz5m78ts6jt9lcfhfwcvzefm27k",
             "timerHours": 12,
             "groupName": "Ransomware Incorporated",
-            "supportPortal": "ransom1nc0rp0rated.onion"
+            "supportPortal": "ransom1nc0rp0rated.onion",
+            "extraLines": [
+              "HOST  <%= kiosk_id.sub('reception_kiosk_', 'KIOSK-0') %> / outpatient self check-in",
+              "Please take a seat. Nobody will call your name tonight."
+            ]
           }
         }<% end %>
       ]
@@ -1555,6 +1622,7 @@ boardroom_pin = "0417"
           "locked": true,
           "lockType": "ransomware_display",
           "observations": "The bedside EHR terminal that should show patient vitals and medication records. The screen shows a ransom note on a black background instead. All six beds are running on paper charts.",
+          "onRead": { "setVariable": { "decoded_ransomware_note": true } },
           "observationVariants": [
             {
               "condition": "globalVars.ward_recovering",
@@ -1571,7 +1639,13 @@ boardroom_pin = "0417"
             "walletAddress": "bc1q7cyrfmckn2ewz5m78ts6jt9lcfhfwcvzefm27k",
             "timerHours": 12,
             "groupName": "Ransomware Incorporated",
-            "supportPortal": "ransom1nc0rp0rated.onion"
+            "supportPortal": "ransom1nc0rp0rated.onion",
+            "extraLines": [
+              "HOST  W3-EHR-BEDSIDE / Ward 3 critical care",
+              "Medication administration record: LOCKED. Remote alarm relay: LOCKED.",
+              "Next scheduled doses 04:00 -- six patients -- from paper, from memory.",
+              "Every hour you spend deciding, your nurses spend watching six monitors that no longer talk to the desk."
+            ]
           }
         },
 <%# Bed 4 ventilator panel — the glanceable state surface for Mr Pryce. Pure display
@@ -1742,7 +1816,12 @@ boardroom_pin = "0417"
             "walletAddress": "bc1q7cyrfmckn2ewz5m78ts6jt9lcfhfwcvzefm27k",
             "timerHours": 12,
             "groupName": "Ransomware Incorporated",
-            "supportPortal": "ransom1nc0rp0rated.onion"
+            "supportPortal": "ransom1nc0rp0rated.onion",
+            "extraLines": [
+              "HOST  IT-ADM-02 / systems administration",
+              "Backup server: ENCRYPTED. Shadow copies: DELETED. Restore catalogue: OURS.",
+              "We came in through a door your administrator told you about in May. Ask him."
+            ]
           }
         },
         {
@@ -1939,14 +2018,31 @@ boardroom_pin = "0417"
               "description": "ProFTPD exploitation flag submitted - shell access established"
             },
             {
-              "type": "emit_event",
-              "event_name": "database_flag_submitted",
-              "description": "Database backup flag submitted - reveals offline key location"
+              "type": "give_item",
+              "item_name": "Verified Restore Manifest",
+              "description": "Database backup flag submitted - the drop-site cuts a verified restore manifest from the recovered catalogue"
             },
             {
               "type": "unlock_object",
               "objectId": "entropy_staging_cache",
               "description": "Ghost's operational log submitted - ENTROPY Staging Cache unlocks automatically"
+            }
+          ],
+<%# The recovery console will not run without this. It is the flag-3 payout: the
+    drop-site turns the catalogue the player found on the backup server into a list
+    of which snapshot is safe to restore. Item-backed, so the console reads the
+    player's inventory rather than a hidden global. %>
+          "itemsHeld": [
+            {
+              "type": "text_file",
+              "id": "verified_restore_manifest",
+              "name": "Verified Restore Manifest",
+              "takeable": true,
+              "readable": true,
+              "text": "SAFETYNET DROP-SITE // VERIFIED RESTORE MANIFEST\nCut from the backup catalogue inside the database backup you located on 172.16.0.3.\n\nSNAPSHOT     TYPE           STATUS\nTue 23:00    nightly full   CLEAN     <-- restore point\nWed 23:00    nightly full   TAINTED   (dropper staged Wed 21:12)\nThu 23:00    nightly full   TAINTED\nFri 01:00    incremental    TAINTED\nFri 02:47    --             ENCRYPTION EVENT\n\nEvery system image since Tuesday night carries ENTROPY's dropper. Rebuild from any of them and the wards go dark again inside the hour.\n\nLoad into the Hospital Recovery Console, server room. This tells the console which images it can trust. Patient records are decrypted in place with whichever key set you give it -- and that decides how long it takes.",
+              "observations": "The drop-site's payout for the database backup: a verified restore manifest, cut from the catalogue you pulled off the backup server. It names the one clean snapshot. The recovery console will not restore anything without it.",
+              "puzzle_graph_role": "key",
+              "puzzle_graph_unlocks": "hospital_recovery_console"
             }
           ]
         },
@@ -1964,10 +2060,54 @@ boardroom_pin = "0417"
           "id": "hospital_recovery_console",
           "name": "Hospital Recovery Console",
           "takeable": false,
-          "observations": "The system recovery console. This is where you initiate the backup restoration process. Choose your recovery source carefully -- the wrong choice could mean reinfection.",
+          "observations": "The hospital's clinical recovery console. It will not restore a single host until it holds a verified restore manifest -- without one it cannot tell a clean snapshot from a poisoned one. After that, the key sets you load decide how fast the wards come back.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.backup_restore_initiated",
+              "value": "The recovery console is running the restore you chose. Progress bars, host by host. Nothing left to decide here."
+            },
+            {
+              "condition": "globalVars.restore_manifest_obtained",
+              "value": "The recovery console has a clean restore point to work from now. What is left is which keys you give it, and how fast that brings the wards back."
+            }
+          ],
           "puzzle_graph_role": "lock",
           "puzzle_graph_aim": "restore_hospital_systems",
+          "puzzle_graph_links": [
+            { "from": "vmfl_submit_database_flag", "to": "lock_hospital_recovery_console" }
+          ],
+<%# Gate: every source needs the Verified Restore Manifest (flag 3's drop-site reward).
+    Offline adds the escrow keys from the safe; combined adds ENTROPY's own key
+    material, which sits in the staging cache that flag 4's reward opens. The console
+    lists each slot so the player can see exactly what it is still missing. %>
           "minigameData": {
+            "consoleTitle": "ST. CATHERINE'S REGIONAL // CLINICAL RECOVERY CONSOLE",
+            "keySlots": [
+              {
+                "id": "manifest",
+                "label": "Verified restore manifest",
+                "item": "verified_restore_manifest",
+                "loadedText": "LOADED -- clean snapshot Tue 23:00",
+                "missingText": "NOT LOADED -- no clean restore point identified",
+                "blockedText": "No verified restore manifest. The console cannot tell a clean snapshot from a poisoned one, so it will not restore anything -- attacker's key or ours. The catalogue that would tell it is on the backup server."
+              },
+              {
+                "id": "escrow",
+                "label": "Offline escrow keys",
+                "global": "offline_keys_recovered",
+                "loadedText": "LOADED -- air-gapped key set read in",
+                "missingText": "NOT LOADED -- the escrow safe is still shut",
+                "blockedText": "Offline escrow keys not loaded -- the emergency storage safe is still shut."
+              },
+              {
+                "id": "entropy",
+                "label": "ENTROPY key material",
+                "item": "entropy_key_material",
+                "loadedText": "LOADED -- attacker session keys, wrapped",
+                "missingText": "NOT LOADED -- still on the attacker's hardware",
+                "blockedText": "No attacker key material loaded. Ghost staged it on site, on hardware that is not on any hospital register. The combined restore needs it alongside the escrow set."
+              }
+            ],
             "backupRecoverySources": [
               {
                 "id": "ransom_payment",
@@ -1983,7 +2123,8 @@ boardroom_pin = "0417"
                   "£150,000 has left St. Catherine's and will not be recovered.",
                   "Ransomware Incorporated records this site as a payer. So will everyone they sell the list to."
                 ],
-                "status": "AVAILABLE -- 30 MINUTES",
+                "needs": ["manifest"],
+                "status": "30 MINUTES -- IF YOU PAY",
                 "etaLabel": "30 minutes",
                 "marker": "!",
                 "statusTone": "warning",
@@ -1994,7 +2135,8 @@ boardroom_pin = "0417"
                   "Recovery time: 30 minutes (instant decryption key delivery).",
                   "Patient risk: Minimal -- systems restored before backup power fails.",
                   "Cost: £150,000 to Ransomware Incorporated funds future attacks.",
-                  "Intelligence value: Ghost escapes -- no trail, no arrest, no deterrent."
+                  "Intelligence value: Ghost escapes -- no trail, no arrest, no deterrent.",
+                  "Prerequisite: a verified restore manifest -- the key decrypts, the manifest stops their dropper coming back with it."
                 ]
               },
               {
@@ -2002,8 +2144,7 @@ boardroom_pin = "0417"
                 "name": "Offline Backup Keys (Physical Safe)",
                 "compromised": false,
                 "etaHours": 12,
-                "requiresGlobal": "offline_keys_recovered",
-                "requiresGlobalLabel": "Offline backup keys not recovered -- the escrow safe is still shut.",
+                "needs": ["manifest", "escrow"],
                 "outcomeTone": "warning",
                 "outcomeHeader": "RESTORE INITIATED -- OFFLINE KEY ESCROW",
                 "outcomeStatus": "MANUAL RESTORATION RUNNING -- ETA 12 HOURS",
@@ -2013,7 +2154,7 @@ boardroom_pin = "0417"
                   "ENTROPY is paid nothing and learns nothing.",
                   "The long way round. Everyone in this building will feel every hour of it."
                 ],
-                "status": "AVAILABLE IF SAFE CRACKED",
+                "status": "12 HOURS -- ESCROW KEYS",
                 "etaLabel": "12 hours manual restore",
                 "marker": "~",
                 "statusTone": "warning",
@@ -2024,26 +2165,25 @@ boardroom_pin = "0417"
                   "Recovery time: 12 hours -- manual restoration of encrypted patient records.",
                   "Patient risk: Statistical -- 0.3% fatality per hour on life support.",
                   "Cost: £0 to ENTROPY -- denies ransom funding for future operations.",
-                  "Prerequisite: Offline backup keys must be recovered from PIN safe first."
+                  "Prerequisite: the verified restore manifest, and the offline escrow keys from the emergency storage safe."
                 ]
               },
               {
                 "id": "combined_recovery",
-                "name": "Combined Recovery (VM Keys + Physical Keys)",
+                "name": "Combined Recovery (Escrow Keys + ENTROPY Key Material)",
                 "compromised": false,
                 "etaHours": 4,
-                "requiresGlobal": "offline_keys_recovered",
-                "requiresGlobalLabel": "Offline backup keys not recovered -- the escrow safe is still shut.",
+                "needs": ["manifest", "escrow", "entropy"],
                 "outcomeTone": "success",
                 "outcomeHeader": "RESTORE INITIATED -- OFFLINE ESCROW PLUS RECOVERED KEY MATERIAL",
                 "outcomeStatus": "CLINICAL SYSTEMS DECRYPTING -- ETA 4 HOURS",
                 "outcomeBullets": [
-                  "Both key sets accepted. The escrow copy verifies what you pulled off their own server.",
+                  "Both key sets accepted. The escrow copy unwraps the session keys you took off Ghost's own hardware.",
                   "Four hours, inside the generator window, with no payment and no attacker key.",
-                  "ENTROPY is paid nothing, and you keep everything you took off their backup server.",
+                  "ENTROPY is paid nothing, and the keys they meant to sell back to you did the work.",
                   "This is the outcome the board deferred £85,000 to avoid needing."
                 ],
-                "status": "OPTIMAL -- REQUIRES BOTH KEY TYPES",
+                "status": "OPTIMAL -- BOTH KEY SETS",
                 "etaLabel": "4 hours",
                 "marker": "OK",
                 "statusTone": "safe",
@@ -2054,7 +2194,7 @@ boardroom_pin = "0417"
                   "Recovery time: 4 hours -- both key types accelerate decryption significantly.",
                   "Patient risk: Low -- well within backup power window.",
                   "Cost: £0 to ENTROPY -- no ransom payment required.",
-                  "Prerequisite: Both VM exploitation flags AND offline backup keys required."
+                  "Prerequisite: the verified restore manifest, the offline escrow keys, and ENTROPY's own key material off their staging hardware."
                 ]
               }
             ]
@@ -2149,6 +2289,17 @@ boardroom_pin = "0417"
           "puzzle_graph_aim": "unmask_inside_asset",
           "puzzle_graph_note": "Flag-locked container: forces the full VM chain (SSH -> ProFTPD -> database -> Ghost's log) before the mission's ideological payload is readable",
           "contents": [
+            {
+              "type": "text_file",
+              "id": "entropy_key_material",
+              "name": "ENTROPY Key Material",
+              "takeable": true,
+              "readable": true,
+              "text": "RI // SITE KEY MATERIAL -- ST CATHERINE'S\nop: TRIAGE    operator: ghost\n\nper-host session keys, wrapped ....... 1,184\nmaster unwrap ........................ HELD BY SUPPORT PORTAL (off site)\n\nnote to self: on their own these are noise. the site's offline escrow set would let them verify host by host and skip the slow path -- twelve hours becomes four. the escrow set is the one thing in this building i could not reach. so they will pay.",
+              "observations": "A ruggedised drive, taped to the inside of the cache lid. Ghost's own copy of the per-host keys -- the thing Ransomware Incorporated's 'support portal' would sell back to St. Catherine's for £150,000. Wrapped, and useless without the hospital's escrow set to unwrap them. With it, the recovery console can run the four-hour restore.",
+              "puzzle_graph_role": "key",
+              "puzzle_graph_unlocks": "hospital_recovery_console"
+            },
             {
               "type": "notes",
               "id": "ghost_manifesto",
@@ -2317,6 +2468,7 @@ boardroom_pin = "0417"
           "locked": true,
           "lockType": "ransomware_display",
           "observations": "Dr. Kim's executive workstation. The ransom note has locked it like every other machine in the building -- board papers, financials, and the incident response she is trying to run, all behind Ransomware Incorporated's countdown.",
+          "onRead": { "setVariable": { "decoded_ransomware_note": true, "read_ransom_cto": true } },
           "puzzle_graph_role": "lock",
           "puzzle_graph_aim": "infiltrate_hospital",
           "minigameData": {
@@ -2327,7 +2479,12 @@ boardroom_pin = "0417"
             "walletAddress": "bc1q7cyrfmckn2ewz5m78ts6jt9lcfhfwcvzefm27k",
             "timerHours": 12,
             "groupName": "Ransomware Incorporated",
-            "supportPortal": "ransom1nc0rp0rated.onion"
+            "supportPortal": "ransom1nc0rp0rated.onion",
+            "extraLines": [
+              "HOST  EXEC-CTO-01 / office of the Chief Technology Officer",
+              "A personal note for this desk: we read the seven emails before you did.",
+              "Everyone else is going to read them too. The only question left is who tells them."
+            ]
           }
         },
         {
@@ -2659,7 +2816,12 @@ boardroom_pin = "0417"
             "walletAddress": "bc1q7cyrfmckn2ewz5m78ts6jt9lcfhfwcvzefm27k",
             "timerHours": 12,
             "groupName": "Ransomware Incorporated",
-            "supportPortal": "ransom1nc0rp0rated.onion"
+            "supportPortal": "ransom1nc0rp0rated.onion",
+            "extraLines": [
+              "HOST  SEC-DESK-01 / security office",
+              "Badge issuing: DISABLED. Door groups: ENCRYPTED. Card mappings: ENCRYPTED.",
+              "Nobody in your building can open a door for anyone tonight. Except us."
+            ]
           }
         },
         {
@@ -2767,10 +2929,10 @@ boardroom_pin = "0417"
           "readable": true,
           "text": "WARD 3 / EXEC -- NIGHT HANDOVER, WEEK COMMENCING MON\n\nMon  Quiet. Bed 4 unsettled, see notes.\nTue  Agency x2. Lift 2 still out.\nWed  Estates in re: store room. Didn't come.\nThu  Quiet.\nFri  02:30-03:00 FIRE DRILL, Ward 3 + Exec corridor.\n     Doors on free egress for the duration. Auth: N/S Supervisor.\n     NOBODY told the ward. Second time.\n\nSat  -- (this column left blank)\n\nAcross the bottom, in a different hand and pressed hard:\n\"02:47. Everything went at once. If you are reading this and the screens are still dead, we are on paper. Charts in the trolley, drug round by torch if the lights go. Do not wait for IT.\"",
           "observations": "A wipe-clean weekly grid, half of it rubbed out and rewritten. The bottom two lines are newer than the rest and were written by somebody in a hurry.",
-          "onRead": { "setVariable": { "read_handover_board": true } },
+          "onRead": { "setVariable": { "read_handover_board": true, "insider_evidence_partial": true } },
           "puzzle_graph_role": "clue",
           "puzzle_graph_aim": "unmask_inside_asset",
-          "puzzle_graph_reveals": "fire_drill_window_and_that_the_night_security_supervisor_authorised_it"
+          "puzzle_graph_reveals": "fire_drill_window_covers_the_0247_attack_and_the_night_security_supervisor_authorised_it"
         },
         {
           "type": "notes",
@@ -2998,6 +3160,9 @@ boardroom_pin = "0417"
     "advised_board_refuse": false,
 
     "offline_keys_recovered": false,
+    "escrow_safe_opened": false,
+    "restore_manifest_obtained": false,
+    "ghost_key_material_obtained": false,
     "password_hints_found": false,
     "lore_cryptosecure_found": false,
     "lore_ghosts_manifesto_found": false,
@@ -3006,6 +3171,7 @@ boardroom_pin = "0417"
 
     "pin_attempts": 0,
     "decoded_ransomware_note": false,
+    "read_ransom_cto": false,
     "read_operator_note": false,
     "read_handover_board": false,
     "found_safe_pin_clue": false,

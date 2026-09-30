@@ -97,12 +97,13 @@
   "ransomware_display": {
     "_dispatch": "lockType",
     "required": ["organisation", "ransomAmount", "groupName"],
-    "optional": ["encryptedSystems", "ransomBitcoin", "walletAddress", "timerHours", "supportPortal"]
+    "optional": ["encryptedSystems", "ransomBitcoin", "walletAddress", "timerHours", "supportPortal", "extraLines"]
   },
 
   "backup_recovery": {
     "_dispatch": "lockType",
-    "required": ["backupRecoverySources"]
+    "required": ["backupRecoverySources"],
+    "optional": ["consoleTitle", "keySlots"]
   },
 
   "dual_auth": {

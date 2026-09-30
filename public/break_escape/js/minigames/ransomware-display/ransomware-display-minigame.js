@@ -91,8 +91,14 @@ export class RansomwareDisplayMinigame extends MinigameScene {
             return;
         }
 
+        // A scenario's `timerHours` sets the clock (m02's note says twelve hours of
+        // backup power); without it the display keeps its original 72 hours.
+        const timerHours = Number(this.params.lockable?.scenarioData?.minigameData?.timerHours);
+        const durationMs = Number.isFinite(timerHours) && timerHours > 0
+            ? timerHours * 60 * 60 * 1000
+            : TIMER_DURATION_MS;
         const scenarioStart = this.getScenarioStartTimestamp();
-        const deadlineAt = scenarioStart + TIMER_DURATION_MS;
+        const deadlineAt = scenarioStart + durationMs;
         if (window.gameState?.globalVariables) {
             window.gameState.globalVariables['ransomware_deadline_at'] = deadlineAt;
         }
@@ -128,6 +134,11 @@ export class RansomwareDisplayMinigame extends MinigameScene {
         const walletAddress  = scenarioData.walletAddress  || '';
         const groupName      = scenarioData.groupName      || 'Ransomware Group';
         const supportPortal  = scenarioData.supportPortal  || '';
+        // Optional per-terminal lines (host name, what this machine was doing, a
+        // targeted threat), so each infected screen can say something of its own.
+        const extraLines = Array.isArray(scenarioData.extraLines)
+            ? scenarioData.extraLines.join('\n')
+            : (scenarioData.extraLines || '');
 
         this.gameContainer.innerHTML = `
             <div class="ransomware-display-bg">
@@ -143,6 +154,7 @@ ${encryptedSystems}
 ${ransomBitcoin ? `${ransomBitcoin} - ${ransomAmount}` : ransomAmount}
 ${walletAddress ? `Wallet: ${walletAddress}` : ''}
 DO NOT attempt recovery - encrypted files will be destroyed${supportPortal ? `\nSupport: ${supportPortal}` : ''}</pre>
+                    ${extraLines ? `<pre class="ransomware-display-body ransomware-display-extra">${extraLines}</pre>` : ''}
 
                     <div class="ransomware-display-timer-row">
                         <span id="ransomware-timer-label">TIME REMAINING:</span>

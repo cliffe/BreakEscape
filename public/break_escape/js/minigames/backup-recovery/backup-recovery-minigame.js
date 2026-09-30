@@ -156,18 +156,73 @@ export class BackupRecoveryMinigame extends MinigameScene {
         return normalized.length > 0 ? normalized : DEFAULT_SOURCES;
     }
 
+    getMinigameData() {
+        return this.params?.lockable?.scenarioData?.minigameData || {};
+    }
+
     /**
-     * A source may declare `requiresGlobal`: the name of a global variable that must be
-     * truthy before it can be chosen. Lets a scenario make a prerequisite real rather than
-     * writing it in a bullet the console never enforces. Sources with no `requiresGlobal`
+     * Key slots: the material the console holds, shown as a checklist under the
+     * header. A slot is loaded when the player carries the named inventory item
+     * (`item`, matched on the item's id) or when the named global is true
+     * (`global`). An item-backed slot makes a physical artefact the actual key,
+     * rather than a flag the player never sees. Scenarios without `keySlots`
+     * render exactly as before.
+     */
+    getKeySlots() {
+        const slots = this.getMinigameData().keySlots;
+        return Array.isArray(slots) ? slots.filter((slot) => slot && typeof slot.id === 'string') : [];
+    }
+
+    isSlotLoaded(slot) {
+        if (!slot) {
+            return false;
+        }
+        if (slot.item) {
+            const items = window.inventory?.items || [];
+            if (items.some((item) => item?.scenarioData?.id === slot.item)) {
+                return true;
+            }
+        }
+        if (slot.global) {
+            const globals = window.gameState?.globalVariables || {};
+            if (globals[slot.global] === true) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * The first reason a source cannot be chosen, or null when it can. A source may
+     * declare `requiresGlobal` (a global that must be true) and/or `needs` (key slot
+     * ids that must all be loaded). Lets a scenario make a prerequisite real rather
+     * than writing it in a bullet the console never enforces. Sources with neither
      * are always available, so existing scenarios are unaffected.
      */
-    isSourceAvailable(source) {
-        if (!source || !source.requiresGlobal) {
-            return true;
+    getUnmetRequirement(source) {
+        if (!source) {
+            return null;
         }
-        const globals = window.gameState?.globalVariables || {};
-        return globals[source.requiresGlobal] === true;
+        if (Array.isArray(source.needs) && source.needs.length > 0) {
+            const slots = this.getKeySlots();
+            for (const slotId of source.needs) {
+                const slot = slots.find((s) => s.id === slotId);
+                if (slot && !this.isSlotLoaded(slot)) {
+                    return slot.blockedText || `${slot.label || slotId} not loaded.`;
+                }
+            }
+        }
+        if (source.requiresGlobal) {
+            const globals = window.gameState?.globalVariables || {};
+            if (globals[source.requiresGlobal] !== true) {
+                return source.requiresGlobalLabel || 'That source is not available yet.';
+            }
+        }
+        return null;
+    }
+
+    isSourceAvailable(source) {
+        return this.getUnmetRequirement(source) === null;
     }
 
     getSelectedSource() {
@@ -222,7 +277,7 @@ export class BackupRecoveryMinigame extends MinigameScene {
         if (!this.isSourceAvailable(source)) {
             if (window.gameAlert) {
                 window.gameAlert(
-                    source.requiresGlobalLabel || 'That source is not available yet.',
+                    this.getUnmetRequirement(source),
                     'warning',
                     'Source Unavailable',
                     3500
@@ -394,7 +449,7 @@ export class BackupRecoveryMinigame extends MinigameScene {
         if (!this.isSourceAvailable(source)) {
             return {
                 header: `UNAVAILABLE - ${source.name.toUpperCase()}`,
-                banner: source.requiresGlobalLabel || 'This source is not available yet.',
+                banner: this.getUnmetRequirement(source),
                 bannerTone: 'danger',
                 bullets: source.bullets || []
             };
@@ -497,9 +552,27 @@ export class BackupRecoveryMinigame extends MinigameScene {
             `;
         }).join('');
 
+        const consoleTitle = this.getMinigameData().consoleTitle || 'NORTHGATE TRUST // BACKUP RECOVERY CONSOLE';
+        const slots = this.getKeySlots();
+        const slotsMarkup = slots.length === 0 ? '' : `
+                    <ul class="backup-recovery-slots">
+                        ${slots.map((slot) => {
+                            const loaded = this.isSlotLoaded(slot);
+                            const stateText = loaded
+                                ? (slot.loadedText || 'LOADED')
+                                : (slot.missingText || 'NOT LOADED');
+                            return `
+                        <li class="backup-recovery-slot ${loaded ? 'is-loaded' : 'is-missing'}" data-slot-id="${escapeHtml(slot.id)}">
+                            <span class="backup-recovery-slot-box">${loaded ? '[x]' : '[ ]'}</span>
+                            <span class="backup-recovery-slot-label">${escapeHtml(slot.label || slot.id)}</span>
+                            <span class="backup-recovery-slot-state">${escapeHtml(stateText)}</span>
+                        </li>`;
+                        }).join('')}
+                    </ul>`;
+
         this.gameContainer.innerHTML = `
             <div class="backup-recovery-shell">
-                <div class="backup-recovery-header">NORTHGATE TRUST // BACKUP RECOVERY CONSOLE</div>
+                <div class="backup-recovery-header">${escapeHtml(consoleTitle)}${slotsMarkup}</div>
 
                 <div class="backup-recovery-tiles" role="list">
                     ${tiles}

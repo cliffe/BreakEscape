@@ -98,6 +98,14 @@
     -moz-osx-font-smoothing: grayscale;
 }
 
+/* Per-terminal lines (scenarioData `extraLines`): what this machine says that the others don't. */
+.ransomware-display-extra {
+    flex: none;
+    margin-top: 10px;
+    border-color: #a80000;
+    color: #ffd0d0;
+}
+
 .ransomware-display-timer-row {
     margin-top: 14px;
     display: flex;

@@ -271,7 +271,7 @@ Agent HaX: The hundred and fifty thousand. You should know where it goes.
 === combined_recovery_outcomes ===
 #speaker:agent_0x99
 
-Agent HaX: You ran the combined restore -- the keys off the backup server and the physical set out of the safe, together. Four hours. Systems back well inside the window.
+Agent HaX: You ran the combined restore -- Ghost's own key material out of their staging cache and the physical set out of the safe, together. Four hours. Systems back well inside the window.
 
 Agent HaX: Two died, both of them critical long before ENTROPY got anywhere near that building. The wards held.
 

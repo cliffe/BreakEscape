@@ -1,6 +1,6 @@
 # Ransomed Trust — Testing Walkthrough
 
-> Last updated: 2026-09-30. Reconciled by hand against `scenario.json.erb` and `ink/*.ink` at `09287477`, and cross-checked against the end-to-end playtest of game 1126 (2026-09-29).
+> Last updated: 2026-09-30. Reconciled by hand against `scenario.json.erb` and `ink/*.ink` at `09287477`, and cross-checked against the end-to-end playtest of game 1126 (2026-09-29). Revised the same day for the recovery-console flag rewards, the safe/`gather_pin_clues` fix, Gary's walk-away, the handover board as evidence and the per-terminal ransom screens; re-played end to end in game 1153 (concluded, all eight aims complete) and game 1154 (walk-away and first-screen checks).
 >
 > The Decision Weight work from `DECISION_WEIGHT_PLAN.md` is implemented (ward deterioration, Bed 4 slow-path window, Kim word-kept text, evidence scaling). The invariants it must not break are listed under "Regression invariants" below.
 
@@ -56,21 +56,21 @@ The player enters the ward at its **bottom-right**, walks up through the beds an
 - VM `hospital_backup_server` provisioned with 4 flags, in this order:
   1. `flag{ssh_access_granted}` → task `submit_ssh_flag`
   2. `flag{proftpd_backdoor_exploited}` → task `submit_proftpd_flag`
-  3. `flag{database_backup_located}` → task `submit_database_flag`
-  4. `flag{ghost_operational_log}` → task `submit_ghost_log_flag`, **and** its drop-site `flagRewards` entry (`unlock_object: entropy_staging_cache`) opens the ENTROPY Staging Cache
+  3. `flag{database_backup_located}` → task `submit_database_flag`, **and** its drop-site `flagRewards` entry (`give_item`) puts the **Verified Restore Manifest** (`verified_restore_manifest`, a `text_file` held in the station's `itemsHeld`) into the inventory
+  4. `flag{ghost_operational_log}` → task `submit_ghost_log_flag`, **and** its drop-site `flagRewards` entry (`unlock_object: entropy_staging_cache`) opens the ENTROPY Staging Cache, which holds the **ENTROPY Key Material** (`entropy_key_material`)
 
 ### Minigames used
 
 | Minigame                       | Object                                                               | Status        |
 | ------------------------------ | -------------------------------------------------------------------- | ------------- |
-| `ransomware_display`           | 5 encrypted terminals (reception, ward EHR, IT, CTO office, security) | ✅ Implemented |
+| `ransomware_display`           | 5 encrypted terminals (reception, ward EHR, IT, CTO office, security) plus 2 kiosks; each shows its own `extraLines` and a 12-hour clock (`timerHours`) | ✅ Implemented |
 | `password` lock                | Gary's Workstation (`Hospital1987`)                                  | ✅ Implemented |
 | `pin` lock                     | Boardroom door (`0417`), emergency safe (`1987`), Kim's safe (`1987`) | ✅ Implemented |
 | `key` lock + lockpick          | IT Department door, IT Filing Cabinet, Sealed Equipment Case         | ✅ Implemented |
 | `rfid` lock                    | Server Room door                                                     | ✅ Implemented |
 | `flag` lock                    | ENTROPY Staging Cache                                                | ✅ Implemented |
 | `vm-launcher` / `flag-station` | Server room                                                          | ✅ Implemented |
-| `backup_recovery`              | Hospital Recovery Console (server room)                              | ✅ Implemented |
+| `backup_recovery`              | Hospital Recovery Console (server room); `keySlots` checklist, sources gated by `needs` | ✅ Implemented |
 | `workstation` (CyberChef)      | CyberChef Workstation (server room), Ward Clerk's Laptop (handover)  | ✅ Implemented |
 | `pin-cracker`                  | Inside the Sealed Equipment Case (server room); three tries          | ✅ Implemented |
 
@@ -89,7 +89,7 @@ The player enters the ward at its **bottom-right**, walks up through the beds an
 1. **Reception (game load)** — Opening briefing cutscene plays → `briefing_played` set, `#unlock_aim:infiltrate_hospital`; **task `arrive_at_hospital` complete**. On close, the handler sends the "nobody can badge you through anything" text and offers the lockpicking field guide (`lockpicking_guide_offered`)
 2. **Reception — Visitor Log** — Read it → `noticed_struck_booking`; handler flags the struck-through booking (first cover-burn foreshadow). The log also lists G. Reeves arriving at 03:20 and declining to sign. *Optional, recommended*
 3. **Reception — Crisis Protocol Notice** — Read it → explains the premise in-world (override keys at reception; server room reader is standalone). *Optional*
-4. **Reception — Hospital Founding Plaque** — "Founded 1987". This is the emergency safe PIN, but reading the plaque sets nothing and does **not** complete `gather_pin_clues`. *Optional*
+4. **Reception — Hospital Founding Plaque** — "Founded 1987". This is the emergency safe PIN. Reading the plaque sets nothing; opening the safe with it completes `gather_pin_clues` (step 32). *Optional*
 5. **Reception — Bernie Nwosu** — Any opening leads through `the_struck_entry` → `offer_key` → **task `sign_in_at_reception` complete**, `#unlock_aim:access_it_systems`, `bernie_gave_key`, **IT Department Override Key given**. HaX then texts that Kim is "through the ward, up past the night handover room"
    - Honest lines (confirm the booking and invite her to check the log or ring Kim) set `was_honest` → `bernie_trusts_player`. **This gates her vouching for you after the cover burn**
    - *KO fallback*: `taskOnKO: sign_in_at_reception`; the key drops from `itemsHeld`
@@ -101,7 +101,7 @@ The player enters the ward at its **bottom-right**, walks up through the beds an
    - *KO fallback*: `taskOnKO: gather_pin_clues`
 9. **Ward (top-left) → Ward Link → Main Corridor** — Ward Board is a directory: Handover north, Boardroom west of it, CTO north, IT east, Security Office at the west end, Server Room through Security
 10. **Night Handover (`staff_room`)** — no NPC. Four objects:
-    - **Night Handover Board** → `read_handover_board`; handler text on the Friday **02:30–03:00** fire drill "Auth: N/S Supervisor". Flavour only; it does not set `insider_evidence_partial`
+    - **Night Handover Board** → `read_handover_board` **and** `insider_evidence_partial` (→ task `unmask_gather_evidence`). HaX's reading: Friday's 02:30–03:00 "drill" put every door on free egress, the estate went dark at 02:47 inside that window, "second time", signed off by the N/S Supervisor. The generic evidence text is suppressed for this source, so only the board message arrives
     - **Estates Audit Snag List** → `found_safe_pin_clue` → handler completes **task `gather_pin_clues`** (item 19: safe still on the founding year; item 21: fire drill not countersigned). This reveals the locked "Keys In The Safe" aim early
     - **Spare Contractor Lanyard** (`contractor_lanyard`), lying on the side. Free to take any time; see step 20
     - **Ward Clerk's Laptop**: portable CyberChef workstation
@@ -119,7 +119,7 @@ The player enters the ward at its **bottom-right**, walks up through the beds an
 
 12. **Night Handover → IT door (east)** — Unlock with the override key, or pick it → **task `open_it_department` complete**
     - Bernie only sees reception, so `seen_picking_by_bernie` fires only if the player picks something in the lobby. Val's `on_lockpick_used` cutscene fires if she sees any pick (repeatable, 30 s cooldown)
-13. **Encrypted terminal** — Read the Reception Workstation, IT Infected Terminal or Security Desk Terminal → `decoded_ransomware_note` → handler completes **task `decode_ransomware_note`**. The ward EHR and CTO terminals show the note but carry no `onRead`, so they do **not** complete it
+13. **Encrypted terminal** — Read any of the five: Reception Workstation, ward EHR Terminal, IT Infected Terminal, CTO Workstation or Security Desk Terminal → `decoded_ransomware_note` → handler completes **task `decode_ransomware_note`**. Each screen adds its own lines under the demand (host name, what that machine was doing: 18,402 registrations at reception, the ward's 04:00 doses on paper, "a door your administrator told you about in May" in IT, locked door groups in Security). The CTO screen carries a note about "the seven emails" and also sets `read_ransom_cto` → HaX texts that Ghost wants more than money. The kiosks are flavour and set nothing
 14. **IT — Planted Network Device** — Pick it up → Ghost's first phone contact (`ghost_contacted_player`). *Optional*
 15. **IT — Gary Whitlock** — Server Room Keycard. Routes:
     - *Rapport* — solidarity opener ("Seven times. I know.") plus a warm follow-up puts `gary_influence >= 25` → `keycard_trusted`: card, credentials spoken aloud, **tasks `talk_to_gary` + `obtain_password_hints` complete**, then he offers the filing cabinet
@@ -127,7 +127,7 @@ The player enters the ward at its **bottom-right**, walks up through the beds an
     - *Reluctant* (influence below 8 when asking from the hub) → `keycard_reluctant`: card only
     - *Blame* (opener 3) → `open_blame`: card skidded across the desk, **`talk_to_gary` complete**, `gary_defensive`. These tags now sit above the text, so the card and task arrive (engine fix `9c1de3fe`: trailing Ink tags run)
     - *Leverage* — open the filing cabinet first, take Warning 7 of 7 (`gary_evidence_recovered`), then "Gary. Look at this." → `show_the_email` → recovers him from any state including defensive → `leverage_payoff`: card if not already given, **`talk_to_gary` + `obtain_password_hints`**
-    - "Nothing yet. I'll come back." from `the_ask` **also completes `talk_to_gary`**, burning the cover without handing over the card. The hub still offers "I need into the server room." afterwards
+    - *Walk away* — "Nothing yet. I'll come back." from `the_ask` (or "I should get on." from the hub before the card) completes **nothing** and burns nothing. Gary answers in character and the conversation parks in `gary_waiting`. Coming back plays a return line ("Still here. So's the card…", cycling, warmer if `gary_trusts_player`) with three choices: "I need into the server room." → `keycard_request` (the card routes above, by influence), "Something else first." → hub, or "Still nothing." to leave again. `talk_to_gary` and the cover burn wait until the card actually changes hands
     - *KO fallback*: `taskOnKO: talk_to_gary`; card and Spare Contractor Lanyard drop; handler completes `obtain_password_hints` on `gary_ko`
 16. **IT — Gary's Password Sticky Note** — Read it → `password_hints_found` → handler completes **task `obtain_password_hints`** (the route that never fails). Gary's hub "Is there anything reused…" and the defensive hub's credential question also complete it
 17. **IT — Gary's Workstation** (password `Hospital1987`) → Backup Server SSH Notes. *Optional*
@@ -169,9 +169,9 @@ The player enters the ward at its **bottom-right**, walks up through the beds an
 23. **Server Room — VM Access Terminal** — Interact → handler offers the scanning-and-exploitation field guide
 24. **VM** — SSH in with the reused credential (`Hospital1987`) → submit flag 1 at the drop-site → **task `submit_ssh_flag` complete**, `flag_ssh_submitted`; handler offers vulnerability, ProFTPD exploitation and privesc guides
 25. **VM** — Exploit the ProFTPD 1.3.3c backdoor → submit flag 2 → **task `submit_proftpd_flag` complete**, `flag_proftpd_submitted`; **Ghost calls** (`on_proftpd_exploited`)
-26. **VM** — Locate the encrypted database backup → submit flag 3 → **task `submit_database_flag` complete**, `flag_database_submitted`, `insider_db_window_found` → **task `unmask_db_window` complete**; **Ghost calls** (`on_backup_located`)
+26. **VM** — Locate the encrypted database backup → submit flag 3 → **task `submit_database_flag` complete**, `flag_database_submitted`, `insider_db_window_found` → **task `unmask_db_window` complete**; **Ghost calls** (`on_backup_located`). The drop-site reward puts the **Verified Restore Manifest** in the inventory (readable: one clean snapshot, Tue 23:00, everything after it carries the dropper); pickup sets `restore_manifest_obtained` and HaX texts at 6 s that the console will now work. Ghost's call covers the drop-site's reward panel, so the inventory slot and HaX's text are what the player sees
 27. **VM** — Recover Ghost's operational log → submit flag 4 → **task `submit_ghost_log_flag` complete**; `flag_ghost_log_submitted`, `backdoor_fully_exploited`, `network_isolated`, `insider_badge_id_found` → **task `unmask_ghost_badge` complete**; handler names badge **SC-4471**
-28. **Server Room — ENTROPY Staging Cache** — Opens after flag 4's drop-site reward. Take Ghost's Operational Manifesto (`lore_ghosts_manifesto_found`) and the Affiliate Handling Note (`insider_method_confirmed`). (Before `f94ab033` the unlocked cache only showed its observation, which is what playtest 1126 hit.)
+28. **Server Room — ENTROPY Staging Cache** — Opens after flag 4's drop-site reward; HaX's flag-4 text now points at it. Take the **ENTROPY Key Material** (`ghost_key_material_obtained`, HaX text: pair it with the escrow set for four hours), Ghost's Operational Manifesto (`lore_ghosts_manifesto_found`) and the Affiliate Handling Note (`insider_method_confirmed`). (Before `f94ab033` the unlocked cache only showed its observation, which is what playtest 1126 hit.)
 29. **Server Room extras** *(optional)* — Handwritten Note Taped Inside the Rack (ROT13; `read_operator_note`: 12 h offline, 4 h combined); Sealed Equipment Case (pick it) → PIN Cracker (`pin_cracker_found`, Ghost's `on_cracker_taken`, HaX offers the info-leak field note) + ENTROPY Asset Tag (`insider_evidence_partial`)
 
 **Aim completes when:** 24–27 are done. Unlocks "Put A Name To The Badge" and "Bring The Wards Back".
@@ -182,11 +182,11 @@ The player enters the ward at its **bottom-right**, walks up through the beds an
 
 [Unlocks after: aim `cover_compromised` complete. Revealed earlier if the snag list, Kim or Doyle completes `gather_pin_clues` first]
 
-30. **`gather_pin_clues`** — completes from the snag list (step 10), Kim's `escrow_safe` knot (`found_safe_pin_clue`; she also names the founding year), Doyle's empathy `timeline`, or Doyle KO. The plaque, the ward-approach note and the pin-cracker do **not** complete it
+30. **`gather_pin_clues`** — completes from the snag list (step 10), Kim's `escrow_safe` knot (`found_safe_pin_clue`; she also names the founding year), Doyle's empathy `timeline`, Doyle KO, **or opening the safe by any route** (handler on `objective_task_completed:crack_safe_pin`, which also sets `escrow_safe_opened`). Reading the plaque, the ward-approach note or taking the pin-cracker does not complete it on its own. Once the safe is open, the snag list's "the plaque's in the lobby" text is suppressed
 31. **Emergency Storage (far east end of the ward)** — Enter → **task `locate_safe` complete**
-32. **PIN-Locked Safe** — PIN `1987` (or work it out with the pin-cracker) → **task `crack_safe_pin` complete**; read the Offline Backup Encryption Keys → `offline_keys_recovered`; handler and Ghost both text. The unlocked Emergency Supply Cabinet next to it holds flavour items
+32. **PIN-Locked Safe** — PIN `1987` (or work it out with the pin-cracker) → **tasks `crack_safe_pin` + `gather_pin_clues` complete**; read the Offline Backup Encryption Keys → `offline_keys_recovered`; handler (twelve hours alone, four with Ghost's key material, once the console has a restore point) and Ghost both text. The unlocked Emergency Supply Cabinet next to it holds flavour items
 
-This aim is not part of the ending gate. The keys are required only for the offline-only and combined recovery options.
+This aim is not part of the ending gate. The keys are required only for the offline-only and combined recovery options. Solving the safe from the plaque alone now finishes the aim.
 
 ---
 
@@ -203,6 +203,8 @@ Holds only the two **discovery** tasks. The naming payoff lives in the next aim 
     - Val's `reeves_questions` fire-drill question
     - Kim's `fire_drill` knot, first choice
     - ENTROPY Asset Tag (Sealed Equipment Case)
+    - Night Handover Board (step 10)
+    - HaX's text for the first source is generic ("Somebody on the staff here has been working for ENTROPY…"); it is skipped when the first source is the handover board (which sends its own) or when the badge is already known (the naming text below covers it)
 34. Step 26 (flag 3) → **task `unmask_db_window` complete**
 
 ## Aim: Put A Name To The Badge *(parallel, not required for conclusion)*
@@ -221,10 +223,10 @@ Holds only the two **discovery** tasks. The naming payoff lives in the next aim 
 
 [Unlocks after: aim `exploit_entropy_backdoor` complete]
 
-38. **Server Room — Hospital Recovery Console** — Pick a source:
-    - Ransom Payment (30 min) — always available → `paid_ransom`, `ward_recovering`
-    - Offline Backup Keys (12 h) — needs `offline_keys_recovered` → `slow_path_window_open`, Bed 4 distressed
-    - Combined Recovery (4 h) — needs `offline_keys_recovered` → `ward_recovering`, no ransom
+38. **Server Room — Hospital Recovery Console** — The header lists three key slots, each `[x]`/`[ ]` with a state line: Verified restore manifest (item `verified_restore_manifest`), Offline escrow keys (`offline_keys_recovered`), ENTROPY key material (item `entropy_key_material`). The two item slots read the inventory, not a global. **Before flag 3 every source is greyed out** and selecting one explains why ("No verified restore manifest… The catalogue that would tell it is on the backup server."); confirm reads SOURCE UNAVAILABLE. Sources:
+    - Ransom Payment (30 min) — needs the manifest → `paid_ransom`, `ward_recovering`
+    - Offline Backup Keys (12 h) — needs the manifest + escrow keys → `slow_path_window_open`, Bed 4 distressed
+    - Combined Recovery (4 h) — needs the manifest + escrow keys + ENTROPY key material (so flag 4 and the staging cache) → `ward_recovering`, no ransom
     - Confirming sets `backup_restore_initiated` → **task `initiate_backup_recovery` complete**, and `backup_recovery_source` → **task `make_ransom_decision` complete** + `ransom_decision_made`. **Ghost video-calls** (`on_recovery_console`) with his offer (`ghost_deal_accepted` if taken). HaX points to the Boardroom comms terminal
 39. **Boardroom door** — PIN `0417`, from Kim's Desk Diary, Kim's `boardroom_code` knot, or the pin-cracker. Reachable any time, but the terminal stays locked until step 40's gates are met
 40. **Boardroom — Hospital Communications Terminal** — needs `backdoor_fully_exploited` **and** `ransom_decision_made` (otherwise `relay_locked_investigation` / `relay_locked_incident`) → transmit or keep quiet → **task `decide_hospital_exposure` complete**, `exposed_hospital` true/false, **`mission_complete`**. Transmitting sends extra [SENT] lines for the ZDS invoice, the manifesto and an exposed Reeves
@@ -244,8 +246,12 @@ Holds only the two **discovery** tasks. The naming payoff lives in the next aim 
 | `dr_kim_met`                                                 | Handler, on `meet_dr_kim`                                                                       |
 | `found_boardroom_code`                                       | Kim's diary `onRead` or Kim's `boardroom_code` knot                                             |
 | `found_safe_pin_clue`                                        | Snag list `onRead` or Kim's `escrow_safe` knot                                                  |
-| `read_handover_board`                                        | Night Handover Board `onRead` (flavour text only)                                               |
-| `decoded_ransomware_note`                                    | Reception, IT or Security Desk terminal `onRead`                                                |
+| `read_handover_board`                                        | Night Handover Board `onRead` (also sets `insider_evidence_partial`)                            |
+| `decoded_ransomware_note`                                    | Any of the five encrypted terminals `onRead` (reception, ward EHR, IT, CTO, security)           |
+| `read_ransom_cto`                                            | CTO Workstation `onRead` (HaX's "seven emails" text)                                            |
+| `escrow_safe_opened`                                         | Handler, on `crack_safe_pin` (also completes `gather_pin_clues`)                                |
+| `restore_manifest_obtained`                                  | Handler, on picking up the Verified Restore Manifest (flag 3 reward)                            |
+| `ghost_key_material_obtained`                                | Handler, on picking up the ENTROPY Key Material (staging cache)                                 |
 | `password_hints_found`                                       | Sticky note `onRead`                                                                            |
 | `gary_evidence_recovered`                                    | Warning 7 of 7 `onPickup`                                                                       |
 | `board_coverup_email_found`                                  | Board Liability Email `onPickup`                                                                |
@@ -258,7 +264,7 @@ Holds only the two **discovery** tasks. The naming payoff lives in the next aim 
 | `insider_db_window_found`                                    | Handler, on `submit_database_flag`                                                              |
 | `lore_ghosts_manifesto_found` / `insider_method_confirmed`   | ENTROPY Staging Cache contents                                                                  |
 | `pin_cracker_found`                                          | PIN Cracker `onPickup`                                                                          |
-| `insider_evidence_partial`                                   | Proposal, Night Rota, Val's notebook, Val's drill question, Kim's `fire_drill`, ENTROPY Asset Tag |
+| `insider_evidence_partial`                                   | Proposal, Night Rota, Val's notebook, Val's drill question, Kim's `fire_drill`, ENTROPY Asset Tag, Night Handover Board |
 | `inspected_asset_post`                                       | Night Security Post Log `onRead`                                                                |
 | `insider_identified`                                         | Handler: badge ID + (post log or `insider_evidence_partial`)                                    |
 | `insider_confronted` + `insider_asset_arrested` / `_escaped` | Reeves confrontation or ambush                                                                  |
@@ -291,7 +297,9 @@ Holds only the two **discovery** tasks. The naming payoff lives in the next aim 
 - [ ] Server room door will **not** open without the RFID card (no pick, no badge, no talking past it)
 - [ ] All four flags submit and complete their tasks with progress counters
 - [ ] ENTROPY Staging Cache stays shut until flag 4, then opens **and** yields both notes
-- [ ] Recovery console greys out offline and combined options until the offline keys are read
+- [ ] Recovery console greys out **every** option before flag 3, and says it needs a restore manifest
+- [ ] Flag 3 puts the Verified Restore Manifest in the inventory; the console's manifest slot then shows `[x]` and ransom opens (offline too, if the keys are read)
+- [ ] Combined stays greyed until the ENTROPY Key Material is taken from the staging cache after flag 4
 - [ ] Press terminal refuses to transmit before flag 4 **and** before the recovery decision
 - [ ] Debrief reflects: ransom choice, exposure choice, `gary_protected`, Reeves outcome, `bernie_vouched`, `guard_knocked_out`, `advised_board_*` vs `paid_ransom`
 - [ ] Credits play after the debrief closes and the game records as concluded
@@ -315,13 +323,15 @@ Holds only the two **discovery** tasks. The naming payoff lives in the next aim 
 
 - [ ] **KO every NPC in turn** and confirm the mission still completes: Bernie (`sign_in_at_reception`), Kim (`meet_dr_kim`), Gary (`talk_to_gary` + handler completes `obtain_password_hints`), Doyle (`gather_pin_clues`), Val (`cover_restored`)
 - [ ] Reach Gary by picking the IT door **without ever speaking to Bernie**, then return to her after the burn: her `first_meeting` opens on the cover-burn branch and still completes `sign_in_at_reception`
-- [ ] Leave Gary via "Nothing yet. I'll come back.": `talk_to_gary` completes and the burn fires with no card in hand; on return `met_gary` routes to `returning` and the hub still offers the card
+- [ ] Leave Gary via "Nothing yet. I'll come back.": `talk_to_gary` stays open, no burn, no card; coming back plays his return line from `gary_waiting` (not on the way out), and "I need into the server room." still hands over the card (checked in game 1154)
 - [ ] Accuse Gary and push (`accuse_gary_push`): only offered once `gave_keycard` is true, so the server room is never stranded
 - [ ] Accuse Kim and push: she goes hostile after `meet_dr_kim` has already completed
 - [ ] Reach the Boardroom before the VM work is done: press terminal shows `relay_locked_investigation`
 - [ ] Complete the VM work but not the recovery decision: press terminal shows `relay_locked_incident`
 - [ ] Never identify Reeves: `press_terminal_ambush` fires and the credits show him escaped
-- [ ] Solve the safe from the plaque alone: `crack_safe_pin` completes but `gather_pin_clues` stays open (the aim is not in the ending gate)
+- [ ] Solve the safe from the plaque alone: `crack_safe_pin` and `gather_pin_clues` both complete and "The Keys In The Safe" finishes (checked in game 1153)
+- [ ] Read the handover board before any other evidence: `unmask_gather_evidence` completes and only the board's HaX text arrives (checked in game 1153)
+- [ ] Read the ward EHR terminal before any other screen: `decode_ransomware_note` completes (checked in game 1154)
 
 ---
 

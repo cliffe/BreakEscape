@@ -53,6 +53,36 @@
     padding: 12px;
 }
 
+/* Key slots: what material the console currently holds (scenarioData `keySlots`). */
+.backup-recovery-slots {
+    list-style: none;
+    margin: 10px 0 0 0;
+    padding: 0;
+    display: grid;
+    gap: 2px;
+}
+
+.backup-recovery-slot {
+    display: grid;
+    grid-template-columns: auto minmax(0, 16em) minmax(0, 1fr);
+    gap: 10px;
+    font-family: 'GNF', monospace;
+    font-size: 21px;
+    line-height: 1.15;
+}
+
+.backup-recovery-slot.is-loaded {
+    color: #bff0cb;
+}
+
+.backup-recovery-slot.is-missing {
+    color: #f0c9a0;
+}
+
+.backup-recovery-slot-state {
+    color: var(--mg07-muted);
+}
+
 .backup-recovery-tiles {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));

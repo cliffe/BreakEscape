@@ -93,6 +93,18 @@
       "optional": false
     },
     {
+      "id": "lock_reception_kiosk_1",
+      "label": "Self Check-in Kiosk<br/>Ransomware terminal",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_reception_kiosk_2",
+      "label": "Self Check-in Kiosk<br/>Ransomware terminal",
+      "kind": "lock",
+      "optional": false
+    },
+    {
       "id": "npc_bernie_nwosu",
       "label": "Bernie Nwosu",
       "kind": "key",
@@ -312,6 +324,12 @@
       "id": "lock_entropy_staging_cache",
       "label": "ENTROPY Staging Cache<br/>Flag lock",
       "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "entropy_key_material",
+      "label": "ENTROPY Key Material",
+      "kind": "key",
       "optional": false
     },
     {
@@ -660,6 +678,16 @@
     },
     {
       "from": "reception_lobby",
+      "to": "lock_reception_kiosk_1",
+      "soft": false
+    },
+    {
+      "from": "reception_lobby",
+      "to": "lock_reception_kiosk_2",
+      "soft": false
+    },
+    {
+      "from": "reception_lobby",
       "to": "npc_bernie_nwosu",
       "soft": false
     },
@@ -866,6 +894,16 @@
     {
       "from": "server_room",
       "to": "lock_entropy_staging_cache",
+      "soft": false
+    },
+    {
+      "from": "lock_entropy_staging_cache",
+      "to": "entropy_key_material",
+      "soft": false
+    },
+    {
+      "from": "entropy_key_material",
+      "to": "lock_hospital_recovery_console",
       "soft": false
     },
     {
@@ -1161,6 +1199,11 @@
     {
       "from": "ward_vestibule",
       "to": "ward_approach",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_database_flag",
+      "to": "lock_hospital_recovery_console",
       "soft": false
     },
     {

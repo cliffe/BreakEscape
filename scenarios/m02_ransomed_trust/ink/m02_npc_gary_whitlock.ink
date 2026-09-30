@@ -19,6 +19,12 @@
 // So the "wrong" opening costs the player the lanyard, the credentials from
 // his mouth, and his good opinion. It never costs them the mission -- the
 // sticky note on his monitor carries the credentials regardless.
+//
+// WALKING AWAY is free. Leaving before the card changes hands completes nothing
+// and burns nothing: talk_to_gary completes only when the card does, because the
+// cover burn hangs off that task (whoever is watching pulls the booking once the
+// player holds the one working credential). Gary notices, though, and says so
+// when the player comes back (gary_waiting).
 // ===========================================
 
 EXTERNAL player_name()
@@ -36,6 +42,7 @@ VAR topic_passwords = false
 VAR showed_him_the_email = false
 VAR met_gary = false                 // prevents replaying first_meeting with its * choices already spent
 VAR gary_protected_locally = false   // local mirror so the boardroom-email hub option retires once used
+VAR gary_waiting_primed = false      // set as the player walks off card-less; the greeting plays on the way back in
 
 // Synced from globalVars by engine at call-open
 VAR gary_evidence_recovered = false
@@ -212,11 +219,13 @@ Gary Whitlock: And when they write this up and it says the administrator failed 
     -> discuss_vulnerability
 
 + [Nothing yet. I'll come back.]
-    ~ cover_burned = true
-    #complete_task:talk_to_gary
+    {gary_trusts_player:
+        Gary Whitlock: *already turning back to the screens* Go on. I'll be here. Obviously.
+    - else:
+        Gary Whitlock: *already turning back to the screens* Course you will. Everybody comes back. Usually when they want something.
+    }
     #exit_conversation
-    Gary Whitlock: I'll be here. Obviously.
-    -> hub
+    -> gary_waiting
 
 === keycard_request ===
 Narrator: He pulls a lanyard out from under his collar and looks at it.
@@ -426,7 +435,12 @@ Gary Whitlock: If you can get into it -- take the lot. I'd rather it was in your
 + {insider_evidence_partial and gave_keycard and not insider_identified} [The affiliate who confirmed ENTROPY's timing. Was that you?]
     -> accuse_gary
 
-+ [I should get on.]
++ {not gave_keycard} [I should get on.]
+    Gary Whitlock: *already turning back to the screens* Aye. Card'll be here.
+    #exit_conversation
+    -> gary_waiting
+
++ {gave_keycard} [I should get on.]
     {gary_trusts_player:
         Gary Whitlock: Go on. And -- thanks. For reading them.
     - else:
@@ -713,6 +727,36 @@ Gary Whitlock: Get out.
 #set_global:accused_wrong_suspect:true
 #exit_conversation
 -> DONE
+
+// ===========================================
+// WALKED OFF WITHOUT THE CARD
+// The engine resumes a conversation at the knot its pending choices belong to
+// and replays that knot from the top. So the greeting is gated on a flag that is
+// false on the way out and set just before the choices: it plays when the
+// player comes back, not as they leave. Every choice here clears it again.
+// ===========================================
+
+=== gary_waiting ===
+{gary_waiting_primed and not gave_keycard:
+    Narrator: The lanyard is still round his neck. He taps the card on it without turning round.
+    {gary_trusts_player:
+        Gary Whitlock: {&Still here. Card's still here. You know what you came in for -- just ask.|Still here. Still got it. Still yours when you want it.}
+    - else:
+        Gary Whitlock: {&Still here. So's the card. Funny, that -- nobody's walked off with it while you were gone.|Back again. Card's where it was. So am I.}
+    }
+}
+~ gary_waiting_primed = true
++ {not gave_keycard} [I need into the server room.]
+    ~ gary_waiting_primed = false
+    -> keycard_request
++ [Something else first.]
+    ~ gary_waiting_primed = false
+    -> hub
++ [Still nothing. I'll come back.]
+    ~ gary_waiting_primed = false
+    Gary Whitlock: *doesn't look up* Mm.
+    #exit_conversation
+    -> gary_waiting
 
 // ===========================================
 // RETURN VISITS
