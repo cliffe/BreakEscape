@@ -79,6 +79,12 @@ import { NPCPathfindingManager } from '../systems/npc-pathfinding.js';
 import NPCSpriteManager from '../systems/npc-sprites.js';
 import { resolveObjectField } from '../utils/conditional-text.js';
 
+// Default hover text for decor: "drug_trolley1" -> "A drug trolley."
+function describeDecor(name) {
+    const words = String(name).replace(/\d+$/, '').replace(/[_-]+/g, ' ').trim();
+    return `${/^[aeiou]/i.test(words) ? 'An' : 'A'} ${words}.`;
+}
+
 export let rooms = {};
 export let currentRoom = '';
 export let currentPlayerRoom = '';
@@ -2042,7 +2048,7 @@ export function createRoom(roomId, roomData, position) {
                             type: 'table',
                             takeable: false,
                             readable: false,
-                            observations: scenarioObj.observations || `A ${textureKey} in the room`
+                            observations: scenarioObj.observations || describeDecor(textureKey)
                         };
 
                         // Depth: same formula as regular objects (bottom-Y + 0.5)
@@ -2663,7 +2669,7 @@ export function createRoom(roomId, roomData, position) {
                             type: 'table',  // Mark explicitly as table type
                             takeable: false,
                             readable: false,
-                            observations: `A ${cleanName} in the room`
+                            observations: describeDecor(cleanName)
                         };
                         console.log(`Applied table properties to ${imageName}`);
                     }
@@ -2677,7 +2683,7 @@ export function createRoom(roomId, roomData, position) {
                             type: cleanName,
                             takeable: false,
                             readable: false,
-                            observations: `A ${cleanName} in the room`
+                            observations: describeDecor(cleanName)
                         };
                         console.log(`Applied default properties to ${type} ${imageName} -> ${cleanName}`);
                     }
