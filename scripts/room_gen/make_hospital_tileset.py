@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Build tiles/rooms/room_hospital.png: a clinical variant of room6.png.
+Build tiles/rooms/room_hospital.png: a clinical variant of room6.png, with the
+north wall 2 tiles high (floor from y=64, see room_geometry.py).
 
 The look (mint walls, green skirting, pale grey-blue vinyl floor) comes from a
 PixelLab edit of room6 (scripts/room_gen/pixellab/room6_hospital_edit.png). That
@@ -18,9 +19,13 @@ this.load.image line in game.js.
 Usage: python3 scripts/room_gen/make_hospital_tileset.py
 """
 
+import sys
 from pathlib import Path
 
 from PIL import Image
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from room_geometry import FLOOR_TOP, raise_back_wall, sheet_floor_top  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "public/break_escape/assets/tiles/rooms/room6.png"
@@ -47,8 +52,9 @@ FLOOR_LIGHT = (221, 232, 236)
 FLOOR_SPECK = (189, 203, 211)
 GROUT = (170, 186, 196)
 
-# room6 geometry (px)
-FLOOR_TOP = 70          # first floor row under the back wall
+# Geometry (px). room6 draws its wall foot 6px low (floor from row 70); main()
+# raises it to the standard 2-tile north wall first (room_geometry.FLOOR_TOP = 64,
+# floor line on rows 62-63), so every sheet here meets the bottom of north doors.
 TILE = 32
 
 
@@ -239,6 +245,7 @@ def make_exec(carpet):
 
 def main():
     src = Image.open(SRC).convert("RGBA")
+    src = raise_back_wall(src, sheet_floor_top(SRC))
     out = src.copy()
     sp, op = src.load(), out.load()
     back_wall_grey = sp[160, 40][:3]

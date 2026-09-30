@@ -726,8 +726,8 @@ def room_lab():
 
 WALL_TOP_PX = 12        # top of the back-wall band in the room art
 WALL_FRAME_PX = 12      # white-and-black frame round the room edge (x or y 0-11)
-WALL_BASE_PX = 61       # skirting starts here: wall hangings end above it
-FLOOR_TOP_PX = 66       # first floor pixel row under the back wall (hospital tileset)
+WALL_BASE_PX = 59       # skirting starts here (rows 59-61, floor line 62-63): hangings end above it
+FLOOR_TOP_PX = 64       # first floor row: north walls are 2 tiles (room_geometry.FLOOR_TOP)
 SIDE_WALL_PX = 24       # floor furniture should not lean further onto the side walls
 FOOTPRINT_PX = 12       # bottom strip of a floor sprite treated as its floor contact
 
@@ -1009,6 +1009,18 @@ def validate_room(room: dict, stem: str):
             )
 
     warnings += sprite_bounds_warnings(room, layers, gid_to_name)
+
+    # North walls are 2 tiles: the floor must start at y=64, level with north door
+    # bottoms (room_gen/room_geometry.py; check every map with check_room_walls.py)
+    try:
+        from room_gen.check_room_walls import measure
+        from room_gen.room_geometry import FLOOR_TOP
+        tops = measure(room)
+        if tops and any(t != FLOOR_TOP for t in tops):
+            warnings.append(f"back wall floor line off the 2-tile standard: floor starts at "
+                            f"{sorted(set(tops))}, want {FLOOR_TOP} (fix the room sheet, see room_geometry.py)")
+    except Exception as e:
+        warnings.append(f"could not measure the back wall ({e})")
 
     n_objs = sum(
         len(layers[n].get("objects", []))
@@ -1589,7 +1601,7 @@ def room_hospital_staff():
     items = []
     # Wall fixtures above the counter: boiler over the left end, a pair of soap
     # dispensers right of the sink, the notice board over the bin
-    items.append(make_obj("objects", "hot_water_boiler1", 152.0, 60.0, oid))
+    items.append(make_obj("objects", "hot_water_boiler1", 152.0, 58.0, oid))
     oid += 1
     items.append(make_obj("objects", "soap_dispenser1", 176.0, 56.0, oid))
     oid += 1

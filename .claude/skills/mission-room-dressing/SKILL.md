@@ -41,8 +41,8 @@ The preview draws every map sprite, conditional slots included, but **not** scen
 Look at each room as a visitor would. Things the user has flagged in past rounds (hospital, September 2026) — check for each:
 
 - **Theme fit.** Objects must belong in that kind of room: no garden-style lamp stands, school chalkboards on easels, glass drugs cabinets in offices or server rooms, or plants in clinical areas. Replace, don't just delete: bookcases/filing cabinets in offices, a second rack row in a server room, a whiteboard for a handover board.
-- **Wall items stay on the wall face.** Every room is edged by a white frame with a black border (x or y 0–11 in room pixels). Nothing hung on a wall may overlap it. Back-wall hangings (posters, boards, signs, clocks) fit between the frame and the skirting where the wall meets the floor: top y ≥ 12, bottom y ≤ 61. Side-wall items fit in the green strip between the frame and the floor edge: x 12–30 on the west wall, and from `width − 30` to `width − 12` on the east. Anything wider than about 18px, such as an exit sign, goes on the back wall. `--check` reports "overlaps the wall frame" and "hangs over the skirting".
-- **Against the wall.** Vending machines and bookcases stand flat against the north wall, their feet just below the skirting (y≈66 or more), unless they deliberately divide a space (two bookcases forming a nook). Wall-hung fixtures that reach the floor (clinical sinks on a pedestal) go the same way: feet a few pixels below the floor line (y≈72–76), the basin and splashback up the wall. A sink with its feet out on the floor reads as floating in the room.
+- **Wall items stay on the wall face.** Every room is edged by a white frame with a black border (x or y 0–11 in room pixels). Nothing hung on a wall may overlap it. Back-wall hangings (posters, boards, signs, clocks) fit between the frame and the skirting where the wall meets the floor: top y ≥ 12, bottom y ≤ 59. Side-wall items fit in the green strip between the frame and the floor edge: x 12–30 on the west wall, and from `width − 30` to `width − 12` on the east. Anything wider than about 18px, such as an exit sign, goes on the back wall. `--check` reports "overlaps the wall frame" and "hangs over the skirting".
+- **Against the wall.** Vending machines and bookcases stand flat against the north wall, their feet just below the floor line (y≈64 or more), unless they deliberately divide a space (two bookcases forming a nook). Wall-hung fixtures that reach the floor (clinical sinks on a pedestal) go the same way: feet a few pixels below the floor line (y≈72–76), the basin and splashback up the wall. A sink with its feet out on the floor reads as floating in the room.
 - **Seating faces its table or desk.** Use the facing variants (`hospital_chair1` faces W, `hospital_chair2` E, `hospital_chair_south`, `hospital_chair_north`). Waiting areas get at least one back-to-back double row.
 - **Kit faces what it serves.** e.g. bedside monitors turned towards their beds; a back view reads as clutter.
 - **Realistic detail**, sparingly: fire alarm call point with an extinguisher under it, exit sign, sanitiser dispensers by doors, notice boards, bins of the right kind (clinical waste, pedal, yellow).
@@ -62,12 +62,20 @@ Look at each room as a visitor would. Things the user has flagged in past rounds
 
 ### Moving and swapping furniture
 
-Coordinates: `x` = left edge, `y` = feet (bottom), room pixels. Frame y 0–11, back wall face y 12–60, skirting y 61–63, black line y 64–65 (level with the base of north doors), floor from y 66.
+Coordinates: `x` = left edge, `y` = feet (bottom), room pixels. Frame y 0–11, back wall face y 12–58, skirting y 59–61, floor line y 62–63, floor from y 64 (level with the base of north doors; see Room geometry).
 
 - Builder room: edit the builder (`make_obj(layer, name, x, y, oid)`, `place_on_table(table, name, x_frac, surface_frac)`), then regenerate that room and diff the object list if the builder hasn't been run for a while (someone may have hand-edited the output).
 - Hand room, one change: `room_edit.py ROOM move|sprite|add|delete|relayer|floor ...`. Several changes: import `Room` in a short script and call `save()` once. Untouched bytes stay identical; a missing tileset (or an embedded copy older than a new tile) is added or refreshed automatically.
 - `room_edit.py` handles Tiled's multi-line object blocks and the one-object-per-line entries in some hand-edited maps (room_hospital_office, _reception).
 - Then `python3 scripts/generate_rooms.py --check ROOM` for hand rooms. Warnings about door corners, overlaps and the bottom rows are hints: fix the ones that show, and say why you left the rest.
+
+### Room geometry: the north wall is 2 tiles
+
+Every room sheet and map follows one standard, taken from m01's office sheet (`tiles/rooms/room1.png`): the back wall fills rows 0–63, the dark floor line is on rows 62–63, and the floor starts at y=64, exactly where a north door's 32×64 sprite ends. `scripts/room_gen/room_geometry.py` holds the numbers and `raise_back_wall()`, which moves a sheet's wall foot up to the standard without rescaling (room6 and the hospital sheets were drawn 6px low and were fixed this way; `make_hospital_tileset.py` raises room6's geometry before painting, so every hospital variant is correct by construction).
+
+- `python3 scripts/room_gen/check_room_walls.py [glob | --scenario FILE]` rebuilds each map's top tiles and reports where the floor starts; every map should read 64. `generate_rooms.py --check` and each builder run warn when a map is off.
+- A new room sheet: check it with `sheet_floor_top()` (or the checker) before building maps on it; if it reads more than 64, raise it with `raise_back_wall()` rather than hand-editing rows.
+- Mixing sheets (one sheet's wall row above another's floor row) is where a second, lower line creeps in: the checker looks through the wall for that case.
 
 ### Floors
 
@@ -114,6 +122,7 @@ This does catalog.json, tilesets_ref.json, `objects_hospital_extras.tsx` (the ge
 ## 4. Verify
 
 1. `python3 scripts/generate_rooms.py --check <hand rooms>` and re-render the changed rooms; look at them.
+   Run `python3 scripts/room_gen/check_room_walls.py --scenario scenarios/<mission>/scenario.json.erb` if you touched a room sheet or a map's tile layers.
 2. `python3 scripts/room_gen/slot_audit.py --notes scenarios/<mission>/scenario.json.erb` → 0 problems, and each notes prompt either fixed or left for a reason you can state. (`--all` shows old problems in other scenarios; report them but leave them unless asked.)
 3. `ruby scripts/validate_scenario.rb` on the mission and on every scenario sharing a changed room type. Restore unrelated files the validator rewrites.
 4. JS changes: copy the file to `<scratch>/x.mjs` and `node --check` it (the game files are ES modules).
