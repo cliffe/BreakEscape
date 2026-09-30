@@ -724,6 +724,9 @@ const STATIC_SWIVEL_PROPS = {
     // frames are 64x63; a bed-sized box round its middle that suits every facing
     bed_empty: { base: 'bed-empty-rotate', frameNumber: 1, offsetX: -13, offsetY: 0,
         body: { w: 40, h: 28, x: 12, y: 26 } },
+    // ward drug trolley: 34x47 sprite, frames 48x48 with the south view bottom-centred
+    drug_trolley1: { base: 'drug-trolley-rotate', frameNumber: 1, offsetX: -7, offsetY: -1,
+        body: { w: 30, h: 12, x: 9, y: 35 } },
 };
 
 // Define scale factors for different object types

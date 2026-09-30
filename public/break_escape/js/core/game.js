@@ -198,8 +198,8 @@ export function preload() {
     for (let i = 1; i <= 8; i++) {
         this.load.image(`wheelchair-rotate${i}`, `objects/wheelchair-rotate${i}.png`);
     }
-    // Linen cart, corridor IV stand and empty trolley bed: 8-direction frames for the same swap.
-    for (const base of ['linen-cart-rotate', 'iv-stand-rotate', 'bed-empty-rotate']) {
+    // Linen cart, corridor IV stand, empty trolley bed and ward drug trolley: 8-direction frames for the same swap.
+    for (const base of ['linen-cart-rotate', 'iv-stand-rotate', 'bed-empty-rotate', 'drug-trolley-rotate']) {
         for (let i = 1; i <= 8; i++) {
             this.load.image(`${base}${i}`, `objects/${base}${i}.png`);
         }
