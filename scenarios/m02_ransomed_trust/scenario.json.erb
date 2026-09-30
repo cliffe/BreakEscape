@@ -1742,7 +1742,7 @@ boardroom_pin = "0417"
               "name": "Backup Server SSH Notes",
               "takeable": true,
               "readable": true,
-              "text": "BACKUP SERVER -- ACCESS NOTES (Gary)\n\nHost: 192.168.100.50  (ProFTPD 1.3.3c)\nSSH login still uses the old shared admin password -- I KNOW, I keep meaning to rotate it.\n\nReminder to self: the FTP service is the real problem. It's the 1.3.3c backdoor -- the poisoned source release. I flagged this to the board SIX MONTHS ago.\n\nIf you're reading this and you're not me: yes, the password policy here is a disgrace. That's the point.",
+              "text": "BACKUP SERVER -- ACCESS NOTES (Gary)\n\nHost: 172.16.0.3  (ProFTPD 1.3.3c)\nSSH login still uses the old shared admin password -- I KNOW, I keep meaning to rotate it.\n\nReminder to self: the FTP service is the real problem. It's the 1.3.3c backdoor -- the poisoned source release. I flagged this to the board SIX MONTHS ago.\n\nIf you're reading this and you're not me: yes, the password policy here is a disgrace. That's the point.",
               "observations": "Gary's own notes -- confirms the backup server password reuse and the ProFTPD vulnerability",
               "puzzle_graph_role": "clue",
               "puzzle_graph_reveals": "password_reuse_same_weak_credential_across_workstation_and_ssh"
@@ -1839,7 +1839,7 @@ boardroom_pin = "0417"
           "readDisplay": "gameDisplay",
           "takeable": false,
           "readable": true,
-          "text": "HOSPITAL NETWORK DIAGRAM\n\nBackup Server:\n- ProFTPD 1.3.3c\n- Port 21 (FTP)\n- IP: 192.168.100.50\n- Status: VULNERABLE (1.3.3c source backdoor)\n\nGary's note: 'WARNED THEM 6 MONTHS AGO!!!'",
+          "text": "HOSPITAL NETWORK DIAGRAM\n\nBackup Server:\n- ProFTPD 1.3.3c\n- Port 21 (FTP)\n- IP: 172.16.0.3\n- Status: VULNERABLE (1.3.3c source backdoor)\n\nGary's note: 'WARNED THEM 6 MONTHS AGO!!!'",
           "observations": "Network diagram showing the vulnerable ProFTPD backup server",
           "puzzle_graph_role": "clue",
           "puzzle_graph_unlocks": "vm_launcher_rooting_for_a_win",
@@ -1893,7 +1893,7 @@ boardroom_pin = "0417"
           "takeable": false,
           "observations": "Kali attack terminal -- your working box for reaching the hospital backup server over the network",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
-          "vm": <%= vm_object('attack_vm', {"id":1,"title":"kali","ip":"192.168.100.50","enable_console":true}) %>,
+          "vm": <%= vm_object('attack_vm', {"id":1,"title":"kali","ip":"172.16.0.2","enable_console":true}) %>,
           "puzzle_graph_role": "vm",
           "puzzle_graph_aim": "exploit_entropy_backdoor"
         },
