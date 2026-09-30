@@ -8,6 +8,15 @@
     },
     "imported": "2026-09-26"
   },
+  "female_blowse_v2": {
+    "character_id": "df960bf2-20c6-4600-b725-44846cb0337f",
+    "name": "A woman with long wavy black hair, light skin, a r...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-30"
+  },
   "female_hacker_hood_down_v2": {
     "character_id": "41542288-ce3e-4823-8c10-51c1586622ed",
     "name": "A young woman hacker with dark brown hair tied up ...",
@@ -45,6 +54,24 @@
     },
     "imported": "2026-09-27"
   },
+  "female_office_worker_v2": {
+    "character_id": "c7f54eae-f3cc-4358-980d-35d076247969",
+    "name": "A young woman office worker with shoulder-length w...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-29"
+  },
+  "female_scientist_v2": {
+    "character_id": "9179b19e-bd42-427d-b0ba-b27ea874ce16",
+    "name": "A young East Asian woman scientist with long strai...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-29"
+  },
   "female_security_guard_v2": {
     "character_id": "a394dbab-dc0e-4c6e-b74a-85a5e4c7b568",
     "name": "Security Guard\nWoman, light skin tone, security gu...",
@@ -53,6 +80,24 @@
       "height": 60
     },
     "imported": "2026-09-26"
+  },
+  "female_spy_v2": {
+    "character_id": "52c4d2cc-aca3-4ee0-bfa6-20b526b6db6f",
+    "name": "A woman spy with long dark brown hair under a brow...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-29"
+  },
+  "female_telecom_v2": {
+    "character_id": "c9ae81c0-04c7-4d6f-af99-437fd3ecd4b0",
+    "name": "A young woman telecoms engineer with brown hair ti...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-29"
   },
   "gary_whitlock": {
     "character_id": "2b2d5800-1695-4dcd-bdc4-593bc34e4b43",
@@ -91,6 +136,33 @@
     "imported": "2026-09-29",
     "idle_from": "b57e62b8-2e5a-4eff-982b-303a4b7f576f"
   },
+  "male_nerd_v2": {
+    "character_id": "ae175532-182f-435a-8f0a-d7408d88eb2f",
+    "name": "A young man with short dark hair, a full dark bear...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-30"
+  },
+  "male_office_worker_v2": {
+    "character_id": "f9fdf0ce-34a5-424e-a4c1-af43aaaa8f37",
+    "name": "A man office worker in his forties with short dark...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-30"
+  },
+  "male_scientist_v2": {
+    "character_id": "d363cc74-5990-4eb9-b65f-95483c28c1e9",
+    "name": "An older man scientist with swept-back white hair,...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-30"
+  },
   "male_security_guard_v2": {
     "character_id": "7f4b98d0-6ef6-4064-8f01-c032e0cd8050",
     "name": "Man, light skin tone, security guard. Wearing a da...",
@@ -99,6 +171,24 @@
       "height": 60
     },
     "imported": "2026-09-26"
+  },
+  "male_spy_v2": {
+    "character_id": "7f1e42c3-a32c-49b3-ba27-f9190b4c6a93",
+    "name": "A man spy with light skin, a brown fedora pulled l...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-30"
+  },
+  "male_telecom_v2": {
+    "character_id": "7295d940-3676-431e-8a55-b3124508f56f",
+    "name": "A man telecoms engineer with short brown hair unde...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-30"
   },
   "sarah_kim": {
     "character_id": "1792c7b7-4189-4a22-857e-4a0a738bd83d",

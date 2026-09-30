@@ -13,23 +13,33 @@ module BreakEscape
       female_hacker_hood_down
       female_hacker_hood_down_v2
       female_office_worker
+      female_office_worker_v2
       female_security_guard
       female_security_guard_v2
       female_telecom
+      female_telecom_v2
       female_spy
+      female_spy_v2
       female_scientist
+      female_scientist_v2
       female_blowse
+      female_blowse_v2
       male_hacker_hood
       male_hacker_hood_v2
       male_hacker_hood_down
       male_hacker_hood_down_v2
       male_office_worker
+      male_office_worker_v2
       male_security_guard
       male_security_guard_v2
       male_telecom
+      male_telecom_v2
       male_spy
+      male_spy_v2
       male_scientist
+      male_scientist_v2
       male_nerd
+      male_nerd_v2
     ].freeze
 
     # Get the texture key for game injection (must match game.js preload keys)

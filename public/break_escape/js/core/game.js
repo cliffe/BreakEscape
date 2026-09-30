@@ -785,6 +785,36 @@ export function preload() {
     this.load.atlas('female_hacker_hood_down_v2',
         `characters/female_hacker_hood_down_v2.png?v=${ASSETS_VERSION}`,
         `characters/female_hacker_hood_down_v2.json?v=${ASSETS_VERSION}`);
+    this.load.atlas('female_office_worker_v2',
+        `characters/female_office_worker_v2.png?v=${ASSETS_VERSION}`,
+        `characters/female_office_worker_v2.json?v=${ASSETS_VERSION}`);
+    this.load.atlas('female_telecom_v2',
+        `characters/female_telecom_v2.png?v=${ASSETS_VERSION}`,
+        `characters/female_telecom_v2.json?v=${ASSETS_VERSION}`);
+    this.load.atlas('female_spy_v2',
+        `characters/female_spy_v2.png?v=${ASSETS_VERSION}`,
+        `characters/female_spy_v2.json?v=${ASSETS_VERSION}`);
+    this.load.atlas('female_scientist_v2',
+        `characters/female_scientist_v2.png?v=${ASSETS_VERSION}`,
+        `characters/female_scientist_v2.json?v=${ASSETS_VERSION}`);
+    this.load.atlas('female_blowse_v2',
+        `characters/female_blowse_v2.png?v=${ASSETS_VERSION}`,
+        `characters/female_blowse_v2.json?v=${ASSETS_VERSION}`);
+    this.load.atlas('male_office_worker_v2',
+        `characters/male_office_worker_v2.png?v=${ASSETS_VERSION}`,
+        `characters/male_office_worker_v2.json?v=${ASSETS_VERSION}`);
+    this.load.atlas('male_telecom_v2',
+        `characters/male_telecom_v2.png?v=${ASSETS_VERSION}`,
+        `characters/male_telecom_v2.json?v=${ASSETS_VERSION}`);
+    this.load.atlas('male_spy_v2',
+        `characters/male_spy_v2.png?v=${ASSETS_VERSION}`,
+        `characters/male_spy_v2.json?v=${ASSETS_VERSION}`);
+    this.load.atlas('male_scientist_v2',
+        `characters/male_scientist_v2.png?v=${ASSETS_VERSION}`,
+        `characters/male_scientist_v2.json?v=${ASSETS_VERSION}`);
+    this.load.atlas('male_nerd_v2',
+        `characters/male_nerd_v2.png?v=${ASSETS_VERSION}`,
+        `characters/male_nerd_v2.json?v=${ASSETS_VERSION}`);
 
     // Animated plant textures are loaded above
     
