@@ -2979,11 +2979,11 @@
         {
          "columns":10,
          "firstgid":701,
-         "image":"..\/tiles\/rooms\/room_hospital.png",
+         "image":"..\/tiles\/rooms\/room_hospital_kitchen.png",
          "imageheight":320,
          "imagewidth":320,
          "margin":0,
-         "name":"room_hospital",
+         "name":"room_hospital_kitchen",
          "spacing":0,
          "tilecount":100,
          "tileheight":32,
@@ -3001,7 +3001,7 @@
          "margin":0,
          "name":"objects\/hospital_extras",
          "spacing":0,
-         "tilecount":102,
+         "tilecount":119,
          "tileheight":63,
          "tiles":[
                 {
@@ -3625,8 +3625,111 @@
                  "image":"..\/objects\/pigeonholes1.png",
                  "imageheight":27,
                  "imagewidth":28
+                }, 
+                {
+                 "id":102,
+                 "image":"..\/objects\/network_rack1.png",
+                 "imageheight":59,
+                 "imagewidth":34
+                }, 
+                {
+                 "id":103,
+                 "image":"..\/objects\/storage_array1.png",
+                 "imageheight":59,
+                 "imagewidth":30
+                }, 
+                {
+                 "id":104,
+                 "image":"..\/objects\/tape_library1.png",
+                 "imageheight":59,
+                 "imagewidth":30
+                }, 
+                {
+                 "id":105,
+                 "image":"..\/objects\/patient_hoist1.png",
+                 "imageheight":51,
+                 "imagewidth":40
+                }, 
+                {
+                 "id":106,
+                 "image":"..\/objects\/drug_trolley1.png",
+                 "imageheight":47,
+                 "imagewidth":34
+                }, 
+                {
+                 "id":107,
+                 "image":"..\/objects\/bedside_cabinet_slim1.png",
+                 "imageheight":27,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":108,
+                 "image":"..\/objects\/security_monitor1.png",
+                 "imageheight":29,
+                 "imagewidth":24
+                }, 
+                {
+                 "id":109,
+                 "image":"..\/objects\/cable_tray1.png",
+                 "imageheight":14,
+                 "imagewidth":150
+                },
+            
+                {
+                 "id":110,
+                 "image":"..\/objects\/year_planner1.png",
+                 "imageheight":31,
+                 "imagewidth":44
+                }, 
+                {
+                 "id":111,
+                 "image":"..\/objects\/conference_screen1.png",
+                 "imageheight":36,
+                 "imagewidth":48
+                }, 
+                {
+                 "id":112,
+                 "image":"..\/objects\/flip_chart1.png",
+                 "imageheight":45,
+                 "imagewidth":26
+                }, 
+                {
+                 "id":113,
+                 "image":"..\/objects\/supply_boxes1.png",
+                 "imageheight":40,
+                 "imagewidth":29
+                }, 
+                {
+                 "id":114,
+                 "image":"..\/objects\/wall_rail1.png",
+                 "imageheight":6,
+                 "imagewidth":192
+                }, 
+                {
+                 "id":115,
+                 "image":"..\/objects\/it_workbench1.png",
+                 "imageheight":58,
+                 "imagewidth":60
+                }, 
+                {
+                 "id":116,
+                 "image":"..\/objects\/exec_desk1.png",
+                 "imageheight":46,
+                 "imagewidth":80
+                }, 
+                {
+                 "id":117,
+                 "image":"..\/objects\/radio_charger1.png",
+                 "imageheight":18,
+                 "imagewidth":26
+                }, 
+                {
+                 "id":118,
+                 "image":"..\/objects\/window_blinds1.png",
+                 "imageheight":32,
+                 "imagewidth":40
                 }],
-         "tilewidth":60
+         "tilewidth":192
         }],
  "tilewidth":32,
  "type":"map",

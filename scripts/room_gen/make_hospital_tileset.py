@@ -23,6 +23,8 @@ OUT = ROOT / "public/break_escape/assets/tiles/rooms/room_hospital.png"
 OUT_CARPET = ROOT / "public/break_escape/assets/tiles/rooms/room_hospital_carpet.png"
 # Same walls, raised access floor with a row of perforated vent tiles: server room
 OUT_RAISED = ROOT / "public/break_escape/assets/tiles/rooms/room_hospital_raised.png"
+# Same walls, warm flecked safety-vinyl sheet with welded seams: staff room / kitchen
+OUT_KITCHEN = ROOT / "public/break_escape/assets/tiles/rooms/room_hospital_kitchen.png"
 
 # Palette sampled from the PixelLab edit
 BACK_WALL = (180, 218, 206)
@@ -143,6 +145,42 @@ def make_raised(hospital):
     print(f"wrote {OUT_RAISED}")
 
 
+# Kitchen safety vinyl: an oatmeal sheet floor with dark and quartz flecks and a
+# thin heat-welded seam every two tiles (sheet vinyl, so no per-tile grout).
+KITCHEN = (208, 197, 176)
+KITCHEN_LIGHT = (218, 208, 189)
+KITCHEN_FLECK = (163, 147, 126)
+KITCHEN_QUARTZ = (126, 150, 158)
+KITCHEN_SEAM = (184, 172, 151)
+
+
+def kitchen_pixel(x, y):
+    if x % (2 * TILE) == 0:
+        return KITCHEN_SEAM
+    h = (x * 73856093) ^ (y * 19349663)
+    if h % 31 == 0:
+        return KITCHEN_FLECK
+    if h % 53 == 0:
+        return KITCHEN_QUARTZ
+    if h % 11 == 0:
+        return KITCHEN_LIGHT
+    return KITCHEN
+
+
+def make_kitchen(hospital):
+    out = hospital.copy()
+    op = out.load()
+    for y in range(out.height):
+        for x in range(out.width):
+            if is_floor(x, y):
+                c = kitchen_pixel(x, y)
+                if y < FLOOR_TOP + 3:
+                    c = tuple(int(v * 0.9) for v in c)
+                op[x, y] = (*c, op[x, y][3])
+    out.save(OUT_KITCHEN)
+    print(f"wrote {OUT_KITCHEN}")
+
+
 def main():
     src = Image.open(SRC).convert("RGBA")
     out = src.copy()
@@ -173,6 +211,7 @@ def main():
     print(f"wrote {OUT}")
     make_carpet(out)
     make_raised(out)
+    make_kitchen(out)
 
 
 if __name__ == "__main__":

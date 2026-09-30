@@ -222,7 +222,10 @@ The `type` field of each room must match a file in `public/break_escape/assets/r
 | `room_battery_hall` | Industrial lithium-ion battery storage hall (4×2 GU) |
 | `room_hospital_ward` | Hospital ward (4×2 GU) |
 | `room_hospital_reception` | Hospital reception / night desk (2×2 GU) |
-| `room_hospital_office` | Hospital office — IT department, admin (2×2 GU) |
+| `room_hospital_office` | Hospital office — generic two-desk admin office (2×2 GU) |
+| `room_hospital_office_it` | Hospital IT department (2×2 GU) — two-desk bank, repair workbench, comms rack, locked filing cabinet |
+| `room_hospital_office_cto` | Hospital executive office (2×2 GU) — one wooden desk with visitor chairs, bookcases, small meeting table, wall safe |
+| `room_hospital_office_security` | Hospital security office (2×2 GU) — CCTV console desk, key cabinet, radio charger, lockers |
 | `room_hospital_cto_office` | Hospital executive office (1×1 GU) |
 | `room_hospital_meeting` | Hospital boardroom / meeting room (2×2 GU) |
 | `room_hospital_servers` | Hospital server room (2×2 GU) |

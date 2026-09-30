@@ -77,6 +77,9 @@ export function preload() {
     this.load.tilemapTiledJSON('room_security', 'rooms/room_security.json'); // Dual-desk security office
     this.load.tilemapTiledJSON('room_lab', 'rooms/room_lab.json');           // Tech/lab workbench room
     this.load.tilemapTiledJSON('room_hospital_office', 'rooms/room_hospital_office.json'); // Hospital admin office (room6)
+    this.load.tilemapTiledJSON('room_hospital_office_it', 'rooms/room_hospital_office_it.json'); // Hospital IT department: desk bank, workbench, comms rack
+    this.load.tilemapTiledJSON('room_hospital_office_cto', 'rooms/room_hospital_office_cto.json'); // Hospital executive office: one desk, meeting chairs, bookcases
+    this.load.tilemapTiledJSON('room_hospital_office_security', 'rooms/room_hospital_office_security.json'); // Hospital security office: CCTV desk, key cabinet, lockers
     this.load.tilemapTiledJSON('room_hospital_cto_office', 'rooms/room_hospital_cto_office.json'); // Small hospital CTO office (room6)
     this.load.tilemapTiledJSON('room_hospital_reception', 'rooms/room_hospital_reception.json'); // Hospital reception (room6)
     this.load.tilemapTiledJSON('room_hospital_meeting', 'rooms/room_hospital_meeting.json'); // Hospital conference room (room6)
@@ -95,6 +98,7 @@ export function preload() {
     this.load.image('room_hospital', 'tiles/rooms/room_hospital.png'); // clinical recolour of room6, same tile layout
     this.load.image('room_hospital_carpet', 'tiles/rooms/room_hospital_carpet.png'); // same walls, carpet tiles (offices, conference room)
     this.load.image('room_hospital_raised', 'tiles/rooms/room_hospital_raised.png'); // same walls, raised access floor (server room)
+    this.load.image('room_hospital_kitchen', 'tiles/rooms/room_hospital_kitchen.png'); // same walls, flecked kitchen safety vinyl (staff room)
     this.load.image('room14', 'tiles/rooms/room14.png');
     this.load.image('room19', 'tiles/rooms/room19.png');
     this.load.image('door_32', 'tiles/door_32.png');
@@ -633,6 +637,11 @@ export function preload() {
     this.load.image('flip_chart1', 'objects/flip_chart1.png');
     this.load.image('supply_boxes1', 'objects/supply_boxes1.png');
     this.load.image('wall_rail1', 'objects/wall_rail1.png');
+    this.load.image('it_workbench1', 'objects/it_workbench1.png');
+    this.load.image('exec_desk1', 'objects/exec_desk1.png');
+    this.load.image('radio_charger1', 'objects/radio_charger1.png');
+    this.load.image('window_blinds1', 'objects/window_blinds1.png');
+    this.load.image('cctv_monitors2', 'objects/cctv_monitors2.png');
     this.load.image('backup_recovery',         'objects/backup_recovery.png');
     this.load.image('dual_auth',               'objects/dual_auth.png');
     this.load.image('ehr-terminal',            'objects/ehr-terminal.png');

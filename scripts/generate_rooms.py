@@ -305,6 +305,7 @@ def room_tilesets(name: str) -> list[dict]:
 # layout; made by room_gen/make_hospital_tileset.py, preloaded in game.js)
 HOSPITAL_FLOOR_VARIANTS = {
     "room_hospital_servers": "room_hospital_raised",  # raised access floor
+    "room_hospital_staff": "room_hospital_kitchen",   # flecked kitchen safety vinyl
 }
 
 
@@ -768,6 +769,7 @@ WALL_MOUNTED_EXTRAS = {
     "year_planner",
     "conference_screen",
     "wall_rail",
+    "window_blinds",
 }
 
 
@@ -1927,6 +1929,8 @@ def room_hospital_storage_1x1gu():
 def main():
     # Hand-maintained (do not regenerate — edit .tmj in Tiled, then export JSON):
     #   room_hospital_office, room_hospital_cto_office, room_hospital_meeting
+    #   room_hospital_office_it, room_hospital_office_cto, room_hospital_office_security
+    #   (copies of room_hospital_office, edited with scripts/room_gen/room_edit.py)
     # room_hospital_reception's .json has also been hand-edited since it was
     # generated (45 objects vs the builder's 34) — regenerating it loses that.
     builders = {
