@@ -790,6 +790,35 @@ def unwhiten(frame, source, mask, mouth=None):
     return Image.fromarray(f)
 
 
+def keep_clothing(frame, bust, params, shape):
+    """Put back the bust's collar and hair below the reach of the dropped chin.
+
+    drop_jaw moves a block that can include a collar or hair when the neck is short, and
+    the model re-shades whatever the jaw mask covers. Only the chin should move, so for the
+    open shapes every pixel in the jaw box below the lowest row the chin can reach (mouth
+    box bottom + drop) that is not skin-coloured in the bust is restored from the bust.
+    Skin is sampled from the rows just above the mouth box (upper lip and philtrum).
+    """
+    drop = params.get("drop", {}).get(shape, 0)
+    if not drop or not params.get("jaw") or shape not in JAW_SHAPES:
+        return frame
+    import numpy as np
+    mx0, my0, mx1, my1 = params["mouth"]
+    jx0, jy0, jx1, jy1 = jaw_box(bust, params["mouth"], params["jaw"])
+    b = np.asarray(bust).astype(np.int32)
+    sample = b[max(0, my0 - 3):my0, mx0:mx1].reshape(-1, 4)
+    sample = sample[sample[:, 3] > 0]
+    if not len(sample):
+        return frame
+    skin = np.median(sample[:, :3], axis=0)
+    f = np.asarray(frame).copy()
+    top = min(jy1, my1 + drop + 1)
+    region = b[top:jy1, jx0:jx1]
+    not_skin = (np.abs(region[..., :3] - skin).sum(axis=2) > 90) | (region[..., 3] == 0)
+    f[top:jy1, jx0:jx1][not_skin] = np.asarray(bust)[top:jy1, jx0:jx1][not_skin]
+    return Image.fromarray(f)
+
+
 def shape_mask(bust, params, shape):
     """The inpaint mask for one shape.
 
@@ -899,6 +928,7 @@ def save_inpaint_visemes(run, api, job):
         full = source.copy()
         mouth = None if shape == "blink" else job["params"]["mouth"]  # closing lids add light pixels
         full.paste(unwhiten(im, source, mask, mouth), (0, 0), mask)
+        full = keep_clothing(full, bust, job["params"], shape)
         p = out / f"{shape}.png"
         full.save(p)
         outputs.append(str(p.relative_to(run.dir)))
