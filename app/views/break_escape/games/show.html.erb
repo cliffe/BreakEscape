@@ -184,7 +184,7 @@
       csrfToken: '<%= form_authenticity_token %>',
       hacktivityMode: <%= BreakEscape::Mission.hacktivity_mode? ? 'true' : 'false' %>,
       vmSetId: <%= @game.player_state.is_a?(Hash) ? (@game.player_state['vm_set_id'] || 'null') : 'null' %>,
-      playerSprite: '<%= @player_preference&.selected_sprite || 'male_hacker_hood' %>',
+      playerSprite: '<%= @player_preference&.selected_sprite || 'male_hacker_hood_v2' %>',
       hasProgress: <%= @game.has_progress? ? 'true' : 'false' %>,
       hasSiblings: <%= (@mission_sessions.length > 1) ? 'true' : 'false' %>,
       vmPanelUrl: '<%= BreakEscape::Mission.hacktivity_mode? ? vm_panel_game_path(@game) : '' %>',

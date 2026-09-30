@@ -151,7 +151,7 @@ export class PlayerHUD {
     }
     
     // Default fallback
-    return 'male_hacker';
+    return 'male_hacker_hood_v2';
   }
 
   /**

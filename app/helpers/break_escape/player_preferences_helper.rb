@@ -22,6 +22,11 @@ module BreakEscape
       end
     end
 
+    # Menu label for a sprite key; the _v2 suffix is an asset detail, not part of the name.
+    def sprite_label(sprite)
+      sprite.delete_suffix('_v2').humanize
+    end
+
     def sprite_headshot_path(sprite)
       "/break_escape/assets/characters/#{sprite}_headshot.png?v=#{BreakEscape::ASSETS_VERSION}"
     end

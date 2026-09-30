@@ -69,9 +69,9 @@
                 <div class="sprite-headshot-container">
                   <%= image_tag sprite_headshot_path(sprite),
                                 class: 'sprite-headshot',
-                                alt: sprite.humanize,
+                                alt: sprite_label(sprite),
                                 loading: 'lazy' %>
-                  <span class="headshot-fallback headshot-fallback-hidden"><%= sprite.humanize %></span>
+                  <span class="headshot-fallback headshot-fallback-hidden"><%= sprite_label(sprite) %></span>
                 </div>
 
                 <% unless is_valid %>
@@ -88,7 +88,7 @@
                                      id: "sprite_#{sprite}",
                                      disabled: !is_valid,
                                      class: 'sprite-radio' %>
-                  <span class="sprite-label"><%= sprite.humanize %></span>
+                  <span class="sprite-label"><%= sprite_label(sprite) %></span>
                 </div>
               </label>
             <% end %>
@@ -120,7 +120,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       const sprites = <%= raw @available_sprites.to_json %>;
       // Use preferred sprite for Mission 1 if none selected
-      let selectedSprite = '<%= @player_preference.selected_sprite.presence || "female_hacker_hood" %>';
+      let selectedSprite = '<%= @player_preference.selected_sprite.presence || BreakEscape::PlayerPreference::DEFAULT_SPRITE %>';
 
       initializeSpritePreview(sprites, selectedSprite);
 

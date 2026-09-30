@@ -208,7 +208,7 @@ export class NPCCombat {
       // Play gender-matched grunt for the player being hit
       const playerSheet = window.breakEscapeConfig?.playerSprite
         || window.gameScenario?.player?.spriteSheet
-        || 'male_hacker';
+        || 'male_hacker_hood_v2';
       const isPlayerFemale = playerSheet.startsWith('female_');
       const hpAfter = window.playerHealth?.getHP() ?? Infinity;
       const maxHP   = window.playerHealth?.getMaxHP() ?? 100;

@@ -6,41 +6,40 @@ module BreakEscape
     belongs_to :player, polymorphic: true
 
     # Constants - Available sprite sheets (must match game.js preload and assets on disk).
-    # A <key>_v2 entry is a redrawn version of <key>; it counts as <key> for validSprites.
+    # These are the avatar menu choices. A <key>_v2 entry is a redrawn version of <key>;
+    # it counts as <key> for validSprites.
     AVAILABLE_SPRITES = %w[
-      female_hacker_hood
       female_hacker_hood_v2
-      female_hacker_hood_down
       female_hacker_hood_down_v2
-      female_office_worker
       female_office_worker_v2
-      female_security_guard
       female_security_guard_v2
-      female_telecom
       female_telecom_v2
-      female_spy
       female_spy_v2
-      female_scientist
       female_scientist_v2
-      female_blowse
       female_blowse_v2
-      male_hacker_hood
       male_hacker_hood_v2
-      male_hacker_hood_down
       male_hacker_hood_down_v2
-      male_office_worker
       male_office_worker_v2
-      male_security_guard
       male_security_guard_v2
-      male_telecom
       male_telecom_v2
-      male_spy
       male_spy_v2
-      male_scientist
       male_scientist_v2
-      male_nerd
       male_nerd_v2
     ].freeze
+
+    # Original sprites replaced by a v2 redraw. Saved preferences and requests may still
+    # name them; selected_sprite reads and writes them as the v2 key, so old rows keep
+    # working without a data migration and the menu shows them as selected.
+    LEGACY_SPRITES = AVAILABLE_SPRITES.to_h { |v2| [v2.delete_suffix('_v2'), v2] }.freeze
+
+    # Sprite the avatar menu previews before the player has chosen one. selected_sprite
+    # itself stays NULL until the player picks (see set_defaults).
+    DEFAULT_SPRITE = 'female_hacker_hood_v2'
+
+    # Map a legacy sprite key to its v2 replacement; other keys pass through unchanged.
+    def self.current_sprite(sprite_name)
+      LEGACY_SPRITES.fetch(sprite_name, sprite_name)
+    end
 
     # Get the texture key for game injection (must match game.js preload keys)
     def self.sprite_filename(sprite_name)
@@ -90,6 +89,14 @@ module BreakEscape
       regex = /\A#{regex_pattern}\z/
 
       sprite.match?(regex) || sprite.delete_suffix('_v2').match?(regex)
+    end
+
+    def selected_sprite
+      self.class.current_sprite(super)
+    end
+
+    def selected_sprite=(value)
+      super(self.class.current_sprite(value))
     end
 
     # Check if player has selected a sprite

@@ -218,7 +218,7 @@ export function createPlayer(gameInstance) {
     const startRoomPosition = getStartingRoomCenter(startRoomId);
     
     // Get player sprite - prioritize saved preference over scenario default
-    const playerSprite = window.breakEscapeConfig?.playerSprite || window.gameScenario?.player?.spriteSheet || 'male_hacker_hood';
+    const playerSprite = window.breakEscapeConfig?.playerSprite || window.gameScenario?.player?.spriteSheet || 'male_hacker_hood_v2';
     const hasExplicitSprite = !!(window.breakEscapeConfig?.playerSprite || window.gameScenario?.player?.spriteSheet);
     console.log(`🎮 Loading player sprite: ${playerSprite}`);
 
@@ -489,7 +489,7 @@ function updateAnimationSpeed(isRunning) {
 }
 
 function createPlayerAnimations() {
-    const playerSprite = window.breakEscapeConfig?.playerSprite || window.gameScenario?.player?.spriteSheet || 'male_hacker_hood';
+    const playerSprite = window.breakEscapeConfig?.playerSprite || window.gameScenario?.player?.spriteSheet || 'male_hacker_hood_v2';
     createAtlasPlayerAnimations(playerSprite);
 }
 
