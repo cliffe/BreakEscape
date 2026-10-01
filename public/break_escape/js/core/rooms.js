@@ -3164,7 +3164,7 @@ function createNPCSpritesForRoom(roomId, roomData) {
             console.log(`   currentScene: ${!!currentScene}, key: ${currentScene?.key}, isScene: ${currentScene?.add ? 'yes' : 'no'}`);
             
             if (currentScene && typeof currentScene.add?.graphics === 'function') {
-                window.npcManager.setLOSVisualization(true, currentScene);
+                window.npcManager.setLOSVisualization(true, currentScene, false);
             } else {
                 console.warn(`⚠️ Cannot get valid Phaser scene for LOS visualization`, {
                     currentScene: !!currentScene,

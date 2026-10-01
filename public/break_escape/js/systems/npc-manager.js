@@ -120,6 +120,7 @@ export default class NPCManager {
     // LOS Visualization
     this.losVisualizations = new Map(); // { npcId: graphicsObject }
     this.losVisualizationEnabled = false; // Toggle LOS cone rendering
+    this.losVisualizeAll = false; // true: debug mode, draw every NPC's cone; false: only NPCs with los.visualize
     
     // OPTIMIZATION: Debug mode (set via window.NPC_DEBUG = true)
     this.debug = false;
@@ -1484,9 +1485,13 @@ export default class NPCManager {
    * Enable or disable LOS cone visualization for debugging
    * @param {boolean} enable - Whether to show LOS cones
    * @param {Phaser.Scene} scene - Phaser scene for drawing
+   * @param {boolean} showAll - Draw every NPC's cone (debug). When false, only
+   *   NPCs whose scenario sets los.visualize = true get a cone.
    */
-  setLOSVisualization(enable, scene = null) {
+  setLOSVisualization(enable, scene = null, showAll = true) {
     this.losVisualizationEnabled = enable;
+    // Once debug mode has asked for every cone, a later per-NPC request must not narrow it
+    this.losVisualizeAll = enable && (showAll || this.losVisualizeAll);
     
     if (enable && scene) {
       console.log('👁️ Enabling LOS visualization');
@@ -1522,8 +1527,12 @@ export default class NPCManager {
         continue;
       }
       
-      if (!npc.los || !npc.los.enabled) {
-        // console.log(`   Skip "${npc.id}" - no LOS config or disabled`);
+      if (!npc.los || !npc.los.enabled || (!this.losVisualizeAll && npc.los.visualize !== true)) {
+        // console.log(`   Skip "${npc.id}" - no LOS config, disabled, or not flagged for visualization`);
+        if (this.losVisualizations.has(npc.id)) {
+          clearLOSCone(this.losVisualizations.get(npc.id));
+          this.losVisualizations.delete(npc.id);
+        }
         continue;
       }
       
