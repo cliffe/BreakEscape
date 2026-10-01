@@ -4,9 +4,12 @@ VAR receptionist_influence = 0
 VAR badge_received = false
 VAR topic_victoria = false
 VAR topic_company_history = false
-VAR topic_james = false
+VAR topic_danny = false
 VAR pin_hint_given = false
 VAR clone_reception_badge_done = false
+// Pass 3c: synced scenario global, set by the card_cloned mapping only when the
+// badge is actually saved in the cloner. Until then the clone option stays offered.
+VAR reception_badge_cloned = false
 // Synced from globalVars: after Victoria's card is cloned the building is closing.
 VAR mission_phase = ""
 
@@ -72,7 +75,6 @@ Receptionist: We do penetration testing, security audits and advanced research t
 ~ topic_company_history = true
 ~ pin_hint_given = true
 * [2010. Victoria must be proud of how far it's come.]
-    Narrator: You file 2010 away. Founding years end up in passwords.
     ~ receptionist_influence = receptionist_influence + 5
     # influence_increased
     You: 2010. She must be proud of how far the company's come.
@@ -113,13 +115,13 @@ Receptionist: Is this your first time working with a cybersecurity firm?
     -> closing_up
 + {mission_phase != "act2_infiltration" && not topic_victoria} [Ask about Victoria Sterling]
     -> ask_victoria
-+ {mission_phase != "act2_infiltration" && not topic_james} [Ask about other employees]
-    -> ask_james
++ {mission_phase != "act2_infiltration" && not topic_danny} [Ask about other employees]
+    -> ask_danny
 + {mission_phase != "act2_infiltration" && not topic_company_history && not pin_hint_given} [Ask about company history]
     -> ask_company_history
 + {mission_phase != "act2_infiltration" && receptionist_influence >= 15} [Ask about the building layout]
     -> ask_building_layout
-+ {mission_phase != "act2_infiltration" && badge_received && not clone_reception_badge_done} [Lean across the desk to examine the directory — cloner in range]
++ {mission_phase != "act2_infiltration" && badge_received && not reception_badge_cloned} [Lean across the desk to examine the directory — cloner in range]
     -> clone_badge_opportunity
 + {mission_phase != "act2_infiltration"} [End conversation]
     Receptionist: Have a great visit!
@@ -152,9 +154,9 @@ Receptionist: And she really cares about the work. Sometimes she's here until mi
 + [Continue]
     -> hub
 
-=== ask_james ===
+=== ask_danny ===
 #speaker:receptionist
-~ topic_james = true
+~ topic_danny = true
 ~ receptionist_influence = receptionist_influence + 5
 # influence_increased
 Receptionist: Well, there's Danny Foster - he's one of our senior consultants.
@@ -191,7 +193,6 @@ Receptionist: "Security Through Economics" - that's our motto.
     # influence_increased
     -> hub
 * [2010. I'll remember that.]
-    Narrator: You file 2010 away. Founding years end up in passwords.
     You: 2010. A significant year for the company, then.
     Receptionist: Absolutely! Ms. Sterling is very proud of everything we've built since then.
     ~ receptionist_influence = receptionist_influence + 5
@@ -205,7 +206,7 @@ Receptionist: "Security Through Economics" - that's our motto.
 ~ receptionist_influence = receptionist_influence + 5
 # influence_increased
 Receptionist: Sure! It's a pretty straightforward layout.
-Receptionist: Reception here, then through the card reader to the conference area, main offices down the central hallway.
+Receptionist: Reception here, then the main hallway. The conference room's through the card reader, first on the left.
 Receptionist: Server room at the far end of the main hallway -- executive cards only.
 Receptionist: And Ms. Sterling's office is in the executive wing, east off the main hallway.
 * [Is anyone here after business hours?]
@@ -214,9 +215,9 @@ Receptionist: And Ms. Sterling's office is in the executive wing, east off the m
     # influence_increased
     -> hub
 * [Even the conference area needs a card? That's pretty tight security.]
-    Receptionist: RFID badges throughout - conference area, server room, executive wing. Ms. Sterling is very particular about access control.
+    Receptionist: Card readers on the conference room and the server room. Ms. Sterling is very particular about access control.
     Narrator: She taps the badge on her lanyard.
-    Receptionist: Staff badges cover the whole building. Visitors normally get escorted through.
+    Receptionist: Staff badges get you into the conference area. The server room takes an executive card. Visitors normally get escorted through.
     ~ receptionist_influence = receptionist_influence + 5
     # influence_increased
     -> hub
@@ -227,9 +228,19 @@ Receptionist: And Ms. Sterling's office is in the executive wing, east off the m
 #speaker:receptionist
 Narrator: You lean over the desk, studying the building directory, keeping the RFID cloner within range of her lanyard.
 Narrator: The cloner's antenna lights up — it detects a MIFARE signal from her staff badge.
-~ clone_reception_badge_done = true
+// The tag sits on a throwaway line: starting the RFID minigame ends this chat.
+// The task completes on Save (card_cloned mapping), never on the tag.
 #clone_keycard:receptionist_badge
-#complete_task:clone_reception_badge
+Narrator: She carries on straightening the sign-in sheet.
+-> clone_badge_debrief
+
+=== clone_badge_debrief ===
+#speaker:receptionist
+{ reception_badge_cloned:
+    Narrator: The badge is in the cloner.
+- else:
+    Narrator: The cloner didn't keep the read. You'll have to lean in again.
+}
 -> hub
 
 === closing_up ===

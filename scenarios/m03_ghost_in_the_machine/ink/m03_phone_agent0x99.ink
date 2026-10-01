@@ -17,6 +17,8 @@ VAR flag_distcc_submitted = false
 VAR whiteboard_seen = false
 VAR roster_seen = false
 VAR usb_seen = false
+VAR lore_directive_found = false
+VAR victoria_fate = ""
 
 // ---- Field-guide exposure flags (offered synced; given tracked locally) ----
 VAR lockpicking_guide_offered = false
@@ -26,6 +28,7 @@ VAR netexploit_guide_given = false
 VAR rfid_guide_given = false
 VAR recon_guide_given = false
 VAR cyberchef_guide_given = false
+VAR proftpd_guide_given = false
 
 // ---- Local hint tracking ----
 VAR hint_confrontation_given = false
@@ -59,6 +62,8 @@ Agent HaX: {player_name()}. What do you need?
     -> request_netexploit_guide
 + {netexploit_guide_offered and not cyberchef_guide_given} [Send me the CyberChef decoding field guide]
     -> request_cyberchef_guide
++ {netexploit_guide_offered and not proftpd_guide_given} [Send me the ProFTPD exploitation guide]
+    -> request_proftpd_guide
 + [Where do I stand?]
     -> report_progress
 + [I need a hint]
@@ -75,6 +80,9 @@ Agent HaX: Listen carefully. You've got the logs. The case stands whether or not
 Agent HaX: Want the Architect? Offer her a deal, and a cold one. She flips to save herself, not because she's sorry -- don't mistake the two.
 Agent HaX: Want her off the board? Arrest her. But she came ready to run, so corner her or she walks.
 Agent HaX: And if the evidence is enough for you, let her go and secure it. Your call. None of them are clean.
+{ victoria_fate == "" and not (usb_seen or lore_directive_found):
+    Agent HaX: If it's the deal you want, bring her something she can't shrug off. The drive in her desk.
+}
 + [Understood]
     -> hub
 
@@ -98,6 +106,15 @@ Agent HaX: Map before you touch anything. nmap the subnet, read the versions, th
 + [Got it]
     -> hub
 
+=== request_proftpd_guide ===
+#speaker:agent_0x99
+~ proftpd_guide_given = true
+#give_item:lab-workstation:m03_proftpd_field_guide
+Agent HaX: ProFTPD guide sent. That's the backdoor that took St. Catherine's down.
+Agent HaX: Their FTP box runs the trojaned 1.3.3c build. Anonymous login gets you nothing that matters; the backdoor gets you root.
++ [Got it]
+    -> hub
+
 === request_cyberchef_guide ===
 #speaker:agent_0x99
 ~ cyberchef_guide_given = true
@@ -114,7 +131,7 @@ Agent HaX: ROT13, Base64, hex. If a decode still looks scrambled, it's layered -
 #set_variable:lockpicking_guide_requested:true
 #give_item:lab-workstation:m03_lockpicking_field_guide
 Agent HaX: Lockpicking guide sent.
-Agent HaX: Light tension, find the binding pin, set it, repeat -- and only when the guard's at the far end of his patrol. Pick in his sightline and you're made.
+Agent HaX: Light tension, find the binding pin, set it, repeat -- and only once he's passed the door and turned away from it. Pick in his sightline and you're made.
 + [Received]
     -> hub
 
@@ -164,9 +181,9 @@ Agent HaX: It takes time and it exposes you. Watch the guard's loop and only wor
 === hint_password ===
 #speaker:agent_0x99
 ~ hint_password_given = true
-Agent HaX: People reuse what they can't forget. The post-it on her monitor reads "VS / founding year".
-Agent HaX: The founding year's on the plaque in reception -- 2010. Her initials, then the year. That's her login.
-Agent HaX: The wall safe's a different code. She keeps that one in her drafts, not on the post-it.
+Agent HaX: People never change the default. That IT slip on her monitor tells you the format.
+Agent HaX: The founding year's on the plaque in reception. Put the two together.
+Agent HaX: The wall safe's a different code. She mails it to the night team from her office. Check what's sitting on her machine unsent.
 + [I'll look]
     -> hub
 
@@ -183,7 +200,7 @@ Agent HaX: And if it's still scrambled after one pass, it's layered. Decode agai
 #speaker:agent_0x99
 ~ hint_network_given = true
 Agent HaX: The VM terminal in the server room reaches 192.168.100.0/24. Scan first, then work the services.
-Agent HaX: FTP and the web host give you the client and pricing flags. distcc is the one that matters -- that's where the operational logs are. Submit all four at the drop-site.
+Agent HaX: The FTP box is the ProFTPD backdoor you met at St. Catherine's; the web host has the price list. distcc is the one that matters -- that's where the operational logs are. Submit all four at the drop-site.
 + [Got it]
     -> hub
 
@@ -195,6 +212,9 @@ Agent HaX: FTP and the web host give you the client and pricing flags. distcc is
 }
 { night_confrontation_ready:
     Agent HaX: Network's stripped and the case is made. Sterling's your last move. Take Danny Foster's office first if you want a say in his end.
+    { victoria_fate == "" and not (usb_seen or lore_directive_found):
+        Agent HaX: And her desk drawer's still got that drive in it, if you want something to bargain with.
+    }
     -> report_end
 }
 Agent HaX: You're in after hours. Status:
@@ -225,7 +245,10 @@ Agent HaX: Sit tight until the place clears out, then the server room door. Emul
 === on_victoria_computer_accessed ===
 #speaker:agent_0x99
 Agent HaX: You're into her machine. Good.
-Agent HaX: Client roster, transaction records, anything to the Architect. And her drafts -- the wall-safe code lives in there.
+Agent HaX: Client roster, transaction records, anything to the Architect.
+{ whiteboard_seen:
+    Agent HaX: And that board in the server room said she mails the night team from in there. Anything she hasn't sent yet is worth a look.
+}
 -> hub
 
 === m2_revelation_call ===
@@ -234,6 +257,13 @@ Agent HaX: {player_name()}, I've got the distcc logs you just submitted.
 Agent HaX: There it is. The ProFTPD backdoor. Line item on invoice ZDS-2024-0847: twenty-five thousand, priced in US dollars like everything else on that market, part of a package to Ghost.
 Agent HaX: Target line: St. Catherine's Regional. Sable's sign-off on the approval.
 Agent HaX: This is the thing we couldn't prove at the hospital. Zero Day armed Ghost. It's on the record now, timestamped and attributed.
+-> m2_revelation_choices
+
+// Pass 3c: choices live in text-free knots. When the phone reopens with changed
+// globals, the engine re-navigates to the knot owning the current choices and
+// replays its text (phone-chat-minigame.js restore), which duplicated this call
+// in the history. A choices-only knot replays nothing.
+=== m2_revelation_choices ===
 * [We can prosecute this]
     You: Direct chain. Zero Day to Ghost to St. Catherine's. That stands up.
     Agent HaX: It does. ENTROPY procurement, in writing. Ironclad.
@@ -251,6 +281,9 @@ Agent HaX: This is the thing we couldn't prove at the hospital. Zero Day armed G
 #speaker:agent_0x99
 Agent HaX: Pull the rest while you're standing in it. The catalogue, the roster, the drive in her desk. Every page is another cell we can name.
 Agent HaX: And {player_name()} -- the logs point at a Phase 2. Bigger than a hospital. If you find the directive, we get ahead of it for once.
+-> m2_revelation_impact_choices
+
+=== m2_revelation_impact_choices ===
 * [I'll get everything]
     Agent HaX: I know you will. Go.
     -> m2_revelation_end
@@ -271,7 +304,7 @@ Agent HaX: The ProFTPD line names Ghost and St. Catherine's outright. That's the
 
 === on_architect_directive_found ===
 #speaker:agent_0x99
-Agent HaX: That drive from her desk. Run it through the laptop -- Base64, then ROT13 -- and tell me what it says.
+Agent HaX: That drive from her desk. Run it through the laptop and tell me what it says.
 Agent HaX: If it's what I think, it's the Architect talking. We take it to Command tonight.
 -> hub
 
@@ -279,7 +312,6 @@ Agent HaX: If it's what I think, it's the Architect talking. We take it to Comma
 #speaker:agent_0x99
 #give_item:keycard:relayed_executive_keycard
 Agent HaX: Well. That's one way to end a job interview.
-Agent HaX: Her card's still on her lanyard, and I'm not having you rifle a CEO's pockets on camera. Nightshade has lifted its keys from the reader logs and built you a working copy.
+Agent HaX: If her card's come loose, leave it where it fell -- it's evidence. Nightshade has lifted its keys from the reader logs and built you a working copy.
 Agent HaX: It's in your kit now. It opens what hers opens, which means the server room tonight.
-+ [Understood]
-        -> hub
+-> hub

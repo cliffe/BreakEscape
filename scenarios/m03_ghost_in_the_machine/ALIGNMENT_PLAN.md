@@ -1,7 +1,20 @@
+> Renamed 2026-10-01: James Park → Danny Foster (ink file m03_james_choice → m03_danny_choice; room james_office → danny_office; task james_choice_made → danny_choice_made; globals james_fate/james_ko/james_warned/james_protected/james_exposed/james_innocence_confirmed → danny_*; receptionist knot ask_james / VAR topic_james → ask_danny / topic_danny; debrief knot james_discussion → danny_discussion). CIPHER → Sable and Obsidian (codenames only; no ids carried the old name).
+
 # m03 Ghost in the Machine — Alignment & Advancement Plan
 
-> Produced by the mission-alignment-plan skill. 2026-08-19. **Plan only — not yet implemented.**
+> Produced by the mission-alignment-plan skill. 2026-08-19. **Plan only when written; since implemented (see Progress below).**
 > Measured against: m01_first_contact, m02_ransomed_trust. Reviewed: 1 round (planner + independent reviewer; reviewer corrections folded in).
+
+## Progress (updated 2026-10-01)
+
+Status: Phases 1-6 implemented (`e2868c1d`, 2026-08-20) and reworked in pass 2 (`11b38faf`, `7df3596a`). Played to `status=completed` in the browser.
+
+- Done: Phase 1 (KO resilience, speaker prefixes, flag wiring, dead guard combat removed), Phase 2 (six aims, five unlock edges), Phase 3 (progress-gated HaX hub, five field guides), Phase 4 (Victoria as cover-CEO under 0day with four fates; CIPHER became Sable/Obsidian; James Park became Danny Foster, a live NPC), Phase 6 artefacts.
+- Changed by pass 2: the Phase 1.3 flag targets used the reference form, which the engine never completes, so the ending was unreachable. They now read `flag_station_dropsite:ghost_in_machine_vm_network-flag1..4`. The HaX phone, Danny and debrief ink crashed on unbound externals and were rewritten to the m01/m02 VAR pattern.
+- Phase 5 (day/night) was not built in the first pass. Pass 2 built it differently from the plan: the guard stays visible and patrols the executive wing, Danny is revealed on room entry once `mission_phase` is `act2_infiltration`. The receptionist stays at her desk; after the clone her ink switches to a night-time "shutting down" hub (her `setVisible:false` mapping did not hold in play and was removed, PASS2_IMPROVEMENTS.md D7).
+- New in pass 2: the safe PIN (5829) now comes from the whiteboard, Sterling's PC and her unsent draft, instead of sharing the founding year with the PC password.
+- Open: the SecGen flag order is inferred from the XML and not confirmed by a build (the VM is now published and `mission.json` points at it). The approval log's KO'd-guard lockpick line-of-sight gap (m03 section 5) is not named in its list of implemented items.
+- Latest playtest (regression, 2026-10-01, `tools/playtest/m03-regress-report.md`): game 1187 reached `status=completed` with all four flags, game 1190 covered the Victoria-KO route. No regressions. Victoria's intro replayed after a reload because NPC ink variables were not saved; the approval log lists that persistence as implemented, and no re-run of the check is recorded.
 
 ## Executive summary
 

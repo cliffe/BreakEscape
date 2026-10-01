@@ -93,7 +93,7 @@ flowchart TD
   vmfl_submit_distcc_flag{"Distcc Flag"}
   main_hallway("Main Hallway")
   executive_wing_hallway("Executive Wing Hallway")
-  james_office("James Office")
+  danny_office("Danny Office")
 
   door_conference_room_01 --> conference_room_01
   door_server_room --> server_room
@@ -119,10 +119,10 @@ flowchart TD
   vmfl_submit_http_flag -.-> vmch_submit_distcc_flag
   reception_lobby --> main_hallway
   main_hallway --> executive_wing_hallway
-  executive_wing_hallway --> james_office
+  executive_wing_hallway --> danny_office
 
   class door_conference_room_01,door_server_room,door_executive_office,lock_exec_filing_cabinet,lock_server_filing_cabinet,lock_wall_safe_server,lock_victoria_computer lock
-  class conference_room_01,server_room,executive_office,reception_lobby,main_hallway,executive_wing_hallway,james_office room
+  class conference_room_01,server_room,executive_office,reception_lobby,main_hallway,executive_wing_hallway,danny_office room
   class rfid_cloner,lock_pick_kit,cyberchef_workstation item
   class vmch_submit_network_scan_flag,vmch_submit_ftp_flag,vmch_submit_http_flag,vmch_submit_distcc_flag vm
   class vmfl_submit_network_scan_flag,vmfl_submit_ftp_flag,vmfl_submit_http_flag,vmfl_submit_distcc_flag flag
@@ -220,7 +220,7 @@ flowchart TD
   vmfl_submit_distcc_flag{"Distcc Flag"}
   main_hallway("Main Hallway")
   executive_wing_hallway("Executive Wing Hallway")
-  james_office("James Office")
+  danny_office("Danny Office")
   aim_act1_gain_access{{"Get Inside WhiteHat"}}
   aim_act2_breach_server_room{{"Breach The Server Room"}}
   aim_search_executive_office{{"Search Sterling's Office"}}
@@ -252,7 +252,7 @@ flowchart TD
   vmfl_submit_http_flag -.-> vmch_submit_distcc_flag
   reception_lobby --> main_hallway
   main_hallway --> executive_wing_hallway
-  executive_wing_hallway --> james_office
+  executive_wing_hallway --> danny_office
   aim_act1_gain_access -.-> aim_act2_breach_server_room
   aim_act1_gain_access -.-> aim_search_executive_office
   aim_act1_gain_access -.-> aim_collect_lore
@@ -267,7 +267,7 @@ flowchart TD
   lock_wall_safe_server -.-> aim_collect_lore
 
   class door_conference_room_01,door_server_room,door_executive_office,lock_exec_filing_cabinet,lock_server_filing_cabinet,lock_wall_safe_server,lock_victoria_computer lock
-  class conference_room_01,server_room,executive_office,reception_lobby,main_hallway,executive_wing_hallway,james_office room
+  class conference_room_01,server_room,executive_office,reception_lobby,main_hallway,executive_wing_hallway,danny_office room
   class rfid_cloner,lock_pick_kit,cyberchef_workstation item
   class vmch_submit_network_scan_flag,vmch_submit_ftp_flag,vmch_submit_http_flag,vmch_submit_distcc_flag vm
   class vmfl_submit_network_scan_flag,vmfl_submit_ftp_flag,vmfl_submit_http_flag,vmfl_submit_distcc_flag flag
@@ -310,16 +310,16 @@ flowchart TD
   server_room["Server Room<br/>(locked)"]
   executive_wing_hallway("Executive Wing Hallway")
   executive_office["Executive Office<br/>(locked)"]
-  james_office("James Office")
+  danny_office("Danny Office")
 
   reception_lobby --> main_hallway
   main_hallway --> conference_room_01
   main_hallway --> server_room
   main_hallway --> executive_wing_hallway
   executive_wing_hallway --> executive_office
-  executive_wing_hallway --> james_office
+  executive_wing_hallway --> danny_office
 
-  class reception_lobby,main_hallway,executive_wing_hallway,james_office room
+  class reception_lobby,main_hallway,executive_wing_hallway,danny_office room
   class conference_room_01,server_room,executive_office lock
   class node_start start
 ```
@@ -355,7 +355,7 @@ flowchart TD
   server_room["Server Room<br/>(locked)"]
   executive_wing_hallway("Executive Wing Hallway")
   executive_office["Executive Office<br/>(locked)"]
-  james_office("James Office")
+  danny_office("Danny Office")
   rc_obj1_1{"Building Directory"}
   rc_obj2_2{"Company Founding Plaque"}
   rc_npc_agent_hax_3("Agent HaX")
@@ -371,40 +371,41 @@ flowchart TD
   rc_m03_recon_field_guide_13{"SAFETYNET Field Guide: Reconnaissance and Network Mapping"}
   rc_m03_netexploit_field_guide_14{"SAFETYNET Field Guide: distcc Exploitation"}
   rc_m03_cyberchef_field_guide_15{"SAFETYNET Field Guide: Encoding and Decoding with CyberChef"}
-  rc_npc_agent_hax_16("Agent HaX")
-  rc_obj17_17{"Presentation Materials"}
-  rc_obj18_18{"Conference Whiteboard"}
-  rc_npc_victoria_sterling_19("Victoria Sterling")
-  rc_obj20_20{"Executive Keycard"}
-  rc_server_filing_cabinet_21[["Filing Cabinet"]]
-  rc_obj22_22{"Training Lab Runbook"}
-  rc_wall_safe_server_23[["Wall Safe"]]
-  rc_obj24_24{"Exploit Catalogue"}
-  rc_obj25_25{"Server Room Whiteboard"}
-  rc_vm_launcher_zero_day_26{"VM Access Terminal"}
-  rc_cyberchef_workstation_27{"CyberChef Workstation"}
-  rc_flag_station_dropsite_28{"Drop-Site Terminal"}
-  rc_npc_security_guard_29("Security Guard")
-  rc_exec_filing_cabinet_30[["Filing Cabinet"]]
-  rc_obj31_31{"Zero Day: A Brief History"}
-  rc_victoria_computer_32[["Executive Computer"]]
-  rc_obj33_33{"Unsent draft (raw message source)"}
-  rc_obj34_34{"Client Roster"}
-  rc_obj35_35[["Desk Drawer"]]
-  rc_obj36_36{"Hidden USB Drive"}
-  rc_obj37_37{"Performance Review"}
-  rc_obj38_38{"Family Photo"}
-  rc_obj39_39[["Danny's Workstation"]]
-  rc_obj40_40{"Folder: GHOST -- Hospital Infrastructure Assessment"}
-  rc_obj41_41{"Personal notes (unsent)"}
-  rc_npc_danny_foster_42("Danny Foster")
+  rc_m03_proftpd_field_guide_16{"SAFETYNET Field Guide: ProFTPD Exploitation Workflow"}
+  rc_npc_agent_hax_17("Agent HaX")
+  rc_obj18_18{"Presentation Materials"}
+  rc_obj19_19{"Conference Whiteboard"}
+  rc_npc_victoria_sterling_20("Victoria Sterling")
+  rc_obj21_21{"Executive Keycard"}
+  rc_server_filing_cabinet_22[["Filing Cabinet"]]
+  rc_obj23_23{"Training Lab Runbook"}
+  rc_wall_safe_server_24[["Wall Safe"]]
+  rc_obj25_25{"Exploit Catalogue"}
+  rc_obj26_26{"Server Room Whiteboard"}
+  rc_vm_launcher_zero_day_27{"VM Access Terminal"}
+  rc_cyberchef_workstation_28{"CyberChef Workstation"}
+  rc_flag_station_dropsite_29{"Drop-Site Terminal"}
+  rc_npc_security_guard_30("Security Guard")
+  rc_exec_filing_cabinet_31[["Filing Cabinet"]]
+  rc_obj32_32{"Zero Day: A Brief History"}
+  rc_victoria_computer_33[["Executive Computer"]]
+  rc_obj34_34{"Unsent email to the night team (raw source)"}
+  rc_obj35_35{"Client Roster"}
+  rc_obj36_36[["Desk Drawer"]]
+  rc_obj37_37{"Hidden USB Drive"}
+  rc_obj38_38{"Performance Review"}
+  rc_obj39_39{"Family Photo"}
+  rc_obj40_40[["Danny's Workstation"]]
+  rc_obj41_41{"Folder: GHOST -- Hospital Infrastructure Assessment"}
+  rc_obj42_42{"Personal notes (unsent)"}
+  rc_npc_danny_foster_43("Danny Foster")
 
   reception_lobby --> main_hallway
   main_hallway --> conference_room_01
   main_hallway --> server_room
   main_hallway --> executive_wing_hallway
   executive_wing_hallway --> executive_office
-  executive_wing_hallway --> james_office
+  executive_wing_hallway --> danny_office
   reception_lobby --> rc_obj1_1
   reception_lobby --> rc_obj2_2
   reception_lobby --> rc_npc_agent_hax_3
@@ -420,38 +421,39 @@ flowchart TD
   rc_npc_agent_hax_9 --> rc_m03_recon_field_guide_13
   rc_npc_agent_hax_9 --> rc_m03_netexploit_field_guide_14
   rc_npc_agent_hax_9 --> rc_m03_cyberchef_field_guide_15
-  reception_lobby --> rc_npc_agent_hax_16
-  conference_room_01 --> rc_obj17_17
+  rc_npc_agent_hax_9 --> rc_m03_proftpd_field_guide_16
+  reception_lobby --> rc_npc_agent_hax_17
   conference_room_01 --> rc_obj18_18
-  conference_room_01 --> rc_npc_victoria_sterling_19
-  rc_npc_victoria_sterling_19 --> rc_obj20_20
-  server_room --> rc_server_filing_cabinet_21
-  rc_server_filing_cabinet_21 --> rc_obj22_22
-  server_room --> rc_wall_safe_server_23
-  rc_wall_safe_server_23 --> rc_obj24_24
-  server_room --> rc_obj25_25
-  server_room --> rc_vm_launcher_zero_day_26
-  server_room --> rc_cyberchef_workstation_27
-  server_room --> rc_flag_station_dropsite_28
-  executive_wing_hallway --> rc_npc_security_guard_29
-  executive_office --> rc_exec_filing_cabinet_30
-  rc_exec_filing_cabinet_30 --> rc_obj31_31
-  executive_office --> rc_victoria_computer_32
-  rc_victoria_computer_32 --> rc_obj33_33
-  rc_victoria_computer_32 --> rc_obj34_34
-  executive_office --> rc_obj35_35
-  rc_obj35_35 --> rc_obj36_36
-  james_office --> rc_obj37_37
-  james_office --> rc_obj38_38
-  james_office --> rc_obj39_39
-  rc_obj39_39 --> rc_obj40_40
-  rc_obj39_39 --> rc_obj41_41
-  james_office --> rc_npc_danny_foster_42
+  conference_room_01 --> rc_obj19_19
+  conference_room_01 --> rc_npc_victoria_sterling_20
+  rc_npc_victoria_sterling_20 --> rc_obj21_21
+  server_room --> rc_server_filing_cabinet_22
+  rc_server_filing_cabinet_22 --> rc_obj23_23
+  server_room --> rc_wall_safe_server_24
+  rc_wall_safe_server_24 --> rc_obj25_25
+  server_room --> rc_obj26_26
+  server_room --> rc_vm_launcher_zero_day_27
+  server_room --> rc_cyberchef_workstation_28
+  server_room --> rc_flag_station_dropsite_29
+  executive_wing_hallway --> rc_npc_security_guard_30
+  executive_office --> rc_exec_filing_cabinet_31
+  rc_exec_filing_cabinet_31 --> rc_obj32_32
+  executive_office --> rc_victoria_computer_33
+  rc_victoria_computer_33 --> rc_obj34_34
+  rc_victoria_computer_33 --> rc_obj35_35
+  executive_office --> rc_obj36_36
+  rc_obj36_36 --> rc_obj37_37
+  danny_office --> rc_obj38_38
+  danny_office --> rc_obj39_39
+  danny_office --> rc_obj40_40
+  rc_obj40_40 --> rc_obj41_41
+  rc_obj40_40 --> rc_obj42_42
+  danny_office --> rc_npc_danny_foster_43
 
-  class reception_lobby,main_hallway,executive_wing_hallway,james_office room
+  class reception_lobby,main_hallway,executive_wing_hallway,danny_office room
   class conference_room_01,server_room,executive_office lock
-  class rc_obj1_1,rc_obj2_2,rc_visitor_badge_7,rc_obj8_8,rc_relayed_executive_keycard_10,rc_m03_rfid_field_guide_11,rc_m03_lockpicking_field_guide_12,rc_m03_recon_field_guide_13,rc_m03_netexploit_field_guide_14,rc_m03_cyberchef_field_guide_15,rc_obj17_17,rc_obj18_18,rc_obj20_20,rc_obj22_22,rc_obj24_24,rc_obj25_25,rc_vm_launcher_zero_day_26,rc_cyberchef_workstation_27,rc_flag_station_dropsite_28,rc_obj31_31,rc_obj33_33,rc_obj34_34,rc_obj36_36,rc_obj37_37,rc_obj38_38,rc_obj40_40,rc_obj41_41 item
-  class rc_npc_agent_hax_3,rc_npc_director_magnus_netherton_4,rc_npc_agent_0x47_nightshade_5,rc_npc_receptionist_6,rc_npc_agent_hax_9,rc_npc_agent_hax_16,rc_npc_victoria_sterling_19,rc_npc_security_guard_29,rc_npc_danny_foster_42 npc
-  class rc_server_filing_cabinet_21,rc_wall_safe_server_23,rc_exec_filing_cabinet_30,rc_victoria_computer_32,rc_obj35_35,rc_obj39_39 container
+  class rc_obj1_1,rc_obj2_2,rc_visitor_badge_7,rc_obj8_8,rc_relayed_executive_keycard_10,rc_m03_rfid_field_guide_11,rc_m03_lockpicking_field_guide_12,rc_m03_recon_field_guide_13,rc_m03_netexploit_field_guide_14,rc_m03_cyberchef_field_guide_15,rc_m03_proftpd_field_guide_16,rc_obj18_18,rc_obj19_19,rc_obj21_21,rc_obj23_23,rc_obj25_25,rc_obj26_26,rc_vm_launcher_zero_day_27,rc_cyberchef_workstation_28,rc_flag_station_dropsite_29,rc_obj32_32,rc_obj34_34,rc_obj35_35,rc_obj37_37,rc_obj38_38,rc_obj39_39,rc_obj41_41,rc_obj42_42 item
+  class rc_npc_agent_hax_3,rc_npc_director_magnus_netherton_4,rc_npc_agent_0x47_nightshade_5,rc_npc_receptionist_6,rc_npc_agent_hax_9,rc_npc_agent_hax_17,rc_npc_victoria_sterling_20,rc_npc_security_guard_30,rc_npc_danny_foster_43 npc
+  class rc_server_filing_cabinet_22,rc_wall_safe_server_24,rc_exec_filing_cabinet_31,rc_victoria_computer_33,rc_obj36_36,rc_obj40_40 container
   class node_start start
 ```

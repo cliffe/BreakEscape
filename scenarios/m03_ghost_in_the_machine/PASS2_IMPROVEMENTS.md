@@ -1,3 +1,5 @@
+> Renamed 2026-10-01: James Park → Danny Foster (ink file m03_james_choice → m03_danny_choice; room james_office → danny_office; task james_choice_made → danny_choice_made; globals james_fate/james_ko/james_warned/james_protected/james_exposed/james_innocence_confirmed → danny_*; receptionist knot ask_james / VAR topic_james → ask_danny / topic_danny; debrief knot james_discussion → danny_discussion). CIPHER → Sable and Obsidian (codenames only; no ids carried the old name).
+
 # m03 Ghost in the Machine — Pass 2 improvements
 
 > The m02-standard pass. Sources: `scenario.json.erb`, the seven `.ink` files, the

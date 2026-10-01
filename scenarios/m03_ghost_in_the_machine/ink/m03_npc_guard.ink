@@ -11,6 +11,9 @@ VAR topic_victoria = false
 VAR guard_detection_count = 0
 // Synced from globalVars: day (act1_meeting) vs night (act2_infiltration).
 VAR mission_phase = ""
+// Synced scenario global (pass 3b): set on a catch, cleared when the player leaves the
+// corridor, so one approach costs one strike however often they retry in his view.
+VAR guard_grace = false
 
 // Root divert. When a conversation has ended (-> DONE), the engine restores only
 // its variables on the next talk and continues from the root (npc-conversation-
@@ -381,17 +384,79 @@ Narrator: The guard reaches for his radio.
     #exit_conversation
     -> guard_idle
 
+// Pass 3: a detection is a warning first, not an instant fight (m02 Val Okonkwo
+// pattern). The count still costs Perfect Stealth every time. He only goes
+// hostile if the player refuses to back off, or is caught a third time.
 === on_lockpick_detected ===
 #speaker:npc
-#display:guard-hostile
-Security Guard: HEY! What are you doing with that lock?!
-~ guard_hostile = true
+{ guard_grace:
+    -> lockpick_still_here
+}
 ~ guard_suspicious = true
 ~ guard_detection_count = guard_detection_count + 1
-Security Guard: You're trying to break in! That's it - I'm calling the police!
-#hostile:night_guard
-#exit_conversation
--> guard_idle
+~ guard_grace = true
+#set_global:guard_grace:true
+{ guard_detection_count >= 3:
+    -> lockpick_final
+}
+{ guard_detection_count == 2:
+    -> lockpick_again
+}
+#display:guard-alert
+Narrator: A torch beam lands on your hands, and on the pick in them.
+Security Guard: Oi. Away from the door. Now.
++ [Ms. Sterling locked her keys in. She asked me to fetch her forms.]
+    ~ guard_influence = guard_influence + 5
+    Security Guard: With a pick set. Course she did.
+    Security Guard: I'm writing it down. Do that again where I can see it and I'm calling it in.
+    #exit_conversation
+    -> guard_idle
++ [Sorry. Wrong door. I'm going.]
+    Security Guard: Yeah, you are. I'll be watching.
+    #exit_conversation
+    -> guard_idle
++ [Shove past him.]
+    ~ guard_hostile = true
+    Security Guard: Right. That's it.
+    #hostile:night_guard
+    #exit_conversation
+    -> guard_idle
+
+// Same approach, still in his sight: no new strike, just a firmer nudge away.
+=== lockpick_still_here ===
+#speaker:npc
+#display:guard-suspicious
+Security Guard: I'm still stood here, you know. Away from the door.
+Narrator: He isn't going anywhere while you're in front of him. Come back when his back's turned.
++ [Step away from the door.]
+    #exit_conversation
+    -> guard_idle
+
+=== lockpick_again ===
+#speaker:npc
+#display:guard-hostile
+Security Guard: Again? I told you once.
++ [Put the picks away and back off.]
+    Security Guard: Last warning. Next time I'm not asking.
+    #exit_conversation
+    -> guard_idle
++ [Stand your ground.]
+    ~ guard_hostile = true
+    Security Guard: Have it your way.
+    #hostile:night_guard
+    #exit_conversation
+    -> guard_idle
+
+=== lockpick_final ===
+#speaker:npc
+#display:guard-hostile
+~ guard_hostile = true
+Security Guard: That's three times. I'm done talking.
+Narrator: He drops the torch and squares up.
++ [Brace yourself]
+    #hostile:night_guard
+    #exit_conversation
+    -> guard_idle
 
 === on_restricted_area ===
 #speaker:npc

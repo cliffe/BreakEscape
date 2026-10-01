@@ -4,7 +4,7 @@ EXTERNAL player_name()
 // unbound EXTERNAL getters -- the engine binds only player_name, and any other
 // EXTERNAL throws the moment the conversation opens.
 VAR victoria_fate = ""
-VAR james_fate = ""
+VAR danny_fate = ""
 VAR player_approach = ""
 VAR knows_m2_connection = false
 VAR guard_detection_count = 0
@@ -12,6 +12,14 @@ VAR lore_history_found = false
 VAR lore_catalogue_found = false
 VAR lore_directive_found = false
 VAR handler_trust = 50
+// Pass 3 (puzzle chains): Perfect Stealth must be earned past the guard (P6),
+// the catalogue has its own consequence (P2), and HaX only quotes what the
+// player brought out (P13).
+VAR exec_office_entered = false
+VAR guard_knocked_out = false
+VAR catalogue_seen = false
+VAR roster_seen = false
+VAR usb_seen = false
 
 // Root divert. When a conversation has ended (-> DONE), the engine restores only
 // its variables on the next talk and continues from the root (npc-conversation-
@@ -29,9 +37,17 @@ Narrator: SAFETYNET headquarters. The morning after WhiteHat Security.
 #speaker:agent_0x99
 Agent HaX: {player_name()}. Sit down before you fall down. You've earned it.
 
-{ guard_detection_count == 0:
+// Perfect Stealth needs all three: never detected, actually went past him into
+// Sterling's office, and didn't simply knock him out (P6).
+{ guard_detection_count == 0 and exec_office_entered and not guard_knocked_out:
     #complete_task:zero_detection
     Agent HaX: First thing the log told me: the guard never logged you once. In and out like you were never there. That's a rare night's work.
+}
+{ guard_detection_count == 0 and guard_knocked_out:
+    Agent HaX: The guard never logged you. Mind you, he spent most of the night unconscious, so I'm not calling it stealth.
+}
+{ guard_detection_count == 0 and not exec_office_entered and not guard_knocked_out:
+    Agent HaX: The guard never saw you. Then again, you never gave him the chance.
 }
 { guard_detection_count == 1:
     Agent HaX: Security flagged one run-in with the guard. You recovered, but you left a mark on the log.
@@ -93,6 +109,9 @@ Agent HaX: And now she's ours. That was a hell of a call -- turning her instead 
 #speaker:agent_0x99
 Agent HaX: Counter-intelligence has her. First package is already in -- comms protocols for the Architect, the payment rails, contacts at the other cells.
 Agent HaX: She stays at Zero Day so nothing looks wrong, and she reports to us. For the first time we have eyes inside ENTROPY's supply line.
+{ usb_seen or lore_directive_found:
+    Agent HaX: And she knew you already had the directive. That's why she didn't try to sell us the parts we had.
+}
 { player_approach == "diplomatic":
     Agent HaX: You read the moment and took it. That's the whole reason this was on the table.
 }
@@ -142,7 +161,7 @@ Agent HaX: We've got the evidence and the name either way. The Architect loses a
 === victoria_escaped ===
 #speaker:agent_0x99
 Agent HaX: Sterling's in the wind. She had a bag packed before you ever crossed the threshold.
-Agent HaX: We've got the case -- the logs, the catalogue, the directive. What we don't have is her.
+Agent HaX: We've got the case. The transaction log puts Sable's name on the sale. What we don't have is her.
 * [The evidence outlasts her]
     You: The proof doesn't run. She's a signature on it now, wherever she is.
     ~ handler_trust = handler_trust + 5
@@ -177,8 +196,12 @@ Agent HaX: Now the part that kept me up. Phase 2.
 }
 { not lore_directive_found:
     Agent HaX: We know Phase 2 is real -- the logs point straight at it. But without the directive itself we're working the shape of it, not the detail.
-    Agent HaX: Infrastructure. Grid and healthcare. Winter. That's what we've got, and it's enough to start hardening targets.
-    -> james_discussion
+    { roster_seen:
+        Agent HaX: Her client roster says grid storage and Critical Mass. That's what we've got, and it's enough to start hardening targets.
+    - else:
+        Agent HaX: Infrastructure, and soon. That's the shape of it, and it's enough to start hardening targets.
+    }
+    -> danny_discussion
 }
 
 === architect_revelation ===
@@ -204,11 +227,11 @@ Agent HaX: The directive proves they exist and proves they plan at this scale. W
 #speaker:agent_0x99
 Agent HaX: The Phase 2 target list won't go out with our name on it. It'll reach the operators as an anonymous advisory from a research outfit nobody's heard of. They'll act on it -- they always do.
 Agent HaX: Substations get hardened. Hospitals get emergency assessments. We can't unmake ENTROPY, but we can be standing where they meant to strike.
--> james_discussion
+-> danny_discussion
 
-=== james_discussion ===
+=== danny_discussion ===
 #speaker:agent_0x99
-{ james_fate == "protected":
+{ danny_fate == "protected":
     Agent HaX: Danny Foster. You gave him the way in and he took it -- came to us on his own last night. Cooperating fully.
     Agent HaX: I read his file and your notes. He drew a map under a lie. When he understood what it was for, it broke him. That's a man Sterling used, not a conspirator.
     { player_approach == "diplomatic":
@@ -217,7 +240,7 @@ Agent HaX: Substations get hardened. Hospitals get emergency assessments. We can
     Agent HaX: He won't be charged. But he'll carry it. That's its own sentence.
     -> final_assessment
 }
-{ james_fate == "exposed":
+{ danny_fate == "exposed":
     Agent HaX: Danny Foster. You logged the lot -- the recon, the emails, the raise he took to stay quiet.
     Agent HaX: He's been arrested. Deceived at the start, complicit by the end, and the second part is a choice a court can name.
     { player_approach == "aggressive":
@@ -226,7 +249,7 @@ Agent HaX: Substations get hardened. Hospitals get emergency assessments. We can
     Agent HaX: He'll likely get years, not a life sentence -- the deception's real and he's cooperating. But he serves.
     -> final_assessment
 }
-{ james_fate == "left":
+{ danny_fate == "left":
     Agent HaX: Danny Foster. You left the decision with him. Didn't shield him, didn't hang him. Just handed it back.
     Agent HaX: He hasn't called. His phone's been off since last night and he's not at home.
     { player_approach == "cautious":
@@ -235,23 +258,45 @@ Agent HaX: Substations get hardened. Hospitals get emergency assessments. We can
     Agent HaX: If he comes in, he's a witness. If Zero Day's people find him first, he's a loose end to them. I've got someone watching his house.
     -> final_assessment
 }
-{ james_fate == "ko":
+{ danny_fate == "ko":
     Agent HaX: Danny Foster was found unconscious in his own office. We've got him in protective custody.
     Agent HaX: He'll cooperate when he comes round. He was halfway to us before you got there -- you just took the choice out of his hands.
     -> final_assessment
 }
-{ james_fate == "":
+{ danny_fate == "":
     Agent HaX: You never found the consultant, Danny Foster. His name's still in the recon files, so it'll surface. Where he lands is anyone's guess now.
     -> final_assessment
 }
 
 === final_assessment ===
 #speaker:agent_0x99
-{ lore_history_found and lore_catalogue_found and lore_directive_found:
+{ lore_history_found and (catalogue_seen or lore_catalogue_found) and (usb_seen or lore_directive_found):
     Agent HaX: And you brought the whole paper trail out with you. The history, the catalogue, the directive. We don't just have a case now -- we have their philosophy, their pricing, and their plan.
 }
-{ not (lore_history_found and lore_catalogue_found and lore_directive_found):
-    Agent HaX: You left some of the paper behind. What you brought out is enough to prosecute and enough to warn people. More would have helped. It usually does.
+{ not (lore_history_found and (catalogue_seen or lore_catalogue_found) and (usb_seen or lore_directive_found)):
+    Agent HaX: You left some of the paper behind.
+    { not lore_history_found:
+        Agent HaX: Their own history of the firm is still in Sterling's filing cabinet.
+    }
+    { not (catalogue_seen or lore_catalogue_found):
+        Agent HaX: The exploit catalogue is still in the wall safe.
+    }
+    { not (usb_seen or lore_directive_found):
+        Agent HaX: The drive is still in her desk.
+    }
+    Agent HaX: What you brought out is enough to prosecute and enough to warn people. More would have helped. It usually does.
+}
+// The catalogue's own consequence (P2). The vendor line stands alone: the
+// anonymous-advisory knot is only reached when the directive was found.
+{ catalogue_seen or lore_catalogue_found:
+    { victoria_fate != "recruited":
+        Agent HaX: The catalogue's going out as an anonymous advisory. Every product on that list, flagged to the people who run it: audit these, now. A price list doesn't patch anything, but it tells them where to look.
+    - else:
+        Agent HaX: The catalogue gets folded into routine advisories over the next few months, a product at a time, so nothing points back at her. A price list doesn't patch anything, but it tells the people who run those systems where to look.
+    }
+    { victoria_fate != "recruited":
+        Agent HaX: And word will reach their buyers that the list is in our hands. Every sale off that shelf just got riskier.
+    }
 }
 Agent HaX: Final word, {player_name()}:
 { handler_trust >= 70:
@@ -267,7 +312,11 @@ Agent HaX: Final word, {player_name()}:
 
 === aftermath ===
 #speaker:agent_0x99
-Agent HaX: Here's where it stands. Zero Day's exploit line is exposed.
+{ victoria_fate != "recruited":
+    Agent HaX: Here's where it stands. Zero Day's exploit line is exposed.
+- else:
+    Agent HaX: Here's where it stands. Zero Day doesn't know it's been read.
+}
 { victoria_fate == "arrested":
     Agent HaX: Victoria Sterling is in custody.
 }
@@ -280,7 +329,11 @@ Agent HaX: Here's where it stands. Zero Day's exploit line is exposed.
 { victoria_fate == "escaped":
     Agent HaX: Victoria Sterling is in the wind.
 }
-Agent HaX: Phase 2 targets are being hardened. The cells that leaned on Zero Day's supply are scrambling. And we're one step closer to the Architect.
+{ victoria_fate != "recruited":
+    Agent HaX: Phase 2 targets are being hardened. The cells that leaned on Zero Day's supply are scrambling. And we're one step closer to the Architect.
+- else:
+    Agent HaX: Phase 2 targets are being hardened, quietly. The cells that lean on Zero Day's supply still think it's safe. And we're one step closer to the Architect.
+}
 * [What's next for me?]
     You: What's my next assignment?
     Agent HaX: Rest, then a debrief. Then we see where ENTROPY surfaces. Take one cell down and it shows you the next.

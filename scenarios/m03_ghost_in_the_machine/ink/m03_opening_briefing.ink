@@ -173,6 +173,8 @@ Agent HaX: On our side of the record she runs the front and answers to 0day and 
 Agent HaX: Two stages. Reception first: the receptionist's staff badge opens the conference area. Weak-default card, so the cloner cracks it in seconds. Lean in near her desk to capture it.
 Agent HaX: Then Sterling's executive card during your meeting. That one's custom-key, so the crack grinds -- stay in range while it works.
 Agent 0x47 'Nightshade': And it's capture and replay. Her card broadcasts, we copy, we impersonate. Same trick the other side uses on us. One day it'll be our badge somebody clones, so remember how easy it was.
+Agent 0x47 'Nightshade': Last time a card meant getting it off somebody. This time you just stand next to it.
+Agent HaX: Your picks for anything keyed, the cloner for anything carded. And no keypad gadget this time. Nightshade's still got the one from St. Catherine's on his bench, and we don't have a second.
 * [What if she notices?]
     Agent HaX: Play the curious recruit. She loves talking about the work. The cloner is passive until you trigger it.
     -> briefing_hub

@@ -147,8 +147,8 @@
       "optional": false
     },
     {
-      "id": "james_office",
-      "label": "James Office",
+      "id": "danny_office",
+      "label": "Danny Office",
       "kind": "room",
       "optional": false
     }
@@ -276,7 +276,7 @@
     },
     {
       "from": "executive_wing_hallway",
-      "to": "james_office",
+      "to": "danny_office",
       "soft": false
     }
   ]

@@ -1,8 +1,8 @@
 EXTERNAL player_name()
 
-// james_fate is a scenario global; assigning it writes through to game state,
+// danny_fate is a scenario global; assigning it writes through to game state,
 // where the credits and the debrief read it back. No unbound EXTERNAL getters.
-VAR james_fate = ""
+VAR danny_fate = ""
 VAR danny_evidence_seen = false
 VAR player_choice_made = false
 
@@ -15,8 +15,8 @@ VAR player_choice_made = false
 === start ===
 #speaker:danny_foster
 // Re-entry guard: the decision scene plays once. Talking again must not replay it
-// and overwrite james_fate.
-{ james_fate != "":
+// and overwrite danny_fate.
+{ danny_fate != "":
     -> after_choice
 }
 Narrator: The office is small and lived-in. A framed photo faces the chair. On the screen, a folder is still open: "GHOST -- Hospital Infrastructure Assessment".
@@ -70,10 +70,10 @@ Danny Foster: *shakily* You'd do that.
 You: Sterling goes down for what she did with your work. You don't have to go down with her. But you have to come in, and you have to tell them everything.
 Danny Foster: Everything. Yes. God, yes.
 Narrator: He reaches for his phone with a hand that isn't quite steady, and for the first time all night he looks like a man who might sleep.
-~ james_fate = "protected"
-#set_global:james_fate:protected
+~ danny_fate = "protected"
+#set_global:danny_fate:protected
 ~ player_choice_made = true
-#complete_task:james_choice_made
+#complete_task:danny_choice_made
 #exit_conversation
 -> after_choice
 
@@ -84,10 +84,10 @@ Danny Foster: *quietly* You're not wrong. That's the worst of it. You're not wro
 You: I'm logging all of it. The recon, the emails, the raise. Prosecutors decide the charge, not me. Cooperating will help you. Nothing erases it.
 Danny Foster: *defeated* Then I'll cooperate. For whatever it's worth. Just -- in whatever you write, say that I didn't know at the start. Please.
 Narrator: He doesn't argue. Somewhere in the last few months he stopped believing he'd get to.
-~ james_fate = "exposed"
-#set_global:james_fate:exposed
+~ danny_fate = "exposed"
+#set_global:danny_fate:exposed
 ~ player_choice_made = true
-#complete_task:james_choice_made
+#complete_task:danny_choice_made
 #exit_conversation
 -> after_choice
 
@@ -98,10 +98,10 @@ You: Sterling is who I came for. What you do next is between you and whoever you
 Danny Foster: That's almost worse. At least a decision made for me isn't mine.
 You: It's the only one that'll hold, though. Make it.
 Narrator: You leave him with the photo, the open folder, and the phone. Whatever he does with the three of them, he does alone.
-~ james_fate = "left"
-#set_global:james_fate:left
+~ danny_fate = "left"
+#set_global:danny_fate:left
 ~ player_choice_made = true
-#complete_task:james_choice_made
+#complete_task:danny_choice_made
 #exit_conversation
 -> after_choice
 
@@ -109,18 +109,18 @@ Narrator: You leave him with the photo, the open folder, and the phone. Whatever
 // Resting point (m02 pattern): choices first, never DONE, so a re-talk in the
 // same session lands here instead of "(End of conversation)".
 #speaker:danny_foster
-+ {james_fate == "protected"} [Danny's on the phone to SAFETYNET. Leave him to it.]
++ {danny_fate == "protected"} [Danny's on the phone to SAFETYNET. Leave him to it.]
     Danny Foster: They're sending someone for me. Thank you. I mean it.
     #exit_conversation
     -> after_choice
-+ {james_fate == "exposed"} [Danny's sitting very still. Leave him.]
++ {danny_fate == "exposed"} [Danny's sitting very still. Leave him.]
     Danny Foster: I'm not going anywhere. You know where to find me.
     #exit_conversation
     -> after_choice
-+ {james_fate == "left"} [Danny's still staring at the phone. Leave him.]
++ {danny_fate == "left"} [Danny's still staring at the phone. Leave him.]
     Danny Foster: I'm still deciding. Let me.
     #exit_conversation
     -> after_choice
-+ {james_fate == "" or james_fate == "ko"} [Leave]
++ {danny_fate == "" or danny_fate == "ko"} [Leave]
     #exit_conversation
     -> after_choice

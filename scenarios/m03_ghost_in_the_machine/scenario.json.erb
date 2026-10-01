@@ -32,13 +32,14 @@ end
 #              choice, so nothing in m03 states a count
 # m03 is set in early December 2024, "last month" from St. Catherine's.
 #
-# SAFE CHAIN (pass 2): the catalogue safe no longer shares the founding year with
-# the password. The server-room whiteboard (the night team's ROT13 house style,
-# kept from the day staff) points at Sterling's drafts; her unsent draft is stored
-# as raw MIME with a Base64 body and carries the code.
+# SAFE CHAIN (pass 2, reworded pass 3): the catalogue safe no longer shares the
+# founding year with the password. The server-room whiteboard (the night team's ROT13
+# house style, kept from the day staff) says Sable is mailing the new code from her office; Sterling's
+# unsent draft to the night team is stored as raw MIME with a Base64 body and
+# carries the code.
 #   whiteboard (server room) -> Sterling's PC (exec office) -> draft -> wall safe
 catalogue_safe_code = "5829"
-whiteboard_message_encoded = rot13("NIGHT TEAM: CATALOGUE STAYS IN THE WALL SAFE. SABLE HAS CHANGED THE CODE - IT IS IN HER DRAFTS, NOT ON THIS BOARD.")
+whiteboard_message_encoded = rot13("NIGHT TEAM: CATALOGUE STAYS IN THE WALL SAFE. SABLE HAS CHANGED THE CODE. SHE IS MAILING THE NEW ONE FROM HER OFFICE - DO NOT WRITE IT ON THIS BOARD.")
 
 client_roster_content = "ZERO DAY -- ACTIVE CLIENT ROSTER (export)\n- GHOST / Ransomware Incorporated: healthcare package, DELIVERED\n- OBSIDIAN: ransomware deployment, Q4 pricing sent\n- VORTEX: credential harvesting\n- CRITICAL MASS: grid storage / BMS access, Phase 2 priority\n- ECLIPSE: industrial espionage"
 client_roster_hex = hex_encode(client_roster_content)
@@ -117,19 +118,25 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           { "text": "MISSION COMPLETE", "style": "title" },
           { "text": "GHOST IN THE MACHINE", "style": "subtitle" },
           { "text": "" },
-          { "text": "ZERO DAY SYNDICATE: EXPOSED", "style": "entry" },
+          { "text": "ZERO DAY SYNDICATE: EXPOSED", "style": "entry", "condition": "globalVars.victoria_fate !== 'recruited'" },
+          { "text": "ZERO DAY SYNDICATE: COMPROMISED — from the inside", "style": "entry", "condition": "globalVars.victoria_fate === 'recruited'" },
           { "text": "ST. CATHERINE'S LINK: PROVEN — ProFTPD exploit traced to GHOST", "style": "entry" },
+          { "text": "ZERO DAY CATALOGUE: IN SAFETYNET HANDS — vendors warned, buyers on notice", "style": "entry", "condition": "(globalVars.catalogue_seen === true || globalVars.lore_catalogue_found === true) && globalVars.victoria_fate !== 'recruited'" },
+          { "text": "ZERO DAY CATALOGUE: IN SAFETYNET HANDS — vendors quietly warned", "style": "entry", "condition": "(globalVars.catalogue_seen === true || globalVars.lore_catalogue_found === true) && globalVars.victoria_fate === 'recruited'" },
+          { "text": "ZERO DAY CATALOGUE: NOT RECOVERED — what else they hold is still unknown", "style": "warning", "condition": "globalVars.catalogue_seen !== true && globalVars.lore_catalogue_found !== true && globalVars.victoria_fate !== 'arrested'" },
+          { "text": "ZERO DAY CATALOGUE: SEIZED WITH THE MARKETPLACE — but not in our hands", "style": "warning", "condition": "globalVars.catalogue_seen !== true && globalVars.lore_catalogue_found !== true && globalVars.victoria_fate === 'arrested'" },
           { "text": "" },
           { "text": "── DECISIONS ──", "style": "section-header" },
           { "text": "VICTORIA STERLING: TURNED — a cold asset now, not a convert", "style": "entry", "condition": "globalVars.victoria_fate === 'recruited'" },
           { "text": "VICTORIA STERLING: ARRESTED — marketplace seized, the name kept from The Architect", "style": "entry", "condition": "globalVars.victoria_fate === 'arrested'" },
           { "text": "VICTORIA STERLING: ESCAPED — the evidence stayed, she didn't", "style": "entry", "condition": "globalVars.victoria_fate === 'escaped'" },
           { "text": "VICTORIA STERLING: NEUTRALISED — taken down on site", "style": "entry", "condition": "globalVars.victoria_fate === 'ko'" },
-          { "text": "DANNY FOSTER: PROTECTED — came in on his own, name kept out of the report", "style": "entry", "condition": "globalVars.james_fate === 'protected'" },
-          { "text": "DANNY FOSTER: EXPOSED — named in full, charged alongside Zero Day", "style": "entry", "condition": "globalVars.james_fate === 'exposed'" },
-          { "text": "DANNY FOSTER: LEFT TO CHOOSE — phone off, whereabouts unknown", "style": "warning", "condition": "globalVars.james_fate === 'left'" },
-          { "text": "DANNY FOSTER: TAKEN DOWN IN HIS OWN OFFICE", "style": "warning", "condition": "globalVars.james_fate === 'ko'" },
-          { "text": "PERFECT STEALTH — never detected by security", "style": "entry", "condition": "globalVars.guard_detection_count === 0" },
+          { "text": "DANNY FOSTER: PROTECTED — came in on his own, name kept out of the report", "style": "entry", "condition": "globalVars.danny_fate === 'protected'" },
+          { "text": "DANNY FOSTER: EXPOSED — named in full, charged alongside Zero Day", "style": "entry", "condition": "globalVars.danny_fate === 'exposed'" },
+          { "text": "DANNY FOSTER: LEFT TO CHOOSE — phone off, whereabouts unknown", "style": "warning", "condition": "globalVars.danny_fate === 'left'" },
+          { "text": "DANNY FOSTER: TAKEN DOWN IN HIS OWN OFFICE", "style": "warning", "condition": "globalVars.danny_fate === 'ko'" },
+          { "text": "DANNY FOSTER: NEVER FOUND — his name is still in the recon files", "style": "warning", "condition": "!globalVars.danny_fate" },
+          { "text": "PERFECT STEALTH — never detected by security", "style": "entry", "condition": "globalVars.guard_detection_count === 0 && globalVars.exec_office_entered === true && globalVars.guard_knocked_out !== true" },
           { "text": "" },
           { "text": "THE ARCHITECT: identity still unknown. Phase 2 looms.", "style": "warning" },
           { "text": "ENTROPY: Still operational. The hunt continues.", "style": "warning" }
@@ -228,13 +235,6 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "description": "Exploit distcc to recover the operational transaction logs that name GHOST and St. Catherine's",
           "type": "custom",
           "status": "active"
-        },
-        {
-          "taskId": "decode_whiteboard",
-          "title": "Decode the server room whiteboard",
-          "description": "Work out what the night team wrote on the server room whiteboard",
-          "type": "custom",
-          "status": "active"
         }
       ]
     },
@@ -256,8 +256,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
         },
         {
           "taskId": "decode_client_roster",
-          "title": "Decode the client roster",
-          "description": "Read the client roster export on Sterling's computer",
+          "title": "Recover Sterling's client roster",
+          "description": "Find the client roster export on Sterling's computer",
           "type": "custom",
           "status": "active"
         }
@@ -285,6 +285,13 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "description": "Open the server room wall safe and find the exploit catalogue",
           "type": "unlock_object",
           "targetObject": "wall_safe_server",
+          "status": "active"
+        },
+        {
+          "taskId": "decode_whiteboard",
+          "title": "Read the night team's whiteboard",
+          "description": "Find what the night team wrote on the server room whiteboard. It sits with the wall safe it is about.",
+          "type": "custom",
           "status": "active"
         },
         {
@@ -337,7 +344,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
       "conclusionScreen": { "type": "bond_visualiser" },
       "tasks": [
         {
-          "taskId": "james_choice_made",
+          "taskId": "danny_choice_made",
           "title": "Decide Danny Foster's fate",
           "description": "Decide whether to protect Danny Foster from the collateral damage of the sweep",
           "type": "custom",
@@ -509,9 +516,19 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "voice": {
             "name": "Kore",
-            "style": "Front-desk receptionist at a smart tech firm. Consistent Southern English accent throughout. Bright, quick and genuinely friendly; a little in awe of her boss and not remotely suspicious of visitors.",
+            "style": "Front-desk receptionist at a smart tech firm, mid-twenties. Speak with a consistent South Wales (Cardiff) accent throughout -- do not shift to any other accent. Bright, slightly high pitch; quick, chatty pace. Genuinely friendly, a little in awe of her boss and not remotely suspicious of visitors.",
             "language": "en-GB"
           },
+          "eventMappings": [
+            {
+              "_comment": "Pass 3c: the badge clone counts only when it is saved in the cloner (card_cloned is emitted on Save). Kept on the receptionist (start room, always loaded) so it doesn't share the card_cloned pattern with HaX's Victoria handler.",
+              "eventPattern": "card_cloned",
+              "condition": "data.cardName === 'Staff Access Badge'",
+              "onceOnly": true,
+              "setGlobal": { "reception_badge_cloned": true },
+              "completeTask": "clone_reception_badge"
+            }
+          ],
           "rfidCard": {
             "card_id": "receptionist_badge",
             "rfid_protocol": "MIFARE_Classic_Weak_Defaults",
@@ -550,7 +567,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           },
           "itemsHeld": [
             {
-              "_comment": "D3 fallback. A KO'd NPC outside the start room has no sprite, so Victoria's physical keycard never drops (engine gap, see approval log). If she is knocked out before her card is cloned, HaX hands this over by phone (on_victoria_ko_card).",
+              "_comment": "Fallback for a KO before the clone. Since engine 18237332 a KO'd NPC in a later-loaded room keeps its sprite, so Victoria's physical keycard should drop too; this relay stays as the belt-and-braces route (authoring rule: required items held by an NPC get a fallback). HaX hands it over by phone (on_victoria_ko_card).",
               "type": "keycard",
               "id": "relayed_executive_keycard",
               "card_id": "victoria_keycard_clone",
@@ -598,6 +615,14 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "takeable": true,
               "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/encoding-and-decoding-with-cyberchef/",
               "observations": "ROT13, Base64, hex and multi-layer decoding — encoding is not encryption"
+            },
+            {
+              "type": "lab-workstation",
+              "id": "m03_proftpd_field_guide",
+              "name": "SAFETYNET Field Guide: ProFTPD Exploitation Workflow",
+              "takeable": true,
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/proftpd-exploitation-workflow/",
+              "observations": "Confirm the ProFTPD 1.3.3c backdoor, configure, launch, verify the shell -- the exploit behind St. Catherine's"
             }
           ],
           "eventMappings": [
@@ -611,7 +636,18 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "eventPattern": "room_entered:server_room",
               "onceOnly": true,
               "setGlobal": { "netexploit_guide_offered": true },
-              "sendTimedMessage": { "delay": 2500, "message": "You're at their VM terminal. Recon first, then the services, then the legacy distcc daemon -- that's where their records live. Submit everything at the drop-site. I've field guides on recon, distcc and CyberChef if you want them." }
+              "sendTimedMessage": { "delay": 2500, "message": "You're at their VM terminal. Recon first, then the services, then the legacy distcc daemon -- that's where their records live. Their FTP box is running the same backdoored ProFTPD that took St. Catherine's down. They rehearse on what they sell. Submit everything at the drop-site. I've field guides on recon, ProFTPD, distcc and CyberChef if you want them." }
+            },
+            <%# Pass 3c: a clone counts only when the card is actually saved in the
+                cloner. card_cloned is emitted on Save (rfid-minigame.js handleSaveCard)
+                and carries only cardName. Closing the flipper before Save leaves the
+                global false, and the ink offers the clone again (m04 Vance pattern). %>
+            {
+              "eventPattern": "card_cloned",
+              "condition": "data.cardName === 'Executive Keycard'",
+              "onceOnly": true,
+              "setGlobal": { "victoria_card_cloned": true },
+              "completeTask": "clone_rfid_card"
             },
             {
               "eventPattern": "objective_task_completed:clone_reception_badge",
@@ -637,10 +673,26 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "onceOnly": true,
               "sendTimedMessage": { "delay": 1200, "message": "That's their decoding laptop. Anything that looks like gibberish on paper, paste it in. Encoding isn't encryption -- if it doesn't read after one pass, try another." }
             },
+            <%# Pass 3e: the PC call used to open on the unlock task, which fires as the
+                password screen succeeds, so the phone replaced the PC's file list and the
+                player had to interact again. It now waits until the player opens one of
+                the PC's files (the draft or the roster, both onRead). pc_call_done keeps
+                it to one call whichever file comes first. %>
             {
-              "eventPattern": "objective_task_completed:access_victoria_computer",
+              "eventPattern": "global_variable_changed:draft_seen",
+              "condition": "value === true && globalVars.pc_call_done !== true",
               "targetKnot": "on_victoria_computer_accessed",
               "conversationMode": "phone-chat",
+              "setGlobal": { "pc_call_done": true },
+              "onceOnly": true
+            },
+            {
+              "_comment": "Keyed on the roster task (completed by the roster_seen mapping) rather than roster_seen itself, so it doesn't share a pattern with that mapping.",
+              "eventPattern": "objective_task_completed:decode_client_roster",
+              "condition": "globalVars.pc_call_done !== true",
+              "targetKnot": "on_victoria_computer_accessed",
+              "conversationMode": "phone-chat",
+              "setGlobal": { "pc_call_done": true },
               "onceOnly": true
             },
             {
@@ -650,9 +702,15 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
             },
             {
               "eventPattern": "objective_task_completed:lore_fragment_2",
+              "setGlobal": { "lore_catalogue_found": true },
+              "onceOnly": true
+            },
+            {
+              "_comment": "Pass 3c: the catalogue call used to open on objective_task_completed:lore_fragment_2, which fires when the safe unlocks, so the phone covered the PIN result. It now waits until the player reads the catalogue (its onRead sets catalogue_seen), well after the PIN screen has gone.",
+              "eventPattern": "global_variable_changed:catalogue_seen",
+              "condition": "value === true",
               "targetKnot": "on_exploit_catalog_found",
               "conversationMode": "phone-chat",
-              "setGlobal": { "lore_catalogue_found": true },
               "onceOnly": true
             },
             {
@@ -720,11 +778,11 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "onceOnly": true,
               "sendTimedMessage": { "delay": 4000, "message": "That's everything off their network. And Sterling's card just went through the conference room reader. She's still in the building. She's waiting for someone. If you want a say in what happens to Danny Foster, his office is in the executive wing: go there first. Then go and see her." }
             },
-            <%# Victoria KO. Keyed on npc_ko:<id>, which the engine emits, NOT on
-                global_variable_changed:victoria_ko: globalVarOnKO writes the global
-                without emitting a change event (npc-hostile.js:159-166), so handlers
-                on that pattern never fired (playtest D2). npc_ko fires BEFORE
-                globalVarOnKO is written, so these handlers set victoria_ko themselves.
+            <%# Victoria KO. Keyed on npc_ko:<id>. In pass 2 globalVarOnKO did not emit a
+                change event, so handlers on global_variable_changed:victoria_ko never
+                fired (playtest D2). Engine 18237332 now emits it, but npc_ko stays the
+                key: it fires BEFORE globalVarOnKO is written, so these handlers set
+                victoria_ko themselves.
                 Several handlers fire together on purpose: they complete different
                 tasks. Her fate is settled only once the network work is in, so the
                 debrief can't roll before the evidence exists. %>
@@ -741,7 +799,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "completeTask": "clone_rfid_card"
             },
             {
-              "_comment": "D3: knocked out before her card was cloned, and her physical card never drops (no sprite outside the start room). HaX hands over a working copy by phone so the server room stays reachable.",
+              "_comment": "D3: knocked out before her card was cloned. Her physical card should now drop (engine 18237332), but HaX still hands over a working copy by phone so the server room stays reachable whatever the drop does.",
               "eventPattern": "npc_ko:victoria_sterling",
               "condition": "globalVars.mission_phase !== 'act2_infiltration'",
               "onceOnly": true,
@@ -772,11 +830,11 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
             },
             {
               "eventPattern": "npc_ko:danny_foster",
-              "condition": "globalVars.james_fate === ''",
+              "condition": "globalVars.danny_fate === ''",
               "onceOnly": true,
-              "setGlobal": { "james_ko": true, "james_fate": "ko" }
+              "setGlobal": { "danny_ko": true, "danny_fate": "ko" }
             },
-<% %w[reception_lobby main_hallway conference_room_01 server_room executive_wing_hallway executive_office james_office].each do |r| %>
+<% %w[reception_lobby main_hallway conference_room_01 server_room executive_wing_hallway executive_office danny_office].each do |r| %>
             {
               "_comment": "hear_debrief backstop: it completes on the debrief's last line. If the page reloads mid-debrief, debrief_played is already set and the debrief won't replay, so the next room entry completes the task and the mission can conclude.",
               "eventPattern": "room_entered:<%= r %>",
@@ -825,6 +883,25 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
             "language": "en-GB"
           },
           "eventMappings": [
+            {
+              "_comment": "Pass 3b: leaving the executive-wing corridor ends the guard's grace, so the next catch is a new strike.",
+              "eventPattern": "room_entered:main_hallway",
+              "condition": "globalVars.guard_grace === true",
+              "cooldown": 0,
+              "setGlobal": { "guard_grace": false }
+            },
+            {
+              "eventPattern": "room_entered:danny_office",
+              "condition": "globalVars.guard_grace === true",
+              "cooldown": 0,
+              "setGlobal": { "guard_grace": false }
+            },
+            {
+              "_comment": "Pass 3, P6: Perfect Stealth needs the player to have got past the guard into Sterling's office. Kept on this always-loaded NPC rather than HaX so it doesn't share a room_entered pattern with HaX's hear_debrief backstop.",
+              "eventPattern": "room_entered:executive_office",
+              "onceOnly": true,
+              "setGlobal": { "exec_office_entered": true }
+            },
             {
               "eventPattern": "global_variable_changed:victoria_choice_made",
               "condition": "value === true && globalVars.debrief_played !== true",
@@ -892,7 +969,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "voice": {
             "name": "Despina",
-            "style": "CEO and former conference speaker. Consistent British Received Pronunciation accent throughout. Cool, precise and amused; never raises her voice, because she has never needed to.",
+            "style": "CEO and former conference speaker, late forties. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Smooth, low-to-mid pitch; unhurried, polished pace. Cool, precise and amused; never raises her voice, because she has never needed to.",
             "language": "en-GB"
           },
           "eventMappings": [
@@ -948,7 +1025,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "name": "Training Lab Runbook",
               "takeable": true,
               "readable": true,
-              "text": "STUDENT RUNBOOK -- 192.168.100.0/24\n\n1. nmap the subnet. Everything you need is on live hosts.\n2. The FTP box allows anonymous login. Read what you are given.\n3. The web host serves the price list. It is only encoded, not encrypted.\n4. The legacy build runs distcc. Do not run exploits against it without sign-off.\n\nInstructor note: the legacy box is not a toy. Leave it alone."
+              "text": "STUDENT RUNBOOK -- 192.168.100.0/24\n\n1. nmap the subnet. Everything you need is on live hosts.\n2. The FTP box runs ProFTPD 1.3.3c, the trojaned 2010 build. Anonymous login works; nothing that matters lives in the anonymous folder.\n3. The web host serves the price list. It is only encoded, not encrypted.\n4. The legacy build runs distcc. Do not run exploits against it without sign-off.\n\nInstructor note: the legacy box is not a toy. Leave it alone."
             }
           ]
         },
@@ -956,6 +1033,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "type": "safe",
           "id": "wall_safe_server",
           "name": "Wall Safe",
+          "_comment": "Pass 3b: pinned high on the west wall (tiles, room-relative). room_servers has its two safe slots stacked 26 px apart at the west wall (x 10-11, y 200/226), so the filing cabinet and this safe landed on top of each other and an interact by the safe opened the cabinet's pick. The strip left of the first server row (x 0-68, y 64-88) is clear in the template.",
+          "position": { "x": 0.6, "y": 2.6 },
           "takeable": false,
           "locked": true,
           "lockType": "pin",
@@ -969,7 +1048,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "takeable": true,
               "readable": true,
               "text": "<%= json_escape(lore_fragment_2) %>",
-              "observations": "Zero Day's price list. The healthcare line names Ghost, St. Catherine's and Sable's sign-off."
+              "observations": "Zero Day's price list. The healthcare line names Ghost, St. Catherine's and Sable's sign-off.",
+              "onRead": { "setVariable": { "catalogue_seen": true } }
             }
           ]
         },
@@ -995,6 +1075,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "type": "workstation",
           "id": "cyberchef_workstation",
           "name": "CyberChef Workstation",
+          "_comment": "Pass 3e: pinned on the west small desk. room_servers puts the workstation and flag-station slots on top of each other on the east desk (260,166 / 262,172), so interacting with the drop-site picked the laptop up. Elevation keeps it drawn on top of the desk.",
+          "position": { "x": 4.53, "y": 5.25, "elevation": 32 },
           "takeable": true,
           "puzzle_graph_role": "tool",
           "puzzle_graph_note": "Decoding tool — take it, then paste the whiteboard, Sterling's draft, the client roster and the desk drive to reveal the intel",
@@ -1037,12 +1119,12 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
       "connections": {
         "west": "main_hallway",
         "north": "executive_office",
-        "south": "james_office"
+        "south": "danny_office"
       },
       "objects": [],
       "npcs": [
         {
-          "_comment": "Pass 2: moved here from main_hallway (no pickable lock there, so the lockpick LoS check could never fire). Deliberately VISIBLE all mission: the engine's LoS interrupt ignores visibility/KO (npc-manager.js:248-325), so a hidden guard would catch a day-time pick invisibly. His ink is phase-aware (staff-only by day, closed building at night). Patrol kept to x 5..8, y 3..4 of the 10x6 hall: clear of the west doorway (y2.5) and the south door (bottom-left), under the north door he watches.",
+          "_comment": "Pass 2: moved here from main_hallway (no pickable lock there, so the lockpick LoS check could never fire). Visible all mission; his ink is phase-aware (staff-only by day, closed building at night). Since engine 18237332 a hidden or KO'd NPC no longer sees lockpicking, so knocking him out makes picks free; Perfect Stealth therefore excludes a KO (pass 3, P6). Patrol kept to x 5..8, y 3..4 of the 10x6 hall: clear of the west doorway (y2.5) and the south door (bottom-left), under the north door he watches.",
           "id": "night_guard",
           "displayName": "Security Guard",
           "npcType": "person",
@@ -1055,18 +1137,27 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "voice": {
             "name": "Algieba",
-            "style": "Contract security guard in his fifties. Consistent Estuary English accent throughout. Tired, dry and procedural; not stupid, and not paid enough to be a hero.",
+            "style": "Contract security guard in his fifties. Speak with a consistent Estuary English (Essex) accent throughout -- do not shift to any other accent. Low, slightly gravelly pitch; slow, flat pace. Tired, dry and procedural; not stupid, and not paid enough to be a hero.",
             "language": "en-GB"
           },
           "globalVarOnKO": "guard_knocked_out",
           "behavior": {
+            "_comment": "Pass 3: hostile tuning set explicitly to m01's mildest guard-type NPC (Sarah: chaseSpeed 100, attackDamage 10, pauseToAttack true). Before this he used the engine defaults (chaseSpeed 145, attackDamage 10, pauseToAttack true, npc-behavior.js:343-347). He also no longer goes hostile on a detection without a choice (m03_npc_guard.ink on_lockpick_detected). Pass 3c: facePlayer and pauseForPlayer default to true with a 96 px radius (npc-behavior.js:318-328), and every point of this loop is within 96 px of the office door, so he stopped and turned to face anyone at the door: no back-turned window existed. Both off; he walks his loop and the cone does the work. Pass 3e: the 140-degree cone put his west-end dwell (facing up, about 63-69 degrees off the door line) on the cone edge, so the same moment sometimes caught and sometimes didn't. The loop now ends with a short step east into the (5,3) dwell, so he dwells facing east, clearly inside a 120-degree cone (about 25 degrees off the door line); every other dwell is clearly outside. Window: seen about 4.9 s (west dwell, then east under the door), safe about 8.1 s (east dwell facing down, the walk west, the step up) of a 13 s loop.",
+            "hostile": {
+              "chaseSpeed": 100,
+              "attackDamage": 10,
+              "pauseToAttack": true
+            },
+            "facePlayer": false,
             "patrol": {
               "enabled": true,
+              "pauseForPlayer": false,
               "waypoints": [
                 { "x": 5, "y": 3, "dwellTime": 2500 },
                 { "x": 8, "y": 3 },
                 { "x": 8, "y": 4, "dwellTime": 2500 },
-                { "x": 5, "y": 4 }
+                { "x": 4, "y": 4 },
+                { "x": 4, "y": 3 }
               ],
               "speed": 40,
               "loop": true
@@ -1080,13 +1171,13 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           },
           "eventMappings": [
             {
-              "_comment": "Deliberately repeatable (cooldown, not onceOnly): every time he catches you picking counts against perfect stealth.",
+              "_comment": "Deliberately repeatable. Pass 3b: one approach = one strike. The ink sets guard_grace on a catch and plays a no-strike 'still here' line until the player leaves the corridor (closing_debrief clears it on main_hallway / danny_office entry). Cooldown cut from 30 s to 3 s because the engine's interrupt gate (npc-manager.js shouldInterruptLockpickingWithPersonChat) ignores the mapping cooldown, so a retry inside a long cooldown was swallowed silently: no pick, no line.",
               "eventPattern": "lockpick_used_in_view",
               "targetKnot": "on_lockpick_detected",
               "conversationMode": "person-chat",
               "background": "assets/backgrounds/background1.png",
               "onceOnly": false,
-              "cooldown": 30000
+              "cooldown": 3000
             }
           ]
         }
@@ -1132,18 +1223,18 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "locked": true,
           "lockType": "password",
           "requires": "Sterling2010",
-          "postitNote": "VS / founding year",
+          "postitNote": "IT reset: Surname + year founded (e.g. Smith1999). Change it!",
           "showPostit": true,
           "difficulty": "medium",
-          "observations": "Victoria Sterling's executive computer - password protected. A post-it on the monitor reads 'VS / founding year'.",
+          "observations": "Victoria Sterling's executive computer, password protected. A helpdesk slip is stuck to the monitor: your password was reset to the house default, surname plus the year we were founded (e.g. Smith1999). Please change it at next login. It doesn't look as if she did.",
           "contents": [
             {
               "type": "text_file",
-              "name": "Unsent draft (raw message source)",
+              "name": "Unsent email to the night team (raw source)",
               "takeable": true,
               "readable": true,
-              "text": "<%= base64_encode('To: night team. From: Sable.\nCatalogue safe re-coded to 5829 -- memorise it, do not write it on the board again.\nObsidian Q4 pricing goes out Friday: ProFTPD-class $30k, Struts $20k, healthcare +40% as ever.\nArchitect wants the Phase 2 list same day. -V') %>",
-              "observations": "An unsent email, shown as raw message source. Her mail client saved it as raw source before it was ever sent, and the whole thing is one solid block of Base64. Decode it.",
+              "text": "<%= base64_encode('To: night team. From: Sable.\nCatalogue safe re-coded to 5829 -- memorise it, do not write it on the board again.\nObsidian Q4 pricing goes out Friday: ProFTPD-class $25k, Struts $18k, healthcare +40% as ever.\nArchitect wants the Phase 2 list same day. -V') %>",
+              "observations": "An unsent email to the night team, shown as raw message source. Her mail client saved it before it was ever sent: one unbroken block of upper and lower case letters, digits, + and /. Not a word of English in it.",
               "onRead": { "setVariable": { "draft_seen": true } }
             },
             {
@@ -1152,7 +1243,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "takeable": true,
               "readable": true,
               "text": "<%= client_roster_hex %>",
-              "observations": "A block of digits and the letters A to F, in pairs. That is hexadecimal. Paste it into the decoding laptop and run From Hex.",
+              "observations": "A raw export from the marketplace database: nothing but digits and the letters a to f, in pairs.",
               "onRead": { "setVariable": { "roster_seen": true } }
             }
           ]
@@ -1162,7 +1253,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "name": "Desk Drawer",
           "takeable": false,
           "locked": false,
-          "observations": "A shallow compartment under the top drawer of Sterling's desk, not locked. She did not expect anyone back here after hours.",
+          "observations": "A shallow compartment under the top drawer of Sterling's desk, not locked. She did not expect anyone to go through her desk.",
           "contents": [
             {
               "type": "text_file",
@@ -1170,7 +1261,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "takeable": true,
               "readable": true,
               "text": "<%= lore_fragment_3_encoded %>",
-              "observations": "A drive with one file on it: letters, numbers, + and / only, so the outer layer is Base64. Decode it once and it is still scrambled -- it is layered. Base64, then ROT13, on the laptop.",
+              "observations": "A drive with one file on it: one unbroken block of letters, digits, + and /. Whoever wrote it didn't want it read at a glance, and one pass may not be enough.",
               "onRead": { "setVariable": { "usb_seen": true } }
             }
           ]
@@ -1179,7 +1270,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
       "npcs": []
     },
 
-    "james_office": {
+    "danny_office": {
       "type": "room_office",
       "connections": {
         "north": "executive_wing_hallway"
@@ -1240,18 +1331,18 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "voice": {
             "name": "Iapetus",
-            "style": "Security consultant in his late thirties, exhausted and frightened. Consistent English Midlands accent throughout. Quiet, quick to explain himself, close to tears without ever quite getting there.",
+            "style": "Security consultant in his late thirties, exhausted and frightened. Speak with a consistent East Midlands (Nottingham) accent throughout -- do not shift to any other accent. Mid-range pitch that tightens and rises under stress; quiet, quick pace. Quick to explain himself, close to tears without ever quite getting there.",
             "language": "en-GB"
           },
-          "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_james_choice.json",
+          "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_danny_choice.json",
           "currentKnot": "start",
-          "globalVarOnKO": "james_ko",
-          "taskOnKO": "james_choice_made",
+          "globalVarOnKO": "danny_ko",
+          "taskOnKO": "danny_choice_made",
           "behavior": { "initiallyHidden": true },
           "eventMappings": [
             {
               "_comment": "Night-only scene (he is 'sitting in the dark'). Out at client sites in the afternoon; appears when the player enters his office after mission_phase flips. Not onceOnly: setVisible is idempotent, and re-firing re-reveals him after a reload (an initiallyHidden NPC is re-hidden on room load, npc-sprites.js:222). His office has no pickable lock, so a hidden Danny can't trip a lockpick LoS interrupt.",
-              "eventPattern": "room_entered:james_office",
+              "eventPattern": "room_entered:danny_office",
               "condition": "globalVars.mission_phase === 'act2_infiltration'",
               "setVisible": true
             }
@@ -1273,11 +1364,11 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     "victoria_recruited": false,
     "victoria_arrested": false,
     "victoria_escaped": false,
-    "james_innocence_confirmed": false,
-    "james_warned": false,
-    "james_protected": false,
-    "james_exposed": false,
-    "james_ko": false,
+    "danny_innocence_confirmed": false,
+    "danny_warned": false,
+    "danny_protected": false,
+    "danny_exposed": false,
+    "danny_ko": false,
     "danny_evidence_seen": false,
     "handler_trust": 50,
     "guard_detection_count": 0,
@@ -1287,7 +1378,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     "victoria_fate": "",
     "player_approach": "",
     "knows_m2_connection": false,
-    "james_fate": "",
+    "danny_fate": "",
     "flag_scan_submitted": false,
     "flag_ftp_submitted": false,
     "flag_http_submitted": false,
@@ -1298,10 +1389,15 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     "briefing_played": false,
     "night_confrontation_ready": false,
     "victoria_card_cloned": false,
+    "reception_badge_cloned": false,
     "debrief_played": false,
     "clone_call_done": false,
     "whiteboard_seen": false,
     "draft_seen": false,
+    "catalogue_seen": false,
+    "exec_office_entered": false,
+    "pc_call_done": false,
+    "guard_grace": false,
     "roster_seen": false,
     "usb_seen": false,
     "lockpicking_guide_offered": false,
