@@ -134,7 +134,7 @@ export function getNPCFacingDirection(npc) {
         'up': 270,      // Up (north)
         'left': 180,    // Left (west)
         'right': 0,     // Right (east)
-        'down-left': 225,
+        'down-left': 135,
         'down-right': 45,
         'up-left': 225,
         'up-right': 315
@@ -161,7 +161,7 @@ export function getNPCFacingDirection(npc) {
         'up': 270,
         'left': 180,
         'right': 0,
-        'down-left': 225,
+        'down-left': 135,
         'down-right': 45,
         'up-left': 225,
         'up-right': 315

@@ -849,7 +849,7 @@ boardroom_pin = "0417"
             {
               "eventPattern": "objective_task_completed:talk_to_gary",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 11000, "message": "This wasn't the board and it wasn't Kim -- she'd have called me. Someone in that building watched you get as far as IT and decided to slow you down. Which tells me they know exactly what you're about to reach.\n\nPractical problem first: 'I'm the consultant, Dr Kim authorised me' is now a lie the guard can disprove. Get something that stands up -- a real staff lanyard, or somebody willing to vouch for you out loud. Then get to that server room." }
+              "sendTimedMessage": { "delay": 11000, "skipIfGlobal": "cover_restored", "message": "This wasn't the board and it wasn't Kim -- she'd have called me. Someone in that building watched you get as far as IT and decided to slow you down. Which tells me they know exactly what you're about to reach.\n\nPractical problem first: 'I'm the consultant, Dr Kim authorised me' is now a lie the guard can disprove. Get something that stands up -- a real staff lanyard, or somebody willing to vouch for you out loud. Then get to that server room." }
             },
 <%# Gary's own spare carries a distinct id so it is a distinct object; taking it off him
     (theft, or off the floor after a KO) must restore cover exactly as the staff-room

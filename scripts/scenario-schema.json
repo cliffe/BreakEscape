@@ -324,7 +324,7 @@
         "locked": { "type": "boolean" },
         "lockType": {
           "type": "string",
-          "enum": ["key", "pin", "rfid", "password", "bluetooth", "flag", "ransomware_display", "network_architecture", "alarm_panel"]
+          "enum": ["key", "pin", "rfid", "password", "bluetooth", "biometric", "flag", "ransomware_display", "network_architecture", "alarm_panel"]
         },
         "requires": {
           "oneOf": [
@@ -674,7 +674,9 @@
           "type": "object",
           "properties": {
             "delay": { "type": "integer" },
-            "message": { "type": "string" }
+            "message": { "type": "string" },
+            "targetKnot": { "type": "string" },
+            "skipIfGlobal": { "type": "string" }
           }
         },
         "setGlobal": { "type": "object" },
@@ -818,7 +820,7 @@
         },
         "lockType": {
           "type": "string",
-          "enum": ["key", "pin", "rfid", "password", "bluetooth", "flag", "ransomware_display", "network_architecture", "alarm_panel"]
+          "enum": ["key", "pin", "rfid", "password", "bluetooth", "biometric", "flag", "ransomware_display", "network_architecture", "alarm_panel"]
         },
         "requires": {
           "oneOf": [

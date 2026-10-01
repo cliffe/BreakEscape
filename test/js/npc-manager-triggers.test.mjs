@@ -139,3 +139,31 @@ test('the NPC\'s own KO event still opens its scene (m01 Derek, m05 Torres)', ()
         assert.equal(started[0][2].startKnot, 'fight_outcome');
     });
 });
+
+// E11: an eventMapping's sendTimedMessage.delay counts from the event, not from game start.
+// Elapsed game time is simulated by moving gameStartTime back rather than waiting.
+test('a mapping\'s sendTimedMessage arrives its delay after the event, mid-mission', () => {
+    const m = makeManager();
+    m.npcs.set('hax', { id: 'hax', npcType: 'phone', phoneId: 'player_phone', currentKnot: 'hub' });
+    m.gameStartTime = Date.now() - 600000;              // ten minutes into the mission
+    const texts = () => m.getConversationHistory('hax').filter(h => h.timed).map(h => h.text);
+
+    m._handleEventMapping('hax', 'item_picked_up:keycard',
+        { handlerIndex: 0, cooldown: 0, sendTimedMessage: { delay: 8000, message: 'Got the card?' } }, {});
+    m._checkTimedMessages();
+    assert.deepEqual(texts(), [], 'must not fire on the next tick');
+
+    m.gameStartTime -= 7000;                            // 7 s later
+    m._checkTimedMessages();
+    assert.deepEqual(texts(), []);
+
+    m.gameStartTime -= 1000;                            // 8 s after the event
+    m._checkTimedMessages();
+    assert.deepEqual(texts(), ['Got the card?']);
+});
+
+test('NPC timedMessages with a plain delay still count from game start', () => {
+    const m = makeManager();
+    m.scheduleTimedMessage({ npcId: 'val', text: 'Welcome.', delay: 3000 });
+    assert.equal(m.timedMessages[0].triggerTime, 3000);
+});

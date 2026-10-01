@@ -706,15 +706,17 @@ export default class NPCManager {
       console.log(`📖 Changed ${npcId} story path to: ${config.changeStoryPath} (cleared all caches and history)`);
     }
     
-    // Send timed message if specified
+    // Send timed message if specified. The mapping's delay counts from this event,
+    // so convert it to a triggerTime (scheduleTimedMessage measures from game start).
     if (config.sendTimedMessage) {
       const msgConfig = config.sendTimedMessage;
       this.scheduleTimedMessage({
         npcId: npcId,
         text: msgConfig.message,
-        delay: msgConfig.delay || 0,
+        triggerTime: (Date.now() - this.gameStartTime) + (msgConfig.delay || 0),
         phoneId: npc.phoneId,
-        targetKnot: msgConfig.targetKnot || null
+        targetKnot: msgConfig.targetKnot || null,
+        skipIfGlobal: msgConfig.skipIfGlobal || null   // checked at delivery, not at the event
       });
       console.log(`📨 Scheduled timed message for ${npcId}: "${msgConfig.message}" (delay: ${msgConfig.delay}ms, targetKnot: ${msgConfig.targetKnot || 'default'})`);
     }
@@ -1106,7 +1108,7 @@ export default class NPCManager {
   }
 
   // Schedule a timed message to be delivered after a delay
-  // opts: { npcId, text, triggerTime (ms from game start) OR delay (ms from now), phoneId, waitForEvent }
+  // opts: { npcId, text, triggerTime (ms from game start) OR delay (ms from game start too, unless waitForEvent is set), phoneId, waitForEvent }
   // waitForEvent: Optional event name to wait for before delivering message (e.g., 'conversation_closed:briefing_cutscene')
   //               When set, the delay is applied AFTER the event fires, not from game start
   scheduleTimedMessage(opts) {
