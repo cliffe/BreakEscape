@@ -7,12 +7,11 @@
 // Variables from gameplay
 VAR player_name = "Agent 0x00"
 VAR final_choice = ""
-VAR objectives_completed = 0
 VAR found_blockchain_evidence = false
 VAR found_architects_fund = false
-VAR elena_recruited = false
-VAR elena_arrested = false
-VAR elena_ko = false
+VAR irina_recruited = false
+VAR irina_arrested = false
+VAR irina_ko = false
 VAR satoshi_ko = false
 VAR trader_ko = false
 VAR analyst_ko = false
@@ -69,7 +68,7 @@ Agent HaX: Extremely significant. We now know:
 
 Agent HaX: Every ENTROPY cell is financially connected through HashChain's mixing infrastructure.
 
-Agent HaX: The Architect coordinates funding to all cells simultaneously through a master fund.
+Agent HaX: The Architect funds every cell through one master fund: advances first, then the balances on one clock.
 
 Agent HaX: And a major coordinated attack was planned for 72 hours from when you recovered that document.
 
@@ -86,7 +85,7 @@ Agent HaX: Partly. It depends what you did with the wallet.
     Agent HaX: Some were paid before tonight, though. Whatever they were buying, they may already have it.
 - else:
     Agent HaX: You let the payout run. Every wallet it reached is tagged.
-    Agent HaX: We know which cells were paid, how much and when. If they move, we'll see it.
+    Agent HaX: Those balances reached the cells. We know which cells were paid, how much and when. If they move, we'll see it.
 }
 
 -> architects_fund_discussion
@@ -106,7 +105,7 @@ Agent HaX: Partly. It depends what you did with the wallet.
 }
 
 === fund_implications ===
-Agent HaX: 180-340 projected casualties across all coordinated operations.
+Agent HaX: Three hundred and fifty to six hundred projected dead across the operations it pays for. The cells' own estimates.
 
 Agent HaX: They calculated death tolls, {player_name}. Planned for them. Called it "The Architect's Masterpiece."
 
@@ -131,31 +130,34 @@ Agent HaX: They aren't cold, exactly. They've decided the deaths are the lesson.
 - else:
     Agent HaX: Every cell that took a payout is on our map, and they don't know it.
     Agent HaX: The cost is plain: they have the money, and whatever it buys goes ahead unless we get there first.
+    Agent HaX: The toll on that document is the one we agreed to watch. Three hundred and fifty to six hundred.
 }
 
--> elena_discussion
+-> irina_discussion
 
 // ================================================
 // IRINA VOLKOVA DISCUSSION
 // ================================================
 
-=== elena_discussion ===
+=== irina_discussion ===
 Agent HaX: Now let's talk about Dr. Irina Volkova.
 
-{elena_ko:
-    -> elena_ko_path
+// PASS 3 review: same order as the credits. A turned or detained Irina who
+// was knocked down afterwards is reported by her fate, not the KO.
+{irina_recruited:
+    -> irina_recruited_path
 }
-{elena_recruited:
-    -> elena_recruited_path
+{irina_arrested:
+    -> irina_arrested_path
 }
-{elena_arrested:
-    -> elena_arrested_path
+{irina_ko:
+    -> irina_ko_path
 }
-{not elena_ko && not elena_recruited && not elena_arrested:
-    -> elena_neutral_path
+{not irina_ko && not irina_recruited && not irina_arrested:
+    -> irina_neutral_path
 }
 
-=== elena_ko_path ===
+=== irina_ko_path ===
 Agent HaX: Volkova went down on the trading floor. The medics say she'll be fine in a day and charged within a week.
 
 Agent HaX: I won't pretend that isn't a loss. She had the whole mixer in her head and she was already halfway to walking away from it.
@@ -170,10 +172,14 @@ Agent HaX: I won't pretend that isn't a loss. She had the whole mixer in her hea
     Agent HaX: But log it honestly. The report should say we lost an asset, not that we neutralised a threat.
     -> password_cracking_discussion
 
-=== elena_recruited_path ===
+=== irina_recruited_path ===
 Agent HaX: You recruited her. That was... unexpected. And brilliant.
 
-Agent HaX: Irina is cooperating fully. Her knowledge of ENTROPY's cryptographic infrastructure is extraordinary.
+Agent HaX: She gave us the mixer tonight, before the police took the building. Her knowledge of ENTROPY's cryptographic infrastructure is extraordinary.
+
+{irina_ko:
+    Agent HaX: And then she went down on the trading floor. That's in the report as a mistake, not a result. What she gave us still stands.
+}
 
 + [Was it the right call?]
     -> recruitment_validation
@@ -181,11 +187,11 @@ Agent HaX: Irina is cooperating fully. Her knowledge of ENTROPY's cryptographic 
     -> moral_reasoning
 
 === recruitment_validation ===
-Agent HaX: Absolutely. A cryptographer of her calibre is worth more as an asset than a prisoner.
+Agent HaX: For tonight, yes. What she knew about the mixer was worth more than anything we could have pulled off her servers.
 
-Agent HaX: She's already provided intelligence on Crypto Anarchist cells in three countries.
+Agent HaX: She handed over the mixer's pool keys and the wallet map before midnight.
 
-Agent HaX: And {player_name}, she's teaching our analysts. Her expertise is pulling our whole cryptography team up a level.
+Agent HaX: And {player_name}, she named the account that paid her. That's more than we'd have got from her servers.
 
 -> recruitment_impact
 
@@ -199,9 +205,9 @@ Agent HaX: She's not a terrorist. She's a brilliant person who got swept up in i
 -> recruitment_impact
 
 === recruitment_impact ===
-Agent HaX: The intelligence she's providing is dismantling Crypto Anarchist cells globally.
+Agent HaX: What she gave us tonight maps every wallet the mixer touched.
 
-Agent HaX: And she's documenting the work: papers on cryptocurrency forensics, training material for the police.
+Agent HaX: What happens to her after this is for the police and the lawyers. She knows that.
 
 Agent HaX: She came over because she believed you. Keep that in mind when you're asked why she's worth the trouble.
 
@@ -210,7 +216,7 @@ Agent HaX: She came over because she believed you. Keep that in mind when you're
 + [I'm glad it worked out]
     -> password_cracking_discussion
 
-=== elena_arrested_path ===
+=== irina_arrested_path ===
 Agent HaX: You detained Irina Volkova and handed her to the police with the evidence. Clean, by the book.
 
 Agent HaX: The charges are theirs to bring, not ours. Laundering, conspiracy, facilitating terrorist financing. It'll be a long file.
@@ -221,7 +227,7 @@ Agent HaX: The charges are theirs to bring, not ours. Laundering, conspiracy, fa
     -> missed_opportunity
 
 === arrest_justification ===
-Agent HaX: She did. $12.8 million moved through infrastructure she wrote, to fund attacks with a projection of 180 to 340 dead.
+Agent HaX: She did. The money moved through infrastructure she wrote, to fund attacks with a projection of three hundred and fifty to six hundred dead.
 
 Agent HaX: Moral conflict doesn't erase culpability. She built the systems. She knew they were being abused.
 
@@ -246,7 +252,7 @@ Agent HaX: They'll replace her eventually, but it'll take time. That's operation
 + [What happens next?]
     -> password_cracking_discussion
 
-=== elena_neutral_path ===
+=== irina_neutral_path ===
 Agent HaX: Irina wasn't arrested or recruited. Interesting.
 
 Agent HaX: She's under surveillance now. We're monitoring her communications, tracking her movements.
@@ -373,8 +379,7 @@ Agent HaX: The operation succeeded, but prioritise evidence collection in future
 -> lore_discussion
 
 // ================================================
-// THE ARCHITECT (review M6: branched on architect_identity_found; the old
-// lore_collected counter was never incremented, so this was unreachable)
+// THE ARCHITECT (branches on architect_identity_found)
 // ================================================
 
 === lore_discussion ===
@@ -436,14 +441,16 @@ Agent HaX: A man like that keeps insurance. We'll wonder what was in it.
 === mission_conclusion ===
 Agent HaX: {player_name}, for the first time we can see how the cells connect.
 
+Agent HaX: And the man in the corner office was Satoshi's Ghost, the Crypto Anarchists' own leader. He's in police custody tonight.
+
 {assets_seized:
     Agent HaX: The fund is frozen. The cells still waiting on it are short tonight.
 - else:
-    Agent HaX: The fund ran, and every wallet it paid is tagged.
+    Agent HaX: The fund ran. The balances reached the cells, and every wallet they reached is tagged.
 }
 
-{elena_recruited:
-    Agent HaX: And Irina Volkova is working for us now.
+{irina_recruited:
+    Agent HaX: And Irina Volkova gave us the mixer before she was taken in.
 }
 
 {found_blockchain_evidence && found_architects_fund:
@@ -459,19 +466,20 @@ Agent HaX: {player_name}, for the first time we can see how the cells connect.
 === final_assessment ===
 Agent HaX: Here's what worries me.
 
-Agent HaX: Six cells, paid at once, seventy-two hours. That isn't six operations. That's one schedule.
+Agent HaX: Six cells, one fund, one seventy-two-hour clock. That isn't six operations. That's one schedule.
 
 {architect_identity_found:
     Agent HaX: And we may finally have a name for whoever wrote it.
 }
 
 + [What's next?]
+    Agent HaX: We find out which of them moves first. Some of them are already paid for.
     -> next_mission_hint
 + [So they all move at once.]
+    Agent HaX: If they do, we won't get much warning. Some of them are already paid for.
     -> next_mission_hint
 
 === next_mission_hint ===
-Agent HaX: If they do, we won't get much warning. Some of them are already paid for.
 
 Agent HaX: Get some rest, {player_name}. Keep your phone on.
 

@@ -211,7 +211,7 @@ Priya Raghavan: Either someone's consolidating funds from multiple sources, or..
     -> coordinated_funding
 
 + [Did you flag this to Irina?]
-    -> elena_flagging
+    -> irina_flagging
 
 === coordinated_funding ===
 #speaker:analyst
@@ -224,7 +224,7 @@ Priya Raghavan: I really hope Irina knows what she's doing with this investigati
 
 -> hub
 
-=== elena_flagging ===
+=== irina_flagging ===
 #speaker:analyst
 
 Priya Raghavan: Yeah, like two weeks ago. She's been analysing it personally.
@@ -232,12 +232,12 @@ Priya Raghavan: Yeah, like two weeks ago. She's been analysing it personally.
 Priya Raghavan: Hasn't told me her conclusions yet. Just said to keep monitoring.
 
 + [Does she seem concerned?]
-    -> elena_concern
+    -> irina_concern
 
 + [What's your read on it?]
     -> analyst_opinion
 
-=== elena_concern ===
+=== irina_concern ===
 #speaker:analyst
 
 Priya Raghavan: Hard to tell. Irina's always intense.

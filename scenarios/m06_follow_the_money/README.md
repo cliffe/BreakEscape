@@ -1,40 +1,40 @@
 # Mission 6: Follow the Money
 
-**Status:** Implemented — validator clean (0 errors, 0 warnings) **ENTROPY Cell:** Crypto Anarchists **SecGen Scenario:** Hackme and Crack Me (password cracking) **Difficulty:** Tier 2 (Intermediate)
+**Status:** Implemented; pass 3 (puzzle chains) applied 2026-10-01, validator clean (0 errors) **ENTROPY Cell:** Crypto Anarchists **SecGen Scenario:** Hackme and Crack Me (password cracking) **Difficulty:** Tier 2 (Intermediate)
 
 ## Mission Overview
 
-Track cryptocurrency payments from M2 (hospital ransomware) and M5 (corporate espionage) to discover ENTROPY's complete financial network. Infiltrate HashChain Exchange, crack passwords to access backend servers, map blockchain transactions, and discover "The Architect's Fund" - $12.8M funding a coordinated attack across all ENTROPY cells.
+Track cryptocurrency payments from M2 (hospital ransomware) and M5 (corporate espionage) to discover ENTROPY's complete financial network. Infiltrate HashChain Exchange, crack passwords to access backend servers, map blockchain transactions, and discover "The Architect's Fund": advances already paid to six ENTROPY cells, and $12.8M in balances due out in 72 hours.
 
 ## Key NPCs
 
 - **Dr. Irina Volkova** (CTO) - Brilliant cryptographer, morally conflicted, can be recruited or arrested
-- **"Satoshi Nakamoto II"** (CEO) - Crypto Anarchist leader, true believer in financial anarchism
+- **"Satoshi Nakamoto II"** (CEO) - public persona of "Satoshi's Ghost", the Crypto Anarchists' leader; the codename is on the fund's authorisation line
+- **Checkpoint Guard** - contract guard on the trading-floor door; talk past him on the FCA cover, pick the lock in his blind window, or knock him out
 - **Blockchain Analyst** - Innocent employee with transaction intelligence
 - **Crypto Trader** - Discovers suspicious ENTROPY wallet activity
 
 ## Room Layout
 
 ```
-Reception Lobby → Security Checkpoint → Trading Floor (central hub)
+Reception Lobby → Security Checkpoint (guard) → Trading Floor (key lock; central hub)
   ├─ Server Room (VM access, password required) → Data Center (Architect's Fund evidence)
   ├─ Blockchain Lab (transaction network analysis)
   ├─ Irina's Office (CTO, locked with RFID badge)
-  └─ Executive Wing (executive badge required) → Satoshi's Office (confrontation, safe with intel)
+     Data Center → Executive Wing (executive badge from Irina) → Satoshi's Office (confrontation, safe with intel)
 ```
 
 ## Critical Revelations
 
 1. **ENTROPY Financial Network Mapped:** All cells funnel money through HashChain Exchange
-2. **The Architect's Fund Discovered:** $12.8M for coordinated attack in 72 hours, 180-340 projected casualties
+2. **The Architect's Fund Discovered:** per-cell advances already paid, $12.8M pending for 72 hours, each cell tied to an m07 operation; the cells' own projection is 350-600 dead
 3. **Architect Identity Narrowed:** 87% probability = Dr. Adrian Tesseract (former SAFETYNET strategist)
 4. **Cross-Mission Connections:** Direct links to M2 ransomware and M5 corporate espionage wallets
 
 ## Major Choices
 
-1. **Asset Strategy:** Seize cryptocurrency (immediate impact, ends intelligence) vs. Monitor transactions (long-term intelligence, ENTROPY keeps funding)
-2. **Irina Volkova:** Recruit (valuable cryptographer asset) vs. Arrest (eliminate criminal expertise)
-3. **Public Exposure:** Warn cryptocurrency community vs. Quiet takedown
+1. **Asset Strategy:** Freeze the wallet (the pending balances stop; the advances are already gone; ENTROPY learns its bank is burned) vs. watch it (the balances reach the cells; every recipient is mapped). The debrief states the monitoring cost plainly.
+2. **Irina Volkova:** Turn her (she gives up the mixer tonight; nothing carries into later missions) vs. detain her and hand her to the police. Her research notes give a low-trust player a way to turn her.
 
 ## Educational Objectives (CyBOK)
 
@@ -80,9 +80,11 @@ Reception Lobby → Security Checkpoint → Trading Floor (central hub)
 | Lock | Type | Key | Clue location |
 |------|------|-----|---------------|
 | Server room door | `password` | `bitcoin2025` | IT New Starter Checklist, security checkpoint |
-| Irina's office | `rfid` | `cto_badge` | Irina hands it over at trust ≥ 25, or clone it with the trading-floor cloner |
-| Executive wing | `rfid` | `executive_badge` | Spare badge in the data centre |
-| Executive safe (optional) | `pin` | `2140` | Architect's email (Irina's office) and the manifesto margin note |
+| Trading floor | `key` (4 pins, easy) | lockpick, or the guard's `#unlock_door` | Start-kit Lock Pick Kit; FCA cover + Irina's name to the guard |
+| Irina's office | `rfid` | `cto_badge` | Irina lends it at trust ≥ 25, or clone it off her lanyard with the start-kit cloner, or pick up the dropped badge / ask HaX after a KO |
+| Data centre | `pin` | `3110` | Door Controller Export, paid out for flag 3 |
+| Executive wing | `rfid` | `executive_badge` | Irina hands over the spare once you've found the fund (export note DC-03 says it was signed out to her) |
+| Executive safe (optional) | `pin` | `2140` | Architect's email P.S. (Irina's office) and the press clipping in the executive wing |
 
 ## Field Guides
 
@@ -91,15 +93,18 @@ over on request through a `support_hub` choice — never pushed into the invento
 
 | Guide | Offered on | Lab sheet |
 |-------|-----------|-----------|
-| Password cracking | Picking up Irina's wordlist | `ssh-access-and-bruteforce` |
+| SSH logins with cracked credentials | Picking up Irina's wordlist | `ssh-access-and-bruteforce` |
+| distcc exploitation (the foothold) | First interacting with the VM launcher | `distcc-exploitation` |
 | Privilege escalation / credential reuse | Submitting flag 1 | `privilege-escalation` |
 | Reconnaissance | First interacting with the VM launcher | `reconnaissance-and-network-mapping` |
-| RFID cloning | Entering the security checkpoint | `rfid-cloning` |
+| RFID cloning | Entering the trading floor | `rfid-cloning` |
 
 ## Design Notes
 
-This mission is the financial hub connecting all previous operations and revealing the scope of The Architect's coordination. Password cracking theme teaches credential security. Irina Volkova is a recruitable asset who can provide ongoing intelligence if turned. The discovery of The Architect's Fund creates urgency leading into M7's crisis.
+This mission is the financial hub connecting all previous operations and revealing the scope of The Architect's coordination. Password cracking theme teaches credential security. Irina Volkova can be turned for what she gives up tonight; no later mission depends on it. The discovery of The Architect's Fund creates urgency leading into M7's crisis.
 
-PIN code for the executive safe: **2140** — the year the last bitcoin is mined. Clued twice: in The Architect's email in Irina's office, and in the CEO's own margin note on the manifesto in his office.
+PIN code for the executive safe: **2140** — the year the last bitcoin is mined. Clued twice: The Architect's email P.S. in Irina's office names the safe without the digits, and the framed press clipping in the executive wing gives the year.
+
+Start kit (capability arc): phone, Lock Pick Kit, RFID Cloner, Fingerprint Kit. No PIN cracker. The fingerprint kit is carried and unused here.
 
 The safe is optional. Skipping it costs the player The Architect's identity file, and the closing debrief acknowledges the gap rather than pretending they have it.

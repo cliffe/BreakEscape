@@ -1,5 +1,7 @@
 # m06 Follow the Money — Pass 2 improvements
 
+> Renamed 2026-10-01: CTO ids elena → irina to match Dr Irina Volkova (NPC id `elena_volkov` → `irina_volkova`; ink `m06_npc_elena_volkov.*` → `m06_npc_irina_volkova.*`; room `elena_office` → `irina_office`; globals, tasks, knots and VARs `elena_*` → `irina_*`, e.g. `meet_elena` → `meet_irina`, `decide_elena_fate` → `decide_irina_fate`, `topic_elena` → `topic_irina`). Old ids below are historical.
+
 > The m02-standard pass. Sources: `scenario.json.erb`, the seven `.ink` files,
 > the engine (`public/`, `app/`), m02/m03/m04/m05 as worked examples, the season
 > arc plan, the universe bible, and the published SecGen XML. Nothing committed.

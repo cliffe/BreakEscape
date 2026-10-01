@@ -15,10 +15,12 @@ VAR found_wallet_keys = false
 VAR player_name = "Agent 0x00"
 VAR found_blockchain_evidence = false
 VAR found_architects_fund = false
-VAR elena_recruited = false
-VAR elena_arrested = false
+VAR irina_recruited = false
+VAR irina_arrested = false
 VAR assets_seized = false
 VAR monitoring_enabled = false
+VAR irina_ko = false
+VAR detain_announced = false
 VAR assets_decided = false  // synced global: the re-entry guard survives a reload (review M3)
 
 // ===========================================
@@ -49,9 +51,14 @@ VAR assets_decided = false  // synced global: the re-entry guard survives a relo
     + [You're funding ENTROPY. Every cell we've hit runs its money through this exchange.]
         -> evidence_reveal
 
-    + [The Architect's Fund. $12.8 million, and a projection of 180 to 340 dead. You calculated death tolls.]
+    + [The Architect's Fund. $12.8 million still to go out, and a projection of 350 to 600 dead. You calculated death tolls.]
         ~ shown_evidence = true
         -> casualties_discussion
+
+    // PASS 3 P4: the codename is on the fund's authorisation line.
+    + {found_architects_fund} [Or should I call you Satoshi's Ghost? You signed the fund with it.]
+        ~ shown_evidence = true
+        -> ghost_name
 
     + [You're being detained for facilitating terrorism]
         -> arrest_attempt
@@ -65,6 +72,15 @@ VAR assets_decided = false  // synced global: the re-entry guard survives a relo
 {asset_choice_made:
     -> aftermath
 }
+
+=== ghost_name ===
+#speaker:narrator
+Narrator: For the first time since you walked in, he stops smiling.
+#speaker:satoshi
+Satoshi Nakamoto II: Nobody says that name in this building.
+Satoshi Nakamoto II: Yes. Satoshi's Ghost. The Crypto Anarchists answer to me, and The Architect's money answers to my signature.
+Satoshi Nakamoto II: "Nakamoto II" is for the brochure. The Ghost is who pays for things.
+-> casualties_discussion
 
 // ===========================================
 // EVIDENCE REVEAL
@@ -97,7 +113,7 @@ Satoshi Nakamoto II: Money laundering, you'd call it. We call it "enabling finan
 {found_architects_fund:
     Satoshi Nakamoto II: Ah, you found The Architect's allocation document. Thorough work.
 
-    Satoshi Nakamoto II: 180-340 casualties across coordinated operations. Yes, those are the projections.
+    Satoshi Nakamoto II: Three hundred and fifty to six hundred, across every operation. The cells' own estimates. Yes.
 - else:
     Satoshi Nakamoto II: Casualties are inevitable in any revolution.
 }
@@ -160,7 +176,8 @@ Satoshi Nakamoto II: Governments weaponize currency. Financial surveillance enab
 === terrorism_rebuttal ===
 #speaker:satoshi
 
-Satoshi Nakamoto II: *leans forward* We fund ACCELERATION.
+Narrator: He leans forward.
+Satoshi Nakamoto II: We fund ACCELERATION.
 
 Satoshi Nakamoto II: The current system is doomed to collapse. Climate crisis, wealth inequality, technological disruption. It's already failing.
 
@@ -177,12 +194,12 @@ Satoshi Nakamoto II: *nods approvingly* You understand the distinction. Good.
 
 Satoshi Nakamoto II: Financial privacy is legitimate. But you're right that ENTROPY corrupted the idea.
 
-{elena_recruited:
+{irina_recruited:
     Satoshi Nakamoto II: Irina understood that too. That's why she betrayed us, isn't it?
-    -> elena_betrayal_reaction
+    -> irina_betrayal_reaction
 - else:
     Satoshi Nakamoto II: At least, Irina thinks so. She's been having... moral difficulties.
-    -> elena_conflict
+    -> irina_conflict
 }
 
 === criminal_accusation ===
@@ -213,10 +230,10 @@ Satoshi Nakamoto II: So let's discuss the practical matter: You've discovered ou
 // IRINA REACTIONS
 // ===========================================
 
-=== elena_betrayal_reaction ===
+=== irina_betrayal_reaction ===
 #speaker:satoshi
 
-{elena_recruited:
+{irina_recruited:
     Satoshi Nakamoto II: You recruited her. Showed her the casualty projections. Appealed to her conscience.
     Satoshi Nakamoto II: She was always the weak link. Too much empathy for an anarchist.
 - else:
@@ -225,14 +242,14 @@ Satoshi Nakamoto II: So let's discuss the practical matter: You've discovered ou
 
 -> choice_presentation
 
-=== elena_conflict ===
+=== irina_conflict ===
 #speaker:satoshi
 
 Satoshi Nakamoto II: She built this infrastructure for idealism. Now she's uncomfortable with the reality.
 
 Satoshi Nakamoto II: Revolutions require sacrifice. Not everyone has the stomach for it.
 
-{not elena_recruited and not elena_arrested:
+{not irina_recruited and not irina_arrested:
     Satoshi Nakamoto II: Did you try to recruit her? Appeal to her conscience?
     Satoshi Nakamoto II: I'm curious whether she chose principles or comfort.
 }
@@ -312,22 +329,23 @@ You: I'm freezing it. The recovery keys sweep $12.8 million into cold storage be
     You: Every cell still waiting on that payout gets nothing. The ones you've already paid, we'll find.
 }
 
-Satoshi Nakamoto II: *slow clap* Short-term thinking. SAFETYNET's specialty.
+Narrator: He claps, slowly.
+Satoshi Nakamoto II: Short-term thinking. SAFETYNET's speciality.
 
 Satoshi Nakamoto II: You just proved our point. Government seizes cryptocurrency at will. Financial freedom is an illusion.
 
 Satoshi Nakamoto II: Our recruitment will surge. Thank you for the propaganda victory.
 
-+ [We stopped the attack. That's what matters.]
++ [We stopped the money that hadn't left. That's what matters.]
     -> immediate_impact_response
 
-+ [Better than letting 180-340 people die]
++ [Better than paying for 350 to 600 dead]
     -> casualty_prevention_response
 
 === immediate_impact_response ===
 #speaker:satoshi
 
-Satoshi Nakamoto II: This attack, yes. But you've made the NEXT one easier to recruit for.
+Satoshi Nakamoto II: The balances, yes. The advances went out a week ago. And you've made the next one easier to recruit for.
 
 Satoshi Nakamoto II: Every crypto anarchist who was sitting on the fence? You just pushed them to our side.
 
@@ -378,7 +396,7 @@ Satoshi Nakamoto II: You're trading immediate prevention for comprehensive intel
 
 Satoshi Nakamoto II: Perhaps. Or ENTROPY adapts, creates new financial channels, and your monitoring becomes worthless.
 
-Satoshi Nakamoto II: Meanwhile, The Architect's operations proceed. Those 180-340 casualties? They happen.
+Satoshi Nakamoto II: Meanwhile, The Architect's operations proceed. Those three hundred and fifty to six hundred? They happen.
 
 Satoshi Nakamoto II: All for intelligence that might pay off eventually. If we don't adapt first.
 
@@ -404,6 +422,7 @@ Satoshi Nakamoto II: The only difference is which system we protect.
 === arrest_attempt ===
 #speaker:satoshi
 
+~ detain_announced = true
 You: "Satoshi Nakamoto II", I'm detaining you. Money laundering, facilitating terrorism, conspiracy. The police can take it from here.
 
 // Review minor 4: the evidence check now runs first, so arrest_resisted is
@@ -453,6 +472,11 @@ Satoshi Nakamoto II: No. I don't think I will.
 #speaker:satoshi
 #set_variable:satoshi_arrested=true
 
+// PASS 3 playtest: he is always detained after the decision (PASS3 D5: no
+// escape). Say so when the player hasn't already announced it.
+{not detain_announced:
+    You: Whatever you call yourself, you're coming with me. The police are on their way up.
+}
 Narrator: He stands and holds out his wrists, as if he rehearsed it.
 
 Satoshi Nakamoto II: I'll be convicted, of course. They'll want to make an example of me.
@@ -465,12 +489,15 @@ Satoshi Nakamoto II: I'll be convicted, of course. They'll want to make an examp
     Satoshi Nakamoto II: And the wallet you left running? We'll adapt. New channels. Your intelligence ages badly.
 }
 
-{elena_recruited:
+{irina_recruited and not irina_ko:
     Satoshi Nakamoto II: Irina's cooperation will hurt us short-term. Her expertise was valuable.
     Satoshi Nakamoto II: But even she couldn't stop the movement. Crypto anarchism is bigger than any individual.
 }
+{irina_ko and not irina_arrested:
+    Satoshi Nakamoto II: And Irina is on the trading-floor carpet, I hear. Your side has a strange way of treating people who might have helped it.
+}
 
-{elena_arrested:
+{irina_arrested:
     Satoshi Nakamoto II: And Irina in handcuffs as well. Whatever she said to you at the end, she built all of this with me.
 }
 

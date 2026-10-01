@@ -1,6 +1,18 @@
 # m06 Follow the Money — Alignment & Advancement Plan
 
-> Produced by the mission-alignment-plan skill. 2026-08-24. Plan only — not yet implemented. Measured against: m01_first_contact, m02_ransomed_trust, m05_insider_trading. Reviewed: 1 round (reviewer returned 4 additional blockers, all folded in).
+> Renamed 2026-10-01: CTO ids elena → irina to match Dr Irina Volkova (NPC id `elena_volkov` → `irina_volkova`; ink `m06_npc_elena_volkov.*` → `m06_npc_irina_volkova.*`; room `elena_office` → `irina_office`; globals, tasks, knots and VARs `elena_*` → `irina_*`, e.g. `meet_elena` → `meet_irina`, `decide_elena_fate` → `decide_irina_fate`, `topic_elena` → `topic_irina`). Old ids below are historical.
+
+> Produced by the mission-alignment-plan skill. 2026-08-24. Plan only when written; since implemented (see Progress below). Measured against: m01_first_contact, m02_ransomed_trust, m05_insider_trading. Reviewed: 1 round (reviewer returned 4 additional blockers, all folded in).
+
+## Progress (updated 2026-10-01)
+
+Status: Phases 1-7 implemented, apart from the checkpoint guard noted below, in `6bd77d41` (2026-08-31), reworked in pass 2 (`e15e0889`) and adjusted in `7df3596a`. Played to `status=completed` in four games.
+
+- Done: completability wiring, aim staging with the `bond_visualiser` conclusion, music block, progress-gated HaX hub, and the Phase 7 artefacts (README, dungeon graph, `TESTING_WALKTHROUGH.md`, `VM_INTEGRATION.md`).
+- Open Decision 1 was settled by renaming the CTO to Dr Irina Volkova (`7df3596a`; ids and the ink file name unchanged), not by the Marcus Lee swap the plan recommended.
+- Changed by pass 2: Satoshi never appeared (his reveal events fire before his room loads), so he is now simply visible. The data-centre PIN (3110) is the flag-3 reward, so the VM work gates a physical door. KO reactions key on `npc_ko:<id>`. The debrief waits for the last decision, all four flags and a closed UI, and the new `hear_debrief` task keeps the credits behind it. The $847,000 is now the Architect's outbound acquisition budget, matching m05. Cover is FCA, and SAFETYNET detains instead of arresting.
+- Open: the SecGen flag order (hcauth, hcledger, hcfindb, hcvault) is inferred from the XML and not confirmed by a build. Per `scenario.json.erb` there is no checkpoint security NPC (Phase 4, Open Decision 8) and the CEO is still "Satoshi Nakamoto II" (Decision 2). No pass 2 source records Open Decisions 4-8 as settled.
+- Latest playtest: games 1173 and 1174 (`tools/playtest/m06-pass2-report.md`) and confirmation games 1175 and 1176 (`m06-pass2c-report.md`) all reached `status=completed`, with no new defects. The regression run (game 1191, 2026-10-01, `m06-regress-report.md`) was not played to the end; it found the HaX first call replaying after a reload because NPC ink variables were not saved. The approval log lists that persistence as implemented, and no re-run of the check is recorded.
 
 ## Executive summary
 

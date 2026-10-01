@@ -7,7 +7,7 @@
 // Variables for tracking player questions
 VAR asked_about_connections = false
 VAR asked_about_exchange = false
-VAR asked_about_elena = false
+VAR asked_about_irina = false
 VAR asked_about_architect_fund = false
 VAR mission_accepted = false
 
@@ -115,15 +115,15 @@ Agent HaX: "Satoshi Nakamoto II", the CEO. True believer, charming with it. Nobo
 Agent HaX: Dr. Irina Volkova, the CTO. Brilliant cryptographer, former academic. And possibly someone we can turn.
 
 + [Why would she help us?]
-    ~ asked_about_elena = true
-    -> elena_background
+    ~ asked_about_irina = true
+    -> irina_background
 + [What makes you think she's recruitable?]
-    ~ asked_about_elena = true
-    -> elena_background
+    ~ asked_about_irina = true
+    -> irina_background
 + [What about the money trail?]
     -> architect_fund_hint
 
-=== elena_background ===
+=== irina_background ===
 Agent HaX: Irina's a genius. Published 37 papers on cryptography. 2,847 citations.
 
 Agent HaX: She built HashChain's privacy infrastructure. But our psychological profile suggests moral conflict.
@@ -279,7 +279,7 @@ Agent HaX: And {player_name}, your attack box on the backend has the cracking to
     -> final_briefing
 
 === physical_tools ===
-Agent HaX: Two doors in there are on RFID badges. I'm told there's a badge cloner on the trading floor; crypto people love their security toys.
+Agent HaX: Two doors in there are on RFID badges. The cloner in your kit will read theirs at conversational distance; stand close and keep them talking.
 
 Agent HaX: Everything else, ask for. You're a regulator. Use it.
 
@@ -294,7 +294,9 @@ Agent HaX: {player_name}, this one matters more than most.
 
 Agent HaX: We've been fighting one cell at a time. This is the first time we can see how they all connect.
 
-Agent HaX: Map the network. Find where the money goes. And if you can turn Irina, we keep a pair of eyes inside it.
+Agent HaX: You've your usual kit: picks, the RFID cloner and the print kit. No PIN cracker this time; R&D still have it on the bench.
+
+Agent HaX: Map the network. Find where the money goes. And if you can turn Irina tonight, she can open the mixer up for us before anyone knows she's talked.
 
 + [What if I find something bigger than individual cells?]
     -> bigger_picture

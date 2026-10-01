@@ -6,7 +6,7 @@
 VAR trader_talked = false
 VAR topic_volume = false
 VAR topic_monero = false
-VAR topic_elena = false
+VAR topic_irina = false
 VAR first_meeting = true
 
 // External variables
@@ -72,8 +72,8 @@ Dani Okonkwo: High volume, fast transactions, low fees. Competitive market.
 + {not topic_monero} [Why is so much of this in Monero?]
     -> monero_discussion
 
-+ {not topic_elena} [What's Dr. Volkova like to work for?]
-    -> elena_discussion
++ {not topic_irina} [What's Dr. Volkova like to work for?]
+    -> irina_discussion
 
 + [That's all, thanks]
     #speaker:trader
@@ -238,9 +238,9 @@ Dani Okonkwo: Perfectly legal mixing service. We're transparent about it.
 // IRINA DISCUSSION
 // ===========================================
 
-=== elena_discussion ===
+=== irina_discussion ===
 #speaker:trader
-~ topic_elena = true
+~ topic_irina = true
 
 Dani Okonkwo: Irina's brilliant. Like, PhD in cryptography brilliant.
 
@@ -249,12 +249,12 @@ Dani Okonkwo: She designed all our privacy protocols. Zero-knowledge proofs, hom
 Dani Okonkwo: Way above my pay grade. I just use the systems she builds.
 
 + [Does she seem concerned about compliance?]
-    -> elena_compliance
+    -> irina_compliance
 
 + [What's your impression of her?]
-    -> elena_impression
+    -> irina_impression
 
-=== elena_compliance ===
+=== irina_compliance ===
 #speaker:trader
 
 Dani Okonkwo: Obsessively. She reviews every flagged transaction personally.
@@ -265,7 +265,7 @@ Dani Okonkwo: But she hasn't said anything specific.
 
 -> hub
 
-=== elena_impression ===
+=== irina_impression ===
 #speaker:trader
 
 Dani Okonkwo: Smart, intense, kinda distant. But fair.

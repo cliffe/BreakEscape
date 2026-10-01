@@ -3,6 +3,18 @@
   "start_room": "reception_lobby",
   "nodes": [
     {
+      "id": "door_trading_floor",
+      "label": "Trading Floor<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "trading_floor",
+      "label": "Trading Floor",
+      "kind": "room",
+      "optional": false
+    },
+    {
       "id": "door_server_room",
       "label": "Server Room<br/>Password lock",
       "kind": "lock",
@@ -27,13 +39,13 @@
       "optional": false
     },
     {
-      "id": "door_elena_office",
+      "id": "door_irina_office",
       "label": "Dr. I. Volkova, CTO<br/>RFID lock",
       "kind": "lock",
       "optional": false
     },
     {
-      "id": "elena_office",
+      "id": "irina_office",
       "label": "Dr. I. Volkova, CTO",
       "kind": "room",
       "optional": false
@@ -51,6 +63,30 @@
       "optional": false
     },
     {
+      "id": "reception_lobby",
+      "label": "HashChain Exchange",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lock_pick_kit",
+      "label": "Lock Pick Kit",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "rfid_cloner",
+      "label": "RFID Cloner",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "fingerprint_kit",
+      "label": "Fingerprint Kit",
+      "kind": "item",
+      "optional": false
+    },
+    {
       "id": "security_checkpoint",
       "label": "Restricted",
       "kind": "room",
@@ -63,22 +99,10 @@
       "optional": false
     },
     {
-      "id": "trading_floor",
-      "label": "Trading Floor",
-      "kind": "room",
-      "optional": false
-    },
-    {
       "id": "daily_trading_report",
       "label": "Daily Trading Report",
       "kind": "item",
       "optional": false
-    },
-    {
-      "id": "rfid_badge_cloner",
-      "label": "RFID Badge Cloner",
-      "kind": "item",
-      "optional": true
     },
     {
       "id": "npc_dr_irina_volkova",
@@ -102,6 +126,12 @@
       "id": "lock_vm_launcher_hackme",
       "label": "Vm Launcher Hackme",
       "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "executive_access_badge",
+      "label": "Executive Access Badge",
+      "kind": "key",
       "optional": false
     },
     {
@@ -141,21 +171,9 @@
       "optional": false
     },
     {
-      "id": "lock_executive_access_badge",
-      "label": "Executive Access Badge",
-      "kind": "lock",
-      "optional": false
-    },
-    {
       "id": "cold_storage_procedure",
       "label": "Cold Storage Procedure",
       "kind": "item",
-      "optional": false
-    },
-    {
-      "id": "executive_access_badge",
-      "label": "Executive Access Badge",
-      "kind": "key",
       "optional": false
     },
     {
@@ -277,15 +295,14 @@
       "label": "Flag4 Flag",
       "kind": "flag",
       "optional": false
-    },
-    {
-      "id": "reception_lobby",
-      "label": "HashChain Exchange",
-      "kind": "room",
-      "optional": false
     }
   ],
   "edges": [
+    {
+      "from": "door_trading_floor",
+      "to": "trading_floor",
+      "soft": false
+    },
     {
       "from": "door_server_room",
       "to": "server_room",
@@ -297,13 +314,38 @@
       "soft": false
     },
     {
-      "from": "door_elena_office",
-      "to": "elena_office",
+      "from": "door_irina_office",
+      "to": "irina_office",
       "soft": false
     },
     {
       "from": "door_executive_wing",
       "to": "executive_wing",
+      "soft": false
+    },
+    {
+      "from": "reception_lobby",
+      "to": "lock_pick_kit",
+      "soft": false
+    },
+    {
+      "from": "lock_pick_kit",
+      "to": "door_trading_floor",
+      "soft": false
+    },
+    {
+      "from": "reception_lobby",
+      "to": "rfid_cloner",
+      "soft": true
+    },
+    {
+      "from": "rfid_cloner",
+      "to": "door_irina_office",
+      "soft": true
+    },
+    {
+      "from": "reception_lobby",
+      "to": "fingerprint_kit",
       "soft": false
     },
     {
@@ -323,16 +365,6 @@
     },
     {
       "from": "trading_floor",
-      "to": "rfid_badge_cloner",
-      "soft": true
-    },
-    {
-      "from": "rfid_badge_cloner",
-      "to": "door_elena_office",
-      "soft": true
-    },
-    {
-      "from": "trading_floor",
       "to": "npc_dr_irina_volkova",
       "soft": false
     },
@@ -343,7 +375,7 @@
     },
     {
       "from": "cto_access_badge",
-      "to": "door_elena_office",
+      "to": "door_irina_office",
       "soft": false
     },
     {
@@ -354,6 +386,16 @@
     {
       "from": "password_dictionary_list",
       "to": "lock_vm_launcher_hackme",
+      "soft": false
+    },
+    {
+      "from": "npc_dr_irina_volkova",
+      "to": "executive_access_badge",
+      "soft": false
+    },
+    {
+      "from": "executive_access_badge",
+      "to": "door_executive_wing",
       "soft": false
     },
     {
@@ -387,23 +429,8 @@
       "soft": false
     },
     {
-      "from": "the_architect_s_fund_allocation",
-      "to": "lock_executive_access_badge",
-      "soft": false
-    },
-    {
       "from": "data_center",
       "to": "cold_storage_procedure",
-      "soft": false
-    },
-    {
-      "from": "data_center",
-      "to": "executive_access_badge",
-      "soft": false
-    },
-    {
-      "from": "executive_access_badge",
-      "to": "door_executive_wing",
       "soft": false
     },
     {
@@ -417,12 +444,12 @@
       "soft": false
     },
     {
-      "from": "elena_office",
+      "from": "irina_office",
       "to": "cryptography_research_notes",
       "soft": false
     },
     {
-      "from": "elena_office",
+      "from": "irina_office",
       "to": "email_from_the_architect",
       "soft": false
     },
@@ -519,16 +546,6 @@
     {
       "from": "reception_lobby",
       "to": "security_checkpoint",
-      "soft": false
-    },
-    {
-      "from": "security_checkpoint",
-      "to": "trading_floor",
-      "soft": false
-    },
-    {
-      "from": "trading_floor",
-      "to": "blockchain_lab",
       "soft": false
     }
   ]

@@ -24,6 +24,7 @@
 
 ### **"Satoshi's Ghost"** (Cell Leader)
 - **Real Name:** Unknown (possibly Andrew Wolff, but uncertain)
+- **Public Persona:** "Satoshi Nakamoto II", CEO of HashChain Exchange (m06)
 - **Background:** Early cryptocurrency adopter and blockchain developer who was there "from the beginning" (possibly Bitcoin's early days). Deep understanding of cryptocurrency protocols, blockchain security, and cryptoeconomic systems. Originally idealistic about cryptocurrency's potential to decentralize power. Became disillusioned watching cryptocurrency evolve into speculative casino dominated by greed. Decided: "If cryptocurrency is going to be about chaos and profit rather than ideals, let's accelerate that to its logical conclusion." Joined ENTROPY to exploit and destabilize cryptocurrency systems.
 - **Expertise:** Blockchain technology, cryptocurrency protocols, consensus mechanisms, cryptoeconomic systems, smart contract development
 - **Notable Operations:** Multiple DeFi exploits worth millions; consensus attacks on smaller blockchains; cryptocurrency market manipulation
