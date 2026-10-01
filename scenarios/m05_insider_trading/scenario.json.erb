@@ -7,31 +7,39 @@
 # This file defines the game world structure: rooms, NPCs, objects, items
 # For mission metadata (display name, CyBOK mappings, etc.), see mission.json
 #
-# ROOM LAYOUT:
-#   Reception Lobby → Security Office (Patricia Morgan, mission handler)
-#   Reception Lobby → Break Room → Main Office Area (Kevin Park IT admin)
-#   Main Office Area → Research Lab (Dr. Chen, badge required)
-#   Main Office Area → Marketing (Lisa Park, optional)
-#   Security Office → Server Hallway (badge clone required)
-#   Server Hallway → Server Room (password required, Torres confrontation)
-#   Server Room → Data Center (final exfiltration point)
+# ROOM LAYOUT (pass 2: single connections only, see PASS2_IMPROVEMENTS.md):
+#
+#   torres_office      data_center
+#        |                  |
+#   research_lab - open_office_area    server_room
+#                       |                  |
+#   break_room - main_corridor ------- server_hallway (RFID)
+#                       |
+#                reception_lobby ----- patricia_office
+#
+#   The old layout hung three 10-wide rooms off the 10-wide corridor's north
+#   wall. positionNorthMultiple (rooms.js:1253) cannot give all three the
+#   1 GU of overlap it needs, so at least one door opened onto nothing.
+#   Every connection is now a single E/W pair or an equal-width N/S pair,
+#   which always line up (see the m04 door-alignment rule).
+#
+# THE CASE (pass 2): evidence is a set of found_* booleans, not a counter.
+#   The engine assigns setVariable values literally, so the old
+#   "evidence_level + 1" strings never counted anything.
+#   Motive:  found_medical_bills | found_torres_journal | found_vetting_file
+#   Exfil:   flag3_submitted | found_manifest | found_upload_schedule
+#   Patricia will act on a name only when the player has one of each.
 #
 # HYBRID ARCHITECTURE:
-#   - VM: Bludit CMS server (CVE-2019-16113 exploitation)
-#   - 4 VM flags unlock intelligence and evidence correlation
-#   - In-game physical evidence + VM digital evidence = full picture
+#   - VM: Bludit CMS research portal (leaked credentials, authenticated
+#     image-upload RCE, then user and root on the box)
+#   - 4 VM flags; concludeRequires gates the ending on all four
 # ============================================================================
 
-# ERB Helper Methods
-require 'base64'
-
-def base64_encode(text)
-  Base64.strict_encode64(text)
-end
-
 # Narrative Content Variables
-password_hint_sticky = "Server room temp password (expires Friday): quantum2024"
-torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a standing retainer if I complete the upload tonight. Elena's treatment starts Monday. I know this will cost lives - thirty to forty-five people, according to their own projections. Ambulances that don't make it in time. But I've rationalized it through their philosophy. The system is corrupt. Collateral damage for greater good. What have I become?"
+server_room_password = "quantum2024"
+password_hint_sticky = "Server room temp password (expires Friday): #{server_room_password}\n\n- K"
+torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing retainer if I finish the upload tonight. Elena's first trial dose is Monday.\n\nI know what this costs. Thirty to forty-five people, by their own projections. Ambulances that don't arrive in time.\n\nI've talked myself round with their philosophy. The system is rotten. Collateral damage for the greater good.\n\nI read that back and I don't recognise the man who wrote it. What have I become?"
 %>
 {
   "narrator": {
@@ -44,7 +52,7 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
     }
   },
 
-  "scenario_brief": "Infiltrate Quantum Dynamics Corporation to identify and stop an insider threat. ENTROPY's Insider Threat Initiative has recruited an employee to exfiltrate quantum-safe key material for the National Emergency-Services Dispatch Network. You have 4 hours to find the insider, gather evidence, and stop the final data upload.",
+  "scenario_brief": "Infiltrate Quantum Dynamics Corporation to identify and stop an insider threat. ENTROPY's Insider Threat Initiative has recruited an employee to exfiltrate quantum-safe key material for the National Emergency-Services Dispatch Network. You have 4 hours to find the insider, build the case, and stop the final upload.",
 
   "music": {
     "events": [
@@ -102,36 +110,56 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
           { "text": "OPERATION SCHRÖDINGER: STOPPED",                       "style": "entry" },
           { "text": "CIVILIAN LIVES SAVED: 30-45 (estimated, first rollout wave)", "style": "entry", "condition": "globalVars.knows_full_stakes" },
           { "text": "" },
-          { "text": "── EVIDENCE ──",                                      "style": "section-header" },
-          { "text": "COMPLETE — ENTROPY's recruitment methodology exposed", "style": "entry", "condition": "globalVars.entropy_program_exposed" },
-          { "text": "PARTIAL — Recruitment pipeline still unconfirmed",     "style": "entry", "condition": "!globalVars.entropy_program_exposed" },
+          { "text": "── THE CASE ──",                                      "style": "section-header" },
+          { "text": "MOTIVE, MEANS AND AUTHORISATION — all on file",       "style": "entry", "condition": "globalVars.flag4_submitted && (globalVars.found_medical_bills || globalVars.found_torres_journal || globalVars.found_vetting_file) && globalVars.found_pamphlet" },
+          { "text": "RECRUITMENT PIPELINE — TalentStack link not documented", "style": "entry", "condition": "!globalVars.found_pamphlet" },
           { "text": "" },
           { "text": "── DAVID TORRES ──",                                  "style": "section-header" },
-          { "text": "TURNED — Double agent, feeding intelligence on ENTROPY's network", "style": "entry", "condition": "globalVars.final_choice === 'turn_double_agent'" },
-          { "text": "ARRESTED — Full cooperation, reduced sentence",       "style": "entry", "condition": "globalVars.final_choice === 'arrest' && globalVars.elena_treatment_funded" },
-          { "text": "ARRESTED — No cooperation, standard sentence",        "style": "entry", "condition": "globalVars.final_choice === 'arrest' && !globalVars.elena_treatment_funded" },
-          { "text": "SUBDUED — Taken into custody by force",               "style": "entry", "condition": "globalVars.final_choice === 'combat_nonlethal'" },
-          { "text": "KILLED — Lethal force during apprehension",           "style": "warning", "condition": "globalVars.final_choice === 'combat_lethal' || globalVars.torres_killed" },
-          { "text": "EXPOSED — Named publicly as \"The Quantum Traitor\"",  "style": "warning", "condition": "globalVars.final_choice === 'public_exposure'" },
+          { "text": "TURNED — working for SAFETYNET inside ENTROPY's network", "style": "entry", "condition": "globalVars.final_choice === 'turn_double_agent'" },
+          { "text": "HANDED TO THE POLICE — talked to SAFETYNET first",    "style": "entry", "condition": "globalVars.final_choice === 'arrest' && globalVars.elena_treatment_funded" },
+          { "text": "HANDED TO THE POLICE — said nothing",                 "style": "entry", "condition": "globalVars.final_choice === 'arrest' && !globalVars.elena_treatment_funded" },
+          { "text": "DETAINED AFTER A FIGHT — handed to the police",       "style": "entry", "condition": "globalVars.final_choice === 'combat_nonlethal'" },
+          { "text": "DEAD — left injured on the data-centre floor",        "style": "warning", "condition": "globalVars.final_choice === 'combat_lethal'" },
+          { "text": "EXPOSED — named publicly as \"The Quantum Traitor\"",  "style": "warning", "condition": "globalVars.final_choice === 'public_exposure'" },
           { "text": "" },
           { "text": "── ELENA TORRES ──",                                  "style": "section-header" },
-          { "text": "Treatment funded — starts Monday, witness protection covers everything", "style": "entry", "condition": "globalVars.elena_treatment_funded" },
-          { "text": "Still fighting Stage 3 cancer — no treatment coverage", "style": "entry", "condition": "!globalVars.elena_treatment_funded && globalVars.final_choice !== 'combat_lethal' && !globalVars.torres_killed" },
-          { "text": "Widowed — still fighting Stage 3 cancer, alone",       "style": "warning", "condition": "globalVars.final_choice === 'combat_lethal' || globalVars.torres_killed" },
+          { "text": "Treatment paid for by SAFETYNET — first dose Monday", "style": "entry", "condition": "globalVars.elena_treatment_funded" },
+          { "text": "Still fighting Stage 3 cancer — treatment unfunded",  "style": "entry", "condition": "!globalVars.elena_treatment_funded && globalVars.final_choice !== 'combat_lethal'" },
+          { "text": "Widowed — still fighting Stage 3 cancer, alone",       "style": "warning", "condition": "globalVars.final_choice === 'combat_lethal'" },
           { "text": "" },
           { "text": "── SOFIA (11) AND MIGUEL (8) TORRES ──",                "style": "section-header" },
-          { "text": "Father home, cooperating, family intact",             "style": "entry", "condition": "globalVars.final_choice === 'turn_double_agent' || (globalVars.final_choice === 'arrest' && globalVars.elena_treatment_funded)" },
-          { "text": "Father in federal prison for years",                  "style": "entry", "condition": "globalVars.final_choice === 'arrest' && !globalVars.elena_treatment_funded" },
-          { "text": "Father subdued and in custody",                       "style": "entry", "condition": "globalVars.final_choice === 'combat_nonlethal'" },
-          { "text": "Father dead — lost him and, without treatment, may lose their mother too", "style": "warning", "condition": "globalVars.final_choice === 'combat_lethal' || globalVars.torres_killed" },
+          { "text": "Father home, family intact",                          "style": "entry", "condition": "globalVars.final_choice === 'turn_double_agent'" },
+          { "text": "Father facing trial, mother in treatment",            "style": "entry", "condition": "globalVars.final_choice === 'arrest' && globalVars.elena_treatment_funded" },
+          { "text": "Father facing trial, mother untreated",               "style": "entry", "condition": "(globalVars.final_choice === 'arrest' && !globalVars.elena_treatment_funded) || globalVars.final_choice === 'combat_nonlethal'" },
+          { "text": "Father dead — and, without treatment, they may lose their mother too", "style": "warning", "condition": "globalVars.final_choice === 'combat_lethal'" },
           { "text": "Classmates saw their father named a spy on the news",  "style": "warning", "condition": "globalVars.final_choice === 'public_exposure'" },
           { "text": "" },
-          { "text": "The Architect remains at large...",                   "style": "warning" }
+          { "text": "── THE RECRUITER ──",                                 "style": "section-header" },
+          { "text": "OFFER REFUSED — the TalentStack list went to SAFETYNET", "style": "entry", "condition": "globalVars.recruiter_deal_offered && !globalVars.recruiter_deal_accepted && globalVars.found_pipeline_list" },
+          { "text": "OFFER REFUSED — but the TalentStack list was never recovered", "style": "entry", "condition": "globalVars.recruiter_deal_offered && !globalVars.recruiter_deal_accepted && !globalVars.found_pipeline_list" },
+          { "text": "OFFER TAKEN — forty-seven names left in her pipeline", "style": "warning", "condition": "globalVars.recruiter_deal_accepted && !globalVars.recruiter_deal_confessed" },
+          { "text": "OFFER TAKEN, THEN CONFESSED — the list went in late",  "style": "warning", "condition": "globalVars.recruiter_deal_accepted && globalVars.recruiter_deal_confessed" },
+          { "text": "" },
+          
+{ "text": "The Architect remains at large...",                   "style": "warning" }
         ]
       }
     ]
   },
 
+  <%# PASS 2: every task is "active" (the m02 pattern). unlockAim activates only
+      an aim's FIRST task (objectives-manager.js:651-660) and handleItemPickup
+      ignores any task that isn't active (:324), so with "locked" tasks the
+      collect/enter tasks in later aims could never tick. Notes-type evidence
+      is matched with targetItemIds: targetItems matches the item TYPE, and
+      every one of these items is type "notes". %>
+  <%# PASS 2 review (lesson 27): a locked aim auto-reveals when any of its
+      tasks completes (objectives-manager.js:414-419). Tasks now sit in the aim
+      where the player meets them: the sticky note, the leaflet and the vetting
+      file are first-ring finds, so they live in aim 2. "Find Out Why" and
+      "Prove the Exfiltration" both open from aim 2 and run in parallel,
+      because nothing in the rooms orders them. The aims are a to-do list, not
+      a gate: doors, items and concludeRequires are what gate progress. %>
   "objectives": [
     {
       "aimId": "establish_access",
@@ -142,9 +170,8 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
       "tasks": [
         {
           "taskId": "receive_mission_briefing",
-          "title": "Receive mission briefing from Agent 0x99",
-          "type": "npc_conversation",
-          "targetNPC": "opening_briefing",
+          "title": "Receive mission briefing from Agent HaX",
+          "type": "custom",
           "status": "active"
         },
         {
@@ -158,6 +185,7 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
           "taskId": "obtain_security_badge",
           "title": "Obtain visitor access badge",
           "type": "collect_items",
+          "targetCount": 1,
           "targetItems": ["id_badge"],
           "status": "active"
         }
@@ -166,7 +194,7 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
     {
       "aimId": "investigate_employees",
       "title": "Work Out Who Has Been in the Servers",
-      "description": "Interview staff and identify suspicious activity",
+      "description": "Interview staff and get the access you need",
       "status": "locked",
       "order": 1,
       "unlockCondition": { "aimCompleted": "establish_access" },
@@ -176,14 +204,14 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
           "title": "Interview Kevin Park (IT Admin)",
           "type": "npc_conversation",
           "targetNPC": "kevin_park",
-          "status": "locked"
+          "status": "active"
         },
         {
           "taskId": "talk_to_lisa",
           "title": "Interview Lisa Park (Marketing)",
           "type": "npc_conversation",
           "targetNPC": "lisa_park",
-          "status": "locked",
+          "status": "active",
           "optional": true
         },
         {
@@ -191,74 +219,92 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
           "title": "Interview Dr. Chen (Chief Scientist)",
           "type": "npc_conversation",
           "targetNPC": "dr_chen",
-          "status": "locked",
+          "status": "active",
           "optional": true
         },
         {
-          "taskId": "obtain_research_access",
-          "title": "Obtain a research lab access badge from Dr. Chen",
-          "type": "custom",
-          "status": "locked",
-          "optional": true
-        },
-        {
-          "taskId": "find_lockpick",
-          "title": "Acquire lockpick set from Kevin",
+          "taskId": "obtain_server_badge",
+          "title": "Get a staff badge that opens the server hallway",
           "type": "collect_items",
-          "targetItems": ["lockpick"],
-          "status": "locked"
-        },
-        {
-          "taskId": "obtain_rfid_cloner",
-          "title": "Obtain RFID badge cloner from Kevin",
-          "type": "collect_items",
-          "targetItems": ["rfid_cloner"],
-          "status": "locked"
+          "targetCount": 1,
+          "targetItemIds": ["cloned_employee_badge", "research_lab_badge", "relayed_server_badge"],
+          "status": "active"
         },
         {
           "taskId": "obtain_torres_keycard",
-          "title": "Get keycard for Torres' office from Kevin",
+          "title": "Get a keycard for Torres' office",
           "type": "collect_items",
-          "targetItems": ["keycard"],
-          "status": "locked"
+          "targetCount": 1,
+          "targetItemIds": ["torres_office_keycard", "relayed_torres_office_card"],
+          "status": "active"
+        },
+        {
+          "taskId": "find_lockpick",
+          "title": "Talk Kevin out of his old pick set",
+          "type": "collect_items",
+          "targetCount": 1,
+          "targetItems": ["lockpick"],
+          "status": "active",
+          "optional": true
+        },
+        {
+          "taskId": "find_server_password",
+          "title": "Find the server room password",
+          "type": "collect_items",
+          "targetCount": 1,
+          "targetItemIds": ["server_password_note"],
+          "status": "active"
+        },
+        {
+          "taskId": "find_vetting_file",
+          "title": "Ask Patricia for the vetting files",
+          "type": "collect_items",
+          "targetCount": 1,
+          "targetItemIds": ["torres_vetting_file"],
+          "status": "active",
+          "optional": true
+        },
+        {
+          "taskId": "find_entropy_pamphlet",
+          "title": "Work out who has been recruiting in the building",
+          "type": "collect_items",
+          "targetCount": 1,
+          "targetItemIds": ["entropy_pamphlet"],
+          "status": "active",
+          "optional": true
         }
       ]
     },
     {
       "aimId": "gather_evidence",
-      "title": "Get Behind the Badge Readers",
-      "description": "Collect proof of the insider threat operation",
+      "title": "Find Out Why",
+      "description": "Build the personal side of the case",
       "status": "locked",
       "order": 2,
       "unlockCondition": { "aimCompleted": "investigate_employees" },
       "tasks": [
         {
           "taskId": "access_torres_office",
-          "title": "Access David Torres' office",
+          "title": "Get into David Torres' office",
           "type": "enter_room",
           "targetRoom": "torres_office",
-          "status": "locked"
-        },
-        {
-          "taskId": "find_medical_bills",
-          "title": "Search the desk drawers",
-          "type": "collect_items",
-          "targetItems": ["medical_bills"],
-          "status": "locked"
+          "status": "active"
         },
         {
           "taskId": "find_journal",
           "title": "Find whatever he has been writing",
           "type": "collect_items",
-          "targetItems": ["personal_journal"],
-          "status": "locked"
+          "targetCount": 1,
+          "targetItemIds": ["personal_journal"],
+          "status": "active"
         },
         {
-          "taskId": "find_entropy_pamphlet",
-          "title": "Pick up the leaflet someone left in the break room",
+          "taskId": "find_medical_bills",
+          "title": "Get into his briefcase",
           "type": "collect_items",
-          "targetItems": ["entropy_pamphlet"],
-          "status": "locked",
+          "targetCount": 1,
+          "targetItemIds": ["medical_bills"],
+          "status": "active",
           "optional": true
         }
       ]
@@ -266,101 +312,88 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
     {
       "aimId": "exploit_infrastructure",
       "title": "Prove the Exfiltration on the Server",
-      "description": "Access compromised systems and gather digital evidence",
+      "description": "Get into the server room and prove what is leaving the building",
       "status": "locked",
       "order": 3,
-      "unlockCondition": { "aimCompleted": "gather_evidence" },
+      "unlockCondition": { "aimCompleted": "investigate_employees" },
       "tasks": [
         {
-          "taskId": "clone_employee_badge",
-          "title": "Clone Kevin's employee badge for server access",
-          "type": "custom",
-          "status": "locked"
-        },
-        {
-          "taskId": "find_server_password",
-          "title": "Find the server room password",
-          "type": "collect_items",
-          "targetItems": ["server_password_note"],
-          "status": "locked"
-        },
-        {
           "taskId": "access_server_room",
-          "title": "Access the server room",
+          "title": "Get into the server room",
           "type": "enter_room",
           "targetRoom": "server_room",
-          "status": "locked"
+          "status": "active"
         },
         {
           "taskId": "access_bludit_vm",
-          "title": "Access the Bludit CMS server",
-          "type": "unlock_object",
-          "targetObject": "vm_launcher_bludit",
-          "status": "locked"
+          "title": "Open the research portal terminal",
+          "type": "custom",
+          "status": "active"
         },
         {
           "taskId": "submit_flag1",
           "title": "Submit Flag 1: Leaked Bludit admin credentials (recon)",
           "type": "submit_flags",
-          "targetFlags": ["qdc_research_server:flag_1"],
+          "targetFlags": ["flag_station_evidence:qdc_research_server-flag1"],
           "targetCount": 1,
           "currentCount": 0,
           "showProgress": true,
-          "status": "locked"
+          "status": "active"
         },
         {
           "taskId": "submit_flag2",
           "title": "Submit Flag 2: Authenticated Bludit image-upload RCE",
           "type": "submit_flags",
-          "targetFlags": ["qdc_research_server:flag_2"],
+          "targetFlags": ["flag_station_evidence:qdc_research_server-flag2"],
           "targetCount": 1,
           "currentCount": 0,
           "showProgress": true,
-          "status": "locked"
+          "status": "active"
         },
         {
           "taskId": "submit_flag3",
           "title": "Submit Flag 3: Torres' exfiltration staging manifest (user access)",
           "type": "submit_flags",
-          "targetFlags": ["qdc_research_server:flag_3"],
+          "targetFlags": ["flag_station_evidence:qdc_research_server-flag3"],
           "targetCount": 1,
           "currentCount": 0,
           "showProgress": true,
-          "status": "locked"
+          "status": "active"
         },
         {
           "taskId": "submit_flag4",
           "title": "Submit Flag 4: The Architect's acquisition authorisation (root)",
           "type": "submit_flags",
-          "targetFlags": ["qdc_research_server:flag_4"],
+          "targetFlags": ["flag_station_evidence:qdc_research_server-flag4"],
           "targetCount": 1,
           "currentCount": 0,
           "showProgress": true,
-          "status": "locked"
+          "status": "active"
         },
         {
           "taskId": "access_data_center",
-          "title": "Access the data center to find exfiltration evidence",
+          "title": "Get into the data centre",
           "type": "enter_room",
           "targetRoom": "data_center",
-          "status": "locked"
+          "status": "active"
         },
         {
           "taskId": "find_upload_schedule",
-          "title": "Discover Torres' upload schedule",
+          "title": "Find out when the final upload runs",
           "type": "collect_items",
-          "targetItems": ["upload_schedule"],
-          "status": "locked"
+          "targetCount": 1,
+          "targetItemIds": ["upload_schedule"],
+          "status": "active"
         }
       ]
     },
     {
       "aimId": "confront_insider",
       "title": "Decide What Happens to Him",
-      "description": "Confront David Torres and decide his fate",
+      "description": "Name the insider, confront him and decide his fate",
       "status": "locked",
       "order": 4,
-      "unlockCondition": { "aimCompleted": "exploit_infrastructure" },
+      "unlockCondition": { "aimsCompleted": ["gather_evidence", "exploit_infrastructure"] },
       "missionConclusion": true,
       "conclusionScreen": { "type": "bond_visualiser" },
       <%# Ending gate: the mandatory flag nodes from the dungeon graph -- the
@@ -380,20 +413,25 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
           "taskId": "identify_torres",
           "title": "Name your suspect to Patricia Morgan",
           "type": "custom",
-          "status": "locked"
+          "status": "active"
         },
         {
           "taskId": "confront_torres",
           "title": "Confront your suspect",
-          "type": "npc_conversation",
-          "targetNPC": "david_torres",
-          "status": "locked"
+          "type": "custom",
+          "status": "active"
         },
         {
           "taskId": "make_critical_choice",
-          "title": "Decide Torres' fate: Turn, Arrest, or Combat",
+          "title": "Decide what happens to David Torres",
           "type": "custom",
-          "status": "locked"
+          "status": "active"
+        },
+        {
+          "taskId": "hear_debrief",
+          "title": "Report back to Agent HaX",
+          "type": "custom",
+          "status": "active"
         }
       ]
     }
@@ -407,7 +445,7 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
       "name": "Your Phone",
       "takeable": true,
       "phoneId": "player_phone",
-      "npcIds": ["agent_0x99_handler", "recruiter", "closing_debrief_trigger"],
+      "npcIds": ["agent_0x99_handler"],
       "observations": "Your secure phone with encrypted connection to SAFETYNET"
     }
   ],
@@ -431,9 +469,7 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
     "knows_full_stakes": false,
     "knows_insider_profile": false,
     "handler_trust": 50,
-    "objectives_completed": 0,
-    "lore_collected": 0,
-    "evidence_level": 0,
+
     "final_choice": "",
     "confront_stance": "",
     "torres_turned": false,
@@ -442,9 +478,27 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
     "torres_identified": false,
     "elena_treatment_funded": false,
     "entropy_program_exposed": false,
+
+    "found_pamphlet": false,
+    "found_incident_log": false,
+    "found_vetting_file": false,
     "found_medical_bills": false,
     "found_torres_journal": false,
-    "found_briefcase_comms": false,
+    "found_upload_schedule": false,
+    "found_manifest": false,
+    "case_ready_notified": false,
+    "case_motive": false,
+    "case_exfil": false,
+    "found_pipeline_list": false,
+    "flags_nag_sent": false,
+    "debrief_played": false,
+    "torres_fate_by_phone": false,
+
+    "server_badge_obtained": false,
+    "office_card_obtained": false,
+    "lockpick_obtained": false,
+    "patricia_authorised_office": false,
+
     "flag1_submitted": false,
     "flag2_submitted": false,
     "flag3_submitted": false,
@@ -454,6 +508,7 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
     "recruiter_contacted_player": false,
     "recruiter_deal_offered": false,
     "recruiter_deal_accepted": false,
+    "recruiter_deal_confessed": false,
 
     "opening_briefing_ko": false,
     "patricia_ko": false,
@@ -473,8 +528,6 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
     "flag4_discussed": false,
     "confrontation_advice_given": false,
 
-    "rfid_guide_offered": false,
-    "rfid_guide_hint_given": false,
     "bludit_guide_offered": false,
     "bludit_guide_hint_given": false,
     "lockpicking_guide_offered": false,
@@ -483,7 +536,7 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
     "recon_guide_hint_given": false
   },
 
-  "endGoal": "Identify the insider, gather sufficient evidence (evidence_level >= 4), and confront David Torres to stop Operation Schrödinger. Choose how to resolve: turn him as double agent, arrest him, or use force.",
+  "endGoal": "Identify the insider with both halves of the case (motive and proof of exfiltration), stop the final upload, and decide David Torres' fate: turn him, hand him to the police, expose the programme, or fight.",
 
   "rooms": {
     "reception_lobby": {
@@ -495,7 +548,7 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
       "npcs": [
         {
           "id": "opening_briefing",
-          "displayName": "Agent 0x99",
+          "displayName": "Agent HaX",
           "npcType": "person",
           "position": { "x": 500, "y": 500 },
           "spriteSheet": "hacker",
@@ -553,28 +606,13 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
         },
         {
           "id": "agent_0x99_handler",
-          "displayName": "Agent 0x99 'Haxolottle'",
+          "displayName": "Agent HaX",
           "npcType": "phone",
           "storyPath": "scenarios/m05_insider_trading/ink/m05_phone_agent_0x99.json",
           "avatar": "assets/npc/avatars/npc_helper.png",
           "phoneId": "player_phone",
           "currentKnot": "start",
-          "timedMessages": [
-            {
-              "delay": 5000,
-              "message": "Hey there! 🦎 I'm your handler for this op. The insider threat is real - we've got 4 hours max before final exfiltration. Message me if you need guidance.",
-              "type": "text"
-            }
-          ],
           "itemsHeld": [
-            {
-              "type": "lab-workstation",
-              "id": "safetynet_field_guide_rfid_cloning",
-              "name": "SAFETYNET Field Guide: RFID Cloning",
-              "takeable": true,
-              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/rfid-cloning/",
-              "observations": "Field guide to reading, cracking and emulating MIFARE access cards"
-            },
             {
               "type": "lab-workstation",
               "id": "safetynet_field_guide_bludit_cms",
@@ -598,19 +636,77 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
               "takeable": true,
               "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/reconnaissance-and-network-mapping/",
               "observations": "Field guide to discovering hosts and mapping an unfamiliar network with Nmap"
+            },
+            {
+              "_comment": "PASS 2 KO fallback (m03/m04 pattern). Kevin is in a room loaded after the start, so npc._sprite is unset and dropNPCItems returns early (npc-hostile.js:257-261): his badge and the office spare would never hit the floor. On npc_ko:kevin_park HaX pushes working copies. A duplicate is harmless; the RFID lock needs one match on opens_lock (unlock-system.js:511-513).",
+              "type": "keycard",
+              "id": "relayed_server_badge",
+              "name": "Staff Badge (relayed copy)",
+              "takeable": true,
+              "opens_lock": "employee_badge",
+              "observations": "A copy of Kevin's staff badge, rebuilt by SAFETYNET from the badge-reader logs. Opens the server hallway."
+            },
+            {
+              "type": "keycard",
+              "id": "relayed_torres_office_card",
+              "name": "Torres Office Card (relayed copy)",
+              "takeable": true,
+              "opens_lock": "office_keycard",
+              "observations": "A copy of IT's spare card for David Torres' office, rebuilt by SAFETYNET from the reader logs."
+            },
+            {
+              "_comment": "PASS 2 review M3: Patricia-KO fallback for obtain_security_badge (a collect_items task needs the item).",
+              "type": "id_badge",
+              "id": "relayed_contractor_pass",
+              "name": "Contractor Pass",
+              "takeable": true,
+              "observations": "A contractor pass SAFETYNET printed against QDC's visitor system after Patricia went down."
             }
           ],
+          "_comment": "PASS 2 review: eventMapping conditions go through safeEvaluateCondition (npc-manager.js:14-101), which supports only &&-joined terms. Any || or parenthesised condition evaluates to false, so every alternative below is its own mapping.",
           "eventMappings": [
+            {
+              "_comment": "PASS 2 (lesson 20): was a 5 s timedMessage that could land over the opening briefing. Now fires once the briefing closes.",
+              "eventPattern": "conversation_closed:opening_briefing",
+              "onceOnly": true,
+              "completeTask": "receive_mission_briefing",
+              "sendTimedMessage": { "delay": 3000, "message": "You're in. Patricia Morgan's office is just off reception, on the east side. Start with her. Four hours, and the clock's already running." }
+            },
+            {
+              "_comment": "Playtest D4 backstop: the briefing was marked played (setGlobalOnStart) but never finished, e.g. a reload mid-cutscene. The task is custom, so this completes it without the server needing the NPC encountered.",
+              "eventPattern": "room_entered:reception_lobby",
+              "condition": "globalVars.briefing_played === true",
+              "onceOnly": true,
+              "completeTask": "receive_mission_briefing"
+            },
             {
               "eventPattern": "item_picked_up:lockpick",
               "onceOnly": true,
+              "setGlobal": { "lockpick_obtained": true },
               "sendTimedMessage": { "delay": 1500, "message": "Nice find on the lockpick. Call me if you want a rundown on using it." }
             },
+<% %w[cloned_employee_badge research_lab_badge relayed_server_badge].each do |id| %>
+            {
+              "_comment": "PASS 2 (lesson 26): 'given' globals come from the pickup, not from ink before the tag.",
+              "eventPattern": "item_picked_up:keycard",
+              "condition": "data.itemId === '<%= id %>'",
+              "onceOnly": true,
+              "setGlobal": { "server_badge_obtained": true }
+            },
+<% end %>
+<% %w[torres_office_keycard relayed_torres_office_card].each do |id| %>
+            {
+              "eventPattern": "item_picked_up:keycard",
+              "condition": "data.itemId === '<%= id %>'",
+              "onceOnly": true,
+              "setGlobal": { "office_card_obtained": true }
+            },
+<% end %>
             {
               "eventPattern": "item_picked_up:notes",
               "condition": "data.itemId === 'medical_bills'",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "$380,000 in medical debt. That's ENTROPY's textbook vulnerability. Call me — I want to talk about it." }
+              "sendTimedMessage": { "delay": 1500, "message": "Three hundred and eighty thousand dollars, and the insurer walked away. That's the kind of trouble ENTROPY goes looking for. Call me when you want to talk it through." }
             },
             {
               "eventPattern": "item_picked_up:notes",
@@ -622,80 +718,115 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
               "eventPattern": "global_variable_changed:flag1_submitted",
               "condition": "value === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "First flag verified. Three more to go — call if you want a status check." }
+              "sendTimedMessage": { "delay": 1500, "message": "First flag verified. Three to go. Call if you want a status check." }
             },
             {
               "eventPattern": "global_variable_changed:flag2_submitted",
               "condition": "value === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "Second flag secured. Shell access confirmed. Call me for the next step." }
+              "sendTimedMessage": { "delay": 1500, "message": "Second flag in. You've got a shell. Call me for the next step." }
             },
             {
               "eventPattern": "global_variable_changed:flag3_submitted",
               "condition": "value === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "Third flag verified. One more — The Architect's authorisation. Call me." }
+              "sendTimedMessage": { "delay": 1500, "message": "Third flag verified. His staging manifest, under his own name. One more: the authorisation behind it." }
             },
             {
               "eventPattern": "global_variable_changed:flag4_submitted",
               "condition": "value === true",
               "onceOnly": true,
               "setGlobal": { "architect_approval_confirmed": true },
-              "sendTimedMessage": { "delay": 1500, "message": "Final flag secured. The Architect's authorisation, casualty projection and all. Call me — you need to hear this." }
+              "sendTimedMessage": { "delay": 1500, "message": "Final flag in. The Architect's authorisation, casualty projection and all. Call me. You need to hear this." }
             },
+            <%# PASS 2: "enough to name him" = one motive item AND one exfil item.
+                Each piece of evidence latches case_motive or case_exfil; the
+                nudge fires when the second half lands. && only (see _comment). %>
+<% %w[found_medical_bills found_torres_journal found_vetting_file].each do |g| %>
             {
-              "eventPattern": "global_variable_changed:evidence_level",
-              "condition": "value >= 4",
-              "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "You've got enough evidence correlated. Call me before you confront the insider." }
-            },
-            {
-              "eventPattern": "global_variable_changed:evidence_level",
-              "condition": "value >= 5 && globalVars.patricia_ko === true && globalVars.torres_identified !== true",
-              "onceOnly": true,
-              "setGlobal": { "torres_identified": true },
-              "sendTimedMessage": { "delay": 1500, "message": "Patricia's off comms, but the evidence names him for us — David Torres. I'm flagging him now. Go and confront him." }
-            },
-            {
-              "eventPattern": "global_variable_changed:torres_identified",
+              "eventPattern": "global_variable_changed:<%= g %>",
               "condition": "value === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "You've named him. Call me — I've got a full profile before you go in." }
+              "setGlobal": { "case_motive": true }
+            },
+<% end %>
+<% %w[flag3_submitted found_manifest found_upload_schedule].each do |g| %>
+            {
+              "eventPattern": "global_variable_changed:<%= g %>",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": { "case_exfil": true }
+            },
+<% end %>
+<% [%w[case_motive case_exfil], %w[case_exfil case_motive]].each do |me, other| %>
+<% [["!== true", "Take it to Patricia and name him. She won't move on anything less."], ["=== true", "Patricia's out of it, so call me and give me the name."]].each do |ko, tail| %>
+            {
+              "eventPattern": "global_variable_changed:<%= me %>",
+              "condition": "value === true && globalVars.<%= other %> === true && globalVars.case_ready_notified !== true && globalVars.torres_identified !== true && globalVars.patricia_ko <%= ko %>",
+              "onceOnly": true,
+              "setGlobal": { "case_ready_notified": true },
+              "sendTimedMessage": { "delay": 2000, "message": "That's both halves: why he'd do it, and proof it's leaving the building. <%= tail %>" }
+            },
+<% end %>
+<% end %>
+            {
+              "_comment": "PASS 2 review M3: completing the collect task without the item is rejected server-side (game.rb:1179-1210). HaX hands over a real id_badge and authorises the office card on Patricia's behalf.",
+              "eventPattern": "npc_ko:patricia_morgan",
+              "onceOnly": true,
+              "conversationMode": "phone-chat",
+              "targetKnot": "on_patricia_ko_relay"
+            },
+            {
+              "eventPattern": "npc_ko:kevin_park",
+              "onceOnly": true,
+              "conversationMode": "phone-chat",
+              "targetKnot": "on_kevin_ko_relay"
             },
             {
               "eventPattern": "door_unlock_attempt",
               "condition": "data.connectedRoom === 'server_hallway'",
               "onceOnly": true,
-              "setGlobal": { "rfid_guide_offered": true },
-              "sendTimedMessage": { "delay": 1500, "message": "That's an RFID reader on the server hallway. If you've got the cloner, I can send you the field guide for it — just ask." }
+              "sendTimedMessage": { "delay": 1500, "message": "That reader wants a staff badge. Kevin in IT holds the spares. Dr Chen's badge would open it too, if she trusts you." }
             },
             {
+              "eventPattern": "door_unlock_attempt",
+              "condition": "data.connectedRoom === 'torres_office'",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "Torres' office. IT keeps a spare card for every office, but Kevin won't hand it over without a reason. Patricia can give him one." }
+            },
+<% ["Locked Filing Cabinet", "Torres' Briefcase"].each do |nm| %>
+            {
               "eventPattern": "object_interacted",
-              "condition": "data.objectName === 'Locked Filing Cabinet'",
+              "condition": "data.objectName === <%= nm.to_json.gsub('"', '\\"') %> && globalVars.lockpicking_guide_offered !== true",
               "onceOnly": true,
               "setGlobal": { "lockpicking_guide_offered": true },
-              "sendTimedMessage": { "delay": 1500, "message": "Pin tumbler on that cabinet. Say the word and I'll send you the lockpicking guide." }
+              "sendTimedMessage": { "delay": 1500, "message": "Pin tumbler. If you've got picks, say the word and I'll send you the lockpicking guide." }
             },
+<% end %>
             {
               "eventPattern": "object_interacted",
               "condition": "data.objectType === 'vm-launcher'",
               "onceOnly": true,
+              "completeTask": "access_bludit_vm",
               "setGlobal": { "bludit_guide_offered": true, "recon_guide_offered": true, "bludit_server_discovered": true },
-              "sendTimedMessage": { "delay": 1500, "message": "That's the Bludit box. I've got two guides for it — mapping the network first, then the CMS exploitation chain. Ask and they're yours." }
+              "sendTimedMessage": { "delay": 1500, "message": "That's QDC's research portal. Bludit. I've got two guides for it: mapping the network first, then the CMS exploitation chain. Ask and they're yours." }
             },
+<% (1..4).each do |n| %>
             {
-              "eventPattern": "global_variable_changed:kevin_ko",
-              "condition": "value === true",
+              "eventPattern": "conversation_closed:david_torres",
+              "condition": "globalVars.final_choice !== '' && globalVars.flag<%= n %>_submitted !== true && globalVars.flags_nag_sent !== true",
               "onceOnly": true,
-              "completeTask": "clone_employee_badge",
-              "sendTimedMessage": { "delay": 2000, "message": "Kevin's down. I'm pulling his badge credentials remotely and pushing you a clone — you've got server hallway access." }
+              "setGlobal": { "flags_nag_sent": true },
+              "sendTimedMessage": { "delay": 2000, "message": "The upload's dead. Good. Before I pull you out, finish the job on that research server. I want all four flags in the drop-site, or the file on the Architect has holes in it." }
             },
+<% end %>
             {
-              "eventPattern": "global_variable_changed:torres_ko",
-              "condition": "value === true",
-              "onceOnly": true,
-              "completeTask": "confront_torres",
-              "sendTimedMessage": { "delay": 2000, "message": "Torres is down. That's a confrontation whether he was conscious for it or not — decide what happens to him." }
+              "_comment": "PASS 2 review B1 safety net. post_ko_choice is disableClose, but if it is ever lost (a reload mid-choice), npc_ko won't re-fire and a KO'd NPC can't be talked to (interactions.js:1690). Re-entering the data centre with Torres down and no fate set offers the same two choices by phone.",
+              "eventPattern": "room_entered:data_center",
+              "condition": "globalVars.torres_ko === true && globalVars.final_choice === ''",
+              "onceOnly": false,
+              "conversationMode": "phone-chat",
+              "targetKnot": "post_ko_safety_net"
             }
           ]
         },
@@ -707,34 +838,77 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
           "avatar": "assets/npc/avatars/npc_hacker.png",
           "phoneId": "player_phone",
           "currentKnot": "start",
+          "_comment": "PASS 2 review B2: not in the phone's npcIds. Listed contacts get their start knot preloaded the first time the phone opens (phone-chat-minigame.js:283-380), which played her first call -- and set recruiter_contacted_player -- before Torres was named. She now appears only once a mapping gives her history (phone-chat-ui.js:373-384), and her start knot also guards on torres_identified.",
           "eventMappings": [
             {
-              "eventPattern": "global_variable_changed:torres_identified",
-              "condition": "value === true",
+              "_comment": "PASS 2 (lesson 20): fired on torres_identified, i.e. in the middle of Patricia's scene. Now waits for the naming conversation to close.",
+              "eventPattern": "conversation_closed:patricia_morgan",
+              "condition": "globalVars.torres_identified === true && globalVars.recruiter_contacted_player !== true",
               "conversationMode": "phone-chat",
               "targetKnot": "start",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 2000, "message": "Unknown number. \"TalentStack Executive Recruiting.\" ...you should probably take this." }
+            },
+            {
+              "_comment": "HaX-naming route (Patricia KO'd). Phone chats don't emit conversation_closed, so this can't wait for HaX's call to end; it leaves a message and the player rings back.",
+              "eventPattern": "global_variable_changed:torres_identified",
+              "condition": "value === true && globalVars.patricia_ko === true && globalVars.recruiter_contacted_player !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 8000, "message": "TalentStack Executive Recruiting. We should talk before you do anything you can't take back. - R." }
             }
           ]
         },
         {
+          "_comment": "PASS 2: was a phone NPC. Phone chats never emit conversation_closed (only person-chat-minigame.js:1566 does), so the credits music trigger on conversation_closed:closing_debrief_trigger could never fire. Now a hidden person NPC played as a person-chat cutscene, the m02/m04 debrief pattern. debrief_played (set at the top of the debrief ink) stops a replay after a reload.",
           "id": "closing_debrief_trigger",
-          "displayName": "Agent 0x99",
-          "npcType": "phone",
+          "displayName": "Agent HaX",
+          "npcType": "person",
+          "position": { "x": 500, "y": 500 },
+          "spriteSheet": "female_spy_v2",
+          "avatar": "assets/characters/female_spy_headshot.png",
+          "spriteTalk": "assets/characters/female_spy_talk.png",
+          "spriteVisemes": "assets/characters/female_spy_visemes.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m05_insider_trading/ink/m05_closing_debrief.json",
-          "avatar": "assets/npc/avatars/npc_helper.png",
-          "phoneId": "player_phone",
           "currentKnot": "start",
+          "behavior": { "initiallyHidden": true },
+          "voice": {
+            "name": "Aoede",
+            "style": "Intelligence handler giving a mission debrief in person. Consistent British Received Pronunciation accent throughout. Steady, mid-range pitch; the night is over and she is choosing her words carefully.",
+            "language": "en-GB"
+          },
           "eventMappings": [
             {
-              "eventPattern": "global_variable_changed:final_choice",
-              "condition": "value !== ''",
-              "conversationMode": "phone-chat",
+              "_comment": "Waits for the Torres conversation to close with a fate set AND all four flags in (the concludeRequires gate). If flags are still out, HaX sends the player back and the last flag fires the debrief.",
+              "eventPattern": "conversation_closed:david_torres",
+              "condition": "globalVars.final_choice !== '' && globalVars.flag1_submitted === true && globalVars.flag2_submitted === true && globalVars.flag3_submitted === true && globalVars.flag4_submitted === true && globalVars.debrief_played !== true",
+              "conversationMode": "person-chat",
               "targetKnot": "start",
+              "background": "assets/backgrounds/hq1.png",
               "onceOnly": true,
               "disableClose": true
-            }
+            },
+            {
+              "_comment": "B1 safety-net path: the fate was decided by phone, so no person-chat closes.",
+              "eventPattern": "global_variable_changed:torres_fate_by_phone",
+              "condition": "value === true && globalVars.flag1_submitted === true && globalVars.flag2_submitted === true && globalVars.flag3_submitted === true && globalVars.flag4_submitted === true && globalVars.debrief_played !== true",
+              "conversationMode": "person-chat",
+              "targetKnot": "start",
+              "background": "assets/backgrounds/hq1.png",
+              "onceOnly": true,
+              "disableClose": true
+            },
+<% (1..4).each do |n| %>
+            {
+              "eventPattern": "global_variable_changed:flag<%= n %>_submitted",
+              "condition": "value === true && globalVars.final_choice !== '' && globalVars.flag1_submitted === true && globalVars.flag2_submitted === true && globalVars.flag3_submitted === true && globalVars.flag4_submitted === true && globalVars.debrief_played !== true",
+              "conversationMode": "person-chat",
+              "targetKnot": "start",
+              "background": "assets/backgrounds/hq1.png",
+              "onceOnly": true,
+              "disableClose": true
+            }<%= n < 4 ? ',' : '' %>
+<% end %>
           ]
         }
       ],
@@ -744,7 +918,7 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
           "name": "Building Directory",
           "takeable": true,
           "readable": true,
-          "text": "QUANTUM DYNAMICS CORPORATION - Staff Directory\n\nSECURITY:\nPatricia Morgan - Chief Security Officer\n\nRESEARCH:\nDr. Sarah Chen - Chief Scientist, Lab 3\nDavid Torres - Cryptography Lead, Office 7\n\nIT/OPERATIONS:\nKevin Park - Systems Administrator\n\nMARKETING:\nLisa Park - Marketing Coordinator",
+          "text": "QUANTUM DYNAMICS CORPORATION - Staff Directory\n\nSECURITY:\nPatricia Morgan - Chief Security Officer (off reception)\n\nRESEARCH:\nDr. Sarah Chen - Chief Scientist, research lab\nDavid Torres - Cryptography Lead, office beyond the open-plan\n\nIT/OPERATIONS:\nKevin Park - Systems Administrator, open-plan office\n\nMARKETING:\nLisa Park - Marketing Coordinator\n\nServer hallway: staff badge only.",
           "observations": "Building directory listing key personnel"
         }
       ]
@@ -755,10 +929,22 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
       "connections": {
         "south": "reception_lobby",
         "west": "break_room",
-        "north": ["open_office_area", "server_hallway", "research_lab"]
+        "east": "server_hallway",
+        "north": "open_office_area"
       },
       "npcs": [],
-      "objects": []
+      "objects": [
+        {
+          "type": "notes",
+          "id": "collection_flyer",
+          "name": "Noticeboard Flyer",
+          "takeable": true,
+          "readable": true,
+          "position": { "x": 7, "y": 4 },
+          "text": "COLLECTION FOR ELENA TORRES\n\nMany of you know David's wife Elena is very unwell. The treatment that might help isn't available here, and the insurer has said no.\n\nIf you'd like to chip in, the tin is in the break room. Every bit helps.\n\nThank you - Lisa (Marketing)\n\n[Someone has written underneath in biro: \"Raised so far: £2,140. Target: don't ask.\"]",
+          "observations": "A handwritten flyer pinned to the corridor noticeboard"
+        }
+      ]
     },
 
     "break_room": {
@@ -771,7 +957,7 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
           "id": "lisa_park",
           "displayName": "Lisa Park",
           "npcType": "person",
-          "position": { "x": 3, "y": 3 },
+          "position": { "x": 4, "y": 4 },
           "spriteSheet": "hacker",
           "spriteTalk": "assets/characters/hacker-talk.png",
           "spriteConfig": {
@@ -788,12 +974,12 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
         {
           "type": "notes",
           "id": "entropy_pamphlet",
-          "name": "Insider Threat Initiative Pamphlet",
+          "name": "TalentStack Leaflet",
           "takeable": true,
           "readable": true,
-          "text": "<%= base64_encode('INSIDER THREAT INITIATIVE - ENTROPY Recruitment Division\n\nPhase 1: TARGET IDENTIFICATION\n- Financial vulnerability assessment\n- Access privilege evaluation  \n- Psychological profiling\n\nPhase 2: INITIAL CONTACT\n- Approach via encrypted channels\n- Offer financial compensation\n- Introduce accelerationist ideology\n\nPhase 3: RADICALIZATION\n- Indoctrinate with extremist philosophy\n- Justify casualties as necessary\n- Create dependency') %>",
-          "observations": "LORE Fragment: ENTROPY recruiting methodology",
-          "onPickup": { "setVariable": { "lore_collected": "lore_collected + 1", "entropy_program_exposed": true, "evidence_level": "evidence_level + 1" } }
+          "text": "TALENTSTACK EXECUTIVE RECRUITING\n\"Every career has a turning point.\"\n\nFeeling undervalued? Carrying more than anyone knows?\nWe place exceptional people with partners who reward loyalty - and who look after their families.\n\nDiscreet. Confidential. Life-changing.\n\n[On the back, in blue ink, the same neat hand as the office whiteboards: \"R. called again. Retainer + the debt, all of it. Say yes by Thurs.\" The initials \"D.T.\" have been scribbled out.]",
+          "observations": "A glossy recruitment leaflet, screwed up and dropped behind the coffee machine. Someone has written on the back.",
+          "onRead": { "setVariable": { "found_pamphlet": true } }
         }
       ]
     },
@@ -803,7 +989,8 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
       "dimensions": { "width": 10, "height": 10 },
       "connections": {
         "south": "main_corridor",
-        "north": "torres_office"
+        "north": "torres_office",
+        "west": "research_lab"
       },
       "npcs": [
         {
@@ -823,40 +1010,30 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
           "taskOnKO": "talk_to_kevin",
           "itemsHeld": [
             {
-              "type": "keycard",
-              "name": "Employee Badge",
-              "opens_lock": "employee_badge",
-              "takeable": true,
-              "observations": "Kevin's employee badge - could be cloned"
-            },
-            {
               "type": "lockpick",
+              "id": "kevin_lockpick",
               "name": "Lockpick Set",
               "takeable": true,
-              "observations": "Professional lockpicking tools",
-              "puzzle_graph_unlocks": "patricia_filing_cabinet"
-            },
-            {
-              "type": "rfid_cloner",
-              "name": "RFID Badge Cloner",
-              "takeable": true,
-              "observations": "Security testing tool for cloning RFID badges"
+              "observations": "An old pin-tumbler pick set, left over from last year's penetration test",
+              "puzzle_graph_unlocks": ["torres_briefcase", "patricia_filing_cabinet"]
             },
             {
               "type": "keycard",
+              "id": "torres_office_keycard",
               "name": "Torres Office Keycard",
               "opens_lock": "office_keycard",
               "takeable": true,
-              "puzzle_graph_unlocks": "torres_office",
-              "observations": "Spare keycard for David Torres' office - Kevin has access to all offices for IT support"
+              "observations": "IT's spare card for David Torres' office",
+              "puzzle_graph_unlocks": "torres_office"
             },
             {
               "type": "keycard",
-              "name": "Cloned Employee Badge",
+              "id": "cloned_employee_badge",
+              "name": "Cloned Staff Badge",
               "opens_lock": "employee_badge",
               "takeable": true,
-              "puzzle_graph_unlocks": "server_hallway",
-              "observations": "A cloned copy of Kevin's employee RFID badge - grants access to the server hallway"
+              "observations": "A copy of Kevin's staff badge. Opens the server hallway.",
+              "puzzle_graph_unlocks": "server_hallway"
             }
           ]
         }
@@ -868,17 +1045,17 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
           "name": "Server Password Sticky Note",
           "takeable": true,
           "readable": true,
-          "text": "<%= password_hint_sticky %>",
-          "puzzle_graph_unlocks": "server_room",
-          "observations": "Sticky note with temporary server room password"
+          "text": <%= password_hint_sticky.to_json %>,
+          "observations": "A sticky note curling off the edge of Kevin's monitor",
+          "puzzle_graph_unlocks": "server_room"
         },
         {
           "type": "notes",
           "name": "IT Department Notice",
           "takeable": true,
           "readable": true,
-          "text": "IT SECURITY NOTICE\n\nAll staff: Server room access is restricted.\nTemporary password expires Friday.\nContact Kevin Park for access issues.\n\nReminder: David Torres has been accessing servers at unusual hours.\nIf you notice suspicious activity, report to Security Chief Patricia Morgan.\n\n- IT Department",
-          "observations": "Notice mentioning Torres' unusual server access patterns"
+          "text": "IT SECURITY NOTICE\n\nAll staff: server room access is restricted.\nThe temporary server room password expires Friday.\nAfter-hours server access must be logged with IT in advance.\n\nContact Kevin Park for access issues.\n\n- IT Department",
+          "observations": "A printed notice about server room access"
         }
       ]
     },
@@ -889,7 +1066,7 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
       "lockType": "rfid",
       "requires": "employee_badge",
       "connections": {
-        "south": "main_corridor",
+        "west": "main_corridor",
         "north": "server_room"
       },
       "npcs": [],
@@ -900,7 +1077,7 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
       "type": "room_servers",
       "locked": true,
       "lockType": "password",
-      "requires": "server_password",
+      "requires": "<%= server_room_password %>",
       "connections": {
         "south": "server_hallway",
         "north": "data_center"
@@ -912,7 +1089,8 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
           "id": "vm_launcher_bludit",
           "name": "Bludit CMS Server Terminal",
           "takeable": false,
-          "observations": "Terminal providing access to compromised Bludit CMS server for investigation",
+          "position": { "x": 2, "y": 7 },
+          "observations": "A terminal on the research network. QDC's Bludit research portal is somewhere on this subnet.",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
           "vm": <%= vm_object('attack_vm', {"id":5,"title":"kali","ip":"192.168.100.75","enable_console":true}) %>
         },
@@ -921,7 +1099,7 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
           "id": "flag_station_evidence",
           "name": "SAFETYNET Drop-Site Terminal",
           "takeable": false,
-          "observations": "Secure SAFETYNET terminal for submitting the flags you capture from Torres' Bludit CMS server. Each flag you recover on the box validates a stage of the exfiltration case.",
+          "observations": "Secure SAFETYNET terminal for submitting the flags you capture from the research portal. Each flag validates a stage of the exfiltration case.",
           "acceptsVms": ["qdc_research_server"],
           "flags": <%= flags_for_vm('qdc_research_server', ['flag{leaked_bludit_admin_credentials}', 'flag{bludit_authenticated_upload_rce}', 'flag{torres_staging_manifest}', 'flag{architect_acquisition_authorisation}']) %>,
           "flagRewards": [
@@ -962,70 +1140,40 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
       "connections": {
         "south": "open_office_area"
       },
-      "npcs": [
-        {
-          "id": "david_torres",
-          "displayName": "David Torres",
-          "npcType": "person",
-          "position": { "x": 4, "y": 3 },
-          "spriteSheet": "hacker-red",
-          "spriteTalk": "assets/characters/hacker-red-talk.png",
-          "spriteConfig": {
-            "idleFrameStart": 20,
-            "idleFrameEnd": 23
-          },
-          "storyPath": "scenarios/m05_insider_trading/ink/m05_torres_confrontation.json",
-          "currentKnot": "start",
-          "globalVarOnKO": "torres_ko",
-          "taskOnKO": "make_critical_choice",
-          "behavior": {
-            "initiallyHidden": true,
-            "hostile": {
-              "chaseSpeed": 140,
-              "attackDamage": 20,
-              "pauseToAttack": true
-            }
-          },
-          "eventMappings": [
-            {
-              "eventPattern": "global_variable_changed:torres_identified",
-              "condition": "value === true",
-              "onceOnly": true,
-              "setVisible": true,
-              "conversationMode": "person-chat",
-              "targetKnot": "start",
-              "background": "assets/backgrounds/hq1.png"
-            },
-            {
-              "eventPattern": "npc_ko:david_torres",
-              "onceOnly": true,
-              "conversationMode": "person-chat",
-              "targetKnot": "post_ko_choice",
-              "background": "assets/backgrounds/hq1.png"
-            }
-          ]
-        }
-      ],
+      "npcs": [],
       "objects": [
-        {
-          "type": "notes",
-          "id": "medical_bills",
-          "name": "Medical Bills",
-          "takeable": true,
-          "readable": true,
-          "text": "MOUNTAIN VIEW ONCOLOGY CENTER\n\nPatient: Elena Torres\nDiagnosis: Stage 3 Breast Cancer\n\nTreatment Plan: $380,000\nInsurance Coverage: $0 (Claim Denied)\nOut-of-Pocket: $380,000\n\nPayment Due: Immediately",
-          "observations": "Elena Torres' medical bills showing massive debt",
-          "onPickup": { "setVariable": { "found_medical_bills": true, "evidence_level": "evidence_level + 1" } }
-        },
         {
           "type": "notes",
           "id": "personal_journal",
           "name": "Personal Journal",
           "takeable": true,
           "readable": true,
-          "text": "<%= torres_journal_excerpt %>",
-          "observations": "Torres' journal showing radicalization process",
-          "onPickup": { "setVariable": { "found_torres_journal": true, "evidence_level": "evidence_level + 1", "lore_collected": "lore_collected + 1" } }
+          "text": <%= torres_journal_excerpt.to_json %>,
+          "observations": "A battered notebook in the desk tray. The last few pages are written hard enough to dent the paper.",
+          "onRead": { "setVariable": { "found_torres_journal": true } }
+        },
+        {
+          "type": "suitcase",
+          "id": "torres_briefcase",
+          "name": "Torres' Briefcase",
+          "takeable": false,
+          "locked": true,
+          "lockType": "key",
+          "keyPins": [35, 60, 45, 30],
+          "difficulty": "easy",
+          "observations": "A scuffed leather briefcase under the desk, locked. Pin tumbler.",
+          "contents": [
+            {
+              "type": "notes",
+              "id": "medical_bills",
+              "name": "Medical Bills",
+              "takeable": true,
+              "readable": true,
+              "text": "MOUNTAIN VIEW ONCOLOGY CENTER (California)\nInternational Patient Services\n\nPatient: Elena Torres (referred from the UK)\nDiagnosis: Stage 3 breast cancer\nProgramme: Phase II trial, first dose scheduled Monday\n\nTreatment plan: $380,000\nInsurer: QDC group medical policy\nClaim status: DECLINED (experimental-treatment exclusion)\nBalance due before first dose: $380,000\n\n[Clipped to the front, a loan statement: second charge on the family home, and a payday-loan reminder in red.]",
+              "observations": "Elena Torres' treatment invoice and the debts piling up behind it",
+              "onRead": { "setVariable": { "found_medical_bills": true } }
+            }
+          ]
         }
       ]
     },
@@ -1033,14 +1181,14 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
     "research_lab": {
       "type": "room_lab",
       "connections": {
-        "south": "main_corridor"
+        "east": "open_office_area"
       },
       "npcs": [
         {
           "id": "dr_chen",
           "displayName": "Dr. Sarah Chen",
           "npcType": "person",
-          "position": { "x": 5, "y": 4 },
+          "position": { "x": 6, "y": 5 },
           "spriteSheet": "hacker-red",
           "spriteTalk": "assets/characters/hacker-red-talk.png",
           "spriteConfig": {
@@ -1053,17 +1201,15 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
           "taskOnKO": "talk_to_dr_chen",
           "itemsHeld": [
             {
+              "_comment": "PASS 2: the lab is unlocked, so the badge now opens the server hallway (a second route beside Kevin's clone, lesson 8).",
               "type": "keycard",
-              "name": "Research Access Badge",
-              "takeable": false,
-              "observations": "Dr. Chen's high-level research badge"
-            },
-            {
-              "type": "keycard",
-              "name": "Research Lab Badge",
+              "name": "Research Badge",
               "id": "research_lab_badge",
+              "opens_lock": "employee_badge",
               "takeable": true,
-              "observations": "A duplicate research badge Dr. Chen issues to trusted collaborators"
+              "observations": "Dr. Chen's spare research badge. Senior staff badges open the server hallway.",
+              "puzzle_graph_unlocks": "server_hallway",
+              "puzzle_graph_optional": true
             }
           ]
         }
@@ -1096,16 +1242,20 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
           "itemsHeld": [
             {
               "type": "id_badge",
+              "id": "visitor_badge",
               "name": "Visitor Badge",
               "takeable": true,
               "observations": "Temporary visitor access badge"
             },
             {
               "type": "notes",
-
-              "name": "Employee Financial Records",
+              "id": "torres_vetting_file",
+              "name": "Vetting Aftercare File: D. Torres",
               "takeable": true,
-              "observations": "Authorized access files for employee financial records"
+              "readable": true,
+              "text": "QDC PERSONNEL SECURITY - VETTING AFTERCARE (RESTRICTED)\n\nSubject: David Torres, Cryptography Lead\nClearance: Developed Vetting\n\nChange of circumstances: NOT DECLARED\n\nQuarterly credit check: three new loans in six weeks. Second charge on the family home. One account in arrears.\nKnown context: spouse in treatment abroad, invoiced in US dollars. Company insurer declined cover.\n\nAction: aftercare interview requested three weeks ago.\nCancelled by the CEO's office: \"Classified project. Do not disturb the team.\"\n\n- P. Morgan",
+              "observations": "Patricia's vetting file on David Torres",
+              "onRead": { "setVariable": { "found_vetting_file": true } }
             }
           ]
         }
@@ -1117,9 +1267,9 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
           "name": "Security Incident Log",
           "takeable": true,
           "readable": true,
-          "text": "QUANTUM DYNAMICS - SECURITY INCIDENT LOG\n\nRECENT FLAGGED ACTIVITY:\n\n[2 weeks ago] David Torres: After-hours server room access (11:47 PM)\n[1 week ago] David Torres: Unusual data transfer patterns detected\n[5 days ago] David Torres: Multiple failed login attempts on restricted systems\n[3 days ago] David Torres: Large file downloads from research database\n\nNOTE: Escalated to management. Awaiting response.\nManagement response: 'Torres is working on classified project. Activity authorized.'\n\nSomething feels wrong about this. -PM",
-          "observations": "Patricia's security logs showing Torres' suspicious activity",
-          "onPickup": { "setVariable": { "evidence_level": "evidence_level + 1" } }
+          "text": "QUANTUM DYNAMICS - SECURITY INCIDENT LOG\n\nRECENT FLAGGED ACTIVITY:\n\n[2 weeks ago] Cryptography badge: after-hours server room access (23:47)\n[1 week ago] Research share: unusual transfer volumes, 02:00-04:00\n[5 days ago] Cryptography badge: failed logins on the restricted portal\n[3 days ago] Research share: large downloads, key-material directory\n\nNOTE: Escalated to management. Awaiting response.\nManagement response: 'Cryptography team is on a classified project. Activity authorised.'\n\nThe badge is always one of eight. The hours are always the same. Something is wrong. -PM",
+          "observations": "Patricia's log of flagged activity from the cryptography team",
+          "onRead": { "setVariable": { "found_incident_log": true } }
         },
         {
           "type": "safe",
@@ -1131,14 +1281,15 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
           "keyPins": [40, 55, 30, 50],
           "difficulty": "easy",
           "observations": "A locked filing cabinet behind Patricia's desk - pin tumbler lock",
-          "itemsHeld": [
+          "contents": [
             {
               "type": "notes",
-              "name": "SAFETYNET Mission Brief",
+              "id": "ceo_stand_down_email",
+              "name": "Printed Email from the CEO's Office",
               "takeable": true,
               "readable": true,
-              "text": "CLASSIFIED - SAFETYNET FIELD OPERATION\n\nMISSION: INSIDER THREAT INTERDICTION\nLOCATION: Quantum Dynamics Corporation\nTHREAT LEVEL: CRITICAL\n\nINTELLIGENCE SUMMARY:\nENTROPY's Insider Threat Initiative has recruited an employee at Quantum Dynamics to exfiltrate Project Heisenberg quantum-safe key material and the rollout schedule for the National Emergency-Services Dispatch Network (999 call routing). ENTROPY intends to retain and integrate this capability directly - this is an acquisition, not a sale.\n\nESTIMATED CASUALTIES IF SUCCESSFUL: 30-45 excess civilian deaths, first rollout wave, from degraded dispatch routing during the key-rotation window\n\nYOUR MISSION:\n1. Identify the insider\n2. Gather evidence of ENTROPY recruitment\n3. Prevent final data exfiltration\n4. Neutralize or turn the asset\n\nTIME CRITICAL: Final upload scheduled within 4 hours.\n\n[LORE Fragment - Mission Context]",
-              "observations": "Full mission briefing with casualty projections"
+              "text": "From: Office of the CEO (J. Zhao)\nTo: Patricia Morgan\nSubject: RE: Aftercare interview - cryptography team\n\nPatricia,\n\nStand this down. The Home Office readiness review is in three weeks and we cannot have a personnel security incident on file for the Heisenberg team.\n\nIf there's a problem, we'll deal with it quietly afterwards.\n\nJ.\n\n[Patricia has written across the top in red: \"Kept a copy. If this goes wrong, it went wrong here.\"]",
+              "observations": "The email that stopped Patricia's investigation"
             }
           ]
         }
@@ -1150,13 +1301,83 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
       "connections": {
         "south": "server_room"
       },
-      "npcs": [],
+      "npcs": [
+        {
+          "_comment": "PASS 2: moved here from torres_office. His confrontation is written as 'alone at a terminal, the upload running', and the data centre holds the upload terminal. Hidden until he is named; the room_entered mapping re-shows him after a reload, because an initiallyHidden NPC is re-hidden on room load (npc-sprites.js:222). No pickable lock in this room (lesson 12).",
+          "id": "david_torres",
+          "displayName": "David Torres",
+          "npcType": "person",
+          "position": { "x": 5, "y": 7 },
+          "spriteSheet": "hacker-red",
+          "spriteTalk": "assets/characters/hacker-red-talk.png",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/m05_insider_trading/ink/m05_torres_confrontation.json",
+          "currentKnot": "start",
+          "globalVarOnKO": "torres_ko",
+          "taskOnKO": "confront_torres",
+          "behavior": {
+            "initiallyHidden": true,
+            "hostile": {
+              "chaseSpeed": 140,
+              "attackDamage": 20,
+              "pauseToAttack": true
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:torres_identified",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setVisible": true
+            },
+            {
+              "eventPattern": "room_entered:data_center",
+              "condition": "globalVars.torres_identified === true",
+              "onceOnly": false,
+              "setVisible": true
+            },
+            {
+              "eventPattern": "npc_ko:david_torres",
+              "condition": "globalVars.final_choice === ''",
+              "onceOnly": true,
+              "conversationMode": "person-chat",
+              "targetKnot": "post_ko_choice",
+              "background": "assets/backgrounds/background1.png",
+              "disableClose": true
+            }
+          ]
+        }
+      ],
       "objects": [
         {
           "type": "pc",
           "name": "Exfiltration Upload Terminal",
           "takeable": false,
-          "observations": "Torres' staging terminal for the final data upload - evidence of Operation Schrödinger"
+          "position": { "x": 6, "y": 7 },
+          "locked": false,
+          "observations": "A rack terminal with a USB drive in the front port. A transfer window is open.",
+          "contents": [
+            {
+              "type": "text_file",
+              "name": "transfer_queue.log",
+              "takeable": false,
+              "readable": true,
+              "text": "QUEUE: heisenberg_final.tar.gpg -> drop.talentstack-careers[.]net\nSTAGED: 73% (previous sessions)\nTHIS SESSION: resuming...\nOPERATOR: dtorres\nWINDOW: 20:30 tonight\n\nThe last line has been typed and deleted several times: \"cancel?\""
+            }
+          ]
+        },
+        {
+          "type": "notes",
+          "id": "talentstack_envelope",
+          "name": "Sealed TalentStack Envelope",
+          "takeable": true,
+          "readable": true,
+          "text": "Inside a padded envelope addressed to a PO box in Reading, a printed spreadsheet:\n\nTALENTSTACK - CANDIDATE EVALUATION, NEXT COHORT\n\n47 rows. Initials, employer, role, clearance, and a column headed PRESSURE: 'mortgage arrears', 'custody case', 'gambling', 'carer, no respite', 'passed over x3'.\n\nEmployers include two water companies, a hospital trust, a council payroll office and a rail signalling contractor.\n\nA compliments slip is clipped to the top: \"D. - drop this at the usual place after tonight's upload. Last job, then you're clear. - R.\"",
+          "observations": "A padded envelope tucked under the terminal keyboard. Torres was carrying more than the key material.",
+          "onRead": { "setVariable": { "found_pipeline_list": true } }
         },
         {
           "type": "notes",
@@ -1164,9 +1385,9 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
           "name": "Upload Schedule",
           "takeable": true,
           "readable": true,
-          "text": "OPERATION SCHRÖDINGER - UPLOAD SCHEDULE\n\nSTATUS: PENDING FINAL APPROVAL\n\nData Package: Project Heisenberg key material + 999 dispatch rollout schedule\nTarget: ENTROPY secure drop-site (retained, not resold)\nUpload Window: Tonight, 3:00 AM - 6:00 AM\n\nCompensation: debt relief + standing consultancy retainer\n\nFinal approval required from: The Architect\n\n[CRITICAL EVIDENCE - Exfiltration Plan]",
-          "observations": "Torres' upload schedule showing final exfiltration timing and payment",
-          "onPickup": { "setVariable": { "evidence_level": "evidence_level + 1", "lore_collected": "lore_collected + 1" } }
+          "text": "OPERATION SCHRÖDINGER - UPLOAD SCHEDULE\n\nSTATUS: FINAL APPROVAL GRANTED\n\nData package: Project Heisenberg key material + 999 dispatch rollout schedule\nDestination: ENTROPY drop-site (retained, not resold)\nUpload window: TONIGHT, 20:30\nOperator on site: D. Torres\n\nAcquisition budget released to the Initiative: $847,000 in cryptocurrency, via the TalentStack wallet.\nOperator compensation (from that budget): debt relief + standing consultancy retainer.\n\nApproved by: The Architect",
+          "observations": "Torres' upload schedule: the final window is tonight",
+          "onRead": { "setVariable": { "found_upload_schedule": true } }
         },
         {
           "type": "notes",
@@ -1174,9 +1395,9 @@ torres_journal_excerpt = "Met with the Recruiter again. Debt relief plus a stand
           "name": "Data Package Manifest",
           "takeable": true,
           "readable": true,
-          "text": "PROJECT HEISENBERG - PACKAGE CONTENTS\n\n- quantum-safe_key_material_v3.tar.gpg - lattice-based key exchange parameters, production candidate set\n- dispatch_network_rollout_schedule.xlsx - National Emergency-Services Dispatch Network (999 call routing), phased cutover dates by region including key-rotation windows\n- handover_note.txt - sloppy admin credential note from the research portal\n\nImpact Assessment:\nAcquisition of this data will enable ENTROPY to:\n- Hold the dispatch network's key material during a rotation window\n- Force a degraded routing path for ambulance, fire and police dispatch\n- Integrate the capability directly - it is not being resold\n\nProjected casualties: 30-45 excess civilian deaths, first rollout wave\n\n[CRITICAL EVIDENCE - Data Contents]",
+          "text": "PROJECT HEISENBERG - PACKAGE CONTENTS\nStaged by: D. Torres\n\n- quantum-safe_key_material_v3.tar.gpg - lattice-based key exchange parameters, production candidate set\n- dispatch_network_rollout_schedule.xlsx - National Emergency-Services Dispatch Network (999 call routing), phased cutover dates by region including key-rotation windows\n- handover_note.txt - sloppy admin credential note from the research portal\n\nImpact assessment (ENTROPY copy):\n- Hold the dispatch network's key material through a rotation window\n- Force a degraded routing path for ambulance, fire and police dispatch\n- Retain the capability. Not for resale.\n\nProjected casualties: 30-45 excess civilian deaths, first rollout wave",
           "observations": "Manifest showing what Torres is staging and the projected casualties",
-          "onPickup": { "setVariable": { "evidence_level": "evidence_level + 1", "lore_collected": "lore_collected + 1" } }
+          "onRead": { "setVariable": { "found_manifest": true } }
         }
       ]
     }

@@ -1,17 +1,32 @@
 // ===========================================
-// PHONE NPC: Agent 0x99 (Handler Support)
+// PHONE NPC: Agent HaX (handler support)
 // Mission 5: Insider Trading
-// Break Escape - Remote Support, Field Guides, Moral Sounding Board
+// Remote support, field guides, KO relays, moral sounding board
+//
+// PASS 2: never reaches DONE (lesson 21). Every exit is
+// #exit_conversation followed by -> support_hub.
+// Speaker id stays agent_0x99 (the NPC id); the display name is Agent HaX,
+// as in m02, m03, m04 and m06.
 // ===========================================
 
 VAR first_contact = true
 
-// ---- Mission state vars (synced from globalVars by engine at call-open) ----
+// ---- Mission state (synced from globalVars when the call opens) ----
 VAR player_name = "Agent 0x00"
-VAR evidence_level = 0
-VAR entropy_program_exposed = false
+VAR found_pamphlet = false
 VAR found_medical_bills = false
 VAR found_torres_journal = false
+VAR found_vetting_file = false
+VAR found_manifest = false
+VAR found_upload_schedule = false
+VAR found_pipeline_list = false
+VAR patricia_ko = false
+VAR patricia_authorised_office = false
+VAR torres_ko = false
+VAR final_choice = ""
+VAR torres_arrested = false
+VAR torres_killed = false
+VAR torres_fate_by_phone = false
 VAR architect_approval_confirmed = false
 VAR recruiter_contacted_player = false
 VAR flag1_submitted = false
@@ -21,12 +36,9 @@ VAR flag4_submitted = false
 VAR bludit_server_discovered = false
 VAR torres_identified = false
 
-// Field-guide exposure flags. Engine-owned: each _offered is set by an
-// eventMapping when the player actually meets the thing the guide is about
-// (exposure-gated, never time-gated), and each _hint_given is set here when
-// the guide is handed over.
-VAR rfid_guide_offered = false
-VAR rfid_guide_hint_given = false
+// Field-guide exposure flags. Each _offered is set by an eventMapping when
+// the player meets the thing the guide is about; each _hint_given is set
+// here when the guide is handed over.
 VAR bludit_guide_offered = false
 VAR bludit_guide_hint_given = false
 VAR lockpicking_guide_offered = false
@@ -46,6 +58,12 @@ VAR flag3_discussed = false
 VAR flag4_discussed = false
 VAR confrontation_advice_given = false
 
+=== function has_motive()
+~ return found_medical_bills or found_torres_journal or found_vetting_file
+
+=== function has_exfil()
+~ return flag3_submitted or found_manifest or found_upload_schedule
+
 // ===========================================
 // ENTRY POINT
 // ===========================================
@@ -60,39 +78,38 @@ VAR confrontation_advice_given = false
 === first_call ===
 #speaker:agent_0x99
 
-Agent 0x99: {player_name}. You're in. Four hours before the final upload window closes, so let's not waste them.
+Agent HaX: {player_name}. You're in. Four hours until the final upload window, so let's use them.
 
-Agent 0x99: Patricia Morgan runs security here — she's your handler on the ground and she called this in. Get her the picture as you build it.
+Agent HaX: Patricia Morgan runs security here. She called us in, and she's the one who can open doors for you. Keep her in the picture as you build it.
 
-Agent 0x99: Somewhere in that building is the person feeding ENTROPY's Insider Threat Initiative the quantum-safe key material for the 999 dispatch network. Find them before 3 AM.
+Agent HaX: Somewhere in that building is the person feeding ENTROPY the key material for the 999 dispatch network. Find them before half past eight tonight.
 
-+ [Understood]
++ [I'll get to work.]
     -> support_hub
 
 + [What should I know going in?]
-    Agent 0x99: Nobody in that building is your enemy by default. This isn't a hostile compound — it's an office with one person who made a terrible choice under terrible pressure.
-    Agent 0x99: Interview people. Build a profile. The evidence will tell you who, and it'll tell you why. You need both before you confront anyone.
+    Agent HaX: Nobody in that building is your enemy by default. It's an office, with one person in it who made a terrible choice under terrible pressure.
+    Agent HaX: Talk to people. The evidence will tell you who, and it'll tell you why. You need both before you confront anyone.
     -> support_hub
 
 + [Anything I should be careful of?]
-    Agent 0x99: Don't tip your hand before you're ready. If word gets back to the insider that Security has a name, they accelerate — and you lose the chance to turn them instead of just arresting them.
-    Agent 0x99: And watch for anyone who reaches out to you directly. ENTROPY runs a recruitment pipeline. You might not be the only target in the building tonight.
+    Agent HaX: Don't show your hand early. If the insider hears that Security has a name, they'll bring the upload forward, and you lose any chance of turning them.
+    Agent HaX: And watch for anyone who reaches out to you directly. ENTROPY recruits. You might not be the only target in the building tonight.
     -> support_hub
 
 // ===========================================
-// SUPPORT HUB -- gated by mission state
-// Options only appear when they're relevant, and retire once used
-// (except the moral sounding board, which stays open)
+// SUPPORT HUB (gated by mission state)
+// Options appear when relevant and retire once used, except the moral
+// sounding board, which stays open.
 // ===========================================
 
 === support_hub ===
 #speaker:agent_0x99
 
-// Evidence topics -- unlock as the player finds each piece
-+ {entropy_program_exposed and not recruitment_method_discussed} [I've got the Insider Threat Initiative pamphlet -- is this real?]
++ {found_pamphlet and not recruitment_method_discussed} [Someone here has been talking to a recruiter called TalentStack.]
     -> topic_recruitment_method
 
-+ {found_medical_bills and not leverage_discussed} [Elena Torres has a $380,000 hole in her life. Is that the hook?]
++ {(found_medical_bills or found_vetting_file) and not leverage_discussed} [Torres is buried in debt he's hiding. Is that the hook?]
     -> topic_leverage
 
 + {found_torres_journal and not journal_discussed} [I've read his journal. He knew.]
@@ -104,51 +121,43 @@ Agent 0x99: Somewhere in that building is the person feeding ENTROPY's Insider T
 + {recruiter_contacted_player and not recruiter_discussed} [The Recruiter just called me.]
     -> topic_recruiter
 
-// VM flag status -- retiring, one per flag
-+ {flag1_submitted and not flag1_discussed} [First flag's in. What's the plan for that Bludit box?]
++ {flag1_submitted and not flag1_discussed} [First flag's in. What next on the Bludit box?]
     -> topic_flag1
 
 + {flag2_submitted and not flag2_discussed} [Second flag's in. I've got a shell.]
     -> topic_flag2
 
-+ {flag3_submitted and not flag3_discussed} [Third flag's in. Found his staging manifest.]
++ {flag3_submitted and not flag3_discussed} [Third flag's in. I found his staging manifest.]
     -> topic_flag3
 
 + {flag4_submitted and not flag4_discussed} [Fourth flag's in. Root, and the Architect's sign-off.]
     -> topic_flag4
 
-// Optional field guide: RFID cloning (offered on first failed contact with the server hallway reader)
-+ {rfid_guide_offered and not rfid_guide_hint_given} [Can you send me the RFID cloning field guide?]
-    -> request_rfid_guide
-
-// Optional field guide: Bludit CMS (offered on reaching the terminal)
-+ {bludit_guide_offered and not bludit_guide_hint_given} [This Bludit box -- where do I even start?]
++ {bludit_guide_offered and not bludit_guide_hint_given} [This Bludit box. Where do I even start?]
     -> request_bludit_guide
 
-// Optional field guide: lockpicking (offered on first contact with the filing cabinet)
-+ {lockpicking_guide_offered and not lockpicking_guide_hint_given} [Can you send me the lockpicking field guide?]
++ {lockpicking_guide_offered and not lockpicking_guide_hint_given} [Send me the lockpicking guide.]
     -> request_lockpicking_guide
 
-// Optional field guide: reconnaissance (offered alongside the Bludit terminal)
-+ {recon_guide_offered and not recon_guide_hint_given} [Can you send me the network recon field guide?]
++ {recon_guide_offered and not recon_guide_hint_given} [Send me the network recon guide.]
     -> request_recon_guide
 
-// Confrontation approach -- once the case is strong enough
-+ {evidence_level >= 4 and not confrontation_advice_given} [I have enough. Do I go in soft or hard?]
++ {patricia_ko and not torres_identified} [Patricia's down. I'll give you the name instead.]
+    -> name_to_hax
+
++ {torres_identified and final_choice == "" and not confrontation_advice_given} [I'm going in. Soft or hard?]
     -> confrontation_advice
 
-// Moral sounding board -- returnable, not retired
-+ {evidence_level >= 2} [What ENTROPY did to him -- I need to talk it through.]
++ {has_motive()} [What ENTROPY did to him. I need to talk it through.]
     -> moral_sounding_board
 
-// Always available
 + [Got any general advice?]
     -> general_advice
 
-+ [I'm good, just checking in]
-    Agent 0x99: Stay focused. You're on a timeline.
++ [Just checking in.]
+    Agent HaX: Stay focused. You're on a clock.
     #exit_conversation
-    -> DONE
+    -> support_hub
 
 // ===========================================
 // EVIDENCE TOPICS
@@ -158,75 +167,79 @@ Agent 0x99: Somewhere in that building is the person feeding ENTROPY's Insider T
 #speaker:agent_0x99
 ~ recruitment_method_discussed = true
 
-Agent 0x99: Real, and textbook. Phase one is financial vulnerability assessment. Phase two, contact and an offer. Phase three, they radicalize you gradually until the casualties stop feeling like the point.
+Agent HaX: TalentStack Executive Recruiting is the Insider Threat Initiative's front, and "R." is the Recruiter. Find someone in trouble, make an offer, then sell them the ideology until the casualties stop feeling like the point.
 
-Agent 0x99: That pamphlet didn't fall out of someone's bag by accident. Somebody in that building is either running the pipeline or already caught in it.
+Agent HaX: A leaflet with an answer scribbled on the back means somebody in that building has already said yes.
 
-+ [So I'm looking for a target, not a recruiter]
-    Agent 0x99: Probably a target. ENTROPY doesn't usually put the recruiter on-site — too much exposure. Look for someone the profile fits: access, and a reason to need money fast.
++ [So I'm looking for a target, not a recruiter.]
+    Agent HaX: Probably. The Recruiter doesn't sit on site; too much exposure. Look for someone with access and a reason to need money fast.
     -> support_hub
 
-+ [Noted]
++ [Then I'm looking for whoever wrote on the back.]
+    Agent HaX: Handwriting, initials, a desk the leaflet came from. Start there.
     -> support_hub
 
 === topic_leverage ===
 #speaker:agent_0x99
 ~ leverage_discussed = true
 
-Agent 0x99: $380,000 in medical debt, insurance claim denied, and a wife with Stage 3 cancer. That's not a coincidence, that's a target file.
+Agent HaX: Three hundred and eighty thousand dollars for a trial abroad, an insurer that walked away, and a wife with Stage 3 cancer. That's a target file, written by his own bad luck.
 
-Agent 0x99: ENTROPY doesn't recruit ideologues first. They recruit desperate people and sell them the ideology afterwards, to make the choice feel like it was theirs.
+Agent HaX: ENTROPY rarely recruits believers. They recruit desperate people and sell them the belief afterwards, so the choice feels like it was theirs.
 
-+ [That's monstrous]
-    Agent 0x99: It's efficient. Which is worse, depending on your mood tonight.
++ [That's monstrous.]
+    Agent HaX: It's efficient. Some nights that's worse.
     -> support_hub
 
-+ [Understood]
++ [Desperate people can still say no.]
+    Agent HaX: They can. Keep hold of that when you're standing in front of him. Keep hold of the rest too.
     -> support_hub
 
 === topic_journal ===
 #speaker:agent_0x99
 ~ journal_discussed = true
 
-Agent 0x99: Then you've seen the rationalization work in real time. Thirty to forty-five lives, and he wrote it down and kept going anyway.
+Agent HaX: Then you've watched him talk himself round, on paper. Thirty to forty-five lives, written down, and he kept going.
 
-Agent 0x99: That's the part that should worry you more than the recruitment pitch. He's not confused about the cost. He's decided he can live with it.
+Agent HaX: That should worry you more than the recruitment pitch. He understands the cost. He decided he could live with it.
 
-+ [Does that change how I should approach him?]
-    Agent 0x99: It means don't expect him to be surprised when you lay out what he's done. He already knows. What you're offering him is a way out he hasn't let himself consider yet.
++ [Does that change how I approach him?]
+    Agent HaX: Don't expect him to be surprised when you lay it out. He already knows. What you can offer him is a way out he hasn't let himself look at.
     -> support_hub
 
-+ [Noted]
++ [He also wrote "what have I become".]
+    Agent HaX: He did. That line is the door, if you want one.
     -> support_hub
 
 === topic_architect ===
 #speaker:agent_0x99
 ~ architect_discussed = true
 
-Agent 0x99: Read that twice. A named casualty projection, reviewed, and signed off as an acceptable cost of doing business.
+Agent HaX: Read it twice. A casualty projection, reviewed, and signed off as an acceptable cost.
 
-Agent 0x99: That's not a rogue cell improvising. That's a chain of command that priced human lives and approved the invoice. It's the strongest evidence you'll get all night — it proves this goes above Torres.
+Agent HaX: No rogue cell improvised that. Someone priced human lives and approved the invoice. It's the strongest thing you'll find tonight, because it puts this above Torres.
 
-+ [This is bigger than one insider]
-    Agent 0x99: It always was. Torres is the delivery mechanism. The Architect is the decision. Keep both in the file.
++ [This is bigger than one insider.]
+    Agent HaX: It always was. Torres is the delivery. The Architect is the decision. Keep both in the file.
     -> support_hub
 
-+ [Understood]
++ [Then Torres is the only thread we've got to it.]
+    Agent HaX: For tonight, yes. Bear that in mind when you decide what happens to him.
     -> support_hub
 
 === topic_recruiter ===
 #speaker:agent_0x99
 ~ recruiter_discussed = true
 
-Agent 0x99: She's ENTROPY's talent pipeline, dressed up as an executive search firm. If she called you directly, you're close enough to worry her.
+Agent HaX: The Recruiter runs ENTROPY's talent pipeline behind an executive search firm. If she rang you herself, you've got close enough to worry her.
 
-Agent 0x99: Whatever she offered you, remember she's very good at making a bad trade sound reasonable. That's the entire job.
+Agent HaX: Whatever she offered, she's very good at making a bad trade sound reasonable. That's the whole of her job.
 
-+ [She tried to sell me a deal]
-    Agent 0x99: Of course she did. Weigh it on its own terms, not on how reasonable she made it sound. Her voice is the product.
++ [She offered me a deal.]
+    Agent HaX: Of course she did. Weigh it on what it costs, not on how reasonable she sounded.
     -> support_hub
 
-+ [I'll be careful]
++ [I'll be careful.]
     -> support_hub
 
 // ===========================================
@@ -237,9 +250,9 @@ Agent 0x99: Whatever she offered you, remember she's very good at making a bad t
 #speaker:agent_0x99
 ~ flag1_discussed = true
 
-Agent 0x99: First flag verified. That handover note was sloppy IT work — but it got you the login.
+Agent HaX: First flag verified. Somebody's sloppy handover note got you the login.
 
-Agent 0x99: Keep working that Bludit server. Three more flags to go.
+Agent HaX: Now use it. The upload flaw needs you logged in, and you are.
 
 -> support_hub
 
@@ -247,9 +260,9 @@ Agent 0x99: Keep working that Bludit server. Three more flags to go.
 #speaker:agent_0x99
 ~ flag2_discussed = true
 
-Agent 0x99: Second flag secured. Authenticated image-upload RCE — you've got a shell.
+Agent HaX: Second flag in. You've got a shell on their portal.
 
-Agent 0x99: You're building the digital evidence chain. Good work.
+Agent HaX: Look for whoever's been using that box to stage files. Their home directory will tell you who.
 
 -> support_hub
 
@@ -257,9 +270,9 @@ Agent 0x99: You're building the digital evidence chain. Good work.
 #speaker:agent_0x99
 ~ flag3_discussed = true
 
-Agent 0x99: Third flag verified. Torres' own staging manifest — the Data Package Manifest.
+Agent HaX: Third flag verified. His staging manifest, under his own name.
 
-Agent 0x99: One more flag — the Architect's authorisation. Find it.
+Agent HaX: One more: the authorisation behind it. That'll be somewhere only root can read.
 
 -> support_hub
 
@@ -267,38 +280,110 @@ Agent 0x99: One more flag — the Architect's authorisation. Find it.
 #speaker:agent_0x99
 ~ flag4_discussed = true
 
-Agent 0x99: Final flag secured. The Architect's acquisition authorisation.
+Agent HaX: All four in. The Architect's acquisition authorisation.
 
-Agent 0x99: A casualty projection, signed off and filed as acceptable cost. This proves ENTROPY's leadership approved the operation. Excellent work.
+Agent HaX: A casualty projection, signed and filed as an acceptable cost. ENTROPY's leadership approved this knowing the number.
 
 -> support_hub
 
 // ===========================================
-// FIELD GUIDE HANDOVERS
-// Each sets its _hint_given so the offer retires, and pushes the
-// lab-workstation item into the player's inventory.
+// NAMING THE INSIDER TO HAX (Patricia KO'd)
 // ===========================================
 
-=== request_rfid_guide ===
+=== name_to_hax ===
 #speaker:agent_0x99
-~ rfid_guide_hint_given = true
-#give_item:lab-workstation:safetynet_field_guide_rfid_cloning
-
-Agent 0x99: Sending it now. Read the card, crack the keys, emulate it at the reader — that's the whole shape of it.
-
-+ [Received]
-    Agent 0x99: That badge reader's the only thing between you and the server hallway. Go.
+{has_motive() and has_exfil():
+    You: David Torres. I've got why he'd do it, and proof it's leaving the building.
+    Agent HaX: That's enough for me. I'm flagging him now.
+    #complete_task:identify_torres
+    ~ torres_identified = true
+    Agent HaX: His badge is in the data centre, north of the server room, and the window's close. Hang up and move.
+    + [On my way.]
+        #exit_conversation
+        -> support_hub
+- else:
+    {has_motive():
+        Agent HaX: You've got why. I need proof it's leaving the building: the server room, the portal, the data centre.
+    - else:
+        {has_exfil():
+            Agent HaX: You can see the data moving. Now tell me who, and why. Eight people could have touched that share.
+        - else:
+            Agent HaX: Not yet. I need a reason and I need proof. Bring me both.
+        }
+    }
     -> support_hub
+}
+
+// ===========================================
+// KO RELAYS
+// ===========================================
+
+// npc_ko:patricia_morgan. obtain_security_badge is a collect task, so the
+// player needs a real id_badge; and the office card no longer needs her say-so.
+=== on_patricia_ko_relay ===
+#speaker:agent_0x99
+#give_item:id_badge:relayed_contractor_pass
+~ patricia_authorised_office = true
+Agent HaX: Patricia's down. She was our sponsor in that building, {player_name}.
+Agent HaX: I've printed you a contractor pass against their visitor system, and Kevin will get a message "from Security" saying you can have the office spares.
+Agent HaX: When you've got a name and the proof, bring it to me instead of her.
++ [Understood. I'll bring it to you.]
+    #exit_conversation
+    -> support_hub
+
+// npc_ko:kevin_park. His items can't drop in a later-loaded room (npc._sprite
+// gap), so HaX pushes working copies of both cards.
+=== on_kevin_ko_relay ===
+#speaker:agent_0x99
+#give_item:keycard:relayed_server_badge
+#give_item:keycard:relayed_torres_office_card
+Agent HaX: Kevin's down. That wasn't how I'd have done it.
+Agent HaX: I've pulled his badge and the office spare off the reader logs and pushed copies to your kit. You've got the server hallway and Torres' office.
+Agent HaX: Whatever else he knew, you'll have to find the hard way.
++ [I'll manage.]
+    #exit_conversation
+    -> support_hub
+
+// room_entered:data_center while Torres is KO'd and no fate is set: the
+// post-KO person-chat was lost (a reload mid-choice). Same two choices.
+=== post_ko_safety_net ===
+#speaker:agent_0x99
+{final_choice != "":
+    -> support_hub
+}
+Agent HaX: Torres is still on the floor where he went down, and he isn't moving much. The upload's stopped. What are you doing with him?
++ [Stay with him. Recovery position, pressure on the wound, call it in.]
+    You: I'm staying with him. Get Patricia and an ambulance down here.
+    ~ torres_arrested = true
+    #complete_task:make_critical_choice
+    ~ final_choice = "combat_nonlethal"
+    Agent HaX: Calling it now. Patricia will ring the police. Keep his airway clear.
+    ~ torres_fate_by_phone = true
+    #exit_conversation
+    -> support_hub
++ [Leave him bleeding. He's not my problem.]
+    You: I'm leaving him. Someone else can deal with it.
+    ~ torres_killed = true
+    #complete_task:make_critical_choice
+    ~ final_choice = "combat_lethal"
+    Agent HaX: ...Understood. I'll note the time.
+    ~ torres_fate_by_phone = true
+    #exit_conversation
+    -> support_hub
+
+// ===========================================
+// FIELD GUIDE HANDOVERS
+// ===========================================
 
 === request_bludit_guide ===
 #speaker:agent_0x99
 ~ bludit_guide_hint_given = true
 #give_item:lab-workstation:safetynet_field_guide_bludit_cms
 
-Agent 0x99: Bludit CMS guide uploaded. Start with what's leaked in plain sight, then work up to an authenticated image-upload RCE for the shell.
+Agent HaX: Bludit guide's in your kit. Start with what's leaked in plain sight, then work up to the authenticated upload flaw for a shell.
 
-+ [Got it]
-    Agent 0x99: Recon first. Don't skip straight to exploitation — the leaked credentials get you further, faster.
++ [Got it.]
+    Agent HaX: Recon first. The leaked login gets you further, faster, than guessing ever will.
     -> support_hub
 
 === request_lockpicking_guide ===
@@ -306,12 +391,12 @@ Agent 0x99: Bludit CMS guide uploaded. Start with what's leaked in plain sight, 
 ~ lockpicking_guide_hint_given = true
 #give_item:lab-workstation:safetynet_field_guide_lockpicking
 
-Agent 0x99: Lockpicking guide uploaded to your terminal.
+Agent HaX: Lockpicking guide's in your kit.
 
-Agent 0x99: Light tension, find the binding pin, set it, repeat. Read the lock by feel — don't force it.
+Agent HaX: Light tension, find the binding pin, set it, repeat. Feel the lock. Don't force it.
 
-+ [Received]
-    Agent 0x99: Quiet and patient gets you through that cabinet. Go.
++ [Thanks.]
+    Agent HaX: Quiet and patient gets you through it.
     -> support_hub
 
 === request_recon_guide ===
@@ -319,12 +404,12 @@ Agent 0x99: Light tension, find the binding pin, set it, repeat. Read the lock b
 ~ recon_guide_hint_given = true
 #give_item:lab-workstation:safetynet_field_guide_recon_network_mapping
 
-Agent 0x99: Uploading the recon guide now.
+Agent HaX: Recon guide's on its way.
 
-Agent 0x99: Use it to map what's alive on that network before you touch anything — the Bludit box won't be the only thing listening.
+Agent HaX: Map what's alive on that subnet before you touch anything. The Bludit box won't be the only thing listening.
 
-+ [Received]
-    Agent 0x99: Fast reconnaissance, clean notes, then strike.
++ [Thanks.]
+    Agent HaX: Quick scan, clean notes, then go in.
     -> support_hub
 
 // ===========================================
@@ -335,65 +420,73 @@ Agent 0x99: Use it to map what's alive on that network before you touch anything
 #speaker:agent_0x99
 ~ confrontation_advice_given = true
 
-Agent 0x99: You have enough to move. Now it's a question of how.
+Agent HaX: You've named him. Now it's about how you go in.
 
-Agent 0x99: Soft: give him the exit ENTROPY never offered — turn double agent, keep his family whole, feed us the network from inside. Slower, and it depends entirely on whether he wants out.
+Agent HaX: Soft: give him the exit ENTROPY never offered. He goes back to his desk working for us, and his family stays whole. It only works if he wants out.
 
-Agent 0x99: Hard: arrest him clean, evidence in hand, no negotiation. Faster, safer for you, and it's the version where nobody gets a second chance to change their mind.
+Agent HaX: Hard: you hold him, hand him to Patricia, and she calls the police. We have no badge, {player_name}. Whatever happens to him after that is up to them.
 
 + [Which do you recommend?]
-    Agent 0x99: I'm not going to answer that. You've read his journal. You know what he's carrying. That has to be your call, not mine.
+    Agent HaX: I'm not going to answer that. You've seen what he's carrying. It has to be your call.
     -> support_hub
 
-+ [I'll decide when I'm standing in front of him]
-    Agent 0x99: That's honestly the right answer. Read the room when you get there.
++ [I'll decide when I'm standing in front of him.]
+    Agent HaX: That's the right answer. Read the room when you get there.
     -> support_hub
 
 // ===========================================
-// MORAL SOUNDING BOARD -- returnable hub topic
+// MORAL SOUNDING BOARD (returnable)
 // ===========================================
 
 === moral_sounding_board ===
 #speaker:agent_0x99
 
-Agent 0x99: ENTROPY weaponizes suffering. They find someone drowning and offer a rope with a hook hidden in it. That's not an excuse for what he's done — it's the machine that built the choice.
+Agent HaX: ENTROPY weaponises suffering. They find someone drowning and offer a rope with a hook in it. That doesn't excuse him. It explains the machine that built the choice.
 
-Agent 0x99: But they still made choices. Every step from that first pamphlet to tonight's upload window, Torres could have walked into Patricia's office instead. He didn't.
+Agent HaX: He still made choices. Every step from that first phone call to tonight, he could have walked into Patricia's office instead. He didn't.
 
 + [Does knowing why change what he deserves?]
-    Agent 0x99: It changes what's just, maybe. It doesn't undo thirty to forty-five projected deaths if that upload goes out. Both things are true at once — that's the part nobody's philosophy handles cleanly.
+    Agent HaX: Maybe it changes what's fair. It doesn't undo thirty to forty-five deaths if that upload goes. Both are true at once, and nobody's philosophy handles that cleanly.
     -> support_hub
 
 + [What happens to people like him after this?]
-    Agent 0x99: Depends entirely on what you decide tonight. Turned, arrested, or worse — each one writes a different ending for him and for Elena. That's not a small thing to be carrying, {player_name}.
+    Agent HaX: That depends on what you do tonight. Each way you go writes a different ending for him and for Elena. It's a heavy thing to carry, {player_name}.
     -> support_hub
 
-+ [I don't know what I think yet]
-    Agent 0x99: You don't have to, not until you're standing in front of him. Call me again if it helps to talk it through.
++ [I don't know what I think yet.]
+    Agent HaX: You don't have to, until you're in front of him. Call me again if it helps.
     -> support_hub
 
 // ===========================================
-// GENERAL ADVICE (state-aware fallback)
+// GENERAL ADVICE (state-aware)
 // ===========================================
 
 === general_advice ===
 #speaker:agent_0x99
 
-{not entropy_program_exposed and not found_medical_bills and not found_torres_journal:
-    Agent 0x99: Start with people. Interview the staff, and keep your eyes open in the break room and offices. Evidence surfaces from conversation as much as searches.
-    -> support_hub
-}
-{(entropy_program_exposed or found_medical_bills or found_torres_journal) and evidence_level < 4:
-    Agent 0x99: You have leads. Now correlate them — physical evidence from the offices plus digital evidence from the Bludit server gets you to a name and a case.
-    -> support_hub
-}
-{evidence_level >= 4 and not torres_identified:
-    Agent 0x99: You have enough evidence. Name your suspect to Patricia and get ready to confront him.
-    -> support_hub
-}
 {torres_identified:
-    Agent 0x99: You've named him. Whatever you decide when you face him, be ready for anything — ENTROPY trains people in counter-interrogation.
+    Agent HaX: You've named him. Whatever you decide when you face him, be ready for anything. People with nothing left to lose don't always behave.
     -> support_hub
 }
-Agent 0x99: You know what you're doing. Trust your training.
+{has_motive() and has_exfil():
+    {patricia_ko:
+        Agent HaX: You have both halves of the case. Patricia's out of it, so give me the name.
+    - else:
+        Agent HaX: You have both halves of the case. Take it to Patricia and name him.
+    }
+    -> support_hub
+}
+{has_motive():
+    Agent HaX: You know why someone would. Now prove it's leaving the building. Server room first, then whatever's behind it.
+    -> support_hub
+}
+{has_exfil():
+    Agent HaX: You can see it leaving. Now find out who and why. The offices, the break room, and Patricia's files.
+    -> support_hub
+}
+{not found_pamphlet:
+    Agent HaX: Start with people. Patricia, Kevin in IT, anyone who notices things. Evidence comes out of conversations as often as drawers.
+    -> support_hub
+}
+Agent HaX: You know what you're doing. Trust your training.
 -> support_hub

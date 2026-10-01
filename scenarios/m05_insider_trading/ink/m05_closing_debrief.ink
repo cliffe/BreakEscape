@@ -1,190 +1,172 @@
 // ===========================================
 // Mission 5: Closing Debrief - Act 3
-// Reflects on player choices and mission outcome
+// Reflects on player choices and mission outcome.
+//
+// PASS 2:
+// - The case is read from found_* booleans and flags. evidence_level and
+//   lore_collected never counted (the engine assigns setVariable values
+//   literally), so every run used to land in the "thin case" branch.
+// - Each ending has its own authored branch; combat_nonlethal no longer
+//   borrows the "he lawyered up" text, and the combat_lethal branch matches
+//   what the player actually did (left him on the floor).
+// - The Recruiter's offer now has a consequence here and in the credits.
+// - Meta references ("Mission 6", "Missions 6 through 10") are in-world.
+// - Linear person-chat cutscene (hidden NPC, the m02/m04 pattern): it ends
+//   the mission, so it terminates at END. debrief_played stops a replay.
+// - Canon (review M2): SAFETYNET has no arrest powers. Torres is handed to
+//   the police via Patricia; sentencing is not SAFETYNET's to promise.
 // ===========================================
 
-// Variables from Act 1 (Opening)
+// Act 1 (opening)
 VAR player_approach = "" // cautious, aggressive, diplomatic
-VAR mission_priority = "" // thoroughness, speed, stealth
-VAR knows_full_stakes = false // Did player ask about casualties?
-VAR handler_trust = 50 // 0-100 Agent 0x99 trust
+VAR knows_full_stakes = false
+VAR handler_trust = 50
 
-// Variables from Act 2 (Investigation)
-VAR objectives_completed = 0 // Number completed
-VAR lore_collected = 0 // Number of LORE fragments
-VAR evidence_level = 0 // 0-7+ evidence quality
+// Act 2 (the case)
+VAR found_pamphlet = false
+VAR found_incident_log = false
+VAR found_vetting_file = false
+VAR found_medical_bills = false
+VAR found_torres_journal = false
+VAR found_upload_schedule = false
+VAR found_manifest = false
+VAR flag3_submitted = false
+VAR flag4_submitted = false
 
-// Variables from Act 3 (Confrontation)
+// Act 3 (confrontation)
 VAR final_choice = "" // turn_double_agent, arrest, combat_nonlethal, combat_lethal, public_exposure
-VAR confront_stance = "" // sympathetic or hardline — how the player framed Torres in the confrontation
-VAR torres_turned = false
-VAR torres_arrested = false
-VAR torres_killed = false
+VAR confront_stance = "" // sympathetic or hardline
 VAR elena_treatment_funded = false
-VAR entropy_program_exposed = false
+VAR recruiter_deal_offered = false
+VAR recruiter_deal_accepted = false
+VAR found_pipeline_list = false
+VAR debrief_played = false
+VAR recruiter_deal_confessed = false
 
 VAR player_name = "Agent 0x00"
+
+=== function case_strength()
+~ temp n = 0
+{found_pamphlet:
+    ~ n = n + 1
+}
+{found_incident_log:
+    ~ n = n + 1
+}
+{found_vetting_file:
+    ~ n = n + 1
+}
+{found_medical_bills:
+    ~ n = n + 1
+}
+{found_torres_journal:
+    ~ n = n + 1
+}
+{found_upload_schedule:
+    ~ n = n + 1
+}
+{found_manifest:
+    ~ n = n + 1
+}
+{flag3_submitted:
+    ~ n = n + 1
+}
+{flag4_submitted:
+    ~ n = n + 1
+}
+~ return n
 
 // ===========================================
 // DEBRIEF START
 // ===========================================
 
 === start ===
+~ debrief_played = true
 #speaker:narrator
+Narrator: SAFETYNET headquarters. Thursday morning, nine o'clock.
 
-[Location: SAFETYNET Headquarters, Debrief Room]
-[Time: Saturday morning, 9:00 AM]
-
-You sit across from Agent 0x99. Mission report displayed on screen.
+Narrator: You sit across from Agent HaX. The mission report is up on the screen.
 
 #speaker:agent_0x99
-#display:agent-professional
-
-Agent 0x99: {player_name}. Mission complete.
-
-Agent 0x99: Let's go through what happened.
+Agent HaX: {player_name}. Let's go through it.
 
 -> mission_outcome_assessment
 
 // ===========================================
-// MISSION OUTCOME ASSESSMENT
+// THE CASE
 // ===========================================
 
 === mission_outcome_assessment ===
 #speaker:agent_0x99
 
-{evidence_level >= 6:
-    Agent 0x99: Full evidence chain, insider stopped. Operation Schrödinger is dead.
-    -> full_success_path
+{case_strength() >= 7:
+    Agent HaX: The file on this is the best we've had on the Initiative. Motive, means, the Architect's signature, and the recruiter's calling card. Nobody's arguing with it.
+- else:
+    {case_strength() >= 4:
+        Agent HaX: You built enough to move, and you closed it. There are gaps in the file, but it'll stand.
+    - else:
+        Agent HaX: You stopped the upload. The file behind it is thin. The police will get what we send them, and it won't be much.
+    }
 }
-
-{evidence_level >= 4 and evidence_level < 6:
-    Agent 0x99: You built enough to move and you closed it out. Solid work.
-    -> partial_success_path
-}
-
-{evidence_level < 4:
-    Agent 0x99: You stopped the upload, but the case behind it is thin.
-    -> minimal_success_path
-}
-
-=== full_success_path ===
-#speaker:agent_0x99
-
-Agent 0x99: You identified the insider. Stopped the final exfiltration.
 
 {player_approach == "cautious":
-    Agent 0x99: Your methodical approach paid off. Nothing was missed.
+    Agent HaX: You said you'd be methodical. You were.
 }
-
 {player_approach == "aggressive":
-    Agent 0x99: You moved fast and got results. Efficient work.
+    Agent HaX: You said fast and direct. You were, and it held.
 }
-
 {player_approach == "diplomatic":
-    Agent 0x99: Your adaptability made the difference. You read the situation perfectly.
+    Agent HaX: You said you'd read the room. You did.
 }
 
--> exfiltration_prevented
-
-=== partial_success_path ===
-#speaker:agent_0x99
-
-Agent 0x99: The core threat was neutralized, but we left gaps.
-
-{evidence_level < 4:
-    Agent 0x99: Evidence collection could have been stronger.
-}
-
--> exfiltration_prevented
-
-=== minimal_success_path ===
-#speaker:agent_0x99
-
-Agent 0x99: You stopped the immediate threat. That matters.
-
-Agent 0x99: But we missed opportunities for larger intelligence gains.
-
--> exfiltration_prevented
-
-// ===========================================
-// EXFILTRATION STATUS
-// ===========================================
-
-=== exfiltration_prevented ===
-#speaker:agent_0x99
-
-Agent 0x99: Final data exfiltration: PREVENTED
-
-Agent 0x99: 73% of Project Heisenberg was already stolen. But the last 27%—
-
-Agent 0x99: DoD deployment schedules. Zero-day exploits. Installation timelines.
-
-Agent 0x99: That 27% would have caused the casualties. You saved it.
+Agent HaX: The final upload: stopped at 97%. The key material left in pieces over six weeks, but the rotation windows never went. Without those, what they have is a very expensive paperweight.
 
 {knows_full_stakes:
-    Agent 0x99: Those thirty to forty-five people who'd have waited too long for an ambulance? Still alive. Because of you.
+    Agent HaX: Those thirty to forty-five people who'd have waited too long for an ambulance? They'll never know. That's how it's supposed to work.
 }
 
 -> torres_outcome
 
 // ===========================================
-// TORRES OUTCOME (5 Paths)
+// TORRES OUTCOME
 // ===========================================
 
 === torres_outcome ===
 #speaker:agent_0x99
 
-Agent 0x99: And David Torres...
+Agent HaX: And David Torres...
 
 {final_choice == "turn_double_agent":
     -> torres_turned_path
 }
-
 {final_choice == "combat_lethal":
     -> torres_killed_path
 }
-
 {final_choice == "public_exposure":
     -> public_exposure_path
 }
-
+{final_choice == "combat_nonlethal":
+    -> torres_subdued_path
+}
 {final_choice == "arrest" and elena_treatment_funded:
     -> torres_arrested_with_treatment_path
 }
-
-{final_choice == "arrest" and not elena_treatment_funded:
-    -> torres_arrested_no_treatment_path
-}
-
-{final_choice == "combat_nonlethal":
-    -> torres_arrested_no_treatment_path
-}
-
-// Defensive fallback: if the confrontation state never bridged, don't starve.
-{final_choice == "":
-    -> torres_arrested_no_treatment_path
-}
+-> torres_arrested_no_treatment_path
 
 // ===========================================
-// PATH 1: TORRES TURNED
+// PATH 1: TURNED
 // ===========================================
 
 === torres_turned_path ===
 #speaker:agent_0x99
 
-Agent 0x99: You turned him. Double agent status.
+Agent HaX: You turned him. High risk, high reward.
 
-Agent 0x99: That was the high-risk, high-reward play.
+Agent HaX: Elena starts the trial on Monday. We're paying, quietly, and if it ever gets dangerous we can move the family.
 
-{elena_treatment_funded:
-    Agent 0x99: Elena Torres starts treatment Monday. Experimental therapy, SAFETYNET-funded.
-    Agent 0x99: Witness protection covers everything.
-}
+Agent HaX: In exchange, he gives us the Insider Threat Initiative from the inside.
 
-Agent 0x99: In exchange, Torres gives us ENTROPY's entire Insider Threat Initiative.
-
-+ [What have we learned so far?]
++ [What have we got from him so far?]
     -> torres_intelligence_gained
 
 + [Can we trust him?]
@@ -193,291 +175,233 @@ Agent 0x99: In exchange, Torres gives us ENTROPY's entire Insider Threat Initiat
 === torres_intelligence_gained ===
 #speaker:agent_0x99
 
-Agent 0x99: 23 active insider placements. He's giving us companies, names, timelines.
+Agent HaX: Twenty-three active placements. He's giving us the companies, and some of the names.
 
-Agent 0x99: 47 additional targets under evaluation. We're warning them before ENTROPY makes contact.
-
-Agent 0x99: The Recruiter's operational methods. TalentStack Executive Recruiting as cover.
-
-{handler_trust >= 60:
-    Agent 0x99: This is massive intelligence, {player_name}. Strategic victory.
+{found_pipeline_list:
+    Agent HaX: And the forty-seven on that TalentStack list. We're getting to them before the Recruiter does.
+- else:
+    Agent HaX: He's met some of the Recruiter's other candidates. Not all forty-seven, but it's a start.
 }
 
--> campaign_impact_turned
+Agent HaX: And how TalentStack actually works: the front, the payments, the approach.
+
+-> recruiter_reckoning
 
 === torres_trust_question ===
 #speaker:agent_0x99
 
-Agent 0x99: He's motivated. Elena's life depends on his cooperation.
+Agent HaX: He's motivated. Elena's treatment depends on him.
 
-Agent 0x99: And you de-radicalized him early. Three months in, not three years.
+Agent HaX: And you got him early. Three months in, not three years. He still knows it was wrong. We can work with that.
 
-Agent 0x99: He still has cognitive dissonance. He knows what he did was wrong.
+Agent HaX: If he wobbles, we'll know. That's the job now.
 
-Agent 0x99: We can work with that.
-
--> campaign_impact_turned
-
-=== campaign_impact_turned ===
-#speaker:agent_0x99
-
-Agent 0x99: For the campaign? This changes everything.
-
-Agent 0x99: Torres becomes an asset for Missions 6 through 10.
-
-Agent 0x99: We map ENTROPY's network. Save dozens of potential recruits.
-
-{handler_trust >= 70:
-    Agent 0x99: You made the right call. I'm proud of how you handled this.
-}
-
--> lore_discussion
+-> recruiter_reckoning
 
 // ===========================================
-// PATH 2: TORRES KILLED
+// PATH 2: LEFT ON THE FLOOR
 // ===========================================
 
 === torres_killed_path ===
 #speaker:agent_0x99
 
-Agent 0x99: David Torres. KIA. Lethal force during apprehension.
+Agent HaX: David Torres is dead.
 
-Agent 0x99: *pause*
+Agent HaX: He hit his head on the rack when he went down. You killed the upload and walked out. Nobody found him until Patricia went looking, forty minutes later.
 
-Agent 0x99: He was reaching for his phone. To call his wife.
+Agent HaX: The pathologist thinks twenty minutes would have been enough.
 
-Agent 0x99: But you didn't know that at the time.
-
-+ [He was resisting. I made a tactical decision]
-    You: I assessed him as a threat. Lethal force was justified.
++ [He came at me. I stopped the upload.]
+    You: He attacked me. I did what the mission needed.
     -> torres_tactical_discussion
 
-+ [I know. I'll live with it]
-    You: It was him or the mission. I chose the mission.
++ [I should have stayed with him.]
+    You: I should have stayed. I know.
     -> torres_weight_discussion
 
 === torres_tactical_discussion ===
 #speaker:agent_0x99
 
-Agent 0x99: The after-action report supports your assessment.
+Agent HaX: The upload was the priority. Nobody will argue that.
 
-Agent 0x99: Confined space. Suspected espionage agent. Rapid movement toward concealed object.
-
-Agent 0x99: By the book, you're clear.
+Agent HaX: But there was a gap between stopping it and walking away, and a man died in it. The review board will ask about that gap.
 
 -> torres_family_impact
 
 === torres_weight_discussion ===
 #speaker:agent_0x99
 
-Agent 0x99: These choices have weight. They should.
+Agent HaX: Yes. You should have.
 
-Agent 0x99: David Torres was radicalized for three months. He knew his actions would cost lives.
-
-Agent 0x99: But he was also a father. A husband. A man who made terrible choices under terrible pressure.
-
-Agent 0x99: Both things are true.
+Agent HaX: He'd been ENTROPY's for three months. He was also a husband and a father. Both of those were true on the floor of that data centre.
 
 -> torres_family_impact
 
 === torres_family_impact ===
 #speaker:agent_0x99
 
-Agent 0x99: Elena Torres is now a widow. Still fighting Stage 3 cancer.
+Agent HaX: Elena Torres is a widow now, still fighting Stage 3 cancer. No treatment, no protection.
 
-Agent 0x99: Sofia and Miguel—ages 11 and 8—lost their father.
+Agent HaX: Sofia is eleven. Miguel is eight.
 
-Agent 0x99: No witness protection. No treatment coverage.
+Agent HaX: And everything he knew about the Initiative died with him. We're mapping it the hard way now.
 
-{knows_full_stakes:
-    Agent 0x99: You stopped the dispatch network compromise. At the cost of one family.
-}
-
-Agent 0x99: That's the math. Doesn't make it easier.
-
--> campaign_impact_killed
-
-=== campaign_impact_killed ===
-#speaker:agent_0x99
-
-Agent 0x99: For the campaign? We lost intelligence opportunities.
-
-Agent 0x99: Torres could have mapped ENTROPY's Insider Threat Initiative. Now we do it the hard way.
-
-Agent 0x99: The other 47 targets are still vulnerable. We'll find them manually.
-
-{handler_trust < 50:
-    Agent 0x99: I won't judge your choice. But it cost us.
-}
-
--> lore_discussion
+-> recruiter_reckoning
 
 // ===========================================
-// PATH 3: TORRES ARRESTED (No Treatment)
+// PATH 3: SUBDUED
+// ===========================================
+
+=== torres_subdued_path ===
+#speaker:agent_0x99
+
+Agent HaX: Detained after a fight. You stayed with him, kept his airway clear, and Patricia brought the police and an ambulance. Textbook, once it came to that.
+
+Agent HaX: He woke up in hospital under police guard, angry, and he hasn't said a word to anyone since. What happens to him now is up to them.
+
+Agent HaX: Elena's treatment is unfunded. He never talked to us, so there's no deal to hang it on.
+
++ [He chose to fight.]
+    You: He chose to fight. I gave him the chance to step away.
+    Agent HaX: You did. And now we're both living with what came after.
+    -> recruiter_reckoning
++ [Is there still a way to get him talking?]
+    You: Is there any way back to a cooperation deal?
+    Agent HaX: Not through us. He's in the police's hands now, and we don't get to walk into their interview rooms.
+    -> recruiter_reckoning
+
+// ===========================================
+// PATH 4: ARRESTED (no cooperation)
 // ===========================================
 
 === torres_arrested_no_treatment_path ===
 #speaker:agent_0x99
 
-Agent 0x99: David Torres. Federal custody. Espionage charges.
+Agent HaX: You held him and Patricia called the police. He hasn't said a word to them or to us.
 
-Agent 0x99: He didn't cooperate. Lawyer'd up immediately.
+Agent HaX: Our evidence reached them without our name on it. What a court gives him is out of our hands.
 
-Agent 0x99: 15 to 25 years in federal prison. Standard sentence for espionage.
+Agent HaX: Elena's treatment is unfunded. She has months, maybe. Sofia and Miguel may watch that with their father on remand.
 
-Agent 0x99: Elena Torres? No treatment coverage. Stage 3 cancer.
-
-Agent 0x99: She has months, maybe. Sofia and Miguel will watch their mother die while their father's in prison.
-
-+ [Justice has costs]
-    You: He committed espionage. Actions have consequences.
-    Agent 0x99: They do. For everyone involved.
++ [Justice has costs.]
+    You: He did this. Actions have consequences.
+    Agent HaX: They do. For everyone near him.
     -> campaign_impact_arrested_no_coop
 
-+ [I offered him a deal. He refused]
-    You: He could have cooperated. He chose not to.
-    Agent 0x99: Fair point.
++ [That's not on me.]
+    You: I did my job. The rest isn't my department.
+    Agent HaX: I know that's what you said to him. I'm not sure it's true.
     -> campaign_impact_arrested_no_coop
 
 === campaign_impact_arrested_no_coop ===
 #speaker:agent_0x99
 
-Agent 0x99: Without his cooperation, we lost intelligence on ENTROPY's network.
+Agent HaX: Without him, we're blind on the Initiative. The placements carry on. The forty-seven stay in the pipeline until we find them ourselves.
 
-Agent 0x99: The 23 active placements continue. The 47 targets remain vulnerable.
-
-Agent 0x99: We stopped one operation. ENTROPY still has 22 others running.
-
--> lore_discussion
+-> recruiter_reckoning
 
 // ===========================================
-// PATH 4: TORRES ARRESTED (With Treatment)
+// PATH 5: ARRESTED (with cooperation)
 // ===========================================
 
 === torres_arrested_with_treatment_path ===
 #speaker:agent_0x99
 
-Agent 0x99: David Torres. Federal custody. Full cooperation agreement.
+Agent HaX: He talked to you before the police arrived. Everything he knows about the Initiative, in exchange for Elena's treatment.
 
-Agent 0x99: He's providing intelligence in exchange for Elena's treatment.
+Agent HaX: She starts on Monday, and we're paying. What happens to him is the court's business now. We couldn't promise him anything there, and you didn't.
 
-{elena_treatment_funded:
-    Agent 0x99: Witness protection budget covers experimental therapy. She starts Monday.
-}
+Agent HaX: His family gets through this. The kids have a chance.
 
-Agent 0x99: Torres still faces prison time. 5 to 10 years, reduced sentence for cooperation.
+Agent HaX: It's less than a double agent would give us. It's a great deal more than nothing, and it's clean.
 
-Agent 0x99: But his family survives. Elena gets treatment. Kids have a chance.
-
--> campaign_impact_arrested_coop
-
-=== campaign_impact_arrested_coop ===
-#speaker:agent_0x99
-
-Agent 0x99: His cooperation gives us partial intelligence on ENTROPY's Insider Threat Initiative.
-
-Agent 0x99: Not as valuable as a double agent, but better than nothing.
-
-Agent 0x99: We'll identify some of the 23 active placements. Warn some of the 47 targets.
-
-Agent 0x99: By-the-book justice with strategic benefit. Solid outcome.
-
--> lore_discussion
+-> recruiter_reckoning
 
 // ===========================================
-// PATH 5: PUBLIC EXPOSURE
+// PATH 6: PUBLIC EXPOSURE
 // ===========================================
 
 === public_exposure_path ===
 #speaker:agent_0x99
 
-Agent 0x99: You went nuclear. Public exposure.
+Agent HaX: You went public.
 
-Agent 0x99: Every major news outlet has the story. ENTROPY's Insider Threat Initiative is front-page news.
+Agent HaX: The Insider Threat Initiative is front-page news. TalentStack's offices are empty. The police picked Torres up the next morning.
+{found_pipeline_list:
+    Agent HaX: We rang the forty-seven on that list before the story broke. Most of them had never heard of ENTROPY. They have now.
+}
 
-Agent 0x99: The 47 targets? They've all been warned. ENTROPY can't touch them now.
+Agent HaX: The twenty-three placements are blown. Their employers are running their own investigations.
 
-Agent 0x99: The 23 active placements? Compromised. Companies launching internal investigations.
-
-+ [It was necessary to burn the program]
-    You: ENTROPY's recruitment methodology is exposed. They can't rebuild this.
++ [It was the only way to burn the programme.]
+    You: It was the only way to make sure they can't rebuild it.
     -> public_exposure_consequence
 
-+ [I wanted maximum impact]
-    You: This sends a message. ENTROPY's operations have consequences.
++ [They needed to see it cost them.]
+    You: ENTROPY needed to see this cost them something.
     -> public_exposure_consequence
 
 === public_exposure_consequence ===
 #speaker:agent_0x99
 
-Agent 0x99: You're right. ENTROPY's Insider Threat Initiative is finished.
+Agent HaX: It worked. The Initiative is finished in this country, for now.
 
-Agent 0x99: But there are costs.
+Agent HaX: And David Torres is "The Quantum Traitor". Sofia and Miguel's classmates have seen their father's face on the news.
 
-Agent 0x99: David Torres is now a household name. "The Quantum Traitor."
-
-Agent 0x99: Sofia and Miguel's classmates see their father on TV. Labeled a spy.
-
-Agent 0x99: Elena's in hospice. Reading about her husband's espionage while dying.
+Agent HaX: Elena is reading about it from a hospital bed.
 
 {handler_trust >= 60:
-    Agent 0x99: You prioritized the mission over individuals. I understand the logic.
+    Agent HaX: You put the programme ahead of the man. I understand the logic.
 - else:
-    Agent 0x99: Strategic victory. Human cost. That's the trade you made.
+    Agent HaX: A strategic win, at a human cost. That's the trade you made.
 }
 
--> campaign_impact_public
+Agent HaX: Expect them to hit back. You made them look weak, and they won't forget it.
 
-=== campaign_impact_public ===
-#speaker:agent_0x99
-
-Agent 0x99: For the campaign? ENTROPY's recruitment arm is crippled.
-
-Agent 0x99: But they'll retaliate. Expect escalation in future missions.
-
-Agent 0x99: You made them look weak. They won't forget that.
-
--> lore_discussion
+-> recruiter_reckoning
 
 // ===========================================
-// LORE & INTELLIGENCE DISCUSSION
+// THE RECRUITER'S OFFER
 // ===========================================
 
-=== lore_discussion ===
+=== recruiter_reckoning ===
 #speaker:agent_0x99
 
-{lore_collected >= 4:
-    Agent 0x99: I see you collected all LORE fragments. Thorough work.
-    -> lore_complete
+{not recruiter_deal_offered:
+    -> entropy_revelation
 }
-
-{lore_collected >= 2:
-    Agent 0x99: You found some LORE fragments. Helpful context.
-    -> lore_partial
-}
-
-{lore_collected < 2:
-    Agent 0x99: Limited LORE collection. We'll work with what we have.
+{not recruiter_deal_accepted:
+    Agent HaX: And the Recruiter. She rang you, she made you an offer, and you turned her down.
+    {found_pipeline_list:
+        Agent HaX: The TalentStack list went into your report. We've reached three of the forty-seven already. That's three she doesn't get.
+    - else:
+        Agent HaX: We never found the list she was protecting. Her courier probably has it by now. Still, you didn't sell.
+    }
     -> entropy_revelation
 }
 
-=== lore_complete ===
-#speaker:agent_0x99
+Agent HaX: One more thing. Your report doesn't mention the Recruiter's call.
 
-Agent 0x99: The recruiting pamphlet. Target selection criteria. Architect protocols.
+Agent HaX: The phone logs do. Four minutes, from a TalentStack number, right after you named him.
 
-Agent 0x99: Together, these show ENTROPY's methodology. Systematic. Calculated. Professional.
++ [She offered me a deal. I took it.]
+    ~ recruiter_deal_confessed = true
+    You: She offered to keep me out of it if the list stayed with her. I said yes.
+    Agent HaX: ...Thank you for telling me. That's the only reason this stays between us.
+    {found_pipeline_list:
+        Agent HaX: The list goes in today. It's late, and some of those forty-seven will already have signed. That's on the record now, and on you.
+    - else:
+        Agent HaX: Whatever that list was, it's with her courier now. That's on the record, and on you.
+    }
+    ~ handler_trust = handler_trust - 10
+    -> entropy_revelation
 
-Agent 0x99: They're not anarchists. They're a criminal corporation with service-level agreements.
-
--> entropy_revelation
-
-=== lore_partial ===
-#speaker:agent_0x99
-
-Agent 0x99: The LORE you found fills in gaps. ENTROPY's professionalism is clear.
-
--> entropy_revelation
++ [It was nothing. A sales pitch.]
+    You: A sales pitch. I hung up.
+    Agent HaX: Four minutes is a long sales pitch.
+    Agent HaX: I'll leave it there. For now.
+    ~ handler_trust = handler_trust - 25
+    -> entropy_revelation
 
 // ===========================================
 // ENTROPY REVELATION
@@ -486,15 +410,15 @@ Agent 0x99: The LORE you found fills in gaps. ENTROPY's professionalism is clear
 === entropy_revelation ===
 #speaker:agent_0x99
 
-Agent 0x99: This mission revealed something critical about ENTROPY.
+{flag4_submitted:
+    Agent HaX: The Architect's authorisation is the part I keep coming back to. A casualty projection, reviewed, and filed as an acceptable cost.
+- else:
+    Agent HaX: We never got the authorisation off that server. Somebody above the Recruiter signed this off, and we can't prove who.
+}
 
-Agent 0x99: Insider Threat Initiative. Digital Vanguard. Zero Day Syndicate. Crypto Anarchists.
+Agent HaX: Ransomware Incorporated. Zero Day Syndicate. Critical Mass. Now the Insider Threat Initiative.
 
-Agent 0x99: They're coordinating like a multinational corporation.
-
-Agent 0x99: Service contracts. Revenue sharing. Professional recruitment.
-
-Agent 0x99: The Architect isn't just coordinating attacks. They built a criminal enterprise.
+Agent HaX: The cells share suppliers, targets and a signature. The Architect runs them like a business, and pays them like one: the Initiative was given eight hundred and forty-seven thousand dollars for this job alone.
 
 -> future_implications
 
@@ -505,26 +429,20 @@ Agent 0x99: The Architect isn't just coordinating attacks. They built a criminal
 === future_implications ===
 #speaker:agent_0x99
 
-Agent 0x99: For future missions, this matters.
-
-{torres_turned:
-    Agent 0x99: Torres will provide intelligence through Mission 10. Strategic asset.
+{final_choice == "turn_double_agent":
+    Agent HaX: Torres is an asset now. We'll be leaning on him for months.
+}
+{final_choice == "combat_lethal" or final_choice == "combat_nonlethal" or (final_choice == "arrest" and not elena_treatment_funded):
+    Agent HaX: We'll map the Initiative the slow way. Harder, but doable.
+}
+{final_choice == "public_exposure":
+    Agent HaX: ENTROPY will escalate. They're wounded, not finished.
 }
 
-{torres_killed or (torres_arrested and not elena_treatment_funded):
-    Agent 0x99: We'll track ENTROPY's network manually. Harder, but doable.
-}
+Agent HaX: Every one of these operations has been paid for by someone. Next, we follow the money.
 
-{entropy_program_exposed:
-    Agent 0x99: ENTROPY will escalate. They're wounded but not dead.
-}
-
-Agent 0x99: Mission 6 - "Follow the Money" - we'll track ENTROPY's financial network.
-
-Agent 0x99: Crypto Anarchists. HashChain Exchange. Cryptocurrency laundering.
-
-{torres_turned:
-    Agent 0x99: Torres can provide account numbers and transaction IDs. Massive advantage.
+{final_choice == "turn_double_agent" or elena_treatment_funded:
+    Agent HaX: Torres knows how TalentStack paid him. That's a thread we can pull.
 }
 
 -> final_reflection
@@ -532,29 +450,25 @@ Agent 0x99: Crypto Anarchists. HashChain Exchange. Cryptocurrency laundering.
 === final_reflection ===
 #speaker:agent_0x99
 
-Agent 0x99: {player_name}, one last thing.
+Agent HaX: {player_name}, one last thing.
 
-Agent 0x99: This mission put you in an impossible position. No clean read on Torres was ever going to be available to you.
-
-Agent 0x99: How you handled that... that's who you are as an agent.
+Agent HaX: There was never a clean way to handle Torres. How you handled him tells me what kind of agent you are.
 
 {confront_stance == "sympathetic":
-    Agent 0x99: You went in looking for the man underneath the espionage. That mattered, whatever you decided in the end.
+    Agent HaX: You went looking for the man underneath. That mattered, whatever you decided in the end.
 }
 {confront_stance == "hardline":
-    Agent 0x99: You never once let him hide behind the sob story. Cold, maybe. But you saw it clearly.
+    Agent HaX: You never let him hide behind his story. Cold, maybe. But you saw it clearly.
 }
 
 {handler_trust >= 70:
-    Agent 0x99: I trust your judgment. Today proved that.
-}
-
-{handler_trust >= 50 and handler_trust < 70:
-    Agent 0x99: You made tough calls. I respect that.
-}
-
-{handler_trust < 50:
-    Agent 0x99: We got the job done. That's what matters.
+    Agent HaX: I trust your judgement. Last night proved that.
+- else:
+    {handler_trust >= 50:
+        Agent HaX: You made hard calls. I respect that.
+    - else:
+        Agent HaX: The job got done. We'll talk about the rest another time.
+    }
 }
 
 -> mission_end
@@ -562,15 +476,16 @@ Agent 0x99: How you handled that... that's who you are as an agent.
 === mission_end ===
 #speaker:agent_0x99
 
-Agent 0x99: Get some rest. Mission 6 briefs Monday.
+Agent HaX: Get some rest. Take the rest of the day.
 
 {knows_full_stakes:
-    Agent 0x99: And {player_name}? The people who'd have waited too long for that ambulance?
-    Agent 0x99: They'll never know your name. But they're alive.
-    Agent 0x99: That's what we do this for.
+    Agent HaX: And {player_name}? The people who'd have waited too long for that ambulance will never know your name. But they're alive.
 }
 
-Agent 0x99: Good work out there.
+// The conclusion task completes HERE, at the end of the debrief, so the
+// bond_visualiser screen is raised after the player has heard it (m04 pattern).
+#complete_task:hear_debrief
+Agent HaX: Good work.
 
 #exit_conversation
 -> END

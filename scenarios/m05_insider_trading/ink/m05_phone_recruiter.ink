@@ -13,32 +13,47 @@ VAR recruiter_persuasion_attempted = false
 VAR final_choice = ""
 VAR recruiter_deal_accepted = false
 
-// External variables (set by game)
-EXTERNAL player_name()
+// Synced from scenario globals
+VAR player_name = "Agent 0x00"
+VAR torres_identified = false
+VAR found_pipeline_list = false
+
+// PASS 2: never reaches DONE (lesson 21). Every exit goes to `idle`,
+// whose sticky choices let the player ring her back. Return-contact
+// choices are sticky (+) so a second call can't starve.
 
 // ===========================================
 // INITIAL CONTACT (torres_identified)
 // ===========================================
 
 === start ===
+// Review B2: never play the first call before Torres is named, even if
+// something runs this knot early (the phone preloads listed contacts).
+{not torres_identified:
+    -> not_yet
+}
 
-{recruiter_contacted_player:
+// Playtest D2: route on whether the DEAL was made, not on whether the call
+// started. In run 1 the naming conversation's close fired twice, a second
+// jump to `start` landed after the first had set recruiter_contacted_player,
+// and the player got "Still deciding?" with no offer ever made. Replaying
+// the intro is harmless; skipping the offer is not.
+{recruiter_deal_offered:
     -> return_contact
 }
 
-> DEVICE ACTIVE
-> UNKNOWN NUMBER -- CALLER ID: "TALENTSTACK EXECUTIVE RECRUITING"
+#speaker:narrator
+Narrator: Caller ID: TALENTSTACK EXECUTIVE RECRUITING.
 
 #speaker:recruiter
 
-The Recruiter: Agent 0x00. Or whatever they're calling you this week.
+The Recruiter: {player_name}. Or whatever they're calling you this week.
 
-The Recruiter: I run TalentStack. Executive search, mostly technical roles. You've just spent several days putting a name to one of my placements, so I thought I'd save you the trouble of wondering who I am.
+The Recruiter: I run TalentStack. Executive search, mostly technical roles. You've spent the last few hours putting a name to one of my placements, so I thought I'd save you the trouble of wondering who I am.
 
 The Recruiter: David Torres. QD-001, if you prefer the file number.
 
 ~ recruiter_contacted_player = true
-#set_global:recruiter_contacted_player:true
 
 * [You radicalised a man whose wife is dying.]
     The Recruiter: I identified a man whose wife was dying and offered him a way to keep paying for her treatment. You're describing the outcome as though I invented the cancer.
@@ -69,7 +84,7 @@ The Recruiter: Torres took debt relief and a standing consultancy retainer. Chea
 === recruiter_line_item ===
 #speaker:recruiter
 
-The Recruiter: He was a line item. There are forty-six more like him in the pipeline right now, and a forty-seventh I'm still deciding about.
+The Recruiter: He was a line item. There are forty-seven more candidates in the pipeline right now.
 
 The Recruiter: I don't say that to be cruel. I say it because it's accurate, and accuracy is the only thing I owe you.
 
@@ -120,14 +135,15 @@ The Recruiter: Here's why I actually called.
 
 The Recruiter: You're going to confront Torres. Whatever you decide about him doesn't much interest me -- he's already spent. But I'd rather you didn't spend the next six months chasing my other forty-seven candidates.
 
-The Recruiter: Walk away from the Insider Threat Initiative file. Don't hand SAFETYNET a target list. In return, I make sure nothing in this operation points at you personally -- no loose thread, no surveillance file, no complications in your next assignment.
+The Recruiter: Under Torres' keyboard there's an envelope addressed to a PO box in Reading. Forty-seven names. {found_pipeline_list: You've already opened it, I expect.} Leave it out of your report. Let my courier have it.
+
+The Recruiter: In return, nothing in this operation points at you personally. No loose thread, no file with your face in it, no complications on your next job.
 
 The Recruiter: Every person has a price, agent. I'm asking what yours is.
 
 ~ recruiter_deal_offered = true
-#set_global:recruiter_deal_offered:true
 
-* [Not interested. I'm taking the file to SAFETYNET.]
+* [Not interested. That list is going to SAFETYNET.]
     -> recruiter_deal_refused
 
 * [What exactly would "nothing points at me" cost me?]
@@ -136,19 +152,19 @@ The Recruiter: Every person has a price, agent. I'm asking what yours is.
 * [I'm done talking. This call's over.]
     The Recruiter: Time's short for both of us, then.
     #exit_conversation
-    -> DONE
+    -> idle
 
 === recruiter_deal_terms ===
 #speaker:recruiter
 
-The Recruiter: Nothing dramatic. You forget you ever heard the number forty-seven. The file stays exactly where it is -- with me.
+The Recruiter: Nothing dramatic. You forget the number forty-seven. The envelope goes to Reading, not to your handler.
 
 The Recruiter: In exchange, you get a clean report, a grateful handler, and one fewer thing keeping you up at night. Most agents take that trade without needing it spelled out.
 
-* [Fine. The file stays with you. I never heard the number forty-seven.]
+* [Fine. The envelope goes to Reading. I never heard the number forty-seven.]
     -> recruiter_deal_taken
 
-* [Not interested. I'm taking the file to SAFETYNET.]
+* [Not interested. That list is going to SAFETYNET.]
     -> recruiter_deal_refused
 
 * [No deal. Every one of those forty-seven is a name I'm going to find.]
@@ -157,31 +173,32 @@ The Recruiter: In exchange, you get a clean report, a grateful handler, and one 
 === recruiter_deal_taken ===
 #speaker:recruiter
 ~ recruiter_deal_accepted = true
-#set_global:recruiter_deal_accepted:true
 
 The Recruiter: Sensible. You'll get your clean report, and I'll get my quiet. That's the whole of the arrangement.
 
 The Recruiter: Handle Torres however suits you. The other forty-seven were never your problem to begin with.
 
-> CHANNEL TERMINATED
+#speaker:narrator
+Narrator: The line goes dead.
 
 #exit_conversation
--> DONE
+-> idle
 
 === recruiter_deal_refused ===
 #speaker:recruiter
 
-The Recruiter: Noted. For what it's worth, that's what I expected -- your file reads as somebody who finishes what she starts.
+The Recruiter: Noted. For what it's worth, that's what I expected -- your file reads as somebody who finishes what they start.
 
 The Recruiter: Understand what you're choosing, though. Forty-seven candidates is a number that changes weekly. You won't reach all of them before I've closed on a few more.
 
 The Recruiter: Good luck with Torres. He was cheap. The next one might cost me more, and I'll enjoy the work regardless.
 
-#set_global:recruiter_deal_accepted:false
-> CHANNEL TERMINATED
+~ recruiter_deal_accepted = false
+#speaker:narrator
+Narrator: The line goes dead.
 
 #exit_conversation
--> DONE
+-> idle
 
 // ===========================================
 // RETURN CONTACT (After first call)
@@ -189,8 +206,6 @@ The Recruiter: Good luck with Torres. He was cheap. The next one might cost me m
 
 === return_contact ===
 #speaker:recruiter
-
-[UNKNOWN NUMBER -- TALENTSTACK]
 
 {final_choice != "":
     -> post_confrontation_contact
@@ -200,24 +215,31 @@ The Recruiter: Good luck with Torres. He was cheap. The next one might cost me m
 
 === mid_mission_contact ===
 #speaker:recruiter
+{not recruiter_deal_offered:
+    -> recruiter_deal
+}
 
 The Recruiter: Still deciding? The offer doesn't improve with age, agent.
 
 The Recruiter: Forty-seven names. One phone call from you either protects them or leaves them exactly where they are -- in my pipeline.
 
-* [I already told you. No deal.]
++ [I already told you. No deal.]
     The Recruiter: Consistent. I can respect that, even while I disagree with it.
     -> end_contact
 
-* [I'm going to find every one of them.]
++ [I'm going to find every one of them.]
     The Recruiter: You're welcome to try. I have a considerable head start.
     -> end_contact
 
-* [I'm done talking. This call's over.]
++ [I'm done talking. This call's over.]
     -> end_contact
 
 === post_confrontation_contact ===
 #speaker:recruiter
+{not recruiter_deal_offered:
+    The Recruiter: Torres is dealt with, and we never did talk terms. Pity. The next one will cost me more.
+    -> end_contact
+}
 
 {recruiter_deal_accepted:
     -> deal_accepted_response
@@ -232,7 +254,7 @@ The Recruiter: Sensible. The file's forgotten on my end too -- as far as anyone 
 
 The Recruiter: You'll sleep fine. Most people do, once they've priced it out.
 
-* [I'll live with it.]
++ [I'll live with it.]
     -> recruiter_final_statement
 
 === deal_refused_response ===
@@ -242,10 +264,10 @@ The Recruiter: Torres is dealt with, one way or another, and you didn't take the
 
 The Recruiter: It changes nothing about the other forty-seven. I'll simply be more careful with whoever's next.
 
-* [There won't be a "next" if I have anything to do with it.]
++ [There won't be a "next" if I have anything to do with it.]
     -> recruiter_final_statement
 
-* [You talk about people like inventory.]
++ [You talk about people like inventory.]
     The Recruiter: Inventory doesn't have a price, agent. People do. That's the entire distinction I've built a career on.
     -> recruiter_final_statement
 
@@ -260,17 +282,39 @@ The Recruiter: That's not a defence. It's just the part nobody wants to hear -- 
 
 The Recruiter: Forty-seven names, agent. The clock on those didn't stop because you found one of mine.
 
-> CHANNEL TERMINATED
+#speaker:narrator
+Narrator: The line goes dead.
 
 #exit_conversation
--> DONE
+-> idle
 
 === end_contact ===
 #speaker:recruiter
 
 The Recruiter: Think it over. I'm not in a hurry.
 
-> CONTACT CLOSED
+#speaker:narrator
+Narrator: She hangs up first.
 
 #exit_conversation
--> DONE
+-> idle
+
+// ===========================================
+// RESTING KNOT
+// ===========================================
+
+=== idle ===
+#speaker:narrator
++ [Ring the TalentStack number back.]
+    -> return_contact
++ [Leave it.]
+    #exit_conversation
+    -> idle
+
+// Resting knot before Torres is named. Never reached in normal play; the
+// Recruiter is off the phone's contact list until a mapping calls her.
+=== not_yet ===
+#speaker:narrator
++ [No messages.]
+    #exit_conversation
+    -> not_yet

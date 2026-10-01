@@ -63,6 +63,12 @@
       "optional": false
     },
     {
+      "id": "lock_torres_briefcase",
+      "label": "Torres Briefcase",
+      "kind": "lock",
+      "optional": false
+    },
+    {
       "id": "lock_patricia_filing_cabinet",
       "label": "Patricia Filing Cabinet",
       "kind": "lock",
@@ -75,10 +81,28 @@
       "optional": false
     },
     {
-      "id": "cloned_employee_badge",
-      "label": "Cloned Employee Badge",
+      "id": "cloned_staff_badge",
+      "label": "Cloned Staff Badge",
       "kind": "key",
       "optional": false
+    },
+    {
+      "id": "npc_dr_sarah_chen",
+      "label": "Dr. Sarah Chen",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "research_lab",
+      "label": "Research Lab",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "research_badge",
+      "label": "Research Badge",
+      "kind": "key",
+      "optional": true
     },
     {
       "id": "vmch_submit_flag1",
@@ -151,12 +175,6 @@
       "label": "Break Room",
       "kind": "room",
       "optional": false
-    },
-    {
-      "id": "research_lab",
-      "label": "Research Lab",
-      "kind": "room",
-      "optional": false
     }
   ],
   "edges": [
@@ -197,6 +215,11 @@
     },
     {
       "from": "lockpick_set",
+      "to": "lock_torres_briefcase",
+      "soft": false
+    },
+    {
+      "from": "lockpick_set",
       "to": "lock_patricia_filing_cabinet",
       "soft": false
     },
@@ -212,13 +235,33 @@
     },
     {
       "from": "npc_kevin_park",
-      "to": "cloned_employee_badge",
+      "to": "cloned_staff_badge",
       "soft": false
     },
     {
-      "from": "cloned_employee_badge",
+      "from": "cloned_staff_badge",
       "to": "door_server_hallway",
       "soft": false
+    },
+    {
+      "from": "torres_office",
+      "to": "lock_torres_briefcase",
+      "soft": false
+    },
+    {
+      "from": "research_lab",
+      "to": "npc_dr_sarah_chen",
+      "soft": false
+    },
+    {
+      "from": "npc_dr_sarah_chen",
+      "to": "research_badge",
+      "soft": true
+    },
+    {
+      "from": "research_badge",
+      "to": "door_server_hallway",
+      "soft": true
     },
     {
       "from": "patricia_office",
@@ -281,7 +324,7 @@
       "soft": false
     },
     {
-      "from": "main_corridor",
+      "from": "open_office_area",
       "to": "research_lab",
       "soft": false
     }

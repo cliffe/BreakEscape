@@ -1,21 +1,25 @@
 // ===========================================
 // Mission 5: NPC - Dr. Sarah Chen
-// Chief Scientist, Project Heisenberg Lead
+// Chief Scientist, Project Heisenberg lead
+//
+// PASS 2: never reaches DONE/END (lesson 21). Her spare badge now opens
+// the server hallway (second route beside Kevin's clone). The old
+// #unlock_room / #unlock_task tags were not engine tags and did nothing.
+// Her Heisenberg lines now match the mission's stakes (the 999 dispatch
+// rollout), not the pre-alignment "military communications" draft.
 // ===========================================
 
 VAR chen_influence = 0                // 0-100 scale
 VAR topic_heisenberg = false
 VAR topic_team = false
 VAR topic_torres_defense = false
-VAR gave_research_access = false
+VAR told_about_torres = false
 VAR first_meeting = true
 
-// External variables
+// Synced from scenario globals
 VAR player_name = "Agent 0x00"
 VAR torres_identified = false
-VAR torres_turned = false
-VAR torres_arrested = false
-VAR torres_killed = false
+VAR server_badge_obtained = false
 
 // ===========================================
 // INITIAL MEETING
@@ -23,58 +27,47 @@ VAR torres_killed = false
 
 === start ===
 #complete_task:talk_to_dr_chen
-
-{first_meeting:
-    ~ first_meeting = false
-    #speaker:narrator
-    #display:chen-professional
-
-    A woman in her mid-40s looks up from complex equations on a whiteboard. Sharp eyes behind glasses.
-
-    #speaker:dr_chen
-    Dr. Sarah Chen: You're the security consultant. Sarah Chen, Project Heisenberg lead.
-
-    Dr. Sarah Chen: I hope you find whoever did this quickly.
-
-    + [I'll do my best. Can you help me understand what was stolen?]
-        You: The technical context will help narrow down suspects.
-        ~ chen_influence += 10
-        # influence_increased
-        -> heisenberg_explanation
-
-    + [I need to interview your team members.]
-        You: Everyone with access to Project Heisenberg.
-        Dr. Sarah Chen: My team didn't do this.
-        -> defensive_response
-
-    + [Could you have missed a behavioural change in your team?]
-        You: Could you have missed something? Behavioral changes?
-        Dr. Sarah Chen: I know my people.
-        ~ chen_influence -= 5
-        # influence_decreased
-        -> defensive_response
-}
-
 {not first_meeting:
-    #display:chen-neutral
-    Dr. Sarah Chen: Yes?
     -> hub
 }
+~ first_meeting = false
+#speaker:narrator
+Narrator: A woman in her mid-forties looks up from a whiteboard dense with lattice notation. Sharp eyes behind glasses.
+
+#speaker:dr_chen
+Dr. Sarah Chen: You're the consultant. Sarah Chen, Project Heisenberg lead.
+
+Dr. Sarah Chen: I hope you find whoever did this quickly. And I hope you're wrong about my team.
+
++ [Help me understand what was taken.]
+    You: The technical context will help me narrow it down.
+    ~ chen_influence += 10
+    -> heisenberg_explanation
+
++ [I need to interview your team.]
+    You: I need to talk to everyone with access to Heisenberg.
+    Dr. Sarah Chen: My team didn't do this.
+    -> defensive_response
+
++ [Could you have missed a change in one of them?]
+    You: Could you have missed something? Someone behaving differently?
+    Dr. Sarah Chen: I know my people.
+    ~ chen_influence -= 5
+    -> defensive_response
 
 === heisenberg_explanation ===
 #speaker:dr_chen
+~ topic_heisenberg = true
+~ chen_influence += 5
 
-Dr. Sarah Chen: Project Heisenberg is quantum key distribution for military communications.
+Dr. Sarah Chen: Heisenberg is quantum-safe key exchange for the new national emergency dispatch network. The system that routes 999 calls.
 
-Dr. Sarah Chen: Post-quantum cryptography. Secure against quantum computer attacks.
-
-Dr. Sarah Chen: If hostile nations get our protocols, they can develop countermeasures. Decade of research wasted.
+Dr. Sarah Chen: Lattice-based. Built to survive an attacker with a quantum computer, which is a problem for the 2030s. The problem for tonight is simpler.
 
 {chen_influence >= 15:
-    Dr. Sarah Chen: 247 DoD facilities are scheduled for installation. If attackers know the deployment timeline...
-    Dr. Sarah Chen: People could die.
+    Dr. Sarah Chen: The keys rotate region by region during the rollout. If someone holds the keys and knows the rotation windows, they don't need to break anything. They just wait.
+    Dr. Sarah Chen: People could die waiting for an ambulance. I've done the arithmetic. I try not to.
     ~ chen_influence += 5
-    # influence_increased
 }
 
 -> hub
@@ -82,33 +75,32 @@ Dr. Sarah Chen: If hostile nations get our protocols, they can develop counterme
 === defensive_response ===
 #speaker:dr_chen
 
-Dr. Sarah Chen: My team is brilliant. Vetted. TS/SCI clearance.
+Dr. Sarah Chen: My team are brilliant and vetted to the hilt.
 
 Dr. Sarah Chen: If one of them did this, they had a reason. Pressure. Coercion.
 
-+ [I'm not here to judge. Just to find the truth.]
++ [I'm not here to judge. I'm here for the truth.]
     ~ chen_influence += 10
-    # influence_increased
     You: Whoever did this might be a victim too.
-    Dr. Sarah Chen: Thank you for understanding that.
+    Dr. Sarah Chen: Thank you for saying that.
     -> hub
 
-+ [Reason doesn't justify espionage.]
++ [A reason doesn't make it right.]
     You: They made a choice.
     Dr. Sarah Chen: We're done here.
     ~ chen_influence -= 10
-    # influence_decreased
     #exit_conversation
-    -> DONE
+    -> hub
 
 // ===========================================
 // CONVERSATION HUB
 // ===========================================
 
 === hub ===
+#speaker:dr_chen
 
-+ {not topic_heisenberg} [Explain Project Heisenberg to me in detail.]
-    -> ask_heisenberg_details
++ {not topic_heisenberg} [Explain Project Heisenberg to me.]
+    -> heisenberg_explanation
 
 + {not topic_team} [Tell me about your team.]
     -> ask_team_members
@@ -116,52 +108,30 @@ Dr. Sarah Chen: If one of them did this, they had a reason. Pressure. Coercion.
 + {not topic_torres_defense and chen_influence >= 20} [What can you tell me about David Torres?]
     -> ask_torres
 
-+ {chen_influence >= 30} [I need access to research documentation.]
++ {not server_badge_obtained and topic_heisenberg} [I need to get onto the server side.]
     -> request_research_access
+
++ {torres_identified and not told_about_torres} [It's David.]
+    -> chen_guilt
 
 + [That's all for now.]
     You: That's all for now.
-    #exit_conversation
-    #speaker:dr_chen
     Dr. Sarah Chen: Good luck with your investigation.
-    -> DONE
-
-=== ask_heisenberg_details ===
-#speaker:dr_chen
-~ topic_heisenberg = true
-~ chen_influence += 5
-# influence_increased
-
-Dr. Sarah Chen: Quantum entanglement enables unbreakable encryption. Any eavesdropping attempt collapses the quantum state.
-
-Dr. Sarah Chen: Our work implements this at scale. 847 pages of protocols, algorithms, hardware specifications.
-
-Dr. Sarah Chen: Three years of research. Billions in DoD funding.
-
-{chen_influence >= 25:
-    Dr. Sarah Chen: If you want to understand the technical details, check the research lab. Documentation's there.
-    #unlock_task:access_heisenberg_documentation
-}
-
--> hub
+    #exit_conversation
+    -> hub
 
 === ask_team_members ===
 #speaker:dr_chen
 ~ topic_team = true
 ~ chen_influence += 5
-# influence_increased
 
-Dr. Sarah Chen: Eight people total. I personally recruited most of them.
+Dr. Sarah Chen: Eight people. I recruited most of them myself.
 
-Dr. Sarah Chen: David Torres is my senior researcher. Brilliant cryptographer. MIT PhD.
-
-Dr. Sarah Chen: The others are equally qualified.
+Dr. Sarah Chen: David Torres is my cryptography lead. The best I've worked with.
 
 {chen_influence >= 20:
-    Dr. Sarah Chen: David's been... distracted lately. Personal issues.
-    Dr. Sarah Chen: His wife Elena has cancer. Stage 3. It's been hard on him.
+    Dr. Sarah Chen: He's been distracted. His wife Elena is very ill. It's been hard on him.
     ~ chen_influence += 5
-    # influence_increased
 }
 
 -> hub
@@ -170,12 +140,11 @@ Dr. Sarah Chen: The others are equally qualified.
 #speaker:dr_chen
 ~ topic_torres_defense = true
 
-Dr. Sarah Chen: David is one of the best cryptographers I've ever worked with.
+Dr. Sarah Chen: David is one of the finest cryptographers in the country.
 
 {chen_influence >= 30:
-    Dr. Sarah Chen: I've seen him struggle. Medical bills. Insurance denials.
+    Dr. Sarah Chen: I've watched him fight the insurer for months. Every denial letter, he'd come in the next morning and work twice as hard.
     ~ chen_influence += 10
-    # influence_increased
 }
 
 -> hub
@@ -183,107 +152,49 @@ Dr. Sarah Chen: David is one of the best cryptographers I've ever worked with.
 === request_research_access ===
 #speaker:dr_chen
 
-You: I need access to Project Heisenberg documentation. Technical specs, team files.
+You: I need to get into the server hallway. Your badge opens it.
 
-{chen_influence >= 40:
+{chen_influence >= 25:
     #give_item:keycard:research_lab_badge
-    Dr. Sarah Chen: Alright. You've been thorough and respectful.
-    Dr. Sarah Chen: Here's my research badge. Use it wisely.
-
-    #unlock_room:research_lab
-    #complete_task:obtain_research_access
-
-    ~ gave_research_access = true
+    Dr. Sarah Chen: You've been straight with me. Here's my spare.
+    Dr. Sarah Chen: Senior badges open the server hallway. Bring it back when you're done.
     ~ chen_influence += 5
-    # influence_increased
-
-    Dr. Sarah Chen: The research lab has everything you need.
     -> hub
 - else:
-    Dr. Sarah Chen: I don't know you well enough to grant that level of access.
-    Dr. Sarah Chen: Keep investigating. Earn my trust.
+    Dr. Sarah Chen: I don't know you well enough to hand you my access.
+    Dr. Sarah Chen: Kevin in IT can sort you out if it's that urgent.
     -> hub
-}
-
-// ===========================================
-// EVENT-TRIGGERED: Player Identifies Torres
-// ===========================================
-
-=== on_torres_accused ===
-#speaker:dr_chen
-
-{torres_identified:
-    Dr. Sarah Chen: Is it true? David Torres?
-
-    + [Yes. The evidence is conclusive]
-        Dr. Sarah Chen: *closes eyes* I should have seen it.
-        Dr. Sarah Chen: He was pulling away. Working late alone. Avoiding eye contact.
-        -> chen_guilt
-
-    + [I'm still gathering evidence]
-        Dr. Sarah Chen: Be absolutely certain before you destroy his life.
-        -> DONE
 }
 
 === chen_guilt ===
 #speaker:dr_chen
+~ told_about_torres = true
 
-Dr. Sarah Chen: I failed him. As a supervisor. As a friend.
+Dr. Sarah Chen: I should have seen it. He was pulling away. Working late, alone. Avoiding my eye.
 
-+ [This isn't your fault. ENTROPY manipulated him]
-    Dr. Sarah Chen: That doesn't make me feel better.
+Dr. Sarah Chen: I failed him. As a manager, and as a friend.
+
++ [ENTROPY picked him because he was drowning. That isn't on you.]
+    You: This isn't your fault. They went looking for someone drowning.
+    Dr. Sarah Chen: That doesn't make me feel better. But thank you.
     -> torres_defense
 
-+ [He made his choice]
-    Dr. Sarah Chen: *sharp look* He made a choice. So did they, when they picked him.
-    -> DONE
++ [He made his choice.]
+    You: He made his choice.
+    Dr. Sarah Chen: He did. So did they, when they picked him.
+    -> hub
 
 === torres_defense ===
 #speaker:dr_chen
 
 Dr. Sarah Chen: What happens to him now?
 
-+ [That depends on how he cooperates]
-    Dr. Sarah Chen: Will you... consider his circumstances?
-    You: I'll make the right call when I confront him.
-    Dr. Sarah Chen: Thank you.
-    -> DONE
++ [That depends on him.]
+    You: That depends on whether he helps us.
+    Dr. Sarah Chen: Will you at least think about his circumstances?
+    You: I'll make the call when I'm standing in front of him.
+    -> hub
 
-+ [He'll face justice]
-    Dr. Sarah Chen: *quiet* I understand.
-    -> DONE
-
-// ===========================================
-// EVENT-TRIGGERED: Mission Complete
-// ===========================================
-
-=== on_mission_complete ===
-#speaker:dr_chen
-
-{torres_turned:
-    Dr. Sarah Chen: I heard David's cooperating. Working with SAFETYNET.
-    Dr. Sarah Chen: And... Elena's treatment will be covered?
-    You: Witness protection program. She'll get the care she needs.
-    Dr. Sarah Chen: *exhales* Thank god. Maybe something good comes from this.
-}
-
-{torres_arrested:
-    Dr. Sarah Chen: David's in federal custody.
-    Dr. Sarah Chen: What about Elena? The children?
-    You: That's not my jurisdiction.
-    Dr. Sarah Chen: *bitter* Of course not.
-}
-
-{torres_killed:
-    Dr. Sarah Chen: I heard David was killed.
-    Dr. Sarah Chen: *long silence*
-    Dr. Sarah Chen: Elena's a widow now. Sofia and Miguel have no father.
-    Dr. Sarah Chen: I hope it was worth it.
-    #exit_conversation
-    -> DONE
-}
-
-Dr. Sarah Chen: Thank you for... handling this as well as you could.
-
-#exit_conversation
--> DONE
++ [He'll face justice.]
+    Dr. Sarah Chen: I understand.
+    -> hub

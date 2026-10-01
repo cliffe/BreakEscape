@@ -42,26 +42,26 @@
     {
       "ka": "WAM",
       "topic": "Web & Mobile Security",
-      "keywords": ["Directory traversal", "Authentication bypass", "CMS vulnerabilities"]
+      "keywords": ["Leaked credentials", "Authenticated file upload", "CMS vulnerabilities"]
     },
     {
       "ka": "CPS",
       "topic": "Physical Security",
-      "keywords": ["Physical access control", "RFID cloning", "Badge authentication systems"]
+      "keywords": ["Physical access control", "Lock picking", "Badge authentication systems"]
     },
     {
       "ka": "AAA",
       "topic": "Authentication",
-      "keywords": ["RFID authentication", "Access control bypass", "Credential theft", "Identity spoofing"]
+      "keywords": ["RFID authentication", "Access control bypass", "Credential theft"]
     }
   ],
 
   "learning_objectives": [
-    "Identify indicators of insider threats through behavioral analysis",
+    "Identify indicators of insider threats through behavioural analysis",
     "Correlate digital evidence (VM flags) with physical evidence (documents, interviews)",
-    "Exploit Bludit CMS via brute-force credential recovery and authenticated image-upload remote code execution",
+    "Exploit Bludit CMS via leaked credentials and authenticated image-upload remote code execution",
     "Navigate complex moral decisions with lasting consequences",
-    "Understand ENTROPY's systematic recruitment and radicalization methodology"
+    "Understand ENTROPY's systematic recruitment and radicalisation methodology"
   ],
 
   "vm_integration": {
@@ -77,9 +77,9 @@
   },
 
   "narrative_summary": {
-    "act1": "Arrive at Quantum Dynamics as SAFETYNET security consultant. Meet CSO Patricia Morgan who briefs you on suspected insider threat. Begin investigation by interviewing employees and gathering access credentials.",
-    "act2": "Clone employee badge to access server areas. Exploit Bludit CMS server to extract digital evidence. Discover David Torres' radicalization through ENTROPY's Insider Threat Initiative. Find medical bills revealing wife's cancer as leverage point. The Recruiter calls directly, offering a deal to let her other targets go unwarned.",
-    "act3": "Correlate all evidence to identify Torres. Confront him with choices: turn as double agent, arrest with cooperation, arrest without cooperation, combat (which resolves to a post-KO choice), or public exposure. No ending is ranked above another — each carries its own consequences."
+    "act1": "Arrive at Quantum Dynamics, a Home Office contractor near Cambridge, as a SAFETYNET security consultant. Meet CSO Patricia Morgan, interview staff and talk your way into the access you need.",
+    "act2": "Get a staff badge from Kevin or Dr Chen, and Torres' office card on Patricia's authority. Build both halves of the case: why (the journal, the vetting file, the medical bills in his briefcase) and proof of exfiltration (the research portal flags, the data-centre paperwork). Name him to Patricia. The Recruiter calls, offering a deal to leave her other targets unwarned.",
+    "act3": "Find Torres at the upload terminal in the data centre. Confront him with choices: turn as double agent, arrest with cooperation, arrest without cooperation, combat (which resolves to a post-KO choice), or public exposure. No ending is ranked above another — each carries its own consequences."
   },
 
   "key_npcs": [
@@ -93,19 +93,19 @@
       "id": "kevin_park",
       "name": "Kevin Park",
       "role": "IT Systems Administrator",
-      "importance": "Badge cloning target, provides technical intel"
+      "importance": "Holds the staff-badge clone, the office spare and a pick set; each is earned in conversation"
     },
     {
       "id": "dr_chen",
       "name": "Dr. Sarah Chen",
       "role": "Chief Scientist, Project Heisenberg Lead",
-      "importance": "Research badge access, emotional response to Torres accusation"
+      "importance": "Second route to a server-hallway badge; reacts to the accusation"
     },
     {
       "id": "lisa_park",
       "name": "Lisa Park",
       "role": "Marketing Coordinator",
-      "importance": "Optional NPC, humanizes Torres through family context"
+      "importance": "Optional NPC, humanises Torres through family context"
     },
     {
       "id": "david_torres",
@@ -121,14 +121,14 @@
     },
     {
       "id": "agent_0x99",
-      "name": "Agent 0x99 'Haxolottle'",
+      "name": "Agent HaX",
       "role": "SAFETYNET Handler",
       "importance": "Phone support, event-triggered guidance"
     }
   ],
 
   "moral_complexity": {
-    "primary_dilemma": "Torres is both perpetrator (knowingly enabled a lethal delay to emergency dispatch) and victim (radicalized through medical debt). He's only 3 months into radicalization - early enough to potentially save. The Recruiter argues the harder case: he made an informed choice, and forty-seven more candidates are already in her pipeline.",
+    "primary_dilemma": "Torres is both perpetrator (knowingly enabled a lethal delay to emergency dispatch) and victim (radicalised through medical debt). He's only 3 months into radicalisation - early enough to potentially save. The Recruiter argues the harder case: he made an informed choice, and forty-seven more candidates are already in her pipeline.",
     "entropy_portrayal": "A systematic recruitment methodology run by people who calculate and approve civilian casualties as an acceptable cost. The Recruiter is unapologetic and persuasive, not a cartoon villain.",
     "player_agency": "Multiple ending paths, unranked, with differences in campaign impact, Elena's treatment, and future intelligence gathering"
   },

@@ -1,147 +1,147 @@
 // ===========================================
 // Mission 5: Torres Confrontation - Act 3
-// Critical Choice with 5 Ending Paths
+// Critical choice: turn / hand over / expose / fight (fight resolves
+// in-engine, then the player decides his fate after the knockout).
+//
+// PASS 2:
+// - Torres waits in the data centre, at the upload terminal the scene
+//   describes. He is shown when he is named; the player walks to him.
+// - Re-entry guard (lesson 14): once final_choice is set, talking again
+//   goes to a resting knot and can't replay or overwrite the outcome.
+// - Never reaches DONE/END (lesson 21).
+// - final_choice is a synced global; the debrief waits for this
+//   conversation to CLOSE (conversation_closed:david_torres).
+// - Canon (review M2): SAFETYNET has no jurisdiction and no arrest powers
+//   (universe_bible/02_organisations/safetynet/overview.md:41-47). The
+//   player detains Torres and hands him to Patricia, who calls the police.
+//   "Cooperation" is a private deal: SAFETYNET pays for Elena's treatment
+//   in exchange for a debrief before the police arrive. What a court does
+//   next is not SAFETYNET's to promise.
 // ===========================================
 
-// Choice tracking
 VAR final_choice = ""  // "turn_double_agent", "arrest", "combat_nonlethal", "combat_lethal", "public_exposure"
-VAR confront_stance = ""  // "sympathetic" or "hardline" — how the player framed Torres, paid back in the debrief
+VAR confront_stance = ""  // "sympathetic" or "hardline"
 VAR torres_turned = false
 VAR torres_arrested = false
 VAR torres_killed = false
 VAR elena_treatment_funded = false
 VAR entropy_program_exposed = false
 
-// External variables
+// Synced from scenario globals
 VAR player_name = "Agent 0x00"
-VAR evidence_level = 0
 VAR found_medical_bills = false
 VAR found_torres_journal = false
-VAR found_briefcase_comms = false
-VAR flag4_submitted = false // Architect communications
+VAR found_vetting_file = false
+VAR found_pipeline_list = false
+VAR flag4_submitted = false
+VAR recruiter_contacted_player = false
+VAR patricia_ko = false
 
 // ===========================================
-// CONFRONTATION START (Evidence Gated)
+// ENTRY
 // ===========================================
 
 === start ===
-#speaker:narrator
-
-{evidence_level >= 4:
-    -> confrontation_scene
-- else:
-    You need more evidence before confronting Torres.
-
-    {not flag4_submitted:
-        Exploit the Bludit server to find The Architect's communications.
-    }
-    {not found_medical_bills:
-        Search Torres' office for personal evidence.
-    }
-
-    #exit_conversation
-    -> END
+{final_choice != "":
+    -> after_choice
 }
+-> confrontation_scene
 
 === confrontation_scene ===
 #speaker:narrator
+Narrator: 8:14 PM. The data centre. Fans roar in the racks.
 
-[8:14 PM. Server room.]
+Narrator: David Torres sits alone at the terminal, a USB drive in the front port. The transfer bar reads 94%. Sixteen minutes to the window.
 
-You find David Torres alone at a terminal, USB drive connected, progress bar at 94%.
-
-The final exfiltration. Project Heisenberg's last 27%.
-
-He doesn't turn around.
+Narrator: He doesn't turn around.
 
 #speaker:david_torres
-#display:torres-stressed
+{patricia_ko:
+    David Torres: I know you're there. Security's gone quiet tonight. That was you, wasn't it?
+- else:
+    David Torres: I know you're there. Patricia sent you.
+}
 
-David Torres: I know you're there. Patricia sent you, didn't she?
+David Torres: "Security consultant." You're not an auditor.
 
-David Torres: Security consultant. More like SAFETYNET agent.
-
-+ [It's over. Step away from the computer.]
-    You: It's over. Step away from the computer.
++ [It's over. Step away from the terminal.]
+    You: It's over, David. Step away from the terminal.
     #speaker:narrator
-    He turns slowly to face you.
+    Narrator: He turns slowly. His hand stays near the keyboard.
     #speaker:david_torres
     David Torres: Is it?
     -> torres_confrontation
 
-+ [I know everything. The Bludit server. The Recruiter. ENTROPY.]
-    You: I've seen the communications. The payment records. All of it.
++ [I've seen the portal. The Recruiter. All of it.]
+    You: I've seen the staging on the portal. The Recruiter. All of it.
     David Torres: Then you know more than I did when I started.
     -> torres_confrontation
 
 // ===========================================
-// MAIN CONFRONTATION DIALOGUE
+// MAIN CONFRONTATION
 // ===========================================
 
 === torres_confrontation ===
 #speaker:david_torres
-#display:torres-defensive
 
-David Torres: Let me guess. You found the medical bills. Elena's diagnosis.
-
-David Torres: Stage 3 cancer. $380,000 in debt.
-
-{found_torres_journal:
-    David Torres: Did you read my journal too? See me lie to myself for three months?
+{found_medical_bills or found_vetting_file:
+    David Torres: You've seen the bills, then. Elena's trial. Three hundred and eighty thousand dollars.
+- else:
+    David Torres: Do you know what a clinical trial costs, when the insurer says no? I do. To the dollar.
 }
 
-+ [ENTROPY manipulated you. You didn't know what you were doing.]
-    You: They lied. Told you it was for journalists, right?
+{found_torres_journal:
+    David Torres: Did you read my journal as well? Three months of me lying to myself, in my own handwriting.
+}
+
++ [They played you. You didn't know what this was.]
+    You: They lied to you. Told you it was for journalists, right?
     ~ confront_stance = "sympathetic"
-    #set_global:confront_stance:sympathetic
     -> torres_knows_truth
 
 + [You knew exactly what you were doing.]
-    You: The Architect's authorisation was explicit. The dispatch network. The casualty projection.
+    You: You knew. The dispatch network. The projection. You knew.
     ~ confront_stance = "hardline"
-    #set_global:confront_stance:hardline
     -> torres_knows_truth
 
 === torres_knows_truth ===
 #speaker:david_torres
-#display:torres-breaking
+
+David Torres: "Investigative journalists exposing a corrupt contractor." That's what the Recruiter said. For about two weeks.
 
 {flag4_submitted:
-    David Torres: "Investigative journalists exposing military corruption." That's what the Recruiter said. For about two weeks.
-
-    David Torres: Then they showed me the casualty projections.
+    David Torres: Then they showed me the paperwork you've clearly found. The Architect's signature under a number.
+- else:
+    David Torres: Then they showed me the casualty projection.
 }
 
-David Torres: I've known for two months. It was never going overseas. ENTROPY wants the dispatch network for themselves.
+David Torres: I've known for two months. It was never going to a newspaper. ENTROPY wants the dispatch network for themselves.
 
-David Torres: Thirty to forty-five people dead the first time they use it. Ambulances that don't arrive in time.
+David Torres: Thirty to forty-five people, the first time they use it. Ambulances that don't arrive.
 
-+ [You knew people would die. Why did you keep going?]
-    You: You KNEW people would die. Why?
++ [You knew people would die. Why keep going?]
+    You: You knew people would die. Why did you keep going?
     -> torres_rationalization
 
-+ [You're no different from ENTROPY's other radicals.]
-    You: You're no different from ENTROPY's other radicals.
++ [You're no different from the rest of them.]
+    You: You're no different from ENTROPY's other true believers.
     #speaker:narrator
-    He starts to answer, then stops himself.
+    Narrator: He opens his mouth to answer, then stops himself.
     -> torres_rationalization
 
 === torres_rationalization ===
 #speaker:david_torres
-#display:torres-conflicted
 
-David Torres: Because the system is corrupt. The military-industrial complex profits from endless war—
+David Torres: Because the system is rotten. Because it would all come down anyway, and better it comes down on purpose...
 
-David Torres: Because Elena was dying and I had no choice—
+David Torres: Because Elena was dying and nobody else was going to pay...
 
 David Torres: Because thirty to forty-five people is... is...
 
-David Torres: Is thirty to forty-five families. Like Elena. Like Sofia and Miguel.
+David Torres: Is thirty to forty-five families. Like mine.
 
 {found_torres_journal:
-    David Torres: You read my journal. You saw the cognitive dissonance.
-    David Torres: "System must collapse for greater good." "Collateral damage is necessary for change."
-    David Torres: I was lying to myself.
+    David Torres: You read it. "Collateral damage for the greater good." I wrote that about strangers so I wouldn't have to think of them as people.
 }
 
 -> evidence_revelation
@@ -149,322 +149,287 @@ David Torres: Is thirty to forty-five families. Like Elena. Like Sofia and Migue
 === evidence_revelation ===
 #speaker:david_torres
 
-David Torres: What did I become?
+David Torres: Three months ago I was trying to save my wife.
 
-David Torres: Three months ago I was trying to save my wife. Now I'm...
-
-David Torres: I'm about to get people killed.
+David Torres: Now I'm sixteen minutes from getting people killed.
 
 #speaker:narrator
-
-This is it. The choice.
+Narrator: The transfer bar ticks to 95%. This is the choice.
 
 -> final_choice_moment
 
 // ===========================================
-// CRITICAL CHOICE - 4 CONVERSATION PATHS + COMBAT
+// CRITICAL CHOICE
 // ===========================================
 
 === final_choice_moment ===
 #speaker:narrator
 
-What do you do?
-
 + [You're not too far gone. Help us, and we'll help Elena.]
     #complete_task:confront_torres
-    ~ final_choice = "turn_double_agent"
     -> turn_double_agent_path
 
-+ [You're under arrest for espionage and treason.]
++ [It's over. You're staying here until the police arrive.]
     #complete_task:confront_torres
-    ~ final_choice = "arrest"
     -> arrest_path
 
-+ [Drop the philosophy. Fight or surrender. Your choice.]
++ [Drop the philosophy. Step away, or I make you.]
     #complete_task:confront_torres
     -> combat_offer
 
-+ [I'm exposing everything. ENTROPY's program, your crimes, all of it.]
++ [I'm going public. ENTROPY's programme, your part in it, all of it.]
     #complete_task:confront_torres
-    ~ final_choice = "public_exposure"
     -> public_exposure_path
 
 // ===========================================
-// PATH 1: TURN DOUBLE AGENT
+// PATH 1: TURN
 // ===========================================
 
 === turn_double_agent_path ===
 #speaker:david_torres
-#display:torres-hopeful
 
-You: You've been radicalized for three months. Not three years.
-
-You: You still have cognitive dissonance. You're not fully committed to their ideology.
-
-You: That means you can come back.
+You: They've had you three months, not three years. You wrote "what have I become". People who've gone all the way don't ask that.
 
 David Torres: Come back how?
 
-+ [Work for us. Feed ENTROPY false data. Map their network.]
-    You: Witness protection. New identity. And Elena gets treatment.
++ [Work for us. Feed them false data. Lead us to the network.]
+    You: You go back to your desk. You pass them what we give you. And you lead us to the rest of the network.
     -> torres_deal_offered
 
 === torres_deal_offered ===
 #speaker:david_torres
 
-David Torres: Elena's treatment? Full coverage?
+David Torres: And Elena?
 
-You: Witness protection program. Experimental treatment included.
+You: We pay for the trial. If it ever gets dangerous, we can move your family somewhere quiet.
 
-{flag4_submitted:
-    You: I found the target database. 47 other people ENTROPY's evaluating.
-    You: People like you. Desperate. Vulnerable. About to be radicalized.
-    David Torres: Forty-seven more?
+{recruiter_contacted_player:
+    You: The Recruiter rang me tonight. She's lining up forty-seven more people like you.
+    David Torres: Forty-seven...
 }
 
-David Torres: What do you need from me?
-
-+ [Everything. The Recruiter's identity, comm protocols, payment chains.]
-    You: And you keep meeting them. Pass false data. Lead us to their network.
++ [Everything. Her name, the channels, the money.]
+    You: I need everything. How she contacts you, how you're paid, who else you've met.
     -> torres_accepts_turn
 
 === torres_accepts_turn ===
 #speaker:david_torres
-#display:torres-determined
 
-David Torres: Okay. Okay, I'll do it.
+David Torres: All right. All right. I'll do it.
 
-David Torres: I'll help you save the other 47. The ones who haven't... who aren't monsters yet.
-
-David Torres: And Elena?
-
-You: Treatment starts next week. SAFETYNET will handle everything.
+David Torres: I'll help you get to the others before they end up where I am.
 
 ~ torres_turned = true
 ~ elena_treatment_funded = true
 #complete_task:make_critical_choice
-
-David Torres: Thank you. Thank god.
+~ final_choice = "turn_double_agent"
+David Torres: Thank you. I didn't think anyone would give me a way out.
 
 -> stop_upload
 
 // ===========================================
-// PATH 2: ARREST (Standard Justice)
+// PATH 2: HAND HIM OVER
 // ===========================================
 
 === arrest_path ===
 #speaker:david_torres
-#display:torres-resigned
 
-You: David Torres, you're under arrest for espionage, theft of classified materials, and conspiracy.
+You: I'm not police, David. I can't arrest you. But you're not leaving this room, and Patricia is calling them.
 
-David Torres: I know.
+David Torres: So what are you?
 
-David Torres: Do I get a lawyer?
-
-+ [Yes. You have rights.]
-    You: Federal custody. You'll be processed, arraigned. Standard procedure.
++ [Someone who stopped this. That's all you need to know.]
+    You: Someone who stopped this. The police can have you, and the evidence.
     David Torres: What about Elena? The kids?
     -> arrest_family_question
 
-+ [You'll get due process.]
++ [It doesn't matter. What matters is who arrives next.]
     David Torres: That's not an answer.
     -> arrest_family_question
 
 === arrest_family_question ===
 #speaker:david_torres
 
-David Torres: Elena's treatment. The $380,000. If I'm in prison...
+David Torres: Elena's trial. If I'm in a cell, nobody pays for it.
 
-David Torres: She dies. Sofia and Miguel watch their mother die.
+David Torres: She dies. Sofia and Miguel watch it happen.
 
-+ [SAFETYNET might fund treatment as part of a cooperation deal.]
-    You: If you provide full intelligence on ENTROPY. Names, locations, protocols.
-    David Torres: I'll cooperate. Fully. Whatever you need.
++ [Talk to me before they get here, and we'll pay for her treatment.]
+    You: Before the police arrive, you tell me everything about ENTROPY: names, channels, money. Do that, and we pay for Elena's treatment. What a court does with you is not mine to promise.
+    David Torres: Everything. Whatever you need.
     ~ elena_treatment_funded = true
     -> arrest_cooperation
 
-+ [That's not my jurisdiction.]
-    You: I'm an agent, not a social worker.
-    David Torres: Of course.
++ [That isn't my problem.]
+    You: I'm not a social worker, David.
+    David Torres: No. Of course not.
     -> arrest_no_cooperation
 
 === arrest_cooperation ===
 #speaker:david_torres
 
-David Torres: I'll tell you everything about the Insider Threat Initiative.
+David Torres: The Recruiter. How they found me. Where the money comes from. All of it.
 
-David Torres: The Recruiter. The 23 other placements. The 47 targets.
-
-David Torres: Just... please. Elena.
+David Torres: Just... Elena. Please.
 
 ~ torres_arrested = true
-~ final_choice = "arrest"
 #complete_task:make_critical_choice
-
-You: Stop the upload first. Then we'll debrief.
+~ final_choice = "arrest"
+You: Stop the upload first. Then we talk, quickly.
 
 -> stop_upload
 
 === arrest_no_cooperation ===
 #speaker:david_torres
 
-David Torres: Then I want my lawyer. Now.
-
-David Torres: I'm not saying anything else.
+David Torres: Then I've got nothing to say to you. I'll wait for them.
 
 ~ torres_arrested = true
-~ final_choice = "arrest"
 #complete_task:make_critical_choice
-
+~ final_choice = "arrest"
 You: Fine. But that upload stops. Now.
 
 -> stop_upload
 
 // ===========================================
-// PATH 3: COMBAT — TORRES GOES HOSTILE
+// PATH 3: FIGHT
+// The fight resolves in-engine. The player decides his fate after the
+// knockout in post_ko_choice (npc_ko:david_torres mapping, disableClose).
 // ===========================================
-// Decision C: combat is resolved by the engine, not in prose.
-// The player's fate for Torres is decided AFTER the knockout,
-// in post_ko_choice below (reached via the npc_ko event).
 
 === combat_offer ===
 #speaker:david_torres
-#display:torres-hostile
-#hostile:david_torres
 
-You: No more talk. No more philosophy. Hands up, or I use force.
+You: No more talk. Hands off the keyboard, or I take them off it.
 
 David Torres: You're not taking me. Elena needs me.
 
+#hostile:david_torres
 #speaker:narrator
-
-He backs toward the terminal and lunges.
+Narrator: He shoves the chair back and comes at you.
 
 #exit_conversation
--> END
+-> fighting
+
+// Resting knot while he is hostile. A hostile NPC is struck, not talked to,
+// so this is only a safety net that keeps the story live (lesson 21).
+=== fighting ===
+#speaker:narrator
++ [Back off and keep your guard up.]
+    Narrator: He's past talking.
+    #exit_conversation
+    -> fighting
 
 // ===========================================
 // POST-KNOCKOUT: DECIDE HIS FATE
-// Entered via the david_torres npc_ko eventMapping
 // ===========================================
 
 === post_ko_choice ===
+{final_choice != "":
+    -> after_choice
+}
 #speaker:narrator
+Narrator: Torres went down hard against the rack. He isn't getting up.
 
-Torres is down. The terminal still reads 97% complete.
+Narrator: His breathing is ragged, and blood is pooling under his head. The terminal reads 97%.
 
-You have a few seconds before backup arrives to decide how this gets written up.
-
-+ [Cuff him. He answers for this in a courtroom, not on a floor.]
-    ~ final_choice = "combat_nonlethal"
++ [Kill the upload, then stay with him: recovery position, pressure, call it in.]
+    You: Upload first. Then him.
     ~ torres_arrested = true
     #complete_task:make_critical_choice
+    ~ final_choice = "combat_nonlethal"
     -> post_ko_arrest
 
-+ [Leave him for SAFETYNET cleanup. What happens to him next isn't on you.]
-    ~ final_choice = "combat_lethal"
++ [Kill the upload and walk out. Leave him bleeding on the floor.]
+    You: Upload first. He can wait for whoever comes.
     ~ torres_killed = true
     #complete_task:make_critical_choice
+    ~ final_choice = "combat_lethal"
     -> post_ko_handoff
 
 === post_ko_arrest ===
 #speaker:narrator
+Narrator: You pull the drive and kill the transfer at 97%. The last of it stays in the building.
 
-You cancel the upload — 97% complete, the last 3% stays secure — and radio it in.
+Narrator: Then you roll him onto his side, press your jacket to the cut, and call Patricia. She brings the police and an ambulance. He comes round in hospital, under guard.
 
-Torres wakes up in federal custody. Elena and the kids get a phone call, not a visit from a coroner.
-
-#set_global:final_choice:combat_nonlethal
 #exit_conversation
--> END
+-> after_choice
 
 === post_ko_handoff ===
 #speaker:narrator
+Narrator: You pull the drive and kill the transfer at 97%. The last of it stays in the building.
 
-You cancel the upload — 97% complete, the last 3% stays secure — and walk out.
+Narrator: You step over him on the way out. Nobody else knows he's down here.
 
-Whatever SAFETYNET's cleanup team decides to do with an unconscious ENTROPY asset is not a call you're sticking around for.
-
-#set_global:final_choice:combat_lethal
 #exit_conversation
--> END
+-> after_choice
 
 // ===========================================
-// PATH 4: PUBLIC EXPOSURE (Nuclear Option)
+// PATH 4: PUBLIC EXPOSURE
 // ===========================================
 
 === public_exposure_path ===
 #speaker:david_torres
-#display:torres-horrified
 
-You: I'm not arresting you, David.
+You: I'm not handing you over quietly, David. I'm burning the whole programme.
 
-You: I'm exposing ENTROPY's entire Insider Threat Initiative.
+You: Your case, the Recruiter, the other placements. Every newsroom that will take it.
 
-You: Your case. The 23 other placements. The 47 targets. All of it.
+David Torres: You'll wreck everyone. The other targets...
 
-You: Every major news outlet. WikiLeaks. The whole playbook.
-
-David Torres: You'll destroy everyone. The other targets—
-
-You: They'll be warned. ENTROPY's program will be burned.
+You: They'll be warned. ENTROPY's recruiting operation will be finished.
 
 David Torres: And me? My family?
 
-+ [You'll be named publicly. There's no protecting you.]
-    You: Elena will read about your espionage in the news.
-    You: Sofia and Miguel will see their father's face on TV.
++ [You'll be named. I can't protect you from that.]
+    You: You'll be named publicly. Elena will read it. Sofia and Miguel will see your face on the news.
     -> public_exposure_consequence
 
 === public_exposure_consequence ===
 #speaker:david_torres
 
-David Torres: My children. They're eight and eleven.
+David Torres: They're eight and eleven.
 
-David Torres: This will follow them their entire lives.
+David Torres: This will follow them for the rest of their lives.
 
-You: You should have thought of that before committing espionage.
+You: You should have thought about that before tonight.
 
 ~ entropy_program_exposed = true
-~ torres_arrested = true  // Will be arrested after exposure
-~ final_choice = "public_exposure"
+~ torres_arrested = true
 #complete_task:make_critical_choice
-
-David Torres: I did this to save them. And you're going to destroy them anyway.
+~ final_choice = "public_exposure"
+David Torres: I did this to save them. And you're going to wreck them anyway.
 
 -> stop_upload
 
 // ===========================================
-// STOP UPLOAD SEQUENCE (conversational paths)
+// STOP THE UPLOAD (conversational paths)
 // ===========================================
 
 === stop_upload ===
 #speaker:narrator
+Narrator: He reaches past you and cancels the transfer. 97%. The last of it stays in the building.
 
-{torres_turned or torres_arrested:
-    David Torres: Upload cancelled. 97% complete. Last 3% stays here.
-- else:
-    You force Torres away from the terminal.
-    You: Cancel it. Now.
-    David Torres: Done.
+{found_pipeline_list:
+    Narrator: The TalentStack envelope is still in your pocket. He looks at it, then away.
 }
 
 {torres_turned:
     #speaker:david_torres
     David Torres: What happens now?
-    You: Debrief. Witness protection processing. Elena gets moved to a secure facility for treatment.
-    David Torres: And the 47 others?
-    You: We save as many as we can.
+    You: You go home and act normal. Elena starts treatment on Monday. We'll be in touch.
+    David Torres: And the others?
+    You: We reach as many as we can.
 }
 
-{torres_arrested:
+{torres_arrested and not entropy_program_exposed:
     #speaker:david_torres
-    David Torres: Federal prison. How long?
-    You: 15 to 25 years for espionage. Maybe less with cooperation.
+    David Torres: How long will I get?
+    You: That's for a court. Not me.
     {elena_treatment_funded:
-        David Torres: But Elena gets treatment?
-        You: SAFETYNET will honor the deal.
+        David Torres: But Elena gets her treatment?
+        You: We keep our deals.
     - else:
         David Torres: Elena will be dead before I get out.
     }
@@ -473,25 +438,36 @@ David Torres: I did this to save them. And you're going to destroy them anyway.
 {entropy_program_exposed:
     #speaker:david_torres
     David Torres: When does it go public?
-    You: Within the week. Gives SAFETYNET time to warn the 47 targets.
+    You: Within the week. That gives us time to warn the others first. The police will come for you before then.
     David Torres: And then my face is everywhere.
 }
 
 #speaker:narrator
-
-Mission complete. ENTROPY's operation stopped.
-
-The cost? That depends on the choice you made.
-
-{final_choice == "turn_double_agent":
-    #set_global:final_choice:turn_double_agent
-}
-{final_choice == "arrest":
-    #set_global:final_choice:arrest
-}
-{final_choice == "public_exposure":
-    #set_global:final_choice:public_exposure
-}
+Narrator: Operation Schrödinger is stopped. What it cost depends on what you just chose.
 
 #exit_conversation
--> END
+-> after_choice
+
+// ===========================================
+// RESTING KNOT (re-entry after the choice)
+// ===========================================
+
+=== after_choice ===
+#speaker:narrator
++ {final_choice == "turn_double_agent"} [We'll be in touch, David.]
+    #speaker:david_torres
+    David Torres: I know. I'll be waiting for the call.
+    #exit_conversation
+    -> after_choice
++ {final_choice == "arrest" or final_choice == "public_exposure"} [Sit tight. Patricia's on her way with the police.]
+    #speaker:david_torres
+    David Torres: Where would I go?
+    #exit_conversation
+    -> after_choice
++ {final_choice == "combat_nonlethal" or final_choice == "combat_lethal"} [Leave him.]
+    Narrator: He doesn't move.
+    #exit_conversation
+    -> after_choice
++ {final_choice == ""} [Not yet.]
+    #exit_conversation
+    -> start
