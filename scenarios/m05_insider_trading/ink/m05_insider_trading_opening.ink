@@ -203,6 +203,10 @@ Agent HaX: The real enemy is ENTROPY. The insider might be a victim too.
 
 Agent HaX: You're going in as an external security consultant. SAFETYNET cover identity.
 
+Agent HaX: Your kit goes in with you. Picks, the cloner, and the print kit you brought back from Albion. Auditors carry odd bags; nobody looks.
+
+Agent HaX: Still no PIN cracker. The lab isn't finished with it.
+
 Agent HaX: Chief Security Officer Patricia Morgan is expecting you. Ex-military police, fifteen years at the National Crime Agency. She called us in.
 
 Agent HaX: She'll get you in the door, but the politics are tense. The CEO wants this handled quietly.
@@ -216,9 +220,9 @@ Agent HaX: She'll get you in the door, but the politics are tense. The CEO wants
 === npc_briefing ===
 #speaker:agent_0x99
 
-Agent HaX: Dr. Sarah Chen leads the cryptography team. Brilliant scientist, protective of her people.
+Agent HaX: Dr Ruth Halloran leads the cryptography team. Brilliant scientist, protective of her people.
 
-Agent HaX: Kevin Park - IT systems administrator. He's your best bet for technical access. Build rapport.
+Agent HaX: Owen Gallagher - IT systems administrator. He holds the spare cards and the server-room password, and he logs who gets them.
 
 Agent HaX: Lisa Park in marketing might have useful intel. She's observant about office dynamics.
 
@@ -231,7 +235,7 @@ Agent HaX: Lisa Park in marketing might have useful intel. She's observant about
 === resources_briefing ===
 #speaker:agent_0x99
 
-Agent HaX: Not much, and that's deliberate. A security auditor can't walk a pick kit through reception. Anything you need, you source on site. Kevin Park in IT is your best bet.
+Agent HaX: SAFETYNET can't get you a staff badge, so you'll be borrowing access on site. Owen Gallagher in IT is your best bet.
 
 Agent HaX: We've set up a drop-site terminal in the server room. Secure channel for submitting what you pull off their systems.
 

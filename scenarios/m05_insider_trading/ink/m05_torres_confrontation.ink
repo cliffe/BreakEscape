@@ -64,6 +64,8 @@ Narrator: He doesn't turn around.
 
 David Torres: "Security consultant." You're not an auditor.
 
+David Torres: The vault logged me in twice tonight. One of them was you.
+
 + [It's over. Step away from the terminal.]
     You: It's over, David. Step away from the terminal.
     #speaker:narrator

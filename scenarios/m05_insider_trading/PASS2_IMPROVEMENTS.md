@@ -1,5 +1,7 @@
 # m05 Insider Trading — Pass 2 improvements
 
+> Renamed 2026-10-01 (pass 3): Dr Sarah Chen → Dr Ruth Halloran (id dr_chen → dr_halloran; ink m05_npc_dr_chen → m05_npc_dr_halloran; globals/VARs chen_* → halloran_*; task talk_to_dr_chen → talk_to_dr_halloran). Kevin Park → Owen Gallagher (id kevin_park → owen_gallagher; ink m05_npc_kevin_park → m05_npc_owen_gallagher; globals/VARs kevin_* → owen_*; task talk_to_kevin → talk_to_owen; knot on_kevin_ko_relay → on_owen_ko_relay). This document predates the rename and is not rewritten.
+
 > The m02-standard pass. Sources: `scenario.json.erb`, the nine `.ink` files,
 > the engine (`public/`, `app/`), m02/m03/m04 as worked examples, the escalated
 > universe bible, and the published SecGen XML. Nothing was committed.

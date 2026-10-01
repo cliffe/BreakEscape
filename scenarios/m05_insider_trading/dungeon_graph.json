@@ -16,13 +16,13 @@
     },
     {
       "id": "door_server_room",
-      "label": "Server Room<br/>Password lock",
+      "label": "Server Room — Password Access. Contact IT.<br/>Password lock",
       "kind": "lock",
       "optional": false
     },
     {
       "id": "server_room",
-      "label": "Server Room",
+      "label": "Server Room — Password Access. Contact IT.",
       "kind": "room",
       "optional": false
     },
@@ -39,27 +39,27 @@
       "optional": false
     },
     {
-      "id": "open_office_area",
-      "label": "Open Office Area",
+      "id": "door_data_center",
+      "label": "Key Vault — Fingerprint Access. Cryptography Lead Only.<br/>Biometric lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "data_center",
+      "label": "Key Vault — Fingerprint Access. Cryptography Lead Only.",
       "kind": "room",
       "optional": false
     },
     {
-      "id": "server_password_sticky_note",
-      "label": "Server Password Sticky Note",
+      "id": "reception_lobby",
+      "label": "Reception Lobby",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lock_pick_kit",
+      "label": "Lock Pick Kit",
       "kind": "item",
-      "optional": false
-    },
-    {
-      "id": "npc_kevin_park",
-      "label": "Kevin Park",
-      "kind": "key",
-      "optional": false
-    },
-    {
-      "id": "lockpick_set",
-      "label": "Lockpick Set",
-      "kind": "key",
       "optional": false
     },
     {
@@ -75,20 +75,50 @@
       "optional": false
     },
     {
+      "id": "rfid_cloner",
+      "label": "RFID Cloner",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "fingerprint_kit",
+      "label": "Fingerprint Kit",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "npc_owen_gallagher",
+      "label": "Owen Gallagher",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "open_office_area",
+      "label": "Open Office Area",
+      "kind": "room",
+      "optional": false
+    },
+    {
       "id": "torres_office_keycard",
       "label": "Torres Office Keycard",
       "kind": "key",
       "optional": false
     },
     {
-      "id": "cloned_staff_badge",
-      "label": "Cloned Staff Badge",
-      "kind": "key",
+      "id": "server_password_sticky_note",
+      "label": "Server Password Sticky Note",
+      "kind": "item",
       "optional": false
     },
     {
-      "id": "npc_dr_sarah_chen",
-      "label": "Dr. Sarah Chen",
+      "id": "mug",
+      "label": "Mug",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "npc_dr_ruth_halloran",
+      "label": "Dr Ruth Halloran",
       "kind": "key",
       "optional": false
     },
@@ -153,12 +183,6 @@
       "optional": false
     },
     {
-      "id": "reception_lobby",
-      "label": "Reception Lobby",
-      "kind": "room",
-      "optional": false
-    },
-    {
       "id": "main_corridor",
       "label": "Main Corridor",
       "kind": "room",
@@ -194,37 +218,47 @@
       "soft": false
     },
     {
-      "from": "open_office_area",
-      "to": "server_password_sticky_note",
+      "from": "door_data_center",
+      "to": "data_center",
       "soft": false
     },
     {
-      "from": "server_password_sticky_note",
-      "to": "door_server_room",
+      "from": "reception_lobby",
+      "to": "lock_pick_kit",
       "soft": false
     },
     {
-      "from": "open_office_area",
-      "to": "npc_kevin_park",
-      "soft": false
-    },
-    {
-      "from": "npc_kevin_park",
-      "to": "lockpick_set",
-      "soft": false
-    },
-    {
-      "from": "lockpick_set",
+      "from": "lock_pick_kit",
       "to": "lock_torres_briefcase",
       "soft": false
     },
     {
-      "from": "lockpick_set",
+      "from": "lock_pick_kit",
       "to": "lock_patricia_filing_cabinet",
       "soft": false
     },
     {
-      "from": "npc_kevin_park",
+      "from": "reception_lobby",
+      "to": "rfid_cloner",
+      "soft": false
+    },
+    {
+      "from": "rfid_cloner",
+      "to": "door_server_hallway",
+      "soft": false
+    },
+    {
+      "from": "reception_lobby",
+      "to": "fingerprint_kit",
+      "soft": false
+    },
+    {
+      "from": "open_office_area",
+      "to": "npc_owen_gallagher",
+      "soft": false
+    },
+    {
+      "from": "npc_owen_gallagher",
       "to": "torres_office_keycard",
       "soft": false
     },
@@ -234,13 +268,23 @@
       "soft": false
     },
     {
-      "from": "npc_kevin_park",
-      "to": "cloned_staff_badge",
+      "from": "npc_owen_gallagher",
+      "to": "server_password_sticky_note",
       "soft": false
     },
     {
-      "from": "cloned_staff_badge",
-      "to": "door_server_hallway",
+      "from": "server_password_sticky_note",
+      "to": "door_server_room",
+      "soft": false
+    },
+    {
+      "from": "torres_office",
+      "to": "mug",
+      "soft": false
+    },
+    {
+      "from": "mug",
+      "to": "door_data_center",
       "soft": false
     },
     {
@@ -250,11 +294,11 @@
     },
     {
       "from": "research_lab",
-      "to": "npc_dr_sarah_chen",
+      "to": "npc_dr_ruth_halloran",
       "soft": false
     },
     {
-      "from": "npc_dr_sarah_chen",
+      "from": "npc_dr_ruth_halloran",
       "to": "research_badge",
       "soft": true
     },

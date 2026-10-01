@@ -30,6 +30,19 @@
 #   Exfil:   flag3_submitted | found_manifest | found_upload_schedule
 #   Patricia will act on a name only when the player has one of each.
 #
+# THE LOCKS (pass 3, PUZZLE_CHAINS_PLAN.md):
+#   Start kit: phone, picks (m01), RFID cloner (m03), fingerprint kit (m04).
+#   server_hallway  rfid      clone Owen's lanyard (by design), or Dr
+#                             Halloran's spare, or HaX's relay
+#   server_room     password  Owen refuses by default; Patricia's incident
+#                             log (evidence) or her authority opens him up
+#   torres_office   rfid      Owen's spare, on Patricia's authority
+#   data_center     biometric the key vault, enrolled to Torres alone; his
+#                             print is on the mug in his office. Owen names
+#                             the reader when he hands over the password
+#   briefcase, Patricia's cabinet: picks (by design)
+#   Naming: Patricia in person, Patricia by phone (patricia_phone), or HaX.
+#
 # HYBRID ARCHITECTURE:
 #   - VM: Bludit CMS research portal (leaked credentials, authenticated
 #     image-upload RCE, then user and root on the box)
@@ -38,7 +51,7 @@
 
 # Narrative Content Variables
 server_room_password = "quantum2024"
-password_hint_sticky = "Server room temp password (expires Friday): #{server_room_password}\n\n- K"
+password_hint_sticky = "Server room temp password (expires Friday): #{server_room_password}\n\n- O"
 torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing retainer if I finish the upload tonight. Elena's first trial dose is Monday.\n\nI know what this costs. Thirty to forty-five people, by their own projections. Ambulances that don't arrive in time.\n\nI've talked myself round with their philosophy. The system is rotten. Collateral damage for the greater good.\n\nI read that back and I don't recognise the man who wrote it. What have I become?"
 %>
 {
@@ -112,7 +125,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           { "text": "" },
           { "text": "── THE CASE ──",                                      "style": "section-header" },
           { "text": "MOTIVE, MEANS AND AUTHORISATION — all on file",       "style": "entry", "condition": "globalVars.flag4_submitted && (globalVars.found_medical_bills || globalVars.found_torres_journal || globalVars.found_vetting_file) && globalVars.found_pamphlet" },
-          { "text": "RECRUITMENT PIPELINE — TalentStack link not documented", "style": "entry", "condition": "!globalVars.found_pamphlet" },
+          { "text": "RECRUITMENT PIPELINE — TalentStack link not documented", "style": "entry", "condition": "!globalVars.found_pamphlet && !globalVars.found_pipeline_list" },
           { "text": "" },
           { "text": "── DAVID TORRES ──",                                  "style": "section-header" },
           { "text": "TURNED — working for SAFETYNET inside ENTROPY's network", "style": "entry", "condition": "globalVars.final_choice === 'turn_double_agent'" },
@@ -135,13 +148,17 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           { "text": "Classmates saw their father named a spy on the news",  "style": "warning", "condition": "globalVars.final_choice === 'public_exposure'" },
           { "text": "" },
           { "text": "── THE RECRUITER ──",                                 "style": "section-header" },
-          { "text": "OFFER REFUSED — the TalentStack list went to SAFETYNET", "style": "entry", "condition": "globalVars.recruiter_deal_offered && !globalVars.recruiter_deal_accepted && globalVars.found_pipeline_list" },
-          { "text": "OFFER REFUSED — but the TalentStack list was never recovered", "style": "entry", "condition": "globalVars.recruiter_deal_offered && !globalVars.recruiter_deal_accepted && !globalVars.found_pipeline_list" },
+          { "text": "OFFER REFUSED — the TalentStack list went to SAFETYNET", "style": "entry", "condition": "globalVars.recruiter_deal_decided && !globalVars.recruiter_deal_accepted && globalVars.found_pipeline_list" },
+          { "text": "OFFER REFUSED — but the TalentStack list was never recovered", "style": "entry", "condition": "globalVars.recruiter_deal_decided && !globalVars.recruiter_deal_accepted && !globalVars.found_pipeline_list" },
+          { "text": "OFFER LEFT UNANSWERED — she rang off without a yes", "style": "entry", "condition": "globalVars.recruiter_deal_offered && !globalVars.recruiter_deal_decided" },
           { "text": "OFFER TAKEN — forty-seven names left in her pipeline", "style": "warning", "condition": "globalVars.recruiter_deal_accepted && !globalVars.recruiter_deal_confessed" },
           { "text": "OFFER TAKEN, THEN CONFESSED — the list went in late",  "style": "warning", "condition": "globalVars.recruiter_deal_accepted && globalVars.recruiter_deal_confessed" },
           { "text": "" },
-          
-{ "text": "The Architect remains at large...",                   "style": "warning" }
+          { "text": "── QUANTUM DYNAMICS ──",                              "style": "section-header" },
+          { "text": "CEO'S STAND-DOWN — on file with the Home Office review", "style": "entry", "condition": "globalVars.found_stand_down_email" },
+          { "text": "WHO STOPPED THE INTERVIEW — never asked",            "style": "warning", "condition": "!globalVars.found_stand_down_email" },
+          { "text": "" },
+          { "text": "The Architect remains at large...",                   "style": "warning" }
         ]
       }
     ]
@@ -200,10 +217,10 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
       "unlockCondition": { "aimCompleted": "establish_access" },
       "tasks": [
         {
-          "taskId": "talk_to_kevin",
-          "title": "Interview Kevin Park (IT Admin)",
+          "taskId": "talk_to_owen",
+          "title": "Interview Owen Gallagher (IT Admin)",
           "type": "npc_conversation",
-          "targetNPC": "kevin_park",
+          "targetNPC": "owen_gallagher",
           "status": "active"
         },
         {
@@ -215,19 +232,18 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "optional": true
         },
         {
-          "taskId": "talk_to_dr_chen",
-          "title": "Interview Dr. Chen (Chief Scientist)",
+          "taskId": "talk_to_dr_halloran",
+          "title": "Interview Dr Halloran (Chief Scientist)",
           "type": "npc_conversation",
-          "targetNPC": "dr_chen",
+          "targetNPC": "dr_halloran",
           "status": "active",
           "optional": true
         },
         {
           "taskId": "obtain_server_badge",
-          "title": "Get a staff badge that opens the server hallway",
-          "type": "collect_items",
-          "targetCount": 1,
-          "targetItemIds": ["cloned_employee_badge", "research_lab_badge", "relayed_server_badge"],
+          "title": "Get through the server-hallway reader",
+          "type": "enter_room",
+          "targetRoom": "server_hallway",
           "status": "active"
         },
         {
@@ -239,20 +255,11 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "status": "active"
         },
         {
-          "taskId": "find_lockpick",
-          "title": "Talk Kevin out of his old pick set",
-          "type": "collect_items",
-          "targetCount": 1,
-          "targetItems": ["lockpick"],
-          "status": "active",
-          "optional": true
-        },
-        {
           "taskId": "find_server_password",
           "title": "Find the server room password",
           "type": "collect_items",
           "targetCount": 1,
-          "targetItemIds": ["server_password_note"],
+          "targetItemIds": ["server_password_note", "relayed_server_password_note"],
           "status": "active"
         },
         {
@@ -372,7 +379,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
         },
         {
           "taskId": "access_data_center",
-          "title": "Get into the data centre",
+          "title": "Get past the key-vault reader",
           "type": "enter_room",
           "targetRoom": "data_center",
           "status": "active"
@@ -445,8 +452,34 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
       "name": "Your Phone",
       "takeable": true,
       "phoneId": "player_phone",
-      "npcIds": ["agent_0x99_handler"],
+      "npcIds": ["agent_0x99_handler", "patricia_phone"],
       "observations": "Your secure phone with encrypted connection to SAFETYNET"
+    },
+    <%# PASS 3 P3: cumulative kit (PASS3_APPROVAL_LOG.md, user ruling). Picks from
+        m01, cloner from m03, fingerprint kit from m04. No PIN cracker. %>
+    {
+      "type": "lockpick",
+      "name": "Lock Pick Kit",
+      "takeable": true,
+      "observations": "Professional lock picking kit for bypassing physical locks",
+      "puzzle_graph_role": "tool",
+      "puzzle_graph_unlocks": ["torres_briefcase", "patricia_filing_cabinet"]
+    },
+    {
+      "type": "rfid_cloner",
+      "name": "RFID Cloner",
+      "takeable": true,
+      "observations": "Concealed RFID cloning device — get close to a keycard to copy it",
+      "puzzle_graph_role": "tool",
+      "puzzle_graph_unlocks": ["server_hallway"]
+    },
+    {
+      "type": "fingerprint_kit",
+      "name": "Fingerprint Kit",
+      "takeable": true,
+      "observations": "The kit you took off the OptiGrid crew at Albion. Powder, brush, lifting tape.",
+      "puzzle_graph_role": "tool",
+      "puzzle_graph_note": "Opens the key vault with Torres' print (the mug in his office)"
     }
   ],
 
@@ -496,8 +529,18 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
 
     "server_badge_obtained": false,
     "office_card_obtained": false,
-    "lockpick_obtained": false,
     "patricia_authorised_office": false,
+    "patricia_authorised_server": false,
+    "server_door_seen": false,
+    "server_password_obtained": false,
+    "vault_reader_seen": false,
+    "torres_print_collected": false,
+    "patricia_phone_available": false,
+    "recruiter_texted": false,
+    "recruiter_deal_decided": false,
+    "found_stand_down_email": false,
+    "privesc_guide_offered": false,
+    "privesc_guide_hint_given": false,
 
     "flag1_submitted": false,
     "flag2_submitted": false,
@@ -512,8 +555,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
 
     "opening_briefing_ko": false,
     "patricia_ko": false,
-    "kevin_ko": false,
-    "chen_ko": false,
+    "owen_ko": false,
+    "halloran_ko": false,
     "lisa_ko": false,
     "torres_ko": false,
 
@@ -550,6 +593,11 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "id": "opening_briefing",
           "displayName": "Agent HaX",
           "npcType": "person",
+          "voice": {
+            "name": "Aoede",
+            "style": "Intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Speak quickly with a sense of urgency, as if time is short.",
+            "language": "en-GB"
+          },
           "position": { "x": 500, "y": 500 },
           "spriteSheet": "hacker",
           "spriteConfig": {
@@ -608,6 +656,11 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "id": "agent_0x99_handler",
           "displayName": "Agent HaX",
           "npcType": "phone",
+          "voice": {
+            "name": "Aoede",
+            "style": "Intelligence handler speaking over a secure phone line. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Speak quickly with urgency, as if time is short.",
+            "language": "en-GB"
+          },
           "storyPath": "scenarios/m05_insider_trading/ink/m05_phone_agent_0x99.json",
           "avatar": "assets/npc/avatars/npc_helper.png",
           "phoneId": "player_phone",
@@ -638,13 +691,13 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "observations": "Field guide to discovering hosts and mapping an unfamiliar network with Nmap"
             },
             {
-              "_comment": "PASS 2 KO fallback (m03/m04 pattern). Kevin is in a room loaded after the start, so npc._sprite is unset and dropNPCItems returns early (npc-hostile.js:257-261): his badge and the office spare would never hit the floor. On npc_ko:kevin_park HaX pushes working copies. A duplicate is harmless; the RFID lock needs one match on opens_lock (unlock-system.js:511-513).",
+              "_comment": "KO safety net (m03/m04 pattern). dropNPCItems now finds the sprite in later-loaded rooms (npc-hostile.js:256-261), so Owen's office card and password note drop on a KO; but his staff badge is an rfidCard (PASS 3 P4), not an item, so nothing drops for the hallway. On npc_ko:owen_gallagher HaX pushes working copies of all three. A duplicate is harmless; the RFID lock needs one match on opens_lock (unlock-system.js:511-513).",
               "type": "keycard",
               "id": "relayed_server_badge",
               "name": "Staff Badge (relayed copy)",
               "takeable": true,
               "opens_lock": "employee_badge",
-              "observations": "A copy of Kevin's staff badge, rebuilt by SAFETYNET from the badge-reader logs. Opens the server hallway."
+              "observations": "A copy of Owen's staff badge, rebuilt by SAFETYNET from the badge-reader logs. Opens the server hallway."
             },
             {
               "type": "keycard",
@@ -661,6 +714,24 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "name": "Contractor Pass",
               "takeable": true,
               "observations": "A contractor pass SAFETYNET printed against QDC's visitor system after Patricia went down."
+            },
+            {
+              "type": "notes",
+              "id": "relayed_server_password_note",
+              "name": "Server-Room Password (from IT's ticket queue)",
+              "takeable": true,
+              "readable": true,
+              "text": "IT TICKET #2291 - Server room door: temporary password reset\nNew password: <%= server_room_password %>\nExpires: Friday\nRaised by: O. Gallagher",
+              "observations": "SAFETYNET pulled this out of QDC's IT ticket queue after Owen went down.",
+              "onRead": { "setVariable": { "server_password_obtained": true } }
+            },
+            {
+              "type": "lab-workstation",
+              "id": "safetynet_field_guide_privilege_escalation",
+              "name": "SAFETYNET Field Guide: Privilege Escalation via Sudo",
+              "takeable": true,
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/privilege-escalation/",
+              "observations": "Field guide to enumerating sudo rights and escalating to root"
             }
           ],
           "_comment": "PASS 2 review: eventMapping conditions go through safeEvaluateCondition (npc-manager.js:14-101), which supports only &&-joined terms. Any || or parenthesised condition evaluates to false, so every alternative below is its own mapping.",
@@ -680,12 +751,30 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "completeTask": "receive_mission_briefing"
             },
             {
-              "eventPattern": "item_picked_up:lockpick",
+              "_comment": "PASS 3 P4: Owen's badge is cloned, not handed over. card_cloned carries only cardName (rfid-minigame.js:245-249) and is emitted synchronously before the conversation resumes. No parentheses in the name: the validator rejects them in any condition.",
+              "eventPattern": "card_cloned",
+              "condition": "data.cardName === 'Staff Badge - O. Gallagher'",
               "onceOnly": true,
-              "setGlobal": { "lockpick_obtained": true },
-              "sendTimedMessage": { "delay": 1500, "message": "Nice find on the lockpick. Call me if you want a rundown on using it." }
+              "setGlobal": { "server_badge_obtained": true }
             },
-<% %w[cloned_employee_badge research_lab_badge relayed_server_badge].each do |id| %>
+<%# PASS 3 (implementation review minor 6): the CEO email counts when taken, not only when read. %>
+<% %w[ceo_stand_down_copy ceo_stand_down_email].each do |id| %>
+            {
+              "eventPattern": "item_picked_up:notes",
+              "condition": "data.itemId === '<%= id %>'",
+              "onceOnly": true,
+              "setGlobal": { "found_stand_down_email": true }
+            },
+<% end %>
+<% %w[server_password_note relayed_server_password_note].each do |id| %>
+            {
+              "eventPattern": "item_picked_up:notes",
+              "condition": "data.itemId === '<%= id %>'",
+              "onceOnly": true,
+              "setGlobal": { "server_password_obtained": true }
+            },
+<% end %>
+<% %w[research_lab_badge relayed_server_badge].each do |id| %>
             {
               "_comment": "PASS 2 (lesson 26): 'given' globals come from the pickup, not from ink before the tag.",
               "eventPattern": "item_picked_up:keycard",
@@ -730,11 +819,13 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "eventPattern": "global_variable_changed:flag3_submitted",
               "condition": "value === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "Third flag verified. His staging manifest, under his own name. One more: the authorisation behind it." }
+              "setGlobal": { "privesc_guide_offered": true },
+              "sendTimedMessage": { "delay": 1500, "message": "Third flag verified. His staging manifest, under his own name. One more: the authorisation behind it, somewhere only root can read. I've a sudo guide if you want it." }
             },
             {
+              "_comment": "PASS 3 (E11 audit): with the fate already set, the debrief follows at once and this 'call me' would land after it.",
               "eventPattern": "global_variable_changed:flag4_submitted",
-              "condition": "value === true",
+              "condition": "value === true && globalVars.final_choice === ''",
               "onceOnly": true,
               "setGlobal": { "architect_approval_confirmed": true },
               "sendTimedMessage": { "delay": 1500, "message": "Final flag in. The Architect's authorisation, casualty projection and all. Call me. You need to hear this." }
@@ -759,7 +850,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
             },
 <% end %>
 <% [%w[case_motive case_exfil], %w[case_exfil case_motive]].each do |me, other| %>
-<% [["!== true", "Take it to Patricia and name him. She won't move on anything less."], ["=== true", "Patricia's out of it, so call me and give me the name."]].each do |ko, tail| %>
+<% [["!== true", "Call Patricia and give her the name. She won't move on anything less."], ["=== true", "Patricia's out of it, so call me and give me the name."]].each do |ko, tail| %>
             {
               "eventPattern": "global_variable_changed:<%= me %>",
               "condition": "value === true && globalVars.<%= other %> === true && globalVars.case_ready_notified !== true && globalVars.torres_identified !== true && globalVars.patricia_ko <%= ko %>",
@@ -777,22 +868,45 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "targetKnot": "on_patricia_ko_relay"
             },
             {
-              "eventPattern": "npc_ko:kevin_park",
+              "eventPattern": "npc_ko:owen_gallagher",
               "onceOnly": true,
               "conversationMode": "phone-chat",
-              "targetKnot": "on_kevin_ko_relay"
+              "targetKnot": "on_owen_ko_relay"
             },
             {
               "eventPattern": "door_unlock_attempt",
               "condition": "data.connectedRoom === 'server_hallway'",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "That reader wants a staff badge. Kevin in IT holds the spares. Dr Chen's badge would open it too, if she trusts you." }
+              "sendTimedMessage": { "delay": 1500, "message": "Staff prox reader. Your cloner will take a card off anyone who carries one. Owen's lanyard is the nearest." }
             },
             {
               "eventPattern": "door_unlock_attempt",
               "condition": "data.connectedRoom === 'torres_office'",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "Torres' office. IT keeps a spare card for every office, but Kevin won't hand it over without a reason. Patricia can give him one." }
+              "sendTimedMessage": { "delay": 1500, "message": "Torres' office. IT holds a spare for every office, and Owen won't part with it without a reason." }
+            },
+            {
+              "_comment": "PASS 3 P5/P7: door_unlock_attempt fires before the lock check (unlock-system.js:110-118), so the bark is worded to be true whether or not the player already has the password.",
+              "eventPattern": "door_unlock_attempt",
+              "condition": "data.connectedRoom === 'server_room'",
+              "onceOnly": true,
+              "setGlobal": { "server_door_seen": true },
+              "sendTimedMessage": { "delay": 1500, "message": "Password lock. IT sets these; the notice by the door says who." }
+            },
+            {
+              "eventPattern": "door_unlock_attempt",
+              "condition": "data.connectedRoom === 'data_center'",
+              "onceOnly": true,
+              "setGlobal": { "vault_reader_seen": true },
+              "sendTimedMessage": { "delay": 1500, "message": "Fingerprint reader on the key vault. It takes the cryptography lead's print, and you've got the kit." }
+            },
+            {
+              "_comment": "PASS 3 P6: m05 has one print surface, so the generic dusting event is unambiguous. torres_print_collected exists only for onceOnly: prints are not saved across a reload (E1), so nothing may read it.",
+              "eventPattern": "minigame_completed",
+              "condition": "data.minigameName === 'DustingMinigame' && data.success === true",
+              "onceOnly": true,
+              "setGlobal": { "torres_print_collected": true },
+              "sendTimedMessage": { "delay": 1500, "message": "That's Torres' print. The vault's north of the server room." }
             },
 <% ["Locked Filing Cabinet", "Torres' Briefcase"].each do |nm| %>
             {
@@ -800,7 +914,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "condition": "data.objectName === <%= nm.to_json.gsub('"', '\\"') %> && globalVars.lockpicking_guide_offered !== true",
               "onceOnly": true,
               "setGlobal": { "lockpicking_guide_offered": true },
-              "sendTimedMessage": { "delay": 1500, "message": "Pin tumbler. If you've got picks, say the word and I'll send you the lockpicking guide." }
+              "sendTimedMessage": { "delay": 1500, "message": "Pin tumbler. Your picks will do it. Want the guide?" }
             },
 <% end %>
             {
@@ -834,32 +948,67 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "id": "recruiter",
           "displayName": "The Recruiter",
           "npcType": "phone",
+          "voice": {
+            "name": "Gacrux",
+            "style": "ENTROPY's recruiter, a former intelligence-agency talent spotter in her fifties, calling from somewhere comfortable. Speak with a consistent educated American (Washington DC, Mid-Atlantic) accent throughout — do not shift to any other accent. Low, warm pitch; slow, patient pace, never raised. Charming and empathetic on the surface, utterly ruthless underneath; talks about people as placements.",
+            "language": "en-US"
+          },
           "storyPath": "scenarios/m05_insider_trading/ink/m05_phone_recruiter.json",
           "avatar": "assets/npc/avatars/npc_hacker.png",
           "phoneId": "player_phone",
           "currentKnot": "start",
           "_comment": "PASS 2 review B2: not in the phone's npcIds. Listed contacts get their start knot preloaded the first time the phone opens (phone-chat-minigame.js:283-380), which played her first call -- and set recruiter_contacted_player -- before Torres was named. She now appears only once a mapping gives her history (phone-chat-ui.js:373-384), and her start knot also guards on torres_identified.",
           "eventMappings": [
+<% %w[patricia_morgan patricia_phone agent_0x99_handler].each do |src| %>
             {
-              "_comment": "PASS 2 (lesson 20): fired on torres_identified, i.e. in the middle of Patricia's scene. Now waits for the naming conversation to close.",
-              "eventPattern": "conversation_closed:patricia_morgan",
-              "condition": "globalVars.torres_identified === true && globalVars.recruiter_contacted_player !== true",
-              "conversationMode": "phone-chat",
-              "targetKnot": "start",
+              "eventPattern": "conversation_closed:<%= src %>",
+              "condition": "globalVars.torres_identified === true && globalVars.recruiter_contacted_player !== true && globalVars.recruiter_texted !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 2000, "message": "Unknown number. \"TalentStack Executive Recruiting.\" ...you should probably take this." }
+              "setGlobal": { "recruiter_texted": true },
+              "sendTimedMessage": { "delay": 2000, "message": "TalentStack Executive Recruiting. We should talk before you do anything you can't take back. - R." }
+            },
+<% end %>
+            {
+              "_comment": "PASS 3 P11 (review r3 M1/M2): text only, keyed on the naming conversation CLOSING, so nothing lands mid-scene. Phone chats now emit conversation_closed:<id> too (phone-chat-minigame.js:986-1007, :1192). Three routes: Patricia in person, Patricia by phone, HaX (Patricia KO'd). recruiter_texted stops a second text across the three. The delay is short because mapping delays count from game start (E11), so it reads the same whether or not E11 is fixed. The game_loaded backstop re-sends the text after a reload, because phone history is in memory only (npc-manager.js:374-395) and she is listed only while she has history.",
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.torres_identified === true && globalVars.recruiter_contacted_player !== true",
+              "onceOnly": false,
+              "sendTimedMessage": { "delay": 2000, "message": "TalentStack Executive Recruiting. We should talk before you do anything you can't take back. - R." }
             },
             {
-              "_comment": "HaX-naming route (Patricia KO'd). Phone chats don't emit conversation_closed, so this can't wait for HaX's call to end; it leaves a message and the player rings back.",
-              "eventPattern": "global_variable_changed:torres_identified",
-              "condition": "value === true && globalVars.patricia_ko === true && globalVars.recruiter_contacted_player !== true",
-              "onceOnly": true,
-              "sendTimedMessage": { "delay": 8000, "message": "TalentStack Executive Recruiting. We should talk before you do anything you can't take back. - R." }
+              "_comment": "PASS 3 (implementation review minor 7): her chat was opened and the offer made but not answered, then a reload lost her history and her contact. Disjoint from the backstop above (that one needs recruiter_contacted_player false; an offer implies it is true). The phone list can't add a contact at runtime (phone-chat-ui.js:372-383), so a text is the only way back.",
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.recruiter_deal_offered === true && globalVars.recruiter_deal_decided !== true",
+              "onceOnly": false,
+              "sendTimedMessage": { "delay": 2000, "message": "You haven't given me an answer, agent. The offer stands until it doesn't. - R." }
             }
           ]
         },
         {
-          "_comment": "PASS 2: was a phone NPC. Phone chats never emit conversation_closed (only person-chat-minigame.js:1566 does), so the credits music trigger on conversation_closed:closing_debrief_trigger could never fire. Now a hidden person NPC played as a person-chat cutscene, the m02/m04 debrief pattern. debrief_played (set at the top of the debrief ink) stops a replay after a reload.",
+          "_comment": "PASS 3 P11: Patricia's mobile. In npcIds, so her start knot is preloaded the first time the phone opens and a reopened chat re-navigates to the saved choice's knot (phone-chat-minigame.js:532-566). Every resting knot in m05_phone_patricia.ink re-checks patricia_ko and patricia_phone_available at its top, and nothing before the first choice prints or assigns.",
+          "id": "patricia_phone",
+          "displayName": "Patricia Morgan",
+          "npcType": "phone",
+          "voice": {
+            "name": "Kore",
+            "style": "Chief Security Officer, early fifties, ex-military. Speak with a consistent South Wales (Cardiff) accent throughout — do not shift to any other accent. Firm, low-to-mid pitch; brisk, economical pace. Direct, dry and steady under pressure; her warmth shows only in what she chooses to notice. On the phone.",
+            "language": "en-GB"
+          },
+          "storyPath": "scenarios/m05_insider_trading/ink/m05_phone_patricia.json",
+          "avatar": "assets/npc/avatars/npc_neutral.png",
+          "phoneId": "player_phone",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "conversation_closed:patricia_morgan",
+              "onceOnly": true,
+              "setGlobal": { "patricia_phone_available": true },
+              "sendTimedMessage": { "delay": 2500, "message": "Patricia. This is my mobile. Ring me if anything changes; don't walk it back through reception." }
+            }
+          ]
+        },
+        {
+          "_comment": "PASS 2: was a phone NPC. At the time phone chats did not emit conversation_closed (they do since 18237332), so the credits music trigger on conversation_closed:closing_debrief_trigger could never fire. Now a hidden person NPC played as a person-chat cutscene, the m02/m04 debrief pattern. debrief_played (set at the top of the debrief ink) stops a replay after a reload.",
           "id": "closing_debrief_trigger",
           "displayName": "Agent HaX",
           "npcType": "person",
@@ -874,7 +1023,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "behavior": { "initiallyHidden": true },
           "voice": {
             "name": "Aoede",
-            "style": "Intelligence handler giving a mission debrief in person. Consistent British Received Pronunciation accent throughout. Steady, mid-range pitch; the night is over and she is choosing her words carefully.",
+            "style": "Intelligence handler giving a mission debrief in person. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Unhurried; the night is over and she is choosing her words carefully.",
             "language": "en-GB"
           },
           "eventMappings": [
@@ -918,7 +1067,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "name": "Building Directory",
           "takeable": true,
           "readable": true,
-          "text": "QUANTUM DYNAMICS CORPORATION - Staff Directory\n\nSECURITY:\nPatricia Morgan - Chief Security Officer (off reception)\n\nRESEARCH:\nDr. Sarah Chen - Chief Scientist, research lab\nDavid Torres - Cryptography Lead, office beyond the open-plan\n\nIT/OPERATIONS:\nKevin Park - Systems Administrator, open-plan office\n\nMARKETING:\nLisa Park - Marketing Coordinator\n\nServer hallway: staff badge only.",
+          "text": "QUANTUM DYNAMICS CORPORATION - Staff Directory\n\nSECURITY:\nPatricia Morgan - Chief Security Officer (off reception)\n\nRESEARCH:\nDr Ruth Halloran - Chief Scientist, research lab\nDavid Torres - Cryptography Lead, office beyond the open-plan\n\nIT/OPERATIONS:\nOwen Gallagher - Systems Administrator, open-plan office\n\nMARKETING:\nLisa Park - Marketing Coordinator\n\nServer hallway: staff badge only.",
           "observations": "Building directory listing key personnel"
         }
       ]
@@ -957,6 +1106,11 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "id": "lisa_park",
           "displayName": "Lisa Park",
           "npcType": "person",
+          "voice": {
+            "name": "Laomedeia",
+            "style": "Marketing coordinator in her early thirties, British-Korean, raised in New Malden. Speak with a consistent south-west London accent throughout — do not shift to any other accent. Bright, mid-to-high pitch; quick, chatty pace. Warm and observant; she gossips because she cares about people.",
+            "language": "en-GB"
+          },
           "position": { "x": 4, "y": 4 },
           "spriteSheet": "hacker",
           "spriteTalk": "assets/characters/hacker-talk.png",
@@ -994,9 +1148,14 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
       },
       "npcs": [
         {
-          "id": "kevin_park",
-          "displayName": "Kevin Park",
+          "id": "owen_gallagher",
+          "displayName": "Owen Gallagher",
           "npcType": "person",
+          "voice": {
+            "name": "Puck",
+            "style": "Systems administrator in his late twenties. Speak with a consistent Manchester accent throughout — do not shift to any other accent. Mid-range pitch; quick, energetic pace. Friendly and a bit frazzled, sardonic about the state of the network, relieved someone competent has turned up.",
+            "language": "en-GB"
+          },
           "position": { "x": 6, "y": 4 },
           "spriteSheet": "hacker",
           "spriteTalk": "assets/characters/hacker-talk.png",
@@ -1004,19 +1163,17 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
             "idleFrameStart": 20,
             "idleFrameEnd": 23
           },
-          "storyPath": "scenarios/m05_insider_trading/ink/m05_npc_kevin_park.json",
+          "storyPath": "scenarios/m05_insider_trading/ink/m05_npc_owen_gallagher.json",
           "currentKnot": "start",
-          "globalVarOnKO": "kevin_ko",
-          "taskOnKO": "talk_to_kevin",
+          "globalVarOnKO": "owen_ko",
+          "taskOnKO": "talk_to_owen",
+          "_comment": "PASS 3 P4: the server-hallway badge is cloned off his lanyard (rfidCard), not handed over. P5: the password note is his to give, after the player has seen the server-room door and brings Patricia's log or her authority.",
+          "rfidCard": {
+            "card_id": "employee_badge",
+            "rfid_protocol": "EM4100",
+            "name": "Staff Badge - O. Gallagher"
+          },
           "itemsHeld": [
-            {
-              "type": "lockpick",
-              "id": "kevin_lockpick",
-              "name": "Lockpick Set",
-              "takeable": true,
-              "observations": "An old pin-tumbler pick set, left over from last year's penetration test",
-              "puzzle_graph_unlocks": ["torres_briefcase", "patricia_filing_cabinet"]
-            },
             {
               "type": "keycard",
               "id": "torres_office_keycard",
@@ -1027,37 +1184,19 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "puzzle_graph_unlocks": "torres_office"
             },
             {
-              "type": "keycard",
-              "id": "cloned_employee_badge",
-              "name": "Cloned Staff Badge",
-              "opens_lock": "employee_badge",
+              "type": "notes",
+              "id": "server_password_note",
+              "name": "Server Password Sticky Note",
               "takeable": true,
-              "observations": "A copy of Kevin's staff badge. Opens the server hallway.",
-              "puzzle_graph_unlocks": "server_hallway"
+              "readable": true,
+              "text": <%= password_hint_sticky.to_json %>,
+              "observations": "A sticky note Owen peels off the edge of his monitor",
+              "puzzle_graph_unlocks": "server_room"
             }
           ]
         }
       ],
-      "objects": [
-        {
-          "type": "notes",
-          "id": "server_password_note",
-          "name": "Server Password Sticky Note",
-          "takeable": true,
-          "readable": true,
-          "text": <%= password_hint_sticky.to_json %>,
-          "observations": "A sticky note curling off the edge of Kevin's monitor",
-          "puzzle_graph_unlocks": "server_room"
-        },
-        {
-          "type": "notes",
-          "name": "IT Department Notice",
-          "takeable": true,
-          "readable": true,
-          "text": "IT SECURITY NOTICE\n\nAll staff: server room access is restricted.\nThe temporary server room password expires Friday.\nAfter-hours server access must be logged with IT in advance.\n\nContact Kevin Park for access issues.\n\n- IT Department",
-          "observations": "A printed notice about server room access"
-        }
-      ]
+      "objects": []
     },
 
     "server_hallway": {
@@ -1070,7 +1209,19 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
         "north": "server_room"
       },
       "npcs": [],
-      "objects": []
+      "objects": [
+        {
+          "_comment": "PASS 3 P5: moved here from the open office. It is the hint at the password door and gives the hallway a job. Pinned on the visible floor (rows 2-3; row 4 renders on the wall line where the hallway overlaps Patricia's office, playtest 3a), clear of the west and north doors.",
+          "type": "notes",
+          "id": "it_access_notice",
+          "name": "IT Notice: Server Room Access",
+          "takeable": true,
+          "readable": true,
+          "position": { "x": 3, "y": 2.3 },
+          "text": "IT SECURITY NOTICE\n\nSERVER ROOM: password access.\nAfter-hours server access must be logged with IT in advance.\nThe temporary password is rotated by IT and expires Friday.\n\nForgotten it? Contact O. Gallagher (IT), open-plan office.\n\n- IT Department",
+          "observations": "A printed notice taped beside the server-room door"
+        }
+      ]
     },
 
     "server_room": {
@@ -1078,6 +1229,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
       "locked": true,
       "lockType": "password",
       "requires": "<%= server_room_password %>",
+      "door_sign": "Server Room — Password Access. Contact IT.",
       "connections": {
         "south": "server_hallway",
         "north": "data_center"
@@ -1153,6 +1305,19 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "onRead": { "setVariable": { "found_torres_journal": true } }
         },
         {
+          "_comment": "PASS 3 P6: the only Torres print surface. No text and no readable: a print-bearing object hides its own text until dusted (E1). Pinned on the front-right of the desk (desk x 118-196, y 86-147 in room px; the chair sprite covers y 64-128 and the plant x 67-131), so it is not hidden behind the plant (playtest 3a).",
+          "type": "office-misc-cup",
+          "id": "torres_mug",
+          "name": "Mug",
+          "takeable": false,
+          "position": { "x": 5.6, "y": 4.1, "elevation": 32 },
+          "hasFingerprint": true,
+          "fingerprintOwner": "David Torres",
+          "fingerprintDifficulty": "easy",
+          "observations": "A mug printed with a child's drawing: four stick figures and a dog. 'WORLD'S BEST DAD — love Miguel'. Cold coffee, a thumbprint on the glaze.",
+          "puzzle_graph_unlocks": "data_center"
+        },
+        {
           "type": "suitcase",
           "id": "torres_briefcase",
           "name": "Torres' Briefcase",
@@ -1185,9 +1350,14 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
       },
       "npcs": [
         {
-          "id": "dr_chen",
-          "displayName": "Dr. Sarah Chen",
+          "id": "dr_halloran",
+          "displayName": "Dr Ruth Halloran",
           "npcType": "person",
+          "voice": {
+            "name": "Erinome",
+            "style": "Cryptography research lead in her mid-forties. Speak with a consistent educated Irish (Dublin) accent throughout — do not shift to any other accent. Clear, mid-range pitch; measured, precise pace. Sharp, protective of her team and impatient with sloppy reasoning.",
+            "language": "en-GB"
+          },
           "position": { "x": 6, "y": 5 },
           "spriteSheet": "hacker-red",
           "spriteTalk": "assets/characters/hacker-red-talk.png",
@@ -1195,19 +1365,19 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
             "idleFrameStart": 20,
             "idleFrameEnd": 23
           },
-          "storyPath": "scenarios/m05_insider_trading/ink/m05_npc_dr_chen.json",
+          "storyPath": "scenarios/m05_insider_trading/ink/m05_npc_dr_halloran.json",
           "currentKnot": "start",
-          "globalVarOnKO": "chen_ko",
-          "taskOnKO": "talk_to_dr_chen",
+          "globalVarOnKO": "halloran_ko",
+          "taskOnKO": "talk_to_dr_halloran",
           "itemsHeld": [
             {
-              "_comment": "PASS 2: the lab is unlocked, so the badge now opens the server hallway (a second route beside Kevin's clone, lesson 8).",
+              "_comment": "PASS 2: the lab is unlocked, so the badge now opens the server hallway (a second route beside Owen's clone, lesson 8).",
               "type": "keycard",
               "name": "Research Badge",
               "id": "research_lab_badge",
               "opens_lock": "employee_badge",
               "takeable": true,
-              "observations": "Dr. Chen's spare research badge. Senior staff badges open the server hallway.",
+              "observations": "Dr Halloran's spare research badge. Senior staff badges open the server hallway.",
               "puzzle_graph_unlocks": "server_hallway",
               "puzzle_graph_optional": true
             }
@@ -1228,6 +1398,11 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "id": "patricia_morgan",
           "displayName": "Patricia Morgan",
           "npcType": "person",
+          "voice": {
+            "name": "Kore",
+            "style": "Chief Security Officer, early fifties, ex-military. Speak with a consistent South Wales (Cardiff) accent throughout — do not shift to any other accent. Firm, low-to-mid pitch; brisk, economical pace. Direct, dry and steady under pressure; her warmth shows only in what she chooses to notice.",
+            "language": "en-GB"
+          },
           "position": { "x": 3, "y": 3 },
           "spriteSheet": "hacker-red",
           "spriteTalk": "assets/characters/hacker-red-talk.png",
@@ -1256,6 +1431,17 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "text": "QDC PERSONNEL SECURITY - VETTING AFTERCARE (RESTRICTED)\n\nSubject: David Torres, Cryptography Lead\nClearance: Developed Vetting\n\nChange of circumstances: NOT DECLARED\n\nQuarterly credit check: three new loans in six weeks. Second charge on the family home. One account in arrears.\nKnown context: spouse in treatment abroad, invoiced in US dollars. Company insurer declined cover.\n\nAction: aftercare interview requested three weeks ago.\nCancelled by the CEO's office: \"Classified project. Do not disturb the team.\"\n\n- P. Morgan",
               "observations": "Patricia's vetting file on David Torres",
               "onRead": { "setVariable": { "found_vetting_file": true } }
+            },
+            {
+              "_comment": "PASS 3 P8: Patricia's own copy, handed over from her confession knot. The cabinet holds the other copy for a player who picks it. Its NAME must differ from the cabinet copy: the server's item lookup matches id OR name and searches room containers before NPC itemsHeld (games_controller.rb:1543-1606), so a shared name resolved her give to the locked cabinet and was rejected (playtest 3b).",
+              "type": "notes",
+              "id": "ceo_stand_down_copy",
+              "name": "Patricia's Copy of the CEO's Email",
+              "takeable": true,
+              "readable": true,
+              "text": "From: Office of the CEO (J. Zhao)\nTo: Patricia Morgan\nSubject: RE: Aftercare interview - cryptography team\n\nPatricia,\n\nStand this down. The Home Office readiness review is in three weeks and we cannot have a personnel security incident on file for the Heisenberg team.\n\nIf there's a problem, we'll deal with it quietly afterwards.\n\nJ.\n\n[Patricia has written across the top in red: \"Kept a copy. If this goes wrong, it went wrong here.\"]",
+              "observations": "The email that stopped Patricia's investigation",
+              "onRead": { "setVariable": { "found_stand_down_email": true } }
             }
           ]
         }
@@ -1289,7 +1475,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "takeable": true,
               "readable": true,
               "text": "From: Office of the CEO (J. Zhao)\nTo: Patricia Morgan\nSubject: RE: Aftercare interview - cryptography team\n\nPatricia,\n\nStand this down. The Home Office readiness review is in three weeks and we cannot have a personnel security incident on file for the Heisenberg team.\n\nIf there's a problem, we'll deal with it quietly afterwards.\n\nJ.\n\n[Patricia has written across the top in red: \"Kept a copy. If this goes wrong, it went wrong here.\"]",
-              "observations": "The email that stopped Patricia's investigation"
+              "observations": "The email that stopped Patricia's investigation",
+              "onRead": { "setVariable": { "found_stand_down_email": true } }
             }
           ]
         }
@@ -1298,6 +1485,10 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
 
     "data_center": {
       "type": "room_servers",
+      "locked": true,
+      "lockType": "biometric",
+      "requires": "David Torres",
+      "door_sign": "Key Vault — Fingerprint Access. Cryptography Lead Only.",
       "connections": {
         "south": "server_room"
       },
@@ -1307,6 +1498,11 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "id": "david_torres",
           "displayName": "David Torres",
           "npcType": "person",
+          "voice": {
+            "name": "Schedar",
+            "style": "Senior engineer in his late forties, born in Madrid and twenty years in England. Speak with a consistent light Castilian Spanish accent in fluent British English throughout — do not shift to any other accent. Low, soft pitch; slow, worn pace. Exhausted and grieving, past the point of lying; quietly desperate rather than angry.",
+            "language": "en-GB"
+          },
           "position": { "x": 5, "y": 7 },
           "spriteSheet": "hacker-red",
           "spriteTalk": "assets/characters/hacker-red-talk.png",

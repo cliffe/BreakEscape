@@ -35,6 +35,12 @@ VAR flag3_submitted = false
 VAR flag4_submitted = false
 VAR bludit_server_discovered = false
 VAR torres_identified = false
+VAR patricia_authorised_server = false
+VAR server_door_seen = false
+VAR server_password_obtained = false
+VAR vault_reader_seen = false
+VAR owen_ko = false
+VAR office_card_obtained = false
 
 // Field-guide exposure flags. Each _offered is set by an eventMapping when
 // the player meets the thing the guide is about; each _hint_given is set
@@ -45,6 +51,8 @@ VAR lockpicking_guide_offered = false
 VAR lockpicking_guide_hint_given = false
 VAR recon_guide_offered = false
 VAR recon_guide_hint_given = false
+VAR privesc_guide_offered = false
+VAR privesc_guide_hint_given = false
 
 // Hub topic retirement flags
 VAR recruitment_method_discussed = false
@@ -84,6 +92,9 @@ Agent HaX: Patricia Morgan runs security here. She called us in, and she's the o
 
 Agent HaX: Somewhere in that building is the person feeding ENTROPY the key material for the 999 dispatch network. Find them before half past eight tonight.
 
+-> first_call_choices
+
+=== first_call_choices ===
 + [I'll get to work.]
     -> support_hub
 
@@ -142,6 +153,9 @@ Agent HaX: Somewhere in that building is the person feeding ENTROPY the key mate
 + {recon_guide_offered and not recon_guide_hint_given} [Send me the network recon guide.]
     -> request_recon_guide
 
++ {privesc_guide_offered and not privesc_guide_hint_given} [Send me the sudo guide.]
+    -> request_privesc_guide
+
 + {patricia_ko and not torres_identified} [Patricia's down. I'll give you the name instead.]
     -> name_to_hax
 
@@ -171,6 +185,9 @@ Agent HaX: TalentStack Executive Recruiting is the Insider Threat Initiative's f
 
 Agent HaX: A leaflet with an answer scribbled on the back means somebody in that building has already said yes.
 
+-> topic_recruitment_method_choices
+
+=== topic_recruitment_method_choices ===
 + [So I'm looking for a target, not a recruiter.]
     Agent HaX: Probably. The Recruiter doesn't sit on site; too much exposure. Look for someone with access and a reason to need money fast.
     -> support_hub
@@ -187,6 +204,9 @@ Agent HaX: Three hundred and eighty thousand dollars for a trial abroad, an insu
 
 Agent HaX: ENTROPY rarely recruits believers. They recruit desperate people and sell them the belief afterwards, so the choice feels like it was theirs.
 
+-> topic_leverage_choices
+
+=== topic_leverage_choices ===
 + [That's monstrous.]
     Agent HaX: It's efficient. Some nights that's worse.
     -> support_hub
@@ -203,6 +223,9 @@ Agent HaX: Then you've watched him talk himself round, on paper. Thirty to forty
 
 Agent HaX: That should worry you more than the recruitment pitch. He understands the cost. He decided he could live with it.
 
+-> topic_journal_choices
+
+=== topic_journal_choices ===
 + [Does that change how I approach him?]
     Agent HaX: Don't expect him to be surprised when you lay it out. He already knows. What you can offer him is a way out he hasn't let himself look at.
     -> support_hub
@@ -219,6 +242,9 @@ Agent HaX: Read it twice. A casualty projection, reviewed, and signed off as an 
 
 Agent HaX: No rogue cell improvised that. Someone priced human lives and approved the invoice. It's the strongest thing you'll find tonight, because it puts this above Torres.
 
+-> topic_architect_choices
+
+=== topic_architect_choices ===
 + [This is bigger than one insider.]
     Agent HaX: It always was. Torres is the delivery. The Architect is the decision. Keep both in the file.
     -> support_hub
@@ -235,6 +261,9 @@ Agent HaX: The Recruiter runs ENTROPY's talent pipeline behind an executive sear
 
 Agent HaX: Whatever she offered, she's very good at making a bad trade sound reasonable. That's the whole of her job.
 
+-> topic_recruiter_choices
+
+=== topic_recruiter_choices ===
 + [She offered me a deal.]
     Agent HaX: Of course she did. Weigh it on what it costs, not on how reasonable she sounded.
     -> support_hub
@@ -291,13 +320,23 @@ Agent HaX: A casualty projection, signed and filed as an acceptable cost. ENTROP
 // ===========================================
 
 === name_to_hax ===
+// PASS 3 (review r3 M3): a re-navigated chat must never replay the naming.
+{torres_identified: -> support_hub}
 #speaker:agent_0x99
 {has_motive() and has_exfil():
     You: David Torres. I've got why he'd do it, and proof it's leaving the building.
     Agent HaX: That's enough for me. I'm flagging him now.
     #complete_task:identify_torres
     ~ torres_identified = true
-    Agent HaX: His badge is in the data centre, north of the server room, and the window's close. Hang up and move.
+    ~ patricia_authorised_office = true
+    Agent HaX: His badge just went through the hallway and the vault's logged him in. He's at the upload terminal.
+    {not vault_reader_seen:
+        Agent HaX: The data centre door reads his fingerprint. Something from his office will carry it.
+    }
+    {not owen_ko and not office_card_obtained:
+        Agent HaX: Owen's been told you can have the spare for his office.
+    }
+    Agent HaX: The window's close. Hang up and move.
     + [On my way.]
         #exit_conversation
         -> support_hub
@@ -324,22 +363,38 @@ Agent HaX: A casualty projection, signed and filed as an acceptable cost. ENTROP
 #speaker:agent_0x99
 #give_item:id_badge:relayed_contractor_pass
 ~ patricia_authorised_office = true
+~ patricia_authorised_server = true
 Agent HaX: Patricia's down. She was our sponsor in that building, {player_name}.
-Agent HaX: I've printed you a contractor pass against their visitor system, and Kevin will get a message "from Security" saying you can have the office spares.
-Agent HaX: When you've got a name and the proof, bring it to me instead of her.
-+ [Understood. I'll bring it to you.]
+Agent HaX: I've printed you a contractor pass against their visitor system, and Owen will get a message "from Security" saying you can have the office spares and the server-room password.
+{not torres_identified:
+    Agent HaX: When you've got a name and the proof, bring it to me instead of her.
+}
+-> on_patricia_ko_relay_choices
+
+=== on_patricia_ko_relay_choices ===
++ {not torres_identified} [Understood. I'll bring it to you.]
+    #exit_conversation
+    -> support_hub
++ {torres_identified} [Understood.]
     #exit_conversation
     -> support_hub
 
-// npc_ko:kevin_park. His items can't drop in a later-loaded room (npc._sprite
-// gap), so HaX pushes working copies of both cards.
-=== on_kevin_ko_relay ===
+// npc_ko:owen_gallagher. His office card and password note now drop on a KO
+// (npc-hostile.js:256-261), but his badge is an rfidCard, not an item. HaX
+// pushes working copies of all three as a safety net, and says the vault
+// line Owen would have said at the password handover (PASS 3 P5/P6).
+=== on_owen_ko_relay ===
 #speaker:agent_0x99
 #give_item:keycard:relayed_server_badge
 #give_item:keycard:relayed_torres_office_card
-Agent HaX: Kevin's down. That wasn't how I'd have done it.
-Agent HaX: I've pulled his badge and the office spare off the reader logs and pushed copies to your kit. You've got the server hallway and Torres' office.
+#give_item:notes:relayed_server_password_note
+Agent HaX: Owen's down. That wasn't how I'd have done it.
+Agent HaX: I've pulled his badge and the office spare off the reader logs, and the server-room password out of IT's ticket queue. They're in your kit.
+Agent HaX: Past the server room is the key vault. It's on a fingerprint reader, and the only print enrolled is Torres'.
 Agent HaX: Whatever else he knew, you'll have to find the hard way.
+-> on_owen_ko_relay_choices
+
+=== on_owen_ko_relay_choices ===
 + [I'll manage.]
     #exit_conversation
     -> support_hub
@@ -352,6 +407,10 @@ Agent HaX: Whatever else he knew, you'll have to find the hard way.
     -> support_hub
 }
 Agent HaX: Torres is still on the floor where he went down, and he isn't moving much. The upload's stopped. What are you doing with him?
+-> post_ko_safety_net_choices
+
+=== post_ko_safety_net_choices ===
+{final_choice != "": -> support_hub}
 + [Stay with him. Recovery position, pressure on the wound, call it in.]
     You: I'm staying with him. Get Patricia and an ambulance down here.
     ~ torres_arrested = true
@@ -382,6 +441,9 @@ Agent HaX: Torres is still on the floor where he went down, and he isn't moving 
 
 Agent HaX: Bludit guide's in your kit. Start with what's leaked in plain sight, then work up to the authenticated upload flaw for a shell.
 
+-> request_bludit_guide_choices
+
+=== request_bludit_guide_choices ===
 + [Got it.]
     Agent HaX: Recon first. The leaked login gets you further, faster, than guessing ever will.
     -> support_hub
@@ -395,8 +457,25 @@ Agent HaX: Lockpicking guide's in your kit.
 
 Agent HaX: Light tension, find the binding pin, set it, repeat. Feel the lock. Don't force it.
 
+-> request_lockpicking_guide_choices
+
+=== request_lockpicking_guide_choices ===
 + [Thanks.]
     Agent HaX: Quiet and patient gets you through it.
+    -> support_hub
+
+=== request_privesc_guide ===
+#speaker:agent_0x99
+~ privesc_guide_hint_given = true
+#give_item:lab-workstation:safetynet_field_guide_privilege_escalation
+
+Agent HaX: Sudo guide's in your kit. Check what you're allowed to run as root before you try anything clever.
+
+-> request_privesc_guide_choices
+
+=== request_privesc_guide_choices ===
++ [Thanks.]
+    Agent HaX: Misconfigured sudo is the commonest way up. Look for a program that can open a shell.
     -> support_hub
 
 === request_recon_guide ===
@@ -408,6 +487,9 @@ Agent HaX: Recon guide's on its way.
 
 Agent HaX: Map what's alive on that subnet before you touch anything. The Bludit box won't be the only thing listening.
 
+-> request_recon_guide_choices
+
+=== request_recon_guide_choices ===
 + [Thanks.]
     Agent HaX: Quick scan, clean notes, then go in.
     -> support_hub
@@ -426,6 +508,9 @@ Agent HaX: Soft: give him the exit ENTROPY never offered. He goes back to his de
 
 Agent HaX: Hard: you hold him, hand him to Patricia, and she calls the police. We have no badge, {player_name}. Whatever happens to him after that is up to them.
 
+-> confrontation_advice_choices
+
+=== confrontation_advice_choices ===
 + [Which do you recommend?]
     Agent HaX: I'm not going to answer that. You've seen what he's carrying. It has to be your call.
     -> support_hub
@@ -445,6 +530,9 @@ Agent HaX: ENTROPY weaponises suffering. They find someone drowning and offer a 
 
 Agent HaX: He still made choices. Every step from that first phone call to tonight, he could have walked into Patricia's office instead. He didn't.
 
+-> moral_sounding_board_choices
+
+=== moral_sounding_board_choices ===
 + [Does knowing why change what he deserves?]
     Agent HaX: Maybe it changes what's fair. It doesn't undo thirty to forty-five deaths if that upload goes. Both are true at once, and nobody's philosophy handles that cleanly.
     -> support_hub
@@ -463,6 +551,16 @@ Agent HaX: He still made choices. Every step from that first phone call to tonig
 
 === general_advice ===
 #speaker:agent_0x99
+// PASS 3 P7: these sit above the torres_identified early return.
+{server_door_seen and not server_password_obtained and not patricia_ko:
+    Agent HaX: Owen wants a reason. Patricia's log has one, or ask Patricia.
+}
+{server_door_seen and not server_password_obtained and patricia_ko:
+    Agent HaX: Owen wants a reason. He's had word from Security; tell him.
+}
+{vault_reader_seen:
+    Agent HaX: The vault takes Torres' print. His office has it.
+}
 
 {torres_identified:
     Agent HaX: You've named him. Whatever you decide when you face him, be ready for anything. People with nothing left to lose don't always behave.
@@ -472,7 +570,7 @@ Agent HaX: He still made choices. Every step from that first phone call to tonig
     {patricia_ko:
         Agent HaX: You have both halves of the case. Patricia's out of it, so give me the name.
     - else:
-        Agent HaX: You have both halves of the case. Take it to Patricia and name him.
+        Agent HaX: You have both halves of the case. Call Patricia and give her the name.
     }
     -> support_hub
 }
@@ -485,7 +583,7 @@ Agent HaX: He still made choices. Every step from that first phone call to tonig
     -> support_hub
 }
 {not found_pamphlet:
-    Agent HaX: Start with people. Patricia, Kevin in IT, anyone who notices things. Evidence comes out of conversations as often as drawers.
+    Agent HaX: Start with people. Patricia, Owen in IT, anyone who notices things. Evidence comes out of conversations as often as drawers.
     -> support_hub
 }
 Agent HaX: You know what you're doing. Trust your training.

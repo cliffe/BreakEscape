@@ -1,8 +1,20 @@
 # m05 Insider Trading — Alignment & Advancement Plan
 
+> Renamed 2026-10-01 (pass 3): Dr Sarah Chen → Dr Ruth Halloran (id dr_chen → dr_halloran; ink m05_npc_dr_chen → m05_npc_dr_halloran; globals/VARs chen_* → halloran_*; task talk_to_dr_chen → talk_to_dr_halloran). Kevin Park → Owen Gallagher (id kevin_park → owen_gallagher; ink m05_npc_kevin_park → m05_npc_owen_gallagher; globals/VARs kevin_* → owen_*; task talk_to_kevin → talk_to_owen; knot on_kevin_ko_relay → on_owen_ko_relay). This document predates the rename and is not rewritten.
+
 > Produced by the mission-alignment-plan skill. 2026-08-22. Measured against: m01_first_contact, m02_ransomed_trust (with m03/m04 as recent worked examples). Reviewed: 1 round (two planners, one adversarial reviewer; reviewer corrections folded in).
 >
 > **IMPLEMENTED 2026-08-23.** All nine phases built by subagents and verified. Validator is fully clean — zero INVALID, zero warnings — with schema, geometry and the 4-hop critical path passing, all 9 ink files compiling, and every named-NPC KO path reaching missionConclusion. A new SecGen VM (`SecGen/scenarios/break_escape/safetynet/m05_insider_trading.xml`) and a new field-guide lab sheet (`HacktivityLabSheets/_labs/safetynet/bludit-cms-exploitation.md`) were authored. Evidence and badge items reuse the existing `notes`/`keycard` sprites (no new art needed); this fix also exposed and closed latent RFID `key_id` gaps that had left `server_hallway` and `torres_office` unopenable at runtime. The drop-site was reworked from a scripted terminal into a real flag-submission station (m01 pattern) — the scripted `m05_dropsite_terminal.ink` was removed. Decisions A–D resolved: A=retarget to civilian emergency-dispatch, B=unranked endings, C=post-KO lethal choice, D=adapt the Bludit sheet + rename flags.
+
+## Progress (updated 2026-10-01)
+
+Status: all nine phases implemented (2026-08-23) and reworked in pass 2 (`b114feba`). Played to `status=completed` on three routes. Pass 2 found several claims in the header above did not hold in the engine (see below).
+
+- Done: all phases. Commits: `40e4ace8` (alignment), `9924217a` (drop-site as a flag station), `03d1c23e` (finale globals), `8810a55e` (debrief state, recruiter deal), `7f64bed7` (walkthrough). Decisions A-D stand.
+- Changed by pass 2: the layout was rebuilt with single connections (the multi-room connection off the corridor could not be laid out). Flag tasks were retargeted to `flag_station_evidence:qdc_research_server-flag1..4`. The evidence counter became `found_*` booleans, because `setVariable` assigns strings literally. The debrief became a hidden person NPC so the credits roll. Eventmapping conditions using `||` or brackets were dead and are split. Ten collect tasks gained `targetCount: 1`. The Recruiter is no longer preloaded by the phone. The post-KO choice cannot be closed, with a HaX phone fallback. SAFETYNET detains and hands over to the police instead of arresting.
+- Also: `12fba7cb` gives Dr Chen's research badge an identity rather than a lock.
+- Open: the SecGen flag order for `qdc_research_server` is inferred from the XML and not confirmed by a build (the XML is published and was reordered in pass 2). No rename of Dr Sarah Chen is recorded (approval log, m05 section 6).
+- Latest playtest (regression, 2026-10-01, `tools/playtest/m05-regress-report.md`): games 1198, 1204 and 1207 all reached `status=completed`, with no regressions. They cover the normal path, Patricia KO and Kevin KO, and Fight to KO to the post-KO choice.
 
 ## Executive summary
 

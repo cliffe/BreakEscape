@@ -78,7 +78,7 @@
 
   "narrative_summary": {
     "act1": "Arrive at Quantum Dynamics, a Home Office contractor near Cambridge, as a SAFETYNET security consultant. Meet CSO Patricia Morgan, interview staff and talk your way into the access you need.",
-    "act2": "Get a staff badge from Kevin or Dr Chen, and Torres' office card on Patricia's authority. Build both halves of the case: why (the journal, the vetting file, the medical bills in his briefcase) and proof of exfiltration (the research portal flags, the data-centre paperwork). Name him to Patricia. The Recruiter calls, offering a deal to leave her other targets unwarned.",
+    "act2": "Clone a staff badge off Owen's lanyard (or borrow Dr Halloran's), then talk Owen out of the server-room password with Patricia's log or her authority. Get Torres' office card on Patricia's authority and lift his print for the key vault. Build both halves of the case: why (the journal, the vetting file, the medical bills in his briefcase) and proof of exfiltration (the research portal flags, the data-centre paperwork). Name him to Patricia, in person or by phone. The Recruiter texts; ring her back and she offers a deal to leave her other targets unwarned.",
     "act3": "Find Torres at the upload terminal in the data centre. Confront him with choices: turn as double agent, arrest with cooperation, arrest without cooperation, combat (which resolves to a post-KO choice), or public exposure. No ending is ranked above another — each carries its own consequences."
   },
 
@@ -90,14 +90,14 @@
       "importance": "Mission handler, provides security access and intelligence"
     },
     {
-      "id": "kevin_park",
-      "name": "Kevin Park",
+      "id": "owen_gallagher",
+      "name": "Owen Gallagher",
       "role": "IT Systems Administrator",
-      "importance": "Holds the staff-badge clone, the office spare and a pick set; each is earned in conversation"
+      "importance": "His badge is cloned off his lanyard; holds the office spare and the server-room password, which he gives up for evidence or Patricia's authority, and names the key vault's reader"
     },
     {
-      "id": "dr_chen",
-      "name": "Dr. Sarah Chen",
+      "id": "dr_halloran",
+      "name": "Dr Ruth Halloran",
       "role": "Chief Scientist, Project Heisenberg Lead",
       "importance": "Second route to a server-hallway badge; reacts to the accusation"
     },

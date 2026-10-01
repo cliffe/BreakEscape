@@ -107,7 +107,7 @@ Lisa Park: Tense. Everyone knows something's wrong. The crypto team keep looking
 
 {lisa_influence >= 15:
     Lisa Park: David especially. He looks like he's carrying something heavy, all the time.
-    Lisa Park: Dr Chen's taking it personally. And Kevin's been living in the logs.
+    Lisa Park: Dr Halloran's taking it personally. And Owen's been living in the logs.
     ~ lisa_influence += 5
 }
 

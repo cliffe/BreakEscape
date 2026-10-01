@@ -39,9 +39,11 @@ VAR confront_stance = "" // sympathetic or hardline
 VAR elena_treatment_funded = false
 VAR recruiter_deal_offered = false
 VAR recruiter_deal_accepted = false
+VAR recruiter_deal_decided = false
 VAR found_pipeline_list = false
 VAR debrief_played = false
 VAR recruiter_deal_confessed = false
+VAR found_stand_down_email = false
 
 VAR player_name = "Agent 0x00"
 
@@ -107,6 +109,12 @@ Agent HaX: {player_name}. Let's go through it.
     - else:
         Agent HaX: You stopped the upload. The file behind it is thin. The police will get what we send them, and it won't be much.
     }
+}
+
+{found_stand_down_email:
+    Agent HaX: Patricia's copy of the CEO's email went to the Home Office review with the rest of the file. Nobody signs off on a stand-down like that twice.
+- else:
+    Agent HaX: QDC's readiness review passed. Nobody asked who cancelled Patricia's interview.
 }
 
 {player_approach == "cautious":
@@ -368,6 +376,16 @@ Agent HaX: Expect them to hit back. You made them look weak, and they won't forg
 #speaker:agent_0x99
 
 {not recruiter_deal_offered:
+    -> entropy_revelation
+}
+{not recruiter_deal_decided and not recruiter_deal_accepted:
+    Agent HaX: And the Recruiter. She rang you and made you an offer. You never gave her an answer.
+    Agent HaX: Silence isn't a yes, and she'll know that by now.
+    {found_pipeline_list:
+        Agent HaX: The TalentStack list went into your report. We've reached three of the forty-seven already.
+    - else:
+        Agent HaX: We never found the list she was protecting. Her courier probably has it by now.
+    }
     -> entropy_revelation
 }
 {not recruiter_deal_accepted:
