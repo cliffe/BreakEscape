@@ -32,6 +32,8 @@ export default class PhoneChatConversation {
         this.engine = inkEngine;
         this.storyLoaded = false;
         this.storyEnded = false;
+        // Set false for throwaway preload runs so ink writes don't leak into window.gameState.globalVariables
+        this.observeGlobals = true;
         
         console.log(`💬 PhoneChatConversation initialized for NPC: ${npcId}`);
     }
@@ -96,8 +98,10 @@ export default class PhoneChatConversation {
             if (window.npcConversationStateManager && this.engine.story) {
                 window.npcConversationStateManager.discoverGlobalVariables(this.engine.story);
                 window.npcConversationStateManager.syncGlobalVariablesToStory(this.engine.story);
-                window.npcConversationStateManager.observeGlobalVariableChanges(this.engine.story, this.npcId);
-                console.log(`🌐 Global variable observer set up for ${this.npcId}`);
+                if (this.observeGlobals) {
+                    window.npcConversationStateManager.observeGlobalVariableChanges(this.engine.story, this.npcId);
+                    console.log(`🌐 Global variable observer set up for ${this.npcId}`);
+                }
             }
             
             console.log(`✅ Story loaded successfully for ${this.npcId}`);
@@ -185,6 +189,9 @@ export default class PhoneChatConversation {
             const npc = this.npcManager.getNPC(this.npcId);
             if (npc) {
                 npc.currentKnot = knotName;
+                // Remembered separately so a later external change to currentKnot
+                // (npc-manager setting the NPC's next knot) can be told apart
+                npc.lastEnteredKnot = knotName;
             }
             
             console.log(`🎯 Navigated to knot: ${knotName}`);
@@ -193,6 +200,26 @@ export default class PhoneChatConversation {
             console.error(`❌ Error navigating to knot ${knotName}:`, error);
             return false;
         }
+    }
+
+    /**
+     * Re-talk after the story ran to DONE/END: give the restored (position-less) story
+     * somewhere to start. A knot the scenario set on the NPC since the last visit wins;
+     * otherwise 'start' (an NPC whose currentKnot is just the knot it was last in, e.g. a
+     * first_call intro, would replay that intro every time); otherwise currentKnot.
+     * @returns {boolean} True if navigation succeeded
+     */
+    restartAfterEnd() {
+        const npc = this.npcManager.getNPC(this.npcId);
+        const current = npc?.currentKnot;
+        const pending = current && current !== npc.lastEnteredKnot ? current : null;
+        for (const knot of [pending, 'start', current]) {
+            if (knot && this.goToKnot(knot)) {
+                this.storyEnded = false;
+                return true;
+            }
+        }
+        return false;
     }
     
     /**

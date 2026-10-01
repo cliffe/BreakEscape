@@ -19,7 +19,9 @@ export const MinigameFramework = {
         }
         
         // If there's already a minigame running, end it first
-        if (this.currentMinigame) {
+        // (a minigame already mid-end, i.e. we were called from its onComplete, is
+        // finished: ending it again would re-run cleanup and its callback)
+        if (this.currentMinigame && !this.currentMinigame._ending) {
             console.log('Ending current minigame before starting new one');
             this.endMinigame(false, null);
         }
@@ -108,9 +110,15 @@ export const MinigameFramework = {
     
     endMinigame(success, result) {
         console.log('endMinigame called with success:', success, 'result:', result);
+        if (this.currentMinigame && this.currentMinigame._ending) {
+            console.log('Minigame is already ending, ignoring re-entrant endMinigame');
+            return;
+        }
         if (this.currentMinigame) {
+            const ending = this.currentMinigame;
+            ending._ending = true;
             console.log('Cleaning up current minigame');
-            this.currentMinigame.cleanup();
+            ending.cleanup();
             
             // Hide the popup overlay
             const popupOverlay = document.querySelector('.popup-overlay');
@@ -119,7 +127,8 @@ export const MinigameFramework = {
             }
             
             // Remove minigame container only if it was auto-created
-            const container = document.querySelector('.minigame-container');
+            // (remove THIS minigame's container, not whichever comes first in the DOM)
+            const container = ending.container || document.querySelector('.minigame-container');
             if (container && !container.hasAttribute('data-external')) {
                 console.log('Removing minigame container');
                 container.remove();
@@ -148,12 +157,24 @@ export const MinigameFramework = {
             }
             
             // Call completion callback
-            if (this.currentMinigame.params && this.currentMinigame.params.onComplete) {
-                console.log('Calling onComplete callback');
-                this.currentMinigame.params.onComplete(success, result);
+            // onComplete may start another minigame (cloner save -> return to the
+            // conversation); that one is now currentMinigame and must not be
+            // cleared here, or its container is orphaned with input disabled.
+            try {
+                if (ending.params && ending.params.onComplete) {
+                    console.log('Calling onComplete callback');
+                    ending.params.onComplete(success, result);
+                }
+            } finally {
+                if (this.currentMinigame === ending) {
+                    this.currentMinigame = null;
+                }
             }
-            
-            this.currentMinigame = null;
+            // Nothing is running now, so any auto-created container still in the
+            // DOM is an orphan (it would sit over the canvas swallowing clicks).
+            if (!this.currentMinigame) {
+                document.querySelectorAll('.minigame-container:not([data-external])').forEach(el => el.remove());
+            }
             console.log(`Ended minigame with success: ${success}`);
         } else {
             console.log('No current minigame to end');

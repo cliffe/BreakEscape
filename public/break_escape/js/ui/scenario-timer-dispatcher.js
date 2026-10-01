@@ -32,6 +32,23 @@ class ScenarioTimerDispatcher {
     this._eventSubs = [];
 
     for (const timer of this.timers) {
+      // Reload/late init: don't restart a timer that has already been cancelled
+      // or has already done its job (all its setGlobal keys already hold the target value).
+      const globalsNow = window.gameState?.globalVariables || {};
+      if (timer.cancelOnGlobal && globalsNow[timer.cancelOnGlobal]) {
+        this._cancelTimer(timer, 'cancelOnGlobal already set at init');
+        continue;
+      }
+      if (timer.setGlobal && typeof timer.setGlobal === 'object') {
+        const keys = Object.keys(timer.setGlobal);
+        if (keys.length > 0 && keys.every(k => globalsNow[k] === timer.setGlobal[k])) {
+          this.firedTimers.add(timer.id);
+          window.scenarioTimerUI?.markFired(timer.id);
+          console.log(`ℹ️ Timer ${timer.id} skipped at init (setGlobal keys already set)`);
+          continue;
+        }
+      }
+
       if (timer.startOnGlobal) {
         // Check if the variable is already true at init (e.g. game reloaded mid-session)
         const alreadySet = !!window.gameState?.globalVariables?.[timer.startOnGlobal];
@@ -56,8 +73,7 @@ class ScenarioTimerDispatcher {
         const handler = (payload) => {
           const value = payload?.value ?? window.gameState?.globalVariables?.[timer.cancelOnGlobal];
           if (value) {
-            this._cancelledTimers.add(timer.id);
-            console.log(`🚫 Timer ${timer.id} cancelled (cancelOnGlobal: ${timer.cancelOnGlobal})`);
+            this._cancelTimer(timer, `cancelOnGlobal: ${timer.cancelOnGlobal}`);
           }
         };
         window.eventDispatcher?.on(eventName, handler);
@@ -66,6 +82,16 @@ class ScenarioTimerDispatcher {
     }
 
     console.log(`⏱️ ScenarioTimerDispatcher initialized with ${this.timers.length} timer(s)`);
+  }
+
+  /**
+   * Cancel a timer and stop its HUD countdown
+   * @private
+   */
+  _cancelTimer(timer, reason) {
+    this._cancelledTimers.add(timer.id);
+    window.scenarioTimerUI?.markFired(timer.id);
+    console.log(`🚫 Timer ${timer.id} cancelled (${reason})`);
   }
 
   /**

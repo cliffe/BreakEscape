@@ -8,7 +8,7 @@
 
   "emergency-button": {
     "required": ["authVar", "activatedVar", "completionActions"],
-    "optional": ["interactionType", "label", "confirmDesc", "unauthorizedText", "alreadyActiveText", "confirmedText", "conditionalActions"]
+    "optional": ["interactionType", "label", "confirmDesc", "unauthorizedText", "unauthorizedTextVariants", "alreadyActiveText", "confirmedText", "conditionalActions"]
   },
 
   "sis_config_panel": {

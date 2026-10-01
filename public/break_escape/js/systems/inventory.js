@@ -296,6 +296,40 @@ function createInventorySprite(itemData) {
 }
 
 /**
+ * Put a notes item that arrived as a reward (no notes minigame) into the notepad,
+ * apply its onRead/onPickup setVariable and emit item_picked_up. Mirrors
+ * NPCGameBridge._receiveNote; window.addNote de-duplicates by title and text.
+ */
+function receiveRewardNote(item) {
+    const text = item.text || item.observations || '';
+    if (text && window.addNote) {
+        const body = item.observations && item.text ? `${item.text}\n\nObservation: ${item.observations}` : text;
+        const added = window.addNote(item.name || 'Note', body, !!item.important);
+        if (added && window.gameAlert) {
+            window.gameAlert(`Added "${item.name}" to your notes.`, 'info', 'Note Added', 3000);
+        }
+    }
+
+    const readAction = item.onRead || item.onPickup;
+    if (readAction?.setVariable && window.gameState?.globalVariables) {
+        Object.entries(readAction.setVariable).forEach(([varName, value]) => {
+            const oldValue = window.gameState.globalVariables[varName];
+            window.gameState.globalVariables[varName] = value;
+            window.npcConversationStateManager?.broadcastGlobalVariableChange(varName, value, null);
+            window.eventDispatcher?.emit(`global_variable_changed:${varName}`, { name: varName, value, oldValue });
+        });
+    }
+
+    window.eventDispatcher?.emit(`item_picked_up:${item.type}`, {
+        itemType: item.type,
+        itemName: item.name,
+        itemId: item.id,
+        collectionGroup: item.collection_group || null,
+        roomId: window.currentPlayerRoom
+    });
+}
+
+/**
  * Put an item in the player's inventory, validating with the server first.
  *
  * Returns a result object, not a boolean, because callers need to tell two
@@ -502,7 +536,15 @@ export async function addToInventory(sprite) {
         // The server POST above already registered them, so containers will filter them out on
         // next load. We skip the visual slot and the item_picked_up event here (interactions.js
         // already emitted it before opening the notes minigame).
+        // Exception: notes that arrive without the notes minigame (flag rewards and timers via
+        // apply-actions give_item, objectId 'action_item_*'). Nothing else will show them, so add
+        // them to the notepad and fire onRead/item_picked_up as reading one in the world does.
+        // World pickups, container takes and NPC gifts (which npc-game-bridge handles itself)
+        // don't use that objectId, so they are never added twice.
         if (/^notes\d*$/.test(sprite.scenarioData?.type)) {
+            if (/^action_item_/.test(sprite.objectId || '')) {
+                receiveRewardNote(sprite.scenarioData);
+            }
             return { ok: true, reason: 'added' };
         }
 

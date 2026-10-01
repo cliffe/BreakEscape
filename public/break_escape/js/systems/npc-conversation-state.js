@@ -37,7 +37,7 @@ class NPCConversationStateManager {
             if (story.variablesState) {
                 // Filter out has_* variables (derived from itemsHeld, will be re-synced on load)
                 const filteredVariables = {};
-                for (const [key, value] of Object.entries(story.variablesState)) {
+                for (const [key, value] of this.readDeclaredVariables(story)) {
                     // Skip dynamically-synced item inventory variables
                     if (!key.startsWith('has_lockpick') && 
                         !key.startsWith('has_workstation') && 
@@ -88,7 +88,8 @@ class NPCConversationStateManager {
      * 
      * @param {string} npcId - NPC identifier
      * @param {Object} story - The Ink story object to restore into
-     * @returns {boolean} True if state was restored
+     * @returns {boolean|string} false if nothing restored; true if the full story state was restored;
+     *   'variables-only' if the story had ended and only variables were restored (caller must navigate to a knot)
      */
     restoreNPCState(npcId, story) {
         if (!npcId || !story) return false;
@@ -128,13 +129,14 @@ class NPCConversationStateManager {
                         console.log(`⏭️ Skipping global variable in NPC restore: ${key} (will sync from gameState)`);
                         continue;
                     }
-                    story.variablesState[key] = value;
+                    this.setDeclaredVariable(story, key, value);
                 }
                 console.log(`✅ Restored NPC-specific variables for NPC: ${npcId}`, {
                     savedAt: new Date(state.timestamp).toLocaleTimeString(),
                     reason: 'Story ended - restarting fresh with saved variables'
                 });
-                return true;
+                // Distinct truthy value: the story has no position, so the caller must navigate
+                return 'variables-only';
             }
 
             console.log(`ℹ️ No saveable data for NPC: ${npcId}`);
@@ -143,6 +145,122 @@ class NPCConversationStateManager {
             console.error(`❌ Error restoring NPC state for ${npcId}:`, error);
             return false;
         }
+    }
+
+    /**
+     * NPC-local ink variables of every NPC with saved state, for the server
+     * (state-sync.js sends them with each sync). Globals are left out, since
+     * they sync on their own, and so is anything that isn't a plain scalar.
+     * @returns {Object} { npcId: { varName: value } }
+     */
+    exportNpcInkVariables() {
+        const out = {};
+        for (const [npcId, state] of this.conversationStates) {
+            if (!state?.variables) continue;
+            const vars = {};
+            for (const [key, value] of Object.entries(state.variables)) {
+                if (this.isGlobalVariable(key)) continue;
+                if (value === null || ['string', 'number', 'boolean'].includes(typeof value)) {
+                    vars[key] = value;
+                }
+            }
+            out[npcId] = vars;
+        }
+        return out;
+    }
+
+    /**
+     * Seed NPC-local ink variables saved on the server (called on load from
+     * game.js). Each becomes a variables-only state: a person-chat NPC's next
+     * conversation restores its own flags and restarts at its start knot (the
+     * path a same-session re-talk takes), and phone-chat applies them with
+     * applySavedInkVariables. In-session state wins.
+     * @param {Object} saved - { npcId: { varName: value } }
+     */
+    importNpcInkVariables(saved) {
+        if (!saved || typeof saved !== 'object') return;
+        for (const [npcId, variables] of Object.entries(saved)) {
+            if (this.conversationStates.has(npcId)) continue;
+            if (!variables || typeof variables !== 'object') continue;
+            this.conversationStates.set(npcId, { timestamp: 0, hasEnded: true, variables: { ...variables } });
+        }
+        console.log(`🗂️ Seeded saved ink variables for ${Object.keys(saved).length} NPC(s)`);
+    }
+
+    /**
+     * The story's declared VARs as [name, value] pairs. Object.entries on
+     * story.variablesState does NOT do this: it is a Proxy over the inkjs
+     * VariablesState object and lists its internals (patch,
+     * _changedVariablesForBatchObs, ...), never the ink variables.
+     * @param {Object} story - The Ink story object
+     * @returns {Array<[string, *]>}
+     */
+    readDeclaredVariables(story) {
+        const declared = story?.variablesState?._defaultGlobalVariables;
+        if (!declared) return [];
+        // $(name) reads the ink variable even if its name matches a VariablesState property
+        return Array.from(declared.keys()).map(name => [name, story.variablesState.$(name)]);
+    }
+
+    /**
+     * Set a declared VAR. Names the story doesn't declare are refused: through
+     * the Proxy they would either throw or overwrite a VariablesState internal.
+     * @returns {boolean} True if the variable was set
+     */
+    setDeclaredVariable(story, name, value) {
+        const vs = story?.variablesState;
+        if (!vs?._defaultGlobalVariables?.has(name)) return false;
+        try {
+            vs.$(name, value);
+            return true;
+        } catch (e) {
+            console.warn(`⚠️ Could not set ink variable ${name}:`, e.message);
+            return false;
+        }
+    }
+
+    /**
+     * Record only an NPC's ink variables (no story position). Phone chats keep
+     * their position in npc.storyState; this is what lets their first-contact
+     * flags reach the server so an intro doesn't replay after a reload.
+     * @param {string} npcId - NPC identifier
+     * @param {Object} story - The Ink story object
+     */
+    recordInkVariables(npcId, story) {
+        if (!npcId || !story?.variablesState) return;
+        const variables = {};
+        for (const [key, value] of this.readDeclaredVariables(story)) {
+            if (this.isGlobalVariable(key)) continue;
+            if (value === null || ['string', 'number', 'boolean'].includes(typeof value)) {
+                variables[key] = value;
+            }
+        }
+        const existing = this.conversationStates.get(npcId) || {};
+        this.conversationStates.set(npcId, { ...existing, timestamp: Date.now(), variables });
+    }
+
+    /**
+     * Copy an NPC's saved ink-local variables into a freshly loaded story.
+     * Each assignment is separate, so a variable the ink no longer declares is
+     * skipped rather than aborting the rest.
+     * @param {string} npcId - NPC identifier
+     * @param {Object} story - The Ink story object
+     * @returns {number} How many variables were applied
+     */
+    applySavedInkVariables(npcId, story) {
+        const variables = this.conversationStates.get(npcId)?.variables;
+        if (!variables || !story?.variablesState) return 0;
+        let applied = 0;
+        for (const [key, value] of Object.entries(variables)) {
+            if (this.isGlobalVariable(key)) continue;
+            if (this.setDeclaredVariable(story, key, value)) {
+                applied++;
+            } else {
+                console.warn(`⚠️ Saved ink variable ${key} no longer in ${npcId}'s story; skipped`);
+            }
+        }
+        if (applied) console.log(`🗂️ Applied ${applied} saved ink variable(s) to ${npcId}`);
+        return applied;
     }
 
     /**
@@ -324,11 +442,20 @@ class NPCConversationStateManager {
         story.variablesState.variableChangedEvent = (variableName, newValue) => {
             // Check if this is a global variable
             if (this.isGlobalVariable(variableName)) {
+                const unwrappedValue = newValue?.valueObject ?? newValue;
+
+                // Not a change: syncGlobalVariablesToStory writing gameState's own
+                // values into this story (it runs again after the observer is attached,
+                // on every conversation start), or ink re-assigning the current value.
+                // Emitting here re-fired global_variable_changed for every global the
+                // story declares, so onceOnly eventMappings whose condition had since
+                // become true fired spuriously (m01: three "Derek's contained" calls).
+                if (window.gameState.globalVariables[variableName] === unwrappedValue) return;
+
                 story.__beChangedGlobals.add(variableName);
                 console.log(`🌐 Global variable changed: ${variableName} = ${newValue} (from ${npcId})`);
-                
+
                 // Update window.gameState
-                const unwrappedValue = newValue?.valueObject ?? newValue;
                 window.gameState.globalVariables[variableName] = unwrappedValue;
                 
                 // Broadcast to other loaded stories

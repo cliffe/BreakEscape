@@ -59,6 +59,11 @@ export class ObjectivesManager {
           console.log(`📋 Initialized submit_flags task ${task.taskId}: status=${task.status}, targetFlags=${task.targetFlags?.join(', ') || 'none'}, targetCount=${task.targetCount}`);
         }
         
+        // collect_items defaults to 1 item (server does the same)
+        if (task.type === 'collect_items' && !task.targetCount) {
+          task.targetCount = 1;
+        }
+        
         this.taskIndex[task.taskId] = task;
       });
     });
@@ -321,6 +326,13 @@ export class ObjectivesManager {
     // Find all active collect_items tasks that target this item
     Object.values(this.taskIndex).forEach(task => {
       if (task.type !== 'collect_items') return;
+      if (task.status === 'completing') {
+        // A completion POST is in flight and may be rejected (it can beat the
+        // inventory/collect POST). Keep the pickup and replay it after a revert.
+        if (!task._pendingPickups) task._pendingPickups = [];
+        task._pendingPickups.push(data);
+        return;
+      }
       if (task.status !== 'active') return;
 
       // Check if item matches task criteria
@@ -412,12 +424,8 @@ export class ObjectivesManager {
       this.showTaskCompleteNotification(task);
       this.processTaskCompletion(task);   // handles onComplete.unlockTask / unlockAim
 
-      // Auto-reveal locked parent aim
-      const parentAim = this.aimIndex[task.aimId];
-      if (parentAim && parentAim.status === 'locked') {
-        parentAim.status = 'active';
-        this.showAimUnlockedNotification(parentAim);
-      }
+      // Auto-reveal locked parent aim (unless it has an unmet unlockCondition)
+      this.revealAimForCompletedTask(task);
 
       this.checkAimCompletion(task.aimId);
 
@@ -514,6 +522,18 @@ export class ObjectivesManager {
     return last;
   }
 
+  /**
+   * Re-run pickups that arrived while a collect task was 'completing' and the
+   * completion was then rejected/reverted. No-op if nothing was queued.
+   */
+  replayPendingPickups(task) {
+    const pending = task._pendingPickups;
+    task._pendingPickups = null;
+    if (pending && pending.length) {
+      pending.forEach(data => this.handleItemPickup(data));
+    }
+  }
+
   async completeTask(taskId) {
     const task = this.taskIndex[taskId];
     if (!task || task.status === 'completed' || task.status === 'completing') return;
@@ -529,6 +549,7 @@ export class ObjectivesManager {
       if (!response.success) {
         console.warn(`⚠️ Server rejected task completion: ${response.error}`);
         task.status = 'active'; // Revert on server rejection
+        this.replayPendingPickups(task);
         if (window.gameAlert) {
           window.gameAlert(response.error || 'Not yet…', 'warning', 'Objective Blocked');
         }
@@ -553,6 +574,7 @@ export class ObjectivesManager {
       // later trigger can retry it, and say so plainly.
       console.error('Failed to sync task completion with server:', error);
       task.status = 'active';
+      this.replayPendingPickups(task);
       if (window.gameAlert) {
         window.gameAlert('Could not save that objective. It will retry -- keep playing.',
                          'error', 'Sync Error');
@@ -561,6 +583,7 @@ export class ObjectivesManager {
     }
 
     // Update local state
+    task._pendingPickups = null;
     task.status = 'completed';
     task.completedAt = new Date().toISOString();
     
@@ -571,12 +594,8 @@ export class ObjectivesManager {
     this.processTaskCompletion(task);
 
     // If the parent aim is locked, make it visible so the completed task shows up
-    const parentAim = this.aimIndex[task.aimId];
-    if (parentAim && parentAim.status === 'locked') {
-      parentAim.status = 'active';
-      console.log(`🔓 Aim auto-revealed by task completion: ${parentAim.title}`);
-      this.showAimUnlockedNotification(parentAim);
-    }
+    // (unless it has an unmet unlockCondition: then it stays hidden, see helper)
+    this.revealAimForCompletedTask(task);
 
     // Check aim completion
     this.checkAimCompletion(task.aimId);
@@ -599,6 +618,43 @@ export class ObjectivesManager {
     this.notifyListeners();
   }
   
+  /**
+   * Is an aim's unlockCondition satisfied right now?
+   * Aims without a recognised condition return true.
+   */
+  isUnlockConditionMet(aim) {
+    const cond = aim && aim.unlockCondition;
+    if (!cond) return true;
+    if (cond.aimCompleted) return this.aimIndex[cond.aimCompleted]?.status === 'completed';
+    if (Array.isArray(cond.aimsCompleted)) {
+      return cond.aimsCompleted.every(id => this.aimIndex[id]?.status === 'completed');
+    }
+    if (cond.globalVariable) {
+      const expected = cond.equals === undefined ? true : cond.equals;
+      const actual = window.gameState?.globalVariables?.[cond.globalVariable];
+      return expected === true ? !!actual : actual === expected;
+    }
+    return true;
+  }
+
+  /**
+   * A task finished while its aim may still be locked. Aims with an unlockCondition
+   * stay hidden until that condition is met (the completed task is already recorded,
+   * so it shows as done when the aim is later unlocked). Aims with no unlockCondition
+   * keep the old behaviour: they are revealed by the completion.
+   */
+  revealAimForCompletedTask(task) {
+    const parentAim = this.aimIndex[task.aimId];
+    if (!parentAim || parentAim.status !== 'locked') return;
+    if (parentAim.unlockCondition && !this.isUnlockConditionMet(parentAim)) {
+      console.log(`🔒 Task done early; aim stays hidden until unlocked: ${parentAim.title}`);
+      return;
+    }
+    parentAim.status = 'active';
+    console.log(`🔓 Aim auto-revealed by task completion: ${parentAim.title}`);
+    this.showAimUnlockedNotification(parentAim);
+  }
+
   /**
    * Process task.onComplete actions (unlock next task/aim)
    */
@@ -637,6 +693,7 @@ export class ObjectivesManager {
     
     task.status = 'active';
     console.log(`🔓 Task unlocked: ${task.title}`);
+    this.persistUnlock('task', taskId);
     
     this.showTaskUnlockedNotification(task);
     this.notifyListeners();
@@ -651,24 +708,51 @@ export class ObjectivesManager {
     if (!aim || aim.status !== 'locked') return;
     
     aim.status = 'active';
+    this.persistUnlock('aim', aimId);
     
     // Also activate first task
     const firstTask = aim.tasks[0];
     if (firstTask && firstTask.status === 'locked') {
       firstTask.status = 'active';
+      this.persistUnlock('task', firstTask.taskId);
     }
     
     console.log(`🔓 Aim unlocked: ${aim.title}`);
     this.showAimUnlockedNotification(aim);
     this.notifyListeners();
+
+    // Tasks may have been completed while the aim was hidden
+    if (aim.tasks.some(t => t.status === 'completed')) this.checkAimCompletion(aimId);
   }
   
+  /**
+   * Record an unlock on the server so it survives a reload. The server already
+   * records onComplete unlocks and derives unlockCondition ones on load; this
+   * covers #unlock_aim / #unlock_task ink tags and eventMapping unlocks, which
+   * were client-only. Fire-and-forget: the unlock already applies this session.
+   */
+  persistUnlock(kind, objectiveId) {
+    const gameId = window.breakEscapeConfig?.gameId;
+    if (!gameId) return;
+    fetch(`/break_escape/games/${gameId}/objectives/unlock`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+      },
+      body: JSON.stringify({ kind, objective_id: objectiveId })
+    }).catch(error => console.warn(`📋 Could not record ${kind} unlock ${objectiveId}:`, error));
+  }
+
   /**
    * Check if all tasks in an aim are complete
    */
   checkAimCompletion(aimId) {
     const aim = this.aimIndex[aimId];
     if (!aim) return;
+
+    // Hidden aim with an unmet unlockCondition: defer completion until it is unlocked
+    if (aim.status === 'locked' && aim.unlockCondition && !this.isUnlockConditionMet(aim)) return;
     
     const allComplete = aim.tasks.every(task => task.optional || task.status === 'completed');
     

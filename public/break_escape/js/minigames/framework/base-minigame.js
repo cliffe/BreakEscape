@@ -14,9 +14,9 @@ export class MinigameScene {
     
     init() {
         // Check if cancel button should be shown (default: true)
-        const showCancel = this.params.showCancel !== false;
-        // disableClose hides the × button and blocks Esc — useful for forced cutscene conversations
+        // disableClose hides the × button and the cancel button and blocks Esc — useful for forced cutscene conversations
         const disableClose = this.params.disableClose === true;
+        const showCancel = this.params.showCancel !== false && !disableClose;
 
         this.container.innerHTML = `
             <button class="minigame-close-button" id="minigame-close" ${disableClose ? 'style="display:none"' : ''}>&times;</button>

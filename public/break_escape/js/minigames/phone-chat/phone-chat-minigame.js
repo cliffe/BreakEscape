@@ -306,6 +306,8 @@ export class PhoneChatMinigame extends MinigameScene {
                 try {
                     // Create temporary conversation to get intro message
                     const tempConversation = new PhoneChatConversation(npc.id, this.npcManager, this.inkEngine);
+                    // Preload is a dry run: don't let ink variable writes reach the synced globals
+                    tempConversation.observeGlobals = false;
                     
                     // Load from storyJSON (pre-cached) or via Rails API
                     let storySource = npc.storyJSON;
@@ -320,6 +322,10 @@ export class PhoneChatMinigame extends MinigameScene {
                     console.log(`📱 Story loaded for ${npc.id}:`, loaded);
                     
                     if (loaded) {
+                        // After a reload: restore this contact's own ink flags (e.g. first_contact)
+                        // so its start knot skips an intro the player already read
+                        window.npcConversationStateManager?.applySavedInkVariables?.(npc.id, tempConversation.engine?.story);
+
                         // Navigate to start
                         const startKnot = npc.currentKnot || 'start';
                         console.log(`📱 Navigating to knot: ${startKnot}`);
@@ -372,6 +378,24 @@ export class PhoneChatMinigame extends MinigameScene {
                             // Save the story state after preloading
                             // This prevents the intro from replaying when conversation is opened
                             npc.storyState = tempConversation.saveState();
+                            
+                            // The preload ran with the global observer off, so any synced globals the
+                            // intro assigned (~ x = true) were not written. Keep them and apply them when
+                            // the player first opens the conversation, like the deferred tags below.
+                            const preloadStory = tempConversation.engine?.story;
+                            const globals = window.gameState?.globalVariables;
+                            if (preloadStory?.variablesState && globals) {
+                                const changed = {};
+                                Object.keys(globals).forEach(name => {
+                                    if (!preloadStory.variablesState.GlobalVariableExistsWithName(name)) return;
+                                    const value = preloadStory.variablesState[name];
+                                    if (value !== globals[name]) changed[name] = value;
+                                });
+                                if (Object.keys(changed).length > 0) {
+                                    npc.deferredGlobals = changed;
+                                    console.log(`📋 Deferred ${Object.keys(changed).length} global change(s) for ${npc.id}:`, changed);
+                                }
+                            }
                             
                             // Defer game action tags (e.g. complete_task, set_global) so they fire
                             // when the player first opens the conversation, not silently during preload
@@ -497,6 +521,10 @@ export class PhoneChatMinigame extends MinigameScene {
         
         // Set conversation as active
         this.isConversationActive = true;
+
+        // Saved ink flags for this contact (from before a reload). A restored
+        // npc.storyState below carries its own, newer values and overrides these.
+        window.npcConversationStateManager?.applySavedInkVariables?.(npcId, this.conversation.engine?.story);
         
         // Check if we have saved story state to restore
         // BUT: if startKnot was explicitly provided (e.g., from timed message),
@@ -511,10 +539,19 @@ export class PhoneChatMinigame extends MinigameScene {
             // (Restored state snapshots choices at save time — globals may have changed since.)
             const story = this.conversation.engine?.story;
             if (story) {
+                // Re-navigating re-runs the knot from its first line, so only do it when the sync
+                // actually changed a global the saved story had; otherwise its choices are current
+                // and re-running would replay the knot's text (with changed text) after the thread.
+                const globalsBefore = {};
+                const gameGlobals = window.gameState?.globalVariables || {};
+                Object.keys(gameGlobals).forEach(name => {
+                    if (story.variablesState.GlobalVariableExistsWithName(name)) globalsBefore[name] = story.variablesState[name];
+                });
                 if (window.npcConversationStateManager) {
                     window.npcConversationStateManager.syncGlobalVariablesToStory(story);
                 }
-                if (story.currentChoices?.length > 0) {
+                const globalsChanged = Object.keys(globalsBefore).some(name => story.variablesState[name] !== globalsBefore[name]);
+                if (globalsChanged && story.currentChoices?.length > 0) {
                     const firstChoice = story.currentChoices[0];
                     const sourcePath = firstChoice.sourcePath ||
                         (firstChoice._sourcePath && firstChoice._sourcePath.toString());
@@ -530,11 +567,31 @@ export class PhoneChatMinigame extends MinigameScene {
                 }
             }
 
-            // Show current choices without continuing
-            this.showCurrentChoices();
+            // If the saved story had ended (DONE/END), the restored story has no position and
+            // would only show "Conversation ended". Restart at the NPC's knot instead. Skip when
+            // the only history is the preload intro (NPC config "restartOnRetalk": false also opts out): that intro has already been shown and its
+            // tags are still deferred, so replaying would duplicate both.
+            const onlyPreloaded = conversationHistory.every(msg => msg.preloaded);
+            if (npc.restartOnRetalk !== false && !onlyPreloaded &&
+                this.conversation.getCurrentState().hasEnded &&
+                this.conversation.restartAfterEnd()) {
+                console.log(`🔁 Previous conversation had ended - restarting ${npcId} at knot: ${npc.currentKnot}`);
+                this.continueStory();
+            } else {
+                // Show current choices without continuing
+                this.showCurrentChoices();
+            }
 
             // Process any game action tags that were collected during preload but deferred
             // until the player actually opens the conversation (e.g. complete_task, set_global)
+            if (npc.deferredGlobals) {
+                Object.entries(npc.deferredGlobals).forEach(([name, value]) => {
+                    window.gameState.globalVariables[name] = value;
+                    window.npcConversationStateManager?.broadcastGlobalVariableChange(name, value, npc.id);
+                    window.eventDispatcher?.emit(`global_variable_changed:${name}`, { name, value });
+                });
+                npc.deferredGlobals = null;
+            }
             if (npc.deferredTags && npc.deferredTags.length > 0) {
                 console.log(`📋 Processing ${npc.deferredTags.length} deferred tag(s) for ${npc.id}:`, npc.deferredTags);
                 processGameActionTags(npc.deferredTags, this.ui);
@@ -548,6 +605,11 @@ export class PhoneChatMinigame extends MinigameScene {
                 console.log(`📱 Navigating to knot: ${targetKnot}`);
             }
             this.conversation.goToKnot(targetKnot);
+            
+            // This run plays (and applies the tags and globals of) the knot itself, so anything a
+            // preload deferred for it would be a second copy
+            npc.deferredGlobals = null;
+            npc.deferredTags = null;
             
             // Continue story to get fresh content and choices
             this.continueStory();
@@ -699,7 +761,10 @@ export class PhoneChatMinigame extends MinigameScene {
             console.log('⚠️ No tags to process');
         }
 
-        // Display accumulated NPC messages one at a time with typing indicator
+        // Display accumulated NPC messages one at a time with typing indicator.
+        // pendingNpcMessages is what has not reached the history yet: if the phone is closed
+        // mid-typeout, _flushPendingMessages() keeps it (see there).
+        this._pendingNpcMessages = accumulatedMessages.filter(m => m.trim()).map(m => m.trim());
         for (let i = 0; i < accumulatedMessages.length; i++) {
             const message = accumulatedMessages[i];
             if (!message.trim()) continue;
@@ -710,8 +775,10 @@ export class PhoneChatMinigame extends MinigameScene {
             await this.ui.addMessage('npc', message.trim());
             if (!this.isConversationActive) return;
             this.history.addMessage('npc', message.trim());
+            this._pendingNpcMessages.shift();
             if (i < accumulatedMessages.length - 1) await delay(INTER_MESSAGE_MS);
         }
+        this._pendingNpcMessages = [];
 
         // Display choices if available
         if (lastResult.choices && lastResult.choices.length > 0) {
@@ -892,8 +959,42 @@ export class PhoneChatMinigame extends MinigameScene {
         if (npc) {
             const state = this.conversation.saveState();
             npc.storyState = state;
+            // Only once the player has opened the chat (not at preload), so an
+            // intro's deferred tags have run before its flags reach the server
+            window.npcConversationStateManager?.recordInkVariables?.(this.currentNPCId, this.conversation.engine?.story);
             console.log('💾 Saved story state for', this.currentNPCId);
         }
+    }
+    
+    /**
+     * The story runs ahead of the typeout: its tags and global changes are applied before the
+     * first message appears. If the phone is closed (or the contact list reopened) before the
+     * messages have all been typed, put the rest in the thread and save the story position now.
+     * Otherwise the player never sees them, and a reopen finds an empty history and runs the
+     * knot again against the changed globals (m02: Ghost's "You found it." was replaced by his
+     * return text, because the Planted Network Device pickup opens his phone twice in 500 ms).
+     */
+    _flushPendingMessages() {
+        const pending = this._pendingNpcMessages;
+        this._pendingNpcMessages = [];
+        if (!pending || pending.length === 0 || !this.currentNPCId) return;
+        pending.forEach(text => this.npcManager.addMessage(this.currentNPCId, 'npc', text));
+        const npc = this.npcManager.getNPC(this.currentNPCId);
+        if (npc && this.conversation) npc.storyState = this.conversation.saveState();
+    }
+    
+    /**
+     * Emit conversation_closed:<npcId>, matching person-chat, so timed messages and
+     * event mappings keyed on it fire for phone contacts too.
+     * @param {string|null} npcId - NPC whose conversation just closed
+     */
+    _emitConversationClosed(npcId) {
+        if (!npcId || !this.conversation || !window.eventDispatcher) return;
+        window.eventDispatcher.emit(`conversation_closed:${npcId}`, {
+            npcId,
+            timestamp: Date.now()
+        });
+        console.log(`📢 Emitted event: conversation_closed:${npcId}`);
     }
     
     /**
@@ -902,6 +1003,8 @@ export class PhoneChatMinigame extends MinigameScene {
     closeConversation() {
         console.log('🔙 Closing conversation');
         
+        this._flushPendingMessages();
+        this._emitConversationClosed(this.currentNPCId);
         this.isConversationActive = false;
         this.currentNPCId = null;
         this.conversation = null;
@@ -1082,6 +1185,11 @@ export class PhoneChatMinigame extends MinigameScene {
      */
     cleanup() {
         console.log('🧹 PhoneChatMinigame cleaning up');
+        
+        // A conversation still open at teardown counts as closed (closeConversation()
+        // clears currentNPCId/conversation, so this can't double-emit)
+        this._flushPendingMessages();
+        this._emitConversationClosed(this.currentNPCId);
         
         if (this.ui) {
             this.ui.cleanup();

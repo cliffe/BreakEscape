@@ -472,7 +472,8 @@ export class PasswordMinigame extends MinigameScene {
             }
         } catch (error) {
             console.error('Server validation error:', error);
-            if (error.message && error.message.includes('422')) {
+            // api-client sets err.status; a wrong password comes back 422 and is a real attempt.
+            if (error?.status === 422 || error?.message?.includes('422')) {
                 this.passwordIncorrect();
             } else {
                 this.showFailure("Network error. Please try again.", false, 1500);

@@ -759,7 +759,8 @@ export class NPCGameBridge {
     const roomId = npc.roomId;
 
     // Destroy sprite immediately so the NPC disappears from the world
-    const sprite = npc._sprite || npc.sprite;
+    const sprite = npc._sprite || npc.sprite ||
+      window.rooms?.[roomId]?.npcSprites?.find(s => s.npcId === npcId);
     if (sprite && !sprite.destroyed) {
       sprite.destroy();
     }

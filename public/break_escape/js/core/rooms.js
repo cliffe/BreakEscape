@@ -1320,10 +1320,14 @@ function positionSouthSingle(currentRoom, connectedRoom, currentPos, dimensions)
 
     const y = currentPos.y + currentDim.stackingHeightPx;
 
-    // Same parity-based edge alignment as positionNorthSingle — see comment there.
+    // Same parity-based edge alignment as positionNorthSingle — see comment there,
+    // except the parity is taken at the SHARED wall (the current room's bottom
+    // edge, where its south door sprite picks its side), not at the current
+    // room's origin. For the north case the shared wall is the origin, so the
+    // two already agree there.
     let x;
     if (currentDim.widthPx !== connectedDim.widthPx) {
-        const gridCoords = worldToGrid(currentPos.x, currentPos.y);
+        const gridCoords = worldToGrid(currentPos.x, currentPos.y + currentDim.stackingHeightPx);
         const sum = gridCoords.gridX + gridCoords.gridY;
         const useRightSide = ((sum % 2) + 2) % 2 === 1;
         x = useRightSide

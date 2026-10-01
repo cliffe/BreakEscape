@@ -1,5 +1,6 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { applyActions } from '../../systems/apply-actions.js';
+import { resolveConditionalText } from '../../utils/conditional-text.js';
 
 /**
  * ESD Pushbutton Minigame
@@ -16,6 +17,8 @@ import { applyActions } from '../../systems/apply-actions.js';
  * Optional params:
  *   confirmDesc        — first line of confirm modal (default: "This action is irreversible.")
  *   unauthorizedText   — status text when authVar is not yet set
+ *   unauthorizedTextVariants — [{ condition, text }] state-aware overrides of unauthorizedText;
+ *                      first matching condition (globalVars syntax) wins
  *   alreadyActiveText  — status text shown on reopen when already activated
  *   confirmedText      — status text shown immediately after confirming activation
  *   conditionalActions — [{ ifGlobalFalse: 'varName', actions: [] }] for conditional side-effects
@@ -119,7 +122,11 @@ export class EsdPushbuttonMinigame extends MinigameScene {
 
     applyInitialState() {
         const alreadyActiveText = this._sd.alreadyActiveText || 'Emergency shutdown already active.';
-        const unauthorizedText  = this._sd.unauthorizedText  || 'Authorisation required before pressing ESD.';
+        const unauthorizedText  = resolveConditionalText(
+            this._sd.unauthorizedText || 'Authorisation required before pressing ESD.',
+            (this._sd.unauthorizedTextVariants || []).map(v => ({ condition: v?.condition, value: v?.text })),
+            window.gameState?.globalVariables || {}
+        );
 
         if (this.alreadyActivated) {
             this.state = 'ACTIVATED';

@@ -474,7 +474,19 @@ export class PersonChatMinigame extends MinigameScene {
                 if (stateRestored) {
                     // If we restored state, reset the story ended flag in case it was marked as ended before
                     this.conversation.storyEnded = false;
-                    console.log(`🔄 Continuing previous conversation with ${this.npcId}`);
+                    // A story that ran to DONE/END has no position: restoring it (full state) or only
+                    // its variables leaves nothing to show but "(End of conversation)". Restart at the
+                    // NPC's start knot instead (see PhoneChatConversation.restartAfterEnd).
+                    const restoredStory = this.inkEngine.story;
+                    // NPC config "restartOnRetalk": false opts out, for one-shot scenes (e.g. a final
+                    // choice with rewards) that must not replay once resolved.
+                    const storyIsFinished = this.npc.restartOnRetalk !== false && (stateRestored === 'variables-only' ||
+                        (!restoredStory.canContinue && !(restoredStory.currentChoices?.length > 0)));
+                    if (storyIsFinished && this.conversation.restartAfterEnd()) {
+                        console.log(`🔁 Previous conversation had ended - restarting ${this.npcId} at knot: ${this.npc.currentKnot}`);
+                    } else {
+                        console.log(`🔄 Continuing previous conversation with ${this.npcId}`);
+                    }
                 } else {
                     // First time conversation - navigate to start knot
                     const startKnot = this.npc.currentKnot || 'start';
@@ -569,7 +581,10 @@ export class PersonChatMinigame extends MinigameScene {
                 if (this.inkEngine && this.inkEngine.story) {
                     npcConversationStateManager.saveNPCState(this.npcId, this.inkEngine.story);
                 }
-                this.ui.showDialogue('(End of conversation - press ESC to exit)', 'system');
+                // Via the helper so a disableClose scene (no Esc, no x) still closes itself.
+                // Reached on re-talk to a restartOnRetalk:false NPC whose story had ended,
+                // including after a reload, when its saved ink variables are restored.
+                this.showConversationOverMessage('(End of conversation - press ESC to exit)');
                 console.log('🏁 Story has reached an end point');
                 return;
             }
@@ -988,7 +1003,7 @@ export class PersonChatMinigame extends MinigameScene {
                     if (this.inkEngine && this.inkEngine.story) {
                         npcConversationStateManager.saveNPCState(this.npcId, this.inkEngine.story);
                     }
-                    this.ui.showDialogue('(Conversation ended - press ESC to close)', 'system');
+                    this.showConversationOverMessage('(Conversation ended - press ESC to close)');
                     console.log('🏁 Story has reached an end point');
                 } else if (result.canContinue) {
                     // No text but more content available - get next line
@@ -1018,7 +1033,7 @@ export class PersonChatMinigame extends MinigameScene {
                     if (this.inkEngine && this.inkEngine.story) {
                         npcConversationStateManager.saveNPCState(this.npcId, this.inkEngine.story);
                     }
-                    this.ui.showDialogue('(Conversation ended - press ESC to close)', 'system');
+                    this.showConversationOverMessage('(Conversation ended - press ESC to close)');
                     console.log('🏁 Story has reached an end point');
                 } else if (result.canContinue) {
                     // No visible text but more content available - get next line
@@ -1197,7 +1212,7 @@ export class PersonChatMinigame extends MinigameScene {
                     if (this.inkEngine && this.inkEngine.story) {
                         npcConversationStateManager.saveNPCState(this.npcId, this.inkEngine.story);
                     }
-                    this.ui.showDialogue('(Conversation ended - press ESC to close)', 'system');
+                    this.showConversationOverMessage('(Conversation ended - press ESC to close)');
                     console.log('🏁 Story has reached an end point');
                 }, 1000);
             } else if (originalResult.choices && originalResult.choices.length > 0) {
@@ -1260,7 +1275,7 @@ export class PersonChatMinigame extends MinigameScene {
                     if (this.inkEngine && this.inkEngine.story) {
                         npcConversationStateManager.saveNPCState(this.npcId, this.inkEngine.story);
                     }
-                    this.ui.showDialogue('(Conversation ended - press ESC to close)', 'system');
+                    this.showConversationOverMessage('(Conversation ended - press ESC to close)');
                     console.log('🏁 Story has reached an end point');
                 }
             }
@@ -1373,7 +1388,7 @@ export class PersonChatMinigame extends MinigameScene {
                 if (this.inkEngine && this.inkEngine.story) {
                     npcConversationStateManager.saveNPCState(this.npcId, this.inkEngine.story);
                 }
-                this.ui.showDialogue('(Conversation ended - press ESC to close)', 'system');
+                this.showConversationOverMessage('(Conversation ended - press ESC to close)');
                 console.log('🏁 Story has reached an end point');
                 return;
             }
@@ -1422,7 +1437,7 @@ export class PersonChatMinigame extends MinigameScene {
                         if (this.inkEngine && this.inkEngine.story) {
                             npcConversationStateManager.saveNPCState(this.npcId, this.inkEngine.story);
                         }
-                        this.ui.showDialogue('(Conversation ended - press ESC to close)', 'system');
+                        this.showConversationOverMessage('(Conversation ended - press ESC to close)');
                         console.log('🏁 Story has reached an end point');
                     } else {
                         // No text but story isn't ended - wait a bit and show message
@@ -1430,13 +1445,28 @@ export class PersonChatMinigame extends MinigameScene {
                         if (this.inkEngine && this.inkEngine.story) {
                             npcConversationStateManager.saveNPCState(this.npcId, this.inkEngine.story);
                         }
-                        this.ui.showDialogue('(No more dialogue available - press ESC to close)', 'system');
+                        this.showConversationOverMessage('(No more dialogue available - press ESC to close)');
                     }
                 }, DIALOGUE_AUTO_ADVANCE_DELAY);
             }
         } catch (error) {
             console.error('❌ Error displaying dialogue:', error);
             this.showError('An error occurred during conversation');
+        }
+    }
+    
+    /**
+     * Show the "conversation over" line. Normally the player closes with Esc, the x or End
+     * Conversation, but disableClose removes all three, so a story that ends without
+     * #exit_conversation would trap the player; close it for them after the message is read.
+     * @param {string} message - Text to show
+     */
+    showConversationOverMessage(message) {
+        this.ui.showDialogue(message, 'system');
+        if (this.params.disableClose === true) {
+            setTimeout(() => {
+                if (this.gameState.isActive) this.complete(true);
+            }, 2000);
         }
     }
     
@@ -1562,7 +1592,9 @@ export class PersonChatMinigame extends MinigameScene {
         }
 
         // Emit event when conversation closes (for triggering timed messages or other events)
-        if (window.eventDispatcher) {
+        // cleanup() can be reached from more than one teardown path; emit once per instance
+        if (window.eventDispatcher && !this._conversationClosedEmitted) {
+            this._conversationClosedEmitted = true;
             const eventName = `conversation_closed:${this.npcId}`;
             window.eventDispatcher.emit(eventName, {
                 npcId: this.npcId,

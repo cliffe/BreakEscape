@@ -149,14 +149,24 @@ export class NPCBehaviorManager {
      * @param {boolean} visible - True to show, false to hide
      */
     setNPCVisible(npcId, visible) {
-        const behavior = this.behaviors.get(npcId);
-        if (!behavior) {
-            console.warn(`⚠️ setNPCVisible: no behavior for ${npcId}`);
-            return;
+        // Always record the desired visibility on the NPC data so sprite creation
+        // (room not yet loaded) honours it instead of behavior.initiallyHidden.
+        const npcData = window.npcManager?.getNPC(npcId);
+        if (npcData) {
+            npcData.isVisible = visible;
         }
-        const sprite = behavior.sprite;
-        if (!sprite) {
-            console.warn(`⚠️ setNPCVisible: no sprite for ${npcId}`);
+
+        const behavior = this.behaviors.get(npcId);
+        const sprite = behavior?.sprite;
+        if (!behavior || !sprite) {
+            console.warn(`⚠️ setNPCVisible: no ${behavior ? 'sprite' : 'behavior'} for ${npcId} yet, recorded isVisible=${visible} for when it is created`);
+            if (npcData && window.RoomStateSync && npcData.roomId) {
+                window.RoomStateSync.updateNpcState(npcData.roomId, npcId, {
+                    isVisible: visible
+                }).catch(err => {
+                    console.error('Failed to sync NPC visibility state to server:', err);
+                });
+            }
             return;
         }
         sprite.setVisible(visible);

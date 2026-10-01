@@ -219,7 +219,7 @@ export function createNPCSprite(scene, npc, roomData) {
             console.log(`👻 NPC ${npc.id} restored from hidden state (npc.isVisible: false)`);
         }
         // Check if NPC should be initially hidden (cutscene-only NPCs revealed by events)
-        else if (npc.behavior?.initiallyHidden === true) {
+        else if (npc.behavior?.initiallyHidden === true && npc.isVisible !== true) {
             sprite.setVisible(false);
             // Also disable collision and physics for hidden NPCs
             if (sprite.body) {

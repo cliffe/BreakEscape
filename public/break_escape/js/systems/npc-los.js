@@ -26,6 +26,11 @@ export function isInLineOfSight(npc, target, losConfig = {}) {
     enabled = true
   } = losConfig;
   
+  // Hidden or KO'd NPCs see nothing (checked before the "LOS disabled" shortcut)
+  if (npc?.id && window.npcHostileSystem?.isNPCKO?.(npc.id)) return false;
+  const losSprite = npc?._sprite || npc?.sprite;
+  if (losSprite && losSprite.visible === false) return false;
+
   if (!enabled) return true; // If LOS disabled, always return true (can see everything)
   
   // Get NPC position

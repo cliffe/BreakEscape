@@ -185,6 +185,18 @@ export default class NPCManager {
       delete entry.eventMapping; // Remove the incorrect property
     }
     
+    // Carry runtime fields written by createNPCSprite over from an existing entry,
+    // so re-registering (e.g. a later room load) doesn't orphan the live sprite.
+    const existingEntry = this.npcs.get(realId);
+    if (existingEntry) {
+      if (entry._sprite === undefined && existingEntry._sprite !== undefined) {
+        entry._sprite = existingEntry._sprite;
+      }
+      if (!entry.roomId && existingEntry.roomId) {
+        entry.roomId = existingEntry.roomId;
+      }
+    }
+    
     this.npcs.set(realId, entry);
     
     // Register in global character registry for speaker resolution
@@ -254,6 +266,12 @@ export default class NPCManager {
     for (const npc of this.npcs.values()) {
       // NPC must be in the specified room and be a 'person' type NPC
       if (npc.roomId !== roomId || npc.npcType !== 'person') continue;
+      
+      // Hidden or KO'd NPCs see nothing
+      if (window.npcHostileSystem?.isNPCKO?.(npc.id)) continue;
+      const losSprite = npc._sprite || npc.sprite;
+      if (losSprite && (losSprite.visible === false || losSprite.active === false)) continue;
+      if (npc.isVisible === false) continue;
       
       console.log(`👁️ [LOS CHECK] Checking NPC: "${npc.id}" (room: ${npc.roomId}, type: ${npc.npcType})`);
       
@@ -536,7 +554,21 @@ export default class NPCManager {
     // Update triggered tracking
     triggered.count++;
     triggered.lastTime = now;
+    // Handlers limited by onceOnly / maxTriggers are saved to the server
+    // (exportTriggeredEvents, sent by state-sync.js) so a reload doesn't replay them.
+    // A handler that opens a conversation is saved only once that conversation
+    // closes (see _persistTriggerOnClose): a reload mid-scene must let it fire
+    // again, or a mission whose progress is in that scene is stranded. In-session
+    // dedup is unaffected either way (count is already incremented).
+    const opensConversation =
+      (config.conversationMode === 'person-chat' && npc.npcType === 'person') ||
+      config.conversationMode === 'video-call' ||
+      (config.conversationMode === 'phone-chat' && npc.npcType === 'phone');
+    if ((config.once || config.maxTriggers) && !opensConversation) triggered.persist = true;
     this.triggeredEvents.set(eventKey, triggered);
+    const persistOnClose = (config.once || config.maxTriggers) && opensConversation
+      ? () => this._persistTriggerOnClose(npcId, eventKey)
+      : () => {};
     
     // Set global variables if specified
     if (config.setGlobal && window.gameState?.globalVariables) {
@@ -695,6 +727,20 @@ export default class NPCManager {
       fullConfig: config
     });
     
+    // A knocked-out NPC can't hold a conversation or play a cutscene. The rest of
+    // the handler (setGlobal, completeTask, timed messages, ...) has already run
+    // above, so missions that rely on KO handlers keep working. The NPC's own KO
+    // event is exempt: m01 Derek and m05 Torres open their KO scene from it.
+    if ((config.conversationMode === 'person-chat' || config.conversationMode === 'video-call') &&
+        npc.npcType === 'person') {
+      const ownKOEvent = eventPattern.startsWith('npc_ko') &&
+        (eventPattern === `npc_ko:${npcId}` || eventData?.npcId === npcId);
+      if (!ownKOEvent && window.npcHostileSystem?.isNPCKO?.(npcId)) {
+        console.log(`💤 ${npcId} is knocked out - skipping ${config.conversationMode} for ${eventPattern}`);
+        return;
+      }
+    }
+
     // Check if this event should trigger a full person-chat conversation
     // instead of just a bark (indicated by conversationMode: 'person-chat')
     if (config.conversationMode === 'person-chat' && npc.npcType === 'person') {
@@ -723,6 +769,7 @@ export default class NPCManager {
           try {
             const jumpSuccess = activeMinigame.jumpToKnot(config.knot);
             if (jumpSuccess) {
+              persistOnClose();
               console.log(`✅ Successfully jumped to knot ${config.knot} in active conversation`);
               return;  // Success - exit early
             } else {
@@ -775,6 +822,7 @@ export default class NPCManager {
             scenario: window.gameScenario,
             disableClose: config.disableClose || false
           });
+          persistOnClose();
           console.log(`[NPCManager] Event '${eventPattern}' triggered for NPC '${npcId}' → person-chat conversation`);
 
           // When the conversation closes, if the NPC is far from the player (they couldn't
@@ -841,6 +889,7 @@ export default class NPCManager {
             disableClose: config.disableClose || false,
             videoCall: true
           });
+          persistOnClose();
           console.log(`[NPCManager] Event '${eventPattern}' triggered for NPC '${npcId}' → person-chat VIDEO CALL`);
         }, 500);
 
@@ -868,6 +917,7 @@ export default class NPCManager {
             theme: npc.phoneTheme,
             disableClose: config.disableClose || false
           });
+          persistOnClose();
           console.log(`[NPCManager] Event '${eventPattern}' triggered for NPC '${npcId}' → phone-chat conversation`);
         }, 500);
 
@@ -994,6 +1044,53 @@ export default class NPCManager {
   // Get all NPCs
   getAllNPCs() {
     return Array.from(this.npcs.values());
+  }
+
+  /**
+   * Mark a conversation-opening handler for saving once its conversation closes.
+   * Registered after the scene has started, so a conversation_closed emitted for
+   * an earlier conversation (or the one this event came from) doesn't count.
+   */
+  _persistTriggerOnClose(npcId, eventKey) {
+    if (!this.eventDispatcher) return;
+    const eventName = `conversation_closed:${npcId}`;
+    const onClosed = () => {
+      this.eventDispatcher.off(eventName, onClosed);
+      const triggered = this.triggeredEvents.get(eventKey);
+      if (triggered) triggered.persist = true;
+    };
+    this.eventDispatcher.on(eventName, onClosed);
+  }
+
+  /**
+   * onceOnly / maxTriggers handlers that have fired, for the server (state-sync.js),
+   * keyed like the dedup key: `${npcId}:${eventPattern}:${handlerIndex}`.
+   * @returns {Object} { key: count }
+   */
+  exportTriggeredEvents() {
+    const out = {};
+    for (const [key, triggered] of this.triggeredEvents) {
+      if (triggered.persist && triggered.count > 0) out[key] = triggered.count;
+    }
+    return out;
+  }
+
+  /**
+   * Restore saved handler counts on load (game.js), before any mapping can fire,
+   * so a onceOnly cutscene, bark or message doesn't replay after a reload.
+   * Keeps the larger count if this session has already fired the handler.
+   * @param {Object} saved - { key: count }
+   */
+  restoreTriggeredEvents(saved) {
+    if (!saved || typeof saved !== 'object') return;
+    for (const [key, count] of Object.entries(saved)) {
+      if (!Number.isInteger(count) || count <= 0) continue;
+      const existing = this.triggeredEvents.get(key) || { count: 0, lastTime: 0 };
+      existing.count = Math.max(existing.count, count);
+      existing.persist = true;
+      this.triggeredEvents.set(key, existing);
+    }
+    console.log(`📋 Restored ${Object.keys(saved).length} fired onceOnly/maxTriggers handler(s)`);
   }
 
   // Check if an event has been triggered for an NPC
@@ -1273,7 +1370,12 @@ export default class NPCManager {
 
     // Mark the guard global immediately so that reloads during the cutscene also skip it.
     if (conversation.setGlobalOnStart && window.gameState?.globalVariables) {
-      window.gameState.globalVariables[conversation.setGlobalOnStart] = true;
+      const startVarName = conversation.setGlobalOnStart;
+      const startOldValue = window.gameState.globalVariables[startVarName];
+      window.gameState.globalVariables[startVarName] = true;
+      window.eventDispatcher?.emit(`global_variable_changed:${startVarName}`, {
+        name: startVarName, value: true, oldValue: startOldValue
+      });
       console.log(`[NPCManager] Set global '${conversation.setGlobalOnStart}' = true for ${conversation.npcId}`);
     }
     

@@ -157,12 +157,18 @@ function damageNPC(npcId, amount) {
     // player opens the agent 0x99 bark notification.
     const npcRef = window.npcManager?.getNPC(npcId);
     if (npcRef?.globalVarOnKO && window.gameState?.globalVariables) {
-      window.gameState.globalVariables[npcRef.globalVarOnKO] = true;
+      const koVarName = npcRef.globalVarOnKO;
+      const koOldValue = window.gameState.globalVariables[koVarName];
+      window.gameState.globalVariables[koVarName] = true;
       if (window.npcConversationStateManager) {
         window.npcConversationStateManager.broadcastGlobalVariableChange(
-          npcRef.globalVarOnKO, true, 'npc_hostile_system'
+          koVarName, true, 'npc_hostile_system'
         );
       }
+      // Fire the game-wide event so eventMappings keyed on the global fire too
+      window.eventDispatcher?.emit(`global_variable_changed:${koVarName}`, {
+        name: koVarName, value: true, oldValue: koOldValue
+      });
       console.log(`🌐 Set global variable ${npcRef.globalVarOnKO} = true (NPC ${npcId} KO'd)`);
     }
 
@@ -249,7 +255,10 @@ function playNPCDeathAnimation(npcId, sprite) {
  */
 function dropNPCItems(npcId) {
   const npc = window.npcManager?.getNPC(npcId);
-  const sprite = npc?._sprite || npc?.sprite;
+  let sprite = npc?._sprite || npc?.sprite;
+  if (npc && !sprite && npc.roomId) {
+    sprite = window.rooms?.[npc.roomId]?.npcSprites?.find(s => s.npcId === npcId);
+  }
   if (!npc || !npc.itemsHeld || npc.itemsHeld.length === 0) {
     return;
   }
@@ -327,7 +336,10 @@ function dropNPCItems(npcId) {
     spriteObj.scenarioData = droppedItemData;
     spriteObj.interactable = true;
     spriteObj.name = droppedItemData.name;
-    spriteObj.objectId = `dropped_${npcId}_${index}_${Date.now()}`;
+    // Use the item's scenario id so the room-state entry, pickup, flag-station
+    // ownership and collect checks all see the original id (also after a reload).
+    // Fall back to a generated unique id when the item has none.
+    spriteObj.objectId = item.id || `dropped_${npcId}_${index}_${Date.now()}`;
     spriteObj.takeable = true;
     spriteObj.type = droppedItemData.type;
     
@@ -383,6 +395,12 @@ function dropNPCItems(npcId) {
         texture: texture,
         x: spawnX,
         y: spawnY,
+        // Room-relative tile position: this is what rooms.js uses to place the
+        // object on reload (raw x/y are ignored), keeping the drop spot stable.
+        position: room?.position ? {
+          x: (spawnX - room.position.x) / 32,
+          y: (spawnY - room.position.y) / 32
+        } : undefined,
         takeable: true,
         interactable: true,
         scenarioData: droppedItemData
