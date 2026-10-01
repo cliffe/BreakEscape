@@ -386,6 +386,19 @@
         },
         "spriteSheet": { "type": "string" },
         "spriteTalk": { "type": "string" },
+        "rfidCard": {
+          "type": "object",
+          "description": "Keycard this NPC carries, readable by the player's RFID cloner. npc-conversation-state.js syncs card_protocol/card_name/card_card_id and the card_instant_clone/card_needs_attack/card_uid_only flags into the NPC's ink story; chat-helpers.js builds the cloned card from it.",
+          "properties": {
+            "card_id": { "type": "string", "description": "Card identifier; matched against the card id in a #clone_keycard tag." },
+            "rfid_protocol": {
+              "type": "string",
+              "description": "Protocol decides how the clone works: EM4100 and MIFARE_Classic_Weak_Defaults clone instantly, MIFARE_Classic_Custom_Keys needs a key attack, MIFARE_DESFire is UID-only. Defaults to EM4100 when cloning."
+            },
+            "name": { "type": "string", "description": "Display name of the card" }
+          },
+          "additionalProperties": true
+        },
         "spriteVisemes": { "type": "string", "description": "Optional lip-sync sheet (assets/characters/<key>_visemes.png, one row of mouth shapes) with a matching .json beside it naming each column. Falls back to spriteTalk when absent or unloadable." },
         "spriteConfig": {
           "type": "object",
@@ -510,6 +523,10 @@
             "visualize": { "type": "boolean", "description": "Draw the detection cone on screen" }
           },
           "additionalProperties": false
+        },
+        "restartOnRetalk": {
+          "type": "boolean",
+          "description": "Default true: an NPC whose ink story has ended (-> END / -> DONE) restarts at its start knot when talked to again. Set false for one-shot scenes (final choices, confrontations, debriefs) that must not replay."
         },
         "globalVarOnKO": {
           "type": "string",

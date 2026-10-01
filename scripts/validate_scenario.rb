@@ -14,6 +14,7 @@ require 'optparse'
 require 'pathname'
 require 'set'
 require 'base64'
+require 'open3'
 
 # Try to load json-schema gem, provide helpful error if missing
 begin
@@ -265,10 +266,10 @@ def check_unknown_fields(json_data)
   # Known NPC fields
   known_npc_fields = %w[
     id displayName npcType position spriteSheet spriteTalk spriteVisemes spriteConfig
-    voice behavior globalVarOnKO taskOnKO storyPath currentKnot avatar
+    voice behavior globalVarOnKO restartOnRetalk taskOnKO storyPath currentKnot avatar
     phoneId phoneTheme unlockable externalVariables persistentVariables
     timedMessages timedConversation eventMappings itemsHeld puzzle_graph_actions
-    observations disableClose los _comment
+    observations disableClose los rfidCard _comment
   ]
 
   # Known NPC behavior fields
@@ -927,6 +928,14 @@ def check_objectives_wiring(json_data, base_dir)
       # CHECK 3  collect_items — notes items need readable + text
       # ─────────────────────────────────────────────────────────────
       when 'collect_items'
+        # objectives-manager.js has no default for targetCount (only submit_flags derives one
+        # from targetFlags), so a collect task without it can't track or complete progress.
+        unless task.key?('targetCount')
+          issues << "⚠️ WARNING: #{task_path} (collect_items) has no 'targetCount'. The engine does not " \
+                    "default it for collect_items tasks, so progress and completion are unreliable. " \
+                    "Set 'targetCount' to the number of items to collect."
+        end
+
         # Collect candidate items matched by this task's targeting strategy.
         candidates = []
 
@@ -2183,10 +2192,9 @@ def check_common_issues(json_data, valid_item_types = nil)
                     issues << "❌ INVALID: '#{mapping_path}' is a phone NPC event mapping with 'targetKnot' — this does NOT work after the first conversation. Once a storyState is saved, targetKnot is ignored on reopen. Correct pattern: use 'setGlobal' to set a flag, then add a conditional hub option in the Ink story: '+ {flag_var} [Ask about it] -> knot'. Also add 'sendTimedMessage' to notify the player that new content is available."
                   end
 
-                  # targetKnot inside sendTimedMessage is not used either
-                  if mapping['sendTimedMessage']&.key?('targetKnot')
-                    issues << "❌ INVALID: '#{mapping_path}/sendTimedMessage' has a 'targetKnot' field — targetKnot inside sendTimedMessage is not used for phone NPCs and will be silently ignored. Remove it. To surface a new dialogue option, use 'setGlobal' on the event mapping and add a conditional hub choice in the Ink story."
-                  end
+                  # NOTE: 'targetKnot' inside sendTimedMessage IS used by the engine
+                  # (npc-manager.js hands it to npc-barks.js, which opens the chat at that knot),
+                  # so it is deliberately not flagged.
 
                   # Event mappings that produce no visible effect are likely broken/incomplete.
                   # phone-chat trigger mappings are self-evidently visible (they open the chat), so skip that check.
@@ -3069,6 +3077,174 @@ def check_room_geometry(json_data, repo_root)
   issues
 end
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Engine-limit checks: patterns that validate against the schema but silently
+# do nothing (or the wrong thing) at runtime. See scenarios/PASS2_APPROVAL_LOG.md.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Conditions evaluated by an &&-only evaluator can't take '||' or parentheses.
+# allow_includes: npc-manager.js safeEvaluateCondition also accepts
+# "<value|data.x|globalVars.x>.includes('…')" terms; scenario-timer.js and
+# conditional-text.js don't. Credits/music-event conditions are run through
+# `new Function` (scenario-music-events.js) and can use any JS, so they are
+# deliberately not checked.
+def unsupported_condition_syntax(condition, allow_includes:)
+  return nil unless condition.is_a?(String)
+  stripped = allow_includes ? condition.gsub(/\.includes\((['"])[^'"]*\1\)/, '.includes()') : condition
+  stripped = stripped.gsub('.includes()', '') if allow_includes
+  problems = []
+  problems << "'||'" if stripped.include?('||')
+  problems << 'parentheses' if stripped.match?(/[()]/)
+  problems.empty? ? nil : problems.join(' and ')
+end
+
+def check_engine_limits(json_data)
+  issues = []
+  rooms = json_data['rooms'].is_a?(Hash) ? json_data['rooms'] : {}
+  globals = json_data['globalVariables'].is_a?(Hash) ? json_data['globalVariables'].keys : []
+
+  task_types = {}
+  Array(json_data['objectives']).each do |aim|
+    Array(aim.is_a?(Hash) ? aim['tasks'] : nil).each do |t|
+      task_types[t['taskId']] = t['type'] if t.is_a?(Hash) && t['taskId']
+    end
+  end
+
+  # 2. eventMapping conditions (NPC mappings go through safeEvaluateCondition)
+  # 5. completeTask on a collect_items task from an eventMapping
+  check_mappings = lambda do |holder_path, mappings|
+    Array(mappings).each_with_index do |m, i|
+      next unless m.is_a?(Hash)
+      mp = "#{holder_path}/eventMappings[#{i}]"
+      if (bad = unsupported_condition_syntax(m['condition'], allow_includes: true))
+        issues << "❌ INVALID: '#{mp}' condition \"#{m['condition']}\" uses #{bad}. npc-manager.js " \
+                  "safeEvaluateCondition supports only '&&'-joined simple terms (value/data.x/globalVars.x " \
+                  "with ===, !==, >, <, >=, <=, '!' or .includes('…')), so this evaluates to false and the " \
+                  "mapping never fires. Split it into simpler mappings, one per '||' branch."
+      end
+      ct = m['completeTask']
+      if ct.is_a?(String) && task_types[ct] == 'collect_items'
+        issues << "⚠️ WARNING: '#{mp}' completeTask '#{ct}' targets a collect_items task. The mapping can " \
+                  "reach the server before the pickup POST, which rejects it ('Insufficient items collected') " \
+                  "and reverts the task. Let the pickup complete a collect_items task, or make the task a manual type."
+      end
+    end
+  end
+
+  rooms.each do |room_id, room|
+    next unless room.is_a?(Hash)
+    Array(room['npcs']).each do |npc|
+      next unless npc.is_a?(Hash)
+      check_mappings.call("rooms/#{room_id}/npcs(#{npc['id']})", npc['eventMappings'])
+    end
+    Array(room['objects']).each do |obj|
+      next unless obj.is_a?(Hash)
+      check_mappings.call("rooms/#{room_id}/objects(#{obj['id'] || obj['name']})", obj['eventMappings']) if obj['eventMappings']
+    end
+  end
+
+  # Timer conditions and text/sprite/observation variants use the &&-only
+  # evaluator in scenario-timer.js / conditional-text.js (no '||', no parens).
+  Array(json_data['timers']).each_with_index do |t, i|
+    next unless t.is_a?(Hash)
+    if (bad = unsupported_condition_syntax(t['condition'], allow_includes: false))
+      issues << "❌ INVALID: 'timers[#{i}]' condition \"#{t['condition']}\" uses #{bad}. scenario-timer.js " \
+                "_evaluateCondition supports only '&&'-joined terms (globalVars.x, !globalVars.x, ===, !==, >, <, >=, <=); " \
+                "'||' and parentheses are mis-read (the first globalVars name wins)."
+    end
+  end
+
+  # Generic walk: complete_task without taskId (3), notes given by flagRewards (6),
+  # setVariable arithmetic strings (9), variant conditions.
+  notes_re = /\Anotes\d*\z/
+  walk = nil
+  walk = lambda do |node, path, holder_items|
+    case node
+    when Array
+      node.each_with_index { |v, i| walk.call(v, "#{path}[#{i}]", holder_items) }
+    when Hash
+      if node['type'] == 'complete_task' && node['taskId'].to_s.strip.empty?
+        hint = node['task_id'] ? " It has 'task_id', which the engine does not read; rename it to 'taskId'." : ''
+        issues << "❌ INVALID: '#{path}' is a complete_task action with no 'taskId'. apply-actions.js reads " \
+                  "action.taskId, so this does nothing at runtime.#{hint}"
+      end
+
+      if node['flagRewards'].is_a?(Array)
+        held = Array(node['itemsHeld']).select { |h| h.is_a?(Hash) }
+        node['flagRewards'].each_with_index do |r, i|
+          next unless r.is_a?(Hash) && r['type'] == 'give_item'
+          matches = held.select { |h| (r['item_type'] && h['type'] == r['item_type']) || (r['item_name'] && h['name'] == r['item_name']) }
+          if matches.any? { |h| notes_re.match?(h['type'].to_s) } || notes_re.match?(r['item_type'].to_s)
+            issues << "⚠️ WARNING: '#{path}/flagRewards[#{i}]' gives a notes-type item " \
+                      "('#{r['item_name'] || r['item_type']}'). inventory.js addToInventory skips notes types that arrive " \
+                      "outside the notes minigame, so the player never sees it (not in the inventory, not in the notepad). " \
+                      "Use type 'text_file' instead."
+          end
+        end
+      end
+
+      if node['setVariable'].is_a?(Hash)
+        node['setVariable'].each do |var, val|
+          next unless val.is_a?(String)
+          m = val.match(/\A\s*(\w+)\s*[+-]/)
+          if m && globals.include?(m[1])
+            issues << "⚠️ WARNING: '#{path}/setVariable' sets '#{var}' to the string \"#{val}\". setVariable assigns " \
+                      "values literally, so this stores that text instead of doing arithmetic. Set a number, or " \
+                      "use separate flags per step."
+          end
+        end
+      end
+
+      %w[observationVariants spriteVariants textVariants].each do |vk|
+        Array(node[vk]).each_with_index do |v, i|
+          next unless v.is_a?(Hash)
+          if (bad = unsupported_condition_syntax(v['condition'], allow_includes: false))
+            issues << "❌ INVALID: '#{path}/#{vk}[#{i}]' condition \"#{v['condition']}\" uses #{bad}. conditional-text.js " \
+                      "supports only '&&'-joined terms; '||' and parentheses are mis-read."
+          end
+        end
+      end
+
+      node.each do |k, v|
+        next if k == 'objectives' && path.empty?
+        walk.call(v, path.empty? ? k.to_s : "#{path}/#{k}", holder_items)
+      end
+    end
+  end
+  walk.call(json_data.reject { |k, _| k == 'objectives' }, '', nil)
+
+  issues
+end
+
+# Door alignment: shells out to scripts/check_door_alignment.py (a port of the
+# engine's room placement + door placement). Returns issue strings.
+def check_door_alignment(erb_path, repo_root)
+  issues = []
+  script = File.join(repo_root, 'scripts', 'check_door_alignment.py')
+  return issues unless File.exist?(script)
+
+  out, status = Open3.capture2e('python3', script, '--json', erb_path)
+  res = begin
+    JSON.parse(out.lines.reject { |l| l.strip.empty? }.last.to_s)
+  rescue JSON::ParserError
+    nil
+  end
+  if res.nil? || res['error']
+    issues << "💡 SUGGESTION: Door alignment check skipped — #{res ? res['error'] : (status.success? ? 'no output' : out.strip[0, 200])}"
+    return issues
+  end
+  Array(res['bad']).each do |b|
+    issues << "❌ INVALID: Doors between '#{b['a']}' and '#{b['b']}' (#{b['dir']}) are misaligned, so the player " \
+              "can't walk straight through: #{b['detail']}. Change the room types/sizes or the connection so the " \
+              "two door gaps meet (see scripts/check_door_alignment.py)."
+  end
+  Array(res['unmodelled']).each do |u|
+    issues << "⚠️ WARNING: UNMODELLED multi-door connection #{u} — door alignment for array connections is not checked. " \
+              "Verify these doors line up in the browser."
+  end
+  issues
+end
+
 # Main execution
 def main
   options = {
@@ -3261,6 +3437,8 @@ def main
     # Check room layout geometry (world-space overlaps)
     puts "Checking room layout geometry..."
     geometry_issues = check_room_geometry(json_data, repo_root)
+    puts "Checking door alignment..."
+    door_issues = check_door_alignment(erb_path, repo_root)
     if geometry_issues.any? { |i| i.start_with?("⚠️") }
       puts "⚠️ Found #{geometry_issues.count { |i| i.start_with?('⚠️') }} room overlap warning(s):"
       puts
@@ -3275,6 +3453,18 @@ def main
       puts "✓ Room layout geometry OK — no world-space overlaps"
       puts
     end
+    if door_issues.any? { |i| i.start_with?("❌") }
+      puts "✗ Door alignment check found #{door_issues.count { |i| i.start_with?('❌') }} error(s):"
+      puts
+      door_issues.each_with_index { |issue, index| puts "#{index + 1}. #{issue}"; puts }
+    elsif door_issues.any?
+      puts "⚠️ Door alignment: #{door_issues.length} note(s):"
+      puts
+      door_issues.each_with_index { |issue, index| puts "#{index + 1}. #{issue}"; puts }
+    else
+      puts "✓ Door alignment OK"
+      puts
+    end
 
     # Validate against schema
     puts "Validating against schema..."
@@ -3284,6 +3474,7 @@ def main
     puts "Checking for common issues..."
     common_issues = check_common_issues(json_data, valid_item_types)
     common_issues += check_lock_credentials(json_data)
+    common_issues += check_engine_limits(json_data)
 
     # Check for recommended fields
     puts "Checking recommended fields..."
