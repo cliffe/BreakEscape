@@ -69,7 +69,7 @@ Robert Vance: I'm monitoring systems from the ops desk. Come and see me if you n
     # influence_increased
     -> charge_control_systems_explanation
 
-+ {not asked_server_room} [I'm in the server room. What am I looking for?]
++ {not asked_server_room} [I'm in the engineering workshop. What am I looking for?]
     ~ asked_server_room = true
     ~ chen_trust_level += 3
     # influence_increased
@@ -104,11 +104,9 @@ Robert Vance: I'm monitoring systems from the ops desk. Come and see me if you n
 
 Robert Vance: Three rack banks. A, B and C, each with its own BMS and its own cooling loop.
 
-Robert Vance: They're driven over SCADA, but every one of them has a physical control as well.
+Robert Vance: They're driven over SCADA, and SCADA is theirs, so nothing you type at a terminal will hold — they'll just push it back.
 
-Robert Vance: So if they've fitted bypass hardware, killing the digital side alone won't do it. You need the hardware out too.
-
-Robert Vance: And mind the order. Wrong sequence trips the fail-safes, and the fail-safes are half of what's keeping that hall cool.
+Robert Vance: The one control they can't reach is the hardwired ESD in the plant room. That's what isolates the banks and forces the vent fans. Everything comes down to that button.
 
 -> support_hub
 
@@ -148,10 +146,10 @@ Robert Vance: Get to it and press it. That's the mission.
 === priority_guidance ===
 {not attack_mechanism_known:
     Robert Vance: Find out how they're driving the SCADA network. Everything else waits on that.
-    Robert Vance: The terminal in the server room is your way in.
+    Robert Vance: The jump-server terminal in the workshop is your way in.
 }
 {attack_mechanism_known and urgency_stage >= 3:
-    Robert Vance: We're past planning. Disable the vectors now -- physical, script, trigger.
+    Robert Vance: We're past planning. Get to the hardwired ESD and press it -- that's the only thing left that works.
 }
 {attack_mechanism_known and urgency_stage < 3:
     Robert Vance: You know what they did. Now get to the ESD and press it.
@@ -161,8 +159,8 @@ Robert Vance: Get to it and press it. That's the mission.
 
 === urgency_assessment ===
 {urgency_stage >= 4:
-    Robert Vance: Bad. Rack temperatures are climbing toward the runaway threshold.
-    Robert Vance: If we can't stop it at source we go to emergency shutdown, and a hard shutdown on a hot bank might do their job for them.
+    Robert Vance: Bad. Rack temperatures are past the advisory and climbing toward runaway.
+    Robert Vance: The hardwired ESD is built for exactly this — it isolates the bank and forces the vents. Get to it.
 }
 {urgency_stage == 3:
     Robert Vance: Charge parameters are drifting yellow. There's time. Not a lot.
@@ -188,17 +186,8 @@ Robert Vance: Call me if you need it.
 
 -> support_hub
 
-// ===========================================
-// EMERGENCY CALL (attack partially triggered)
-// Routed to by an eventMapping targetKnot, not fallen into.
-// ===========================================
-
-=== chen_emergency_call ===
-Robert Vance: {player_name()}! Temperatures just spiked -- it's started!
-
-Robert Vance: Bank B is going. You need those vectors down now, all of them.
-
-+ [On it.]
-    #exit_conversation
-    Robert Vance: Go!
-    -> support_hub
+// The old `chen_emergency_call` knot was removed in pass 2: it was orphaned (no
+// eventMapping reached it), its "get those vectors down, all of them" line
+// contradicted the one-ESD design, and firing a phone conversation when the
+// racks vent (T+12m, likely mid-finale) would drop a call over the plant-room
+// fight (lesson 20). The racks_vent timer's own hint covers that beat.

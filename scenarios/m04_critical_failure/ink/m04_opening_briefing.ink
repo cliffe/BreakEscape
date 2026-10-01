@@ -43,7 +43,7 @@ This one's different from Ransomware Incorporated. More dangerous.
     -> briefing_main
 
 * [What makes this cell more dangerous?]
-    Agent HaX: They're infrastructure specialists. Not just disruption—they weaponize critical systems.
+    Agent HaX: They're infrastructure specialists. Not just disruption—they weaponise critical systems.
     -> briefing_main
 
 * [I'm ready. What's the target?]
@@ -129,7 +129,7 @@ Agent HaX: A chain battery fire and a hydrogen explosion. The grid drops for 240
 === critical_mass_explanation ===
 #speaker:agent_0x99
 
-Agent HaX: Critical Mass—ENTROPY cell specializing in infrastructure attacks.
+Agent HaX: Critical Mass—ENTROPY cell specialising in infrastructure attacks.
 
 Agent HaX: Power storage, generation, transportation. They target critical lifelines.
 
@@ -168,17 +168,17 @@ Agent HaX: Three operatives on-site: codenames Cipher, Relay, and Static. Plus V
 === combat_warning ===
 #speaker:agent_0x99
 
-Agent HaX: Yes. This is your first mission with hostile ENTROPY operatives.
+Agent HaX: Yes, and more of them than you've faced before. Four on site, not one cornered operative.
 
-Agent HaX: They're not amateurs. Cipher guards the battery hall. Relay patrols inverter room.
+Agent HaX: They're not amateurs. Cipher holds the battery hall. Relay patrols the inverter room.
 
 Agent HaX: Static and Voltage are in the plant room—final defensive position.
 
 Agent HaX: You can go stealth, but if compromised, you'll need to fight.
 
-Agent HaX: I've authorized you for lethal force if necessary. But capture Voltage if possible—he knows things.
+Agent HaX: I've authorised you for lethal force if necessary. But capture Voltage if possible—he knows things.
 
-+ [I understand. Neutralize threats, prioritize Voltage's capture if possible.]
++ [I understand. Neutralise threats, prioritise Voltage's capture if possible.]
     ~ handler_trust += 15
     ~ player_approach = "tactical"
     Agent HaX: Good. That's the right mindset.
@@ -200,7 +200,7 @@ Agent HaX: It's ideological terrorism disguised as activism. They claim they're 
 
 Agent HaX: But people die. That's what makes them dangerous.
 
-+ [They're rationalizing murder as a public service.]
++ [They're rationalising murder as a public service.]
     ~ handler_trust += 5
     Agent HaX: Exactly. Don't let their rhetoric confuse you.
     -> briefing_hub
@@ -229,7 +229,7 @@ Agent HaX: If you reveal the truth, he'll cooperate fully. SCADA expertise could
 
 Agent HaX: But operational security risk. If operatives monitor him, cover's blown.
 
-Agent HaX: I trust your judgment. You'll know when it's safe.
+Agent HaX: I trust your judgement. You'll know when it's safe.
 
 + [I'll assess Vance in person before deciding.]
     ~ handler_trust += 10
@@ -242,21 +242,19 @@ Agent HaX: I trust your judgment. You'll know when it's safe.
 
 Agent HaX: This isn't just about stopping an attack.
 
-Agent HaX: Intelligence suggests Critical Mass is coordinating with another ENTROPY cell—Social Fabric.
+Agent HaX: This is the one the directive from the Zero Day job warned us about. "Zero Day supplies, Critical Mass executes." Grid storage, this winter. We told you it was coming — it's tonight, and it's this hall.
 
-Agent HaX: Simultaneous infrastructure strikes across the region.
+Agent HaX: And it's coordinated. Critical Mass hits the infrastructure, Social Fabric is standing by to amplify the panic. Simultaneous strikes across the region, all timed to 0800.
 
-Agent HaX: We think someone's coordinating multiple cells. Call sign "The Architect."
+Agent HaX: One mind behind it, the one the directive named — The Architect. Voltage answers up that chain. Take him, and we get closer to the hand that's timing all of it.
 
-Agent HaX: Capture Voltage, and we might get answers about this larger network.
-
-+ [Stop the attack, capture Voltage if possible, gather intelligence on The Architect.]
++ [This is the Phase 2 attack from the Zero Day directive.]
     ~ handler_trust += 10
-    Agent HaX: Exactly. In that order.
+    Agent HaX: The same one. Stop it, take Voltage if you can, and bring out whatever names the next target.
     -> mission_objectives
 
-+ [The Architect is coordinating all ENTROPY cells?]
-    Agent HaX: We think so. But we need proof. Voltage might have it.
++ [Then capturing Voltage is how we get to The Architect.]
+    Agent HaX: It's the best thread we've had. He won't give the name, but what he's holding will narrow it.
     -> mission_objectives
 
 // ===========================================
@@ -278,7 +276,7 @@ Agent HaX: Four—capture or eliminate ENTROPY operatives. Voltage is the priori
 
 Agent HaX: VM access is set up for SCADA network investigation. Submit flags to the drop-site terminal.
 
-* [Understood. Infiltrate, investigate, neutralize, capture. Moving out now.]
+* [Understood. Infiltrate, investigate, neutralise, capture. Moving out now.]
     ~ handler_trust += 10
     Agent HaX: Stay sharp. These operatives are prepared.
     -> mission_departure

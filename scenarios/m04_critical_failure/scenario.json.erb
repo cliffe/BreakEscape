@@ -32,7 +32,7 @@
 #     +-- S -> operations_office (Vance: Level 1 keycard)
 #                +-- S -> security_office            [key]  spare Level 1 in locker
 #                +-- E -> scada_control_room
-#                           +-- S -> battery_hall_1 (Cipher: drops Level 2)
+#                           +-- E -> battery_hall_1 (Cipher: drops Level 2)
 #                                      +-- S -> engineering_workshop  [rfid: Level 2]  VM + flag station
 #                                      +-- E -> battery_hall_2 / inverter room  [rfid: Level 1]  (Relay: drops Master)
 #                                                 +-- S -> plant_room  [rfid: Master]  (Voltage + Static, ESD)
@@ -45,9 +45,19 @@
 #   * plant_room hung off battery_hall_1, so it sat next to the hall before the
 #     player had ever met Relay; it now hangs off battery_hall_2, which is what
 #     makes the Master keycard a genuine gate.
-# Verify with: ruby scripts/validate_scenario.rb (world-space overlap check is
-# the authority here; scripts/predict_door_sides.py uses a different layout model
-# and performs no overlap check).
+# Verify with: ruby scripts/validate_scenario.rb (world-space overlap check).
+#
+# PASS 2 (playtest D1): scada -> battery_hall_1 was a SOUTH connection, and the
+# doorway opened onto the hall's solid north wall. The engine placed the 20-wide
+# hall under the 10-wide control room using the parity of the control room's
+# ORIGIN (rooms.js positionSouthSingle), but placed each door by the parity of
+# the SHARED WALL (doors.js placeSouthDoorSingle / placeNorthDoorSingle).
+# room_control_1x2gu is 10x6, a stacking height of 1 grid unit (odd), so the two
+# parities disagree and the doors land 320px apart. The validator checks overlap,
+# not door alignment. The hall now hangs EAST of the control room: E/W pairs are
+# top-aligned and both doors sit at top + 2.5 tiles, so they always line up.
+# Every connection was re-checked against a port of the engine's BFS and door
+# placement (all aligned, no overlaps).
 # ============================================================================
 
 # ERB Helper Methods
@@ -127,7 +137,6 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
         "credits": [
           { "text": "MISSION COMPLETE", "style": "title", "condition": "globalVars.attack_prevented && !globalVars.racks_vented" },
           { "text": "COSTLY SUCCESS", "style": "title", "condition": "globalVars.attack_prevented && globalVars.racks_vented" },
-          { "text": "CATASTROPHIC FAILURE", "style": "title", "condition": "!globalVars.attack_prevented" },
           { "text": "CRITICAL FAILURE", "style": "subtitle" },
           { "text": "" },
           { "text": "ALBION ENERGY STORAGE: THERMAL RUNAWAY AVERTED — Emergency Shutdown engaged", "style": "entry", "condition": "globalVars.attack_prevented && !globalVars.racks_vented" },
@@ -248,9 +257,9 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
         },
         {
           "taskId": "submit_network_scan_flag",
-          "title": "Submit evidence from the exposed status page",
+          "title": "Submit the flag from the fake rack status page",
           "type": "submit_flags",
-          "targetFlags": ["bms_jump_server:flag_1"],
+          "targetFlags": ["flag_station_dropsite:bms_jump_server-flag1"],
           "targetCount": 1,
           "currentCount": 0,
           "showProgress": true,
@@ -267,17 +276,7 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
           "taskId": "submit_ftp_intel_flag",
           "title": "Submit the intelligence file from their FTP service",
           "type": "submit_flags",
-          "targetFlags": ["bms_jump_server:flag_2"],
-          "targetCount": 1,
-          "currentCount": 0,
-          "showProgress": true,
-          "status": "active"
-        },
-        {
-          "taskId": "submit_http_analysis_flag",
-          "title": "Submit the HTTP-analysis evidence",
-          "type": "submit_flags",
-          "targetFlags": ["bms_jump_server:flag_3"],
+          "targetFlags": ["flag_station_dropsite:bms_jump_server-flag2"],
           "targetCount": 1,
           "currentCount": 0,
           "showProgress": true,
@@ -294,7 +293,17 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
           "taskId": "submit_distcc_exploit_flag",
           "title": "Submit proof of the distcc foothold",
           "type": "submit_flags",
-          "targetFlags": ["bms_jump_server:flag_4"],
+          "targetFlags": ["flag_station_dropsite:bms_jump_server-flag4"],
+          "targetCount": 1,
+          "currentCount": 0,
+          "showProgress": true,
+          "status": "active"
+        },
+        {
+          "taskId": "submit_privesc_flag",
+          "title": "Submit proof you became root on the jump server",
+          "type": "submit_flags",
+          "targetFlags": ["flag_station_dropsite:bms_jump_server-flag3"],
           "targetCount": 1,
           "currentCount": 0,
           "showProgress": true,
@@ -302,27 +311,23 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
         }
       ]
     },
+    <%# PASS 2 (playtest D5). Relay and Voltage can be dealt with before any flag
+        is in: Hall 2 opens on the Level 1 card, Relay carries the Master card,
+        and the plant room is right behind her. The engine auto-reveals a locked
+        aim the moment any of its tasks completes (objectives-manager.js:414-419,
+        573-578), so while these two tasks lived in stop_the_runaway, KO'ing Relay
+        early put "Stop the Thermal Runaway" on screen before the attack was even
+        mapped. They now have their own aim, revealed at the start of act two.
+        stop_the_runaway keeps only tasks that cannot complete before
+        map_the_attack (the ESD needs attack_mechanism_known; the debrief needs
+        the ESD), so its unlockCondition now holds in practice. %>
     {
-      "aimId": "stop_the_runaway",
-      "title": "Stop the Thermal Runaway",
-      "description": "Everything between you and the hardwired shutdown is now a person who intends to use it",
+      "aimId": "take_back_the_plant",
+      "title": "Take the Plant Back from the Cell",
+      "description": "The rest of the cell is between you and the button: one in the inverter room, one on the plant-room door, and the man holding the trigger",
       "status": "locked",
-      "unlockCondition": { "aimCompleted": "map_the_attack" },
+      "unlockCondition": { "aimCompleted": "confirm_the_lie" },
       "order": 4,
-      "missionConclusion": true,
-      <%# Ending gate: the mandatory flag nodes from the dungeon graph -- the
-          technical work this mission is not allowed to skip. Story tasks are
-          not listed: they cost score if unfinished, they never withhold the
-          ending. See README_scenario_design.md#concluderequires. %>
-      "concludeRequires": {
-        "tasksCompleted": [
-          "submit_network_scan_flag",
-          "submit_ftp_intel_flag",
-          "submit_http_analysis_flag",
-          "submit_distcc_exploit_flag"
-        ]
-      },
-      "conclusionScreen": { "type": "bond_visualiser" },
       "tasks": [
         {
           "taskId": "neutralize_operative_relay",
@@ -335,7 +340,31 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
           "title": "Confront the cell leader in the plant room",
           "type": "custom",
           "status": "active"
-        },
+        }
+      ]
+    },
+    {
+      "aimId": "stop_the_runaway",
+      "title": "Stop the Thermal Runaway",
+      "description": "The mechanism is proven and the clock is running. Get to the hardwired shutdown",
+      "status": "locked",
+      "unlockCondition": { "aimCompleted": "map_the_attack" },
+      "order": 5,
+      "missionConclusion": true,
+      <%# Ending gate: the mandatory flag nodes from the dungeon graph -- the
+          technical work this mission is not allowed to skip. Story tasks are
+          not listed: they cost score if unfinished, they never withhold the
+          ending. See README_scenario_design.md#concluderequires. %>
+      "concludeRequires": {
+        "tasksCompleted": [
+          "submit_network_scan_flag",
+          "submit_ftp_intel_flag",
+          "submit_privesc_flag",
+          "submit_distcc_exploit_flag"
+        ]
+      },
+      "conclusionScreen": { "type": "bond_visualiser" },
+      "tasks": [
         {
           "taskId": "disable_attack_vectors",
           "title": "Force the shutdown before the racks go",
@@ -522,6 +551,23 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
               "takeable": true,
               "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/encoding-and-decoding-with-cyberchef/",
               "observations": "Field guide to spotting Base64 and ROT13 and decoding them with CyberChef"
+            },
+            {
+              "_comment": "B1 fallback. Cipher/Relay are hostile NPCs KO'd in rooms outside the start room; dropNPCItems returns early when npc._sprite is unset (npc-hostile.js:257-261), which m03's live D3 saw happen for an NPC KO'd in her own room. If the drop fails, the workshop/plant-room cards are unrecoverable and the mission soft-locks. On KO, HaX hands over a working copy by phone. The physical drop is kept too; a duplicate card is harmless because the RFID lock matches on opens_lock and needs only one match (unlock-system.js:511-513).",
+              "type": "keycard",
+              "id": "relayed_workshop_keycard",
+              "name": "Workshop Keycard (relayed copy)",
+              "takeable": true,
+              "opens_lock": "server_room_keycard",
+              "observations": "A copy of the Level 2 workshop card, built by SAFETYNET from the reader logs after Cipher went down. Opens the engineering workshop."
+            },
+            {
+              "type": "keycard",
+              "id": "relayed_master_keycard",
+              "name": "Master Keycard (relayed copy)",
+              "takeable": true,
+              "opens_lock": "master_keycard",
+              "observations": "A copy of the master card, built by SAFETYNET from the reader logs after Relay went down. Opens the plant room."
             }
           ],
           "timedMessages": [
@@ -537,7 +583,7 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
               "eventPattern": "room_entered:battery_hall_1",
               "onceOnly": true,
               "setGlobal": { "rfid_guide_offered": true },
-              "sendTimedMessage": { "delay": 2500, "message": "Those doors are RFID. If you're going to be cloning cards tonight I can push you the field guide for it — just ask." }
+              "sendTimedMessage": { "delay": 2500, "message": "Those doors are RFID, and the cards that open them are on their people. If you want to know how the readers work, I can push you the RFID field guide — just ask." }
             },
             {
               "eventPattern": "room_entered:security_office",
@@ -549,11 +595,12 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
               "eventPattern": "room_entered:engineering_workshop",
               "onceOnly": true,
               "setGlobal": { "recon_guide_offered": true, "vuln_guide_offered": true, "server_room_reached": true },
-              "sendTimedMessage": { "delay": 3000, "message": "You're on the OT network now. I've got two guides for this — mapping the network, and reading the attack surface once you've mapped it. Ask and they're yours." }
+              "sendTimedMessage": { "delay": 3000, "message": "You're on the OT network now. The BMS jump server's here — that's their way in. Use the VM terminal, scan it, and submit what you find at the drop-site. I've got two guides if you want them: mapping the network, and reading the attack surface once you've mapped it. Just ask." }
             },
             {
-              "eventPattern": "objective_task_completed:submit_http_analysis_flag",
+              "eventPattern": "objective_task_completed:submit_ftp_intel_flag",
               "onceOnly": true,
+              "completeTask": "investigate_compromised_services",
               "setGlobal": { "distcc_guide_offered": true },
               "sendTimedMessage": { "delay": 2000, "message": "That jump server is running a legacy distccd. It's the way in. I have a guide for it if you want it." }
             },
@@ -564,22 +611,95 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
               "setGlobal": { "cyberchef_guide_offered": true },
               "sendTimedMessage": { "delay": 2000, "message": "That card in the go-bag is Base64. I can send you the decoding guide if you'd rather not eyeball it." }
             },
+            <%# operatives_defeated counter. globalVarOnKO writes
+                operative_*_defeated WITHOUT emitting global_variable_changed
+                (npc-hostile.js:159-166, lesson 18), so the old
+                global_variable_changed:operative_*_defeated mappings never fired
+                on a KO and the counter stuck at 0. React to npc_ko:<id>, which
+                the engine DOES emit (npc-hostile.js:151-153). The other
+                operative's _defeated flag is already written when this fires
+                (globalVarOnKO runs after npc_ko for the same NPC but the other
+                NPC was KO'd earlier), so the conditions give the right running
+                total in either order. %>
             {
-              "eventPattern": "global_variable_changed:operative_cipher_defeated",
-              "condition": "value === true",
+              "eventPattern": "npc_ko:operative_cipher",
+              "condition": "globalVars.operative_relay_defeated !== true",
               "onceOnly": true,
               "setGlobal": { "operatives_defeated": 1 }
             },
             {
-              "eventPattern": "global_variable_changed:operative_relay_defeated",
-              "condition": "value === true",
+              "eventPattern": "npc_ko:operative_cipher",
+              "condition": "globalVars.operative_relay_defeated === true",
               "onceOnly": true,
               "setGlobal": { "operatives_defeated": 2 }
             },
             {
+              "eventPattern": "npc_ko:operative_relay",
+              "condition": "globalVars.operative_cipher_defeated !== true",
+              "onceOnly": true,
+              "setGlobal": { "operatives_defeated": 1 }
+            },
+            {
+              "eventPattern": "npc_ko:operative_relay",
+              "condition": "globalVars.operative_cipher_defeated === true",
+              "onceOnly": true,
+              "setGlobal": { "operatives_defeated": 2 }
+            },
+            <%# B1 KO keycard fallbacks. On a KO, HaX phones and hands over a
+                relayed copy of the card that operative carried, in case the
+                physical drop failed (see the itemsHeld comment). The KO is still
+                the trigger, so the fight stays mandatory; the drop is kept too. %>
+            {
+              "eventPattern": "npc_ko:operative_cipher",
+              "onceOnly": true,
+              "conversationMode": "phone-chat",
+              "targetKnot": "on_cipher_ko_card"
+            },
+            {
+              "eventPattern": "npc_ko:operative_relay",
+              "onceOnly": true,
+              "conversationMode": "phone-chat",
+              "targetKnot": "on_relay_ko_card"
+            },
+            <%# Playtest D2: chen_provided_keycard used to be set by Vance's ink just
+                before #give_item, so when the give did not land the flag was already
+                true and the "I still need a facility keycard" safety net never
+                appeared. The flag is now set only when the card is actually in the
+                player's inventory (item_picked_up is emitted by type; the id rides in
+                data.itemId -- lesson 1). %>
+            {
+              "eventPattern": "item_picked_up:keycard",
+              "condition": "data.itemId === 'vance_level1_keycard'",
+              "onceOnly": true,
+              "setGlobal": { "chen_provided_keycard": true }
+            },
+            <%# Playtest D7: the three optional methodology tasks never ticked.
+                Each is completed by the flag its step produces: the scan finds the
+                exposed status page (flag 1), enumeration finds the FTP drop (flag
+                2, wired on the FTP handler above), and the distcc foothold is flag 4. %>
+            {
+              "eventPattern": "objective_task_completed:submit_network_scan_flag",
+              "onceOnly": true,
+              "completeTask": "scan_scada_network"
+            },
+            {
               "eventPattern": "objective_task_completed:submit_distcc_exploit_flag",
               "onceOnly": true,
-              "setGlobal": { "attack_mechanism_known": true }
+              "completeTask": "exploit_distcc_vulnerability"
+            },
+            <%# Voltage neutralised. The ARREST and ESCAPE paths set
+                voltage_captured / voltage_escaped from ink, which DOES emit
+                global_variable_changed, so those two mappings fire. The FIGHT
+                path KOs him via globalVarOnKO, which does NOT emit (lesson 18) --
+                so without the npc_ko:voltage mapping below, voltage_neutralised
+                (and therefore esd_authorized) never set on the combat ending and
+                the player could not press the ESD. That was a soft-lock on the
+                mission's primary climax. %>
+            {
+              "eventPattern": "npc_ko:voltage",
+              "condition": "globalVars.voltage_escaped !== true",
+              "onceOnly": true,
+              "setGlobal": { "voltage_neutralised": true, "voltage_captured": true }
             },
             {
               "eventPattern": "global_variable_changed:voltage_captured",
@@ -593,19 +713,49 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
               "onceOnly": true,
               "setGlobal": { "voltage_neutralised": true }
             },
+            <%# attack_mechanism_known is set when the OT-network aim completes (all
+                four flags in), not on the last flag submission -- so the ESD gate
+                below is really "you have proved how they did it", whichever flag
+                the player happened to submit last. %>
+            {
+              "eventPattern": "objective_aim_completed:map_the_attack",
+              "onceOnly": true,
+              "setGlobal": { "attack_mechanism_known": true },
+              "sendTimedMessage": { "delay": 1500, "message": "That's the attack mechanism confirmed — falsified thermals, ESD interlocks disabled, overcharge armed for 0800. The trigger is in the plant room. Get there, and get to an ESD button." }
+            },
+            <%# ESD authorisation requires all THREE: the thermal hazard confirmed
+                (anomaly_detected), the man on the trigger dealt with
+                (voltage_neutralised), and the attack proven on the network
+                (attack_mechanism_known). M1: without the last condition the player
+                could reach battery_hall_2 on the Level 1 card, go straight to the
+                plant room and press the button with no VM work done, and the
+                mission-conclusion flags would never be required. Each mapping fires
+                on one prerequisite landing and checks the other two, so whichever
+                is last grants authorisation. %>
             {
               "eventPattern": "global_variable_changed:voltage_neutralised",
-              "condition": "value === true && globalVars.anomaly_detected === true",
+              "condition": "value === true && globalVars.anomaly_detected === true && globalVars.attack_mechanism_known === true",
               "onceOnly": true,
               "setGlobal": { "esd_authorized": true },
-              "sendTimedMessage": { "delay": 1200, "message": "He's out of the way and you've got the thermal confirmed. The ESD is yours — press it." }
+              "sendTimedMessage": { "delay": 1200, "message": "He's out of the way, the thermal's confirmed, and you've got their mechanism on record. The ESD is yours — press it." }
             },
             {
               "eventPattern": "global_variable_changed:anomaly_detected",
-              "condition": "value === true && globalVars.voltage_neutralised === true",
+              "condition": "value === true && globalVars.voltage_neutralised === true && globalVars.attack_mechanism_known === true",
               "onceOnly": true,
               "setGlobal": { "esd_authorized": true }
             },
+            {
+              "eventPattern": "global_variable_changed:attack_mechanism_known",
+              "condition": "value === true && globalVars.anomaly_detected === true && globalVars.voltage_neutralised === true",
+              "onceOnly": true,
+              "setGlobal": { "esd_authorized": true }
+            },
+            <%# find_infiltration_evidence has three sources, not one (lesson 8):
+                the unscheduled work order, the workshop access log, and the camera
+                tampering log. Any of them completes it; the first also delivers the
+                "don't trust the SCADA screens" nudge. completeTask is idempotent,
+                so later ones firing is harmless. %>
             {
               "eventPattern": "global_variable_changed:evidence_maintenance_logs_found",
               "condition": "value === true",
@@ -614,14 +764,16 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
               "sendTimedMessage": { "delay": 1500, "message": "That work order was never authorised — there's your infiltration evidence. Now don't trust the SCADA screens; they're spoofed. Get into the battery hall and check the racks against a physical instrument." }
             },
             {
-              "eventPattern": "room_entered:engineering_workshop",
+              "eventPattern": "global_variable_changed:evidence_access_logs_found",
+              "condition": "value === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "The workshop. The BMS jump server lives here — that's your way onto the OT network. Use the VM terminal, scan it, and submit what you find at the drop-site." }
+              "completeTask": "find_infiltration_evidence"
             },
             {
-              "eventPattern": "objective_task_completed:submit_distcc_exploit_flag",
+              "eventPattern": "global_variable_changed:evidence_camera_tampering_found",
+              "condition": "value === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "That's the attack mechanism confirmed — falsified thermals, ESD interlocks disabled, overcharge armed for 0800. The trigger is in the plant room. Get there, and get to an ESD button." }
+              "completeTask": "find_infiltration_evidence"
             }
           ]
         },
@@ -643,12 +795,16 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
             }
           ],
           "eventMappings": [
+            <%# Lesson 20: fire this when the in-person Vance conversation CLOSES
+                (and he turned ally), not on the chen_is_ally change itself -- that
+                change happens mid-conversation, so a 2s phone text would land on
+                top of the talk the player is still in. %>
             {
-              "eventPattern": "global_variable_changed:chen_is_ally",
-              "condition": "value === true",
+              "eventPattern": "conversation_closed:robert_vance",
+              "condition": "globalVars.chen_is_ally === true",
               "onceOnly": true,
               "setGlobal": { "chen_phone_available": true },
-              "sendTimedMessage": { "delay": 2000, "message": "It's Vance. I'm staying on the ops desk with the historian up, but I'm on comms if you're moving. Call me if you need the engineering side — I can talk you through the BMS and the ESD." }
+              "sendTimedMessage": { "delay": 2500, "message": "It's Vance. I'm staying on the ops desk with the historian up, but I'm on comms if you're moving. Call me if you need the engineering side — I can talk you through the BMS and the ESD." }
             }
           ]
         },
@@ -723,7 +879,7 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
           "id": "robert_vance",
           "displayName": "Robert Vance",
           "npcType": "person",
-          "position": { "x": 10, "y": 5 },
+          "position": { "x": 5, "y": 7 },
           "spriteSheet": "hacker",
           "spriteConfig": { "idleFrameStart": 20, "idleFrameEnd": 23 },
           "storyPath": "scenarios/m04_critical_failure/ink/m04_npc_robert_vance.json",
@@ -741,6 +897,7 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
           "itemsHeld": [
             {
               "type": "keycard",
+              "id": "vance_level1_keycard",
               "name": "Facility Access Keycard (Level 1)",
               "takeable": true,
               "opens_lock": "facility_keycard_level1",
@@ -794,7 +951,7 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
       "door_sign": "SCADA Control Room",
       "connections": {
         "west": "operations_office",
-        "south": "battery_hall_1"
+        "east": "battery_hall_1"
       },
       "npcs": [],
       "objects": [
@@ -805,8 +962,8 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
           "takeable": false,
           "readable": true,
           "observationDisplay": "gameDisplay",
-          "observations": "A large wall-mounted SCADA HMI mirroring the battery hall status. Every rack bank showing green. Temperature: 28°C. Status: NORMAL.",
-          "text": "ALBION ENERGY STORAGE — SCADA HMI (MAIN DISPLAY)\n\nRack Bank A: 28.0°C | SoC 72% | Status: NORMAL\nRack Bank B: 27.9°C | SoC 71% | Status: NORMAL\nRack Bank C: 28.1°C | SoC 73% | Status: NORMAL\n\nHydrogen vent fans: AUTO\nESD interlocks: ARMED\nAll alarm setpoints: SATISFIED\n\n[These values are sourced from the BMS sensor feed. If you suspect tampering, compare them against an independent physical instrument in the battery hall.]",
+          "observations": "A large wall-mounted SCADA HMI mirroring the battery hall status. Every rack bank showing green, 28°C, NORMAL — all of it fed from the BMS sensor bus. If that feed is lying, only a standalone instrument in the hall would show it.",
+          "text": "ALBION ENERGY STORAGE — SCADA HMI (MAIN DISPLAY)\n\nRack Bank A: 28.0°C | SoC 72% | Status: NORMAL\nRack Bank B: 27.9°C | SoC 71% | Status: NORMAL\nRack Bank C: 28.1°C | SoC 73% | Status: NORMAL\n\nHydrogen vent fans: AUTO\nESD interlocks: ARMED\nAll alarm setpoints: SATISFIED\n\nFeed source: BMS sensor bus \u2192 SCADA historian. Last integrity check: PASSED.",
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "scada_shows_falsified_normal_readings"
         },
@@ -868,7 +1025,7 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
           "flags": <%= flags_for_vm('bms_jump_server', [
             'flag{network_scan_complete}',
             'flag{ftp_intel_gathered}',
-            'flag{http_analysis_complete}',
+            'flag{privesc_complete}',
             'flag{distcc_exploit_complete}'
           ]) %>,
           "flagRewards": [
@@ -884,13 +1041,13 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
             },
             {
               "type": "emit_event",
-              "event_name": "http_analysis_submitted",
-              "description": "HTTP analysis submitted - attack schedule confirmed"
+              "event_name": "privesc_submitted",
+              "description": "Root on the jump server - the calibration override that fakes the thermals"
             },
             {
               "type": "emit_event",
               "event_name": "distcc_exploit_submitted",
-              "description": "Exploitation evidence submitted - attack mechanism identified"
+              "description": "distcc foothold evidence submitted - remote command execution proven"
             }
           ]
         },
@@ -914,7 +1071,7 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
           "name": "SAFETYNET Tasking Note",
           "takeable": false,
           "readable": true,
-          "text": "DROP-SITE TASKING\n\nRequired evidence: submit all four VM flags at the drop-site —\n  network scan, FTP intel, HTTP analysis, distcc exploit.\n\nThe scan / enumerate / exploit steps in your objectives are your methodology —\nlog them if you want the full record, but it's the submitted flags that build the case.\nDon't get stuck chasing a checkbox; get the flags in.",
+          "text": "DROP-SITE TASKING\n\nRequired evidence: submit all four VM flags at the drop-site —\n  the status page, the FTP drop, the distcc foothold and root.\n\nThe scan / enumerate / exploit steps in your objectives are your methodology —\nlog them if you want the full record, but it's the submitted flags that build the case.\nDon't get stuck chasing a checkbox; get the flags in.",
           "observations": "SAFETYNET note clarifying that the four flag submissions are the required evidence; the recon sub-tasks are optional methodology"
         }
       ]
@@ -982,7 +1139,7 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
       "ambientSound": "server_room_ventilation",
       "ambientVolume": 0.7,
       "connections": {
-        "north": "scada_control_room",
+        "west": "scada_control_room",
         "south": "engineering_workshop",
         "east": "battery_hall_2"
       },
@@ -991,7 +1148,7 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
           "id": "operative_cipher",
           "displayName": "ENTROPY Operative 'Cipher'",
           "npcType": "person",
-          "position": { "x": 12, "y": 6 },
+          "position": { "x": 12, "y": 7 },
           "spriteSheet": "hacker-red",
           "spriteTalk": "assets/characters/hacker-red-talk.png",
           "spriteConfig": { "idleFrameStart": 20, "idleFrameEnd": 23 },
@@ -1027,7 +1184,7 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
         {
           "type": "thermometer",
           "id": "analog_thermometer",
-          "name": "Analog Thermometer — Rack Bank C Wall",
+          "name": "Analogue Thermometer — Rack Bank C Wall",
           "takeable": false,
           "readable": true,
           "important": true,
@@ -1038,11 +1195,11 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
           "observationVariants": [
             {
               "condition": "globalVars.attack_prevented",
-              "value": "Thermometer dial now reads: 49°C and falling.\n\nThe analog thermometer by Rack Bank C — the needle is dropping steadily since the Emergency Shutdown."
+              "value": "Thermometer dial now reads: 49°C and falling.\n\nThe analogue thermometer by Rack Bank C — the needle is dropping steadily since the Emergency Shutdown."
             },
             {
               "condition": "globalVars.anomaly_detected",
-              "value": "The thermometer dial reads: 61°C\n\nThe analog thermometer confirms a physical thermal anomaly that the SCADA readout (28°C) is hiding."
+              "value": "The thermometer dial reads: 61°C\n\nThe analogue thermometer confirms a physical thermal anomaly that the SCADA readout (28°C) is hiding."
             }
           ],
           "triggerOnInteract": [
@@ -1058,7 +1215,7 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
           "readable": true,
           "observationDisplay": "gameDisplay",
           "observations": "Digital status panels on each rack. All showing green. Readings look normal.",
-          "text": "BATTERY RACK STATUS — HALL 1 (DIGITAL DISPLAY)\n\nRack C1: 28.0°C | SoC 72% | Status: NORMAL\nRack C2: 27.9°C | SoC 71% | Status: NORMAL\nRack C3: 28.1°C | SoC 73% | Status: NORMAL\n\nAll values within certified operating parameters.\nAll alarm setpoints: SATISFIED\n\n[NOTE: sourced from the BMS sensor feed to SCADA. Compare with the analog thermometer on this wall.]"
+          "text": "BATTERY RACK STATUS — HALL 1 (DIGITAL DISPLAY)\n\nRack C1: 28.0°C | SoC 72% | Status: NORMAL\nRack C2: 27.9°C | SoC 71% | Status: NORMAL\nRack C3: 28.1°C | SoC 73% | Status: NORMAL\n\nAll values within certified operating parameters.\nAll alarm setpoints: SATISFIED\n\nFeed source: BMS sensor bus. The mechanical dial on this same wall is not on the bus."
         },
         {
           "type": "tablet",
@@ -1083,6 +1240,8 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
           "name": "BESS Process Diagram",
           "takeable": false,
           "readable": true,
+          <%# PASS 2 (playtest D8): the battery-hall template has no notes slot, so this fell back to a random position and landed in the east doorway, blocking the walk to Hall 2. Pinned to the bottom-right corner of the service aisle, clear of the west (0.5,2.5), east (19.5,2.5) and south (1.5,9) doorways. %>
+          "position": { "x": 18, "y": 8 },
           "text": "BATTERY ENERGY STORAGE — PROCESS OVERVIEW\n\n1. Grid import → rectifier / PCS\n2. Charge management (BMS per-rack)\n3. Lithium-ion rack banks A, B, C (cells, thermocouples, vent paths)\n4. Hydrogen detection + forced ventilation\n5. ESD interlocks (hardwired) → isolation\n6. Inverter / export to grid\n\nCapacity: 200 MWh\nServes: 240,000 residents at peak",
           "observations": "Process overview showing the facility scale and the safety interlocks"
         }
@@ -1108,7 +1267,7 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
           "id": "operative_relay",
           "displayName": "ENTROPY Operative 'Relay'",
           "npcType": "person",
-          "position": { "x": 7, "y": 5 },
+          "position": { "x": 7, "y": 7 },
           "spriteSheet": "hacker-red",
           "spriteTalk": "assets/characters/hacker-red-talk.png",
           "spriteConfig": { "idleFrameStart": 20, "idleFrameEnd": 23 },
@@ -1116,16 +1275,16 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
           "currentKnot": "start",
           "behavior": {
             "hostile": { "chaseSpeed": 120, "attackDamage": 15, "pauseToAttack": true },
+            <%# PASS 2 (playtest D9): this used patrol.route, which the engine only reads for multiRoom {room, waypoints} segments (npc-behavior.js:321,353). With no waypoints or bounds the patrol fell back to a random walk, so Relay wandered into the gaps between the rack rows and dropped the Master card there. In-room patrols use waypoints (tiles, room-relative). These keep her on the clear service aisle (rows 7-8 of the 20x10 hall), clear of the west and south doorways, so a KO while patrolling drops the card on open floor. %>
             "patrol": {
               "enabled": true,
-              "route": [
-                { "x": 4, "y": 5 },
-                { "x": 7, "y": 5 },
-                { "x": 10, "y": 5 },
-                { "x": 7, "y": 5 }
+              "waypoints": [
+                { "x": 5, "y": 7, "dwellTime": 2000 },
+                { "x": 10, "y": 7 },
+                { "x": 15, "y": 7, "dwellTime": 2000 },
+                { "x": 10, "y": 7 }
               ],
-              "speed": 40,
-              "pauseTime": 10
+              "speed": 40
             }
           },
           "globalVarOnKO": "operative_relay_defeated",
@@ -1196,7 +1355,7 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
           "id": "voltage",
           "displayName": "Voltage (Critical Mass Leader)",
           "npcType": "person",
-          "position": { "x": 10, "y": 6 },
+          "position": { "x": 7, "y": 7 },
           "spriteSheet": "hacker-red",
           "spriteTalk": "assets/characters/hacker-red-talk.png",
           "spriteConfig": { "idleFrameStart": 20, "idleFrameEnd": 23 },
@@ -1205,14 +1364,42 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
           "behavior": {
             "hostile": { "chaseSpeed": 145, "attackDamage": 22, "pauseToAttack": true }
           },
-          "globalVarOnKO": "voltage_captured",
-          "taskOnKO": "confront_voltage"
+          <%# Playtest D4: this was globalVarOnKO "voltage_captured". The engine writes
+              that global itself inside the KO routine (npc-hostile.js:159-166), so no
+              eventMapping condition could stop it -- a KO after the escape stance set
+              CAPTURED on top of ESCAPED, and the debrief said he was in custody. The
+              KO now has its own global; voltage_captured is written only by the
+              npc_ko:voltage mapping (gated on voltage_escaped !== true) or by the
+              peaceful-arrest ink. %>
+          "globalVarOnKO": "voltage_ko",
+          "taskOnKO": "confront_voltage",
+          <%# Playtest D4, confirmed live (game 1163): #remove_npc runs and returns
+              success, but removeNpcFromScene destroys npc._sprite, and that
+              reference is missing for NPCs in lazily loaded rooms (the registry
+              entry is rebuilt by registerNPC after the sprite exists -- engine
+              issue, logged). The behaviour manager keeps its own sprite, so
+              setVisible:false really hides him, disables his body, and takes him
+              out of the interact scan and the punch cone (player-combat.js:293).
+              The room_entered re-hide covers a reload; #remove_npc still persists
+              the removal server-side. %>
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:voltage_escaped",
+              "condition": "value === true",
+              "setVisible": false
+            },
+            {
+              "eventPattern": "room_entered:plant_room",
+              "condition": "globalVars.voltage_escaped === true",
+              "setVisible": false
+            }
+          ]
         },
         {
           "id": "operative_static",
           "displayName": "ENTROPY Operative 'Static'",
           "npcType": "person",
-          "position": { "x": 8, "y": 6 },
+          "position": { "x": 4, "y": 7 },
           "spriteSheet": "hacker-red",
           "spriteTalk": "assets/characters/hacker-red-talk.png",
           "spriteConfig": { "idleFrameStart": 20, "idleFrameEnd": 23 },
@@ -1250,7 +1437,7 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
             "label": "EMERGENCY SHUTDOWN - RACK BANKS A-C",
             "confirmDesc": "Initiate hardwired shutdown for Rack Banks A-C. Isolates the banks, forces hydrogen ventilation to maximum, and aborts the 0800 overcharge trigger. Irreversible without manual reset.",
             "authVar": "esd_authorized",
-            "unauthorizedText": "The button is live, but you are not clear to use it. Two things first: confirm the thermal hazard is real against a physical instrument, and deal with the man behind you — press this with him conscious and he fires the trigger before the banks isolate.",
+            "unauthorizedText": "NOT ARMED. The interlock holds the button until three conditions are met: the thermal hazard confirmed against a standalone instrument; the attack on the OT network proven from the workshop jump server; and the trigger holder out of the fight — anyone still in reach of that laptop fires before the banks isolate. Whichever of those is still open, close it and come back.",
             "activatedVar": "attack_prevented",
             "alreadyActiveText": "Emergency shutdown already active. Rack banks A-C isolated. Thermal runaway aborted.",
             "confirmedText": "ISOLATED - COOLING ACTIVE - ATTACK ABORTED",
@@ -1267,7 +1454,7 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
           "name": "ENTROPY Command Laptop",
           "takeable": false,
           "readable": true,
-          "text": "REMOTE OVERCHARGE CONTROLLER — ARMED\n\nTarget: Albion Rack Banks A / B / C\nTrigger: 0800 local (countdown running)\nSCADA thermal feed: SPOOFED (nominal)\nHydrogen vent fans: FORCED OFF\nESD interlocks (software): DISABLED\n\n[The software path is locked behind the trigger. The hardwired ESD pushbutton on the wall is the only thing that still works.]",
+          "text": "REMOTE OVERCHARGE CONTROLLER — ARMED\n\nTarget: Albion Rack Banks A / B / C\nTrigger: 0800 local (countdown running)\nSCADA thermal feed: SPOOFED (nominal)\nHydrogen vent fans: FORCED OFF\nESD interlocks (software): DISABLED\n\nSoftware abort: LOCKED until trigger. Hardwired ESD: OUT OF OUR REACH.",
           "observations": "Critical Mass's command laptop — the overcharge is armed and counting down. The software won't stop it; the hardwired ESD will."
         },
         {
@@ -1332,7 +1519,7 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
               "name": "Social Fabric Safehouse Card (Encoded)",
               "takeable": true,
               "readable": true,
-              "text": "<%= base64_encode('SOCIAL FABRIC — REGIONAL SAFEHOUSE\nUnit 14, Calder Wharf, Salford\nKnock pattern: 2-1-3\nAsk for \"Loom\". Burn this after reading.') %>\n\n(Base64 — decode with CyberChef to read the safehouse address.)",
+              "text": "<%= base64_encode('SOCIAL FABRIC — REGIONAL SAFEHOUSE\nUnit 14, Calder Wharf, Salford\nKnock pattern: 2-1-3\nAsk for \"Loom\". Burn this after reading.') %>",
               "observations": "An encoded card from the go-bag — the next thread to pull on Social Fabric",
               "puzzle_graph_role": "clue",
               "puzzle_graph_reveals": "social_fabric_safehouse_address_lead",
@@ -1348,11 +1535,15 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
 <%# Thermal-runaway clock. Modelled on sis02_energy/scenario.json.erb:387-450, which is
     the worked example for this engine feature (ScenarioTimerDispatcher + ScenarioTimerUI).
 
-    Both timers start when the player independently confirms the thermal hazard
-    (anomaly_detected, set by reading the analog thermometer against the falsified
-    SCADA readout) and are cancelled by the hardwired shutdown (attack_prevented).
-    Starting on anomaly_detected rather than mission start means the clock begins when
-    the player *knows*, so the pressure is always informed pressure.
+    M2: both timers start on attack_mechanism_known -- the moment the player has
+    proved how the attack works (all four OT-network flags in) -- NOT on
+    anomaly_detected. Starting on anomaly_detected meant both clocks ran on
+    wall-time through the whole VM stage, so COSTLY SUCCESS was effectively the
+    default outcome. The countdown is now the final act: mechanism proven -> race
+    to the plant room and the hardwired ESD. Cancelled by the shutdown
+    (attack_prevented). Reload is lenient: if the start global is already set the
+    dispatcher restarts the clock from the reload moment
+    (scenario-timer-dispatcher.js:37-38), so a reload never strands the player.
 
     DELIBERATE DIVERGENCE FROM sis02: its h2_evacuation timer fires a
     `show_end_screen` action with outcome "failure" and a "Return to Missions" button,
@@ -1366,9 +1557,10 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
     {
       "id": "h2_advisory",
       "label": "H\u2082 Advisory \u2014 rack bank B",
-      "startOnGlobal": "anomaly_detected",
-      "delayMs": 1320000,
+      "startOnGlobal": "attack_mechanism_known",
+      "delayMs": 360000,
       "cancelOnGlobal": "attack_prevented",
+      "condition": "!globalVars.attack_prevented",
       "setGlobal": { "hydrogen_alarm": true, "urgency_stage": 3 },
       "showCountdown": true,
       "onceOnly": true,
@@ -1393,8 +1585,8 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
     {
       "id": "racks_vent",
       "label": "Thermal runaway \u2014 rack bank B",
-      "startOnGlobal": "anomaly_detected",
-      "delayMs": 2400000,
+      "startOnGlobal": "attack_mechanism_known",
+      "delayMs": 720000,
       "cancelOnGlobal": "attack_prevented",
       "condition": "!globalVars.attack_prevented",
       "setGlobal": { "racks_vented": true, "casualties_occurred": true, "urgency_stage": 4 },
@@ -1421,6 +1613,12 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
     "chen_trust_level": 0,
     "chen_phone_available": false,
     "facility_access_granted": false,
+    <%# vance_met / chen_provided_keycard are written from Vance's ink but declared
+        here as globals so they persist across a reload (ink-local VAR state is lost
+        on reload, m03 D5). vance_met routes re-talk to the hub; chen_provided_keycard
+        guards the one-time keycard grant so a reload can't hand out a duplicate. %>
+    "vance_met": false,
+    "chen_provided_keycard": false,
 
     "anomaly_detected": false,
     "scada_anomalies_identified": false,
@@ -1432,7 +1630,7 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
 
     "flag_network_scan_submitted": false,
     "flag_ftp_intel_submitted": false,
-    "flag_http_analysis_submitted": false,
+    "flag_privesc_submitted": false,
     "flag_distcc_exploit_submitted": false,
 
     "operative_cipher_defeated": false,
@@ -1442,6 +1640,7 @@ attack_schedule_encoded = base64_encode("ATTACK SEQUENCE:\n0800 - Remote overcha
     "robert_vance_ko": false,
     "voltage_captured": false,
     "voltage_escaped": false,
+    "voltage_ko": false,
     "remote_trigger_disabled": false,
 
     "esd_authorized": false,

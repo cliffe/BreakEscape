@@ -6,7 +6,8 @@
 
 // Variables for tracking entry approach
 VAR guard_suspicious = false
-VAR entry_method = ""            // credentials, smooth_talk, stealth
+VAR entry_method = ""            // credentials, smooth_talk
+VAR guard_admitted = false       // Has the guard let the player in?
 
 // External variables (set by game)
 // NOTE: the engine binds exactly six externals (person-chat-conversation.js:96-129):
@@ -17,23 +18,23 @@ VAR entry_method = ""            // credentials, smooth_talk, stealth
 EXTERNAL player_name()
 
 // ===========================================
-// ENTRY DIALOGUE
-// Location: Main Entrance
-// Task 1.1: Enter Facility
-//
-// The NPC declares currentKnot "start" (scenario.json.erb:332), so `start`
-// must exist -- without it ChoosePathString throws and the guard is mute.
+// ENTRY
+// Location: Main Entrance. Person NPC the player can re-approach, so this
+// conversation NEVER reaches DONE/END (lesson 21): every exit returns to a
+// choices-first resting knot so re-talk re-enters it rather than showing
+// "(End of conversation)".
 // ===========================================
 
 === start ===
+{guard_admitted: -> guard_idle}
 -> security_guard_entry
 
 === security_guard_entry ===
 #speaker:security_guard
 
-// Guard at desk, looks up as player approaches
+Narrator: The guard looks up from the desk as you approach.
 
-Morning. Kind of early for visitors.
+Security Guard: Morning. Bit early for visitors.
 
 * [State grid-safety regulator. I'm here for an inspection.]
     -> guard_credentials_check
@@ -41,36 +42,28 @@ Morning. Kind of early for visitors.
 * [I'm here for an inspection of the facility.]
     -> guard_inspection_response
 
-* [(Attempt to slip past the guard)]
+* [(Try to slip past the guard)]
     -> guard_stealth_attempt
 
 === guard_credentials_check ===
 #speaker:security_guard
 
-// Guard examines credentials
-
 State auditor? This early?
 
-// Guard examines badge, checks clipboard
+Narrator: He turns your badge over, glances at the clipboard, hands it back.
 
-Alright, sign in here.
-
-// Guard hands clipboard
-
-Mr. Vance mentioned something about a surprise inspection. He's not happy about it, fair warning.
+Security Guard: Alright, sign in here. Mr Vance mentioned a surprise inspection. He's not happy about it, fair warning.
 
 * [I'll keep that in mind. Thank you.]
     -> guard_entry_granted
 
-* [It's routine procedure. Where can I find Mr. Vance?]
+* [Routine procedure. Where do I find Mr Vance?]
     -> guard_directions
 
 === guard_directions ===
 #speaker:security_guard
 
-Administration offices, down that hall.
-
-Should be in his office or the Control Room at this hour.
+Security Guard: Operations office, straight down the hall. He'll be at his desk or in the control room at this hour.
 
 -> guard_entry_granted
 
@@ -78,21 +71,19 @@ Should be in his office or the Control Room at this hour.
 #speaker:security_guard
 
 ~ entry_method = "credentials"
+~ guard_admitted = true
 
-Go on through. Badge scanner there will let you in.
+Security Guard: Go on through. Operations office is straight down the hall.
 
-// Interior door unlocks
-
-// TRIGGERS: Task 1.1 complete (enter_facility)
-
--> END
+#exit_conversation
+-> guard_idle
 
 === guard_inspection_response ===
 #speaker:security_guard
 
 Inspection? Nobody told me about any inspection.
 
-* [It's a surprise inspection. You can check with your supervisor if needed.]
+* [It's a surprise inspection. Check with your supervisor if you like.]
     -> guard_confused_allows
 
 * [Here are my credentials.]
@@ -101,11 +92,7 @@ Inspection? Nobody told me about any inspection.
 === guard_confused_allows ===
 #speaker:security_guard
 
-// Guard confused but doesn't want to challenge authority
-
-Uh... okay. Sign in anyway. Cover my bases.
-
-// Guard hands clipboard
+Security Guard: Right. Sign in anyway, let me cover myself.
 
 -> guard_entry_granted
 
@@ -114,54 +101,33 @@ Uh... okay. Sign in anyway. Cover my bases.
 
 ~ guard_suspicious = true
 
-// Player attempts to bypass guard - guard notices
+Narrator: You angle for the inner door. He is on his feet before you clear the desk.
 
-Hey! Where do you think you're going?
+Security Guard: Hey. Where do you think you're going?
 
-* [(Sprint past the guard toward the door)]
-    -> guard_alarm_raised
-
-* [Sorry, I'm testing your entry protocols. Part of the security audit.]
+* [Testing your entry protocols. Part of the audit.]
     -> guard_smooth_talk
 
 * [My apologies. Here are my credentials.]
     -> guard_credentials_check
 
-=== guard_alarm_raised ===
-#speaker:security_guard
-
-~ guard_suspicious = true
-
-// Guard raises alarm - fails stealth entry
-
-Security! We've got an intruder!
-
-// Player must leave and try alternate entry (loading dock)
-
-// TRIGGERS: Alarm raised, stealth entry failed
-
--> END
-
 === guard_smooth_talk ===
 #speaker:security_guard
 
-// Guard considers the explanation
+Security Guard: Testing my protocols.
 
-Security audit? Testing entry protocols?
-
-* [Yes, exactly. You challenged me appropriately. That's a pass.]
+* [Exactly. You challenged me. That's a pass.]
     -> guard_fooled
 
-* [Ask anyone. I'll wait.]
-    // He does not buy it.
+* [Forget it. Here's my ID.]
     -> guard_demands_credentials
 
 === guard_fooled ===
 #speaker:security_guard
 
-Oh. Uh, okay. Should I still log you in?
+Security Guard: Oh. Right. Should I still log you in?
 
-* [Yes, that would be proper procedure.]
+* [Yes. Proper procedure.]
     -> guard_entry_granted
 
 === guard_demands_credentials ===
@@ -169,6 +135,28 @@ Oh. Uh, okay. Should I still log you in?
 
 ~ guard_suspicious = true
 
-Right. I need to see some ID before I let you through.
+Security Guard: I'll need to see some ID before you go any further.
 
 -> guard_credentials_check
+
+// ===========================================
+// RESTING HUB
+// Reached once the guard has admitted the player. Sticky choices, always at
+// least one, so re-approaching him never runs dry.
+// ===========================================
+
+=== guard_idle ===
+#speaker:security_guard
+
++ [Anything unusual on shift tonight?]
+    Security Guard: Quiet. That OptiGrid crew came through late on the ninth, but they had cards. Mr Vance is the one to ask.
+    -> guard_idle
+
++ [Where's Mr Vance?]
+    Security Guard: Operations office, down the hall. Or the control room.
+    -> guard_idle
+
++ [Nothing. Carry on.]
+    #exit_conversation
+    Security Guard: Right you are.
+    -> guard_idle

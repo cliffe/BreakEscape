@@ -21,7 +21,7 @@ BMS/SCADA thermal telemetry.
 - Exposed web service carrying the falsified rack status page
 - ProFTPD service holding OptiGrid's transferred operational intelligence
 - Legacy distccd (CVE-2004-2687) left behind by the "maintenance" crew — remote command execution
-- sudo Baron Samedit (CVE-2021-3156) for local privilege escalation
+- sudoedit (CVE-2023-22809) for local privilege escalation
 
 **kali**
 - Kali Linux platform for reconnaissance and exploitation against the jump server
@@ -39,7 +39,7 @@ flag_hints.xml. scenario.json.erb therefore expects exactly four flags on
 
   flag_1  parameterised_website     -> submit_network_scan_flag
   flag_2  proftpd_133c_backdoor     -> submit_ftp_intel_flag
-  flag_3  sudo_baron                -> submit_privesc_flag
+  flag_3  sudoedit                  -> submit_privesc_flag
   flag_4  distcc_exec               -> submit_distcc_exploit_flag
 
 If a SecGen build emits a different order or count, update `targetFlags` in
@@ -93,9 +93,9 @@ scenario.json.erb to match — do not renumber here.
       <input into="main_page_paragraph_content">
         <value>RACK BANK STATUS -- AUTOMATED FEED
 
-Bank A: 21.4 C  NOMINAL
-Bank B: 21.9 C  NOMINAL
-Bank C: 21.6 C  NOMINAL
+Bank A: 28.0 C  NOMINAL
+Bank B: 27.9 C  NOMINAL
+Bank C: 28.1 C  NOMINAL
 
 Hydrogen detection: NOMINAL
 Emergency shutdown interlocks: ARMED
@@ -124,9 +124,10 @@ Last integrity check: PASSED</value>
     </vulnerability>
 
     <!-- FLAG 3 (submit_privesc_flag)
-         sudo Baron Samedit. The maintenance account can become root, which is how
+         sudoedit (CVE-2023-22809). sudo_baron was swapped out: it conflicts with every
+         base except Debian 10 Buster, and this system is Debian 12. The maintenance account can become root, which is how
          the crew rewrote the telemetry the control room trusts. -->
-    <vulnerability module_path=".*/sudo_baron">
+    <vulnerability module_path=".*/sudoedit">
       <input into="strings_to_leak">
         <generator type="flag_generator"/>
       </input>

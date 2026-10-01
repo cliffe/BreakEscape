@@ -161,6 +161,31 @@ Agent HaX: And {player_name()} — the hall doesn't care who's winning. Watch th
 -> support_hub
 
 // ===========================================
+// KO KEYCARD FALLBACKS (B1)
+// Reached by an eventMapping (phone-chat) on npc_ko:operative_cipher /
+// npc_ko:operative_relay. If the physical card drop failed, HaX relays a working
+// copy from the reader logs so the workshop / plant room stays reachable. The
+// card is also still on the floor if the drop worked; a duplicate is harmless
+// (the RFID lock matches on opens_lock). #give_item above the line it belongs to.
+// ===========================================
+
+=== on_cipher_ko_card ===
+#speaker:agent_0x99
+#give_item:keycard:relayed_workshop_keycard
+Agent HaX: He's down. I've pulled his Level 2 card's number off the reader logs and pushed a working copy to your kit. If his own card turns up on the floor, you've got a spare. Either way, the workshop's open.
++ [Understood.]
+    #exit_conversation
+    -> support_hub
+
+=== on_relay_ko_card ===
+#speaker:agent_0x99
+#give_item:keycard:relayed_master_keycard
+Agent HaX: Relay's down. Same trick: there's a copy of her master card in your kit now, whatever happened to the real one. The plant room's the last door. Voltage is behind it.
++ [On it.]
+    #exit_conversation
+    -> support_hub
+
+// ===========================================
 // FIRST CALL (Initial Contact)
 // Triggered: Shortly after mission start
 // ===========================================
@@ -207,7 +232,7 @@ Agent HaX: And {player_name()} — the hall doesn't care who's winning. Watch th
     ~ handler_confidence += 5
     -> chen_cooperation_acknowledged
 
-* [Skeptical, but he's complying with the audit cover.]
+* [Sceptical, but he's complying with the audit cover.]
     -> chen_skeptical_acknowledged
 
 * [I told him the truth about ENTROPY. He's fully on board.]
@@ -260,7 +285,7 @@ Whatever they're planning, it's scheduled for 0800. You've got time, but not muc
 
 Priority one: find how they're compromising the SCADA network.
 
-Look for server room access, network infrastructure, anything that explains remote control.
+Look for a way onto the OT network — the engineering workshop, the network infrastructure, anything that explains remote control.
 
 {chen_is_ally:
     Vance can point you to the right systems.
@@ -281,7 +306,7 @@ Call if you need guidance.
 
 // ===========================================
 // EVENT: SERVER ROOM ENTERED
-// Triggered: Player enters server room
+// Triggered: Player enters the engineering workshop
 // ===========================================
 
 === event_server_room_entered ===
@@ -291,9 +316,9 @@ Call if you need guidance.
 ~ server_room_advice_given = true
 ~ handler_confidence += 10
 
-{player_name()}, good work reaching the server room.
+{player_name()}, good work reaching the engineering workshop.
 
-That's their access point—SCADA network infrastructure runs through there.
+That's their access point—the BMS jump server and the SCADA network infrastructure run through there.
 
 + [There's a network investigation terminal here. SCADA backup server.]
     -> vm_guidance
@@ -322,7 +347,7 @@ Look for network access points, compromised services, remote control mechanisms.
 
 They had three operatives here for hours—they installed something.
 
-Find it, analyze it, and we'll know how to disable their attack.
+Find it, analyse it, and we'll know how to disable their attack.
 
 + [On it]
     -> server_room_event_end
@@ -376,7 +401,7 @@ Which is why the answer isn't software. There's a hardwired Emergency Shutdown p
 === trigger_location_discussion ===
 #speaker:agent_0x99
 
-Based on your intel, the remote trigger is with Voltage—plant room command center.
+Based on your intel, the remote trigger is with Voltage—plant room command centre.
 
 That's where you'll find him. And that's where this ends.
 
@@ -391,7 +416,7 @@ Listen carefully. Voltage is high-value intelligence.
 
 He knows about The Architect, multi-cell coordination, future operations.
 
-* [Should I prioritize capturing Voltage even if it's riskier?]
+* [Should I prioritise capturing Voltage even if it's riskier?]
     -> capture_vs_speed_guidance
 
 * [Understood. I'll attempt to capture him.]
@@ -410,7 +435,7 @@ Going for him is high intel value and a riskier engagement — he's holding the 
 
 Going for the shutdown is the safe play. The grid holds, but he walks out of that dock and we lose him.
 
-I trust your judgment. Choose based on the tactical situation.
+I trust your judgement. Choose based on the tactical situation.
 
 + [I'll make the call when I confront him. Tactical situation dependent.]
     ~ handler_confidence += 15
@@ -446,7 +471,7 @@ That's the right approach. Adapt to what you find.
 
 Final phase objectives:
 
-One—neutralize Voltage and any remaining operatives in the plant room.
+One—neutralise Voltage and any remaining operatives in the plant room.
 
 Two—secure or destroy the remote trigger laptop.
 
@@ -456,10 +481,10 @@ Three—get to the hardwired ESD pushbutton in the plant room and press it.
     You've already taken down {operatives_defeated} operatives. You're doing this.
 }
 {operatives_defeated == 1:
-    You've neutralized one operative. Expect resistance from the others.
+    You've neutralised one operative. Expect resistance from the others.
 }
 {operatives_defeated == 0:
-    All three operatives are still active. Be ready for combat.
+    Their people are still on their feet. Be ready for combat.
 }
 
 * [Ready. Moving to the plant room now.]
@@ -516,14 +541,14 @@ Three—get to the hardwired ESD pushbutton in the plant room and press it.
 #speaker:agent_0x99
 
 {not server_room_reached:
-    Get to the server room. That's where they accessed the SCADA network.
+    Get to the engineering workshop, off Battery Hall 1. That's where they got onto the SCADA network.
 
     {chen_is_ally:
-        Vance can tell you how to get there.
+        Vance can point you to it from the ops desk.
     }
 }
 {server_room_reached and not attack_mechanism_known:
-    Use the VM terminal in the server room. Investigate the SCADA network.
+    Use the VM terminal in the workshop. Investigate the SCADA network.
 
     Identify their attack mechanism. Submit flags when you find intel.
 }
@@ -539,21 +564,21 @@ Three—get to the hardwired ESD pushbutton in the plant room and press it.
 === intel_status_update ===
 #speaker:agent_0x99
 
-{flags_submitted >= 3:
-    You've submitted {flags_submitted} flags. Excellent intel gathering.
-}
-{flags_submitted >= 1 and flags_submitted < 3:
-    You've submitted {flags_submitted} flag(s) so far. Keep investigating.
-}
-{flags_submitted == 0:
-    No flags submitted yet. Find intelligence and submit at the drop-site terminal.
+{attack_mechanism_known:
+    You've got their whole mechanism on record now. That's the case made.
+- else:
+    {server_room_reached:
+        You're on the OT network. Keep pulling flags and get them into the drop-site terminal.
+    - else:
+        Nothing submitted yet. The intel is on the BMS jump server in the workshop — scan it, and submit what you find at the drop-site.
+    }
 }
 
 {operatives_defeated >= 2:
-    Two operatives neutralized. {operatives_defeated == 3: All hostiles down.| One or two remaining.}
+    Both hall operatives neutralised. Static and Voltage will be waiting in the plant room.
 }
 {operatives_defeated == 1:
-    One operative neutralized. Stay alert for the others.
+    One operative neutralised. Stay alert for the others.
 }
 {operatives_defeated == 0:
     No confirmed hostile encounters yet. They're here—be ready.
@@ -590,11 +615,8 @@ What's the situation?
     {operatives_defeated >= 1:
         Check the operative you defeated—they may have had a keycard.
     }
-    {operatives_defeated == 0 and chen_is_ally:
-        Vance can provide access if you ask him.
-    }
-    {operatives_defeated == 0 and not chen_is_ally:
-        Find a keycard or get Vance to provide access.
+    {operatives_defeated == 0:
+        Vance's card only reaches Level 1. The workshop is Level 2 — that card is on the operative holding Battery Hall 1. You'll have to go through him.
     }
 }
 {server_room_reached:

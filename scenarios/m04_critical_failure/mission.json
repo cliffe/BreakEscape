@@ -22,7 +22,7 @@
       "keywords": [
         "EXPLOITATION",
         "distcc CVE-2004-2687",
-        "sudo Baron CVE-2021-3156",
+        "sudoedit CVE-2023-22809",
         "Remote code execution",
         "Infrastructure attacks",
         "Multi-cell coordination",

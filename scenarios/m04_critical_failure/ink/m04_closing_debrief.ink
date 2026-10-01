@@ -19,7 +19,7 @@ VAR racks_vented = false
 VAR casualties_occurred = false
 
 // Engine-owned; set true if the player knocked Robert Vance out. Read only.
-// Gates his debrief presence -- a man on the floor of his own control room
+// Gates his debrief presence -- a man on the floor of his own operations office
 // does not stand and deliver closing remarks.
 VAR robert_vance_ko = false
 
@@ -47,16 +47,23 @@ EXTERNAL player_name()
 
 {player_name()}, report. What's the status?
 
-* [Attack prevented. Emergency shutdown engaged, banks isolated.]
+* {not racks_vented} [Shutdown engaged before the racks went. Banks isolated, hall intact.]
     -> debrief_attack_stopped
 
-* [Attack fully prevented. Voltage has been {voltage_captured: captured | neutralized. He escaped.}]
+* {racks_vented} [Bank B went before I reached the button. Shutdown held A and C.]
+    -> debrief_attack_stopped
+
+* [Voltage is {voltage_captured: in custody.|out through the dock.}]
     -> debrief_voltage_status
 
 === debrief_attack_stopped ===
 #speaker:agent_0x99
 
-Good work. Thermal runaway aborted, the banks are isolated, systems secured.
+{racks_vented:
+    Bank B's gone, but you isolated A and C and forced the vents. It could have been the whole hall. It wasn't.
+- else:
+    Good work. Thermal runaway aborted before a single cell vented, the banks are isolated, systems secured.
+}
 
 {chen_trust_level >= 70 and not robert_vance_ko:
     Vance speaks highly of your work. Says you saved 240,000 lives.
@@ -91,9 +98,9 @@ Good work. Thermal runaway aborted, the banks are isolated, systems secured.
 === debrief_intelligence_gathered ===
 #speaker:agent_0x99
 
-The intelligence you gathered confirms our worst fears.
+The intelligence you gathered is the proof we've been chasing since the Zero Day job.
 
-Critical Mass and Social Fabric were coordinating this attack.
+The directive said it: Zero Day supplies, Critical Mass executes, grid storage this winter. Tonight was that plan, running. Critical Mass and Social Fabric, coordinating the one attack.
 
 {voltage_captured:
     Voltage's interrogation has already begun. He's defiant, but he's confirming cross-cell operations.
@@ -114,13 +121,13 @@ Social Fabric was ready with disinformation campaigns in three cities—they pla
 === debrief_architect_revelation ===
 #speaker:agent_0x99
 
-Yes. We've intercepted communications mentioning "The Architect."
+Yes. The same name the Zero Day directive carried. The Architect.
 
-Someone is coordinating ENTROPY cells at a level we've never seen before.
+Now we've watched one of their coordinated strikes run start to finish — we know how the cells fit together, not just that they do.
 
 This facility was a test run.
 
-The Architect is planning something bigger—coordinated infrastructure attacks with synchronized disinformation campaigns.
+The Architect is planning something bigger—coordinated infrastructure attacks with synchronised disinformation campaigns.
 
 -> debrief_task_force_announcement
 
@@ -230,13 +237,7 @@ Full transparency. We reveal the attack attempt, facility vulnerabilities, and E
     #speaker:agent_0x99
 }
 
-Consequences:
-- Public protected through awareness of infrastructure risks
-- Facility reputation damaged
-- Industry-wide security investigations triggered
-- Political pressure for infrastructure funding
-
-This will force systemic change.
+The public gets the truth and the warning that goes with it. Albion takes a reputational hit, every other storage site gets audited, and someone in Parliament finally has to answer for the funding. It forces the change the sector's been dodging.
 
 Approved.
 
@@ -262,13 +263,7 @@ Facility patches vulnerabilities quietly.
     #speaker:agent_0x99
 }
 
-Consequences:
-- Public uninformed of risk
-- Facility reputation intact
-- Security upgrades done discretely
-- No systemic pressure for change
-
-Stability over transparency.
+The public never hears how close this came. Albion's reputation survives, the upgrades happen quietly, and nothing forces the wider sector to move. Stability, bought with silence.
 
 Approved.
 
@@ -292,13 +287,7 @@ Acknowledge a "security incident" without full details. Controlled narrative.
     #speaker:agent_0x99
 }
 
-Consequences:
-- Moderate public awareness
-- Balanced transparency and stability
-- Some pressure for security improvements
-- Controlled narrative
-
-Balanced approach.
+People are told an incident happened, not the whole of it. Enough awareness to push some improvement, not enough to start a panic. A controlled middle.
 
 Approved.
 
@@ -341,7 +330,7 @@ Decision recorded.
 
 #speaker:agent_0x99
 
-* {not robert_vance_ko} [It was an honor working with you, Mr. Vance.]
+* {not robert_vance_ko} [It was an honour working with you, Mr Vance.]
     -> debrief_end_respectful
 
 * {not robert_vance_ko} [Just doing my job.]
@@ -374,7 +363,7 @@ I'll begin implementing security overhauls immediately.
 
 Noted. It'll be in the report either way.
 
-The methods are a separate conversation. You put a facility manager on the floor of his own control room tonight.
+The methods are a separate conversation. You put a facility manager on the floor of his own operations office tonight.
 
 -> mission_complete
 
@@ -394,7 +383,7 @@ Task Force Null briefing tomorrow at 0600.
 }
 
 {operatives_defeated >= 3:
-    You neutralized all their operatives. Textbook operation.
+    You neutralised all their operatives. Textbook operation.
 }
 {operatives_defeated == 2:
     Two operatives down. Clean work.

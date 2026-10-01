@@ -10,9 +10,10 @@
 VAR chen_trust_level = 0          // 0-100 trust/cooperation level
 VAR revealed_mission = false       // Has player revealed SAFETYNET mission?
 VAR chen_is_ally = false          // Full ally status activated
-VAR chen_provided_keycard = false
+VAR chen_provided_keycard = false  // global; set ONLY by the item_picked_up:keycard mapping when the card lands (playtest D2)
 VAR discussed_optigrid = false
 VAR scada_threat_confirmed = false
+VAR vance_met = false              // First meeting completed; re-talk lands in the hub
 
 // Game state variables
 VAR operatives_defeated = 0
@@ -33,6 +34,9 @@ EXTERNAL player_name()
 // ===========================================
 
 === initial_meeting ===
+// Re-talk after the first meeting lands in the resting hub, so the intro line
+// and the task-complete tag below do not replay (lesson 21).
+{vance_met: -> vance_hub}
 #speaker:robert_vance
 #complete_task:meet_robert_vance
 
@@ -40,12 +44,12 @@ EXTERNAL player_name()
 
 A grid-safety audit at 4 AM? You regulator types have interesting schedules.
 
-+ [Just doing my job, Mr. Vance.]
++ [Just doing my job, Mr Vance.]
     ~ chen_trust_level += 5
     # influence_increased
     -> chen_professional_response
 
-+ [I apologize for the inconvenience. I know this is unexpected.]
++ [I apologise for the inconvenience. I know this is unexpected.]
     ~ chen_trust_level += 10
     # influence_increased
     -> chen_apologetic_response
@@ -89,7 +93,7 @@ It's just... we're understaffed, underfunded, and now I've got surprise inspecti
 
 // Vance becomes defensive
 
-Concerns? We passed our last three inspections with flying colors.
+Concerns? We passed our last three inspections with flying colours.
 
 Our safety record is spotless. Who's been talking?
 
@@ -116,7 +120,7 @@ We don't have anything to hide.
 
 // Vance reluctantly agrees
 
-Fine. But this better be routine. I've got 47 operators keeping 240,000 people on grid power.
+Fine. But this better be routine. I run this site on a skeleton crew and we keep 240,000 people on grid power.
 
 -> chen_provides_access
 
@@ -190,10 +194,10 @@ Employee records, maintenance logs, facility access—I'll get you whatever you 
 // Vance retrieves keycard from desk drawer
 
 {not chen_provided_keycard:
-    #give_item:keycard
+    #give_item:keycard:vance_level1_keycard
     Here's a facility keycard—Level 1 access. That'll get you into most areas.
 
-    Restricted zones like the server room need higher clearance, but for an inspection you should be fine.
+    Restricted zones like the workshop and the plant room need higher clearance, but for an inspection you should be fine.
 }
 
 // STICKY. This knot is reached from contractors_inquiry, concerns_question,
@@ -202,23 +206,20 @@ Employee records, maintenance logs, facility access—I'll get you whatever you 
 // an empty choice list and running out of content -- the cause of all 601
 // failing paths in this file.
 + [Thank you. I'll start reviewing employee records.]
-    ~ chen_provided_keycard = true
     -> initial_meeting_end_professional
 
-+ [I appreciate your cooperation, Mr. Vance.]
-    ~ chen_provided_keycard = true
++ [I appreciate your cooperation, Mr Vance.]
     ~ chen_trust_level += 5
     # influence_increased
     -> initial_meeting_end_grateful
 
 + {discussed_optigrid} [Before I start—about those OptiGrid technicians. I need the full details.]
-    ~ chen_provided_keycard = true
     -> optigrid_details_request
 
 === optigrid_details_request ===
 #speaker:robert_vance
 
-Three technicians, here for two days. Network infrastructure maintenance and SCADA optimization.
+Three technicians, here for two days. Network infrastructure maintenance and SCADA optimisation.
 
 They had all the right paperwork. What's your concern?
 
@@ -231,16 +232,19 @@ They had all the right paperwork. What's your concern?
 === initial_meeting_end_professional ===
 #speaker:robert_vance
 
+~ vance_met = true
+
 Let me know if you need anything else. I'll be right here at the ops desk, monitoring systems.
 
 // TRIGGERS: Task 1.2 completion
 
 #exit_conversation
--> initial_meeting
+-> vance_hub
 
 === initial_meeting_end_grateful ===
 #speaker:robert_vance
 
+~ vance_met = true
 ~ chen_trust_level += 5
 # influence_increased
 
@@ -249,7 +253,44 @@ Of course. And look... if you do find anything, let me know.
 This facility is my responsibility. These people depend on us.
 
 #exit_conversation
--> initial_meeting
+-> vance_hub
+
+// ===========================================
+// RESTING HUB
+// Reached after the first meeting on every path. Sticky choices, state-aware,
+// always at least one -- so re-approaching Vance at the ops desk never replays
+// the intro and never runs dry. Phone support (m04_phone_robert_vance) carries
+// the deeper SCADA guidance once he is an ally.
+// ===========================================
+
+=== vance_hub ===
+#speaker:robert_vance
+
+// Flat knot-level choices with conditions (choices inside a {cond: ...} block
+// don't gather reliably). At least one is always available in every state.
+// Safety net (M3): offer the Level 1 card here if no path handed it over.
++ {not chen_provided_keycard} [I still need a facility keycard.]
+    #give_item:keycard:vance_level1_keycard
+    Robert Vance: Of course — here. Level 1, most of the site. Should have led with that.
+    -> vance_hub
+
++ {chen_is_ally} [What should I be doing right now?]
+    Robert Vance: The SCADA screens are lying to you -- I'm watching the historian and the real rack temperatures are climbing. Get to a hardwired ESD. The software won't save us.
+    -> vance_hub
+
++ {chen_is_ally} [Stay on the ops desk. I'll call if I need the engineering side.]
+    Robert Vance: I'm not going anywhere. Call me the moment you're moving.
+    #exit_conversation
+    -> vance_hub
+
++ {not chen_is_ally} [A few more questions about the facility.]
+    Robert Vance: Make it quick. I've got a plant to run.
+    -> vance_hub
+
++ {not chen_is_ally} [That's all for now.]
+    Robert Vance: Right. I'll be at the ops desk.
+    #exit_conversation
+    -> vance_hub
 
 // ===========================================
 // EARLY REVEAL OPTION
@@ -362,6 +403,14 @@ Tell me what you need. Anything.
 ~ chen_trust_level += 20
 # influence_increased
 
+// The reveal/ally paths bypass chen_provides_access, where the card is handed
+// over on the cover-story route -- so without this the 12 ally paths left the
+// player with no Level 1 card (M3). Give it here, once.
+{not chen_provided_keycard:
+    #give_item:keycard:vance_level1_keycard
+    Here — take my facility keycard. Level 1, it'll get you through most of the site. Go.
+}
+
 Facility access, SCADA system knowledge, anything.
 
 240,000 people depend on this grid. We're stopping this.
@@ -372,8 +421,9 @@ Come back to the ops desk the moment you need the SCADA side — we'll find what
 
 // TRIGGERS: Task 1.2 completion, chen_is_ally activated early
 
+~ vance_met = true
 #exit_conversation
--> initial_meeting
+-> vance_hub
 
 === chen_maintains_cover ===
 #speaker:robert_vance

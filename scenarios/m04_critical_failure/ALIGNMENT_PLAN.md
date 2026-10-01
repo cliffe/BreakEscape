@@ -199,7 +199,7 @@ This invalidated the `vulnerability_analysis:flag_N` prefix wired in Phase 1a. T
 |---|---|---|---|
 | 1 | `parameterised_website` (falsified rack status page) | ✅ | `submit_network_scan_flag` |
 | 2 | `proftpd_133c_backdoor` (OptiGrid transfer channel) | ✅ | `submit_ftp_intel_flag` |
-| 3 | `sudo_baron` CVE-2021-3156 | ✅ | `submit_privesc_flag` |
+| 3 | `sudoedit` CVE-2023-22809 (was sudo_baron; swapped in pass 2, Debian 12 conflict) | ✅ | `submit_privesc_flag` |
 | 4 | `distcc_exec` CVE-2004-2687 | ✅ | `submit_distcc_exploit_flag` |
 
 Every `module_path` and every `read_fact` was checked against the module metadata in the SecGen checkout before use — none are invented. XML confirmed well-formed.
@@ -218,7 +218,7 @@ Files: `ink/m04_phone_agent0x99.ink`, `scenario.json.erb` (agent `itemsHeld`, `e
 1. Build `support_hub` on the m02 model; fold `event_server_room_entered`, `event_attack_mechanism_identified` and `player_guidance_request` into gated options; declare **all five** missing gating VARs in `globalVariables` (`operatives_defeated`, `attack_mechanism_known`, `server_room_reached`, `attack_partially_triggered`, `player_health_low`) plus the guide `_offered`/`_hint_given` pairs, and drive `operatives_defeated` from the three `globalVarOnKO`s via handler mappings. Watch the near-miss: `attack_mechanism_understood` is already declared (`:1097`) while the ink reads `attack_mechanism_known` — pick one name. Fix the `Capture Voltage:` pseudo-prefix (`:288`).
 2. Add `lab-workstation` field guides in HaX's `itemsHeld` with `labUrl`s to real sheets, exposure-gated and offered at the right beats (RFID door → `rfid-cloning`; VM launch → `reconnaissance-and-network-mapping` + `vulnerability-analysis-and-attack-surface`; distcc → `distcc-exploitation`; go-bag card → `encoding-and-decoding-with-cyberchef`; lockers → `lockpicking`). All eight named sheets confirmed present in `HacktivityLabSheets/_labs/safetynet/`.
 3. **Cross-repo dependency:** `distcc-exploitation` and `rfid-cloning` are absent from the local `_site/labs/safetynet/`. Since `HacktivityLabSheets/.gitignore:2` ignores `_site/`, that proves only that the local build is stale — verify against the live site or a fresh build before treating it as a publishing task.
-4. Create the SecGen scenario (four flags, 192.168.100.10, nmap → FTP/HTTP enum → distcc CVE-2004-2687 → sudo Baron CVE-2021-3156), or repoint `mission.json` at the shipped lab XML.
+4. Create the SecGen scenario (four flags, 192.168.100.10, nmap → FTP/HTTP enum → distcc CVE-2004-2687 → sudoedit CVE-2023-22809), or repoint `mission.json` at the shipped lab XML.
 
 **Acceptance:** every hub option contextual and re-enterable; each guide item resolves on the live HLS site; `secgen_scenario` points at something real. **Verify:** `npc-dialog-review`; check each `labUrl` against the built/live site.
 

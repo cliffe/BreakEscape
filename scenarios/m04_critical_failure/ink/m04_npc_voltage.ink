@@ -5,32 +5,23 @@
 // ===========================================
 
 // ===========================================
-// PHASE 1a NOTE -- this file is made RUNNABLE here, not rewritten.
-// The confrontation prose, Voltage's reframing as Blackout's lieutenant, and
-// the final voltage_fate design are PHASE 3 work. What changed now:
-//   * the combat-dispatch knots no longer narrate a fight and no longer fall
-//     off the end when none of their (never-set) flags matched -- that was
-//     every one of the 14 enumerated paths erroring;
-//   * the ink no longer writes `voltage_captured = false`, which synced back
-//     and clobbered the engine's globalVarOnKO value;
-//   * outcomes are routed from `start` on engine state, so re-entering the
-//     conversation after the fight is coherent.
+// The three stances (fight / arrest / go-for-the-button) each set one outcome
+// and hand the fight to the engine via #hostile, or route to a resting knot.
+// Outcomes are routed from `start` on engine-owned globals so re-entry is
+// coherent (and reload-safe -- ink-local VARs are lost on reload).
 // ===========================================
 
 // Ink-owned state
-VAR voltage_leverage = true              // Does Voltage have active trigger?
-VAR player_priority = ""                 // capture vs. disable
-VAR combat_difficulty = "normal"         // Combat difficulty modifier
-VAR attack_partially_triggered = false
 VAR voltage_confronted = false           // Has the confrontation played?
 VAR asked_the_number = false             // Did the player make him state the casualty figure?
 
 // Ink-owned record of how the DIALOGUE ended: "", "escaped", "fought".
-// Deliberately NOT named voltage_fate/voltage_captured -- the engine owns those.
-// PHASE 3 resolves this plus the KO global into a single engine-owned fate.
 VAR voltage_dialogue_outcome = ""
 
-// Engine-owned, synced in from globalVariables. NEVER assign these from ink.
+// Engine-owned, synced in from globalVariables. Read freely. Only the peaceful
+// ARREST path assigns voltage_captured (there is no KO to set it, so ink is the
+// only signal Voltage was taken alive); voltage_escaped is likewise ink-set on
+// the button path. Every other write of these is the engine's.
 VAR voltage_captured = false
 VAR voltage_escaped = false
 VAR operative_static_defeated = false
@@ -50,6 +41,10 @@ EXTERNAL player_name()
 // ===========================================
 
 === start ===
+// Global-keyed guards first: ink-local state (voltage_dialogue_outcome,
+// voltage_confronted) is lost on reload (m03 D5), so branch on the engine-owned
+// globals. voltage_escaped is set from the button path and persists.
+{voltage_escaped: -> voltage_escape_success}
 {voltage_captured: -> voltage_captured_end}
 {voltage_dialogue_outcome == "escaped": -> voltage_escape_success}
 {voltage_confronted: -> voltage_standoff_resumed}
@@ -107,8 +102,6 @@ Bold. But conviction doesn't stop attacks.
 === voltage_has_leverage ===
 #speaker:voltage
 
-~ voltage_leverage = true
-
 // Voltage hand moves near laptop
 
 One keystroke and I trigger it now. The racks go critical, the hall burns, and 240,000 people lose power by noon.
@@ -123,8 +116,6 @@ Your move, agent.
 
 === voltage_threatens_trigger ===
 #speaker:voltage
-
-~ voltage_leverage = true
 
 // Voltage hand moves to laptop
 
@@ -245,13 +236,13 @@ Voltage: You genuinely don't get to have both, and I'd think about it quickly.
 
 === choice_fight ===
 #speaker:voltage
+~ voltage_confronted = true
 
-Voltage: *closing the distance* You've picked the slow option.
+#complete_task:confront_voltage
+Voltage: You've picked the slow option.
 
 Narrator: He moves for the bench and you move for him, and the plant room stops being a place where anyone is talking.
 
-~ voltage_confronted = true
-#complete_task:confront_voltage
 #hostile
 #exit_conversation
 -> END
@@ -264,7 +255,7 @@ Narrator: He moves for the bench and you move for him, and the plant room stops 
 Narrator: He looks at your hands, then at the door behind you, and does the arithmetic he has done all night.
 
 {operative_static_defeated:
-    Voltage: *quietly* Static's down, isn't he.
+    Voltage: Static's down, isn't he.
 - else:
     Voltage: You'd have to get past Static.
 }
@@ -276,19 +267,20 @@ Narrator: He looks at your hands, then at the door behind you, and does the arit
     // Every OTHER path leaves voltage_captured to the engine.
     ~ voltage_captured = true
     ~ voltage_confronted = true
-    Voltage: *a long pause* ...A court.
-    Voltage: Fine. A court can have the number too.
-    Narrator: He steps back from the bench with his hands open, and lets you take the laptop off it.
     #complete_task:confront_voltage
+    Voltage: ...A court. Fine. A court can have the number too.
+    Narrator: He steps back from the bench with his hands open, and lets you take the laptop off it.
     #exit_conversation
-    -> END
+    // Story stays live so re-talk re-enters the resting knot, not "(End of
+    // conversation)" (lesson 21).
+    -> voltage_captured_end
 
 + [Last chance. Step away.]
     ~ voltage_confronted = true
-    Voltage: No.
-    Narrator: He goes for the bench.
     ~ voltage_dialogue_outcome = "fought"
     #complete_task:confront_voltage
+    Voltage: No.
+    Narrator: He goes for the bench.
     #hostile
     #exit_conversation
     -> END
@@ -307,79 +299,58 @@ Voltage: You save your eleven and your forty. I'll be somewhere else by the time
 ~ voltage_escaped = true
 ~ voltage_confronted = true
 
-Narrator: The dock door bangs open onto the loading bay and the cold, and he's gone into it.
-
+// Action tags above the line they belong to. #remove_npc takes him off the
+// board so he can't be punched afterwards for a double CAPTURED+ESCAPED (M4,
+// m01 pattern m01_derek_confrontation.ink:357).
 #complete_task:confront_voltage
+#remove_npc
 #exit_conversation
--> END
+Narrator: The dock door bangs open onto the loading bay and the cold, and he's gone into it.
+-> voltage_escape_success
 
 // ===========================================
-// COMBAT PATHS
+// OUTCOME RESTING KNOTS
+// The three stances all resolve to one of these two (or to a KO, which routes
+// back through `start`). Each is choice-first and never reaches DONE/END for a
+// friendly re-talk (lesson 21). The old unreachable combat-dispatch and
+// PHASE 3 placeholder knots were removed in pass 2.
 // ===========================================
 
-// Both knots below used to branch on voltage_defeated_before_trigger /
-// voltage_triggered_attack / voltage_escaped / voltage_defeated -- ink VARs that
-// NOTHING ever set. With all of them false no branch matched and flow ran off
-// the end of the knot: "ran out of content" on all 14 paths.
-//
-// The fight is now the engine's. These knots hand off to it and stop.
-
-=== voltage_no_leverage_combat ===
-~ voltage_leverage = false
-~ voltage_confronted = true
-~ voltage_dialogue_outcome = "fought"
-
-Voltage: You disabled it. Smart.
-
-Voltage: I'm still not being captured today.
-
-#hostile
-#exit_conversation
--> END
-
-// ===========================================
-// CAPTURE OUTCOMES
-//
-// PHASE 3 TODO -- CURRENTLY UNREACHABLE, DELIBERATELY.
-// voltage_captured_with_trigger, voltage_captured_no_leverage,
-// voltage_triggered_emergency and voltage_escape_attempt were reachable only
-// from the two broken combat-dispatch knots, which narrated a fight the engine
-// is supposed to own. Their prose is kept because Phase 3 needs it when it
-// wires the real fate model (ink-owned voltage_dialogue_outcome + engine-owned
-// fate resolved by a handler eventMapping, per ALIGNMENT_PLAN.md Phase 3.4).
-// Until then the reachable outcomes are: KO -> voltage_captured_end via
-// `start`, and the negotiated escape -> voltage_escape_success.
-//
-// NOTE: the `~ voltage_captured = true` assignments below are in unreachable
-// knots. Phase 3 must NOT simply re-link them -- voltage_captured is
-// engine-owned (globalVarOnKO) and ink should not be writing it.
-// ===========================================
-
+// Re-talk after he has been taken alive. Person NPC, still on his feet in
+// cuffs, so this must never reach DONE/END (lesson 21): sticky, always at
+// least one choice.
 === voltage_captured_end ===
 #speaker:voltage
 
-// SAFETYNET team arrives to take custody
-
-// TRIGGERS: Task 3.1 complete (confront_voltage)
 #complete_task:confront_voltage
-#exit_conversation
--> END
+
++ [Nothing you want to tell me?]
+    Voltage: I told you the number. That's the only true thing anyone said in here tonight.
+    -> voltage_captured_end
+
++ [Say nothing.]
+    #exit_conversation
+    Narrator: He sits against the bench with his wrists zipped, watching the red button he never reached.
+    -> voltage_captured_end
 
 // ===========================================
 // ESCAPE OUTCOMES
 // ===========================================
 
+// Re-entered after he ran for the dock. He is gone; this knot just holds the
+// dock door open in the fiction and never ends the story (lesson 21).
 === voltage_escape_success ===
-#speaker:voltage
-
 ~ voltage_dialogue_outcome = "escaped"
 ~ voltage_confronted = true
-
-// Attack still prevented, but Voltage at large
-
-// TRIGGERS: voltage_escaped event
-// Task 3.1 complete (confront_voltage)
 #complete_task:confront_voltage
-#exit_conversation
--> END
+
++ [Look through the dock door.]
+    Narrator: The loading bay is empty and cold. A vehicle was here; it isn't now. Voltage made the exchange he wanted -- the grid for his own head start.
+    #exit_conversation
+    -> voltage_escape_success
+
++ [Turn back to the button.]
+    #exit_conversation
+    Narrator: The red mushroom head is still on the wall behind you, and the racks are still climbing. That is the only thing that matters now.
+    -> voltage_escape_success
 

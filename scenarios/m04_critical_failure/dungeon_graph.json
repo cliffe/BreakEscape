@@ -117,8 +117,8 @@
       "optional": false
     },
     {
-      "id": "analog_thermometer_rack_bank_c_wall",
-      "label": "Analog Thermometer — Rack Bank C Wall",
+      "id": "analogue_thermometer_rack_bank_c_wall",
+      "label": "Analogue Thermometer — Rack Bank C Wall",
       "kind": "item",
       "optional": false
     },
@@ -178,7 +178,7 @@
     },
     {
       "id": "vmch_submit_network_scan_flag",
-      "label": "Submit evidence from the exposed status page",
+      "label": "Submit the flag from the fake rack status page",
       "kind": "vm",
       "optional": false
     },
@@ -201,18 +201,6 @@
       "optional": false
     },
     {
-      "id": "vmch_submit_http_analysis_flag",
-      "label": "Submit the HTTP-analysis evidence",
-      "kind": "vm",
-      "optional": false
-    },
-    {
-      "id": "vmfl_submit_http_analysis_flag",
-      "label": "Http Analysis Flag",
-      "kind": "flag",
-      "optional": false
-    },
-    {
       "id": "vmch_submit_distcc_exploit_flag",
       "label": "Submit proof of the distcc foothold",
       "kind": "vm",
@@ -221,6 +209,18 @@
     {
       "id": "vmfl_submit_distcc_exploit_flag",
       "label": "Distcc Exploit Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "vmch_submit_privesc_flag",
+      "label": "Submit proof you became root on the jump server",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_privesc_flag",
+      "label": "Privesc Flag",
       "kind": "flag",
       "optional": false
     },
@@ -304,7 +304,7 @@
     },
     {
       "from": "battery_hall_1",
-      "to": "analog_thermometer_rack_bank_c_wall",
+      "to": "analogue_thermometer_rack_bank_c_wall",
       "soft": false
     },
     {
@@ -378,23 +378,23 @@
       "soft": true
     },
     {
-      "from": "vmch_submit_http_analysis_flag",
-      "to": "vmfl_submit_http_analysis_flag",
-      "soft": false
-    },
-    {
-      "from": "vmfl_submit_ftp_intel_flag",
-      "to": "vmch_submit_http_analysis_flag",
-      "soft": true
-    },
-    {
       "from": "vmch_submit_distcc_exploit_flag",
       "to": "vmfl_submit_distcc_exploit_flag",
       "soft": false
     },
     {
-      "from": "vmfl_submit_http_analysis_flag",
+      "from": "vmfl_submit_ftp_intel_flag",
       "to": "vmch_submit_distcc_exploit_flag",
+      "soft": true
+    },
+    {
+      "from": "vmch_submit_privesc_flag",
+      "to": "vmfl_submit_privesc_flag",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_distcc_exploit_flag",
+      "to": "vmch_submit_privesc_flag",
       "soft": true
     },
     {

@@ -37,7 +37,7 @@ It is gated two ways (`esd_authorized` = `anomaly_detected` **and** `voltage_neu
 2. Read the analog thermometer → `anomaly_detected`. **This starts the clock.**
 3. **Cipher** (battery hall 1) → Level 2 → engineering workshop.
 4. Work the **BMS jump server** VM; submit four flags at the drop-site
-   (web status page → ProFTPD → sudo Baron → distcc).
+   (web status page → ProFTPD → distcc foothold → sudoedit to root).
 5. **Relay** (battery hall 2) → Master → plant room.
 6. **Voltage:** Fight, Arrest, or go for the button and let him run. All three resolve the mission.
 7. **Press the ESD.** Attack aborted. Debrief.
@@ -59,5 +59,5 @@ is avoidable and player-paced; it never dead-ends the run.
 ## Learning objectives (CyBOK)
 
 Network scanning and service enumeration (NS); vulnerability exploitation and privilege escalation
-(SS) via distcc CVE-2004-2687 and sudo Baron CVE-2021-3156; SCADA/ICS exposure through an OT jump
+(SS) via distcc CVE-2004-2687 and sudoedit CVE-2023-22809; SCADA/ICS exposure through an OT jump
 host (CPS). Field guides for each step are offered by Agent HaX as the player reaches them.
