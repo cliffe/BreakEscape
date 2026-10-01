@@ -15,6 +15,12 @@ VAR redirect_window_closed = false
 VAR morrison_resolved = ""
 VAR elena_outcome = ""
 VAR mercer_fate = ""
+VAR elena_ko = false
+VAR morrison_ko = false
+VAR mercer_ko = false
+VAR grid_saved = false
+VAR countdown_expired = false
+VAR redirect_declined = false
 VAR found_coordination_traffic = false
 VAR found_tomb_gamma = false
 VAR found_mole_evidence = false
@@ -88,22 +94,58 @@ Agent HaX: The team's logged for {team_assignment == "fracture": Fracture -- Was
 Agent HaX: What I can't do is be in the other two places. So you're going to be my hands in the one place a person on the ground still changes the ending. Grid control. Get inside.
 
 + [Walk me through the layout.]
-    Agent HaX: Checkpoint, ops floor, server room, control room. Locked chain -- badge, then a keyed door, then a PIN, then a password on the control room itself.
+    Agent HaX: Checkpoint, ops floor, then the server hall behind a badge reader. North of the server hall is the control room, behind a password. South is the plant: a keyed door, then a keypad down to the cable vault.
     Agent HaX: One of the guards on the checkpoint shift is bought. Assume every reader you touch is logging you. I'll flag the tools as you hit each lock.
     -> hub
 + [What's the clock?]
-    Agent HaX: Cascade timer's running on the SCADA host. Don't let it rush you into sloppiness -- reading the room carefully has never once cost a life. Panicking has.
+    Agent HaX: No clock yet. The sequence is loaded and waiting on the host that drives it. The moment you log in to that host, assume they notice and start it.
+    Agent HaX: So get the control room door open before you log in to that host. The console up there is the only place the abort goes in.
     -> hub
 + [Understood. Let's go.]
     Agent HaX: Good. Call me the second you hit something you can't open.
     -> hub
 
 === first_call_open ===
-Agent HaX: {player_name()}. HaX. You're on the channel but the board says the team's still uncommitted -- Netherton's holding for your call.
+// PASS 2 playtest D3 (lesson 36): this can run in the phone preload, before
+// the briefing commit lands, so it must not claim the team is uncommitted.
+// The commit option lives on the hub, gated on the synced team_assigned.
+Agent HaX: {player_name()}. HaX. I've got your channel and I've got the board.
 
-Agent HaX: I can't move a tactical team from a phone. That decision sits with you and the Director. Settle it with him on the briefing channel, then come back to me and I'll run the rest.
+Agent HaX: If the team's call is still open when you ring, tell me where they go and I'll pass it straight up to the Director.
 
-+ [On it.]
+-> hub
+
+// PASS 2: the briefing can be closed before the call is made and never
+// replays (setGlobalOnStart), so the commit lives here as well.
+=== commit_team ===
++ [Fracture. Washington.]
+    #set_global:team_assignment:fracture
+    #set_global:team_assigned:true
+    #complete_task:assign_tactical_team
+    ~ delegation_registered = true
+    ~ team_assigned = true
+    ~ team_assignment = "fracture"
+    Agent HaX: Fracture. Passed up and confirmed.
+    -> hub
++ [Trojan Horse. Austin.]
+    #set_global:team_assignment:trojan_horse
+    #set_global:team_assigned:true
+    #complete_task:assign_tactical_team
+    ~ delegation_registered = true
+    ~ team_assigned = true
+    ~ team_assignment = "trojan_horse"
+    Agent HaX: Trojan Horse. Passed up and confirmed.
+    -> hub
++ [Meltdown. San Francisco.]
+    #set_global:team_assignment:meltdown
+    #set_global:team_assigned:true
+    #complete_task:assign_tactical_team
+    ~ delegation_registered = true
+    ~ team_assigned = true
+    ~ team_assignment = "meltdown"
+    Agent HaX: Meltdown. Passed up and confirmed.
+    -> hub
++ [Not yet.]
     Agent HaX: Quickly. Two operations are waiting on which one you don't pick.
     -> hub
 
@@ -121,12 +163,16 @@ Agent HaX: I can't move a tactical team from a phone. That decision sits with yo
     Agent HaX: Logged and confirmed. The aircraft's committed. Now get inside.
     -> hub
 
-// --- The redirect window: open ---
-+ {projection_revised and not team_redirected and not redirect_window_closed} [Those numbers were understated. I want the team moved to Trojan Horse.]
+// --- No team yet (briefing closed early) ---
++ {not team_assigned} [Where the team goes: I'm ready to make the call.]
+    -> commit_team
+
+// --- The redirect window: open (never when the team is already there) ---
++ {projection_revised and team_assigned and team_assignment != "trojan_horse" and not team_redirected and not redirect_window_closed} [Those numbers were understated. I want the team moved to Trojan Horse.]
     -> redirect_open
 
 // --- The redirect window: closed, refused out loud ---
-+ {projection_revised and not team_redirected and redirect_window_closed and not redirect_closed_discussed} [Can I still move the team to Trojan Horse?]
++ {projection_revised and team_assigned and team_assignment != "trojan_horse" and not team_redirected and redirect_window_closed and not redirect_closed_discussed} [Can I still move the team to Trojan Horse?]
     -> redirect_closed
 
 // --- Moral sounding board ---
@@ -134,11 +180,13 @@ Agent HaX: I can't move a tactical team from a phone. That decision sits with yo
     -> moral_soundingboard
 
 // --- Morrison ---
-+ {morrison_resolved != "" and not morrison_discussed} [The guard on the checkpoint -- Morrison. He was dirty.]
++ {(morrison_resolved != "" or morrison_ko) and not morrison_discussed} [The guard on the checkpoint -- Morrison. He was dirty.]
     -> topic_morrison
 
 // --- Elena ---
 + {elena_outcome != "" and not elena_discussed} [Elena's numbers don't match the brief.]
+    -> topic_elena
++ {elena_ko and elena_outcome == "" and not elena_discussed} [The engineer in the server hall. Elena Rodriguez. She's down.]
     -> topic_elena
 
 // --- The coordination traffic ---
@@ -146,7 +194,7 @@ Agent HaX: I can't move a tactical team from a phone. That decision sits with yo
     -> topic_traffic
 
 // --- Mercer ---
-+ {mercer_fate != "" and not mercer_discussed} [I've dealt with Mercer.]
++ {(mercer_fate != "" or mercer_ko) and not mercer_discussed} [I've dealt with Mercer.]
     -> topic_mercer
 
 // --- Tomb Gamma ---
@@ -160,11 +208,11 @@ Agent HaX: I can't move a tactical team from a phone. That decision sits with yo
 // --- Per-stage VM hints ---
 + {scanning_guide_offered and not flag1_submitted and not vm1_hint_given} [I'm on the attack host and I don't know where to start.]
     -> vm_hint_1
-+ {flag1_submitted and not flag2_submitted and not vm2_hint_given} [I've got the timeline. What's next on the host?]
++ {flag1_submitted and not flag2_submitted and not vm2_hint_given} [I've got the share. What's next on the host?]
     -> vm_hint_2
-+ {flag2_submitted and not flag3_submitted and not vm3_hint_given} [I've got the C2 channel. I need more than a user shell.]
++ {flag2_submitted and not flag3_submitted and not vm3_hint_given} [I've got a username and a password. Now what?]
     -> vm_hint_3
-+ {flag3_submitted and not flag4_submitted and not vm4_hint_given} [I'm root. How do I actually stop the cascade?]
++ {flag3_submitted and not flag4_submitted and not vm4_hint_given} [I'm in as their operator. How do I stop the cascade?]
     -> vm_hint_4
 
 // --- Field guide requests ---
@@ -183,7 +231,7 @@ Agent HaX: I can't move a tactical team from a phone. That decision sits with yo
 + [I'll call you back.]
     Agent HaX: I'm here. Go.
     #exit_conversation
-    -> DONE
+    -> hub
 
 // ===========================================
 // THE REDIRECT
@@ -201,12 +249,16 @@ Agent HaX: The trade is real: the healthcare and dispatch keys are sequenced lat
 + [Move them. Trojan Horse. Now.]
     #set_global:team_redirected:true
     #set_global:team_assignment:trojan_horse
+    ~ team_redirected = true
+    ~ team_assignment = "trojan_horse"
     Agent HaX: Redirecting. Austin confirmed, forty minutes out.
     Narrator: One pin swings across the board to Austin. The pin it left behind goes dark and stays dark.
     Agent HaX: You changed your mind under a clock, on evidence you went and found. Not many can. Live with the half you couldn't reach -- that one's on ENTROPY, not you.
     -> hub
 
 + [No. Leave them where they are.]
+    #set_global:redirect_declined:true
+    ~ redirect_declined = true
     Agent HaX: Then they stay. I'll note you weighed it and held. That's a decision too, and a defensible one.
     -> hub
 
@@ -216,7 +268,7 @@ Agent HaX: No. I'm sorry -- that window's shut.
 
 Agent HaX: The team's committed on the ground now. I can't turn an aircraft mid-approach on a maybe, and there isn't the fuel or the time to peel them off a live objective and re-task them across the country. If we'd moved them earlier it would have meant something. Now it just strands two operations instead of one.
 
-Agent HaX: You learned the numbers were wrong. That knowledge wasn't wasted -- it goes in the report, and it's why M8 starts where it starts. But the team's where it is. Finish the part that's still yours to finish.
+Agent HaX: You learned the numbers were wrong. That knowledge wasn't wasted -- it goes in the report. But the team's where it is. Finish the part that's still yours to finish.
 
 + [Understood.]
     -> hub
@@ -246,14 +298,14 @@ Agent HaX: Two of them we don't answer. Whichever way you'd turned it, that stay
 
 === topic_morrison ===
 ~ morrison_discussed = true
-Agent HaX: {morrison_resolved == "ko": He's down, then. Fine. He made his choice when he took their money.|Morrison, yeah. We cleared him last month -- routine revalidation, clean sheet.}
+Agent HaX: {morrison_ko: He's down, then. Fine. He made his choice when he took their money.|Morrison, yeah. We cleared him last month -- routine revalidation, clean sheet.}
 
 Agent HaX: Which is the part that should worry you. Somebody inside our vetting signed off a man ENTROPY already owned. That's a small version of a much bigger question, and you're going to meet the big version before the night's out.
 -> hub
 
 === topic_elena ===
 ~ elena_discussed = true
-Agent HaX: {elena_outcome == "ko": She's not talking now. Shame -- she was the one person in there who'd been lied to as hard as the public had.|She was shown a six-hour demonstration with nobody hurt. What you're standing in is not that.}
+Agent HaX: {elena_ko: She's not talking now. Shame -- she was the one person in there who'd been lied to as hard as the public had.|She was shown a six-hour demonstration with nobody hurt. What you're standing in is not that.}
 
 Agent HaX: The projections in your brief were ENTROPY's own numbers. They fed them to us as part of the gambit. Elena's the proof they're understated -- if she gave you the real casualty figure, that's your redirect evidence. Same thing the coordination traffic on their share will tell you, if you'd rather not take one frightened engineer's word for it.
 -> hub
@@ -267,25 +319,36 @@ Agent HaX: And the Trojan Horse parameters are right there in it -- nine-day dor
 
 === topic_mercer ===
 ~ mercer_discussed = true
-Agent HaX: {mercer_fate == "ko": On the floor, is he. Doesn't change a thing about the sequence -- it's scheduled and local and it never needed him conscious.|Blackout himself. Dr James Mercer. Ex-DoE, built cascading-failure models for a living, now he builds them for real and calls it a lesson.}
+Agent HaX: {mercer_ko: On the floor, is he. Doesn't change a thing about the sequence -- the host decides when it runs, and it never needed him conscious.|Blackout himself. Dr James Mercer. Ex-DoE, built cascading-failure models for a living, now he builds them for real and calls it a lesson.}
 
-Agent HaX: He's read the casualty projection. He signed it. That's not a man you talk down -- you're not choosing whether to convert him, you're choosing what to say to him. Tell him he was a diversion or don't. It won't save anyone. It'll just change what he has to live with.
+Agent HaX: He read the casualty projection and signed it. Nobody was ever going to talk him down. What you said to him won't have saved anyone. It changes what he has to live with, that's all.
 -> hub
 
 === topic_tomb ===
 ~ tomb_discussed = true
 Agent HaX: Tomb Gamma. That's the Architect's workshop -- where the whole gambit was assembled. No coordinates on it, you'll notice. Deliberate. He doesn't keep an address.
 
-Agent HaX: Bag it. That dossier is half of what M8 gets built on. The other half's whatever else is down there with you.
+Agent HaX: Bag it. That dossier is half of what we'll be working from next. The other half's whatever else is down there with you.
 -> hub
 
 === topic_mole ===
 ~ mole_discussed = true
-Agent HaX: *long pause* Say that again slowly, because I want to be sure I'm hearing it.
+Narrator: A long pause on the line.
+
+Agent HaX: Say that again slowly, because I want to be sure I'm hearing it.
 
 Agent HaX: He had our deployment before we made it. Not the attack timing -- the agent. Somebody handed ENTROPY you. Which means tonight was never about the grid. It was an experiment to watch how SAFETYNET triages when it can't cover everything, and we just ran it for him in full.
 
-Agent HaX: You still saved eight point four million people. That's real, don't let anyone take it off you. But we've got a leak, and it's near enough the top to know your tasking. Get that intercept out. It's the first thread of the next one.
+{grid_saved and not countdown_expired:
+    Agent HaX: You still saved eight point four million people. That's real, don't let anyone take it off you.
+}
+{grid_saved and countdown_expired:
+    Agent HaX: You still held three states with one step already gone. That's real, don't let anyone take it off you.
+}
+{not grid_saved:
+    Agent HaX: And the grid's still yours to hold, so hold it first.
+}
+Agent HaX: But we've got a leak, and it's near enough the top to know your tasking. Get that intercept out. It's the first thread of the next one.
 -> hub
 
 // ===========================================
@@ -294,30 +357,30 @@ Agent HaX: You still saved eight point four million people. That's real, don't l
 
 === vm_hint_1 ===
 ~ vm1_hint_given = true
-Agent HaX: Their backup server's got an NFS export sitting wide open. Mount it read-only and go through it -- the attack timeline's in there, and so's the flag that proves you found it.
+Agent HaX: The host driving this is their backup server, and it has an NFS export sitting wide open. Mount it read-only and go through it. The coordination file's in there, and so's a flag.
 
-Agent HaX: showmount to see what's exported, then mount it somewhere local. Read, don't touch. First flag's the coordination traffic, and that's the one that changes what you know.
+Agent HaX: showmount to see what's exported, then mount it somewhere local. Read, don't touch. Note any account names you find. You'll want one later.
 -> hub
 
 === vm_hint_2 ===
 ~ vm2_hint_given = true
-Agent HaX: Good. Now enumerate services on the host. There's a netcat listener acting as their command channel -- get onto it and read what's passing.
+Agent HaX: Good. Now scan every port on the host, not just the common ones. Something on a port above 1024 will talk to anyone who connects. Connect to it with netcat and read what it says.
 
-Agent HaX: That channel's carrying the control room password in clear, so this flag pays you twice: it's flag two, and it's the door into SCADA without needing anyone in there to cooperate.
+Agent HaX: Submit that flag and the relay hands you the capture. It has the control room door password in it, so you won't need anyone in there to cooperate.
 -> hub
 
 === vm_hint_3 ===
 ~ vm3_hint_given = true
-Agent HaX: A user shell won't terminate their processes -- you need root. Enumerate for privilege escalation: sudo -l first, then look for the misconfiguration they left behind.
+Agent HaX: The name from the share and the password from the listener are one account. SSH in with them. There's a flag in that account's home directory.
 
-Agent HaX: Least intrusive path that reaches root. Flag three is control of the host. Once you own it, you own the countdown.
+Agent HaX: Before you do: the moment you log in, assume they see you and start the sequence. If the control room door isn't open yet, open it first.
 -> hub
 
 === vm_hint_4 ===
 ~ vm4_hint_given = true
-Agent HaX: Now the actual job. Kill the cascade processes and lock out remote access so they can't just restart them from outside. That's flag four.
+Agent HaX: A user shell won't kill their job. You need root. sudo -l first: see what this account is allowed to run as root, then ask what each of those programs can be made to run.
 
-Agent HaX: When it lands, the control room's crisis system will take an abort. Go upstairs and give it one. That's the grid held.
+Agent HaX: Root flag goes through the relay, and the cascade control system in the control room will take an abort. Go and give it one.
 -> hub
 
 // ===========================================
@@ -329,7 +392,7 @@ Agent HaX: When it lands, the control room's crisis system will take an abort. G
 #give_item:lab-workstation:m07_rfid_field_guide
 Agent HaX: RFID cloning guide's on your terminal.
 
-Agent HaX: Read the badge with a Proxmark, clone it to a blank, present the clone. The reader can't tell the difference -- that's the whole weakness. Morrison's badge or the printer, either gets you a valid one to copy.
+Agent HaX: The reader only checks what the card says, not who's holding it. That's the whole weakness. Morrison's badge works, and so does anything the badge station behind his desk prints.
 
 + [Got it.]
     Agent HaX: Quiet and quick. Go.

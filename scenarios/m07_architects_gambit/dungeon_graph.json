@@ -63,9 +63,21 @@
       "optional": true
     },
     {
-      "id": "visitor_badge_printer",
-      "label": "Visitor Badge Printer",
+      "id": "lock_badge_printer",
+      "label": "Contractor Badge Station<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "printed_contractor_badge",
+      "label": "Printed Contractor Badge",
       "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "contractor_badge_station",
+      "label": "Contractor Badge Station",
+      "kind": "lock",
       "optional": true
     },
     {
@@ -96,6 +108,12 @@
       "id": "plant_maintenance_key",
       "label": "Plant Maintenance Key",
       "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "shift_handover_sheet",
+      "label": "Shift Handover Sheet",
+      "kind": "item",
       "optional": false
     },
     {
@@ -160,7 +178,7 @@
     },
     {
       "id": "vmch_recover_coordination_traffic",
-      "label": "Mount the exposed NFS export and submit what is on it",
+      "label": "Mount the attack host's open NFS export and submit the flag on it",
       "kind": "vm",
       "optional": false
     },
@@ -172,7 +190,7 @@
     },
     {
       "id": "vmch_intercept_c2_channel",
-      "label": "Enumerate the host's services and submit the command channel flag",
+      "label": "Find the listener on the attack host, read what it sends and submit the flag",
       "kind": "vm",
       "optional": false
     },
@@ -184,7 +202,7 @@
     },
     {
       "id": "vmch_escalate_on_attack_host",
-      "label": "Escalate to root on the attack host and submit the flag",
+      "label": "Log in to the attack host with the recovered account and submit the flag in its home directory",
       "kind": "vm",
       "optional": false
     },
@@ -196,7 +214,7 @@
     },
     {
       "id": "vmch_terminate_cascade_scripts",
-      "label": "Kill the running attack processes and lock out remote access",
+      "label": "Escalate to root on the attack host and submit the root flag",
       "kind": "vm",
       "optional": false
     },
@@ -240,11 +258,26 @@
     },
     {
       "from": "security_checkpoint",
-      "to": "visitor_badge_printer",
+      "to": "lock_badge_printer",
+      "soft": false
+    },
+    {
+      "from": "lock_badge_printer",
+      "to": "printed_contractor_badge",
+      "soft": false
+    },
+    {
+      "from": "printed_contractor_badge",
+      "to": "door_server_room",
+      "soft": false
+    },
+    {
+      "from": "security_checkpoint",
+      "to": "contractor_badge_station",
       "soft": true
     },
     {
-      "from": "visitor_badge_printer",
+      "from": "contractor_badge_station",
       "to": "door_server_room",
       "soft": true
     },
@@ -276,6 +309,16 @@
     {
       "from": "plant_maintenance_key",
       "to": "door_generator_room",
+      "soft": false
+    },
+    {
+      "from": "operations_floor",
+      "to": "shift_handover_sheet",
+      "soft": false
+    },
+    {
+      "from": "shift_handover_sheet",
+      "to": "lock_badge_printer",
       "soft": false
     },
     {

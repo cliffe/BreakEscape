@@ -26,6 +26,9 @@ VAR architect_t5_played = false
 VAR architect_t1_played = false
 VAR countdown_expired = false
 VAR grid_saved = false
+VAR architect_contact = false
+VAR architect_signoff_done = false
+VAR cascade_armed = false
 
 // Local -- which transmissions this handset has already carried
 VAR heard_t30 = false
@@ -36,7 +39,12 @@ VAR heard_t1 = false
 VAR heard_signoff = false
 
 === start ===
-{grid_saved and not heard_signoff:
+// PASS 2 playtest D2: after the win he is done. Synced global, so a reset
+// story (bark with an explicit knot) can't replay a stale taunt either.
+{grid_saved and (heard_signoff or architect_signoff_done):
+    -> after_win
+}
+{grid_saved:
     -> sign_off
 }
 {architect_t1_played and not heard_t1:
@@ -45,16 +53,27 @@ VAR heard_signoff = false
 {architect_t5_played and not heard_t5:
     -> taunt_t5
 }
-{architect_t10_played and not heard_t10:
+{architect_t10_played and not heard_t10 and not architect_t5_played:
     -> taunt_t10
 }
 {architect_t20_played and not heard_t20:
     -> taunt_t20
 }
+// PASS 2 review M3 (lesson 36): the phone preloads this contact's start knot
+// on first open. Until the ops-floor mapping sets architect_contact, stay
+// silent, so first contact is not used up in the preload.
+{not architect_contact and not architect_t20_played:
+    -> dormant
+}
 {not heard_t30:
     -> taunt_t30
 }
 -> dead_air
+
+=== dormant ===
++ [Hang up.]
+    #exit_conversation
+    -> dormant
 
 // ===========================================
 // T-30 -- first contact. He is establishing a baseline.
@@ -69,7 +88,7 @@ The Architect: Agent 0x00. Don't look for the trace. It isn't there.
 The Architect: I've read your file. Files are written by people who need you to be a particular shape. I prefer to watch.
 
 + [Who am I speaking to?]
-    The Architect: Someone with thirty minutes of your attention and no interest in wasting it.
+    The Architect: Someone with a little of your attention tonight and no interest in wasting it.
     -> t30_close
 + [I don't take calls from ENTROPY.]
     The Architect: You took this one.
@@ -81,7 +100,7 @@ The Architect: There is a decision in front of you tonight. Make it however you 
 Narrator: The line drops. Your handset reports no call in the log.
 
 #exit_conversation
--> DONE
+-> parked
 
 // ===========================================
 // T-20 -- he names what was left. Reads team_assignment.
@@ -127,7 +146,7 @@ The Architect: You've sent your team.
 Narrator: Dead air, then the ordinary hiss of a handset that thinks it has been idle for twenty minutes.
 
 #exit_conversation
--> DONE
+-> parked
 
 // ===========================================
 // T-10 -- the redirect window. Reads redirect_window_closed (boolean only).
@@ -135,7 +154,7 @@ Narrator: Dead air, then the ordinary hiss of a handset that thinks it has been 
 
 === taunt_t10 ===
 ~ heard_t10 = true
-Narrator: Your screen wakes on its own. The countdown behind it keeps running.
+Narrator: Your screen wakes on its own. Nothing else on it moves.
 
 {redirect_window_closed:
     The Architect: Whatever you have just learnt, you've learnt it too late to move anybody. That happens.
@@ -166,7 +185,7 @@ The Architect: Stop this, and something else fails. Someone else dies. You simpl
 Narrator: The call ends mid-syllable.
 
 #exit_conversation
--> DONE
+-> parked
 
 // ===========================================
 // T-5 -- he asks the player to name what they abandoned.
@@ -205,7 +224,7 @@ The Architect: Do you believe in yours enough to name them? You will have to, ev
 Narrator: Static. Then nothing.
 
 #exit_conversation
--> DONE
+-> parked
 
 // ===========================================
 // T-1 -- the last minute. He is not measuring the grid.
@@ -234,30 +253,41 @@ The Architect: But this was never about the power grid.
 Narrator: He hangs up first. He has hung up first every time.
 
 #exit_conversation
--> DONE
+-> parked
 
 // ===========================================
 // Sign-off -- after grid_saved. No gloating. No rattle.
 // ===========================================
 
 === sign_off ===
+// PASS 2: the debrief waits for this global (set at the top, so an early
+// close still releases it).
+#set_global:architect_signoff_done:true
 ~ heard_signoff = true
-Narrator: The countdown reads zero and stays there. Your handset rings anyway.
+{cascade_armed:
+    Narrator: The countdown on the wall stops. Your handset rings anyway.
+- else:
+    Narrator: The console goes quiet. Your handset rings anyway.
+}
 
-The Architect: You saved eight point four million people. I want to be clear that I'm not being sarcastic.
+{countdown_expired:
+    The Architect: Seattle went dark first, as scheduled. You saved the rest. I want to be clear that I'm not being sarcastic.
+- else:
+    The Architect: You saved eight point four million people. I want to be clear that I'm not being sarcastic.
+}
 
+// PASS 2 review minor 11: each branch names the two left unanswered.
 {team_assignment == "fracture":
-    The Architect: I'll have the figures from Washington, the vendor pipeline and San Francisco by morning.
+    The Architect: I'll have the figures from Austin and San Francisco by morning.
 - else:
     {team_assignment == "trojan_horse":
         {team_redirected:
             The Architect: And you moved them. Late, but you moved them. That is a different result from the one I expected, and I do like those.
-        - else:
-            The Architect: I'll have the figures from Washington, the pipeline and San Francisco by morning.
         }
+        The Architect: I'll have the figures from Washington and San Francisco by morning.
     - else:
         {team_assignment == "meltdown":
-            The Architect: I'll have the figures from Washington, the vendor pipeline and San Francisco by morning.
+            The Architect: I'll have the figures from Washington and Austin by morning.
         - else:
             The Architect: I'll have the figures from all three by morning.
         }
@@ -277,7 +307,7 @@ The Architect: So will you have the figures. And then we'll both know the same t
 Narrator: The line goes quiet. Your call log holds no record of any of it.
 
 #exit_conversation
--> DONE
+-> parked
 
 // ===========================================
 // Nothing scheduled. He is not available on request.
@@ -289,4 +319,29 @@ Narrator: You bring the handset up. There is a carrier tone on a channel that sh
 + [Hang up.]
     Narrator: The tone stops a half-second before you do.
     #exit_conversation
-    -> DONE
+    -> parked
+
+// ===========================================
+// PASS 2: the story never ends (a phone thread whose story has ended shows
+// "Conversation ended" on every reopen). Every exit parks here. Reopening
+// re-evaluates this knot, so a transmission that arrived since goes through.
+// ===========================================
+
+=== parked ===
+{grid_saved and (heard_signoff or architect_signoff_done):
+    -> after_win
+}
+{grid_saved:
+    -> sign_off
+}
+{(architect_t1_played and not heard_t1) or (architect_t5_played and not heard_t5) or (architect_t10_played and not heard_t10 and not architect_t5_played) or (architect_t20_played and not heard_t20):
+    -> start
+}
++ [Listen.]
+    -> dead_air
+
+// After the sign-off: nothing more from him, and no text.
+=== after_win ===
++ [Hang up.]
+    #exit_conversation
+    -> after_win

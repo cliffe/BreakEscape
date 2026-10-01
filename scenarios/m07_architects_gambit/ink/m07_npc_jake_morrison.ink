@@ -36,7 +36,7 @@ VAR bluff_burned = false
 -> challenge
 
 === challenge ===
-Narrator: He clocks you at ten metres and his hand goes to his belt before his face does anything at all. The torch beam finds your chest and stays there.
+Narrator: He clocks you at thirty feet and his hand goes to his belt before his face does anything at all. The flashlight beam finds your chest and stays there.
 
 Jake Morrison: Building's evacuated. Has been forty minutes. So you're either lost or you're the other thing.
 
@@ -45,11 +45,13 @@ Jake Morrison: Building's evacuated. Has been forty minutes. So you're either lo
 === hub ===
 + [I'm on the contractor list. Check it.]
     -> bluff
-+ [The grid goes down in half an hour. You know that.]
++ [The grid goes down tonight. You know that.]
     -> stakes
-+ {visitor_log_read} [You renewed Mercer's credentials on the ninth. Your login, your signature.]
++ {visitor_log_read} [You renewed Mercer's credentials on the sixteenth of June. Your login, your signature.]
     -> leverage
-+ [I'm not here to fight you, Jake.]
+// PASS 2: the label said "I'm not here to fight you" and led straight to
+// him panicking; the label now says what the player actually does.
++ [Walk straight at him. "I'm not here to fight you, Jake."]
     -> hostile_option
 + [Back off. I'm leaving.]
     -> evade
@@ -89,18 +91,18 @@ Jake Morrison: That's not what I meant.
 === leverage ===
 Narrator: You say the date. Not the accusation, just the date, and the way it lands tells you everything the log already told you.
 
-Jake Morrison: That log's meant to be on a closed terminal.
+Jake Morrison: That log's meant to stay in the desk drawer.
 
-You: It was. It isn't now. Federal building, federal record, and your name is on a credential renewal for a man who is upstairs putting eight point four million people in the dark.
+You: It was. It isn't now. Compliance record, three years' retention, and your name is on a credential renewal for a man who is upstairs putting eight point four million people in the dark.
 
-Narrator: The torch beam drops to the floor. His hand stays where it is.
+Narrator: The flashlight beam drops to the floor. His hand stays where it is.
 
 Jake Morrison: I renewed a badge. That's all I did. Nobody said anything about the grid.
 
 + [Nobody ever does. That's what the money is for.]
     -> deal
-+ [Then help me and say so to a magistrate.]
-    Jake Morrison: I'm not going to a magistrate. Don't ask me that again.
++ [Then help me, and say so to the police when they ask.]
+    Jake Morrison: I'm not saying anything to anybody. Don't ask me that again.
     -> deal
 
 === deal ===
@@ -108,28 +110,28 @@ Jake Morrison: What do you want.
 
 + [Your badge. Server zone. Then you go, and you keep going.]
     -> deal_take
-+ [Your badge, and you wait here for the arrest team.]
++ [Your badge, and you wait here for the police.]
     -> deal_refused
 
 === deal_take ===
+// PASS 2: tags above the lines (lesson 3); selector give_item on the
+// itemsHeld id (lesson 26); badge_obtained comes from the pickup mapping.
+~ morrison_resolved = "talked"
+#set_global:morrison_resolved:talked
+#give_item:keycard:morrison_server_badge
+#complete_task:clear_the_checkpoint
 Narrator: He unclips the badge with two fingers and holds it out at arm's length, as if it were the part of him that had done it.
 
 Jake Morrison: Six months I've been waiting for somebody to come and ask. Turns out I just wanted the asking over with.
 
-Jake Morrison: There's a printer behind me runs blank contractor stock. You'd have got in either way. I want you to know I know that.
+Jake Morrison: There's a badge station behind me runs contractor stock. You'd have got in either way. I want you to know I know that.
 
 You: Go.
 
-Narrator: He goes out through the muster door and does not look back. Every hour of what he knows walks out with him.
+Narrator: He goes out through the muster door and does not look back.
 
-~ morrison_resolved = "talked"
-~ badge_obtained = true
-#set_global:morrison_resolved:talked
-#set_global:badge_obtained:true
-#give_item:keycard:server_zone_badge
-#complete_task:clear_the_checkpoint
 #exit_conversation
--> DONE
+-> already_dealt
 
 === deal_refused ===
 Narrator: The hand comes back up. Not levelled -- just back up, which is worse, because it means he has stopped deciding and started reacting.
@@ -160,20 +162,20 @@ Narrator: He comes off the frame at you.
 #set_global:morrison_resolved:ko
 #hostile:jake_morrison
 #exit_conversation
--> DONE
+-> parked
 
 === evade ===
-Narrator: You give him the corner and the corner gives you the cone. He sweeps the torch across the turnstiles twice, finds an empty checkpoint both times, and settles back into the pattern he has walked for six months.
+Narrator: You give him the corner and the corner gives you the cone. He sweeps the flashlight across the turnstiles twice, finds an empty checkpoint both times, and settles back into the pattern he has walked for six months.
 
 Jake Morrison: Yeah. Thought so.
 
 ~ morrison_resolved = "evaded"
 #set_global:morrison_resolved:evaded
 #exit_conversation
--> DONE
+-> hub
 
 === wary_again ===
-Narrator: He is halfway along the patrol and jumpier than he was. The torch comes up fast.
+Narrator: He is halfway along the patrol and jumpier than he was. The flashlight comes up fast.
 
 Jake Morrison: Something's in here. I know something's in here.
 
@@ -184,11 +186,18 @@ Narrator: The checkpoint is empty. His radio sits on the desk with the battery o
 
 + [Move on.]
     #exit_conversation
-    -> DONE
+    -> already_dealt
 
 === down_and_out ===
-Narrator: He is face down by the turnstiles, breathing, with his badge lanyard cut. Whatever he knew about the ninth of the month is going with him to a hospital, and then to a lawyer.
+Narrator: He is face down by the turnstiles, breathing. Whatever he knew about the sixteenth of June is going with him to a hospital, and then to a lawyer.
 
 + [Leave him.]
     #exit_conversation
-    -> DONE
+    -> down_and_out
+
+// PASS 2 (lesson 21): conversations never reach DONE. A hostile Morrison
+// can't be talked to, so this only holds the story open.
+=== parked ===
++ [Leave it.]
+    #exit_conversation
+    -> parked

@@ -1,59 +1,47 @@
 # m07 "The Architect's Gambit" — Solution Guide
 
-> **Spoilers, and every secret in plaintext.** Regenerated at WP10, 2026-08-30, from the built mission.
-> The README deliberately omits these; this is the file that holds them.
+> **Spoilers, and every secret in plaintext.** Rewritten in pass 2 (2026-10-01) to match the shipped mission.
 
 ## Secrets
 
 | Secret | Value | Where the player finds it | Redundant source |
 |---|---|---|---|
-| Server-zone badge | `server_zone_badge` (the badge's `opens_lock`) | Jake Morrison's `itemsHeld`, by talking him down or by KO | badge printer, `security_checkpoint` |
-| Generator maintenance key | `generator_maintenance_key` | operations floor | lockpick in starting inventory |
+| Server-zone badge | opens `server_zone_badge` | Morrison (`morrison_server_badge`), talked round or KO drop | Contractor Badge Station, `security_checkpoint`, PIN below |
+| Badge station PIN | **0616** | Shift Handover Sheet, `operations_floor` | Morrison "has it too" (not given in dialogue) |
+| Plant key | `generator_maintenance_key` | operations floor | lockpick in starting inventory |
 | Cable vault PIN | **4703** | maintenance log, `generator_room` | Elena Rodriguez |
-| SCADA control password | **CascadeWindow19** | Elena Rodriguez | netcat C2 channel, VM flag 2 |
-| Shutdown gate | `scada_attack_host:flag_4` | VM challenge | — |
+| SCADA control password | **CascadeWindow19** | Elena Rodriguez | Listener Capture note (flag 2 reward) |
+| Cascade Control System | flag lock, no `requires` | unlocked by the flag 4 reward | — |
 
-Both secrets are ERB locals at the top of `scenario.json.erb` (`vault_pin`, `scada_password`) — change them there, not inline.
+All three codes are ERB locals at the top of `scenario.json.erb` (`vault_pin`, `scada_password`, `badge_pin`).
 
-## VM challenges — SecGen `putting_it_together`
+## VM challenges
 
-Station `scada_attack_host`, four flags, submitted at `flag_station_safetynet_relay`.
+`mission.json` points at SecGen `putting_it_together`; the scenario expects the target system to be named `scada_attack_host` (see the approval log: an m07 XML still needs publishing). Four flags, all submitted at `flag_station_safetynet_relay`; `targetFlags` use the form `flag_station_safetynet_relay:scada_attack_host-flagN`.
 
-| Flag | Challenge | Sets | Narrative payload |
+| Flag | Challenge | Reward | Narrative payload |
 |---|---|---|---|
-| 1 | Mount the misconfigured NFS export | `flag1_submitted` → `found_coordination_traffic`, `projection_revised` | The four operations run from one schedule. Also the vendor manifest that reveals the Trojan Horse understatement. |
-| 2 | Enumerate services, find the netcat C2 channel | `flag2_submitted` → `scada_password_found` | Override codes and the SCADA password |
-| 3 | Privilege escalation to root | `flag3_submitted` → `redirect_window_closed` | Control of the attack host — **and the redirect window shuts** |
-| 4 | Terminate the cascade scripts, lock out remote access | `flag4_submitted` | Unlocks `crisis_control_system` |
+| 1 | Mount the attack host's NFS export (username + flag) | `set_global flag1_submitted` | Coordination file: four operations, one schedule; the Trojan Horse manifest (`projection_revised`) |
+| 2 | Find the listener on a high port, connect with netcat (password + flag) | `give_item` Listener Capture | Operator password and the control room door password |
+| 3 | SSH in as the operator, flag in its home directory | `set_global flag3_submitted` | The host notices: `cascade_armed` (15-minute clock), `redirect_window_closed` |
+| 4 | `sudo -l`, abuse the allowed program for a root shell, root flag | `unlock_object crisis_control_system` | Job killed, remote access locked out; the console will take an abort |
 
-A flag reward carries exactly one `set_global`; the secondary payloads above hang off `eventMappings` on `agent_0x99`.
+Assumed flag order (NFS, listener, user, root) is unverified against a build; see the approval log.
 
 ## Walkthrough
 
-1. Cutscene briefing at SAFETYNET HQ. Read all three operation briefs; commit the tactical team (sets `team_assignment`); the scene then flies the player out to Portland and hands off at the checkpoint.
-2. Checkpoint: talk past, evade, or drop Jake Morrison. Take his badge, or print one.
-3. East, east into the server room (RFID).
-4. Elena Rodriguez: the SCADA password, the vault PIN, and — if asked about the vendor manifest — `projection_revised`.
-5. Optional, aim 2: south to the generator room (key or lockpick), maintenance log for the PIN, deal with Thomas Park, south to the cable vault. Collect `mole_intercept_evidence` and `tomb_gamma_dossier`.
-6. VM: flags 1 → 4. Redirect the team on the HaX hub *before* flag 3 if you intend to.
-7. North to SCADA control (password). Confront Mercer — the stance comes before the argument.
-8. Use `crisis_control_system` (flag 4). Sets `grid_saved` and `mission_complete`.
-9. Debrief, back at SAFETYNET HQ → credits → `bond_visualiser`.
+1. Briefing: read the briefs, commit the team (or later via HaX).
+2. Badge: Morrison (visitor log gives the leverage line), or ops floor handover sheet → badge station 0616.
+3. Server room: Elena (optional; revision, password, PIN). VM flags 1 and 2.
+4. Open the control room door (CascadeWindow19) and anything else you want **before** flag 3.
+5. Flag 3, then flag 4 inside the 15-minute window.
+6. Cascade Control System → printout → the Architect's sign-off → debrief → credits.
+7. Optional: generator hall (key or picks), maintenance log, vault (4703), Park, the two documents.
 
-## The delegation
+## The delegation and the redirect
 
-The player is assigned Portland and chooses where the single tactical team goes. Two operations go unanswered.
-
-- **Fracture** — voter database and disinformation. Irreversible, no immediate deaths.
-- **Trojan Horse** — TechForge signing keys. **The understated brief**: the keys reach healthcare and emergency-dispatch vendors and the fuse is far shorter than briefed, making its true toll the highest of the three.
-- **Meltdown** — 47 zero-days against 12 corporations. Deaths tonight, via hospital ransomware.
-
-The briefing projections are ENTROPY's own numbers, leaked deliberately. Discovering the understatement (Elena, or flag 1) sets `projection_revised` and opens a redirect on the HaX hub. Redirecting always resolves to Trojan Horse, costs the originally-chosen operation entirely, and stops the injection at roughly a third.
-
-The redirect window closes on `redirect_window_closed`, written by **both** the countdown timer and `flag3_submitted`.
+Unchanged in substance from the design: the briefing projections are ENTROPY's own, Trojan Horse is understated, and discovering that (Elena or flag 1) opens a redirect on the HaX hub unless the team is already on Trojan Horse. The window closes at 40 real minutes after the commit or on flag 3. Declining sets `redirect_declined`, which the debrief and credits record.
 
 ## Endings and recorded state
 
-`grid_saved`, `team_assignment`, `team_redirected`, `projection_revised`, `mercer_fate` (arrested / ko / escaped), `mercer_stance` (condemned / reasoned / silent), `mercer_told_diversion`, `elena_outcome` (turned / fled / ko), `morrison_resolved`, `park_resolved`, `found_tomb_gamma`, `found_mole_evidence`, `debrief_stance` (defended / owned / refused / hardened), plus the four `*_ko` latches. All are read by the debrief and the credits.
-
-**The twist** has two levels. With `found_mole_evidence`, HaX reads the intercept: its header predates the tasking order by 51 minutes — the mole leaked the agent, not the timing, and the gambit was an experiment in how SAFETYNET triages. Without it, the same conclusion is reached by elimination and left unexplained. Neither version is allowed to make the win worthless: 8.4 million people stayed on the grid.
+`grid_saved`, `countdown_expired`, `team_assignment`, `team_redirected`, `redirect_declined`, `projection_revised`, `mercer_fate`, `mercer_stance`, `mercer_told_diversion`, `elena_outcome`, `morrison_resolved`, `park_resolved`, `found_tomb_gamma`, `found_mole_evidence`, `debrief_stance`, and the four `*_ko` latches. All are read by the debrief and/or the credits.

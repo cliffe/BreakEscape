@@ -10,25 +10,29 @@ VAR team_assignment = ""
 VAR team_assigned = false
 
 // ================================================
-// BEAT 1 - SAFETYNET HQ, OPERATIONS ROOM
+// BEAT 1 - SECURE LINK FROM HQ. The agent is in a car on the I-5,
+// forty minutes out of Portland (PASS 2: the old draft flew the agent in
+// from HQ, hours of flight against thirty-minute windows).
 // ================================================
 
 === start ===
-Narrator: 02:41. The operations room at SAFETYNET headquarters, every desk manned, and the wall map carrying the night's traffic across three continents. Four of the pins are red. All four went red inside the same minute.
+Narrator: 02:41 Pacific. An unmarked sedan on the I-5, rain on the windshield, and the secure tablet on the passenger seat lighting up with the operations room at SAFETYNET headquarters. Behind the Director, the wall map. Four of the pins are red. All four went red inside the same minute.
 
-Director Magnus Netherton: Agent 0x00. Sit down. You are wheels-up in twenty minutes and I would rather do this in a room than over a satellite link.
+Director Magnus Netherton: Agent 0x00. Keep driving. This will not take long, and I would rather you heard it from me than read it off a screen.
 
 You: What am I looking at?
 
 Director Magnus Netherton: Four ENTROPY operations went live inside the same sixty seconds. Not four cells improvising. One schedule.
 
+Director Magnus Netherton: Three days ago you followed one fund paying six cells on one seventy-two-hour clock. Some of them had already been paid. Four of them are what you are looking at.
+
 Director Magnus Netherton: Washington. Austin. San Francisco. And a grid control facility in an industrial park outside Portland, Oregon.
 
 Narrator: The Portland pin stops blinking and goes solid.
 
-Director Magnus Netherton: Pacific Northwest Regional Grid Control. One hundred and forty-seven substations, eight point four million people across Washington, Oregon and Northern California. A script on the SCADA stack fires at twenty to five, their time, and takes the lot down in four steps.
+Director Magnus Netherton: Pacific Northwest Regional Grid Control. One hundred and forty-seven substations, eight point four million people across Washington, Oregon and Northern California. A sequence is loaded on their SCADA stack that takes the lot down in four steps.
 
-Director Magnus Netherton: The timer is local and it is hardcoded. Nobody stops it from outside that building.
+Director Magnus Netherton: It is waiting on a start signal from a host inside the building. When that host sends it, you will have minutes, not hours. Nobody stops it from outside that building.
 
 -> briefing_questions
 
@@ -39,7 +43,7 @@ Director Magnus Netherton: The timer is local and it is hardcoded. Nobody stops 
 
 === briefing_questions ===
 * [Why me? There must be teams closer.]
-    Director Magnus Netherton: There are teams closer to the other three. We have people on two other continents tonight and not one of them can be in Oregon before that script runs. You can.
+    Director Magnus Netherton: There are teams closer to the other three. We have people on two other continents tonight and not one of them can be in Oregon in time. You are forty minutes out.
     Director Magnus Netherton: This is not a selection, Agent. It's an assignment. Portland is the only target of the four where a person standing inside the building changes the outcome. So that is where you are going.
     -> briefing_questions
 * [What happens if the cascade runs?]
@@ -47,7 +51,7 @@ Director Magnus Netherton: The timer is local and it is hardcoded. Nobody stops 
     Director Magnus Netherton: Hospitals hold seventy-two hours on backup. Water treatment fails at forty-eight. It is winter, and the projection on my desk is two hundred and forty to three hundred and eighty-five dead in the first three days.
     -> briefing_questions
 * [Who's coming in with me?]
-    Director Magnus Netherton: *evenly* Nobody. You'll have Agent HaX on the wire and a lockpick set. That's the deployment.
+    Director Magnus Netherton: Nobody. You'll have Agent HaX on the wire and a lockpick set. That's the deployment.
     Director Magnus Netherton: The building is mid-evacuation, which will help you and will also mean nobody there knows who you are.
     -> briefing_questions
 * [Four operations at once. That's not a cell. That's a campaign.]
@@ -234,11 +238,13 @@ Director Magnus Netherton: A life, a vote, and the security floor under every op
 // ================================================
 
 === netherton_declines ===
-Director Magnus Netherton: *pause* You want me to make it.
+Narrator: A pause.
+
+Director Magnus Netherton: You want me to make it.
 
 You: You've been doing this twenty years. I've had four minutes.
 
-Director Magnus Netherton: And in twenty years the one thing I've learnt is that a director who picks for the agent he is about to put on an aircraft is picking for himself and calling it command.
+Director Magnus Netherton: And in twenty years the one thing I've learnt is that a director who picks for the agent he is about to send into a building is picking for himself and calling it command.
 
 Director Magnus Netherton: The handbook has eleven pages on delegation of force. Not one of them tells you which lot of people to leave.
 
@@ -256,6 +262,7 @@ Director Magnus Netherton: Say the word and their aircraft turns.
 + [Send them to Fracture. Washington.]
     #set_global:team_assignment:fracture
     #set_global:team_assigned:true
+    #complete_task:assign_tactical_team
     Director Magnus Netherton: Fracture. Confirmed.
     Narrator: The pin over Washington changes colour. The other two stay red.
     Director Magnus Netherton: They'll be on the ground in eleven minutes. Reeves won't be there, but his cluster will.
@@ -263,6 +270,7 @@ Director Magnus Netherton: Say the word and their aircraft turns.
 + [Send them to Trojan Horse. Austin.]
     #set_global:team_assignment:trojan_horse
     #set_global:team_assigned:true
+    #complete_task:assign_tactical_team
     Director Magnus Netherton: Trojan Horse. Confirmed.
     Narrator: The pin over Austin changes colour. The other two stay red.
     Director Magnus Netherton: The long game, then. I'll note in the log that you chose the one with no bodies on it.
@@ -270,6 +278,7 @@ Director Magnus Netherton: Say the word and their aircraft turns.
 + [Send them to Meltdown. San Francisco.]
     #set_global:team_assignment:meltdown
     #set_global:team_assigned:true
+    #complete_task:assign_tactical_team
     Director Magnus Netherton: Meltdown. Confirmed.
     Narrator: The pin over San Francisco changes colour. The other two stay red.
     Director Magnus Netherton: Twenty-fourth floor. If they hold it, four thousand two hundred hospitals don't get hit.
@@ -285,19 +294,19 @@ Director Magnus Netherton: Say the word and their aircraft turns.
 === handoff ===
 Director Magnus Netherton: That's the team gone. Two operations are now running with nobody in the way of them, and that is on the record as my decision as much as yours.
 
-Director Magnus Netherton: Go. Your aircraft is holding and I will pick you up on the secure channel when you land.
+Director Magnus Netherton: Go. I will pick you up on the secure channel when it matters.
 
-Narrator: The flight passes in cloud. Then a wet apron, and an unmarked saloon doing ninety on the airport road into Portland, 04:12 by the dashboard clock and raining hard enough that the wipers can't keep up.
+Narrator: Forty minutes of rain and empty interstate. Then an industrial park outside Portland, 03:24 by the dashboard clock, raining hard enough that the wipers can't keep up.
 
-Narrator: Chain-link, a lowered barrier, three storeys of poured concrete behind it. People are coming out of the front doors into the rain with coats over their heads.
+Narrator: Chain-link, a lowered barrier, three stories of poured concrete behind it. People are coming out of the front doors into the rain with coats over their heads.
 
 Director Magnus Netherton: Building's evacuating. Security checkpoint is manned and one of the guards on that shift is compromised. Assume the badge readers are logging you.
 
-Director Magnus Netherton: Twenty-eight minutes on the cascade timer. Agent HaX has your channel from here.
+Director Magnus Netherton: The sequence has not been started yet. Assume that changes the moment they notice you. Agent HaX has your channel from here.
 
 You: Understood.
 
-Director Magnus Netherton: *quietly* Eight point four million people, Agent. Go and do the part you can actually reach.
+Director Magnus Netherton: Eight point four million people, Agent. Go and do the part you can actually reach.
 
 #exit_conversation
 -> END

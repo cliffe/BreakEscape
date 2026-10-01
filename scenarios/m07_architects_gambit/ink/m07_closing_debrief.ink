@@ -1,6 +1,6 @@
 // ================================================
 // Mission 7: The Architect's Gambit
-// Closing debrief -- Director Magnus Netherton, SAFETYNET HQ, after the flight home
+// Closing debrief -- Director Magnus Netherton, secure link from SAFETYNET HQ, the same night
 //
 // Fired from global_variable_changed:mission_complete.
 //
@@ -26,6 +26,7 @@ VAR countdown_expired = false
 VAR team_assignment = ""
 VAR team_redirected = false
 VAR projection_revised = false
+VAR redirect_declined = false
 
 // People
 VAR mercer_fate = ""
@@ -56,11 +57,17 @@ VAR asked_what_now = false
 
 // ================================================
 === start ===
-#complete_task:take_the_debrief
+// PASS 2 (lesson 46): take_the_debrief now completes on the LAST line
+// (handoff), so the bond_visualiser opens after the debrief, not over it.
+// debrief_played stops a replay after a reload; a room-entry mapping on
+// agent_0x99 completes the task if the page reloads mid-debrief.
+#set_global:debrief_played:true
 
-Narrator: SAFETYNET headquarters. One flight, one debrief queue and no sleep since Portland, and the quiet room behind the operations floor has its lights down.
+// PASS 2 review minor 10: the debrief is the same night, over the secure
+// link (the text says "tonight" and "four hours ago" throughout).
+Narrator: A borrowed office at the grid site, an hour after the abort, and the secure link back to SAFETYNET headquarters. On the screen, the quiet room behind the operations floor has its lights down.
 
-Narrator: Director Magnus Netherton comes in with a tablet, in the same suit he was wearing when he put you on the aircraft.
+Narrator: Director Magnus Netherton sits down in front of the camera with a tablet, in the same suit he was wearing when he briefed you.
 
 Director Magnus Netherton: {player_name}. Sit down. This will not take long and you have earned the right to sit down for it.
 
@@ -70,16 +77,16 @@ Director Magnus Netherton: {player_name}. Sit down. This will not take long and 
 // ================================================
 === the_win ===
 
-{grid_saved:
+{grid_saved and not countdown_expired:
     Director Magnus Netherton: The cascade sequence is terminated. All twenty-three transformers held. One hundred and forty-seven substations are carrying load and the regional operator is reporting nominal.
     Director Magnus Netherton: Eight point four million people have power tonight. The projection on that desk said two hundred and forty to three hundred and eighty-five dead. That number is now zero.
     Director Magnus Netherton: I am not going to qualify that. You did the thing. It is done.
 - else:
-    Director Magnus Netherton: The sequence was stopped. Late, and not tidily, but stopped. Eight point four million people have power tonight and the projection on that desk is a piece of paper about something that did not happen.
+    Director Magnus Netherton: The sequence was stopped. Late, and not tidily, but stopped.
 }
 
 {countdown_expired:
-    Director Magnus Netherton: You went past his clock. He wanted you to notice that. The grid did not notice it at all.
+    Director Magnus Netherton: The first step ran before the abort went through. Seattle metro lost power until it did. Steps two to four never executed, and crews are bringing Seattle back substation by substation.
 }
 
 Narrator: He lets that stand for a moment. Then he turns the tablet over.
@@ -138,7 +145,7 @@ Director Magnus Netherton: You changed your mind under a countdown. Most people 
 Director Magnus Netherton: The team took the TechCore security operations centre, twenty-fourth floor, and turned it around. Emergency mitigations pushed to all twelve client networks inside the deployment window.
 Director Magnus Netherton: The hospitals first, because that is what you were buying. No ransomware. No cancelled theatre lists. Four thousand two hundred hospitals ran a normal night and nobody died in one.
 Director Magnus Netherton: Eight of the twelve targets held clean. Four took damage. A bank lost a day of transaction processing, a retailer lost payments over a weekend, two lost intellectual property that will be for sale by next month. Markets moved about three per cent and are already recovering.
-Director Magnus Netherton: Two Digital Vanguard insiders arrested inside the SOC. Ashford was not with them. Ashford is never with them.
+Director Magnus Netherton: Two Digital Vanguard insiders detained inside the SOC and handed to the police. Ashford was not with them. Ashford is never with them.
 -> revision_payoff
 
 = covered_none
@@ -157,9 +164,25 @@ Director Magnus Netherton: I will need an explanation for that in writing. Not t
     -> operations_gone_dark
 }
 
+// PASS 2: the team was already on Trojan Horse -- the revision is what they
+// were standing in, not a road not taken.
+{ projection_revised and team_assignment == "trojan_horse":
+    Director Magnus Netherton: Your field notes say you established that the Trojan Horse projection was understated. Dispatch systems on the key manifest. Nine days of dormancy, not ninety.
+    Director Magnus Netherton: The team was already there. You found out what you had chosen while they were stopping it.
+    Agent HaX: I logged it. For what it is worth, {player_name}, you found the thing that was designed not to be findable. That is the part I would keep.
+    -> operations_gone_dark
+}
+
 { projection_revised and not team_redirected:
     Director Magnus Netherton: Your field notes say you established that the Trojan Horse projection was understated. Dispatch systems on the key manifest. Nine days of dormancy, not ninety.
-    Director Magnus Netherton: Timestamped an hour and six minutes before the tactical element was committed.
+    // PASS 2: was "timestamped an hour and six minutes before the tactical
+    // element was committed", impossible -- the team is committed in the
+    // briefing, before the player is inside.
+    {redirect_declined:
+        Director Magnus Netherton: You raised it with the window still open, weighed moving the team, and held. That is on the record as a decision.
+    - else:
+        Director Magnus Netherton: The team was not moved on it.
+    }
     Agent HaX: I logged it. For what it is worth, {player_name}, you found the thing that was designed not to be findable. That is the part I would keep.
     Agent HaX: The team not moving on it is a separate sentence, and I am not going to pretend it is the same one.
     -> operations_gone_dark
@@ -167,7 +190,7 @@ Director Magnus Netherton: I will need an explanation for that in writing. Not t
 
 { team_assignment != "trojan_horse":
     Director Magnus Netherton: One further note from analysis, added an hour ago. The Trojan Horse projection you were briefed with was wrong in two places, and wrong in the direction that made it easy to put down.
-    Director Magnus Netherton: The evidence for that was in this building tonight. Two independent copies of it. Nobody read them.
+    Director Magnus Netherton: The evidence for that was in that building tonight. Two independent copies of it. Nobody read them.
 }
 
 -> operations_gone_dark
@@ -235,14 +258,14 @@ Director Magnus Netherton: They died tonight, on your clock, while you were in P
 Director Magnus Netherton: The site, then. Shorter list.
 
 {
-    - mercer_ko or mercer_fate == "ko":
+    - mercer_ko:
     Director Magnus Netherton: Dr. James Mercer went out of that control room on a stretcher and into custody at the bottom of the stairs. He is concussed and he has not said a word since he came round. Medical first, interview after.
 - mercer_fate == "arrested":
     Director Magnus Netherton: Dr. James Mercer is in custody and talking, which is more than I expected. He signed the two-hundred-and-forty-to-three-hundred-and-eighty-five projection. He read it and he signed it.
 - mercer_fate == "escaped":
     Director Magnus Netherton: Dr. James Mercer left the site before the cordon closed. We have a name, a face and no idea which country he is in. He will surface. His sort always does.
 - else:
-    Director Magnus Netherton: Blackout is unaccounted for. Nobody in the response element put eyes on him.
+    Director Magnus Netherton: Blackout was still at the master console when you left that room. By the time the police reached it, he was not.
 }
 
 {
@@ -256,11 +279,11 @@ Director Magnus Netherton: The site, then. Shorter list.
 
 { mercer_told_diversion:
     Director Magnus Netherton: And you told him he was a diversion. That the substation was never the operation and he was the noise around it.
-    Director Magnus Netherton: He is a fanatic who has just been informed he was scenery. Whatever that does to a man, it is doing it now, in a cell, in Portland.
+    Director Magnus Netherton: He is a fanatic who has just been informed he was scenery. Whatever that does to a man, it is doing it now, wherever he is.
 }
 
 {
-    - elena_ko or elena_outcome == "ko":
+    - elena_ko:
     Director Magnus Netherton: Elena Rodriguez was found unconscious in the server room. She will be fine. She is also the only person on the ENTROPY side of this who was trying to stop it, which is going to make her statement an awkward document.
 - elena_outcome == "turned":
     Director Magnus Netherton: Elena Rodriguez walked out and gave a statement without being asked twice. Six-hour blackout with a hospital carve-out was what she signed up for. She has read what she was actually part of.
@@ -268,24 +291,28 @@ Director Magnus Netherton: The site, then. Shorter list.
 - elena_outcome == "fled":
     Director Magnus Netherton: Elena Rodriguez left the site before the cordon. She took nothing and she disabled nothing on her way out, which tells me something.
 - else:
-    Director Magnus Netherton: No contact logged with the Critical Mass technician. She is in the wind with everything she knows.
+    Director Magnus Netherton: No contact logged with the Critical Mass engineer in the server hall. She is in the wind with everything she knows.
 }
 
 {
-    - morrison_ko or morrison_resolved == "ko":
-    Director Magnus Netherton: The checkpoint guard is at Providence with a head injury. Jake Morrison. Contract security, forty-one, two children, no connection to any of this beyond a badge and a bad night.
-    Director Magnus Netherton: He renewed Mercer's credentials because a man in a lanyard asked him to. He will be told that was not his fault. It will take a while to land.
+    - morrison_ko:
+    Director Magnus Netherton: The checkpoint guard is at Providence with a head injury. Jake Morrison. Contract security, forty-one, two children.
+    // PASS 2: he was paid (his own ink: "a number in my account"), so the old
+    // "no connection beyond a bad night" / "social engineering" lines contradicted him.
+    Director Magnus Netherton: He was paid to renew Mercer's credentials in June and he has been spending the money ever since. The police will want to talk to him when he can talk.
 - morrison_resolved == "talked":
-    Director Magnus Netherton: Jake Morrison is giving a full statement voluntarily and is extremely upset with himself about the credential renewal. Someone should tell him it was social engineering and not stupidity.
+    Director Magnus Netherton: Jake Morrison walked out to the muster point and waited there for the police. He is giving a full statement, including the payment for Mercer's credential renewal. He did not have to wait.
 - morrison_resolved == "evaded":
-    Director Magnus Netherton: The checkpoint guard never saw you. He is still at his post, and as far as he knows he had a quiet shift.
+    Director Magnus Netherton: The checkpoint guard is still at his post, and still on their payroll. We know his name. That will keep.
 }
 
 {
-    - park_ko or park_resolved == "ko":
-    Director Magnus Netherton: Thomas Park was recovered unconscious beside the backup transfer switch. He was ten minutes from disabling the only thing standing between this substation and a hard black start.
+    - park_ko:
+    Director Magnus Netherton: Thomas Park was recovered unconscious in the cable vault, beside the control run to the backup transfer switch. He was four minutes from disabling the only thing standing between that control centre and a hard black start.
 - park_resolved == "talked":
-    Director Magnus Netherton: Thomas Park is in custody and cooperating. He has given us two Critical Mass safehouses already.
+    // PASS 2: he walks out saying "I'm not going to help you", so he is not
+    // "cooperating" and has given nothing up.
+    Director Magnus Netherton: Thomas Park walked out of the vault and into the police cordon. He has said nothing beyond his name. He left the switch alone, which is the part that mattered.
 - park_resolved == "evaded":
     Director Magnus Netherton: Thomas Park is gone. The transfer switch is intact, which is the part that mattered, but he walked out of a building we had cordoned.
 }
@@ -323,7 +350,7 @@ Agent HaX: He was not trying to beat you tonight. He was measuring you. And you 
 -> coda_close
 
 = coda_thin
-Agent HaX: The taunts. He was calling you before the tactical element was even wheels-up, and he knew you were in Portland, and he knew there was one team and three targets he had not told anyone else about.
+Agent HaX: The taunts. He was on your handset as soon as you were on the operations floor, and he knew you were in Portland, and he knew there was one team and three targets he had not told anyone else about.
 Agent HaX: I have gone back through the tasking chain twice. There is no window in it where he could have learned any of that.
 Director Magnus Netherton: Then explain it.
 Agent HaX: I cannot, sir. That is the report.
@@ -338,7 +365,12 @@ Agent HaX: And the variable was you. There was somebody in that building who cou
     Agent HaX: "Everything the cells field has been through Gamma first. Including the people."
 }
 Director Magnus Netherton: Agent. Look at me.
-Director Magnus Netherton: Eight point four million people have power. That is not diminished by anything either of you has just said. He measured you. He did not beat you.
+{countdown_expired:
+    Director Magnus Netherton: Seattle lost power for a while, and the rest of three states never did. That is not diminished by anything either of you has just said.
+- else:
+    Director Magnus Netherton: Eight point four million people have power. That is not diminished by anything either of you has just said.
+}
+Director Magnus Netherton: He measured you. He did not beat you.
 Narrator: He says it with the flat certainty of a man reading a line he has decided to believe.
 -> debrief_hub
 
@@ -436,7 +468,7 @@ Narrator: Netherton closes the tablet cover with one hand and holds it against h
 
 Director Magnus Netherton: Above expectations, Agent. I do not say that often and I am not going to elaborate on it.
 
-Director Magnus Netherton: Report back here when your leave ends. Not to this room. Somewhere without windows.
+Director Magnus Netherton: Report to headquarters when your leave ends. Not to this room. Somewhere without windows.
 
 Agent HaX: Sir?
 
@@ -444,8 +476,16 @@ Director Magnus Netherton: Somebody told him where we were sending our agent, an
 
 Director Magnus Netherton: So we stop giving them. And we find out who has been reading.
 
-Narrator: Eight time zones west, eight point four million people are going about a day with the lights on, and none of them will ever know how close it came.
+{countdown_expired:
+    Narrator: Outside, Seattle is coming back one substation at a time. Across the rest of three states, people are asleep with the lights on, and none of them will ever know how close it came.
+- else:
+    Narrator: Outside, across three states, eight point four million people are asleep with the lights on, and none of them will ever know how close it came.
+}
 
 Narrator: Somewhere else, a man with the same figures on the same tablet is reading them with more satisfaction than he had any right to expect.
 
--> END
+// PASS 2 (lesson 46): the conclusion aim's last task completes HERE, so the
+// bond_visualiser and credits come after the debrief, not over it.
+#complete_task:take_the_debrief
+#exit_conversation
+-> DONE

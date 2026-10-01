@@ -12,6 +12,24 @@ that uses it. A name that exists in ink but not in this file is a bug.
 
 ---
 
+## PASS 2 amendments (2026-10-01) — these supersede the sections below where they differ
+
+Identifiers are unchanged except where listed. See `PASS2_IMPROVEMENTS.md` for the evidence.
+
+- **Flag targets** use the station-qualified display form `flag_station_safetynet_relay:scada_attack_host-flagN` (the reference form never matched, `game.rb:1110`).
+- **Flag meanings** follow the VM: 1 NFS export, 2 listener (operator password), 3 operator login (user flag), 4 root via sudo. Task ids `escalate_on_attack_host` (flag 3) and `terminate_cascade_scripts` (flag 4) are kept; titles changed.
+- **Flag rewards:** 1 `set_global flag1_submitted`; 2 `give_item` Listener Capture (`c2_capture`, carries CascadeWindow19); 3 `set_global flag3_submitted`; 4 `unlock_object crisis_control_system`. `flag2_submitted` / `flag4_submitted` are set by `objective_task_completed` mappings on `agent_0x99`.
+- **`crisis_control_system`** is type `pc` with sprite `scada_historian`, `lockType: flag` and **no `requires`** (one submission point per flag).
+- **`situation_board`** is type `smartscreen`, sprite `command_board`.
+- **`badge_printer`** is a PIN-locked `pc` container ("Contractor Badge Station", PIN `badge_pin` = 0616) holding `printed_contractor_badge`; the PIN is on the new `shift_handover_sheet` (operations floor). Morrison's badge has id `morrison_server_badge`.
+- **Countdown (§5 superseded):** `architect_t20_played` 10 min and `architect_t10_played` + `redirect_window_closed` 40 min after `team_assigned`; the cascade is armed by `flag3_submitted` (sets new global `cascade_armed`), and `architect_t5_played` / `architect_t1_played` / `countdown_expired` fire 10 / 14 / 15 min after that. Only the 15-minute clock is shown. `countdown_expired` now has a consequence (step one, Seattle, executes before the abort).
+- **Debrief trigger (§ on `mission_complete` superseded):** `closing_debrief` and `the_architect` live in `security_checkpoint` so their mappings register at load. The debrief opens on `minigame_completed`/`minigame_failed` after the Architect's sign-off, or on any `room_entered`, once `grid_saved` and all four `flagN_submitted` are true; latched by `start_debrief_cutscene`, replay-guarded by `debrief_played`.
+- **Tasks:** `assign_tactical_team` and `take_the_debrief` are `custom`.
+- **New globals:** `start_debrief_cutscene`, `debrief_played`, `architect_signoff_started`, `architect_signoff_done`, `flags_nag_sent`, `redirect_declined`, `cascade_armed`, `badge_pin_found`.
+- **KO reactions** key on `npc_ko:<id>`, not `global_variable_changed:<npc>_ko`.
+- **Leaving NPCs** (Morrison talked round, Elena fled, Park talked round, Mercer detained or walked out) are hidden with `setVisible:false` mappings; the ink no longer uses `#remove_npc` or Elena's `#hostile`.
+
+
 ## 1. NPCs
 
 Eight NPC blocks. `id` is the engine identifier, `displayName` is the *exact* string that must
@@ -327,13 +345,13 @@ WP2 owns the objectives/aims block and may add tasks, group them into aims and s
 
 | `taskId` | `type` | Target | KO-able NPC |
 |---|---|---|---|
-| `assign_tactical_team` | `npc_conversation` | `agent_0x99` | — |
+| `assign_tactical_team` | `custom` | (briefing commit line; HaX backstops) | — |
 | `clear_the_checkpoint` | `npc_conversation` | `jake_morrison` | ✔ `taskOnKO` |
 | `reach_operations_floor` | `enter_room` | `operations_floor` | — |
 | `breach_server_room` | `unlock_room` | `server_room` | — |
 | `question_elena` | `npc_conversation` | `elena_rodriguez` | ✔ `taskOnKO` |
-| `recover_coordination_traffic` | `submit_flags` | `["scada_attack_host:flag_1"]` | — |
-| `intercept_c2_channel` | `submit_flags` | `["scada_attack_host:flag_2"]` | — |
+| `recover_coordination_traffic` | `submit_flags` | `["flag_station_safetynet_relay:scada_attack_host-flag1"]` | — |
+| `intercept_c2_channel` | `submit_flags` | `["flag_station_safetynet_relay:scada_attack_host-flag2"]` | — |
 | `secure_generator_room` | `enter_room` | `generator_room` | — |
 | `recover_vault_pin` | `custom` | `maintenance_log` | — |
 | `neutralise_park` | `npc_conversation` | `thomas_park` | ✔ `taskOnKO` |
@@ -341,10 +359,10 @@ WP2 owns the objectives/aims block and may add tasks, group them into aims and s
 | `recover_mole_evidence` | `collect_items` | `mole_intercept_evidence`, `tomb_gamma_dossier` | — |
 | `reach_scada_control` | `enter_room` | `scada_control` | — |
 | `confront_mercer` | `npc_conversation` | `james_mercer` | ✔ `taskOnKO` |
-| `escalate_on_attack_host` | `submit_flags` | `["scada_attack_host:flag_3"]` | — |
-| `terminate_cascade_scripts` | `submit_flags` | `["scada_attack_host:flag_4"]` | — |
+| `escalate_on_attack_host` | `submit_flags` | `["flag_station_safetynet_relay:scada_attack_host-flag3"]` | — |
+| `terminate_cascade_scripts` | `submit_flags` | `["flag_station_safetynet_relay:scada_attack_host-flag4"]` | — |
 | `shut_down_the_cascade` | `unlock_object` | `crisis_control_system` | — |
-| `take_the_debrief` | `npc_conversation` | `closing_debrief` | — |
+| `take_the_debrief` | `custom` | (debrief last line; room-entry backstop) | — |
 
 Every task on a KO-able NPC needs `taskOnKO` **and** `globalVarOnKO`, or a knockout soft-locks the
 run. Aim titles must be action-first and spoiler-safe. The `missionConclusion` aim sits on
