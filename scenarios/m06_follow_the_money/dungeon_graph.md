@@ -73,8 +73,8 @@ flowchart TD
   server_room("Server Room")
   door_data_center["Data Centre<br/>PIN lock"]
   data_center("Data Centre")
-  door_elena_office["Dr. E. Volkov, CTO<br/>RFID lock"]
-  elena_office("Dr. E. Volkov, CTO")
+  door_elena_office["Dr. I. Volkova, CTO<br/>RFID lock"]
+  elena_office("Dr. I. Volkova, CTO")
   door_executive_wing["Executive<br/>RFID lock"]
   executive_wing("Executive")
   security_checkpoint("Restricted")
@@ -82,7 +82,7 @@ flowchart TD
   trading_floor("Trading Floor")
   daily_trading_report{"Daily Trading Report"}
   rfid_badge_cloner{"RFID Badge Cloner"}
-  npc_dr_elena_volkov{"Dr. Elena Volkov"}
+  npc_dr_irina_volkova{"Dr. Irina Volkova"}
   cto_access_badge{"CTO Access Badge"}
   password_dictionary_list{"Password Dictionary List"}
   lock_vm_launcher_hackme["Vm Launcher Hackme"]
@@ -126,12 +126,12 @@ flowchart TD
   trading_floor --> daily_trading_report
   trading_floor -.-> rfid_badge_cloner
   rfid_badge_cloner -.-> door_elena_office
-  trading_floor --> npc_dr_elena_volkov
-  npc_dr_elena_volkov --> cto_access_badge
+  trading_floor --> npc_dr_irina_volkova
+  npc_dr_irina_volkova --> cto_access_badge
   cto_access_badge --> door_elena_office
-  npc_dr_elena_volkov --> password_dictionary_list
+  npc_dr_irina_volkova --> password_dictionary_list
   password_dictionary_list --> lock_vm_launcher_hackme
-  npc_dr_elena_volkov --> action_
+  npc_dr_irina_volkova --> action_
   server_room --> hashchain_backend_server_terminal
   hashchain_backend_server_terminal --> lock_flag_station_financial
   server_room --> safetynet_financial_intelligence_drop
@@ -170,7 +170,7 @@ flowchart TD
   class door_server_room,door_data_center,door_elena_office,door_executive_wing,lock_vm_launcher_hackme,lock_flag_station_financial,lock_executive_access_badge,lock_architects_fund_doc,lock_executive_safe,lock_credential_reuse_available,lock_financial_database_reachable lock
   class server_room,data_center,elena_office,executive_wing,security_checkpoint,trading_floor,blockchain_lab,satoshi_office,reception_lobby room
   class it_new_starter_checklist,daily_trading_report,rfid_badge_cloner,password_dictionary_list,hashchain_backend_server_terminal,safetynet_financial_intelligence_drop,rack_inventory_sheet,the_architect_s_fund_allocation,cold_storage_procedure,entropy_transaction_network_analysis,cryptography_research_notes,email_from_the_architect,framed_press_clipping,executive_safe item
-  class npc_dr_elena_volkov,cto_access_badge,executive_access_badge,npc_satoshi_nakamoto_ii key
+  class npc_dr_irina_volkova,cto_access_badge,executive_access_badge,npc_satoshi_nakamoto_ii key
   class action_ action
   class vmch_submit_flag1,vmch_submit_flag2,vmch_submit_flag3,vmch_submit_flag4 vm
   class vmfl_submit_flag1,vmfl_submit_flag2,vmfl_submit_flag3,vmfl_submit_flag4 flag
@@ -247,8 +247,8 @@ flowchart TD
   server_room("Server Room")
   door_data_center["Data Centre<br/>PIN lock"]
   data_center("Data Centre")
-  door_elena_office["Dr. E. Volkov, CTO<br/>RFID lock"]
-  elena_office("Dr. E. Volkov, CTO")
+  door_elena_office["Dr. I. Volkova, CTO<br/>RFID lock"]
+  elena_office("Dr. I. Volkova, CTO")
   door_executive_wing["Executive<br/>RFID lock"]
   executive_wing("Executive")
   security_checkpoint("Restricted")
@@ -256,7 +256,7 @@ flowchart TD
   trading_floor("Trading Floor")
   daily_trading_report{"Daily Trading Report"}
   rfid_badge_cloner{"RFID Badge Cloner"}
-  npc_dr_elena_volkov{"Dr. Elena Volkov"}
+  npc_dr_irina_volkova{"Dr. Irina Volkova"}
   cto_access_badge{"CTO Access Badge"}
   password_dictionary_list{"Password Dictionary List"}
   lock_vm_launcher_hackme["Vm Launcher Hackme"]
@@ -306,12 +306,12 @@ flowchart TD
   trading_floor --> daily_trading_report
   trading_floor -.-> rfid_badge_cloner
   rfid_badge_cloner -.-> door_elena_office
-  trading_floor --> npc_dr_elena_volkov
-  npc_dr_elena_volkov --> cto_access_badge
+  trading_floor --> npc_dr_irina_volkova
+  npc_dr_irina_volkova --> cto_access_badge
   cto_access_badge --> door_elena_office
-  npc_dr_elena_volkov --> password_dictionary_list
+  npc_dr_irina_volkova --> password_dictionary_list
   password_dictionary_list --> lock_vm_launcher_hackme
-  npc_dr_elena_volkov --> action_
+  npc_dr_irina_volkova --> action_
   server_room --> hashchain_backend_server_terminal
   hashchain_backend_server_terminal --> lock_flag_station_financial
   server_room --> safetynet_financial_intelligence_drop
@@ -371,7 +371,7 @@ flowchart TD
   class door_server_room,door_data_center,door_elena_office,door_executive_wing,lock_vm_launcher_hackme,lock_flag_station_financial,lock_executive_access_badge,lock_architects_fund_doc,lock_executive_safe,lock_credential_reuse_available,lock_financial_database_reachable lock
   class server_room,data_center,elena_office,executive_wing,security_checkpoint,trading_floor,blockchain_lab,satoshi_office,reception_lobby room
   class it_new_starter_checklist,daily_trading_report,rfid_badge_cloner,password_dictionary_list,hashchain_backend_server_terminal,safetynet_financial_intelligence_drop,rack_inventory_sheet,the_architect_s_fund_allocation,cold_storage_procedure,entropy_transaction_network_analysis,cryptography_research_notes,email_from_the_architect,framed_press_clipping,executive_safe item
-  class npc_dr_elena_volkov,cto_access_badge,executive_access_badge,npc_satoshi_nakamoto_ii key
+  class npc_dr_irina_volkova,cto_access_badge,executive_access_badge,npc_satoshi_nakamoto_ii key
   class action_ action
   class vmch_submit_flag1,vmch_submit_flag2,vmch_submit_flag3,vmch_submit_flag4 vm
   class vmfl_submit_flag1,vmfl_submit_flag2,vmfl_submit_flag3,vmfl_submit_flag4 flag
@@ -413,7 +413,7 @@ flowchart TD
   server_room["Server Room<br/>(locked)"]
   data_center["Data Centre<br/>(locked)"]
   blockchain_lab("Blockchain Analysis")
-  elena_office["Dr. E. Volkov, CTO<br/>(locked)"]
+  elena_office["Dr. I. Volkova, CTO<br/>(locked)"]
   executive_wing["Executive<br/>(locked)"]
   satoshi_office("CEO")
 
@@ -462,7 +462,7 @@ flowchart TD
   server_room["Server Room<br/>(locked)"]
   data_center["Data Centre<br/>(locked)"]
   blockchain_lab("Blockchain Analysis")
-  elena_office["Dr. E. Volkov, CTO<br/>(locked)"]
+  elena_office["Dr. I. Volkova, CTO<br/>(locked)"]
   executive_wing["Executive<br/>(locked)"]
   satoshi_office("CEO")
   rc_hashchain_brochure_1{"HashChain Exchange Brochure"}
@@ -481,7 +481,7 @@ flowchart TD
   rc_trading_workstation_14{"Trading Workstation"}
   rc_daily_trading_report_15{"Daily Trading Report"}
   rc_rfid_cloner_16{"RFID Badge Cloner"}
-  rc_npc_dr_elena_volkov_17("Dr. Elena Volkov")
+  rc_npc_dr_irina_volkova_17("Dr. Irina Volkova")
   rc_m06_cto_badge_18{"CTO Access Badge"}
   rc_m06_password_dictionary_19{"Password Dictionary List"}
   rc_npc_dani_okonkwo_20("Dani Okonkwo")
@@ -499,7 +499,7 @@ flowchart TD
   rc_blockchain_evidence_32{"ENTROPY Transaction Network Analysis"}
   rc_mixing_analysis_33{"Privacy Coin Mixing Analysis"}
   rc_npc_priya_raghavan_34("Priya Raghavan")
-  rc_elena_workstation_35{"Elena's Secure Workstation"}
+  rc_elena_workstation_35{"Irina's Secure Workstation"}
   rc_elena_research_notes_36{"Cryptography Research Notes"}
   rc_architect_email_37{"Email: From The Architect"}
   rc_executive_wing_plaque_38{"Framed Press Clipping"}
@@ -532,9 +532,9 @@ flowchart TD
   trading_floor --> rc_trading_workstation_14
   trading_floor --> rc_daily_trading_report_15
   trading_floor --> rc_rfid_cloner_16
-  trading_floor --> rc_npc_dr_elena_volkov_17
-  rc_npc_dr_elena_volkov_17 --> rc_m06_cto_badge_18
-  rc_npc_dr_elena_volkov_17 --> rc_m06_password_dictionary_19
+  trading_floor --> rc_npc_dr_irina_volkova_17
+  rc_npc_dr_irina_volkova_17 --> rc_m06_cto_badge_18
+  rc_npc_dr_irina_volkova_17 --> rc_m06_password_dictionary_19
   trading_floor --> rc_npc_dani_okonkwo_20
   server_room --> rc_vm_launcher_hackme_21
   server_room --> rc_flag_station_financial_22
@@ -562,7 +562,7 @@ flowchart TD
   class reception_lobby,security_checkpoint,trading_floor,blockchain_lab,satoshi_office room
   class server_room,data_center,elena_office,executive_wing lock
   class rc_hashchain_brochure_1,rc_m06_cracking_field_guide_6,rc_m06_privesc_field_guide_7,rc_m06_recon_field_guide_8,rc_m06_rfid_field_guide_9,rc_relayed_password_dictionary_10,rc_relayed_cto_badge_11,rc_it_onboarding_checklist_13,rc_trading_workstation_14,rc_daily_trading_report_15,rc_rfid_cloner_16,rc_m06_cto_badge_18,rc_m06_password_dictionary_19,rc_vm_launcher_hackme_21,rc_flag_station_financial_22,rc_server_rack_labels_23,rc_settlement_log_25,rc_mixer_config_26,rc_cold_storage_index_27,rc_architects_fund_doc_28,rc_wallet_recovery_keys_29,rc_executive_access_badge_30,rc_blockchain_workstation_31,rc_blockchain_evidence_32,rc_mixing_analysis_33,rc_elena_workstation_35,rc_elena_research_notes_36,rc_architect_email_37,rc_executive_wing_plaque_38,rc_crypto_anarchist_manifesto_39,rc_architect_identity_file_41 item
-  class rc_npc_agent_hax_2,rc_npc_director_magnus_netherton_3,rc_npc_agent_0x47_nightshade_4,rc_npc_agent_hax_5,rc_npc_agent_hax_12,rc_npc_dr_elena_volkov_17,rc_npc_dani_okonkwo_20,rc_npc_priya_raghavan_34,rc_npc_satoshi_nakamoto_ii_42 npc
+  class rc_npc_agent_hax_2,rc_npc_director_magnus_netherton_3,rc_npc_agent_0x47_nightshade_4,rc_npc_agent_hax_5,rc_npc_agent_hax_12,rc_npc_dr_irina_volkova_17,rc_npc_dani_okonkwo_20,rc_npc_priya_raghavan_34,rc_npc_satoshi_nakamoto_ii_42 npc
   class rc_transaction_server_24,rc_executive_safe_40 container
   class node_start start
 ```

@@ -79,7 +79,7 @@ Agent HaX: This is a financial investigation. Follow the money, map the network,
     -> support_hub
 
 === initial_guidance ===
-Agent HaX: Priority one: Build rapport with Elena Volkov, the CTO. She's your way in, and maybe more than that.
+Agent HaX: Priority one: Build rapport with Irina Volkova, the CTO. She's your way in, and maybe more than that.
 
 Agent HaX: Priority two: Access the backend servers. That's where the financial records are.
 
@@ -100,13 +100,13 @@ Agent HaX: What do you need help with?
     -> password_help
 + {not blockchain_hint_given} [Blockchain analysis tips]
     -> blockchain_help
-+ {not elena_guidance_given} [Elena Volkov recruitment strategy]
++ {not elena_guidance_given} [Irina Volkova recruitment strategy]
     -> elena_guidance
 + [Got any general advice?]
     -> general_advice
 
 // Story beats -- reachable once the player has actually hit them
-+ {found_password_lists and not reacted_password_lists} [I've got Volkov's wordlist. What do I do with it?]
++ {found_password_lists and not reacted_password_lists} [I've got Volkova's wordlist. What do I do with it?]
     ~ reacted_password_lists = true
     -> on_password_lists_found
 + {flag1_submitted and not reacted_first_server} [First server is cracked. What now?]
@@ -151,13 +151,13 @@ Agent HaX: What do you need help with?
 
 Agent HaX: Server passwords at crypto exchanges follow patterns. Think crypto-themed terms plus years.
 
-Agent HaX: Think "bitcoin" or "satoshi" with a year bolted on. Elena keeps an audit list of the exact words her own people pick.
+Agent HaX: Think "bitcoin" or "satoshi" with a year bolted on. Irina keeps an audit list of the exact words her own people pick.
 
 Agent HaX: Once you crack the first server, look for credential reuse. Admins get lazy with multiple systems.
 
 + [What tools should I use?]
     Agent HaX: Your VM environment has Hydra for brute forcing and John the Ripper for hash cracking.
-    Agent HaX: For the backend, John's default wordlist is enough. Elena's list is for the doors.
+    Agent HaX: For the backend, John's default wordlist is enough. Irina's list is for the doors.
     -> support_hub
 + [Got it, thanks]
     -> support_hub
@@ -183,13 +183,13 @@ Agent HaX: Key targets: the ransomware wallet and the TalentStack wallet. They s
     -> support_hub
 
 // ================================================
-// ELENA VOLKOV GUIDANCE
+// IRINA VOLKOVA GUIDANCE
 // ================================================
 
 === elena_guidance ===
 ~ elena_guidance_given = true
 
-Agent HaX: Elena is brilliant but conflicted. She built this infrastructure for "financial freedom."
+Agent HaX: Irina is brilliant but conflicted. She built this infrastructure for "financial freedom."
 
 Agent HaX: Now it's funding ransomware, espionage, and attacks. Our psych profile says she's morally troubled.
 
@@ -221,7 +221,7 @@ Agent HaX: But try turning her first. A cryptographer of her calibre is worth th
 === general_advice ===
 Agent HaX: Remember: Most employees at HashChain think they work at a legitimate exchange.
 
-Agent HaX: Elena and Satoshi know about ENTROPY. The traders and analysts are likely innocent.
+Agent HaX: Irina and Satoshi know about ENTROPY. The traders and analysts are likely innocent.
 
 + [What about Satoshi Nakamoto II?]
     -> satoshi_discussion
@@ -253,7 +253,7 @@ Agent HaX: If we find it, we can map the entire financial network and potentiall
 === on_password_lists_found ===
 #speaker:agent_0x99
 
-Agent HaX: I see you obtained Elena's password dictionary. Smart.
+Agent HaX: I see you obtained Irina's password dictionary. Smart.
 
 Agent HaX: That list is what people here pick for doors. Put it next to the house convention and the server room opens.
 
@@ -400,7 +400,7 @@ Agent HaX: We now understand ENTROPY's entire funding infrastructure.
 
 Agent HaX: Satoshi's wing is on an executive badge. If you haven't got one yet, the data centre is where they get left.
 
-Agent HaX: And {player_name}, whatever you decide about Elena, make it count. She's either the best source we could ask for or a defendant.
+Agent HaX: And {player_name}, whatever you decide about Irina, make it count. She's either the best source we could ask for or a defendant.
 
 + [What about the asset seizure choice?]
     -> final_choice_reminder
@@ -438,7 +438,7 @@ Agent HaX: Either choice has value. I trust your judgement.
 #set_variable:elena_ko=true
 #set_variable:elena_fate_decided=true
 #complete_task:meet_elena
-Agent HaX: Volkov's on the floor. Well. That's one way to settle it.
+Agent HaX: Volkova's on the floor. Well. That's one way to settle it.
 Agent HaX: She was the best cryptographer ENTROPY had and she was halfway to walking. We'll log it as neutralised on site.
 Agent HaX: I've pulled her wordlist and her office badge off her kit and pushed copies to yours.
 {assets_decided and flag1_submitted and flag2_submitted and flag3_submitted and flag4_submitted:
@@ -508,7 +508,7 @@ Agent HaX: Which leaves the wallet to you. $12.8 million, ready to move. What do
 #give_item:lab-workstation:m06_cracking_field_guide
 Agent HaX: Password cracking guide sent.
 
-Agent HaX: Confirm the service is actually listening, point a focused wordlist at one sensible username, and read the failures as carefully as the successes. Elena's audit list is better than anything generic you could download.
+Agent HaX: Confirm the service is actually listening, point a focused wordlist at one sensible username, and read the failures as carefully as the successes. Irina's audit list is better than anything generic you could download.
 
 + [On it.]
     Agent HaX: Start narrow. Widen only when narrow fails.

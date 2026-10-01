@@ -1,6 +1,6 @@
 # m08 The Mole — Pass 2 improvements
 
-> This is the m02-standard pass. Sources: `scenario.json.erb`, the twelve `.ink` files, the engine (`public/`, `app/`), m07's debrief and PASS2 notes, the m02–m06 Nightshade seed lines, the universe bible, and the SecGen XML (read-only). Nothing has been committed and no browser playtest has been run. ALIGNMENT_PLAN, README, SOLUTION_GUIDE and DEVELOPMENT_STATUS were treated as untrusted. `CONTRACT.md` now ends with a "PASS 2 amendments" section that supersedes them where they differ.
+> This is the m02-standard pass. Sources: `scenario.json.erb`, the twelve `.ink` files, the engine (`public/`, `app/`), m07's debrief and PASS2 notes, the m02–m06 Nightshade seed lines, the universe bible, and the SecGen XML (read-only). Nothing has been committed and no browser playtest has been run. The old ALIGNMENT_PLAN, README, SOLUTION_GUIDE and DEVELOPMENT_STATUS were treated as untrusted and have since been deleted. `CONTRACT.md` ends with a "PASS 2 amendments" section; the design rationale is kept in "Design rationale" below.
 
 ## Browser playtest round (games 1181–1183, `tools/playtest/m08-pass2-report.md`) — fixes
 
@@ -203,7 +203,7 @@ The mission validated with warnings only, but no order of play could finish it. 
 
 ## Continuity
 
-- **"Director Cross" was rename residue.** ALIGNMENT_PLAN:333 records "Cross → Netherton" as applied, and the bible names Netherton. The residue was in the opening (twice), the psych eval ("REDACTED BY DIRECTOR CROSS"), HaX ×2 ("her keycard", "her service number"), the analyst, and the aim description ("she"). All are fixed to Netherton/he. The puzzle-graph id `cross_buried_the_warning` became `netherton_buried_the_warning`.
+- **"Director Cross" was rename residue.** The retired ALIGNMENT_PLAN recorded "Cross → Netherton" as applied, and the bible names Netherton. The residue was in the opening (twice), the psych eval ("REDACTED BY DIRECTOR CROSS"), HaX ×2 ("her keycard", "her service number"), the analyst, and the aim description ("she"). All are fixed to Netherton/he. The puzzle-graph id `cross_buried_the_warning` became `netherton_buried_the_warning`.
 - "Nine days ago": compatible with m07's 72-hour leave. Netherton's "put you on an aircraft to Oregon" now reads "sent you to Portland". m07's briefing is a secure link to the agent's car near Portland.
 - "Two of ours are dead": kept. It is canon in the bible (`insider_threat_initiative.md:77`), but m07's debrief never says it (logged).
 - The 48-hour plan access vs m07's 51-minute intercept: compatible (access vs send). Not changed.
@@ -233,8 +233,8 @@ The mission validated with warnings only, but no order of play could finish it. 
 
 - **The lockpick in the start inventory.** It makes the safe chain optional. Removing a start item is a design call.
 - **The SecGen XML** (read-only): flag order and a phantom fifth flag are logged.
-- **The evaluator's name.** Renamed to Dr S. Okafor in review round 2 (it collided with m05's Dr Sarah Chen). The bible's Insider Threat entry still says "Dr Chen"; logged.
-- README / SOLUTION_GUIDE / DEVELOPMENT_STATUS / ALIGNMENT_PLAN still describe the terminal, the break-room debrief and the free badge printer. CONTRACT amendments and this file supersede them. Not deleted (deleting files needs approval).
+- **The evaluator's name.** Renamed to Dr S. Okafor in review round 2 (it collided with m05's Dr Sarah Chen). The bible's Insider Threat entry now says Dr S. Okafor too.
+- README / SOLUTION_GUIDE / DEVELOPMENT_STATUS / ALIGNMENT_PLAN described the terminal, the break-room debrief and the free badge printer. Deleted after approval; `TESTING_WALKTHROUGH.md` is the current walkthrough.
 - Em dashes ("--") in long-standing lines were trimmed only where a line was being edited anyway.
 
 ## Unverified (needs a browser playtest)
@@ -256,3 +256,11 @@ m08 grants **investigating your own side**:
 - light CyberChef decoding of an insider's own wrapping.
 
 It also takes away the trusted briefing: the colleague who taught the player the tells is the mole. m09 should make the player feel the loss of a trusted inside source and of the database SAFETYNET's defence was built on. Every weakness is now in ENTROPY's hands at Tomb Gamma. If the player chose triple agent, Nightshade is an asset whose word can't be taken at face value.
+
+## Design rationale (kept from the retired ALIGNMENT_PLAN)
+
+- **The traitor.** Agent 0x47 "Nightshade", a placed officer of ENTROPY's Insider Threat Initiative, recruited during training alongside 0x00. Nightshade is not in the bible beyond the Initiative's entry; the character lives in `season_1_arc.md` and the m02-m07 seed lines.
+- **Stakes and tone.** Hard-canon stakes: two SAFETYNET agents are dead because of the m07 leak. Nightshade's "entropy is inevitable" is argued and explicitly rejected, never endorsed. The `debrief_stance` choice converges; Nightshade's actions are condemned whatever the player says.
+- **VM.** SecGen `such_a_git` (GitList 0.4.0 argument-injection RCE, stashed credentials, home-directory flag, sudo apt-get, root). The SecGen system name is `web_server`; flag order against a real build is still unverified.
+- **m07 hand-off.** m08 opens on `found_mole_evidence` ("the leak was the agent"). The old `@mission_7_choice` ERB is gone; m08 reads m07's `team_assignment` (`fracture`, `trojan_horse`, `meltdown`).
+- **Still open:** whether `team_assignment` persists as a campaign-level global (also open in m07); giving the Insider Threat Initiative / "Deep State" naming a structured-bible home; arc principle 5 ("no wrong choices") sits awkwardly against costing the triple-agent fate heavily.

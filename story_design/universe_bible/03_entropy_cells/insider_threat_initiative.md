@@ -73,7 +73,7 @@
 ### **Agent 0x47 "Nightshade"** — the SAFETYNET mole (Mission 8)
 - **Cover identity:** Trusted SAFETYNET operations specialist and cryptographic analyst, maximum clearance, mission-planning access. Trained in the same cohort as Agent 0x00. Impeccable service record — *no marks on his file at all*, which is precisely what should have worried his director.
 - **Recruitment:** Ideological, during SAFETYNET training ~15 years before Mission 8. Not bought — convinced. The Initiative targets the disillusioned young idealist and waits; Nightshade was placed and left dormant for a decade and a half. Compensation: none. Belief was the payment.
-- **Philosophy:** Accelerationist. "Order is a candle in a hurricane." Genuinely believes entropy is inevitable and that shielding people from collapse only makes the eventual collapse worse. Flagged a year before M8 by SAFETYNET psychologist **Dr Chen** ("ideological drift"; see `04_characters/dr_chen.md`) — a warning Director Netherton sealed and ignored.
+- **Philosophy:** Accelerationist. "Order is a candle in a hurricane." Genuinely believes entropy is inevitable and that shielding people from collapse only makes the eventual collapse worse. Flagged a year before M8 by SAFETYNET psychologist **Dr S. Okafor** ("ideological drift") — a warning Director Netherton sealed and ignored.
 - **What he did (Mission 7 → 8):** Leaked SAFETYNET's Mission 7 deployment — team assignments, timing, and **the identity of the on-the-ground agent** — before the tasking order was even issued. Two field agents died at the crises the team could not reach. The four M7 attacks were cover: the real prize was the **exfiltration of SAFETYNET's Global Threat Database** (every catalogued vulnerability), which Nightshade enabled through a door he left open. He knew the casualty trade and made it with his eyes open.
 - **Opsec failure (how he's caught):** Credentials committed into SAFETYNET's internal GitList repository and never scrubbed; access logs placing his account on the mission plan 48 hours before M7; encrypted correspondence (`nightshade_deep_state` ↔ `architect@entropy.onion`) left on a home directory he could have wiped years earlier — arguably a subconscious wish to be found by someone who'd understand it.
 - **Personality:** Calm to the point of eeriness — the still pond in a frightened building. Warm, articulate, unrepentant. Argues his case like a man who has rehearsed it alone for years; the mission presents the argument and **rejects** it.
@@ -353,7 +353,7 @@ The Insider Threat Initiative's most insidious operation involves systematic inf
 **Educational Focus:** Insider-threat detection, behavioural analysis, audit-log correlation, version-control secret leakage (GitList CVE-2018-1000533 / arg-injection RCE), credential-in-history, sudo privilege escalation.
 **Difficulty:** Intermediate (Tier 2). Nightshade has a flawless record and maximum access; two innocent suspects (Cipher, Phantom) are genuine red herrings.
 **Twist:** The Mission 7 attacks were cover — ENTROPY's real prize was the exfiltration of SAFETYNET's **Global Threat Database** (every catalogued vulnerability worldwide), which the mole enabled. Nightshade gives up the Architect's workshop location (**Tomb Gamma**, Montana), setting up M9/M10.
-**Reference:** `scenarios/m08_the_mole/` (CONTRACT.md, SOLUTION_GUIDE.md).
+**Reference:** `scenarios/m08_the_mole/` (CONTRACT.md, TESTING_WALKTHROUGH.md).
 
 ### **"Recruitment Drive"** (Controlled)
 **Scenario Type:** Corporate Infiltration

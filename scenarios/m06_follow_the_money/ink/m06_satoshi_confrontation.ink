@@ -1,7 +1,7 @@
 // ===========================================
 // Mission 6: Satoshi Nakamoto II Confrontation
 // Final showdown with Crypto Anarchists leader
-// Critical choices: Asset seizure/monitoring, Elena recruitment
+// Critical choices: Asset seizure/monitoring, Irina recruitment
 // ===========================================
 
 VAR confrontation_started = false
@@ -178,10 +178,10 @@ Satoshi Nakamoto II: *nods approvingly* You understand the distinction. Good.
 Satoshi Nakamoto II: Financial privacy is legitimate. But you're right that ENTROPY corrupted the idea.
 
 {elena_recruited:
-    Satoshi Nakamoto II: Elena understood that too. That's why she betrayed us, isn't it?
+    Satoshi Nakamoto II: Irina understood that too. That's why she betrayed us, isn't it?
     -> elena_betrayal_reaction
 - else:
-    Satoshi Nakamoto II: At least, Elena thinks so. She's been having... moral difficulties.
+    Satoshi Nakamoto II: At least, Irina thinks so. She's been having... moral difficulties.
     -> elena_conflict
 }
 
@@ -210,7 +210,7 @@ Satoshi Nakamoto II: So let's discuss the practical matter: You've discovered ou
 -> choice_presentation
 
 // ===========================================
-// ELENA REACTIONS
+// IRINA REACTIONS
 // ===========================================
 
 === elena_betrayal_reaction ===
@@ -466,12 +466,12 @@ Satoshi Nakamoto II: I'll be convicted, of course. They'll want to make an examp
 }
 
 {elena_recruited:
-    Satoshi Nakamoto II: Elena's cooperation will hurt us short-term. Her expertise was valuable.
+    Satoshi Nakamoto II: Irina's cooperation will hurt us short-term. Her expertise was valuable.
     Satoshi Nakamoto II: But even she couldn't stop the movement. Crypto anarchism is bigger than any individual.
 }
 
 {elena_arrested:
-    Satoshi Nakamoto II: And Elena in handcuffs as well. Whatever she said to you at the end, she built all of this with me.
+    Satoshi Nakamoto II: And Irina in handcuffs as well. Whatever she said to you at the end, she built all of this with me.
 }
 
 Satoshi Nakamoto II: This isn't over, {player_name}. ENTROPY is decentralised. The Architect will adapt.

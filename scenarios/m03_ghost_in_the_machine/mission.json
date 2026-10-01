@@ -2,7 +2,7 @@
   "display_name": "Ghost in the Machine",
   "description": "Infiltrate Zero Day Syndicate under the guise of a security researcher recruit. Clone Victoria Sterling's RFID keycard, exploit vulnerable training network services, and uncover evidence linking Zero Day to the St. Catherine's Hospital ransomware attack. Your investigation reveals The Architect's Phase 2 plans targeting critical infrastructure.",
   "difficulty_level": 2,
-  "secgen_scenario": "ghost_in_machine_vm_network",
+  "secgen_scenario": "m03_ghost_in_the_machine",
   "collection": "season_1",
   "cybok": [
     {

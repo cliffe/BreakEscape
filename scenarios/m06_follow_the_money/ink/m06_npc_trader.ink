@@ -30,7 +30,7 @@ VAR player_name = "Agent 0x00"
     Dani Okonkwo: Don't worry, we're legit. Mostly. *grins*
 
     + [Mostly? That's an interesting qualifier.]
-        Dani Okonkwo: *laughs* I'm kidding. Everything's above board. Elena makes sure of that.
+        Dani Okonkwo: *laughs* I'm kidding. Everything's above board. Irina makes sure of that.
         -> hub
 
     + [It's a standard audit. Nothing to worry about, if everything's compliant.]
@@ -72,7 +72,7 @@ Dani Okonkwo: High volume, fast transactions, low fees. Competitive market.
 + {not topic_monero} [Why is so much of this in Monero?]
     -> monero_discussion
 
-+ {not topic_elena} [What's Dr. Volkov like to work for?]
++ {not topic_elena} [What's Dr. Volkova like to work for?]
     -> elena_discussion
 
 + [That's all, thanks]
@@ -91,7 +91,7 @@ Dani Okonkwo: High volume, fast transactions, low fees. Competitive market.
 
 Dani Okonkwo: We're doing like $800-900 million USD equivalent per day.
 
-Dani Okonkwo: Not bad for a mid-size exchange. Elena's infrastructure is solid.
+Dani Okonkwo: Not bad for a mid-size exchange. Irina's infrastructure is solid.
 
 Dani Okonkwo: Mostly Bitcoin, Ethereum, but the Monero volume has been crazy lately.
 
@@ -118,7 +118,7 @@ Dani Okonkwo: Classic mixing pattern. Totally legal, but... yeah.
 === reporting_discussion ===
 #speaker:trader
 
-Dani Okonkwo: Oh yeah, we flag everything. Elena runs analysis, files SARs when needed.
+Dani Okonkwo: Oh yeah, we flag everything. Irina runs analysis, files SARs when needed.
 
 Dani Okonkwo: We're compliant. Just... we're also privacy-focused. That's our brand.
 
@@ -198,7 +198,7 @@ Dani Okonkwo: Makes it perfect for privacy. Also perfect for money laundering, I
 
 Dani Okonkwo: *uncomfortable* I mean... I don't ask questions. I just execute trades.
 
-Dani Okonkwo: Elena and Satoshi handle compliance. I'm just the guy watching charts.
+Dani Okonkwo: Irina and Satoshi handle compliance. I'm just the guy watching charts.
 
 + [You must have suspicions]
     -> trader_suspicions
@@ -215,7 +215,7 @@ Dani Okonkwo: *lowers voice* Between you and me? Some of the transaction pattern
 
 Dani Okonkwo: Like, coordinated. Multiple big wallets mixing at the same time, same amounts, same destination patterns.
 
-Dani Okonkwo: I put the wallet names in the daily report and flagged it to Elena. It's on the desk. One of them has "ENTROPY" right there in the address. She said she's investigating.
+Dani Okonkwo: I put the wallet names in the daily report and flagged it to Irina. It's on the desk. One of them has "ENTROPY" right there in the address. She said she's investigating.
 
 Dani Okonkwo: But honestly? I just want to keep my job and not think about it too hard.
 
@@ -235,14 +235,14 @@ Dani Okonkwo: Perfectly legal mixing service. We're transparent about it.
 -> hub
 
 // ===========================================
-// ELENA DISCUSSION
+// IRINA DISCUSSION
 // ===========================================
 
 === elena_discussion ===
 #speaker:trader
 ~ topic_elena = true
 
-Dani Okonkwo: Elena's brilliant. Like, PhD in cryptography brilliant.
+Dani Okonkwo: Irina's brilliant. Like, PhD in cryptography brilliant.
 
 Dani Okonkwo: She designed all our privacy protocols. Zero-knowledge proofs, homomorphic encryption...
 

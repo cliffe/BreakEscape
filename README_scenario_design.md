@@ -1488,6 +1488,64 @@ The canonical reference scenario is `scenarios/m01_first_contact/scenario.json.e
 
 ---
 
+## Authoring Rules
+
+These are the mistakes that most often leave a mission unfinishable or silently broken. Each rule has one line of reason. The validator does not catch all of them yet.
+
+### Positions, objects and items
+
+- **NPC `position` is in tiles, relative to the room.** The engine does not clamp it, so `{x: 400, y: 300}` puts the NPC hundreds of tiles outside a 10x10 room and out of reach. Check every visible NPC and every patrol waypoint against the room template. Hidden cutscene and phone NPCs conventionally use 500,500.
+- **Objects hold items in `contents`, never `itemsHeld`.** `itemsHeld` is the NPC inventory field. An object that uses it opens empty and its unlock task never completes.
+- **Patrols use `patrol.waypoints`.** `patrol.route` is only for multi-room `{room, waypoints}` segments.
+- **Pin objects that have no template slot.** Without a position they land on a random spot, sometimes in a doorway.
+- **Give required items a fallback if an NPC carries them.** An NPC in a room loaded after the start has no sprite at KO time, so its `itemsHeld` never drops. Hand the item from a HaX `#give_item` on `npc_ko:<id>`, and make that handler hand the item itself, not just complete the task.
+- **Notes cannot be flag rewards.** A note given by a flag reward never reaches the inventory or the notepad. Give the note from an NPC `#give_item` or place it in a container.
+
+### Flags and tasks
+
+- **`submit_flags` targets are station-qualified.** Use `<station>:<vmid>-flagN` (for example `flag_station_dropsite:bms_jump_server-flag1`). The `vm:flag_1` reference form never matches, so the task never completes.
+- **Every `collect_items` task needs `targetCount`.** Without it the count check compares against `undefined` and never passes.
+- **Let collect tasks complete themselves.** Do not call `completeTask` on one from a mapping. The server rejects it if the pickup has not landed yet, and the real pickup is then ignored.
+- **Tasks in later aims ship `status: "active"`.** `unlockAim` only activates the first task of an aim.
+- **Do not put a task that can finish early into a late aim.** A locked aim reveals itself when any of its tasks completes.
+- **One submission point per flag.** An object with `lockType: flag` and its own `requires` opens a second submission UI and strands the drop-site task. Use a flag reward `unlock_object` instead.
+- **The `missionConclusion` aim's last task completes at the end of the debrief.** The conclusion screen opens the moment that task completes, so a task finished on a story decision puts the credits over the debrief. End the aim with a debrief task, completed on the debrief's last line.
+- **Put `#complete_task` near the top of a first-meeting knot.** A player who closes the conversation early would otherwise strand the task. The same goes for conclusion tasks.
+
+### Event mappings
+
+- **`&&` is the only operator in an eventMapping `condition`.** `||` and parentheses always evaluate false, so the handler is silently dead. Write one mapping per alternative and guard duplicates with a global.
+- **Use `npc_ko:<id>` to react to a KO.** `globalVarOnKO` sets its global without emitting `global_variable_changed`, so a mapping on that global never fires. Use a dedicated `<npc>_ko` global, not a story global another outcome must exclude.
+- **Scenes opened by `npc_ko:<id>` need `disableClose: true`.** A KO'd NPC cannot be talked to again and the event does not re-fire.
+- **An NPC's mappings register only after its room loads.** A `setVisible` on an event that fires earlier is lost. Reveal on `room_entered:<the NPC's own room>`, or put the mapping on an always-loaded NPC such as HaX.
+- **Hide an NPC with a `setVisible: false` mapping, not `#remove_npc`.** `#remove_npc` fails for NPCs in rooms loaded after the start.
+- **`conversation_closed:<npc>` can fire twice, and phone chats never emit it.** Make handlers idempotent by routing on a global, and open debriefs from a person-chat or a global, not a phone close.
+- **`item_picked_up:` carries the item type, not its id.** Match on the type and add a `data.itemId` condition.
+
+### Timers
+
+- **Timers need conditions.** The HUD clock ignores `cancelOnGlobal`, and a reload restarts any timer whose start global is true. Put `!globalVars.done && ...` as a `condition` on every timer and on its expiry action, and guard the arming mapping so it cannot re-arm after the win.
+- **Start finale clocks once the VM work is done.** Timers run on wall-clock time, VM time included.
+- **Gate HaX timed messages near scripted conversations.** A timed message can open a phone chat over a conversation in progress.
+
+### Ink
+
+- **Never end an NPC conversation in `DONE` or `END`.** Re-talking an ended story shows "(End of conversation)". Every exit is `#exit_conversation` on its own line, then `-> hub` (or `-> after_choice`).
+- **Guard once-only decision scenes.** Use `{fate != "": -> after_choice}`, or talking again replays the scene and overwrites the outcome.
+- **Put action tags above the line they belong to.** Use `#give_item:<type>:<itemId>`, with the id on the NPC's `itemsHeld` entry, and set "given" globals from an `item_picked_up:<type>` mapping, not in ink.
+- **Use synced-global `VAR`s, not `EXTERNAL` functions.** The engine binds only six externals; an unbound one throws.
+- **`setVariable` does no arithmetic.** `"x + 1"` assigns the string. Use one boolean per item instead of a counter.
+- **First-meeting openers need their own knot that diverts.** Choices in a `{cond: ...}` block without a divert merge into the next hub and are lost after one pick.
+- **Do not preload a contact whose `start` reveals plot.** The phone runs every preloaded contact's `start` knot on first open, and `~` assignments there write real globals.
+- **Run `inkcheck.js` with an explicit knot** (`start`). The root container alone proves little.
+
+### Layout and canon
+
+- **Check door alignment.** A north/south connection between rooms of different widths can leave the doors about 320px apart. Use `tools/pass2/render.rb` and `tools/pass2/door_align.py`, and prefer single east/west connections and equal-width north/south pairs. `multi` connections cannot align middle or overflow doors.
+- **Do not park a hidden or KO'd guard in a room with a pickable lock.** Their line-of-sight cone still interrupts lockpicking.
+- **SAFETYNET has no arrest powers.** Agents detain and hand suspects to the police. The handler is displayed as "Agent HaX".
+- **Use UK English** in player-facing text, including "Cyber Security" with a space.
+
 ## Dungeon Graph Metadata
 
 Break Escape uses a metadata layer on scenario objects to let the dungeon graph generator (`scripts/generate_dungeon_graph.rb`) produce an interactive HTML visualisation of the puzzle dependency graph — showing which items, clues, and tasks unlock which locks, rooms, and objectives.

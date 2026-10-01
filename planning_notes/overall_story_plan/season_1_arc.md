@@ -565,7 +565,7 @@ Track cryptocurrency payments from previous missions (M2 ransomware, M5 corporat
 #### Key NPCs
 
 - **"Satoshi Nakamoto II"** (Crypto Anarchists leader, obviously fake name) - True believer in financial anarchy
-- **Elena Volkov** (Exchange CTO) - Brilliant cryptographer, conflicted about criminal use
+- **Irina Volkova** (Exchange CTO) - Brilliant cryptographer, conflicted about criminal use
 - **Agent 0x99** (Remote support) - Provides blockchain analysis tools
 
 #### LORE Opportunities
@@ -578,7 +578,7 @@ Track cryptocurrency payments from previous missions (M2 ransomware, M5 corporat
 
 #### Moral Complexity
 
-**Major Choice:** Seize assets (cripple ENTROPY financially, end intelligence gathering) vs. monitor (maintain intelligence, ENTROPY continues funding operations) **Secondary Choice:** Recruit Elena Volkov (brilliant cryptographer, valuable asset) vs. arrest (eliminate expertise) **Tertiary Choice:** Expose HashChain publicly (warn public, collapse exchange, hurt innocent users) vs. quiet takedown (protect innocents, ENTROPY might rebuild)
+**Major Choice:** Seize assets (cripple ENTROPY financially, end intelligence gathering) vs. monitor (maintain intelligence, ENTROPY continues funding operations) **Secondary Choice:** Recruit Irina Volkova (brilliant cryptographer, valuable asset) vs. arrest (eliminate expertise) **Tertiary Choice:** Expose HashChain publicly (warn public, collapse exchange, hurt innocent users) vs. quiet takedown (protect innocents, ENTROPY might rebuild)
 
 #### Success Outcomes
 
@@ -961,7 +961,7 @@ Final assault on Tomb Gamma. Infiltrate The Architect's stronghold, stop global 
 
 - Review all previous choices and their consequences
 - M7 choice affects which ENTROPY cells still operational
-- Turned NPCs (David Torres, Elena Volkov, Nightshade) provide support or betray
+- Turned NPCs (David Torres, Irina Volkova, Nightshade) provide support or betray
 - Relationships with NPCs affect ending dialogues
 
 #### Multiple Endings (Based on Choices)
@@ -1210,7 +1210,7 @@ Key recurring NPCs with arcs:
 
 - **Agent 0x99:** Mentor relationship, emotional journey, betrayal by Tesseract
 - **David Torres:** Insider who can be turned, provides ongoing intelligence
-- **Elena Volkov:** Brilliant cryptographer, potential recruit
+- **Irina Volkova:** Brilliant cryptographer, potential recruit
 - **Nightshade:** Betrayer, can become triple agent
 - **Dr. Adrian Tesseract:** Antagonist with understandable philosophy
 

@@ -8,7 +8,7 @@ Track cryptocurrency payments from M2 (hospital ransomware) and M5 (corporate es
 
 ## Key NPCs
 
-- **Dr. Elena Volkov** (CTO) - Brilliant cryptographer, morally conflicted, can be recruited or arrested
+- **Dr. Irina Volkova** (CTO) - Brilliant cryptographer, morally conflicted, can be recruited or arrested
 - **"Satoshi Nakamoto II"** (CEO) - Crypto Anarchist leader, true believer in financial anarchism
 - **Blockchain Analyst** - Innocent employee with transaction intelligence
 - **Crypto Trader** - Discovers suspicious ENTROPY wallet activity
@@ -19,7 +19,7 @@ Track cryptocurrency payments from M2 (hospital ransomware) and M5 (corporate es
 Reception Lobby → Security Checkpoint → Trading Floor (central hub)
   ├─ Server Room (VM access, password required) → Data Center (Architect's Fund evidence)
   ├─ Blockchain Lab (transaction network analysis)
-  ├─ Elena's Office (CTO, locked with RFID badge)
+  ├─ Irina's Office (CTO, locked with RFID badge)
   └─ Executive Wing (executive badge required) → Satoshi's Office (confrontation, safe with intel)
 ```
 
@@ -33,7 +33,7 @@ Reception Lobby → Security Checkpoint → Trading Floor (central hub)
 ## Major Choices
 
 1. **Asset Strategy:** Seize cryptocurrency (immediate impact, ends intelligence) vs. Monitor transactions (long-term intelligence, ENTROPY keeps funding)
-2. **Elena Volkov:** Recruit (valuable cryptographer asset) vs. Arrest (eliminate criminal expertise)
+2. **Irina Volkova:** Recruit (valuable cryptographer asset) vs. Arrest (eliminate criminal expertise)
 3. **Public Exposure:** Warn cryptocurrency community vs. Quiet takedown
 
 ## Educational Objectives (CyBOK)
@@ -80,9 +80,9 @@ Reception Lobby → Security Checkpoint → Trading Floor (central hub)
 | Lock | Type | Key | Clue location |
 |------|------|-----|---------------|
 | Server room door | `password` | `bitcoin2025` | IT New Starter Checklist, security checkpoint |
-| Elena's office | `rfid` | `cto_badge` | Elena hands it over at trust ≥ 25, or clone it with the trading-floor cloner |
+| Irina's office | `rfid` | `cto_badge` | Irina hands it over at trust ≥ 25, or clone it with the trading-floor cloner |
 | Executive wing | `rfid` | `executive_badge` | Spare badge in the data centre |
-| Executive safe (optional) | `pin` | `2140` | Architect's email (Elena's office) and the manifesto margin note |
+| Executive safe (optional) | `pin` | `2140` | Architect's email (Irina's office) and the manifesto margin note |
 
 ## Field Guides
 
@@ -91,15 +91,15 @@ over on request through a `support_hub` choice — never pushed into the invento
 
 | Guide | Offered on | Lab sheet |
 |-------|-----------|-----------|
-| Password cracking | Picking up Elena's wordlist | `ssh-access-and-bruteforce` |
+| Password cracking | Picking up Irina's wordlist | `ssh-access-and-bruteforce` |
 | Privilege escalation / credential reuse | Submitting flag 1 | `privilege-escalation` |
 | Reconnaissance | First interacting with the VM launcher | `reconnaissance-and-network-mapping` |
 | RFID cloning | Entering the security checkpoint | `rfid-cloning` |
 
 ## Design Notes
 
-This mission is the financial hub connecting all previous operations and revealing the scope of The Architect's coordination. Password cracking theme teaches credential security. Elena Volkov is a recruitable asset who can provide ongoing intelligence if turned. The discovery of The Architect's Fund creates urgency leading into M7's crisis.
+This mission is the financial hub connecting all previous operations and revealing the scope of The Architect's coordination. Password cracking theme teaches credential security. Irina Volkova is a recruitable asset who can provide ongoing intelligence if turned. The discovery of The Architect's Fund creates urgency leading into M7's crisis.
 
-PIN code for the executive safe: **2140** — the year the last bitcoin is mined. Clued twice: in The Architect's email in Elena's office, and in the CEO's own margin note on the manifesto in his office.
+PIN code for the executive safe: **2140** — the year the last bitcoin is mined. Clued twice: in The Architect's email in Irina's office, and in the CEO's own margin note on the manifesto in his office.
 
 The safe is optional. Skipping it costs the player The Architect's identity file, and the closing debrief acknowledges the gap rather than pretending they have it.

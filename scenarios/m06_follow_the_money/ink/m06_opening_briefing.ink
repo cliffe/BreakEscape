@@ -112,7 +112,7 @@ Agent HaX: Two key targets:
 
 Agent HaX: "Satoshi Nakamoto II", the CEO. True believer, charming with it. Nobody turns him.
 
-Agent HaX: Dr. Elena Volkov, the CTO. Brilliant cryptographer, former academic. And possibly someone we can turn.
+Agent HaX: Dr. Irina Volkova, the CTO. Brilliant cryptographer, former academic. And possibly someone we can turn.
 
 + [Why would she help us?]
     ~ asked_about_elena = true
@@ -124,7 +124,7 @@ Agent HaX: Dr. Elena Volkov, the CTO. Brilliant cryptographer, former academic. 
     -> architect_fund_hint
 
 === elena_background ===
-Agent HaX: Elena's a genius. Published 37 papers on cryptography. 2,847 citations.
+Agent HaX: Irina's a genius. Published 37 papers on cryptography. 2,847 citations.
 
 Agent HaX: She built HashChain's privacy infrastructure. But our psychological profile suggests moral conflict.
 
@@ -196,7 +196,7 @@ Agent HaX: Three. Map the network. Every cell, every wallet, every transaction.
 
 + [How do I access the servers?]
     -> technical_approach
-+ [What about Elena and Satoshi?]
++ [What about Irina and Satoshi?]
     -> npc_strategy
 + [What resources do I have?]
     -> resources
@@ -231,7 +231,7 @@ Agent HaX: And anything about coordinated funding: a master fund distributing mo
 // ================================================
 
 === npc_strategy ===
-Agent HaX: Build rapport with Elena. She's your best intelligence source and potential recruit.
+Agent HaX: Build rapport with Irina. She's your best intelligence source and potential recruit.
 
 Agent HaX: Satoshi is a true believer. Useful for understanding their ideology, but unlikely to cooperate.
 
@@ -248,7 +248,7 @@ Agent HaX: You're from the FCA, the Financial Conduct Authority, on a routine su
 
 Agent HaX: Cryptocurrency exchanges face constant regulatory scrutiny. Your audit is completely normal.
 
-Agent HaX: Elena will meet you as CTO. Ask for what a supervisor would ask for, and see what she hands over.
+Agent HaX: Irina will meet you as CTO. Ask for what a supervisor would ask for, and see what she hands over.
 
 + [What if they see through the cover?]
     -> cover_backup
@@ -294,7 +294,7 @@ Agent HaX: {player_name}, this one matters more than most.
 
 Agent HaX: We've been fighting one cell at a time. This is the first time we can see how they all connect.
 
-Agent HaX: Map the network. Find where the money goes. And if you can turn Elena, we keep a pair of eyes inside it.
+Agent HaX: Map the network. Find where the money goes. And if you can turn Irina, we keep a pair of eyes inside it.
 
 + [What if I find something bigger than individual cells?]
     -> bigger_picture
@@ -313,7 +313,7 @@ Agent HaX: Follow the money. It always tells the truth.
 -> deployment
 
 === final_advice ===
-Agent HaX: Remember: Elena is brilliant but conflicted. Appeal to her ethics, not her ideology.
+Agent HaX: Remember: Irina is brilliant but conflicted. Appeal to her ethics, not her ideology.
 
 Agent HaX: Satoshi is a true believer. Understand his perspective but don't expect conversion.
 
@@ -330,7 +330,7 @@ Agent HaX: One more thing: we're racing the clock.
 
 Agent HaX: The wallets we're watching have gone quiet, the way they do before a big payout. If ENTROPY pays every cell at once, they're about to do something at once.
 
-Agent HaX: Get inside. Find the fund. Then you'll have two calls to make: what happens to the money, and what happens to Elena.
+Agent HaX: Get inside. Find the fund. Then you'll have two calls to make: what happens to the money, and what happens to Irina.
 
 Agent HaX: Follow the money, {player_name}.
 

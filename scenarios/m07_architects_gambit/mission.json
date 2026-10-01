@@ -2,7 +2,7 @@
   "display_name": "The Architect's Gambit",
   "description": "Four ENTROPY operations go live inside the same sixty seconds. SAFETYNET has one agent in range and one tactical team, and you are the agent — sent to a grid control facility outside Portland where a cascade sequence is loaded on the control system, waiting for a host inside the building to start it and take the lights out across three states. The team can reach exactly one of the other three crises. You decide which, two go unanswered, and the debrief reads out what happened at both. Get past the badges and the locks, take the attack host apart, and stop the cascade before you find out what the night was actually measuring.",
   "difficulty_level": 3,
-  "secgen_scenario": "putting_it_together",
+  "secgen_scenario": "m07_architects_gambit",
   "collection": "season_1",
   "estimated_duration_minutes": 90,
   "cybok": [

@@ -4,6 +4,37 @@ Changes the pass-2 agents did **not** make on their own, because they touch shar
 
 Mission-local improvements that were safe to make are recorded in each mission's `PASS2_IMPROVEMENTS.md` instead.
 
+## Status (2026-10-01): all approved and implemented
+
+All approved and implemented. Verified with 261 Rails tests, 31 node tests, a clean validator on m01–m08 and sis01–03, and regression playtests on every m01–m08 mission (games 1186–1215).
+
+**Implemented**
+- **Engine:** every item in section 1 below. The `positionSouthSingle` parity change is inert, because no existing layout moves.
+- **Reload persistence:** cloner cards, aim states, NPC ink variables, one-shot handlers and dropped items.
+- **Validator and schema:** section 2, plus `scripts/check_door_alignment.py`.
+- **SecGen:** m03, m04 and m07 are published; the m05 and m08 XMLs are reordered and fixed. The flag order is inferred from reading the XML; no VMs were built.
+- **Canon:** section 4 is signed off as it stands.
+- **Continuity** (section 5):
+  - m07 now sets up "two of ours";
+  - m06's CTO is renamed Dr Irina Volkova;
+  - the bible's m08 evaluator is now Dr S. Okafor.
+- **Docs:** section 6 deleted. `README_scenario_design.md` gained an Authoring Rules section.
+
+**Found by the regression playtests and fixed**
+- **m01:** three "Derek is contained" messages. Cause: unchanged globals were re-emitted on every conversation start.
+- **m01:** the KO-dropped launch device lost its data and its ID on reload.
+- **m02:** the press terminal soft-locked after "I'll step away".
+- **m02:** the credits covered the debrief. m02 now uses the same `hear_debrief` task.
+- **m02:** Ghost's opening message was lost.
+- **m02:** one-shot handlers replayed after a reload.
+- **m02:** a KO'd Val still ran her scene.
+- **m08 and m07:** two debrief wording fixes.
+
+**Left as is**
+- The 0x00 cohort line and m08's start-inventory lockpick: the log made no recommendation, so both are unchanged.
+- Phone message history after a reload is still short. The intros no longer replay, but the scrollback is not saved.
+- The SecGen flag order still needs a real build to confirm.
+
 ## Orchestrator summary: what needs a decision
 
 Nothing in m01/m02, the engine, the validators or SecGen was changed. Everything below is a proposal. The detail is in the per-mission sections further down.

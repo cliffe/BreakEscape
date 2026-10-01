@@ -84,7 +84,7 @@
 | **Director Samantha Cross** | SAFETYNET Director | M8, M10 | Authority figure, crisis manager |
 | **Agent 0x47 "Nightshade"** | The Mole | M8, M10 | Traitor, can be turned triple agent |
 | **David Torres** | Corporate Insider | M5, (M10) | Recruited by ENTROPY, can be turned |
-| **Elena Volkov** | Cryptographer | M6, (M10) | Crypto Anarchist, potential recruit |
+| **Irina Volkova** | Cryptographer | M6, (M10) | Crypto Anarchist, potential recruit |
 | **Victoria "Vick" Sterling** | Zero Day Sales Lead | M3, (M10) | Can become double agent |
 | **Maya Chen** | Journalist | M1 | Innocent caught in ENTROPY scheme |
 | **Dr. Sarah Kim** | Hospital CTO | M2 | Crisis decision maker |

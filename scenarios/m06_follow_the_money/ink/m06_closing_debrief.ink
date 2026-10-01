@@ -1,7 +1,7 @@
 // ================================================
 // Mission 6: Follow the Money - Closing Debrief
 // Mission Complete - Financial Network Mapped
-// Choices: Elena recruitment, asset seizure/monitoring
+// Choices: Irina recruitment, asset seizure/monitoring
 // ================================================
 
 // Variables from gameplay
@@ -136,11 +136,11 @@ Agent HaX: They aren't cold, exactly. They've decided the deaths are the lesson.
 -> elena_discussion
 
 // ================================================
-// ELENA VOLKOV DISCUSSION
+// IRINA VOLKOVA DISCUSSION
 // ================================================
 
 === elena_discussion ===
-Agent HaX: Now let's talk about Dr. Elena Volkov.
+Agent HaX: Now let's talk about Dr. Irina Volkova.
 
 {elena_ko:
     -> elena_ko_path
@@ -156,7 +156,7 @@ Agent HaX: Now let's talk about Dr. Elena Volkov.
 }
 
 === elena_ko_path ===
-Agent HaX: Volkov went down on the trading floor. The medics say she'll be fine in a day and charged within a week.
+Agent HaX: Volkova went down on the trading floor. The medics say she'll be fine in a day and charged within a week.
 
 Agent HaX: I won't pretend that isn't a loss. She had the whole mixer in her head and she was already halfway to walking away from it.
 
@@ -173,7 +173,7 @@ Agent HaX: I won't pretend that isn't a loss. She had the whole mixer in her hea
 === elena_recruited_path ===
 Agent HaX: You recruited her. That was... unexpected. And brilliant.
 
-Agent HaX: Elena is cooperating fully. Her knowledge of ENTROPY's cryptographic infrastructure is extraordinary.
+Agent HaX: Irina is cooperating fully. Her knowledge of ENTROPY's cryptographic infrastructure is extraordinary.
 
 + [Was it the right call?]
     -> recruitment_validation
@@ -211,7 +211,7 @@ Agent HaX: She came over because she believed you. Keep that in mind when you're
     -> password_cracking_discussion
 
 === elena_arrested_path ===
-Agent HaX: You detained Elena Volkov and handed her to the police with the evidence. Clean, by the book.
+Agent HaX: You detained Irina Volkova and handed her to the police with the evidence. Clean, by the book.
 
 Agent HaX: The charges are theirs to bring, not ours. Laundering, conspiracy, facilitating terrorist financing. It'll be a long file.
 
@@ -237,7 +237,7 @@ Agent HaX: You made the safe call. Can't fault that.
 -> arrest_impact
 
 === arrest_impact ===
-Agent HaX: With Elena in custody, Crypto Anarchist cells are losing their best cryptographer.
+Agent HaX: With Irina in custody, Crypto Anarchist cells are losing their best cryptographer.
 
 Agent HaX: They'll replace her eventually, but it'll take time. That's operational disruption we can exploit.
 
@@ -247,7 +247,7 @@ Agent HaX: They'll replace her eventually, but it'll take time. That's operation
     -> password_cracking_discussion
 
 === elena_neutral_path ===
-Agent HaX: Elena wasn't arrested or recruited. Interesting.
+Agent HaX: Irina wasn't arrested or recruited. Interesting.
 
 Agent HaX: She's under surveillance now. We're monitoring her communications, tracking her movements.
 
@@ -443,7 +443,7 @@ Agent HaX: {player_name}, for the first time we can see how the cells connect.
 }
 
 {elena_recruited:
-    Agent HaX: And Elena Volkov is working for us now.
+    Agent HaX: And Irina Volkova is working for us now.
 }
 
 {found_blockchain_evidence && found_architects_fund:

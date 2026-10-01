@@ -4,7 +4,7 @@
 > the engine (`public/`, `app/`), m02/m03/m04/m05 as worked examples, the season
 > arc plan, the universe bible, and the published SecGen XML. Nothing committed.
 > A previous agent had started the pass (scenario.json.erb rework + a partial
-> Elena-ink rewrite) and stopped on a tool error mid-file; this pass finished
+> Irina-ink rewrite) and stopped on a tool error mid-file; this pass finished
 > that work and reconciled the ink to it.
 
 ## Round 3 (browser playtest, games 1173 and 1174) — fixes
@@ -20,7 +20,7 @@ playtest passed:
 
 Seven defects are fixed:
 
-- **D1: Elena's wordlist could be lost for good.** Her three opener choices
+- **D1: Irina's wordlist could be lost for good.** Her three opener choices
   sat inside `{first_meeting:}` with no divert, so they fell through into the
   hub. All seven options showed on a first meeting, and a first pick from the
   hub discarded the openers. Trust then capped at 10, below the wordlist's
@@ -37,7 +37,7 @@ Seven defects are fixed:
     asking twice at trust 0.
 - **D2: the credits covered the debrief.** The last decision completed
   `resolve_the_fund`, and its `bond_visualiser` opened at once, over the phone
-  or Elena's scene. The debrief then opened underneath it (z-index 1500).
+  or Irina's scene. The debrief then opened underneath it (z-index 1500).
   - Following m05's `hear_debrief` pattern, the conclusion aim now has a fourth
     task, `hear_debrief` (custom). It completes on the debrief's last line, so
     the aim, and with it the visualiser, closes only after the debrief.
@@ -68,7 +68,7 @@ Seven defects are fixed:
     and the manifesto at (2,6), all clear of the door column.
   - Not yet walked in a browser.
 - **D7 text:**
-  - HaX's Elena-KO relay now says "that was the last thing on the list, I'm
+  - HaX's Irina-KO relay now says "that was the last thing on the list, I'm
     bringing you in" when both decisions and all four flags are done.
   - The player's freeze line "Coordinated operations? Cancelled." now matches
     the debrief's hedge: the unpaid cells get nothing, the paid ones are still
@@ -97,7 +97,7 @@ claims were wrong; they are corrected here and in place below.
   Round 1 left this as working. Now he is simply visible: he was already behind
   the executive badge. One harmless mapping sets `satoshi_revealed` on entering
   his office. Engine gap logged.
-- **B2: the debrief never fired if Elena's KO was the last decision.** The
+- **B2: the debrief never fired if Irina's KO was the last decision.** The
   relay set `elena_fate_decided` inside a phone chat and nothing listened. The
   debrief now opens on any of 13 triggers, each gated on both decisions + all
   four flags + `!debrief_played` + `!start_debrief_cutscene`:
@@ -126,20 +126,20 @@ true. Every way of setting each state happens inside a UI that then closes:
 | Satoshi decision in dialogue (freeze/watch) | Satoshi person-chat | `conversation_closed:satoshi_nakamoto` (+ `minigame_completed`) |
 | Satoshi KO → phone decision | `on_satoshi_ko` phone chat | phone close → `minigame_*` |
 | Satoshi KO, phone dismissed, decided later | hub sticky option or re-entering his office re-opens `on_satoshi_ko` | phone close → `minigame_*` |
-| Elena recruited / detained in dialogue | Elena person-chat | `conversation_closed:elena_volkov` (+ `minigame_completed`) |
-| Elena KO → relay | `on_elena_ko_relay` phone chat (tags at the knot top, so an early close still sets them) | phone close → `minigame_*` |
+| Irina recruited / detained in dialogue | Irina person-chat | `conversation_closed:elena_volkov` (+ `minigame_completed`) |
+| Irina KO → relay | `on_elena_ko_relay` phone chat (tags at the knot top, so an early close still sets them) | phone close → `minigame_*` |
 | Any of the above if the close event is somehow missed | — | `room_entered:<any room>` backstop |
 
-Every combination of (flags done, Elena outcome and route, Satoshi outcome and
+Every combination of (flags done, Irina outcome and route, Satoshi outcome and
 route) has its final state set by one of these rows, so a trigger fires. The
 debrief NPC is in the start room, so its mappings are registered at load.
 
 ### Majors
 - **M1:** `meet_elena`, `question_the_trader` and `question_the_analyst` had no
   completion route except `taskOnKO`, which rewarded knocking out innocent
-  staff. Now `#complete_task` at the top of Elena's first meeting, the trader's
+  staff. Now `#complete_task` at the top of Irina's first meeting, the trader's
   `trader_suspicions` and the analyst's `pattern_concerns`. HaX's "you've met
-  Volkov" message moved to `conversation_closed:elena_volkov` with a 4 s delay,
+  Volkova" message moved to `conversation_closed:elena_volkov` with a 4 s delay,
   so it no longer lands mid-dialogue, and it no longer asserts she saw through
   the cover.
 - **M2:** `confront_satoshi` completed only on his last line, so an early close
@@ -160,11 +160,11 @@ debrief NPC is in the start room, so its mappings are registered at load.
   and the player-facing word "LORE" is removed.
 
 ### Minors
-1. **Elena:** "You'll regret that" led straight to detention. It is now "Think
+1. **Irina:** "You'll regret that" led straight to detention. It is now "Think
    about it. I'll come back", which gives her time (+10 trust, once). The
    `trust <= -10` hub option was unreachable and is removed.
    `recruitment_refused` is now set.
-2. **Emote-only lines** (analyst, Elena `after_choice`, Satoshi's wrists) are
+2. **Emote-only lines** (analyst, Irina `after_choice`, Satoshi's wrists) are
    Narrator beats.
 3. **"Agent Agent 0x00":** the "Agent" prefix is removed where it came before
    `{player_name}`.
@@ -174,9 +174,9 @@ debrief NPC is in the start room, so its mappings are registered at load.
    offers "Sit down" (hostile, KO path) or "Then look at this first" (shows the
    evidence).
 5. **Stale HaX lines fixed:**
-   - "Elena should buy the story";
+   - "Irina should buy the story";
    - "Satoshi should be accessible now" (he is badge-gated);
-   - "Elena's inventory";
+   - "Irina's inventory";
    - "Mission 2's… Mission 5's…";
    - "use that list against the backend" (the backend uses John's wordlist; her
      list is for doors).
@@ -200,14 +200,14 @@ debrief NPC is in the start room, so its mappings are registered at load.
    The debrief's ending now sets up m07: six cells paid at once is one schedule.
 9. **Canon:**
    - "holding facility you have prepared" → "Call your police, then";
-   - Satoshi's "Elena chose loyalty" now reads correctly after a remorseful
+   - Satoshi's "Irina chose loyalty" now reads correctly after a remorseful
      detention.
 10. **Text mismatches:**
     - the export no longer puts the exec badge "in a rack drawer" (it is a loose
       object); the badge text matches;
     - Priya now explains the vanity addresses ("1ENTROPY", "1ARCHITECT") instead
       of claiming she can't see them.
-11. **Lesson 26:** Elena's hub now gates on `found_password_lists` and
+11. **Lesson 26:** Irina's hub now gates on `found_password_lists` and
     `elena_badge_obtained`, both set by `item_picked_up` mappings on `itemId`
     (the badge now has `id: m06_cto_badge`). The ink-local "given" flags that
     were set before the give tag are removed.
@@ -215,7 +215,7 @@ debrief NPC is in the start room, so its mappings are registered at load.
     clear centre aisle.
 13. **Debrief over a UI:** see B2. Nothing opens it from inside a phone chat or
     the drop-site UI any more.
-14. **Canon (logged only):** three consecutive "Elena"s.
+14. **Canon (logged only):** three consecutive "Elena"s. Resolved: m06's CTO is now Dr Irina Volkova (display text only; id `elena_volkov` unchanged).
 
 ### Round-1 claims corrected
 - "Satoshi is revealed (`setVisible`)": he never was (B1).
@@ -223,7 +223,7 @@ debrief NPC is in the start room, so its mappings are registered at load.
 - "`arrest_resisted` can turn him hostile": it was unreachable (minor 4).
 - "The press clipping / manifesto give the safe PIN": the manifesto's margin
   note was removed in round 1. The 2140 clue is the executive-wing press
-  clipping only, plus Elena's Architect email.
+  clipping only, plus Irina's Architect email.
 - "No live playtest possible": wrong. Earlier missions reached
   `status=completed` with the session's `<flag:N>` tokens, and an m06 playtest
   follows this pass.
@@ -233,12 +233,12 @@ debrief NPC is in the start room, so its mappings are registered at load.
   see Verification);
 - compile: 7/7;
 - inkcheck: clean (800/800) on 12 entry knots, including Satoshi
-  `arrest_attempt` and `choice_presentation`, and Elena `recruitment_decision`;
+  `arrest_attempt` and `choice_presentation`, and Irina `recruitment_decision`;
 - loopcheck: clean on 6 hubs, plus re-entry states:
   - Satoshi with `assets_decided`;
   - HaX with `satoshi_ko`, with and without keys;
-  - Elena with her fate set;
-  - Elena and Satoshi with the fund found;
+  - Irina with her fate set;
+  - Irina and Satoshi with the fund found;
 - door_align: 8/8;
 - rendered JSON checks:
   - Satoshi has no `behavior`;
@@ -252,7 +252,7 @@ debrief NPC is in the start room, so its mappings are registered at load.
 The mission validated with warnings, but several things were player-visible
 broken or half-done:
 
-1. **The Elena ink was truncated.** The prior agent's rewrite of
+1. **The Irina ink was truncated.** The prior agent's rewrite of
    `m06_npc_elena_volkov.ink` was cut off mid-choice at line 151 — the file had
    no fate knots, no exits, and would not compile. Rebuilt the lower half in the
    same voice (wordlist, badge lend/clone, evidence, recruit/detain, re-entry).
@@ -269,11 +269,11 @@ broken or half-done:
    were dead. Re-keyed on `npc_ko:<id>` with HaX relay knots (lessons 24/37/38).
 4. **The debrief could open over a live conversation and ignored the flags.**
    It was keyed on `start_debrief_cutscene`, set the instant the second decision
-   tag ran — it could fire over the Satoshi/Elena scene and showed the credits
+   tag ran — it could fire over the Satoshi/Irina scene and showed the credits
    while the server still refused to conclude (flags unmet). Now it waits for a
    UI to close (conversation, phone, drop-site) or a room entry, with both
    decisions made **and** all four flags in, and sets `debrief_played` to stop a
-   reload replay. (Round-1 version missed the Elena-KO-last case; see round 2, B2.)
+   reload replay. (Round-1 version missed the Irina-KO-last case; see round 2, B2.)
 
 ## Bugs and soft-locks (fixed)
 
@@ -294,11 +294,11 @@ broken or half-done:
   the vault account — `found_wallet_keys` is now set deterministically by the
   flag-4 mapping, so the freeze ending depends on doing the work.
 - **`decide_elena_fate` sat in the conclusion aim** and the ink completed it the
-  moment Elena's fate was set, auto-revealing the conclusion aim early on the
+  moment Irina's fate was set, auto-revealing the conclusion aim early on the
   trading floor (lesson 27). The ink now only sets `elena_fate_decided`; the task
   completes from a mapping once the conclusion aim is open (`resolve_aim_open`,
   set on entering Satoshi's office).
-- **KO relays (lessons 19/24/38):** Elena and Satoshi are in later-loaded rooms,
+- **KO relays (lessons 19/24/38):** Irina and Satoshi are in later-loaded rooms,
   so their `itemsHeld` never drop on a KO. `npc_ko:elena_volkov` →
   `on_elena_ko_relay` hands relayed copies of her wordlist and office badge
   (`relayed_password_dictionary`, `relayed_cto_badge`) and settles her fate;
@@ -308,7 +308,7 @@ broken or half-done:
   `disableClose`), so the choice lives on a sticky option and re-entering his
   office re-opens it until answered (lesson 37).
 - **Every re-enterable conversation now loops to a hub** rather than reaching
-  `-> DONE` (lesson 21): Elena, trader, analyst and Satoshi. Elena routes to
+  `-> DONE` (lesson 21): Irina, trader, analyst and Satoshi. Irina routes to
   `after_choice` once her fate is settled. The only remaining `-> DONE` is the
   hostile branch of Satoshi's arrest-resisted scene (he can't be re-talked once
   hostile) and the closing debrief (the terminal cutscene, the m05 pattern).
@@ -326,7 +326,7 @@ broken or half-done:
   `found_wallet_keys` (the flag-4 payout). Without it the player can watch now
   or defer and come back with the keys (round 2, M4). Both paths are authored in the debrief
   and credits; the KO path routes the same decision through HaX.
-- Elena's fate (recruit / detain / KO) was reachable only through
+- Irina's fate (recruit / detain / KO) was reachable only through
   `trust >= 20` **and** the blockchain evidence, so a player who never warmed to
   her could not end the mission. The hub now offers "I'm not from the FCA" once
   the fund is found, and gives cold openers two trust-building topics. Every
@@ -334,7 +334,7 @@ broken or half-done:
 
 ## Puzzles / chain
 
-- Depth now: briefing → Elena (wordlist) + checkpoint checklist → **derive**
+- Depth now: briefing → Irina (wordlist) + checkpoint checklist → **derive**
   the passphrase (`bitcoin` + 2025) → server room → backend VM → flag 3 pays the
   data-centre PIN → data centre → fund + exec badge → executive wing → Satoshi.
   The passphrase is a genuine two-source derivation again: HaX no longer reads
@@ -346,7 +346,7 @@ broken or half-done:
 ## Dialogue / continuity
 
 - **Cover retconned FCA, not FinCEN** (UK): the exchange is in-world UK-regulated,
-  and "compliance auditor / FinCEN" read as US. Changed in the briefing, Elena,
+  and "compliance auditor / FinCEN" read as US. Changed in the briefing, Irina,
   the phone and the objective text.
 - **Canon (lesson 39):** SAFETYNET has no arrest powers. "Arrest" became
   "detain and hand to the police", and the sentencing promises ("20-35 years",
@@ -370,7 +370,7 @@ broken or half-done:
 
 - `ruby scripts/validate_scenario.rb` — **0 errors.** Warnings, all judged
   intended:
-  - `rfidCard` "unknown field" on Elena — engine reads it
+  - `rfidCard` "unknown field" on Irina — engine reads it
     (`npc-conversation-state.js:418`); m03 carries the identical warning and its
     clone works. Kept for the cloner route the badge's text promises.
   - Five onceOnly co-fire notices on the handler — each pair is either disjoint
@@ -383,10 +383,10 @@ broken or half-done:
     flag-station's `itemsHeld`, so the note remains. Documentation only.
 - `./scripts/compile-ink.sh m06_follow_the_money` — **7/7 compile.**
 - `inkcheck` clean (800/800 paths, 0 runaway, 0 failing) on: opening `start`,
-  phone `start` / `on_elena_ko_relay` / `on_satoshi_ko`, Elena `start`, Satoshi
+  phone `start` / `on_elena_ko_relay` / `on_satoshi_ko`, Irina `start`, Satoshi
   `start`, debrief `start`.
 - `loopcheck` clean (no runtime errors, hubs loop) on: phone `support_hub`,
-  Elena `hub` and `after_choice`, Satoshi `aftermath`, trader `hub`, analyst
+  Irina `hub` and `after_choice`, Satoshi `aftermath`, trader `hub`, analyst
   `hub`.
 - `door_align.py` on the rendered scenario — **8/8 OK** (all single E/W and
   equal-width N/S pairs; no multi-connections).

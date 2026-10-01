@@ -11,4 +11,4 @@ leads it establishes are still canon for later missions. Treat it as source mate
 it describes the mission being built.**
 
 Current design: `../mission_design.md`. Off-camera operations: `../delegation_operations.md`.
-Authority: `../../ALIGNMENT_PLAN.md`.
+Authority: `../../PASS2_IMPROVEMENTS.md`.

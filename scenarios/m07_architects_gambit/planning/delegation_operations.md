@@ -4,7 +4,7 @@
 them, what is actually true, what happens when the tactical team is sent, and what happens when it is
 not.
 
-**Authority:** `../ALIGNMENT_PLAN.md`. Companion to `mission_design.md`. Source detail mined from
+**Authority:** `../PASS2_IMPROVEMENTS.md` and `../CONTRACT.md`. Companion to `mission_design.md`. Source detail mined from
 `archive/stage_0_option_{b,c,d}_*.md`.
 
 **Consumers:** the opening briefing ink (WP3), the Agent HaX hub (WP6), the closing debrief and

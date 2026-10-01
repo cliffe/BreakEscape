@@ -3,9 +3,9 @@
 **Status:** WP1 deliverable. Committed. **This file is the single source of truth for every
 identifier in the mission.** WP2–WP10 write against these names and must not invent alternatives.
 
-**Authority order:** `ALIGNMENT_PLAN.md` → this file → `planning/mission_design.md` →
-`planning/delegation_operations.md`. Where the plan and this file disagree on a *name*, this file
-wins, because the plan does not name everything and consistency matters more than provenance.
+**Authority order:** `PASS2_IMPROVEMENTS.md` (design rationale) → this file → `planning/mission_design.md` →
+`planning/delegation_operations.md`. Where the rationale and this file disagree on a *name*, this file
+wins, because the rationale does not name everything and consistency matters more than provenance.
 
 **If you need an identifier that is not here, add it here first**, in the same commit as the code
 that uses it. A name that exists in ink but not in this file is a bug.

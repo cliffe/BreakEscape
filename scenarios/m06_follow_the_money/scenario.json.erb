@@ -10,20 +10,20 @@
 # ROOM LAYOUT (verified overlap-free by scripts/predict_door_sides.py):
 #   Reception Lobby → Security Checkpoint → Trading Floor (main hub)
 #   Trading Floor → Server Room (password lock)  → Data Centre (PIN lock)
-#   Trading Floor → Elena's Office (RFID: cto_badge)
+#   Trading Floor → Irina's Office (RFID: cto_badge)
 #   Trading Floor → Blockchain Analysis Lab
 #   Data Centre   → Executive Wing (RFID: executive_badge) → Satoshi's Office
 #
 # CRITICAL PATH (pass 2):
-#   briefing → Elena (wordlist) + IT checklist → server room passphrase
+#   briefing → Irina (wordlist) + IT checklist → server room passphrase
 #   → backend VM: flag 3 pays out the ledger's door-controller export, which
 #     holds the data centre PIN (the VM work now opens the physical path)
 #   → blockchain lab evidence (any time) → data centre → Architect's Fund
-#   + executive badge → Satoshi → asset decision + Elena's fate
+#   + executive badge → Satoshi → asset decision + Irina's fate
 #   → debrief (also waits for all four flags, the concludeRequires gate)
 #
 # KO RESILIENCE (pass 2): KO reactions key on npc_ko:<id> (globalVarOnKO emits
-# no global_variable_changed, npc-hostile.js:159-166). Elena's and Satoshi's
+# no global_variable_changed, npc-hostile.js:159-166). Irina's and Satoshi's
 # KOs open HaX phone knots that hand over relayed copies / put the asset
 # decision to the player; the HaX hub keeps a sticky safety-net option.
 # ============================================================================
@@ -134,9 +134,9 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
           { "text": "WATCHED — Fund left running. Every recipient wallet now tagged.", "style": "entry", "condition": "globalVars.monitoring_enabled" },
           { "text": "" },
           { "text": "── PERSONNEL ──",                                             "style": "section-header" },
-          { "text": "DR. ELENA VOLKOV: Turned — working for SAFETYNET", "style": "entry", "condition": "globalVars.elena_recruited" },
-          { "text": "DR. ELENA VOLKOV: Detained — handed to the police with the laundering evidence", "style": "entry", "condition": "globalVars.elena_arrested" },
-          { "text": "DR. ELENA VOLKOV: Knocked down on the trading floor — the offer was never made", "style": "entry", "condition": "globalVars.elena_ko && !globalVars.elena_recruited && !globalVars.elena_arrested" },
+          { "text": "DR. IRINA VOLKOVA: Turned — working for SAFETYNET", "style": "entry", "condition": "globalVars.elena_recruited" },
+          { "text": "DR. IRINA VOLKOVA: Detained — handed to the police with the laundering evidence", "style": "entry", "condition": "globalVars.elena_arrested" },
+          { "text": "DR. IRINA VOLKOVA: Knocked down on the trading floor — the offer was never made", "style": "entry", "condition": "globalVars.elena_ko && !globalVars.elena_recruited && !globalVars.elena_arrested" },
           { "text": "'SATOSHI NAKAMOTO II': Detained — handed to the police",       "style": "entry",   "condition": "!globalVars.satoshi_ko" },
           { "text": "'SATOSHI NAKAMOTO II': Knocked out in his own office — handed to the police", "style": "entry", "condition": "globalVars.satoshi_ko" },
           { "text": "DANI OKONKWO (TRADER): Flagged the wallets first — left alone", "style": "entry",   "condition": "!globalVars.trader_ko" },
@@ -175,7 +175,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
         },
         {
           "taskId": "meet_elena",
-          "title": "Introduce yourself to Dr. Elena Volkov on the trading floor",
+          "title": "Introduce yourself to Dr. Irina Volkova on the trading floor",
           "type": "npc_conversation",
           "targetNPC": "elena_volkov",
           "status": "active",
@@ -187,14 +187,14 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
     {
       "aimId": "access_backend_systems",
       "title": "Work The Floor",
-      "description": "Get Elena's wordlist, work out the server room passphrase, and see what the exchange's own analysts have drawn.",
+      "description": "Get Irina's wordlist, work out the server room passphrase, and see what the exchange's own analysts have drawn.",
       "status": "locked",
       "unlockCondition": { "aimCompleted": "establish_cover" },
       "order": 1,
       "tasks": [
         {
           "taskId": "obtain_access_tools",
-          "title": "Get Elena's password dictionary list",
+          "title": "Get Irina's password dictionary list",
           "type": "collect_items",
           "targetItemIds": ["m06_password_dictionary", "relayed_password_dictionary"],
           "targetCount": 1,
@@ -428,7 +428,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
         },
         {
           "taskId": "decide_elena_fate",
-          "title": "Decide what happens to Dr. Elena Volkov",
+          "title": "Decide what happens to Dr. Irina Volkova",
           "type": "manual",
           "status": "active"
         },
@@ -536,7 +536,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
     "recon_guide_hint_given": false
   },
 
-  "endGoal": "Map ENTROPY's financial network, recover The Architect's Fund allocation, confront the exchange's leadership, and settle two questions: whether $12.8M is frozen tonight or watched for weeks, and whether Dr. Elena Volkov is turned or handed to the police.",
+  "endGoal": "Map ENTROPY's financial network, recover The Architect's Fund allocation, confront the exchange's leadership, and settle two questions: whether $12.8M is frozen tonight or watched for weeks, and whether Dr. Irina Volkova is turned or handed to the police.",
 
   "rooms": {
     "reception_lobby": {
@@ -661,13 +661,13 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
               "observations": "Reading, identifying and duplicating access badges with a handheld cloner"
             },
             {
-              "_comment": "PASS 2 KO fallback (lessons 19/24/38). Elena is in a room loaded after the start, so npc._sprite is unset and her itemsHeld never drop on a KO. On npc_ko:elena_volkov HaX pushes working copies. obtain_access_tools lists this id, so the collect task completes with a real item.",
+              "_comment": "PASS 2 KO fallback (lessons 19/24/38). Irina is in a room loaded after the start, so npc._sprite is unset and her itemsHeld never drop on a KO. On npc_ko:elena_volkov HaX pushes working copies. obtain_access_tools lists this id, so the collect task completes with a real item.",
               "type": "text_file",
               "id": "relayed_password_dictionary",
               "name": "Password Dictionary List (relayed copy)",
               "takeable": true,
-              "text": "HASHCHAIN INTERNAL — CREDENTIAL AUDIT WORDLIST\n(copy pulled from Dr. Volkov's workstation by SAFETYNET)\n\nbitcoin\nethereum\nsatoshi\nblockchain\nledger\nmonero\nhodl\nmoonshot\nprivatekey\ncoldstorage\n\nAppend: 2023 / 2024 / 2025 / 123 / !",
-              "observations": "Volkov's audit wordlist, pulled off her workstation by SAFETYNET after she went down"
+              "text": "HASHCHAIN INTERNAL — CREDENTIAL AUDIT WORDLIST\n(copy pulled from Dr. Volkova's workstation by SAFETYNET)\n\nbitcoin\nethereum\nsatoshi\nblockchain\nledger\nmonero\nhodl\nmoonshot\nprivatekey\ncoldstorage\n\nAppend: 2023 / 2024 / 2025 / 123 / !",
+              "observations": "Volkova's audit wordlist, pulled off her workstation by SAFETYNET after she went down"
             },
             {
               "type": "keycard",
@@ -675,7 +675,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
               "name": "CTO Badge (relayed copy)",
               "card_id": "cto_badge",
               "takeable": true,
-              "observations": "A copy of Volkov's office badge, rebuilt by SAFETYNET from the badge-reader logs. Opens the CTO's office."
+              "observations": "A copy of Volkova's office badge, rebuilt by SAFETYNET from the badge-reader logs. Opens the CTO's office."
             }
           ],
           "eventMappings": [
@@ -684,7 +684,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
               "eventPattern": "conversation_closed:opening_briefing_npc",
               "onceOnly": true,
               "completeTask": "receive_briefing",
-              "sendTimedMessage": { "delay": 3000, "message": "You're in. Remember the cover: FCA supervision, routine visit, bored and underpaid. The CTO is the one who matters. Dr. Elena Volkov, trading floor, straight through the checkpoint." }
+              "sendTimedMessage": { "delay": 3000, "message": "You're in. Remember the cover: FCA supervision, routine visit, bored and underpaid. The CTO is the one who matters. Dr. Irina Volkova, trading floor, straight through the checkpoint." }
             },
             {
               "eventPattern": "room_entered:reception_lobby",
@@ -698,7 +698,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
               "condition": "globalVars.exchange_infiltrated !== true && globalVars.elena_ko !== true",
               "onceOnly": true,
               "setGlobal": { "exchange_infiltrated": true },
-              "sendTimedMessage": { "delay": 4000, "message": "You've met Volkov. Whatever she's decided you are, she's the one person in that building who might want out. She built the mixer and she hates what it's used for. Work that." }
+              "sendTimedMessage": { "delay": 4000, "message": "You've met Volkova. Whatever she's decided you are, she's the one person in that building who might want out. She built the mixer and she hates what it's used for. Work that." }
             },
             {
               "_comment": "Lesson 26: the badge-given state comes from the pickup, not from ink set before the give tag.",
@@ -724,7 +724,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
               "sendTimedMessage": { "delay": 2500, "message": "The recovery keys are on the vault account on the backend. That's the last flag. Take the estate, and the drop-site will hand you what you need to freeze that wallet." }
             },
             {
-              "_comment": "Playtest D3: no completeTask here. obtain_access_tools is a collect task and completes itself from item_picked_up (objectives-manager.js:314-370); a mapping completeTask can reach the server before the collect lands and be rejected ('Insufficient items collected'), reverting the task. Pickup of the wordlist from Elena (#give_item) or the HaX relay. One mapping per id: conditions are &&-only (lesson 35). The cracking-guide offer rides on the first so the pair can't double-fire (lesson 2).",
+              "_comment": "Playtest D3: no completeTask here. obtain_access_tools is a collect task and completes itself from item_picked_up (objectives-manager.js:314-370); a mapping completeTask can reach the server before the collect lands and be rejected ('Insufficient items collected'), reverting the task. Pickup of the wordlist from Irina (#give_item) or the HaX relay. One mapping per id: conditions are &&-only (lesson 35). The cracking-guide offer rides on the first so the pair can't double-fire (lesson 2).",
               "eventPattern": "item_picked_up:text_file",
               "condition": "data.itemId === 'm06_password_dictionary' && globalVars.found_password_lists !== true",
               "onceOnly": true,
@@ -757,7 +757,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
               "eventPattern": "global_variable_changed:server_passphrase_known",
               "condition": "value === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1200, "message": "There's the house convention, in writing: a crypto term and a year, and the checklist says when it was written. Which term? Whatever tops the list people here actually use. Volkov keeps one." }
+              "sendTimedMessage": { "delay": 1200, "message": "There's the house convention, in writing: a crypto term and a year, and the checklist says when it was written. Which term? Whatever tops the list people here actually use. Volkova keeps one." }
             },
             {
               "_comment": "Backstop: a player who guesses the passphrase still ticks the task.",
@@ -839,7 +839,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
               "targetKnot": "on_satoshi_ko"
             },
             {
-              "_comment": "PASS 2 (lesson 27): decide_elena_fate sits in the conclusion aim, and completing it early auto-revealed that aim on the trading floor. Elena's ink now only sets elena_fate_decided; the task completes once the aim is open.",
+              "_comment": "PASS 2 (lesson 27): decide_elena_fate sits in the conclusion aim, and completing it early auto-revealed that aim on the trading floor. Irina's ink now only sets elena_fate_decided; the task completes once the aim is open.",
               "eventPattern": "objective_task_completed:access_satoshi_office",
               "onceOnly": true,
               "setGlobal": { "resolve_aim_open": true }
@@ -860,7 +860,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
               "eventPattern": "global_variable_changed:assets_decided",
               "condition": "value === true && globalVars.elena_fate_decided !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 2500, "message": "That's the money settled. Volkov is still on the trading floor and nobody has decided what happens to her. That's yours too." }
+              "sendTimedMessage": { "delay": 2500, "message": "That's the money settled. Volkova is still on the trading floor and nobody has decided what happens to her. That's yours too." }
             },
 <% (1..4).each do |n| %>
             {
@@ -904,7 +904,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
             "initiallyHidden": true
           },
           <%# PASS 2: was keyed on start_debrief_cutscene, set by a mapping the moment the
-              second decision tag ran, so the debrief could open over the Satoshi or Elena
+              second decision tag ran, so the debrief could open over the Satoshi or Irina
               conversation and ignored the concludeRequires flags (debrief shown, server
               refuses to conclude). Now it waits for a conversation to CLOSE (or a phone
               decision, or the last flag) with both decisions made and all four flags in.
@@ -912,7 +912,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
           "eventMappings": [
 <% all_in = "globalVars.assets_decided === true && globalVars.elena_fate_decided === true && globalVars.flag1_submitted === true && globalVars.flag2_submitted === true && globalVars.flag3_submitted === true && globalVars.flag4_submitted === true && globalVars.debrief_played !== true && globalVars.start_debrief_cutscene !== true" %>
 <%# PASS 2 review B2 / minor 13. The final state change can land inside a phone
-    chat (Satoshi-KO decision, Elena-KO relay) or the drop-site UI (last flag).
+    chat (Satoshi-KO decision, Irina-KO relay) or the drop-site UI (last flag).
     Opening the debrief then would tear that UI down mid-line, so those cases
     wait for the UI to close: every minigame close emits minigame_completed
     (#exit_conversation, flag success) or minigame_failed (the X / Esc),
@@ -945,7 +945,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
           "name": "HashChain Exchange Brochure",
           "takeable": true,
           "readable": true,
-          "text": "HASHCHAIN EXCHANGE - Premier Cryptocurrency Trading Platform\n\nOur Services:\n- Secure cryptocurrency trading\n- Blockchain analysis tools\n- Privacy-focused transactions\n- Enterprise compliance solutions\n\nLeadership:\nCEO: 'Satoshi Nakamoto II'\nCTO: Dr. Elena Volkov\n\nTagline: 'Financial Freedom Through Cryptography'",
+          "text": "HASHCHAIN EXCHANGE - Premier Cryptocurrency Trading Platform\n\nOur Services:\n- Secure cryptocurrency trading\n- Blockchain analysis tools\n- Privacy-focused transactions\n- Enterprise compliance solutions\n\nLeadership:\nCEO: 'Satoshi Nakamoto II'\nCTO: Dr. Irina Volkova\n\nTagline: 'Financial Freedom Through Cryptography'",
           "observations": "Official exchange brochure — impeccably legitimate on the surface",
           "puzzle_graph_optional": true
         }
@@ -989,7 +989,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
       "npcs": [
         {
           "id": "elena_volkov",
-          "displayName": "Dr. Elena Volkov",
+          "displayName": "Dr. Irina Volkova",
           "npcType": "person",
           "position": { "x": 5, "y": 5 },
           "spriteSheet": "female_scientist_v2",
@@ -1023,7 +1023,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
               "card_id": "cto_badge",
               "name": "CTO Access Badge",
               "takeable": true,
-              "observations": "Elena's office badge. She will lend it to someone she trusts; the RFID cloner can read it off her lanyard while she talks.",
+              "observations": "Irina's office badge. She will lend it to someone she trusts; the RFID cloner can read it off her lanyard while she talks.",
               "puzzle_graph_role": "key",
               "puzzle_graph_unlocks": "elena_office"
             },
@@ -1032,8 +1032,8 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
               "id": "m06_password_dictionary",
               "name": "Password Dictionary List",
               "takeable": true,
-              "text": "HASHCHAIN INTERNAL — CREDENTIAL AUDIT WORDLIST\n\nCompiled by Dr. E. Volkov for internal password strength testing.\n\nbitcoin\nethereum\nsatoshi\nblockchain\nledger\nmonero\nhodl\nmoonshot\nprivatekey\ncoldstorage\n\nAppend: 2023 / 2024 / 2025 / 123 / !\n\nNote: 61% of staff accounts fell to this list in the last audit.\nManagement's response was to stop running the audit.",
-              "observations": "Elena's own credential audit wordlist: the words and years her colleagues actually pick, on accounts and on door controllers alike",
+              "text": "HASHCHAIN INTERNAL — CREDENTIAL AUDIT WORDLIST\n\nCompiled by Dr. I. Volkova for internal password strength testing.\n\nbitcoin\nethereum\nsatoshi\nblockchain\nledger\nmonero\nhodl\nmoonshot\nprivatekey\ncoldstorage\n\nAppend: 2023 / 2024 / 2025 / 123 / !\n\nNote: 61% of staff accounts fell to this list in the last audit.\nManagement's response was to stop running the audit.",
+              "observations": "Irina's own credential audit wordlist: the words and years her colleagues actually pick, on accounts and on door controllers alike",
               "puzzle_graph_role": "tool",
               "puzzle_graph_unlocks": "vm_launcher_hackme"
             }
@@ -1077,7 +1077,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
           "name": "Daily Trading Report",
           "takeable": true,
           "readable": true,
-          "text": "HASHCHAIN EXCHANGE - DAILY TRADING SUMMARY\n\nVolume (24h): $847M USD equivalent\nTop Pairs: BTC/USD, ETH/USD, XMR/USD\n\nLarge Transactions Flagged:\n- Wallet 1ENTROPY2RansomInc: $2.4M mixed\n- Wallet 1TALENTSTACKPAY: $847K out, from 1ARCHITECT9FUND\n- Wallet 1ARCHITECT9FUND: $12.8M received\n\nCompliance Note: Privacy coins (Monero) usage extremely high.\nNote to Elena: Is this normal? -D.O.",
+          "text": "HASHCHAIN EXCHANGE - DAILY TRADING SUMMARY\n\nVolume (24h): $847M USD equivalent\nTop Pairs: BTC/USD, ETH/USD, XMR/USD\n\nLarge Transactions Flagged:\n- Wallet 1ENTROPY2RansomInc: $2.4M mixed\n- Wallet 1TALENTSTACKPAY: $847K out, from 1ARCHITECT9FUND\n- Wallet 1ARCHITECT9FUND: $12.8M received\n\nCompliance Note: Privacy coins (Monero) usage extremely high.\nNote to Irina: Is this normal? -D.O.",
           "observations": "The trader's own flagged-transactions report — ENTROPY wallet names in plain text",
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "entropy_wallets_known"
@@ -1218,7 +1218,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
               "readable": true,
               "collection_group": "transaction_server_files",
               "text": "SETTLEMENT EXCEPTIONS — LAST 30 DAYS\n\n2026-07-14  1ENTROPY2RansomInc   IN   $2,400,000   flagged, released by CTO override\n2026-07-29  1ENTROPY3ZeroDaySy   IN   $1,200,000   flagged, released by CTO override\n2026-08-02  1TALENTSTACKPAY      OUT    $847,000   from 1ARCHITECT9FUND, CEO authorisation\n2026-08-11  1ARCHITECT9FUND      OUT      pending   six wallets, SCHEDULED — CEO pre-authorised, auto-release in 72h\n\nException handler note: every inbound flag this month was cleared by the same account.\nOutbound from the fund wallet needs the CEO. He signed this batch in advance, so it goes out on its own.",
-              "observations": "Elena cleared every inbound flag. The CEO pre-signed the big payout: it leaves on a timer unless someone gets to the wallet first."
+              "observations": "Irina cleared every inbound flag. The CEO pre-signed the big payout: it leaves on a timer unless someone gets to the wallet first."
             },
             {
               "type": "text_file",
@@ -1346,7 +1346,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
 
     "elena_office": {
       "type": "room_office",
-      "door_sign": "Dr. E. Volkov, CTO",
+      "door_sign": "Dr. I. Volkova, CTO",
       "locked": true,
       "lockType": "rfid",
       "requires": "cto_badge",
@@ -1358,7 +1358,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
         {
           "type": "pc",
           "id": "elena_workstation",
-          "name": "Elena's Secure Workstation",
+          "name": "Irina's Secure Workstation",
           "takeable": false,
           "observations": "The CTO's personal machine — post-quantum research on one screen, the mixer's production dashboard on the other"
         },
@@ -1368,8 +1368,8 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
           "name": "Cryptography Research Notes",
           "takeable": true,
           "readable": true,
-          "text": "DR. ELENA VOLKOV - RESEARCH NOTES\n\nCurrent Projects:\n- Post-quantum cryptography for cryptocurrency\n- Zero-knowledge proof systems\n- Homomorphic encryption for private transactions\n\nPublications: 37 papers in top-tier cryptography journals\nCitations: 2,847\n\nNote to self: the exchange's 'privacy features' are being used to launder money. I built these systems for financial freedom, not for this. But Satoshi pays too well to walk away.\n\nWhat have I become?",
-          "observations": "Elena's research notes — the leverage you need is in the last three lines",
+          "text": "DR. IRINA VOLKOVA - RESEARCH NOTES\n\nCurrent Projects:\n- Post-quantum cryptography for cryptocurrency\n- Zero-knowledge proof systems\n- Homomorphic encryption for private transactions\n\nPublications: 37 papers in top-tier cryptography journals\nCitations: 2,847\n\nNote to self: the exchange's 'privacy features' are being used to launder money. I built these systems for financial freedom, not for this. But Satoshi pays too well to walk away.\n\nWhat have I become?",
+          "observations": "Irina's research notes — the leverage you need is in the last three lines",
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "elena_moral_conflict"
         },
@@ -1379,8 +1379,8 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
           "name": "Email: From The Architect",
           "takeable": true,
           "readable": true,
-          "text": "FROM: architect@entropy.onion\nTO: elena.volkov@hashchain.exchange\nSUBJECT: Phase 2 Funding Appreciation\n\nDr. Volkov,\n\nYour cryptocurrency infrastructure has proven invaluable to our coordination efforts. The mixing services and privacy protocols you designed enable operational security across every cell.\n\nPhase 3 approaches. Funding distribution in 72 hours.\n\nYour compensation: $500,000 USD (BTC) upon completion.\n\nContinue the excellent work.\n\n- The Architect\n\nP.S. Your CEO has developed a habit of setting every passcode in that building to the year the last bitcoin is mined. Tell him it is not as clever as he thinks it is.",
-          "observations": "Elena is in direct contact with The Architect. The postscript is about the CEO's passcodes.",
+          "text": "FROM: architect@entropy.onion\nTO: irina.volkova@hashchain.exchange\nSUBJECT: Phase 2 Funding Appreciation\n\nDr. Volkova,\n\nYour cryptocurrency infrastructure has proven invaluable to our coordination efforts. The mixing services and privacy protocols you designed enable operational security across every cell.\n\nPhase 3 approaches. Funding distribution in 72 hours.\n\nYour compensation: $500,000 USD (BTC) upon completion.\n\nContinue the excellent work.\n\n- The Architect\n\nP.S. Your CEO has developed a habit of setting every passcode in that building to the year the last bitcoin is mined. Tell him it is not as clever as he thinks it is.",
+          "observations": "Irina is in direct contact with The Architect. The postscript is about the CEO's passcodes.",
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "executive_safe_pin",
           "puzzle_graph_unlocks": "executive_safe"

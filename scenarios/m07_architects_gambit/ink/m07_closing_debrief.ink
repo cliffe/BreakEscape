@@ -215,6 +215,9 @@ Director Magnus Netherton: Two operations went unanswered. I am reading both.
     -> dark_meltdown ->
 }
 
+// PASS 2: sets up m08's "two of ours are dead at the sites the team could not reach".
+Director Magnus Netherton: And two of ours. Names withheld until the families are told.
+
 Narrator: He stops reading. He does not put the tablet down and he does not say anything to soften it, which is worse than if he had tried.
 
 -> the_people
@@ -245,7 +248,7 @@ Director Magnus Netherton: Operation Meltdown. Twelve targets, forty-seven zero-
 Director Magnus Netherton: That is what the news led with, so I have led with it too.
 Director Magnus Netherton: The ransomware landed across four thousand two hundred hospitals. Eighteen thousand procedures cancelled in the first week. Eighty-seven million patient records gone.
 Director Magnus Netherton: Eighty to a hundred and forty people did not survive that week, because the operation they were booked for became a spreadsheet nobody could open.
-Director Magnus Netherton: They died tonight, on your clock, while you were in Portland saving a different eight million.
+Director Magnus Netherton: It started tonight, on your clock, while you were in Portland saving a different eight million.
 ->->
 
 

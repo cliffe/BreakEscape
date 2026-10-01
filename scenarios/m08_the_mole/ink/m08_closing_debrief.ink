@@ -61,8 +61,11 @@ Director Magnus Netherton: A year ago Dr Okafor put a warning about him on my de
 { suspect_theory == "cipher" || suspect_theory == "phantom":
     Director Magnus Netherton: You told me early it was Cipher, or Phantom. You were wrong, and you came back and corrected it -- which is worth more than being right first. Two good officers spent a night under a suspicion they didn't earn. Go and buy them a drink; the service won't do it for you.
 - else:
-    { nightshade_suspected or suspect_theory == "nightshade":
+    {
+    - nightshade_suspected or suspect_theory == "nightshade":
         Director Magnus Netherton: You had him before the evidence did. You sat across a desk from the calmest man in a frightened building and you didn't buy the calm. I read the transcripts. That instinct is the reason you're still useful to me after they burned you.
+    - accused_cipher or accused_phantom:
+        Director Magnus Netherton: You never gave me a name, but you gave one to a man's face. The box made the case in the end. Next time, let it make the case first.
     - else:
         Director Magnus Netherton: You let the box make the case and kept your own opinion out of it until it was proven. Cold, and correct. It's how the innocent walk out of a mole hunt with their careers intact.
     }

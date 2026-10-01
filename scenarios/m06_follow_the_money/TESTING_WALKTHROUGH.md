@@ -17,14 +17,14 @@ Critical path (6 aims, 5 hops): **Establish Cover → Work The Floor → Crack T
 [Unlocks at start]
 
 1. **Reception Lobby (opening cutscene)** — Agent HaX briefing auto-plays on `game_loaded` (`timedConversation`, `skipIfGlobal: briefing_played`). `#complete_task:receive_briefing` fires at the top of the cutscene; backstops complete it on `conversation_closed:opening_briefing_npc` and on re-entering reception once `briefing_played` is set.
-2. **Trading Floor — Dr. Elena Volkov** — `#complete_task:meet_elena` fires at the top of her first meeting → `onComplete: unlockAim access_backend_systems`. When the conversation closes, HaX sets `exchange_infiltrated` and sends a delayed message.
+2. **Trading Floor — Dr. Irina Volkova** — `#complete_task:meet_elena` fires at the top of her first meeting → `onComplete: unlockAim access_backend_systems`. When the conversation closes, HaX sets `exchange_infiltrated` and sends a delayed message.
 
 ## Aim: Work The Floor
 [Unlocks after: aim `establish_cover` complete]
 
-3. **Trading Floor — Elena** — First meeting shows only the three openers (`first_meeting_scene`). Hub option "test your password strength" (`request_passwords`): hands over the wordlist at `elena_trust >= 15` (reachable on every opener), and on a second ask regardless of trust. `#give_item:text_file:m06_password_dictionary` → `obtain_access_tools` completes itself from the pickup (collect task); the handler sets `found_password_lists` and offers the cracking guide. The option disappears at once after the handover.
+3. **Trading Floor — Irina** — First meeting shows only the three openers (`first_meeting_scene`). Hub option "test your password strength" (`request_passwords`): hands over the wordlist at `elena_trust >= 15` (reachable on every opener), and on a second ask regardless of trust. `#give_item:text_file:m06_password_dictionary` → `obtain_access_tools` completes itself from the pickup (collect task); the handler sets `found_password_lists` and offers the cracking guide. The option disappears at once after the handover.
 4. **Security Checkpoint — IT New Starter Checklist** — Read the note → `server_passphrase_known` set (`onPickup`). Handler nudges toward the convention ("crypto term + year, the checklist says when it was written") **without** reading the passphrase out. `find_server_credentials` completes once both the wordlist and the checklist are in hand (or on entering the server room, as a backstop).
-5. **Server Room door** — The house convention is a crypto term + the checklist's year. Top of Elena's list is `bitcoin`; the checklist is Rev. January 2025 → **`bitcoin2025`**. Enter it at the password lock.
+5. **Server Room door** — The house convention is a crypto term + the checklist's year. Top of Irina's list is `bitcoin`; the checklist is Rev. January 2025 → **`bitcoin2025`**. Enter it at the password lock.
 6. **Server Room (enter)** — `access_server_room` completes → `onComplete: unlockAim crack_passwords`.
 7. **Blockchain Lab (enter)** — `access_blockchain_lab` completes (the lab is open off the hub; it lives in this aim so an early visit can't auto-reveal a later aim).
 8. **Blockchain Lab — ENTROPY Transaction Network Analysis** — Read/take → `onPickup: found_blockchain_evidence, financial_network_mapped`; `find_transaction_records` completes itself from the pickup (no mapping `completeTask`, playtest D3); handler sets `blockchain_debrief_available`.
@@ -53,8 +53,8 @@ Critical path (6 aims, 5 hops): **Establish Cover → Work The Floor → Crack T
 
 20. **Data Centre — Executive Access Badge** — Take it (rack drawer; the export's DC-03 note flags it) → `take_executive_badge` completes.
 21. **Executive Wing door** — Present `executive_badge` at the RFID lock.
-22. **Satoshi's Office (enter)** — now a `room_ceo` (playtest D5: the `room_office` desk block trapped the player at the south door); Satoshi at (5,5), safe pinned (8,2), manifesto (2,6). `access_satoshi_office` completes → `onComplete: unlockAim resolve_the_fund`; handler sets `resolve_aim_open` and, if Elena's fate is already set, completes `decide_elena_fate`.
-23. *(Optional)* **Elena's Office** (CTO badge — lent, cloned off her lanyard, or relayed on KO) & **Executive Safe** — the executive-wing press clipping ("Until 2140") gives the safe PIN **2140**; Elena's Architect email says his passcodes are the year the last bitcoin is mined. The manifesto no longer carries it. Open it → `open_executive_safe` (optional) → `architect_identity_found` (the CEO's own insurance notes on The Architect).
+22. **Satoshi's Office (enter)** — now a `room_ceo` (playtest D5: the `room_office` desk block trapped the player at the south door); Satoshi at (5,5), safe pinned (8,2), manifesto (2,6). `access_satoshi_office` completes → `onComplete: unlockAim resolve_the_fund`; handler sets `resolve_aim_open` and, if Irina's fate is already set, completes `decide_elena_fate`.
+23. *(Optional)* **Irina's Office** (CTO badge — lent, cloned off her lanyard, or relayed on KO) & **Executive Safe** — the executive-wing press clipping ("Until 2140") gives the safe PIN **2140**; Irina's Architect email says his passcodes are the year the last bitcoin is mined. The manifesto no longer carries it. Open it → `open_executive_safe` (optional) → `architect_identity_found` (the CEO's own insurance notes on The Architect).
 
 ## Aim: Settle The Account  *(missionConclusion → bond_visualiser)*
 [Unlocks after: aim `breach_executive_wing` complete]
@@ -62,8 +62,8 @@ Critical path (6 aims, 5 hops): **Establish Cover → Work The Floor → Crack T
 
 24. **Satoshi Nakamoto II** — `#complete_task:confront_satoshi` and `satoshi_confronted` fire at the top of his first conversation. Choosing "You're being detained" with no evidence shown reaches `arrest_resisted`: "Sit down" turns him `#hostile` (KO path), "Then look at this first" shows the evidence. Once `assets_decided` is set he always opens on `aftermath` (reload-safe).
 25. **Asset choice** — In dialogue: **Freeze** (needs `found_wallet_keys`), **Watch**, or, without the keys, **"Not yet, I'll be back with the recovery keys"** (sets `asset_decision_deferred`; HaX points at flag 4). Freeze/Watch set `assets_decided` and complete `decide_asset_strategy`. The scheduled six-wallet payout is CEO pre-signed and auto-releases: watch lets it run, freeze sweeps it first. On a Satoshi KO the same three options come by phone (`on_satoshi_ko`), re-openable from the HaX hub and by re-entering his office.
-26. **Elena's fate** — In her dialogue: **Recruit** (`elena_recruited`) or **Detain** (`elena_arrested`), each sets `elena_fate_decided`. `decide_elena_fate` completes from a handler mapping once `resolve_aim_open` is set (lesson 27 — the task is not completed early in the ink). KO alternative: `on_elena_ko_relay` hands relayed copies of her wordlist and badge and sets `elena_fate_decided` and `elena_ko_relayed`. Refusal now offers "Think about it" once (+10 trust) as an alternative to detaining her.
-27. **Debrief + credits** — When both decisions are made **and all four flags are in**, the next UI close fires the hidden `closing_debrief_person` (`person-chat`, `disableClose`): `conversation_closed` for Satoshi or Elena, `minigame_completed`/`minigame_failed` for the phone or drop-site, or `room_entered` on any room as a backstop. It never opens over an open UI. Each trigger latches `start_debrief_cutscene` so only one opens. The debrief sets `debrief_played` at its top and completes `hear_debrief` on its last line, which completes the aim → bond_visualiser; credits roll on `conversation_closed:closing_debrief_person`. Reload mid-debrief: any room entry with `debrief_played` completes `hear_debrief`.
+26. **Irina's fate** — In her dialogue: **Recruit** (`elena_recruited`) or **Detain** (`elena_arrested`), each sets `elena_fate_decided`. `decide_elena_fate` completes from a handler mapping once `resolve_aim_open` is set (lesson 27 — the task is not completed early in the ink). KO alternative: `on_elena_ko_relay` hands relayed copies of her wordlist and badge and sets `elena_fate_decided` and `elena_ko_relayed`. Refusal now offers "Think about it" once (+10 trust) as an alternative to detaining her.
+27. **Debrief + credits** — When both decisions are made **and all four flags are in**, the next UI close fires the hidden `closing_debrief_person` (`person-chat`, `disableClose`): `conversation_closed` for Satoshi or Irina, `minigame_completed`/`minigame_failed` for the phone or drop-site, or `room_entered` on any room as a backstop. It never opens over an open UI. Each trigger latches `start_debrief_cutscene` so only one opens. The debrief sets `debrief_played` at its top and completes `hear_debrief` on its last line, which completes the aim → bond_visualiser; credits roll on `conversation_closed:closing_debrief_person`. Reload mid-debrief: any room entry with `debrief_played` completes `hear_debrief`.
 
 ## Testing Checklist
 
@@ -82,7 +82,7 @@ Critical path (6 aims, 5 hops): **Establish Cover → Work The Floor → Crack T
 - [ ] Executive badge opens the wing; entering Satoshi's office unlocks aim 6 + `resolve_aim_open`
 - [ ] Confront Satoshi completes `confront_satoshi`
 - [ ] Freeze option present only with `found_wallet_keys`; Watch always present
-- [ ] Elena fate → `elena_fate_decided`; `decide_elena_fate` completes once aim 6 is open
+- [ ] Irina fate → `elena_fate_decided`; `decide_elena_fate` completes once aim 6 is open
 - [ ] Both decisions + all flags → debrief cutscene FIRST, then bond_visualiser + credits after its last line; no replay on reload
 - [ ] `find_transaction_records` / `discover_architects_fund` complete and don't revert
 - [ ] Walk in and out of Satoshi's office freely (room_ceo)
@@ -90,19 +90,19 @@ Critical path (6 aims, 5 hops): **Establish Cover → Work The Floor → Crack T
 ### Optional / alternate
 - [ ] Trader (`trader_suspicions`) and analyst (`pattern_concerns`) optional conversations complete their tasks without a KO
 - [ ] Transaction-server files (group of 3)
-- [ ] CTO badge via Elena lending it, via RFID clone off her lanyard (needs the cloner), or relayed on KO
+- [ ] CTO badge via Irina lending it, via RFID clone off her lanyard (needs the cloner), or relayed on KO
 - [ ] Safe PIN `2140` → Architect identity file → `architect_identity_found`
 
 ### Edge cases
-- [ ] **KO Elena** (`npc_ko:elena_volkov`) → `on_elena_ko_relay` hands the wordlist + badge copies, sets `elena_fate_decided`; credits branch on `elena_ko`
-- [ ] **Elena KO as the very last decision** (Satoshi KO'd + phone decision + all flags first) → debrief opens when the relay phone closes (review B2)
+- [ ] **KO Irina** (`npc_ko:elena_volkov`) → `on_elena_ko_relay` hands the wordlist + badge copies, sets `elena_fate_decided`; credits branch on `elena_ko`
+- [ ] **Irina KO as the very last decision** (Satoshi KO'd + phone decision + all flags first) → debrief opens when the relay phone closes (review B2)
 - [ ] **Reach Satoshi before flag 4** → "Not yet" defers; HaX nudges to flag 4; freeze is available on return
 - [ ] **KO Satoshi** (`npc_ko:satoshi_nakamoto`) → `on_satoshi_ko` puts the asset decision by phone (freeze only with `found_wallet_keys`, else defer); re-openable from the HaX hub sticky option and by re-entering his office
 - [ ] **Satoshi resists** ("You're being detained" from the opening, no evidence) → `arrest_resisted` → "Sit down" → `#hostile`; resolvable via the KO path
 - [ ] **Skip the safe** → debrief acknowledges the missing identity rather than asserting it
 - [ ] **Decisions in either order** → the debrief triggers guard on all of `assets_decided`, `elena_fate_decided` and the four flags
 - [ ] **Reload mid-Satoshi after deciding** → he opens on `aftermath`, cannot pick both options
-- [ ] **Re-talk after an ended conversation** → Elena, trader, analyst and Satoshi all loop back to a hub (never reach DONE); Elena routes to `after_choice` once her fate is set
+- [ ] **Re-talk after an ended conversation** → Irina, trader, analyst and Satoshi all loop back to a hub (never reach DONE); Irina routes to `after_choice` once her fate is set
 
 ## Continuity (with m05 / m07)
 - The **$847,000** is the Architect's **acquisition budget** for the Quantum Dynamics job, paid **out** of `1ARCHITECT9FUND` to the Insider Threat Initiative via the **TalentStack** wallet. It is not proceeds of selling data. The blockchain evidence, settlement log, daily report, opening briefing and phone all show it as an outbound payment.

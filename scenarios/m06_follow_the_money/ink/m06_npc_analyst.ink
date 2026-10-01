@@ -25,7 +25,7 @@ VAR player_name = "Agent 0x00"
     #speaker:narrator
     Narrator: An analyst is bent over a wall-sized monitor, dragging nodes around a transaction graph and muttering at it.
 
-    Priya Raghavan: *doesn't look up* If you're here about the flagged transactions, talk to Elena.
+    Priya Raghavan: *doesn't look up* If you're here about the flagged transactions, talk to Irina.
 
     Priya Raghavan: I just run the analysis. She makes the compliance decisions.
 
@@ -36,7 +36,7 @@ VAR player_name = "Agent 0x00"
     + [What transactions are you analysing?]
         -> transaction_work
 
-    + [I'll talk to Elena then]
+    + [I'll talk to Irina then]
         Priya Raghavan: *already back to screens* Okay.
         #exit_conversation
         -> hub
@@ -134,7 +134,7 @@ Priya Raghavan: Blockchain doesn't show the middle step, but our internal logs d
 
 Priya Raghavan: Exactly. Our internal database is way more valuable than the public blockchain for forensics.
 
-Priya Raghavan: Which is why Elena's so careful about access. If someone gets our logs, they can unmix transactions we've processed.
+Priya Raghavan: Which is why Irina's so careful about access. If someone gets our logs, they can unmix transactions we've processed.
 
 Priya Raghavan: Privacy customers would not be happy about that.
 
@@ -175,7 +175,7 @@ Priya Raghavan: Then timing analysis, looking for coordinated behaviour.
 
 Priya Raghavan: Finally, amount analysis: large conversions, unusual patterns.
 
-Priya Raghavan: Flag anything suspicious to Elena. She decides whether to file SARs or investigate deeper.
+Priya Raghavan: Flag anything suspicious to Irina. She decides whether to file SARs or investigate deeper.
 
 -> hub
 
@@ -210,7 +210,7 @@ Priya Raghavan: Either someone's consolidating funds from multiple sources, or..
 + [Or what?]
     -> coordinated_funding
 
-+ [Did you flag this to Elena?]
++ [Did you flag this to Irina?]
     -> elena_flagging
 
 === coordinated_funding ===
@@ -220,7 +220,7 @@ Priya Raghavan: Or it's coordinated funding for something. Multiple cells paying
 
 Priya Raghavan: That's... that's the kind of pattern you see with organised crime or terrorism.
 
-Priya Raghavan: I really hope Elena knows what she's doing with this investigation.
+Priya Raghavan: I really hope Irina knows what she's doing with this investigation.
 
 -> hub
 
@@ -240,7 +240,7 @@ Priya Raghavan: Hasn't told me her conclusions yet. Just said to keep monitoring
 === elena_concern ===
 #speaker:analyst
 
-Priya Raghavan: Hard to tell. Elena's always intense.
+Priya Raghavan: Hard to tell. Irina's always intense.
 
 Priya Raghavan: But yeah, she's been stressed. Stays late, re-runs my analyses, asks detailed questions.
 
@@ -257,7 +257,7 @@ Priya Raghavan: Coordinated mixing, consistent timing, large amounts, single des
 
 Priya Raghavan: If I saw this pattern at any other exchange, I'd assume criminal network funding.
 
-Priya Raghavan: But Satoshi says we're a legitimate business. Elena vouches for our compliance.
+Priya Raghavan: But Satoshi says we're a legitimate business. Irina vouches for our compliance.
 
 Priya Raghavan: So I'm trying not to jump to conclusions.
 
@@ -266,7 +266,7 @@ Priya Raghavan: So I'm trying not to jump to conclusions.
 === reporting_status ===
 #speaker:analyst
 
-Priya Raghavan: Flagged to Elena. She's investigating.
+Priya Raghavan: Flagged to Irina. She's investigating.
 
 Priya Raghavan: She hasn't filed an external SAR yet, which means either it's legitimate activity or she's gathering more evidence.
 
@@ -316,7 +316,7 @@ Priya Raghavan: The addresses name themselves. Somebody paid for vanity wallets,
 
 Priya Raghavan: Who's actually behind them, I can't tell from the chain. Monero anonymisation is really good.
 
-Priya Raghavan: Elena sees the customer records behind the addresses. I only see the patterns.
+Priya Raghavan: Irina sees the customer records behind the addresses. I only see the patterns.
 
 -> hub
 
@@ -345,7 +345,7 @@ Priya Raghavan: But some of these patterns scare me.
 
 Priya Raghavan: I'm analysing transactions that might be funding... I don't know. Terrorism? Organized crime?
 
-Priya Raghavan: And I tell myself it's not my job to judge. I'm just the analyst. Elena makes the decisions.
+Priya Raghavan: And I tell myself it's not my job to judge. I'm just the analyst. Irina makes the decisions.
 
 Priya Raghavan: But that feels like an excuse.
 
@@ -392,7 +392,7 @@ Narrator: She's quiet for a long moment.
 
 Priya Raghavan: I think some of our customers are using our privacy infrastructure for things that would horrify me if I knew the details.
 
-Priya Raghavan: I think Elena knows more than she's telling me.
+Priya Raghavan: I think Irina knows more than she's telling me.
 
 Priya Raghavan: And I think Satoshi cares more about ideology than consequences.
 

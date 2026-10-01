@@ -28,13 +28,13 @@
     },
     {
       "id": "door_elena_office",
-      "label": "Dr. E. Volkov, CTO<br/>RFID lock",
+      "label": "Dr. I. Volkova, CTO<br/>RFID lock",
       "kind": "lock",
       "optional": false
     },
     {
       "id": "elena_office",
-      "label": "Dr. E. Volkov, CTO",
+      "label": "Dr. I. Volkova, CTO",
       "kind": "room",
       "optional": false
     },
@@ -81,8 +81,8 @@
       "optional": true
     },
     {
-      "id": "npc_dr_elena_volkov",
-      "label": "Dr. Elena Volkov",
+      "id": "npc_dr_irina_volkova",
+      "label": "Dr. Irina Volkova",
       "kind": "key",
       "optional": false
     },
@@ -333,11 +333,11 @@
     },
     {
       "from": "trading_floor",
-      "to": "npc_dr_elena_volkov",
+      "to": "npc_dr_irina_volkova",
       "soft": false
     },
     {
-      "from": "npc_dr_elena_volkov",
+      "from": "npc_dr_irina_volkova",
       "to": "cto_access_badge",
       "soft": false
     },
@@ -347,7 +347,7 @@
       "soft": false
     },
     {
-      "from": "npc_dr_elena_volkov",
+      "from": "npc_dr_irina_volkova",
       "to": "password_dictionary_list",
       "soft": false
     },
@@ -357,7 +357,7 @@
       "soft": false
     },
     {
-      "from": "npc_dr_elena_volkov",
+      "from": "npc_dr_irina_volkova",
       "to": "action_",
       "soft": false
     },

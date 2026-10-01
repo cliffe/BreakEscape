@@ -4,7 +4,7 @@
 **Tier:** 3 (Advanced)
 **Duration:** 80–100 minutes
 **Focus:** ICS/SCADA security, NFS and service enumeration, privilege escalation, physical access control
-**Authority:** `ALIGNMENT_PLAN.md`. Where this doc and the plan disagree, the plan wins.
+**Authority:** `../PASS2_IMPROVEMENTS.md` (design rationale) and `../CONTRACT.md`. Where this doc and those disagree, they win.
 
 > This file was `planning/stage_0_option_a_infrastructure.md`, one of four playable-branch designs.
 > The four-branch architecture was cut. Option A is now **the** mission; the other three crises are
@@ -392,7 +392,7 @@ persistent timer overlay on the player's phone.
 
 **Build order.** The state contract comes first and gates everything else — the globals table, NPC
 ids, `displayName` values and ink knot names, published before any ink is written. Work packages are
-in `ALIGNMENT_PLAN.md`.
+in `../PASS2_IMPROVEMENTS.md` (retired ALIGNMENT_PLAN).
 
 **Attribution.** Inline `DisplayName:` prefixes only, matching `displayName` exactly: `Dr. James
 Mercer:`, `Elena Rodriguez:`, `Agent HaX:`, `Director Magnus Netherton:`, `Narrator:`, `You:`.
