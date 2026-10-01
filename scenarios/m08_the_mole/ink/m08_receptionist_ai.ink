@@ -6,7 +6,6 @@
 // ================================================
 
 VAR archives_password_found = false
-VAR safe_pin_found = false
 
 === start ===
 ATHENA: Reception. How may I help you tonight, Agent? Discreetly, of course. Everything is discreet tonight.
@@ -18,8 +17,8 @@ ATHENA: Reception. How may I help you tonight, Agent? Discreetly, of course. Eve
     ~ archives_password_found = true
     -> hub
 + [Ask about the Director's safe.]
-    ATHENA: Policy says personal safes use a self-chosen code. Practice says everyone uses their service number, and nobody has ever been made to fix it. If you know whose safe you're asking about, you already know the number.
-    ~ safe_pin_found = true
+    ATHENA: Policy says personal safes use a self-chosen code. Practice says everyone uses their own service number, and nobody has ever been made to fix it.
+    ATHENA: I may not read you the Director's personnel file. I will observe that he signs his service number on every printout he requests from personnel, and that someone left one of those in the operations-floor tray this evening.
     -> hub
 + [Ask what ATHENA has seen.]
     ATHENA: I see everything and I judge nothing, Agent. I will say only this: the calmest person in a frightened building is not always the bravest. Sometimes they are simply the one who is not surprised.
@@ -27,4 +26,4 @@ ATHENA: Reception. How may I help you tonight, Agent? Discreetly, of course. Eve
 + [Leave.]
     ATHENA: Of course. I'll log that you were here. I log everything now.
     #exit_conversation
-    -> DONE
+    -> hub

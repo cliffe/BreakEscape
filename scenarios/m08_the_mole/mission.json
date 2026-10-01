@@ -1,6 +1,6 @@
 {
   "display_name": "The Mole",
-  "description": "Someone inside SAFETYNET leaked Mission 7's operational details to ENTROPY. Return to headquarters to identify the traitor among your colleagues—before they can strike again.",
+  "description": "Someone inside SAFETYNET handed ENTROPY the Portland deployment before it was signed. Two agents are dead. Go back to headquarters and find the traitor among your own colleagues, quietly, before they vanish.",
   "difficulty_level": 2,
   "secgen_scenario": "m08_the_mole",
   "collection": "season_1",

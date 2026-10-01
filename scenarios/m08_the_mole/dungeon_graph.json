@@ -51,9 +51,21 @@
       "optional": true
     },
     {
+      "id": "lock_badge_printer",
+      "label": "Visitor Badge Printer<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "printed_server_zone_badge",
+      "label": "Printed Server-Zone Badge",
+      "kind": "key",
+      "optional": false
+    },
+    {
       "id": "visitor_badge_printer",
       "label": "Visitor Badge Printer",
-      "kind": "key",
+      "kind": "lock",
       "optional": true
     },
     {
@@ -105,8 +117,8 @@
       "optional": false
     },
     {
-      "id": "personnel_record_printout_agent_0x47",
-      "label": "Personnel Record Printout -- Agent 0x47",
+      "id": "personnel_print_job_director_s_investigation_request",
+      "label": "Personnel Print Job -- Director's Investigation Request",
       "kind": "item",
       "optional": false
     },
@@ -117,8 +129,8 @@
       "optional": false
     },
     {
-      "id": "mission_7_tactical_board",
-      "label": "Mission 7 Tactical Board",
+      "id": "four_site_night_tactical_board",
+      "label": "Four-Site Night Tactical Board",
       "kind": "item",
       "optional": false
     },
@@ -135,8 +147,8 @@
       "optional": false
     },
     {
-      "id": "global_threat_database_catalog",
-      "label": "Global Threat Database Catalog",
+      "id": "global_threat_database_catalogue",
+      "label": "Global Threat Database Catalogue",
       "kind": "item",
       "optional": false
     },
@@ -159,8 +171,8 @@
       "optional": false
     },
     {
-      "id": "detention_disposition_terminal",
-      "label": "Detention Disposition Terminal",
+      "id": "detention_disposition_screen",
+      "label": "Detention Disposition Screen",
       "kind": "item",
       "optional": false
     },
@@ -253,6 +265,21 @@
     },
     {
       "from": "main_lobby",
+      "to": "lock_badge_printer",
+      "soft": false
+    },
+    {
+      "from": "lock_badge_printer",
+      "to": "printed_server_zone_badge",
+      "soft": false
+    },
+    {
+      "from": "printed_server_zone_badge",
+      "to": "door_server_room",
+      "soft": false
+    },
+    {
+      "from": "main_lobby",
       "to": "visitor_badge_printer",
       "soft": true
     },
@@ -303,17 +330,17 @@
     },
     {
       "from": "operations_floor",
-      "to": "personnel_record_printout_agent_0x47",
+      "to": "personnel_print_job_director_s_investigation_request",
       "soft": false
     },
     {
-      "from": "personnel_record_printout_agent_0x47",
+      "from": "personnel_print_job_director_s_investigation_request",
       "to": "lock_director_safe",
       "soft": false
     },
     {
       "from": "intel_analysis",
-      "to": "mission_7_tactical_board",
+      "to": "four_site_night_tactical_board",
       "soft": false
     },
     {
@@ -328,7 +355,7 @@
     },
     {
       "from": "security_archives",
-      "to": "global_threat_database_catalog",
+      "to": "global_threat_database_catalogue",
       "soft": false
     },
     {
@@ -343,7 +370,7 @@
     },
     {
       "from": "interrogation_room",
-      "to": "detention_disposition_terminal",
+      "to": "detention_disposition_screen",
       "soft": false
     },
     {

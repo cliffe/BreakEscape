@@ -14,12 +14,12 @@ ATHENA: Welcome back, Agent 0x00. Security posture is Level Red. I have logged y
 
 You: What happened here?
 
-ATHENA: Mission 7 happened. And then somebody read the after-action report and realised the enemy already had a copy before we wrote it.
+ATHENA: Portland happened. Four sites in one night, and one team to send. Then somebody read the after-action report and realised the enemy had the deployment before we did.
 
-ATHENA: The leak came from inside this building. Director Cross is waiting for you in her office. She has three names. One of them got your colleagues killed.
+ATHENA: The leak came from inside this building. Director Netherton is waiting for you in his office. He has three names. One of them got two of your colleagues killed.
 
 ATHENA: A word of advice, from the only voice in here with no stake in the outcome: whoever it is has maximum access and years of practice. The moment they know you are hunting, they vanish. Be quiet. Be quick.
 
-ATHENA: The Director's office is north. Do try not to trust anyone on the way.
+ATHENA: The Director's office is north of this lobby. Do try not to trust anyone on the way.
 #exit_conversation
 -> DONE

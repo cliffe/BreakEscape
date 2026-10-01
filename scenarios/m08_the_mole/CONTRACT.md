@@ -160,3 +160,23 @@ Inline `Speaker:` prefixes matching the `displayName` exactly (`Director Magnus
 Netherton:`, `Agent HaX:`, `Agent 0x47 'Nightshade'`, `Agent 0x23 'Cipher'`,
 `Agent 0x88 'Phantom'`, `ATHENA:`). Scene beats are `Narrator:`. `You:` for the
 player. Choice brackets carry the player's actual words (no `You:` echo).
+
+---
+
+## PASS 2 amendments (supersede the sections above where they differ)
+
+- **New globals:** `fate_decided`, `start_debrief_cutscene`, `debrief_played`, `accused_cipher`, `accused_phantom`, `accused_nightshade`.
+- **closing_debrief** moved from `break_room` to `main_lobby` (always loaded). It opens on `conversation_closed:nightshade_confrontation`, `minigame_completed/failed`, or any `room_entered`, gated on `fate_decided` + all four `flagN_submitted`. It also hosts the `all_flags_submitted` latch. It no longer has `taskOnKO`, because it is hidden and can't be knocked down.
+- **take_the_debrief** is now `custom` and completes on the debrief's last line. Room-entry backstops on `opening_briefing_cutscene` cover a reload.
+- **disposition_terminal** is now a read-only `smartscreen` (textVariants). The fate is chosen in `m08_nightshade_confrontation.ink`, which completes `decide_the_fate` and sets `fate_decided`.
+- **badge_printer** is now a PIN-locked `pc` (PIN `0311` on the break-room post-it) holding `printed_server_badge`.
+- **Netherton's keycard** id is `netherton_keycard`, given by `#give_item:keycard:netherton_keycard`.
+- **Safe PIN** `2407` is the Director's service number, shown in the "Requested by" line of `nightshade_personnel_record`. Nightshade's own number is `4719`.
+- **Flag targets:** `flag_station_evidence_relay:safetynet_gitlist_server-flag1..4`.
+- **KO reactions** are keyed on `npc_ko:<id>`. `nightshade_confront_ko` resolves to arrest only through HaX's `npc_ko:nightshade_confrontation` safety net.
+- **Review round 2:**
+  - `open_interrogation_room` deleted.
+  - `read_the_archives` moved into `work_the_suspects`.
+  - `interview_cipher/phantom/nightshade`, `breach_server_room` and `read_the_archives` are now `custom`, completed by brief-gated mapping pairs.
+  - New globals: `brief_taken`, `server_room_entered`, `archives_entered`.
+  - The psych evaluator is Dr S. Okafor.
