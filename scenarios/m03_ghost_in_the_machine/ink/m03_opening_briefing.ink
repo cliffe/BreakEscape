@@ -1,8 +1,12 @@
 EXTERNAL player_name()
 
+// player_approach and knows_m2_connection are declared in the scenario's
+// globalVariables, so assigning them here writes through to game state, where the
+// phone hub, Danny's confrontation and the debrief read them back. No EXTERNAL
+// getters -- the engine binds only six, and an unbound one throws at runtime.
 VAR player_approach = ""
-VAR handler_trust = 50
 VAR knows_m2_connection = false
+VAR handler_trust = 50
 VAR mission_priority = ""
 VAR asked_about_victoria = false
 VAR asked_clone = false
@@ -10,117 +14,123 @@ VAR asked_network = false
 VAR asked_cover = false
 VAR asked_learn = false
 
+// Root divert. When a conversation has ended (-> DONE), the engine restores only
+// its variables on the next talk and continues from the root (npc-conversation-
+// state.js restoreNPCState). Without this line the root is empty and the player
+// sees "(End of conversation)" instead of the start knot's re-entry routing.
+-> start
+
 === start ===
-Narrator: A SAFETYNET briefing room. Director Netherton stands by the screen; Agent 0x99 is patched in over comms; and a man in a lab coat sits half-buried in a laptop he clearly built himself.
+Narrator: A SAFETYNET briefing room. Director Netherton stands by the screen; Agent HaX is patched in over comms; and a man in a lab coat sits half-buried in a laptop he clearly built himself.
 
-Director Magnus Netherton: Agent 0x00. Zero Day Syndicate have stopped selling exploits and started deploying them. That is a line I do not let a cell cross. You're going in. HaX runs you, Nightshade runs the technical side. Listen to both.
+Director Magnus Netherton: Agent 0x00. Zero Day Syndicate have stopped selling exploits and started deploying them through the people they sell to. That is a line I do not let a cell cross. You're going in. HaX runs you, Nightshade runs the technical side. Listen to both.
 
-Agent 0x47 'Nightshade': *not quite looking up from the laptop* Evening. Whatever they've built, I'll take it apart from here. You just get me close to it.
+Agent 0x47 'Nightshade': *distracted* Evening. Whatever they've built, I'll take it apart from here. You just get me close to it.
 
 Director Magnus Netherton: HaX. The floor's yours.
 
-Agent 0x99: {player_name()}, thanks for picking up. We have a developing situation.
-Agent 0x99: Zero Day Syndicate. You heard of them?
+Agent HaX: {player_name()}, thanks for picking up. Zero Day Syndicate. You heard of them?
 * [Refresh my memory]
-    You: Remind me - what's their deal?
+    You: Remind me what their deal is.
     -> briefing_main
 * [The exploit marketplace]
     ~ handler_trust = handler_trust + 10
     # influence_increased
-    You: The exploit marketplace. They sell zero-day vulnerabilities.
-    Agent 0x99: Exactly. And we've got evidence they're escalating.
+    You: The exploit marketplace. They find zero-days and sell them.
+    Agent HaX: That's them. And we've got evidence they're escalating.
     -> briefing_main
 * [Just brief me]
     ~ player_approach = "direct"
+    #set_global:player_approach:direct
     You: Skip the background. What's the mission?
-    Agent 0x99: Right to business. I like it.
+    Agent HaX: Right to business. Good.
     -> briefing_main
 
 === briefing_main ===
 #speaker:agent_0x99
-Agent 0x99: Zero Day operates under the cover of WhiteHat Security Services.
-Agent 0x99: Legitimate pen testing firm by day. Exploit marketplace by night.
+Agent HaX: Zero Day runs behind a real pentest firm -- WhiteHat Security Services. Legitimate audits by day. An exploit marketplace in the back rooms.
+Agent HaX: They don't run the attacks. They arm the cells that do.
 { player_approach == "direct":
-    Agent 0x99: Here's what matters: we need intel on their operations.
+    Agent HaX: Here's what matters: we need the client roster and the operational logs. Proof of who they arm and how.
     -> objectives
 }
-Agent 0x99: They've been selling exploits to other ENTROPY cells.
-* [Which cells?]
-    You: Which ENTROPY cells are they selling to?
-    Agent 0x99: Ransomware Incorporated, Social Fabric, Critical Mass... possibly others.
+* [Which cells buy from them?]
+    You: Which ENTROPY cells are we talking about?
+    Agent HaX: Ransomware Incorporated. Critical Mass. Others we haven't confirmed. Zero Day is their common supplier.
     ~ handler_trust = handler_trust + 5
     # influence_increased
     -> st_catherines_connection
 * [What kind of exploits?]
-    You: What kind of exploits are we talking about?
-    Agent 0x99: Healthcare infrastructure. Energy grid SCADA systems. Critical targets.
+    You: What are they dealing in?
+    Agent HaX: Healthcare systems. Grid control. The things that hurt people when they fail.
     -> st_catherines_connection
 * [This sounds serious]
     ~ player_approach = "cautious"
-    You: This sounds more serious than usual.
-    Agent 0x99: It is. Much more serious.
+    #set_global:player_approach:cautious
+    You: This sounds more serious than the usual cell.
+    Agent HaX: It is. They're the reason the others can punch above their weight.
     -> st_catherines_connection
 
 === st_catherines_connection ===
 #speaker:agent_0x99
-Agent 0x99: Remember the St. Catherine's Hospital attack from last month?
-Agent 0x99: The ransomware that killed six people in critical care?
-* [Of course I remember]
+Agent HaX: You worked St. Catherine's last month. The hospital that went dark.
+Agent HaX: The ransomware ran on a ProFTPD backdoor. That exploit didn't come from the crew who deployed it.
+* [Zero Day sold it]
     ~ knows_m2_connection = true
+    #set_global:knows_m2_connection:true
     ~ handler_trust = handler_trust + 5
     # influence_increased
-    You: Of course. The ProFTPD exploit. Patient monitoring systems went down.
-    Agent 0x99: Right. We think Zero Day sold that exploit.
+    You: The 1.3.3c source backdoor. Zero Day sold Ghost the way in.
+    Agent HaX: We think so. Tonight we prove it.
     -> mission_stakes
-* [That was ENTROPY?]
+* [That was Zero Day?]
     ~ knows_m2_connection = true
-    You: Wait - that hospital attack was ENTROPY?
-    Agent 0x99: We didn't have confirmation at the time. Now we do.
+    #set_global:knows_m2_connection:true
+    You: The exploit at St. Catherine's traces back here?
+    Agent HaX: Ghost pulled the trigger. Somebody handed them the gun. That's what we go and find.
     -> mission_stakes
-* [I heard about it]
+* [Remind me what happened there]
+    You: Walk me through St. Catherine's again.
+    Agent HaX: A ward full of patients on life support, encrypted in the night. Whether people died came down to a recovery decision. That's the buyer, Ghost. Zero Day sold the exploit and invoiced for it.
     ~ knows_m2_connection = true
-    You: I saw the news coverage. Six deaths.
-    Agent 0x99: Six confirmed. The real number might be higher.
+    #set_global:knows_m2_connection:true
     -> mission_stakes
 
 === mission_stakes ===
 #speaker:agent_0x99
-Agent 0x99: Zero Day didn't deploy the ransomware. They just sold the exploit.
-Agent 0x99: For $12,500. With a "healthcare premium" markup.
+Agent HaX: They sold it as a product. Twenty-five thousand on the invoice -- they price in US dollars -- with a healthcare premium on top.
 { knows_m2_connection:
-    Agent 0x99: They charged MORE because hospitals can't defend themselves as well.
-    Agent 0x99: Calculated profit from human suffering.
+    Agent HaX: They charge more to attack hospitals. Because hospitals can't defend themselves, and they pay fast to make it stop.
 }
-* [That's murder for profit]
+* [That's murder with an invoice]
     ~ handler_trust = handler_trust + 10
     # influence_increased
     ~ player_approach = "cautious"
-    You: That's not hacking. That's murder for profit.
-    Agent 0x99: Exactly. And they're planning Phase 2.
+    #set_global:player_approach:cautious
+    You: That's not a trade. That's murder with an invoice attached.
+    Agent HaX: That's the case we're building. And there's a Phase 2 behind it.
     -> objectives
-* [We need to stop them]
+* [We shut them down]
     ~ handler_trust = handler_trust + 5
     # influence_increased
-    You: We need to shut them down. Now.
-    Agent 0x99: Agreed. That's the mission.
+    You: Then we take the supplier off the board.
+    Agent HaX: Agreed. That's the mission.
     -> objectives
 * [What's Phase 2?]
-    You: You said Phase 2. What's Phase 2?
-    Agent 0x99: That's what you're going to find out.
+    You: You said Phase 2. What is it?
+    Agent HaX: That's the other thing you're going in to find.
     -> objectives
 
 === objectives ===
 #speaker:agent_0x99
-Agent 0x99: Your mission objectives:
-Agent 0x99: One - infiltrate WhiteHat Security and clone Victoria Sterling's executive keycard.
-Agent 0x99: Two - access their training network and gather intelligence on exploit sales.
-Agent 0x99: Three - find physical evidence linking Zero Day to the hospital attack.
-Agent 0x99: This tests your network recon, encoding analysis, and intelligence correlation - nmap scanning, banner grabbing, multi-layer decoding. Real pen testing work.
-Agent 0x99: Ask me whatever you need before you go in.
+Agent HaX: Three things, then. One: get inside and clone Victoria Sterling's executive keycard. She's the CEO of the front and the operational lead of the cell.
+Agent HaX: Two: after hours, get onto their training network and pull the flags. Recon, the services, and the legacy distcc box where their records sit.
+Agent HaX: Three: the physical paper trail. Client roster, the catalogue, anything naming St. Catherine's or Phase 2.
+Agent HaX: Ask me whatever you need before you go in.
 -> briefing_hub
 
 === briefing_hub ===
-+ {not asked_about_victoria} [Who's Victoria Sterling?]
++ {not asked_about_victoria} [Who is Victoria Sterling?]
     ~ asked_about_victoria = true
     -> topic_victoria
 + {not asked_clone} [How do I clone her keycard?]
@@ -129,175 +139,165 @@ Agent 0x99: Ask me whatever you need before you go in.
 + {not asked_network} [What's the training network?]
     ~ asked_network = true
     -> topic_network
-+ {not asked_cover} [How do I get in - what's my cover?]
++ {not asked_cover} [What's my cover?]
     ~ asked_cover = true
     -> topic_cover
 + {not asked_learn} [What will I actually learn from this?]
     ~ asked_learn = true
     -> topic_learn
-+ [That's everything - let's talk approach]
++ [That's everything. Let's talk approach.]
     -> mission_approach
 
 === topic_victoria ===
 #speaker:agent_0x99
-Agent 0x99: Victoria Sterling, CEO of WhiteHat Security. Former DEFCON speaker, respected researcher.
-Agent 0x99: And likely the operational lead for Zero Day Syndicate. Codename: "Sable."
-Agent 0x99: Smart, charismatic, ideologically committed to "free market vulnerability research."
-* [So she's convinced herself selling hospital exploits is just economics?]
+Agent HaX: Victoria Sterling. Founded WhiteHat in 2010, former conference speaker, respected researcher on the record.
+Agent HaX: On our side of the record she runs the front and answers to 0day and the Architect. Her sign-off name is Sable.
+* [So she's the head of Zero Day?]
+    You: She runs the whole cell, then?
+    Agent HaX: No. She runs the shop floor. 0day leads the cell, the Architect coordinates the network. Sterling is the one whose name is on the invoices -- which is exactly why she's who you can reach.
     ~ handler_trust = handler_trust + 5
     # influence_increased
-    Agent 0x99: Exactly. She's not a sociopath. She's a true believer - which might make her more dangerous.
     -> briefing_hub
-* [Any chance she's recruitable? As a double agent?]
+* [Any chance she flips?]
     ~ handler_trust = handler_trust + 10
     # influence_increased
     ~ player_approach = "diplomatic"
-    Agent 0x99: Possible. If you can make her see the human cost of her philosophy.
-    Agent 0x99: But that's optional. Primary mission is intelligence gathering.
+    #set_global:player_approach:diplomatic
+    Agent HaX: Maybe. Not because you move her -- she's a believer, not a mercenary. Only because a live source beats a cell you can't see. That's a decision for when you're stood in front of her, not now.
     -> briefing_hub
 + [Got it.]
     -> briefing_hub
 
 === topic_clone ===
 #speaker:agent_0x99
-Agent 0x99: You'll meet Victoria under the cover of a potential recruit. While you're with her, clone her RFID executive keycard - that's your server room access after hours.
-Agent 0x99: We're giving you a pocket-sized RFID cloner. Get within a couple of metres for about ten seconds; it vibrates when the clone's done, then get some distance.
-Agent 0x47 'Nightshade': And it's a straight capture-and-replay -- her card broadcasts, we copy, we impersonate. If you feel a pang about how easy that is, hold onto it. It's the same trick the other side uses on us, and one day it'll be our badge someone clones.
+Agent HaX: Two stages. Reception first: the receptionist's staff badge opens the conference area. Weak-default card, so the cloner cracks it in seconds. Lean in near her desk to capture it.
+Agent HaX: Then Sterling's executive card during your meeting. That one's custom-key, so the crack grinds -- stay in range while it works.
+Agent 0x47 'Nightshade': And it's capture and replay. Her card broadcasts, we copy, we impersonate. Same trick the other side uses on us. One day it'll be our badge somebody clones, so remember how easy it was.
 * [What if she notices?]
-    Agent 0x99: Play the curious recruit - you're interested in their research. The cloner stays passive until you trigger it.
+    Agent HaX: Play the curious recruit. She loves talking about the work. The cloner is passive until you trigger it.
     -> briefing_hub
 + [Understood.]
     -> briefing_hub
 
 === topic_network ===
 #speaker:agent_0x99
-Agent 0x99: Once you're in the server room you'll find their training network - a VM environment at 192.168.100.0/24.
-Agent 0x99: Zero Day uses it to test exploits before selling them. Run reconnaissance - port scanning, service enumeration, the usual.
-* [What am I looking for specifically?]
-    Agent 0x99: Operational logs. Client communications. Evidence of the hospital attack. And anything about Phase 2 - their future target list.
+Agent HaX: In the server room you'll find their training lab. A VM environment on 192.168.100.0/24. It's where they rehearse exploits before they sell them.
+Agent HaX: Map it, work the services, and get to the legacy distcc box. That's where the operational logs live.
+* [What am I looking for exactly?]
+    Agent HaX: Recon, FTP, the web host's price list, then distcc for the logs. Four flags, all submitted at the drop-site. The distcc one is the case.
     -> briefing_hub
-+ [Standard pentest procedures. Got it.]
++ [Standard workflow. Got it.]
     ~ handler_trust = handler_trust + 5
     # influence_increased
-    Agent 0x99: Exactly. Scan, enumerate, exploit if needed.
+    Agent HaX: Scan, enumerate, exploit. You know the shape of it.
     -> briefing_hub
 
 === topic_cover ===
 #speaker:agent_0x99
-Agent 0x99: Your cover: a cybersecurity researcher interested in Zero Day's training programs. Victoria's meeting you to size you up as recruit material.
-Agent 0x99: Entry point is a conference room meeting at 2 PM. After that you'll have until the building empties to prep.
-Agent 0x99: If she asks - you're a freelance pentester, small firms, looking for bigger opportunities, drawn to the "morally grey" side. That'll appeal to her.
+Agent HaX: You're a freelance pentester Sterling's looking at as a recruit. Small firms, drawn to the grey-market side. That's the profile that gets you a meeting.
+Agent HaX: Entry is a conference-room meeting this afternoon. After that the building empties and you come back for the real work.
 * [When do I hit the server room?]
-    Agent 0x99: After the daytime meeting. Most staff gone, just a security guard on patrol. That's when you move.
+    Agent HaX: After dark. Most staff gone, a guard on patrol in the executive wing. That's your window.
     -> briefing_hub
 + [I understand the setup.]
-    Agent 0x99: Good. And be natural with her - she's smart, she'll spot nervousness.
+    Agent HaX: Good. Be natural with her -- she reads people for a living.
     -> briefing_hub
 
 === topic_learn ===
 #speaker:agent_0x99
-Agent 0x99: Good question - this one's educational as well as operational.
-Agent 0x99: Network reconnaissance with nmap. Banner grabbing with netcat, and what systems leak unintentionally.
-Agent 0x99: Encoding versus encryption - decoding ROT13, hex, and Base64. That's obfuscation, not security.
-Agent 0x99: And the big one: correlating digital evidence with physical intelligence, and the economics of the zero-day marketplace.
+Agent HaX: Network recon with nmap. Service enumeration and what a banner gives away for free.
+Agent HaX: Encoding versus encryption -- ROT13, hex, Base64, and layered combinations. Obfuscation, not security.
+Agent HaX: And the big one: tying digital evidence to physical intelligence, and the economics that make a marketplace like this run.
 + [Understood.]
     -> briefing_hub
 
 === mission_approach ===
 #speaker:agent_0x99
-Agent 0x99: Before you go in - how do you want to approach this?
-Agent 0x99: Your call. I trust your judgment.
+Agent HaX: Before you go in -- how do you want to play it?
+Agent HaX: Your call. I trust your read.
 + [Careful and methodical]
     ~ player_approach = "cautious"
+    #set_global:player_approach:cautious
     ~ mission_priority = "thoroughness"
-    You: I'll be thorough. Document everything, leave no stone unturned.
-    Agent 0x99: Smart approach. The more intel we get, the better our case.
-    Agent 0x99: Just remember there's a guard on night patrol. Stealth matters.
+    You: I'll be thorough. Document everything.
+    Agent HaX: Smart. Zero Day leaves paper. Find it, connect it.
+    Agent HaX: And there's a guard on nights. Stealth counts.
     -> final_instructions
 + [Fast and decisive]
     ~ player_approach = "aggressive"
+    #set_global:player_approach:aggressive
     ~ mission_priority = "speed"
-    You: I'll move fast. Get the objectives done and get out.
-    Agent 0x99: Speed has advantages. Less time for things to go wrong.
-    Agent 0x99: But don't rush past critical evidence. The hospital connection proof is vital.
+    You: I move fast, get the objectives, get out.
+    Agent HaX: Less time for things to go wrong. But don't blow past the distcc logs -- that's the case.
     -> final_instructions
-+ [Adapt to the situation]
++ [Read the room]
     ~ player_approach = "diplomatic"
+    #set_global:player_approach:diplomatic
     ~ mission_priority = "stealth"
-    You: I'll read the situation. Stay flexible.
+    You: I'll stay flexible. Read the situation.
     ~ handler_trust = handler_trust + 10
     # influence_increased
-    Agent 0x99: Adaptability. That's why you're good at this.
-    Agent 0x99: Trust your instincts. Call if you need guidance.
+    Agent HaX: That's why you're good at this. Trust your instincts. Call if you need me.
     -> final_instructions
 
 === final_instructions ===
 #speaker:agent_0x99
 { player_approach == "cautious":
-    Agent 0x99: Your careful approach is good for this mission. Zero Day leaves paper trails.
-    Agent 0x99: Find the documents. Connect the dots.
+    Agent HaX: Careful suits this one. The evidence is there for anyone who reads slowly.
 }
 { player_approach == "aggressive":
-    Agent 0x99: You'll need speed for the network challenges. But take time for physical evidence.
-    Agent 0x99: Operational logs, client lists, anything linking them to St. Catherine's.
+    Agent HaX: Speed's fine. Just don't leave the logs behind for it.
 }
 { player_approach == "diplomatic":
-    Agent 0x99: Victoria might respect honesty if you find the right moment.
-    Agent 0x99: Optional objective: assess whether she's recruitable as a double agent.
+    Agent HaX: If Sterling's reachable at all, it'll be a moment you feel rather than plan. Watch for it.
 }
-Agent 0x99: Field Operations Rule 7 - "When infiltrating corporate environments, remember that the most valuable intelligence is often in the least secure location."
+Agent HaX: One rule that always holds: the most valuable thing in a building like this is usually in the least protected place.
 { knows_m2_connection:
-    Agent 0x99: And {player_name()}... six people died because of what Zero Day sold.
-    Agent 0x99: Four in critical care. Two during emergency surgery when systems failed.
-    Agent 0x99: Whatever you find, make it count.
+    Agent HaX: And {player_name()} -- whatever the count turns out to be at St. Catherine's, people died on the back of what Zero Day sold. Make this count.
 }
 * [I won't let you down]
     ~ handler_trust = handler_trust + 10
     # influence_increased
-    You: I'll get the evidence. Zero Day is going down.
-    Agent 0x99: That's what I wanted to hear. Stay safe out there.
+    You: I'll get the evidence. Zero Day goes down.
+    Agent HaX: That's what I wanted to hear. Stay safe.
     -> deployment
 * [Any last advice?]
-    You: Any last advice before I go in?
+    You: Anything else before I go in?
     -> last_advice
 * [I'm ready]
     -> deployment
 
 === last_advice ===
 #speaker:agent_0x99
-Agent 0x99: Victoria will test you. Philosophical questions about security ethics.
-Agent 0x99: Play the curious researcher. Don't tip your hand.
-Agent 0x99: And if you find evidence of Danny Foster's involvement...
-Agent 0x99: He's a mid-level consultant. Might be innocent, might be complicit. Your call on what to do.
+Agent HaX: Sterling will test you. Ethics questions dressed up as philosophy. Stay the curious recruit; don't argue her down.
+Agent HaX: And there's a consultant, Danny Foster. He did the hospital reconnaissance. He may be complicit, he may be a man who was lied to. If you find him, that's your call.
 * [I'll assess in the field]
     ~ handler_trust = handler_trust + 5
     # influence_increased
-    You: I'll make that judgment when I have the facts.
-    Agent 0x99: Good answer. Collect evidence first, decide later.
+    You: I'll decide when I've got the facts.
+    Agent HaX: Good answer. Evidence first.
     -> deployment
-* [Every ENTROPY operative goes down]
+* [Everyone who armed that attack answers for it]
     ~ player_approach = "aggressive"
-    You: If he's involved with ENTROPY, he's compromised.
-    Agent 0x99: Maybe. But gather proof before making that call.
+    #set_global:player_approach:aggressive
+    You: If he did the recon, he's part of it.
+    Agent HaX: Maybe. Get the proof before you make that call.
     -> deployment
 * [Understood]
     -> deployment
 
 === deployment ===
 #speaker:agent_0x99
-Agent 0x99: WhiteHat Security is at 1247 Market Street, downtown financial district.
-Agent 0x99: I'll be on comms if you need support. The drop-site terminal in the server room connects directly to me.
+Agent HaX: WhiteHat Security, 1247 Market Street. I'm on comms the whole time. The drop-site terminal in the server room comes straight back to me.
 { handler_trust >= 70:
-    Agent 0x99: And {player_name()}? I know you'll do this right. You always do.
+    Agent HaX: And {player_name()}? I know you'll do this right. You always do.
 }
 { (handler_trust >= 50) && (handler_trust < 70):
-    Agent 0x99: Good luck. You've got this.
+    Agent HaX: Good luck. You've got this.
 }
 { handler_trust < 50:
-    Agent 0x99: Stay focused. Don't let the stakes psych you out.
+    Agent HaX: Stay focused. Don't let the stakes crowd your head.
 }
-Agent 0x99: Remember: meet with Victoria, clone her keycard, then night infiltration.
-Agent 0x99: Go get 'em, {player_name()}. Haxolottle out.
-[Transition: Fade to WhiteHat Security reception lobby, 2 PM]
+Agent HaX: Meet Sterling, clone her card, then come back after dark. Go.
 #start_gameplay
 -> DONE

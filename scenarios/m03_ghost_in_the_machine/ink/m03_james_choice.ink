@@ -1,350 +1,126 @@
-EXTERNAL player_approach()
 EXTERNAL player_name()
 
-VAR james_evidence_level = 0
+// james_fate is a scenario global; assigning it writes through to game state,
+// where the credits and the debrief read it back. No unbound EXTERNAL getters.
 VAR james_fate = ""
+VAR danny_evidence_seen = false
 VAR player_choice_made = false
 
+// Root divert. When a conversation has ended (-> DONE), the engine restores only
+// its variables on the next talk and continues from the root (npc-conversation-
+// state.js restoreNPCState). Without this line the root is empty and the player
+// sees "(End of conversation)" instead of the start knot's re-entry routing.
+-> start
+
 === start ===
-#speaker:computer
-[Location: Danny Foster's Office]
-[You're searching through files and documents]
-You find a folder labeled "GHOST - Hospital Infrastructure Assessment"
-Inside: network diagrams of hospital IT systems, vulnerability notes, target specifications.
-This is reconnaissance documentation for the St. Catherine's Hospital attack.
--> initial_reaction
+#speaker:danny_foster
+// Re-entry guard: the decision scene plays once. Talking again must not replay it
+// and overwrite james_fate.
+{ james_fate != "":
+    -> after_choice
+}
+Narrator: The office is small and lived-in. A framed photo faces the chair. On the screen, a folder is still open: "GHOST -- Hospital Infrastructure Assessment".
+Narrator: A man is sitting in the dark with his coat on, as if he has been about to leave for hours and hasn't managed it. He doesn't startle.
+Danny Foster: You're not one of ours. I'd know you.
+Danny Foster: You've seen it. The hospital files.
+* [SAFETYNET. I'm investigating the St. Catherine's attack.]
+    -> reveal
+* [St. Catherine's. Your reconnaissance. People died.]
+    -> guilt
+* [She lied to you about the client, didn't she.]
+    -> sympathy
 
-=== initial_reaction ===
-* [Read through the entire file carefully]
-    -> examine_evidence_thoroughly
-* [This proves Danny is guilty - document it immediately]
-    -> rush_to_judgment
-* [Look for more context before deciding]
-    -> search_for_context
+=== reveal ===
+#speaker:danny_foster
+Danny Foster: *very quietly* SAFETYNET.
+Danny Foster: I didn't know. You have to believe that. She told me it was a security-awareness client. That's what the paperwork says because that's what she told me to write.
+Danny Foster: And then I saw the news, and I knew exactly what I'd handed her.
+-> the_question
 
-=== examine_evidence_thoroughly ===
-You carefully read through Danny's documentation.
-FINDINGS:
-Document 1: Hospital network reconnaissance
-Detailed network mapping of St. Catherine's Regional Medical Center
-Identified vulnerable FTP server (ProFTPD 1.3.5)
-Patient monitoring system architecture documented
-Critical care unit network topology
-Document 2: Vulnerability assessment
-ProFTPD backdoor vulnerability noted (CVE-2010-4652)
-Exploitation feasibility: HIGH
-Impact assessment: "Critical care systems dependent on network"
-Recommendation: "Suitable for CLIENT: GHOST deployment"
-Document 3: Email correspondence
-TO: victoria.sterling@whitehat-security.com
-FROM: danny.foster@whitehat-security.com
-SUBJECT: St. Catherine's Assessment Complete
-"Victoria - completed the hospital assessment you requested.
-ProFTPD vulnerability confirmed exploitable. Network architecture
-documented. Ready for client delivery. -DF"
-~ james_evidence_level = 2
--> evidence_analysis
+=== guilt ===
+#speaker:danny_foster
+Danny Foster: *voice cracks* I know. I know what my map was for.
+Danny Foster: I read every article. I could tell you the ward layout from memory because I drew it. I keep thinking if I'd asked one more question --
+Danny Foster: But I didn't. I did good, thorough work, and I gave it to her, and she sold it.
+-> the_question
 
-=== evidence_analysis ===
-This evidence proves Danny conducted the reconnaissance that enabled the hospital attack.
-But additional documents reveal more context...
-[You find a second folder: "Personal Notes"]
-Inside: diary entries from Danny
-ENTRY - May 10, 2024:
-"Victoria asked me to do a hospital security assessment.
-Said it was for a 'security awareness client.' I completed
-the network analysis - it's my job. Professional, thorough work.
-That's what I do. I assess vulnerabilities. That's the business."
-ENTRY - May 20, 2024:
-"Saw the news about St. Catherine's Hospital. Ransomware attack.
-Patient deaths. Critical care systems failed.
-That network diagram looked familiar.
-Oh god. Was that...? No. Victoria said it was for security awareness.
-She wouldn't... would she?"
-ENTRY - May 22, 2024:
-"I confronted Victoria about St. Catherine's. She said I was
-being paranoid. Said hospitals get attacked all the time.
-Said there's no way to know if our assessment was connected.
-But the network topology matches EXACTLY what I documented.
-I think... I think we enabled that attack. I think Victoria
-sold our reconnaissance to whoever deployed that ransomware.
-I helped kill those people. I didn't know. I didn't KNOW.
-What do I do?"
-ENTRY - May 25, 2024:
-"Victoria offered me a raise. Significant raise. Said I'm
-'essential to the business' and she 'trusts my discretion.'
-She knows that I know. And she's paying me to stay quiet.
-I should go to the police. To the FBI. To someone.
-But if I do... I'm admitting I enabled mass casualties. Even
-if I didn't know, I did the work. My network assessment.
-My vulnerability report. My recommendations.
-I could go to prison. My career would be over. My family...
-God help me, I'm considering taking the money and saying nothing."
-~ james_evidence_level = 1
--> moral_complexity
+=== sympathy ===
+#speaker:danny_foster
+Danny Foster: Security-awareness training at a healthcare client. Her exact words. I even believed the invoice.
+Danny Foster: I did the work. Careful work. And then the ransomware ran on the exact FTP box I'd flagged, and I understood what careful had bought.
+-> the_question
 
-=== moral_complexity ===
-The full picture emerges:
-DANNY'S ROLE:
-Conducted hospital reconnaissance (standard pen testing work)
-Believed it was for legitimate security awareness client
-Did NOT know Victoria would sell intelligence to Ransomware Inc
-Discovered the truth AFTER the attack when he saw news coverage
-DANNY'S KNOWLEDGE NOW:
-Knows his work enabled the attack
-Knows Victoria lied about the client
-Suspects Zero Day sold exploit and reconnaissance to attackers
-Was offered hush money (raise) to stay quiet
-DANNY'S CURRENT STATE:
-Guilty, conflicted, paralyzed by fear
-Wants to come forward but fears legal consequences
-Taking Victoria's raise = complicity, but easier path
-No definitive choice made yet in his notes
--> james_moral_choice
+=== the_question ===
+#speaker:danny_foster
+~ danny_evidence_seen = true
+Danny Foster: When I worked it out, I went to her. She told me I was paranoid. Then she gave me a raise and called me essential.
+Danny Foster: She was buying my silence and I was letting her, because the alternative is this. A stranger in my office at night, and me trying to explain that I'm not what the map makes me look like.
+Danny Foster: So. What happens now?
++ [Come in on your own. Testify against Sterling. I'll argue you were deceived.]
+    -> protect
++ [You drew the map. You took the money to stay quiet. That's a choice, and you'll answer for it.]
+    -> expose
++ [This isn't my call to make for you. Decide it yourself.]
+    -> leave
 
-=== james_moral_choice ===
-You have evidence of Danny's involvement. But the context matters.
-He unknowingly conducted reconnaissance that enabled 6 deaths.
-Now he knows the truth and is wrestling with whether to come forward.
-What do you do with this evidence?
-* [Protect Danny - he's a victim too]
-    ~ james_fate = "protected"
-    -> choice_protect
-* [Expose Danny - ignorance doesn't erase complicity]
-    ~ james_fate = "exposed"
-    -> choice_expose
-* [Leave the evidence - let Danny make his own choice]
-    ~ james_fate = "ignored"
-    -> choice_leave
-
-=== choice_protect ===
-You decide to protect Danny.
-Reasoning: He was deceived by Victoria. He did standard pen testing work
-under false pretenses. He's guilty, yes, but unwittingly. And he's
-clearly tormented by what happened.
-Victoria is the one who weaponized his work. She's the real criminal.
-ACTION: You document Victoria's deception but omit Danny's name from reports.
-In your notes, you write:
-"Zero Day Syndicate used internal consultants under false pretenses to
-conduct reconnaissance. Consultants believed work was for legitimate
-security awareness clients. CEO Victoria Sterling (SABLE) intentionally
-misrepresented client identity to obtain hospital reconnaissance."
-This framing protects Danny while still building the case against Victoria.
+=== protect ===
+#speaker:danny_foster
+You: You were lied to. The reconnaissance was legitimate work under a false client. Come in voluntarily and cooperate, and I'll put that in the report myself. Not immunity. But the truth, in your favour.
+Danny Foster: *shakily* You'd do that.
+You: Sterling goes down for what she did with your work. You don't have to go down with her. But you have to come in, and you have to tell them everything.
+Danny Foster: Everything. Yes. God, yes.
+Narrator: He reaches for his phone with a hand that isn't quite steady, and for the first time all night he looks like a man who might sleep.
+~ james_fate = "protected"
+#set_global:james_fate:protected
 ~ player_choice_made = true
 #complete_task:james_choice_made
--> james_protected_outcome
-
-=== james_protected_outcome ===
-#set_global:james_protected:true
-[You add a handwritten note to Danny's diary]
-"Danny - I found your notes. I know what Victoria did to you.
-I'm with SAFETYNET. We're building a case against Zero Day.
-Your reconnaissance work was legitimate pen testing done under
-false pretenses. You're a victim of Victoria's deception, not
-a conspirator.
-If you want to come forward voluntarily, contact SAFETYNET.
-If not, your name won't appear in our reports. That's your choice.
-But Victoria goes down for what she did. -Agent {player_name()}"
-{ player_approach() == "diplomatic":
-    [This aligns with your diplomatic approach - recognize nuance, give people choices]
-}
-Evidence logged. Danny's fate: PROTECTED.
 #exit_conversation
--> DONE
+-> after_choice
 
-=== choice_expose ===
-You decide to expose Danny's full involvement.
-Reasoning: Six people died. Danny's reconnaissance enabled those deaths.
-Yes, he was deceived about the client, but he still did the work.
-He documented vulnerable systems, identified exploitation paths, and
-delivered that intelligence to Victoria.
-And now, knowing the truth, he's considering taking hush money instead
-of coming forward. That's a choice. That's complicity.
-Ignorance might reduce his guilt, but it doesn't erase it.
-ACTION: You document Danny's full involvement in your report.
-In your notes, you write:
-"Danny Foster, senior consultant, conducted hospital reconnaissance that
-directly enabled St. Catherine's attack. Evidence suggests he was
-initially deceived about client identity but subsequently learned the
-truth and accepted financial compensation to remain silent. Recommend
-federal charges for conspiracy after the fact."
+=== expose ===
+#speaker:danny_foster
+You: You documented the systems. You handed over the exploit path. And when you knew what it was for, you took her money and said nothing. Deceived at the start, complicit by the end.
+Danny Foster: *quietly* You're not wrong. That's the worst of it. You're not wrong.
+You: I'm logging all of it. The recon, the emails, the raise. Prosecutors decide the charge, not me. Cooperating will help you. Nothing erases it.
+Danny Foster: *defeated* Then I'll cooperate. For whatever it's worth. Just -- in whatever you write, say that I didn't know at the start. Please.
+Narrator: He doesn't argue. Somewhere in the last few months he stopped believing he'd get to.
+~ james_fate = "exposed"
+#set_global:james_fate:exposed
 ~ player_choice_made = true
 #complete_task:james_choice_made
--> james_exposed_outcome
-
-=== james_exposed_outcome ===
-#set_global:james_exposed:true
-[You photograph all of Danny's documents and diary entries]
-Evidence includes:
-Hospital reconnaissance files
-Vulnerability assessments
-Email correspondence with Victoria
-Diary entries showing he learned the truth
-Notes about accepting Victoria's raise as hush money
-This will likely lead to Danny's arrest alongside Victoria.
-He may receive a lighter sentence due to initial deception, but he'll
-face consequences for his role - both the reconnaissance and the coverup.
-{ player_approach() == "aggressive":
-    [This aligns with your aggressive approach - all ENTROPY operatives face justice]
-}
-Evidence logged. Danny's fate: EXPOSED.
 #exit_conversation
--> DONE
+-> after_choice
 
-=== choice_leave ===
-You decide to leave the evidence but take no direct action regarding Danny.
-Reasoning: This is Danny's moral choice to make, not yours.
-He has all the information. He knows what happened. He knows the
-consequences. He's wrestling with whether to come forward or accept
-the hush money.
-You're not his judge. Your job is to stop ENTROPY and bring down
-Victoria. Danny's fate should be determined by his own choices, not
-by your intervention.
-ACTION: You document the evidence objectively without advocating for
-Danny's protection or exposure.
-In your notes, you write:
-"Danny Foster conducted hospital reconnaissance under direction from
-Victoria Sterling. Diary evidence suggests initial deception regarding
-client identity, followed by post-attack knowledge and internal
-conflict regarding disclosure. Status: undetermined pending Danny's
-own decisions."
+=== leave ===
+#speaker:danny_foster
+You: You already know what you did and what you owe. That decision belongs to you, not to a stranger in your office at four in the morning.
+You: Sterling is who I came for. What you do next is between you and whoever you pick up that phone to call.
+Danny Foster: That's almost worse. At least a decision made for me isn't mine.
+You: It's the only one that'll hold, though. Make it.
+Narrator: You leave him with the photo, the open folder, and the phone. Whatever he does with the three of them, he does alone.
+~ james_fate = "left"
+#set_global:james_fate:left
 ~ player_choice_made = true
 #complete_task:james_choice_made
--> james_ignored_outcome
-
-=== james_ignored_outcome ===
-[You leave the evidence as you found it]
-You don't add any notes. You don't remove any documents. You don't
-interfere with Danny's decision-making process.
-If Danny comes forward to authorities, he'll be treated as a cooperating
-witness. If he accepts the hush money and stays silent, he'll likely be
-implicated when Victoria's full operation is exposed.
-Either way, it's his choice. His moral agency. His consequences.
-{ player_approach() == "cautious":
-    [This aligns with your cautious approach - gather evidence, let the system decide]
-}
-Evidence logged. Danny's fate: UNDECIDED (his choice).
 #exit_conversation
--> DONE
+-> after_choice
 
-=== search_for_context ===
-You resist the urge to immediately judge Danny.
-Instead, you search for more context. Were there other files? Other communications?
-[You find Danny's personal diary - see the entries above]
--> evidence_analysis
-
-=== rush_to_judgment ===
-You immediately photograph the hospital reconnaissance files.
-This is proof. Danny Foster conducted the recon that enabled the St. Catherine's attack.
-But wait... there's another folder on the desk.
-* [Document what you have and move on - you found the smoking gun]
-    ~ james_evidence_level = 2
-    ~ james_fate = "exposed"
-    ~ player_choice_made = true
-    You photograph the reconnaissance files and email.
-    Evidence logged: Danny Foster complicit in hospital attack reconnaissance.
-    #complete_task:james_choice_made
+=== after_choice ===
+// Resting point (m02 pattern): choices first, never DONE, so a re-talk in the
+// same session lands here instead of "(End of conversation)".
+#speaker:danny_foster
++ {james_fate == "protected"} [Danny's on the phone to SAFETYNET. Leave him to it.]
+    Danny Foster: They're sending someone for me. Thank you. I mean it.
     #exit_conversation
-    -> DONE
-* [Check the other folder - be thorough]
-    -> search_for_context
-
-=== james_confrontation ===
-#speaker:danny_foster
-[The office door opens - Danny Foster stands in the doorway]
-#display:james-shocked
-Danny Foster: What... what are you doing in my office?
-[He sees the open files on the desk]
-Danny Foster: You found the hospital files.
-* [SAFETYNET. You're under investigation for the St. Catherine's Hospital attack.]
-    -> james_safetynet_reveal
-* [St. Catherine's Hospital. Your reconnaissance. Six people died.]
-    -> james_guilt_confrontation
-* [She lied to you about the client. You thought it was legitimate security work.]
-    -> james_sympathy_approach
-
-=== james_safetynet_reveal ===
-#speaker:danny_foster
-#display:james-terrified
-Danny Foster: [Goes pale] SAFETYNET... oh god.
-Danny Foster: I didn't know. You have to believe me. I didn't know Victoria was going to sell that intel.
-Danny Foster: I thought it was for a security awareness client. That's what she told me.
-* [You learned the truth after the attack. And you took her hush money instead of coming forward.]
-    Danny Foster: [Desperate] I was scared! I still am! If I come forward, I'm admitting I enabled mass casualties!
-    -> james_plea
-* [If you cooperate fully, SAFETYNET can consider witness protection. But you need to tell us everything.]
-    Danny Foster: [Hopeful] Everything? Yes. Yes, I'll tell you everything Victoria did.
-    -> james_cooperation
-
-=== james_guilt_confrontation ===
-#speaker:danny_foster
-#display:james-broken
-Danny Foster: [Voice cracks] I know. I KNOW.
-Danny Foster: I see their faces every time I close my eyes. I read every article. Every obituary.
-Danny Foster: Angela Martinez. David Chen. Sarah Thompson. Marcus Gray. Jennifer  Wu. Robert Patterson.
-Danny Foster: I can name them all. The six people my work helped kill.
-* [If you feel that guilt, why haven't you gone to the authorities?]
-    Danny Foster: [Ashamed] Because I'm a coward. Because I'm terrified of prison. Because I want to believe it wasn't my fault.
-    -> james_plea
-* [You can still make this right. Testify against Victoria. Help us stop Phase 2.]
-    Danny Foster: [Looks up] Phase 2? There's... there's another attack planned?
-    -> james_cooperation
-
-=== james_sympathy_approach ===
-#speaker:danny_foster
-#display:james-conflicted
-Danny Foster: [Nods slowly] She lied. Said it was for "security awareness training" at a healthcare client.
-Danny Foster: I did the work. Good work. Thorough. Professional.
-Danny Foster: And then I saw the news. And I knew.
-* [Victoria weaponized your legitimate pen testing work. You're a victim too.]
-    Danny Foster: [Quietly] Am I? I still did the reconnaissance. My diagrams. My vulnerability notes.
-    -> james_plea
-* [And when you learned the truth, you took a raise instead of going to the police.]
-    Danny Foster: [Defensive] What was I supposed to do? Confess to enabling mass murder? Destroy my life?
-    -> james_plea
-
-=== james_plea ===
-#speaker:danny_foster
-Danny Foster: What... what's going to happen to me?
-* [Cooperate fully with SAFETYNET. Testify against Victoria. Help us prevent Phase 2.]
-    You: Do that, and we can argue for leniency. You were deceived, and you're coming forward voluntarily.
-    Danny Foster: [Grasps at hope] Leniency. Not immunity, but... less prison time?
-    You: Possibly. But you have to tell us everything. Now.
-    -> james_cooperation
-* [You enabled six deaths. Even unwittingly, you're complicit. You'll face federal charges.]
-    Danny Foster: [Defeated] I know. I... I know I deserve it.
-    Danny Foster: Will it help at all that I cooperate? That I testify?
-    You: It might. But that's for prosecutors to decide, not me.
-    -> james_cooperation
-* [I'm gathering evidence. Prosecutors will decide charges. But cooperation helps.]
-    Danny Foster: [Nods] I'll cooperate. I'll tell you everything. Just... please remember I didn't know.
-    -> james_cooperation
-
-=== james_cooperation ===
-#speaker:danny_foster
-Danny Foster: What do you need to know?
-* [Tell me about Victoria's operation]
-    Danny Foster: She runs the Zero Day exploit marketplace through WhiteHat Security as a front.
-    Danny Foster: I wasn't supposed to know, but I figured it out. The late-night meetings. The unusual clients.
-    Danny Foster: She sells zero-day vulnerabilities to... whoever pays. Ransomware groups. State actors. Anyone.
-    -> victoria_operation_details
-* [Tell me about The Architect]
-    Danny Foster: The Architect? I've seen the name in Victoria's emails. Some kind of ENTROPY leadership figure.
-    Danny Foster: Victoria takes orders from them. "Architect's priority targets." "Architect's directive."
-    Danny Foster: I don't know who they are. But Victoria is terrified of them. And that scares me.
-    -> victoria_operation_details
-* [Tell me about Phase 2]
-    Danny Foster: Phase 2? I don't know details. But I've heard Victoria on calls talking about "infrastructure focus."
-    Danny Foster: Energy grid. More healthcare SCADA systems. Large-scale attacks.
-    Danny Foster: She's been under pressure to deliver more reconnaissance. Higher-value targets.
-    -> victoria_operation_details
-
-=== victoria_operation_details ===
-#speaker:danny_foster
-Danny Foster: Is this enough? Am I helping?
-You: Yes. Keep talking. We'll take a formal statement and get you into protective custody.
-Danny Foster: [Relief and terror mixed] Protective custody. Because Victoria will kill me if she knows I talked.
-You: SAFETYNET will protect you. But you need to come with me. Now.
-#complete_task:james_choice_made
-#exit_conversation
--> DONE
+    -> after_choice
++ {james_fate == "exposed"} [Danny's sitting very still. Leave him.]
+    Danny Foster: I'm not going anywhere. You know where to find me.
+    #exit_conversation
+    -> after_choice
++ {james_fate == "left"} [Danny's still staring at the phone. Leave him.]
+    Danny Foster: I'm still deciding. Let me.
+    #exit_conversation
+    -> after_choice
++ {james_fate == "" or james_fate == "ko"} [Leave]
+    #exit_conversation
+    -> after_choice

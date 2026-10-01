@@ -1,22 +1,24 @@
-EXTERNAL objectives_completed()
-EXTERNAL player_approach()
 EXTERNAL player_name()
-EXTERNAL stealth_rating()
 
-VAR hint_rfid_cloning_given = false
-VAR hint_lockpicking_given = false
-VAR hint_password_given = false
-VAR hint_encoding_given = false
-VAR hint_network_recon_given = false
-VAR rooms_discovered = 0
-VAR objectives_mentioned = 0
+// No game-state EXTERNAL getters. The engine binds only player_name; any other
+// EXTERNAL throws at runtime. Progress is read from globals synced from
+// globalVariables (declared below), exactly as m02's handler does.
 
 // ---- Progress globals (synced from globalVars) ----
 VAR briefing_played = false
+VAR mission_phase = ""
 VAR night_confrontation_ready = false
-VAR hint_confrontation_given = false
+VAR guard_detection_count = 0
+VAR player_approach = ""
+VAR flag_scan_submitted = false
+VAR flag_ftp_submitted = false
+VAR flag_http_submitted = false
+VAR flag_distcc_submitted = false
+VAR whiteboard_seen = false
+VAR roster_seen = false
+VAR usb_seen = false
 
-// ---- Optional field guides (offered flags synced from globalVars; given flags local) ----
+// ---- Field-guide exposure flags (offered synced; given tracked locally) ----
 VAR lockpicking_guide_offered = false
 VAR netexploit_guide_offered = false
 VAR lockpicking_guide_given = false
@@ -25,43 +27,54 @@ VAR rfid_guide_given = false
 VAR recon_guide_given = false
 VAR cyberchef_guide_given = false
 
+// ---- Local hint tracking ----
+VAR hint_confrontation_given = false
+VAR hint_rfid_given = false
+VAR hint_lockpicking_given = false
+VAR hint_password_given = false
+VAR hint_encoding_given = false
+VAR hint_network_given = false
+
+// Root divert. When a conversation has ended (-> DONE), the engine restores only
+// its variables on the next talk and continues from the root (npc-conversation-
+// state.js restoreNPCState). Without this line the root is empty and the player
+// sees "(End of conversation)" instead of the start knot's re-entry routing.
+-> start
+
 === start ===
 #speaker:agent_0x99
-[Secure phone connection established]
-Agent 0x99: {player_name()}, what do you need?
+Agent HaX: {player_name()}. What do you need?
 -> hub
 
 === hub ===
-+ {night_confrontation_ready and not hint_confrontation_given} [Victoria's still in the building — how do I play this?]
++ {night_confrontation_ready and not hint_confrontation_given} [Sterling's still in the building. How do I play this?]
     -> hint_confrontation
-+ [Request hint]
-    -> provide_hint
-+ {briefing_played and not rfid_guide_given} [Send the RFID cloning field guide]
++ {briefing_played and not rfid_guide_given} [Send me the RFID cloning field guide]
     -> request_rfid_guide
-+ {lockpicking_guide_offered and not lockpicking_guide_given} [Send the lockpicking field guide]
++ {lockpicking_guide_offered and not lockpicking_guide_given} [Send me the lockpicking field guide]
     -> request_lockpicking_guide
-+ {netexploit_guide_offered and not recon_guide_given} [Send the network reconnaissance field guide]
++ {netexploit_guide_offered and not recon_guide_given} [Send me the reconnaissance field guide]
     -> request_recon_guide
-+ {netexploit_guide_offered and not netexploit_guide_given} [Send the distcc exploitation field guide]
++ {netexploit_guide_offered and not netexploit_guide_given} [Send me the distcc exploitation field guide]
     -> request_netexploit_guide
-+ {netexploit_guide_offered and not cyberchef_guide_given} [Send the CyberChef decoding field guide]
++ {netexploit_guide_offered and not cyberchef_guide_given} [Send me the CyberChef decoding field guide]
     -> request_cyberchef_guide
-+ [Report progress]
++ [Where do I stand?]
     -> report_progress
-+ [Ask about mission details]
-    -> mission_details
-+ [End call]
-    Agent 0x99: Stay safe. Call if you need backup.
++ [I need a hint]
+    -> provide_hint
++ [Nothing right now]
+    Agent HaX: Copy. Call anytime, {player_name()}.
     #exit_conversation
     -> DONE
 
 === hint_confrontation ===
 #speaker:agent_0x99
 ~ hint_confrontation_given = true
-Agent 0x99: Listen carefully. You have the logs. The case stands whether or not she's in cuffs.
-Agent 0x99: If you want the Architect, offer her a deal — a cold one. She flips to save herself, not because she's sorry. Don't confuse the two.
-Agent 0x99: If you want her off the board, arrest her — but she came ready to run. Corner her or she walks.
-Agent 0x99: And if the evidence is enough for you, let her go and secure it. Your call. None of them are clean.
+Agent HaX: Listen carefully. You've got the logs. The case stands whether or not she's in cuffs.
+Agent HaX: Want the Architect? Offer her a deal, and a cold one. She flips to save herself, not because she's sorry -- don't mistake the two.
+Agent HaX: Want her off the board? Arrest her. But she came ready to run, so corner her or she walks.
+Agent HaX: And if the evidence is enough for you, let her go and secure it. Your call. None of them are clean.
 + [Understood]
     -> hub
 
@@ -70,8 +83,8 @@ Agent 0x99: And if the evidence is enough for you, let her go and secure it. You
 ~ rfid_guide_given = true
 #set_variable:rfid_guide_requested:true
 #give_item:lab-workstation:m03_rfid_field_guide
-Agent 0x99: RFID cloning field guide sent.
-Agent 0x99: Read, crack, emulate. The reception badge is weak defaults — near instant. Victoria's card is custom keys, so the crack grinds. Stay in range until it finishes.
+Agent HaX: RFID cloning guide sent.
+Agent HaX: Read, crack, emulate. Reception's card is weak defaults -- near instant. Sterling's is custom keys, so the crack grinds. Stay in range until it finishes.
 + [Received]
     -> hub
 
@@ -80,8 +93,8 @@ Agent 0x99: Read, crack, emulate. The reception badge is weak defaults — near 
 ~ recon_guide_given = true
 #set_variable:recon_guide_requested:true
 #give_item:lab-workstation:m03_recon_field_guide
-Agent 0x99: Reconnaissance field guide sent.
-Agent 0x99: Map before you touch. nmap the subnet, read the versions, then pick your target. The network scan flag comes straight off a clean sweep.
+Agent HaX: Reconnaissance guide sent.
+Agent HaX: Map before you touch anything. nmap the subnet, read the versions, then pick your target. The scan flag comes off a clean sweep.
 + [Got it]
     -> hub
 
@@ -90,8 +103,8 @@ Agent 0x99: Map before you touch. nmap the subnet, read the versions, then pick 
 ~ cyberchef_guide_given = true
 #set_variable:cyberchef_guide_requested:true
 #give_item:lab-workstation:m03_cyberchef_field_guide
-Agent 0x99: CyberChef field guide sent.
-Agent 0x99: ROT13, Base64, hex — and if a decode still looks scrambled, it's layered. Decode again. Encoding isn't encryption; there's no key to find.
+Agent HaX: CyberChef guide sent.
+Agent HaX: ROT13, Base64, hex. If a decode still looks scrambled, it's layered -- decode again. There's no key to find; encoding isn't encryption.
 + [Received]
     -> hub
 
@@ -100,8 +113,8 @@ Agent 0x99: ROT13, Base64, hex — and if a decode still looks scrambled, it's l
 ~ lockpicking_guide_given = true
 #set_variable:lockpicking_guide_requested:true
 #give_item:lab-workstation:m03_lockpicking_field_guide
-Agent 0x99: Lockpicking field guide uploaded to your terminal.
-Agent 0x99: Light tension, find the binding pin, set it, repeat — and only when the guard's at the far end of the patrol. Picking in view will make you.
+Agent HaX: Lockpicking guide sent.
+Agent HaX: Light tension, find the binding pin, set it, repeat -- and only when the guard's at the far end of his patrol. Pick in his sightline and you're made.
 + [Received]
     -> hub
 
@@ -110,278 +123,163 @@ Agent 0x99: Light tension, find the binding pin, set it, repeat — and only whe
 ~ netexploit_guide_given = true
 #set_variable:netexploit_guide_requested:true
 #give_item:lab-workstation:m03_netexploit_field_guide
-Agent 0x99: distcc exploitation field guide sent.
-Agent 0x99: The legacy distcc daemon on port 3632 runs jobs for anyone who asks — CVE-2004-2687. Point Metasploit's distcc_exec at it and the operational logs are yours.
+Agent HaX: distcc guide sent.
+Agent HaX: The legacy distcc daemon on 3632 runs jobs for anyone who asks -- CVE-2004-2687. Point the distcc_exec module at it and the operational logs are yours.
 + [Got it]
     -> hub
 
 === provide_hint ===
 #speaker:agent_0x99
-Agent 0x99: What do you need help with?
-+ {not hint_rfid_cloning_given} [RFID cloning mechanics]
-    -> hint_rfid_cloning
-+ {not hint_lockpicking_given} [Lockpicking advice]
+Agent HaX: What's giving you trouble?
++ {not hint_rfid_given} [Cloning the keycards]
+    -> hint_rfid
++ {not hint_lockpicking_given} [The locked doors and cabinets]
     -> hint_lockpicking
-+ {not hint_password_given} [Password finding]
++ {not hint_password_given} [Sterling's computer password]
     -> hint_password
-+ {not hint_encoding_given} [Decoding messages]
++ {not hint_encoding_given} [Decoding what I've found]
     -> hint_encoding
-+ {not hint_network_recon_given} [Network reconnaissance]
-    -> hint_network_recon
-+ [General guidance]
-    -> hint_general
++ {not hint_network_given} [The training network]
+    -> hint_network
 + [Never mind]
     -> hub
 
-=== hint_rfid_cloning ===
+=== hint_rfid ===
 #speaker:agent_0x99
-~ hint_rfid_cloning_given = true
-Agent 0x99: Two-stage operation. First: the receptionist's staff badge opens the conference area — lean in near her desk, the cloner picks up the MIFARE signal from her lanyard.
-Agent 0x99: That card uses weak defaults, so the dictionary attack cracks it near-instantly.
-Agent 0x99: Second: Victoria's executive keycard uses custom encryption. You'll capture her card data during the meeting, then the cloner runs a darkside attack — about 30 seconds.
-Agent 0x99: Best moment with Victoria: when you're both near the whiteboard. Keep her talking through the capture phase.
-+ [Got it - read, crack, emulate]
-    Agent 0x99: Exactly that order. The server room door won't open until you emulate her cracked card there.
-    -> hub
-+ [What if Victoria notices?]
-    Agent 0x99: Play curious recruit. Ask about the training network — she loves talking philosophy.
-    Agent 0x99: The cloner is passive until you trigger it. Keep conversation natural.
+~ hint_rfid_given = true
+Agent HaX: Two stages. Reception first -- lean in near her desk and the cloner picks the MIFARE signal off her lanyard. Weak defaults, so it cracks near instantly and opens the conference door.
+Agent HaX: Then Sterling's executive card in the meeting. Custom keys, so the crack takes about half a minute. Best moment is when you're both at the whiteboard. Keep her talking through it.
++ [Read, crack, emulate. Got it.]
+    Agent HaX: That order every time. The server room won't open until you emulate her cracked card at the door.
     -> hub
 
 === hint_lockpicking ===
 #speaker:agent_0x99
 ~ hint_lockpicking_given = true
-Agent 0x99: Lockpicking takes time and makes noise. Watch for the guard patrol route.
-Agent 0x99: Wait until the guard is at the far end of the patrol before starting.
-Agent 0x99: If you have lockpicks in inventory, approach any locked door and interact.
-+ [Where can I find lockpicks?]
-    Agent 0x99: Check supply closets, maintenance areas, or IT cabinets. Common hiding spots.
-    -> hub
+Agent HaX: You've got the pick kit from the start. Sterling's office and the cabinets are keyed -- approach a locked one and interact.
+Agent HaX: It takes time and it exposes you. Watch the guard's loop and only work the lock when his back's turned. If he catches you at it, that's a detection you don't get back.
 + [Understood]
     -> hub
 
 === hint_password ===
 #speaker:agent_0x99
 ~ hint_password_given = true
-Agent 0x99: People hide password hints everywhere. Sticky notes, desk organizers, whiteboards.
-Agent 0x99: For Victoria's computer, look for personal details. Founding year of WhiteHat Security? Significant dates?
-Agent 0x99: The reception area often has company history. Plaques, awards, founding information.
-+ [I'll look around more carefully]
-    Agent 0x99: Thorough search pays off. Don't rush past obvious clues.
+Agent HaX: People reuse what they can't forget. The post-it on her monitor reads "VS / founding year".
+Agent HaX: The founding year's on the plaque in reception -- 2010. Her initials, then the year. That's her login.
+Agent HaX: The wall safe's a different code. She keeps that one in her drafts, not on the post-it.
++ [I'll look]
     -> hub
 
 === hint_encoding ===
 #speaker:agent_0x99
 ~ hint_encoding_given = true
-Agent 0x99: CyberChef workstation in the server room handles decoding.
-Agent 0x99: Common encodings: Base64 (looks random but uses A-Z, a-z, 0-9, +, /), ROT13 (looks like scrambled English), Hex (pairs of 0-9, A-F).
-Agent 0x99: If you decode something and it still looks encoded? Multi-layer encoding. Decode again.
-+ [What's the difference between encoding and encryption?]
-    Agent 0x99: Encoding is just transformation - no secret key needed. Anyone can reverse it if they know the method.
-    Agent 0x99: Encryption requires a key. Much more secure, much harder to break.
-    Agent 0x99: ENTROPY uses encoding for speed. Encryption is too slow for operational comms.
-    -> hub
-+ [Thanks for the primer]
+Agent HaX: Take the laptop in the server room -- it's loaded with CyberChef. Paste anything that looks like nonsense.
+Agent HaX: ROT13 reads like scrambled English. Base64 is letters, numbers, plus and slash. Hex is pairs of 0-9 and A-F.
+Agent HaX: And if it's still scrambled after one pass, it's layered. Decode again. The drive in her desk is Base64 over ROT13 -- two passes.
++ [Thanks]
     -> hub
 
-=== hint_network_recon ===
+=== hint_network ===
 #speaker:agent_0x99
-~ hint_network_recon_given = true
-Agent 0x99: The VM terminal in the server room connects to Zero Day's training network - 192.168.100.0/24.
-Agent 0x99: Start with nmap for network scanning. Then netcat for banner grabbing. Then service-specific tools.
-Agent 0x99: Each flag you capture represents intercepted ENTROPY intelligence. Submit them at the drop-site terminal.
-+ [What's the target priority?]
-    Agent 0x99: Network scan first to map the environment. Then FTP and HTTP for client intel. distcc is the critical one - that's where the operational logs are.
-    -> hub
+~ hint_network_given = true
+Agent HaX: The VM terminal in the server room reaches 192.168.100.0/24. Scan first, then work the services.
+Agent HaX: FTP and the web host give you the client and pricing flags. distcc is the one that matters -- that's where the operational logs are. Submit all four at the drop-site.
 + [Got it]
     -> hub
-
-=== hint_general ===
-#speaker:agent_0x99
-{ player_approach() == "cautious":
-    Agent 0x99: Your methodical approach is smart. Document everything, connect the dots.
-}
-{ player_approach() == "aggressive":
-    Agent 0x99: Speed is good, but don't miss critical evidence. The hospital connection proof is vital.
-}
-{ player_approach() == "diplomatic":
-    Agent 0x99: Stay flexible. Read situations. Trust your judgment.
-}
-Agent 0x99: Remember - clone the reception badge first to reach Victoria, then clone her executive keycard to crack the server room. Network recon gets you digital evidence. Physical search gets you documents.
-Agent 0x99: All three together make the case.
--> hub
 
 === report_progress ===
 #speaker:agent_0x99
-~ objectives_mentioned = objectives_mentioned + 1
-Agent 0x99: Give me a status update.
-{ objectives_completed() == 0:
-    Agent 0x99: No objectives complete yet. Have you met with Victoria?
-    Agent 0x99: Priority one: clone her keycard. Everything else depends on server room access.
+{ not (mission_phase == "act2_infiltration"):
+    Agent HaX: Day one still. Get Sterling's card cloned -- everything after that depends on server room access.
+    -> report_end
 }
-{ objectives_completed() == 1:
-    Agent 0x99: One objective down. Good start. Keep moving.
+{ night_confrontation_ready:
+    Agent HaX: Network's stripped and the case is made. Sterling's your last move. Take Danny Foster's office first if you want a say in his end.
+    -> report_end
 }
-{ (objectives_completed() >= 2) && (objectives_completed() < 4):
-    Agent 0x99: {objectives_completed()} objectives complete. You're making progress.
+Agent HaX: You're in after hours. Status:
+{ flag_scan_submitted and flag_ftp_submitted and flag_http_submitted:
+    Agent HaX: Recon, FTP and pricing flags are in. Just distcc left -- that's the logs, that's the case.
+- else:
+    Agent HaX: Flags going in. Keep working the services. The distcc box is the one that finishes it.
 }
-{ objectives_completed() >= 4:
-    Agent 0x99: Excellent work. {objectives_completed()} objectives complete. You're building a solid case.
+{ guard_detection_count == 0:
+    Agent HaX: And the guard hasn't so much as looked at you. Stay that way.
 }
-{ stealth_rating() > 80:
-    Agent 0x99: And I see you're staying ghost. Perfect operational security.
+{ guard_detection_count > 0:
+    Agent HaX: The guard's clocked you at least once. Tighten up -- pick locks only when he's turned away.
 }
-{ stealth_rating() < 50:
-    Agent 0x99: You're making some noise. Guard is getting suspicious. Tighten up your stealth.
-}
-+ [Continue mission]
-    Agent 0x99: Roger that. Call if you need support.
-    -> hub
+-> report_end
 
-=== mission_details ===
-#speaker:agent_0x99
-Agent 0x99: Mission objectives recap:
-Agent 0x99: Primary - Clone Victoria's RFID keycard, access server room, gather network intelligence, find physical evidence linking Zero Day to St. Catherine's.
-Agent 0x99: Optional - Collect LORE fragments for deeper intelligence on ENTROPY's structure.
-+ [Remind me about Victoria]
-    Agent 0x99: Victoria Sterling, CEO. Codename "Sable." True believer in free market vulnerability research.
-    Agent 0x99: Smart, charismatic, ideologically committed. Don't underestimate her.
+=== report_end ===
++ [Continue]
+    Agent HaX: Call if you need me.
     -> hub
-+ [What about The Architect?]
-    Agent 0x99: The Architect is ENTROPY's leadership figure. We don't have identity confirmation yet.
-    Agent 0x99: But evidence suggests they're coordinating all the cells. Zero Day, Ransomware Inc, Social Fabric, all of them.
-    Agent 0x99: Any intel you find on The Architect is gold.
-    -> hub
-+ [Got it]
-    -> hub
-
-=== on_rfid_cloner_pickup ===
-#speaker:agent_0x99
-Agent 0x99: Good, you've got the RFID cloner.
-Agent 0x99: When you meet Victoria, get within 2 meters for 10 seconds. Keep her engaged in conversation.
-Agent 0x99: The device is pocket-sized. She won't notice it unless you're obvious about it.
-#exit_conversation
--> DONE
-
-=== on_lockpick_pickup ===
-#speaker:agent_0x99
-Agent 0x99: Lockpick acquired. That'll let you bypass physical locks.
-Agent 0x99: Remember - lockpicking makes noise and takes time. Watch for patrols.
-#exit_conversation
--> DONE
 
 === on_rfid_clone_success ===
 #speaker:agent_0x99
-Agent 0x99: Darkside crack complete. Victoria's keycard data is in the cloner.
-Agent 0x99: Give it time. Once the place empties out, head to the server room — emulate her card at the door to get in.
-Agent 0x99: That's when the real work begins.
-#exit_conversation
--> DONE
+Agent HaX: Crack complete. Sterling's card is in the cloner.
+Agent HaX: Sit tight until the place clears out, then the server room door. Emulate her card there. That's when the real work starts.
+-> hub
 
-=== on_player_detected ===
+=== on_victoria_computer_accessed ===
 #speaker:agent_0x99
-Agent 0x99: You've been spotted! Talk your way out or prepare for confrontation.
-Agent 0x99: If things go sideways, abort and exfil. We can try again.
-#exit_conversation
--> DONE
-
-=== on_room_discovered ===
-#speaker:agent_0x99
-~ rooms_discovered = rooms_discovered + 1
-{ rooms_discovered == 1:
-    Agent 0x99: New room accessed. Good progress. Search thoroughly.
-}
-{ rooms_discovered == 3:
-    Agent 0x99: You're covering ground. Stay systematic - don't miss critical evidence.
-}
-{ rooms_discovered >= 5:
-    Agent 0x99: Impressive exploration. You should have a complete picture of the facility now.
-}
-#exit_conversation
--> DONE
-
-=== on_lockpick_success ===
-#speaker:agent_0x99
-Agent 0x99: Clean work on that lock. Moving like a pro.
-{ stealth_rating() > 70:
-    Agent 0x99: And you're staying quiet. Textbook infiltration.
-}
-#exit_conversation
--> DONE
+Agent HaX: You're into her machine. Good.
+Agent HaX: Client roster, transaction records, anything to the Architect. And her drafts -- the wall-safe code lives in there.
+-> hub
 
 === m2_revelation_call ===
 #speaker:agent_0x99
-[Agent 0x99's avatar appears - serious expression]
-Agent 0x99: {player_name()}, I just saw the distcc operational logs you submitted.
-Agent 0x99: This is... this is the smoking gun.
-Agent 0x99: ProFTPD exploit. $12,500. Sold to GHOST. Deployed at St. Catherine's Hospital.
-Agent 0x99: Victoria Sterling personally authorized the sale. "Sable" signature on the approval.
-[Pause]
-Agent 0x99: Six people died in that attack. Six people.
-Agent 0x99: Four in critical care when patient monitoring failed. Two during emergency surgery when systems crashed.
-* [We have them now]
-    You: This is direct causation. Zero Day → GHOST → St. Catherine's. We can prosecute.
-    Agent 0x99: Yes. Federal charges. ENTROPY operational conspiracy. This evidence is ironclad.
+Agent HaX: {player_name()}, I've got the distcc logs you just submitted.
+Agent HaX: There it is. The ProFTPD backdoor. Line item on invoice ZDS-2024-0847: twenty-five thousand, priced in US dollars like everything else on that market, part of a package to Ghost.
+Agent HaX: Target line: St. Catherine's Regional. Sable's sign-off on the approval.
+Agent HaX: This is the thing we couldn't prove at the hospital. Zero Day armed Ghost. It's on the record now, timestamped and attributed.
+* [We can prosecute this]
+    You: Direct chain. Zero Day to Ghost to St. Catherine's. That stands up.
+    Agent HaX: It does. ENTROPY procurement, in writing. Ironclad.
     -> m2_revelation_impact
-* [Victoria knew exactly what would happen]
-    You: The healthcare premium. They charged extra BECAUSE hospitals can't defend themselves.
-    Agent 0x99: Calculated exploitation of vulnerability. It's not hacking - it's murder for profit.
+* [The healthcare premium is the intent]
+    You: They charged extra to attack a hospital. That's not negligence, that's a pricing decision.
+    Agent HaX: That's the line a jury remembers. Keep it.
     -> m2_revelation_impact
-* [This changes everything]
-    You: We're not just disrupting a hacking group. This is mass casualty prosecution.
-    Agent 0x99: Yes. The stakes just went up. Way up.
+* [This is bigger than one sale]
+    You: If they invoice one cell like this, they invoice all of them.
+    Agent HaX: Which is the whole reason you're in there. Finish it.
     -> m2_revelation_impact
 
 === m2_revelation_impact ===
 #speaker:agent_0x99
-Agent 0x99: Keep gathering evidence. Physical documents, LORE fragments, anything that builds the case.
-Agent 0x99: And {player_name()}? The Architect's directive mentioned Phase 2.
-Agent 0x99: 50,000 patient treatment delays. 1.2 million without power in winter.
-Agent 0x99: If St. Catherine's was Phase 1... we need to stop Phase 2 before it begins.
-* [I'll find everything I can]
-    Agent 0x99: I know you will. This is what we trained for.
+Agent HaX: Pull the rest while you're standing in it. The catalogue, the roster, the drive in her desk. Every page is another cell we can name.
+Agent HaX: And {player_name()} -- the logs point at a Phase 2. Bigger than a hospital. If you find the directive, we get ahead of it for once.
+* [I'll get everything]
+    Agent HaX: I know you will. Go.
     -> m2_revelation_end
-* [We're bringing them all down]
-    Agent 0x99: Damn right we are. For those six people. And the thousands more at risk.
+* [We take the whole network down]
+    Agent HaX: One page at a time. Starting tonight.
     -> m2_revelation_end
 
 === m2_revelation_end ===
 #speaker:agent_0x99
-Agent 0x99: Finish the mission. Document everything. We'll debrief when you're out.
-Agent 0x99: And {player_name()}? Be careful. Victoria might seem reasonable, but she authorized that hospital attack.
-Agent 0x99: Don't forget what she's capable of.
-#exit_conversation
--> DONE
+Agent HaX: Finish up, then Sterling. And be careful -- reasonable as she sounds, she signed that invoice.
+-> hub
 
 === on_exploit_catalog_found ===
 #speaker:agent_0x99
-Agent 0x99: The exploit catalog... jesus.
-Agent 0x99: $847,000 in Q3 alone. 23 exploits sold.
-Agent 0x99: This isn't a hacking group. It's an industrial operation.
-#exit_conversation
--> DONE
+Agent HaX: The catalogue. Every exploit they sell, with a price and a premium.
+Agent HaX: The ProFTPD line names Ghost and St. Catherine's outright. That's the sale, in their own filing.
+-> hub
 
 === on_architect_directive_found ===
 #speaker:agent_0x99
-Agent 0x99: You found The Architect's directive. This is massive.
-Agent 0x99: Phase 2 targeting. 427 energy substations. 15 hospitals.
-Agent 0x99: And the cross-cell coordination - Zero Day, Ransomware Inc, Social Fabric, Critical Mass all working together.
-Agent 0x99: This isn't isolated cells anymore. This is a coordinated network.
-Agent 0x99: We need to bring this to SAFETYNET Command immediately.
-#exit_conversation
--> DONE
+Agent HaX: That drive from her desk. Run it through the laptop -- Base64, then ROT13 -- and tell me what it says.
+Agent HaX: If it's what I think, it's the Architect talking. We take it to Command tonight.
+-> hub
 
-=== on_guard_hostile ===
+=== on_victoria_ko_card ===
 #speaker:agent_0x99
-Agent 0x99: Guard is hostile! Get to safe distance or prepare to talk your way out.
-Agent 0x99: If combat starts, disable and escape. Avoid lethal force if possible.
-#exit_conversation
--> DONE
-
-=== on_victoria_computer_accessed ===
-#speaker:agent_0x99
-Agent 0x99: You're in Victoria's computer. Good work.
-Agent 0x99: Look for client lists, transaction records, communications with other ENTROPY cells.
-Agent 0x99: Anything linking her directly to The Architect is priority intelligence.
-#exit_conversation
--> DONE
+#give_item:keycard:relayed_executive_keycard
+Agent HaX: Well. That's one way to end a job interview.
+Agent HaX: Her card's still on her lanyard, and I'm not having you rifle a CEO's pockets on camera. Nightshade has lifted its keys from the reader logs and built you a working copy.
+Agent HaX: It's in your kit now. It opens what hers opens, which means the server room tonight.
++ [Understood]
+        -> hub

@@ -7,9 +7,20 @@ VAR topic_company_history = false
 VAR topic_james = false
 VAR pin_hint_given = false
 VAR clone_reception_badge_done = false
+// Synced from globalVars: after Victoria's card is cloned the building is closing.
+VAR mission_phase = ""
+
+// Root divert. When a conversation has ended (-> DONE), the engine restores only
+// its variables on the next talk and continues from the root (npc-conversation-
+// state.js restoreNPCState). Without this line the root is empty and the player
+// sees "(End of conversation)" instead of the start knot's re-entry routing.
+-> start
 
 === start ===
 #speaker:receptionist
+{ mission_phase == "act2_infiltration":
+    -> closing_up
+}
 { not badge_received:
     #display:receptionist-professional
     Receptionist: Good afternoon! You must be {player_name()}.
@@ -26,14 +37,14 @@ VAR clone_reception_badge_done = false
 === badge_process ===
 #speaker:receptionist
 Receptionist: I just need you to sign in here, and I'll print you a visitor badge.
-[She slides a clipboard across the desk]
-Receptionist: Ms. Sterling's in the conference room. Second door on the right down that hallway.
+Narrator: She slides a clipboard across the desk.
+Receptionist: Ms. Sterling's in the conference room. Straight up the hallway, first door on the left.
 * [Thank you - sign in]
     #give_item:id_badge:visitor_badge
     ~ badge_received = true
     ~ receptionist_influence = receptionist_influence + 5
     # influence_increased
-    You sign the visitor log.
+    Narrator: You sign the visitor log.
     Receptionist: Here's your badge. Please keep it visible while you're in the building.
     Receptionist: The conference room is through the card reader on the left — RFID access. Ms. Sterling usually authorises visitors herself, so just head over when you're ready.
     Receptionist: And welcome to WhiteHat Security!
@@ -46,30 +57,30 @@ Receptionist: Ms. Sterling's in the conference room. Second door on the right do
 * [Just sign quickly and head to meeting]
     #give_item:id_badge:visitor_badge
     ~ badge_received = true
-    You quickly sign the log.
+    Narrator: You scrawl a signature in the log.
     Receptionist: Here's your badge. Ms. Sterling's in the conference room — through the card reader on your left.
     #exit_conversation
-    -> DONE
+    -> hub
 
 === company_overview ===
 #speaker:receptionist
 Receptionist: WhiteHat Security was founded in 2010 by Victoria Sterling.
-Receptionist: We do penetration testing, security audits, and advanced research training.
+Receptionist: We do penetration testing, security audits and advanced research training.
 { receptionist_influence >= 10:
     Receptionist: We also have a research division - Zero Day training programs. Very cutting-edge stuff.
 }
 ~ topic_company_history = true
 ~ pin_hint_given = true
-* [2010 founding - that's the PIN to the safe!]
-    [Mental note: 2010 might be useful...]
+* [2010. Victoria must be proud of how far it's come.]
+    Narrator: You file 2010 away. Founding years end up in passwords.
     ~ receptionist_influence = receptionist_influence + 5
     # influence_increased
-    You: 2010, interesting. Victoria must be proud of how far the company's come.
-    Receptionist: Oh, very much so. She has a whole display of awards in her office.
+    You: 2010. She must be proud of how far the company's come.
+    Receptionist: Oh, very much so. She has a whole wall of awards in her office.
     -> badge_process
 * [What kind of training does Zero Day offer?]
-    Receptionist: [Slightly evasive] Advanced penetration testing techniques. For serious researchers.
-    Receptionist: Ms. Sterling is very selective about who gets into the program.
+    Receptionist: *slightly evasive* Advanced penetration testing techniques. For serious researchers.
+    Receptionist: Ms. Sterling is very selective about who gets into the programme.
     ~ receptionist_influence = receptionist_influence + 5
     # influence_increased
     -> badge_process
@@ -90,25 +101,30 @@ Receptionist: Is this your first time working with a cybersecurity firm?
     Receptionist: That's exciting! Everyone here is very passionate about security.
     -> hub
 * [I should head to the conference room. Don't want to keep Victoria waiting.]
-    Receptionist: Of course! Down the hall, second door on the right.
+    Receptionist: Of course! Up the hallway, first door on the left.
     #exit_conversation
-    -> DONE
+    -> hub
 
 === hub ===
-+ {not topic_victoria} [Ask about Victoria Sterling]
+// Resting point (m02 pattern): every exit comes back here, never DONE, so the
+// engine restores the story at these choices. Night-aware: after Victoria's card
+// is cloned, the only thing to do is say goodnight.
++ {mission_phase == "act2_infiltration"} [You're still here? It's late.]
+    -> closing_up
++ {mission_phase != "act2_infiltration" && not topic_victoria} [Ask about Victoria Sterling]
     -> ask_victoria
-+ {not topic_james} [Ask about other employees]
++ {mission_phase != "act2_infiltration" && not topic_james} [Ask about other employees]
     -> ask_james
-+ {not topic_company_history && not pin_hint_given} [Ask about company history]
++ {mission_phase != "act2_infiltration" && not topic_company_history && not pin_hint_given} [Ask about company history]
     -> ask_company_history
-+ {receptionist_influence >= 15} [Ask about the building layout]
++ {mission_phase != "act2_infiltration" && receptionist_influence >= 15} [Ask about the building layout]
     -> ask_building_layout
-+ {badge_received && not clone_reception_badge_done} [Lean across the desk to examine the directory — cloner in range]
++ {mission_phase != "act2_infiltration" && badge_received && not clone_reception_badge_done} [Lean across the desk to examine the directory — cloner in range]
     -> clone_badge_opportunity
-+ [End conversation]
++ {mission_phase != "act2_infiltration"} [End conversation]
     Receptionist: Have a great visit!
     #exit_conversation
-    -> DONE
+    -> hub
 
 === ask_victoria ===
 #speaker:receptionist
@@ -142,7 +158,7 @@ Receptionist: And she really cares about the work. Sometimes she's here until mi
 ~ receptionist_influence = receptionist_influence + 5
 # influence_increased
 Receptionist: Well, there's Danny Foster - he's one of our senior consultants.
-Receptionist: Really nice guy. Always brings donuts on Fridays.
+Receptionist: Really nice bloke. Always brings doughnuts in on a Friday.
 { receptionist_influence >= 15:
     Receptionist: He's been a bit stressed lately, though. I think he's working on a big project.
 }
@@ -153,8 +169,8 @@ Receptionist: Really nice guy. Always brings donuts on Fridays.
     # influence_increased
     -> hub
 * [Where does Danny work? In case I run into him.]
-    Receptionist: His office is down the main hallway, past the server room.
-    Receptionist: Though he's usually out at client sites during the day.
+    Receptionist: The executive wing -- off to the right from the main hallway. His is the door on the south side.
+    Receptionist: He's usually out at client sites in the day, mind. He comes back in the evening to write up.
     -> hub
 + [Continue]
     -> hub
@@ -166,17 +182,17 @@ Receptionist: Really nice guy. Always brings donuts on Fridays.
 ~ receptionist_influence = receptionist_influence + 5
 # influence_increased
 Receptionist: WhiteHat Security was founded in 2010 by Victoria Sterling.
-Receptionist: There's actually a plaque right over there [gestures to wall] with the founding year and mission statement.
+Receptionist: There's actually a plaque right over there *gestures at the wall* with the founding year and mission statement.
 Receptionist: "Security Through Economics" - that's our motto.
 * [That's an unusual motto. What does it mean?]
-    Receptionist: [Uncertain] Something about market-driven security research? Ms. Sterling explains it better than I can.
+    Receptionist: *uncertain* Something about market-driven security research? Ms. Sterling explains it better than I can.
     Receptionist: She has strong opinions about how the security industry should work.
     ~ receptionist_influence = receptionist_influence + 5
     # influence_increased
     -> hub
-* [2010 - I'll remember that]
-    [Mental note: 2010 might be important...]
-    You: 2010. That's a significant year for the company then.
+* [2010. I'll remember that.]
+    Narrator: You file 2010 away. Founding years end up in passwords.
+    You: 2010. A significant year for the company, then.
     Receptionist: Absolutely! Ms. Sterling is very proud of everything we've built since then.
     ~ receptionist_influence = receptionist_influence + 5
     # influence_increased
@@ -190,8 +206,8 @@ Receptionist: "Security Through Economics" - that's our motto.
 # influence_increased
 Receptionist: Sure! It's a pretty straightforward layout.
 Receptionist: Reception here, then through the card reader to the conference area, main offices down the central hallway.
-Receptionist: Server room and IT area in the back - executive access only.
-Receptionist: And Ms. Sterling's office is in the executive wing on the north side.
+Receptionist: Server room at the far end of the main hallway -- executive cards only.
+Receptionist: And Ms. Sterling's office is in the executive wing, east off the main hallway.
 * [Is anyone here after business hours?]
     Receptionist: Usually just Ms. Sterling if she's working late. And we have a night security guard - makes rounds to keep the place safe.
     ~ receptionist_influence = receptionist_influence + 5
@@ -199,7 +215,7 @@ Receptionist: And Ms. Sterling's office is in the executive wing on the north si
     -> hub
 * [Even the conference area needs a card? That's pretty tight security.]
     Receptionist: RFID badges throughout - conference area, server room, executive wing. Ms. Sterling is very particular about access control.
-    [She taps the badge on her lanyard.]
+    Narrator: She taps the badge on her lanyard.
     Receptionist: Staff badges cover the whole building. Visitors normally get escorted through.
     ~ receptionist_influence = receptionist_influence + 5
     # influence_increased
@@ -207,43 +223,19 @@ Receptionist: And Ms. Sterling's office is in the executive wing on the north si
 + [That's helpful, thanks]
     -> hub
 
-=== daytime_return ===
-#speaker:receptionist
-#display:receptionist-friendly
-Receptionist: How did your meeting with Ms. Sterling go?
-* [Very well - she's impressive]
-    ~ receptionist_influence = receptionist_influence + 10
-    # influence_increased
-    You: It went great. Victoria is very impressive. I learned a lot.
-    Receptionist: I'm so glad! She has that effect on people.
-    #exit_conversation
-    -> DONE
-* [It was... illuminating. She has strong ideas about security.]
-    Receptionist: [Laughs] That's one way to put it! She definitely has opinions.
-    ~ receptionist_influence = receptionist_influence + 5
-    # influence_increased
-    #exit_conversation
-    -> DONE
-* [I need some time to consider the training program. Big decision.]
-    Receptionist: Of course! Take your time. Let us know if you have any questions.
-    #exit_conversation
-    -> DONE
-
-=== restricted_area_daytime ===
-#speaker:receptionist
-Receptionist: Oh, I'm sorry - that area is for employees only.
-Receptionist: Visitor access is to the reception and conference area. Ms. Sterling can authorise anything further.
-{ receptionist_influence >= 20:
-    Receptionist: If you need access to something specific, Ms. Sterling can authorize it.
-}
-#exit_conversation
--> DONE
-
 === clone_badge_opportunity ===
 #speaker:receptionist
-[You lean over the desk, studying the building directory, keeping the RFID cloner within range of her lanyard.]
-[The cloner's antenna lights up — it detects a MIFARE signal from her staff badge.]
+Narrator: You lean over the desk, studying the building directory, keeping the RFID cloner within range of her lanyard.
+Narrator: The cloner's antenna lights up — it detects a MIFARE signal from her staff badge.
 ~ clone_reception_badge_done = true
 #clone_keycard:receptionist_badge
 #complete_task:clone_reception_badge
 -> hub
+
+=== closing_up ===
+#speaker:receptionist
+Receptionist: Oh! You're still here? I'm just shutting down for the night.
+Receptionist: Security's on from now, so don't go wandering. Have a good evening!
++ [You too.]
+    #exit_conversation
+    -> hub

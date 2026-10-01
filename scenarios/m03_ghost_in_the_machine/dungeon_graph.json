@@ -54,7 +54,7 @@
       "id": "lock_pick_kit",
       "label": "Lock Pick Kit",
       "kind": "item",
-      "optional": false
+      "optional": true
     },
     {
       "id": "lock_exec_filing_cabinet",
@@ -187,22 +187,22 @@
     {
       "from": "reception_lobby",
       "to": "lock_pick_kit",
-      "soft": false
+      "soft": true
     },
     {
       "from": "lock_pick_kit",
       "to": "door_executive_office",
-      "soft": false
+      "soft": true
     },
     {
       "from": "lock_pick_kit",
       "to": "lock_exec_filing_cabinet",
-      "soft": false
+      "soft": true
     },
     {
       "from": "lock_pick_kit",
       "to": "lock_server_filing_cabinet",
-      "soft": false
+      "soft": true
     },
     {
       "from": "server_room",
