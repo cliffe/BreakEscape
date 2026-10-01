@@ -12,6 +12,26 @@ that uses it. A name that exists in ink but not in this file is a bug.
 
 ---
 
+## PASS 3 amendments (2026-10-01) — these supersede everything below where they differ
+
+Source: `PUZZLE_CHAINS_PLAN.md` (signed off after review round 3).
+
+- **Rename.** Jake Morrison → **Ray Hollis**: NPC id `jake_morrison` → `ray_hollis`; ink `m07_npc_jake_morrison` → `m07_npc_ray_hollis` (.ink/.json, `storyPath`); globals `morrison_resolved` → `hollis_resolved`, `morrison_ko` → `hollis_ko`; item `morrison_server_badge` → `hollis_server_badge`; `npc_ko:ray_hollis`. The rows below have been updated in place.
+- **Start kit:** phone, Lock Pick Kit, RFID Cloner, Fingerprint Kit. No PIN cracker. Named in the briefing's `start` knot.
+- **Flag 1 reward** is `give_item` "Coordination Schedule -- Relay Decode" (`coordination_extract`, `text_file` in the relay's `itemsHeld`). Its `onRead` sets `projection_revised` and `found_coordination_traffic`. `flag1_submitted` comes from an `objective_task_completed:recover_coordination_traffic` mapping. Only the decode sets `found_coordination_traffic`.
+- **HaX verdict:** six `onceOnly` mappings behind the latch `verdict_sent` (extract: `global_variable_changed:found_coordination_traffic`; Elena: `conversation_closed:elena_rodriguez`), split Trojan / not-Trojan window open / not-Trojan window shut (committed only). The Elena three also set `verdict_from_elena`, which the `onceOnly` redirect confirmation reads.
+- **Vault code:** `vault_pin` (4703) is the last four of the ATS-1 plate serial on `backup_transfer_switch`. The rule is in the decode's T.P. block and in a talked-round Hollis's `deal_take`. `maintenance_log` says the old code (2291) is void and has no `onRead`. Elena still speaks 4703; `vault_pin_found` is written by her ink and read by nothing.
+- **Tasks:** `recover_vault_pin` is `unlock_room` on `cable_vault` ("Work out the plant keypad code"). `search_cable_vault` is `custom` ("Find how the intrusion reached the breakers"), completed by a mapping on `splice_found` (set by `vault_trunk_runs` `onRead`). `clear_the_checkpoint` is titled "Deal with Ray Hollis on the checkpoint desk".
+- **World pickups (E20):** `casualty_projection` and `mole_intercept_evidence` are type `notes` with `onRead` (a world `text_file` is never taken).
+- **Hollis evade:** "Back off" sets `hollis_backed_off` (new bool); `hollis_resolved` becomes "evaded" only on reaching `server_room` without talking him round or a KO (HaX mapping).
+- **Field guide (L2):** `m07_nfs_field_guide` (`nfs-and-netcat-leaks`), offered on first use of the VM terminal; globals `nfs_guide_offered`, `nfs_guide_hint_given`.
+- **Shift supervisor** renamed D. Okafor → D. Halvorsen (m08 has an unrelated Dr Okafor).
+- **Hollis leverage** needs `renewal_signoff_read` (set by `shift_handover_sheet`, which now names his login on Mercer's renewal); `visitor_log_read` alone gives a partial option.
+- **Field guide:** `m07_scanning_field_guide` → `m07_ssh_field_guide` (`ssh-access-and-bruteforce`), offered with flag 2 (`ssh_guide_offered`). The vm-launcher first use sets `vm_terminal_used` (gates `vm_hint_1`) and offers no guide.
+- **New globals:** `renewal_signoff_read`, `verdict_sent`, `verdict_from_elena`, `vault_entered` (HaX, `room_entered:cable_vault`), `generator_hall_reached` (HaX, `room_entered:generator_room`), `inside_reached` (HaX, first `room_entered:operations_floor`; drives the uncommitted player's music), `splice_found`, `ssh_guide_offered`, `ssh_guide_hint_given`, `vm_terminal_used`. **Removed:** `scanning_guide_offered`, `scanning_guide_hint_given`.
+- **Flag 3** HaX text splits on `team_assigned`. Both set `redirect_window_closed` and `cascade_armed`.
+- **Cones:** `los.visualize` is false on Hollis and Park (the engine only checks LOS for `lockpick_used_in_view`).
+
 ## PASS 2 amendments (2026-10-01) — these supersede the sections below where they differ
 
 Identifiers are unchanged except where listed. See `PASS2_IMPROVEMENTS.md` for the evidence.
@@ -21,13 +41,13 @@ Identifiers are unchanged except where listed. See `PASS2_IMPROVEMENTS.md` for t
 - **Flag rewards:** 1 `set_global flag1_submitted`; 2 `give_item` Listener Capture (`c2_capture`, carries CascadeWindow19); 3 `set_global flag3_submitted`; 4 `unlock_object crisis_control_system`. `flag2_submitted` / `flag4_submitted` are set by `objective_task_completed` mappings on `agent_0x99`.
 - **`crisis_control_system`** is type `pc` with sprite `scada_historian`, `lockType: flag` and **no `requires`** (one submission point per flag).
 - **`situation_board`** is type `smartscreen`, sprite `command_board`.
-- **`badge_printer`** is a PIN-locked `pc` container ("Contractor Badge Station", PIN `badge_pin` = 0616) holding `printed_contractor_badge`; the PIN is on the new `shift_handover_sheet` (operations floor). Morrison's badge has id `morrison_server_badge`.
+- **`badge_printer`** is a PIN-locked `pc` container ("Contractor Badge Station", PIN `badge_pin` = 0616) holding `printed_contractor_badge`; the PIN is on the new `shift_handover_sheet` (operations floor). Hollis's badge has id `hollis_server_badge`.
 - **Countdown (§5 superseded):** `architect_t20_played` 10 min and `architect_t10_played` + `redirect_window_closed` 40 min after `team_assigned`; the cascade is armed by `flag3_submitted` (sets new global `cascade_armed`), and `architect_t5_played` / `architect_t1_played` / `countdown_expired` fire 10 / 14 / 15 min after that. Only the 15-minute clock is shown. `countdown_expired` now has a consequence (step one, Seattle, executes before the abort).
 - **Debrief trigger (§ on `mission_complete` superseded):** `closing_debrief` and `the_architect` live in `security_checkpoint` so their mappings register at load. The debrief opens on `minigame_completed`/`minigame_failed` after the Architect's sign-off, or on any `room_entered`, once `grid_saved` and all four `flagN_submitted` are true; latched by `start_debrief_cutscene`, replay-guarded by `debrief_played`.
 - **Tasks:** `assign_tactical_team` and `take_the_debrief` are `custom`.
 - **New globals:** `start_debrief_cutscene`, `debrief_played`, `architect_signoff_started`, `architect_signoff_done`, `flags_nag_sent`, `redirect_declined`, `cascade_armed`, `badge_pin_found`.
 - **KO reactions** key on `npc_ko:<id>`, not `global_variable_changed:<npc>_ko`.
-- **Leaving NPCs** (Morrison talked round, Elena fled, Park talked round, Mercer detained or walked out) are hidden with `setVisible:false` mappings; the ink no longer uses `#remove_npc` or Elena's `#hostile`.
+- **Leaving NPCs** (Hollis talked round, Elena fled, Park talked round, Mercer detained or walked out) are hidden with `setVisible:false` mappings; the ink no longer uses `#remove_npc` or Elena's `#hostile`.
 
 
 ## 1. NPCs
@@ -40,7 +60,7 @@ must define.
 |---|---|---|---|---|---|
 | `opening_briefing_cutscene` | `Director Magnus Netherton` | `person` | `security_checkpoint` (hidden) | `scenarios/m07_architects_gambit/ink/m07_opening_briefing.json` | `start` |
 | `agent_0x99` | `Agent HaX` | `phone` | `security_checkpoint` | `scenarios/m07_architects_gambit/ink/m07_phone_agent_0x99.json` | `start` |
-| `jake_morrison` | `Jake Morrison` | `person` | `security_checkpoint` | `scenarios/m07_architects_gambit/ink/m07_npc_jake_morrison.json` | `start` |
+| `ray_hollis` | `Ray Hollis` | `person` | `security_checkpoint` | `scenarios/m07_architects_gambit/ink/m07_npc_ray_hollis.json` | `start` |
 | `elena_rodriguez` | `Elena Rodriguez` | `person` | `server_room` | `scenarios/m07_architects_gambit/ink/m07_npc_elena_rodriguez.json` | `start` |
 | `james_mercer` | `Dr. James Mercer` | `person` | `scada_control` | `scenarios/m07_architects_gambit/ink/m07_npc_james_mercer.json` | `start` |
 | `the_architect` | `The Architect` | `phone` | `scada_control` (reachable everywhere) | `scenarios/m07_architects_gambit/ink/m07_architect_comms.json` | `start` |
@@ -95,9 +115,9 @@ Connections are declared **both ways**. Do not reorder them — door corners mov
 
 | Gate | `lockType` | `requires` | Primary source | Redundant source |
 |---|---|---|---|---|
-| → `server_room` | `rfid` | `server_zone_badge` | Morrison's `itemsHeld` badge (talk or KO) | `badge_printer` at the checkpoint |
+| → `server_room` | `rfid` | `server_zone_badge` | Hollis's `itemsHeld` badge (talk or KO) | `badge_printer` at the checkpoint |
 | → `generator_room` | `key` | `generator_maintenance_key`, `keyPins: [40,25,55,30]` | `generator_maintenance_key` on the ops floor | Lockpick in starting inventory |
-| → `cable_vault` | `pin` | `4703` (ERB `vault_pin`) | `maintenance_log` in the generator room | Elena Rodriguez |
+| → `cable_vault` | `pin` | `4703` (ERB `vault_pin`) | rule (relay decode or Hollis) + ATS-1 plate on `backup_transfer_switch` | Elena Rodriguez |
 | → `scada_control` | `password` | `CascadeWindow19` (ERB `scada_password`) | Elena Rodriguez | netcat C2 traffic, VM flag 2 |
 | `crisis_control_system` | `flag` | `scada_attack_host:flag_4` | VM flag 4 | — (this **is** the win condition) |
 
@@ -121,7 +141,7 @@ cable_vault          (4, 4)  north=LEFT
 
 No world-space overlaps, no two doors on the same corner of the same wall.
 
-### Jake Morrison's patrol
+### Ray Hollis's patrol
 
 `room_security` is 10×10 tiles, which is enough floor to walk round him. Sequential looping patrol,
 speed 70, six waypoints at `(2,4) (5,3) (8,4) (8,8) (5,8) (2,8)` with dwells of 6000/1500/5000/1500/
@@ -141,8 +161,8 @@ or a `#` tag use these ids verbatim.
 |---|---|---|---|
 | `security_checkpoint` | `badge_printer` | `workstation` | Redundant RFID source; `give_item` yields `printed_contractor_badge` |
 | | `printed_contractor_badge` | `keycard` | Given by the printer; `opens_lock: server_zone_badge` |
-| | `morrison_server_badge` | `keycard` | Morrison's `itemsHeld` badge; `opens_lock: server_zone_badge` |
-| | `visitor_log` | `notes` | Morrison renewed Mercer's credentials |
+| | `hollis_server_badge` | `keycard` | Hollis's `itemsHeld` badge; `opens_lock: server_zone_badge` |
+| | `visitor_log` | `notes` | Hollis renewed Mercer's credentials |
 | | `checkpoint_evacuation_board` | `smartscreen` | Muster board |
 | `operations_floor` | `generator_maintenance_key` | `key` | Primary source for the key lock |
 | | `situation_board` | `command_board` | 8.4M, 147 substations, the four-step sequence |
@@ -154,13 +174,13 @@ or a `#` tag use these ids verbatim.
 | | `rack_cabling_note` | `notes` | Points at the vault keypad and the maintenance log |
 | `scada_control` | **`crisis_control_system`** | `scada_historian` | **Win condition.** Flag-locked on flag 4 |
 | | `cascade_countdown_display` | `smartscreen` | The countdown |
-| | `casualty_projection` | `text_file` | 240–385, signed by Mercer. Takeable — carry it to Elena |
-| `generator_room` | `maintenance_log` | `notes` | Carries the vault PIN; `onRead` sets `vault_pin_found` |
+| | `casualty_projection` | `notes` | 240–385, signed by Mercer. Takeable — carry it to Elena; `onRead` sets `casualty_projection_found` |
+| `generator_room` | `maintenance_log` | `notes` | Says the keypad was reset 16 JUN; old code void. No `onRead` |
 | | `backup_transfer_switch` | `batrack` | Park's sabotage target |
 | | `genset_control_panel` | `servers` | 72-hour rating |
 | `cable_vault` | `vault_trunk_runs` | `cable` | The physical half of the intrusion |
-| | `tomb_gamma_dossier` | `notes` | `onPickup` sets `found_tomb_gamma` |
-| | `mole_intercept_evidence` | `text_file` | `onPickup` sets `found_mole_evidence` |
+| | `tomb_gamma_dossier` | `notes` | `onRead` sets `found_tomb_gamma` |
+| | `mole_intercept_evidence` | `notes` | `onRead` sets `found_mole_evidence` |
 
 ---
 
@@ -265,7 +285,7 @@ what they read and write it back with `#set_global`. **Nothing may be added with
 ### NPC outcomes
 | Name | Type | Values |
 |---|---|---|
-| `morrison_resolved` | string | `""` \| `"talked"` \| `"ko"` \| `"evaded"` |
+| `hollis_resolved` | string | `""` \| `"talked"` \| `"ko"` \| `"evaded"` |
 | `elena_outcome` | string | `""` \| `"turned"` \| `"fled"` \| `"ko"` |
 | `mercer_fate` | string | `""` \| `"arrested"` \| `"ko"` \| `"escaped"` |
 | `mercer_stance` | string | `""` \| `"condemned"` \| `"reasoned"` \| `"silent"` |
@@ -287,7 +307,7 @@ that file.
 and the debrief credits need him.
 
 ### Knockout latches
-`morrison_ko`, `elena_ko`, `mercer_ko`, `park_ko` — all bool. WP2 wires each NPC's `globalVarOnKO`
+`hollis_ko`, `elena_ko`, `mercer_ko`, `park_ko` — all bool. WP2 wires each NPC's `globalVarOnKO`
 to its latch and `taskOnKO` to the matching task. Ink treats a KO'd NPC's `*_resolved` / `*_outcome`
 string as `"ko"`.
 
@@ -305,7 +325,7 @@ on what the player has actually found rather than guessing.
 
 ### Field guide gating
 Two latches per guide, five guides: `<x>_guide_offered` and `<x>_guide_hint_given`, where `<x>` ∈
-{`rfid`, `lockpicking`, `recon`, `scanning`, `privesc`}. Ten booleans. The offer gate is
+{`rfid`, `lockpicking`, `recon`, `nfs`, `ssh`, `privesc`}. Twelve booleans. The offer gate is
 `{<x>_guide_offered and not <x>_guide_hint_given}`.
 
 **Deleted from the old build:** everything not in the lists above. ~30 of the old 47 globals were
@@ -328,7 +348,8 @@ All five lab sheets verified present in `HacktivityLabSheets/_labs/safetynet/`.
 | RFID cloning | `m07_rfid_field_guide` | player first hits the badge door | `rfid-cloning.md` | `https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/rfid-cloning/` |
 | Lockpicking | `m07_lockpicking_field_guide` | player first hits the key lock | `lockpicking.md` | `https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/lockpicking/` |
 | Recon & network mapping | `m07_recon_field_guide` | `room_entered:server_room` | `reconnaissance-and-network-mapping.md` | `https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/reconnaissance-and-network-mapping/` |
-| Scanning & exploitation | `m07_scanning_field_guide` | vm-launcher first interacted | `scanning-and-exploitation.md` | `https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/scanning-and-exploitation/` |
+| NFS shares and open ports | `m07_nfs_field_guide` | VM terminal first interacted (`nfs_guide_offered`, on the vm-launcher mapping) | `nfs-and-netcat-leaks.md` (new; 404 until published) | `https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/nfs-and-netcat-leaks/` |
+| SSH access | `m07_ssh_field_guide` | flag 2 submitted (`ssh_guide_offered`, on the `flag2_submitted` mapping) | `ssh-access-and-bruteforce.md` | `https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/ssh-access-and-bruteforce/` |
 | Privilege escalation | `m07_privesc_field_guide` | `flag2_submitted` | `privilege-escalation.md` | `https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/privilege-escalation/` |
 
 No guide is ever offered before the player has hit the obstacle it explains. The old build's
@@ -346,16 +367,16 @@ WP2 owns the objectives/aims block and may add tasks, group them into aims and s
 | `taskId` | `type` | Target | KO-able NPC |
 |---|---|---|---|
 | `assign_tactical_team` | `custom` | (briefing commit line; HaX backstops) | — |
-| `clear_the_checkpoint` | `npc_conversation` | `jake_morrison` | ✔ `taskOnKO` |
+| `clear_the_checkpoint` | `npc_conversation` | `ray_hollis` | ✔ `taskOnKO` |
 | `reach_operations_floor` | `enter_room` | `operations_floor` | — |
 | `breach_server_room` | `unlock_room` | `server_room` | — |
 | `question_elena` | `npc_conversation` | `elena_rodriguez` | ✔ `taskOnKO` |
 | `recover_coordination_traffic` | `submit_flags` | `["flag_station_safetynet_relay:scada_attack_host-flag1"]` | — |
 | `intercept_c2_channel` | `submit_flags` | `["flag_station_safetynet_relay:scada_attack_host-flag2"]` | — |
 | `secure_generator_room` | `enter_room` | `generator_room` | — |
-| `recover_vault_pin` | `custom` | `maintenance_log` | — |
+| `recover_vault_pin` | `unlock_room` | `cable_vault` | — |
 | `neutralise_park` | `npc_conversation` | `thomas_park` | ✔ `taskOnKO` |
-| `search_cable_vault` | `enter_room` | `cable_vault` | — |
+| `search_cable_vault` | `custom` | (mapping on `splice_found`) | — |
 | `recover_mole_evidence` | `collect_items` | `mole_intercept_evidence`, `tomb_gamma_dossier` | — |
 | `reach_scada_control` | `enter_room` | `scada_control` | — |
 | `confront_mercer` | `npc_conversation` | `james_mercer` | ✔ `taskOnKO` |
@@ -387,7 +408,7 @@ Agent HaX:
 Director Magnus Netherton:
 Dr. James Mercer:
 Elena Rodriguez:
-Jake Morrison:
+Ray Hollis:
 Thomas Park:
 The Architect:
 ```
@@ -418,9 +439,9 @@ Left out on purpose. Do not treat their absence as an oversight.
 |---|---|
 | WP2 | `objectives` array and all aims/tasks; `flagRewards`; `taskOnKO` / `globalVarOnKO`; `missionConclusion` + `requiresCompleted` + `conclusionScreen` |
 | WP6 | `itemsHeld` field guides on `agent_0x99`; dialogue `eventMappings` |
-| WP7 | Architect taunt `eventMappings` on the countdown globals; Morrison and Park barks and `#hostile` |
+| WP7 | Architect taunt `eventMappings` on the countdown globals; Hollis and Park barks and `#hostile` |
 | WP9 | `voice` blocks on all speakers; the top-level `narrator` block; the `music` block |
-| ink agents | `m07_npc_jake_morrison`, `m07_npc_elena_rodriguez`, `m07_npc_james_mercer`, `m07_npc_thomas_park` do not exist yet; the four existing files are the old build and are being rewritten |
+| ink agents | `m07_npc_ray_hollis`, `m07_npc_elena_rodriguez`, `m07_npc_james_mercer`, `m07_npc_thomas_park` do not exist yet; the four existing files are the old build and are being rewritten |
 
 ---
 

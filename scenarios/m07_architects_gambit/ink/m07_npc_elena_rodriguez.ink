@@ -280,7 +280,7 @@ Narrator: She pulls a folded worksheet out of her back pocket and flattens it ag
 
 Elena Rodriguez: Control room door. CascadeWindow19. He changed it in March and he's too vain to change it twice.
 
-Elena Rodriguez: The cable vault keypad is 4703, if you haven't got it off the maintenance log yet. Trunk runs are down there. That's where the physical half of this got in.
+Elena Rodriguez: The cable vault keypad is 4703. Mercer's tech reset it the day after my survey, so the plant log's out of date. Trunk runs are down there. That's where the physical half of this got in.
 
 Elena Rodriguez: He'll be at the master console. He won't be armed. He'll want to explain.
 

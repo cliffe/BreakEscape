@@ -71,6 +71,12 @@ VAR heard_signoff = false
 -> dead_air
 
 === dormant ===
+// PASS 3 (phone-chat rule, E10): a reopen re-navigates to the knot that owns
+// the saved choice. If first contact or a taunt has arrived since, go through.
+// Prints nothing, so the preload still saves no unread text here.
+{architect_contact or architect_t20_played or grid_saved:
+    -> start
+}
 + [Hang up.]
     #exit_conversation
     -> dormant
@@ -87,6 +93,10 @@ The Architect: Agent 0x00. Don't look for the trace. It isn't there.
 
 The Architect: I've read your file. Files are written by people who need you to be a particular shape. I prefer to watch.
 
+-> taunt_t30_choices
+
+// PASS 3 (E13): choices-only, so a re-navigation replays none of the text above.
+=== taunt_t30_choices ===
 + [Who am I speaking to?]
     The Architect: Someone with a little of your attention tonight and no interest in wasting it.
     -> t30_close
@@ -129,6 +139,10 @@ The Architect: You've sent your team.
     }
 }
 
+-> taunt_t20_choices
+
+// PASS 3 (E13): choices-only, so a re-navigation replays none of the text above.
+=== taunt_t20_choices ===
 + [You're wasting my time.]
     The Architect: Then you'll have spent it on something.
     -> t20_close
@@ -168,6 +182,10 @@ Narrator: Your screen wakes on its own. Nothing else on it moves.
 
 The Architect: Stop this, and something else fails. Someone else dies. You simply won't be in the room for it.
 
+-> taunt_t10_choices
+
+// PASS 3 (E13): choices-only, so a re-navigation replays none of the text above.
+=== taunt_t10_choices ===
 + [Then I'll be in this one.]
     The Architect: Yes. That's rather the point.
     -> t10_close
@@ -211,6 +229,10 @@ The Architect: Mercer believes in his cause. He would give you the figure and de
     }
 }
 
+-> taunt_t5_choices
+
+// PASS 3 (E13): choices-only, so a re-navigation replays none of the text above.
+=== taunt_t5_choices ===
 + [I made a call. I'll carry it.]
     The Architect: Noted.
     -> t5_close
@@ -242,6 +264,10 @@ Narrator: One minute. The handset is warm in your hand and the line is already o
 
 The Architect: But this was never about the power grid.
 
+-> taunt_t1_choices
+
+// PASS 3 (E13): choices-only, so a re-navigation replays none of the text above.
+=== taunt_t1_choices ===
 + [Eight point four million people say otherwise.]
     The Architect: They do. And I have written every one of them down.
     -> t1_close
@@ -294,6 +320,10 @@ Narrator: He hangs up first. He has hung up first every time.
     }
 }
 
+-> sign_off_choices
+
+// PASS 3 (E13): choices-only, so a re-navigation replays none of the text above.
+=== sign_off_choices ===
 + [You lost tonight.]
     The Architect: I wasn't playing for tonight.
     -> signoff_close
@@ -315,7 +345,17 @@ Narrator: The line goes quiet. Your call log holds no record of any of it.
 
 === dead_air ===
 Narrator: You bring the handset up. There is a carrier tone on a channel that should not have one, and nobody on it.
+-> dead_air_choices
 
+// PASS 3 (E13): choices-only.
+=== dead_air_choices ===
+{grid_saved:
+    -> start
+}
+// PASS 3: a taunt that arrived while this menu was open goes through, as parked does.
+{(architect_t1_played and not heard_t1) or (architect_t5_played and not heard_t5) or (architect_t10_played and not heard_t10 and not architect_t5_played) or (architect_t20_played and not heard_t20):
+    -> start
+}
 + [Hang up.]
     Narrator: The tone stops a half-second before you do.
     #exit_conversation

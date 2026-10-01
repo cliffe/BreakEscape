@@ -34,6 +34,9 @@ Director Magnus Netherton: Pacific Northwest Regional Grid Control. One hundred 
 
 Director Magnus Netherton: It is waiting on a start signal from a host inside the building. When that host sends it, you will have minutes, not hours. Nobody stops it from outside that building.
 
+// PASS 3 (capability arc): the kit, in the one knot every run opens on.
+Director Magnus Netherton: You have what's in your go-bag: picks, the cloner, the print kit. No PIN cracker. Analysis still has it in pieces.
+
 -> briefing_questions
 
 // ================================================
@@ -51,7 +54,7 @@ Director Magnus Netherton: It is waiting on a start signal from a host inside th
     Director Magnus Netherton: Hospitals hold seventy-two hours on backup. Water treatment fails at forty-eight. It is winter, and the projection on my desk is two hundred and forty to three hundred and eighty-five dead in the first three days.
     -> briefing_questions
 * [Who's coming in with me?]
-    Director Magnus Netherton: Nobody. You'll have Agent HaX on the wire and a lockpick set. That's the deployment.
+    Director Magnus Netherton: Nobody. Agent HaX on the wire and what you're carrying. That's the deployment.
     Director Magnus Netherton: The building is mid-evacuation, which will help you and will also mean nobody there knows who you are.
     -> briefing_questions
 * [Four operations at once. That's not a cell. That's a campaign.]

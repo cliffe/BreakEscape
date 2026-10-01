@@ -33,14 +33,15 @@ VAR mercer_fate = ""
 VAR mercer_stance = ""
 VAR mercer_told_diversion = false
 VAR elena_outcome = ""
-VAR morrison_resolved = ""
+VAR hollis_resolved = ""
 VAR park_resolved = ""
 
 // Knockout latches
-VAR morrison_ko = false
+VAR hollis_ko = false
 VAR elena_ko = false
 VAR mercer_ko = false
 VAR park_ko = false
+VAR vault_entered = false
 
 // Lore
 VAR found_tomb_gamma = false
@@ -203,7 +204,12 @@ Director Magnus Netherton: I will need an explanation for that in writing. Not t
 
 Narrator: He picks the tablet up again and holds it at a slight distance, the way people do when they have decided to read something out rather than say it.
 
-Director Magnus Netherton: Two operations went unanswered. I am reading both.
+// PASS 3 (puzzle-chains bug fix): an uncommitted team reads all three below.
+{ team_assignment == "":
+    Director Magnus Netherton: Three operations went unanswered. I am reading all three.
+- else:
+    Director Magnus Netherton: Two operations went unanswered. I am reading both.
+}
 
 { team_assignment != "fracture":
     -> dark_fracture ->
@@ -298,15 +304,22 @@ Director Magnus Netherton: The site, then. Shorter list.
 }
 
 {
-    - morrison_ko:
-    Director Magnus Netherton: The checkpoint guard is at Providence with a head injury. Jake Morrison. Contract security, forty-one, two children.
+    - hollis_ko:
+    Director Magnus Netherton: The checkpoint guard is at Providence with a head injury. Ray Hollis. Contract security, thirty-six, two children.
     // PASS 2: he was paid (his own ink: "a number in my account"), so the old
     // "no connection beyond a bad night" / "social engineering" lines contradicted him.
     Director Magnus Netherton: He was paid to renew Mercer's credentials in June and he has been spending the money ever since. The police will want to talk to him when he can talk.
-- morrison_resolved == "talked":
-    Director Magnus Netherton: Jake Morrison walked out to the muster point and waited there for the police. He is giving a full statement, including the payment for Mercer's credential renewal. He did not have to wait.
-- morrison_resolved == "evaded":
+- hollis_resolved == "talked":
+    Director Magnus Netherton: Ray Hollis walked out to the muster point and waited there for the police. He is giving a full statement, including the payment for Mercer's credential renewal. He did not have to wait.
+- hollis_resolved == "evaded":
     Director Magnus Netherton: The checkpoint guard is still at his post, and still on their payroll. We know his name. That will keep.
+// PASS 3: nobody dealt with him (never spoken to, or he went for the agent and was left standing).
+- else:
+    {hollis_resolved == "ko":
+        Director Magnus Netherton: The checkpoint guard was still at his post when the police reached the gate. Ray Hollis. He went for our agent and was left standing. We will be asking him why.
+    - else:
+        Director Magnus Netherton: The checkpoint guard was still at his post when the police reached the gate. Ray Hollis. Nobody had asked him anything yet. We will.
+    }
 }
 
 {
@@ -316,8 +329,19 @@ Director Magnus Netherton: The site, then. Shorter list.
     // PASS 2: he walks out saying "I'm not going to help you", so he is not
     // "cooperating" and has given nothing up.
     Director Magnus Netherton: Thomas Park walked out of the vault and into the police cordon. He has said nothing beyond his name. He left the switch alone, which is the part that mattered.
+// PASS 3: every live-Park state ends with the cut finished (he was four minutes out).
 - park_resolved == "evaded":
-    Director Magnus Netherton: Thomas Park is gone. The transfer switch is intact, which is the part that mattered, but he walked out of a building we had cordoned.
+    Director Magnus Netherton: Thomas Park finished what he went down there to do. He cut the control run to the transfer switch and walked out of a building we had cordoned.
+    Director Magnus Netherton: Had the abort come any later, that control centre would have been running on nothing.
+- park_resolved == "ko":
+    Director Magnus Netherton: Thomas Park came at you in the vault and you left him to it. He finished. The control run to the transfer switch was cut when the police got down there, and he was not.
+    Director Magnus Netherton: Had the abort come any later, that control centre would have been running on nothing.
+- vault_entered:
+    Director Magnus Netherton: You were in the vault with Thomas Park. He kept working, and he finished: the control run to the transfer switch was cut by the time the police got down there.
+    Director Magnus Netherton: Had the abort come any later, that control centre would have been running on nothing.
+- else:
+    Director Magnus Netherton: Nobody went down to the cable vault until the police did. They found tools on an insulated mat and the control run to the transfer switch cut. Whoever did it was gone.
+    Director Magnus Netherton: Had the abort come any later, that control centre would have been running on nothing.
 }
 
 -> the_coda

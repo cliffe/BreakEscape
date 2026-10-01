@@ -1,5 +1,7 @@
 # m07 The Architect's Gambit — Pass 2 improvements
 
+> Renamed 2026-10-01: Jake Morrison → Ray Hollis (id jake_morrison → ray_hollis; ink m07_npc_jake_morrison → m07_npc_ray_hollis; globals morrison_* → hollis_*; item morrison_server_badge → hollis_server_badge). This document predates the rename and is not rewritten; see CONTRACT.md and PUZZLE_CHAINS_PLAN.md.
+
 > The m02-standard pass. Sources: `scenario.json.erb`, the eight `.ink` files, the engine (`public/`, `app/`), m02–m06 as worked examples, m06's closing debrief and m08's opening. Nothing committed. Browser playtest not yet run.
 
 ## Browser playtest round (games 1177/1178, `tools/playtest/m07-pass2-report.md`) — fixes

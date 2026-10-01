@@ -1,5 +1,7 @@
 # m07 — Delegation Operations
 
+> Renamed 2026-10-01: Jake Morrison → Ray Hollis (id jake_morrison → ray_hollis; ink m07_npc_jake_morrison → m07_npc_ray_hollis; globals morrison_* → hollis_*; item morrison_server_badge → hollis_server_badge). This document predates the rename and is not rewritten; see CONTRACT.md and PUZZLE_CHAINS_PLAN.md.
+
 **Scope:** the three ENTROPY operations the player does *not* play. What the player is told about
 them, what is actually true, what happens when the tactical team is sent, and what happens when it is
 not.

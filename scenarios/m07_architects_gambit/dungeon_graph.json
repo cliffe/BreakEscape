@@ -63,6 +63,18 @@
       "optional": true
     },
     {
+      "id": "rfid_cloner",
+      "label": "RFID Cloner",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "fingerprint_kit",
+      "label": "Fingerprint Kit",
+      "kind": "item",
+      "optional": false
+    },
+    {
       "id": "lock_badge_printer",
       "label": "Contractor Badge Station<br/>PIN lock",
       "kind": "lock",
@@ -87,8 +99,8 @@
       "optional": false
     },
     {
-      "id": "npc_jake_morrison",
-      "label": "Jake Morrison",
+      "id": "npc_ray_hollis",
+      "label": "Ray Hollis",
       "kind": "key",
       "optional": false
     },
@@ -161,6 +173,12 @@
     {
       "id": "plant_maintenance_log",
       "label": "Plant Maintenance Log",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "backup_power_transfer_switch",
+      "label": "Backup Power Transfer Switch",
       "kind": "key",
       "optional": false
     },
@@ -258,6 +276,16 @@
     },
     {
       "from": "security_checkpoint",
+      "to": "rfid_cloner",
+      "soft": false
+    },
+    {
+      "from": "security_checkpoint",
+      "to": "fingerprint_kit",
+      "soft": false
+    },
+    {
+      "from": "security_checkpoint",
       "to": "lock_badge_printer",
       "soft": false
     },
@@ -288,11 +316,11 @@
     },
     {
       "from": "security_checkpoint",
-      "to": "npc_jake_morrison",
+      "to": "npc_ray_hollis",
       "soft": false
     },
     {
-      "from": "npc_jake_morrison",
+      "from": "npc_ray_hollis",
       "to": "facility_access_badge_server_zone",
       "soft": false
     },
@@ -367,7 +395,12 @@
       "soft": false
     },
     {
-      "from": "plant_maintenance_log",
+      "from": "generator_room",
+      "to": "backup_power_transfer_switch",
+      "soft": false
+    },
+    {
+      "from": "backup_power_transfer_switch",
       "to": "door_cable_vault",
       "soft": false
     },

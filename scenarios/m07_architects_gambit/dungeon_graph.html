@@ -142,7 +142,7 @@
       <tr><th>AND-gate convergences</th><td class="val">0</td></tr>
       <tr><th>Physical locks (puzzle)</th><td class="val">8</td></tr>
       <tr><th>Rooms</th><td class="val">6</td></tr>
-      <tr><th>Puzzle nodes / edges</th><td class="val">37 / 41</td></tr>
+      <tr><th>Puzzle nodes / edges</th><td class="val">40 / 44</td></tr>
       <tr><th>Story nodes / edges</th><td class="val">6 / 5</td></tr>
     </table>
   </div>
@@ -181,11 +181,13 @@
   cable_vault("Underground Cable Vault")
   security_checkpoint("Security Checkpoint")
   lock_pick_kit{"Lock Pick Kit"}
+  rfid_cloner{"RFID Cloner"}
+  fingerprint_kit{"Fingerprint Kit"}
   lock_badge_printer["Contractor Badge Station<br/>PIN lock"]
   printed_contractor_badge{"Printed Contractor Badge"}
   contractor_badge_station["Contractor Badge Station"]
   audited_visitor_log{"Audited Visitor Log"}
-  npc_jake_morrison{"Jake Morrison"}
+  npc_ray_hollis{"Ray Hollis"}
   facility_access_badge_server_zone{"Facility Access Badge -- Server Zone"}
   operations_floor("Operations Floor")
   plant_maintenance_key{"Plant Maintenance Key"}
@@ -198,6 +200,7 @@
   cascade_control_system["Cascade Control System"]
   signed_casualty_projection{"Signed Casualty Projection"}
   plant_maintenance_log{"Plant Maintenance Log"}
+  backup_power_transfer_switch{"Backup Power Transfer Switch"}
   recovered_site_reference_tomb_gamma{"Recovered Site Reference -- 'Tomb Gamma'"}
   intercepted_mail_deployment_confirmed{"Intercepted Mail -- Deployment Confirmed"}
   vmch_recover_coordination_traffic["Mount the attack host's open NFS export and submit the flag on it"]
@@ -215,14 +218,16 @@
   door_cable_vault --> cable_vault
   security_checkpoint -.-> lock_pick_kit
   lock_pick_kit -.-> door_generator_room
+  security_checkpoint --> rfid_cloner
+  security_checkpoint --> fingerprint_kit
   security_checkpoint --> lock_badge_printer
   lock_badge_printer --> printed_contractor_badge
   printed_contractor_badge --> door_server_room
   security_checkpoint -.-> contractor_badge_station
   contractor_badge_station -.-> door_server_room
   security_checkpoint --> audited_visitor_log
-  security_checkpoint --> npc_jake_morrison
-  npc_jake_morrison --> facility_access_badge_server_zone
+  security_checkpoint --> npc_ray_hollis
+  npc_ray_hollis --> facility_access_badge_server_zone
   facility_access_badge_server_zone --> door_server_room
   operations_floor --> plant_maintenance_key
   plant_maintenance_key --> door_generator_room
@@ -237,7 +242,8 @@
   scada_control --> cascade_control_system
   scada_control --> signed_casualty_projection
   generator_room --> plant_maintenance_log
-  plant_maintenance_log --> door_cable_vault
+  generator_room --> backup_power_transfer_switch
+  backup_power_transfer_switch --> door_cable_vault
   cable_vault --> recovered_site_reference_tomb_gamma
   cable_vault --> intercepted_mail_deployment_confirmed
   vmch_recover_coordination_traffic --> vmfl_recover_coordination_traffic
@@ -253,8 +259,8 @@
 
   class door_server_room,door_scada_control,door_generator_room,door_cable_vault,lock_badge_printer,contractor_badge_station,lock_crisis_control_system,cascade_control_system lock
   class server_room,scada_control,generator_room,cable_vault,security_checkpoint,operations_floor room
-  class lock_pick_kit,audited_visitor_log,shift_handover_sheet,safetynet_relay_terminal,signed_casualty_projection,recovered_site_reference_tomb_gamma,intercepted_mail_deployment_confirmed item
-  class printed_contractor_badge,npc_jake_morrison,facility_access_badge_server_zone,plant_maintenance_key,npc_elena_rodriguez,plant_maintenance_log key
+  class lock_pick_kit,rfid_cloner,fingerprint_kit,audited_visitor_log,shift_handover_sheet,safetynet_relay_terminal,signed_casualty_projection,plant_maintenance_log,recovered_site_reference_tomb_gamma,intercepted_mail_deployment_confirmed item
+  class printed_contractor_badge,npc_ray_hollis,facility_access_badge_server_zone,plant_maintenance_key,npc_elena_rodriguez,backup_power_transfer_switch key
   class vm_access_terminal,vmch_recover_coordination_traffic,vmch_intercept_c2_channel,vmch_escalate_on_attack_host,vmch_terminate_cascade_scripts vm
   class action_question_elena action
   class vmfl_recover_coordination_traffic,vmfl_intercept_c2_channel,vmfl_escalate_on_attack_host,vmfl_terminate_cascade_scripts flag
@@ -324,11 +330,13 @@
   cable_vault("Underground Cable Vault")
   security_checkpoint("Security Checkpoint")
   lock_pick_kit{"Lock Pick Kit"}
+  rfid_cloner{"RFID Cloner"}
+  fingerprint_kit{"Fingerprint Kit"}
   lock_badge_printer["Contractor Badge Station<br/>PIN lock"]
   printed_contractor_badge{"Printed Contractor Badge"}
   contractor_badge_station["Contractor Badge Station"]
   audited_visitor_log{"Audited Visitor Log"}
-  npc_jake_morrison{"Jake Morrison"}
+  npc_ray_hollis{"Ray Hollis"}
   facility_access_badge_server_zone{"Facility Access Badge -- Server Zone"}
   operations_floor("Operations Floor")
   plant_maintenance_key{"Plant Maintenance Key"}
@@ -341,6 +349,7 @@
   cascade_control_system["Cascade Control System"]
   signed_casualty_projection{"Signed Casualty Projection"}
   plant_maintenance_log{"Plant Maintenance Log"}
+  backup_power_transfer_switch{"Backup Power Transfer Switch"}
   recovered_site_reference_tomb_gamma{"Recovered Site Reference -- 'Tomb Gamma'"}
   intercepted_mail_deployment_confirmed{"Intercepted Mail -- Deployment Confirmed"}
   vmch_recover_coordination_traffic["Mount the attack host's open NFS export and submit the flag on it"]
@@ -364,14 +373,16 @@
   door_cable_vault --> cable_vault
   security_checkpoint -.-> lock_pick_kit
   lock_pick_kit -.-> door_generator_room
+  security_checkpoint --> rfid_cloner
+  security_checkpoint --> fingerprint_kit
   security_checkpoint --> lock_badge_printer
   lock_badge_printer --> printed_contractor_badge
   printed_contractor_badge --> door_server_room
   security_checkpoint -.-> contractor_badge_station
   contractor_badge_station -.-> door_server_room
   security_checkpoint --> audited_visitor_log
-  security_checkpoint --> npc_jake_morrison
-  npc_jake_morrison --> facility_access_badge_server_zone
+  security_checkpoint --> npc_ray_hollis
+  npc_ray_hollis --> facility_access_badge_server_zone
   facility_access_badge_server_zone --> door_server_room
   operations_floor --> plant_maintenance_key
   plant_maintenance_key --> door_generator_room
@@ -386,7 +397,8 @@
   scada_control --> cascade_control_system
   scada_control --> signed_casualty_projection
   generator_room --> plant_maintenance_log
-  plant_maintenance_log --> door_cable_vault
+  generator_room --> backup_power_transfer_switch
+  backup_power_transfer_switch --> door_cable_vault
   cable_vault --> recovered_site_reference_tomb_gamma
   cable_vault --> intercepted_mail_deployment_confirmed
   vmch_recover_coordination_traffic --> vmfl_recover_coordination_traffic
@@ -418,8 +430,8 @@
 
   class door_server_room,door_scada_control,door_generator_room,door_cable_vault,lock_badge_printer,contractor_badge_station,lock_crisis_control_system,cascade_control_system lock
   class server_room,scada_control,generator_room,cable_vault,security_checkpoint,operations_floor room
-  class lock_pick_kit,audited_visitor_log,shift_handover_sheet,safetynet_relay_terminal,signed_casualty_projection,recovered_site_reference_tomb_gamma,intercepted_mail_deployment_confirmed item
-  class printed_contractor_badge,npc_jake_morrison,facility_access_badge_server_zone,plant_maintenance_key,npc_elena_rodriguez,plant_maintenance_log key
+  class lock_pick_kit,rfid_cloner,fingerprint_kit,audited_visitor_log,shift_handover_sheet,safetynet_relay_terminal,signed_casualty_projection,plant_maintenance_log,recovered_site_reference_tomb_gamma,intercepted_mail_deployment_confirmed item
+  class printed_contractor_badge,npc_ray_hollis,facility_access_badge_server_zone,plant_maintenance_key,npc_elena_rodriguez,backup_power_transfer_switch key
   class vm_access_terminal,vmch_recover_coordination_traffic,vmch_intercept_c2_channel,vmch_escalate_on_attack_host,vmch_terminate_cascade_scripts vm
   class action_question_elena action
   class vmfl_recover_coordination_traffic,vmfl_intercept_c2_channel,vmfl_escalate_on_attack_host,vmfl_terminate_cascade_scripts flag
@@ -500,34 +512,35 @@
   rc_m07_rfid_field_guide_7{"SAFETYNET Field Guide: RFID Cloning"}
   rc_m07_lockpicking_field_guide_8{"SAFETYNET Field Guide: Lockpicking"}
   rc_m07_recon_field_guide_9{"SAFETYNET Field Guide: Reconnaissance and Network Mapping"}
-  rc_m07_scanning_field_guide_10{"SAFETYNET Field Guide: Scanning and Exploitation"}
-  rc_m07_privesc_field_guide_11{"SAFETYNET Field Guide: Privilege Escalation"}
-  rc_npc_jake_morrison_12("Jake Morrison")
-  rc_morrison_server_badge_13{"Facility Access Badge -- Server Zone"}
-  rc_npc_the_architect_14("The Architect")
-  rc_npc_director_magnus_netherton_15("Director Magnus Netherton")
-  rc_generator_maintenance_key_16{"Plant Maintenance Key"}
-  rc_situation_board_17{"Grid Situation Board"}
-  rc_substation_map_18{"147-Substation Wall Map"}
-  rc_shift_handover_sheet_19{"Shift Handover Sheet"}
-  rc_ops_floor_workstation_20{"Abandoned Operator Workstation"}
-  rc_vm_launcher_attack_terminal_21{"VM Access Terminal"}
-  rc_flag_station_safetynet_relay_22{"SAFETYNET Relay Terminal"}
-  rc_scada_backup_server_23{"SCADA Backup Server"}
-  rc_rack_cabling_note_24{"Cabling Survey Note"}
-  rc_npc_elena_rodriguez_25("Elena Rodriguez")
-  rc_crisis_control_system_26[["Cascade Control System"]]
-  rc_obj27_27{"Sequence Abort Confirmation"}
-  rc_cascade_countdown_display_28{"Cascade Countdown Display"}
-  rc_casualty_projection_29{"Signed Casualty Projection"}
-  rc_npc_dr_james_mercer_30("Dr. James Mercer")
-  rc_maintenance_log_31{"Plant Maintenance Log"}
-  rc_backup_transfer_switch_32{"Backup Power Transfer Switch"}
-  rc_genset_control_panel_33{"Genset Control Panel"}
-  rc_vault_trunk_runs_34{"Trunk Cable Runs"}
-  rc_tomb_gamma_dossier_35{"Recovered Site Reference -- 'Tomb Gamma'"}
-  rc_mole_intercept_evidence_36{"Intercepted Mail -- Deployment Confirmed"}
-  rc_npc_thomas_park_37("Thomas Park")
+  rc_m07_nfs_field_guide_10{"SAFETYNET Field Guide: NFS Shares and Open Ports"}
+  rc_m07_ssh_field_guide_11{"SAFETYNET Field Guide: SSH Access and Bruteforce"}
+  rc_m07_privesc_field_guide_12{"SAFETYNET Field Guide: Privilege Escalation"}
+  rc_npc_ray_hollis_13("Ray Hollis")
+  rc_hollis_server_badge_14{"Facility Access Badge -- Server Zone"}
+  rc_npc_the_architect_15("The Architect")
+  rc_npc_director_magnus_netherton_16("Director Magnus Netherton")
+  rc_generator_maintenance_key_17{"Plant Maintenance Key"}
+  rc_situation_board_18{"Grid Situation Board"}
+  rc_substation_map_19{"147-Substation Wall Map"}
+  rc_shift_handover_sheet_20{"Shift Handover Sheet"}
+  rc_ops_floor_workstation_21{"Abandoned Operator Workstation"}
+  rc_vm_launcher_attack_terminal_22{"VM Access Terminal"}
+  rc_flag_station_safetynet_relay_23{"SAFETYNET Relay Terminal"}
+  rc_scada_backup_server_24{"SCADA Backup Server"}
+  rc_rack_cabling_note_25{"Cabling Survey Note"}
+  rc_npc_elena_rodriguez_26("Elena Rodriguez")
+  rc_crisis_control_system_27[["Cascade Control System"]]
+  rc_obj28_28{"Sequence Abort Confirmation"}
+  rc_cascade_countdown_display_29{"Cascade Countdown Display"}
+  rc_casualty_projection_30{"Signed Casualty Projection"}
+  rc_npc_dr_james_mercer_31("Dr. James Mercer")
+  rc_maintenance_log_32{"Plant Maintenance Log"}
+  rc_backup_transfer_switch_33{"Backup Power Transfer Switch"}
+  rc_genset_control_panel_34{"Genset Control Panel"}
+  rc_vault_trunk_runs_35{"Trunk Cable Runs"}
+  rc_tomb_gamma_dossier_36{"Recovered Site Reference -- 'Tomb Gamma'"}
+  rc_mole_intercept_evidence_37{"Intercepted Mail -- Deployment Confirmed"}
+  rc_npc_thomas_park_38("Thomas Park")
 
   security_checkpoint --> operations_floor
   operations_floor --> server_room
@@ -543,40 +556,41 @@
   rc_npc_agent_hax_6 --> rc_m07_rfid_field_guide_7
   rc_npc_agent_hax_6 --> rc_m07_lockpicking_field_guide_8
   rc_npc_agent_hax_6 --> rc_m07_recon_field_guide_9
-  rc_npc_agent_hax_6 --> rc_m07_scanning_field_guide_10
-  rc_npc_agent_hax_6 --> rc_m07_privesc_field_guide_11
-  security_checkpoint --> rc_npc_jake_morrison_12
-  rc_npc_jake_morrison_12 --> rc_morrison_server_badge_13
-  security_checkpoint --> rc_npc_the_architect_14
-  security_checkpoint --> rc_npc_director_magnus_netherton_15
-  operations_floor --> rc_generator_maintenance_key_16
-  operations_floor --> rc_situation_board_17
-  operations_floor --> rc_substation_map_18
-  operations_floor --> rc_shift_handover_sheet_19
-  operations_floor --> rc_ops_floor_workstation_20
-  server_room --> rc_vm_launcher_attack_terminal_21
-  server_room --> rc_flag_station_safetynet_relay_22
-  server_room --> rc_scada_backup_server_23
-  server_room --> rc_rack_cabling_note_24
-  server_room --> rc_npc_elena_rodriguez_25
-  scada_control --> rc_crisis_control_system_26
-  rc_crisis_control_system_26 --> rc_obj27_27
-  scada_control --> rc_cascade_countdown_display_28
-  scada_control --> rc_casualty_projection_29
-  scada_control --> rc_npc_dr_james_mercer_30
-  generator_room --> rc_maintenance_log_31
-  generator_room --> rc_backup_transfer_switch_32
-  generator_room --> rc_genset_control_panel_33
-  cable_vault --> rc_vault_trunk_runs_34
-  cable_vault --> rc_tomb_gamma_dossier_35
-  cable_vault --> rc_mole_intercept_evidence_36
-  cable_vault --> rc_npc_thomas_park_37
+  rc_npc_agent_hax_6 --> rc_m07_nfs_field_guide_10
+  rc_npc_agent_hax_6 --> rc_m07_ssh_field_guide_11
+  rc_npc_agent_hax_6 --> rc_m07_privesc_field_guide_12
+  security_checkpoint --> rc_npc_ray_hollis_13
+  rc_npc_ray_hollis_13 --> rc_hollis_server_badge_14
+  security_checkpoint --> rc_npc_the_architect_15
+  security_checkpoint --> rc_npc_director_magnus_netherton_16
+  operations_floor --> rc_generator_maintenance_key_17
+  operations_floor --> rc_situation_board_18
+  operations_floor --> rc_substation_map_19
+  operations_floor --> rc_shift_handover_sheet_20
+  operations_floor --> rc_ops_floor_workstation_21
+  server_room --> rc_vm_launcher_attack_terminal_22
+  server_room --> rc_flag_station_safetynet_relay_23
+  server_room --> rc_scada_backup_server_24
+  server_room --> rc_rack_cabling_note_25
+  server_room --> rc_npc_elena_rodriguez_26
+  scada_control --> rc_crisis_control_system_27
+  rc_crisis_control_system_27 --> rc_obj28_28
+  scada_control --> rc_cascade_countdown_display_29
+  scada_control --> rc_casualty_projection_30
+  scada_control --> rc_npc_dr_james_mercer_31
+  generator_room --> rc_maintenance_log_32
+  generator_room --> rc_backup_transfer_switch_33
+  generator_room --> rc_genset_control_panel_34
+  cable_vault --> rc_vault_trunk_runs_35
+  cable_vault --> rc_tomb_gamma_dossier_36
+  cable_vault --> rc_mole_intercept_evidence_37
+  cable_vault --> rc_npc_thomas_park_38
 
   class security_checkpoint,operations_floor room
   class server_room,scada_control,generator_room,cable_vault lock
-  class rc_badge_printer_1,rc_crisis_control_system_26 container
-  class rc_printed_contractor_badge_2,rc_visitor_log_3,rc_checkpoint_evacuation_board_4,rc_m07_rfid_field_guide_7,rc_m07_lockpicking_field_guide_8,rc_m07_recon_field_guide_9,rc_m07_scanning_field_guide_10,rc_m07_privesc_field_guide_11,rc_morrison_server_badge_13,rc_generator_maintenance_key_16,rc_situation_board_17,rc_substation_map_18,rc_shift_handover_sheet_19,rc_ops_floor_workstation_20,rc_vm_launcher_attack_terminal_21,rc_flag_station_safetynet_relay_22,rc_scada_backup_server_23,rc_rack_cabling_note_24,rc_obj27_27,rc_cascade_countdown_display_28,rc_casualty_projection_29,rc_maintenance_log_31,rc_backup_transfer_switch_32,rc_genset_control_panel_33,rc_vault_trunk_runs_34,rc_tomb_gamma_dossier_35,rc_mole_intercept_evidence_36 item
-  class rc_npc_director_magnus_netherton_5,rc_npc_agent_hax_6,rc_npc_jake_morrison_12,rc_npc_the_architect_14,rc_npc_director_magnus_netherton_15,rc_npc_elena_rodriguez_25,rc_npc_dr_james_mercer_30,rc_npc_thomas_park_37 npc
+  class rc_badge_printer_1,rc_crisis_control_system_27 container
+  class rc_printed_contractor_badge_2,rc_visitor_log_3,rc_checkpoint_evacuation_board_4,rc_m07_rfid_field_guide_7,rc_m07_lockpicking_field_guide_8,rc_m07_recon_field_guide_9,rc_m07_nfs_field_guide_10,rc_m07_ssh_field_guide_11,rc_m07_privesc_field_guide_12,rc_hollis_server_badge_14,rc_generator_maintenance_key_17,rc_situation_board_18,rc_substation_map_19,rc_shift_handover_sheet_20,rc_ops_floor_workstation_21,rc_vm_launcher_attack_terminal_22,rc_flag_station_safetynet_relay_23,rc_scada_backup_server_24,rc_rack_cabling_note_25,rc_obj28_28,rc_cascade_countdown_display_29,rc_casualty_projection_30,rc_maintenance_log_32,rc_backup_transfer_switch_33,rc_genset_control_panel_34,rc_vault_trunk_runs_35,rc_tomb_gamma_dossier_36,rc_mole_intercept_evidence_37 item
+  class rc_npc_director_magnus_netherton_5,rc_npc_agent_hax_6,rc_npc_ray_hollis_13,rc_npc_the_architect_15,rc_npc_director_magnus_netherton_16,rc_npc_elena_rodriguez_26,rc_npc_dr_james_mercer_31,rc_npc_thomas_park_38 npc
   class node_start start`
     };
     const rendered = {};

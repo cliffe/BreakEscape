@@ -1,7 +1,8 @@
 # m07 "The Architect's Gambit" — QA Walkthrough
 
-> Rewritten in pass 2 (2026-10-01) to match the shipped `scenario.json.erb`.
-> Validator: 0 errors, 6 warnings and 6 "❌ INVALID" lines, all judged intended or false positives (see `PASS2_IMPROVEMENTS.md`).
+> Rewritten in pass 3 (2026-10-01) to match `scenario.json.erb` after `PUZZLE_CHAINS_PLAN.md`.
+> Validator: 0 errors, 8 warnings. The six baseline ones are unchanged. The two new ones are co-firing `onceOnly` latches on `room_entered:generator_room` and `room_entered:cable_vault`, beside the debrief backstops; firing together is intended.
+> Renamed 2026-10-01: Jake Morrison → Ray Hollis (id `ray_hollis`; globals `hollis_*`).
 
 **Map** — a spine with two spurs off the server room:
 
@@ -15,15 +16,15 @@ security_checkpoint ─E─ operations_floor ─E─ server_room ─N─ scada_c
                                              cable_vault
 ```
 
-**Lock chain** (each gate has two sources, so no knockout can strand the mission):
+**Lock chain**
 
-| # | Gate | Lock | Primary | Redundant |
-|---|---|---|---|---|
-| 1 | → `server_room` | `rfid` `server_zone_badge` | Jake Morrison's badge (talk him round, or KO drop) | Contractor Badge Station at the checkpoint, PIN **0616** from the Shift Handover Sheet on the ops floor |
-| 2 | → `generator_room` | `key` `generator_maintenance_key` | plant key, operations floor | lockpick in starting inventory |
-| 3 | → `cable_vault` | `pin` **4703** | maintenance log, generator room | Elena Rodriguez |
-| 4 | → `scada_control` | `password` **CascadeWindow19** | Elena Rodriguez | Listener Capture note, handed over by the relay for flag 2 |
-| 5 | `crisis_control_system` | `flag`, no `requires` | flag 4 reward `unlock_object` | — (win condition) |
+| # | Gate | Lock | Routes |
+|---|---|---|---|
+| 1 | → `server_room` | `rfid` `server_zone_badge` | Hollis talked round (needs the Shift Handover Sheet's print-history line) · Contractor Badge Station, PIN **0616** from the same sheet · Hollis KO'd, badge drops |
+| 2 | → `generator_room` | `key` | plant key, ops floor · lockpick (start kit) |
+| 3 | → `cable_vault` | `pin` **4703** | rule (relay decode T.P. block, or Hollis's tip) + ATS-1 plate on the transfer switch in `generator_room` · Elena gives the number · the log's 2291 is VOID |
+| 4 | → `scada_control` | `password` **CascadeWindow19** | Elena · Listener Capture (flag 2 reward) |
+| 5 | `crisis_control_system` | `flag`, no `requires` | flag 4 reward `unlock_object` |
 
 ---
 
@@ -31,55 +32,57 @@ security_checkpoint ─E─ operations_floor ─E─ server_room ─N─ scada_c
 
 | # | Action | Expected |
 |---|---|---|
-| 1 | Load the scenario | Briefing cutscene (Netherton on a secure link, agent in a car on the I-5); `briefing_played` set; does not replay on resume |
-| 2 | Read the three briefs, commit the team | `team_assignment`, `team_assigned`; task `assign_tactical_team` completes on the commit line; music to noir |
-| 2a | *Variant:* close the briefing (Esc) before committing | Open HaX: he offers the commit menu (`commit_team`), and a sticky hub option stays until the team is sent |
-| 3 | Morrison | Talk (visitor log unlocks the leverage line), evade, or fight. Talked round, he hands over `morrison_server_badge` and disappears |
-| 4 | *Or:* ops floor → Shift Handover Sheet → back to the Contractor Badge Station, PIN 0616 → take the Printed Contractor Badge | Badge in inventory; `badge_obtained` |
-| 5 | East into `operations_floor` | RFID guide offered unless a badge is held; `architect_contact` set; Architect bark "Agent 0x00. Don't look for the trace." Click it: his first call (`taunt_t30`). Before this his thread is silent (`dormant`) |
+| 1 | Load the scenario | Briefing cutscene. Before the first question menu, Netherton names the kit: picks, the cloner, the print kit, no PIN cracker. Inventory: phone, Lock Pick Kit, RFID Cloner, Fingerprint Kit. `briefing_played` set; no replay on resume |
+| 2 | Read the three briefs, commit the team | `team_assignment`, `team_assigned`; `assign_tactical_team` completes; music to noir |
+| 2a | *Variant:* close the briefing before committing | HaX hub offers the commit (`commit_team`) at any time. First ops-floor entry sets `inside_reached` and turns the music to noir once |
+| 3 | Hollis, at the checkpoint | No evidence: bluff / stakes / walk at him / back off. Visitor log only: partial option, he stonewalls. Handover read: "You renewed Mercer's credentials on the sixteenth of June. Your login." → deal → badge, then two lines: the vault keypad was read off the transfer-switch plate, and their plant tech went down the riser when the alarms went. He leaves; `hollis_resolved = talked` |
+| 4 | *Or:* Shift Handover Sheet → Contractor Badge Station, PIN 0616 | Printed Contractor Badge; `badge_obtained` |
+| 5 | East into `operations_floor` | RFID guide offered unless a badge is held; `architect_contact`; Architect bark. `inside_reached` set |
 | 6 | East into `server_room` (RFID) | Recon guide offered; lockpicking guide offered unless the plant key is held |
-| 7 | Elena Rodriguez | `question_elena` completes on meeting her. Turned: gives CascadeWindow19 + 4703. Pressured: may flee (she disappears, does not attack) |
-| 8 | VM flag 1 (NFS export on the attack host) | `flag1_submitted` → `found_coordination_traffic`, `projection_revised`; HaX message differs if the team is already on Trojan Horse |
-| 9 | VM flag 2 (listener on a high port) | Relay hands over **Listener Capture — Operator Credentials** (a `text_file`, shown in the inventory; has the door password); `flag2_submitted` via task mapping; `scada_password_found` |
-| 10 | Get the **control room door** open before logging in to the host | HaX says so ("What's the clock?", vm hint 3). It is the only door the finale needs |
-| 11 | VM flag 3 (SSH as the operator, flag in home dir) | `flag3_submitted` → `redirect_window_closed`, `cascade_armed`; the visible 15-minute "Cascade sequence" clock starts; privesc guide offered |
-| 12 | VM flag 4 (root via sudo) | Reward `unlock_object crisis_control_system`; `flag4_submitted` via task mapping; HaX: "go and give it one" |
-| 13 | North into `scada_control` (password) | Music to spy-action |
-| 14 | Mercer | `confront_mercer` completes on first contact; stance, then an ending. Detained or walked out: he disappears |
-| 15 | Use the Cascade Control System (after flag 4) | Opens as a container, with no flag prompt: unlocked client-side by the reward if the room is loaded, or server-side on room load otherwise. `item_unlocked` → `shut_down_the_cascade` → `grid_saved`, `mission_complete`. The HUD clock disappears because every timer's `condition` now fails. `cancelOnGlobal` alone does not clear the HUD (engine gap). Before flag 4 the console shows a flag prompt that accepts nothing |
-| 16 | Close the printout | The Architect's sign-off opens as a phone call (`sign_off`), sets `architect_signoff_done`. Reopening his thread afterwards gives only "Hang up" (`after_win`), never an old taunt |
-| 17 | Close the phone | Debrief opens (needs grid saved **and** all four flags). `debrief_played` set at the top |
-| 18 | Finish the debrief | `take_the_debrief` completes on the last line → victory music → credits → `bond_visualiser` |
+| 7 | Use the VM terminal | `vm_terminal_used`, `nfs_guide_offered`; HaX: "Map the host first. NFS is the door they left open… Want the NFS and netcat field guide?" The hub offers it; it gives "SAFETYNET Field Guide: NFS Shares and Open Ports" (URL 404s until the sheet is published) |
+| 8 | Elena | `question_elena` on meeting. Revision beat sets `projection_revised`; **no HaX text while she is talking**. Turned: CascadeWindow19 + 4703 |
+| 9 | VM flag 1 | Relay gives **Coordination Schedule -- Relay Decode**. `flag1_submitted` (from the task). Nudge after 1.5 s unless the decode was already read. `projection_revised` stays false until the decode is read (or Elena) |
+| 10 | Read the decode (inventory) | `projection_revised`, `found_coordination_traffic`; ~3 s later one HaX verdict (see variants) |
+| 11 | VM flag 2 | Listener Capture in inventory; `scada_password_found`; HaX offers the SSH field guide (`ssh-access-and-bruteforce`) |
+| 12 | Open the control room door **before** flag 3 | HaX says so |
+| 13 | VM flag 3 | `cascade_armed`, `redirect_window_closed`; 15-minute clock. HaX text differs if the team was never committed |
+| 14 | VM flag 4 | Console unlock reward; HaX "go and give it one" |
+| 15 | Mercer, console, printout | As pass 2 |
+| 16 | Close the printout | Architect sign-off; reopening his thread shows only "Hang up" |
+| 17 | Close the phone | Debrief (grid saved and all four flags) |
+| 18 | Finish the debrief | Credits, then `bond_visualiser` |
 
-**Optional (aim 2):** south to `generator_room` (key/lockpick), maintenance log (4703, completes `recover_vault_pin`), south to `cable_vault`, Thomas Park, collect `mole_intercept_evidence` and `tomb_gamma_dossier`.
+**Optional (aim 2):** generator hall (key or picks): `generator_hall_reached`; the log says the vault code was reset and 2291 is void; the transfer switch plate reads S/N 0098-4703. Without the rule, HaX's hub offers "The vault keypad. Where do I get the code?" and names the source, not the digits. Keypad 4703: `recover_vault_pin` ticks **when the door opens**. In the vault (`vault_entered`): read the trunk runs → `splice_found` → `search_cable_vault`; Park (projection option if `casualty_projection_found`); take the mole intercept and the Tomb Gamma dossier → `recover_mole_evidence` 2/2.
+
+**Expected, not bugs:** clicking a badge in the inventory opens the RFID clone minigame (the player holds a cloner), so cancel it. With the team never committed there are no T-20/T-10 barks. A player chased onto the ops floor by a hostile Hollis on the first entry hears `threat` give way to `noir`.
 
 ---
 
-## Branch variants to test
+## Branch variants
 
 | Variant | Setup | Expected |
 |---|---|---|
-| Each delegation target | fracture / trojan_horse / meltdown | Debrief reads the two not covered |
-| Team never committed | Close briefing, never use HaX's commit | Debrief `covered_none`; credits "never committed" |
-| Team already on Trojan Horse | Commit Trojan Horse, find the revision | No redirect option on the HaX hub; debrief says "you found out what you had chosen" |
-| Redirect taken | Revision found, redirect before flag 3 / 40 min | `team_redirected`; Architect sign-off registers surprise |
-| Redirect declined | Revision found, HaX redirect → "Leave them" | `redirect_declined`; debrief + credits record it |
-| Redirect window shut | Flag 3 or 40 min first | HaX refuses out loud |
-| Flag 3 after the win | Submit flag 4, save the grid, then flag 3 | No arming, no clock, no HaX "they saw you" message |
-| Reload after the win | Reload with `cascade_armed` and `grid_saved` true | No clock, no `countdown_expired` |
-| Clock expires | Wait 15 real minutes after flag 3 | `countdown_expired`; Architect bark "Seattle first"; printout variant shows step 01 executed; debrief line + credits warning |
-| Flags missing | Save the grid having submitted only flag 4 | HaX nag; debrief waits; submit the rest at the relay → debrief opens on the station closing |
-| Mercer endings | record / hollowed / hostile / walks | Distinct credits; he is hidden after record, hollowed, walks |
-| Reload mid-debrief | Reload after the debrief starts | Debrief does not replay; next room entry completes `take_the_debrief` |
+| Verdict, decode first, window open | Commit Fracture; flag 1; read decode | "That's their own table … call me while there's still time." Closing Elena later sends nothing |
+| Verdict, Elena first | Commit Meltdown; Elena revision beat; close her | Nothing while talking; after close "One frightened engineer … call me while there's still time." Reading the decode later sends no second verdict |
+| Verdict, window shut | Commit Fracture; flag 3 before reading the decode; then read it | "… The window's shut. It goes in the report." No call to action |
+| Verdict, already on Trojan Horse | Commit Trojan Horse; read decode | "The team's already in Austin …" |
+| Uncommitted, late reader | Never commit; flag 3; read decode | No verdict text; HaX `topic_traffic` says the team is still waiting on the call |
+| Redirect confirmation | Elena first, redirect, then read decode | "The share says what Elena told you …" once; re-reading sends nothing. Decode first, redirect, re-read: nothing |
+| Redirect window shut | Flag 3 or 40 min first | "Move them" not offered; HaX refuses out loud |
+| Hollis endings | talk / KO / evade / ignore him | Credits: Talked / Neutralised / Evaded / Left at his post |
+| Park endings | talk (projection) / KO / evade / provoke and flee / walk past / never go down | Credits: Talked / Neutralised / Evaded / Fought off / Seen, left to work / Never found; exactly one Park line |
+| Transfer switch | Enter the vault, leave Park alive and not talked round, read the switch | "CONTROL RUN FAULT" variant; base text if Park is talked round or KO'd |
+| Clock expires | Wait 15 minutes after flag 3 | `countdown_expired`; printout variant; debrief line |
+| Reload mid-mission | After reading the decode and the projection | Globals hold; no intro, verdict or nudge replays |
 
 ---
 
 ## Knockout matrix
 
-| NPC | `taskOnKO` | `globalVarOnKO` | Reaction mapping | Redundant route |
+| NPC | `taskOnKO` | `globalVarOnKO` | Reaction | Route that survives |
 |---|---|---|---|---|
-| `jake_morrison` | `clear_the_checkpoint` | `morrison_ko` | `npc_ko:jake_morrison` HaX message | badge drops (start room); badge station |
-| `elena_rodriguez` | `question_elena` | `elena_ko` | `npc_ko:elena_rodriguez` | Listener Capture (password), maintenance log (PIN), flag 1 (revision) |
+| `ray_hollis` | `clear_the_checkpoint` | `hollis_ko` | `npc_ko:ray_hollis` HaX message | badge drops (only `badge_obtained`); badge station. Loses his statement and tip |
+| `elena_rodriguez` | `question_elena` | `elena_ko` | `npc_ko:elena_rodriguez` | Listener Capture (password), relay decode (revision, vault rule) |
 | `james_mercer` | `confront_mercer` | `mercer_ko` | `npc_ko:james_mercer` | gates nothing |
 | `thomas_park` | `neutralise_park` | `park_ko` | `npc_ko:thomas_park` | side content |
 
@@ -90,10 +93,9 @@ security_checkpoint ─E─ operations_floor ─E─ server_room ─N─ scada_c
 ```bash
 ruby    scripts/validate_scenario.rb scenarios/m07_architects_gambit/scenario.json.erb
 bash    scripts/compile-ink.sh m07_architects_gambit
+python3 scripts/check_door_alignment.py scenarios/m07_architects_gambit/scenario.json.erb
+ruby    tools/pass2/render.rb scenarios/m07_architects_gambit/scenario.json.erb /tmp/m07.json
+python3 .claude/skills/mission-puzzle-chains/scripts/room_depth.py /tmp/m07.json
 node    scripts/ink_runtime_check/inkcheck.js  <ink>.json <knot>
 node    scripts/ink_runtime_check/loopcheck.js <ink>.json <knot> [VAR=value ...]
-ruby    tools/pass2/render.rb scenarios/m07_architects_gambit/scenario.json.erb /tmp/m07.json
-python3 tools/pass2/door_align.py /tmp/m07.json
 ```
-
-The re-entry states run in pass 2 are listed in `PASS2_IMPROVEMENTS.md`.
