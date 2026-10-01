@@ -144,7 +144,7 @@ Agent HaX: Priority three: map the whole ENTROPY financial network. Every transa
     -> relay_exec_badge
 
 // Field guides, offered once the player has met the thing they explain
-+ {cracking_guide_offered and not cracking_guide_hint_given} [Send me the SSH login field guide.]
++ {cracking_guide_offered and not cracking_guide_hint_given} [Send me the offline password cracking guide.]
     -> request_cracking_guide
 + {distcc_guide_offered and not distcc_guide_hint_given} [Send me the distcc guide.]
     -> request_distcc_guide
@@ -480,8 +480,8 @@ Agent HaX: Which leaves the wallet to you. $12.8 million still pending. What do 
 ~ cracking_guide_hint_given = true
 #set_variable:cracking_guide_hint_given=true
 #give_item:lab-workstation:m06_cracking_field_guide
-Agent HaX: SSH login guide sent.
-Agent HaX: Its worked example guesses passwords against the live service. Here you can do better: unshadow the hashes and run John's default list offline, then log in with what it gives you.
+Agent HaX: Offline cracking guide sent.
+Agent HaX: Everything you need to turn that readable shadow file into logins. Unshadow it, run John offline, then try each cracked password on the other accounts.
 -> hub
 
 === request_distcc_guide ===
