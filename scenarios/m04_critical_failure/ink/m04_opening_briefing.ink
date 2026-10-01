@@ -176,7 +176,7 @@ Agent HaX: Static and Voltage are in the plant room—final defensive position.
 
 Agent HaX: You can go stealth, but if compromised, you'll need to fight.
 
-Agent HaX: I've authorised you for lethal force if necessary. But capture Voltage if possible—he knows things.
+Agent HaX: You're cleared for whatever force it takes to stop that trigger being pressed. But I want Voltage breathing. He knows things.
 
 + [I understand. Neutralise threats, prioritise Voltage's capture if possible.]
     ~ handler_trust += 15
@@ -208,19 +208,19 @@ Agent HaX: But people die. That's what makes them dangerous.
 === cover_identity_explanation ===
 #speaker:agent_0x99
 
-Agent HaX: Your cover: grid-safety regulator conducting a surprise regulatory inspection.
+Agent HaX: Your cover: the grid-safety regulator Albion is expecting today. You're just four hours early.
 
-Agent HaX: Forged credentials in your phone. Facility manager is Robert Vance—he's expecting an auditor today.
+Agent HaX: Your credentials are in your kit. Facility manager is Robert Vance. He knows an auditor's due; he doesn't expect one before dawn.
 
 Agent HaX: Use the cover to get inside. Vance doesn't know about the threat yet.
 
 + [Once I'm inside, should I brief the facility manager?]
-    -> chen_briefing_advice
+    -> vance_briefing_advice
 
 + [Understood. Once inside?]
     -> briefing_hub
 
-=== chen_briefing_advice ===
+=== vance_briefing_advice ===
 #speaker:agent_0x99
 
 Agent HaX: Your call. Vance's a career engineer—safety-focused, competent.
@@ -272,9 +272,11 @@ Agent HaX: Two—investigate the SCADA network. Identify how they compromised it
 
 Agent HaX: Three—stop it at the plant room. There's a hardwired Emergency Shutdown pushbutton in there, physical contacts, no network path. It's the one control they couldn't take. Press it and the banks isolate.
 
-Agent HaX: Four—capture or eliminate ENTROPY operatives. Voltage is the priority for intelligence.
+Agent HaX: Four—stop the operatives. Voltage, alive, is the priority for intelligence.
 
 Agent HaX: VM access is set up for SCADA network investigation. Submit flags to the drop-site terminal.
+
+Agent HaX: Kit: your picks, and the cloner from the WhiteHat job. No PIN cracker this time. We've got one, it's ENTROPY's, and it isn't leaving the lab.
 
 * [Understood. Infiltrate, investigate, neutralise, capture. Moving out now.]
     ~ handler_trust += 10
@@ -311,7 +313,7 @@ Agent HaX: This is on you. I trust you can handle it.
 === priority_clarification ===
 #speaker:agent_0x99
 
-Agent HaX: Attack prevention is absolute priority. 240,000 lives.
+Agent HaX: Attack prevention is absolute priority. Eleven people on site, and everyone on that feed.
 
 Agent HaX: Capture Voltage if you can—intelligence value is enormous.
 
@@ -329,7 +331,7 @@ Agent HaX: Lives first. Intelligence second.
 
 Agent HaX: Facility is 20 minutes out. Security checkpoint will ask for credentials.
 
-Agent HaX: Present your regulator credentials. Act like a routine surprise inspection.
+Agent HaX: Present your regulator credentials. Act like a routine audit that came early.
 
 Agent HaX: {combat_ready: Combat may be unavoidable. Stay tactical.| Stay alert. ENTROPY's waiting.}
 

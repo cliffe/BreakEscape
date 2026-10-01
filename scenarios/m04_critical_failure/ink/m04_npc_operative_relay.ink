@@ -8,7 +8,8 @@
 //
 // PASS 2: the dead post-KO surrender/interrogation hubs were removed (a KO'd NPC
 // is non-interactable, interactions.js:1690, and there is no subdue mechanic).
-// The Master keycard is recovered from the drop or HaX's KO fallback, and
+// Relay carries the Level 2 workshop card (PASS 3 P3), recovered from the drop
+// or HaX's KO fallback, and
 // neutralize_operative_relay is completed by the engine's taskOnKO. Relay's
 // OptiGrid ops log (itemsHeld) still carries the regional-strike intel.
 // ===========================================

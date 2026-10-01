@@ -12,9 +12,9 @@ VAR guard_admitted = false       // Has the guard let the player in?
 // External variables (set by game)
 // NOTE: the engine binds exactly six externals (person-chat-conversation.js:96-129):
 // player_name, current_mission_id, npc_location, mission_phase,
-// operational_stress_level, equipment_status. chen_trust_level() was declared
+// operational_stress_level, equipment_status. vance_trust_level() was declared
 // here but is NOT bound by the engine, so it is removed -- read the synced
-// chen_trust_level global instead if this dialogue ever needs it.
+// vance_trust_level global instead if this dialogue ever needs it.
 EXTERNAL player_name()
 
 // ===========================================
@@ -52,7 +52,7 @@ State auditor? This early?
 
 Narrator: He turns your badge over, glances at the clipboard, hands it back.
 
-Security Guard: Alright, sign in here. Mr Vance mentioned a surprise inspection. He's not happy about it, fair warning.
+Security Guard: Alright, sign in here. Mr Vance said there was an audit today. Didn't say it'd be this early. He's not happy about it, fair warning.
 
 * [I'll keep that in mind. Thank you.]
     -> guard_entry_granted
@@ -81,9 +81,9 @@ Security Guard: Go on through. Operations office is straight down the hall.
 === guard_inspection_response ===
 #speaker:security_guard
 
-Inspection? Nobody told me about any inspection.
+Inspection? Nobody told me it'd be at this hour.
 
-* [It's a surprise inspection. Check with your supervisor if you like.]
+* [It's on today's list. I'm early. Check with your supervisor if you like.]
     -> guard_confused_allows
 
 * [Here are my credentials.]

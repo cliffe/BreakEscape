@@ -1,5 +1,7 @@
 # m04 Critical Failure — Pass 2 improvements
 
+> Renamed 2026-10-01: Robert Chen → Robert Vance (the character was renamed in pass 1; his ids now match). Ids `chen_*` → `vance_*`: globals `chen_trust_level`, `chen_is_ally`, `chen_provided_keycard`, `chen_phone_available`, `chen_knows_truth` → `vance_*`; every `chen_*` ink knot and VAR → `vance_*`; ERB `chen_warning_email` → `vance_warning_email`. NPC ids (`robert_vance`, `robert_vance_phone`) were already right. The puzzle structure described here is superseded by `PUZZLE_CHAINS_PLAN.md` (pass 3).
+
 > The m02-standard pass. Sources: `scenario.json.erb`, the ten `.ink` files, the
 > engine (`public/`, `app/`), m02/m03 as worked examples, and the escalated
 > universe bible. Nothing was committed. Everything is derived from the `.erb`

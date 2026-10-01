@@ -12,23 +12,27 @@
 // ===========================================
 
 // Ink-owned state
-VAR chen_support_calls = 0
+VAR vance_support_calls = 0
 VAR guidance_provided = ""
 VAR asked_charge_control = false
 VAR asked_server_room = false
 VAR asked_disabling = false
 
 // Engine-owned, synced in from globalVariables.
-// chen_trust_level is deliberately incremented here -- that is real progression
-// and syncs back. chen_is_ally / urgency_stage are read only.
-VAR chen_is_ally = false
-VAR chen_trust_level = 0
+// vance_trust_level is deliberately incremented here -- that is real progression
+// and syncs back. vance_is_ally / urgency_stage are read only.
+VAR vance_is_ally = false
+VAR vance_trust_level = 0
 VAR urgency_stage = 0
 
-// Engine-owned, synced in from globalVariables. Declared in scenario.json.erb
-// as attack_mechanism_known and set true by the flag_4 drop-site eventMapping,
-// so the branches gated on it below do fire once the attack is mapped.
+// Engine-owned, synced in from globalVariables. Set true by the
+// objective_aim_completed:map_the_attack mapping (all four flags in), so the
+// branches gated on it below fire once the attack is mapped.
 VAR attack_mechanism_known = false
+VAR server_room_reached = false    // global; set on entering the workshop (PASS 3 P16)
+VAR plant_reader_seen = false      // global; set on entering Hall 2 (PASS 3 P8)
+VAR asked_plant_reader = false
+VAR robert_vance_ko = false        // global; Vance knocked out -- nobody answers
 
 EXTERNAL player_name()
 
@@ -37,20 +41,31 @@ EXTERNAL player_name()
 // ===========================================
 
 === start ===
-{not chen_is_ally: -> chen_not_yet_ally}
-~ chen_support_calls += 1
--> chen_phone_support_start
+{robert_vance_ko: -> vance_no_answer}
+{not vance_is_ally: -> vance_not_yet_ally}
+~ vance_support_calls += 1
+-> vance_phone_support_start
 
-=== chen_not_yet_ally ===
-Robert Vance: I'm monitoring systems from the ops desk. Come and see me if you need something.
-
-+ [Understood.]
+// PASS 3 phone-chat rule. A phone chat reopened after a synced global changed
+// re-navigates to the knot of the first saved choice, not `start`
+// (phone-chat-minigame.js:532-566), so every resting knot re-checks its own
+// state at the top. This one prints no NPC text (the preload would add an
+// unread message), so a player who opens the phone before allying sees only a
+// way out, and is routed on as soon as vance_is_ally flips.
+=== vance_not_yet_ally ===
+{robert_vance_ko: -> vance_no_answer}
+{vance_is_ally: -> start}
++ [(He's at the ops desk. Talk to him there.)]
     #exit_conversation
-    Robert Vance: Right.
-    -> chen_not_yet_ally
+    -> vance_not_yet_ally
 
-=== chen_phone_support_start ===
-{chen_support_calls == 1:
+=== vance_no_answer ===
++ [(No answer.)]
+    #exit_conversation
+    -> vance_no_answer
+
+=== vance_phone_support_start ===
+{vance_support_calls == 1:
     Robert Vance: {player_name()}. I'm on the ops desk with both screens up.
 - else:
     Robert Vance: Still here. Still watching it climb.
@@ -63,31 +78,38 @@ Robert Vance: I'm monitoring systems from the ops desk. Come and see me if you n
 // ===========================================
 
 === support_hub ===
+{robert_vance_ko: -> vance_no_answer}
 + {not asked_charge_control} [How do the charge-control systems work?]
     ~ asked_charge_control = true
-    ~ chen_trust_level += 3
+    ~ vance_trust_level += 3
     # influence_increased
     -> charge_control_systems_explanation
 
-+ {not asked_server_room} [I'm in the engineering workshop. What am I looking for?]
++ {server_room_reached and not asked_server_room} [I'm in the engineering workshop. What am I looking for?]
     ~ asked_server_room = true
-    ~ chen_trust_level += 3
+    ~ vance_trust_level += 3
     # influence_increased
     -> server_room_guidance
 
 + {not asked_disabling} [How do I disable their attack safely?]
     ~ asked_disabling = true
-    ~ chen_trust_level += 3
+    ~ vance_trust_level += 3
     # influence_increased
     -> safe_disabling_guidance
 
++ {plant_reader_seen and not asked_plant_reader} [The plant room's on a fingerprint reader.]
+    ~ asked_plant_reader = true
+    Robert Vance: HV room. Authorised persons only, and tonight that's me. I can't come: Voltage is on the other side, and somebody has to watch the real numbers.
+    Robert Vance: They didn't need me on the ninth. I log every round on the Hall 1 panel. They'll have had it off that. Do what they did.
+    -> support_hub
+
 + [What should I prioritise right now?]
-    ~ chen_trust_level += 5
+    ~ vance_trust_level += 5
     # influence_increased
     -> priority_guidance
 
 + [How urgent is this?]
-    ~ chen_trust_level += 3
+    ~ vance_trust_level += 3
     # influence_increased
     -> urgency_assessment
 
@@ -186,7 +208,7 @@ Robert Vance: Call me if you need it.
 
 -> support_hub
 
-// The old `chen_emergency_call` knot was removed in pass 2: it was orphaned (no
+// The old `vance_emergency_call` knot was removed in pass 2: it was orphaned (no
 // eventMapping reached it), its "get those vectors down, all of them" line
 // contradicted the one-ESD design, and firing a phone conversation when the
 // racks vent (T+12m, likely mid-finale) would drop a call over the plant-room

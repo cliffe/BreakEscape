@@ -1,5 +1,7 @@
 # m04 Critical Failure — Alignment & Advancement Plan
 
+> Renamed 2026-10-01: Robert Chen → Robert Vance (the character was renamed in pass 1; his ids now match). Ids `chen_*` → `vance_*`: globals `chen_trust_level`, `chen_is_ally`, `chen_provided_keycard`, `chen_phone_available`, `chen_knows_truth` → `vance_*`; every `chen_*` ink knot and VAR → `vance_*`; ERB `chen_warning_email` → `vance_warning_email`. NPC ids (`robert_vance`, `robert_vance_phone`) were already right. The puzzle structure described here is superseded by `PUZZLE_CHAINS_PLAN.md` (pass 3).
+
 > Produced by the mission-alignment-plan skill. 2026-08-21.
 > **Status: all phases (1a–6) implemented and verified.** Two external blockers remain: a SecGen build to confirm flag order, and a HacktivityLabSheets rebuild so two field guides resolve. Neither is a code change to this mission.
 > Validator: **0 ❌, 0 room overlaps, 0 objective-wiring warnings, 0 ink warnings.** Ink runtime: **10/10 files clean** under both harnesses. Story critical path: **4 hops** (was 0).
@@ -9,6 +11,16 @@
 > Review status: **1 round, reviewer corrections applied.** Findings from the adversarial review are folded in below; the ink scope, the row-2 diagnosis, the room-overlap evidence and the phase order all changed as a result.
 >
 > Note: `ruby scripts/validate_scenario.rb` regenerates `dungeon_graph.{md,html}` as a side effect; `git status scenarios/m04_critical_failure/` afterwards showed no changes — the committed graph was already current.
+
+## Progress (updated 2026-10-01)
+
+Status: Phases 1a-6 implemented (2026-08-21) and reworked in pass 2 (`90964705`). Played to `status=completed` in the browser.
+
+- Done: all phases. Commits: `92c35ef5` (alignment), `b7a65f12` (design-review fixes, Chen renamed Vance), `616779c7` (ink and dialogue review), `169610f2` (walkthrough regenerated).
+- Changed by pass 2: the four flag tasks used the reference form (`bms_jump_server:flag_N`), which the engine never completes; they now read `flag_station_dropsite:bms_jump_server-flag1..4`. Knocking Voltage out left `esd_authorized` unset, so the fight ending could not shut the plant down; it now keys on `npc_ko:voltage`.
+- Also changed: hall 1 moved east of the control room because the SCADA doorway opened onto a wall; a new aim, `take_back_the_plant`, holds the tasks that can finish early; the escaped Voltage is hidden with `setVisible`; HaX relays copies of the Level 2 and Master keycards in case the KO drop fails in a later-loaded room; conversations return to resting hubs instead of ending.
+- Open (external, as in the header): a SecGen build to confirm the `bms_jump_server` flag order (the VM is published; the order is inferred from the XML), and a HacktivityLabSheets rebuild so the `distcc-exploitation` and `rfid-cloning` guides resolve.
+- Latest playtest (regression, 2026-10-01, `tools/playtest/m04-regress-report.md`): game 1193 completed the critical path with four flags; game 1197 covered the arrest stance, ESD before mapping and the locked-aim reveal. No regressions. The fight stance was not run in that pass.
 
 ## Executive summary
 

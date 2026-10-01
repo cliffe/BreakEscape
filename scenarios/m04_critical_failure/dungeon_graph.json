@@ -28,13 +28,13 @@
     },
     {
       "id": "door_plant_room",
-      "label": "Inverter / Plant Room — Authorised Access Only<br/>RFID lock",
+      "label": "Inverter / Plant Room — HV. Authorised Persons Only. Fingerprint Access<br/>Biometric lock",
       "kind": "lock",
       "optional": false
     },
     {
       "id": "plant_room",
-      "label": "Inverter / Plant Room — Authorised Access Only",
+      "label": "Inverter / Plant Room — HV. Authorised Persons Only. Fingerprint Access",
       "kind": "room",
       "optional": false
     },
@@ -42,6 +42,12 @@
       "id": "main_entrance",
       "label": "Albion Energy Storage — Reception",
       "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "rfid_cloner",
+      "label": "RFID Cloner",
+      "kind": "item",
       "optional": false
     },
     {
@@ -53,6 +59,12 @@
     {
       "id": "lock_security_equipment_locker",
       "label": "Security Equipment Locker",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_optigrid_tool_case",
+      "label": "Optigrid Tool Case",
       "kind": "lock",
       "optional": false
     },
@@ -84,7 +96,7 @@
       "id": "facility_access_keycard_level_1",
       "label": "Facility Access Keycard (Level 1)",
       "kind": "key",
-      "optional": false
+      "optional": true
     },
     {
       "id": "action_meet_robert_vance",
@@ -111,6 +123,36 @@
       "optional": false
     },
     {
+      "id": "fingerprint_kit",
+      "label": "Fingerprint Kit",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "optigrid_job_card_4782_back_page",
+      "label": "OptiGrid Job Card #4782 (back page)",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "optigrid_tool_case",
+      "label": "OptiGrid Tool Case",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "security_office",
+      "label": "Security Office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "access_control_export_hv_plant_room",
+      "label": "Access Control Export: HV Plant Room",
+      "kind": "item",
+      "optional": false
+    },
+    {
       "id": "battery_hall_1",
       "label": "BATTERY HALL 1 — RESTRICTED ACCESS — PPE REQUIRED",
       "kind": "room",
@@ -129,15 +171,9 @@
       "optional": false
     },
     {
-      "id": "npc_entropy_operative_cipher",
-      "label": "ENTROPY Operative 'Cipher'",
-      "kind": "key",
-      "optional": false
-    },
-    {
-      "id": "workshop_keycard_level_2",
-      "label": "Workshop Keycard (Level 2)",
-      "kind": "key",
+      "id": "duty_round_panel",
+      "label": "Duty Round Panel",
+      "kind": "item",
       "optional": false
     },
     {
@@ -147,8 +183,8 @@
       "optional": false
     },
     {
-      "id": "master_keycard",
-      "label": "Master Keycard",
+      "id": "workshop_keycard_level_2",
+      "label": "Workshop Keycard (Level 2)",
       "kind": "key",
       "optional": false
     },
@@ -223,12 +259,6 @@
       "label": "Privesc Flag",
       "kind": "flag",
       "optional": false
-    },
-    {
-      "id": "security_office",
-      "label": "Security Office",
-      "kind": "room",
-      "optional": false
     }
   ],
   "edges": [
@@ -249,12 +279,27 @@
     },
     {
       "from": "main_entrance",
+      "to": "rfid_cloner",
+      "soft": false
+    },
+    {
+      "from": "rfid_cloner",
+      "to": "door_battery_hall_2",
+      "soft": false
+    },
+    {
+      "from": "main_entrance",
       "to": "lock_pick_kit",
       "soft": false
     },
     {
       "from": "lock_pick_kit",
       "to": "lock_security_equipment_locker",
+      "soft": false
+    },
+    {
+      "from": "lock_pick_kit",
+      "to": "lock_optigrid_tool_case",
       "soft": false
     },
     {
@@ -275,12 +320,12 @@
     {
       "from": "npc_robert_vance",
       "to": "facility_access_keycard_level_1",
-      "soft": false
+      "soft": true
     },
     {
       "from": "facility_access_keycard_level_1",
       "to": "door_battery_hall_2",
-      "soft": false
+      "soft": true
     },
     {
       "from": "npc_robert_vance",
@@ -295,6 +340,36 @@
     {
       "from": "engineering_workshop",
       "to": "bms_jump_server_terminal",
+      "soft": false
+    },
+    {
+      "from": "engineering_workshop",
+      "to": "lock_optigrid_tool_case",
+      "soft": false
+    },
+    {
+      "from": "lock_optigrid_tool_case",
+      "to": "fingerprint_kit",
+      "soft": false
+    },
+    {
+      "from": "fingerprint_kit",
+      "to": "door_plant_room",
+      "soft": false
+    },
+    {
+      "from": "lock_optigrid_tool_case",
+      "to": "optigrid_job_card_4782_back_page",
+      "soft": false
+    },
+    {
+      "from": "engineering_workshop",
+      "to": "optigrid_tool_case",
+      "soft": false
+    },
+    {
+      "from": "security_office",
+      "to": "access_control_export_hv_plant_room",
       "soft": false
     },
     {
@@ -314,17 +389,12 @@
     },
     {
       "from": "battery_hall_1",
-      "to": "npc_entropy_operative_cipher",
+      "to": "duty_round_panel",
       "soft": false
     },
     {
-      "from": "npc_entropy_operative_cipher",
-      "to": "workshop_keycard_level_2",
-      "soft": false
-    },
-    {
-      "from": "workshop_keycard_level_2",
-      "to": "door_engineering_workshop",
+      "from": "duty_round_panel",
+      "to": "door_plant_room",
       "soft": false
     },
     {
@@ -334,12 +404,12 @@
     },
     {
       "from": "npc_entropy_operative_relay",
-      "to": "master_keycard",
+      "to": "workshop_keycard_level_2",
       "soft": false
     },
     {
-      "from": "master_keycard",
-      "to": "door_plant_room",
+      "from": "workshop_keycard_level_2",
+      "to": "door_engineering_workshop",
       "soft": false
     },
     {

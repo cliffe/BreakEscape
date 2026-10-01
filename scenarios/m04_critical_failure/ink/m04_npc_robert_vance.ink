@@ -1,16 +1,17 @@
 // ===========================================
 // ROBERT VANCE - FACILITY MANAGER (ALLY NPC)
-// (internal chen_* state vars are a deliberate legacy hold -- they sync
-//  consistently across ERB/ink and carry no player-visible text.)
+// (The character was Robert Chen in pass 1. His ids were renamed chen_* ->
+//  vance_* on 2026-10-01 under the rename rule; see PUZZLE_CHAINS_PLAN.md §0.)
 // Mission 4: Critical Failure
 // Break Escape - Character Arc: Defensive → Alarmed → Committed Ally
 // ===========================================
 
 // Variables for tracking relationship and mission state
-VAR chen_trust_level = 0          // 0-100 trust/cooperation level
+VAR vance_trust_level = 0          // 0-100 trust/cooperation level
 VAR revealed_mission = false       // Has player revealed SAFETYNET mission?
-VAR chen_is_ally = false          // Full ally status activated
-VAR chen_provided_keycard = false  // global; set ONLY by the item_picked_up:keycard mapping when the card lands (playtest D2)
+VAR vance_is_ally = false          // Full ally status activated
+VAR vance_provided_keycard = false  // global; set ONLY by mappings when the card is really held: card_cloned (PASS 3 clone route) or item_picked_up:keycard (KO drop)
+VAR plant_reader_seen = false      // global; set by HaX's room_entered:battery_hall_2 bark (PASS 3 P8)
 VAR discussed_optigrid = false
 VAR scada_threat_confirmed = false
 VAR vance_met = false              // First meeting completed; re-talk lands in the hub
@@ -45,20 +46,20 @@ EXTERNAL player_name()
 A grid-safety audit at 4 AM? You regulator types have interesting schedules.
 
 + [Just doing my job, Mr Vance.]
-    ~ chen_trust_level += 5
+    ~ vance_trust_level += 5
     # influence_increased
-    -> chen_professional_response
+    -> vance_professional_response
 
 + [I apologise for the inconvenience. I know this is unexpected.]
-    ~ chen_trust_level += 10
+    ~ vance_trust_level += 10
     # influence_increased
-    -> chen_apologetic_response
+    -> vance_apologetic_response
 
 + [There have been concerns about this facility. I need to conduct a thorough review.]
-    ~ chen_trust_level -= 5
-    -> chen_defensive_response
+    ~ vance_trust_level -= 5
+    -> vance_defensive_response
 
-=== chen_professional_response ===
+=== vance_professional_response ===
 #speaker:robert_vance
 
 Right. Well, I run a tight ship here despite our budget constraints.
@@ -71,24 +72,24 @@ Whatever boxes you need checked, let's get it done quickly—we have a facility 
     ~ discussed_optigrid = true
     -> maintenance_question
 
-=== chen_apologetic_response ===
+=== vance_apologetic_response ===
 #speaker:robert_vance
 
 // Vance's expression softens slightly
 
 I appreciate that. Look, I know you're doing your job.
 
-It's just... we're understaffed, underfunded, and now I've got surprise inspections at dawn.
+It's just... we're understaffed, underfunded, and now I've got an audit four hours early.
 
 + [I understand the pressure you're under. I'll be as efficient as possible.]
-    ~ chen_trust_level += 10
+    ~ vance_trust_level += 10
     # influence_increased
-    -> chen_cooperation_gained
+    -> vance_cooperation_gained
 
 + [Has there been unusual activity recently?]
     -> concerns_question
 
-=== chen_defensive_response ===
+=== vance_defensive_response ===
 #speaker:robert_vance
 
 // Vance becomes defensive
@@ -106,14 +107,14 @@ Our safety record is spotless. Who's been talking?
 === access_request ===
 #speaker:robert_vance
 
-~ chen_trust_level += 3
+~ vance_trust_level += 3
 # influence_increased
 
 Employee records? Fine. But I want to know what you're looking for.
 
 We don't have anything to hide.
 
--> chen_provides_access
+-> vance_provides_access
 
 === access_request_reluctant ===
 #speaker:robert_vance
@@ -122,20 +123,20 @@ We don't have anything to hide.
 
 Fine. But this better be routine. I run this site on a skeleton crew and we keep 240,000 people on grid power.
 
--> chen_provides_access
+-> vance_provides_access
 
 === maintenance_question ===
 #speaker:robert_vance
 
-~ chen_trust_level += 5
+~ vance_trust_level += 5
 # influence_increased
 
-Maintenance? We had OptiGrid Solutions in earlier this week for control system upgrades.
+Maintenance? OptiGrid came in on the ninth for control-system upgrades.
 
-Routine stuff, all contracted properly. Background checks passed.
+Their cards worked and they quoted an order number. I've still not found the order itself.
 
 + [I'd like to review those access logs if possible.]
-    ~ chen_trust_level += 5
+    ~ vance_trust_level += 5
     # influence_increased
     -> optigrid_interest
 
@@ -152,7 +153,7 @@ Sure, I can pull those. They checked out—proper credentials.
 Is there a problem?
 
 + [Just being thorough.]
-    -> chen_provides_access
+    -> vance_provides_access
 
 + [Actually, there's something important you should know.]
     -> early_reveal_opportunity
@@ -162,9 +163,9 @@ Is there a problem?
 
 Just OptiGrid this month. We've had budget cuts—only essential maintenance.
 
-That's why this surprise audit is... frustrating. We're doing our best with limited resources.
+That's why an audit at this hour is... frustrating. We're doing our best with limited resources.
 
--> chen_provides_access
+-> vance_provides_access
 
 === concerns_question ===
 #speaker:robert_vance
@@ -172,12 +173,12 @@ That's why this surprise audit is... frustrating. We're doing our best with limi
 Unusual activity? Not that I've noticed. Why?
 
 + [Standard question. Part of the inspection process.]
-    -> chen_provides_access
+    -> vance_provides_access
 
 + [I think we should have a private conversation about something.]
     -> early_reveal_opportunity
 
-=== chen_cooperation_gained ===
+=== vance_cooperation_gained ===
 #speaker:robert_vance
 
 // Vance relaxes, becomes cooperative
@@ -186,22 +187,31 @@ Alright. What do you need?
 
 Employee records, maintenance logs, facility access—I'll get you whatever you need.
 
--> chen_provides_access
+-> vance_provides_access
 
-=== chen_provides_access ===
+=== vance_provides_access ===
 #speaker:robert_vance
 
-// Vance retrieves keycard from desk drawer
-
-{not chen_provided_keycard:
-    #give_item:keycard:vance_level1_keycard
-    Here's a facility keycard—Level 1 access. That'll get you into most areas.
-
-    Restricted zones like the workshop and the plant room need higher clearance, but for an inspection you should be fine.
+// PASS 3 P2: no card is handed over. A regulator is escorted, not carded, so
+// the player copies Vance's prox card with the m03 cloner (by design).
+{not vance_provided_keycard:
+    Auditors get escorted, not carded. When the shift settles I'll walk you round myself.
 }
 
+The workshop's on the contractor's cards, and the plant room's HV. Authorised persons only.
+
+-> vance_provides_access_choices
+
+// Separate knot so the choices are knot-level (choices inside a {cond:} block
+// don't gather reliably) and so a resumed clone lands on a choice-owning knot.
+=== vance_provides_access_choices ===
+#speaker:robert_vance
+
++ {not vance_provided_keycard} [(Lean in over the site map while the cloner reads his lanyard.)]
+    -> vance_clone_cover
+
 // STICKY. This knot is reached from contractors_inquiry, concerns_question,
-// chen_cooperation_gained and chen_accepts_audit. As once-only choices, a
+// vance_cooperation_gained and vance_accepts_audit. As once-only choices, a
 // second arrival found the first two consumed and the third gated off, leaving
 // an empty choice list and running out of content -- the cause of all 601
 // failing paths in this file.
@@ -209,7 +219,7 @@ Employee records, maintenance logs, facility access—I'll get you whatever you 
     -> initial_meeting_end_professional
 
 + [I appreciate your cooperation, Mr Vance.]
-    ~ chen_trust_level += 5
+    ~ vance_trust_level += 5
     # influence_increased
     -> initial_meeting_end_grateful
 
@@ -221,13 +231,79 @@ Employee records, maintenance logs, facility access—I'll get you whatever you 
 
 Three technicians, here for two days. Network infrastructure maintenance and SCADA optimisation.
 
-They had all the right paperwork. What's your concern?
+They had cards and an order number. I never found the order behind it. What's your concern?
 
 + [Nothing yet. Just compiling information]
     -> initial_meeting_end_professional
 
 + [I think we should talk about what's really happening here]
     -> early_reveal_opportunity
+
+// ===========================================
+// CLONE KNOTS (PASS 3 P2). m03 shape (m03_npc_victoria.ink:352-367):
+// narration first, the tag on a throwaway line (action tags run before their
+// block's text, and starting the RFID minigame ends this chat), then a separate
+// debrief knot that opens with the result and ends on a choice. A cancelled
+// clone returns here with vance_provided_keycard still false, so the clone
+// choice simply reappears as the retry.
+// ===========================================
+
+=== vance_clone_cover ===
+#speaker:robert_vance
+Narrator: You lean over the site map on his desk while he talks, close enough for the cloner on your hip to reach his lanyard.
+#clone_keycard:facility_keycard_level1
+Narrator: He keeps talking.
+-> vance_clone_cover_debrief
+
+=== vance_clone_cover_debrief ===
+#speaker:robert_vance
+{vance_provided_keycard:
+    Narrator: The cloner buzzes once against your hip. Old prox. It didn't even have to work for it.
+- else:
+    Narrator: The cloner didn't get a clean read.
+}
+-> vance_provides_access_choices
+
+=== vance_clone_ally ===
+#speaker:robert_vance
+Robert Vance: I'm not handing over my card. If this goes wrong I need to get into the halls. Copy it. You've got something that does that.
+Narrator: You hold the cloner up to his lanyard.
+#clone_keycard:facility_keycard_level1
+Narrator: He watches the screen like it might bite.
+-> vance_clone_ally_debrief
+
+=== vance_clone_ally_debrief ===
+#speaker:robert_vance
+{vance_provided_keycard:
+    Narrator: The cloner buzzes once. Old prox. It didn't even have to work for it.
+    Robert Vance: That's uncomfortably easy. We were meant to replace those readers this year.
+- else:
+    Narrator: The cloner didn't get a clean read.
+}
++ {not vance_provided_keycard} [Try again.]
+    -> vance_clone_ally
++ [Right. Going.]
+    -> vance_commits_exit
+
+=== vance_clone_hub ===
+#speaker:robert_vance
+{vance_is_ally:
+    Robert Vance: Go on. Copy it.
+- else:
+    Narrator: You ask about the site map again, and stand close while he answers.
+}
+#clone_keycard:facility_keycard_level1
+Narrator: The cloner reads.
+-> vance_clone_hub_debrief
+
+=== vance_clone_hub_debrief ===
+#speaker:robert_vance
+{vance_provided_keycard:
+    Narrator: The cloner buzzes once. You've got his card.
+- else:
+    Narrator: The cloner didn't get a clean read.
+}
+-> vance_hub
 
 === initial_meeting_end_professional ===
 #speaker:robert_vance
@@ -245,7 +321,7 @@ Let me know if you need anything else. I'll be right here at the ops desk, monit
 #speaker:robert_vance
 
 ~ vance_met = true
-~ chen_trust_level += 5
+~ vance_trust_level += 5
 # influence_increased
 
 Of course. And look... if you do find anything, let me know.
@@ -268,28 +344,48 @@ This facility is my responsibility. These people depend on us.
 
 // Flat knot-level choices with conditions (choices inside a {cond: ...} block
 // don't gather reliably). At least one is always available in every state.
-// Safety net (M3): offer the Level 1 card here if no path handed it over.
-+ {not chen_provided_keycard} [I still need a facility keycard.]
-    #give_item:keycard:vance_level1_keycard
-    Robert Vance: Of course — here. Level 1, most of the site. Should have led with that.
+// Safety net (M3, PASS 3 P2): copy the Level 1 card if no path did. Covert
+// wording on the cover route so the hub doesn't blow the cover.
++ {not vance_provided_keycard and not vance_is_ally} [(Ask about the site map again, and stand close.)]
+    -> vance_clone_hub
+
++ {not vance_provided_keycard and vance_is_ally} [Let me copy your card.]
+    -> vance_clone_hub
+
+// PASS 3 P8: the plant-room reader. Only an ally tells you whose print and where.
++ {plant_reader_seen and vance_is_ally} [The plant room's on a fingerprint reader.]
+    Robert Vance: HV room. Authorised persons only, and tonight that's me.
+    -> vance_plant_reader_ally
+
++ {plant_reader_seen and not vance_is_ally} [The plant room's on a fingerprint reader.]
+    Robert Vance: It's an HV room, and you're an auditor.
     -> vance_hub
 
-+ {chen_is_ally} [What should I be doing right now?]
++ {vance_is_ally} [What should I be doing right now?]
     Robert Vance: The SCADA screens are lying to you -- I'm watching the historian and the real rack temperatures are climbing. Get to a hardwired ESD. The software won't save us.
     -> vance_hub
 
-+ {chen_is_ally} [Stay on the ops desk. I'll call if I need the engineering side.]
++ {vance_is_ally} [Stay on the ops desk. I'll call if I need the engineering side.]
     Robert Vance: I'm not going anywhere. Call me the moment you're moving.
     #exit_conversation
     -> vance_hub
 
-+ {not chen_is_ally} [A few more questions about the facility.]
++ {not vance_is_ally} [A few more questions about the facility.]
     Robert Vance: Make it quick. I've got a plant to run.
     -> vance_hub
 
-+ {not chen_is_ally} [That's all for now.]
++ {not vance_is_ally} [That's all for now.]
     Robert Vance: Right. I'll be at the ops desk.
     #exit_conversation
+    -> vance_hub
+
+=== vance_plant_reader_ally ===
+#speaker:robert_vance
++ [Then come and open it.]
+    Robert Vance: With Voltage on the other side? And somebody has to watch the real numbers.
+    Robert Vance: They didn't need me on the ninth. I log every round on the Hall 1 panel. They'll have had it off that. Do what they did.
+    -> vance_hub
++ [Understood.]
     -> vance_hub
 
 // ===========================================
@@ -305,16 +401,16 @@ This facility is my responsibility. These people depend on us.
 Alright, you've got my attention. What's this really about?
 
 + [You deserve the truth. ENTROPY operatives are inside your facility.]
-    -> chen_early_reveal
+    -> vance_early_reveal
 
 + [Nothing. Just being cautious. Let's continue the inspection.]
-    -> chen_maintains_cover
+    -> vance_maintains_cover
 
-=== chen_early_reveal ===
+=== vance_early_reveal ===
 #speaker:robert_vance
 
 ~ revealed_mission = true
-~ chen_trust_level += 30
+~ vance_trust_level += 30
 # influence_increased
 
 Narrator: You drop the cover. Not a state auditor — SAFETYNET. Intelligence that ENTROPY operatives are inside his facility, and that his battery storage is the target.
@@ -326,16 +422,16 @@ Narrator: You drop the cover. Not a state auditor — SAFETYNET. Intelligence th
 ENTROPY? Here? At my facility?
 
 + [Completely serious. At least three operatives targeting your battery management systems.]
-    ~ chen_trust_level += 10
+    ~ vance_trust_level += 10
     # influence_increased
-    -> chen_processes_threat
+    -> vance_processes_threat
 
 + [Those OptiGrid technicians you mentioned? That was them. They weren't contractors.]
-    ~ chen_trust_level += 5
+    ~ vance_trust_level += 5
     # influence_increased
-    -> chen_optigrid_realization
+    -> vance_optigrid_realization
 
-=== chen_processes_threat ===
+=== vance_processes_threat ===
 #speaker:robert_vance
 
 My God. 240,000 people depend on this grid.
@@ -343,15 +439,15 @@ My God. 240,000 people depend on this grid.
 How much time do we have?
 
 + [Our intelligence shows an attack scheduled for 0800 hours.]
-    -> chen_timeline_reaction
+    -> vance_timeline_reaction
 
 + [I'm working to identify and stop the attack. But I need your help.]
-    -> chen_commits_immediately
+    -> vance_commits_immediately
 
-=== chen_optigrid_realization ===
+=== vance_optigrid_realization ===
 #speaker:robert_vance
 
-~ chen_trust_level += 10
+~ vance_trust_level += 10
 # influence_increased
 
 // Vance's expression shows horror and guilt
@@ -361,19 +457,19 @@ I... I let them in. I signed off on their access.
 They had proper credentials, background checks... Oh God, what have I done?
 
 + [You had no way of knowing. Their credentials were forged. Focus on stopping them now.]
-    ~ chen_trust_level += 15
+    ~ vance_trust_level += 15
     # influence_increased
-    -> chen_commits_to_helping
+    -> vance_commits_to_helping
 
 + [This isn't your fault. Help me stop them—that's what matters.]
-    ~ chen_trust_level += 10
+    ~ vance_trust_level += 10
     # influence_increased
-    -> chen_commits_to_helping
+    -> vance_commits_to_helping
 
-=== chen_timeline_reaction ===
+=== vance_timeline_reaction ===
 #speaker:robert_vance
 
-~ chen_trust_level += 5
+~ vance_trust_level += 5
 # influence_increased
 
 // Checks clock, does mental calculation
@@ -382,34 +478,26 @@ That's less than four hours from now.
 
 What do you need from me?
 
--> chen_commits_to_helping
+-> vance_commits_to_helping
 
-=== chen_commits_immediately ===
+=== vance_commits_immediately ===
 #speaker:robert_vance
 
-~ chen_trust_level += 15
+~ vance_trust_level += 15
 # influence_increased
 
 // Vance stands, determined
 
 Tell me what you need. Anything.
 
--> chen_commits_to_helping
+-> vance_commits_to_helping
 
-=== chen_commits_to_helping ===
+=== vance_commits_to_helping ===
 #speaker:robert_vance
 
-~ chen_is_ally = true
-~ chen_trust_level += 20
+~ vance_is_ally = true
+~ vance_trust_level += 20
 # influence_increased
-
-// The reveal/ally paths bypass chen_provides_access, where the card is handed
-// over on the cover-story route -- so without this the 12 ally paths left the
-// player with no Level 1 card (M3). Give it here, once.
-{not chen_provided_keycard:
-    #give_item:keycard:vance_level1_keycard
-    Here — take my facility keycard. Level 1, it'll get you through most of the site. Go.
-}
 
 Facility access, SCADA system knowledge, anything.
 
@@ -419,16 +507,29 @@ I'll pull up all the access logs and SCADA monitoring data from right here.
 
 Come back to the ops desk the moment you need the SCADA side — we'll find what they did to my systems. And I'm on comms if you're moving.
 
-// TRIGGERS: Task 1.2 completion, chen_is_ally activated early
+// PASS 3 P2: the ally paths bypass vance_provides_access, so the card is copied
+// here (12 ally paths, M3). The exit is its own knot so the clone can't share
+// a block with #exit_conversation, and vance_met is set only after the clone.
+-> vance_commits_choices
 
+=== vance_commits_choices ===
+#speaker:robert_vance
++ {not vance_provided_keycard} [I'll need into the halls.]
+    -> vance_clone_ally
++ [I'm going.]
+    -> vance_commits_exit
+
+=== vance_commits_exit ===
+#speaker:robert_vance
+// TRIGGERS: Task 1.2 completion, vance_is_ally activated early
 ~ vance_met = true
 #exit_conversation
 -> vance_hub
 
-=== chen_maintains_cover ===
+=== vance_maintains_cover ===
 #speaker:robert_vance
 
-~ chen_trust_level -= 3
+~ vance_trust_level -= 3
 
 // Vance looks confused but lets it go
 

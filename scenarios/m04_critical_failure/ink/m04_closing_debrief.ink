@@ -11,12 +11,19 @@ VAR mission_debriefed = false        // Debrief completed
 
 // Game state variables
 VAR voltage_captured = false
-VAR chen_trust_level = 0
+VAR vance_trust_level = 0
 VAR operatives_defeated = 0
 
 // Engine-owned; set by the racks_vent timer. Read only.
 VAR racks_vented = false
 VAR casualties_occurred = false
+// PASS 3 P11b: set by the trigger_race timer when Voltage reached the laptop.
+VAR vented_by_trigger = false
+
+// PASS 3 P12: set on pickup of the optional intel. Read only.
+VAR lore_architect_directive_found = false
+VAR lore_cross_cell_coordination_found = false
+VAR lore_safehouse_address_found = false
 
 // Engine-owned; set true if the player knocked Robert Vance out. Read only.
 // Gates his debrief presence -- a man on the floor of his own operations office
@@ -50,10 +57,13 @@ EXTERNAL player_name()
 * {not racks_vented} [Shutdown engaged before the racks went. Banks isolated, hall intact.]
     -> debrief_attack_stopped
 
-* {racks_vented} [Bank B went before I reached the button. Shutdown held A and C.]
+* {racks_vented and not vented_by_trigger} [Bank B went before I reached the button. Shutdown held A and C.]
     -> debrief_attack_stopped
 
-* [Voltage is {voltage_captured: in custody.|out through the dock.}]
+* {vented_by_trigger} [He reached the laptop before I reached him. Shutdown held A and C.]
+    -> debrief_attack_stopped
+
+* [Voltage is {voltage_captured:in custody.|out through the dock.}]
     -> debrief_voltage_status
 
 === debrief_attack_stopped ===
@@ -65,8 +75,12 @@ EXTERNAL player_name()
     Good work. Thermal runaway aborted before a single cell vented, the banks are isolated, systems secured.
 }
 
-{chen_trust_level >= 70 and not robert_vance_ko:
-    Vance speaks highly of your work. Says you saved 240,000 lives.
+{vance_trust_level >= 70 and not robert_vance_ko:
+    {racks_vented:
+        Vance says you kept it to one bank. He still wants that in writing.
+    - else:
+        Vance says the grid held because of you. He wants that in writing.
+    }
 }
 {robert_vance_ko:
     The facility manager's being treated by medics. He'll live. He won't be filing a commendation.
@@ -98,15 +112,31 @@ EXTERNAL player_name()
 === debrief_intelligence_gathered ===
 #speaker:agent_0x99
 
-The intelligence you gathered is the proof we've been chasing since the Zero Day job.
+// PASS 3 review: the "proof" claim needs the paper; the directive itself is
+// m03's, so HaX can quote it either way.
+{lore_cross_cell_coordination_found or lore_architect_directive_found:
+    The intelligence you brought out is the proof we've been chasing since the Zero Day job.
+}
 
-The directive said it: Zero Day supplies, Critical Mass executes, grid storage this winter. Tonight was that plan, running. Critical Mass and Social Fabric, coordinating the one attack.
+The directive said it: Zero Day supplies, Critical Mass executes, grid storage this winter. Tonight was that plan, running.
 
 {voltage_captured:
     Voltage's interrogation has already begun. He's defiant, but he's confirming cross-cell operations.
 - else:
-    The documents you recovered show clear coordination between cells.
+    Voltage is gone, so the paper will have to talk.
 }
+
+{lore_cross_cell_coordination_found or lore_architect_directive_found:
+    The documents show Critical Mass and Social Fabric coordinating the one attack, in their own handwriting.
+- else:
+    The paper's still in the plant room. Forensics will bag it, but I'd rather you'd read it.
+}
+
+{lore_safehouse_address_found:
+    And that card from the go-bag. It decodes to Calder Wharf, Social Fabric's regional safehouse. A team's on it.
+}
+
+Keep the crew's fingerprint kit. Forensics can have the case.
 
 This wasn't random.
 
@@ -190,7 +220,12 @@ Good. Task Force Null briefing is tomorrow at 0600.
 Now—there's one more decision to make.
 
 {racks_vented:
-    Agent HaX: The banks are isolated, but Bank B went before you got to the button. Nine on the night crew in Hall 2. Two more on the feed before the grid caught up.
+    {vented_by_trigger:
+        Agent HaX: The banks are isolated, but he got to the laptop before you got to him, and Bank B went with it.
+    - else:
+        Agent HaX: The banks are isolated, but Bank B went before you got to the button.
+    }
+    Agent HaX: Nine on the night crew in Hall 2. Two more on the feed before the grid caught up.
     Agent HaX: You stopped the rest of it. I need you to hold on to that, because the number you're going to read tomorrow is not zero.
 - else:
     Agent HaX: Eleven people on site tonight walked out of there. Forty-odd on that feed never knew they were on it.
@@ -229,10 +264,10 @@ Full transparency. We reveal the attack attempt, facility vulnerabilities, and E
 {not robert_vance_ko:
     // Robert Vance reacts
     #speaker:robert_vance
-    {chen_trust_level >= 70:
-        It'll damage the facility's reputation, but... people have a right to know how close this came.
+    {vance_trust_level >= 70:
+        Robert Vance: It'll damage the facility's reputation, but... people have a right to know how close this came.
     - else:
-        The public backlash will be severe. But I understand the reasoning.
+        Robert Vance: The public backlash will be severe. But I understand the reasoning.
     }
     #speaker:agent_0x99
 }
@@ -255,10 +290,10 @@ Facility patches vulnerabilities quietly.
 {not robert_vance_ko:
     // Robert Vance reacts
     #speaker:robert_vance
-    {chen_trust_level >= 70:
-        I understand the reasoning, but... is it right to hide this from the people we serve?
+    {vance_trust_level >= 70:
+        Robert Vance: I understand the reasoning, but... is it right to hide this from the people we serve?
     - else:
-        Thank you. The facility can't afford the reputational damage right now.
+        Robert Vance: Thank you. The facility can't afford the reputational damage right now.
     }
     #speaker:agent_0x99
 }
@@ -279,10 +314,10 @@ Acknowledge a "security incident" without full details. Controlled narrative.
 {not robert_vance_ko:
     // Robert Vance reacts
     #speaker:robert_vance
-    {chen_trust_level >= 70:
-        A middle ground. People know something happened without full panic. I can work with that.
+    {vance_trust_level >= 70:
+        Robert Vance: A middle ground. People know something happened without full panic. I can work with that.
     - else:
-        Probably the most politically viable option.
+        Robert Vance: Probably the most politically viable option.
     }
     #speaker:agent_0x99
 }
@@ -311,20 +346,24 @@ Decision recorded.
 {not robert_vance_ko:
     // Robert Vance final words
     #speaker:robert_vance
-    {chen_trust_level >= 80:
-        Thank you.
+    {vance_trust_level >= 80:
+        Robert Vance: Thank you.
 
-        I don't know your real name, but... thank you.
+        Robert Vance: I don't know your real name, but... thank you.
 
-        You saved this facility. You saved 240,000 people.
+        {casualties_occurred:
+            Robert Vance: You kept it to one bank. Without you it was the whole hall.
+        - else:
+            Robert Vance: You saved this facility. You kept 240,000 people on supply, and nobody in that hall died.
+        }
     }
-    {chen_trust_level >= 50 and chen_trust_level < 80:
-        You did good work here.
+    {vance_trust_level >= 50 and vance_trust_level < 80:
+        Robert Vance: You did good work here.
 
-        This facility won't forget it.
+        Robert Vance: This facility won't forget it.
     }
-    {chen_trust_level < 50:
-        I appreciate what you did, even if I don't fully understand it.
+    {vance_trust_level < 50:
+        Robert Vance: I appreciate what you did, even if I don't fully understand it.
     }
 }
 
@@ -345,16 +384,16 @@ Decision recorded.
 === debrief_end_respectful ===
 #speaker:robert_vance
 
-This facility's been operating on hope and duct tape for too long.
+Robert Vance: This facility's been operating on hope and duct tape for too long.
 
-That changes now. I'll make sure of it.
+Robert Vance: That changes now. I'll make sure of it.
 
 -> mission_complete
 
 === debrief_end_professional ===
 #speaker:robert_vance
 
-I'll begin implementing security overhauls immediately.
+Robert Vance: I'll begin implementing security overhauls immediately.
 
 -> mission_complete
 

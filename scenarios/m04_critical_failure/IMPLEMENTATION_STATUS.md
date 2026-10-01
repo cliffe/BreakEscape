@@ -1,5 +1,7 @@
 # Mission 4: "Critical Failure" — Implementation Status
 
+> Renamed 2026-10-01: Robert Chen → Robert Vance (the character was renamed in pass 1; his ids now match). Ids `chen_*` → `vance_*`: globals `chen_trust_level`, `chen_is_ally`, `chen_provided_keycard`, `chen_phone_available`, `chen_knows_truth` → `vance_*`; every `chen_*` ink knot and VAR → `vance_*`; ERB `chen_warning_email` → `vance_warning_email`. NPC ids (`robert_vance`, `robert_vance_phone`) were already right. The puzzle structure described here is superseded by `PUZZLE_CHAINS_PLAN.md` (pass 3).
+
 **Mission ID:** m04_critical_failure
 **Setting:** Albion Energy Storage — 200 MWh grid-scale lithium-ion BESS
 **Last updated:** 2026-08-21

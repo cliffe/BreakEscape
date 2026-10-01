@@ -25,6 +25,12 @@ VAR voltage_dialogue_outcome = ""
 VAR voltage_captured = false
 VAR voltage_escaped = false
 VAR operative_static_defeated = false
+// PASS 3 P11b: the trigger race. voltage_fight_started is set by a HaX mapping
+// when he turns hostile (the fight stance or a first punch); vented_by_trigger by
+// the trigger_race timer when he reaches the laptop first.
+VAR voltage_fight_started = false
+VAR vented_by_trigger = false
+VAR racks_vented = false              // engine-owned; the 12-minute vent or the race
 VAR operatives_defeated = 0
 
 // External variables (set by game)
@@ -41,6 +47,11 @@ EXTERNAL player_name()
 // ===========================================
 
 === start ===
+// PASS 3 P11b: once a fight has started and he isn't taken or gone, the stance
+// menu is over. After a reload or a player KO the race has been forfeit (the
+// player respawns at the entrance and the restarted timer fires), so he comes
+// back in the after-state, never with the button stance.
+{voltage_fight_started and not voltage_captured and not voltage_escaped: -> voltage_after_trigger}
 // Global-keyed guards first: ink-local state (voltage_dialogue_outcome,
 // voltage_confronted) is lost on reload (m03 D5), so branch on the engine-owned
 // globals. voltage_escaped is set from the button path and persists.
@@ -104,7 +115,12 @@ Bold. But conviction doesn't stop attacks.
 
 // Voltage hand moves near laptop
 
-One keystroke and I trigger it now. The racks go critical, the hall burns, and 240,000 people lose power by noon.
+// PASS 3 playtest D4: after the 12-minute vent the threat must match the hall.
+{racks_vented:
+    Bank B's already gone. One keystroke and A and C follow it, the hall burns, and 240,000 people lose power by noon.
+- else:
+    One keystroke and I trigger it now. The racks go critical, the hall burns, and 240,000 people lose power by noon.
+}
 
 Your move, agent.
 
@@ -218,13 +234,19 @@ Narrator: The laptop is open on the plant-room bench with the trigger armed on s
 
 Voltage: So. The button, or me.
 
-Voltage: You genuinely don't get to have both, and I'd think about it quickly.
+// PASS 3 P11a/P11b: with Static up, a fight is a race he can win, so "both" is
+// genuinely off the table; with Static down the arrest is earned instead.
+{operative_static_defeated:
+    Voltage: Static's down. So it's you, me, and one keystroke.
+- else:
+    Voltage: You genuinely don't get to have both, and I'd think about it quickly.
+}
 
 + [I'm taking you down. Now.] #color:red
     ~ voltage_dialogue_outcome = "fought"
     -> choice_fight
 
-+ [Step away from the bench. You're under arrest.]
++ {operative_static_defeated} [Step away from the bench. You're under arrest.]
     ~ voltage_dialogue_outcome = "arrested"
     -> choice_arrest
 
@@ -254,11 +276,8 @@ Narrator: He moves for the bench and you move for him, and the plant room stops 
 
 Narrator: He looks at your hands, then at the door behind you, and does the arithmetic he has done all night.
 
-{operative_static_defeated:
-    Voltage: Static's down, isn't he.
-- else:
-    Voltage: You'd have to get past Static.
-}
+// PASS 3 P11a: only reachable with Static down.
+Voltage: Static's down, isn't he.
 
 + [Blackout signed it. You countersigned. Tell that to a court.]
     // DELIBERATE EXCEPTION to the engine-owns-voltage_captured rule in the header:
@@ -275,15 +294,11 @@ Narrator: He looks at your hands, then at the door behind you, and does the arit
     // conversation)" (lesson 21).
     -> voltage_captured_end
 
-+ [Last chance. Step away.]
-    ~ voltage_confronted = true
-    ~ voltage_dialogue_outcome = "fought"
-    #complete_task:confront_voltage
-    Voltage: No.
-    Narrator: He goes for the bench.
-    #hostile
-    #exit_conversation
-    -> END
+// PASS 3 (round 3, M2): the old "Last chance. Step away." made him refuse and
+// fire #hostile from a surrender demand. With Static down the arrest stands;
+// backing off returns to the stance menu, where the fight is labelled as one.
++ [Not yet.]
+    -> confrontation_choice
 
 // ---------- GO FOR THE BUTTON ----------
 
@@ -307,6 +322,41 @@ Voltage: You save your eleven and your forty. I'll be somewhere else by the time
 #exit_conversation
 Narrator: The dock door bangs open onto the loading bay and the cold, and he's gone into it.
 -> voltage_escape_success
+
+// ===========================================
+// AFTER THE TRIGGER RACE (PASS 3 P11b)
+// Reached from start once a fight has begun and Voltage is neither captured nor
+// gone. If the race fired, the player can only have come back here after a
+// reload or a KO (a fight in progress makes him hostile, and hostile NPCs are
+// punched, not talked to). The line says only that the player was gone long
+// enough, which is true after a KO and after a reload alike (review round 4).
+// No button stance: that outcome is closed.
+// ===========================================
+
+=== voltage_after_trigger ===
+#speaker:voltage
+{vented_by_trigger:
+    Voltage: It's done. You were gone long enough, and Bank B went with it.
+- else:
+    Voltage: Still standing? Then let's finish it.
+}
+
++ [Take him down.] #color:red
+    #hostile
+    #exit_conversation
+    -> voltage_after_trigger
+
++ {operative_static_defeated} [Hands on the bench. You're under arrest.]
+    ~ voltage_captured = true
+    ~ voltage_confronted = true
+    #complete_task:confront_voltage
+    Voltage: Why not. The number's already moving.
+    #exit_conversation
+    -> voltage_captured_end
+
++ [Not yet.]
+    #exit_conversation
+    -> voltage_after_trigger
 
 // ===========================================
 // OUTCOME RESTING KNOTS

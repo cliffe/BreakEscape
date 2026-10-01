@@ -9,9 +9,9 @@
 // PASS 2: the old post-KO surrender/interrogation hubs (cipher_down,
 // cipher_interrogation, cipher_secured_hub) were removed. A KO'd NPC is
 // non-interactable (interactions.js:1690) and there is no non-lethal subdue
-// mechanic, so none of that content could ever be reached. The Level 2 keycard
-// is recovered from the drop (or HaX's KO fallback), and neutralize_operative_cipher
-// is completed by the engine's taskOnKO -- neither needed the interrogation.
+// mechanic, so none of that content could ever be reached. Since PASS 3 (P3)
+// Cipher carries no card and his fight is optional; neutralize_operative_cipher
+// is completed by the engine's taskOnKO.
 // Cipher's intel note (itemsHeld) still carries the same information.
 // ===========================================
 
