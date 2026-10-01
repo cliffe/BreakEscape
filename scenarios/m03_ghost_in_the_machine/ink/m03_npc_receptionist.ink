@@ -227,7 +227,7 @@ Receptionist: And Ms. Sterling's office is in the executive wing, east off the m
 === clone_badge_opportunity ===
 #speaker:receptionist
 Narrator: You lean over the desk, studying the building directory, keeping the RFID cloner within range of her lanyard.
-Narrator: The cloner's antenna lights up — it detects a MIFARE signal from her staff badge.
+Narrator: The cloner's antenna lights up — it detects a MIFARE signal from her staff badge. Read it, then crack the keys.
 // The tag sits on a throwaway line: starting the RFID minigame ends this chat.
 // The task completes on Save (card_cloned mapping), never on the tag.
 #clone_keycard:receptionist_badge

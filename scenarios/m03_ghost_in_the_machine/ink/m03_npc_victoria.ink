@@ -267,7 +267,7 @@ You: This network diagram - is this your training lab architecture?
 - else:
     Victoria Sterling: *curtly* The training lab. Since you're so interested.
 }
-Narrator: The cloner in your pocket starts reading her card. Custom keys: this will take a while. Keep her talking.
+Narrator: The cloner in your pocket starts reading her card. Custom keys: you'll need Darkside afterwards, and that takes about thirty seconds. Keep her talking while it reads.
 ~ rfid_clone_started = true
 -> clone_rfid_distraction
 
@@ -284,7 +284,7 @@ Narrator: She doesn't warm to you. But she stops watching your hands.
 
 === clone_retry ===
 #speaker:victoria_sterling
-Narrator: Back at the board. The cloner finds her card again and picks up where it left off.
+Narrator: Back at the board. The cloner finds her card again and starts a fresh read.
 -> clone_rfid_distraction
 
 === clone_rfid_distraction ===
@@ -361,7 +361,7 @@ Victoria Sterling: You're asking good questions. Technical competence is common.
 
 === clone_complete ===
 #speaker:victoria_sterling
-Narrator: The cloner buzzes once against your leg. Capture done; the key crack runs on its own now.
+Narrator: The cloner buzzes once against your leg. Card read. Now run Darkside on it.
 // Pass 3c (m04 Vance pattern): the tag sits on a throwaway line, because starting
 // the RFID minigame ends this chat. victoria_card_cloned and clone_rfid_card are set
 // by the card_cloned mapping on Save, never here, so closing the flipper early

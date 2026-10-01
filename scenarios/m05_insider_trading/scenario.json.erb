@@ -901,9 +901,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "sendTimedMessage": { "delay": 1500, "message": "Fingerprint reader on the key vault. It takes the cryptography lead's print, and you've got the kit." }
             },
             {
-              "_comment": "PASS 3 P6: m05 has one print surface, so the generic dusting event is unambiguous. torres_print_collected exists only for onceOnly: prints are not saved across a reload (E1), so nothing may read it.",
-              "eventPattern": "minigame_completed",
-              "condition": "data.minigameName === 'DustingMinigame' && data.success === true",
+              "_comment": "PASS 3 P6, re-keyed by the fingerprint redesign: fires on a lift of Torres' print. Lifted prints are saved with the game, so torres_print_collected is safe to read.",
+              "eventPattern": "fingerprint_collected:david_torres",
               "onceOnly": true,
               "setGlobal": { "torres_print_collected": true },
               "sendTimedMessage": { "delay": 1500, "message": "That's Torres' print. The vault's north of the server room." }
@@ -959,29 +958,15 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "currentKnot": "start",
           "_comment": "PASS 2 review B2: not in the phone's npcIds. Listed contacts get their start knot preloaded the first time the phone opens (phone-chat-minigame.js:283-380), which played her first call -- and set recruiter_contacted_player -- before Torres was named. She now appears only once a mapping gives her history (phone-chat-ui.js:373-384), and her start knot also guards on torres_identified.",
           "eventMappings": [
-<% %w[patricia_morgan patricia_phone agent_0x99_handler].each do |src| %>
-            {
+<% %w[patricia_morgan patricia_phone agent_0x99_handler].each_with_index do |src, i| %>
+            <%= i > 0 ? ',' : '' %>{
               "eventPattern": "conversation_closed:<%= src %>",
               "condition": "globalVars.torres_identified === true && globalVars.recruiter_contacted_player !== true && globalVars.recruiter_texted !== true",
               "onceOnly": true,
               "setGlobal": { "recruiter_texted": true },
               "sendTimedMessage": { "delay": 2000, "message": "TalentStack Executive Recruiting. We should talk before you do anything you can't take back. - R." }
-            },
-<% end %>
-            {
-              "_comment": "PASS 3 P11 (review r3 M1/M2): text only, keyed on the naming conversation CLOSING, so nothing lands mid-scene. Phone chats now emit conversation_closed:<id> too (phone-chat-minigame.js:986-1007, :1192). Three routes: Patricia in person, Patricia by phone, HaX (Patricia KO'd). recruiter_texted stops a second text across the three. The delay is short because mapping delays count from game start (E11), so it reads the same whether or not E11 is fixed. The game_loaded backstop re-sends the text after a reload, because phone history is in memory only (npc-manager.js:374-395) and she is listed only while she has history.",
-              "eventPattern": "game_loaded",
-              "condition": "globalVars.torres_identified === true && globalVars.recruiter_contacted_player !== true",
-              "onceOnly": false,
-              "sendTimedMessage": { "delay": 2000, "message": "TalentStack Executive Recruiting. We should talk before you do anything you can't take back. - R." }
-            },
-            {
-              "_comment": "PASS 3 (implementation review minor 7): her chat was opened and the offer made but not answered, then a reload lost her history and her contact. Disjoint from the backstop above (that one needs recruiter_contacted_player false; an offer implies it is true). The phone list can't add a contact at runtime (phone-chat-ui.js:372-383), so a text is the only way back.",
-              "eventPattern": "game_loaded",
-              "condition": "globalVars.recruiter_deal_offered === true && globalVars.recruiter_deal_decided !== true",
-              "onceOnly": false,
-              "sendTimedMessage": { "delay": 2000, "message": "You haven't given me an answer, agent. The offer stands until it doesn't. - R." }
             }
+<% end %>
           ]
         },
         {
@@ -1305,7 +1290,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "onRead": { "setVariable": { "found_torres_journal": true } }
         },
         {
-          "_comment": "PASS 3 P6: the only Torres print surface. No text and no readable: a print-bearing object hides its own text until dusted (E1). Pinned on the front-right of the desk (desk x 118-196, y 86-147 in room px; the chair sprite covers y 64-128 and the plant x 67-131), so it is not hidden behind the plant (playtest 3a).",
+          "_comment": "PASS 3 P6: the only Torres print surface. It carries no text and no readable of its own. (A print surface no longer hides its text: the kit panel offers Use normally.) Pinned on the front-right of the desk (desk x 118-196, y 86-147 in room px; the chair sprite covers y 64-128 and the plant x 67-131), so it is not hidden behind the plant (playtest 3a).",
           "type": "office-misc-cup",
           "id": "torres_mug",
           "name": "Mug",
@@ -1313,6 +1298,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "position": { "x": 5.6, "y": 4.1, "elevation": 32 },
           "hasFingerprint": true,
           "fingerprintOwner": "David Torres",
+          "fingerprintCandidates": ["Lisa Park", "Owen Gallagher", "Patricia Morgan", "Dr Ruth Halloran"],
           "fingerprintDifficulty": "easy",
           "observations": "A mug printed with a child's drawing: four stick figures and a dog. 'WORLD'S BEST DAD — love Miguel'. Cold coffee, a thumbprint on the glaze.",
           "puzzle_graph_unlocks": "data_center"

@@ -656,13 +656,11 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "setGlobal": { "fingerprint_kit_found": true },
               "sendTimedMessage": { "delay": 1500, "message": "That's the crew's fingerprint kit. The plant-room reader takes the duty engineer's print, and this is how they got past it. Keep the kit; it's ours now." }
             },
-            <%# PASS 3 P9. Generic event (no owner id), unambiguous only because m04 has
-                one print surface. The kit's "Search room" mode collects without it, so
-                nothing depends on vance_print_collected; it never drives a "you have
-                his print" line (the print itself does not survive a reload). %>
+            <%# PASS 3 P9, re-keyed by the fingerprint redesign: fires on every lift of
+                Vance's print (dusting is now the only way to collect one), and lifted
+                prints are saved with the game, so vance_print_collected is safe to read. %>
             {
-              "eventPattern": "minigame_completed",
-              "condition": "data.minigameName === 'DustingMinigame' && data.success === true",
+              "eventPattern": "fingerprint_collected:robert_vance",
               "onceOnly": true,
               "setGlobal": { "vance_print_collected": true },
               "sendTimedMessage": { "delay": 1000, "message": "That's Vance's print. The reader's in Hall 2." }
@@ -1417,10 +1415,10 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           "text": "BATTERY ENERGY STORAGE — PROCESS OVERVIEW\n\n1. Grid import → rectifier / PCS\n2. Charge management (BMS per-rack)\n3. Lithium-ion rack banks A, B, C (cells, thermocouples, vent paths)\n4. Hydrogen detection + forced ventilation\n5. ESD interlocks (hardwired) → isolation\n6. Inverter / export to grid\n\nCapacity: 200 MWh\nServes: 240,000 residents at peak",
           "observations": "Process overview showing the facility scale and the safety interlocks"
         },
-        <%# PASS 3 P6: Vance's print. No readable text and no triggerOnInteract: a
-            print surface hides its own text until the print is taken
-            (interactions.js:1227-1241), and triggerOnInteract would return before
-            the fingerprint branch. West half of the hall, away from Cipher (12,7),
+        <%# PASS 3 P6: Vance's print. No readable text and no triggerOnInteract, so
+            the panel is only a print surface. (A print surface no longer hides its
+            own text: the kit panel offers "Use normally", and without a kit the
+            normal interaction runs.) West half of the hall, away from Cipher (12,7),
             off the E/W door line (top + 2.5) and clear of the south door (1.5, 9).
             Row 7, not 8: at row 8 the sprite drew over the workshop's top wall
             (playtest m04-pass3a-roundpanel.png). %>
@@ -1432,6 +1430,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           "position": { "x": 6, "y": 7 },
           "hasFingerprint": true,
           "fingerprintOwner": "Robert Vance",
+          "fingerprintCandidates": ["Static", "Relay", "Cipher", "Security Guard"],
           "fingerprintDifficulty": "easy",
           "observations": "A small wall terminal by the rack rows where the duty engineer logs each round.",
           "puzzle_graph_role": "clue",

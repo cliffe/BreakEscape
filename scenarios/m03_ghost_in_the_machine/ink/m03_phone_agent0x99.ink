@@ -92,7 +92,7 @@ Agent HaX: And if the evidence is enough for you, let her go and secure it. Your
 #set_variable:rfid_guide_requested:true
 #give_item:lab-workstation:m03_rfid_field_guide
 Agent HaX: RFID cloning guide sent.
-Agent HaX: Read, crack, emulate. Reception's card is weak defaults -- near instant. Sterling's is custom keys, so the crack grinds. Stay in range until it finishes.
+Agent HaX: Read, crack, emulate. Reception's card is weak defaults, so a dictionary attack is near instant. Sterling's is custom keys, so run Darkside once you've read it. About half a minute.
 + [Received]
     -> hub
 
@@ -164,8 +164,8 @@ Agent HaX: What's giving you trouble?
 === hint_rfid ===
 #speaker:agent_0x99
 ~ hint_rfid_given = true
-Agent HaX: Two stages. Reception first -- lean in near her desk and the cloner picks the MIFARE signal off her lanyard. Weak defaults, so it cracks near instantly and opens the conference door.
-Agent HaX: Then Sterling's executive card in the meeting. Custom keys, so the crack takes about half a minute. Best moment is when you're both at the whiteboard. Keep her talking through it.
+Agent HaX: Two stages. Reception first -- lean in near her desk and the cloner picks the MIFARE signal off her lanyard. Weak defaults, so read it, run a dictionary attack, save it, and it opens the conference door.
+Agent HaX: Then Sterling's executive card in the meeting. Custom keys, so read it, then run Darkside, about half a minute. Best moment is when you're both at the whiteboard. Keep her talking.
 + [Read, crack, emulate. Got it.]
     Agent HaX: That order every time. The server room won't open until you emulate her cracked card at the door.
     -> hub
