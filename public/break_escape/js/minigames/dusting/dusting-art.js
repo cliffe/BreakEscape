@@ -154,6 +154,7 @@ export const ART_SLOTS = {
     'brush-feather': { w: 32, h: 64, draw: drawBrushFeather },
     'wand': { w: 32, h: 64, draw: drawWand },
     'tape-roll': { w: 48, h: 48, draw: drawTapeRoll },
+    // The slot is the 128x128 play area. A supplied PNG (the card is portrait, 65x88) is contained and centred in it.
     'backing-card': { w: 128, h: 128, draw: drawBackingCard }
 };
 
@@ -197,14 +198,34 @@ export function hasArt(name) {
     return !!cache[name];
 }
 
-/** Draw a slot at its own size onto ctx (PNG if present, else procedural). */
-export function drawSlot(ctx, name) {
+/**
+ * Where a slot's picture lands inside its w x h box. A procedural slot fills the box. A PNG is contained: scaled
+ * to fit with its own aspect ratio and centred, so a portrait card in a square slot is not stretched.
+ * `centreX` (optional) centres it on that x instead, clamped inside the box, for a card that has to sit under
+ * a print that is not in the middle of the slot.
+ */
+export function artRect(name, centreX) {
+    const slot = ART_SLOTS[name];
+    const img = cache[name];
+    if (!slot) return null;
+    if (!img) return { x: 0, y: 0, w: slot.w, h: slot.h };
+    const iw = img.naturalWidth || slot.w, ih = img.naturalHeight || slot.h;
+    const k = Math.min(slot.w / iw, slot.h / ih);
+    const w = Math.round(iw * k), h = Math.round(ih * k);
+    const x = typeof centreX === 'number' ? Math.max(0, Math.min(slot.w - w, Math.round(centreX - w / 2))) : Math.floor((slot.w - w) / 2);
+    return { x, y: Math.floor((slot.h - h) / 2), w, h };
+}
+
+/** Draw a slot into its own box on ctx (PNG contained and centred if present, else procedural). */
+export function drawSlot(ctx, name, centreX) {
     const slot = ART_SLOTS[name];
     if (!slot) return;
     ctx.save();
     ctx.imageSmoothingEnabled = false;
-    if (cache[name]) ctx.drawImage(cache[name], 0, 0, slot.w, slot.h);
-    else slot.draw(ctx, slot.w, slot.h);
+    if (cache[name]) {
+        const r = artRect(name, centreX);
+        ctx.drawImage(cache[name], r.x, r.y, r.w, r.h);
+    } else slot.draw(ctx, slot.w, slot.h);
     ctx.restore();
 }
 

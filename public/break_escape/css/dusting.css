@@ -83,8 +83,10 @@
 .dusting-tools { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
 .dusting-tool { display: inline-flex; align-items: center; gap: 6px; }
 .dusting-art { image-rendering: pixelated; display: block; }
-.dusting-tool .dusting-art { height: 32px !important; width: 16px !important; }
-.dusting-btn .dusting-art { vertical-align: middle; }
+/* Tool icons are drawn at their own pixel size (32x64 canvas, shown 1:1). Halving them with CSS threw pixels away. */
+.dusting-tool { min-height: 72px; }
+.dusting-btn [data-slot] { vertical-align: middle; flex: 0 0 auto; }
+.dusting-btn:has([data-slot]) { display: inline-flex; align-items: center; gap: 6px; }
 [data-slot] { display: inline-block; line-height: 0; }
 
 .dusting-jars { display: grid; gap: 8px; }

@@ -751,6 +751,7 @@
 @media (max-width: 480px) {
     .fpr-panel { padding: 12px; }
     .fpr-card { width: 140px; }
+    .fpr-card:has(.fpr-thumb.has-art) { width: 160px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -858,10 +859,23 @@
     color: #00ff41;
 }
 
+/* lift-card.png is 70x68 with a 44x44 window at (13,13). Shown at exactly 2x (140x136, window 88x88) so the
+   pixels stay square, with the print canvas sitting in the window instead of covering the card. */
 .fpr-thumb.has-art {
+    box-sizing: border-box;
+    width: 140px;
+    height: 136px;
+    padding: 26px;
+    border: 0;
     background-image: var(--fp-art);
-    background-size: 100% 100%;
+    background-size: 140px 136px;
+    background-repeat: no-repeat;
     image-rendering: pixelated;
+}
+.fpr-card:has(.fpr-thumb.has-art) { width: 168px; }
+.fpr-thumb.has-art .fpr-canvas {
+    width: 88px !important;
+    height: 88px !important;
 }
 
 .fpr-card { position: relative; }
@@ -894,10 +908,22 @@
     .fpr-result-accepted .fpr-result-title { animation: none; }
 }
 
+/* reference-card.png is a 72x72 card. It sits behind the example print at 1:1, not stretched across the row,
+   so the text beside it stays on the dark panel. */
 .field-note.has-art {
+    min-height: 84px;
+    padding-left: 10px;
     background-image: var(--fp-art);
-    background-size: 100% 100%;
+    background-size: 72px 72px;
+    background-position: 10px center;
+    background-repeat: no-repeat;
     image-rendering: pixelated;
+}
+.field-note.has-art canvas {
+    width: 56px;
+    height: 56px;
+    margin: 0 18px 0 8px;
+    border: 0;
 }
 
 .fpr-card-num { z-index: 2; background: #0a0f0c; padding: 0 5px; }

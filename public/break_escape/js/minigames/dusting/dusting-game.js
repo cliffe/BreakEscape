@@ -16,7 +16,7 @@ import {
     SURFACES, POWDERS, TOOLS, DIFFICULTY, DustField, TapeGrid, surfaceForObject, contrastFactor,
     liftQuality, ratingFor, developedDensity, wrongPowderReason
 } from './dusting-model.js';
-import { ART_SLOTS, SURFACE_SLOT, preloadArt, onArtLoaded, drawSlot, slotCanvas, refreshSlotCanvases } from './dusting-art.js';
+import { ART_SLOTS, SURFACE_SLOT, preloadArt, onArtLoaded, drawSlot, artRect, hasArt, slotCanvas, refreshSlotCanvases } from './dusting-art.js';
 import { displayNameForOwner, bestLiftFromObject } from '../../systems/biometric-samples.js';
 
 // Load dusting-specific CSS
@@ -1128,10 +1128,17 @@ export class DustingMinigame extends MinigameScene {
         const cv = document.createElement('canvas');
         cv.width = N; cv.height = N;
         const c = cv.getContext('2d');
-        drawSlot(c, 'backing-card');
+        // A supplied card PNG is not square: it is contained and centred, with the dark panel colour round it.
+        const cardArt = hasArt('backing-card');
+        const tb = this.tapeBounds;
+        const cardX = tb.x + tb.w / 2; // the print moves about the surface, so the card follows it
+        const cr = artRect('backing-card', cardX);
+        if (cardArt) { c.fillStyle = '#0a0f0c'; c.fillRect(0, 0, N, N); }
+        drawSlot(c, 'backing-card', cardX);
         const pw = POWDERS[this.powder];
         if (pw.backing !== '#f2f0ea') {
-            c.save(); c.globalCompositeOperation = 'multiply'; c.fillStyle = pw.backing; c.fillRect(0, 0, N, N); c.restore();
+            c.save(); c.globalCompositeOperation = 'multiply'; c.fillStyle = pw.backing;
+            c.fillRect(cr.x, cr.y, cr.w, cr.h); c.restore();
         }
         const bg = c.getImageData(0, 0, N, N).data;
         const holes = new Uint8Array(N * N);
