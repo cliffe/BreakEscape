@@ -581,6 +581,7 @@ Kevin Park: So what do I do? Do I just go back to my desk and pretend everything
 // ================================================
 
 === wrongly_accused_warning ===
+#set_variable:kevin_accused=true
 Kevin Park: The report has a "HEADER MISMATCH DETECTED" flag. That's not me questioning it — that's the mail server's own forensic system flagging a forgery.
 
 Kevin Park: And the anomaly report itself says my workstation was active at the same time the server room was being accessed. That means two sessions running simultaneously. That means someone else was using my credentials.

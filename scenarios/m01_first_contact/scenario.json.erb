@@ -556,7 +556,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "currentKnot": "start",
           "voice": {
             "name": "Kore",
-            "style": "Friendly, warm receptionist. Speak with a consistent Irish accent throughout — do not shift to any other accent. Use a warm, mid-range pitch. Speak naturally and helpfully.",
+            "style": "Friendly, warm receptionist in her early thirties. Speak with a consistent Irish (Dublin) accent throughout — do not shift to any other accent. Use a warm, mid-range pitch. Speak naturally and helpfully.",
             "language": "en-GB"
           },
           "globalVarOnKO": "sarah_ko",
@@ -999,17 +999,53 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               }
             },
             {
-              "eventPattern": "global_variable_changed:sudo_flag_submitted",
-              "condition": "value === true && !globalVars.derek_confronted",
+              "eventPattern": "global_variable_changed:ssh_flag_submitted",
+              "condition": "value === true && globalVars.linux_flag_submitted && globalVars.sudo_flag_submitted && !globalVars.derek_confronted",
               "onceOnly": true,
               "sendTimedMessage": {
                 "delay": 3000,
-                "message": "All technical flags secured. 🦎 If you haven't opened the ENTROPY archive yet, do that now. Then find Derek — you have everything you need."
+                "message": "All technical flags secured. 🦎 The ENTROPY archive is unlocked, so read it if you haven't. Then find Derek — you have everything you need."
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:linux_flag_submitted",
+              "condition": "value === true && globalVars.ssh_flag_submitted && globalVars.sudo_flag_submitted && !globalVars.derek_confronted",
+              "onceOnly": true,
+              "sendTimedMessage": {
+                "delay": 3000,
+                "message": "All technical flags secured. 🦎 The ENTROPY archive is unlocked, so read it if you haven't. Then find Derek — you have everything you need."
               }
             },
             {
               "eventPattern": "global_variable_changed:sudo_flag_submitted",
-              "condition": "value === true && globalVars.derek_confronted === true",
+              "condition": "value === true && globalVars.ssh_flag_submitted && globalVars.linux_flag_submitted && !globalVars.derek_confronted",
+              "onceOnly": true,
+              "sendTimedMessage": {
+                "delay": 3000,
+                "message": "All technical flags secured. 🦎 The ENTROPY archive is unlocked, so read it if you haven't. Then find Derek — you have everything you need."
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:ssh_flag_submitted",
+              "condition": "value === true && globalVars.linux_flag_submitted && globalVars.sudo_flag_submitted && globalVars.derek_confronted === true",
+              "onceOnly": true,
+              "sendTimedMessage": {
+                "delay": 3000,
+                "message": "All technical evidence secured. Derek is already contained. 🦎 Call me when you're ready for debrief."
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:linux_flag_submitted",
+              "condition": "value === true && globalVars.ssh_flag_submitted && globalVars.sudo_flag_submitted && globalVars.derek_confronted === true",
+              "onceOnly": true,
+              "sendTimedMessage": {
+                "delay": 3000,
+                "message": "All technical evidence secured. Derek is already contained. 🦎 Call me when you're ready for debrief."
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:sudo_flag_submitted",
+              "condition": "value === true && globalVars.ssh_flag_submitted && globalVars.linux_flag_submitted && globalVars.derek_confronted === true",
               "onceOnly": true,
               "sendTimedMessage": {
                 "delay": 3000,
@@ -1277,7 +1313,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "currentKnot": "start",
           "voice": {
             "name": "Algieba",
-            "style": "Confident, slightly menacing corporate executive. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+            "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
             "language": "en-GB"
           },
           "globalVarOnKO": "derek_confronted",
@@ -1623,8 +1659,8 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "voice": "Patricia... it's Maya. I know you probably won't hear this. They cleared out your desk so fast. I just — I needed to say it somewhere. You were right about Derek. I'm sorry we didn't back you up when it mattered. Be safe.",
           "ttsVoice": {
             "name": "Leda",
-            "style": "Speak with a consistent Chinese-American accent throughout — do not shift to any other accent. Nervous and concerned. Speaking quietly, like she doesn't want to be overheard.",
-            "language": "en-GB"
+            "style": "Content analyst in her late twenties. Speak with a consistent Chinese-American (California) accent throughout — do not shift to any other accent. Soft, mid-to-high pitch; quiet, hesitant pace. Nervous and concerned. Speaking quietly, like she doesn't want to be overheard.",
+            "language": "en-US"
           },
           "avatar": "assets/characters/female_scientist_headshot.png",
           "sender": "Maya Chen",
@@ -1729,8 +1765,8 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "currentKnot": "start",
           "voice": {
             "name": "Leda",
-            "style": "Speak with a consistent Chinese-American accent throughout — do not shift to any other accent. Nervous and concerned.",
-            "language": "en-GB"
+            "style": "Content analyst in her late twenties. Speak with a consistent Chinese-American (California) accent throughout — do not shift to any other accent. Soft, mid-to-high pitch; quiet, hesitant pace. Nervous and concerned.",
+            "language": "en-US"
           },
           "globalVarOnKO": "maya_ko"
         }
