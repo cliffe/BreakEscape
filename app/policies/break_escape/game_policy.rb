@@ -57,6 +57,10 @@ module BreakEscape
       show?
     end
 
+    def unlock_objective?
+      show?
+    end
+
     def container?
       show?
     end

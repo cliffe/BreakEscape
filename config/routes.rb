@@ -38,6 +38,7 @@ BreakEscape::Engine.routes.draw do
       get 'objectives'                                      # Get current objective state
       post 'objectives/tasks/:task_id', to: 'games#complete_task', as: 'complete_task'
       put 'objectives/tasks/:task_id', to: 'games#update_task_progress', as: 'update_task_progress'
+      post 'objectives/unlock', to: 'games#unlock_objective', as: 'unlock_objective'  # Persist an ink/eventMapping aim or task unlock
 
       post 'conclude', to: 'games#conclude_mission'  # Client reports the story ended; server gates on concludeRequires
 

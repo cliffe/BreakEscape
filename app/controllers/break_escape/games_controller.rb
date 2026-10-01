@@ -24,7 +24,7 @@ module BreakEscape
       policy.worker_src  :self, :blob
     end
 
-    before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :sync_state, :update_room, :unlock, :inventory, :objectives, :complete_task, :update_task_progress, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :conclude_mission]
+    before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :sync_state, :update_room, :unlock, :inventory, :objectives, :complete_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :conclude_mission]
 
     # Actions that read-modify-write @game.player_state and then save! need a
     # row lock, or two concurrent requests for the same game (e.g. a single
@@ -77,7 +77,7 @@ module BreakEscape
     # room is here for the same reason -- track_npc_encounters appends to
     # encounteredNPCs and saves, and npc_conversation tasks validate against
     # that list, so losing an entry rejects a legitimate completion.
-    around_action :with_game_lock, only: [:container, :sync_state, :update_room, :unlock, :complete_task, :update_task_progress, :submit_flag, :reset, :new_session, :inventory, :room]
+    around_action :with_game_lock, only: [:container, :sync_state, :update_room, :unlock, :complete_task, :update_task_progress, :unlock_objective, :submit_flag, :reset, :new_session, :inventory, :room]
 
     # GET /games/new?mission_id=:id
     # Show VM set selection page for VM-required missions
@@ -264,8 +264,10 @@ module BreakEscape
 
         # Include objectives state for page reload recovery
         # This allows the client to restore completed/progress state
+        # Aims the client opened by unlockCondition are derived here, since
+        # the server never recorded them (see Game#objectives_state_for_client).
         if @game.player_state['objectivesState'].present?
-          filtered['objectivesState'] = @game.player_state['objectivesState']
+          filtered['objectivesState'] = @game.objectives_state_for_client
         end
 
         # Include submitted flags for flag station minigame
@@ -283,6 +285,18 @@ module BreakEscape
         # Include saved notes (with player observations) for session resume.
         if @game.player_state['notes'].present?
           filtered['savedNotes'] = @game.player_state['notes']
+        end
+
+        # NPC-local ink variables (met_x, first_meeting, ...) so intros and
+        # one-shot lines don't replay after a reload.
+        if @game.player_state['npcInkVariables'].present?
+          filtered['savedNpcInkVariables'] = @game.player_state['npcInkVariables']
+        end
+
+        # onceOnly / maxTriggers eventMapping handlers that already fired, so
+        # one-shot cutscenes and messages don't replay after a reload.
+        if @game.player_state['triggeredEvents'].present?
+          filtered['savedTriggeredEvents'] = @game.player_state['triggeredEvents']
         end
 
         # Include current inventory from player_state for page reload recovery
@@ -611,6 +625,14 @@ module BreakEscape
         @game.update_global_variables!(params[:globalVariables].to_unsafe_h)
       end
 
+      if params[:npcInkVariables].respond_to?(:to_unsafe_h)
+        @game.merge_npc_ink_variables!(params[:npcInkVariables].to_unsafe_h)
+      end
+
+      if params[:triggeredEvents].respond_to?(:to_unsafe_h)
+        @game.merge_triggered_events!(params[:triggeredEvents].to_unsafe_h)
+      end
+
       # Persist notes (including player observations).
       # Merge by id so edits made mid-session overwrite older snapshots, but
       # notes not yet in player_state are added fresh.
@@ -855,6 +877,16 @@ module BreakEscape
           @game.remove_inventory_item!(item['id'])
           render json: { success: true, inventory: @game.player_state['inventory'] }
 
+        when 'update_saved_cards'
+          # The RFID cloner's saved cards, so a reload doesn't empty it
+          cards = Array(params[:saved_cards]).map { |c| c.respond_to?(:to_unsafe_h) ? c.to_unsafe_h : c }
+          if @game.update_cloner_saved_cards!(cards)
+            render json: { success: true }
+          else
+            render json: { success: false, message: 'No RFID cloner in inventory, or invalid card data' },
+                   status: :unprocessable_entity
+          end
+
         else
           render json: { success: false, message: 'Invalid action' }, status: :bad_request
         end
@@ -880,6 +912,20 @@ module BreakEscape
       authorize @game if defined?(Pundit)
 
       render json: @game.objectives_state
+    end
+
+    # POST /games/:id/objectives/unlock
+    # Record an aim or task the client unlocked from an ink tag or an
+    # eventMapping (params: kind = 'aim' | 'task', objective_id). Only reveals; never
+    # completes anything, so it needs no validation beyond the id existing.
+    def unlock_objective
+      authorize @game if defined?(Pundit)
+
+      if @game.unlock_objective!(params[:kind].to_s, params[:objective_id].to_s)
+        render json: { success: true }
+      else
+        render json: { success: false, error: 'Unknown objective' }, status: :unprocessable_entity
+      end
     end
 
     # POST /games/:id/objectives/tasks/:task_id
@@ -1756,6 +1802,7 @@ module BreakEscape
       # Allow common item properties, including nested scenarioData
       params.require(:data).permit(
         :id, :type, :name, :texture, :x, :y, :takeable, :interactable,
+        position: [:x, :y],
         scenarioData: [
           :type, :name, :takeable, :id, :opens_lock, :key_id, :observations, :active, :visible, :interactable,
           keyPins: []

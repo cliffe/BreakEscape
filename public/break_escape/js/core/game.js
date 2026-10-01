@@ -955,6 +955,20 @@ export async function create() {
         console.log(`📝 Restored ${gameScenario.savedNotes.length} note(s) from server`);
     }
 
+    // Restore NPC-local ink variables (met_x, first_meeting, ...) so an NPC's
+    // next conversation restarts at its start knot with them set, the same as
+    // re-talking without a reload. Inert until the manager provides the method.
+    if (gameScenario.savedNpcInkVariables) {
+        window.npcConversationStateManager?.importNpcInkVariables?.(gameScenario.savedNpcInkVariables);
+    }
+
+    // Restore which onceOnly / maxTriggers eventMapping handlers already fired, so a
+    // reload doesn't replay one-shot cutscenes, barks and messages. Must run before
+    // game_loaded, the first event mappings can react to.
+    if (gameScenario.savedTriggeredEvents) {
+        window.npcManager?.restoreTriggeredEvents?.(gameScenario.savedTriggeredEvents);
+    }
+
     // Restore objectives state from server if available (passed via objectivesState)
     if (gameScenario.objectivesState) {
         window.gameState.objectives = gameScenario.objectivesState;

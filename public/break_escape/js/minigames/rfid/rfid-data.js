@@ -12,6 +12,7 @@
  */
 
 import { getProtocolInfo, detectProtocol, isMIFARE } from './rfid-protocols.js';
+import { ApiClient } from '../../api-client.js';
 
 // Maximum number of cards that can be saved to cloner
 const MAX_SAVED_CARDS = 50;
@@ -316,6 +317,7 @@ export class RFIDDataManager {
                 timestamp: Date.now()
             };
             console.log(`📡 Overwritten duplicate card: ${cardData.name || 'Card'}`);
+            this.persistSavedCards(cloner);
             return { success: true, message: `Updated: ${cardData.name || 'Card'}` };
         } else {
             // Add new card
@@ -324,8 +326,26 @@ export class RFIDDataManager {
                 timestamp: Date.now()
             });
             console.log(`📡 Saved new card: ${cardData.name || 'Card'}`);
+            this.persistSavedCards(cloner);
             return { success: true, message: `Saved: ${cardData.name || 'Card'}` };
         }
+    }
+
+    /**
+     * Send the cloner's saved cards to the server, which keeps them on the
+     * cloner's inventory entry so they come back after a page reload.
+     * Fire-and-forget: the card is already usable this session, so a failed
+     * save is logged, not shown.
+     * @param {Object} cloner - The rfid_cloner inventory item
+     */
+    persistSavedCards(cloner) {
+        if (!window.breakEscapeConfig?.gameId) return;
+        ApiClient.post('/inventory', {
+            action_type: 'update_saved_cards',
+            saved_cards: cloner.scenarioData.saved_cards
+        }).catch(error => {
+            console.warn('📡 Could not save cloner cards to server (lost on reload):', error.message);
+        });
     }
 
     /**

@@ -254,10 +254,22 @@ module BreakEscape
 
         # SECURITY: Verify the item matches an item the NPC actually holds
         npc_data = find_npc_in_scenario(source_data['npc_id'])
-        unless npc_data && npc_has_item?(npc_data, item)
+        held_item = npc_data && find_npc_held_item(npc_data, item)
+        unless held_item
           Rails.logger.warn "[BreakEscape] NPC #{source_data['npc_id']} does not have item type=#{item['type']}, id=#{item['id']}, rejecting item add"
           return false
         end
+
+        # Persist the FULL scenario definition of the held item (mode, flags, onLaunch,
+        # keyPins, etc.), not just the client-supplied subset, so a dropped object
+        # restored after a reload behaves exactly like the original. Only identity and
+        # placement come from the client.
+        # The persisted object keeps the held item's ORIGINAL scenario id (flag-station
+        # ownership, collect tasks and lock matching all key on it); the client's
+        # generated drop id is only used when the scenario item has none.
+        item = held_item.deep_dup.merge(
+          item.slice('x', 'y', 'position', 'texture')
+        ).merge('id' => held_item['id'].presence || item['id']).merge('takeable' => true, 'interactable' => true, 'active' => true, 'visible' => true)
       end
 
       # Generate unique ID if not provided
@@ -533,13 +545,18 @@ module BreakEscape
     # Check if an NPC has a specific item in their itemsHeld array
     # Used for security validation when adding items to rooms
     def npc_has_item?(npc_data, item)
-      return false unless npc_data['itemsHeld'].present?
+      !find_npc_held_item(npc_data, item).nil?
+    end
+
+    # Return the itemsHeld entry (scenario definition) matching the given item, or nil.
+    def find_npc_held_item(npc_data, item)
+      return nil unless npc_data['itemsHeld'].present?
 
       item_type = item['type']
       item_id = BreakEscape::ItemIdentity.identity_candidates(item).first
       item_name = item['name']
 
-      npc_data['itemsHeld'].any? do |held_item|
+      npc_data['itemsHeld'].find do |held_item|
         held_type = held_item['type']
         held_id = BreakEscape::ItemIdentity.identity_candidates(held_item).first
         held_name = held_item['name']
@@ -549,17 +566,17 @@ module BreakEscape
 
         # If both have IDs, match by ID
         if item_id.present? && held_id.present?
-          return true if held_id.to_s == item_id.to_s
+          return held_item if held_id.to_s == item_id.to_s
         end
 
         # If both have names, match by name
         if item_name.present? && held_name.present?
-          return true if held_name.to_s == item_name.to_s
+          return held_item if held_name.to_s == item_name.to_s
         end
 
         # If no ID or name, match by type only
         if item_id.blank? && item_name.blank?
-          return true
+          return held_item
         end
 
         false
@@ -1015,8 +1032,165 @@ module BreakEscape
     def objectives_state
       {
         'objectives' => filter_target_flags(scenario_data['objectives']&.map(&:deep_dup)),
-        'state' => player_state['objectivesState'] || {}
+        'state' => objectives_state_for_client
       }
+    end
+
+    # The saved objectivesState plus the aim reveals the client makes but never
+    # reports, so a reload shows the aims the player saw before it. Without
+    # this, every aim opened by unlockCondition came back locked with its
+    # tasks hidden. Derived on read rather than written, so games saved before
+    # this change are fixed too. Mirrors objectives-manager.js:
+    #  - aimCompleted / aimsCompleted met -> active (checkAimCompletion)
+    #  - one of its tasks completed -> active, but only if the aim has no
+    #    unlockCondition or that condition is met (revealAimForCompletedTask;
+    #    an aim whose condition is unmet stays hidden when a task finishes early)
+    def objectives_state_for_client
+      state = (player_state['objectivesState'] || {}).deep_dup
+      return state unless scenario_data['objectives'].is_a?(Array)
+
+      aims  = state['aims']  ||= {}
+      tasks = state['tasks'] || {}
+
+      scenario_data['objectives'].each do |aim|
+        aim_id = aim['aimId']
+        next unless aim['status'] == 'locked'
+        next if aims.dig(aim_id, 'status').present?
+
+        cond = aim['unlockCondition']
+        opened_by_aims = cond.is_a?(Hash) && (cond['aimCompleted'].present? || cond['aimsCompleted'].is_a?(Array)) &&
+                         unlock_condition_met?(cond, aims)
+        revealed_by_task = Array(aim['tasks']).any? { |t| tasks.dig(t['taskId'], 'status') == 'completed' } &&
+                           unlock_condition_met?(cond, aims)
+
+        aims[aim_id] = { 'status' => 'active' } if opened_by_aims || revealed_by_task
+      end
+
+      state
+    end
+
+    # Same answers as ObjectivesManager#isUnlockConditionMet: no condition, or
+    # one it doesn't recognise, counts as met.
+    def unlock_condition_met?(cond, aims)
+      return true unless cond.is_a?(Hash)
+
+      completed = ->(aim_id) { aims.dig(aim_id, 'status') == 'completed' }
+      if cond['aimCompleted'].present?
+        completed.call(cond['aimCompleted'])
+      elsif cond['aimsCompleted'].is_a?(Array)
+        cond['aimsCompleted'].all? { |id| completed.call(id) }
+      elsif cond['globalVariable'].present?
+        expected = cond.key?('equals') ? cond['equals'] : true
+        actual = player_state.dig('globalVariables', cond['globalVariable'])
+        expected == true ? !!actual : actual == expected
+      else
+        true
+      end
+    end
+
+    # Record an aim or task the client unlocked outside onComplete (an ink
+    # #unlock_aim / #unlock_task tag or an eventMapping), so it is still
+    # unlocked after a reload. Only ever moves locked -> active; a completed
+    # entry is left alone. Returns false for an id the scenario doesn't have.
+    def unlock_objective!(kind, id)
+      initialize_objectives
+      return false unless player_state['objectivesState']
+
+      case kind
+      when 'aim'
+        return false unless scenario_data['objectives']&.any? { |a| a['aimId'] == id }
+        bucket = player_state['objectivesState']['aims'] ||= {}
+      when 'task'
+        return false unless find_task_in_scenario(id)
+        bucket = player_state['objectivesState']['tasks'] ||= {}
+      else
+        return false
+      end
+
+      entry = bucket[id] ||= {}
+      return true if %w[active completed].include?(entry['status'])
+
+      entry['status'] = 'active'
+      save!
+      true
+    end
+
+    MAX_SAVED_CARDS = 50
+    MAX_SAVED_CARDS_BYTES = 64.kilobytes
+
+    # Store the RFID cloner's saved cards on its inventory entry. The cards
+    # lived only in the client's copy of the item, so a reload emptied the
+    # cloner. The playerInventory sent on load carries them back. RFID unlocks
+    # are already client-trusted, so this stores nothing the client couldn't
+    # already assert. Returns false when there is no cloner or the data is bad.
+    def update_cloner_saved_cards!(cards)
+      return false unless cards.is_a?(Array) && cards.length <= MAX_SAVED_CARDS
+      return false unless cards.all? { |c| c.is_a?(Hash) }
+      return false if cards.to_json.bytesize > MAX_SAVED_CARDS_BYTES
+
+      cloner = (player_state['inventory'] || []).find do |item|
+        item.is_a?(Hash) && (item['type'] || item.dig('scenarioData', 'type')) == 'rfid_cloner'
+      end
+      return false unless cloner
+
+      cloner['saved_cards'] = cards
+      save!
+      true
+    end
+
+    MAX_TRIGGERED_EVENTS = 2000
+    MAX_TRIGGERED_EVENT_KEY_LENGTH = 300
+
+    # Merge the client's fired onceOnly / maxTriggers eventMapping handlers
+    # ({ "npcId:eventPattern:handlerIndex" => count }). Held only in memory
+    # before, so a reload replayed one-shot cutscenes, barks and messages.
+    # Counts only grow (the larger one is kept). Does not save!; the caller does.
+    def merge_triggered_events!(incoming)
+      return unless incoming.is_a?(Hash)
+
+      merged = (player_state['triggeredEvents'] || {}).dup
+      incoming.each do |key, count|
+        next unless key.is_a?(String) && key.length <= MAX_TRIGGERED_EVENT_KEY_LENGTH
+        next unless count.is_a?(Integer) && count.positive?
+
+        merged[key] = [merged[key].to_i, count].max
+      end
+
+      if merged.size > MAX_TRIGGERED_EVENTS
+        Rails.logger.warn "[BreakEscape] triggeredEvents over #{MAX_TRIGGERED_EVENTS} keys; update not saved"
+        return
+      end
+
+      player_state['triggeredEvents'] = merged
+    end
+
+    MAX_NPC_INK_VARIABLES_BYTES = 128.kilobytes
+
+    # Merge NPC-local ink variables (the ones that aren't scenario globals)
+    # sent by the client, one entry per NPC. These are what the client's
+    # conversation-state manager keeps in memory between conversations; with
+    # them saved, a reload restarts each NPC at its start knot with its own
+    # flags (met_x, first_meeting, ...) intact, the same as re-talking in one
+    # session. Only scalar values are kept. Does not save!; the caller does.
+    def merge_npc_ink_variables!(incoming)
+      return unless incoming.is_a?(Hash)
+
+      merged = (player_state['npcInkVariables'] || {}).dup
+      incoming.each do |npc_id, vars|
+        next unless npc_id.is_a?(String) && npc_id.length <= 100 && vars.is_a?(Hash)
+
+        merged[npc_id] = vars.select do |k, v|
+          k.is_a?(String) && k.length <= 100 &&
+            (v.is_a?(String) || v.is_a?(Numeric) || v == true || v == false || v.nil?)
+        end
+      end
+
+      if merged.to_json.bytesize > MAX_NPC_INK_VARIABLES_BYTES
+        Rails.logger.warn "[BreakEscape] npcInkVariables over #{MAX_NPC_INK_VARIABLES_BYTES} bytes; update not saved"
+        return
+      end
+
+      player_state['npcInkVariables'] = merged
     end
 
     # Aim/Task status helpers

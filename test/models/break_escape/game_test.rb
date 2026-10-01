@@ -30,6 +30,41 @@ module BreakEscape
       assert @game.mission
     end
 
+    test "NPC drop persists the full held item definition and survives pickup" do
+      device = { 'type' => 'launch-device', 'name' => 'Launch Device', 'id' => 'entropy_launch_device',
+                 'mode' => 'launch-abort', 'flags' => ['abort'], 'onLaunch' => { 'setGlobal' => { 'x' => true } } }
+      @game.scenario_data = {
+        'startRoom' => 'break_room',
+        'rooms' => { 'break_room' => { 'objects' => [], 'npcs' => [{ 'id' => 'derek', 'itemsHeld' => [device] }] } }
+      }
+      @game.player_state['unlockedRooms'] = ['break_room']
+      # Client sends only a stripped subset, as the strong params allow
+      # Client may send either the original id or a generated drop id; the stored id must be the scenario's
+      sent = { 'id' => 'entropy_launch_device', 'type' => 'launch-device', 'name' => 'Launch Device',
+               'x' => 100, 'y' => 200, 'position' => { 'x' => 3.5, 'y' => 4.25 } }
+      assert @game.add_item_to_room!('break_room', sent, { 'npc_id' => 'derek' })
+
+      room = @game.filtered_room_data('break_room')
+      obj = room['objects'].find { |o| o['id'] == 'entropy_launch_device' }
+      assert_equal 'entropy_launch_device', obj['id']
+      assert_equal 'launch-abort', obj['mode']
+      assert_equal 1, obj['flagCount'] # flag values are stripped from client payloads, count kept
+      assert_equal({ 'setGlobal' => { 'x' => true } }, obj['onLaunch'])
+      assert_equal({ 'x' => 3.5, 'y' => 4.25 }, obj['position'])
+      assert obj['takeable']
+
+      # A generated client drop id is replaced by the scenario id
+      @game.player_state['room_states']['break_room']['objects_added'] = []
+      assert @game.add_item_to_room!('break_room', sent.merge('id' => 'dropped_derek_0_999'), { 'npc_id' => 'derek' })
+      assert_equal ['entropy_launch_device'],
+                   @game.filtered_room_data('break_room')['objects'].map { |o| o['id'] }
+
+      # Picked up: no longer restored on reload
+      assert @game.remove_item_from_room!('break_room', 'entropy_launch_device')
+      room = @game.filtered_room_data('break_room')
+      assert_nil room['objects'].find { |o| o['id'] == 'entropy_launch_device' }
+    end
+
     test "should unlock room" do
       @game.unlock_room!('office')
       assert @game.room_unlocked?('office')
