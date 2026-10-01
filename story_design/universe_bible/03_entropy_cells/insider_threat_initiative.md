@@ -79,7 +79,7 @@
 - **Personality:** Calm to the point of eeriness — the still pond in a frightened building. Warm, articulate, unrepentant. Argues his case like a man who has rehearsed it alone for years; the mission presents the argument and **rejects** it.
 - **Player-facing appearances:** Seeded as a **trusted technical colleague** in the briefings/debriefs of Missions 2–6 (sprite `male_scientist`), so his Mission 8 betrayal lands on someone the player has worked beside. Never flagged as suspect before M8. In M5 he ironically briefs the player on *how to catch an insider* — describing the exact behavioural tells that later expose him.
 - **Fate (player choice, M8):** Arrested (trial) **or** turned triple agent (intelligence at moral cost). Either way he gives up **Tomb Gamma** (Montana), the Architect's workshop and the database's destination — the setup for M9/M10. If turned, he may resurface as a live-wire asset in later missions.
-- **Sprite/voice canon:** `male_scientist`; voice **Charon** (calm, deliberate RP).
+- **Sprite/voice canon:** `male_scientist`; voice **Enceladus** (calm, precise RP), as in m02. Charon is Director Netherton's voice.
 
 ### **"Red Tape"** (NEW)
 - **Real Name:** Gerald Mitchell

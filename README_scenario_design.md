@@ -1543,7 +1543,7 @@ These are the mistakes that most often leave a mission unfinishable or silently 
 
 - **Check door alignment.** A north/south connection between rooms of different widths can leave the doors about 320px apart. Use `tools/pass2/render.rb` and `tools/pass2/door_align.py`, and prefer single east/west connections and equal-width north/south pairs. `multi` connections cannot align middle or overflow doors.
 - **Do not park a hidden or KO'd guard in a room with a pickable lock.** Their line-of-sight cone still interrupts lockpicking.
-- **SAFETYNET has no arrest powers.** Agents detain and hand suspects to the police. The handler is displayed as "Agent HaX".
+- **SAFETYNET has no arrest powers.** Agents detain and hand suspects to the police. The handler is displayed as "Agent HaX". Her NPC id stays `agent_0x99` in every mission (m05 uses `agent_0x99_handler`): it is the shared handler id, so don't rename it to match the display name. Other renamed NPCs do get matching ids.
 - **Use UK English** in player-facing text, including "Cyber Security" with a space.
 
 ## Dungeon Graph Metadata
