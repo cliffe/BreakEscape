@@ -21,6 +21,9 @@ VAR asked_help = false
 VAR accused_phantom = false
 VAR mole_identified = false
 VAR apologised = false
+// PASS 3 (P7): the door-audit beat.
+VAR found_badge_audit = false
+VAR asked_audit = false
 
 === start ===
 { phantom_interviewed:
@@ -46,16 +49,20 @@ Agent 0x88 'Phantom': Agent 0x00. The Director's own bloodhound. Sit. Let me sav
     -> hub
 + { not asked_list } [Who's on your list?]
     ~ asked_list = true
-    Agent 0x88 'Phantom': Same three as yours, minus me. And if you put a gun to it -- the one who never flinches. Money leaves a trail and there is no trail, so it isn't money. It's belief. Ask yourself who in this building has stopped believing we can win.
+    Agent 0x88 'Phantom': Same three as yours, minus me. I'm not putting a name on it until I've seen a door log. Money leaves a trail and there is no trail, so it isn't money. It's belief. Ask yourself who in this building has stopped believing we can win.
     ~ phantom_influence += 1
     # influence_increased
     -> hub
 + { found_phantom_lead and not asked_help } [I read your notes. The Crypto Lab terminal.]
     ~ asked_help = true
     Narrator: He leans in, and all the charm goes out of his face.
-    Agent 0x88 'Phantom': Then you're further than I got. Someone's been in mission_planning from a Crypto Lab terminal at hours nobody's rostered. I couldn't get root on the repo to prove whose account it was -- that's your part, you've got the Director's blessing and I've got a reprimand pending. Get onto that box. The name's in the logs. I'd bet my pension it's the quiet one.
+    Agent 0x88 'Phantom': Then you're further than I got. Someone's been in mission_planning from a Crypto Lab terminal, for forty-seven minutes, on a file you read in five. I couldn't get root on the repo to prove whose account it was -- that's your part, you've got the Director's blessing and I've got a reprimand pending. Get onto that box. The name's in the logs.
     ~ phantom_influence += 2
     # influence_increased
+    -> hub
++ { found_badge_audit and not asked_audit } [Your door audit was still in the archive printer.]
+    ~ asked_audit = true
+    Agent 0x88 'Phantom': So it printed. The duty officer walked me out before it finished. I never saw what it says, and I'd rather you didn't tell me. Tell the Director.
     -> hub
 + { accused_phantom and mole_identified and not apologised } [You were right. I was wrong to put it on you.]
     ~ apologised = true

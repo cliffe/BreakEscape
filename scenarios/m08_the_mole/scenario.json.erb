@@ -24,24 +24,33 @@
 #
 # ROOM LAYOUT (grid units; door sides verified by predict_door_sides.py):
 #
-#                 [Intel Analysis]      [Server Room] (rfid)
-#                        |                     |
-#   [Break Room]--[Crypto Lab]--[Main Lobby]--[Ops Floor]
-#                        |             |            |
-#   [Interrogation](key) |    [Director's Office]   [Security Archives](password)
+# (PASS 3: redrawn to match the connections below; the old drawing put
+#  Intel Analysis over the Crypto Lab and the Director's Office south.)
+#
+#                          [Director's Office]   [Intel Analysis]
+#                                  |                    |
+#   [Break Room]--[Crypto Lab]--[Main Lobby]------[Ops Floor]--[Server Room] (rfid)
+#                      |                                |
+#           [Interrogation] (pin)          [Security Archives] (password)
 #
 #   Connections (all reciprocal):
 #     main_lobby        N director_office  E operations_floor  W cryptography_lab
 #     operations_floor  N intel_analysis   E server_room       S security_archives
 #     cryptography_lab  S interrogation_room  W break_room
 #
-# LOCK CHAIN - every gate has a redundant source so no KO strands the run:
-#   rfid     server_room        <- Director Netherton's keycard   | badge printer (lobby, PIN on the break-room post-it)
-#   password security_archives  <- post-it in break room      | ATHENA log query (lobby)
-#   pin      director_safe       <- the Director's service number, printed as
-#                                   "requested by" on the ops-floor personnel
-#                                   printout (ATHENA and HaX point at it)
-#   key      interrogation_room  <- key inside director_safe    | lockpick (start inventory)
+# LOCK CHAIN (PASS 3; see PUZZLE_CHAINS_PLAN.md):
+#   rfid     server_room        <- Director Netherton's keycard (asked for, or dropped on a KO)
+#                                  | badge printer (lobby, PIN on the break-room post-it)
+#   password security_archives  <- post-it in the break room only (ATHENA hints, never reads it)
+#   pin      director_safe      <- the Director's service number, printed as "requested by"
+#                                  on the ops-floor personnel printout
+#   pin      interrogation_room <- suite_code: the code card in director_safe, or Netherton
+#                                  aloud after a correct reading of the door audit (P6).
+#                                  Picks can't open it; the PIN cracker isn't in the kit.
+#   key      nightshade_locker  <- start-kit picks | his key, asked for (P8) or dropped on a KO
+#
+# CLOCK (PASS 3): the Citadel keeps UTC and SAFETYNET logs print UTC. T-0, the
+# Portland order, is 10:41 UTC (m07). The plan was opened D-2 10:38-11:25 UTC.
 #
 # WIN CONDITION (PASS 2): all four flags in -> the confrontation opens as a
 # disableClose cutscene on entering the interrogation room; the fate choice is
@@ -74,20 +83,26 @@ end
 safe_pin = "2407"
 nightshade_service_no = "4719"
 
-# Security Archives door. On the break-room post-it; ATHENA reads it from the
-# facilities log as the redundant source.
+# Security Archives door. On the break-room post-it only; ATHENA hints at where
+# facilities keep it and never reads it out (PASS 3).
 archives_password = "TrustNoOne"
+
+# Interrogation suite keypad (PASS 3, P4). One source: the room's requires, the
+# code card in the Director's safe and the synced global suite_code (which
+# Netherton's ink prints) all render this value.
+suite_code = "5386"
 
 # Visitor badge printer at reception (second route to the server room). The
 # facilities post-it in the break room carries it.
 badge_pin = "0311"
 
-# Nightshade's sent mail, as he left it on his own desk: Base64, then ROT13.
-# The player decodes it at the Crypto Lab's CyberChef workstation.
-backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state. Package delivered: assignments, timeline, agent ID, all confirmed. Your coordination held. They spent the night choosing which fire to fight and never saw the vault open behind them. I know what the two unanswered sites cost. You do not need to tell me the number. I made the trade with my eyes open. Order is a candle in a hurricane; I would rather help the wind than keep relighting the wick. Awaiting next tasking. -- N"
+# Nightshade's sent mail, on a USB stick in his break-room locker (PASS 3):
+# Base64, then ROT13. The player decodes it at the Crypto Lab's CyberChef
+# workstation.
+backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state. Package delivered: deployment, timeline, agent ID, all confirmed. Your coordination held. They spent the night choosing which fire to fight and never saw the vault open behind them. I know what the unanswered sites cost. You do not need to tell me the number. I made the trade with my eyes open. Order is a candle in a hurricane; I would rather help the wind than keep relighting the wick. Awaiting next tasking. -- N"
 %>
 {
-  "scenario_brief": "Nine days ago four ENTROPY operations went live inside the same minute, and one of them cost lives. Since that night you have known why. An intercept pulled off the wire was timestamped before the deployment order was ever written -- which means ENTROPY did not guess where SAFETYNET would send you. Somebody told them. The leak was not the operation. The leak was the agent. Director Netherton has pulled you back to the Citadel, SAFETYNET's own headquarters, and handed you three names. One of them has been feeding the people who got your colleagues killed. Find the mole. Do it quietly -- the moment they know you are looking, they are gone.",
+  "scenario_brief": "Nine days ago four ENTROPY operations went live inside the same minute, and the ones nobody could reach cost lives. Since that night you have known why. An intercept pulled off the wire was timestamped before the deployment order was ever written -- which means ENTROPY did not guess where SAFETYNET would send you. Somebody told them. The leak was not the operation. The leak was the agent. Director Netherton has pulled you back to the Citadel, SAFETYNET's own headquarters, and handed you three names. One of them has been feeding the people who got your colleagues killed. Find the mole. Do it quietly -- the moment they know you are looking, they are gone.",
 
   "show_scenario_brief": "on_resume",
 
@@ -108,32 +123,36 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
   },
 
 <%# Dynamic music. Structure copied from m07 / m02. Beat map:
-      arrival, paranoid HQ ......... noir       (game_loaded, brief not done)
-      investigation underway ....... noir       (game_loaded, brief done)
-      the repo cracks open ......... tension    (flag2_submitted -- creds recovered)
-      evidence closes on Nightshade  threat     (all_flags_submitted / mole_identified)
+      opening cutscene ............. cutscene   (game_loaded, brief not played)
+      investigation underway ....... noir       (opening cutscene closes; or game_loaded once played)
+      evidence closes on Nightshade  threat     (mole_identified, flag 4)
       the interrogation room ....... spy-action (room_entered:interrogation_room)
       debrief closes ............... victory + credits
     'victory' auto-opens the Bond Visualiser, so it is held to the debrief
-    actually finishing -- the m01/m02/m07 pattern. %>
+    actually finishing -- the m01/m02/m07 pattern.
+    PASS 3 (puzzle-chains bug fix): nothing switched from the cutscene
+    playlist to noir when the opening closed (m01 has that cue), and the
+    flag-2 cue named a "tension" playlist that does not exist
+    (music-config.js:56-145), so it did nothing. The first is added, the
+    second removed. %>
   "music": {
     "events": [
       { "trigger": "game_loaded", "condition": "!globalVars.briefing_played", "playlist": "cutscene", "fade": false },
-      { "trigger": "game_loaded", "condition": "globalVars.briefing_played === true", "playlist": "noir", "fade": false },
-      { "trigger": "global_variable_changed:flag2_submitted", "condition": "value === true", "playlist": "tension" },
+      { "trigger": "game_loaded", "condition": "globalVars.briefing_played === true && !globalVars.mole_identified", "playlist": "noir", "fade": false },
+      { "trigger": "game_loaded", "condition": "globalVars.mole_identified === true", "playlist": "threat", "fade": false },
+      { "trigger": "conversation_closed:opening_briefing_cutscene", "playlist": "noir", "fade": true },
       { "trigger": "global_variable_changed:mole_identified", "condition": "value === true", "playlist": "threat" },
       { "trigger": "room_entered:interrogation_room", "condition": "globalVars.all_flags_submitted === true && !globalVars.fate_decided", "playlist": "spy-action" },
 <%# PASS 2: was "conversation_ended:m08_closing_debrief", an event nothing
     emits, so the victory track and the bond visualiser never ran and there were
     no credits at all. Now the m07 shape: conversation_closed on the debrief NPC,
     with credits that read back the player's choices. %>
-      {
-        "trigger": "conversation_closed:closing_debrief",
-        "playlist": "victory",
-        "autoStop": true,
-        "disableClose": true,
-        "fade": true,
-        "credits": [
+<%# PASS 3 (playtest E7): the credits live in one Ruby string so two entries
+    can carry them: the normal close of the debrief, and the backstop that
+    concludes the mission after a reload mid-debrief (debrief_backstop_fired,
+    set by the room-entry backstops on opening_briefing_cutscene). Before this,
+    that reload concluded the mission with the visualiser open and no credits. %>
+<% m08_credits = <<~'CREDITS'
           { "text": "MISSION COMPLETE", "style": "title" },
           { "text": "THE MOLE", "style": "subtitle" },
           { "text": "" },
@@ -153,24 +172,44 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
           { "text": "PHANTOM: Accused to his face, then cleared by a flight manifest", "style": "warning", "condition": "globalVars.accused_phantom && !globalVars.phantom_ko" },
           { "text": "PHANTOM: Knocked out mid-hunt. Innocent, and the only other person looking.", "style": "warning", "condition": "globalVars.phantom_ko" },
           { "text": "PHANTOM: Cleared. His off-book hunt pointed the right way.", "style": "entry", "condition": "!globalVars.accused_phantom && !globalVars.phantom_ko" },
-          { "text": "YOUR FIRST CALL TO THE DIRECTOR: Nightshade", "style": "entry", "condition": "globalVars.suspect_theory === 'nightshade'" },
+          { "text": "YOUR FIRST CALL TO THE DIRECTOR: Nightshade", "style": "entry", "condition": "globalVars.suspect_theory === 'nightshade' && !globalVars.named_on_evidence" },
+          { "text": "THE CASE: Named from the door audit, before the root logs", "style": "entry", "condition": "globalVars.named_on_evidence && !globalVars.audit_misread" },
+          { "text": "THE CASE: Named from the door audit, not on the first reading", "style": "entry", "condition": "globalVars.named_on_evidence && globalVars.audit_misread" },
+          { "text": "THE CASE: The door audit, misread. The box made it.", "style": "warning", "condition": "globalVars.audit_closed" },
           { "text": "YOUR FIRST CALL TO THE DIRECTOR: Cipher -- wrong, and corrected", "style": "warning", "condition": "globalVars.suspect_theory === 'cipher'" },
           { "text": "YOUR FIRST CALL TO THE DIRECTOR: Phantom -- wrong, and corrected", "style": "warning", "condition": "globalVars.suspect_theory === 'phantom'" },
           { "text": "" },
           { "text": "── RECOVERED ──", "style": "section-header" },
           { "text": "SEALED PSYCH EVALUATION: Read. The warning was in writing a year ago.", "style": "entry", "condition": "globalVars.found_nightshade_profile" },
-          { "text": "'DEEP STATE' RECRUITMENT BRIEF: Recovered from his desk", "style": "entry", "condition": "globalVars.found_deep_state_manual" },
+          { "text": "'DEEP STATE' RECRUITMENT BRIEF: Recovered from his locker", "style": "entry", "condition": "globalVars.found_deep_state_manual" },
+          { "text": "GO-BAG: Packed nine days ago. Never used.", "style": "entry", "condition": "globalVars.found_go_bag" },
           { "text": "GLOBAL THREAT DATABASE: Confirmed stolen during the four-site night", "style": "warning", "condition": "globalVars.database_theft_understood" },
           { "text": "" },
           { "text": "── ON THE RECORD ──", "style": "section-header" },
           { "text": "AGENT 0x00 TO THE DIRECTOR: He's the crime, not you", "style": "entry", "condition": "globalVars.debrief_stance === 'defended'" },
           { "text": "AGENT 0x00 TO THE DIRECTOR: Own the gap", "style": "entry", "condition": "globalVars.debrief_stance === 'owned'" },
           { "text": "DIRECTOR NETHERTON: Knocked down in his own office. He did not mention it again.", "style": "warning", "condition": "globalVars.netherton_ko" },
+          { "text": "NIGHTSHADE: Knocked down in his lab before the evidence was in.", "style": "warning", "condition": "globalVars.nightshade_ko" },
+          { "text": "AGENT HAX: Put on the break-room floor by her own agent.", "style": "warning", "condition": "globalVars.hax_ko" },
           { "text": "" },
           { "text": "THE ARCHITECT: At large, with every weakness SAFETYNET ever catalogued.", "style": "warning" },
           { "text": "ENTROPY: Still operational.", "style": "warning" }
+        
+CREDITS
+%>
+<% [["conversation_closed:closing_debrief", nil], ["global_variable_changed:debrief_backstop_fired", "value === true"]].each_with_index do |(trig, cond), ci| %>
+      {
+        "trigger": "<%= trig %>",
+<% if cond %>        "condition": "<%= cond %>",
+<% end %>        "playlist": "victory",
+        "autoStop": true,
+        "disableClose": true,
+        "fade": true,
+        "credits": [
+<%= m08_credits.rstrip %>
         ]
-      }
+      }<%= ci == 0 ? ',' : '' %>
+<% end %>
     ]
   },
 
@@ -187,10 +226,26 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
       "type": "lockpick",
       "name": "Lock Pick Kit",
       "takeable": true,
-      "observations": "SAFETYNET field pick kit. The fallback for the interrogation room if the safe key never turns up.",
+      "observations": "SAFETYNET field pick kit. You did not expect to need it at headquarters.",
       "puzzle_graph_role": "tool",
-      "puzzle_graph_unlocks": ["interrogation_room"],
+      "puzzle_graph_unlocks": ["nightshade_locker"],
       "puzzle_graph_optional": true
+    },
+    <%# PASS 3 (capability arc): the cumulative kit. ATHENA names it in the
+        opening, and says the PIN cracker is on a bench in Technical Analysis. %>
+    {
+      "type": "rfid_cloner",
+      "name": "RFID Cloner",
+      "takeable": true,
+      "observations": "Concealed RFID cloning device. Get close to a keycard to copy it.",
+      "puzzle_graph_role": "tool"
+    },
+    {
+      "type": "fingerprint_kit",
+      "name": "Fingerprint Kit",
+      "takeable": true,
+      "observations": "Powder, brush, lifting tape. The kit from the Albion job.",
+      "puzzle_graph_role": "tool"
     }
   ],
 
@@ -233,7 +288,14 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
       "status": "locked",
       "order": 1,
       "unlockCondition": { "aimCompleted": "take_the_brief" },
-      <%# PASS 2 review (lesson 27: a locked aim reveals when ANY of its tasks
+      <%# PASS 3 (playtest A): the three interviews are no longer optional. An
+          aim whose tasks are all optional completes the moment any one of them
+          does (objectives-manager.js:757, :725), so reading the archives ticked
+          "Work The Three Suspects" with nobody interviewed. Each interview also
+          completes if that suspect is knocked out (brief-gated pairs on
+          closing_debrief), so a KO can't leave the aim open for good. The
+          archives and name_the_mole stay optional.
+          PASS 2 review (lesson 27: a locked aim reveals when ANY of its tasks
           completes). The interviews, the archives and the server-room breach
           can all happen before the brief, so they are custom tasks completed by
           mappings that wait for brief_taken (set at the top of Netherton's
@@ -244,22 +306,19 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
           "taskId": "interview_cipher",
           "title": "Interview Agent Cipher on the operations floor",
           "type": "custom",
-          "status": "active",
-          "optional": true
+          "status": "active"
         },
         {
           "taskId": "interview_phantom",
           "title": "Interview Agent Phantom in intel analysis",
           "type": "custom",
-          "status": "active",
-          "optional": true
+          "status": "active"
         },
         {
           "taskId": "interview_nightshade",
           "title": "Interview the cryptography lab's duty officer",
           "type": "custom",
-          "status": "active",
-          "optional": true
+          "status": "active"
         },
         <%# PASS 2 review: moved here from correlate_the_evidence, where opening
             the archives (ATHENA gives the password at minute one) revealed that
@@ -268,6 +327,15 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
         {
           "taskId": "read_the_archives",
           "title": "Cross-check the leak window against the Security Archives",
+          "type": "custom",
+          "status": "active",
+          "optional": true
+        },
+        <%# PASS 3 (P6): completes only in Netherton's ink, after the brief, on a
+            correct reading of the door audit. %>
+        {
+          "taskId": "name_the_mole",
+          "title": "Tell the Director who the door audit puts in the Crypto Lab",
           "type": "custom",
           "status": "active",
           "optional": true
@@ -464,15 +532,16 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
 <% rooms_all.each_with_index do |r, i| %>
             {
               "eventPattern": "room_entered:<%= r %>",
-              "condition": "globalVars.debrief_played === true",
+              "condition": "globalVars.debrief_played === true && !globalVars.mission_complete",
               "onceOnly": true,
+              "setGlobal": { "debrief_backstop_fired": true },
               "completeTask": "take_the_debrief"
             }<%= i < rooms_all.size - 1 ? ',' : '' %>
 <% end %>
           ]
         },
         {
-          "_comment": "Standing ATHENA console -- reception AI, running heightened protocols. Redundant source for the archives password and the safe PIN (facilities/personnel log queries). Carries no required task.",
+          "_comment": "Standing ATHENA console -- reception AI, running heightened protocols. PASS 3: hints only. She points at where facilities keep the archives password and at the personnel printout for the safe; she reads out neither. Carries no required task.",
           "id": "receptionist_ai",
           "displayName": "ATHENA",
           "npcType": "person",
@@ -503,7 +572,7 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
           "storyPath": "scenarios/m08_the_mole/ink/m08_phone_agent_0x99.json",
           "voice": {
             "name": "Aoede",
-            "style": "Intelligence handler on a secure line, investigating people she has trusted for years. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Normally quick and dry; tonight the dryness keeps slipping, because one of the three names is a friend and she does not yet know which.",
+            "style": "Intelligence handler on a secure line, investigating people she has trusted for years. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Use a steady, mid-range pitch. Normally quick and dry; tonight the dryness keeps slipping, because one of the three names is a friend and she does not yet know which.",
             "language": "en-GB"
           },
           "currentKnot": "start",
@@ -533,12 +602,12 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
               "sendTimedMessage": { "delay": 1500, "message": "You're on the box already? Our own code server, no password required. That is going in a report nobody will enjoy. Somewhere in that repository is how they talked to us. If you want to know why that request slipped through, ask me for the vulnerability analysis guide." }
             },
             {
-              "_comment": "Flag 2 -- stashed credentials. The mole's opsec failure: creds committed to the repo. Also opens the information-leakage guide.",
+              "_comment": "Flag 2 -- stashed credentials. The mole's opsec failure: creds committed to the repo. PASS 3: offers the secrets-in-git-history guide (the old info-leak sheet was about PIN oracles, not git history).",
               "eventPattern": "global_variable_changed:flag2_submitted",
               "condition": "value === true",
               "onceOnly": true,
-              "setGlobal": { "found_leaked_creds": true, "infoleak_guide_offered": true },
-              "sendTimedMessage": { "delay": 1500, "message": "Credentials, committed straight into the repo and never scrubbed. Whoever left those there thought nobody would ever get this far. Log in properly with them and let's see whose account it really is. There's a field guide on secrets in commit history if you want it." }
+              "setGlobal": { "found_leaked_creds": true, "gitsecrets_guide_offered": true },
+              "sendTimedMessage": { "delay": 1500, "message": "Credentials, committed straight into the repo and never scrubbed. Whoever left those there thought nobody would ever get this far. Log in properly with them and let's see whose account it really is. It's reading, not tooling: the history and the stash. There's a field guide on secrets in git history if you want it." }
             },
             {
               "_comment": "Flag 3 -- proper login, home-directory flag. The account resolves to a real person. Also opens the privilege-escalation guide.",
@@ -561,14 +630,14 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
               "eventPattern": "global_variable_changed:all_flags_submitted",
               "condition": "value === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 6000, "message": "That's the whole chain. The Director's had him walked down to the interrogation room, south of the Crypto Lab. The key's in the Director's safe, or use your picks. Go and finish it." }
+              "sendTimedMessage": { "delay": 6000, "message": "That's the whole chain. The Director's had him walked down to the interrogation room, south of the Crypto Lab. The suite code's in the Director's safe, if he hasn't given it to you already. Go and finish it." }
             },
             {
-              "_comment": "KO -- Director Netherton. He is in a later-loaded room, so his keycard drop can't be relied on (lesson 24). The badge printer is the second route.",
+              "_comment": "KO -- Director Netherton. PASS 3 bug fix: lesson 24 is stale; a KO'd NPC now drops his itemsHeld (npc-hostile.js:139, :258-261), so a keycard he had not yet handed over lands beside him. The text is true either way. The badge printer stays the second route.",
               "eventPattern": "npc_ko:director_netherton",
               "onceOnly": true,
               "setGlobal": { "brief_taken": true },
-              "sendTimedMessage": { "delay": 2000, "message": "The Director is down. Tell me that wasn't you. You still need a server-room badge: the visitor printer at reception will print one if you can find its PIN. Facilities never remember theirs, so they write them down. Try the break room." }
+              "sendTimedMessage": { "delay": 2000, "message": "The Director is down. Tell me that wasn't you. If he hadn't handed you his keycard yet, it's on the floor beside him. Failing that, the visitor printer at reception will print a server-room badge if you can find its PIN. Facilities never remember theirs, so they write them down. Try the break room. And whatever you were going to tell him tonight waits until he can hear it." }
             },
             {
               "_comment": "KO -- Nightshade (suspect entry). The case does not need the interview; it needs the box.",
@@ -587,6 +656,20 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
               "eventPattern": "npc_ko:agent_phantom",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 2000, "message": "Phantom's down. For the record, all that snooping was Phantom running the same hunt you are. Off the books, but on our side. You've just knocked out the only other person in this building trying to catch the mole." }
+            },
+            {
+              "_comment": "PASS 3 (P9): HaX in person knocked down. globalVarOnKO hax_ko sets the credit.",
+              "eventPattern": "npc_ko:agent_0x99_person",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2000, "message": "That was me you just put on the break-room floor. I'm typing this from it. We'll talk about it after." }
+            },
+            {
+              "_comment": "PASS 3 (P2): the USB stick from Nightshade's locker is opened (container path fires its onPickup). Offers the CyberChef guide.",
+              "eventPattern": "global_variable_changed:found_architect_comms_local",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": { "cyberchef_guide_offered": true },
+              "sendTimedMessage": { "delay": 1500, "message": "That backup file's wrapped twice. Same tricks as your first week. The lab's CyberChef station will take it, and the guide from back then still applies; ask me for it." }
             },
             {
               "_comment": "PASS 2 playtest D1: the person-chat End Conversation button closes the confrontation even with disableClose (engine gap, logged). If it closes before the fate is entered, nudge the player back in; the room-entry mapping reopens the scene from the start. Not onceOnly, so it repeats each time.",
@@ -639,7 +722,8 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
           "itemsHeld": [
             { "type": "lab-workstation", "id": "m08_recon_field_guide", "name": "SAFETYNET Field Guide: Reconnaissance and Network Mapping", "takeable": true, "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/reconnaissance-and-network-mapping/" },
             { "type": "lab-workstation", "id": "m08_scanning_field_guide", "name": "SAFETYNET Field Guide: Scanning and Exploitation", "takeable": true, "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/scanning-and-exploitation/" },
-            { "type": "lab-workstation", "id": "m08_infoleak_field_guide", "name": "SAFETYNET Field Guide: Information Leakage", "takeable": true, "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/information-leakage-and-the-pin-oracle/" },
+            { "type": "lab-workstation", "id": "m08_gitsecrets_field_guide", "name": "SAFETYNET Field Guide: Secrets in Git History", "takeable": true, "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/secrets-in-git-history/" },
+            { "type": "lab-workstation", "id": "m08_cyberchef_field_guide", "name": "SAFETYNET Field Guide: Encoding and Decoding with CyberChef", "takeable": true, "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/encoding-and-decoding-with-cyberchef/" },
             { "type": "lab-workstation", "id": "m08_vulnanalysis_field_guide", "name": "SAFETYNET Field Guide: Vulnerability Analysis", "takeable": true, "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/vulnerability-analysis-and-attack-surface/" },
             { "type": "lab-workstation", "id": "m08_privesc_field_guide", "name": "SAFETYNET Field Guide: Privilege Escalation", "takeable": true, "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/privilege-escalation/" }
           ]
@@ -663,6 +747,49 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
           "currentKnot": "start",
           "behavior": { "initiallyHidden": true },
           "eventMappings": [
+            {
+              "_comment": "PASS 3 (playtest B-F1): Netherton's keycard is re-offered in his hub until it reaches the inventory. A give, or a pickup after a KO drop, both emit item_picked_up:keycard with the item id.",
+              "eventPattern": "item_picked_up:keycard",
+              "condition": "data.itemId === 'netherton_keycard'",
+              "onceOnly": true,
+              "setGlobal": { "netherton_card_taken": true }
+            },
+            {
+              "eventPattern": "global_variable_changed:cipher_ko",
+              "condition": "value === true && globalVars.brief_taken === true",
+              "onceOnly": true,
+              "completeTask": "interview_cipher"
+            },
+            {
+              "eventPattern": "global_variable_changed:brief_taken",
+              "condition": "value === true && globalVars.cipher_ko === true",
+              "onceOnly": true,
+              "completeTask": "interview_cipher"
+            },
+            {
+              "eventPattern": "global_variable_changed:phantom_ko",
+              "condition": "value === true && globalVars.brief_taken === true",
+              "onceOnly": true,
+              "completeTask": "interview_phantom"
+            },
+            {
+              "eventPattern": "global_variable_changed:brief_taken",
+              "condition": "value === true && globalVars.phantom_ko === true",
+              "onceOnly": true,
+              "completeTask": "interview_phantom"
+            },
+            {
+              "eventPattern": "global_variable_changed:nightshade_ko",
+              "condition": "value === true && globalVars.brief_taken === true",
+              "onceOnly": true,
+              "completeTask": "interview_nightshade"
+            },
+            {
+              "eventPattern": "global_variable_changed:brief_taken",
+              "condition": "value === true && globalVars.nightshade_ko === true",
+              "onceOnly": true,
+              "completeTask": "interview_nightshade"
+            },
             {
               "eventPattern": "global_variable_changed:server_room_entered",
               "condition": "value === true && globalVars.brief_taken === true",
@@ -788,10 +915,10 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
           "readable": true,
           "observations": "Three personnel files, clipped together, stamped INVESTIGATION -- EYES ONLY.",
           "observationDisplay": "gameDisplay",
-          "text": "INTERNAL INVESTIGATION -- PERSONS OF INTEREST\n\nAgent 0x23 'CIPHER' -- Intelligence Analyst\n  Access: signals intelligence, cryptography.\n  Flag: works odd hours, secretive about a personal project. Withdrawn.\n\nAgent 0x47 'NIGHTSHADE' -- Operations Specialist\n  Access: MAXIMUM. Mission planning, operational security.\n  Flag: none on file. Impeccable record. Trained alongside Agent 0x00.\n\nAgent 0x88 'PHANTOM' -- Field Coordinator\n  Access: team movements, tactical planning.\n  Flag: asking questions outside remit. Unlogged absences.\n\nNetherton, handwritten: 'The one with nothing on the file worries me most.'"
+          "text": "INTERNAL INVESTIGATION -- PERSONS OF INTEREST\n\nAgent 0x23 'CIPHER' -- Intelligence Analyst\n  Access: signals intelligence, cryptography, mission planning (crypto annex).\n  Flag: works odd hours, secretive about a personal project. Withdrawn.\n\nAgent 0x47 'NIGHTSHADE' -- Operations Specialist\n  Access: mission planning, operational security.\n  Flag: none on file. Impeccable record. Trained alongside Agent 0x00.\n\nAgent 0x88 'PHANTOM' -- Field Coordinator\n  Access: team movements, tactical planning, mission planning.\n  Flag: asking questions outside remit. Unlogged absences.\n\nNetherton, handwritten: 'The one with nothing on the file worries me most.'"
         },
         {
-          "_comment": "Biometric safe. PIN is the Director's own service number, printed in the Requested-by line of the ops-floor personnel printout; ATHENA and HaX point at the printout (neither reads it out). Holds the interrogation-room key (redundant with the start-inventory lockpick).",
+          "_comment": "Biometric safe. PIN is the Director's own service number, printed in the Requested-by line of the ops-floor personnel printout; ATHENA and HaX point at the printout (neither reads it out). PASS 3 (P4): holds the interrogation-suite code card (the suite is now a keypad, so the start-kit picks can't skip this chain) and Okafor's evaluation. Netherton also gives the code aloud after a correct reading of the door audit (P6).",
           "type": "safe",
           "id": "director_safe",
           "name": "Director's Safe",
@@ -802,15 +929,18 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
           "difficulty": "medium",
           "observations": "A biometric safe under the desk with a keypad fallback. The keypad is the way in tonight -- biometrics are logged, and the Director would rather this particular errand were not.",
           "puzzle_graph_role": "container",
+          "puzzle_graph_unlocks": "interrogation_room",
+          "puzzle_graph_optional": true,
           "contents": [
             {
-              "type": "key",
-              "id": "interrogation_key",
-              "name": "Interrogation Room Key",
+              "type": "notes",
+              "id": "interrogation_suite_code",
+              "name": "Interrogation Suite Code Card",
               "takeable": true,
-              "opens_lock": "interrogation_key",
-              "keyPins": [30, 55, 20, 45],
-              "observations": "The physical key to the interrogation suite. Netherton keeps it in the safe so that using it is a decision, not a habit.",
+              "readable": true,
+              "observations": "A card in the Director's hand. Netherton keeps it in the safe so that using it is a decision, not a habit.",
+              "text": "INTERROGATION SUITE -- DOOR CODE\n<%= suite_code %>\n\nChanged after every use. Kept here so that using it is a decision, not a habit. -- M.N.",
+              "onRead": { "setVariable": { "suite_code_found": true } },
               "puzzle_graph_role": "key",
               "puzzle_graph_unlocks": "interrogation_room"
             },
@@ -855,7 +985,7 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
           "storyPath": "scenarios/m08_the_mole/ink/m08_suspect_cipher.json",
           "voice": {
             "name": "Iapetus",
-            "style": "A brilliant, socially anxious cryptographer being questioned about treason. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Fast, over-explains, corrects your terminology, terrified of being misunderstood -- which reads as guilt to anyone not listening properly.",
+            "style": "A brilliant, socially anxious cryptographer in his early thirties being questioned about treason. Consistent educated Scottish (Glasgow) accent throughout -- do not shift to any other accent. Mid-to-high pitch; fast, over-explains, corrects your terminology. Terrified of being misunderstood -- which reads as guilt to anyone not listening properly.",
             "language": "en-GB"
           },
           "currentKnot": "start",
@@ -889,8 +1019,8 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m08_the_mole/ink/m08_background_analyst.json",
           "voice": {
-            "name": "Kore",
-            "style": "A junior SAFETYNET analyst who has not slept, watching a mole hunt happen around her desk. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Nervy, quiet, oversharing out of stress.",
+            "name": "Vindemiatrix",
+            "style": "A junior SAFETYNET analyst in her mid-twenties who has not slept, watching a mole hunt happen around her desk. British-Indian, from Leicester: a consistent East Midlands accent throughout -- do not shift to any other accent. Soft, slightly high pitch; quick, quiet pace. Nervy, oversharing out of stress.",
             "language": "en-GB"
           },
           "currentKnot": "start",
@@ -907,8 +1037,7 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
           "readable": true,
           "observations": "A personnel printout left in the ops-floor tray, the kind nobody reads. It is a copy the Director pulled for his investigation, and it has more service numbers on it than he probably meant to share.",
           "observationDisplay": "gameDisplay",
-          "text": "SAFETYNET PERSONNEL SUMMARY -- INVESTIGATION COPY\nRequested by: Director M. Netherton (svc no. <%= safe_pin %>)\n\nAgent 0x47 'Nightshade' -- Operations Specialist\nService number: <%= nightshade_service_no %>\nCommissioned: training cohort shared with Agent 0x00\nClearance: MAXIMUM\nSafe/locker code: service number (POLICY VIOLATION -- flagged, never changed)\n\nNote in the margin, facilities' handwriting: 'Every safe in this building opens on its owner's service number. The Director's included. Nobody has ever made anyone fix it.'",
-          "onPickup": { "setVariable": { "safe_pin_found": true } },
+          "text": "SAFETYNET PERSONNEL SUMMARY -- INVESTIGATION COPY\nRequested by: Director M. Netherton (svc no. <%= safe_pin %>)\n\nAgent 0x47 'Nightshade' -- Operations Specialist\nService number: <%= nightshade_service_no %>\nCommissioned: training cohort shared with Agent 0x00\nClearance: planning\nPersonal safe code: service number (POLICY VIOLATION -- flagged, never changed)\n\nNote in the margin, facilities' handwriting: 'Every safe in this building opens on its owner's service number. Nobody has ever made anyone fix it.'",
           "puzzle_graph_role": "clue",
           "puzzle_graph_unlocks": "director_safe"
         },
@@ -944,7 +1073,7 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
           "storyPath": "scenarios/m08_the_mole/ink/m08_suspect_phantom.json",
           "voice": {
             "name": "Fenrir",
-            "style": "A charismatic field coordinator who is running his own unauthorised investigation and enjoying being underestimated. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Warm, quick, deflects with charm, keeps turning your questions back on you -- which is exactly why he is on the suspect list.",
+            "style": "A charismatic field coordinator in his early forties, running his own unauthorised investigation and enjoying being underestimated. British-Ghanaian, raised in Accra and educated in London: a consistent light, educated Ghanaian English accent throughout -- do not shift to any other accent. Warm, mid-low pitch; quick, easy pace. Deflects with charm and keeps turning your questions back on you -- which is exactly why he is on the suspect list.",
             "language": "en-GB"
           },
           "currentKnot": "start",
@@ -976,7 +1105,7 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
           "readable": true,
           "observations": "The tactical board from the night of the four attacks, still up. Somebody could not bring themselves to take it down.",
           "observationDisplay": "gameDisplay",
-          "text": "FOUR SITES, ONE TEAM -- AFTERMATH\n\nFour simultaneous operations. One tactical team, committed to one. Two crises went unanswered because ENTROPY knew, in advance, exactly where our people would and would not be.\n\nOF THE TWO UNANSWERED:\n  - Confirmed dead: 2 SAFETYNET field agents, plus civilians at both sites.\n  - The agent on the ground was compromised before deployment.\n\nENTROPY did not out-think us. They were told. Everything on this board -- the assignments, the timing, the agent -- was in the leak.\n\nHandwritten, Phantom's pen: 'Two of ours. HOW DID THEY KNOW.'",
+          "text": "FOUR SITES, ONE TEAM -- AFTERMATH\n\nFour simultaneous operations. One agent on the ground at Portland, one tactical team for the other three. Every crisis it could not reach went unanswered. ENTROPY knew in advance where our agent would be, and that one team could not be everywhere.\n\nAT THE UNANSWERED SITES:\n  - Confirmed dead: 2 SAFETYNET field agents, plus civilians.\n  - The agent on the ground was compromised before deployment.\n\nENTROPY did not out-think us. They were told. Everything on this board -- the deployment, the timing, the agent -- was in the leak.\n\nHandwritten, Phantom's pen: 'Two of ours. HOW DID THEY KNOW.'",
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "the_leak_got_people_killed"
         },
@@ -988,7 +1117,7 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
           "readable": true,
           "observations": "A private notebook Phantom did not quite hide.",
           "observationDisplay": "gameDisplay",
-          "text": "MINE. Not for the file.\n\nThe leak had planning access + timing + the agent's ID. That's a very short list.\nTracked server auth: someone's been in mission_planning from a Crypto Lab terminal at hours nobody's rostered.\nNetherton won't give me the suspect list, so I'm building my own. If I'm on it -- fine. I'd put me on it too.\n\nWhoever it is: they didn't do it for money. Money leaves a trail. This is someone who thinks they were RIGHT.",
+          "text": "MINE. Not for the file.\n\nThe leak had planning access + timing + the agent's ID. That's a very short list.\nTracked server auth: someone's been in mission_planning from a Crypto Lab terminal, for forty-seven minutes, on a file you read in five.\nPulled a door audit for the window on the archive terminal. Duty officer walked in before I could get it off the printer. Doors tell you who was in a room, not whose account. Match it to when the plan was opened.\nNetherton won't give me the suspect list, so I'm building my own. If I'm on it -- fine. I'd put me on it too.\n\nWhoever it is: they didn't do it for money. Money leaves a trail. This is someone who thinks they were RIGHT.",
           "onPickup": { "setVariable": { "found_phantom_lead": true } },
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "the_leak_came_from_the_crypto_lab"
@@ -1045,7 +1174,7 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
           "readable": true,
           "observations": "A printed excerpt of the auth log, left by the rack. Whoever printed it ran it through the redaction filter first. Only root on the box will tell you whose account this is.",
           "observationDisplay": "gameDisplay",
-          "text": "AUTH LOG -- mission_planning share\n\n... routine ...\nUSER [REDACTED]  T-48h (before Portland)  OPEN portland_operations.enc  DURATION 00:47:00\n... routine ...\n\nPencilled underneath: '47 minutes on a file you read in five. Same window ENTROPY started coordinating. Whoever this is, they weren't reading the plan. They were copying it. Need root to unmask the account.'",
+          "text": "AUTH LOG -- mission_planning share (UTC)\n\n... routine ...\nUSER [REDACTED]  D-2 10:38 UTC (T-48h)  TERM crypto-lab-04  OPEN pnw_contingency.enc  DURATION 00:47:00\n... routine ...\n\nPencilled underneath: '47 minutes on a file you read in five. Same window ENTROPY started coordinating. Whoever this is, they weren't reading the plan. They were copying it. Need root to unmask the account.'",
           "onRead": { "setVariable": { "found_access_logs_hint": true } }
         }
       ]
@@ -1081,7 +1210,25 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
           "takeable": false,
           "readable": true,
           "observations": "The archive's index of previous internal breaches. This one does not fit the pattern.",
-          "text": "PRIOR LEAK INVESTIGATIONS\n2023 -- contractor, financial data (accident)\n2024 -- phishing, mission timeline (external)\n2025 -- accidental disclosure (minor)\n\n2026 -- PORTLAND DEPLOYMENT -- ACTIVE\nEvery prior leak was an accident or an outsider. This one is a trusted insider with maximum access and a reason they believe in. Nothing in the archive matches it. That is the point."
+          "text": "PRIOR LEAK INVESTIGATIONS\n2023 -- contractor, financial data (accident)\n2024 -- phishing, mission timeline (external)\n2025 -- accidental disclosure (minor)\n\n2026 -- PORTLAND DEPLOYMENT -- ACTIVE\nEvery prior leak was an accident or an outsider. This one is a trusted insider with planning access and a reason they believe in. Nothing in the archive matches it. That is the point."
+        },
+        <%# PASS 3 (P5): the door audit. Phantom ran the query and was walked out
+            before it printed. Times are UTC (the Citadel keeps UTC). It says who
+            was behind CL-1, not when the plan was opened: that is on the
+            timeline (break room) and the auth excerpt (server room). %>
+        {
+          "type": "notes",
+          "id": "badge_audit_printout",
+          "name": "Badge Audit Printout -- Leak Window",
+          "takeable": true,
+          "readable": true,
+          "position": { "x": 4.6, "y": 3.4 },
+          "observations": "A door-audit query, printed and never collected, slid off the desk onto the floor. The header carries Phantom's account.",
+          "observationDisplay": "gameDisplay",
+          "text": "BADGE AUDIT -- QUERY RESULTS (all times UTC)\nRun by: 0x88 (PHANTOM). Printed. Not collected.\nWindow: D-2 07:00 to 13:00 (D-2 = two days before the Portland order)\n\nCL-1 -- Crypto Lab door. The only way into the lab, the break room\n        and the interrogation suite.\n  07:52  IN   0x3C  OFF-SHIFT\n  08:12  IN   0x61  FACILITIES (clean)\n  08:58  OUT  0x61\n  10:15  IN   0x47  NIGHTSHADE\n  10:24  IN   0x23  CIPHER\n  10:32  OUT  0x23  CIPHER\n  11:43  OUT  0x47  NIGHTSHADE\n  (next event: 13:10 OUT 0x3C)\n\nLIB-2 -- Crypto library door\n  10:35  IN   0x23  CIPHER\n  (next event: 13:40 OUT 0x23)\n\nTRAVEL DESK\n  0x88  PHANTOM  Zurich handover. Wheels up 10:09, down 11:54. Manifest on file.",
+          "onRead": { "setVariable": { "found_badge_audit": true } },
+          "puzzle_graph_role": "clue",
+          "puzzle_graph_reveals": "who_was_behind_the_lab_door"
         }
       ]
     },
@@ -1107,12 +1254,27 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m08_the_mole/ink/m08_suspect_nightshade.json",
           "voice": {
-            "name": "Charon",
-            "style": "The mole, not yet unmasked, being interviewed by an old training partner. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, warm, unhurried, helpful to a fault. The only tell is that nothing rattles him -- in a building full of frightened people, he is serene.",
+            "name": "Enceladus",
+            "style": "SAFETYNET's cryptographic-hardware analyst. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, precise, technically fluent; a colleague you trust. Tonight he is the mole, not yet unmasked, being interviewed by an old training partner: warm, unhurried, helpful to a fault. The only tell is that nothing rattles him -- in a building full of frightened people, he is serene.",
             "language": "en-GB"
           },
           "currentKnot": "start",
           "globalVarOnKO": "nightshade_ko",
+          <%# PASS 3 (P8): the key to his locker in the break room. He hands it over
+              when asked after the audit or Okafor beat (#give_item); a KO drops it. %>
+          "itemsHeld": [
+            {
+              "type": "key",
+              "id": "nightshade_locker_key",
+              "name": "Nightshade's Locker Key",
+              "takeable": true,
+              "opens_lock": "nightshade_locker_key",
+              "keyPins": [35, 50, 25, 45],
+              "observations": "A small locker key on a plain ring. 0x47, in his handwriting, on the tag.",
+              "puzzle_graph_role": "key",
+              "puzzle_graph_unlocks": "nightshade_locker"
+            }
+          ],
           <%# PASS 2: once all four flags are in he is walked down to the
               interrogation room (hidden confrontation NPC), so the lab copy
               leaves. setVisible, not #remove_npc (lesson 24); re-applied on
@@ -1142,7 +1304,7 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
               "setVisible": false
             }
           ],
-          "observations": "Nightshade looks up from a clean, bare desk and smiles like an old friend, which he is. Everyone else in the Citadel is coming apart. He is the calmest person in the building."
+          "observations": "Nightshade looks up from a clean, bare desk and smiles like an old friend, which he is."
         }
       ],
       "objects": [
@@ -1154,40 +1316,14 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
           "observations": "The lab's decoding station, CyberChef loaded and waiting. Whatever turns up encoded in this building, this is where it comes apart."
         },
         {
-          "_comment": "Nightshade's desk. Its very tidiness is the clue. Holds the ENTROPY correspondence (PASS 2: now actually encoded, Base64 then ROT13, by the in-world author with a motive, Nightshade himself; decode at the CyberChef workstation in the same lab) and the recruitment brief. Reading these is optional colour -- the case is carried by the VM flags -- but they are the heart of the character.",
+          "_comment": "Nightshade's desk. PASS 3 (P8): bare. The USB stick and the recruitment brief moved to his locker in the break room, so the signed mail no longer sits, decodable, in the room he is interviewed in. Type pc with no contents key keeps its desk slot and opens no container (interactions.js:1287).",
           "type": "pc",
           "id": "nightshade_desk",
           "name": "Nightshade's Workstation",
           "takeable": false,
-          "locked": false,
-          "observations": "A desk with nothing personal on it. No photos, no mug, no clutter. A man who has already decided he is leaving.",
-          "contents": [
-            {
-              "type": "text_file",
-              "id": "encrypted_backup",
-              "name": "File: PERSONAL_BACKUP.enc",
-              "takeable": true,
-              "readable": true,
-              "observations": "A file labelled PERSONAL_BACKUP. Its properties say how it was wrapped: Base64, then ROT13. Lazy, for a cryptographer. Almost as if he wanted it found eventually. The lab's CyberChef station can unwrap it, last layer first.",
-              "text": "<%= rot13(base64_encode(backup_plain)) %>",
-              "onPickup": { "setVariable": { "found_architect_comms_local": true } },
-              "puzzle_graph_role": "clue",
-              "puzzle_graph_reveals": "nightshade_knew_the_cost"
-            },
-            {
-              "type": "text_file",
-              "id": "deep_state_manual",
-              "name": "Insider Threat Initiative -- 'Deep State' Brief",
-              "takeable": true,
-              "readable": true,
-              "observations": "A slim ENTROPY recruitment document. Page 7 is the one that matters.",
-              "observationDisplay": "gameDisplay",
-              "text": "ENTROPY -- INSIDER THREAT INITIATIVE\n'Deep State' Programme (fragment, p.7)\n\nIdeal candidates are not bought. They are convinced. Look inside intelligence agencies for the disillusioned -- those who have started to believe that defence is a delaying action against an outcome already decided.\n\nRecruit young. During training, before loyalty sets. Place them, then wait years. A convinced asset needs no handler and leaves no financial trail. They will act, when asked, because they believe it is right.\n\nCompensation: none. Belief is the payment.",
-              "onPickup": { "setVariable": { "found_deep_state_manual": true } },
-              "puzzle_graph_role": "clue",
-              "puzzle_graph_reveals": "nightshade_was_an_ideological_recruit"
-            }
-          ]
+          "readable": true,
+          "observations": "A desk with nothing personal on it. No photos, no mug, no clutter.",
+          "text": "0x47 -- SESSION LOCKED.\nRe-authentication required (Level Red)."
         }
       ]
     },
@@ -1195,9 +1331,8 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
     "interrogation_room": {
       "type": "room_security",
       "locked": true,
-      "lockType": "key",
-      "requires": "interrogation_key",
-      "keyPins": [30, 55, 20, 45],
+      "lockType": "pin",
+      "requires": "<%= suite_code %>",
       "difficulty": "medium",
       "door_sign": "Interrogation -- Recording In Progress",
       "connections": { "north": "cryptography_lab" },
@@ -1214,8 +1349,8 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m08_the_mole/ink/m08_nightshade_confrontation.json",
           "voice": {
-            "name": "Charon",
-            "style": "The mole, unmasked, across an interrogation table from an old friend, with nothing left to lose and no intention of apologising. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, rueful, articulate, and completely unrepentant -- he argues his case like a man who has rehearsed it alone for years.",
+            "name": "Enceladus",
+            "style": "SAFETYNET's cryptographic-hardware analyst. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, precise, technically fluent; a colleague you trust. Tonight he is the mole, unmasked, across an interrogation table from an old friend, with nothing left to lose and no intention of apologising: rueful, articulate and completely unrepentant -- he argues his case like a man who has rehearsed it alone for years.",
             "language": "en-GB"
           },
           "currentKnot": "start",
@@ -1291,10 +1426,11 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
           "storyPath": "scenarios/m08_the_mole/ink/m08_agent_0x99.json",
           "voice": {
             "name": "Aoede",
-            "style": "The player's handler, in person, off duty, hurting. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Normally the quick dry voice on the phone; here, quiet, tired, and trying not to show how much this one costs her.",
+            "style": "The player's handler, in person, off duty, hurting. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Use a steady, mid-range pitch. Normally the quick dry voice on the phone; here, quieter and tired, trying not to show how much this one costs her.",
             "language": "en-GB"
           },
           "currentKnot": "start",
+          "globalVarOnKO": "hax_ko",
           "observations": "HaX is in the corner with a coffee she has not touched. She has trained, deployed and grieved alongside all three of your suspects. One of them did this. She keeps doing the arithmetic and hating the answer."
         },
         {
@@ -1309,7 +1445,7 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
           "storyPath": "scenarios/m08_the_mole/ink/m08_background_agent.json",
           "voice": {
             "name": "Puck",
-            "style": "An off-duty SAFETYNET agent pretending to read while eavesdropping on everyone. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, gossipy, paranoid, enjoying the drama a little too much.",
+            "style": "An off-duty SAFETYNET agent in his forties pretending to read while eavesdropping on everyone. Consistent Geordie (Newcastle) accent throughout -- do not shift to any other accent. Low, conspiratorial pitch; unhurried pace. Gossipy and paranoid, enjoying the drama a little too much.",
             "language": "en-GB"
           },
           "currentKnot": "start",
@@ -1318,7 +1454,7 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
       ],
       "objects": [
         {
-          "_comment": "Primary source of the archives password (ATHENA is the redundant source) and the only source of the badge printer PIN (Netherton's keycard is the other route to the server room). Facilities wrote both down; that is the in-world author.",
+          "_comment": "PASS 3: the only source of the archives password (ATHENA hints at the kettle, never reads it) and the only source of the badge printer PIN (Netherton's keycard is the other route to the server room). Facilities wrote both down; that is the in-world author.",
           "type": "notes",
           "id": "password_sticky_note",
           "name": "Post-It On The Coffee Machine",
@@ -1326,7 +1462,6 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
           "readable": true,
           "observations": "A yellow sticky note stuck to the coffee machine, exactly where the security posters say it should never be.",
           "text": "FACILITIES -- do not remove\nArchives backup pw: <%= archives_password %>\nVisitor badge printer PIN: <%= badge_pin %>\n\n(In a building called the Citadel, on a Level Red posture, both are on a post-it by the kettle.)",
-          "onPickup": { "setVariable": { "archives_password_found": true } },
           "puzzle_graph_role": "clue",
           "puzzle_graph_unlocks": "security_archives"
         },
@@ -1338,8 +1473,69 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
           "readable": true,
           "observations": "Someone has been reconstructing the leak timeline on a legal pad. It matches the server logs exactly.",
           "observationDisplay": "gameDisplay",
-          "text": "LEAK TIMELINE\nT-72h  Portland response plan finalised\nT-68h  team assignments confirmed\nT-48h  ANOMALY: operations plan opened 47 min, Crypto Lab terminal\nT-47h  ENTROPY coordination chatter begins\nT-24h  ENTROPY fully prepared for our response\nT-0    Four sites go live. They were already waiting.\n\nThe leak went out in the 48-to-47-hour window. Full planning access, and a Crypto Lab terminal. Who sits at those terminals with that clearance? The roster says one name. The roster has been wrong before. Get the logs.",
+          "text": "LEAK TIMELINE (all times UTC; T-0 = deployment order, 10:41)\nT-72h  Pacific Northwest contingency plan finalised\nT-68h  Agent 0x00 pre-positioned, Pacific Northwest\nT-48h  (D-2 10:38-11:25) ANOMALY: operations plan opened, 47 min, Crypto Lab terminal\nT-47h  ENTROPY coordination chatter begins\nT-24h  ENTROPY fully prepared for our response\nT-51m  (09:50) Deployment confirmed to ENTROPY (intercept)\nT-0    Four sites go live. They were already waiting.\n\nThe leak went out just before the 48-hour mark. Full planning access and a Crypto Lab terminal. Three names on the Director's list have that access. Two of them badge through the lab door: Cipher and Nightshade. Get the door logs.",
           "onPickup": { "setVariable": { "found_timeline": true } }
+        },
+        <%# PASS 3 (P8): Nightshade's staff locker. Picks (start kit), his key
+            (asked for after the audit or Okafor beat, or dropped on a KO). Holds
+            the signed mail on a USB stick, the recruitment brief and his go-bag.
+            Position (4.4, 7.45) is top-left in tiles: clear of the tables, the
+            chairs, both NPCs, the walls and the east door (checked on a template
+            render with the sprite overlaid, scratchpad/m08_place). %>
+        {
+          "type": "safe",
+          "id": "nightshade_locker",
+          "name": "Staff Locker -- 0x47",
+          "sprite": "staff_lockers1",
+          "takeable": false,
+          "locked": true,
+          "lockType": "key",
+          "requires": "nightshade_locker_key",
+          "keyPins": [35, 50, 25, 45],
+          "difficulty": "medium",
+          "position": { "x": 4.4, "y": 7.45 },
+          "observations": "A row of staff lockers, stickered and dented. One is labelled 0x47 in a neat hand and has nothing on it at all.",
+          "puzzle_graph_role": "container",
+          "contents": [
+              {
+                "type": "text_file",
+                "id": "encrypted_backup",
+                "name": "USB Stick -- PERSONAL_BACKUP.enc",
+                "takeable": true,
+                "readable": true,
+                "observations": "A plain USB stick in an envelope marked 0x47. One file on it, PERSONAL_BACKUP.enc. Its properties say how it was wrapped: Base64, then ROT13. Lazy, for a cryptographer. Almost as if he wanted it found eventually. The CyberChef station in the lab next door can unwrap it, last layer first.",
+                "text": "<%= rot13(base64_encode(backup_plain)) %>",
+                "onPickup": { "setVariable": { "found_architect_comms_local": true } },
+                "puzzle_graph_role": "clue",
+                "puzzle_graph_reveals": "nightshade_knew_the_cost"
+              },
+              {
+                "type": "text_file",
+                "id": "deep_state_manual",
+                "name": "Insider Threat Initiative -- 'Deep State' Brief",
+                "takeable": true,
+                "readable": true,
+                "observations": "A slim ENTROPY recruitment document. Page 7 is the one that matters.",
+                "observationDisplay": "gameDisplay",
+                "text": "ENTROPY -- INSIDER THREAT INITIATIVE\n'Deep State' Programme (fragment, p.7)\n\nIdeal candidates are not bought. They are convinced. Look inside intelligence agencies for the disillusioned -- those who have started to believe that defence is a delaying action against an outcome already decided.\n\nRecruit young. During training, before loyalty sets. Place them, then wait years. A convinced asset needs no handler and leaves no financial trail. They will act, when asked, because they believe it is right.\n\nCompensation: none. Belief is the payment.",
+                "onPickup": { "setVariable": { "found_deep_state_manual": true } },
+                "puzzle_graph_role": "clue",
+                "puzzle_graph_reveals": "nightshade_was_an_ideological_recruit"
+              },
+            {
+              "type": "notes",
+              "id": "nightshade_go_bag",
+              "name": "Go-Bag -- Locker 0x47",
+              "takeable": true,
+              "readable": true,
+              "observations": "A packed holdall on the top shelf.",
+              "observationDisplay": "gameDisplay",
+              "text": "A packed holdall on the top shelf. Nothing in it is his.\n - A passport in a name you have never heard, with his photograph.\n - An e-ticket, one way, economy, to Helena, Montana, for the morning after Portland. Not used.\n - A change of clothes. No cash. No photographs.\n\nHe packed to leave nine days ago, and he is still at his desk.",
+              "onRead": { "setVariable": { "found_go_bag": true } },
+              "puzzle_graph_role": "clue",
+              "puzzle_graph_reveals": "he_packed_to_run_and_stayed"
+            }
+          ]
         }
       ]
     }
@@ -1387,13 +1583,10 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
     "found_phantom_lead": false,
     "found_access_logs_hint": false,
     "found_architect_comms_local": false,
-    "evidence_reviewed": false,
     "found_timeline": false,
 
 <%# --- Lock-chain latches ------------------------------------------------- %>
     "badge_cloned": false,
-    "safe_pin_found": false,
-    "archives_password_found": false,
 
 <%# --- VM progress (flagRewards set_global) ------------------------------- %>
     "flag1_submitted": false,
@@ -1431,7 +1624,25 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
     "vulnanalysis_guide_hint_given": false,
     "privesc_guide_offered": false,
     "privesc_guide_hint_given": false,
-    "infoleak_guide_offered": false,
-    "infoleak_guide_hint_given": false
+    "cyberchef_guide_offered": false,
+    "cyberchef_guide_hint_given": false,
+    "gitsecrets_guide_offered": false,
+    "gitsecrets_guide_hint_given": false,
+
+<%# --- PASS 3: the door-audit check, the locker, the suite ------------------- %>
+    "suite_code": "<%= suite_code %>",
+    "suite_code_found": false,
+    "found_badge_audit": false,
+    "named_on_evidence": false,
+    "audit_misread": false,
+    "audit_closed": false,
+    "cipher_audit_confirmed": false,
+    "nightshade_audit_confirmed": false,
+    "witness_heard": false,
+    "found_go_bag": false,
+    "hax_ko": false,
+    "hax_person_met": false,
+    "netherton_card_taken": false,
+    "debrief_backstop_fired": false
   }
 }

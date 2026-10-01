@@ -26,6 +26,10 @@ VAR accused_phantom = false
 VAR netherton_ko = false
 VAR nightshade_confront_ko = false
 VAR found_nightshade_profile = false
+// PASS 3 (P6): the door-audit check
+VAR named_on_evidence = false
+VAR audit_misread = false
+VAR audit_closed = false
 
 === start ===
 #set_global:debrief_played:true
@@ -58,14 +62,34 @@ Director Magnus Netherton: A year ago Dr Okafor put a warning about him on my de
 { accused_cipher or accused_phantom:
     Director Magnus Netherton: {accused_cipher and accused_phantom:You accused both of the innocent men to their faces.|You accused {accused_cipher:Cipher|Phantom} to his face.} I read the transcripts. It is in the file now, and it will follow {accused_cipher and accused_phantom:them|him} longer than it follows you. That is how mole hunts damage the people who are not moles.
 }
-{ suspect_theory == "cipher" || suspect_theory == "phantom":
+{ named_on_evidence:
+    Director Magnus Netherton: You named him to me before the box did, on something I could put in front of a lawyer. You read the clock, not the face.
+    { audit_misread:
+        Director Magnus Netherton: Not on the first reading. I noticed. So would a lawyer.
+    }
+}
+// PASS 3 (impl review M1): audit_closed has its own branch, so the closed-check
+// line replaces the later tiers rather than stacking on them, and "the box made
+// the case" is never said twice.
+{
+- audit_closed:
+    Director Magnus Netherton: You brought me that door log and read it to me three ways. The box made the case in the end. Next time, read it once, and read it right.
+- suspect_theory == "cipher" || suspect_theory == "phantom":
     Director Magnus Netherton: You told me early it was Cipher, or Phantom. You were wrong, and you came back and corrected it -- which is worth more than being right first. Two good officers spent a night under a suspicion they didn't earn. Go and buy them a drink; the service won't do it for you.
+- named_on_evidence:
+    Director Magnus Netherton: That, more than any instinct, is the reason you're still useful to me after they burned you.
 - else:
+    // impl review m4: a misread that was never followed up leaves a trace.
+    { audit_misread:
+        Director Magnus Netherton: You brought me that door log, read it wrong, and never came back to read it right. Noted.
+    }
     {
     - nightshade_suspected or suspect_theory == "nightshade":
         Director Magnus Netherton: You had him before the evidence did. You sat across a desk from the calmest man in a frightened building and you didn't buy the calm. I read the transcripts. That instinct is the reason you're still useful to me after they burned you.
     - accused_cipher or accused_phantom:
         Director Magnus Netherton: You never gave me a name, but you gave one to a man's face. The box made the case in the end. Next time, let it make the case first.
+    - audit_misread:
+        Director Magnus Netherton: The box made the case. Next time, finish the reading before you bring it to me.
     - else:
         Director Magnus Netherton: You let the box make the case and kept your own opinion out of it until it was proven. Cold, and correct. It's how the innocent walk out of a mole hunt with their careers intact.
     }

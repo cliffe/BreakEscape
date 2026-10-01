@@ -1,5 +1,8 @@
 # m08 "The Mole" — Identifier Contract
 
+> Sections 1–8 predate passes 2 and 3. Where they differ, the "PASS 2 amendments" and
+> "PASS 3 amendments" at the end win.
+
 Authoritative list of every fixed identifier in this mission. Anything in
 `scenario.json.erb` or the ink that names an NPC, room, object, global, flag,
 task or knot is fixed here. **Do not rename without updating this file.**
@@ -22,8 +25,8 @@ ENTROPY's **Insider Threat Initiative** (see
 | `agent_cipher` | Agent 0x23 'Cipher' | person | operations_floor | male_nerd | Iapetus | red herring (innocent) |
 | `background_analyst` | Junior Analyst | person | operations_floor | female_office_worker | Kore | bark, no state |
 | `agent_phantom` | Agent 0x88 'Phantom' | person | intel_analysis | male_spy | Fenrir | red herring (innocent, off-book hunter) |
-| `agent_nightshade` | Agent 0x47 'Nightshade' | person | cryptography_lab | **male_scientist** | Charon | the mole, pre-reveal interview |
-| `nightshade_confrontation` | Agent 0x47 'Nightshade' | person (hidden) | interrogation_room | **male_scientist** | Charon | confrontation; reveals on room entry + `all_flags_submitted` |
+| `agent_nightshade` | Agent 0x47 'Nightshade' | person | cryptography_lab | **male_scientist** | Enceladus | the mole, pre-reveal interview |
+| `nightshade_confrontation` | Agent 0x47 'Nightshade' | person (hidden) | interrogation_room | **male_scientist** | Enceladus | confrontation; reveals on room entry + `all_flags_submitted` |
 | `agent_0x99_person` | Agent HaX | person | break_room | female_hacker_hood | Aoede | in-person emotional beat, no task |
 | `background_agent` | Off-Duty Agent | person | break_room | male_office_worker | Puck | bark, no state |
 | `closing_debrief` | Director Magnus Netherton | person (hidden) | break_room | male_spy | Charon | debrief; reveals on `mission_complete` |
@@ -180,3 +183,49 @@ player. Choice brackets carry the player's actual words (no `You:` echo).
   - `interview_cipher/phantom/nightshade`, `breach_server_room` and `read_the_archives` are now `custom`, completed by brief-gated mapping pairs.
   - New globals: `brief_taken`, `server_room_entered`, `archives_entered`.
   - The psych evaluator is Dr S. Okafor.
+
+---
+
+## PASS 3 amendments (puzzle-chains pass, 2026-10-01; supersede everything above where they differ)
+
+See `PUZZLE_CHAINS_PLAN.md` (signed off after 3 review rounds).
+
+- **Clock.** The Citadel keeps UTC, and SAFETYNET logs print UTC. Days count from the Portland order
+  ("D-n"). T-0 is 10:41 UTC (m07). The plan was opened D-2 10:38–11:25 UTC (47 min) as
+  `pnw_contingency.enc`. Later missions should keep this.
+- **Start kit:** phone, Lock Pick Kit, RFID Cloner (`rfid_cloner`), Fingerprint Kit (`fingerprint_kit`).
+  No PIN cracker. ATHENA names the kit in the opening.
+- **Lock table (replaces §2's):**
+
+| Lock | Room/object | requires | Sources |
+|---|---|---|---|
+| rfid | server_room | `server_zone_badge` | `netherton_keycard` (asked for; drops on a KO) · `printed_server_badge` (badge printer, PIN 0311 on the break-room post-it) |
+| password | security_archives | `TrustNoOne` | break-room post-it only (ATHENA hints, never reads it) |
+| pin | director_safe | `2407` | the Director's service number on `nightshade_personnel_record` |
+| pin | interrogation_room | ERB `suite_code` (5386) | `interrogation_suite_code` card in the safe · Netherton aloud after a correct door-audit reading |
+| key | nightshade_locker (break_room) | `nightshade_locker_key` | start-kit picks · `nightshade_locker_key` (Nightshade's itemsHeld; given when asked after his audit or Okafor beat; drops on a KO) |
+
+- **Objects added or changed:**
+  - director_safe contents: `interrogation_suite_code` (notes, onRead `suite_code_found`) replaces
+    `interrogation_key` (deleted); `nightshade_profile` unchanged.
+  - security_archives: `badge_audit_printout` (notes, onRead `found_badge_audit`).
+  - cryptography_lab: `nightshade_desk` is a `pc` with no contents (readable locked-session text).
+  - break_room: `nightshade_locker` (type `safe`, sprite `staff_lockers1`) holding `encrypted_backup`
+    (now "USB Stick -- PERSONAL_BACKUP.enc"), `deep_state_manual` (moved from the desk) and
+    `nightshade_go_bag` (notes, onRead `found_go_bag`).
+  - agent_nightshade itemsHeld: `nightshade_locker_key`.
+  - HaX itemsHeld: `m08_infoleak_field_guide` removed; `m08_cyberchef_field_guide` added.
+- **Task added:** `name_the_mole` (custom, optional) in `work_the_suspects`; completed in Netherton's
+  ink (`audit_right`).
+- **Globals added:** `suite_code` (string, from the ERB; Netherton's ink prints it), `suite_code_found`,
+  `found_badge_audit`, `named_on_evidence`, `audit_misread`, `audit_closed`, `cipher_audit_confirmed`,
+  `nightshade_audit_confirmed`, `witness_heard`, `found_go_bag`, `hax_ko` (globalVarOnKO on
+  `agent_0x99_person`), `cyberchef_guide_offered`, `cyberchef_guide_hint_given`.
+- **Globals removed:** `evidence_reviewed`, `safe_pin_found`, `archives_password_found`,
+  `infoleak_guide_offered`, `infoleak_guide_hint_given`.
+- **Ink knots added:** Netherton `audit_case`, `audit_q1`–`audit_q4` (text), `audit_c1`–`audit_c4`
+  (top-level choices knots, each opening with the state check), `audit_wrong`, `audit_right`,
+  `repeat_code`; HaX phone `guides_menu`; off-duty agent `return_visit`, `testimony`. Local ink VARs:
+  Netherton `audit_misreads`, `audit_reply`, `audit_skip_step4`; suspects `asked_audit`; Nightshade
+  `gave_locker_key`; off-duty agent `met`.
+- **Voices:** unchanged from the voice audit (Nightshade = Enceladus).

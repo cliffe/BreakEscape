@@ -21,6 +21,10 @@ VAR asked_project = false
 VAR accused_cipher = false
 VAR mole_identified = false
 VAR apologised = false
+// PASS 3 (P7): the door-audit beat, which also confirms his rows for P6 step 4.
+VAR found_badge_audit = false
+VAR cipher_audit_confirmed = false
+VAR asked_audit = false
 
 === start ===
 { cipher_interviewed:
@@ -47,6 +51,13 @@ Agent 0x23 'Cipher': I know how it looks. The hours, the locked screen, me flinc
     Agent 0x23 'Cipher': In the crypto library. Alone. The single worst alibi a person can offer, and completely true. But the library logs its own door, and you can pull the terminal auth for the leak window: my badge never went near the mission_planning share.
     Agent 0x23 'Cipher': Whoever opened that plan did it from a Crypto Lab terminal. My desk is on the ops floor. Do the geography. #set_global:cipher_alibi_known:true
     -> hub
++ { found_badge_audit and asked_alibi and not asked_audit } [The door audit has you in the Crypto Lab that morning. You left that out.]
+    ~ asked_audit = true
+    ~ cipher_alibi_known = true
+    ~ cipher_audit_confirmed = true
+    Narrator: The colour goes out of his face.
+    Agent 0x23 'Cipher': Eight minutes. I went in for a hardware token from the token cabinet, and I came out again. Eight minutes. I left it out because I knew exactly how it would sound. #set_global:cipher_audit_confirmed:true
+    -> hub
 + { asked_alibi and found_access_logs and not asked_project } [The logs back you. But your screen's still locked.]
     ~ asked_project = true
     Narrator: Something in his shoulders lets go.
@@ -57,7 +68,7 @@ Agent 0x23 'Cipher': I know how it looks. The hours, the locked screen, me flinc
 + { not asked_others } [Who do you think it is?]
     ~ asked_others = true
     Narrator: He lowers his voice.
-    Agent 0x23 'Cipher': Phantom asks too much -- but he always did, it's practically a personality. Nightshade asks nothing. Ever. About anything. I used to file that under discipline. Lately I think it's the quiet of a man who already has all his answers and is just waiting for the rest of us to catch up.
+    Agent 0x23 'Cipher': Phantom reads logs he isn't cleared for. I've watched him do it over people's shoulders.
     Agent 0x23 'Cipher': But I'm frightened and pattern-matching in the dark, so weight that accordingly.
     -> hub
 + { accused_cipher and mole_identified and not apologised } [The logs cleared you. I was wrong to say it.]

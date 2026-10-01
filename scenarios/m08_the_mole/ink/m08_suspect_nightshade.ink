@@ -22,6 +22,11 @@ VAR accused_nightshade = false
 VAR mole_identified = false
 VAR asked_insiders = false
 VAR asked_logs = false
+// PASS 3 (P7, P8): the door-audit beat and the locker key.
+VAR found_badge_audit = false
+VAR nightshade_audit_confirmed = false
+VAR asked_audit = false
+VAR gave_locker_key = false
 
 === start ===
 { nightshade_interviewed:
@@ -39,20 +44,18 @@ Agent 0x47 'Nightshade': There you are. I wondered when they'd send you. Of ever
 + { not asked_alibi } [Where were you when the plan leaked?]
     ~ asked_alibi = true
     Agent 0x47 'Nightshade': Here, most likely. I'm always here. Pull the terminal logs -- I'd genuinely encourage it. Nothing clears a person like the truth, properly examined. And nothing convicts them like it either, of course, but I try not to dwell on the second half.
-    Narrator: He offers it without a flicker. In a building where everyone else is shaking, he is a still pond.
+    Narrator: He offers it without a flicker.
     -> hub
 + { not asked_fear } [Everyone here is terrified. You're not.]
     ~ asked_fear = true
     ~ nightshade_suspected = true
     Agent 0x47 'Nightshade': Should I be? Fear is what you feel when the outcome is still uncertain. I made my peace with most outcomes a long time ago. It's a discipline. I could teach it to you -- though I don't think we're going to have the time. #set_global:nightshade_suspected:true
-    Narrator: You file that away. It is the first genuinely strange thing anyone has said to you tonight.
     -> hub
 + { not asked_dead } [Two of ours are dead.]
     ~ asked_dead = true
     ~ nightshade_suspected = true
     Narrator: He says it quietly.
     Agent 0x47 'Nightshade': I know. I do know that. My calm is what caring costs, once you've decided the ship is going down and the only question left is how kind you can be on the way. #set_global:nightshade_suspected:true
-    Narrator: It is the right sentiment, delivered a half-second too smoothly, like a line rehearsed alone in the dark.
     -> hub
 + { not asked_insiders } [You briefed me on catching insiders once. "The calm of someone who's decided the rules don't apply."]
     ~ asked_insiders = true
@@ -76,6 +79,16 @@ Agent 0x47 'Nightshade': There you are. I wondered when they'd send you. Of ever
     ~ nightshade_influence -= 1
     # influence_decreased
     -> hub
++ { found_badge_audit and asked_alibi and not asked_audit } [The door log has you in this lab from 10:15 to 11:43 that morning.]
+    ~ asked_audit = true
+    ~ nightshade_audit_confirmed = true
+    Agent 0x47 'Nightshade': Yes. I told you: I'm always here. You've proved I keep long hours, 0x00. Bring me the account. #set_global:nightshade_audit_confirmed:true
+    -> hub
++ { (asked_audit or asked_training) and not gave_locker_key } [Your locker in the break room. I want to see inside it.]
+    ~ gave_locker_key = true
+    #give_item:key:nightshade_locker_key
+    Agent 0x47 'Nightshade': Take it. 0x47, second from the end. I'd genuinely encourage it.
+    -> hub
 + { not mole_identified } [I think it's you, Nightshade.] -> accuse
 + [We're done here.] -> leave
 
@@ -84,9 +97,7 @@ Agent 0x47 'Nightshade': There you are. I wondered when they'd send you. Of ever
 ~ nightshade_suspected = true
 Narrator: He doesn't blink.
 Agent 0x47 'Nightshade': Do you. On instinct, or on evidence? Because I know you, and I know which one you're running on, and it isn't evidence yet.
-Agent 0x47 'Nightshade': Here's what will happen. You'll leave, because you have to -- a hunch won't hold me. And I'll still be here when you come back, because I've nowhere I'd rather be and nothing I'm afraid of. Go and get your proof. I'd honestly rather you found me than guessed me.
-Narrator: It is the calmest denial you have ever heard, and it convinces you of nothing except that you are right.
-#set_global:nightshade_suspected:true
+Agent 0x47 'Nightshade': Here's what will happen. You'll leave, because you have to -- a hunch won't hold me. And I'll still be here when you come back, because I've nowhere I'd rather be and nothing I'm afraid of. Go and get your proof. I'd honestly rather you found me than guessed me. #set_global:nightshade_suspected:true #set_global:accused_nightshade:true
 -> hub
 
 === leave ===

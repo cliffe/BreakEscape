@@ -8,11 +8,21 @@ VAR mole_identified = false
 VAR nightshade_suspected = false
 VAR suspect_theory = ""
 VAR fate_decided = false
+VAR found_go_bag = false
+VAR asked_bag = false
+// PASS 3 (impl review m9): synced global, so the intro doesn't replay after a reload.
+VAR hax_person_met = false
 
 === start ===
-Narrator: HaX is folded into the corner with a coffee she has let go stone cold. Off the wire, she is smaller than she sounds on it.
+{ hax_person_met: -> return_visit }
+~ hax_person_met = true
+Narrator: HaX is folded into the corner with a coffee she has let go stone cold. Off the wire, she is smaller than she sounds on it. #set_global:hax_person_met:true
 
 Agent HaX: Don't say anything kind, I'll come apart. Sit if you want. Don't, if you don't.
+-> hub
+
+=== return_visit ===
+Agent HaX: Still here. The coffee's still cold.
 -> hub
 
 === hub ===
@@ -25,6 +35,10 @@ Agent HaX: Don't say anything kind, I'll come apart. Sit if you want. Don't, if 
     - else:
         Agent HaX: Don't make me pick. The second I say a name out loud it's real, and one of my friends is a murderer. Get me evidence. Let the box say it, not me.
     }
+    -> hub
++ { found_go_bag and not asked_bag } [Nightshade had a bag packed.]
+    ~ asked_bag = true
+    Agent HaX: Of course he did. Yours has picks in it. His had a passport. And he's still here. Either he's very sure of himself or he's waiting for someone, and I don't like either.
     -> hub
 + { mole_identified } [It's Nightshade.]
     Narrator: She doesn't answer for a long moment.

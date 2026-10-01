@@ -28,7 +28,7 @@
     },
     {
       "id": "door_interrogation_room",
-      "label": "Interrogation -- Recording In Progress<br/>Key lock",
+      "label": "Interrogation -- Recording In Progress<br/>PIN lock",
       "kind": "lock",
       "optional": false
     },
@@ -49,6 +49,24 @@
       "label": "Lock Pick Kit",
       "kind": "item",
       "optional": true
+    },
+    {
+      "id": "lock_nightshade_locker",
+      "label": "Nightshade Locker",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "rfid_cloner",
+      "label": "RFID Cloner",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "fingerprint_kit",
+      "label": "Fingerprint Kit",
+      "kind": "item",
+      "optional": false
     },
     {
       "id": "lock_badge_printer",
@@ -81,8 +99,8 @@
       "optional": false
     },
     {
-      "id": "interrogation_room_key",
-      "label": "Interrogation Room Key",
+      "id": "interrogation_suite_code_card",
+      "label": "Interrogation Suite Code Card",
       "kind": "key",
       "optional": false
     },
@@ -96,7 +114,7 @@
       "id": "director_s_safe",
       "label": "Director's Safe",
       "kind": "item",
-      "optional": false
+      "optional": true
     },
     {
       "id": "npc_director_magnus_netherton",
@@ -153,21 +171,27 @@
       "optional": false
     },
     {
+      "id": "badge_audit_printout_leak_window",
+      "label": "Badge Audit Printout -- Leak Window",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "npc_agent_0x47_nightshade",
+      "label": "Agent 0x47 'Nightshade'",
+      "kind": "key",
+      "optional": false
+    },
+    {
       "id": "cryptography_lab",
       "label": "Cryptography Lab",
       "kind": "room",
       "optional": false
     },
     {
-      "id": "file_personal_backup_enc",
-      "label": "File: PERSONAL_BACKUP.enc",
-      "kind": "item",
-      "optional": false
-    },
-    {
-      "id": "insider_threat_initiative_deep_state_brief",
-      "label": "Insider Threat Initiative -- 'Deep State' Brief",
-      "kind": "item",
+      "id": "nightshade_s_locker_key",
+      "label": "Nightshade's Locker Key",
+      "kind": "key",
       "optional": false
     },
     {
@@ -185,6 +209,30 @@
     {
       "id": "post_it_on_the_coffee_machine",
       "label": "Post-It On The Coffee Machine",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "usb_stick_personal_backup_enc",
+      "label": "USB Stick -- PERSONAL_BACKUP.enc",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "insider_threat_initiative_deep_state_brief",
+      "label": "Insider Threat Initiative -- 'Deep State' Brief",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "go_bag_locker_0x47",
+      "label": "Go-Bag -- Locker 0x47",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "staff_locker_0x47",
+      "label": "Staff Locker -- 0x47",
       "kind": "item",
       "optional": false
     },
@@ -260,8 +308,18 @@
     },
     {
       "from": "lock_pick_kit",
-      "to": "door_interrogation_room",
+      "to": "lock_nightshade_locker",
       "soft": true
+    },
+    {
+      "from": "main_lobby",
+      "to": "rfid_cloner",
+      "soft": false
+    },
+    {
+      "from": "main_lobby",
+      "to": "fingerprint_kit",
+      "soft": false
     },
     {
       "from": "main_lobby",
@@ -295,11 +353,11 @@
     },
     {
       "from": "lock_director_safe",
-      "to": "interrogation_room_key",
+      "to": "interrogation_suite_code_card",
       "soft": false
     },
     {
-      "from": "interrogation_room_key",
+      "from": "interrogation_suite_code_card",
       "to": "door_interrogation_room",
       "soft": false
     },
@@ -311,7 +369,12 @@
     {
       "from": "director_office",
       "to": "director_s_safe",
-      "soft": false
+      "soft": true
+    },
+    {
+      "from": "director_s_safe",
+      "to": "door_interrogation_room",
+      "soft": true
     },
     {
       "from": "director_office",
@@ -359,13 +422,23 @@
       "soft": false
     },
     {
-      "from": "cryptography_lab",
-      "to": "file_personal_backup_enc",
+      "from": "security_archives",
+      "to": "badge_audit_printout_leak_window",
       "soft": false
     },
     {
       "from": "cryptography_lab",
-      "to": "insider_threat_initiative_deep_state_brief",
+      "to": "npc_agent_0x47_nightshade",
+      "soft": false
+    },
+    {
+      "from": "npc_agent_0x47_nightshade",
+      "to": "nightshade_s_locker_key",
+      "soft": false
+    },
+    {
+      "from": "nightshade_s_locker_key",
+      "to": "lock_nightshade_locker",
       "soft": false
     },
     {
@@ -381,6 +454,31 @@
     {
       "from": "post_it_on_the_coffee_machine",
       "to": "door_security_archives",
+      "soft": false
+    },
+    {
+      "from": "break_room",
+      "to": "lock_nightshade_locker",
+      "soft": false
+    },
+    {
+      "from": "lock_nightshade_locker",
+      "to": "usb_stick_personal_backup_enc",
+      "soft": false
+    },
+    {
+      "from": "lock_nightshade_locker",
+      "to": "insider_threat_initiative_deep_state_brief",
+      "soft": false
+    },
+    {
+      "from": "lock_nightshade_locker",
+      "to": "go_bag_locker_0x47",
+      "soft": false
+    },
+    {
+      "from": "break_room",
+      "to": "staff_locker_0x47",
       "soft": false
     },
     {

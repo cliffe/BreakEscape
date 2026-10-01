@@ -30,6 +30,12 @@ VAR fate_decided = false
 VAR database_theft_understood = false
 VAR netherton_ko = false
 VAR gamma_volunteered = false
+// PASS 3 (P6, P8, P9)
+VAR named_on_evidence = false
+VAR found_go_bag = false
+VAR asked_bag = false
+VAR nightshade_ko = false
+VAR accused_nightshade = false
 
 === start ===
 { fate_decided: -> after_choice }
@@ -44,6 +50,17 @@ You: Why didn't you?
 - else:
     Agent 0x47 'Nightshade': Because some part of me wanted to be caught by someone who'd understand it. I misjudged that, I think. You look at me like I'm a stranger. Fair. Sit down anyway. You've earned the truth.
 }
+// PASS 3 (impl review M2): after his answer to "Why didn't you?", so the
+// question keeps its meaning.
+{ nightshade_ko:
+    Agent 0x47 'Nightshade': You put me on the floor of my own lab. I've had worse from people I liked less.
+}
+{
+- named_on_evidence:
+    Agent 0x47 'Nightshade': The door log. I walked past that reader every morning for fifteen years and never once thought of it as a witness.
+- accused_nightshade:
+    Agent 0x47 'Nightshade': You said it to my face before you could put it in front of anyone. You were right, and it didn't matter until tonight.
+}
 -> the_case
 
 === the_case ===
@@ -55,9 +72,18 @@ Agent 0x47 'Nightshade': Order is a candle in a hurricane, {player_name}. We sta
 + { not asked_why } [Two people are dead. You keep talking about wind. Say what you actually did.]
     ~ asked_why = true
     Narrator: He answers evenly.
-    Agent 0x47 'Nightshade': I gave them your deployment and I knew, to the site, which crises the team could not reach. I did the arithmetic of who that would kill and I did it anyway. I wrote as much -- you read it. I'm not asking you to forgive the sum. I'm telling you I did it with my eyes open.
+    Agent 0x47 'Nightshade': I gave them your deployment. I knew there would be four fires and one bucket, and that you would be standing in one of them. I didn't need to know which way the bucket went. Every way it went, people died. I did the arithmetic of who that would kill and I did it anyway. I wrote as much -- you read it. I'm not asking you to forgive the sum. I'm telling you I did it with my eyes open.
     You: You're dressing murder up as physics so you can sleep at night.
     Agent 0x47 'Nightshade': Perhaps. You always were better than me at the part I decided to skip.
+    -> hub
++ { found_go_bag and not asked_bag } [You had a flight to Montana for the morning after Portland. Why are you still here?]
+    ~ asked_bag = true
+    Agent 0x47 'Nightshade': Because I wanted to see who they would send. I hoped it would be you.
+    { asked_architect:
+        Agent 0x47 'Nightshade': You have the coordinates now. Montana was always where I was going. I just wanted to see your face first.
+    - else:
+        Agent 0x47 'Nightshade': Montana. You'll want to know why Montana. Ask me properly.
+    }
     -> hub
 + { not asked_recruit } [When. When did they turn you?]
     ~ asked_recruit = true
