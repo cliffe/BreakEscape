@@ -105,18 +105,36 @@ Ask the user only for what you cannot determine:
 | `speed`   | `fast` (default) or `human`                           |
 | VM policy | Only if the scenario has VM-backed steps — see Step 4 |
 
-### Server and game id
+### Servers: with and without TTS
+
+Two servers share one database, so a game made by `new-game.rb` plays on either port.
+
+| Port | Server | TTS | Use for |
+| ---- | ------ | --- | ------- |
+| 3001 | keyless (`tools/playtest/start-keyless-server.sh`) | none: no `GEMINI_API_KEY` | **Default.** Any mission still in draft |
+| 3000 | the user's `./start_server.sh`, has the Gemini key | live | Only when audio is wanted: a final confirmation run of a finished mission, or checking voice lines |
+
+The TTS cache is keyed on line text, voice and scenario. Audio generated for draft lines is paid for and then orphaned the moment the text changes, so draft runs go to :3001.
 
 ```bash
-# Server (leave running in the background)
-./start_server.sh          # BREAK_ESCAPE_STANDALONE=true, port 3000
+ss -ltn | grep -E ':300[01]'                  # which are up
+tools/playtest/start-keyless-server.sh        # idempotent: reports and exits 0 if :3001 is already up
+tools/playtest/stop-keyless-server.sh         # kills only the pid in test/dummy/tmp/pids/server-3001.pid
 ```
+
+You may start and stop the :3001 server. **Never stop, restart or start the :3000 server**: it is the user's. If :3000 is down and you need it, ask. Note that `./start_server.sh` runs `pkill -9 -f puma`, which also kills :3001; if it vanishes after the user restarted theirs, run the start script again. The keyless log is `tmp/keyless-3001.log`; its boot output carries a "GEMINI_API_KEY environment variable is not set" warning.
+
+**On :3001 a missing voice is expected, not a finding.** A line with no cached audio makes a TTS request that returns 503, the line plays silent and the game carries on. A 503 on a TTS request in the network log or console is that, nothing else. Cached lines still play.
+
+### Server and game id
 
 Create the game with the **checked-in helper**, never by hand:
 
 ```bash
-BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb <scenario_name>
+PLAYTEST_PORT=3001 BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb <scenario_name>
 ```
+
+`PLAYTEST_PORT` sets the port in the printed `URL` (default 3000; use 3000 only for audio runs). Don't edit the URL by hand.
 
 `<scenario_name>` is the directory under `scenarios/` — `m02_ransomed_trust`. A numeric mission id works too; a name that doesn't exist prints the list.
 
@@ -125,7 +143,7 @@ One argument is the whole of setup. The helper reads the scenario to find which 
 ```
 MISSION=m02_ransomed_trust (id 46)
 GAME_ID=987
-URL=http://127.0.0.1:3000/break_escape/games/987
+URL=http://127.0.0.1:3001/break_escape/games/987
 FLAG_SOURCE=derived from scenario
 FLAGS_EXPECTED=hospital_backup_server:4
 VALID_FLAGS=4

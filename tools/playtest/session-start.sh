@@ -10,7 +10,7 @@
 #
 # Prints the session tag; drive it with cmd.sh:
 #
-#   tools/playtest/session-start.sh --url http://127.0.0.1:3000/break_escape/games/1047 ...
+#   tools/playtest/session-start.sh --url http://127.0.0.1:3001/break_escape/games/1047 ...
 #   tools/playtest/cmd.sh 1047 '{"cmd":"brief"}'
 #   tools/playtest/cmd.sh 1047 '{"cmd":"sync"}'
 #   tools/playtest/cmd.sh 1047 '{"cmd":"quit"}'

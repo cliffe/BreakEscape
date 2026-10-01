@@ -91,7 +91,7 @@ g.save!
 valid = g.send(:extract_valid_flags_from_scenario)
 puts "MISSION=#{mission.name} (id #{mission.id})"
 puts "GAME_ID=#{g.id}"
-puts "URL=http://127.0.0.1:3000/break_escape/games/#{g.id}"
+puts "URL=http://127.0.0.1:#{ENV.fetch('PLAYTEST_PORT', '3000')}/break_escape/games/#{g.id}"
 puts "FLAG_SOURCE=#{source}"
 puts "FLAGS_EXPECTED=#{needs.map { |vm, n| "#{vm}:#{n}" }.join(' ')}" if needs.any?
 puts "VALID_FLAGS=#{valid.length}"
