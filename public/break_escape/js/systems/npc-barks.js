@@ -20,6 +20,9 @@ export default class NPCBarkSystem {
     // OPTIMIZATION: Limit simultaneous barks
     this.maxSimultaneousBarks = 5;
     this.activeBarkCount = 0;
+
+    // Popups close themselves after this long if the player ignores them
+    this.barkAutoCloseMs = 60000;
     
     // OPTIMIZATION: Debounce rapid bark queuing
     this.barkQueue = [];
@@ -346,6 +349,8 @@ export default class NPCBarkSystem {
     this._updateClearAllButton();
     this._trimBarkStackToFit();
 
+    el._autoCloseTimer = setTimeout(() => this._removeBark(el), this.barkAutoCloseMs);
+
     // Handle clicks - either custom handler or auto-open phone
     if (typeof payload.onClick === 'function') {
       el.addEventListener('click', () => payload.onClick(el));
@@ -364,7 +369,9 @@ export default class NPCBarkSystem {
    * OPTIMIZATION: Remove bark with animation
    */
   _removeBark(el) {
-    if (!el || !el.parentNode) return;
+    if (!el || !el.parentNode || el._removing) return;
+    el._removing = true;
+    clearTimeout(el._autoCloseTimer);
 
     const finish = () => {
       if (el.parentNode) el.parentNode.removeChild(el);
