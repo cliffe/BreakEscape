@@ -129,6 +129,25 @@ module BreakEscape
       end
     end
 
+    # Remember that an NPC has handed an item to the player. The scenario's
+    # itemsHeld is restored on every room load, so without this record a reload
+    # gives the item back to the NPC and a later KO drops a duplicate.
+    def record_npc_gift!(npc_id, item)
+      return if npc_id.blank? || item.blank?
+
+      given = (player_state['npc_given_items'] ||= {})
+      entries = (given[npc_id.to_s] ||= [])
+      entry = {
+        'type' => item['type'],
+        'id' => BreakEscape::ItemIdentity.identity_candidates(item).first,
+        'name' => item['name']
+      }.compact
+      return if entries.any? { |e| e == entry }
+
+      entries << entry
+      save!
+    end
+
     def remove_inventory_item!(item_id)
       player_state['inventory']&.reject! { |item| item['id'] == item_id }
       save!
@@ -208,10 +227,67 @@ module BreakEscape
     end
 
     # Minigame state
+    BIOMETRIC_SAMPLE_KEYS = %w[
+      id type owner ownerId ownerName quality rating pattern identified
+      sourceObjectId sourceRoomId sourceName surface collectedAt
+    ].freeze
+    MAX_BIOMETRIC_SAMPLES = 50
+
     def add_biometric_sample!(sample)
-      player_state['biometricSamples'] ||= []
-      player_state['biometricSamples'] << sample
+      merge_biometric_samples!([sample])
       save!
+    end
+
+    # Merge client fingerprint samples into player_state['biometricSamples'].
+    # Keeps only the known keys, clamps quality to 0..1, merges by owner (the
+    # higher quality wins, `identified` is ORed, the earliest collectedAt is
+    # kept), caps the list at 50, and drops any sample whose owner is not a
+    # fingerprintOwner somewhere in scenario_data, so a hand-made request can't
+    # invent a print the mission doesn't contain. Does not save!; the caller does.
+    def merge_biometric_samples!(incoming)
+      return unless incoming.is_a?(Array)
+
+      known_owners = []
+      collect = lambda do |node|
+        case node
+        when Hash
+          known_owners << node['fingerprintOwner'] if node['fingerprintOwner'].is_a?(String)
+          node.each_value { |v| collect.call(v) }
+        when Array
+          node.each { |v| collect.call(v) }
+        end
+      end
+      collect.call(scenario_data)
+
+      merged = Array(player_state['biometricSamples']).select { |s| s.is_a?(Hash) }.map { |s| s.slice(*BIOMETRIC_SAMPLE_KEYS) }
+      incoming.each do |raw|
+        raw = raw.to_unsafe_h if raw.respond_to?(:to_unsafe_h)
+        next unless raw.is_a?(Hash)
+
+        sample = raw.stringify_keys.slice(*BIOMETRIC_SAMPLE_KEYS)
+        owner = sample['owner']
+        next unless owner.is_a?(String) && known_owners.include?(owner)
+
+        sample['quality'] = sample['quality'].to_f.clamp(0.0, 1.0)
+        sample['identified'] = sample['identified'] == true
+        sample.each { |k, v| sample[k] = v.to_s[0, 200] if v.is_a?(String) }
+        sample['owner'] = owner
+
+        idx = merged.index { |m| m['owner'] == owner }
+        if idx.nil?
+          merged << sample
+        else
+          existing = merged[idx]
+          best = sample['quality'] > existing['quality'].to_f ? sample : existing
+          best = best.dup
+          best['identified'] = existing['identified'] == true || sample['identified'] == true
+          dates = [existing['collectedAt'], sample['collectedAt']].compact.sort
+          best['collectedAt'] = dates.first if dates.any?
+          merged[idx] = best
+        end
+      end
+
+      player_state['biometricSamples'] = merged.first(MAX_BIOMETRIC_SAMPLES)
     end
 
     def add_bluetooth_device!(device)
@@ -727,6 +803,22 @@ module BreakEscape
         end
       end
 
+      # An NPC's itemsHeld comes from the scenario every time, so drop what that NPC
+      # has already given the player. Only the give record is used (not the
+      # inventory), so an item the player never received from this NPC stays.
+      given_items = player_state['npc_given_items']
+      if given_items.present? && room['npcs'].present?
+        room['npcs'] = room['npcs'].map do |npc|
+          given = given_items[npc['id'].to_s]
+          next npc if given.blank? || npc['itemsHeld'].blank?
+
+          # Copy rather than mutate: NPCs from npcs_added are shared with player_state
+          npc.merge('itemsHeld' => npc['itemsHeld'].reject do |held|
+            given.any? { |g| BreakEscape::ItemIdentity.addressed_by?(held, g['type'], g['id'], g['name']) }
+          end)
+        end
+      end
+
       # Mark previously-unlocked objects as locked=false so the client skips the
       # lock minigame and opens them directly on interaction.
       if player_state['unlockedObjects'].present? && room['objects'].present?
@@ -1193,6 +1285,111 @@ module BreakEscape
       player_state['npcInkVariables'] = merged
     end
 
+    MAX_TIMED_MESSAGES = 200
+    MAX_TIMED_MESSAGE_TEXT = 4000
+    MAX_TIMED_MESSAGE_DELAY_MS = 24.hours.in_milliseconds
+
+    # Replace the client's timed-text snapshot: texts already counting down
+    # ("pending", with the time left) and the ids of NPC-level timed texts already
+    # delivered. Without it a reload between a mapping's event and its delayed
+    # text lost the text, since the onceOnly handler was already saved as fired.
+    # The client sends its whole current set, so this replaces rather than merges.
+    # Does not save!; the caller does.
+    def replace_timed_messages!(incoming)
+      return unless incoming.is_a?(Hash)
+
+      pending = Array(incoming['pending']).first(MAX_TIMED_MESSAGES).filter_map do |msg|
+        next unless msg.is_a?(Hash)
+        next unless msg['npcId'].is_a?(String) && msg['npcId'].length <= 100
+        next unless msg['text'].is_a?(String) && msg['text'].present?
+
+        {
+          'id' => msg['id'].is_a?(String) ? msg['id'][0, 300] : nil,
+          'npcId' => msg['npcId'],
+          'text' => msg['text'][0, MAX_TIMED_MESSAGE_TEXT],
+          'remainingMs' => msg['remainingMs'].to_i.clamp(0, MAX_TIMED_MESSAGE_DELAY_MS),
+          'phoneId' => msg['phoneId'].is_a?(String) ? msg['phoneId'][0, 100] : nil,
+          'targetKnot' => msg['targetKnot'].is_a?(String) ? msg['targetKnot'][0, 200] : nil,
+          'skipIfGlobal' => msg['skipIfGlobal'].is_a?(String) ? msg['skipIfGlobal'][0, 200] : nil
+        }.compact
+      end
+
+      delivered = Array(incoming['delivered'])
+                    .select { |id| id.is_a?(String) && id.length <= 300 }
+                    .uniq.first(MAX_TIMED_MESSAGES)
+
+      player_state['timedMessages'] = { 'pending' => pending, 'delivered' => delivered }
+    end
+
+    MAX_PHONE_STATE_BYTES = 512.kilobytes
+    MAX_PHONE_HISTORY_MESSAGES = 150
+    MAX_PHONE_MESSAGE_TEXT = 4000
+    MAX_PHONE_STORY_STATE_BYTES = 60.kilobytes
+    PHONE_MESSAGE_KEYS = %w[type text timestamp read isBark timed preloaded].freeze
+
+    # Merge the client's phone threads, one entry per phone contact, each replacing
+    # the saved one: the texts (with read state), the ink story position, and a
+    # preload's deferred tags/globals. Held only in memory before, so a reload
+    # emptied every thread, dropped contacts listed only by their thread, and
+    # replayed intros. Does not save!; the caller does.
+    def merge_phone_state!(incoming)
+      return unless incoming.is_a?(Hash)
+
+      merged = (player_state['phoneState'] || {}).dup
+      incoming.each do |npc_id, entry|
+        next unless npc_id.is_a?(String) && npc_id.length <= 100 && entry.is_a?(Hash)
+
+        clean = sanitize_phone_state_entry(entry)
+        merged[npc_id] = clean if clean
+      end
+
+      if merged.to_json.bytesize > MAX_PHONE_STATE_BYTES
+        Rails.logger.warn "[BreakEscape] phoneState over #{MAX_PHONE_STATE_BYTES} bytes; update not saved"
+        return
+      end
+
+      player_state['phoneState'] = merged
+    end
+
+    def sanitize_phone_state_entry(entry)
+      history = Array(entry['history']).last(MAX_PHONE_HISTORY_MESSAGES).filter_map do |msg|
+        next unless msg.is_a?(Hash) && msg['type'].is_a?(String) && msg['text'].is_a?(String)
+        next if msg['text'].empty?
+
+        msg.to_h.slice(*PHONE_MESSAGE_KEYS).select do |key, value|
+          case key
+          when 'type' then value.length <= 20
+          when 'text' then true
+          when 'timestamp' then value.is_a?(Numeric)
+          else value == true || value == false
+          end
+        end.merge('text' => msg['text'][0, MAX_PHONE_MESSAGE_TEXT])
+      end
+
+      clean = { 'history' => history }
+      story_state = entry['storyState']
+      if story_state.is_a?(String) && story_state.bytesize <= MAX_PHONE_STORY_STATE_BYTES
+        clean['storyState'] = story_state
+        clean['storyPath'] = entry['storyPath'] if entry['storyPath'].is_a?(String) && entry['storyPath'].length <= 300
+      end
+      %w[currentKnot lastEnteredKnot].each do |key|
+        clean[key] = entry[key] if entry[key].is_a?(String) && entry[key].length <= 200
+      end
+      tags = Array(entry['deferredTags']).select { |t| t.is_a?(String) && t.length <= 300 }.first(100)
+      clean['deferredTags'] = tags if tags.any?
+      if entry['deferredGlobals'].is_a?(Hash)
+        globals = entry['deferredGlobals'].to_h.select do |k, v|
+          k.is_a?(String) && k.length <= 100 &&
+            (v.is_a?(String) || v.is_a?(Numeric) || v == true || v == false || v.nil?)
+        end
+        clean['deferredGlobals'] = globals if globals.any?
+      end
+
+      return nil if history.empty? && !clean.key?('storyState')
+
+      clean
+    end
+
     # Aim/Task status helpers
     def aim_status(aim_id)
       player_state.dig('objectivesState', 'aims', aim_id, 'status') || 'active'
@@ -1643,6 +1840,7 @@ module BreakEscape
 
       # Dynamic room state tracking (delta overlay on scenario_data)
       self.player_state['room_states'] ||= {}           # Hash of room modifications
+      self.player_state['npc_given_items'] ||= {}       # npc_id => items that NPC has handed to the player
     end
 
     def set_started_at

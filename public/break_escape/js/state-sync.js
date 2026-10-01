@@ -31,7 +31,7 @@ export class StateSync {
     window.removeEventListener('pagehide', this.onPageHide);
   }
 
-  buildPayload() {
+  buildPayload({ onlyChanged = false } = {}) {
     // Get current game state
     const currentRoom = window.currentRoom?.name;
     const globalVariables = window.gameState?.globalVariables || {};
@@ -53,12 +53,36 @@ export class StateSync {
     // onceOnly / maxTriggers eventMapping handlers that have fired
     const triggeredEvents = window.npcManager?.exportTriggeredEvents?.();
 
+    // Timed texts already counting down (and NPC-level ones already delivered), so
+    // a reload between an event and its delayed text keeps the text
+    const timedMessages = window.npcManager?.exportTimedMessages?.();
+
+    // Phone threads: texts, read state and story position per contact. The unload
+    // flush sends only contacts changed since the last confirmed sync.
+    const phoneState = window.npcManager?.exportPhoneState?.({ onlyChanged });
+
     const payload = { currentRoom, globalVariables, notes };
+    // Lifted fingerprints, plain fields only, so they survive a reload.
+    const biometricSamples = (window.gameState?.biometricSamples || []).map(s => ({
+      id: s.id, type: s.type, owner: s.owner, ownerId: s.ownerId, ownerName: s.ownerName,
+      quality: s.quality, rating: s.rating, pattern: s.pattern, identified: s.identified,
+      sourceObjectId: s.sourceObjectId, sourceRoomId: s.sourceRoomId, sourceName: s.sourceName,
+      surface: s.surface, collectedAt: s.collectedAt
+    }));
+    if (biometricSamples.length > 0) {
+      payload.biometricSamples = biometricSamples;
+    }
     if (npcInkVariables && Object.keys(npcInkVariables).length > 0) {
       payload.npcInkVariables = npcInkVariables;
     }
     if (triggeredEvents && Object.keys(triggeredEvents).length > 0) {
       payload.triggeredEvents = triggeredEvents;
+    }
+    if (timedMessages) {
+      payload.timedMessages = timedMessages;
+    }
+    if (phoneState && Object.keys(phoneState).length > 0) {
+      payload.phoneState = phoneState;
     }
     return payload;
   }
@@ -66,7 +90,9 @@ export class StateSync {
   async sync() {
     try {
       // Sync to server
-      await ApiClient.put('/sync_state', this.buildPayload());
+      const payload = this.buildPayload();
+      await ApiClient.put('/sync_state', payload);
+      window.npcManager?.markPhoneStateSynced?.(payload.phoneState);
       console.log('✓ State synced to server');
     } catch (error) {
       console.error('State sync failed:', error);
@@ -80,12 +106,17 @@ export class StateSync {
    */
   flush() {
     try {
-      const payload = this.buildPayload();
+      const payload = this.buildPayload({ onlyChanged: true });
       let body = JSON.stringify(payload);
       if (body.length > KEEPALIVE_BODY_LIMIT) {
-        // Keep the reload-critical parts: globals and fired one-shot handlers
-        body = JSON.stringify({ globalVariables: payload.globalVariables, triggeredEvents: payload.triggeredEvents });
-        if (body.length > KEEPALIVE_BODY_LIMIT) return;
+        // Keep the reload-critical parts: globals, fired one-shot handlers, the timed
+        // texts they scheduled, and the phone threads changed since the last sync
+        const { globalVariables, triggeredEvents, timedMessages, phoneState } = payload;
+        body = JSON.stringify({ globalVariables, triggeredEvents, timedMessages, phoneState });
+        if (body.length > KEEPALIVE_BODY_LIMIT) {
+          body = JSON.stringify({ globalVariables, triggeredEvents, timedMessages });
+          if (body.length > KEEPALIVE_BODY_LIMIT) return;
+        }
       }
       fetch(`${getApiBase()}/sync_state`, {
         method: 'PUT',

@@ -508,7 +508,11 @@ export default class NPCBarkSystem {
       npcName: npcName || (npcData && npcData.displayName) || npcId,
       avatar: avatar || (npcData && npcData.avatar),
       inkStoryPath: inkStoryPath || (npcData && npcData.storyPath),
-      startKnot: startKnot || (npcData && npcData.currentKnot),
+      // Only a knot the text itself names (sendTimedMessage.targetKnot, a mapping's knot).
+      // Falling back to npc.currentKnot made every notification click an explicit jump:
+      // phone-chat then cleared the thread and re-ran the last knot entered, instead of
+      // reopening the saved conversation (E10/E13). Without a knot it reopens the thread.
+      startKnot: startKnot || null,
       theme: npcData?.phoneTheme
     };
     

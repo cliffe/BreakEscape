@@ -517,3 +517,19 @@
         min-height: 500px;
     }
 }
+
+/* Keyless MIFARE read screen: compact so the "Crack keys first" button stays on screen */
+.flipper-card-data-compact {
+    padding: 8px 12px;
+    margin: 8px 0;
+    line-height: 1.4;
+}
+
+.flipper-card-data-compact div {
+    margin: 2px 0;
+}
+
+.flipper-crack-hint {
+    margin: 4px 0;
+    font-size: 0.85em;
+}

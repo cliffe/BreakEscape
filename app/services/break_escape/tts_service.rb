@@ -112,6 +112,9 @@ module BreakEscape
       else
         nil
       end
+    rescue QuotaExhaustedError
+      # Callers (the TTS endpoint, the batch processor) handle this specifically
+      raise
     rescue => e
       Rails.logger.error "[TTS] Error generating audio: #{e.class} - #{e.message}"
       Rails.logger.error e.backtrace.first(5).join("\n")

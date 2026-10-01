@@ -14,6 +14,7 @@ import { rooms } from '../core/rooms.js';
 import { unlockDoor } from './doors.js';
 import { startLockpickingMinigame, startKeySelectionMinigame, startPinMinigame, startPasswordMinigame, startRansomwareDisplayMinigame, startBackupRecoveryMinigame, startInfusionPumpMinigame } from './minigame-starters.js';
 import { playUISound } from './ui-sounds.js';
+import { startFingerprintReader } from '../minigames/biometrics/fingerprint-reader-minigame.js';
 
 // Helper function to notify server of unlock and get room/container data
 export async function notifyServerUnlock(lockable, type, method) {
@@ -107,16 +108,27 @@ export function handleUnlock(lockable, type) {
         return;
     }
     
-    // Emit unlock attempt event
-    if (window.eventDispatcher && type === 'door') {
-        const doorProps = lockable.doorProperties || {};
-        window.eventDispatcher.emit('door_unlock_attempt', {
-            roomId: doorProps.roomId,
-            connectedRoom: doorProps.connectedRoom,
-            direction: doorProps.direction,
-            lockType: lockRequirements.lockType
-        });
+    // Emit unlock attempt event. This is reached only for a door that is locked, but it
+    // fires before the outcome is known, so a player holding the key still triggers it.
+    // Lines that should play only on a refusal use door_unlock_failed (emitDoorUnlockFailed).
+    const doorAttemptData = (window.eventDispatcher && type === 'door') ? {
+        roomId: (lockable.doorProperties || {}).roomId,
+        connectedRoom: (lockable.doorProperties || {}).connectedRoom,
+        direction: (lockable.doorProperties || {}).direction,
+        lockType: lockRequirements.lockType
+    } : null;
+    if (doorAttemptData) {
+        window.eventDispatcher.emit('door_unlock_attempt', doorAttemptData);
     }
+    // Refusals that come back immediately (no minigame): tell the NPC event system.
+    const emitDoorUnlockFailed = (reason) => {
+        if (!doorAttemptData) return;
+        const payload = { ...doorAttemptData, reason };
+        window.eventDispatcher.emit('door_unlock_failed', payload);
+        if (doorAttemptData.connectedRoom) {
+            window.eventDispatcher.emit(`door_unlock_failed:${doorAttemptData.connectedRoom}`, payload);
+        }
+    };
     
     switch(lockRequirements.lockType) {
         case 'key':
@@ -235,6 +247,7 @@ export function handleUnlock(lockable, type) {
                 }, keyPins);  // Pass keyPins to minigame starter
             } else {
                 console.log('NO KEYS OR LOCKPICK AVAILABLE');
+                emitDoorUnlockFailed('no_key');
                 window.gameAlert(`Requires key`, 'error', 'Locked', 4000);
             }
             break;
@@ -348,60 +361,13 @@ export function handleUnlock(lockable, type) {
             break;
             
         case 'biometric':
-            const requiredFingerprint = lockRequirements.requires;
-            console.log('BIOMETRIC LOCK REQUIRES', requiredFingerprint);
-            
-            // Check if we have fingerprints in the biometricSamples collection
-            const biometricSamples = window.gameState?.biometricSamples || [];
-            
-            console.log('BIOMETRIC SAMPLES', JSON.stringify(biometricSamples));
-            
-            // Get the required match threshold from the object or use default
-            const requiredThreshold = lockable.biometricMatchThreshold || 0.4;
-            console.log('BIOMETRIC THRESHOLD', requiredThreshold);
-            
-            // Find the fingerprint sample for the required person
-            const fingerprintSample = biometricSamples.find(sample => 
-                sample.owner === requiredFingerprint
-            );
-            
-            const hasFingerprint = fingerprintSample !== undefined;
-            console.log('FINGERPRINT CHECK', `Looking for '${requiredFingerprint}'. Found: ${hasFingerprint}`);
-            
-            if (hasFingerprint) {
-                // Get the quality from the sample
-                let fingerprintQuality = fingerprintSample.quality;
-                
-                // Normalize quality to 0-1 range if it's in percentage format
-                if (fingerprintQuality > 1) {
-                    fingerprintQuality = fingerprintQuality / 100;
-                }
-                
-                console.log('BIOMETRIC CHECK', 
-                    `Required: ${requiredFingerprint}, Quality: ${fingerprintQuality} (${Math.round(fingerprintQuality * 100)}%), Threshold: ${requiredThreshold} (${Math.round(requiredThreshold * 100)}%)`);
-                
-                // Check if the fingerprint quality meets the threshold
-                if (fingerprintQuality >= requiredThreshold) {
-                    console.log('BIOMETRIC UNLOCK SUCCESS');
-                    // Notify server and get room/container data
-                    notifyServerUnlock(lockable, type, 'biometric').then(serverResponse => {
-                        unlockTarget(lockable, type, lockable.layer, serverResponse);
-                    });
-                    window.gameAlert(`You successfully unlocked the ${type} with ${requiredFingerprint}'s fingerprint.`,
-                        'success', 'Biometric Unlock Successful', 5000);
-                } else {
-                    console.log('BIOMETRIC QUALITY TOO LOW', 
-                        `Quality: ${fingerprintQuality} (${Math.round(fingerprintQuality * 100)}%) < Threshold: ${requiredThreshold} (${Math.round(requiredThreshold * 100)}%)`);
-                    window.gameAlert(`The fingerprint quality (${Math.round(fingerprintQuality * 100)}%) is too low for this lock. 
-                            It requires at least ${Math.round(requiredThreshold * 100)}% quality.`,
-                        'error', 'Biometric Authentication Failed', 5000);
-                }
-            } else {
-                console.log('MISSING REQUIRED FINGERPRINT', 
-                    `Required: '${requiredFingerprint}', Available: ${biometricSamples.map(s => s.owner).join(", ") || "none"}`);
-                window.gameAlert(`This ${type} requires ${requiredFingerprint}'s fingerprint, which you haven't collected yet.`,
-                    'error', 'Biometric Authentication Failed', 5000);
-            }
+            // The reader overlay owns the whole check: pick a lift, then accepted / partial read /
+            // no match / no prints (systems/biometric-lock.js, minigames/biometrics/).
+            startFingerprintReader(lockable, type, lockRequirements, () => {
+                notifyServerUnlock(lockable, type, 'biometric').then(serverResponse => {
+                    unlockTarget(lockable, type, lockable.layer, serverResponse);
+                });
+            }, emitDoorUnlockFailed);
             break;
             
         case 'bluetooth':
@@ -417,6 +383,7 @@ export function handleUnlock(lockable, type) {
             
             if (!hasScanner) {
                 console.log('NO BLUETOOTH SCANNER');
+                emitDoorUnlockFailed('no_scanner');
                 window.gameAlert(`You need a Bluetooth scanner to access this ${type}.`, 'error', 'Scanner Required', 4000);
                 break;
             }

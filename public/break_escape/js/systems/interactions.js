@@ -442,6 +442,7 @@ function getInteractionSpriteKey(obj) {
             if (lockType === 'password') return 'password';
             if (lockType === 'pin') return 'pin';
             if (lockType === 'backup_recovery') return 'password';
+            if (lockType === 'biometric') return 'fingerprint';
             if (lockType === 'rfid') return 'nfc-waves';
             return 'keyway'; // Default to keyway for key locks or unknown types
         }
@@ -1223,8 +1224,11 @@ export function handleObjectInteraction(sprite) {
         return;
     }
     
-    // Check for fingerprint collection possibility
-    if (sprite.scenarioData.hasFingerprint) {
+    // Check for fingerprint collection possibility. "Use normally" in the dusting panel sets
+    // _bypassFingerprintOnce so the object's ordinary interaction (its text, files, contents) runs once.
+    const bypassPrint = sprite._bypassFingerprintOnce === true;
+    if (bypassPrint) sprite._bypassFingerprintOnce = false;
+    if (sprite.scenarioData.hasFingerprint && !bypassPrint) {
         // Check if player has fingerprint kit
         const hasKit = window.inventory.items.some(item => 
             item && item.scenarioData && 
@@ -1232,13 +1236,15 @@ export function handleObjectInteraction(sprite) {
         );
         
         if (hasKit) {
-            const sample = collectFingerprint(sprite);
-            if (sample) {
-                return; // Exit after collecting fingerprint
+            // Returns null (fall through) once the surface has given an excellent lift
+            const started = collectFingerprint(sprite);
+            if (started) {
+                return; // The dusting minigame is open
             }
-        } else {
-            window.gameAlert("You need a fingerprint kit to collect samples from this surface!", 'warning', 'Missing Equipment', 4000);
-            return;
+        } else if (!sprite._fingerprintHintShown) {
+            // No kit: carry on with the normal interaction, and say once that prints are here
+            sprite._fingerprintHintShown = true;
+            window.gameAlert("There are prints on this. A fingerprint kit could lift them.", 'info', 'Fingerprints', 4000);
         }
     }
     
@@ -1366,8 +1372,9 @@ export function handleObjectInteraction(sprite) {
     if (data.type === 'text_file' && resolvedText) {
         console.log('Text file object detected:', { type: data.type, name: data.name, text: resolvedText });
 
-        // Fire onRead.setVariable (or legacy onPickup for non-takeable items)
-        const readAction = data.onRead || (!data.takeable ? data.onPickup : null);
+        // Fire onRead.setVariable, or onPickup when there is no onRead (as notes do).
+        // A takeable file is also taken below, so onPickup is its pickup action.
+        const readAction = data.onRead || data.onPickup;
         if (readAction?.setVariable && window.gameState?.globalVariables) {
             Object.entries(readAction.setVariable).forEach(([varName, value]) => {
                 const oldValue = window.gameState.globalVariables[varName];
@@ -1405,6 +1412,18 @@ export function handleObjectInteraction(sprite) {
             };
 
             window.MinigameFramework.startMinigame('text-file', null, minigameParams);
+
+            // A takeable text file in the world goes into the inventory when first read,
+            // like notes do. addToInventory registers it with the server, removes the
+            // sprite from the room and emits item_picked_up (collect_items tasks count it).
+            // Clearing takeable first stops a second click re-taking it.
+            if (data.takeable) {
+                data.takeable = false;
+                Promise.resolve(addToInventory(sprite)).then(res => {
+                    // Server refused or network failed: let the player try again
+                    if (res && res.ok === false) data.takeable = true;
+                });
+            }
             return; // Exit early since minigame handles the interaction
         }
     }

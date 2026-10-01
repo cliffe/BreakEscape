@@ -269,6 +269,7 @@ export class NPCGameBridge {
         scenarioData: item,
         name: item.type,
         objectId: `npc_gift_${npcId}_${item.type}_${Date.now()}`,
+        sourceNpcId: npcId, // lets the server look in this NPC's itemsHeld first
         texture: { key: item.type }
       };
 

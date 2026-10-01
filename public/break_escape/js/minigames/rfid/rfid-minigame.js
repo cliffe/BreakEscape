@@ -235,6 +235,15 @@ export class RFIDMinigame extends MinigameScene {
     handleSaveCard(cardData) {
         console.log('💾 Saving card:', cardData.name);
 
+        // A MIFARE Classic card with no recovered keys can't be cloned: send the
+        // player to the attack menu rather than saving an unreadable card.
+        if (!this.dataManager.canClone(cardData)) {
+            // Stay on the read screen, where the explanation and the
+            // "Crack keys first" button remain until the player acts.
+            this.ui.showCardDataScreen(cardData);
+            return;
+        }
+
         const result = this.dataManager.saveCardToCloner(cardData);
 
         if (result.success) {

@@ -162,6 +162,49 @@ module BreakEscape
       end
     end
 
+    # ─── Gemini quota exhausted (approval log E5) ────────────────────────────
+
+    test "tts returns 429 with a clear message and Retry-After when the Gemini quota is exhausted" do
+      with_env("GEMINI_API_KEY" => "dummy_key_for_test") do
+        quota_service = Object.new
+        quota_service.define_singleton_method(:generate) { |*_args, **_kw| raise TtsService::QuotaExhaustedError.new(52) }
+
+        TtsService.stub(:new, quota_service) do
+          post tts_game_url(@game), params: { npc_id: "intercom_1", text: VOICE_TEXT }
+        end
+
+        assert_response :too_many_requests
+        assert_match(/quota/i, json_body["error"])
+        assert_equal 52, json_body["retry_after"]
+        assert_equal "52", response.headers["Retry-After"]
+      end
+    end
+
+    test "tts returns 429 without Retry-After when the quota error carries no delay" do
+      with_env("GEMINI_API_KEY" => "dummy_key_for_test") do
+        quota_service = Object.new
+        quota_service.define_singleton_method(:generate) { |*_args, **_kw| raise TtsService::QuotaExhaustedError.new }
+
+        TtsService.stub(:new, quota_service) do
+          post tts_game_url(@game), params: { npc_id: "intercom_1", text: VOICE_TEXT }
+        end
+
+        assert_response :too_many_requests
+        assert_nil response.headers["Retry-After"]
+      end
+    end
+
+    test "TtsService.generate lets a quota error through instead of turning it into nil" do
+      with_env("GEMINI_API_KEY" => "dummy_key_for_test") do
+        service = TtsService.new
+        service.define_singleton_method(:call_gemini_tts) { |*_args| raise TtsService::QuotaExhaustedError.new(10) }
+
+        assert_raises(TtsService::QuotaExhaustedError) do
+          service.generate("A line nobody has cached #{SecureRandom.hex(8)}", "Kore", nil, nil, scenario_name: "quota_test")
+        end
+      end
+    end
+
     # ─── Ink NPC — story file not found ─────────────────────────────────────
 
     test "tts returns 404 when ink story file cannot be resolved" do

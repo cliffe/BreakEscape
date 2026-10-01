@@ -101,6 +101,17 @@ function safeEvaluateCondition(conditionStr, eventData) {
 }
 
 export default class NPCManager {
+  // Fields the chat minigames write onto an NPC entry at runtime (phone-chat keeps
+  // its story position in storyState). Carried over a re-registration, and the
+  // phone ones are saved to the server (exportPhoneState).
+  static CONVERSATION_RUNTIME_FIELDS = ['storyState', 'currentKnot', 'lastEnteredKnot', 'deferredTags', 'deferredGlobals'];
+
+  // Limits on what a phone thread saves (exportPhoneState)
+  static PHONE_HISTORY_MAX_MESSAGES = 150;
+  static PHONE_MESSAGE_MAX_CHARS = 4000;
+  static PHONE_STORY_STATE_MAX_CHARS = 60000;
+  static PHONE_MESSAGE_FIELDS = ['type', 'text', 'timestamp', 'read', 'isBark', 'timed', 'preloaded'];
+
   constructor(eventDispatcher, barkSystem = null) {
     this.eventDispatcher = eventDispatcher;
     this.barkSystem = barkSystem;
@@ -112,6 +123,11 @@ export default class NPCManager {
     this.timedConversations = []; // Scheduled conversations: { npcId, targetKnot, triggerTime, delivered }
     this.gameStartTime = Date.now(); // Track when game started for timed messages
     this.timerInterval = null; // Timer for checking timed messages
+    this._timedMessageSeq = 0; // ids for mapping texts (see exportTimedMessages)
+    this._savedPhoneState = new Map(); // npcId -> saved phone thread, applied when the NPC registers
+    this._restoredTimedPending = new Map(); // id -> { triggerTime } for NPC-level texts not yet re-registered
+    this._restoredTimedDelivered = new Set(); // ids of NPC-level texts delivered before a reload
+    this._phoneStateSent = new Map(); // npcId -> JSON last confirmed saved (markPhoneStateSynced)
     
     // OPTIMIZATION: Cache InkEngine instances and fetched stories
     this.inkEngineCache = new Map(); // { npcId: inkEngine }
@@ -195,9 +211,17 @@ export default class NPCManager {
       if (!entry.roomId && existingEntry.roomId) {
         entry.roomId = existingEntry.roomId;
       }
+      // Conversation runtime state lives on the entry too (phone-chat saves the
+      // story position here); a re-registration must not reset a chat in progress.
+      for (const field of NPCManager.CONVERSATION_RUNTIME_FIELDS) {
+        if (existingEntry[field] !== undefined) entry[field] = existingEntry[field];
+      }
     }
-    
+
     this.npcs.set(realId, entry);
+
+    // After a reload: the phone thread and story position saved for this NPC
+    if (!existingEntry) this._applySavedPhoneState(realId);
     
     // Register in global character registry for speaker resolution
     if (window.characterRegistry) {
@@ -209,17 +233,22 @@ export default class NPCManager {
       this.conversationHistory.set(realId, []);
     }
     
-    // Set up event listeners for auto-mapping
+    // Set up event listeners for auto-mapping. A re-registration (e.g. two loads
+    // of the NPC's room racing) drops the old listeners first: both copies shared
+    // one dedup key, so a "cooldown": 0 mapping fired twice in the same tick (E21).
+    if (existingEntry) this._removeEventMappingListeners(realId);
     if (entry.eventMappings && this.eventDispatcher) {
       this._setupEventMappings(realId, entry.eventMappings);
     } else if (entry.eventMappings && !this.eventDispatcher) {
       console.error(`❌ ${realId} has eventMappings but eventDispatcher is not available!`);
     }
-    
-    // Schedule timed messages if any are defined
-    if (entry.timedMessages && Array.isArray(entry.timedMessages)) {
-      entry.timedMessages.forEach(msg => {
+
+    // Timed messages and conversations are scheduled once per NPC; a
+    // re-registration would otherwise queue (and deliver) a second copy.
+    if (!existingEntry && entry.timedMessages && Array.isArray(entry.timedMessages)) {
+      entry.timedMessages.forEach((msg, msgIndex) => {
         this.scheduleTimedMessage({
+          id: `npc:${realId}:${msgIndex}`,
           npcId: realId,
           text: msg.message,
           delay: msg.delay,
@@ -230,9 +259,9 @@ export default class NPCManager {
       });
       console.log(`[NPCManager] Scheduled ${entry.timedMessages.length} timed messages for ${realId}`);
     }
-    
+
     // Schedule timed conversations if any are defined
-    if (entry.timedConversation) {
+    if (!existingEntry && entry.timedConversation) {
       this.scheduleTimedConversation({
         npcId: realId,
         targetKnot: entry.timedConversation.targetKnot,
@@ -277,16 +306,31 @@ export default class NPCManager {
       
       // Check if NPC has lockpick_used_in_view event mapping with person-chat
       if (npc.eventMappings && Array.isArray(npc.eventMappings)) {
-        const lockpickMapping = npc.eventMappings.find(mapping => 
-          mapping.eventPattern === 'lockpick_used_in_view' && 
-          mapping.conversationMode === 'person-chat'
-        );
-        
-        if (!lockpickMapping) {
+        const lockpickMappings = [];
+        npc.eventMappings.forEach((mapping, index) => {
+          if (mapping?.eventPattern === 'lockpick_used_in_view' &&
+              mapping.conversationMode === 'person-chat') {
+            lockpickMappings.push({ mapping, index });
+          }
+        });
+
+        if (lockpickMappings.length === 0) {
           console.log(`👁️ [LOS CHECK]   ✗ NPC has no lockpick_used_in_view mapping`);
           continue;
         }
-        
+
+        // Only interrupt if one of those mappings would actually fire now (E4).
+        // Otherwise the pick was swallowed: no minigame and no conversation.
+        // The payload matches what unlock-system emits, minus the lockable.
+        const gateEventData = { npcId: npc.id, roomId, timestamp: Date.now() };
+        const firing = lockpickMappings.find(({ mapping, index }) =>
+          this._mappingWouldFire(npc.id, 'lockpick_used_in_view',
+            this._buildMappingConfig(mapping, index), gateEventData).fire);
+        if (!firing) {
+          console.log(`👁️ [LOS CHECK]   ✗ lockpick_used_in_view mapping won't fire now (cooldown, condition or limit) - pick goes ahead`);
+          continue;
+        }
+
         console.log(`👁️ [LOS CHECK]   ✓ NPC has lockpick_used_in_view→person-chat mapping`);
         
         // Check LOS configuration
@@ -406,11 +450,14 @@ export default class NPCManager {
   getTotalUnreadCount(phoneId, allowedNpcIds = null) {
     let npcs = this.getNPCsByPhone(phoneId);
     
-    // Filter to only allowed NPCs if specified
+    // Filter to only allowed NPCs if specified. Same rule as the contact list
+    // (phone-chat-ui.js populateContactList): a contact outside npcIds is listed
+    // once it has a thread, so its unread texts count too.
     if (allowedNpcIds && allowedNpcIds.length > 0) {
-      npcs = npcs.filter(npc => allowedNpcIds.includes(npc.id));
+      npcs = npcs.filter(npc => allowedNpcIds.includes(npc.id) ||
+        this.getConversationHistory(npc.id).length > 0);
     }
-    
+
     let totalUnread = 0;
     
     for (const npc of npcs) {
@@ -438,7 +485,45 @@ export default class NPCManager {
     
     for (const [mappingIndex, mapping] of mappingsArray.entries()) {
       const eventPattern = mapping.eventPattern;
-      const config = {
+      const config = this._buildMappingConfig(mapping, mappingIndex);
+
+      console.log(`  📌 Registering listener for event: ${eventPattern} → ${config.knot}`);
+
+      const listener = (eventData) => {
+        this._handleEventMapping(npcId, eventPattern, config, eventData);
+      };
+
+      // Register listener with event dispatcher
+      this.eventDispatcher.on(eventPattern, listener);
+
+      // Track listener for cleanup
+      if (!this.eventListeners.has(npcId)) {
+        this.eventListeners.set(npcId, []);
+      }
+      this.eventListeners.get(npcId).push({ pattern: eventPattern, listener });
+    }
+
+    console.log(`✅ Registered ${mappingsArray.length} event mappings for ${npcId}`);
+  }
+
+  /** Remove the event-mapping listeners registered for an NPC (see registerNPC). */
+  _removeEventMappingListeners(npcId) {
+    const listeners = this.eventListeners.get(npcId);
+    if (!listeners) return;
+    if (this.eventDispatcher) {
+      for (const { pattern, listener } of listeners) {
+        this.eventDispatcher.off(pattern, listener);
+      }
+    }
+    this.eventListeners.delete(npcId);
+  }
+
+  /**
+   * The handler config for one eventMappings entry. Shared by the listeners and
+   * by the lockpick interrupt gate, so both judge a mapping the same way.
+   */
+  _buildMappingConfig(mapping, mappingIndex) {
+    return {
         handlerIndex: mappingIndex, // per-handler dedup discriminator (see _handleEventMapping)
         knot: mapping.targetKnot || mapping.knot,
         bark: mapping.bark,
@@ -464,24 +549,59 @@ export default class NPCManager {
         setDwellMultiplier: mapping.setDwellMultiplier  ?? undefined,
         navigateToPlayer:   mapping.navigateToPlayer    || false
       };
-      
-      console.log(`  📌 Registering listener for event: ${eventPattern} → ${config.knot}`);
-      
-      const listener = (eventData) => {
-        this._handleEventMapping(npcId, eventPattern, config, eventData);
-      };
-      
-      // Register listener with event dispatcher
-      this.eventDispatcher.on(eventPattern, listener);
-      
-      // Track listener for cleanup
-      if (!this.eventListeners.has(npcId)) {
-        this.eventListeners.set(npcId, []);
-      }
-      this.eventListeners.get(npcId).push({ pattern: eventPattern, listener });
+  }
+
+  /**
+   * Would this handler fire for this event now? The same once-only, maxTriggers,
+   * cooldown and condition checks _handleEventMapping applies, without side effects.
+   * @returns {{ fire: boolean, reason?: string, eventKey: string, triggered: Object, now: number }}
+   */
+  _mappingWouldFire(npcId, eventPattern, config, eventData) {
+    // Dedup key is per-handler (npc + event pattern + this handler's index in the
+    // NPC's eventMappings array) so that onceOnly means "this handler fires once",
+    // not "the first handler on this (npc, pattern) pair wins and all siblings die".
+    const eventKey = `${npcId}:${eventPattern}:${config.handlerIndex}`;
+    const triggered = this.triggeredEvents.get(eventKey) || { count: 0, lastTime: 0 };
+    const now = Date.now();
+    const result = (fire, reason) => ({ fire, reason, eventKey, triggered, now });
+
+    // Check if this is a once-only event that's already triggered
+    if (config.once && triggered.count > 0) {
+      return result(false, 'once-only handler already fired');
     }
-    
-    console.log(`✅ Registered ${mappingsArray.length} event mappings for ${npcId}`);
+
+    // Check if max triggers reached
+    if (config.maxTriggers && triggered.count >= config.maxTriggers) {
+      return result(false, `max triggers (${config.maxTriggers}) reached`);
+    }
+
+    // Check cooldown (in milliseconds, default 5000ms = 5s)
+    // IMPORTANT: Use ?? instead of || to properly handle cooldown: 0
+    const cooldown = config.cooldown !== undefined && config.cooldown !== null ? config.cooldown : 5000;
+    if (triggered.lastTime && (now - triggered.lastTime < cooldown)) {
+      return result(false, `on cooldown (${cooldown - (now - triggered.lastTime)}ms remaining)`);
+    }
+
+    // Check condition if provided (can be string or function)
+    if (config.condition) {
+      let conditionMet = false;
+      if (typeof config.condition === 'function') {
+        conditionMet = config.condition(eventData, this.getNPC(npcId));
+      } else if (typeof config.condition === 'string') {
+        // Safely evaluate condition string without eval() (CSP: unsafe-eval is blocked)
+        try {
+          conditionMet = safeEvaluateCondition(config.condition, eventData);
+        } catch (error) {
+          console.error(`❌ Error evaluating condition: ${config.condition}`, error);
+          return result(false, 'condition error');
+        }
+      }
+      if (!conditionMet) {
+        return result(false, `condition not met: ${config.condition}`);
+      }
+    }
+
+    return result(true);
   }
 
   // Handle when a mapped event fires
@@ -494,60 +614,13 @@ export default class NPCManager {
       return;
     }
     
-    // Check if event should be handled.
-    // Dedup key is per-handler (npc + event pattern + this handler's index in the
-    // NPC's eventMappings array) so that onceOnly means "this handler fires once",
-    // not "the first handler on this (npc, pattern) pair wins and all siblings die".
-    const eventKey = `${npcId}:${eventPattern}:${config.handlerIndex}`;
-    const triggered = this.triggeredEvents.get(eventKey) || { count: 0, lastTime: 0 };
-    
-    // Check if this is a once-only event that's already triggered
-    if (config.once && triggered.count > 0) {
-      console.log(`⏭️ Skipping once-only event ${eventPattern} (already triggered)`);
+    // Check if event should be handled (once-only, maxTriggers, cooldown, condition)
+    const check = this._mappingWouldFire(npcId, eventPattern, config, eventData);
+    if (!check.fire) {
+      console.log(`⏭️ Skipping ${eventPattern} for ${npcId}: ${check.reason}`, eventData);
       return;
     }
-    
-    // Check if max triggers reached
-    if (config.maxTriggers && triggered.count >= config.maxTriggers) {
-      console.log(`🚫 Event ${eventPattern} has reached max triggers (${config.maxTriggers})`);
-      return;
-    }
-    
-    // Check cooldown (in milliseconds, default 5000ms = 5s)
-    // IMPORTANT: Use ?? instead of || to properly handle cooldown: 0
-    const cooldown = config.cooldown !== undefined && config.cooldown !== null ? config.cooldown : 5000;
-    const now = Date.now();
-    if (triggered.lastTime && (now - triggered.lastTime < cooldown)) {
-      const remainingMs = cooldown - (now - triggered.lastTime);
-      console.log(`⏸️ Event ${eventPattern} on cooldown (${remainingMs}ms remaining)`);
-      return;
-    }
-    
-    // Check condition if provided (can be string or function)
-    if (config.condition) {
-      let conditionMet = false;
-      
-      console.log(`🔍 Evaluating condition for ${eventPattern}:`, config.condition);
-      console.log(`   Event data:`, eventData);
-      
-      if (typeof config.condition === 'function') {
-        conditionMet = config.condition(eventData, npc);
-      } else if (typeof config.condition === 'string') {
-        // Safely evaluate condition string without eval() (CSP: unsafe-eval is blocked)
-        try {
-          conditionMet = safeEvaluateCondition(config.condition, eventData);
-          console.log(`   Condition result: ${conditionMet}`);
-        } catch (error) {
-          console.error(`❌ Error evaluating condition: ${config.condition}`, error);
-          return;
-        }
-      }
-      
-      if (!conditionMet) {
-        console.log(`🚫 Event ${eventPattern} condition not met:`, config.condition, `| data:`, eventData);
-        return;
-      }
-    }
+    const { eventKey, triggered, now } = check;
     
     console.log(`✅ Event ${eventPattern} conditions passed, triggering NPC reaction`);
     
@@ -711,6 +784,7 @@ export default class NPCManager {
     if (config.sendTimedMessage) {
       const msgConfig = config.sendTimedMessage;
       this.scheduleTimedMessage({
+        id: `map:${eventKey}:${now}`,
         npcId: npcId,
         text: msgConfig.message,
         triggerTime: (Date.now() - this.gameStartTime) + (msgConfig.delay || 0),
@@ -950,7 +1024,7 @@ export default class NPCManager {
           message: barkText,
           avatar: npc.avatar,
           inkStoryPath: npc.storyPath,
-          startKnot: config.knot || npc.currentKnot,
+          startKnot: config.knot || null,   // none: a click reopens the thread (npc-barks.js)
           phoneId: npc.phoneId,
           useTTS: npc.npcType === 'person' && !!npc.voice
         });
@@ -1112,7 +1186,7 @@ export default class NPCManager {
   // waitForEvent: Optional event name to wait for before delivering message (e.g., 'conversation_closed:briefing_cutscene')
   //               When set, the delay is applied AFTER the event fires, not from game start
   scheduleTimedMessage(opts) {
-    const { npcId, text, triggerTime, delay, phoneId, targetKnot, waitForEvent, skipIfGlobal } = opts;
+    const { id, npcId, text, triggerTime, delay, phoneId, targetKnot, waitForEvent, skipIfGlobal } = opts;
 
     if (!npcId || !text) {
       console.error('[NPCManager] scheduleTimedMessage requires npcId and text');
@@ -1123,6 +1197,9 @@ export default class NPCManager {
     const actualDelay = triggerTime !== undefined ? triggerTime : (delay || 0);
 
     const message = {
+      // Identifies the text across a reload (exportTimedMessages): "npc:<id>:<n>" for an
+      // NPC's own timedMessages, "map:..." for a mapping's sendTimedMessage
+      id: id || `msg:${npcId}:${++this._timedMessageSeq}`,
       npcId,
       text,
       delay: actualDelay, // Store delay separately for event-based triggering
@@ -1135,6 +1212,20 @@ export default class NPCManager {
     };
 
     this.timedMessages.push(message);
+
+    // After a reload, an NPC's own timed text that was already delivered, or was
+    // already counting down, picks up where it was rather than starting over
+    if (this._restoredTimedDelivered.has(message.id)) {
+      message.delivered = true;
+      console.log(`[NPCManager] Timed message ${message.id} was delivered before the reload; not rescheduled`);
+      return;
+    }
+    if (this._restoredTimedPending.has(message.id)) {
+      message.triggerTime = this._restoredTimedPending.get(message.id).triggerTime;
+      this._restoredTimedPending.delete(message.id);
+      console.log(`[NPCManager] Timed message ${message.id} resumed from before the reload (at ${message.triggerTime}ms)`);
+      return;
+    }
 
     if (waitForEvent) {
       console.log(`[NPCManager] Scheduled timed message from ${npcId} waiting for event '${waitForEvent}' (delay: ${actualDelay}ms):`, text);
@@ -1153,15 +1244,15 @@ export default class NPCManager {
     }
 
     const listener = (eventData) => {
+      // Remove event listener since it's one-time
+      this.eventDispatcher.off(eventName, listener);
+      if (message.delivered || message.triggerTime !== null) return; // resumed after a reload
       console.log(`[NPCManager] Event '${eventName}' fired, scheduling message delivery with ${message.delay}ms delay`);
 
       // Calculate trigger time as delay from now (when event fired)
       message.triggerTime = Date.now() - this.gameStartTime + message.delay;
 
       console.log(`[NPCManager] Message will be delivered at ${message.triggerTime}ms from game start`);
-
-      // Remove event listener since it's one-time
-      this.eventDispatcher.off(eventName, listener);
     };
 
     this.eventDispatcher.on(eventName, listener);
@@ -1288,7 +1379,8 @@ export default class NPCManager {
       }
 
       if (!message.delivered && elapsed >= message.triggerTime) {
-        this._deliverTimedMessage(message);
+        // false: the NPC isn't registered yet (its room loads after a reload); try next tick
+        if (this._deliverTimedMessage(message) === false) continue;
         message.delivered = true;
       }
     }
@@ -1311,8 +1403,11 @@ export default class NPCManager {
   _deliverTimedMessage(message) {
     const npc = this.getNPC(message.npcId);
     if (!npc) {
-      console.warn(`[NPCManager] Cannot deliver timed message: NPC ${message.npcId} not found`);
-      return;
+      if (!message._warnedMissing) {
+        console.warn(`[NPCManager] Cannot deliver timed message yet: NPC ${message.npcId} not registered`);
+        message._warnedMissing = true;
+      }
+      return false;
     }
 
     // Skip if a guard global is already truthy (e.g. don't nag about ESD after it's been pressed).
@@ -1343,7 +1438,7 @@ export default class NPCManager {
         message: message.text,
         avatar: npc.avatar,
         inkStoryPath: npc.storyPath,
-        startKnot: message.targetKnot || npc.currentKnot,
+        startKnot: message.targetKnot || null,   // none: a click reopens the thread (npc-barks.js)
         phoneId: message.phoneId,
         useTTS: npc.npcType === 'person' && !!npc.voice
       });
@@ -1410,6 +1505,222 @@ export default class NPCManager {
     }
     
     console.log(`[NPCManager] Delivered timed conversation from ${conversation.npcId} to knot: ${conversation.targetKnot}`);
+  }
+
+  /**
+   * Timed texts for the server (state-sync.js), so a reload between an event and
+   * its delayed text doesn't lose the text (E12). A mapping marks a onceOnly handler
+   * as fired at the event, so without this the text was gone for good.
+   * - pending: texts already counting down, with the time left. skipIfGlobal stays
+   *   with them and is checked at delivery, as before.
+   * - delivered: ids of NPC-level timedMessages already delivered, so the copy that
+   *   registerNPC schedules again after a reload doesn't arrive a second time.
+   * @returns {{ pending: Array, delivered: Array<string> }}
+   */
+  exportTimedMessages() {
+    const elapsed = Date.now() - this.gameStartTime;
+    const pending = [];
+    const delivered = [];
+    for (const m of this.timedMessages) {
+      if (m.delivered) {
+        if (typeof m.id === 'string' && m.id.startsWith('npc:')) delivered.push(m.id);
+        continue;
+      }
+      if (m.triggerTime === null || m.triggerTime === undefined) continue; // still waiting for its event
+      pending.push({
+        id: m.id,
+        npcId: m.npcId,
+        text: m.text,
+        remainingMs: Math.max(0, Math.round(m.triggerTime - elapsed)),
+        phoneId: m.phoneId,
+        targetKnot: m.targetKnot || null,
+        skipIfGlobal: m.skipIfGlobal || null
+      });
+    }
+    // Restored NPC-level state not yet claimed by a registration still counts
+    for (const id of this._restoredTimedDelivered) {
+      if (!delivered.includes(id)) delivered.push(id);
+    }
+    return { pending, delivered };
+  }
+
+  /**
+   * Restore exportTimedMessages() output on load (game.js). Mapping texts are queued
+   * now; an NPC's own timedMessages are matched by id when registerNPC schedules them.
+   * @param {{ pending?: Array, delivered?: Array<string> }} saved
+   */
+  restoreTimedMessages(saved) {
+    if (!saved || typeof saved !== 'object') return;
+    const elapsed = Date.now() - this.gameStartTime;
+    for (const id of Array.isArray(saved.delivered) ? saved.delivered : []) {
+      if (typeof id !== 'string') continue;
+      this._restoredTimedDelivered.add(id);
+      const existing = this.timedMessages.find(m => m.id === id);
+      if (existing) existing.delivered = true;
+    }
+    let queued = 0;
+    for (const p of Array.isArray(saved.pending) ? saved.pending : []) {
+      if (!p || typeof p.npcId !== 'string' || typeof p.text !== 'string' || !p.text) continue;
+      const triggerTime = elapsed + Math.max(0, Number(p.remainingMs) || 0);
+      const id = typeof p.id === 'string' ? p.id : null;
+      if (id && id.startsWith('npc:')) {
+        const existing = this.timedMessages.find(m => m.id === id);
+        if (existing) {
+          if (!existing.delivered) existing.triggerTime = triggerTime;
+        } else {
+          this._restoredTimedPending.set(id, { triggerTime });
+        }
+        continue;
+      }
+      if (id && this.timedMessages.some(m => m.id === id)) continue;
+      this.timedMessages.push({
+        id: id || `msg:${p.npcId}:${++this._timedMessageSeq}`,
+        npcId: p.npcId,
+        text: p.text,
+        delay: 0,
+        phoneId: p.phoneId || 'player_phone',
+        targetKnot: p.targetKnot || null,
+        delivered: false,
+        waitForEvent: null,
+        skipIfGlobal: p.skipIfGlobal || null,
+        triggerTime
+      });
+      queued++;
+    }
+    console.log(`📨 Restored ${queued} pending timed message(s)`);
+  }
+
+  /**
+   * Phone threads for the server (state-sync.js), so a reload keeps the texts, their
+   * read state, the story position (and with it any pending choice) and the contacts
+   * listed only because they have a thread (E9). One entry per phone NPC that has a
+   * thread or a story position.
+   * @param {Object} [opts]
+   * @param {boolean} [opts.onlyChanged] - only NPCs changed since markPhoneStateSynced
+   *   (keeps the unload flush small)
+   * @returns {Object} { npcId: { history, storyState, storyPath, currentKnot, ... } }
+   */
+  exportPhoneState({ onlyChanged = false } = {}) {
+    const out = {};
+    for (const npc of this.npcs.values()) {
+      if (npc.npcType !== 'phone') continue;
+      const entry = this._phoneStateEntry(npc);
+      if (!entry) continue;
+      if (onlyChanged && this._phoneStateSent.get(npc.id) === JSON.stringify(entry)) continue;
+      out[npc.id] = entry;
+    }
+    // Saved threads for NPCs this session hasn't registered yet are kept as they are
+    for (const [npcId, saved] of this._savedPhoneState) {
+      if (!(npcId in out) && !this.npcs.has(npcId) && !onlyChanged) out[npcId] = saved;
+    }
+    return out;
+  }
+
+  /** Record what the server now holds, after a sync that included exportPhoneState(). */
+  markPhoneStateSynced(exported) {
+    if (!exported || typeof exported !== 'object') return;
+    for (const [npcId, entry] of Object.entries(exported)) {
+      this._phoneStateSent.set(npcId, JSON.stringify(entry));
+    }
+  }
+
+  _phoneStateEntry(npc) {
+    const C = NPCManager;
+    const history = (this.conversationHistory.get(npc.id) || [])
+      .slice(-C.PHONE_HISTORY_MAX_MESSAGES)
+      .filter(msg => msg && typeof msg.text === 'string' && msg.text)
+      .map(msg => {
+        const copy = {};
+        for (const field of C.PHONE_MESSAGE_FIELDS) {
+          if (msg[field] !== undefined && msg[field] !== null) copy[field] = msg[field];
+        }
+        copy.text = copy.text.slice(0, C.PHONE_MESSAGE_MAX_CHARS);
+        copy.read = !!msg.read;
+        return copy;
+      });
+    const storyState = typeof npc.storyState === 'string' &&
+      npc.storyState.length <= C.PHONE_STORY_STATE_MAX_CHARS ? npc.storyState : null;
+    if (history.length === 0 && !storyState) return null;
+    const entry = { history };
+    if (storyState) {
+      entry.storyState = storyState;
+      // A story position only fits the story it came from (changeStoryPath)
+      if (npc.storyPath) entry.storyPath = npc.storyPath;
+    }
+    if (npc.currentKnot) entry.currentKnot = npc.currentKnot;
+    if (npc.lastEnteredKnot) entry.lastEnteredKnot = npc.lastEnteredKnot;
+    // A preload's deferred tags and globals run when the thread is first opened;
+    // if the player reloads before that, they still have to run
+    if (Array.isArray(npc.deferredTags) && npc.deferredTags.length > 0) {
+      entry.deferredTags = npc.deferredTags.filter(t => typeof t === 'string');
+    }
+    if (npc.deferredGlobals && typeof npc.deferredGlobals === 'object') {
+      const globals = {};
+      for (const [k, v] of Object.entries(npc.deferredGlobals)) {
+        if (v === null || ['string', 'number', 'boolean'].includes(typeof v)) globals[k] = v;
+      }
+      if (Object.keys(globals).length > 0) entry.deferredGlobals = globals;
+    }
+    return entry;
+  }
+
+  /**
+   * Restore exportPhoneState() output on load (game.js), before the phone can open.
+   * Applied now to NPCs already registered, otherwise when registerNPC sees them.
+   * @param {Object} saved - { npcId: entry }
+   */
+  restorePhoneState(saved) {
+    if (!saved || typeof saved !== 'object') return;
+    for (const [npcId, entry] of Object.entries(saved)) {
+      if (!entry || typeof entry !== 'object') continue;
+      this._savedPhoneState.set(npcId, entry);
+      // The server holds this already; only send it again once it changes
+      this._phoneStateSent.set(npcId, JSON.stringify(entry));
+      if (this.npcs.has(npcId)) this._applySavedPhoneState(npcId);
+    }
+    console.log(`📱 Restored saved phone state for ${Object.keys(saved).length} contact(s)`);
+  }
+
+  _applySavedPhoneState(npcId) {
+    const saved = this._savedPhoneState.get(npcId);
+    const npc = this.npcs.get(npcId);
+    if (!saved || !npc) return;
+    this._savedPhoneState.delete(npcId);
+
+    // This session's own thread wins (nothing to merge into on a fresh load)
+    const current = this.conversationHistory.get(npcId) || [];
+    if (current.length === 0 && Array.isArray(saved.history)) {
+      const history = saved.history
+        .filter(msg => msg && typeof msg.text === 'string' && msg.text && typeof msg.type === 'string')
+        .map(msg => {
+          const copy = {};
+          for (const field of NPCManager.PHONE_MESSAGE_FIELDS) {
+            if (msg[field] !== undefined) copy[field] = msg[field];
+          }
+          copy.read = !!msg.read;
+          if (typeof copy.timestamp !== 'number') copy.timestamp = Date.now();
+          return copy;
+        });
+      this.conversationHistory.set(npcId, history);
+    }
+
+    if (!npc.storyState && typeof saved.storyState === 'string' &&
+        (!saved.storyPath || !npc.storyPath || saved.storyPath === npc.storyPath)) {
+      npc.storyState = saved.storyState;
+      if (typeof saved.currentKnot === 'string') npc.currentKnot = saved.currentKnot;
+      if (typeof saved.lastEnteredKnot === 'string') npc.lastEnteredKnot = saved.lastEnteredKnot;
+    }
+    if (Array.isArray(saved.deferredTags) && saved.deferredTags.length > 0) {
+      npc.deferredTags = saved.deferredTags.filter(t => typeof t === 'string');
+    }
+    if (saved.deferredGlobals && typeof saved.deferredGlobals === 'object') {
+      npc.deferredGlobals = { ...saved.deferredGlobals };
+    }
+
+    if (typeof window !== 'undefined' && window.updatePhoneBadge && npc.phoneId) {
+      try { window.updatePhoneBadge(npc.phoneId); } catch (e) { /* inventory not ready yet */ }
+    }
+    console.log(`📱 Restored ${npcId}'s phone thread (${(this.conversationHistory.get(npcId) || []).length} message(s))`);
   }
 
   // Load timed messages from scenario data

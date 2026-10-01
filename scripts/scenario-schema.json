@@ -326,6 +326,7 @@
           "type": "string",
           "enum": ["key", "pin", "rfid", "password", "bluetooth", "biometric", "flag", "ransomware_display", "network_architecture", "alarm_panel"]
         },
+        "biometricMatchThreshold": { "type": "number", "minimum": 0, "maximum": 1 },
         "requires": {
           "oneOf": [
             { "type": "string" },
@@ -851,6 +852,20 @@
           "type": "string",
           "enum": ["easy", "medium", "hard"]
         },
+        "fingerprintOwnerName": { "type": "string" },
+        "fingerprintPattern": {
+          "type": "string",
+          "enum": ["loop", "whorl", "arch"]
+        },
+        "fingerprintSurface": {
+          "type": "string",
+          "enum": ["glossy_light", "glossy_dark", "textured"]
+        },
+        "fingerprintCandidates": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "biometricMatchThreshold": { "type": "number", "minimum": 0, "maximum": 1 },
         "mac": { "type": "string" },
         "canScanBluetooth": { "type": "boolean" },
         "phoneId": { "type": "string" },

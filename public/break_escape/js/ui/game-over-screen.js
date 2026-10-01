@@ -167,8 +167,12 @@ export class GameOverScreen {
     // Hide game over screen
     this.hide();
 
-    // Reload the page to restart
-    window.location.reload();
+    // Reload the page to restart. skip_resume=1 stops show.html.erb opening the
+    // "Resume session?" / "Other sessions" overlay: the player just chose Restart, and
+    // a plain reload has saved progress, so the overlay would otherwise appear.
+    const url = new URL(window.location.href);
+    url.searchParams.set('skip_resume', '1');
+    window.location.href = url.toString();
   }
 
   mainMenu() {

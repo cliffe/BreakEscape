@@ -78,55 +78,13 @@ async function preloadPhoneIntroMessages(phoneId, allowedNpcIds = null) {
     console.log(`📱 Found ${npcs.length} NPCs on phone ${phoneId}:`, npcs.map(n => n.id));
     
     for (const npc of npcs) {
-        const history = window.npcManager.getConversationHistory(npc.id);
-        console.log(`📱 NPC ${npc.id}: history length = ${history.length}, has story = ${!!(npc.storyPath || npc.storyJSON)}`);
-        
-        // Only preload if no history exists and NPC has a story
-        if (history.length === 0 && (npc.storyPath || npc.storyJSON)) {
-            try {
-                console.log(`📱 Preloading intro for ${npc.id}...`);
-                const tempConversation = new PhoneChatConversation(npc.id, window.npcManager, tempEngine);
-                
-                // Use inline JSON if available, otherwise use Rails API endpoint
-                let storySource = npc.storyJSON;
-                if (!storySource && npc.storyPath) {
-                    const gameId = window.breakEscapeConfig?.gameId;
-                    storySource = `/break_escape/games/${gameId}/ink?npc=${encodeURIComponent(npc.id)}`;
-                    console.log(`📖 Using Rails API for ${npc.id}: ${storySource}`);
-                }
-                
-                const loaded = await tempConversation.loadStory(storySource);
-                
-                if (loaded) {
-                    const startKnot = npc.currentKnot || 'start';
-                    tempConversation.goToKnot(startKnot);
-                    const result = tempConversation.continue();
-                    
-                    if (result.text && result.text.trim()) {
-                        const messages = result.text.trim().split('\n').filter(line => line.trim());
-                        console.log(`📱 Adding ${messages.length} preloaded messages for ${npc.id}`);
-                        messages.forEach(message => {
-                            if (message.trim()) {
-                                window.npcManager.addMessage(npc.id, 'npc', message.trim(), { 
-                                    preloaded: true,
-                                    timestamp: Date.now() - 3600000 // 1 hour ago
-                                });
-                            }
-                        });
-                        
-                        npc.storyState = tempConversation.saveState();
-                        console.log(`✅ Preloaded intro for ${npc.id}`);
-                    } else {
-                        console.log(`⚠️ No intro text for ${npc.id}`);
-                    }
-                } else {
-                    console.log(`⚠️ Failed to load story for ${npc.id}`);
-                }
-            } catch (error) {
-                console.error(`❌ Error preloading intro for ${npc.id}:`, error);
-            }
-        } else {
-            console.log(`⏭️ Skipping ${npc.id} - history=${history.length}, story=${!!(npc.storyPath || npc.storyJSON)}`);
+        try {
+            // The same preload phone-chat runs (observer off, whole opening, deferred tags
+            // and globals), so the thread's intro is complete and in order however the
+            // phone is first reached
+            await PhoneChatConversation.preloadOpening(npc, window.npcManager, tempEngine);
+        } catch (error) {
+            console.error(`❌ Error preloading intro for ${npc.id}:`, error);
         }
     }
     console.log(`📱 Finished preloading for phone ${phoneId}`);
@@ -453,7 +411,8 @@ export async function addToInventory(sprite) {
                     },
                     body: JSON.stringify({
                         action_type: 'add',
-                        item: itemData
+                        item: itemData,
+                        source_npc_id: sprite.sourceNpcId || undefined
                     })
                 });
 

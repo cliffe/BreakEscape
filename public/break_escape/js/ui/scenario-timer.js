@@ -81,6 +81,8 @@ class ScenarioTimerUI {
     // Check if display already exists
     if (document.getElementById('scenario-timer-display')) {
       this.displayElement = document.getElementById('scenario-timer-display');
+      this.labelElement = this.displayElement.querySelector('.scenario-timer-label');
+      this.clockElement = this.displayElement.querySelector('.scenario-timer-clock');
       return;
     }
     
@@ -112,6 +114,23 @@ class ScenarioTimerUI {
   markFired(timerId) {
     this.firedTimers.add(timerId);
     console.log(`✅ Timer fired: ${timerId}, marked as complete`);
+    if (!this._getNextPendingTimer()) {
+      this._clearDisplay();
+    }
+  }
+
+  /**
+   * Hide the box and blank its text so nothing stale is left behind
+   * (a timer fired or was cancelled and none is pending).
+   * @private
+   */
+  _clearDisplay() {
+    if (this.displayElement) {
+      this.displayElement.style.display = 'none';
+      this.displayElement.classList.remove('scenario-timer--amber', 'scenario-timer--red');
+    }
+    if (this.labelElement) this.labelElement.textContent = '';
+    if (this.clockElement) this.clockElement.textContent = '';
   }
 
   /**
@@ -247,8 +266,8 @@ class ScenarioTimerUI {
     const nextTimer = this._getNextPendingTimer();
     
     if (!nextTimer) {
-      // No pending timers - hide display
-      this.displayElement.style.display = 'none';
+      // No pending timers - hide display and clear its text
+      this._clearDisplay();
       return;
     }
     

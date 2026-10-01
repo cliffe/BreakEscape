@@ -25,7 +25,23 @@ export default class NPCLazyLoader {
     if (this.loadedRooms.has(roomId) || !roomData?.npcs?.length) {
       return;
     }
-    
+    // Two loads of one room can overlap (a door and an NPC's patrol both ask for it);
+    // loadedRooms is only set once the stories arrive, so share the first load rather
+    // than registering every NPC in the room twice (E21).
+    this.inFlightRooms = this.inFlightRooms || new Map();
+    if (this.inFlightRooms.has(roomId)) {
+      return this.inFlightRooms.get(roomId);
+    }
+    const load = this._loadNPCsForRoom(roomId, roomData);
+    this.inFlightRooms.set(roomId, load);
+    try {
+      return await load;
+    } finally {
+      this.inFlightRooms.delete(roomId);
+    }
+  }
+
+  async _loadNPCsForRoom(roomId, roomData) {
     console.log(`📦 Loading ${roomData.npcs.length} NPCs for room ${roomId}`);
     
     // Separate NPCs with and without story paths

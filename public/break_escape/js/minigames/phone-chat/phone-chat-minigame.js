@@ -297,123 +297,11 @@ export class PhoneChatMinigame extends MinigameScene {
         console.log('📱 All registered NPCs:', Array.from(this.npcManager.npcs.values()).map(n => ({ id: n.id, phoneId: n.phoneId, displayName: n.displayName })));
         
         for (const npc of npcs) {
-            const history = this.npcManager.getConversationHistory(npc.id);
-            console.log(`📱 Checking NPC ${npc.id}: history=${history.length}, storyPath=${npc.storyPath}, storyJSON=${!!npc.storyJSON}`);
-            
-            // Only preload if no history exists and NPC has a story (path or JSON)
-            if (history.length === 0 && (npc.storyPath || npc.storyJSON)) {
-                console.log(`📱 Preloading for ${npc.id}...`);
-                try {
-                    // Create temporary conversation to get intro message
-                    const tempConversation = new PhoneChatConversation(npc.id, this.npcManager, this.inkEngine);
-                    // Preload is a dry run: don't let ink variable writes reach the synced globals
-                    tempConversation.observeGlobals = false;
-                    
-                    // Load from storyJSON (pre-cached) or via Rails API
-                    let storySource = npc.storyJSON;
-                    if (!storySource && npc.storyPath) {
-                        const gameId = window.breakEscapeConfig?.gameId;
-                        if (gameId) {
-                            storySource = `/break_escape/games/${gameId}/ink?npc=${npc.id}`;
-                        }
-                    }
-                    console.log(`📱 Loading story for ${npc.id} from:`, storySource);
-                    const loaded = await tempConversation.loadStory(storySource);
-                    console.log(`📱 Story loaded for ${npc.id}:`, loaded);
-                    
-                    if (loaded) {
-                        // After a reload: restore this contact's own ink flags (e.g. first_contact)
-                        // so its start knot skips an intro the player already read
-                        window.npcConversationStateManager?.applySavedInkVariables?.(npc.id, tempConversation.engine?.story);
-
-                        // Navigate to start
-                        const startKnot = npc.currentKnot || 'start';
-                        console.log(`📱 Navigating to knot: ${startKnot}`);
-                        tempConversation.goToKnot(startKnot);
-                        
-                        // Accumulate all intro messages and game action tags until we hit choices or end
-                        const allMessages = [];
-                        const allTags = [];
-                        
-                        while (true) {
-                            const result = tempConversation.continue();
-                            console.log(`📱 Continue result for ${npc.id}:`, {
-                                text: result.text?.substring(0, 50),
-                                hasChoices: result.choices?.length > 0,
-                                canContinue: result.canContinue,
-                                hasEnded: result.hasEnded
-                            });
-                            
-                            // Collect text
-                            if (result.text && result.text.trim()) {
-                                const lines = result.text.trim().split('\n').filter(line => line.trim());
-                                allMessages.push(...lines);
-                            }
-                            
-                            // Collect game action tags — deferred until the player opens the conversation
-                            if (result.tags && result.tags.length > 0) {
-                                allTags.push(...result.tags);
-                            }
-                            
-                            // Stop if we hit choices or end
-                            if (result.hasEnded || (result.choices && result.choices.length > 0) || !result.canContinue) {
-                                console.log(`📱 Stopping preload loop: ended=${result.hasEnded}, choices=${result.choices?.length}, canContinue=${result.canContinue}`);
-                                break;
-                            }
-                        }
-                        
-                        console.log(`📱 Accumulated ${allMessages.length} messages for ${npc.id}`);
-                        
-                        // Add all accumulated intro messages to history
-                        if (allMessages.length > 0) {
-                            allMessages.forEach(message => {
-                                if (message.trim()) {
-                                    this.npcManager.addMessage(npc.id, 'npc', message.trim(), { 
-                                        preloaded: true,
-                                        timestamp: Date.now() - 3600000 // 1 hour ago
-                                    });
-                                }
-                            });
-                            
-                            // Save the story state after preloading
-                            // This prevents the intro from replaying when conversation is opened
-                            npc.storyState = tempConversation.saveState();
-                            
-                            // The preload ran with the global observer off, so any synced globals the
-                            // intro assigned (~ x = true) were not written. Keep them and apply them when
-                            // the player first opens the conversation, like the deferred tags below.
-                            const preloadStory = tempConversation.engine?.story;
-                            const globals = window.gameState?.globalVariables;
-                            if (preloadStory?.variablesState && globals) {
-                                const changed = {};
-                                Object.keys(globals).forEach(name => {
-                                    if (!preloadStory.variablesState.GlobalVariableExistsWithName(name)) return;
-                                    const value = preloadStory.variablesState[name];
-                                    if (value !== globals[name]) changed[name] = value;
-                                });
-                                if (Object.keys(changed).length > 0) {
-                                    npc.deferredGlobals = changed;
-                                    console.log(`📋 Deferred ${Object.keys(changed).length} global change(s) for ${npc.id}:`, changed);
-                                }
-                            }
-                            
-                            // Defer game action tags (e.g. complete_task, set_global) so they fire
-                            // when the player first opens the conversation, not silently during preload
-                            if (allTags.length > 0) {
-                                npc.deferredTags = allTags;
-                                console.log(`📋 Deferred ${allTags.length} action tag(s) for ${npc.id}:`, allTags);
-                            }
-                            
-                            console.log(`📝 Preloaded ${allMessages.length} intro message(s) for ${npc.id} and saved state`);
-                        } else {
-                            console.log(`⚠️ No messages accumulated for ${npc.id}`);
-                        }
-                    } else {
-                        console.log(`⚠️ Story failed to load for ${npc.id}`);
-                    }
-                } catch (error) {
-                    console.warn(`⚠️ Could not preload intro for ${npc.id}:`, error);
-                }
+            try {
+                // Shared with the inventory's preload (PhoneChatConversation.preloadOpening)
+                await PhoneChatConversation.preloadOpening(npc, this.npcManager, this.inkEngine);
+            } catch (error) {
+                console.warn(`⚠️ Could not preload intro for ${npc.id}:`, error);
             }
         }
         
@@ -456,7 +344,15 @@ export class PhoneChatMinigame extends MinigameScene {
         
         // Determine target knot (needed before clearing history)
         const safeParams = this.params || {};
-        const explicitStartKnot = safeParams.startKnot;
+        // An explicit knot (an event-driven call, a text that names its knot) applies once,
+        // to the NPC it was given for. Going back to the contact list and reopening the
+        // thread, or opening another contact, is an ordinary reopen.
+        let explicitStartKnot = null;
+        if (safeParams.startKnot && !this._startKnotUsed &&
+            (!safeParams.npcId || safeParams.npcId === npcId)) {
+            explicitStartKnot = safeParams.startKnot;
+            this._startKnotUsed = true;
+        }
         const targetKnot = explicitStartKnot || npc.currentKnot || 'start';
         
         // If navigating to a new knot explicitly (e.g., from timed message),
@@ -469,8 +365,9 @@ export class PhoneChatMinigame extends MinigameScene {
             const filteredHistory = history.filter(msg => msg.isBark || msg.timed);
             console.log('📝 History after filtering:', filteredHistory.map(m => ({ text: m.text.substring(0, 40), timed: m.timed, isBark: m.isBark })));
             
-            // Update NPCManager's conversation history directly
-            this.npcManager.conversationHistory.set(this.npcId, filteredHistory);
+            // Update NPCManager's conversation history directly. (Keyed by npcId: this
+            // minigame has no this.npcId, so this used to file the copy under undefined, E16.)
+            this.npcManager.conversationHistory.set(npcId, filteredHistory);
             
             // Update what we'll display
             history.splice(0, history.length, ...filteredHistory);
@@ -484,8 +381,9 @@ export class PhoneChatMinigame extends MinigameScene {
         // Show all history (including barks) in the UI
         if (history.length > 0) {
             this.ui.addMessages(history);
-            // Mark messages as read
+            // Mark messages as read, and update the HUD badge now rather than on close
             this.history.markAllRead();
+            if (window.updatePhoneBadge && this.phoneId) window.updatePhoneBadge(this.phoneId);
         }
         
         // Load and start Ink story
@@ -528,51 +426,40 @@ export class PhoneChatMinigame extends MinigameScene {
         
         // Check if we have saved story state to restore
         // BUT: if startKnot was explicitly provided (e.g., from timed message),
-        // navigate to that knot instead of restoring old state
+        // navigate to that knot instead of restoring old state.
+        // A saved state that no longer loads (the ink changed since it was saved)
+        // falls through to a fresh start at the NPC's knot.
+        let restored = false;
         if (hasConversationHistory && npc.storyState && !explicitStartKnot) {
+            restored = this.conversation.restoreState(npc.storyState);
+            if (!restored) {
+                console.warn(`⚠️ Saved story state for ${npcId} could not be restored; starting at its knot`);
+                npc.storyState = null;
+            }
+        }
+
+        if (restored) {
             // Restore previous story state (only if no explicit knot override)
             console.log('📚 Restoring story state from previous conversation');
-            this.conversation.restoreState(npc.storyState);
 
-            // Sync current globals into the restored story, then re-navigate to the
-            // current knot so Ink re-evaluates conditional choices with updated globals.
-            // (Restored state snapshots choices at save time — globals may have changed since.)
-            const story = this.conversation.engine?.story;
-            if (story) {
-                // Re-navigating re-runs the knot from its first line, so only do it when the sync
-                // actually changed a global the saved story had; otherwise its choices are current
-                // and re-running would replay the knot's text (with changed text) after the thread.
-                const globalsBefore = {};
-                const gameGlobals = window.gameState?.globalVariables || {};
-                Object.keys(gameGlobals).forEach(name => {
-                    if (story.variablesState.GlobalVariableExistsWithName(name)) globalsBefore[name] = story.variablesState[name];
-                });
-                if (window.npcConversationStateManager) {
-                    window.npcConversationStateManager.syncGlobalVariablesToStory(story);
-                }
-                const globalsChanged = Object.keys(globalsBefore).some(name => story.variablesState[name] !== globalsBefore[name]);
-                if (globalsChanged && story.currentChoices?.length > 0) {
-                    const firstChoice = story.currentChoices[0];
-                    const sourcePath = firstChoice.sourcePath ||
-                        (firstChoice._sourcePath && firstChoice._sourcePath.toString());
-                    const currentKnot = sourcePath ? sourcePath.split('.')[0] : null;
-                    if (currentKnot) {
-                        try {
-                            story.ChoosePathString(currentKnot);
-                            console.log(`🔄 Re-navigated to "${currentKnot}" to re-evaluate choices with updated globals`);
-                        } catch (e) {
-                            console.warn(`⚠️ Could not re-navigate to "${currentKnot}":`, e.message);
-                        }
-                    }
-                }
-            }
+            // Sync current globals into the restored story. If that changed a global the
+            // saved story held, re-run the knot that owns the saved choices so Ink
+            // re-evaluates them (resting knots re-check state at the top and divert).
+            // The re-run shows only output the player hasn't seen: the knot's leading
+            // text and tags, already in the thread, are not replayed (E10/E13; see
+            // PhoneChatConversation.reopenWithCurrentGlobals).
+            const reopen = this.conversation.reopenWithCurrentGlobals(story => {
+                window.npcConversationStateManager?.syncGlobalVariablesToStory(story);
+            });
 
             // If the saved story had ended (DONE/END), the restored story has no position and
             // would only show "Conversation ended". Restart at the NPC's knot instead. Skip when
             // the only history is the preload intro (NPC config "restartOnRetalk": false also opts out): that intro has already been shown and its
             // tags are still deferred, so replaying would duplicate both.
             const onlyPreloaded = conversationHistory.every(msg => msg.preloaded);
-            if (npc.restartOnRetalk !== false && !onlyPreloaded &&
+            if (reopen.renavigated) {
+                this._presentOutput(reopen.messages, reopen.tags, reopen.result);
+            } else if (npc.restartOnRetalk !== false && !onlyPreloaded &&
                 this.conversation.getCurrentState().hasEnded &&
                 this.conversation.restartAfterEnd()) {
                 console.log(`🔁 Previous conversation had ended - restarting ${npcId} at knot: ${npc.currentKnot}`);
@@ -597,14 +484,19 @@ export class PhoneChatMinigame extends MinigameScene {
                 processGameActionTags(npc.deferredTags, this.ui);
                 npc.deferredTags = null;
             }
+
+            // The player has now opened the thread: record its position and ink flags
+            // (first_contact etc.), so a reload resumes here rather than at the intro
+            this.saveStoryState();
         } else {
             // Navigate to starting knot (either first time, or explicit navigation request)
             if (explicitStartKnot) {
                 console.log(`📱 Explicit navigation to knot: ${explicitStartKnot} (overriding saved state)`);
+                this.conversation.goToKnot(targetKnot);
             } else {
                 console.log(`📱 Navigating to knot: ${targetKnot}`);
+                this.conversation.goToEntryKnot(targetKnot);
             }
-            this.conversation.goToKnot(targetKnot);
             
             // This run plays (and applies the tags and globals of) the knot itself, so anything a
             // preload deferred for it would be a second copy
@@ -662,10 +554,6 @@ export class PhoneChatMinigame extends MinigameScene {
         if (!this.conversation || !this.isConversationActive) {
             return;
         }
-
-        const TYPING_DELAY_MS  = 1000;
-        const INTER_MESSAGE_MS = 400;
-        const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
         console.log('🎬 continueStory() called');
         console.trace('Call stack'); // This will show us where continueStory is being called from
@@ -726,6 +614,21 @@ export class PhoneChatMinigame extends MinigameScene {
         console.log('🏷️ Accumulated tags:', accumulatedTags);
         console.log('📝 Messages detail:', accumulatedMessages);
 
+        await this._presentOutput(accumulatedMessages, accumulatedTags, lastResult);
+    }
+
+    /**
+     * Show a batch of story output: run its tags, type its messages into the thread,
+     * then show the choices (or end). Shared by continueStory and a reopen's re-run.
+     * @param {string[]} accumulatedMessages - NPC lines, in order
+     * @param {string[]} accumulatedTags - tags from those lines
+     * @param {Object} lastResult - { choices, canContinue, hasEnded } after the batch
+     */
+    async _presentOutput(accumulatedMessages, accumulatedTags, lastResult) {
+        const TYPING_DELAY_MS  = 1000;
+        const INTER_MESSAGE_MS = 400;
+        const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
         // If story has ended with no messages, end conversation immediately
         if (lastResult.hasEnded && accumulatedMessages.length === 0) {
             console.log('🏁 Conversation ended');
@@ -774,7 +677,8 @@ export class PhoneChatMinigame extends MinigameScene {
             this.ui.hideTypingIndicator();
             await this.ui.addMessage('npc', message.trim());
             if (!this.isConversationActive) return;
-            this.history.addMessage('npc', message.trim());
+            // Typed into the open thread, so already read (else the badge sticks after closing)
+            this.history.addMessage('npc', message.trim(), { read: true });
             this._pendingNpcMessages.shift();
             if (i < accumulatedMessages.length - 1) await delay(INTER_MESSAGE_MS);
         }
@@ -906,7 +810,7 @@ export class PhoneChatMinigame extends MinigameScene {
             this.ui.hideTypingIndicator();
             await this.ui.addMessage('npc', message.trim());
             if (!this.isConversationActive) return;
-            this.history.addMessage('npc', message.trim());
+            this.history.addMessage('npc', message.trim(), { read: true });
             if (i < accumulatedMessages.length - 1) await delay(INTER_MESSAGE_MS);
         }
 
@@ -1223,10 +1127,13 @@ export function returnToPhoneAfterNotes() {
         
         // Restart the phone-chat minigame with the saved state
         if (window.MinigameFramework) {
-            const params = phoneState.params || {
+            const params = { ...(phoneState.params || {
                 phoneId: phoneState.phoneId || 'default_phone',
                 title: phoneState.title || 'Phone'
-            };
+            }) };
+            // Coming back from the notepad is a reopen; don't jump to (and re-run) the knot
+            // the phone was first opened at
+            delete params.startKnot;
             
             // If we need to return to a specific conversation, add callback
             if (phoneState.returnToNPC) {

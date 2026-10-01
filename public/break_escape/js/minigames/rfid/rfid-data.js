@@ -120,6 +120,30 @@ export class RFIDDataManager {
     }
 
     /**
+     * Number of MIFARE Classic sector keys recovered so far.
+     * @param {Object} cardData
+     * @returns {number}
+     */
+    getKnownKeyCount(cardData) {
+        return cardData?.rfid_data?.sectors ? Object.keys(cardData.rfid_data.sectors).length : 0;
+    }
+
+    /**
+     * Whether a read card may be saved to the cloner. A MIFARE Classic card needs at least
+     * one recovered sector key (the same condition the screen shows as "Clonable").
+     * Other protocols are always clonable (DESFire saves UID only).
+     * @param {Object} cardData
+     * @returns {boolean}
+     */
+    canClone(cardData) {
+        const protocol = detectProtocol(cardData);
+        if (protocol === 'MIFARE_Classic_Weak_Defaults' || protocol === 'MIFARE_Classic_Custom_Keys') {
+            return this.getKnownKeyCount(cardData) > 0;
+        }
+        return true;
+    }
+
+    /**
      * Get card display data for all protocols
      * Supports both new (card_id) and legacy formats
      * @param {Object} cardData - Card scenario data
@@ -174,7 +198,7 @@ export class RFIDDataManager {
                     { label: 'Type', value: '1K (16 sectors)' },
                     { label: 'Keys Known', value: `${keysKnown}/16` },
                     { label: 'Readable', value: keysKnown === 16 ? 'Yes ✓' : keysKnown > 0 ? 'Partial' : 'No' },
-                    { label: 'Clonable', value: keysKnown > 0 ? 'Yes ✓' : 'No' }
+                    { label: 'Clonable', value: this.canClone(cardData) ? 'Yes ✓' : 'No' }
                 ];
 
                 // Add security note

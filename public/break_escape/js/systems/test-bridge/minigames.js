@@ -282,6 +282,47 @@ export const minigameBridge = {
     },
 
     /**
+     * Drag a pointer along a path over an element in the overlay, with real
+     * pointer events (pointerdown, a pointermove per point, pointerup).
+     *
+     * `points` are [{x, y}] or [x, y] pairs. For a <canvas> they are in the
+     * canvas's own pixels (so a 128x128 work surface takes 0..127); for any
+     * other element they are CSS pixels from its top-left. Each point is held
+     * for `stepMs` so a minigame that samples on a timer sees the movement.
+     * Mouse, touch and pen are all just pointers here: pass `pointerType` to
+     * check that a minigame treats them alike.
+     */
+    async drag(selector, points, { stepMs = 16, pointerType = 'mouse' } = {}) {
+        const mg = current();
+        if (!mg) return fail('no-active-minigame');
+        const el = mg.container.querySelector(selector);
+        if (!el) return fail(`no-element-matching:${selector}`);
+        const pts = (points || []).map(p => Array.isArray(p) ? { x: p[0], y: p[1] } : p);
+        if (pts.length < 2) return fail('drag-needs-at-least-two-points');
+        const rect = el.getBoundingClientRect();
+        if (!rect.width || !rect.height) return fail('element-not-visible', { selector });
+        const sx = el.tagName === 'CANVAS' && el.width ? rect.width / el.width : 1;
+        const sy = el.tagName === 'CANVAS' && el.height ? rect.height / el.height : 1;
+        const toClient = (p) => ({ clientX: rect.left + p.x * sx, clientY: rect.top + p.y * sy });
+        const init = (p, buttons) => ({
+            pointerId: 7, pointerType, isPrimary: true, button: 0, buttons,
+            ...toClient(p), bubbles: true, cancelable: true, composed: true
+        });
+        el.dispatchEvent(new PointerEvent('pointermove', init(pts[0], 0)));
+        el.dispatchEvent(new PointerEvent('pointerdown', init(pts[0], 1)));
+        await sleep(stepMs);
+        for (let i = 1; i < pts.length; i++) {
+            el.dispatchEvent(new PointerEvent('pointermove', init(pts[i], 1)));
+            await sleep(stepMs);
+        }
+        el.dispatchEvent(new PointerEvent('pointerup', init(pts[pts.length - 1], 0)));
+        await sleepFrames(2);
+        const result = { ok: true, selector, points: pts.length, pointerType };
+        logAction('minigame.drag', { selector, points: pts.length, stepMs, pointerType }, result);
+        return result;
+    },
+
+    /**
      * ── THE SECOND DOCUMENTED EXCEPTION ──────────────────────────────────────
      *
      * Complete an open lockpicking minigame in PICK mode, without performing

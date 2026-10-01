@@ -7,15 +7,26 @@
  */
 
 import { INTERACTION_RANGE_SQ } from '../utils/constants.js';
+import {
+    addBiometricSample, bestLiftFromObject, displayNameForOwner, ownerSlug, ratingForQuality
+} from './biometric-samples.js';
 
-// Fingerprint collection function
+// A surface that has given a lift this good stops intercepting interactions.
+const EXCELLENT_LIFT = 0.85;
+
+// Fingerprint collection function. Returns null (so the caller falls through to the
+// object's normal interaction) when there is nothing to dust or the surface has already
+// given an excellent lift; otherwise starts dusting and returns true.
 export function collectFingerprint(item) {
     if (!item.scenarioData?.hasFingerprint) {
         window.gameAlert("No fingerprints found on this surface.", 'info', 'No Fingerprints', 3000);
         return null;
     }
-    
-    // Start the dusting minigame
+
+    const objectId = item.scenarioData?.id || item.objectId;
+    const best = bestLiftFromObject(objectId);
+    if (best && best.quality >= EXCELLENT_LIFT) return null;
+
     startDustingMinigame(item);
     return true;
 }
@@ -45,110 +56,81 @@ export function handleBiometricScan(sprite) {
     }, 2000);
 }
 
+// Build, store and announce a sample from the dusting result (T3 contract:
+// { quality, rating, pattern, identified, surface, powder, objectId, roomId }).
+function recordLift(item, result) {
+    const scenarioData = item.scenarioData || {};
+    const owner = scenarioData.fingerprintOwner || 'Unknown';
+    const ownerId = ownerSlug(owner);
+    const ownerName = displayNameForOwner(owner, scenarioData);
+    const quality = Math.min(Math.max(Number(result.quality) || 0, 0), 1);
+    const rating = result.rating || ratingForQuality(quality);
+    const sourceObjectId = scenarioData.id || result.objectId || item.objectId || null;
+    const sourceRoomId = window.currentPlayerRoom || result.roomId || null;
+    const sourceName = scenarioData.name || null;
+
+    const stored = addBiometricSample({
+        id: `fp_${ownerId}`,
+        type: 'fingerprint',
+        owner,
+        ownerId,
+        ownerName,
+        quality,
+        rating,
+        pattern: result.pattern || null,
+        identified: result.identified === true,
+        sourceObjectId,
+        sourceRoomId,
+        sourceName,
+        surface: result.surface || null,
+        collectedAt: new Date().toISOString()
+    });
+    if (!stored) return;
+
+    const payload = {
+        owner, ownerId, ownerName,
+        objectId: sourceObjectId, roomId: sourceRoomId,
+        quality, identified: stored.sample.identified
+    };
+    window.eventDispatcher?.emit(`fingerprint_collected:${ownerId}`, payload);
+    if (stored.newlyIdentified) {
+        window.eventDispatcher?.emit(`fingerprint_identified:${ownerId}`, payload);
+    }
+
+    const pct = Math.round(quality * 100);
+    const message = stored.sample.identified
+        ? `Lifted ${ownerName}'s print (${rating}, ${pct}%).`
+        : `Lifted a print${sourceName ? ` from ${sourceName}` : ''} (${rating}, ${pct}%).`;
+    window.gameAlert(message, 'success', 'Print Lifted', 4000);
+}
+
 // Start fingerprint dusting minigame
 export function startDustingMinigame(item) {
-    console.log('Starting dusting minigame for item:', item);
-    
-    // Check if MinigameFramework is available
     if (!window.MinigameFramework) {
-        console.error('MinigameFramework not available - using fallback');
-        // Fallback to simple collection
-        window.gameAlert('Collecting fingerprint sample...', 'info', 'Dusting', 2000);
-        
-        setTimeout(() => {
-            const quality = 0.7 + Math.random() * 0.3;
-            const rating = quality >= 0.9 ? 'Excellent' : 
-                          quality >= 0.8 ? 'Good' : 
-                          quality >= 0.7 ? 'Fair' : 'Poor';
-            
-            if (!window.gameState) {
-                window.gameState = { biometricSamples: [] };
-            }
-            if (!window.gameState.biometricSamples) {
-                window.gameState.biometricSamples = [];
-            }
-            
-            const sample = {
-                id: `sample_${Date.now()}`,
-                type: 'fingerprint',
-                owner: item.scenarioData.fingerprintOwner || 'Unknown',
-                quality: quality,
-                data: generateFingerprintData(item),
-                timestamp: Date.now()
-            };
-            
-            window.gameState.biometricSamples.push(sample);
-            
-            if (item.scenarioData) {
-                item.scenarioData.hasFingerprint = false;
-            }
-            
-            if (window.updateBiometricsPanel) {
-                window.updateBiometricsPanel();
-            }
-            if (window.updateBiometricsCount) {
-                window.updateBiometricsCount();
-            }
-            
-            window.gameAlert(`Collected ${sample.owner}'s fingerprint sample (${rating} quality)`, 'success', 'Sample Acquired', 4000);
-        }, 2000);
+        console.error('MinigameFramework not available; cannot start the dusting minigame');
         return;
     }
-    
+
     // Initialize the framework if not already done
     if (!window.MinigameFramework.mainGameScene) {
         window.MinigameFramework.init(window.game);
     }
-    
-    // Add scene reference to item for the minigame  
+
+    // Add scene reference to item for the minigame
     item.scene = window.game;
-    
-    // Start the dusting minigame
+
     window.MinigameFramework.startMinigame('dusting', null, {
         item: item,
         scene: item.scene,
         onComplete: (success, result) => {
             if (success) {
-                console.log('DUSTING SUCCESS', result);
-                
-                // Add fingerprint to gameState
-                if (!window.gameState) {
-                    window.gameState = { biometricSamples: [] };
-                }
-                if (!window.gameState.biometricSamples) {
-                    window.gameState.biometricSamples = [];
-                }
-                
-                const sample = {
-                    id: generateFingerprintData(item),
-                    type: 'fingerprint',
-                    owner: item.scenarioData.fingerprintOwner || 'Unknown',
-                    quality: result.quality, // Quality between 0.7 and ~1.0
-                    data: generateFingerprintData(item),
-                    timestamp: Date.now()
-                };
-                
-                window.gameState.biometricSamples.push(sample);
-                
-                // Mark item as collected
-                if (item.scenarioData) {
-                    item.scenarioData.hasFingerprint = false;
-                }
-                
-                // Update the biometrics panel and count
-                if (window.updateBiometricsPanel) {
-                    window.updateBiometricsPanel();
-                }
-                if (window.updateBiometricsCount) {
-                    window.updateBiometricsCount();
-                }
-                
-                // Show notification
-                window.gameAlert(`Collected ${sample.owner}'s fingerprint sample (${result.rating} quality)`, 'success', 'Sample Acquired', 4000);
-            } else {
-                console.log('DUSTING FAILED');
-                window.gameAlert(`Failed to collect the fingerprint sample.`, 'error', 'Dusting Failed', 4000);
+                recordLift(item, result || {});
+            } else if (result?.useNormally) {
+                // "Use normally": run the object's ordinary interaction once, skipping the print branch.
+                item._bypassFingerprintOnce = true;
+                setTimeout(() => window.handleObjectInteraction?.(item), 0);
             }
+            // Cancelled: nothing to show.
         }
     });
 }

@@ -1344,9 +1344,15 @@ export class PersonChatMinigame extends MinigameScene {
             // own voice. Guard: only override when the parsed speaker resolves to a
             // registered NPC that actually has a voice block; otherwise fall back to the
             // trigger NPC, so single-NPC scenarios (m01/m02/m07) are unchanged.
+            // Two NPCs can share a display name (m05: Patricia in person and her phone
+            // contact). A prefix parsed to the other one would be sent with the wrong id
+            // and the server would refuse the text, so prefer the conversation's own NPC.
+            const parsedSpeaker = this.characters[block.speaker];
+            const isOwnNpcByName = parsedSpeaker && this.npc?.displayName &&
+                parsedSpeaker.displayName === this.npc.displayName;
             const ttsSpeakerId = block.isNarrator
                 ? 'narrator'
-                : (block.speaker && block.speaker !== 'player' && this.characters[block.speaker]?.voice
+                : (block.speaker && block.speaker !== 'player' && !isOwnNpcByName && parsedSpeaker?.voice
                     ? block.speaker
                     : this.npcId);
             const audioDuration = await this.ttsManager.play(ttsSpeakerId, ttsText);
@@ -1364,6 +1370,7 @@ export class PersonChatMinigame extends MinigameScene {
                 const nextSpeakerId = nextParsed && !nextParsed.isNarrator
                     && nextParsed.speaker && nextParsed.speaker !== 'player'
                     && this.characters[nextParsed.speaker]?.voice
+                    && this.characters[nextParsed.speaker].displayName !== this.npc?.displayName
                     ? nextParsed.speaker
                     : this.npcId;
                 this.ttsManager.preload(nextSpeakerId, nextTtsText);

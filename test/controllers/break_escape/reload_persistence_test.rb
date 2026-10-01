@@ -294,6 +294,70 @@ module BreakEscape
       assert_equal({ 'ok:x:0' => 1 }, game.reload.player_state['triggeredEvents'])
     end
 
+    # =========================================================================
+    # Phone threads (E9) and pending timed texts (E12)
+    # =========================================================================
+
+    test 'phone threads sync per contact and come back on load' do
+      game = create_game
+      hax = { 'history' => [{ 'type' => 'npc', 'text' => 'Intro', 'timestamp' => 1, 'read' => true, 'preloaded' => true },
+                            { 'type' => 'npc', 'text' => 'Guidance', 'timestamp' => 2, 'read' => false, 'timed' => true }],
+              'storyState' => '{"flow":"x"}', 'storyPath' => 'hax.json', 'currentKnot' => 'start',
+              'deferredTags' => ['complete_task:x'], 'deferredGlobals' => { 'met_hax' => true } }
+
+      put sync_state_game_url(game),
+          params: { phoneState: { 'hax' => hax, 'recruiter' => { 'history' => [{ 'type' => 'npc', 'text' => 'Hi' }] } } },
+          as: :json
+      assert_response :success
+      put sync_state_game_url(game),
+          params: { phoneState: { 'recruiter' => { 'history' => [{ 'type' => 'npc', 'text' => 'Hi' },
+                                                                   { 'type' => 'player', 'text' => 'No.' }] } } },
+          as: :json
+      assert_response :success
+
+      saved = scenario_json(game)['savedPhoneState']
+      assert_equal hax, saved['hax'], 'A contact not in this sync keeps its thread'
+      assert_equal %w[Hi No.], saved['recruiter']['history'].map { |m| m['text'] }
+    end
+
+    test 'phone thread entries are cleaned and an oversized sync is refused' do
+      game = create_game
+      put sync_state_game_url(game),
+          params: { phoneState: { 'hax' => { 'history' => [{ 'type' => 'npc', 'text' => 'Ok', 'evil' => 'x', 'read' => 'yes' },
+                                                           { 'type' => 'npc' }, 'junk'],
+                                             'storyState' => { 'not' => 'a string' } } } },
+          as: :json
+      assert_response :success
+      assert_equal({ 'history' => [{ 'type' => 'npc', 'text' => 'Ok' }] },
+                   game.reload.player_state.dig('phoneState', 'hax'))
+
+      flood = (0..40).to_h { |i| ["npc#{i}", { 'history' => [{ 'type' => 'npc', 'text' => 'x' * 3999 }] * 5 }] }
+      put sync_state_game_url(game), params: { phoneState: flood }, as: :json
+      assert_response :success
+      assert_equal ['hax'], game.reload.player_state['phoneState'].keys
+    end
+
+    test 'pending timed texts replace the saved set and come back on load' do
+      game = create_game
+      put sync_state_game_url(game),
+          params: { timedMessages: { 'pending' => [{ 'id' => 'map:a', 'npcId' => 'hax', 'text' => 'One', 'remainingMs' => 4000,
+                                                     'skipIfGlobal' => 'done' }],
+                                     'delivered' => ['npc:hax:0'] } },
+          as: :json
+      assert_response :success
+      put sync_state_game_url(game),
+          params: { timedMessages: { 'pending' => [{ 'npcId' => 'hax', 'text' => 'Two', 'remainingMs' => -5 },
+                                                   { 'npcId' => 'hax' }],
+                                     'delivered' => ['npc:hax:0', 'npc:hax:1'] } },
+          as: :json
+      assert_response :success
+
+      saved = scenario_json(game)['savedTimedMessages']
+      assert_equal [{ 'npcId' => 'hax', 'text' => 'Two', 'remainingMs' => 0 }], saved['pending'],
+                   'The client sends its whole set; a delivered text drops out'
+      assert_equal ['npc:hax:0', 'npc:hax:1'], saved['delivered']
+    end
+
     private
 
     def scenario_json(game)

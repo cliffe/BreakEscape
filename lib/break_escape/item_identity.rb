@@ -53,6 +53,26 @@ module BreakEscape
       ids.empty? && name.blank?
     end
 
+    # Is `obj` the scenario item the client calls (type, id, name)? Identity first:
+    # if both sides have one, only a shared id counts, so two items with the same
+    # name but different ids are distinct. The name is used only when the scenario
+    # item has no identity of its own (or the client sent none).
+    def addressed_by?(obj, type, id, name)
+      return false if obj.blank?
+      return false unless fetch(obj, 'type') == type
+
+      ids = identity_candidates(obj)
+      key_id = fetch(obj, 'keyId')
+      ids |= [key_id.to_s] if key_id.present?
+
+      return ids.include?(id.to_s) if id.present? && ids.any?
+
+      obj_name = fetch(obj, 'name')
+      return false if obj_name.blank?
+
+      [name, id].any? { |n| n.present? && n.to_s == obj_name.to_s }
+    end
+
     # Reads a key from a hash that may use string or symbol keys.
     def fetch(item, key)
       return nil unless item.respond_to?(:[])

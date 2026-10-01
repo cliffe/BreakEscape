@@ -8,6 +8,8 @@
  * @module chat-helpers
  */
 
+import { getRoomDisplayName } from '../../utils/room-display-name.js';
+
 /**
  * Process game action tags from Ink story
  * Tags format: # unlock_door:ceo, # give_item:keycard|CEO Keycard, etc.
@@ -68,10 +70,10 @@ export async function processGameActionTags(tags, ui) {
                         // This allows subsequent tags and choices to be processed
                         window.NPCGameBridge.unlockDoor(param).then(unlockResult => {
                             if (unlockResult.success) {
-                                if (ui) ui.showNotification(`🔓 Door unlocked: ${param}`, 'success');
+                                if (ui) ui.showNotification(`🔓 Door unlocked: ${getRoomDisplayName(param)}`, 'success');
                                 console.log('✅ Door unlock successful:', unlockResult);
                             } else {
-                                const errorMsg = `⚠️ Failed to unlock: ${param} - ${unlockResult.error || 'Unknown error'}`;
+                                const errorMsg = `⚠️ Failed to unlock: ${getRoomDisplayName(param)} - ${unlockResult.error || 'Unknown error'}`;
                                 if (ui) ui.showNotification(errorMsg, 'warning');
                                 console.warn('⚠️ Door unlock failed:', unlockResult);
                             }

@@ -955,6 +955,9 @@ export async function create() {
         console.log(`📝 Restored ${gameScenario.savedNotes.length} note(s) from server`);
     }
 
+    // Restore lifted fingerprints (best per owner) so the reader has them after a reload.
+    window.restoreBiometricSamples?.(gameScenario.savedBiometricSamples);
+
     // Restore NPC-local ink variables (met_x, first_meeting, ...) so an NPC's
     // next conversation restarts at its start knot with them set, the same as
     // re-talking without a reload. Inert until the manager provides the method.
@@ -967,6 +970,18 @@ export async function create() {
     // game_loaded, the first event mappings can react to.
     if (gameScenario.savedTriggeredEvents) {
         window.npcManager?.restoreTriggeredEvents?.(gameScenario.savedTriggeredEvents);
+    }
+
+    // Timed texts that were counting down at the last sync, and NPC-level timed
+    // texts already delivered, so a reload neither loses nor repeats them (E12).
+    if (gameScenario.savedTimedMessages) {
+        window.npcManager?.restoreTimedMessages?.(gameScenario.savedTimedMessages);
+    }
+
+    // Phone threads (texts, read state, story position). Applied to each contact as
+    // it registers, which for phone NPCs is the starting room's NPC load below (E9).
+    if (gameScenario.savedPhoneState) {
+        window.npcManager?.restorePhoneState?.(gameScenario.savedPhoneState);
     }
 
     // Restore objectives state from server if available (passed via objectivesState)

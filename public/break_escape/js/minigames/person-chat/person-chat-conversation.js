@@ -13,6 +13,8 @@
  * @module person-chat-conversation
  */
 
+import { getInfluenceMessage } from '../helpers/influence-message.js';
+
 export default class PersonChatConversation {
     /**
      * Create conversation manager
@@ -677,50 +679,7 @@ export default class PersonChatConversation {
      * @returns {string} Message to display
      */
     getInfluenceMessage(type, amount, direction) {
-        const baseType = type.replace('_gained', '').replace('_lost', '');
-
-        // Unified influence messages based on NPC and amount
-        const npcId = this.npc.id;
-
-        if (baseType === 'influence') {
-            if (direction === 'gained') {
-                if (npcId === 'dr_chen') {
-                    return amount >= 10 ? 'Dr. Chen really likes that' : 'Dr. Chen appreciates that';
-                } else if (npcId === 'director_netherton') {
-                    return amount >= 10 ? 'Director Netherton is impressed' : 'Director Netherton approves';
-                } else if (npcId === 'haxolottle') {
-                    return amount >= 10 ? 'Haxolottle really appreciates that' : 'Haxolottle likes that';
-                }
-                return amount >= 10 ? 'Influence significantly increased' : 'Influence increased';
-            } else {
-                if (npcId === 'dr_chen') {
-                    return amount >= 10 ? 'Dr. Chen is disappointed' : 'Dr. Chen seems uncertain';
-                } else if (npcId === 'director_netherton') {
-                    return amount >= 10 ? 'Director Netherton is displeased' : 'Director Netherton notes this';
-                } else if (npcId === 'haxolottle') {
-                    return amount >= 10 ? 'Haxolottle is hurt' : 'Haxolottle seems disappointed';
-                }
-                return amount >= 10 ? 'Influence significantly decreased' : 'Influence decreased';
-            }
-        }
-
-        // Legacy support for old tag types (if any remain)
-        const legacyMessages = {
-            rapport: {
-                gained: amount >= 10 ? 'Dr. Chen likes that' : 'Dr. Chen appreciates that',
-                lost: amount >= 10 ? 'Dr. Chen is disappointed' : 'Dr. Chen is uncertain'
-            },
-            respect: {
-                gained: amount >= 10 ? 'Director Netherton is impressed' : 'Director Netherton approves',
-                lost: amount >= 10 ? 'Director Netherton is displeased' : 'Director Netherton notes this'
-            },
-            friendship: {
-                gained: amount >= 10 ? 'Haxolottle really appreciates that' : 'Haxolottle likes that',
-                lost: amount >= 10 ? 'Haxolottle is hurt' : 'Haxolottle seems disappointed'
-            }
-        };
-
-        return legacyMessages[baseType]?.[direction] || `${baseType} ${direction}`;
+        return getInfluenceMessage(type, amount, direction, this.npc);
     }
 
     /**

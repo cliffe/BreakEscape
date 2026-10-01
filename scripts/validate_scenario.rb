@@ -260,7 +260,7 @@ def check_unknown_fields(json_data)
   # Known room fields
   known_room_fields = %w[
     type door_sign connections locked lockType requires keyPins difficulty
-    ambientSound ambientVolume objects npcs _comment dimensions
+    ambientSound ambientVolume objects npcs _comment dimensions biometricMatchThreshold
   ]
 
   # Known NPC fields
@@ -333,7 +333,8 @@ def check_unknown_fields(json_data)
     lockType requires opens_lock key_id keyPins card_id difficulty
     passwordHint showHint showKeyboard maxAttempts
     postitNote showPostit
-    hasFingerprint fingerprintOwner fingerprintDifficulty
+    hasFingerprint fingerprintOwner fingerprintDifficulty fingerprintQuality
+    fingerprintOwnerName fingerprintPattern fingerprintSurface fingerprintCandidates biometricMatchThreshold
     mac canScanBluetooth phoneId npcIds
     hacktivityMode vm acceptsVms flags flagRewards
     mode onAbort onLaunch abortConfirmText launchConfirmText
@@ -350,6 +351,7 @@ def check_unknown_fields(json_data)
 
   check_item_fields = lambda do |item, path|
     next unless item.is_a?(Hash)
+    warnings << "⚠️ WARNING: '#{path}' sets fingerprintQuality, which is ignored: lift quality now comes from the dusting minigame." if item.key?('fingerprintQuality')
     item.each_key do |key|
       unless known_item_fields.include?(key)
         warnings << "⚠️ WARNING: '#{path}' has unknown field '#{key}' — if this is minigame-specific configuration data, nest it under 'minigameData' instead."

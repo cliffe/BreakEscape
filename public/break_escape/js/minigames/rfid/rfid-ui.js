@@ -634,7 +634,9 @@ export class RFIDUIRenderer {
         screen.appendChild(protocolHeader);
 
         // Security note (if applicable)
-        if (displayData.securityNote) {
+        // A keyless MIFARE read shows the crack hint instead (keeps the buttons on screen).
+        const keyless = !this.dataManager.canClone(cardData);
+        if (displayData.securityNote && !keyless) {
             const note = document.createElement('div');
             note.className = 'flipper-info';
             note.textContent = displayData.securityNote;
@@ -643,7 +645,7 @@ export class RFIDUIRenderer {
 
         // Card data fields
         const data = document.createElement('div');
-        data.className = 'flipper-card-data';
+        data.className = keyless ? 'flipper-card-data flipper-card-data-compact' : 'flipper-card-data';
         displayData.fields.forEach(field => {
             const fieldDiv = document.createElement('div');
             fieldDiv.innerHTML = `<strong>${field.label}:</strong> ${field.value}`;
@@ -669,8 +671,18 @@ export class RFIDUIRenderer {
 
         const saveBtn = document.createElement('button');
         saveBtn.className = 'flipper-button';
-        saveBtn.textContent = displayData.protocol === 'MIFARE_DESFire' ? 'Save UID' : 'Save';
-        saveBtn.addEventListener('click', () => this.minigame.handleSaveCard(cardData));
+        if (keyless) {
+            // MIFARE Classic with no keys: no plain Save, point at the attack menu.
+            const why = document.createElement('div');
+            why.className = 'flipper-info flipper-crack-hint';
+            why.textContent = 'Sector keys protect the data. Weak default keys fall to a dictionary attack; custom keys need Darkside or Nested.';
+            screen.appendChild(why);
+            saveBtn.textContent = 'Crack keys first';
+            saveBtn.addEventListener('click', () => this.showProtocolInfo(cardData));
+        } else {
+            saveBtn.textContent = displayData.protocol === 'MIFARE_DESFire' ? 'Save UID' : 'Save';
+            saveBtn.addEventListener('click', () => this.minigame.handleSaveCard(cardData));
+        }
 
         const cancelBtn = document.createElement('button');
         cancelBtn.className = 'flipper-button flipper-button-secondary';

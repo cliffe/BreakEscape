@@ -458,8 +458,29 @@ Ids are the `MinigameFramework.registeredScenes` keys (`person-chat`, `notes`, `
 | `chooseMatching(pattern, { flags?, allowMultiple? })` | explicitly by regex |
 | `matchDialogue(pattern, { flags? })` | assert the current speaker line, without acting |
 | `completeLockpick({ reason? })` | **Documented exception** — completes a pick-mode lock without picking it. See above. |
+| `drag(selector, points, { stepMs?, pointerType? })` | Real pointer events along a path: `pointerdown`, one `pointermove` per point, `pointerup`. Points are `[{x,y}]` or `[x,y]`, in the canvas's own pixels for a `<canvas>`, else CSS px from the element's top-left. `mg drag` takes `args: [selector, points, opts]`. |
 | `take(nameOrIndex)` | Take an item from a container by name or index; clicks the real element whichever markup the container uses. Reports `openedViewer` and `returnsToContainer`. |
 | `close()` | clicks the real × or presses Escape — deliberately *not* `complete()`, so a `disableClose` cutscene correctly stays open |
+
+### Fingerprint dusting
+
+The dusting overlay (`minigames/dusting/dusting-game.js`, registered as `dusting`) is one
+128x128 `<canvas class="dusting-canvas">` plus real `<button>`s, so it is drivable by clicks,
+keys and `drag`. `getState()` adds `{ step, coverage, clarity, tapeCoverage, qualityEstimate,
+reticle, powder, tool, candidates: [{index, label}], debug: { pattern, correctCandidate, printCentre } }`.
+`step` is one of `examine`, `find`, `powder`, `dust`, `lift`, `compare`, `done`. `coverage`, `clarity`, `tapeCoverage` and `qualityEstimate` are fractions (0..1); `candidates` is empty until the pattern is classified; `debug.correctCandidate` is null until then too.
+`debug.printCentre` is in canvas pixels, so it can be passed straight to `drag`.
+
+```js
+const st = __test.minigame.getState();               // step: 'dust'
+const c = st.debug.printCentre;                      // { x, y } in canvas px
+// serpentine strokes over the print; repeat until coverage passes the threshold
+await __test.minigame.drag('.dusting-canvas', [[c.x-30,c.y-30],[c.x+30,c.y-30],[c.x+30,c.y-20],[c.x-30,c.y-20]]);
+```
+
+Keyboard route: arrow keys move the reticle (Shift for big steps), Space or Enter acts, `1`/`2`/`3`
+pick powders, `F`/`B` pick brushes, `L` lifts, `P` peels. Pick the powder that suits the surface or
+the lift is capped lower.
 
 ### Selecting dialogue choices by pattern
 

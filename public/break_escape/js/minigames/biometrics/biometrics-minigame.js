@@ -1,6 +1,14 @@
 import { MinigameScene } from '../framework/base-minigame.js';
+import { normaliseSample, ratingForQuality } from '../../systems/biometric-samples.js';
+import { generatePrint, drawPrint } from '../dusting/fingerprint-generator.js';
+import { drawSampleThumbnail } from './fingerprint-reader-minigame.js';
+import { labelForSample, percent, FIELD_NOTES } from './fingerprint-reader-helpers.js';
+import { applyArtSlot } from './fingerprint-art.js';
 
-// Biometrics Minigame Scene implementation
+// A surface that has given a lift this good is done: the kit skips it.
+const EXCELLENT_LIFT = 0.85;
+
+// Biometrics Minigame Scene implementation (the fingerprint kit panel)
 export class BiometricsMinigame extends MinigameScene {
     constructor(container, params) {
         // Ensure params is defined before calling parent constructor
@@ -16,27 +24,13 @@ export class BiometricsMinigame extends MinigameScene {
         super(container, params);
         
         this.item = params.item;
-        this.biometricSamples = [];
         this.searchingMode = false;
         this.highlightedObjects = [];
-        
-        // Scanner state management
-        this.scannerState = {
-            failedAttempts: {},
-            lockoutTimers: {}
-        };
-        
-        // Constants
-        this.MAX_FAILED_ATTEMPTS = 3;
-        this.SCANNER_LOCKOUT_TIME = 30000; // 30 seconds
-        this.BIOMETRIC_QUALITY_THRESHOLD = 0.7;
     }
     
     init() {
         // Call parent init to set up common components
         super.init();
-        
-        console.log("Biometrics minigame initializing");
         
         // Set container dimensions to be compact like the Bluetooth scanner
         this.container.className += ' biometrics-minigame-container';
@@ -50,8 +44,8 @@ export class BiometricsMinigame extends MinigameScene {
         // Create scanner interface
         this.createScannerInterface();
         
-        // Initialize biometric samples from global state
-        this.initializeBiometricSamples();
+        // Show the samples already held
+        this.updateBiometricsPanel();
     }
     
     createScannerInterface() {
@@ -60,6 +54,9 @@ export class BiometricsMinigame extends MinigameScene {
         expandToggle.className = 'biometrics-expand-toggle';
         expandToggle.innerHTML = '▼';
         expandToggle.title = 'Expand/Collapse';
+        expandToggle.setAttribute('role', 'button');
+        expandToggle.setAttribute('tabindex', '0');
+        expandToggle.setAttribute('aria-label', 'Expand or collapse the scanner panel');
         
         // Create scanner header
         const scannerHeader = document.createElement('div');
@@ -81,7 +78,7 @@ export class BiometricsMinigame extends MinigameScene {
         searchRoomContainer.className = 'biometrics-search-room-container';
         searchRoomContainer.innerHTML = `
             <button id="search-room-btn" class="biometrics-action-btn">
-                <span class="btn-icon"><img src="/break_escape/assets/icons/search.png" alt="Search" class="icon"></span>
+                <span class="btn-icon btn-icon-search" aria-hidden="true"></span>
                 <span class="btn-text">Search Room for Fingerprints</span>
             </button>
         `;
@@ -110,16 +107,38 @@ export class BiometricsMinigame extends MinigameScene {
             <div class="biometrics-samples-list" id="biometrics-samples-list"></div>
         `;
         
+        // Field notes: the three pattern types, drawn by the same generator as the prints
+        const fieldNotes = document.createElement('details');
+        fieldNotes.className = 'biometrics-field-notes';
+        fieldNotes.innerHTML = '<summary>Field notes: pattern types</summary>';
+        FIELD_NOTES.forEach(note => {
+            const row = document.createElement('div');
+            row.className = 'field-note';
+            applyArtSlot(row, 'reference-card');
+            const canvas = document.createElement('canvas');
+            canvas.setAttribute('role', 'img');
+            canvas.setAttribute('aria-label', `Example of a ${note.pattern} pattern`);
+            canvas.dataset.pattern = note.pattern;
+            const text = document.createElement('div');
+            const name = document.createElement('strong');
+            name.textContent = note.pattern;
+            text.append(name, document.createTextNode(note.text));
+            row.append(canvas, text);
+            fieldNotes.appendChild(row);
+        });
+        this.fieldNotesElement = fieldNotes;
+        this.addEventListener(fieldNotes, 'toggle', () => this.drawFieldNotes());
+        
         // Create instructions
         const instructionsContainer = document.createElement('div');
         instructionsContainer.className = 'biometrics-scanner-instructions';
         instructionsContainer.innerHTML = `
             <div class="instruction-text">
                 <strong>Instructions:</strong><br>
-                • Use "Search Room" to highlight objects with fingerprints<br>
-                • Click highlighted objects to collect fingerprint samples<br>
-                • Collected samples can be used to unlock biometric scanners<br>
-                • Higher quality samples have better success rates
+                • Use "Search Room" to highlight surfaces that carry prints<br>
+                • Click a highlighted surface to dust it and lift the print<br>
+                • Present a lift to a fingerprint reader to try to unlock it<br>
+                • A cleaner lift reads more reliably
             </div>
         `;
         
@@ -129,6 +148,7 @@ export class BiometricsMinigame extends MinigameScene {
         this.gameContainer.appendChild(scannerHeader);
         this.gameContainer.appendChild(controlsContainer);
         this.gameContainer.appendChild(samplesListContainer);
+        this.gameContainer.appendChild(fieldNotes);
         this.gameContainer.appendChild(instructionsContainer);
         
         // Set up event listeners
@@ -136,6 +156,18 @@ export class BiometricsMinigame extends MinigameScene {
         
         // Set up expand/collapse functionality
         this.setupExpandToggle(expandToggle);
+    }
+    
+    drawFieldNotes() {
+        if (!this.fieldNotesElement?.open) return;
+        this.fieldNotesElement.querySelectorAll('canvas').forEach(canvas => {
+            if (canvas.dataset.drawn) return;
+            canvas.dataset.drawn = '1';
+            const print = generatePrint({ owner: `field-notes-${canvas.dataset.pattern}`, pattern: canvas.dataset.pattern, size: 64 });
+            canvas.width = 64;
+            canvas.height = 64;
+            drawPrint(canvas.getContext('2d'), print, { scale: 1, ink: '#1b1b1b', background: '#e6e6dc' });
+        });
     }
     
     setupEventListeners() {
@@ -166,6 +198,9 @@ export class BiometricsMinigame extends MinigameScene {
     }
     
     setupExpandToggle(expandToggle) {
+        this.addEventListener(expandToggle, 'keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); expandToggle.click(); }
+        });
         this.addEventListener(expandToggle, 'click', () => {
             const isExpanded = this.container.classList.contains('expanded');
             
@@ -183,16 +218,10 @@ export class BiometricsMinigame extends MinigameScene {
         });
     }
     
-    initializeBiometricSamples() {
-        // Initialize from global state if available
-        if (window.gameState && window.gameState.biometricSamples) {
-            this.biometricSamples = [...window.gameState.biometricSamples];
-        } else {
-            this.biometricSamples = [];
-        }
-        
-        // Update the panel
-        this.updateBiometricsPanel();
+    // The player's lifts, normalised. The samples module owns the list.
+    getSamples() {
+        const raw = window.getBiometricSamples?.() || window.gameState?.biometricSamples || [];
+        return raw.map(normaliseSample).filter(Boolean);
     }
     
     toggleRoomSearching() {
@@ -204,14 +233,20 @@ export class BiometricsMinigame extends MinigameScene {
             searchBtn.classList.add('active');
             searchBtn.querySelector('.btn-text').textContent = 'Stop Searching';
             this.highlightFingerprintObjects();
-            console.log('Room searching started');
         } else {
             // Stop searching mode
             searchBtn.classList.remove('active');
             searchBtn.querySelector('.btn-text').textContent = 'Search Room for Fingerprints';
             this.clearHighlights();
-            console.log('Room searching stopped');
         }
+    }
+    
+    // True when the surface still has a print worth lifting (no excellent lift yet).
+    surfaceNeedsLift(obj) {
+        if (obj.scenarioData?.hasFingerprint !== true) return false;
+        const objectId = obj.scenarioData?.id || obj.objectId;
+        const best = window.bestLiftFromObject?.(objectId);
+        return !(best && best.quality >= EXCELLENT_LIFT);
     }
     
     highlightFingerprintObjects() {
@@ -227,7 +262,7 @@ export class BiometricsMinigame extends MinigameScene {
         this.highlightedObjects = [];
         
         Object.values(room.objects).forEach(obj => {
-            if (obj.scenarioData?.hasFingerprint === true) {
+            if (this.surfaceNeedsLift(obj)) {
                 // Add red highlight effect to the object
                 if (obj.setTint) {
                     obj.setTint(0xff0000); // Red tint for fingerprint objects
@@ -238,12 +273,6 @@ export class BiometricsMinigame extends MinigameScene {
                 this.addFingerprintIndicator(obj);
             }
         });
-        
-        if (this.highlightedObjects.length > 0) {
-            console.log(`Highlighted ${this.highlightedObjects.length} objects with fingerprints`);
-        } else {
-            console.log('No objects with fingerprints found in this room');
-        }
     }
     
     addFingerprintIndicator(obj) {
@@ -252,7 +281,6 @@ export class BiometricsMinigame extends MinigameScene {
             const indicator = obj.scene.add.image(obj.x, obj.y, 'fingerprint');
             indicator.setDepth(1000); // High depth to appear on top
             indicator.setOrigin(-0.25, 0);
-            // indicator.setScale(0.5); // Make it smaller
             indicator.setTint(0xff0000); // Red tint
             
             // Add pulsing animation
@@ -283,109 +311,16 @@ export class BiometricsMinigame extends MinigameScene {
         this.highlightedObjects = [];
     }
     
-    collectFingerprintFromObject(obj) {
-        if (!obj.scenarioData) return;
-        
-        // Use the fingerprint owner if specified, otherwise use the object's name
-        const owner = obj.scenarioData.fingerprintOwner || obj.scenarioData.name || obj.scenarioData.owner || 'Unknown';
-        
-        // Generate fingerprint sample with quality based on difficulty
-        let quality = obj.scenarioData.fingerprintQuality;
-        if (!quality) {
-            // Generate quality based on difficulty
-            const difficulty = obj.scenarioData.fingerprintDifficulty;
-            if (difficulty === 'easy') {
-                quality = 0.8 + Math.random() * 0.2; // 80-100%
-            } else if (difficulty === 'medium') {
-                quality = 0.6 + Math.random() * 0.3; // 60-90%
-            } else if (difficulty === 'hard') {
-                quality = 0.4 + Math.random() * 0.3; // 40-70%
-            } else {
-                quality = 0.6 + Math.random() * 0.4; // 60-100% default
-            }
-        }
-        
-        const sample = this.generateFingerprintSample(owner, quality);
-        
-        // Add to collection
-        this.addBiometricSample(sample);
-        
-        // Remove highlight from this object
-        if (obj.clearTint) {
-            obj.clearTint();
-        }
-        if (obj.fingerprintIndicator) {
-            obj.fingerprintIndicator.destroy();
-            delete obj.fingerprintIndicator;
-        }
-        
-        // Remove from highlighted objects
-        const index = this.highlightedObjects.indexOf(obj);
-        if (index > -1) {
-            this.highlightedObjects.splice(index, 1);
-        }
-        
-        // Show success message
-        if (window.gameAlert) {
-            window.gameAlert(`Fingerprint collected from ${owner} (${sample.rating})`, 'success', 'Sample Collected', 3000);
-        }
-        
-        console.log('Fingerprint collected:', sample);
+    // Close the panel, then open the dusting minigame for this surface on the next tick.
+    dustSurface(sprite) {
+        this.complete(false);
+        setTimeout(() => window.startDustingMinigame?.(sprite), 0);
     }
     
-    generateFingerprintSample(owner, quality = null) {
-        // If no quality provided, generate based on random factors
-        if (quality === null) {
-            quality = 0.6 + (Math.random() * 0.4); // 60-100% quality range
-        }
-        
-        const rating = this.getRatingFromQuality(quality);
-        
-        return {
-            owner: owner || 'Unknown',
-            type: 'fingerprint',
-            quality: quality,
-            rating: rating,
-            id: this.generateSampleId(),
-            collectedAt: new Date().toISOString()
-        };
-    }
-    
-    getRatingFromQuality(quality) {
-        const qualityPercentage = Math.round(quality * 100);
-        if (qualityPercentage >= 95) return 'Perfect';
-        if (qualityPercentage >= 85) return 'Excellent';
-        if (qualityPercentage >= 75) return 'Good';
-        if (qualityPercentage >= 60) return 'Fair';
-        if (qualityPercentage >= 40) return 'Acceptable';
-        return 'Poor';
-    }
-    
-    generateSampleId() {
-        return 'sample_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-    }
-    
-    addBiometricSample(sample) {
-        // Check if sample already exists
-        const existingSample = this.biometricSamples.find(s => 
-            s.owner === sample.owner && s.type === sample.type
-        );
-        
-        if (existingSample) {
-            // Update existing sample with better quality if applicable
-            if (sample.quality > existingSample.quality) {
-                existingSample.quality = sample.quality;
-                existingSample.rating = sample.rating;
-                existingSample.collectedAt = sample.collectedAt;
-            }
-        } else {
-            // Add new sample
-            this.biometricSamples.push(sample);
-        }
-        
-        this.updateBiometricsPanel();
-        this.syncBiometricSamples();
-        console.log('Biometric sample added:', sample);
+    updateBiometricsCount() {
+        const total = this.getSamples().length;
+        const header = this.gameContainer?.querySelector('.samples-count-header');
+        if (header) header.textContent = `${total} sample${total !== 1 ? 's' : ''}`;
     }
     
     updateBiometricsPanel() {
@@ -396,17 +331,19 @@ export class BiometricsMinigame extends MinigameScene {
         const activeCategory = this.gameContainer.querySelector('.biometrics-category.active')?.dataset.category || 'all';
         
         // Filter samples based on search and category
-        let filteredSamples = [...this.biometricSamples];
+        let filteredSamples = this.getSamples();
         
         // Apply category filter
         if (activeCategory === 'fingerprint') {
             filteredSamples = filteredSamples.filter(sample => sample.type === 'fingerprint');
         }
         
-        // Apply search filter
+        // Apply search filter. Matches what the player can see, so an unidentified
+        // print can't be searched by its owner's name.
         if (searchTerm) {
-            filteredSamples = filteredSamples.filter(sample => 
-                sample.owner.toLowerCase().includes(searchTerm) || 
+            filteredSamples = filteredSamples.filter(sample =>
+                labelForSample(sample).toLowerCase().includes(searchTerm) ||
+                (sample.pattern || '').toLowerCase().includes(searchTerm) ||
                 sample.type.toLowerCase().includes(searchTerm)
             );
         }
@@ -416,139 +353,83 @@ export class BiometricsMinigame extends MinigameScene {
         
         // Update samples count in both header and list
         const samplesCount = this.gameContainer.querySelector('.samples-count');
-        const samplesCountHeader = this.gameContainer.querySelector('.samples-count-header');
-        const totalSamples = this.biometricSamples.length;
-        
         if (samplesCount) {
             samplesCount.textContent = `${filteredSamples.length} sample${filteredSamples.length !== 1 ? 's' : ''}`;
         }
-        
-        if (samplesCountHeader) {
-            samplesCountHeader.textContent = `${totalSamples} sample${totalSamples !== 1 ? 's' : ''}`;
-        }
+        this.updateBiometricsCount();
         
         // Clear current content
         biometricsContent.innerHTML = '';
         
         // Add samples
         if (filteredSamples.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'sample-item';
             if (searchTerm) {
-                biometricsContent.innerHTML = '<div class="sample-item">No samples match your search.</div>';
+                empty.textContent = 'No samples match your search.';
             } else if (activeCategory !== 'all') {
-                biometricsContent.innerHTML = `<div class="sample-item">No ${activeCategory} samples found.</div>`;
+                empty.textContent = `No ${activeCategory} samples found.`;
             } else {
-                biometricsContent.innerHTML = '<div class="sample-item">No samples collected yet. Use "Search Room" to find fingerprint objects.</div>';
+                empty.textContent = 'No samples collected yet. Use "Search Room" to find surfaces with prints.';
             }
-        } else {
-            filteredSamples.forEach(sample => {
-                const sampleElement = document.createElement('div');
-                sampleElement.className = 'sample-item';
-                sampleElement.dataset.id = sample.id || 'unknown';
-                
-                const owner = sample.owner || 'Unknown';
-                const type = sample.type || 'fingerprint';
-                const quality = sample.quality || 0;
-                const rating = sample.rating || this.getRatingFromQuality(quality);
-                const collectedAt = sample.collectedAt || new Date().toISOString();
-                
-                const qualityPercentage = Math.round(quality * 100);
-                const timestamp = new Date(collectedAt);
-                const formattedTime = timestamp.toLocaleDateString() + ' ' + timestamp.toLocaleTimeString();
-                
-                sampleElement.innerHTML = `
-                    <div class="sample-header">
-                        <strong>${owner}</strong>
-                        <span class="sample-type">${type}</span>
-                    </div>
-                    <div class="sample-details">
-                        <span class="sample-quality quality-${rating.toLowerCase()}">${rating} (${qualityPercentage}%)</span>
-                        <span class="sample-date">${formattedTime}</span>
-                    </div>
-                `;
-                
-                biometricsContent.appendChild(sampleElement);
-            });
+            biometricsContent.appendChild(empty);
+            return;
         }
-    }
-    
-    syncBiometricSamples() {
-        if (!window.gameState) {
-            window.gameState = {};
-        }
-        window.gameState.biometricSamples = this.biometricSamples;
-    }
-    
-    // Handle biometric scanner interaction (for unlocking doors, etc.)
-    handleBiometricScan(scannerId, requiredOwner) {
-        console.log('Biometric scan requested:', { scannerId, requiredOwner });
         
-        // Check if scanner is locked out
-        if (this.scannerState.lockoutTimers[scannerId]) {
-            const lockoutEnd = this.scannerState.lockoutTimers[scannerId];
-            const now = Date.now();
+        filteredSamples.forEach(sample => {
+            const sampleElement = document.createElement('div');
+            sampleElement.className = 'sample-item has-thumb';
+            sampleElement.dataset.id = sample.id || 'unknown';
             
-            if (now < lockoutEnd) {
-                const remainingTime = Math.ceil((lockoutEnd - now) / 1000);
-                if (window.gameAlert) {
-                    window.gameAlert(`Scanner locked out. Try again in ${remainingTime} seconds.`, 'error', 'Scanner Locked', 3000);
-                }
-                return false;
-            } else {
-                // Lockout expired, clear it
-                delete this.scannerState.lockoutTimers[scannerId];
-                delete this.scannerState.failedAttempts[scannerId];
-            }
-        }
-        
-        // Check if we have a matching biometric sample
-        const matchingSample = this.biometricSamples.find(sample => 
-            sample.owner === requiredOwner && sample.quality >= this.BIOMETRIC_QUALITY_THRESHOLD
-        );
-        
-        if (matchingSample) {
-            console.log('Biometric scan successful:', matchingSample);
+            const thumb = document.createElement('canvas');
+            thumb.className = 'sample-thumb';
+            thumb.setAttribute('role', 'img');
+            thumb.setAttribute('aria-label', `Lifted print, ${sample.pattern || 'unclassified'} pattern`);
+            drawSampleThumbnail(thumb, sample);
             
-            if (window.gameAlert) {
-                window.gameAlert(`Biometric scan successful! Authenticated as ${requiredOwner}.`, 'success', 'Scan Successful', 4000);
+            const rating = sample.rating || ratingForQuality(sample.quality);
+            const body = document.createElement('div');
+            body.className = 'sample-body';
+            
+            const header = document.createElement('div');
+            header.className = 'sample-header';
+            const name = document.createElement('strong');
+            name.textContent = labelForSample(sample);
+            const type = document.createElement('span');
+            type.className = 'sample-type';
+            type.textContent = sample.type;
+            header.append(name, type);
+            
+            const details = document.createElement('div');
+            details.className = 'sample-details';
+            const quality = document.createElement('span');
+            quality.className = `sample-quality quality-${rating.toLowerCase()}`;
+            quality.textContent = `${rating} (${percent(sample.quality)}%)`;
+            details.appendChild(quality);
+            
+            body.append(header, details);
+            if (sample.pattern) {
+                const pattern = document.createElement('div');
+                pattern.className = 'sample-pattern';
+                pattern.textContent = `Pattern: ${sample.pattern}`;
+                body.appendChild(pattern);
             }
             
-            // Reset failed attempts on success
-            delete this.scannerState.failedAttempts[scannerId];
-            
-            return true;
-        } else {
-            console.log('Biometric scan failed');
-            this.handleScannerFailure(scannerId);
-            return false;
-        }
-    }
-    
-    handleScannerFailure(scannerId) {
-        // Initialize failed attempts if not exists
-        if (!this.scannerState.failedAttempts[scannerId]) {
-            this.scannerState.failedAttempts[scannerId] = 0;
-        }
-        
-        // Increment failed attempts
-        this.scannerState.failedAttempts[scannerId]++;
-        
-        // Check if we should lockout
-        if (this.scannerState.failedAttempts[scannerId] >= this.MAX_FAILED_ATTEMPTS) {
-            this.scannerState.lockoutTimers[scannerId] = Date.now() + this.SCANNER_LOCKOUT_TIME;
-            if (window.gameAlert) {
-                window.gameAlert(`Too many failed attempts. Scanner locked for ${this.SCANNER_LOCKOUT_TIME/1000} seconds.`, 'error', 'Scanner Locked', 5000);
-            }
-        } else {
-            const remainingAttempts = this.MAX_FAILED_ATTEMPTS - this.scannerState.failedAttempts[scannerId];
-            if (window.gameAlert) {
-                window.gameAlert(`Scan failed. ${remainingAttempts} attempts remaining before lockout.`, 'warning', 'Scan Failed', 4000);
-            }
-        }
+            sampleElement.append(thumb, body);
+            biometricsContent.appendChild(sampleElement);
+        });
     }
     
     start() {
         super.start();
-        console.log("Biometrics minigame started");
+        
+        // Let samples lifted while the panel is open refresh it
+        this._previousPanelHooks = {
+            panel: window.updateBiometricsPanel,
+            count: window.updateBiometricsCount
+        };
+        window.updateBiometricsPanel = () => this.updateBiometricsPanel();
+        window.updateBiometricsCount = () => this.updateBiometricsCount();
         
         // Set up global interaction handler for fingerprint objects
         this.setupFingerprintInteractionHandler();
@@ -558,13 +439,10 @@ export class BiometricsMinigame extends MinigameScene {
         // Store the original interaction handler
         this.originalInteractionHandler = window.handleObjectInteraction;
         
-        // Override the interaction handler to handle fingerprint collection
+        // Override the interaction handler: in search mode, a highlighted surface opens dusting
         window.handleObjectInteraction = (sprite) => {
-            // Check if we're in searching mode and this object has fingerprints
-            if (this.searchingMode && sprite.scenarioData && sprite.scenarioData.hasFingerprint === true) {
-                
-                console.log('Collecting fingerprint from object:', sprite);
-                this.collectFingerprintFromObject(sprite);
+            if (this.searchingMode && sprite.scenarioData && this.surfaceNeedsLift(sprite)) {
+                this.dustSurface(sprite);
                 return; // Don't call the original handler
             }
             
@@ -581,9 +459,6 @@ export class BiometricsMinigame extends MinigameScene {
             this.toggleRoomSearching();
         }
         
-        // Sync final state
-        this.syncBiometricSamples();
-        
         // Call parent complete with result
         super.complete(success, this.gameResult);
     }
@@ -592,6 +467,12 @@ export class BiometricsMinigame extends MinigameScene {
         // Restore original interaction handler
         if (this.originalInteractionHandler) {
             window.handleObjectInteraction = this.originalInteractionHandler;
+        }
+        
+        if (this._previousPanelHooks) {
+            window.updateBiometricsPanel = this._previousPanelHooks.panel;
+            window.updateBiometricsCount = this._previousPanelHooks.count;
+            this._previousPanelHooks = null;
         }
         
         // Clear highlights
@@ -604,12 +485,9 @@ export class BiometricsMinigame extends MinigameScene {
 
 // Function to start the biometrics minigame
 export function startBiometricsMinigame(item) {
-    console.log('Starting biometrics minigame with:', { item });
-    
     // Make sure the minigame is registered
     if (window.MinigameFramework && !window.MinigameFramework.registeredScenes['biometrics']) {
         window.MinigameFramework.registerScene('biometrics', BiometricsMinigame);
-        console.log('Biometrics minigame registered on demand');
     }
     
     // Initialize the framework if not already done
@@ -622,11 +500,8 @@ export function startBiometricsMinigame(item) {
         title: 'Biometric Scanner',
         item: item,
         disableGameInput: false, // Allow player to move while scanner is open
-        onComplete: (success, result) => {
-            console.log('Biometrics minigame completed with success:', success);
-        }
+        onComplete: (success, result) => {}
     };
     
-    console.log('Starting biometrics minigame with params:', params);
     window.MinigameFramework.startMinigame('biometrics', null, params);
 }

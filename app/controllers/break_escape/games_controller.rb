@@ -287,6 +287,12 @@ module BreakEscape
           filtered['savedNotes'] = @game.player_state['notes']
         end
 
+        # Lifted fingerprints (best quality per owner) so the reader still has
+        # them after a reload.
+        if @game.player_state['biometricSamples'].present?
+          filtered['savedBiometricSamples'] = @game.player_state['biometricSamples']
+        end
+
         # NPC-local ink variables (met_x, first_meeting, ...) so intros and
         # one-shot lines don't replay after a reload.
         if @game.player_state['npcInkVariables'].present?
@@ -297,6 +303,17 @@ module BreakEscape
         # one-shot cutscenes and messages don't replay after a reload.
         if @game.player_state['triggeredEvents'].present?
           filtered['savedTriggeredEvents'] = @game.player_state['triggeredEvents']
+        end
+
+        # Timed texts still counting down at the last sync, and NPC-level timed
+        # texts already delivered, so a reload neither loses nor repeats them.
+        if @game.player_state['timedMessages'].present?
+          filtered['savedTimedMessages'] = @game.player_state['timedMessages']
+        end
+
+        # Phone threads (texts, read state, story position) per phone contact.
+        if @game.player_state['phoneState'].present?
+          filtered['savedPhoneState'] = @game.player_state['phoneState']
         end
 
         # Include current inventory from player_state for page reload recovery
@@ -569,13 +586,24 @@ module BreakEscape
 
       # Generate or retrieve cached audio
       tts_service = TtsService.new
-      mp3_path = tts_service.generate(
-        text,
-        voice_config['name'],
-        voice_config['style'],
-        voice_config['language'],
-        scenario_name: @game.mission&.name
-      )
+      begin
+        mp3_path = tts_service.generate(
+          text,
+          voice_config['name'],
+          voice_config['style'],
+          voice_config['language'],
+          scenario_name: @game.mission&.name
+        )
+      rescue TtsService::QuotaExhaustedError => e
+        # Out of quota is a temporary condition, not a server fault. 429 tells the
+        # client to back off; it already treats any non-OK TTS reply as "no audio".
+        Rails.logger.warn "[TTS] Quota exhausted for #{npc_id}: #{e.message}"
+        response.set_header('Retry-After', e.retry_after.to_s) if e.retry_after
+        return render json: {
+          error: 'Text-to-speech quota exhausted; audio is unavailable for now',
+          retry_after: e.retry_after
+        }.compact, status: :too_many_requests
+      end
       unless mp3_path && File.exist?(mp3_path)
         if tts_service.enabled?
           return render_error('TTS generation failed', :internal_server_error)
@@ -625,12 +653,24 @@ module BreakEscape
         @game.update_global_variables!(params[:globalVariables].to_unsafe_h)
       end
 
+      if params[:biometricSamples].is_a?(Array)
+        @game.merge_biometric_samples!(params[:biometricSamples])
+      end
+
       if params[:npcInkVariables].respond_to?(:to_unsafe_h)
         @game.merge_npc_ink_variables!(params[:npcInkVariables].to_unsafe_h)
       end
 
       if params[:triggeredEvents].respond_to?(:to_unsafe_h)
         @game.merge_triggered_events!(params[:triggeredEvents].to_unsafe_h)
+      end
+
+      if params[:timedMessages].respond_to?(:to_unsafe_h)
+        @game.replace_timed_messages!(params[:timedMessages].to_unsafe_h)
+      end
+
+      if params[:phoneState].respond_to?(:to_unsafe_h)
+        @game.merge_phone_state!(params[:phoneState].to_unsafe_h)
       end
 
       # Persist notes (including player observations).
@@ -861,7 +901,8 @@ module BreakEscape
         case action_type
         when 'add'
           # Validate item exists and is collectible
-          validation_error = validate_item_collectible(item)
+          source_npc_id = (params[:source_npc_id] || params[:sourceNpcId]).presence&.to_s
+          validation_error = validate_item_collectible(item, source_npc_id)
           if validation_error
             Rails.logger.warn "[BreakEscape] inventory validation failed: #{validation_error}"
             return render json: { success: false, message: validation_error },
@@ -870,6 +911,11 @@ module BreakEscape
 
           Rails.logger.info "[BreakEscape] Adding item to inventory: #{item['type']} / #{item['name']}"
           @game.add_inventory_item!(item.to_unsafe_h)
+          # Remember what an NPC has handed over, so a reload does not restore it
+          # to that NPC's itemsHeld (a later KO would drop a duplicate).
+          if @collectible_location && @collectible_location[:type] == 'npc'
+            @game.record_npc_gift!(@collectible_location[:npc_id], item.to_unsafe_h)
+          end
           Rails.logger.info "[BreakEscape] Item added successfully. Current inventory size: #{@game.player_state['inventory']&.length}"
           render json: { success: true, inventory: @game.player_state['inventory'] }
 
@@ -1466,7 +1512,8 @@ module BreakEscape
     # Items that are always allowed in inventory (core game mechanics)
     ALWAYS_ALLOWED_ITEMS = %w[notepad].freeze
 
-    def validate_item_collectible(item)
+    def validate_item_collectible(item, source_npc_id = nil)
+      @collectible_location = nil
       item_type = item['type']
       # A key is addressed by the lock it opens; everything else by its id.
       item_id = BreakEscape::ItemIdentity.identity_candidates(item).first
@@ -1491,7 +1538,7 @@ module BreakEscape
       end
 
       # Search for item, prioritizing accessible locations (not locked containers/rooms)
-      found_item_info = find_accessible_item(item_type, item_id, item_name)
+      found_item_info = find_accessible_item(item_type, item_id, item_name, source_npc_id)
 
       unless found_item_info
         error_msg = "Item not found in scenario: #{item_type}"
@@ -1501,6 +1548,7 @@ module BreakEscape
 
       found_item = found_item_info[:item]
       location = found_item_info[:location]
+      @collectible_location = location
 
       # Check if item is takeable
       unless found_item['takeable']
@@ -1544,7 +1592,21 @@ module BreakEscape
       nil # No error
     end
 
-    def find_accessible_item(item_type, item_id, item_name)
+    # Locate the scenario definition of an item the client wants to add.
+    #
+    # Matching is by id first (id, or the lock a key opens); the name is only
+    # consulted for scenario items that carry no identity of their own. Two items
+    # that share a name but have different ids are different items (E18).
+    #
+    # source_npc_id is set when the add is an NPC give. That NPC's itemsHeld is
+    # searched before any container or room object, so a give is never resolved to
+    # a same-named copy in a locked cabinet.
+    def find_accessible_item(item_type, item_id, item_name, source_npc_id = nil)
+      matches = ->(obj) { BreakEscape::ItemIdentity.addressed_by?(obj, item_type, item_id, item_name) }
+      npc_location = lambda do |npc, room_id, held_item|
+        { item: held_item, location: { type: 'npc', npc_id: npc['id'], room_id: room_id } }
+      end
+
       # Priority 0: Dynamically-added items (e.g., dropped by defeated NPCs).
       # These were already security-validated by add_item_to_room! so they are always allowed.
       @game.player_state['room_states']&.each do |room_id, room_state|
@@ -1557,11 +1619,24 @@ module BreakEscape
         end
       end
 
+      # Priority 0.5: the NPC the item is being given by, when the client says so.
+      if source_npc_id.present?
+        @game.scenario_data['rooms'].each do |room_id, room_data|
+          room_data['npcs']&.each do |npc|
+            next unless npc['id'] == source_npc_id
+
+            npc['itemsHeld']&.each do |held_item|
+              return npc_location.call(npc, room_id, held_item) if matches.call(held_item)
+            end
+          end
+        end
+      end
+
       # Priority 1: Items in unlocked rooms (most accessible)
       @game.scenario_data['rooms'].each do |room_id, room_data|
         if room_data['locked'] == false || @game.player_state['unlockedRooms'].include?(room_id)
           room_data['objects']&.each do |obj|
-            if obj['type'] == item_type && (obj['opens_lock'] == item_id || obj['key_id'] == item_id || obj['id'] == item_id || obj['name'] == item_name || obj['name'] == item_id)
+            if matches.call(obj)
               return { item: obj, location: { type: 'room', room_id: room_id } }
             end
           end
@@ -1571,13 +1646,13 @@ module BreakEscape
       # Priority 2: Items in any room (including locked ones - will validate in main method)
       @game.scenario_data['rooms'].each do |room_id, room_data|
         room_data['objects']&.each do |obj|
-          if obj['type'] == item_type && (obj['opens_lock'] == item_id || obj['key_id'] == item_id || obj['id'] == item_id || obj['name'] == item_name || obj['name'] == item_id)
+          if matches.call(obj)
             return { item: obj, location: { type: 'room', room_id: room_id } }
           end
 
           # Search nested contents in room objects
           obj['contents']&.each do |content|
-            if content['type'] == item_type && (content['opens_lock'] == item_id || content['key_id'] == item_id || content['id'] == item_id || content['name'] == item_name || content['name'] == item_id)
+            if matches.call(content)
               return { item: content, location: { type: 'container', container_id: obj['id'] || obj['name'] } }
             end
           end
@@ -1585,7 +1660,7 @@ module BreakEscape
           # Search flag-station itemsHeld (flag reward items)
           if obj['type'] == 'flag-station' && obj['itemsHeld'].present?
             obj['itemsHeld'].each do |held_item|
-              if held_item['type'] == item_type && (held_item['opens_lock'] == item_id || held_item['key_id'] == item_id || held_item['keyId'] == item_id || held_item['id'] == item_id || held_item['name'] == item_name || held_item['name'] == item_id)
+              if matches.call(held_item)
                 return { item: held_item, location: { type: 'flag_station', flag_station_id: obj['id'] || obj['name'], room_id: room_id } }
               end
             end
@@ -1597,9 +1672,7 @@ module BreakEscape
           next unless npc['itemsHeld'].present?
 
           npc['itemsHeld'].each do |held_item|
-            if held_item['type'] == item_type && (held_item['opens_lock'] == item_id || held_item['key_id'] == item_id || held_item['id'] == item_id || held_item['name'] == item_name || held_item['name'] == item_id)
-              return { item: held_item, location: { type: 'npc', npc_id: npc['id'], room_id: room_id } }
-            end
+            return npc_location.call(npc, room_id, held_item) if matches.call(held_item)
           end
         end
       end
