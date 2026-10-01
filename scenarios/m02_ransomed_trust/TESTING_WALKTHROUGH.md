@@ -229,8 +229,8 @@ Holds only the two **discovery** tasks. The naming payoff lives in the next aim 
     - Combined Recovery (4 h) — needs the manifest + escrow keys + ENTROPY key material (so flag 4 and the staging cache) → `ward_recovering`, no ransom
     - Confirming sets `backup_restore_initiated` → **task `initiate_backup_recovery` complete**, and `backup_recovery_source` → **task `make_ransom_decision` complete** + `ransom_decision_made`. **Ghost video-calls** (`on_recovery_console`) with his offer (`ghost_deal_accepted` if taken). HaX points to the Boardroom comms terminal
 39. **Boardroom door** — PIN `0417`, from Kim's Desk Diary, Kim's `boardroom_code` knot, or the pin-cracker. Reachable any time, but the terminal stays locked until step 40's gates are met
-40. **Boardroom — Hospital Communications Terminal** — needs `backdoor_fully_exploited` **and** `ransom_decision_made` (otherwise `relay_locked_investigation` / `relay_locked_incident`) → transmit or keep quiet → **task `decide_hospital_exposure` complete**, `exposed_hospital` true/false, **`mission_complete`**. Transmitting sends extra [SENT] lines for the ZDS invoice, the manifesto and an exposed Reeves
-41. **Closing debrief** — `closing_debrief_trigger` fires on `mission_complete` (person-chat, cannot be closed early) → ends with `#complete_mission`. Closing it plays the victory credits (music event on `conversation_closed:closing_debrief_trigger`) and the client asks the server to conclude → bond visualiser
+40. **Boardroom — Hospital Communications Terminal** — needs `backdoor_fully_exploited` **and** `ransom_decision_made` (otherwise `relay_locked_investigation` / `relay_locked_incident`) → transmit or keep quiet → **task `decide_hospital_exposure` complete**, `exposed_hospital` true/false, **`mission_complete`**. Transmitting sends extra [SENT] lines for the ZDS invoice, the manifesto and an exposed Reeves. "I'll step away" returns to the decision menu (no DONE), so reopening offers the decision again; once decided, reopening shows a read-only outcome (`decision_recorded`) and the decision cannot be reopened. The locked knots each offer "Step away", which re-checks the gates on the next open. No path ends the story, so `restartOnRetalk: false` is now only a guard
+41. **Closing debrief** — `closing_debrief_trigger` fires on `mission_complete` (person-chat, cannot be closed early) → sets `debrief_played` at the top; its last line fires `#complete_task:hear_debrief` (before `#complete_mission`). That is the last task of the `restore_hospital_systems` aim, so the aim (and the conclusion) completes only here, not on the terminal decision. Closing it plays the victory credits (music event on `conversation_closed:closing_debrief_trigger`) and the client asks the server to conclude → bond visualiser. Backstop: if the page reloads mid-debrief, the next `room_entered` (any room) completes `hear_debrief` once `debrief_played` is true
 
 **Ending gate (`concludeRequires.tasksCompleted`):** `submit_ssh_flag`, `submit_proftpd_flag`, `submit_database_flag`, `submit_ghost_log_flag`. The VM chain cannot be skipped. If the server refuses, the player is told there is outstanding work instead of seeing credits that don't count. Story tasks are not gated: they cost score when unfinished but never withhold the ending.
 
@@ -303,6 +303,10 @@ Holds only the two **discovery** tasks. The naming payoff lives in the next aim 
 - [ ] Press terminal refuses to transmit before flag 4 **and** before the recovery decision
 - [ ] Debrief reflects: ransom choice, exposure choice, `gary_protected`, Reeves outcome, `bernie_vouched`, `guard_knocked_out`, `advised_board_*` vs `paid_ransom`
 - [ ] Credits play after the debrief closes and the game records as concluded
+- [ ] Credits do **not** open right after the terminal confirm; the debrief plays in full first, and `hear_debrief` ("Report back to Agent HaX") is the last task ticked
+- [ ] Press terminal: choose "I'll step away", close, reopen: the decision menu is offered again (no empty terminal, no reload needed)
+- [ ] Press terminal after deciding: reopening shows only "Review the transmission record" / "Close the terminal"; the decision cannot be changed and does not re-trigger the debrief
+- [ ] Reload mid-debrief, then walk into any room: `hear_debrief` completes and the mission concludes
 
 ### Optional Path
 

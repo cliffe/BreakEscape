@@ -67,6 +67,9 @@ EXTERNAL player_name()
 // ===========================================
 
 === start ===
+// Set at the top so a reload mid-debrief can't replay it; the room_entered backstop in the
+// scenario completes hear_debrief if the last line was never reached.
+#set_global:debrief_played:true
 #speaker:narrator
 Narrator: SAFETYNET headquarters. Forty-eight hours after St. Catherine's.
 
@@ -821,6 +824,9 @@ Agent HaX: That's what you came in there to do.
 
 Agent HaX: We'll brief the next operation when you're ready.
 
+// The conclusion aim's last task completes HERE (before any exit), so the bond_visualiser
+// credits come after the debrief rather than over it.
+#complete_task:hear_debrief
 #complete_mission
 #exit_conversation
 

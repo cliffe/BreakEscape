@@ -492,6 +492,16 @@ boardroom_pin = "0417"
           "title": "Decide what goes public at the comms terminal",
           "type": "manual",
           "status": "active"
+        },
+        <%# The aim used to complete on the last story decision, so the bond_visualiser
+            credits opened ~1s after the terminal confirm and covered the debrief. This
+            task completes on the debrief's last line (m03/m05/m06 hear_debrief pattern).
+            concludeRequires is unchanged. %>
+        {
+          "taskId": "hear_debrief",
+          "title": "Report back to Agent HaX",
+          "type": "custom",
+          "status": "active"
         }
       ]
     }
@@ -809,6 +819,15 @@ boardroom_pin = "0417"
               "onceOnly": true,
               "sendTimedMessage": { "delay": 4500, "message": "Read what they left on Kim's screen. Not a demand -- a note about Gary's emails. Ghost wants more than the money out of tonight. Remember that when it comes to deciding what goes public." }
             },
+<% %w[reception_lobby hospital_ward it_department server_room emergency_equipment_storage dr_kim_office conference_room security_office office_corridor staff_room ward_hall ward_vestibule ward_approach].each do |r| %>
+            {
+              "_comment": "Backstop: hear_debrief completes on the debrief's last line. If the page reloads mid-debrief, debrief_played is already set and the debrief won't replay, so the next room entry completes the task and the mission can conclude.",
+              "eventPattern": "room_entered:<%= r %>",
+              "condition": "globalVars.debrief_played === true",
+              "onceOnly": true,
+              "completeTask": "hear_debrief"
+            },
+<% end %>
             {
               "eventPattern": "room_entered:hospital_ward",
               "onceOnly": true,
@@ -2588,6 +2607,7 @@ boardroom_pin = "0417"
           "phoneTheme": "terminal",
           "phoneId": "press_terminal",
           "storyPath": "scenarios/m02_ransomed_trust/ink/m02_object_press_terminal.json",
+          "restartOnRetalk": false,
           "currentKnot": "start",
           "avatar": "assets/npc/avatars/npc_bob.png",
           "behavior": { "initiallyHidden": true }
@@ -3097,6 +3117,7 @@ boardroom_pin = "0417"
 
     "paid_ransom": false,
     "exposed_hospital": false,
+    "debrief_played": false,
     "gary_protected": false,
     "kim_guilt_revealed": false,
     "ghost_deal_accepted": false,

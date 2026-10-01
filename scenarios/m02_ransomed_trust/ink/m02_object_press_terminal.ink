@@ -22,6 +22,13 @@ EXTERNAL player_name()
 VAR backdoor_fully_exploited = false
 VAR ransom_decision_made = false
 
+// The release decision itself. mission_complete and exposed_hospital are set together by
+// do_upload / do_stay_quiet, so mission_complete doubles as "the decision has been made".
+// Both are also set locally (~) so the read-only outcome knot is right in the same session,
+// before the next globalVars sync.
+VAR mission_complete = false
+VAR exposed_hospital = false
+
 // Phase 6 (low-risk): the base package below is always transmitted (the debrief's
 // exposed-path lines assume it went out, so it stays fixed). These optional pieces of
 // corroborating evidence are added to the transmission only if the player actually
@@ -34,6 +41,10 @@ VAR insider_asset_exposed = false
 === start ===
 #speaker:computer
 
+// Decision already made: read-only outcome, never the decision menu again.
+{mission_complete:
+    -> decision_recorded
+}
 {not backdoor_fully_exploited:
     -> relay_locked_investigation
 }
@@ -74,8 +85,11 @@ The SAFETYNET forensic record is incomplete. A public submission must include ve
 
 Finish working the backup server. Recover the evidence off it. Then the archive will accept a release.
 
-#exit_conversation
--> DONE
+// No DONE: a finished story would leave the terminal with no choices on reopen. Stepping
+// away re-enters start, so the gates are re-checked against the current globals.
++ [Step away from the terminal.]
+    #exit_conversation
+    -> start
 
 === relay_locked_incident ===
 #speaker:computer
@@ -90,8 +104,9 @@ The forensic record checks out, but the emergency is not yet resolved. Patient s
 
 Resolve the incident first. Then decide what the world gets to see.
 
-#exit_conversation
--> DONE
++ [Step away from the terminal.]
+    #exit_conversation
+    -> start
 
 === decision_menu ===
 
@@ -102,8 +117,9 @@ Resolve the incident first. Then decide what the world gets to see.
     -> confirm_stay_quiet
 
 + [I'll step away from the terminal for now.]
+    // Back to the menu (not DONE) so reopening offers the decision again.
     #exit_conversation
-    -> DONE
+    -> decision_menu
 
 // ===========================================
 // UPLOAD PATH
@@ -153,10 +169,12 @@ This is no longer only a budget scandal at one hospital. The material you assemb
 }
 
 #complete_task:decide_hospital_exposure
+~ exposed_hospital = true
+~ mission_complete = true
 #set_global:exposed_hospital:true
 #set_global:mission_complete:true
 #exit_conversation
--> DONE
+-> outcome_idle
 
 // ===========================================
 // SUPPRESS PATH
@@ -193,7 +211,36 @@ The sector-wide risk profile -- 214 hospitals scanned, 147 with critical vulnera
 Other hospitals will not learn from this until something similar happens to them.
 
 #complete_task:decide_hospital_exposure
+~ exposed_hospital = false
+~ mission_complete = true
 #set_global:exposed_hospital:false
 #set_global:mission_complete:true
 #exit_conversation
--> DONE
+-> outcome_idle
+
+// ===========================================
+// AFTER THE DECISION: read-only. No path here reaches DONE, so the terminal always has a
+// choice to show on reopen.
+// ===========================================
+
+=== decision_recorded ===
+#speaker:computer
+
+HOSPITAL COMMUNICATIONS TERMINAL
+
+Outgoing relay: CLOSED. The release decision is on record and cannot be changed.
+
+{exposed_hospital:
+    Status: TRANSMITTED. The board liability email, FY2024 budget report, Gary Whitlock's advisory archive and the SAFETYNET forensic record are in the public record.
+- else:
+    Status: WITHHELD. Nothing was transmitted. The evidence stays internal and the sector-wide risk profile remains unpublished.
+}
+
+-> outcome_idle
+
+=== outcome_idle ===
++ [Review the transmission record.]
+    -> decision_recorded
++ [Close the terminal.]
+    #exit_conversation
+    -> outcome_idle

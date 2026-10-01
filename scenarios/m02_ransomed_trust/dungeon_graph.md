@@ -9,7 +9,7 @@ St. Catherine's Regional went dark at 02:47. Every clinical system is encrypted,
 | Metric | Value |
 |---|---|
 | Story aims | 8 |
-| Total tasks | 28 (3 optional) |
+| Total tasks | 29 (3 optional) |
 | VM flag challenges | 4 |
 | Physical locks | 32 |
 | AND-gate convergences | 0 |
