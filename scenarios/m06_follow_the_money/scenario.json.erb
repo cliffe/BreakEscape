@@ -9,19 +9,23 @@
 #
 # ROOM LAYOUT (verified overlap-free by scripts/predict_door_sides.py):
 #   Reception Lobby → Security Checkpoint → Trading Floor (main hub)
-#   Trading Floor → Server Room (password lock)  → Data Center
+#   Trading Floor → Server Room (password lock)  → Data Centre (PIN lock)
 #   Trading Floor → Elena's Office (RFID: cto_badge)
 #   Trading Floor → Blockchain Analysis Lab
-#   Data Center   → Executive Wing (RFID: executive_badge) → Satoshi's Office
+#   Data Centre   → Executive Wing (RFID: executive_badge) → Satoshi's Office
 #
-# CRITICAL PATH:
-#   briefing → Elena (password list + CTO badge) → server room password
-#   → backend VM (4 flags) → blockchain lab evidence → data centre
-#   → Architect's Fund + executive badge → Satoshi confrontation
-#   → asset decision + Elena's fate → debrief
+# CRITICAL PATH (pass 2):
+#   briefing → Elena (wordlist) + IT checklist → server room passphrase
+#   → backend VM: flag 3 pays out the ledger's door-controller export, which
+#     holds the data centre PIN (the VM work now opens the physical path)
+#   → blockchain lab evidence (any time) → data centre → Architect's Fund
+#   + executive badge → Satoshi → asset decision + Elena's fate
+#   → debrief (also waits for all four flags, the concludeRequires gate)
 #
-# KO RESILIENCE: every person NPC carries taskOnKO + globalVarOnKO, and the
-# handler carries KO-keyed eventMappings for the second unlock each NPC gates.
+# KO RESILIENCE (pass 2): KO reactions key on npc_ko:<id> (globalVarOnKO emits
+# no global_variable_changed, npc-hostile.js:159-166). Elena's and Satoshi's
+# KOs open HaX phone knots that hand over relayed copies / put the asset
+# decision to the player; the HaX hub keeps a sticky safety-net option.
 # ============================================================================
 
 # ERB Helper Methods
@@ -37,9 +41,9 @@ end
 # ----------------------------------------------------------------------------
 
 # Password hint lives OUTSIDE the server room it opens (checkpoint noticeboard)
-password_hint_note = "HASHCHAIN IT — NEW STARTER CHECKLIST\n\nStep 4: Door controller passphrases\n\nEvery restricted-area controller uses the house convention:\n  <crypto term, lowercase> + <current year>\n\nThe server room controller was last rotated this year and still\nfollows the convention. It is the obvious one. It is always the\nobvious one, because nobody wants to be locked out at 3am.\n\n(IT has been asked four times to stop doing this. IT has declined.)\n\nStep 5: If you are locked out, do NOT call the CTO. She has opinions."
+password_hint_note = "HASHCHAIN IT — NEW STARTER CHECKLIST\n(Rev. January 2025)\n\nStep 4: Door controller passphrases\n\nEvery restricted-area controller uses the house convention:\n  <crypto term, lowercase> + <current year>\n\nThe server room controller was last rotated when this checklist\nwas written, and still follows the convention. It is the obvious one. It is always the\nobvious one, because nobody wants to be locked out at 3am.\n\n(IT has been asked four times to stop doing this. IT has declined.)\n\nStep 5: If you are locked out, do NOT call the CTO. She has opinions."
 
-blockchain_evidence = "ENTROPY FINANCIAL NETWORK - TRANSACTION ANALYSIS\n\nSource Wallets:\n- 1ENTROPY2RansomInc -> $2.4M (Hospital ransomware - Mission 2)\n- 1ENTROPY5InsiderTh -> $847K (Corporate espionage - Mission 5)\n- 1ENTROPY3ZeroDaySy -> $1.2M (Exploit sales)\n- 1ENTROPY1SocialFab -> $680K (Disinformation campaigns)\n\nIntermediary: HashChain Exchange Mixer\n\nDestination: 1ARCHITECT9FUND\nTotal Value: $12.8M USD equivalent\n\nPURPOSE: Major coordinated operation funding\nTIMELINE: 72 hours until fund distribution"
+blockchain_evidence = "ENTROPY FINANCIAL NETWORK - TRANSACTION ANALYSIS\n\nInbound to 1ARCHITECT9FUND (via HashChain mixer):\n- 1ENTROPY2RansomInc -> $2.4M (ransomware proceeds, pooled across victims)\n- 1ENTROPY3ZeroDaySy -> $1.2M (exploit sales)\n- 1ENTROPY1SocialFab -> $680K (disinformation campaigns)\n- 14 further wallets -> $9.4M (not yet attributed)\n\nOutbound from 1ARCHITECT9FUND:\n- 1TALENTSTACKPAY <- $847K (acquisition budget, Quantum Dynamics job; Insider Threat Initiative)\n\nCurrent balance: $12.8M USD equivalent\n\nPURPOSE: Major coordinated operation funding\nTIMELINE: 72 hours until fund distribution"
 
 architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurrent Balance: $12.8M USD (BTC equivalent)\n\nPLANNED DISTRIBUTION:\n- Critical Mass (Infrastructure): $3.2M\n- Social Fabric (Disinformation): $2.1M\n- Zero Day Syndicate (Exploits): $2.8M\n- Digital Vanguard (Corporate): $1.9M\n- Ghost Protocol (Intelligence): $1.5M\n- Supply Chain Saboteurs: $1.3M\n\nOPERATION: The Architect's Masterpiece\nTARGET DATE: 72 hours\nCOORDINATOR: The Architect\n\nNOTE: Simultaneous multi-cell attack. All cells receive funding simultaneously.\nSuccess probability: 94%\nProjected casualties: 180-340 across all operations"
 %>
@@ -58,7 +62,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
     }
   },
 
-  "scenario_brief": "Track cryptocurrency payments from previous ENTROPY operations to the Crypto Anarchists' HashChain Exchange. Infiltrate as a compliance auditor, map the financial network funding every ENTROPY cell, and find out what The Architect is buying with it.",
+  "scenario_brief": "Track cryptocurrency payments from previous ENTROPY operations to the Crypto Anarchists' HashChain Exchange. Get in as a visiting FCA supervisor, map the financial network funding every ENTROPY cell, and find out what The Architect is buying with it.",
   "show_scenario_brief": "on_resume",
 
   "music": {
@@ -126,43 +130,47 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
           { "text": "ENTROPY FINANCIAL NETWORK: PARTIALLY MAPPED",                 "style": "entry",   "condition": "!globalVars.financial_network_mapped" },
           { "text": "" },
           { "text": "── ASSETS ──",                                                "style": "section-header" },
-          { "text": "SEIZED — $12.8M frozen. Six cells lose their funding tonight.", "style": "entry", "condition": "globalVars.assets_seized" },
-          { "text": "MONITORED — Fund left running. Every recipient wallet now tagged.", "style": "entry", "condition": "globalVars.monitoring_enabled" },
+          { "text": "FROZEN — $12.8M locked in cold storage. The cells not yet paid go without.", "style": "entry", "condition": "globalVars.assets_seized" },
+          { "text": "WATCHED — Fund left running. Every recipient wallet now tagged.", "style": "entry", "condition": "globalVars.monitoring_enabled" },
           { "text": "" },
           { "text": "── PERSONNEL ──",                                             "style": "section-header" },
-          { "text": "DR. ELENA VOLKOV: Recruited — SAFETYNET cryptographic asset",  "style": "entry",   "condition": "globalVars.elena_recruited" },
-          { "text": "DR. ELENA VOLKOV: Arrested — Charged with money laundering",   "style": "entry",   "condition": "globalVars.elena_arrested" },
-          { "text": "DR. ELENA VOLKOV: Removed — Cooperation never offered",        "style": "entry",   "condition": "globalVars.elena_ko && !globalVars.elena_recruited && !globalVars.elena_arrested" },
-          { "text": "'SATOSHI NAKAMOTO II': Arrested — In custody",                 "style": "entry",   "condition": "globalVars.satoshi_arrested && !globalVars.satoshi_ko" },
-          { "text": "'SATOSHI NAKAMOTO II': Neutralised — In custody",              "style": "entry",   "condition": "globalVars.satoshi_ko" },
-          { "text": "CRYPTO TRADER (D. OKONKWO): Whistleblower — Protected",        "style": "entry",   "condition": "!globalVars.trader_ko" },
-          { "text": "CRYPTO TRADER (D. OKONKWO): Removed — No ENTROPY connection",  "style": "entry",   "condition": "globalVars.trader_ko" },
-          { "text": "BLOCKCHAIN ANALYST (P. RAGHAVAN): Cleared — Cooperating",      "style": "entry",   "condition": "!globalVars.analyst_ko" },
-          { "text": "BLOCKCHAIN ANALYST (P. RAGHAVAN): Removed — No ENTROPY connection", "style": "entry", "condition": "globalVars.analyst_ko" },
+          { "text": "DR. ELENA VOLKOV: Turned — working for SAFETYNET", "style": "entry", "condition": "globalVars.elena_recruited" },
+          { "text": "DR. ELENA VOLKOV: Detained — handed to the police with the laundering evidence", "style": "entry", "condition": "globalVars.elena_arrested" },
+          { "text": "DR. ELENA VOLKOV: Knocked down on the trading floor — the offer was never made", "style": "entry", "condition": "globalVars.elena_ko && !globalVars.elena_recruited && !globalVars.elena_arrested" },
+          { "text": "'SATOSHI NAKAMOTO II': Detained — handed to the police",       "style": "entry",   "condition": "!globalVars.satoshi_ko" },
+          { "text": "'SATOSHI NAKAMOTO II': Knocked out in his own office — handed to the police", "style": "entry", "condition": "globalVars.satoshi_ko" },
+          { "text": "DANI OKONKWO (TRADER): Flagged the wallets first — left alone", "style": "entry",   "condition": "!globalVars.trader_ko" },
+          { "text": "DANI OKONKWO (TRADER): Knocked out — had done nothing wrong", "style": "entry",   "condition": "globalVars.trader_ko" },
+          { "text": "PRIYA RAGHAVAN (ANALYST): Drew the graph — left alone",       "style": "entry",   "condition": "!globalVars.analyst_ko" },
+          { "text": "PRIYA RAGHAVAN (ANALYST): Knocked out — had done nothing wrong", "style": "entry", "condition": "globalVars.analyst_ko" },
           { "text": "" },
           { "text": "── THE ARCHITECT ──",                                          "style": "section-header" },
           { "text": "IDENTITY: 87% probability — Dr. Adrian Tesseract",             "style": "entry",   "condition": "globalVars.architect_identity_found" },
           { "text": "IDENTITY: Unknown — safe contents never recovered",            "style": "entry",   "condition": "!globalVars.architect_identity_found" },
           { "text": "" },
-          { "text": "72 hours. Six cells. And now we know what it costs.",         "style": "warning" }
+          { "text": "72 hours. Six cells. Some of them were already paid.",        "style": "warning" }
         ]
       }
     ]
   },
 
+  <%# PASS 2: every task ships "active" (unlockAim activates only the first task,
+      objectives-manager.js:651-660). A locked aim auto-reveals when ANY of its tasks
+      completes (:414-419), so tasks sit in the aim whose rooms can reach them: the
+      blockchain lab is open off the hub, so it lives in aim 2; the data centre is
+      behind the flag-3 PIN, so aim 4 can't complete early. %>
   "objectives": [
     {
       "aimId": "establish_cover",
       "title": "Establish Cover",
-      "description": "Walk into HashChain Exchange as a FinCEN compliance auditor and get the CTO talking.",
+      "description": "Walk into HashChain Exchange as an FCA supervision officer and get the CTO talking.",
       "status": "active",
       "order": 0,
       "tasks": [
         {
           "taskId": "receive_briefing",
           "title": "Take Agent HaX's mission briefing",
-          "type": "npc_conversation",
-          "targetNPC": "opening_briefing_npc",
+          "type": "custom",
           "status": "active"
         },
         {
@@ -178,8 +186,8 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
     },
     {
       "aimId": "access_backend_systems",
-      "title": "Get Into The Back Office",
-      "description": "Talk Elena out of her password dictionary and her CTO badge, work out the server room passphrase, and reach the backend terminal.",
+      "title": "Work The Floor",
+      "description": "Get Elena's wordlist, work out the server room passphrase, and see what the exchange's own analysts have drawn.",
       "status": "locked",
       "unlockCondition": { "aimCompleted": "establish_cover" },
       "order": 1,
@@ -188,7 +196,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
           "taskId": "obtain_access_tools",
           "title": "Get Elena's password dictionary list",
           "type": "collect_items",
-          "targetItemIds": ["m06_password_dictionary", "Password Dictionary List"],
+          "targetItemIds": ["m06_password_dictionary", "relayed_password_dictionary"],
           "targetCount": 1,
           "currentCount": 0,
           "showProgress": true,
@@ -211,100 +219,11 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
           "onComplete": { "unlockAim": "crack_passwords" }
         },
         {
-          "taskId": "question_the_trader",
-          "title": "Hear out the trader who flagged the ENTROPY wallets",
-          "type": "npc_conversation",
-          "targetNPC": "trader_npc",
-          "status": "active",
-          "optional": true
-        }
-      ]
-    },
-    {
-      "aimId": "crack_passwords",
-      "title": "Crack The Backend",
-      "description": "Crack your way onto HashChain's financial servers, reuse what you recover to move sideways, and submit each flag at the intelligence drop.",
-      "status": "locked",
-      "unlockCondition": { "aimCompleted": "access_backend_systems" },
-      "order": 2,
-      "tasks": [
-        {
-          "taskId": "access_hackme_vm",
-          "title": "Launch the backend server terminal",
-          "type": "unlock_object",
-          "targetObject": "vm_launcher_hackme",
-          "status": "active",
-          "puzzle_graph_unlocks": "vm_access_terminal"
-        },
-        {
-          "taskId": "submit_flag1",
-          "title": "Crack the first server password and submit the flag",
-          "type": "submit_flags",
-          "targetFlags": ["hackme_crack_me_lab:flag_1"],
-          "targetCount": 1,
-          "currentCount": 0,
-          "showProgress": true,
-          "status": "active",
-          "puzzle_graph_unlocks": "credential_reuse_available"
-        },
-        {
-          "taskId": "submit_flag2",
-          "title": "Reuse those credentials on the second server and submit the flag",
-          "type": "submit_flags",
-          "targetFlags": ["hackme_crack_me_lab:flag_2"],
-          "targetCount": 1,
-          "currentCount": 0,
-          "showProgress": true,
-          "status": "active",
-          "puzzle_graph_unlocks": "financial_database_reachable"
-        },
-        {
-          "taskId": "submit_flag3",
-          "title": "Reach the financial database and submit the flag",
-          "type": "submit_flags",
-          "targetFlags": ["hackme_crack_me_lab:flag_3"],
-          "targetCount": 1,
-          "currentCount": 0,
-          "showProgress": true,
-          "status": "active",
-          "puzzle_graph_unlocks": "full_network_access"
-        },
-        {
-          "taskId": "submit_flag4",
-          "title": "Take the whole network and submit the final flag",
-          "type": "submit_flags",
-          "targetFlags": ["hackme_crack_me_lab:flag_4"],
-          "targetCount": 1,
-          "currentCount": 0,
-          "showProgress": true,
-          "status": "active",
-          "puzzle_graph_unlocks": "blockchain_lab",
-          "onComplete": { "unlockAim": "map_financial_network" }
-        }
-      ]
-    },
-    {
-      "aimId": "map_financial_network",
-      "title": "Map The Money",
-      "description": "Trace the cryptocurrency out of the hospital and the trading firm, through the mixer, and into whatever it is paying for.",
-      "status": "locked",
-      "unlockCondition": { "aimCompleted": "crack_passwords" },
-      "order": 3,
-      "tasks": [
-        {
           "taskId": "access_blockchain_lab",
-          "title": "Get into the blockchain analysis lab",
+          "title": "Look round the blockchain analysis lab",
           "type": "enter_room",
           "targetRoom": "blockchain_lab",
           "status": "active"
-        },
-        {
-          "taskId": "question_the_analyst",
-          "title": "Get the analyst to walk you through her transaction graph",
-          "type": "npc_conversation",
-          "targetNPC": "blockchain_analyst",
-          "status": "active",
-          "optional": true
         },
         {
           "taskId": "find_transaction_records",
@@ -318,6 +237,99 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
           "puzzle_graph_unlocks": "financial_network_mapped"
         },
         {
+          "taskId": "question_the_trader",
+          "title": "Hear out the trader who flagged the ENTROPY wallets",
+          "type": "npc_conversation",
+          "targetNPC": "trader_npc",
+          "status": "active",
+          "optional": true
+        },
+        {
+          "taskId": "question_the_analyst",
+          "title": "Get the analyst to walk you through her transaction graph",
+          "type": "npc_conversation",
+          "targetNPC": "blockchain_analyst",
+          "status": "active",
+          "optional": true
+        }
+      ]
+    },
+    {
+      "aimId": "crack_passwords",
+      "title": "Crack The Backend",
+      "description": "Crack your way onto HashChain's financial servers, reuse what you recover to move sideways, and submit each flag at the intelligence drop. The financial database runs the door controllers.",
+      "status": "locked",
+      "unlockCondition": { "aimCompleted": "access_backend_systems" },
+      "order": 2,
+      "tasks": [
+        {
+          "taskId": "access_hackme_vm",
+          "title": "Launch the backend server terminal",
+          "type": "custom",
+          "status": "active",
+          "puzzle_graph_unlocks": "vm_access_terminal"
+        },
+        {
+          "taskId": "submit_flag1",
+          "title": "Crack the first server password and submit the flag",
+          "type": "submit_flags",
+          "targetFlags": ["flag_station_financial:hackme_crack_me_lab-flag1"],
+          "targetCount": 1,
+          "currentCount": 0,
+          "showProgress": true,
+          "status": "active",
+          "puzzle_graph_unlocks": "credential_reuse_available"
+        },
+        {
+          "taskId": "submit_flag2",
+          "title": "Reuse those credentials on the second account and submit the flag",
+          "type": "submit_flags",
+          "targetFlags": ["flag_station_financial:hackme_crack_me_lab-flag2"],
+          "targetCount": 1,
+          "currentCount": 0,
+          "showProgress": true,
+          "status": "active",
+          "puzzle_graph_unlocks": "financial_database_reachable"
+        },
+        {
+          "taskId": "submit_flag3",
+          "title": "Reach the financial database and submit the flag",
+          "type": "submit_flags",
+          "targetFlags": ["flag_station_financial:hackme_crack_me_lab-flag3"],
+          "targetCount": 1,
+          "currentCount": 0,
+          "showProgress": true,
+          "status": "active",
+          "puzzle_graph_unlocks": "data_center",
+          "onComplete": { "unlockAim": "map_financial_network" }
+        },
+        {
+          "taskId": "submit_flag4",
+          "title": "Take the whole estate and submit the final flag",
+          "type": "submit_flags",
+          "targetFlags": ["flag_station_financial:hackme_crack_me_lab-flag4"],
+          "targetCount": 1,
+          "currentCount": 0,
+          "showProgress": true,
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "aimId": "map_financial_network",
+      "title": "Map The Money",
+      "description": "Use the ledger's door code to get into the data centre and find out what all this money is paying for.",
+      "status": "locked",
+      "order": 3,
+      "tasks": [
+        {
+          "taskId": "access_data_center",
+          "title": "Get into the data centre",
+          "type": "enter_room",
+          "targetRoom": "data_center",
+          "status": "active"
+        },
+        {
           "taskId": "read_transaction_server_files",
           "title": "Read the files on the transaction server",
           "type": "collect_items",
@@ -327,13 +339,6 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
           "showProgress": true,
           "status": "active",
           "optional": true
-        },
-        {
-          "taskId": "access_data_center",
-          "title": "Push through to the data centre",
-          "type": "enter_room",
-          "targetRoom": "data_center",
-          "status": "active"
         },
         {
           "taskId": "discover_architects_fund",
@@ -378,7 +383,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
         },
         {
           "taskId": "open_executive_safe",
-          "title": "Crack the executive safe for The Architect's identity file",
+          "title": "Crack the CEO's safe",
           "type": "unlock_object",
           "targetObject": "executive_safe",
           "status": "active",
@@ -426,6 +431,15 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
           "title": "Decide what happens to Dr. Elena Volkov",
           "type": "manual",
           "status": "active"
+        },
+        <%# Playtest D2: the aim completed on the last decision and raised the
+            bond_visualiser over the debrief. This task completes on the debrief's
+            last line (m05 hear_debrief pattern), so the credits come after it. %>
+        {
+          "taskId": "hear_debrief",
+          "title": "Report back to Agent HaX",
+          "type": "custom",
+          "status": "active"
         }
       ]
     }
@@ -462,7 +476,13 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
 
     "briefing_played": false,
     "start_debrief_cutscene": false,
+    "debrief_played": false,
     "mission_complete": false,
+    "flags_nag_sent": false,
+    "resolve_aim_open": false,
+    "phone_decision_made": false,
+    "elena_ko_relayed": false,
+    "asset_decision_deferred": false,
 
     "knows_architects_fund": false,
     "knows_coordinated_attack": false,
@@ -516,7 +536,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
     "recon_guide_hint_given": false
   },
 
-  "endGoal": "Map ENTROPY's financial network, recover The Architect's Fund allocation, confront the exchange's leadership, and settle two questions: whether $12.8M is frozen tonight or watched for weeks, and whether Dr. Elena Volkov is recruited or charged.",
+  "endGoal": "Map ENTROPY's financial network, recover The Architect's Fund allocation, confront the exchange's leadership, and settle two questions: whether $12.8M is frozen tonight or watched for weeks, and whether Dr. Elena Volkov is turned or handed to the police.",
 
   "rooms": {
     "reception_lobby": {
@@ -639,36 +659,83 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
               "takeable": true,
               "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/rfid-cloning/",
               "observations": "Reading, identifying and duplicating access badges with a handheld cloner"
-            }
-          ],
-          "timedMessages": [
+            },
             {
-              "delay": 5000,
-              "message": "You're in. Remember the cover: FinCEN, routine compliance audit, bored and underpaid. The CTO is the one who matters — Dr. Elena Volkov, trading floor, first door past the checkpoint.",
-              "type": "text"
+              "_comment": "PASS 2 KO fallback (lessons 19/24/38). Elena is in a room loaded after the start, so npc._sprite is unset and her itemsHeld never drop on a KO. On npc_ko:elena_volkov HaX pushes working copies. obtain_access_tools lists this id, so the collect task completes with a real item.",
+              "type": "text_file",
+              "id": "relayed_password_dictionary",
+              "name": "Password Dictionary List (relayed copy)",
+              "takeable": true,
+              "text": "HASHCHAIN INTERNAL — CREDENTIAL AUDIT WORDLIST\n(copy pulled from Dr. Volkov's workstation by SAFETYNET)\n\nbitcoin\nethereum\nsatoshi\nblockchain\nledger\nmonero\nhodl\nmoonshot\nprivatekey\ncoldstorage\n\nAppend: 2023 / 2024 / 2025 / 123 / !",
+              "observations": "Volkov's audit wordlist, pulled off her workstation by SAFETYNET after she went down"
+            },
+            {
+              "type": "keycard",
+              "id": "relayed_cto_badge",
+              "name": "CTO Badge (relayed copy)",
+              "card_id": "cto_badge",
+              "takeable": true,
+              "observations": "A copy of Volkov's office badge, rebuilt by SAFETYNET from the badge-reader logs. Opens the CTO's office."
             }
           ],
           "eventMappings": [
             {
-              "eventPattern": "objective_task_completed:meet_elena",
+              "_comment": "PASS 2 (lessons 20/42): was a 5 s timedMessage that could land over the opening cutscene. Now fires when the briefing closes, and backstops receive_briefing (a custom task).",
+              "eventPattern": "conversation_closed:opening_briefing_npc",
+              "onceOnly": true,
+              "completeTask": "receive_briefing",
+              "sendTimedMessage": { "delay": 3000, "message": "You're in. Remember the cover: FCA supervision, routine visit, bored and underpaid. The CTO is the one who matters. Dr. Elena Volkov, trading floor, straight through the checkpoint." }
+            },
+            {
+              "eventPattern": "room_entered:reception_lobby",
+              "condition": "globalVars.briefing_played === true",
+              "onceOnly": true,
+              "completeTask": "receive_briefing"
+            },
+            {
+              "_comment": "PASS 2 review: meet_elena now completes at the top of her first conversation, so this waits for the conversation to close instead of landing mid-dialogue.",
+              "eventPattern": "conversation_closed:elena_volkov",
+              "condition": "globalVars.exchange_infiltrated !== true && globalVars.elena_ko !== true",
               "onceOnly": true,
               "setGlobal": { "exchange_infiltrated": true },
-              "sendTimedMessage": { "delay": 2000, "message": "Volkov clocked you as something other than an auditor within about ninety seconds. That's fine. She's the softest thing in the building — she built the mixer and she hates what it's used for. Work that." }
+              "sendTimedMessage": { "delay": 4000, "message": "You've met Volkov. Whatever she's decided you are, she's the one person in that building who might want out. She built the mixer and she hates what it's used for. Work that." }
+            },
+            {
+              "_comment": "Lesson 26: the badge-given state comes from the pickup, not from ink set before the give tag.",
+              "eventPattern": "item_picked_up:keycard",
+              "condition": "data.itemId === 'm06_cto_badge'",
+              "onceOnly": true,
+              "setGlobal": { "elena_badge_obtained": true }
+            },
+<% %w[reception_lobby security_checkpoint trading_floor server_room data_center blockchain_lab elena_office executive_wing satoshi_office].each do |r| %>
+            {
+              "_comment": "Playtest D2 backstop: hear_debrief completes on the debrief's last line. If the page reloads mid-debrief, debrief_played is already set and the debrief won't replay, so the next room entry completes the task and the mission can conclude.",
+              "eventPattern": "room_entered:<%= r %>",
+              "condition": "globalVars.debrief_played === true",
+              "onceOnly": true,
+              "completeTask": "hear_debrief"
+            },
+<% end %>
+            {
+              "_comment": "PASS 2 review M4: the player reached the asset decision without the recovery keys and chose to come back. Point them at flag 4.",
+              "eventPattern": "global_variable_changed:asset_decision_deferred",
+              "condition": "value === true && globalVars.flag4_submitted !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2500, "message": "The recovery keys are on the vault account on the backend. That's the last flag. Take the estate, and the drop-site will hand you what you need to freeze that wallet." }
+            },
+            {
+              "_comment": "Playtest D3: no completeTask here. obtain_access_tools is a collect task and completes itself from item_picked_up (objectives-manager.js:314-370); a mapping completeTask can reach the server before the collect lands and be rejected ('Insufficient items collected'), reverting the task. Pickup of the wordlist from Elena (#give_item) or the HaX relay. One mapping per id: conditions are &&-only (lesson 35). The cracking-guide offer rides on the first so the pair can't double-fire (lesson 2).",
+              "eventPattern": "item_picked_up:text_file",
+              "condition": "data.itemId === 'm06_password_dictionary' && globalVars.found_password_lists !== true",
+              "onceOnly": true,
+              "setGlobal": { "found_password_lists": true, "cracking_guide_offered": true },
+              "sendTimedMessage": { "delay": 1500, "message": "Good. Her list is the terms people in this building actually pick, plus the years they bolt on. Put it next to anything that tells you the house convention for doors. When you get to the servers, I can send you the password cracking field guide too." }
             },
             {
               "eventPattern": "item_picked_up:text_file",
-              "condition": "data.itemId === 'm06_password_dictionary'",
+              "condition": "data.itemId === 'relayed_password_dictionary' && globalVars.found_password_lists !== true",
               "onceOnly": true,
-              "setGlobal": { "found_password_lists": true },
-              "completeTask": "obtain_access_tools",
-              "sendTimedMessage": { "delay": 1500, "message": "Good. That dictionary is the industry's greatest hits — every crypto firm on earth picks from the same twenty words. It'll do for the backend servers." }
-            },
-            {
-              "eventPattern": "item_picked_up:text_file",
-              "condition": "data.itemId === 'm06_password_dictionary'",
-              "onceOnly": true,
-              "setGlobal": { "cracking_guide_offered": true },
-              "sendTimedMessage": { "delay": 3600, "message": "If you want the full method — picking a wordlist, running Hydra against a live service, reading the failures — I can send you the password cracking field guide. Say the word." }
+              "setGlobal": { "found_password_lists": true, "cracking_guide_offered": true }
             },
             {
               "eventPattern": "room_entered:security_checkpoint",
@@ -677,30 +744,44 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
               "sendTimedMessage": { "delay": 3000, "message": "Two doors in this building are on RFID, not keypads. There's a cloner on the trading floor. If you want the guide on reading and duplicating badges, ask." }
             },
             {
+              "_comment": "PASS 2: access_hackme_vm is now custom (unlock_object never fired for a vm-launcher that isn't locked). It completes when the terminal is used.",
               "eventPattern": "object_interacted",
               "condition": "data.objectType === 'vm-launcher'",
               "onceOnly": true,
               "setGlobal": { "recon_guide_offered": true },
-              "sendTimedMessage": { "delay": 1800, "message": "You're on the backend terminal. There is more than one server behind it — map before you log in. I can send the reconnaissance field guide if you want the method." }
+              "completeTask": "access_hackme_vm",
+              "sendTimedMessage": { "delay": 1800, "message": "You're on the backend terminal. There's a build service listening on that box that shouldn't be. Map before you log in. I can send the reconnaissance field guide if you want the method." }
             },
             {
+              "_comment": "PASS 2: used to read the passphrase out ('bitcoin2025') the moment the checklist was picked up, which made the puzzle a pickup. Now HaX points at the second half of the clue.",
               "eventPattern": "global_variable_changed:server_passphrase_known",
               "condition": "value === true",
               "onceOnly": true,
-              "completeTask": "find_server_credentials",
-              "sendTimedMessage": { "delay": 1200, "message": "There it is — the house convention, in writing. Crypto term plus the year. For the server room that's 'bitcoin2025'. Punch it into the door controller." }
+              "sendTimedMessage": { "delay": 1200, "message": "There's the house convention, in writing: a crypto term and a year, and the checklist says when it was written. Which term? Whatever tops the list people here actually use. Volkov keeps one." }
+            },
+            {
+              "_comment": "Backstop: a player who guesses the passphrase still ticks the task.",
+              "eventPattern": "room_entered:server_room",
+              "onceOnly": true,
+              "completeTask": "find_server_credentials"
+            },
+            {
+              "eventPattern": "global_variable_changed:server_passphrase_known",
+              "condition": "value === true && globalVars.found_password_lists === true",
+              "onceOnly": true,
+              "completeTask": "find_server_credentials"
+            },
+            {
+              "eventPattern": "item_picked_up:text_file",
+              "condition": "data.itemId === 'm06_password_dictionary' && globalVars.server_passphrase_known === true",
+              "onceOnly": true,
+              "completeTask": "find_server_credentials"
             },
             {
               "eventPattern": "objective_task_completed:submit_flag1",
               "onceOnly": true,
-              "setGlobal": { "flag1_submitted": true, "servers_accessed": 1 },
-              "sendTimedMessage": { "delay": 1200, "message": "First server is yours. Now the interesting part — whatever password worked there was almost certainly reused. Try it everywhere before you try anything clever." }
-            },
-            {
-              "eventPattern": "objective_task_completed:submit_flag1",
-              "onceOnly": true,
-              "setGlobal": { "privesc_guide_offered": true },
-              "sendTimedMessage": { "delay": 4000, "message": "Foothold isn't root, and one box isn't the estate. I have a privilege escalation and credential reuse guide if you want the systematic version. Ask." }
+              "setGlobal": { "flag1_submitted": true, "servers_accessed": 1, "privesc_guide_offered": true },
+              "sendTimedMessage": { "delay": 1200, "message": "First account is yours. Whatever password worked there was almost certainly reused. Try it everywhere before you try anything clever. I've a credential reuse guide if you want the systematic version." }
             },
             {
               "eventPattern": "objective_task_completed:submit_flag2",
@@ -711,63 +792,91 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
               "eventPattern": "objective_task_completed:submit_flag3",
               "onceOnly": true,
               "setGlobal": { "flag3_submitted": true, "servers_accessed": 3 },
-              "sendTimedMessage": { "delay": 1500, "message": "That's the financial database. Every deposit, every conversion, every withdrawal, timestamped. This is the thing we came for." }
+              "sendTimedMessage": { "delay": 1500, "message": "That's the financial database, and the same service account runs their door controllers. The drop-site has cut you the controller export. The data centre code is in it. North door." }
             },
             {
+              "_comment": "PASS 2: flag 4 pays out the cold-storage recovery keys from the vault account (flag-station give_item). found_wallet_keys is set here, not by an onRead on a gifted item, so it is deterministic. Freezing the fund needs it.",
               "eventPattern": "objective_task_completed:submit_flag4",
               "onceOnly": true,
-              "setGlobal": { "flag4_submitted": true, "servers_accessed": 4 },
-              "sendTimedMessage": { "delay": 1800, "message": "Full estate. Nicely done. Now go and find out what the exchange's own analysts made of it — blockchain lab, east off the trading floor. They will have drawn the graph for us already." }
+              "setGlobal": { "flag4_submitted": true, "servers_accessed": 4, "found_wallet_keys": true },
+              "sendTimedMessage": { "delay": 1800, "message": "Full estate, and the vault account had the cold-storage recovery keys on it. The drop-site's put them in your kit. That gives you an actual choice at the end: freeze the fund, or leave it running and follow it." }
             },
             {
               "eventPattern": "global_variable_changed:found_blockchain_evidence",
               "condition": "value === true",
               "onceOnly": true,
-              "completeTask": "find_transaction_records",
               "setGlobal": { "blockchain_debrief_available": true },
-              "sendTimedMessage": { "delay": 1500, "message": "That graph is the whole case. Hospital money and trading-firm money arriving at one wallet through a mixer the CTO wrote herself. Call me when you want to talk through what it means." }
+              "sendTimedMessage": { "delay": 1500, "message": "That graph is most of the case. Ransom money and exploit money arriving at one wallet through a mixer the CTO wrote herself, and the Initiative's budget going out of the same wallet. Call me when you want to talk it through." }
             },
             {
               "eventPattern": "global_variable_changed:found_architects_fund",
               "condition": "value === true",
               "onceOnly": true,
-              "completeTask": "discover_architects_fund",
               "setGlobal": { "knows_architects_fund": true, "fund_debrief_available": true },
-              "sendTimedMessage": { "delay": 1500, "message": "$12.8M. Six cells. Seventy-two hours. And a casualty projection, which means somebody sat down and did that arithmetic on purpose. Call me — we need to talk about what you do with the wallet." }
+              "sendTimedMessage": { "delay": 1500, "message": "$12.8M. Six cells. Seventy-two hours. Call me. We need to talk about what you do with that wallet, and the badge for his wing is in that room." }
             },
             {
-              "eventPattern": "global_variable_changed:found_wallet_keys",
-              "condition": "value === true",
+              "_comment": "PASS 2 (lesson 18): was global_variable_changed:elena_ko, which globalVarOnKO never emits. HaX relays her items (lesson 24) and records the outcome.",
+              "eventPattern": "npc_ko:elena_volkov",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "Cold storage recovery keys. That gives you an actual choice at the end of this: freeze the fund tonight, or leave it running and follow every penny of it to six other cells. Think about it before you're standing in front of him." }
+              "conversationMode": "phone-chat",
+              "targetKnot": "on_elena_ko_relay"
             },
             {
-              "eventPattern": "global_variable_changed:elena_ko",
-              "condition": "value === true",
+              "_comment": "PASS 2 (lessons 18/37): Satoshi's KO puts the asset decision to the player by phone. Phone chat has no disableClose, so the hub keeps a sticky option and re-entering his office re-opens the question until it is answered.",
+              "eventPattern": "npc_ko:satoshi_nakamoto",
               "onceOnly": true,
-              "completeTask": "decide_elena_fate",
-              "setGlobal": { "elena_fate_decided": true },
-              "sendTimedMessage": { "delay": 2000, "message": "Volkov is on the floor. Well — that's one way to settle it. She was the best cryptographer ENTROPY had and she was halfway to walking. We'll log it as neutralised on site. Her badge is on her; take it." }
+              "setGlobal": { "satoshi_confronted": true },
+              "completeTask": "confront_satoshi",
+              "conversationMode": "phone-chat",
+              "targetKnot": "on_satoshi_ko"
             },
             {
-              "eventPattern": "global_variable_changed:satoshi_ko",
-              "condition": "value === true",
+              "eventPattern": "room_entered:satoshi_office",
+              "condition": "globalVars.satoshi_ko === true && globalVars.assets_decided !== true",
+              "onceOnly": false,
+              "conversationMode": "phone-chat",
+              "targetKnot": "on_satoshi_ko"
+            },
+            {
+              "_comment": "PASS 2 (lesson 27): decide_elena_fate sits in the conclusion aim, and completing it early auto-revealed that aim on the trading floor. Elena's ink now only sets elena_fate_decided; the task completes once the aim is open.",
+              "eventPattern": "objective_task_completed:access_satoshi_office",
               "onceOnly": true,
-              "completeTask": "decide_asset_strategy",
-              "setGlobal": { "assets_decided": true, "assets_seized": true, "satoshi_arrested": true, "final_choice": "seized_by_force" },
-              "sendTimedMessage": { "delay": 2000, "message": "He's down and he isn't getting up. Extraction is inbound for him. With no one at the terminal to argue, I'm calling it: we freeze the fund tonight. $12.8M gone before anyone notices he stopped answering." }
+              "setGlobal": { "resolve_aim_open": true }
             },
             {
-              "eventPattern": "objective_task_completed:decide_asset_strategy",
+              "eventPattern": "objective_task_completed:access_satoshi_office",
               "condition": "globalVars.elena_fate_decided === true",
               "onceOnly": true,
-              "setGlobal": { "mission_complete": true, "start_debrief_cutscene": true }
+              "completeTask": "decide_elena_fate"
             },
             {
-              "eventPattern": "objective_task_completed:decide_elena_fate",
-              "condition": "globalVars.assets_decided === true",
+              "eventPattern": "global_variable_changed:elena_fate_decided",
+              "condition": "value === true && globalVars.resolve_aim_open === true",
               "onceOnly": true,
-              "setGlobal": { "mission_complete": true, "start_debrief_cutscene": true }
+              "completeTask": "decide_elena_fate"
+            },
+            {
+              "eventPattern": "global_variable_changed:assets_decided",
+              "condition": "value === true && globalVars.elena_fate_decided !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2500, "message": "That's the money settled. Volkov is still on the trading floor and nobody has decided what happens to her. That's yours too." }
+            },
+<% (1..4).each do |n| %>
+            {
+              "eventPattern": "global_variable_changed:assets_decided",
+              "condition": "value === true && globalVars.flag<%= n %>_submitted !== true && globalVars.flags_nag_sent !== true",
+              "onceOnly": true,
+              "setGlobal": { "flags_nag_sent": true },
+              "sendTimedMessage": { "delay": 4000, "message": "Before I pull you out, finish the backend. I want all four flags at the drop-site in the server room, or the file on this exchange has holes in it." }
+            },
+<% end %>
+            {
+              "eventPattern": "global_variable_changed:elena_fate_decided",
+              "condition": "value === true && globalVars.assets_decided === true && globalVars.flag4_submitted !== true && globalVars.flags_nag_sent !== true",
+              "onceOnly": true,
+              "setGlobal": { "flags_nag_sent": true },
+              "sendTimedMessage": { "delay": 4000, "message": "Before I pull you out, finish the backend. I want all four flags at the drop-site in the server room, or the file on this exchange has holes in it." }
             }
           ]
         },
@@ -794,16 +903,38 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
           "behavior": {
             "initiallyHidden": true
           },
+          <%# PASS 2: was keyed on start_debrief_cutscene, set by a mapping the moment the
+              second decision tag ran, so the debrief could open over the Satoshi or Elena
+              conversation and ignored the concludeRequires flags (debrief shown, server
+              refuses to conclude). Now it waits for a conversation to CLOSE (or a phone
+              decision, or the last flag) with both decisions made and all four flags in.
+              debrief_played (set at the top of the debrief) stops a replay; lesson 41. %>
           "eventMappings": [
+<% all_in = "globalVars.assets_decided === true && globalVars.elena_fate_decided === true && globalVars.flag1_submitted === true && globalVars.flag2_submitted === true && globalVars.flag3_submitted === true && globalVars.flag4_submitted === true && globalVars.debrief_played !== true && globalVars.start_debrief_cutscene !== true" %>
+<%# PASS 2 review B2 / minor 13. The final state change can land inside a phone
+    chat (Satoshi-KO decision, Elena-KO relay) or the drop-site UI (last flag).
+    Opening the debrief then would tear that UI down mid-line, so those cases
+    wait for the UI to close: every minigame close emits minigame_completed
+    (#exit_conversation, flag success) or minigame_failed (the X / Esc),
+    base-minigame.js:94-104. The two person-chats close with conversation_closed.
+    room_entered on every room is the backstop if the player walks away.
+    start_debrief_cutscene is the synchronous latch: a person-chat close emits
+    both conversation_closed and minigame_completed, and setGlobal runs before
+    the next listener evaluates (npc-manager.js:541-553), so only one opens.
+    It also drives the spy-action music cue. %>
+<% triggers = [["conversation_closed:satoshi_nakamoto", nil], ["conversation_closed:elena_volkov", nil], ["minigame_completed", nil], ["minigame_failed", nil]] + %w[reception_lobby security_checkpoint trading_floor server_room data_center blockchain_lab elena_office executive_wing satoshi_office].map { |r| ["room_entered:#{r}", nil] } %>
+<% triggers.each_with_index do |(pat, cond), i| %>
             {
-              "eventPattern": "global_variable_changed:start_debrief_cutscene",
-              "condition": "value === true",
+              "eventPattern": "<%= pat %>",
+              "condition": "<%= [cond, all_in].compact.join(' && ') %>",
+              "setGlobal": { "start_debrief_cutscene": true },
               "conversationMode": "person-chat",
               "targetKnot": "start",
               "background": "assets/backgrounds/hq1.png",
               "onceOnly": true,
               "disableClose": true
-            }
+            }<%= i < triggers.size - 1 ? ',' : '' %>
+<% end %>
           ]
         }
       ],
@@ -878,15 +1009,21 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
           "currentKnot": "start",
           "globalVarOnKO": "elena_ko",
           "taskOnKO": "meet_elena",
+          "rfidCard": {
+            "card_id": "cto_badge",
+            "rfid_protocol": "EM4100",
+            "name": "CTO Access Badge"
+          },
           "puzzle_graph_actions": ["elena_cooperation"],
           "itemsHeld": [
             {
               "type": "keycard",
+              "id": "m06_cto_badge",
               "opens_lock": "cto_access_badge",
               "card_id": "cto_badge",
               "name": "CTO Access Badge",
               "takeable": true,
-              "observations": "Elena's high-level access badge. Clone it off her lanyard with the RFID cloner, or take the card itself the hard way.",
+              "observations": "Elena's office badge. She will lend it to someone she trusts; the RFID cloner can read it off her lanyard while she talks.",
               "puzzle_graph_role": "key",
               "puzzle_graph_unlocks": "elena_office"
             },
@@ -896,7 +1033,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
               "name": "Password Dictionary List",
               "takeable": true,
               "text": "HASHCHAIN INTERNAL — CREDENTIAL AUDIT WORDLIST\n\nCompiled by Dr. E. Volkov for internal password strength testing.\n\nbitcoin\nethereum\nsatoshi\nblockchain\nledger\nmonero\nhodl\nmoonshot\nprivatekey\ncoldstorage\n\nAppend: 2023 / 2024 / 2025 / 123 / !\n\nNote: 61% of staff accounts fell to this list in the last audit.\nManagement's response was to stop running the audit.",
-              "observations": "Elena's own credential audit wordlist — the passwords her colleagues actually use",
+              "observations": "Elena's own credential audit wordlist: the words and years her colleagues actually pick, on accounts and on door controllers alike",
               "puzzle_graph_role": "tool",
               "puzzle_graph_unlocks": "vm_launcher_hackme"
             }
@@ -906,7 +1043,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
           "id": "trader_npc",
           "displayName": "Dani Okonkwo",
           "npcType": "person",
-          "position": { "x": 3, "y": 4 },
+          "position": { "x": 5, "y": 7 },
           "spriteSheet": "male_office_worker_v2",
           "spriteTalk": "assets/characters/male_office_worker_talk.png",
           "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
@@ -940,7 +1077,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
           "name": "Daily Trading Report",
           "takeable": true,
           "readable": true,
-          "text": "HASHCHAIN EXCHANGE - DAILY TRADING SUMMARY\n\nVolume (24h): $847M USD equivalent\nTop Pairs: BTC/USD, ETH/USD, XMR/USD\n\nLarge Transactions Flagged:\n- Wallet 1ENTROPY2RansomInc: $2.4M mixed\n- Wallet 1ENTROPY5InsiderTh: $847K mixed\n- Wallet 1ARCHITECT9FUND: $12.8M received\n\nCompliance Note: Privacy coins (Monero) usage extremely high.\nNote to Elena: Is this normal? -D.O.",
+          "text": "HASHCHAIN EXCHANGE - DAILY TRADING SUMMARY\n\nVolume (24h): $847M USD equivalent\nTop Pairs: BTC/USD, ETH/USD, XMR/USD\n\nLarge Transactions Flagged:\n- Wallet 1ENTROPY2RansomInc: $2.4M mixed\n- Wallet 1TALENTSTACKPAY: $847K out, from 1ARCHITECT9FUND\n- Wallet 1ARCHITECT9FUND: $12.8M received\n\nCompliance Note: Privacy coins (Monero) usage extremely high.\nNote to Elena: Is this normal? -D.O.",
           "observations": "The trader's own flagged-transactions report — ENTROPY wallet names in plain text",
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "entropy_wallets_known"
@@ -1002,14 +1139,38 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
               "description": "Flag 2: Credential reuse exploited — lateral movement across the estate"
             },
             {
-              "type": "emit_event",
-              "event_name": "flag3_financial_database",
-              "description": "Flag 3: Financial database reached — transaction records exposed"
+              "type": "give_item",
+              "item_name": "Door Controller Export",
+              "description": "Flag 3: Financial database reached — the same service account runs the door controllers; the drop-site cuts you their export"
             },
             {
-              "type": "emit_event",
-              "event_name": "flag4_network_complete",
-              "description": "Flag 4: Complete network access — full financial intelligence recovered"
+              "type": "give_item",
+              "item_name": "Cold Storage Recovery Keys",
+              "description": "Flag 4: Vault account taken — the cold-storage recovery keys come with it"
+            }
+          ],
+<%# PASS 2 (m02 flag-payout pattern, 71e8852e): flag 3 opens the data centre,
+    flag 4 makes the freeze option possible. process_item_reward matches on name. %>
+          "itemsHeld": [
+            {
+              "type": "text_file",
+              "id": "door_controller_export",
+              "name": "Door Controller Export",
+              "takeable": true,
+              "readable": true,
+              "text": "hc-ledger-01 :: door_controllers.csv (export)\n\ncontroller,door,auth,secret,set_by\nDC-01,server room,passphrase,(convention),IT\nDC-02,data centre,pin,3110,CEO\nDC-03,executive wing,rfid,executive_badge,CEO\nDC-04,CTO office,rfid,cto_badge,CTO\n\n# DC-02 note (CEO): 31/10. The day the whitepaper went out.\n# DC-03 note (ops): spare executive badge left out in DC-02. Again.",
+              "observations": "The door controllers run off the same service account as the ledger. The data centre code is on the second line.",
+              "puzzle_graph_role": "key",
+              "puzzle_graph_unlocks": "data_center"
+            },
+            {
+              "type": "text_file",
+              "id": "cold_storage_recovery_keys",
+              "name": "Cold Storage Recovery Keys",
+              "takeable": true,
+              "readable": true,
+              "text": "hc-vault :: cold_storage/recovery.keys\n\nRecovery material for every cold wallet HashChain holds.\n\n1HASHCHAINRESERVE   customer reserve   [key material]\n1ARCHITECT9FUND     client escrow      [key material]\n\nWhoever holds these can sweep a cold wallet before its owner can move it.",
+              "observations": "With these you can freeze the Architect's Fund tonight. Without them, the only choice left is to watch where it goes."
             }
           ]
         },
@@ -1019,8 +1180,8 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
           "name": "Rack Inventory Sheet",
           "takeable": true,
           "readable": true,
-          "text": "HASHCHAIN — RACK B INVENTORY\n\nB-01  hc-auth-01      (staff authentication)\nB-02  hc-trade-01     (matching engine)\nB-03  hc-ledger-01    (internal ledger — RESTRICTED)\nB-04  hc-mixer-01     (privacy conversion service)\nB-05  hc-archive-01   (cold storage index — RESTRICTED)\n\nNote from ops: auth-01 and ledger-01 share a service account.\nRaised as a risk in March. Closed as 'accepted'.",
-          "observations": "Rack inventory — note the shared service account between two of the servers",
+          "text": "HASHCHAIN — RACK B INVENTORY\n\nB-01  hc-auth-01      (staff authentication)\nB-02  hc-trade-01     (matching engine)\nB-03  hc-ledger-01    (internal ledger — RESTRICTED)\nB-04  hc-mixer-01     (privacy conversion service)\nB-05  hc-archive-01   (cold storage index — RESTRICTED)\n\nNote from ops: the auth and ledger service accounts share a password.\nThe ledger account also drives the door controllers.\nRaised as a risk in March. Closed as 'accepted'.",
+          "observations": "Rack inventory. Two service accounts share a password, and one of them runs the doors.",
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "credential_reuse_available"
         }
@@ -1030,6 +1191,11 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
     "data_center": {
       "type": "room_servers",
       "door_sign": "Data Centre",
+      <%# PASS 2: was unlocked, so the VM work gated nothing physical. The PIN is
+          in the door-controller export the drop-site pays out for flag 3. %>
+      "locked": true,
+      "lockType": "pin",
+      "requires": "3110",
       "connections": {
         "south": "server_room",
         "east": "executive_wing"
@@ -1051,8 +1217,8 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
               "takeable": true,
               "readable": true,
               "collection_group": "transaction_server_files",
-              "text": "SETTLEMENT EXCEPTIONS — LAST 30 DAYS\n\n2026-07-14  1ENTROPY2RansomInc   IN   $2,400,000   flagged, released by CTO override\n2026-07-29  1ENTROPY5InsiderTh   IN     $847,000   flagged, released by CTO override\n2026-08-02  1ENTROPY3ZeroDaySy   IN   $1,200,000   flagged, released by CTO override\n2026-08-11  1ARCHITECT9FUND      OUT      pending   HELD — requires CEO authorisation\n\nException handler note: every inbound flag this month was cleared by the same account.\nEvery outbound to the destination wallet needs the CEO personally.",
-              "observations": "Elena cleared every inbound flag. Only the CEO can move money out."
+              "text": "SETTLEMENT EXCEPTIONS — LAST 30 DAYS\n\n2026-07-14  1ENTROPY2RansomInc   IN   $2,400,000   flagged, released by CTO override\n2026-07-29  1ENTROPY3ZeroDaySy   IN   $1,200,000   flagged, released by CTO override\n2026-08-02  1TALENTSTACKPAY      OUT    $847,000   from 1ARCHITECT9FUND, CEO authorisation\n2026-08-11  1ARCHITECT9FUND      OUT      pending   six wallets, SCHEDULED — CEO pre-authorised, auto-release in 72h\n\nException handler note: every inbound flag this month was cleared by the same account.\nOutbound from the fund wallet needs the CEO. He signed this batch in advance, so it goes out on its own.",
+              "observations": "Elena cleared every inbound flag. The CEO pre-signed the big payout: it leaves on a timer unless someone gets to the wallet first."
             },
             {
               "type": "text_file",
@@ -1083,7 +1249,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
           "takeable": true,
           "readable": true,
           "text": <%= architects_fund_document.to_json %>,
-          "observations": "CRITICAL EVIDENCE: $12.8M allocated across six ENTROPY cells for a coordinated operation in 72 hours",
+          "observations": "$12.8M split across six ENTROPY cells, all paid at once, in 72 hours",
           "puzzle_graph_role": "evidence",
           "puzzle_graph_aim": "map_financial_network",
           "puzzle_graph_unlocks": "executive_access_badge",
@@ -1092,14 +1258,13 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
         {
           "type": "notes",
           "id": "wallet_recovery_keys",
-          "name": "Wallet Recovery Keys",
+          "name": "Cold Storage Procedure",
           "takeable": true,
           "readable": true,
-          "text": "HASHCHAIN EXCHANGE - EMERGENCY WALLET RECOVERY\n\nCold Storage Private Keys (Encrypted)\nTotal Holdings: $48.3M USD equivalent\n\nThe Architect's Fund Wallet:\nAddress: 1ARCHITECT9FUND\nBalance: $12.8M USD\nRecovery Key: [ENCRYPTED]\n\nSeizing this wallet freezes ENTROPY's funding tonight.\nLeaving it running lets us watch every cell that draws on it.\n\nYou cannot do both.",
-          "observations": "Cold storage recovery keys — this is what makes the choice at the end a real one",
+          "text": "HASHCHAIN EXCHANGE - COLD STORAGE PROCEDURE (OPS)\n\nTotal cold holdings: $44.3M USD equivalent\n\nRecovery keys for every cold wallet live on ONE account: the vault\naccount on the backend (hc-vault). Nowhere else. Not on paper.\n\nAnyone who can read that account can sweep a cold wallet before\nits owner can move it. Guard it accordingly.\n\n(It has the same kind of password as everything else here.)",
+          "observations": "The recovery keys aren't in this room. They're on the vault account on the backend.",
           "puzzle_graph_role": "clue",
-          "puzzle_graph_reveals": "asset_choice_available",
-          "onPickup": { "setVariable": { "found_wallet_keys": true } }
+          "puzzle_graph_reveals": "asset_choice_available"
         },
         {
           "type": "keycard",
@@ -1107,7 +1272,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
           "card_id": "executive_badge",
           "name": "Executive Access Badge",
           "takeable": true,
-          "observations": "Spare executive badge left in the data centre rack drawer — opens the CEO's wing",
+          "observations": "A spare executive badge somebody left lying in the data centre. It opens the CEO's wing.",
           "puzzle_graph_role": "key",
           "puzzle_graph_unlocks": "executive_wing"
         }
@@ -1160,7 +1325,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
           "takeable": true,
           "readable": true,
           "text": <%= blockchain_evidence.to_json %>,
-          "observations": "CRITICAL EVIDENCE: the full ENTROPY financial network — hospital ransomware and corporate espionage money arriving at the same destination wallet",
+          "observations": "Priya's graph: ransom and exploit money arriving at one wallet, and the Initiative's budget going out of it",
           "puzzle_graph_role": "evidence",
           "puzzle_graph_aim": "map_financial_network",
           "puzzle_graph_unlocks": "architects_fund_doc",
@@ -1172,8 +1337,8 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
           "name": "Privacy Coin Mixing Analysis",
           "takeable": true,
           "readable": true,
-          "text": "MONERO (XMR) MIXING PATTERNS\n\nHashChain Exchange specialises in privacy coin conversions.\n\nPattern Detected:\n1. ENTROPY cells deposit Bitcoin\n2. Convert to Monero (untraceable)\n3. Mix through multiple wallets\n4. Convert back to Bitcoin\n5. Send to The Architect's Fund\n\nThis makes tracing nearly impossible from the blockchain alone.\nA complete picture requires the exchange's own internal records.\n\nLORE: the Crypto Anarchists run money laundering as a service for every other ENTROPY cell.",
-          "observations": "LORE: the Crypto Anarchists' role in ENTROPY — they are the financial infrastructure everyone else rents",
+          "text": "MONERO (XMR) MIXING PATTERNS\n\nHashChain Exchange specialises in privacy coin conversions.\n\nPattern Detected:\n1. ENTROPY cells deposit Bitcoin\n2. Convert to Monero (untraceable)\n3. Mix through multiple wallets\n4. Convert back to Bitcoin\n5. Send to The Architect's Fund\n\nThis makes tracing nearly impossible from the blockchain alone.\nA complete picture requires the exchange's own internal records.\n\n(Margin, P.R.: every cell seems to use us. Are we the bank for all of them?)",
+          "observations": "Priya's working notes. She has half-guessed that the exchange is the bank for every cell.",
           "puzzle_graph_optional": true
         }
       ]
@@ -1215,7 +1380,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
           "takeable": true,
           "readable": true,
           "text": "FROM: architect@entropy.onion\nTO: elena.volkov@hashchain.exchange\nSUBJECT: Phase 2 Funding Appreciation\n\nDr. Volkov,\n\nYour cryptocurrency infrastructure has proven invaluable to our coordination efforts. The mixing services and privacy protocols you designed enable operational security across every cell.\n\nPhase 3 approaches. Funding distribution in 72 hours.\n\nYour compensation: $500,000 USD (BTC) upon completion.\n\nContinue the excellent work.\n\n- The Architect\n\nP.S. Your CEO has developed a habit of setting every passcode in that building to the year the last bitcoin is mined. Tell him it is not as clever as he thinks it is.",
-          "observations": "LORE: Elena is in direct contact with The Architect — and the postscript is a gift, if you know your Bitcoin trivia",
+          "observations": "Elena is in direct contact with The Architect. The postscript is about the CEO's passcodes.",
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "executive_safe_pin",
           "puzzle_graph_unlocks": "executive_safe"
@@ -1241,15 +1406,20 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
           "name": "Framed Press Clipping",
           "takeable": true,
           "readable": true,
-          "text": "CRYPTO WEEKLY — 'THE MAN WHO WON'T GIVE HIS NAME'\n\nHashChain's founder gives interviews only in text, only over Tor, and only under a pseudonym that is either a tribute or a taunt depending on who you ask.\n\n'The state cannot regulate what it cannot see,' he told us. 'We are not hiding money. We are demonstrating that the concept of hidden money is now permanent.'\n\nAsked whether HashChain screens its customers, he replied: 'We screen for competence.'",
-          "observations": "Framed in the corridor outside the CEO's office — he had it mounted himself",
+          "text": "CRYPTO WEEKLY — 'THE MAN WHO WON'T GIVE HIS NAME'\n\nHashChain's founder gives interviews only in text, only over Tor, and only under a pseudonym that is either a tribute or a taunt depending on who you ask.\n\n'The state cannot regulate what it cannot see,' he told us. 'We are not hiding money. We are demonstrating that the concept of hidden money is now permanent.'\n\nAsked whether HashChain screens its customers, he replied: 'We screen for competence.'\n\nHe signed off the interview the way he signs everything: 'Until 2140', the year the last bitcoin is due to be mined.",
+          "observations": "Framed in the corridor outside the CEO's office. He had it mounted himself.",
+          "puzzle_graph_role": "clue",
+          "puzzle_graph_reveals": "executive_safe_pin",
           "puzzle_graph_optional": true
         }
       ]
     },
 
     "satoshi_office": {
-      "type": "room_office",
+      <%# Playtest D5: in room_office the south door lands at tile x 8.5 under the
+          right desk block, and the player stalled at the doorway. room_ceo keeps the
+          bottom half clear; the objects are pinned clear of the door column. %>
+      "type": "room_ceo",
       "door_sign": "CEO",
       "connections": {
         "south": "executive_wing"
@@ -1259,7 +1429,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
           "id": "satoshi_nakamoto",
           "displayName": "Satoshi Nakamoto II",
           "npcType": "person",
-          "position": { "x": 4, "y": 4 },
+          "position": { "x": 5, "y": 5 },
           "spriteSheet": "male_hacker_hood_v2",
           "spriteTalk": "assets/characters/male_hacker_hood_talk.png",
           "avatar": "assets/characters/male_hacker_hood_headshot.png",
@@ -1277,21 +1447,17 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
           "globalVarOnKO": "satoshi_ko",
           "taskOnKO": "confront_satoshi",
           "puzzle_graph_actions": ["satoshi_confrontation"],
-          "behavior": {
-            "initiallyHidden": true
-          },
+          <%# PASS 2 review B1: was initiallyHidden with setVisible mappings on
+              found_architects_fund / room_entered:executive_wing. NPC mappings only
+              register when the NPC's room loads (npc-lazy-loader.js:23-73), and both
+              events fire before satoshi_office loads, so setNPCVisible dropped the
+              request (npc-behavior.js:151-160) and he was never shown: no
+              confrontation, no ending. He is already behind the executive badge, so
+              he is simply visible. %>
           "eventMappings": [
             {
-              "eventPattern": "global_variable_changed:found_architects_fund",
-              "condition": "value === true",
+              "eventPattern": "room_entered:satoshi_office",
               "onceOnly": true,
-              "setVisible": true,
-              "setGlobal": { "satoshi_revealed": true }
-            },
-            {
-              "eventPattern": "room_entered:executive_wing",
-              "onceOnly": true,
-              "setVisible": true,
               "setGlobal": { "satoshi_revealed": true }
             }
           ]
@@ -1302,24 +1468,23 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
           "type": "notes",
           "id": "crypto_anarchist_manifesto",
           "name": "Crypto Anarchist Manifesto",
+          "position": { "x": 2, "y": 6 },
           "takeable": true,
           "readable": true,
-          "text": "THE CRYPTO ANARCHIST MANIFESTO\n\nGovernments cannot control what they cannot see.\nCryptography enables true financial freedom.\nPrivacy is a fundamental human right.\nCentralised finance is slavery.\nDecentralised systems bring liberation.\n\nHashChain Exchange exists to accelerate the collapse of state monetary control.\n\nEvery transaction we enable undermines government power.\nEvery privacy coin we support creates freedom.\n\nENTROPY understands: chaos is the path to liberty.\nThe Architect coordinates the acceleration.\n\nWe are Crypto Anarchists. We will not be stopped.\n\n- Satoshi Nakamoto II (obviously not the real Satoshi)\n\n[handwritten in the margin, in the CEO's hand]\n'The last block. Year 2140. Everything before it is rehearsal.'",
-          "observations": "LORE: the Crypto Anarchists' ideology — and a margin note the CEO clearly reuses as a passcode",
-          "puzzle_graph_role": "clue",
-          "puzzle_graph_optional": true,
-          "puzzle_graph_reveals": "executive_safe_pin",
-          "puzzle_graph_unlocks": "executive_safe"
+          "text": "THE CRYPTO ANARCHIST MANIFESTO\n\nGovernments cannot control what they cannot see.\nCryptography enables true financial freedom.\nPrivacy is a fundamental human right.\nCentralised finance is slavery.\nDecentralised systems bring liberation.\n\nHashChain Exchange exists to accelerate the collapse of state monetary control.\n\nEvery transaction we enable undermines government power.\nEvery privacy coin we support creates freedom.\n\nENTROPY understands: chaos is the path to liberty.\nThe Architect coordinates the acceleration.\n\nWe are Crypto Anarchists. We will not be stopped.\n\n- Satoshi Nakamoto II (obviously not the real Satoshi)",
+          "observations": "The Crypto Anarchists' creed, signed by the man who wrote it",
+          "puzzle_graph_optional": true
         },
         {
           "type": "safe",
           "id": "executive_safe",
           "name": "Executive Safe",
+          "position": { "x": 8, "y": 2 },
           "locked": true,
           "lockType": "pin",
           "requires": "2140",
           "takeable": false,
-          "observations": "Four-digit executive safe. The CEO has written the code on his own wall twice without noticing.",
+          "observations": "Four-digit executive safe. A man this pleased with himself picks a number that means something to him.",
           "puzzle_graph_role": "container",
           "puzzle_graph_optional": true,
           "contents": [
@@ -1329,8 +1494,8 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
               "name": "The Architect's Identity File",
               "takeable": true,
               "readable": true,
-              "text": "CLASSIFIED - THE ARCHITECT IDENTITY INTELLIGENCE\n\nWho is The Architect?\n\nClues gathered:\n- Former intelligence professional (MI6, CIA, or equivalent)\n- Deep cryptography background\n- Organisational genius\n- Philosophy: accelerationism\n\nLikely candidates (SAFETYNET analysis):\n- Dr. Adrian Tesseract (former SAFETYNET chief strategist, defected 7 years ago)\n- Unknown\n\nTesseract Profile:\n- Brilliant strategist\n- Mentored several current SAFETYNET agents\n- Disappeared after a philosophical disagreement\n- Believed the cybersecurity arms race accelerates collapse\n\nConclusion: 87% probability The Architect = Dr. Adrian Tesseract\n\nLORE: setup for the M9 revelation — The Architect's identity narrowed",
-              "observations": "CRITICAL LORE: The Architect narrowed to Dr. Adrian Tesseract, formerly of SAFETYNET",
+              "text": "WHO IS THE ARCHITECT? (private notes, S.N. II — insurance)\n\nClues gathered:\n- Former intelligence professional (MI6, CIA, or equivalent)\n- Deep cryptography background\n- Organisational genius\n- Philosophy: accelerationism\n\nLikely candidates (my own analysis):\n- Dr. Adrian Tesseract (former SAFETYNET chief strategist, defected 7 years ago)\n- Unknown\n\nTesseract Profile:\n- Brilliant strategist\n- Mentored several current SAFETYNET agents\n- Disappeared after a philosophical disagreement\n- Believed the Cyber Security arms race accelerates collapse\n\nConclusion: 87% probability The Architect = Dr. Adrian Tesseract\n\nIf this building ever falls, this page is what I trade.",
+              "observations": "The CEO's own insurance file: The Architect narrowed to Dr. Adrian Tesseract, formerly of SAFETYNET",
               "onPickup": { "setVariable": { "architect_identity_found": true } }
             }
           ]
@@ -1339,3 +1504,4 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCurre
     }
   }
 }
+

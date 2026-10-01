@@ -25,7 +25,7 @@ VAR player_name = "Agent 0x00"
     #speaker:narrator
     Narrator: A young trader watches six price charts at once, placing the occasional order without appearing to look at it.
 
-    Dani Okonkwo: Hey, you're the compliance person, right? From FinCEN?
+    Dani Okonkwo: Hey, you're the regulator, right? From the FCA?
 
     Dani Okonkwo: Don't worry, we're legit. Mostly. *grins*
 
@@ -49,7 +49,7 @@ VAR player_name = "Agent 0x00"
 === operations_overview ===
 #speaker:trader
 
-Dani Okonkwo: We're a mid-size crypto exchange. Focus on privacy coins—Monero, Zcash, stuff like that.
+Dani Okonkwo: We're a mid-size crypto exchange. Focus on privacy coins. Monero, Zcash, stuff like that.
 
 Dani Okonkwo: High volume, fast transactions, low fees. Competitive market.
 
@@ -76,10 +76,10 @@ Dani Okonkwo: High volume, fast transactions, low fees. Competitive market.
     -> elena_discussion
 
 + [That's all, thanks]
-    #exit_conversation
     #speaker:trader
     Dani Okonkwo: No problem. Happy trading!
-    -> DONE
+    #exit_conversation
+    -> hub
 
 // ===========================================
 // TRADING VOLUME
@@ -183,7 +183,7 @@ Dani Okonkwo: We follow the law. We file reports. What people do with their priv
 
 Dani Okonkwo: Monero's untraceable. That's the whole point.
 
-Dani Okonkwo: Bitcoin is pseudonymous—you can track wallets. Monero is truly anonymous.
+Dani Okonkwo: Bitcoin is pseudonymous; you can track wallets. Monero is truly anonymous.
 
 Dani Okonkwo: Makes it perfect for privacy. Also perfect for money laundering, I guess.
 
@@ -208,12 +208,14 @@ Dani Okonkwo: Elena and Satoshi handle compliance. I'm just the guy watching cha
 
 === trader_suspicions ===
 #speaker:trader
+// Review M1: this is the "flagged the wallets" conversation the task names.
+#complete_task:question_the_trader
 
 Dani Okonkwo: *lowers voice* Between you and me? Some of the transaction patterns are... weird.
 
 Dani Okonkwo: Like, coordinated. Multiple big wallets mixing at the same time, same amounts, same destination patterns.
 
-Dani Okonkwo: I flagged it to Elena. She said she's investigating.
+Dani Okonkwo: I put the wallet names in the daily report and flagged it to Elena. It's on the desk. One of them has "ENTROPY" right there in the address. She said she's investigating.
 
 Dani Okonkwo: But honestly? I just want to keep my job and not think about it too hard.
 
@@ -244,7 +246,7 @@ Dani Okonkwo: Elena's brilliant. Like, PhD in cryptography brilliant.
 
 Dani Okonkwo: She designed all our privacy protocols. Zero-knowledge proofs, homomorphic encryption...
 
-Dani Okonkwo: Way above my paygrade. I just use the systems she builds.
+Dani Okonkwo: Way above my pay grade. I just use the systems she builds.
 
 + [Does she seem concerned about compliance?]
     -> elena_compliance
@@ -268,7 +270,7 @@ Dani Okonkwo: But she hasn't said anything specific.
 
 Dani Okonkwo: Smart, intense, kinda distant. But fair.
 
-Dani Okonkwo: She believes in what we're doing—financial privacy as a right.
+Dani Okonkwo: She believes in what we're doing: financial privacy as a right.
 
 Dani Okonkwo: I think she struggles with the fact that good tech can be used for bad things.
 

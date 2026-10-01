@@ -1,6 +1,6 @@
 // ================================================
 // Mission 6: Follow the Money - Opening Briefing
-// Agent 0x99 "Haxolottle" briefs Agent 0x00
+// Agent HaX briefs Agent 0x00
 // Financial investigation of ENTROPY's funding network
 // ================================================
 
@@ -19,17 +19,20 @@ VAR player_name = "Agent 0x00"
 // ================================================
 
 === start ===
+// PASS 2 (lesson 42): briefing_played is set the moment this cutscene opens
+// (setGlobalOnStart), so the task completes at the top, not on the last line.
+#complete_task:receive_briefing
 Narrator: A SAFETYNET briefing room. Director Netherton drops a thick financial dossier on the table; Nightshade is already pulling the transaction graph apart on a laptop.
 
 Director Magnus Netherton: Agent 0x00. Every cell we've hit is being paid by someone. Tonight we stop chasing the operations and start chasing the money. Nightshade's been mapping the flows; HaX takes you in.
 
-Agent 0x47 'Nightshade': *tracing a line on screen* Money's just another protocol, and this one leaks. Follow enough hops and the mixers stop hiding people and start revealing them. Whoever's funding ENTROPY has left a shape in here. We just have to be patient enough to read it.
+Agent 0x47 'Nightshade': Money's just another protocol, and this one leaks. Follow enough hops and the mixers stop hiding people and start revealing them. Whoever's funding ENTROPY has left a shape in here. We just have to be patient enough to read it.
 
 Director Magnus Netherton: HaX.
 
-Agent HaX: {player_name}, great work on the previous missions. But now we need to answer the big question.
+Agent HaX: {player_name}. Every cell we've met so far was paid for by someone. Tonight we find out who.
 
-Agent HaX: Where's the money coming from?
+Agent HaX: Where does the money come from, and where does it go?
 
 + [Following the financial trail?]
     -> financial_investigation
@@ -43,11 +46,11 @@ Agent HaX: Where's the money coming from?
 // ================================================
 
 === money_explanation ===
-Agent HaX: Think about it. The hospital ransomware from Mission 2? $2.4 million paid.
+Agent HaX: Start with what came in. Ransomware Incorporated's wallet has taken about $2.4 million this year, hospital ransoms pooled together.
 
-Agent HaX: The corporate espionage data from Mission 5? $847,000 in cryptocurrency.
+Agent HaX: Then what went out. The Quantum Dynamics job last week: the Architect paid the Insider Threat Initiative $847,000 up front, through TalentStack's wallet.
 
-Agent HaX: All ENTROPY cells are funded. Someone's coordinating the finances.
+Agent HaX: Money in from one cell, money out to another. Somebody is keeping the books for all of them.
 
 -> financial_investigation
 
@@ -56,7 +59,7 @@ Agent HaX: All ENTROPY cells are funded. Someone's coordinating the finances.
 // ================================================
 
 === financial_investigation ===
-Agent HaX: Our blockchain analysts traced the cryptocurrency payments. And they all lead to one place.
+Agent HaX: Our analysts followed both payments. They go through the same place.
 
 Agent HaX: HashChain Exchange. A cryptocurrency trading platform run by ENTROPY's Crypto Anarchists cell.
 
@@ -69,11 +72,11 @@ Agent HaX: HashChain Exchange. A cryptocurrency trading platform run by ENTROPY'
     -> architect_fund_hint
 
 === exchange_role ===
-Agent HaX: HashChain isn't just a trading platform. It's the financial hub for all ENTROPY operations.
+Agent HaX: HashChain is a trading platform on paper. In practice it's the bank for every ENTROPY cell we know of.
 
-Agent HaX: They provide mixing services—converting Bitcoin to untraceable privacy coins like Monero, then back again.
+Agent HaX: They run a mixer: Bitcoin in, converted to Monero, shuffled, and converted back out of an address with no history.
 
-Agent HaX: Every cell funnels money through them. It's the perfect money laundering infrastructure.
+Agent HaX: From the outside, that breaks the trail. From the inside, the exchange's own records put it back together.
 
 -> crypto_anarchists
 
@@ -94,9 +97,9 @@ Agent HaX: They think government control of money is tyranny. Cryptocurrency is 
     -> mission_objectives
 
 === ideology_discussion ===
-Agent HaX: Absolutely. Their leader calls himself "Satoshi Nakamoto II"—obviously not the real Bitcoin creator.
+Agent HaX: Completely. Their leader calls himself "Satoshi Nakamoto II". Obviously not the man who invented Bitcoin.
 
-Agent HaX: But here's the thing: they're not just running an exchange. They're funding terrorism in the name of accelerating the collapse of centralized finance.
+Agent HaX: And he knows what the money is for. He calls it accelerating the collapse of centralised finance. I call it paying for attacks.
 
 -> leadership_discussion
 
@@ -107,9 +110,9 @@ Agent HaX: But here's the thing: they're not just running an exchange. They're f
 === leadership_discussion ===
 Agent HaX: Two key targets:
 
-Agent HaX: "Satoshi Nakamoto II"—the CEO. True believer, charismatic leader, probably unreachable for recruitment.
+Agent HaX: "Satoshi Nakamoto II", the CEO. True believer, charming with it. Nobody turns him.
 
-Agent HaX: Dr. Elena Volkov—the CTO. Brilliant cryptographer. Former academic. And... potentially recruitable.
+Agent HaX: Dr. Elena Volkov, the CTO. Brilliant cryptographer, former academic. And possibly someone we can turn.
 
 + [Why would she help us?]
     ~ asked_about_elena = true
@@ -130,17 +133,17 @@ Agent HaX: She designed these systems for "financial freedom." Now they're being
 + [Think she'll flip?]
     -> recruitment_possibility
 + [What if she refuses?]
-    -> arrest_option
+    -> refusal_option
 
 === recruitment_possibility ===
-Agent HaX: It's possible. If you can show her the full scope of what her work is enabling—the casualties, the attacks—she might turn.
+Agent HaX: It's possible. If you can show her the full scope of what her work is paying for, she might turn.
 
-Agent HaX: A cryptographer of her caliber would be a massive intelligence asset.
+Agent HaX: A cryptographer of her calibre, working for us from inside ENTROPY's bank, is worth more than anything on their servers.
 
 -> mission_objectives
 
-=== arrest_option ===
-Agent HaX: Then we arrest her and eliminate her expertise from ENTROPY's network.
+=== refusal_option ===
+Agent HaX: Then you detain her and hand her to the police with the evidence. We can't charge anyone. They can.
 
 Agent HaX: But {player_name}, if there's any chance of recruitment, it's worth trying. Her knowledge could crack multiple cells.
 
@@ -185,11 +188,11 @@ Agent HaX: If there's a master fund coordinating everything, it'll be in their r
 === mission_objectives ===
 Agent HaX: Your mission objectives:
 
-Agent HaX: One—Infiltrate HashChain Exchange as a compliance auditor. Perfect cover for financial investigation.
+Agent HaX: One. Get into HashChain as a visiting FCA supervisor. Regulators ask to see everything, so nobody minds when you do.
 
-Agent HaX: Two—Access their backend servers and crack passwords to reach financial records.
+Agent HaX: Two. Get onto their backend servers and crack your way to the financial records.
 
-Agent HaX: Three—Map the complete ENTROPY financial network. Every cell, every wallet, every transaction.
+Agent HaX: Three. Map the network. Every cell, every wallet, every transaction.
 
 + [How do I access the servers?]
     -> technical_approach
@@ -203,11 +206,11 @@ Agent HaX: Three—Map the complete ENTROPY financial network. Every cell, every
 // ================================================
 
 === technical_approach ===
-Agent HaX: Their server room is password-protected. Typical crypto-themed passwords—we'll provide hints.
+Agent HaX: The server room door is on a passphrase. Crypto firms all pick from the same handful of words, and somebody in there will have written the house rule down.
 
 Agent HaX: Once you crack the first server, look for credential reuse. System admins get lazy.
 
-Agent HaX: Your VM access terminal will let you practice password cracking against their infrastructure.
+Agent HaX: The backend terminal in the server room puts you on their estate. Crack the accounts there and bring the flags to our drop-site.
 
 + [What am I looking for in the financial data?]
     -> financial_targets
@@ -215,11 +218,11 @@ Agent HaX: Your VM access terminal will let you practice password cracking again
     -> cover_story
 
 === financial_targets ===
-Agent HaX: Transaction records connecting Mission 2's ransomware and Mission 5's espionage payments.
+Agent HaX: Transaction records that tie the ransom money and the Initiative's budget to the same wallets.
 
 Agent HaX: Wallet addresses for all ENTROPY cells.
 
-Agent HaX: And anything about coordinated funding—a master fund distributing money to multiple operations.
+Agent HaX: And anything about coordinated funding: a master fund distributing money to multiple operations.
 
 -> cover_story
 
@@ -230,9 +233,9 @@ Agent HaX: And anything about coordinated funding—a master fund distributing m
 === npc_strategy ===
 Agent HaX: Build rapport with Elena. She's your best intelligence source and potential recruit.
 
-Agent HaX: Satoshi is a true believer—useful for understanding their ideology, but unlikely to cooperate.
+Agent HaX: Satoshi is a true believer. Useful for understanding their ideology, but unlikely to cooperate.
 
-Agent HaX: The traders and analysts are mostly innocent. They think they work at a legitimate exchange.
+Agent HaX: The traders and analysts are probably clean. They think they work at a legitimate exchange. Treat them that way.
 
 -> cover_story
 
@@ -241,11 +244,11 @@ Agent HaX: The traders and analysts are mostly innocent. They think they work at
 // ================================================
 
 === cover_story ===
-Agent HaX: You're a compliance auditor from FinCEN—Financial Crimes Enforcement Network.
+Agent HaX: You're from the FCA, the Financial Conduct Authority, on a routine supervisory visit.
 
 Agent HaX: Cryptocurrency exchanges face constant regulatory scrutiny. Your audit is completely normal.
 
-Agent HaX: Elena will meet you as CTO. She'll provide access to systems for "compliance verification."
+Agent HaX: Elena will meet you as CTO. Ask for what a supervisor would ask for, and see what she hands over.
 
 + [What if they see through the cover?]
     -> cover_backup
@@ -253,9 +256,9 @@ Agent HaX: Elena will meet you as CTO. She'll provide access to systems for "com
     -> final_briefing
 
 === cover_backup ===
-Agent HaX: Your credentials are genuine—we have real FinCEN paperwork. HashChain has no reason to suspect.
+Agent HaX: The paperwork will get you past reception. It won't survive a phone call to the FCA, so don't give anyone a reason to make one.
 
-Agent HaX: And even if they do? You'll be inside their systems before they can react.
+Agent HaX: If it goes wrong, nobody is coming to vouch for you. That's the job.
 
 -> final_briefing
 
@@ -268,7 +271,7 @@ Agent HaX: You'll have phone contact with me throughout the mission.
 
 Agent HaX: SAFETYNET flag station in their server room for submitting intelligence.
 
-Agent HaX: And {player_name}—I've uploaded password cracking tools and dictionaries to your VM environment.
+Agent HaX: And {player_name}, your attack box on the backend has the cracking tools loaded.
 
 + [What about physical tools?]
     -> physical_tools
@@ -276,9 +279,9 @@ Agent HaX: And {player_name}—I've uploaded password cracking tools and diction
     -> final_briefing
 
 === physical_tools ===
-Agent HaX: RFID badge cloner for accessing restricted areas. You'll find one inside—these crypto types love their security toys.
+Agent HaX: Two doors in there are on RFID badges. I'm told there's a badge cloner on the trading floor; crypto people love their security toys.
 
-Agent HaX: Everything else you need should be available as an "auditor." Leverage your cover.
+Agent HaX: Everything else, ask for. You're a regulator. Use it.
 
 -> final_briefing
 
@@ -287,11 +290,11 @@ Agent HaX: Everything else you need should be available as an "auditor." Leverag
 // ================================================
 
 === final_briefing ===
-Agent HaX: {player_name}, this is a critical mission.
+Agent HaX: {player_name}, this one matters more than most.
 
-Agent HaX: We've been fighting individual ENTROPY cells. This is our chance to understand the entire financial infrastructure.
+Agent HaX: We've been fighting one cell at a time. This is the first time we can see how they all connect.
 
-Agent HaX: Map the network. Find where the money goes. And if you can recruit Elena? That's a strategic intelligence win.
+Agent HaX: Map the network. Find where the money goes. And if you can turn Elena, we keep a pair of eyes inside it.
 
 + [What if I find something bigger than individual cells?]
     -> bigger_picture
@@ -314,7 +317,7 @@ Agent HaX: Remember: Elena is brilliant but conflicted. Appeal to her ethics, no
 
 Agent HaX: Satoshi is a true believer. Understand his perspective but don't expect conversion.
 
-Agent HaX: And crack those passwords carefully—you'll need access to multiple servers to piece together the complete network.
+Agent HaX: And on the backend, one account is never the whole picture. Keep going until you have all of it.
 
 -> deployment
 
@@ -325,14 +328,13 @@ Agent HaX: And crack those passwords carefully—you'll need access to multiple 
 === deployment ===
 Agent HaX: One more thing: we're racing the clock.
 
-Agent HaX: Our intelligence suggests a major fund distribution happening soon. If ENTROPY moves money to all cells simultaneously, they're coordinating something big.
+Agent HaX: The wallets we're watching have gone quiet, the way they do before a big payout. If ENTROPY pays every cell at once, they're about to do something at once.
 
-Agent HaX: Get inside. Map the network. Find the fund. And make the critical choices about assets and recruitment.
+Agent HaX: Get inside. Find the fund. Then you'll have two calls to make: what happens to the money, and what happens to Elena.
 
-Agent HaX: HashChain Exchange is the financial heart of ENTROPY. Let's see if we can stop it from beating.
+Agent HaX: Follow the money, {player_name}.
 
 ~ mission_accepted = true
 
-#complete_task:receive_briefing
 #exit_conversation
 -> DONE

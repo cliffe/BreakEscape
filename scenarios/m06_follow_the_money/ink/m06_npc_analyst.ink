@@ -29,17 +29,17 @@ VAR player_name = "Agent 0x00"
 
     Priya Raghavan: I just run the analysis. She makes the compliance decisions.
 
-    + [Impressive setup. I'm from FinCEN -- just observing your process.]
+    + [Impressive setup. I'm with the FCA, just observing your process.]
         Priya Raghavan: *glances up* Oh. Compliance audit. Right.
         -> audit_response
 
-    + [What transactions are you analyzing?]
+    + [What transactions are you analysing?]
         -> transaction_work
 
     + [I'll talk to Elena then]
-        #exit_conversation
         Priya Raghavan: *already back to screens* Okay.
-        -> DONE
+        #exit_conversation
+        -> hub
 }
 
 {not first_meeting:
@@ -89,10 +89,10 @@ Priya Raghavan: Multiple wallets converting to Monero simultaneously, similar am
     -> personal_concerns
 
 + [Thanks for your time]
-    #exit_conversation
     #speaker:analyst
     Priya Raghavan: *already back to work* Uh-huh.
-    -> DONE
+    #exit_conversation
+    -> hub
 
 // ===========================================
 // FORENSICS DISCUSSION
@@ -104,7 +104,7 @@ Priya Raghavan: Multiple wallets converting to Monero simultaneously, similar am
 
 Priya Raghavan: Blockchain forensics is fascinating. Every transaction is public, but attribution is hard.
 
-Priya Raghavan: You track wallet behaviors, cluster related addresses, analyze timing patterns.
+Priya Raghavan: You track wallet behaviours, cluster related addresses, analyse timing patterns.
 
 Priya Raghavan: Like digital detective work. Follow the money across thousands of transactions.
 
@@ -143,9 +143,9 @@ Priya Raghavan: Privacy customers would not be happy about that.
 === illegal_patterns ===
 #speaker:analyst
 
-Priya Raghavan: High-volume mixing with no clear business purpose. Coordinated multi-wallet behaviors.
+Priya Raghavan: High-volume mixing with no clear business purpose. Coordinated multi-wallet behaviours.
 
-Priya Raghavan: Amounts just under reporting thresholds—structuring. Rapid conversions avoiding single-transaction limits.
+Priya Raghavan: Amounts just under reporting thresholds. Structuring. Rapid conversions avoiding single-transaction limits.
 
 Priya Raghavan: And timing patterns. If multiple unrelated wallets mix simultaneously with similar amounts? Coordinated operation.
 
@@ -158,7 +158,7 @@ Priya Raghavan: And timing patterns. If multiple unrelated wallets mix simultane
 === violations_discussion ===
 #speaker:analyst
 
-Priya Raghavan: We file SARs—Suspicious Activity Reports—pretty regularly.
+Priya Raghavan: We file SARs, Suspicious Activity Reports, pretty regularly.
 
 Priya Raghavan: High-value privacy coin mixing attracts... a certain clientele.
 
@@ -169,11 +169,11 @@ Priya Raghavan: But most of it's legal. People have a right to financial privacy
 === methodology_discussion ===
 #speaker:analyst
 
-Priya Raghavan: I run transaction graph analysis—map all connected wallets, identify clusters.
+Priya Raghavan: I run transaction graph analysis: map all connected wallets, identify clusters.
 
-Priya Raghavan: Then timing analysis—look for coordinated behaviors.
+Priya Raghavan: Then timing analysis, looking for coordinated behaviour.
 
-Priya Raghavan: Finally, amount analysis—large conversions, unusual patterns.
+Priya Raghavan: Finally, amount analysis: large conversions, unusual patterns.
 
 Priya Raghavan: Flag anything suspicious to Elena. She decides whether to file SARs or investigate deeper.
 
@@ -190,7 +190,7 @@ Priya Raghavan: *frowns* Yeah. Very.
 
 Priya Raghavan: Multiple large wallets. Coordinated conversions. Consistent timing every Friday night.
 
-Priya Raghavan: Amounts totaling... *checks screen* ...about $12-13 million over the past month.
+Priya Raghavan: Amounts totalling... about $12-13 million over the past month.
 
 + [Where's the money going?]
     -> destination_discussion
@@ -218,7 +218,7 @@ Priya Raghavan: Either someone's consolidating funds from multiple sources, or..
 
 Priya Raghavan: Or it's coordinated funding for something. Multiple cells paying into a central operation.
 
-Priya Raghavan: That's... that's the kind of pattern you see with organized crime or terrorism.
+Priya Raghavan: That's... that's the kind of pattern you see with organised crime or terrorism.
 
 Priya Raghavan: I really hope Elena knows what she's doing with this investigation.
 
@@ -227,7 +227,7 @@ Priya Raghavan: I really hope Elena knows what she's doing with this investigati
 === elena_flagging ===
 #speaker:analyst
 
-Priya Raghavan: Yeah, like two weeks ago. She's been analyzing it personally.
+Priya Raghavan: Yeah, like two weeks ago. She's been analysing it personally.
 
 Priya Raghavan: Hasn't told me her conclusions yet. Just said to keep monitoring.
 
@@ -270,7 +270,7 @@ Priya Raghavan: Flagged to Elena. She's investigating.
 
 Priya Raghavan: She hasn't filed an external SAR yet, which means either it's legitimate activity or she's gathering more evidence.
 
-Priya Raghavan: I trust her judgment. She's way smarter than me.
+Priya Raghavan: I trust her judgement. She's way smarter than me.
 
 -> hub
 
@@ -280,6 +280,8 @@ Priya Raghavan: I trust her judgment. She's way smarter than me.
 
 === pattern_concerns ===
 #speaker:analyst
+// Review M1: the "walk you through her graph" conversation the task names.
+#complete_task:question_the_analyst
 ~ topic_patterns = true
 
 Priya Raghavan: *pulls up a graph* Look at this. Five different source wallets.
@@ -299,9 +301,9 @@ Priya Raghavan: Pattern repeats weekly. Like clockwork.
 
 Priya Raghavan: My guess? Coordinated fundraising. Multiple revenue streams feeding a central operation.
 
-Priya Raghavan: Could be legit—distributed business with centralized accounting.
+Priya Raghavan: Could be legit. A distributed business with centralised accounting.
 
-Priya Raghavan: Could be money laundering—criminal network consolidating funds.
+Priya Raghavan: Could be money laundering. A criminal network consolidating funds.
 
 Priya Raghavan: Without knowing who controls the wallets, it's hard to say.
 
@@ -310,11 +312,11 @@ Priya Raghavan: Without knowing who controls the wallets, it's hard to say.
 === source_identification ===
 #speaker:analyst
 
-Priya Raghavan: Not from blockchain alone. Monero anonymization is really good.
+Priya Raghavan: The addresses name themselves. Somebody paid for vanity wallets, "1ENTROPY" this and "1ARCHITECT" that. It's in my write-up on the desk.
 
-Priya Raghavan: Our internal logs have more info, but Elena restricts access.
+Priya Raghavan: Who's actually behind them, I can't tell from the chain. Monero anonymisation is really good.
 
-Priya Raghavan: I can see the patterns. She can see the actual wallet addresses and transaction details.
+Priya Raghavan: Elena sees the customer records behind the addresses. I only see the patterns.
 
 -> hub
 
@@ -341,7 +343,7 @@ Priya Raghavan: I love blockchain forensics. I love privacy technology. I believ
 
 Priya Raghavan: But some of these patterns scare me.
 
-Priya Raghavan: I'm analyzing transactions that might be funding... I don't know. Terrorism? Organized crime?
+Priya Raghavan: I'm analysing transactions that might be funding... I don't know. Terrorism? Organized crime?
 
 Priya Raghavan: And I tell myself it's not my job to judge. I'm just the analyst. Elena makes the decisions.
 
@@ -361,7 +363,7 @@ Priya Raghavan: That our ideals about financial freedom are being exploited by p
 === moral_conflict ===
 #speaker:analyst
 
-Priya Raghavan: *looks at you* That's why you're here, isn't it? FinCEN doesn't audit mid-size exchanges unless something's flagged.
+Priya Raghavan: *looks at you* That's why you're here, isn't it? The FCA doesn't turn up at a mid-size exchange unless something's already been flagged.
 
 Priya Raghavan: Someone thinks we're dirty.
 
@@ -381,12 +383,12 @@ Priya Raghavan: Well, when your investigation concludes, I hope you tell me whet
 Priya Raghavan: I'd like to know if my work has been... meaningful. Or just enabling.
 
 #exit_conversation
--> DONE
+-> hub
 
 === direct_question ===
 #speaker:analyst
 
-Priya Raghavan: *long pause*
+Narrator: She's quiet for a long moment.
 
 Priya Raghavan: I think some of our customers are using our privacy infrastructure for things that would horrify me if I knew the details.
 
@@ -397,4 +399,4 @@ Priya Raghavan: And I think Satoshi cares more about ideology than consequences.
 Priya Raghavan: So yeah. Probably.
 
 #exit_conversation
--> DONE
+-> hub

@@ -1,6 +1,22 @@
 // ===========================================
 // Mission 6: NPC - Dr. Elena Volkov
-// CTO of HashChain Exchange, Recruitable Asset
+// CTO of HashChain Exchange, recruitable asset
+//
+// PASS 2:
+// - Never reaches DONE (lesson 21): every exit is #exit_conversation -> hub,
+//   and after her fate is settled, -> after_choice.
+// - A player who opened badly (trust -5) could never earn the wordlist: the
+//   hub had no way to build trust. Two once-only topics now do.
+// - The cloner route the badge's observation promised now exists
+//   (rfidCard on the NPC + #clone_keycard, m03 pattern).
+// - Her fate was reachable only through trust >= 20 AND the blockchain
+//   evidence, so a player who never earned her trust could not end the
+//   mission. Once the fund is found, "drop the cover" is always offered.
+// - The fate tags only set elena_fate_decided; the task completes from a
+//   mapping once the conclusion aim is open (lesson 27).
+// - Canon (lesson 39): SAFETYNET has no arrest powers. She is detained and
+//   handed to the police with the evidence; no sentencing promises.
+// - Cover is the FCA, not FinCEN.
 // ===========================================
 
 VAR elena_trust = 0              // -50 to 100 scale
@@ -11,17 +27,26 @@ VAR shown_architects_fund = false
 VAR recruitment_offered = false
 VAR recruitment_accepted = false
 VAR recruitment_refused = false
-VAR password_list_given = false
 VAR badge_discussion = false
-VAR badge_offered = false
+VAR badge_cloned = false
+VAR asked_research = false
+VAR asked_paperwork = false
 VAR first_meeting = true
 
-// External variables
+// Synced from scenario globals / inventory
 VAR player_name = "Agent 0x00"
 VAR found_blockchain_evidence = false
 VAR found_architects_fund = false
 VAR elena_recruited = false
 VAR elena_arrested = false
+VAR elena_fate_decided = false
+VAR has_rfid_cloner = false
+VAR found_password_lists = false   // set by the pickup mapping (lesson 26)
+VAR elena_badge_obtained = false   // set by the pickup mapping (lesson 26)
+VAR given_time = false
+VAR asked_passwords = false   // playtest D1: the second ask always succeeds
+VAR wordlist_handed = false   // playtest D4: menu latch, same conversation
+VAR badge_handed = false
 
 // ===========================================
 // INITIAL MEETING
@@ -29,100 +54,91 @@ VAR elena_arrested = false
 
 === start ===
 #speaker:elena_volkov
-
+{elena_fate_decided:
+    -> after_choice
+}
+// Playtest D1: the openers used to sit inside {first_meeting:} with no divert,
+// so they fell through into the hub and all seven options showed at once. A
+// first pick from the hub discarded the openers and capped trust at 10.
 {first_meeting:
-    ~ first_meeting = false
-
-    #speaker:narrator
-    Narrator: A sharp-eyed woman in her mid-thirties looks up from three monitors of blockchain transaction graphs.
-
-    Dr. Elena Volkov: You must be the FinCEN auditor. Dr. Elena Volkov, Chief Technology Officer.
-
-    Dr. Elena Volkov: Cryptocurrency compliance. Always a pleasure. *her tone suggests otherwise*
-
-    + [Thank you for making the time, Dr. Volkov. I know an audit is disruptive.]
-        ~ elena_trust += 10
-        -> professional_response
-
-    + [Let's make this efficient. I need system access -- backend servers, transaction logs, wallet infrastructure.]
-        ~ elena_trust -= 5
-        ~ elena_suspicious = true
-        -> suspicious_response
-
-    + [Thirty-seven publications, two and a half thousand citations. Your research is extraordinary.]
-        ~ elena_trust += 15
-        -> academic_response
+    -> first_meeting_scene
 }
+Dr. Elena Volkov: Back again. What do you need?
+-> hub
 
-{not first_meeting:
-    Dr. Elena Volkov: Back again. What do you need?
-    -> hub
-}
+=== first_meeting_scene ===
+#speaker:elena_volkov
+~ first_meeting = false
+// Review M1: the only other route to this task was taskOnKO.
+#complete_task:meet_elena
+Narrator: A sharp-eyed woman in her mid-thirties looks up from three monitors of transaction graphs.
+
+Dr. Elena Volkov: You must be the FCA. Dr. Elena Volkov, Chief Technology Officer.
+
+Dr. Elena Volkov: A supervisory visit. Always a pleasure, I'm sure.
+
++ [Thank you for making the time, Dr. Volkov. I know a visit like this is disruptive.]
+    ~ elena_trust += 10
+    -> professional_response
+
++ [Let's be efficient. I need backend servers, transaction logs and wallet infrastructure.]
+    ~ elena_trust -= 5
+    ~ elena_suspicious = true
+    -> suspicious_response
+
++ [Thirty-seven papers and nearly three thousand citations. I've read some of your work.]
+    ~ elena_trust += 15
+    -> academic_response
 
 === professional_response ===
 #speaker:elena_volkov
+Dr. Elena Volkov: I appreciate the courtesy. Most of your colleagues treat us as criminals from the first handshake.
 
-Dr. Elena Volkov: I appreciate the courtesy. Most auditors treat us like criminals from day one.
-
-Dr. Elena Volkov: We run a legitimate exchange. Privacy-focused, yes. But legal.
+Dr. Elena Volkov: We run a privacy-focused exchange. That is not the same thing as an illegal one.
 
 ~ elena_trust += 5
-
 -> audit_discussion
 
 === suspicious_response ===
 #speaker:elena_volkov
+Dr. Elena Volkov: Eager, aren't you?
 
-Dr. Elena Volkov: *narrows eyes* Eager, aren't you?
-
-Dr. Elena Volkov: FinCEN auditors usually start with paperwork. KYC compliance, AML procedures.
-
-Dr. Elena Volkov: You're going straight for the technical infrastructure. Unusual.
+Dr. Elena Volkov: Supervisors usually start with paperwork. Customer checks, anti-laundering procedures. You went straight for the machines.
 
 ~ elena_suspicious = true
-
 -> audit_discussion
 
 === academic_response ===
 #speaker:elena_volkov
+Dr. Elena Volkov: You read my work? Most people from your side see "cryptographer" and hear "hacker".
 
-Dr. Elena Volkov: *surprised* You read my work?
-
-Dr. Elena Volkov: Most auditors see "cryptographer" and assume "hacker." Refreshing to meet someone who understands the difference.
-
-Dr. Elena Volkov: I built this exchange's infrastructure on sound cryptographic principles. Zero-knowledge proofs, homomorphic encryption...
+Dr. Elena Volkov: I built this exchange on sound principles. Zero-knowledge proofs, homomorphic encryption. Things I can defend.
 
 ~ elena_trust += 10
-
 -> academic_discussion
 
 === academic_discussion ===
 #speaker:elena_volkov
+Dr. Elena Volkov: My research is about financial privacy. Governments should not be able to read every transaction a person makes.
 
-Dr. Elena Volkov: My research focuses on financial privacy. Governments shouldn't be able to track every transaction.
+Dr. Elena Volkov: That is a privacy position, not a criminal one.
 
-Dr. Elena Volkov: That's not a criminal position. It's a privacy rights position.
-
-+ [Financial surveillance is genuinely concerning. I understand the principle.]
++ [Financial surveillance worries me too. I understand the principle.]
     ~ elena_trust += 10
     -> hub
 
-+ [It also launders money. Which is why we audit exchanges.]
-    Dr. Elena Volkov: Fair. Everything we do is documented and legal.
++ [It also launders money. That's why people like me visit exchanges like this.]
+    Dr. Elena Volkov: Fair. Ask for what you need and I'll show you it's documented.
     ~ elena_trust += 5
     -> hub
 
 === audit_discussion ===
 #speaker:elena_volkov
-
-Dr. Elena Volkov: What specifically does FinCEN want to see?
-
-Dr. Elena Volkov: Our KYC procedures are compliant. Our transaction monitoring meets regulatory thresholds.
+Dr. Elena Volkov: So what does the FCA want to see? Our customer checks are compliant. Our monitoring meets the thresholds.
 
 {elena_suspicious:
-    Dr. Elena Volkov: Unless you're looking for something beyond standard compliance?
+    Dr. Elena Volkov: Unless you are looking for something that isn't on a checklist.
 }
-
 -> hub
 
 // ===========================================
@@ -130,401 +146,282 @@ Dr. Elena Volkov: Our KYC procedures are compliant. Our transaction monitoring m
 // ===========================================
 
 === hub ===
-
-+ {not password_list_given} [I'll need credentials for the backend servers.]
++ {not found_password_lists and not wordlist_handed} [I'll need to test your password strength. What do people here actually use?]
     -> request_passwords
 
-+ {not badge_discussion} [Tell me about your RFID access control.]
++ {not asked_research} [What's the post-quantum work on your second screen?]
+    -> research_topic
+
++ {elena_suspicious and not asked_paperwork} [Let's start again, properly. Walk me through your anti-laundering procedures.]
+    -> paperwork_topic
+
++ {not badge_discussion} [Tell me about your door access.]
     -> discuss_badges
 
-+ {elena_trust >= 20 and found_blockchain_evidence and not shown_casualties} [There's something you need to see.]
++ {badge_discussion and not elena_badge_obtained and not badge_handed and not badge_cloned} [About your office badge.]
+    -> badge_followup
+
++ {has_rfid_cloner and not elena_badge_obtained and not badge_handed and not badge_cloned} [ (Read her badge with the cloner while she talks.) ]
+    -> clone_badge
+
++ {elena_trust >= 20 and found_blockchain_evidence and not shown_casualties} [There's something you need to see, Dr. Volkov.]
     -> show_blockchain_evidence
 
-+ {shown_casualties and not recruitment_offered} [I'm not FinCEN. I'm SAFETYNET.]
++ {found_architects_fund and not recruitment_offered} [I'm going to stop pretending. I'm not from the FCA.]
     -> reveal_identity
 
 + {recruitment_offered and not recruitment_accepted and not recruitment_refused} [I need an answer, Dr. Volkov.]
     -> recruitment_decision
 
-+ {elena_trust < -10} [Dr. Volkov, you're under arrest.]
-    -> arrest_elena
-
-+ [That's all for now]
-    #exit_conversation
++ [That's all for now.]
     #speaker:elena_volkov
     {elena_trust >= 30:
-        Dr. Elena Volkov: Let me know if you need anything else.
+        Dr. Elena Volkov: Find me if you need anything else.
+    - else:
+        {elena_trust >= 0:
+            Dr. Elena Volkov: Alright. I'll be here.
+        - else:
+            Dr. Elena Volkov: Fine.
+        }
     }
-    {elena_trust < 30 and elena_trust >= 0:
-        Dr. Elena Volkov: Alright. I'll be here.
-    }
-    {elena_trust < 0:
-        Dr. Elena Volkov: *coldly* Fine.
-    }
-    -> DONE
+    #exit_conversation
+    -> hub
 
 // ===========================================
-// REQUEST PASSWORDS
+// REQUEST PASSWORDS (the wordlist)
 // ===========================================
 
 === request_passwords ===
 #speaker:elena_volkov
-
-You: I need to test your backend server security. Password strength analysis.
-
-{elena_trust >= 15:
-    Dr. Elena Volkov: That's... actually reasonable for a security audit.
-
-    ~ password_list_given = true
-    ~ elena_trust += 5
-    #give_item:text_file:m06_password_dictionary
-    #complete_task:obtain_access_tools
-    #set_variable:found_password_lists=true
-    Dr. Elena Volkov: Take my audit wordlist. Every crypto firm on earth picks from the same twenty words and a year.
-
-    Dr. Elena Volkov: Sixty-one per cent of our staff accounts fell to that list. Management's response was to stop running the audit.
-
-    -> hub
-
+// Playtest D1: trust >= 15 is reachable on every opener (professional 15;
+// academic 25+; efficient -5 +10 paperwork +10 research = 15), and a second
+// ask always succeeds, so the passphrase clue can never be lost.
+{asked_passwords:
+    You: I'm asking again. Your own people's passwords, the list you already made.
 - else:
-    Dr. Elena Volkov: I don't know you well enough to give you server credentials.
-    Dr. Elena Volkov: Build trust first. Then we can discuss technical access.
+    You: I need to test how strong your backend passwords really are. What do people here actually pick?
+}
+{elena_trust >= 15 or asked_passwords:
+    ~ elena_trust += 5
+    ~ wordlist_handed = true
+    #give_item:text_file:m06_password_dictionary
+    {elena_trust >= 20:
+        Dr. Elena Volkov: Reasonable request for a supervisor. Here.
+    - else:
+        Dr. Elena Volkov: Fine. You'd find it on the file server in ten minutes anyway. Here.
+    }
+
+    Dr. Elena Volkov: My own audit wordlist. Every crypto firm on earth picks from the same twenty words and bolts a year on the end.
+
+    Dr. Elena Volkov: Sixty-one per cent of our staff accounts fell to that list last time I ran it. Management's response was to stop me running it.
+    -> hub
+- else:
+    ~ asked_passwords = true
+    Dr. Elena Volkov: I don't know you well enough to hand a visitor our credential data.
+
+    Dr. Elena Volkov: Earn a little trust first. Then we can talk about the backend.
     -> hub
 }
 
 // ===========================================
-// BADGE DISCUSSION
+// TRUST-BUILDING TOPICS
+// ===========================================
+
+=== research_topic ===
+#speaker:elena_volkov
+~ asked_research = true
+You: The second screen. That's not a trading dashboard.
+
+Dr. Elena Volkov: Post-quantum key exchange. Lattice-based. The day a quantum computer breaks elliptic curves, every wallet on earth is readable, and I would rather we were ready than surprised.
+
+Dr. Elena Volkov: It's the part of this job I'm still proud of.
+~ elena_trust += 10
+-> hub
+
+=== paperwork_topic ===
+#speaker:elena_volkov
+~ asked_paperwork = true
+You: Let's start again, properly. Walk me through your anti-laundering procedures.
+
+Dr. Elena Volkov: *thawing slightly* Now that's a supervisor's question.
+
+Dr. Elena Volkov: Every flagged transaction comes to me personally. I review it, I decide, I sign it off. That part I do by the book.
+~ elena_trust += 10
+~ elena_suspicious = false
+-> hub
+
+// ===========================================
+// BADGE (lend or clone)
 // ===========================================
 
 === discuss_badges ===
 #speaker:elena_volkov
 ~ badge_discussion = true
+You: Tell me about your door access.
 
-You: Tell me about your RFID access control systems.
+Dr. Elena Volkov: Badges. Trading floor for staff, this one for my office, executive badges for the top floor.
 
-Dr. Elena Volkov: Standard corporate setup. Employee badges for the trading floor, my badge for my own office, executive badges for the top floor.
+Dr. Elena Volkov: *taps the lanyard at her collar* Four years round my neck. The badges are the one part of our security I'd defend. Satoshi is paranoid about doors and careless about passwords, which is exactly backwards.
+-> hub
 
-Dr. Elena Volkov: *taps the lanyard at her collar* This one. It has been round my neck for four years.
-
+=== badge_followup ===
+#speaker:elena_volkov
 {elena_trust >= 25:
-    Dr. Elena Volkov: Between you and me, the badges are the only part of our security I would defend. Satoshi is paranoid about doors and relaxed about passwords, which is precisely backwards.
+    You: I'll need to check your office reader as part of the visit. Can I borrow the badge?
+
     ~ elena_trust += 5
+    ~ badge_handed = true
+    #give_item:keycard:cto_access_badge
+    Dr. Elena Volkov: *unclips it* Bring it back. And don't tell facilities I handed it over, they'll write a memo about it.
+
+    Dr. Elena Volkov: West door. Try not to judge the whiteboard.
+    -> hub
+- else:
+    Dr. Elena Volkov: My badge stays on my neck for a visitor I met an hour ago. Nothing personal.
+
+    {has_rfid_cloner:
+        Narrator: Her lanyard hangs open at her collar, well within a cloner's range. She'd never feel it read.
+    }
+    -> hub
 }
 
-+ {elena_trust >= 25 and not badge_offered} [I'll need to check your office reader as part of the audit. Can I borrow the badge?]
-    -> lend_badge
+// ===========================================
+// CLONE THE BADGE (silent, needs the cloner)
+// ===========================================
+// The hub offers this only while she still has the badge and hasn't lent it.
 
-+ [Understood.]
-    -> hub
-
-=== lend_badge ===
+=== clone_badge ===
+#speaker:narrator
+~ badge_cloned = true
+Narrator: You keep her talking about lattices and let the cloner in your pocket read the badge on her lanyard. One pass, EM4100, a clean copy.
+#clone_keycard:cto_badge
 #speaker:elena_volkov
-~ badge_offered = true
-
-Dr. Elena Volkov: *unclips it without hesitation* Bring it back. And do not tell facilities I handed it over, they will write a memo.
-
-~ elena_trust += 5
-#give_item:keycard:cto_access_badge
-#set_variable:elena_badge_obtained=true
-
-Dr. Elena Volkov: My office is the west door. Try not to judge the state of the whiteboard.
-
+Dr. Elena Volkov: ...anyway. You didn't come here for a lecture on elliptic curves.
 -> hub
 
 // ===========================================
-// SHOW BLOCKCHAIN EVIDENCE
+// SHOW THE EVIDENCE
 // ===========================================
 
 === show_blockchain_evidence ===
-#speaker:elena_volkov
-~ shown_casualties = true
-
-You: Dr. Volkov, I need to show you something.
-
 #speaker:narrator
-Narrator: You lay the transaction analysis on her desk. Hospital ransomware. Corporate espionage. Both arriving at the same destination wallet, both routed through mixers she designed.
+~ shown_casualties = true
+Narrator: You lay the transaction graph on her desk. Ransom money in. Exploit money in. The Initiative's budget back out. All of it through the mixer she wrote.
 
 #speaker:elena_volkov
+Dr. Elena Volkov: *goes still* Where did you get our internal analysis?
 
-Dr. Elena Volkov: *face goes pale* Where did you get this?
++ [You flagged these transactions yourself. You already knew.]
+    Dr. Elena Volkov: I flagged them because they were wrong. Not because I knew what they paid for.
+    -> evidence_pivot
++ [It doesn't matter where. Read what it's paying for.]
+    -> evidence_pivot
 
-Dr. Elena Volkov: That's... that's our internal analysis. How did you...
-
-+ [You analyzed these transactions yourself]
-    -> elena_realization
-
-+ [You knew what this infrastructure was being used for]
-    -> elena_confrontation
-
-=== elena_realization ===
+=== evidence_pivot ===
 #speaker:elena_volkov
-
-Dr. Elena Volkov: I... I ran those analyses because the transaction patterns were suspicious.
-
-Dr. Elena Volkov: Hospital ransomware? Corporate espionage? I flagged these for investigation!
-
 {found_architects_fund:
-    You: And The Architect's Fund? $12.8 million for coordinated attacks with 180-340 projected casualties?
+    You: The Architect's Fund. $12.8 million, six cells, a projection of 180 to 340 dead. You built the machine that moves it.
     ~ shown_architects_fund = true
-    -> architects_fund_reaction
+    Dr. Elena Volkov: *reads it twice* They costed the deaths. They put a number in a cell and moved on.
+
+    Dr. Elena Volkov: I told myself this was about privacy. Financial freedom. Not... this.
 - else:
-    You: The mixing services you built are enabling terrorism.
-    -> moral_conflict
+    You: Hospital ransoms. Exploit sales. All of it laundered clean through your infrastructure.
+    Dr. Elena Volkov: I told myself it was about privacy. I am finding that harder to say out loud than I used to.
 }
-
-=== elena_confrontation ===
-#speaker:elena_volkov
-
-Dr. Elena Volkov: *defensive* I built privacy infrastructure! What people use it for isn't my responsibility!
-
-Dr. Elena Volkov: I design cryptographic systems. That's like blaming the inventor of the printing press for propaganda!
-
-+ [You're not that naive]
-    -> moral_conflict
-
-+ [You analyzed the transactions. You knew.]
-    -> moral_conflict
-
-=== architects_fund_reaction ===
-#speaker:elena_volkov
-
-Dr. Elena Volkov: *reads the document* No. No, this can't be...
-
-Dr. Elena Volkov: 180-340 casualties? They CALCULATED death tolls?
-
-Dr. Elena Volkov: I built this for financial freedom. Not... not mass murder.
-
 ~ moral_conflict_revealed = true
-~ elena_trust += 20
-
--> moral_conflict
-
-=== moral_conflict ===
-#speaker:elena_volkov
-~ moral_conflict_revealed = true
-
-Dr. Elena Volkov: *hands shaking* I knew the exchange was being used for... questionable activities.
-
-Dr. Elena Volkov: But I told myself it was financial freedom. Privacy rights. Fighting government surveillance.
-
-{shown_architects_fund:
-    Dr. Elena Volkov: Not funding coordinated terrorist attacks. Not calculating how many people would die.
-}
-
-Dr. Elena Volkov: *looks up* Who are you? You're not FinCEN.
-
+~ elena_trust += 15
 -> reveal_identity
 
 // ===========================================
-// REVEAL SAFETYNET IDENTITY
+// REVEAL IDENTITY + RECRUITMENT
 // ===========================================
 
 === reveal_identity ===
 #speaker:elena_volkov
 ~ recruitment_offered = true
+You: I'm SAFETYNET. The exchange you built is the bank for every ENTROPY cell we've met.
 
-You: SAFETYNET. Counter-terrorism intelligence.
+Dr. Elena Volkov: *quietly* My work. Used to kill people.
 
-You: The exchange you built is the financial hub for ENTROPY—every cell we've encountered is funded through your mixing infrastructure.
-
-Dr. Elena Volkov: *closes eyes* My research. My work. Used to kill people.
-
-+ [You didn't know the full scope. You can help us now.]
-    -> recruitment_offer_compassionate
-
-+ [You built the systems. You're culpable. But you can make this right.]
-    -> recruitment_offer_pragmatic
-
-+ [You're under arrest for facilitating terrorism]
-    -> arrest_elena
-
-=== recruitment_offer_compassionate ===
-#speaker:elena_volkov
-
-You: Dr. Volkov, you're a brilliant cryptographer who got swept up in ideology.
-
-You: You built these systems for financial freedom. ENTROPY corrupted your work.
-
-You: But you can help us dismantle their network. Your expertise could save hundreds of lives.
-
-~ elena_trust += 15
-
--> recruitment_choice
-
-=== recruitment_offer_pragmatic ===
-#speaker:elena_volkov
-
-You: You face 20-35 years for money laundering and facilitating terrorism.
-
-You: Or you cooperate with SAFETYNET. Provide intelligence, testify against ENTROPY cells, help us trace their funding.
-
-You: Your choice: prison or redemption.
-
-~ elena_trust += 5
-
--> recruitment_choice
-
-// ===========================================
-// RECRUITMENT CHOICE
-// ===========================================
-
-=== recruitment_choice ===
-#speaker:elena_volkov
-
-Dr. Elena Volkov: *long silence*
-
-Dr. Elena Volkov: If I cooperate... what happens to my research? My career?
-
-+ [Your research continues—for SAFETYNET. Help us instead of ENTROPY.]
-    -> recruitment_appeal_purpose
-
-+ [Your career is over either way. But cooperation keeps you free.]
-    -> recruitment_appeal_freedom
-
-+ [Time's up. Decide now.]
++ [You didn't see the whole picture. You can help us take it apart.]
+    ~ elena_trust += 10
+    You: You built these systems believing in them. ENTROPY turned them into a weapon. Help us dismantle their network and that means something.
     -> recruitment_decision
-
-=== recruitment_appeal_purpose ===
-#speaker:elena_volkov
-
-You: SAFETYNET needs cryptographers. Your expertise in cryptocurrency forensics, privacy systems, blockchain analysis...
-
-You: You could teach our analysts. Write papers. Actually contribute to stopping terrorism instead of funding it.
-
-~ elena_trust += 10
-
-Dr. Elena Volkov: *softly* Purpose over punishment.
-
--> recruitment_decision
-
-=== recruitment_appeal_freedom ===
-#speaker:elena_volkov
-
-You: Cooperation means witness protection, reduced sentencing, possibly immunity if your intelligence is valuable enough.
-
-You: Refusal means maximum sentencing for every transaction you enabled.
-
-Dr. Elena Volkov: *bitter laugh* Freedom. The thing I thought I was building.
-
--> recruitment_decision
-
-// ===========================================
-// RECRUITMENT DECISION
-// ===========================================
++ [You built it and you profited. But cooperation is a way to make it right.]
+    ~ elena_trust += 5
+    You: You're in this up to your neck. The honest way out is to help us end it, not to pretend you didn't know.
+    -> recruitment_decision
++ [You're being detained, Dr. Volkov. Now.]
+    -> detain_elena
 
 === recruitment_decision ===
 #speaker:elena_volkov
+{elena_trust >= 35:
+    Dr. Elena Volkov: *long pause* Then I'll help you. On one condition: I see the intelligence I give you actually used. Not buried.
 
-{elena_trust >= 40:
-    -> recruitment_accepted_path
-}
-{elena_trust >= 20 and elena_trust < 40:
-    -> recruitment_uncertain
-}
-{elena_trust < 20:
-    -> recruitment_refused_path
-}
+    You: You'll know. You have my word.
 
-=== recruitment_accepted_path ===
-#speaker:elena_volkov
-~ recruitment_accepted = true
+    ~ elena_recruited = true
+    ~ elena_fate_decided = true
+    #set_variable:elena_recruited=true
+    #set_variable:elena_fate_decided=true
+    Dr. Elena Volkov: Then yes. Start with three Crypto Anarchist cells Satoshi doesn't know I can name.
 
-Dr. Elena Volkov: *takes deep breath* I'll cooperate.
+    Dr. Elena Volkov: And {player_name}? Thank you. For treating this as a choice.
+    #exit_conversation
+    -> after_choice
+- else:
+    Dr. Elena Volkov: I won't turn on Satoshi on the strength of one conversation and a graph.
 
-Dr. Elena Volkov: On one condition: I want to see the intelligence I provide being used. Not disappeared into bureaucracy.
+    Dr. Elena Volkov: Financial privacy is a right. If some people abuse it, that is on them, not on me.
 
-Dr. Elena Volkov: I want to know I'm making this right.
-
-+ [Agreed. We'll keep you informed.]
-    -> recruitment_finalized
-
-+ [You're not in a position to negotiate]
-    ~ elena_trust -= 10
-    -> recruitment_uncertain
-
-=== recruitment_finalized ===
-#speaker:elena_volkov
-
-#set_variable:elena_recruited=true
-#set_variable:elena_fate_decided=true
-#complete_task:decide_elena_fate
-
-Dr. Elena Volkov: Then yes. I'll help you dismantle ENTROPY's financial network.
-
-Dr. Elena Volkov: Starting with Crypto Anarchist cells in three countries I haven't told Satoshi about.
-
-Dr. Elena Volkov: And {player_name}? Thank you. For giving me a chance to fix what I broke.
-
-#exit_conversation
--> DONE
-
-=== recruitment_uncertain ===
-#speaker:elena_volkov
-
-Dr. Elena Volkov: I... I need more time. This is my life you're asking me to turn over.
-
-+ [You don't have time. ENTROPY is distributing $12.8M in 72 hours.]
-    {shown_architects_fund:
-        Dr. Elena Volkov: *anguished* I know! I analyzed those transactions!
+    + [Then you're complicit, and I'm treating you as complicit.]
+        ~ recruitment_refused = true
+        -> detain_elena
+    // Review minor 1: a real alternative. Giving her time can turn her.
+    + {not given_time} [Think about it. I'll come back before anyone else does.]
+        ~ given_time = true
         ~ elena_trust += 10
-        -> recruitment_decision
-    }
-    {not shown_architects_fund:
-        Dr. Elena Volkov: What are you talking about?
-        -> explain_time_pressure
-    }
-
-+ [Fine. But I'm not offering this again.]
-    -> recruitment_refused_path
-
-=== explain_time_pressure ===
-#speaker:elena_volkov
-
-You: The Architect's Fund. $12.8 million allocated to six ENTROPY cells. Coordinated attacks.
-
-You: If you don't help us stop the fund distribution, 180-340 people die.
-
-~ shown_architects_fund = true
-~ elena_trust += 15
-
--> recruitment_decision
-
-=== recruitment_refused_path ===
-#speaker:elena_volkov
-~ recruitment_refused = true
-
-Dr. Elena Volkov: I won't betray Satoshi. Or the principles this exchange was built on.
-
-Dr. Elena Volkov: Financial privacy is a right. If some people abuse it, that's on them.
-
-+ [Then you're complicit in terrorism]
-    -> arrest_elena
-
-+ [You're making a mistake]
-    -> arrest_elena
+        Dr. Elena Volkov: You're giving me time. Nobody in this building has ever done that.
+        #exit_conversation
+        -> hub
+}
 
 // ===========================================
-// ARREST ELENA
+// DETAIN
 // ===========================================
 
-=== arrest_elena ===
+=== detain_elena ===
 #speaker:elena_volkov
+You: Dr. Elena Volkov, I'm detaining you for laundering and for facilitating terrorism. The police will take it from here.
 
-You: Dr. Elena Volkov, you're under arrest for money laundering, facilitating terrorism, and conspiracy.
-
+~ elena_arrested = true
+~ elena_fate_decided = true
 #set_variable:elena_arrested=true
 #set_variable:elena_fate_decided=true
-#complete_task:decide_elena_fate
 
-{elena_trust >= 20:
-    Dr. Elena Volkov: *quietly* I really thought I was doing the right thing.
-    Dr. Elena Volkov: Financial freedom. Privacy rights. I was so sure...
+{moral_conflict_revealed:
+    Dr. Elena Volkov: *offers her wrists* I really did think I was building something good.
 - else:
-    Dr. Elena Volkov: *defiant* This is a violation of everything crypto stands for.
-    Dr. Elena Volkov: You're proving our point. Government tyranny.
+    Dr. Elena Volkov: *cold* This is exactly the state overreach we warned people about.
 }
 
-Dr. Elena Volkov: *hands offered for cuffs* I hope arresting me was worth it.
-
+Dr. Elena Volkov: I hope it was worth it.
 #exit_conversation
--> DONE
+-> after_choice
+
+// ===========================================
+// AFTER HER FATE IS SETTLED (re-entry, lesson 21)
+// ===========================================
+
+=== after_choice ===
+#speaker:elena_volkov
+{elena_recruited:
+    Dr. Elena Volkov: I'm still here, and still yours. What do you need?
+- else:
+    Narrator: She sits very still at her desk, waiting for the police, and doesn't look up.
+}
++ [Nothing. Carry on.]
+    #exit_conversation
+    -> after_choice

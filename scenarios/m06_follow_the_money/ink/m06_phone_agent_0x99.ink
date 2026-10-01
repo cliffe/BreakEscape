@@ -25,9 +25,15 @@ VAR privesc_guide_hint_given = false
 VAR recon_guide_hint_given = false
 VAR rfid_guide_hint_given = false
 VAR flag1_submitted = false
+VAR flag2_submitted = false
+VAR flag3_submitted = false
 VAR flag4_submitted = false
 VAR blockchain_debrief_available = false
 VAR fund_debrief_available = false
+VAR found_wallet_keys = false
+VAR assets_decided = false
+VAR monitoring_enabled = false
+VAR satoshi_ko = false
 VAR reacted_password_lists = false
 VAR reacted_first_server = false
 VAR reacted_blockchain = false
@@ -39,6 +45,9 @@ VAR reacted_network = false
 // ================================================
 
 === start ===
+// PASS 2 review M5: kept as HEAD. The preload's run is saved as history and
+// restored on open (phone-chat-minigame.js:329-365, :499-535), so the preload
+// is the first call the player sees; first_call writes only ink-local state.
 {first_contact:
     ~ first_contact = false
     -> first_call
@@ -47,6 +56,7 @@ VAR reacted_network = false
     -> support_hub
 }
 
+
 // ================================================
 // FIRST CALL (Orientation)
 // ================================================
@@ -54,12 +64,12 @@ VAR reacted_network = false
 === first_call ===
 #speaker:agent_0x99
 
-Agent HaX: {player_name}, you're inside HashChain Exchange. How's the compliance auditor cover holding up?
+Agent HaX: {player_name}, you're inside HashChain Exchange. How's the FCA cover holding up?
 
 Agent HaX: This is a financial investigation. Follow the money, map the network, and find where ENTROPY's funding goes.
 
 + [Cover is solid so far]
-    Agent HaX: Good. Elena should buy the FinCEN audit story. Crypto exchanges are constantly under regulatory scrutiny.
+    Agent HaX: Good. Keep it boring. Regulators visit crypto exchanges all the time.
     -> support_hub
 + [What should I focus on first?]
     -> initial_guidance
@@ -69,7 +79,7 @@ Agent HaX: This is a financial investigation. Follow the money, map the network,
     -> support_hub
 
 === initial_guidance ===
-Agent HaX: Priority one: Build rapport with Elena Volkov, the CTO. She's your access point and potential recruit.
+Agent HaX: Priority one: Build rapport with Elena Volkov, the CTO. She's your way in, and maybe more than that.
 
 Agent HaX: Priority two: Access the backend servers. That's where the financial records are.
 
@@ -122,6 +132,11 @@ Agent HaX: What do you need help with?
 + {rfid_guide_offered and not rfid_guide_hint_given} [Send me the RFID cloning guide.]
     -> request_rfid_guide
 
+// Review B2/M4 safety net: Satoshi can't be asked again once he's down, so
+// the fund decision stays on offer here until it is made.
++ {satoshi_ko and not assets_decided} [About the fund. I'm ready to decide.]
+    -> on_satoshi_ko
+
 + [I'm good for now]
     #exit_conversation
     Agent HaX: Copy that. Call anytime.
@@ -136,13 +151,13 @@ Agent HaX: What do you need help with?
 
 Agent HaX: Server passwords at crypto exchanges follow patterns. Think crypto-themed terms plus years.
 
-Agent HaX: "bitcoin2024", "ethereum2025", "satoshi2024"—variations on cryptocurrency names and dates.
+Agent HaX: Think "bitcoin" or "satoshi" with a year bolted on. Elena keeps an audit list of the exact words her own people pick.
 
 Agent HaX: Once you crack the first server, look for credential reuse. Admins get lazy with multiple systems.
 
 + [What tools should I use?]
     Agent HaX: Your VM environment has Hydra for brute forcing and John the Ripper for hash cracking.
-    Agent HaX: Look for password lists in Elena's inventory or around the trading floor.
+    Agent HaX: For the backend, John's default wordlist is enough. Elena's list is for the doors.
     -> support_hub
 + [Got it, thanks]
     -> support_hub
@@ -158,7 +173,7 @@ Agent HaX: Blockchain transactions are public, but privacy coins make tracing ne
 
 Agent HaX: Look for transaction analysis documents in the Blockchain Analysis Lab. They'll have wallet addresses and fund flows.
 
-Agent HaX: Key targets: wallets from Mission 2's ransomware and Mission 5's espionage. They should all connect through HashChain.
+Agent HaX: Key targets: the ransomware wallet and the TalentStack wallet. They should both connect through HashChain.
 
 + [What am I looking for specifically?]
     Agent HaX: Destination wallets. A master fund receiving money from all cells.
@@ -188,14 +203,14 @@ Agent HaX: Show her the consequences of her work. The ransomware casualties, the
 
 Agent HaX: Appeal to her ethics, not her ideology. She's a cryptographer, not a terrorist.
 
-Agent HaX: If she sees the full scope, she might flip. And {player_name}—her expertise would be invaluable intelligence.
+Agent HaX: If she sees the full scope, she might turn. And {player_name}, from inside their bank, she'd be worth more than anything on their servers.
 
 -> support_hub
 
 === arrest_strategy ===
-Agent HaX: If recruitment fails, arrest her. Eliminate her expertise from ENTROPY's network.
+Agent HaX: If she won't turn, detain her and hand her over with the evidence. Either way her expertise stops working for ENTROPY.
 
-Agent HaX: But try recruitment first. A cryptographer of her caliber is worth the effort.
+Agent HaX: But try turning her first. A cryptographer of her calibre is worth the effort.
 
 -> support_hub
 
@@ -220,7 +235,7 @@ Agent HaX: Satoshi is a true believer. "Financial freedom through cryptography."
 
 Agent HaX: Useful for understanding Crypto Anarchist ideology, but don't expect cooperation.
 
-Agent HaX: He'll justify everything in the name of accelerating the collapse of centralized finance.
+Agent HaX: He'll justify everything in the name of accelerating the collapse of centralised finance.
 
 -> support_hub
 
@@ -240,7 +255,7 @@ Agent HaX: If we find it, we can map the entire financial network and potentiall
 
 Agent HaX: I see you obtained Elena's password dictionary. Smart.
 
-Agent HaX: Crypto-themed passwords are common in this industry. Use that list against the backend servers.
+Agent HaX: That list is what people here pick for doors. Put it next to the house convention and the server room opens.
 
 Agent HaX: Hydra and John the Ripper will make quick work of weak passwords.
 
@@ -256,10 +271,8 @@ Agent HaX: Hydra and John the Ripper will make quick work of weak passwords.
 
 === on_first_server_cracked ===
 #speaker:agent_0x99
-#complete_task:submit_flag1
-#unlock_task:submit_flag2
 
-Agent HaX: First server access confirmed. Excellent password cracking, {player_name}.
+Agent HaX: First account is yours. Good cracking, {player_name}.
 
 Agent HaX: Now look for credential reuse. Same passwords across multiple servers is common.
 
@@ -280,13 +293,12 @@ Agent HaX: Each server you crack reveals more of the financial network.
 
 === on_blockchain_discovered ===
 #speaker:agent_0x99
-#complete_task:find_transaction_records
 
 Agent HaX: {player_name}, I'm seeing the blockchain transaction analysis you just found.
 
-Agent HaX: This is incredible. Mission 2's ransomware—$2.4 million. Mission 5's espionage—$847,000.
+Agent HaX: This is the whole case in one picture. About $2.4 million in from the ransomware wallet. And $847,000 back out, to TalentStack, for the Quantum Dynamics job.
 
-Agent HaX: They all flow through HashChain's mixers to a single destination wallet.
+Agent HaX: Money in from one cell, money out to another, and the same wallet in the middle every time.
 
 + [What's the destination?]
     -> architects_fund_hint
@@ -294,9 +306,9 @@ Agent HaX: They all flow through HashChain's mixers to a single destination wall
     -> cell_connections
 
 === architects_fund_hint ===
-Agent HaX: The analysis calls it "1ARCHITECT9FUND."
+Agent HaX: The analysis calls the destination "1ARCHITECT9FUND".
 
-Agent HaX: {player_name}, if this is real... this is the financial heart of ENTROPY.
+Agent HaX: {player_name}, if this holds up, that wallet is the account every cell draws on.
 
 Agent HaX: Find the complete records. We need to know how much money we're talking about and where it's going.
 
@@ -306,7 +318,7 @@ Agent HaX: Find the complete records. We need to know how much money we're talki
 === cell_connections ===
 Agent HaX: Exactly. Every ENTROPY cell we've encountered is financially connected through HashChain.
 
-Agent HaX: Social Fabric, Crypto Anarchists, Insider Threat Initiative—all funded through this network.
+Agent HaX: Social Fabric, the Crypto Anarchists, the Insider Threat Initiative. All of them bank here.
 
 Agent HaX: Find the complete allocation records. We need to map the entire structure.
 
@@ -319,9 +331,8 @@ Agent HaX: Find the complete allocation records. We need to map the entire struc
 
 === on_architects_fund_discovered ===
 #speaker:agent_0x99
-#complete_task:discover_architects_fund
 
-Agent HaX: {player_name}... I just saw what you pulled from the data center.
+Agent HaX: {player_name}, I'm looking at what you pulled from the data centre.
 
 Agent HaX: The Architect's Fund. $12.8 million USD. Allocated to six different ENTROPY cells.
 
@@ -353,9 +364,9 @@ Agent HaX: {player_name}, this is bigger than any individual cell. This is the c
 === critical_choice_preview ===
 Agent HaX: We're going to face a major choice here.
 
-Agent HaX: Seize the cryptocurrency now—immediate impact, cuts ENTROPY funding, but ends our surveillance.
+Agent HaX: Freeze the wallet now. Immediate, it cuts their funding, but the moment we do it they know we were here.
 
-Agent HaX: Or monitor the transactions—long-term intelligence, map everyone receiving funds, but ENTROPY keeps operating.
+Agent HaX: Or leave it running and watch it. We map every cell that draws on it, but the money keeps moving.
 
 + [What do you recommend?]
     -> handler_recommendation
@@ -382,16 +393,14 @@ Agent HaX: This is above my pay grade. You'll make the call when the time comes.
 
 === on_network_complete ===
 #speaker:agent_0x99
-#unlock_task:access_satoshi_office
-#unlock_task:confront_satoshi
 
-Agent HaX: Complete financial network mapped. Outstanding work, {player_name}.
+Agent HaX: Full estate mapped. Outstanding work, {player_name}.
 
 Agent HaX: We now understand ENTROPY's entire funding infrastructure.
 
-Agent HaX: Time for confrontation. Satoshi Nakamoto II should be accessible now.
+Agent HaX: Satoshi's wing is on an executive badge. If you haven't got one yet, the data centre is where they get left.
 
-Agent HaX: And {player_name}—whatever you decide about Elena, make it count. She's either a massive intelligence asset or a dangerous criminal.
+Agent HaX: And {player_name}, whatever you decide about Elena, make it count. She's either the best source we could ask for or a defendant.
 
 + [What about the asset seizure choice?]
     -> final_choice_reminder
@@ -403,11 +412,11 @@ Agent HaX: And {player_name}—whatever you decide about Elena, make it count. S
 === final_choice_reminder ===
 Agent HaX: That choice is yours to make during the confrontation.
 
-Agent HaX: Seize the crypto assets—immediate impact, ENTROPY loses $12.8M funding.
+Agent HaX: Freeze the wallet. Immediate, ENTROPY loses $12.8M.
 
-Agent HaX: Or monitor the wallets—long-term intelligence, identify everyone receiving funds.
+Agent HaX: Or watch the wallets. Slower, but it names everyone who draws on the fund.
 
-Agent HaX: Either choice has strategic value. I trust your judgment.
+Agent HaX: Either choice has value. I trust your judgement.
 
 #exit_conversation
 -> support_hub
@@ -415,6 +424,78 @@ Agent HaX: Either choice has strategic value. I trust your judgment.
 // ================================================
 // END OF PHONE SUPPORT
 // ================================================
+
+// ================================================
+// KO RELAYS (lessons 18/24/37/38)
+// ================================================
+
+// npc_ko:elena_volkov. She is in a later-loaded room, so her itemsHeld never
+// drop (npc._sprite gap). HaX pushes working copies and logs her as down.
+=== on_elena_ko_relay ===
+#speaker:agent_0x99
+#give_item:text_file:relayed_password_dictionary
+#give_item:keycard:relayed_cto_badge
+#set_variable:elena_ko=true
+#set_variable:elena_fate_decided=true
+#complete_task:meet_elena
+Agent HaX: Volkov's on the floor. Well. That's one way to settle it.
+Agent HaX: She was the best cryptographer ENTROPY had and she was halfway to walking. We'll log it as neutralised on site.
+Agent HaX: I've pulled her wordlist and her office badge off her kit and pushed copies to yours.
+{assets_decided and flag1_submitted and flag2_submitted and flag3_submitted and flag4_submitted:
+    Agent HaX: And that was the last thing on the list. I'm bringing you in.
+- else:
+    Agent HaX: You've still got a job to finish.
+}
+// Review B2: marker for the debrief. The debrief itself opens when this
+// phone chat closes (minigame_completed / minigame_failed triggers), so it
+// never tears the relay down mid-line.
+#set_variable:elena_ko_relayed=true
++ [Understood.]
+    #exit_conversation
+    -> support_hub
+
+// npc_ko:satoshi_nakamoto. He can't be talked to again, so the asset decision
+// comes to the player by phone. Phone chat has no disableClose, so the choices
+// live on a sticky option and re-entering his office re-opens the question.
+=== on_satoshi_ko ===
+#speaker:agent_0x99
+{assets_decided:
+    -> support_hub
+}
+Agent HaX: He's down and he isn't getting up. Extraction's inbound for him.
+Agent HaX: Which leaves the wallet to you. $12.8 million, ready to move. What do we do with it?
+-> satoshi_ko_choice
+
+=== satoshi_ko_choice ===
++ {found_wallet_keys} [Freeze it. Sweep the fund into cold storage tonight.]
+    You: Freeze it. Use the recovery keys and sweep the wallet before anyone notices he's stopped answering.
+    #set_variable:assets_seized=true
+    #set_variable:assets_decided=true
+    #set_variable:satoshi_arrested=true
+    #set_variable:final_choice=seized_by_force
+    #complete_task:decide_asset_strategy
+    Agent HaX: Done. $12.8 million gone before the cells it was promised to even know.
+    #set_variable:phone_decision_made=true
+    #exit_conversation
+    -> support_hub
++ [Leave it running. Tag every wallet that draws on it.]
+    You: Leave it live. I want every cell that reaches for this money on a list.
+    #set_variable:monitoring_enabled=true
+    #set_variable:assets_decided=true
+    #set_variable:satoshi_arrested=true
+    #set_variable:final_choice=monitored_by_force
+    #complete_task:decide_asset_strategy
+    Agent HaX: Tagged and watching. Riskier, but if it holds we map the whole network.
+    #set_variable:phone_decision_made=true
+    #exit_conversation
+    -> support_hub
+// Review M4: without the keys, freezing is deferred rather than silently
+// removed. The sticky hub option brings the player back here.
++ {not found_wallet_keys} [Not yet. I'll get the recovery keys first.]
+    #set_variable:asset_decision_deferred=true
+    Agent HaX: They're on the vault account on the backend. Last flag. Call me when you have them.
+    #exit_conversation
+    -> support_hub
 
 // ================================================
 // FIELD GUIDES

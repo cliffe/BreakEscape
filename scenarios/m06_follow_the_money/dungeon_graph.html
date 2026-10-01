@@ -69,7 +69,7 @@
 </head>
 <body>
   <h1>m06_follow_the_money — dependency graph</h1>
-  <p class="sub">Track cryptocurrency payments from previous ENTROPY operations to the Crypto Anarchists' HashChain Exchange. Infiltrate as a compliance auditor, map the…</p>
+  <p class="sub">Track cryptocurrency payments from previous ENTROPY operations to the Crypto Anarchists' HashChain Exchange. Get in as a visiting FCA supervisor, map the…</p>
   <div class="tab-bar">
     <button class="tab-btn active" data-tab="puzzle"     onclick="showTab('puzzle',this)">Puzzle Graph</button>
     <button class="tab-btn"        data-tab="story"      onclick="showTab('story',this)">Story Aims</button>
@@ -128,7 +128,7 @@
 
   <div class="stats">
     <h2>Critical Path — 5 hops</h2>
-    <div class="crit-path">Establish Cover → Get Into The Back Office → Crack The Backend → Map The Money → Reach The Top Floor → Settle The Account</div>
+    <div class="crit-path">Establish Cover → Work The Floor → Crack The Backend → Map The Money → Reach The Top Floor → Settle The Account</div>
     <div class="note-oos">
       ⚠️&nbsp; Dashed aim arrows = narrative unlock only. A player with physical access to a room may complete an
       objective before the system unlocks that aim. Solid arrows indicate hard dependencies (AND gates, physical
@@ -136,13 +136,13 @@
     </div>
     <table>
       <tr><th>Aims (story objectives)</th><td class="val">6</td></tr>
-      <tr><th>Total tasks</th><td class="val">23</td></tr>
-      <tr><th>Optional tasks</th><td class="val">4 / 23</td></tr>
+      <tr><th>Total tasks</th><td class="val">24</td></tr>
+      <tr><th>Optional tasks</th><td class="val">4 / 24</td></tr>
       <tr><th>VM flag challenges</th><td class="val">4</td></tr>
       <tr><th>AND-gate convergences</th><td class="val">0</td></tr>
       <tr><th>Physical locks (puzzle)</th><td class="val">11</td></tr>
       <tr><th>Rooms</th><td class="val">9</td></tr>
-      <tr><th>Puzzle nodes / edges</th><td class="val">47 / 50</td></tr>
+      <tr><th>Puzzle nodes / edges</th><td class="val">47 / 49</td></tr>
       <tr><th>Story nodes / edges</th><td class="val">6 / 5</td></tr>
     </table>
   </div>
@@ -173,6 +173,8 @@
 
   door_server_room["Server Room<br/>Password lock"]
   server_room("Server Room")
+  door_data_center["Data Centre<br/>PIN lock"]
+  data_center("Data Centre")
   door_elena_office["Dr. E. Volkov, CTO<br/>RFID lock"]
   elena_office("Dr. E. Volkov, CTO")
   door_executive_wing["Executive<br/>RFID lock"]
@@ -191,10 +193,9 @@
   lock_flag_station_financial["Flag Station Financial"]
   safetynet_financial_intelligence_drop{"SAFETYNET Financial Intelligence Drop"}
   rack_inventory_sheet{"Rack Inventory Sheet"}
-  data_center("Data Centre")
   the_architect_s_fund_allocation{"The Architect's Fund Allocation"}
   lock_executive_access_badge["Executive Access Badge"]
-  wallet_recovery_keys{"Wallet Recovery Keys"}
+  cold_storage_procedure{"Cold Storage Procedure"}
   executive_access_badge{"Executive Access Badge"}
   blockchain_lab("Blockchain Analysis")
   entropy_transaction_network_analysis{"ENTROPY Transaction Network Analysis"}
@@ -202,24 +203,24 @@
   cryptography_research_notes{"Cryptography Research Notes"}
   email_from_the_architect{"Email: From The Architect"}
   lock_executive_safe["Executive Safe"]
+  framed_press_clipping{"Framed Press Clipping"}
   satoshi_office("CEO")
-  crypto_anarchist_manifesto{"Crypto Anarchist Manifesto"}
   executive_safe{"Executive Safe"}
   npc_satoshi_nakamoto_ii{"Satoshi Nakamoto II"}
   vmch_submit_flag1["Crack the first server password and submit the flag"]
   vmfl_submit_flag1{"Flag1 Flag"}
   lock_credential_reuse_available["Credential Reuse Available"]
-  vmch_submit_flag2["Reuse those credentials on the second server and submit the flag"]
+  vmch_submit_flag2["Reuse those credentials on the second account and submit the flag"]
   vmfl_submit_flag2{"Flag2 Flag"}
   lock_financial_database_reachable["Financial Database Reachable"]
   vmch_submit_flag3["Reach the financial database and submit the flag"]
   vmfl_submit_flag3{"Flag3 Flag"}
-  lock_full_network_access["Full Network Access"]
-  vmch_submit_flag4["Take the whole network and submit the final flag"]
+  vmch_submit_flag4["Take the whole estate and submit the final flag"]
   vmfl_submit_flag4{"Flag4 Flag"}
   reception_lobby("HashChain Exchange")
 
   door_server_room --> server_room
+  door_data_center --> data_center
   door_elena_office --> elena_office
   door_executive_wing --> executive_wing
   security_checkpoint --> it_new_starter_checklist
@@ -239,7 +240,7 @@
   server_room --> rack_inventory_sheet
   data_center --> the_architect_s_fund_allocation
   the_architect_s_fund_allocation --> lock_executive_access_badge
-  data_center --> wallet_recovery_keys
+  data_center --> cold_storage_procedure
   data_center --> executive_access_badge
   executive_access_badge --> door_executive_wing
   blockchain_lab --> entropy_transaction_network_analysis
@@ -247,8 +248,7 @@
   elena_office --> cryptography_research_notes
   elena_office --> email_from_the_architect
   email_from_the_architect --> lock_executive_safe
-  satoshi_office -.-> crypto_anarchist_manifesto
-  crypto_anarchist_manifesto -.-> lock_executive_safe
+  executive_wing -.-> framed_press_clipping
   satoshi_office --> lock_executive_safe
   satoshi_office -.-> executive_safe
   satoshi_office --> npc_satoshi_nakamoto_ii
@@ -260,26 +260,25 @@
   vmfl_submit_flag2 --> lock_financial_database_reachable
   vmch_submit_flag3 --> vmfl_submit_flag3
   vmfl_submit_flag2 -.-> vmch_submit_flag3
-  vmfl_submit_flag3 --> lock_full_network_access
+  vmfl_submit_flag3 --> door_data_center
   vmch_submit_flag4 --> vmfl_submit_flag4
   vmfl_submit_flag3 -.-> vmch_submit_flag4
-  vmfl_submit_flag4 --> blockchain_lab
   lock_vm_launcher_hackme --> hashchain_backend_server_terminal
   hashchain_backend_server_terminal --> vmch_submit_flag1
   reception_lobby --> security_checkpoint
   security_checkpoint --> trading_floor
   trading_floor --> blockchain_lab
 
-  class door_server_room,door_elena_office,door_executive_wing,lock_vm_launcher_hackme,lock_flag_station_financial,lock_executive_access_badge,lock_architects_fund_doc,lock_executive_safe,lock_credential_reuse_available,lock_financial_database_reachable,lock_full_network_access lock
-  class server_room,elena_office,executive_wing,security_checkpoint,trading_floor,data_center,blockchain_lab,satoshi_office,reception_lobby room
-  class it_new_starter_checklist,daily_trading_report,rfid_badge_cloner,password_dictionary_list,hashchain_backend_server_terminal,safetynet_financial_intelligence_drop,rack_inventory_sheet,the_architect_s_fund_allocation,wallet_recovery_keys,entropy_transaction_network_analysis,cryptography_research_notes,email_from_the_architect,crypto_anarchist_manifesto,executive_safe item
+  class door_server_room,door_data_center,door_elena_office,door_executive_wing,lock_vm_launcher_hackme,lock_flag_station_financial,lock_executive_access_badge,lock_architects_fund_doc,lock_executive_safe,lock_credential_reuse_available,lock_financial_database_reachable lock
+  class server_room,data_center,elena_office,executive_wing,security_checkpoint,trading_floor,blockchain_lab,satoshi_office,reception_lobby room
+  class it_new_starter_checklist,daily_trading_report,rfid_badge_cloner,password_dictionary_list,hashchain_backend_server_terminal,safetynet_financial_intelligence_drop,rack_inventory_sheet,the_architect_s_fund_allocation,cold_storage_procedure,entropy_transaction_network_analysis,cryptography_research_notes,email_from_the_architect,framed_press_clipping,executive_safe item
   class npc_dr_elena_volkov,cto_access_badge,executive_access_badge,npc_satoshi_nakamoto_ii key
   class action_ action
   class vmch_submit_flag1,vmch_submit_flag2,vmch_submit_flag3,vmch_submit_flag4 vm
   class vmfl_submit_flag1,vmfl_submit_flag2,vmfl_submit_flag3,vmfl_submit_flag4 flag
 
   classDef optional stroke-dasharray:5 2
-  class rfid_badge_cloner,crypto_anarchist_manifesto,executive_safe optional
+  class rfid_badge_cloner,framed_press_clipping,executive_safe optional
   class node_start start`,
       story:      `flowchart TD
 
@@ -299,7 +298,7 @@
   classDef start     fill:#003322,stroke:#00ffaa,color:#00ffaa
 
   aim_establish_cover{{"Establish Cover"}}
-  aim_access_backend_systems{{"Get Into The Back Office"}}
+  aim_access_backend_systems{{"Work The Floor"}}
   aim_crack_passwords{{"Crack The Backend"}}
   aim_map_financial_network{{"Map The Money"}}
   aim_breach_executive_wing{{"Reach The Top Floor"}}
@@ -334,6 +333,8 @@
 
   door_server_room["Server Room<br/>Password lock"]
   server_room("Server Room")
+  door_data_center["Data Centre<br/>PIN lock"]
+  data_center("Data Centre")
   door_elena_office["Dr. E. Volkov, CTO<br/>RFID lock"]
   elena_office("Dr. E. Volkov, CTO")
   door_executive_wing["Executive<br/>RFID lock"]
@@ -352,10 +353,9 @@
   lock_flag_station_financial["Flag Station Financial"]
   safetynet_financial_intelligence_drop{"SAFETYNET Financial Intelligence Drop"}
   rack_inventory_sheet{"Rack Inventory Sheet"}
-  data_center("Data Centre")
   the_architect_s_fund_allocation{"The Architect's Fund Allocation"}
   lock_executive_access_badge["Executive Access Badge"]
-  wallet_recovery_keys{"Wallet Recovery Keys"}
+  cold_storage_procedure{"Cold Storage Procedure"}
   executive_access_badge{"Executive Access Badge"}
   blockchain_lab("Blockchain Analysis")
   entropy_transaction_network_analysis{"ENTROPY Transaction Network Analysis"}
@@ -363,30 +363,30 @@
   cryptography_research_notes{"Cryptography Research Notes"}
   email_from_the_architect{"Email: From The Architect"}
   lock_executive_safe["Executive Safe"]
+  framed_press_clipping{"Framed Press Clipping"}
   satoshi_office("CEO")
-  crypto_anarchist_manifesto{"Crypto Anarchist Manifesto"}
   executive_safe{"Executive Safe"}
   npc_satoshi_nakamoto_ii{"Satoshi Nakamoto II"}
   vmch_submit_flag1["Crack the first server password and submit the flag"]
   vmfl_submit_flag1{"Flag1 Flag"}
   lock_credential_reuse_available["Credential Reuse Available"]
-  vmch_submit_flag2["Reuse those credentials on the second server and submit the flag"]
+  vmch_submit_flag2["Reuse those credentials on the second account and submit the flag"]
   vmfl_submit_flag2{"Flag2 Flag"}
   lock_financial_database_reachable["Financial Database Reachable"]
   vmch_submit_flag3["Reach the financial database and submit the flag"]
   vmfl_submit_flag3{"Flag3 Flag"}
-  lock_full_network_access["Full Network Access"]
-  vmch_submit_flag4["Take the whole network and submit the final flag"]
+  vmch_submit_flag4["Take the whole estate and submit the final flag"]
   vmfl_submit_flag4{"Flag4 Flag"}
   reception_lobby("HashChain Exchange")
   aim_establish_cover{{"Establish Cover"}}
-  aim_access_backend_systems{{"Get Into The Back Office"}}
+  aim_access_backend_systems{{"Work The Floor"}}
   aim_crack_passwords{{"Crack The Backend"}}
   aim_map_financial_network{{"Map The Money"}}
   aim_breach_executive_wing{{"Reach The Top Floor"}}
   aim_resolve_the_fund{{"Settle The Account"}}
 
   door_server_room --> server_room
+  door_data_center --> data_center
   door_elena_office --> elena_office
   door_executive_wing --> executive_wing
   security_checkpoint --> it_new_starter_checklist
@@ -406,7 +406,7 @@
   server_room --> rack_inventory_sheet
   data_center --> the_architect_s_fund_allocation
   the_architect_s_fund_allocation --> lock_executive_access_badge
-  data_center --> wallet_recovery_keys
+  data_center --> cold_storage_procedure
   data_center --> executive_access_badge
   executive_access_badge --> door_executive_wing
   blockchain_lab --> entropy_transaction_network_analysis
@@ -414,8 +414,7 @@
   elena_office --> cryptography_research_notes
   elena_office --> email_from_the_architect
   email_from_the_architect --> lock_executive_safe
-  satoshi_office -.-> crypto_anarchist_manifesto
-  crypto_anarchist_manifesto -.-> lock_executive_safe
+  executive_wing -.-> framed_press_clipping
   satoshi_office --> lock_executive_safe
   satoshi_office -.-> executive_safe
   satoshi_office --> npc_satoshi_nakamoto_ii
@@ -427,10 +426,9 @@
   vmfl_submit_flag2 --> lock_financial_database_reachable
   vmch_submit_flag3 --> vmfl_submit_flag3
   vmfl_submit_flag2 -.-> vmch_submit_flag3
-  vmfl_submit_flag3 --> lock_full_network_access
+  vmfl_submit_flag3 --> door_data_center
   vmch_submit_flag4 --> vmfl_submit_flag4
   vmfl_submit_flag3 -.-> vmch_submit_flag4
-  vmfl_submit_flag4 --> blockchain_lab
   lock_vm_launcher_hackme --> hashchain_backend_server_terminal
   hashchain_backend_server_terminal --> vmch_submit_flag1
   reception_lobby --> security_checkpoint
@@ -441,27 +439,26 @@
   aim_crack_passwords -.-> aim_map_financial_network
   aim_map_financial_network -.-> aim_breach_executive_wing
   aim_breach_executive_wing -.-> aim_resolve_the_fund
-  password_dictionary_list -.-> aim_access_backend_systems
   door_server_room -.-> aim_access_backend_systems
   server_room -.-> aim_crack_passwords
-  lock_vm_launcher_hackme -.-> aim_crack_passwords
+  blockchain_lab -.-> aim_access_backend_systems
+  entropy_transaction_network_analysis -.-> aim_access_backend_systems
   vmfl_submit_flag1 -.-> aim_crack_passwords
   vmfl_submit_flag2 -.-> aim_crack_passwords
   vmfl_submit_flag3 -.-> aim_crack_passwords
+  vmfl_submit_flag3 -.-> aim_map_financial_network
   vmfl_submit_flag4 -.-> aim_crack_passwords
-  vmfl_submit_flag4 -.-> aim_map_financial_network
-  blockchain_lab -.-> aim_map_financial_network
-  entropy_transaction_network_analysis -.-> aim_map_financial_network
-  data_center -.-> aim_map_financial_network
+  door_data_center -.-> aim_map_financial_network
   the_architect_s_fund_allocation -.-> aim_map_financial_network
   executive_access_badge -.-> aim_breach_executive_wing
   satoshi_office -.-> aim_breach_executive_wing
   satoshi_office -.-> aim_resolve_the_fund
   lock_executive_safe -.-> aim_breach_executive_wing
+  entropy_transaction_network_analysis -.-> aim_map_financial_network
 
-  class door_server_room,door_elena_office,door_executive_wing,lock_vm_launcher_hackme,lock_flag_station_financial,lock_executive_access_badge,lock_architects_fund_doc,lock_executive_safe,lock_credential_reuse_available,lock_financial_database_reachable,lock_full_network_access lock
-  class server_room,elena_office,executive_wing,security_checkpoint,trading_floor,data_center,blockchain_lab,satoshi_office,reception_lobby room
-  class it_new_starter_checklist,daily_trading_report,rfid_badge_cloner,password_dictionary_list,hashchain_backend_server_terminal,safetynet_financial_intelligence_drop,rack_inventory_sheet,the_architect_s_fund_allocation,wallet_recovery_keys,entropy_transaction_network_analysis,cryptography_research_notes,email_from_the_architect,crypto_anarchist_manifesto,executive_safe item
+  class door_server_room,door_data_center,door_elena_office,door_executive_wing,lock_vm_launcher_hackme,lock_flag_station_financial,lock_executive_access_badge,lock_architects_fund_doc,lock_executive_safe,lock_credential_reuse_available,lock_financial_database_reachable lock
+  class server_room,data_center,elena_office,executive_wing,security_checkpoint,trading_floor,blockchain_lab,satoshi_office,reception_lobby room
+  class it_new_starter_checklist,daily_trading_report,rfid_badge_cloner,password_dictionary_list,hashchain_backend_server_terminal,safetynet_financial_intelligence_drop,rack_inventory_sheet,the_architect_s_fund_allocation,cold_storage_procedure,entropy_transaction_network_analysis,cryptography_research_notes,email_from_the_architect,framed_press_clipping,executive_safe item
   class npc_dr_elena_volkov,cto_access_badge,executive_access_badge,npc_satoshi_nakamoto_ii key
   class action_ action
   class vmch_submit_flag1,vmch_submit_flag2,vmch_submit_flag3,vmch_submit_flag4 vm
@@ -469,7 +466,7 @@
   class aim_establish_cover,aim_access_backend_systems,aim_crack_passwords,aim_map_financial_network,aim_breach_executive_wing,aim_resolve_the_fund critical
 
   classDef optional stroke-dasharray:5 2
-  class rfid_badge_cloner,crypto_anarchist_manifesto,executive_safe optional
+  class rfid_badge_cloner,framed_press_clipping,executive_safe optional
   class node_start start`,
       rooms:      `flowchart TD
 
@@ -495,7 +492,7 @@
   security_checkpoint("Restricted")
   trading_floor("Trading Floor")
   server_room["Server Room<br/>(locked)"]
-  data_center("Data Centre")
+  data_center["Data Centre<br/>(locked)"]
   blockchain_lab("Blockchain Analysis")
   elena_office["Dr. E. Volkov, CTO<br/>(locked)"]
   executive_wing["Executive<br/>(locked)"]
@@ -510,8 +507,8 @@
   data_center --> executive_wing
   executive_wing --> satoshi_office
 
-  class reception_lobby,security_checkpoint,trading_floor,data_center,blockchain_lab,satoshi_office room
-  class server_room,elena_office,executive_wing lock
+  class reception_lobby,security_checkpoint,trading_floor,blockchain_lab,satoshi_office room
+  class server_room,data_center,elena_office,executive_wing lock
   class node_start start`,
       contents:   `flowchart TD
 
@@ -537,7 +534,7 @@
   security_checkpoint("Restricted")
   trading_floor("Trading Floor")
   server_room["Server Room<br/>(locked)"]
-  data_center("Data Centre")
+  data_center["Data Centre<br/>(locked)"]
   blockchain_lab("Blockchain Analysis")
   elena_office["Dr. E. Volkov, CTO<br/>(locked)"]
   executive_wing["Executive<br/>(locked)"]
@@ -551,37 +548,39 @@
   rc_m06_privesc_field_guide_7{"SAFETYNET Field Guide: Privilege Escalation and Credential Reuse"}
   rc_m06_recon_field_guide_8{"SAFETYNET Field Guide: Reconnaissance and Network Mapping"}
   rc_m06_rfid_field_guide_9{"SAFETYNET Field Guide: RFID Cloning"}
-  rc_npc_agent_hax_10("Agent HaX")
-  rc_it_onboarding_checklist_11{"IT New Starter Checklist"}
-  rc_trading_workstation_12{"Trading Workstation"}
-  rc_daily_trading_report_13{"Daily Trading Report"}
-  rc_rfid_cloner_14{"RFID Badge Cloner"}
-  rc_npc_dr_elena_volkov_15("Dr. Elena Volkov")
-  rc_obj16_16{"CTO Access Badge"}
-  rc_m06_password_dictionary_17{"Password Dictionary List"}
-  rc_npc_dani_okonkwo_18("Dani Okonkwo")
-  rc_vm_launcher_hackme_19{"HashChain Backend Server Terminal"}
-  rc_flag_station_financial_20{"SAFETYNET Financial Intelligence Drop"}
-  rc_server_rack_labels_21{"Rack Inventory Sheet"}
-  rc_transaction_server_22[["Financial Transaction Server"]]
-  rc_settlement_log_23{"settlement_exceptions.log"}
-  rc_mixer_config_24{"mixer_pool_config.yml"}
-  rc_cold_storage_index_25{"cold_storage_index.csv"}
-  rc_architects_fund_doc_26{"The Architect's Fund Allocation"}
-  rc_wallet_recovery_keys_27{"Wallet Recovery Keys"}
-  rc_executive_access_badge_28{"Executive Access Badge"}
-  rc_blockchain_workstation_29{"Blockchain Analysis Workstation"}
-  rc_blockchain_evidence_30{"ENTROPY Transaction Network Analysis"}
-  rc_mixing_analysis_31{"Privacy Coin Mixing Analysis"}
-  rc_npc_priya_raghavan_32("Priya Raghavan")
-  rc_elena_workstation_33{"Elena's Secure Workstation"}
-  rc_elena_research_notes_34{"Cryptography Research Notes"}
-  rc_architect_email_35{"Email: From The Architect"}
-  rc_executive_wing_plaque_36{"Framed Press Clipping"}
-  rc_crypto_anarchist_manifesto_37{"Crypto Anarchist Manifesto"}
-  rc_executive_safe_38[["Executive Safe"]]
-  rc_architect_identity_file_39{"The Architect's Identity File"}
-  rc_npc_satoshi_nakamoto_ii_40("Satoshi Nakamoto II")
+  rc_relayed_password_dictionary_10{"Password Dictionary List (relayed copy)"}
+  rc_relayed_cto_badge_11{"CTO Badge (relayed copy)"}
+  rc_npc_agent_hax_12("Agent HaX")
+  rc_it_onboarding_checklist_13{"IT New Starter Checklist"}
+  rc_trading_workstation_14{"Trading Workstation"}
+  rc_daily_trading_report_15{"Daily Trading Report"}
+  rc_rfid_cloner_16{"RFID Badge Cloner"}
+  rc_npc_dr_elena_volkov_17("Dr. Elena Volkov")
+  rc_m06_cto_badge_18{"CTO Access Badge"}
+  rc_m06_password_dictionary_19{"Password Dictionary List"}
+  rc_npc_dani_okonkwo_20("Dani Okonkwo")
+  rc_vm_launcher_hackme_21{"HashChain Backend Server Terminal"}
+  rc_flag_station_financial_22{"SAFETYNET Financial Intelligence Drop"}
+  rc_server_rack_labels_23{"Rack Inventory Sheet"}
+  rc_transaction_server_24[["Financial Transaction Server"]]
+  rc_settlement_log_25{"settlement_exceptions.log"}
+  rc_mixer_config_26{"mixer_pool_config.yml"}
+  rc_cold_storage_index_27{"cold_storage_index.csv"}
+  rc_architects_fund_doc_28{"The Architect's Fund Allocation"}
+  rc_wallet_recovery_keys_29{"Cold Storage Procedure"}
+  rc_executive_access_badge_30{"Executive Access Badge"}
+  rc_blockchain_workstation_31{"Blockchain Analysis Workstation"}
+  rc_blockchain_evidence_32{"ENTROPY Transaction Network Analysis"}
+  rc_mixing_analysis_33{"Privacy Coin Mixing Analysis"}
+  rc_npc_priya_raghavan_34("Priya Raghavan")
+  rc_elena_workstation_35{"Elena's Secure Workstation"}
+  rc_elena_research_notes_36{"Cryptography Research Notes"}
+  rc_architect_email_37{"Email: From The Architect"}
+  rc_executive_wing_plaque_38{"Framed Press Clipping"}
+  rc_crypto_anarchist_manifesto_39{"Crypto Anarchist Manifesto"}
+  rc_executive_safe_40[["Executive Safe"]]
+  rc_architect_identity_file_41{"The Architect's Identity File"}
+  rc_npc_satoshi_nakamoto_ii_42("Satoshi Nakamoto II")
 
   reception_lobby --> security_checkpoint
   security_checkpoint --> trading_floor
@@ -600,43 +599,45 @@
   rc_npc_agent_hax_5 --> rc_m06_privesc_field_guide_7
   rc_npc_agent_hax_5 --> rc_m06_recon_field_guide_8
   rc_npc_agent_hax_5 --> rc_m06_rfid_field_guide_9
-  reception_lobby --> rc_npc_agent_hax_10
-  security_checkpoint --> rc_it_onboarding_checklist_11
-  trading_floor --> rc_trading_workstation_12
-  trading_floor --> rc_daily_trading_report_13
-  trading_floor --> rc_rfid_cloner_14
-  trading_floor --> rc_npc_dr_elena_volkov_15
-  rc_npc_dr_elena_volkov_15 --> rc_obj16_16
-  rc_npc_dr_elena_volkov_15 --> rc_m06_password_dictionary_17
-  trading_floor --> rc_npc_dani_okonkwo_18
-  server_room --> rc_vm_launcher_hackme_19
-  server_room --> rc_flag_station_financial_20
-  server_room --> rc_server_rack_labels_21
-  data_center --> rc_transaction_server_22
-  rc_transaction_server_22 --> rc_settlement_log_23
-  rc_transaction_server_22 --> rc_mixer_config_24
-  rc_transaction_server_22 --> rc_cold_storage_index_25
-  data_center --> rc_architects_fund_doc_26
-  data_center --> rc_wallet_recovery_keys_27
-  data_center --> rc_executive_access_badge_28
-  blockchain_lab --> rc_blockchain_workstation_29
-  blockchain_lab --> rc_blockchain_evidence_30
-  blockchain_lab --> rc_mixing_analysis_31
-  blockchain_lab --> rc_npc_priya_raghavan_32
-  elena_office --> rc_elena_workstation_33
-  elena_office --> rc_elena_research_notes_34
-  elena_office --> rc_architect_email_35
-  executive_wing --> rc_executive_wing_plaque_36
-  satoshi_office --> rc_crypto_anarchist_manifesto_37
-  satoshi_office --> rc_executive_safe_38
-  rc_executive_safe_38 --> rc_architect_identity_file_39
-  satoshi_office --> rc_npc_satoshi_nakamoto_ii_40
+  rc_npc_agent_hax_5 --> rc_relayed_password_dictionary_10
+  rc_npc_agent_hax_5 --> rc_relayed_cto_badge_11
+  reception_lobby --> rc_npc_agent_hax_12
+  security_checkpoint --> rc_it_onboarding_checklist_13
+  trading_floor --> rc_trading_workstation_14
+  trading_floor --> rc_daily_trading_report_15
+  trading_floor --> rc_rfid_cloner_16
+  trading_floor --> rc_npc_dr_elena_volkov_17
+  rc_npc_dr_elena_volkov_17 --> rc_m06_cto_badge_18
+  rc_npc_dr_elena_volkov_17 --> rc_m06_password_dictionary_19
+  trading_floor --> rc_npc_dani_okonkwo_20
+  server_room --> rc_vm_launcher_hackme_21
+  server_room --> rc_flag_station_financial_22
+  server_room --> rc_server_rack_labels_23
+  data_center --> rc_transaction_server_24
+  rc_transaction_server_24 --> rc_settlement_log_25
+  rc_transaction_server_24 --> rc_mixer_config_26
+  rc_transaction_server_24 --> rc_cold_storage_index_27
+  data_center --> rc_architects_fund_doc_28
+  data_center --> rc_wallet_recovery_keys_29
+  data_center --> rc_executive_access_badge_30
+  blockchain_lab --> rc_blockchain_workstation_31
+  blockchain_lab --> rc_blockchain_evidence_32
+  blockchain_lab --> rc_mixing_analysis_33
+  blockchain_lab --> rc_npc_priya_raghavan_34
+  elena_office --> rc_elena_workstation_35
+  elena_office --> rc_elena_research_notes_36
+  elena_office --> rc_architect_email_37
+  executive_wing --> rc_executive_wing_plaque_38
+  satoshi_office --> rc_crypto_anarchist_manifesto_39
+  satoshi_office --> rc_executive_safe_40
+  rc_executive_safe_40 --> rc_architect_identity_file_41
+  satoshi_office --> rc_npc_satoshi_nakamoto_ii_42
 
-  class reception_lobby,security_checkpoint,trading_floor,data_center,blockchain_lab,satoshi_office room
-  class server_room,elena_office,executive_wing lock
-  class rc_hashchain_brochure_1,rc_m06_cracking_field_guide_6,rc_m06_privesc_field_guide_7,rc_m06_recon_field_guide_8,rc_m06_rfid_field_guide_9,rc_it_onboarding_checklist_11,rc_trading_workstation_12,rc_daily_trading_report_13,rc_rfid_cloner_14,rc_obj16_16,rc_m06_password_dictionary_17,rc_vm_launcher_hackme_19,rc_flag_station_financial_20,rc_server_rack_labels_21,rc_settlement_log_23,rc_mixer_config_24,rc_cold_storage_index_25,rc_architects_fund_doc_26,rc_wallet_recovery_keys_27,rc_executive_access_badge_28,rc_blockchain_workstation_29,rc_blockchain_evidence_30,rc_mixing_analysis_31,rc_elena_workstation_33,rc_elena_research_notes_34,rc_architect_email_35,rc_executive_wing_plaque_36,rc_crypto_anarchist_manifesto_37,rc_architect_identity_file_39 item
-  class rc_npc_agent_hax_2,rc_npc_director_magnus_netherton_3,rc_npc_agent_0x47_nightshade_4,rc_npc_agent_hax_5,rc_npc_agent_hax_10,rc_npc_dr_elena_volkov_15,rc_npc_dani_okonkwo_18,rc_npc_priya_raghavan_32,rc_npc_satoshi_nakamoto_ii_40 npc
-  class rc_transaction_server_22,rc_executive_safe_38 container
+  class reception_lobby,security_checkpoint,trading_floor,blockchain_lab,satoshi_office room
+  class server_room,data_center,elena_office,executive_wing lock
+  class rc_hashchain_brochure_1,rc_m06_cracking_field_guide_6,rc_m06_privesc_field_guide_7,rc_m06_recon_field_guide_8,rc_m06_rfid_field_guide_9,rc_relayed_password_dictionary_10,rc_relayed_cto_badge_11,rc_it_onboarding_checklist_13,rc_trading_workstation_14,rc_daily_trading_report_15,rc_rfid_cloner_16,rc_m06_cto_badge_18,rc_m06_password_dictionary_19,rc_vm_launcher_hackme_21,rc_flag_station_financial_22,rc_server_rack_labels_23,rc_settlement_log_25,rc_mixer_config_26,rc_cold_storage_index_27,rc_architects_fund_doc_28,rc_wallet_recovery_keys_29,rc_executive_access_badge_30,rc_blockchain_workstation_31,rc_blockchain_evidence_32,rc_mixing_analysis_33,rc_elena_workstation_35,rc_elena_research_notes_36,rc_architect_email_37,rc_executive_wing_plaque_38,rc_crypto_anarchist_manifesto_39,rc_architect_identity_file_41 item
+  class rc_npc_agent_hax_2,rc_npc_director_magnus_netherton_3,rc_npc_agent_0x47_nightshade_4,rc_npc_agent_hax_5,rc_npc_agent_hax_12,rc_npc_dr_elena_volkov_17,rc_npc_dani_okonkwo_20,rc_npc_priya_raghavan_34,rc_npc_satoshi_nakamoto_ii_42 npc
+  class rc_transaction_server_24,rc_executive_safe_40 container
   class node_start start`
     };
     const rendered = {};
