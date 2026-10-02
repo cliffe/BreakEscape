@@ -51,6 +51,15 @@ Columns:
 
 **When it is fine not to earn it.** Deliberately using a secret early is a legitimate test — question 2 above, and the only way to answer question 3. Do it on purpose, say so, and mark the row. What must not happen is drifting into it by convenience and then reporting a pass.
 
+### Blind runs and regression runs
+
+Both are useful; say which one the run is.
+
+- **Regression run (the default).** The tester knows the answers, from the walkthrough or the playtest script, and plays the route to show it still works. Knowing the answer is fine. The earned-secrets table is what keeps it honest: each secret must still be fetched from its in-game source before it is used, which proves the source exists, is reachable in time and states the right value.
+- **Blind run (for puzzles and deductions).** Use one when the question is "can a player work this out?": a whodunnit, a money trail, a code hidden in documents. The tester must not read anything that names the answer before solving: not the walkthrough, the solution guide, the erb, the ink, the design review, *nor a playtest script that lists the answer* (m05 and m06 testers were not blind because the script named the culprit or the slot). The orchestrator writes a blind script that gives the route and the reload point but not the solution. Report when the tester first suspected what, which clue moved them, which hints they used, how long it took, and whether it was fun.
+
+Don't run every puzzle blind every time: one blind run after a puzzle changes is enough, and regression runs cover it afterwards.
+
 **Flags are the case where earning may be impossible.** Standalone has no VMs, so a `<flag:N>` value cannot be earned by any route; mark those rows "no" and say the mission's solvability is unproven past that point. Where VMs do exist and the run is about solvability, use the `pause` policy and let a human do the VM work — that is the only way that row becomes a "yes".
 
 ## Evidence: a report is not a run

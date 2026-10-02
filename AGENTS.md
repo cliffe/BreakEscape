@@ -29,6 +29,20 @@ Each mission goes through the same loop. Missions run in sequence, pipelined: on
 5. **Browser playtests** (Sonnet, split into short focused runs of 10–15 minutes, at least one with a mid-mission reload). Long single runs were cut off by safety checks and usage limits, so the scripts are split, and testers write findings into their report as they go.
 6. **Fix, then a short confirmation run**, then mark the mission done in the log and commit it.
 
+### The editorial loop (pass 4: design review, then dialogue)
+
+For a pass over finished missions, every mission runs in parallel through the same stages, each gated on the one before:
+
+1. **Design review** (Opus, read-only): the `scenario-design-review` skill in full, findings tagged blocker / major / minor, mission-local vs needs-approval.
+2. **Design fixer** (Opus): implements the mission-local fixes, writes a short `PASS4_PLAYTEST.md` script for what changed.
+3. **Fresh re-review** (Opus) and a **Sonnet playtest** run side by side; their findings go back to the same fixer together, so the tester isn't playing a mission that's changing under it. Repeat until the re-review says "clean" and a short confirmation run passes.
+4. **Dialogue writer** (Opus), from a shared prompt file (`docs/agents/PASS4_DIALOGUE_WRITER_PROMPT.md`), with a snapshot of the ink taken first so `tagdiff --old` can prove the structure is unchanged.
+5. **Script editor** (Opus, fresh, `docs/agents/PASS4_SCRIPT_EDITOR_PROMPT.md`): verdict "ship" or "revise"; its notes go back to the same writer.
+6. **Dialogue playtest** (Sonnet): reads the words on screen, checks hooks still fire, lists "didn't know what to do" moments and the ten worst lines. Fixes go back to the writer.
+7. **Final or pre-commit check** (Sonnet): a short targeted browser run of whatever the last round changed structurally, then commit the mission.
+
+Calibrate first: put the first mission that's ready through the dialogue stage alone, show the user a short before/after sample, and roll the approach out only once they approve. Fold each round's lessons into the shared prompt files so later missions don't repeat them.
+
 ## Choosing a model
 
 - **Opus** for open-ended work: planning, design, adversarial review, implementation of anything that needs judgement, engine work.
@@ -79,6 +93,11 @@ Everything else goes into the approval log for the user: engine or server change
 - Engine changes get node tests (`test/js/`), the Rails suite (`bin/rails test`), the phone reopen check (`node scripts/ink_runtime_check/reopencheck.mjs scripts/ink_runtime_check/missions.json`) and a browser regression across the affected missions before they're committed.
 - Ink rewrites get `scripts/ink_runtime_check/tagdiff.mjs` against the last commit: every changed tag, knot, variable, divert or choice condition must be explained.
 - The bug classes that recurred across pass 4 are checked automatically: the validator's recurring-bug checks (lockpick catches that can't fire, opening cutscene without `waitForEvent`, sprite art, look-alikes, dead `VAR`s, undeclared `#set_global`, repeated bark lines) and `node scripts/ink_runtime_check/dialoguelint.mjs scenarios/<m>/` (fall-through choices, blank re-entry, popup on narration, phone prefixes, exits with no reply, stage cues). Clear or justify each finding before a mission goes to playtest; the rest of the list is in `README_scenario_design.md` ("Common bugs and how to avoid them") and the review skills. Use `--skip-ink --no-graph` to validate a mission someone else is editing without rewriting its files.
+- **Check that a claimed fix happened.** Agents reported fixes they hadn't made several times in pass 4 (a clock line "made conditional", phone prefixes "removed", a flag call "no longer repeating"). Before accepting a report, grep or read the line for every claim that matters.
+- **A follow-up message can arrive after an agent has stopped.** It then does nothing. After sending a follow-up, check the file changed before moving on, and resend if it didn't.
+- **When the safety classifier times out on an agent**, its work wasn't reviewed: check the diff yourself (files touched, validator, reopencheck) before building on it.
+- **Blind and regression playtests.** Regression runs (answers known, but each secret fetched from its in-game source first) prove the route works; a blind run, with a script that doesn't name the answer, is needed once after any puzzle or deduction changes. See the playtest-scenario skill.
+- **Before committing a mission whose last round changed structure** (new knots, moved objects, changed conditions), run a short targeted browser check of exactly those changes.
 - Look at the screenshots yourself before calling UI work done.
 
 ## Housekeeping
@@ -86,7 +105,10 @@ Everything else goes into the approval log for the user: engine or server change
 - Agents that stop mid-run leave headless browsers and stuck harness commands behind. List them with `ps`, check what they are, and kill them **by PID**. Never use `pkill -f` with a pattern that also appears in your own command line, because it kills your own shell.
 - When taking over from an agent that spawned children, list the live agents first and stop its children, or you get duplicate builders overwriting each other.
 - Agents share one working tree. Never `git stash`, `git checkout -- <file>` or `git reset` to get a clean baseline, because that pulls other agents' unsaved work out from under them. Compare against `git show HEAD:<path>` or use a worktree instead.
-- Give each parallel agent its own scratch subfolder (`<mission>-<role>/`). Agents that share the scratchpad root overwrite each other's helper scripts and check outputs.
+- Give each parallel agent its own scratch subfolder (`<mission>-<role>/`) and give the full session scratchpad path in the prompt; "the session scratchpad" alone made some agents create a `scratchpad/` folder in the repo. Agents that share the scratchpad root overwrite each other's helper scripts and check outputs.
+- **Shared files** (`scripts/ink_runtime_check/missions.json`, the voice bible, the brief): tell agents to edit only their own block, re-read just before editing, and never reformat the whole file. Validate shared JSON after any agent touches it.
+- **Run checks without side effects.** The validator rewrites `dungeon_graph.*` on every run; agents checking a mission someone else is editing use `--skip-ink --no-graph`.
 - Delete stray files a harness writes into the repo root, after looking at them.
-- Commit in logical groups (engine, tooling, docs, one commit per mission). Where a shared file mixes several fixes, commit them together rather than leaving an intermediate commit that doesn't run.
+- Commit in logical groups (engine, tooling, docs, one commit per mission). Where a shared file mixes several fixes, commit them together rather than leaving an intermediate commit that doesn't run. Commit engine changes before the missions that rely on them, and run the node and Rails suites before each engine commit.
+- Don't leave a test that compares live content with HEAD: it fails whenever anyone edits that content. Test against fixtures.
 - If a usage limit is near, stop launching agents, write the resume note, and say that nothing restarts on its own.
