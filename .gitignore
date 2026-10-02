@@ -62,6 +62,7 @@ tools/playtest/*-flags-game*.xml
 tools/playtest/*-verify*.txt
 tools/playtest/*-scratch/
 tools/playtest/*.png
+tools/playtest/**/*.png
 
 # Agents sometimes create a repo-root scratchpad; real scratch space is the session scratchpad
 /scratchpad/
