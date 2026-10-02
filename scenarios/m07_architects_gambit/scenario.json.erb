@@ -215,6 +215,7 @@ scada_password = "CascadeWindow19"
           { "text": "── RECOVERED ──", "style": "section-header" },
           { "text": "TOMB GAMMA: Dossier recovered — the Architect's workshop, no coordinates on file", "style": "entry", "condition": "globalVars.found_tomb_gamma" },
           { "text": "MOLE INTERCEPT: Evidence recovered — SAFETYNET tasking read before it was sent", "style": "entry", "condition": "globalVars.found_mole_evidence" },
+          { "text": "NOTHING FURTHER RECOVERED: The site's other papers went to the evidence team unread", "style": "warning", "condition": "!globalVars.found_tomb_gamma && !globalVars.found_mole_evidence" },
           { "text": "" },
           { "text": "── ON THE RECORD ──", "style": "section-header" },
           { "text": "AGENT 0x00: Defended the call — the triage was sound on what was known", "style": "entry", "condition": "globalVars.debrief_stance === 'defended'" },
@@ -926,7 +927,7 @@ scada_password = "CascadeWindow19"
               "condition": "!globalVars.badge_obtained",
               "onceOnly": true,
               "setGlobal": { "rfid_guide_offered": true },
-              "sendTimedMessage": { "delay": 8000, "message": "Server hall door, far side of this floor, wants a server-zone badge. Hollis has one. His desk's badge station prints them too, with its PIN. RFID guide?" }
+              "sendTimedMessage": { "delay": 9500, "message": "Server hall door, far side of this floor, wants a server-zone badge. Hollis has one. His desk's badge station prints them too, with its PIN. RFID guide?" }
             },
             {
               "_comment": "Lockpicking guide. PASS 2 playtest D7: now on entering the server hall (the keyed plant door is on its south wall), skipped if the player already has the key.",
@@ -1170,7 +1171,7 @@ scada_password = "CascadeWindow19"
               "eventPattern": "room_entered:operations_floor",
               "onceOnly": true,
               "setGlobal": { "architect_contact": true },
-              "sendTimedMessage": { "delay": 3000, "message": "Agent 0x00.", "targetKnot": "start" }
+              "sendTimedMessage": { "delay": 5000, "message": "Agent 0x00.", "targetKnot": "start" }
             },
             {
               "eventPattern": "global_variable_changed:architect_t20_played",
@@ -1365,7 +1366,7 @@ scada_password = "CascadeWindow19"
           "readable": true,
           "observations": "A handover sheet in the supervisor's tray, under the plant key's fob. Half of it is about coffee.",
           "text": "NIGHT SHIFT HANDOVER -- OPS FLOOR\n\n- Rebalancing still showing DISABLED BY OPERATOR. Not us. Raised with Facilities, no answer.\n- Remote session on breaker control from a source we don't recognise. Raised with Security (Hollis). He says it's the OptiGrid contractor. Again.\n- Pulled the badge station print history for the 16 JUN renewal on the OptiGrid contractor (J. MERCER, log 218). Printed on the security desk login: RHOLLIS. Raised with Facilities. Still nothing.\n- Contractor badge station locked itself after the June audit. New PIN is <%= badge_pin %>, same as the audit date. Hollis has it too, so don't bother asking him.\n- Coffee machine: still broken. Still not my job.\n\n-- D. Halvorsen, shift supervisor",
-          "onPickup": { "setVariable": { "badge_pin_found": true, "renewal_signoff_read": true } },
+          "onPickup": { "setVariable": { "renewal_signoff_read": true } },
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "badge_station_pin",
           "puzzle_graph_unlocks": "badge_printer"
@@ -1879,7 +1880,6 @@ scada_password = "CascadeWindow19"
     "vault_pin_found": false,
     "scada_password_found": false,
     "visitor_log_read": false,
-    "badge_pin_found": false,
     "casualty_projection_found": false,
     "renewal_signoff_read": false,
     "generator_hall_reached": false,
