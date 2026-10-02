@@ -890,6 +890,8 @@ VAR talked_before = false
 
 These came up in more than one mission during the pass-4 dialogue reviews and playtests (October 2026). Most are caught by `node scripts/ink_runtime_check/dialoguelint.mjs scenarios/<mission>/` (rule name in brackets); the rest are for the reviewer. `README_scenario_design.md` ("Common bugs and how to avoid them") has the scenario-file side.
 
+**0. A line that starts with a stage cue becomes a choice** (`emote-as-choice`, error). In ink a line beginning `*` is a choice, so `*leans in* Fine.` on its own line is not an emote. It hides behind a speaker prefix (`Ghost: *leans in* Fine.` is safe) and appears when the prefix is stripped, as happened in m02's phone ink. Put the cue mid-line (`Fine. *leans in*`) or cut it.
+
 **1. A first meeting that falls into the return visit** (`choice-fallthrough`). Ink doesn't stop at choices: it keeps running to the end of the flow and gathers every choice it passes. So a block that offers choices and is followed by more content prints that content as well, and merges both sets of choices. In m06, Dani, Priya and Satoshi greeted a first-time visitor with "Hi again":
 ```ink
 // ❌ first block flips the flag, so the second block runs too

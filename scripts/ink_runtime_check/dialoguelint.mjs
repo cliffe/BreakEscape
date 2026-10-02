@@ -465,6 +465,16 @@ export function structureFindings(text, { channel = 'person', names = [] } = {})
     }
   }
 
+  // emote-as-choice: a line starting "*word" is parsed by ink as a choice, not an emote
+  // (seen in m02 after phone prefixes were stripped from lines like "Ghost: *leans in* ...")
+  for (const L of lines) {
+    const raw = (L.t || '').trimStart();
+    if (/^\*[A-Za-z]/.test(raw)) {
+      F.push({ level: 'error', rule: 'emote-as-choice', line: L.n, text: raw,
+        note: 'a line starting with "*" is a choice in ink; move the stage cue mid-line or put a speaker/text before it' });
+    }
+  }
+
   // stage cues: inside key information, and density per file
   let cues = 0, spoken = 0;
   for (const L of lines) {
