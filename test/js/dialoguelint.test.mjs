@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { readFileSync } from 'node:fs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const tool = join(root, 'scripts/ink_runtime_check/dialoguelint.mjs');
@@ -203,4 +204,55 @@ test('exit-no-reply also covers a choice that runs into -> END / DONE, and is a 
 test('blank-reentry: a park inside a stitch reopens at its knot, which may greet (m06 checkpoint guard)', () => {
   const ink = `=== start ===\nGuard: Evening. Name?\n-> start.question\n= question\n+ [A consultant.]\n    Guard: Not on my list.\n    #exit_conversation\n    -> start.question\n`;
   assert.equal(only(lintInk(ink), 'blank-reentry').length, 0);
+});
+
+// ---- crowded-hub ----
+const hubOf = (n, mk) => `=== hub ===\nGary: What now?\n` + Array.from({ length: n }, (_, i) => mk(i)).join('\n') + '\n';
+
+test('crowded-hub: 11 plain choices in one knot are flagged, with the m01 citation in the fix hint', () => {
+  const f = only(lintInk(hubOf(11, i => `+ [Topic ${i}]\n    -> t${i}`)), 'crowded-hub');
+  assert.equal(f.length, 1);
+  assert.equal(f[0].level, 'check');
+  assert.equal(f[0].count, 11);
+  assert.match(f[0].note, /order by relevance — topics that arrive later in the mission go first in the ink/);
+  assert.match(f[0].note, /m01_phone_agent0x99\.ink/);
+  assert.match(f[0].note, /support_hub/);
+  assert.match(f[0].note, /retire spent topics/);
+});
+
+test('crowded-hub: 10 choices are fine, and the count is per knot, not per file', () => {
+  assert.equal(only(lintInk(hubOf(10, i => `+ [Topic ${i}]\n    -> t${i}`)), 'crowded-hub').length, 0);
+  const two = hubOf(8, i => `+ [A ${i}]\n    -> a${i}`) + '=== other ===\n' + Array.from({ length: 8 }, (_, i) => `+ [B ${i}]\n    -> b${i}`).join('\n') + '\n';
+  assert.equal(only(lintInk(two), 'crowded-hub').length, 0);
+});
+
+test('crowded-hub: conditional choices count, once-only ones too, nested replies do not', () => {
+  const cond = hubOf(12, i => `+ {seen_${i}} [Topic ${i}]\n    -> t${i}`);
+  assert.equal(only(lintInk(cond), 'crowded-hub').length, 1);
+  const once = hubOf(11, i => `* [Topic ${i}]\n    -> t${i}`);
+  assert.equal(only(lintInk(once), 'crowded-hub').length, 1);
+  const nested = hubOf(4, i => `+ [Topic ${i}]\n    + + [Reply a]\n    + + [Reply b]\n    + + [Reply c]\n    -> t${i}`);
+  assert.equal(only(lintInk(nested), 'crowded-hub').length, 0);
+});
+
+test('crowded-hub: a stitch is its own block', () => {
+  const ink = hubOf(6, i => `+ [A ${i}]\n    -> a${i}`) + '= more\n' + Array.from({ length: 6 }, (_, i) => `+ [B ${i}]\n    -> b${i}`).join('\n') + '\n';
+  assert.equal(only(lintInk(ink), 'crowded-hub').length, 0);
+});
+
+test('crowded-hub: a retiring, ordered hub passes (the m01 pattern); an unconditional choice in the middle does not', () => {
+  const ordered = hubOf(12, i => i < 10 ? `+ {t${i} and not t${i}_done} [Topic ${i}]\n    -> t${i}` : `+ [Fixed ${i}]\n    -> f${i}`);
+  assert.equal(only(lintInk(ordered), 'crowded-hub').length, 0);
+  const middle = hubOf(12, i => i === 5 ? `+ [Fixed]\n    -> f` : `+ {t${i} and not t${i}_done} [Topic ${i}]\n    -> t${i}`);
+  assert.equal(only(lintInk(middle), 'crowded-hub').length, 1);
+  const unretired = hubOf(12, i => i < 10 ? `+ {t${i}} [Topic ${i}]\n    -> t${i}` : `+ [Fixed ${i}]\n    -> f${i}`);
+  assert.equal(only(lintInk(unretired), 'crowded-hub').length, 1);
+});
+
+test('crowded-hub: m01 handler hub (support_hub in m01_phone_agent0x99.ink) is the exemplar and passes', () => {
+  const p = join(root, 'scenarios/m01_first_contact/ink/m01_phone_agent0x99.ink');
+  const src = readFileSync(p, 'utf8');
+  const hub = src.split('=== support_hub ===')[1].split(/^=== /m)[0];
+  assert.ok((hub.match(/^\+ /gm) || []).length > 10, 'support_hub still declares more than 10 choices');
+  assert.equal(only(lintInk(src, { channel: 'phone' }), 'crowded-hub').length, 0);
 });

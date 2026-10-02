@@ -44,8 +44,12 @@ Present **only** the items that need attention:
 | `timed text … is repeated at the start of a line` | the bark and the chat's first line say the same thing | make the bark a teaser |
 | `VAR … is read but never set` | a dead condition: nothing ever changes it | set it where it should change, or test the variable that does |
 | `sets global … not in scenario.globalVariables` | undeclared `#set_global`, often a typo | declare it or fix the name |
+| `can send timed texts less than 4 s apart` (warning) | two timed texts off one event whose conditions can both hold; the toasts stack and the first goes unread | space them 4-6 s apart, or merge them (m04, m05) |
+| `global '…' is set … but nothing reads it` (suggestion) | a global set by a mapping, ink tag or `~` that no condition, mapping, credit or ink read ever uses | use it, or drop the setter (m05 `mission_priority`, m08 `witness_heard`) |
+| `credits section "…" … every one is conditional` (suggestion) | a credits heading with no always-printing line; empty if no condition holds | add an unconditional line, or check the conditions cover every route (m05 Recruiter) |
+| `DIALOGUE LINT` section | `dialoguelint.mjs` run over the mission folder, listed by rule with file:line, capped per rule. Advisory: never changes the exit code. Includes `crowded-hub` (a knot offering more than 10 choices; order newest-first and retire spent topics, as m01's `support_hub` does) | see `README_ink_best_practices.md` "Common ink bugs" |
 
-For the ink-side classes (fall-through choices, blank re-entry, popup placement, phone prefixes, exits with no reply, stage cues) also run `node scripts/ink_runtime_check/dialoguelint.mjs scenarios/<mission>/` and report its `check` and `warn` counts for the new rules. To check a mission another agent is editing without rewriting its compiled ink or dungeon graph, add `--skip-ink --no-graph`.
+For the ink-side classes (fall-through choices, blank re-entry, popup placement, phone prefixes, exits with no reply, stage cues) also run `node scripts/ink_runtime_check/dialoguelint.mjs scenarios/<mission>/` and report its `check` and `warn` counts for the new rules. The validator now runs the lint itself and prints it as a `DIALOGUE LINT` section (skip with `--no-lint`; `--skip-ink` skips it too; it needs `node`). To check a mission another agent is editing without rewriting its compiled ink or dungeon graph (`dungeon_graph.html`, `.md`, `.json`), add `--skip-ink --no-graph`.
 
 Then on its own line, report the dungeon graph stats:
 > Graph: Puzzle 33 nodes / 40 edges · Story 5/4 · Integrated 38/56 · Critical path (4 hops): Aim A → Aim B → …

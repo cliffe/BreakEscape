@@ -947,7 +947,17 @@ Phone inks are the exception: the thread shows the history, and a phone resting 
 
 **9. Variables nobody sets** (validator). A `VAR` read in a condition, never assigned with `~`, and with no scenario global of the same name to sync in, is fixed at its default (m06 `recruitment_accepted`). A `#set_global` name missing from `globalVariables` is usually a typo.
 
-**10. For the reviewer** (no lint):
+**10. A hub with too many choices** (`crowded-hub`, check). A knot whose choice block can offer more than ten choices at once (sticky, once-only and conditional all count) buries the topic that matters now; the m02 phone hub reached 20 buttons in a playtest. Order by relevance: topics that arrive later in the mission go first in the ink, so the newest, most relevant choices sit at the top (see m01's handler hub, `m01_phone_agent0x99.ink`, knot `support_hub`), and retire spent topics with a `not topic_given` guard. Fold related offers into one button with a choices-only follow-up knot (m02 `field_guides`). The rule skips a hub where nearly every conditional choice carries a `not` guard and the unconditional ones sit last, which is the m01 shape.
+```ink
+// m01 support_hub: late-mission topics first, each retired once used, fixed choices last
++ {entropy_reveal_read and (player_aborted_attack or player_launched_attack)} [Operation Shatter resolved — I'm ready for debrief]
++ {derek_office_locked_seen and not derek_office_entered} [Derek's office is locked — how do I get in?]
++ {server_room_entered and not ssh_flag_submitted and not ssh_hint_given} [SSH brute force help]
++ [Got any general advice?]
++ [I'm good for now]
+```
+
+**11. For the reviewer** (no lint):
 - `#speaker:` tags don't choose the speaker. Person-chat acts only on `#speaker:player` and `#speaker:npc[:id]`; a two-part tag like `#speaker:analyst` is ignored and the `Name:` prefix decides (m06). Write the prefix.
 - Status answers ("Where do I stand?", "Remind me where we are", "What's the clock?") must branch on the globals that change, down to the step the player is on. Four missions had a recap that went stale halfway through.
 - A choice can only quote or answer what the player has heard on this route. Check every choice against each way into its knot (m03 "[…I signed myself in.]" after a KO route; m04 Relay answering a reply nobody gave).

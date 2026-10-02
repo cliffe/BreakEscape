@@ -3183,6 +3183,281 @@ def check_recurring_bugs(json_data, repo_root)
 end
 
 # ============================================================================
+# TOOLING PASS 4c CHECKS: stacked timed texts, globals nothing reads, credit
+# sections that can print empty. All SUGGESTION or WARNING, never INVALID.
+# (README_scenario_design.md "Common bugs and how to avoid them".)
+# ============================================================================
+
+# Split a condition into &&-joined terms and describe each one as
+# [subject, :true | :false | [:eq, literal] | [:ne, literal]], or nil if it isn't a simple term.
+def pass4c_condition_terms(condition)
+  return [] unless condition.is_a?(String)
+  condition.split('&&').map(&:strip).reject(&:empty?).filter_map do |t|
+    t = t.sub(/\A\((.*)\)\z/, '\1').strip
+    lit = '(\'[^\']*\'|"[^"]*"|-?\d+(?:\.\d+)?)'
+    if t =~ /\A!\s*([\w.\[\]'"]+)\z/ then [$1, :false]
+    elsif t =~ /\A([\w.\[\]'"]+)\s*===?\s*true\z/ then [$1, :true]
+    elsif t =~ /\A([\w.\[\]'"]+)\s*===?\s*false\z/ then [$1, :false]
+    elsif t =~ /\A([\w.\[\]'"]+)\s*!==?\s*true\z/ then [$1, :false]
+    elsif t =~ /\A([\w.\[\]'"]+)\s*===?\s*#{lit}\z/ then [$1, [:eq, $2]]
+    elsif t =~ /\A([\w.\[\]'"]+)\s*!==?\s*#{lit}\z/ then [$1, [:ne, $2]]
+    elsif t =~ /\A([\w.\[\]'"]+)\z/ then [$1, :true]
+    end
+  end
+end
+
+# True when two conditions can never both hold (x vs !x, value === 'a' vs value === 'b').
+def pass4c_conditions_exclusive?(a, b)
+  ta = pass4c_condition_terms(a)
+  tb = pass4c_condition_terms(b)
+  ta.any? do |sa, va|
+    tb.any? do |sb, vb|
+      next false unless sa == sb
+      (va == :true && vb == :false) || (va == :false && vb == :true) ||
+        (va.is_a?(Array) && vb.is_a?(Array) && va[0] == :eq && vb[0] == :eq && va[1] != vb[1]) ||
+        (va.is_a?(Array) && vb.is_a?(Array) && va[0] == :eq && vb[0] == :ne && va[1] == vb[1]) ||
+        (va.is_a?(Array) && vb.is_a?(Array) && va[0] == :ne && vb[0] == :eq && va[1] == vb[1])
+    end
+  end
+end
+
+# a. Two or more timed texts triggered by the same event, less than 4 s apart: the phone toasts stack
+#    on top of each other and the first is gone before it can be read (m04, m05 playtests).
+STACKED_TEXT_GAP_MS = 4000
+
+def check_stacked_timed_texts(json_data)
+  issues = []
+  rooms = json_data['rooms'].is_a?(Hash) ? json_data['rooms'] : {}
+  entries = Hash.new { |h, k| h[k] = [] }
+  rooms.each do |rid, room|
+    Array(room['npcs']).each_with_index do |npc, i|
+      next unless npc.is_a?(Hash)
+      who = npc['id'] || "npcs[#{i}]"
+      Array(npc['timedMessages']).each do |tm|
+        next unless tm.is_a?(Hash) && tm['delay'].is_a?(Numeric)
+        ev = tm['waitForEvent'].to_s.empty? ? '(game start)' : tm['waitForEvent']
+        entries[ev] << { delay: tm['delay'], msg: tm['message'], cond: nil, who: who, sets: [] }
+      end
+      Array(npc['eventMappings']).each do |m|
+        next unless m.is_a?(Hash) && m['sendTimedMessage'].is_a?(Hash)
+        d = m['sendTimedMessage']['delay']
+        next unless d.is_a?(Numeric) && m['eventPattern'].is_a?(String)
+        entries[m['eventPattern']] << { delay: d, msg: m['sendTimedMessage']['message'], cond: m['condition'], who: who,
+                                       sets: m['setGlobal'].is_a?(Hash) ? m['setGlobal'].keys : [] }
+      end
+    end
+  end
+  entries.each do |ev, list|
+    next if list.size < 2
+    pairs = []
+    list.combination(2).each do |x, y|
+      next unless (x[:delay] - y[:delay]).abs < STACKED_TEXT_GAP_MS
+      next if pass4c_conditions_exclusive?(x[:cond], y[:cond])
+      # a mapping that sets a global the other one requires to be unset: the first to fire blocks the second
+      next if x[:sets].any? { |g| pass4c_condition_terms(y[:cond]).include?(["globalVars.#{g}", :false]) }
+      next if y[:sets].any? { |g| pass4c_condition_terms(x[:cond]).include?(["globalVars.#{g}", :false]) }
+      pairs << [x, y]
+    end
+    next if pairs.empty?
+    shown = pairs.first(2).map do |x, y|
+      "#{x[:who]} @#{x[:delay]} ms \"#{x[:msg].to_s[0, 36]}\" + #{y[:who]} @#{y[:delay]} ms \"#{y[:msg].to_s[0, 36]}\""
+    end.join('; ')
+    more = pairs.size > 2 ? " (and #{pairs.size - 2} more pair#{pairs.size - 2 == 1 ? '' : 's'})" : ''
+    issues << "⚠️ WARNING: event '#{ev}' can send timed texts less than #{STACKED_TEXT_GAP_MS / 1000} s apart that fire together: " \
+              "#{shown}#{more}. Their toasts stack and the first is gone before it can be read. Space them 4-6 s apart, " \
+              "or fold them into one message."
+  end
+  issues
+end
+
+# b. A global something sets (setGlobal, setGlobalOnStart, globalVarOnKO, onRead/onPickup setVariable,
+#    ink #set_global / #set_variable, or an ink '~ x =' on a declared global) that nothing ever reads:
+#    no condition, skipIfGlobal-style field, event pattern, credit/music condition or ink read (m05
+#    mission_priority, m08 witness_heard). Mirror of the "read but never set" check above.
+PASS4C_SET_KEYS_HASH = %w[setGlobal setVariable].freeze
+
+def check_globals_never_read(json_data, repo_root)
+  issues = []
+  declared = (json_data['globalVariables'] || {}).keys
+  setters = {}   # name => first place
+  strings = []   # every string that can read a global
+
+  walk = lambda do |node, path|
+    case node
+    when Hash
+      node.each do |k, v|
+        if k == 'globalVariables'
+          next
+        elsif PASS4C_SET_KEYS_HASH.include?(k) && v.is_a?(Hash)
+          v.each_key { |name| setters[name] ||= "#{path}/#{k}" }
+        elsif (k =~ /\AsetGlobal/ || k == 'globalVarOnKO') && v.is_a?(String)
+          setters[v] ||= "#{path}/#{k}"
+        elsif k == 'setGlobal' && v.is_a?(String)
+          setters[v] ||= "#{path}/#{k}"
+        else
+          walk.call(v, "#{path}/#{k}")
+        end
+      end
+    when Array
+      node.each_with_index { |v, i| walk.call(v, "#{path}[#{i}]") }
+    when String
+      strings << node
+    end
+  end
+  walk.call(json_data, '')
+
+  # ink: setters and reads, per story file (storyPath of every NPC, plus INCLUDEd files)
+  ink_files = []
+  queue = []
+  (json_data['rooms'] || {}).each_value do |room|
+    Array(room['npcs']).each do |npc|
+      sp = npc.is_a?(Hash) ? npc['storyPath'] : nil
+      queue << File.join(repo_root, sp.sub(/\.json\z/, '.ink')) if sp.is_a?(String)
+    end
+  end
+  until queue.empty?
+    f = queue.shift
+    next if ink_files.include?(f) || !File.exist?(f)
+    ink_files << f
+    File.readlines(f).each do |l|
+      queue << File.expand_path($1, File.dirname(f)) if l =~ /^\s*INCLUDE\s+(\S+)/
+    end
+  end
+  ink_read_text = []
+  ink_files.each do |f|
+    rel = f.sub("#{repo_root}/", '')
+    File.readlines(f).each_with_index do |raw, li|
+      line = raw.sub(%r{(^|\s)//.*$}, '\1')
+      line.scan(/#\s*set_(?:global|variable):(\w+)/) { |(v)| setters[v] ||= "#{rel}:#{li + 1}" }
+      if line =~ /^\s*~\s*(\w+)\s*(?:=|\+\+|--|\+=|-=)/ && declared.include?($1)
+        setters[$1] ||= "#{rel}:#{li + 1}"
+      end
+      next if line =~ /^\s*(?:VAR|CONST|EXTERNAL|INCLUDE)\b/
+      stripped = line.gsub(/#\s*set_(?:global|variable):\w+(?::[^\s#]*)?/, ' ')
+                     .sub(/^(\s*~\s*)\w+\s*(?:=|\+\+|--|\+=|-=)/, '\1 ')
+      ink_read_text << stripped
+    end
+  end
+  ink_blob = ink_read_text.join("\n")
+  json_blob = strings.join("\n")
+  # The engine reads some globals by name (minigames, interactions); count those as read.
+  engine_blob = nil
+  engine_text = lambda do
+    engine_blob ||= (Dir.glob(File.join(repo_root, 'public/break_escape/js/**/*.js')) +
+                     Dir.glob(File.join(repo_root, 'app/**/*.rb')) + Dir.glob(File.join(repo_root, 'lib/**/*.rb')))
+                    .map { |f| File.read(f, encoding: 'UTF-8', invalid: :replace, undef: :replace) rescue '' }.join("\n")
+  end
+
+  setters.each do |name, where|
+    next if RECURRING_SYNCED_INK_VARS.include?(name)
+    re = /(?<![\w.])(?:globalVars\.)?#{Regexp.escape(name)}(?!\w)/
+    next if json_blob.match?(re) || ink_blob.match?(re)
+    next if engine_text.call.match?(/(?<![\w])#{Regexp.escape(name)}(?!\w)/)
+    issues << "💡 SUGGESTION: global '#{name}' is set (#{where}) but nothing reads it: no condition, skipIfGlobal, " \
+              "global_variable_changed mapping, credit or music condition, objective field or ink VAR read mentions it. " \
+              "Either use it (gate a line, a credit or a hub choice on it) or drop the setter so it doesn't look like it matters " \
+              "(m05 mission_priority, m08 witness_heard)."
+  end
+  issues
+end
+
+# c. A credits section (a 'section-header' line plus the entries under it) whose every entry carries a
+#    condition and which has no unconditional fallback can print as a bare heading (m05 Recruiter).
+def check_credit_sections(json_data)
+  issues = []
+  walk = lambda do |node, path|
+    case node
+    when Hash
+      node.each do |k, v|
+        if k == 'credits' && v.is_a?(Array) && v.all? { |e| e.is_a?(Hash) }
+          sections = []
+          cur = { header: '(top of the credits)', entries: [] }
+          v.each do |e|
+            if e['style'] == 'section-header'
+              sections << cur
+              cur = { header: e['text'].to_s, entries: [] }
+            elsif !e['text'].to_s.strip.empty?
+              cur[:entries] << e
+            end
+          end
+          sections << cur
+          sections.each do |sec|
+            next if sec[:entries].empty?
+            next unless sec[:entries].all? { |e| e['condition'].is_a?(String) && !e['condition'].strip.empty? }
+            issues << "💡 SUGGESTION: credits section \"#{sec[:header].gsub(/[─\-]+/, '').strip}\" (#{path}/credits) has #{sec[:entries].size} " \
+                      "entr#{sec[:entries].size == 1 ? 'y' : 'ies'} and every one is conditional, with no unconditional fallback line. " \
+                      "If no condition holds the heading prints over nothing (m05 Recruiter). Add an unconditional line, " \
+                      "or make sure the conditions cover every path."
+          end
+        else
+          walk.call(v, "#{path}/#{k}")
+        end
+      end
+    when Array
+      node.each_with_index { |v, i| walk.call(v, "#{path}[#{i}]") }
+    end
+  end
+  walk.call(json_data, '')
+  issues
+end
+
+def check_tooling_pass4c(json_data, repo_root)
+  check_stacked_timed_texts(json_data) + check_globals_never_read(json_data, repo_root) + check_credit_sections(json_data)
+end
+
+# ============================================================================
+# DIALOGUE LINT: runs scripts/ink_runtime_check/dialoguelint.mjs over the mission folder.
+# Findings are advisory (WARNING in the validator's terms) and never change the exit code.
+# ============================================================================
+
+DIALOGUE_LINT_PER_RULE = 4
+
+def run_dialogue_lint(mission_dir, repo_root)
+  node = ENV['PATH'].to_s.split(File::PATH_SEPARATOR).map { |d| File.join(d, 'node') }.find { |f| File.file?(f) && File.executable?(f) }
+  return nil unless node
+  tool = File.join(repo_root, 'scripts/ink_runtime_check/dialoguelint.mjs')
+  return nil unless File.exist?(tool)
+  out, status = Open3.capture2(node, tool, mission_dir, '--json', chdir: repo_root)
+  return nil unless status.success?
+  JSON.parse(out)
+rescue StandardError
+  nil
+end
+
+def print_dialogue_lint(report, repo_root)
+  rel = ->(p) { p.to_s.sub("#{repo_root}/", '') }
+  all = []
+  (report['files'] || []).each { |f| f['findings'].each { |x| all << [rel.call(f['file']), x] } }
+  (report['texts'] || []).each { |f| f['findings'].each { |x| all << [rel.call(f['file']), x] } }
+  puts "DIALOGUE LINT (scripts/ink_runtime_check/dialoguelint.mjs; advisory, does not affect the result)"
+  if all.empty?
+    puts "✓ No dialogue lint findings"
+    puts
+    return
+  end
+  puts "⚠️ WARNING: #{all.size} dialogue lint finding(s)"
+  counts = report['counts'] || all.group_by { |_, x| x['rule'] }.transform_values(&:size)
+  puts "  Totals by rule: " + counts.sort_by { |_, v| -v }.map { |k, v| "#{k}=#{v}" }.join(' ')
+  all.group_by { |_, x| x['rule'] }.sort_by { |_, v| -v.size }.each do |rule, list|
+    puts "  #{rule} (#{list.size}):"
+    list.first(DIALOGUE_LINT_PER_RULE).each do |file, x|
+      detail =
+        if x['words'] then "#{x['words']} words (cap #{x['cap'] || 15})"
+        elsif x['note'] then x['note'].to_s
+        elsif x['match'] then "\"#{x['match']}\""
+        else ''
+        end
+      detail = "#{detail[0, 150]}..." if detail.length > 150
+      text = x['text'].to_s
+      text = "#{text[0, 60]}..." if text.length > 60
+      puts "    #{x['level'].to_s.upcase.ljust(5)} #{file}:#{x['line']}  #{detail}  | #{text}"
+    end
+    puts "    ...and #{list.size - DIALOGUE_LINT_PER_RULE} more" if list.size > DIALOGUE_LINT_PER_RULE
+  end
+  puts
+end
+
+# ============================================================================
 # ROOM GEOMETRY CHECK
 #
 # Faithful Ruby port of the game engine's room-layout algorithm
@@ -3562,7 +3837,8 @@ def main
     verbose: false,
     output_json: false,
     no_graph: false,
-    skip_ink: false
+    skip_ink: false,
+    no_lint: false
   }
 
   OptionParser.new do |opts|
@@ -3580,12 +3856,16 @@ def main
       options[:output_json] = true
     end
 
-    opts.on('--no-graph', 'Skip dungeon graph generation after validation') do
+    opts.on('--no-graph', 'Skip dungeon graph generation (dungeon_graph.html/.md/.json are not written or rewritten)') do
       options[:no_graph] = true
     end
 
     opts.on('--skip-ink', 'Skip ink file compilation validation (faster, but less thorough)') do
       options[:skip_ink] = true
+    end
+
+    opts.on('--no-lint', 'Skip the DIALOGUE LINT section (dialoguelint.mjs over the mission folder)') do
+      options[:no_lint] = true
     end
 
     opts.on('-h', '--help', 'Show this help message') do
@@ -3719,6 +3999,12 @@ def main
       puts
     end
 
+    # Dialogue lint over the mission folder (advisory; needs node; off with --no-lint or --skip-ink)
+    unless options[:skip_ink] || options[:no_lint]
+      lint_report = run_dialogue_lint(File.dirname(erb_path), repo_root)
+      print_dialogue_lint(lint_report, repo_root) if lint_report
+    end
+
     # Check objective task completion wiring
     puts "Checking objective task wiring..."
     wiring_issues = check_objectives_wiring(json_data, repo_root)
@@ -3786,6 +4072,7 @@ def main
     common_issues += check_lock_credentials(json_data)
     common_issues += check_engine_limits(json_data)
     common_issues += check_recurring_bugs(json_data, repo_root)
+    common_issues += check_tooling_pass4c(json_data, repo_root)
 
     # Check for recommended fields
     puts "Checking recommended fields..."

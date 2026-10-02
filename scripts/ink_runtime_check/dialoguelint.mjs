@@ -214,10 +214,16 @@ export function lintInk(text, { channel = 'person', names = [] } = {}) {
 //                       Agent and Netherton).
 //   stage-cue-in-info   (check) an *asterisk cue* on a line that carries a number (m07 Park, Mercer).
 //   stage-cue-density   (warn) more asterisk cues per spoken line than m01 uses (about 1 in 37).
+//   crowded-hub         (check) a knot whose choice block offers more than 10 choices at once (sticky,
+//                       once-only and conditional all count). Passes when every conditional choice is
+//                       retired by a "not ..." guard and the unconditional ones sit last, which is how
+//                       m01's handler hub (m01_phone_agent0x99.ink, knot support_hub) keeps 15 declared
+//                       choices to a handful on screen.
 const NUMBER_WORD = /\b(?:\d[\d,.:]*|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand|million|billion)\b/i;
 // Choices that are actions rather than words (a fight, a cutscene "Continue", a "(He's gone.)"
 // description): no reply expected. A body that turns the NPC #hostile is skipped too.
 const ACTION_CHOICE = /^(?:\(|\s*(?:attack|tackle|brace|continue|back off|move on|run|fight|punch|grab|hit|knock|close|hang up|listen|end|go\b|get out|slip|sneak|walk away|\.\.\.))/i;
+const HUB_MAX = 10;
 const CUE_RE = /\*[^*\s][^*]{0,60}\*/g;
 
 function braceDelta(s) {
@@ -472,6 +478,54 @@ export function structureFindings(text, { channel = 'person', names = [] } = {})
     if (/^\*[A-Za-z]/.test(raw)) {
       F.push({ level: 'error', rule: 'emote-as-choice', line: L.n, text: raw,
         note: 'a line starting with "*" is a choice in ink; move the stage cue mid-line or put a speaker/text before it' });
+    }
+  }
+
+  // crowded-hub: more than HUB_MAX choices in one knot's choice block
+  {
+    const ranges = Object.values(idx).filter(k => !k.stitch).map(k => {
+      // a knot's own block stops where its first stitch starts; each stitch is its own block
+      let end = k.end;
+      for (let j = k.start + 1; j < k.end; j++) if (lines[j].kind === 'stitch') { end = j; break; }
+      return { name: k.name, start: k.start, end };
+    });
+    for (const k of Object.values(idx)) if (k.stitch) ranges.push({ name: k.name, start: k.start, end: k.end });
+    for (const r of ranges) {
+      const cs = [];
+      for (let j = r.start + 1; j < r.end; j++) {
+        const L = lines[j];
+        if (L.kind !== 'choice') continue;
+        const marks = L.t.match(/^((?:[*+]\s*)+)/)[1].replace(/\s/g, '').length;
+        const rest = L.t.replace(/^(?:[*+]\s*)+(?:\(\w+\)\s*)?/, '');
+        if (/^->/.test(rest)) continue;                       // invisible fallback choice
+        const cond = (rest.match(/^(?:\{[^{}]*\}\s*)+/) || [''])[0];
+        cs.push({ n: L.n, marks, cond, text: cleanInkText(rest.replace(/^(?:\{[^{}]*\}\s*)+/, '').replace(/[[\]]/g, ' ')) });
+      }
+      if (cs.length <= HUB_MAX) continue;
+      const top = Math.min(...cs.map(c => c.marks));
+      // split into blocks at gathers and branches that sit between top-level choices
+      const breaks = [];
+      for (let j = r.start + 1; j < r.end; j++) if ((lines[j].kind === 'gather' || lines[j].kind === 'branch') && (lines[j].delta || 0) <= 0) breaks.push(lines[j].n);
+      const blocks = [];
+      let cur = [];
+      let bi = 0;
+      for (const c of cs.filter(x => x.marks === top)) {
+        while (bi < breaks.length && breaks[bi] < c.n) { if (cur.length) blocks.push(cur); cur = []; bi++; }
+        cur.push(c);
+      }
+      if (cur.length) blocks.push(cur);
+      for (const b of blocks) {
+        if (b.length <= HUB_MAX) continue;
+        const conditional = b.filter(c => c.cond);
+        const retired = conditional.filter(c => /\bnot\b|!/.test(c.cond)).length >= 0.75 * conditional.length; // most topics retire once used
+        const lastCond = b.map(c => !!c.cond).lastIndexOf(true);
+        const fixedLast = b.slice(lastCond + 1).every(c => !c.cond) && b.slice(0, lastCond + 1).every(c => !!c.cond);
+        if (conditional.length >= b.length - 3 && retired && fixedLast) continue; // the m01 support_hub pattern
+        F.push({ level: 'check', rule: 'crowded-hub', line: b[0].n, text: b[0].text || r.name, count: b.length,
+          note: `knot "${r.name}" can offer ${b.length} choices at once (more than ${HUB_MAX}; ${conditional.length} conditional). ` +
+            'Fix: order by relevance — topics that arrive later in the mission go first in the ink, so the newest, most relevant choices sit at the top ' +
+            '(see m01\'s handler hub, m01_phone_agent0x99.ink, knot support_hub); retire spent topics.' });
+      }
     }
   }
 
