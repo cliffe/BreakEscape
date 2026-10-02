@@ -1,5 +1,7 @@
 # Agent 0x99 "Haxolottle"
 
+> **Voice:** see the [voice bible](../voice_bible.md#agent-hax-agent-0x99-haxolottle) for how HaX talks in the game, her TTS settings, and where the game departs from this file (no spoken axolotl lines; "she").
+
 ## Profile
 
 **Real Name**: [CLASSIFIED]
@@ -235,6 +237,12 @@ Chen: *pause* "That... actually works as an explanation. Weird, but works."
 - 0x42 trusts Haxolottle's judgment on agent readiness
 - Haxolottle appreciates (but finds slightly excessive) 0x42's mysterious approach
 - Mutual respect evident in minimal words
+
+### Dr. Adrian Tesseract (former teacher)
+
+Season-one canon (user decision, pass 4). Tesseract was SAFETYNET's chief strategist until he walked out seven years ago, and he trained half the field. HaX was one of his students: "He taught me half of what I know about this work" (m06 debrief). After m06 SAFETYNET's lead suspect for The Architect is Tesseract (87%, Satoshi's file); it's a lead, not a confirmed identity.
+
+What she carries from him shows up in how she handles agents. "Let it hurt afterwards, not during" is his line, and she has said it to every agent she has run. In m07 she says it in her first call, the Architect says it to the player a few minutes later, and HaX hears her teacher in it (`m07_phone_agent_0x99.ink`, `topic_teacher`). She names no one. Writers: she doesn't speak about him easily, never defends him, and never says outright that he is the Architect until a mission confirms it (m08 at the earliest; the season plan puts the reveal at M9). See [The Architect](../entropy/masterminds/the_architect.md#identity-what-safetynet-suspects).
 
 ### Other SAFETYNET Agents
 

@@ -63,6 +63,8 @@ Detailed profiles of each semi-autonomous ENTROPY cell.
 ### 04. Characters
 Recurring characters that provide continuity across scenarios.
 
+- **[Voice bible](04_characters/voice_bible.md)** - How each recurring character talks in the game, with their TTS voice settings and a one-line guide to every one-mission character
+
 #### SAFETYNET Operatives
 - **[Agent 0x00](04_characters/safetynet/agent_0x00.md)** - The player character
 - **[Agent 0x99 "Haxolottle"](04_characters/safetynet/agent_0x99_haxolottle.md)** - Your handler
@@ -123,6 +125,7 @@ How players discover world information.
 Practical guidance for creating new scenarios.
 
 - **[Design Framework](09_scenario_design/framework.md)** - Core design principles
+- **[Dialogue Style Guide](09_scenario_design/dialogue_style.md)** - How to write NPC dialogue: line jobs, information first, subtext, choices, line lengths, and a per-file checklist
 - **[Templates](09_scenario_design/templates/)** - Ready-to-use scenario templates
   - [Corporate Infiltration Template](09_scenario_design/templates/corporate_infiltration.md)
   - [Infrastructure Defense Template](09_scenario_design/templates/infrastructure_defense.md)

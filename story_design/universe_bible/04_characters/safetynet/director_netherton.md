@@ -1,5 +1,7 @@
 # Director Magnus "Mag" Netherton
 
+> **Voice:** see the [voice bible](../voice_bible.md#director-magnus-netherton) for how Netherton talks in the game and his TTS settings; the game uses the handbook joke sparingly.
+
 ## Profile
 
 **Full Name**: Magnus Alistair Netherton

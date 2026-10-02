@@ -1,5 +1,7 @@
 # Dr. Lyra "Loop" Chen
 
+> **Voice:** Dr Chen has no lines in m01–m08 yet. Before writing any, add her entry to the [voice bible](../voice_bible.md#canon-characters-not-yet-voiced).
+
 ## Profile
 
 **Full Name**: Dr. Lyra Mei-Ling Chen

@@ -1,5 +1,7 @@
 # Agent 0x00 (Agent Zero / Agent Null)
 
+> **Voice:** see the [voice bible](../voice_bible.md#agent-0x00-the-player) for how the player character speaks in choice text.
+
 ## Profile
 
 **Designation**: Agent 0x00

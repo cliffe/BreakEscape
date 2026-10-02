@@ -1,9 +1,11 @@
 # The Architect — ENTROPY Supreme Commander
 
+> **Voice:** see the [voice bible](../../voice_bible.md#the-architect) for his written and spoken registers, his m07 TTS settings, and where the game departs from this file.
+
 ## Character Overview
 
 **Status:** ENTROPY Supreme Commander
-**Real Identity:** Unknown
+**Real Identity:** Unknown to ENTROPY, including its cell leaders. SAFETYNET's lead suspect since m06 is Dr. Adrian Tesseract, its own former chief strategist (see [Identity: what SAFETYNET suspects](#identity-what-safetynet-suspects)).
 **Tier:** Tier 1 Mastermind (Background Presence Only)
 **Last Known Activity:** Coordinating multi-cell quantum computing operations
 **Threat Level:** Critical (Strategic Leadership)
@@ -27,6 +29,16 @@ Some unverified intelligence suggests:
 - May have physical science or mathematics PhD (depth of technical knowledge)
 
 **Truth:** All speculation. Could be entirely wrong. Could be multiple people using same identity.
+
+### Identity: what SAFETYNET suspects
+
+Season-one canon (user decision, pass 4). This supersedes "identity unknown" wherever the two disagree, for SAFETYNET's side only.
+
+- **ENTROPY doesn't know.** Cell leaders and operatives have never met him and don't know who he is. That stays true (see "What Players Learn" under the cell-leader dialogue, and Operational Security).
+- **SAFETYNET has a name.** In m06, Satoshi Nakamoto II's insurance file puts it at 87%: Dr. Adrian Tesseract, SAFETYNET's former chief strategist, who walked out seven years ago after a disagreement about where the work was heading (he believed the Cyber Security arms race would speed up the collapse it was meant to prevent). He trained half the agents in the field. Agent HaX was one of his students. It is a lead, not a confirmed identity.
+- **m07 plants it, without naming him.** On the player's handset he uses a line HaX gives every agent she runs ("Let it hurt afterwards, not during. I expect you've been told that."), and HaX hears her teacher in it. A player who skipped m06's file learns only that the Architect knows how SAFETYNET trains its people.
+- **Reveal.** m08 and later can build on it; the season plan confirms the identity at M9. Until a mission confirms it, SAFETYNET characters call it a lead or a suspicion, never a fact, and no ENTROPY character names him.
+- **Consistency.** He is a man in his sixties (voice bible; m07 voice style), which fits Tesseract's age. The rest of this file's speculation (academic, Western European or North American, a PhD) is compatible with him.
 
 ### **Operational Role**
 The Architect serves as ENTROPY's strategic mastermind and supreme coordinator:
@@ -441,7 +453,7 @@ Found: Slack-like chat logs from Paradigm Shift Consultants
 ```
 
 **What Players Learn:**
-- Even cell leaders don't know The Architect's identity
+- Even cell leaders don't know The Architect's identity (SAFETYNET, from m06, has a suspect; the cells still don't)
 - The Architect provides effective strategic leadership
 - Resources and planning are reliable
 - ENTROPY operatives trust The Architect despite not knowing them

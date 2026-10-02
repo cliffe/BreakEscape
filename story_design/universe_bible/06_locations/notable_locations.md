@@ -41,7 +41,7 @@ While most Break Escape scenarios take place in one-off locations, certain facil
 - Repeatedly proven vulnerable (past successes encourage future attempts)
 
 #### Organizational Background
-- **Founded**: 2015 by Dr. Marcus Tesseract (fictional tech billionaire)
+- **Founded**: 2015 by Dr. Marcus Tesseract (fictional tech billionaire), younger brother of Dr. Adrian Tesseract, SAFETYNET's former chief strategist and its lead suspect for The Architect (see `04_characters/entropy/masterminds/the_architect.md`). The brothers are not known to be in contact. Whether ENTROPY's repeated attention to the institute is about the family is an open thread, not canon.
 - **Mission**: "Advancing the mathematical foundations of reality"
 - **Reputation**: Prestigious, attracts top talent globally
 - **Funding**: Mix of private investment, government grants, corporate partnerships
