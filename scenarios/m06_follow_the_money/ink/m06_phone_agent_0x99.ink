@@ -130,64 +130,67 @@ Everything after that is joining up the cells' money.
 // ================================================
 
 === hub ===
-// Urgent first: the decision Satoshi's KO left open (review B2/M4 safety net).
+// Ordered by relevance (m01 support_hub pattern): topics that arrive later in
+// the mission come first, spent topics retire, fixed choices sit last.
+
+// Urgent: the decision Satoshi's KO left open (review B2/M4 safety net).
 + {satoshi_ko and not assets_decided} [About the fund. I'm ready to decide.]
     -> on_satoshi_ko
 
-// PASS 3 P9: relayed copies, on request, only for what isn't picked up yet.
-+ {irina_ko and not found_password_lists and not relay_wordlist_sent} [Send me Volkova's wordlist.]
-    -> relay_wordlist
-+ {irina_ko and not irina_badge_obtained and not irina_badge_cloned and not relay_cto_badge_sent} [I need her office badge.]
-    -> relay_cto_badge
+// Story beats, latest first, each retired once the story has moved past it
++ {flag4_submitted and not reacted_network} [The whole estate is mapped. Where does that leave us?]
+    ~ reacted_network = true
+    -> on_network_complete
++ {fund_debrief_available and not reacted_fund} [I've found The Architect's Fund.]
+    ~ reacted_fund = true
+    -> on_architects_fund_discovered
 + {irina_ko and found_architects_fund and not irina_exec_badge_given and not relay_exec_badge_sent} [I need the executive badge she signed out.]
     -> relay_exec_badge
 
 // PASS 4 fix 1: sticky, graded nudges for the custody-console puzzle.
 + {(entered_data_center or read_settlement_log) and not found_architects_fund} [Which cold slot is the fund?]
     -> fund_hint
-
-// PASS 3 playtest (engine E9): phone history is memory-only, so HaX's timed
-// texts are gone after a reload. The recap repeats whatever still applies.
-+ [Remind me where we are.]
-    -> recap
-
-// Story beats, each retired once the story has moved past it
-+ {found_password_lists and not reacted_password_lists and not flag1_submitted} [I've got Volkova's wordlist. What do I do with it?]
-    ~ reacted_password_lists = true
-    -> on_password_lists_found
-+ {flag1_submitted and not reacted_first_server and not flag3_submitted} [First server is cracked. What now?]
-    ~ reacted_first_server = true
-    -> on_first_server_cracked
 + {blockchain_debrief_available and not reacted_blockchain and not found_architects_fund} [Talk me through Priya's write-up.]
     ~ reacted_blockchain = true
     -> on_blockchain_discovered
-+ {fund_debrief_available and not reacted_fund} [I've found The Architect's Fund.]
-    ~ reacted_fund = true
-    -> on_architects_fund_discovered
-+ {flag4_submitted and not reacted_network} [The whole estate is mapped. Where does that leave us?]
-    ~ reacted_network = true
-    -> on_network_complete
++ {flag1_submitted and not reacted_first_server and not flag3_submitted} [First server is cracked. What now?]
+    ~ reacted_first_server = true
+    -> on_first_server_cracked
++ {found_password_lists and not reacted_password_lists and not flag1_submitted} [I've got Volkova's wordlist. What do I do with it?]
+    ~ reacted_password_lists = true
+    -> on_password_lists_found
+
+// PASS 3 P9: relayed copies, on request, only for what isn't picked up yet.
++ {irina_ko and not irina_badge_obtained and not irina_badge_cloned and not relay_cto_badge_sent} [I need her office badge.]
+    -> relay_cto_badge
++ {irina_ko and not found_password_lists and not relay_wordlist_sent} [Send me Volkova's wordlist.]
+    -> relay_wordlist
 
 // Field guides, offered once the player has met the thing they explain
-+ {cracking_guide_offered and not cracking_guide_hint_given} [Send me the offline password cracking guide.]
-    -> request_cracking_guide
 + {distcc_guide_offered and not distcc_guide_hint_given} [Send me the distcc guide.]
     -> request_distcc_guide
 + {privesc_guide_offered and not privesc_guide_hint_given} [Send me the privilege escalation and credential reuse guide.]
     -> request_privesc_guide
++ {cracking_guide_offered and not cracking_guide_hint_given} [Send me the offline password cracking guide.]
+    -> request_cracking_guide
 + {recon_guide_offered and not recon_guide_hint_given} [Send me the reconnaissance field guide.]
     -> request_recon_guide
 + {rfid_guide_offered and not rfid_guide_hint_given} [Send me the RFID cloning guide.]
     -> request_rfid_guide
 
 // Early-game topics, retired once the player is past them
-+ {not password_hint_given and not flag1_submitted} [Any tips on their passwords?]
-    -> password_help
 + {not blockchain_hint_given and not found_blockchain_evidence} [Where do I start on the money trail?]
     -> blockchain_help
++ {not password_hint_given and not flag1_submitted} [Any tips on their passwords?]
+    -> password_help
 + {not irina_guidance_given and not irina_ko and not irina_fate_decided} [How do I play Volkova?]
     -> irina_guidance
 
+// Fixed choices, always last. PASS 3 playtest (engine E9): phone history is
+// memory-only, so HaX's timed texts are gone after a reload. The recap
+// repeats whatever still applies.
++ [Remind me where we are.]
+    -> recap
 + [I'm good for now.]
     Copy that. Call anytime.
     #exit_conversation
@@ -491,21 +494,15 @@ For the file, that's Satoshi's Ghost, the Crypto Anarchists' leader. Not Ghost P
 + {found_architects_fund and found_wallet_keys} [Freeze it. Move it into our wallet before anyone notices he's gone quiet.]
     #set_variable:assets_seized=true
     #set_variable:assets_decided=true
-    #set_variable:satoshi_arrested=true
-    #set_variable:final_choice=seized_by_force
     #complete_task:decide_asset_strategy
     Done. The $12.8 million that hadn't gone out is in a wallet we hold. The advances already reached the cells.
-    #set_variable:phone_decision_made=true
     #exit_conversation
     -> hub
 + {found_architects_fund} [Leave it running. I want every cell that reaches for it on a list.]
     #set_variable:monitoring_enabled=true
     #set_variable:assets_decided=true
-    #set_variable:satoshi_arrested=true
-    #set_variable:final_choice=monitored_by_force
     #complete_task:decide_asset_strategy
     Tagged and watching. The balances will reach the cells, and we'll see every one of them land.
-    #set_variable:phone_decision_made=true
     #exit_conversation
     -> hub
 + {not found_architects_fund} [Not yet. I need to know which slot it is.]

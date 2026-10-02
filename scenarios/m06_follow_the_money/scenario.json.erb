@@ -558,15 +558,10 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
     "mission_complete": false,
     "flags_nag_sent": false,
     "resolve_aim_open": false,
-    "phone_decision_made": false,
-    "irina_ko_relayed": false,
     "asset_decision_deferred": false,
 
-    "knows_architects_fund": false,
-    "knows_coordinated_attack": false,
     "architect_identity_found": false,
 
-    "final_choice": "",
     "satoshi_stance": "",
     "assets_decided": false,
     "assets_seized": false,
@@ -575,8 +570,6 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
     "irina_recruited": false,
     "irina_arrested": false,
     "satoshi_confronted": false,
-    "satoshi_arrested": false,
-    "satoshi_revealed": false,
 
     "found_blockchain_evidence": false,
     "found_architects_fund": false,
@@ -595,7 +588,6 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
     "flag2_submitted": false,
     "flag3_submitted": false,
     "flag4_submitted": false,
-    "servers_accessed": 0,
     "financial_network_mapped": false,
     "exchange_infiltrated": false,
     "blockchain_debrief_available": false,
@@ -938,25 +930,25 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
             {
               "eventPattern": "objective_task_completed:submit_flag1",
               "onceOnly": true,
-              "setGlobal": { "flag1_submitted": true, "servers_accessed": 1, "privesc_guide_offered": true },
+              "setGlobal": { "flag1_submitted": true, "privesc_guide_offered": true },
               "sendTimedMessage": { "delay": 1200, "message": "First account's yours. That password was almost certainly reused. Try it everywhere before anything clever. I've a credential reuse guide if you want it." }
             },
             {
               "eventPattern": "objective_task_completed:submit_flag2",
               "onceOnly": true,
-              "setGlobal": { "flag2_submitted": true, "servers_accessed": 2 }
+              "setGlobal": { "flag2_submitted": true }
             },
             {
               "eventPattern": "objective_task_completed:submit_flag3",
               "onceOnly": true,
-              "setGlobal": { "flag3_submitted": true, "servers_accessed": 3 },
+              "setGlobal": { "flag3_submitted": true },
               "sendTimedMessage": { "delay": 1500, "message": "Financial database. It runs their doors: data centre code's in the export, north door. Last backend box is the vault account. It holds the wallet keys. Get it before upstairs." }
             },
             {
               "_comment": "PASS 2: flag 4 pays out the cold-storage recovery keys from the vault account (flag-station give_item). found_wallet_keys is set here, not by an onRead on a gifted item, so it is deterministic. Freezing the fund needs it.",
               "eventPattern": "objective_task_completed:submit_flag4",
               "onceOnly": true,
-              "setGlobal": { "flag4_submitted": true, "servers_accessed": 4, "found_wallet_keys": true },
+              "setGlobal": { "flag4_submitted": true, "found_wallet_keys": true },
               "sendTimedMessage": { "delay": 1800, "message": "Full estate. The vault account had the recovery keys, and they're in your kit. Whoever holds the keys holds the money: freeze it, or watch it." }
             },
             {
@@ -1020,14 +1012,14 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "eventPattern": "global_variable_changed:found_architects_fund",
               "condition": "value === true && globalVars.irina_ko !== true",
               "onceOnly": true,
-              "setGlobal": { "knows_architects_fund": true, "fund_debrief_available": true },
+              "setGlobal": { "fund_debrief_available": true },
               "sendTimedMessage": { "delay": 1500, "message": "$12.8M in the wallet, six cells, seventy-two hours. Call me about it. The spare executive badge was signed out to Volkova. She's on the trading floor." }
             },
             {
               "eventPattern": "global_variable_changed:found_architects_fund",
               "condition": "value === true && globalVars.irina_ko === true",
               "onceOnly": true,
-              "setGlobal": { "knows_architects_fund": true, "fund_debrief_available": true },
+              "setGlobal": { "fund_debrief_available": true },
               "sendTimedMessage": { "delay": 1500, "message": "$12.8M in the wallet, six cells, seventy-two hours. Call me about it. The spare executive badge was Volkova's. Check where she went down, or ask me for a copy." }
             },
             {
@@ -1035,7 +1027,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "eventPattern": "npc_ko:irina_volkova",
               "condition": "globalVars.irina_recruited !== true && globalVars.irina_arrested !== true && globalVars.exchange_infiltrated === true",
               "onceOnly": true,
-              "setGlobal": { "irina_fate_decided": true, "irina_ko_relayed": true },
+              "setGlobal": { "irina_fate_decided": true },
               "sendTimedMessage": { "delay": 2500, "message": "Volkova's down. Well. That's one way to settle it. Her things are on the floor beside her. If you still need her wordlist, ask me for a copy." }
             },
             {
@@ -1043,21 +1035,21 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "eventPattern": "npc_ko:irina_volkova",
               "condition": "globalVars.irina_recruited !== true && globalVars.irina_arrested !== true && globalVars.exchange_infiltrated !== true",
               "onceOnly": true,
-              "setGlobal": { "irina_fate_decided": true, "irina_ko_relayed": true },
+              "setGlobal": { "irina_fate_decided": true },
               "sendTimedMessage": { "delay": 2500, "message": "Volkova's down before we ever talked to her. Her things are on the floor beside her. If you need her wordlist, ask me for a copy." }
             },
             {
               "eventPattern": "npc_ko:irina_volkova",
-              "condition": "globalVars.irina_recruited === true",
+              "condition": "globalVars.irina_recruited === true && globalVars.irina_arrested !== true",
               "onceOnly": true,
-              "setGlobal": { "irina_fate_decided": true, "irina_ko_relayed": true },
+              "setGlobal": { "irina_fate_decided": true },
               "sendTimedMessage": { "delay": 2500, "message": "Volkova's down, and she'd already come over to us. That goes in the report as a mistake. What she gave us stands. Her things are beside her." }
             },
             {
               "eventPattern": "npc_ko:irina_volkova",
               "condition": "globalVars.irina_arrested === true",
               "onceOnly": true,
-              "setGlobal": { "irina_fate_decided": true, "irina_ko_relayed": true },
+              "setGlobal": { "irina_fate_decided": true },
               "sendTimedMessage": { "delay": 2500, "message": "Volkova's down, and she was already in custody. The police will have questions about that. Whatever she was carrying is on the floor beside her." }
             },
             {
@@ -1117,7 +1109,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "condition": "value === true && globalVars.flag<%= n %>_submitted !== true && globalVars.flags_nag_sent !== true",
               "onceOnly": true,
               "setGlobal": { "flags_nag_sent": true },
-              "sendTimedMessage": { "delay": 4000, "message": "Before I pull you out, finish the backend. I want all four flags at the drop-site in the server room, or the file on this exchange has holes in it." }
+              "sendTimedMessage": { "delay": 8000, "message": "Before I pull you out, finish the backend. I want all four flags at the drop-site in the server room, or the file on this exchange has holes in it." }
             },
 <% end %>
             {
@@ -1587,7 +1579,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "observations": "Slot <%= fund_slot %>'s custody file. Six ENTROPY cells: the advances have already gone, and $12.8M in balances goes out in 72 hours on a pre-signed release. Signed by Satoshi's Ghost.",
               "puzzle_graph_role": "evidence",
               "puzzle_graph_aim": "map_financial_network",
-              "onPickup": { "setVariable": { "found_architects_fund": true, "knows_coordinated_attack": true } }
+              "onPickup": { "setVariable": { "found_architects_fund": true } }
             }
           ]
         },
@@ -1778,7 +1770,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "taskOnKO": "confront_satoshi",
           "puzzle_graph_actions": [
             { "id": "satoshi_confrontation", "label": "Confront Satoshi's Ghost", "unlocks_aim": "resolve_the_fund" }
-          ],
+          ]
           <%# PASS 2 review B1: was initiallyHidden with setVisible mappings on
               found_architects_fund / room_entered:executive_wing. NPC mappings only
               register when the NPC's room loads (npc-lazy-loader.js:23-73), and both
@@ -1786,13 +1778,6 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               request (npc-behavior.js:151-160) and he was never shown: no
               confrontation, no ending. He is already behind the executive badge, so
               he is simply visible. %>
-          "eventMappings": [
-            {
-              "eventPattern": "room_entered:satoshi_office",
-              "onceOnly": true,
-              "setGlobal": { "satoshi_revealed": true }
-            }
-          ]
         }
       ],
       "objects": [

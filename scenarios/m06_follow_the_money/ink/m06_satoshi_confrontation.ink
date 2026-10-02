@@ -15,7 +15,6 @@ VAR confrontation_started = false
 VAR shown_evidence = false
 VAR ideology_discussed = false
 VAR asset_choice_made = false
-VAR satoshi_arrested = false
 VAR found_wallet_keys = false
 
 // External variables
@@ -331,7 +330,6 @@ Satoshi Nakamoto II: You can't win, {player_name}. You can only choose how you l
 
 #set_variable:assets_seized=true
 #set_variable:assets_decided=true
-#set_variable:final_choice=seized
 #complete_task:decide_asset_strategy
 
 {found_architects_fund:
@@ -379,7 +377,6 @@ Satoshi Nakamoto II: People tonight over people later. That's human. Wrong, but 
 
 #set_variable:monitoring_enabled=true
 #set_variable:assets_decided=true
-#set_variable:final_choice=monitored
 #complete_task:decide_asset_strategy
 
 Satoshi Nakamoto II: Patient. I didn't expect that from SAFETYNET.
@@ -423,7 +420,6 @@ Satoshi Nakamoto II: We just disagree about which system gets saved.
 {not shown_evidence:
     -> arrest_resisted
 }
-#set_variable:satoshi_arrested=true
 
 {asset_choice_made:
     Satoshi Nakamoto II: Of course. Was there any other ending to this?
@@ -463,7 +459,6 @@ Satoshi Nakamoto II: No. I don't think I will.
 
 === arrest_finale ===
 #speaker:satoshi
-#set_variable:satoshi_arrested=true
 
 // PASS 3 playtest: he is always detained after the decision (PASS3 D5: no
 // escape). Say so when the player hasn't already announced it.

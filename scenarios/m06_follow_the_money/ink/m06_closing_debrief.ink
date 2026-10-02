@@ -16,7 +16,6 @@
 
 // Variables from gameplay
 VAR player_name = "Agent 0x00"
-VAR final_choice = ""
 VAR found_blockchain_evidence = false
 VAR found_architects_fund = false
 VAR irina_recruited = false
