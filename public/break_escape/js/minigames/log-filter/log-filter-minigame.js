@@ -14,6 +14,7 @@
  */
 
 import { MinigameScene } from '../framework/base-minigame.js';
+import { displayDashes } from '../../utils/display-dashes.js';
 
 export class LogFilterMinigame extends MinigameScene {
 
@@ -253,7 +254,7 @@ export class LogFilterMinigame extends MinigameScene {
         // Header
         const header = this._el('div', 'lf-header');
         const titleEl = this._el('div', 'lf-header-title');
-        titleEl.textContent = this._title;
+        titleEl.textContent = displayDashes(this._title);
         const closeBtn = this._el('button', 'lf-close-btn');
         closeBtn.textContent = '[CLOSE]';
         closeBtn.addEventListener('click', () => this.complete(false));
@@ -293,7 +294,7 @@ export class LogFilterMinigame extends MinigameScene {
         // Additional tabs
         for (const tab of this._additionalTabs) {
             const btn = this._el('button', 'lf-tab-btn');
-            btn.textContent = tab.label;
+            btn.textContent = displayDashes(tab.label);
             btn.dataset.tabId = tab.id;
             if (!this._tabsVisited.has(tab.id)) {
                 btn.classList.add('lf-tab-unread');
@@ -765,7 +766,7 @@ export class LogFilterMinigame extends MinigameScene {
             const lbl = this._el('div', 'lf-detail-label');
             lbl.textContent = f.label + ':';
             const val = this._el('div', 'lf-detail-value');
-            val.textContent = entry[f.key] || '—';
+            val.textContent = displayDashes(entry[f.key] || '—');
             grid.appendChild(lbl);
             grid.appendChild(val);
         }
@@ -807,7 +808,7 @@ export class LogFilterMinigame extends MinigameScene {
                 }
             } else {
                 const flagBtn = this._el('button', 'lf-detail-btn lf-detail-btn-flag');
-                flagBtn.textContent = `[${this._flagActionLabel}]`;
+                flagBtn.textContent = displayDashes(`[${this._flagActionLabel}]`);
                 flagBtn.addEventListener('click', () => this._openOverlay('flag_confirm'));
                 actions.appendChild(flagBtn);
             }
@@ -875,7 +876,7 @@ export class LogFilterMinigame extends MinigameScene {
     _overlayHeader(panel, title) {
         const hdr = this._el('div', 'lf-overlay-header');
         const t = this._el('span');
-        t.textContent = title;
+        t.textContent = displayDashes(title);
         const closeBtn = this._el('button', 'lf-overlay-close');
         closeBtn.textContent = '[✕]';
         closeBtn.addEventListener('click', () => this._closeOverlay());
@@ -902,7 +903,7 @@ export class LogFilterMinigame extends MinigameScene {
         ];
         for (const [lbl, val] of rows) {
             const l = this._el('div', 'lf-threat-label'); l.textContent = lbl;
-            const v = this._el('div', 'lf-threat-value'); v.textContent = val;
+            const v = this._el('div', 'lf-threat-value'); v.textContent = displayDashes(val);
             grid.appendChild(l); grid.appendChild(v);
         }
         body.appendChild(grid);
@@ -936,7 +937,7 @@ export class LogFilterMinigame extends MinigameScene {
             if (val === 'DEPROVISIONED' || (val && val.startsWith('DEPROVISIONED'))) {
                 v.classList.add('lf-account-deprovisioned');
             }
-            v.textContent = val;
+            v.textContent = displayDashes(val);
             grid.appendChild(l); grid.appendChild(v);
         }
 
@@ -944,7 +945,7 @@ export class LogFilterMinigame extends MinigameScene {
         if (ah.deprovisionNote) {
             const lbl = this._el('div', 'lf-account-label'); lbl.textContent = '';
             const val = this._el('div', 'lf-account-value lf-account-gap-note');
-            val.textContent = ah.deprovisionNote;
+            val.textContent = displayDashes(ah.deprovisionNote);
             grid.appendChild(lbl); grid.appendChild(val);
         }
         body.appendChild(grid);
@@ -959,14 +960,14 @@ export class LogFilterMinigame extends MinigameScene {
         ];
         for (const [lbl, val] of rows2) {
             const l = this._el('div', 'lf-account-label'); l.textContent = lbl;
-            const v = this._el('div', 'lf-account-value'); v.textContent = val;
+            const v = this._el('div', 'lf-account-value'); v.textContent = displayDashes(val);
             grid2.appendChild(l); grid2.appendChild(v);
         }
         body.appendChild(grid2);
 
         if (ah.anomalyBadge) {
             const badge = this._el('div', 'lf-account-anomaly-badge');
-            badge.textContent = `⚠ ${ah.anomalyBadge}`;
+            badge.textContent = displayDashes(`⚠ ${ah.anomalyBadge}`);
             body.appendChild(badge);
         }
     }
@@ -975,7 +976,7 @@ export class LogFilterMinigame extends MinigameScene {
         const body = this._overlayHeader(panel, this._flagConfirmTitle);
 
         const text = this._el('div', 'lf-flag-confirm-body');
-        text.textContent = this._flagConfirmBody;
+        text.textContent = displayDashes(this._flagConfirmBody);
         body.appendChild(text);
 
         const actions = this._el('div', 'lf-flag-confirm-actions');
@@ -1046,9 +1047,9 @@ export class LogFilterMinigame extends MinigameScene {
         // Header bar
         const headerBar = this._el('div', 'lf-audit-header-bar');
         const titleEl = this._el('div', 'lf-audit-title');
-        titleEl.textContent = tab.title || 'AUDIT LOG';
+        titleEl.textContent = displayDashes(tab.title || 'AUDIT LOG');
         const subtitleEl = this._el('div', 'lf-audit-subtitle');
-        subtitleEl.textContent = tab.subtitle || '';
+        subtitleEl.textContent = displayDashes(tab.subtitle || '');
         headerBar.appendChild(titleEl);
         headerBar.appendChild(subtitleEl);
         pane.appendChild(headerBar);
@@ -1137,14 +1138,14 @@ export class LogFilterMinigame extends MinigameScene {
         for (const [lbl, val] of rows) {
             if (!val || val === '—') continue;
             const l = this._el('div', 'lf-audit-detail-label'); l.textContent = lbl;
-            const v = this._el('div', 'lf-audit-detail-value'); v.textContent = val;
+            const v = this._el('div', 'lf-audit-detail-value'); v.textContent = displayDashes(val);
             grid.appendChild(l); grid.appendChild(v);
         }
         body.appendChild(grid);
 
         if (entry.detail) {
             const detail = this._el('div', 'lf-audit-critical');
-            detail.textContent = entry.detail;
+            detail.textContent = displayDashes(entry.detail);
             body.appendChild(detail);
         }
     }

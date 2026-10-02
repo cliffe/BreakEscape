@@ -1,4 +1,5 @@
 import { MinigameScene } from '../framework/base-minigame.js';
+import { displayDashes } from '../../utils/display-dashes.js';
 
 const DEFAULT_ROWS = [
     {
@@ -70,10 +71,10 @@ export class SisConfigThresholdMinigame extends MinigameScene {
             return `
                 <tr class="sis-row ${clickableClass}" data-row-index="${index}" data-clickable="${status !== 'GREEN'}">
                     <td>
-                        <div>${row.parameter || ''}</div>
-                        <div class="sis-row-meta">${row.lastModified || ''} | ${row.modifiedBy || ''}</div>
+                        <div>${displayDashes(row.parameter || '')}</div>
+                        <div class="sis-row-meta">${displayDashes(row.lastModified || '')} | ${displayDashes(row.modifiedBy || '')}</div>
                     </td>
-                    <td>${row.currentValue || ''}</td>
+                    <td>${displayDashes(row.currentValue || '')}</td>
                     <td class="${statusClass}">${status}</td>
                 </tr>
             `;
@@ -94,8 +95,8 @@ export class SisConfigThresholdMinigame extends MinigameScene {
                 </tbody>
             </table>
             <div class="sis-actions">
-                <button class="sis-btn sis-btn-compare" id="sis-compare-btn" ${canCompare ? '' : 'disabled'}>${this.compareTitle}</button>
-                <button class="sis-btn sis-btn-confirm" id="sis-confirm-btn">${this.confirmLabel}</button>
+                <button class="sis-btn sis-btn-compare" id="sis-compare-btn" ${canCompare ? '' : 'disabled'}>${displayDashes(this.compareTitle)}</button>
+                <button class="sis-btn sis-btn-confirm" id="sis-confirm-btn">${displayDashes(this.confirmLabel)}</button>
             </div>
             <div class="sis-help" id="sis-help-text">
                 ${canCompare ? 'Select highlighted rows to inspect deviations.' : 'Retrieve the SIS certification document to unlock side-by-side comparison.'}
@@ -153,8 +154,8 @@ export class SisConfigThresholdMinigame extends MinigameScene {
         const detailText = row.detailText || 'This value deviates from the IEC 61511 certified baseline.';
         this.overlayEl.innerHTML = `
             <div class="sis-modal">
-                <h4>${row.parameter || 'Parameter Detail'}</h4>
-                <p>${detailText}</p>
+                <h4>${displayDashes(row.parameter || 'Parameter Detail')}</h4>
+                <p>${displayDashes(detailText)}</p>
                 <div class="sis-modal-actions">
                     <button class="sis-btn" id="sis-detail-close">Close</button>
                 </div>
@@ -172,16 +173,16 @@ export class SisConfigThresholdMinigame extends MinigameScene {
         const currentRows = this.rows.map((row) => {
             const status = normalizeStatus(row.status);
             const className = status === 'GREEN' ? 'sis-compare-item' : 'sis-compare-item sis-compare-item-alert';
-            return `<div class="${className}">${row.parameter}: ${row.currentValue}</div>`;
+            return `<div class="${className}">${displayDashes(row.parameter)}: ${displayDashes(row.currentValue)}</div>`;
         }).join('');
 
         const certifiedRows = this.rows.map((row) => {
-            return `<div class="sis-compare-item">${row.parameter}: ${row.certifiedValue}</div>`;
+            return `<div class="sis-compare-item">${displayDashes(row.parameter)}: ${displayDashes(row.certifiedValue)}</div>`;
         }).join('');
 
         this.overlayEl.innerHTML = `
             <div class="sis-modal">
-                <h4>${this.compareTitle}</h4>
+                <h4>${displayDashes(this.compareTitle)}</h4>
                 <div class="sis-compare-grid">
                     <div class="sis-compare-card">
                         <h5>Current SIS Values</h5>

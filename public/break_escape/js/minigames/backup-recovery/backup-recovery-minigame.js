@@ -1,4 +1,5 @@
 import { MinigameScene } from '../framework/base-minigame.js';
+import { displayDashes } from '../../utils/display-dashes.js';
 
 const DEFAULT_SOURCES = [
     {
@@ -67,6 +68,12 @@ function escapeHtml(value) {
         .replaceAll('>', '&gt;')
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&#039;');
+}
+
+// Escaped for innerHTML, with " -- " shown as an en dash. Display only: ids and
+// stored data keep escapeHtml / the raw text.
+function escapeText(value) {
+    return escapeHtml(displayDashes(String(value)));
 }
 
 export class BackupRecoveryMinigame extends MinigameScene {
@@ -260,7 +267,7 @@ export class BackupRecoveryMinigame extends MinigameScene {
             const lockedLabel = lockedSource?.name || this.lockedSourceId || 'previously selected source';
             if (window.gameAlert) {
                 window.gameAlert(
-                    `Restore decision already locked to ${lockedLabel}.`,
+                    displayDashes(`Restore decision already locked to ${lockedLabel}.`),
                     'info',
                     'Decision Locked In',
                     3000
@@ -375,11 +382,11 @@ export class BackupRecoveryMinigame extends MinigameScene {
 
         this.gameContainer.innerHTML = `
             <div class="backup-recovery-shell backup-recovery-shell--outcome">
-                <div class="backup-recovery-header">${escapeHtml(headerText)}</div>
+                <div class="backup-recovery-header">${escapeText(headerText)}</div>
                 <div class="backup-recovery-outcome-panel backup-recovery-outcome-panel--${panelTone}">
-                    <div class="backup-recovery-outcome-status">${escapeHtml(statusText)}</div>
+                    <div class="backup-recovery-outcome-status">${escapeText(statusText)}</div>
                     <ul class="backup-recovery-panel-bullets">
-                        ${bullets.map((b) => `<li>${escapeHtml(b)}</li>`).join('')}
+                        ${bullets.map((b) => `<li>${escapeText(b)}</li>`).join('')}
                     </ul>
                 </div>
             </div>
@@ -484,11 +491,11 @@ export class BackupRecoveryMinigame extends MinigameScene {
         const bulletsEl = this.gameContainer.querySelector('#backup-recovery-panel-bullets');
 
         if (headerEl) {
-            headerEl.textContent = panel.header;
+            headerEl.textContent = displayDashes(panel.header);
         }
 
         if (bannerEl) {
-            bannerEl.textContent = panel.banner;
+            bannerEl.textContent = displayDashes(panel.banner);
             bannerEl.classList.remove('is-danger', 'is-warning', 'is-neutral');
             const toneClass = panel.bannerTone === 'danger'
                 ? 'is-danger'
@@ -500,19 +507,19 @@ export class BackupRecoveryMinigame extends MinigameScene {
 
         if (bulletsEl) {
             bulletsEl.innerHTML = panel.bullets
-                .map((line) => `<li>${escapeHtml(line)}</li>`)
+                .map((line) => `<li>${escapeText(line)}</li>`)
                 .join('');
         }
 
         const confirmBtn = this.gameContainer.querySelector('#backup-recovery-confirm');
         if (confirmBtn) {
             const baseLabel = selected
-                ? `CONFIRM RESTORE FROM ${selected.name.toUpperCase()}`
+                ? displayDashes(`CONFIRM RESTORE FROM ${selected.name.toUpperCase()}`)
                 : 'CONFIRM RESTORE FROM THIS SOURCE';
             if (this.choiceLocked) {
                 const lockedSource = this.sources.find((source) => source.id === this.lockedSourceId) || null;
                 const lockedLabel = (lockedSource?.name || this.lockedSourceId || 'EXISTING SOURCE').toUpperCase();
-                confirmBtn.textContent = `DECISION LOCKED: ${lockedLabel}`;
+                confirmBtn.textContent = displayDashes(`DECISION LOCKED: ${lockedLabel}`);
                 confirmBtn.disabled = true;
             } else {
                 // An unavailable source must not present a live-looking button.
@@ -542,12 +549,12 @@ export class BackupRecoveryMinigame extends MinigameScene {
             return `
                 <button type="button" class="backup-recovery-tile" data-source-id="${escapeHtml(source.id)}" aria-pressed="false">
                     <div class="backup-recovery-tile-top">
-                        <span class="backup-recovery-icon">${escapeHtml(source.icon || '[SRC]')}</span>
-                        <span class="backup-recovery-marker ${markerClass}">${escapeHtml(source.marker || '!')}</span>
+                        <span class="backup-recovery-icon">${escapeText(source.icon || '[SRC]')}</span>
+                        <span class="backup-recovery-marker ${markerClass}">${escapeText(source.marker || '!')}</span>
                     </div>
-                    <div class="backup-recovery-source-name">${escapeHtml(source.name)}</div>
-                    <div class="backup-recovery-status-badge ${statusClass}">${escapeHtml(source.status || 'UNKNOWN')}</div>
-                    <div class="backup-recovery-eta">${escapeHtml(source.etaLabel || '')}</div>
+                    <div class="backup-recovery-source-name">${escapeText(source.name)}</div>
+                    <div class="backup-recovery-status-badge ${statusClass}">${escapeText(source.status || 'UNKNOWN')}</div>
+                    <div class="backup-recovery-eta">${escapeText(source.etaLabel || '')}</div>
                 </button>
             `;
         }).join('');
@@ -564,15 +571,15 @@ export class BackupRecoveryMinigame extends MinigameScene {
                             return `
                         <li class="backup-recovery-slot ${loaded ? 'is-loaded' : 'is-missing'}" data-slot-id="${escapeHtml(slot.id)}">
                             <span class="backup-recovery-slot-box">${loaded ? '[x]' : '[ ]'}</span>
-                            <span class="backup-recovery-slot-label">${escapeHtml(slot.label || slot.id)}</span>
-                            <span class="backup-recovery-slot-state">${escapeHtml(stateText)}</span>
+                            <span class="backup-recovery-slot-label">${escapeText(slot.label || slot.id)}</span>
+                            <span class="backup-recovery-slot-state">${escapeText(stateText)}</span>
                         </li>`;
                         }).join('')}
                     </ul>`;
 
         this.gameContainer.innerHTML = `
             <div class="backup-recovery-shell">
-                <div class="backup-recovery-header">${escapeHtml(consoleTitle)}${slotsMarkup}</div>
+                <div class="backup-recovery-header">${escapeText(consoleTitle)}${slotsMarkup}</div>
 
                 <div class="backup-recovery-tiles" role="list">
                     ${tiles}

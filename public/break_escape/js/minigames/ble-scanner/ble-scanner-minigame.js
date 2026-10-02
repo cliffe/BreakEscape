@@ -1,4 +1,5 @@
 import { MinigameScene } from '../framework/base-minigame.js';
+import { displayDashes } from '../../utils/display-dashes.js';
 
 export class BleScannerMinigame extends MinigameScene {
     constructor(container, params) {
@@ -359,7 +360,7 @@ export class BleScannerMinigame extends MinigameScene {
 
         el.innerHTML = `
             <div class="ble-device-name">
-                <span>${device.name}</span>
+                <span>${displayDashes(device.name)}</span>
                 <div class="ble-device-icons">${signalBars}${statusIcons}</div>
             </div>
             <div class="ble-device-mac">MAC: ${device.mac}</div>
@@ -424,7 +425,7 @@ export class BleScannerMinigame extends MinigameScene {
         const sd = device._scenarioData || {};
 
         const titleEl = this.gameContainer.querySelector('#ble-action-title');
-        if (titleEl) titleEl.textContent = `Target: ${device.name}`;
+        if (titleEl) titleEl.textContent = displayDashes(`Target: ${device.name}`);
 
         const infoEl = this.gameContainer.querySelector('#ble-action-info');
         if (infoEl) {
@@ -461,7 +462,7 @@ export class BleScannerMinigame extends MinigameScene {
         const hintPanel = this.gameContainer.querySelector('#ble-hint-panel');
         const hintText = this.gameContainer.querySelector('#ble-hint-text');
         if (hintPanel && hintText && sd.hintText) {
-            hintText.textContent = sd.hintText;
+            hintText.textContent = displayDashes(sd.hintText);
             hintPanel.style.display = 'block';
         }
 
@@ -594,7 +595,7 @@ export class BleScannerMinigame extends MinigameScene {
         const el = this.gameContainer.querySelector('#ble-action-feedback');
         if (!el) return;
         el.className = `ble-action-feedback ble-feedback--${type}`;
-        el.textContent = message;
+        el.textContent = displayDashes(message);
     }
 
     syncBleDevices() {

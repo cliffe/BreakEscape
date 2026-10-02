@@ -1,4 +1,5 @@
 import { MinigameScene } from '../framework/base-minigame.js';
+import { displayDashes } from '../../utils/display-dashes.js';
 
 const STATE_KEY = 'mg12_command_board_state';
 
@@ -525,7 +526,7 @@ export class CommandBoardMinigame extends MinigameScene {
 
             const text = document.createElement('span');
             text.className = 'cb-entry-text';
-            text.textContent = String(entry.text || '');
+            text.textContent = displayDashes(String(entry.text || ''));
 
             main.appendChild(timestamp);
             main.appendChild(text);

@@ -7,6 +7,7 @@
 
 import { MinigameScene } from '../framework/base-minigame.js';
 import { applyActions } from '../../systems/apply-actions.js';
+import { displayDashes } from '../../utils/display-dashes.js';
 
 export class FlagStationMinigame extends MinigameScene {
     constructor(container, params) {
@@ -726,7 +727,7 @@ export class FlagStationMinigame extends MinigameScene {
     
     showResult(element, type, message) {
         element.className = `flag-result ${type}`;
-        element.textContent = message;
+        element.textContent = displayDashes(message);
         element.style.display = 'block';
     }
     
@@ -758,7 +759,7 @@ export class FlagStationMinigame extends MinigameScene {
                     return reward.message ? `
                         <div class="reward-item">
                             <span class="reward-icon">💡</span>
-                            <span>${this.escapeHtml(reward.message)}</span>
+                            <span>${this.escapeHtml(displayDashes(reward.message))}</span>
                         </div>
                     ` : '';
                 default:

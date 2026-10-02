@@ -1,4 +1,5 @@
 import { MinigameScene } from '../framework/base-minigame.js';
+import { displayDashes } from '../../utils/display-dashes.js';
 import { ASSETS_PATH, ASSETS_VERSION } from '../../config.js';
 
 const ICON_BASE = `${ASSETS_PATH}/icons`;
@@ -127,18 +128,18 @@ export class RansomwareDisplayMinigame extends MinigameScene {
         const deployed = this.isRansomwareDeployed();
         const scenarioData = this.params.lockable?.scenarioData?.minigameData || {};
 
-        const organisation   = scenarioData.organisation   || 'ORGANISATION';
-        const encryptedSystems = scenarioData.encryptedSystems || 'systems encrypted';
-        const ransomAmount   = scenarioData.ransomAmount   || 'AMOUNT';
+        const organisation   = displayDashes(scenarioData.organisation   || 'ORGANISATION');
+        const encryptedSystems = displayDashes(scenarioData.encryptedSystems || 'systems encrypted');
+        const ransomAmount   = displayDashes(scenarioData.ransomAmount   || 'AMOUNT');
         const ransomBitcoin  = scenarioData.ransomBitcoin  || '';
         const walletAddress  = scenarioData.walletAddress  || '';
         const groupName      = scenarioData.groupName      || 'Ransomware Group';
         const supportPortal  = scenarioData.supportPortal  || '';
         // Optional per-terminal lines (host name, what this machine was doing, a
         // targeted threat), so each infected screen can say something of its own.
-        const extraLines = Array.isArray(scenarioData.extraLines)
+        const extraLines = displayDashes(Array.isArray(scenarioData.extraLines)
             ? scenarioData.extraLines.join('\n')
-            : (scenarioData.extraLines || '');
+            : (scenarioData.extraLines || ''));
 
         this.gameContainer.innerHTML = `
             <div class="ransomware-display-bg">

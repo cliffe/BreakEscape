@@ -1,4 +1,5 @@
 import { MinigameScene } from '../framework/base-minigame.js';
+import { displayDashes } from '../../utils/display-dashes.js';
 
 // ── Static drug library data (fallback if scenarioData not provided) ──────────
 // Full 23-entry library. Entry at index 5 (MORPHINE) is the tampered one.
@@ -113,8 +114,8 @@ export class DrugLibraryIntegrityMinigame extends MinigameScene {
 
         this.gameContainer.innerHTML = `
 <div class="dli-console-header">
-  <div class="dli-console-title">${title}</div>
-  ${subtitle ? `<div class="dli-console-subtitle">${subtitle}</div>` : ''}
+  <div class="dli-console-title">${displayDashes(title)}</div>
+  ${subtitle ? `<div class="dli-console-subtitle">${displayDashes(subtitle)}</div>` : ''}
   <div class="dli-console-files">
     <span>${libFile}</span><span>${bakFile}</span><span>${hashFile}</span>
   </div>
@@ -200,7 +201,7 @@ export class DrugLibraryIntegrityMinigame extends MinigameScene {
             }
 
             return `<tr class="${rowClass}" id="dli-row-${i}">
-  <td class="dli-col-drug">${drug.name}</td>
+  <td class="dli-col-drug">${displayDashes(drug.name)}</td>
   <td class="dli-col-conc">${drug.concMgPerMl}</td>
   <td class="dli-col-dmin">${drug.doseMin}</td>
   <td class="dli-col-dmax">${drug.doseMax}</td>
@@ -263,7 +264,7 @@ ${!alreadyFailed ? `<button class="dli-run-btn" id="dli-run-btn">[ RUN INTEGRITY
         const backupBtn = restored ? '' : `<button class="dli-backup-btn" id="dli-backup-btn">[COMPARE TO BACKUP &rarr;]</button>`;
         return `
 <div class="dli-hash-detail" id="dli-hash-detail">
-  <div class="dli-hash-detail-title">&#x26A0; Hash Mismatch &mdash; ${t.drug}</div>
+  <div class="dli-hash-detail-title">&#x26A0; Hash Mismatch &mdash; ${displayDashes(t.drug)}</div>
   <div class="dli-hash-meta">
     <span>File: <strong>${this._data.libraryFile || 'drug_library.csv'}</strong></span>
     <span>Modified: <span class="dli-ts">${t.modifiedAt}</span></span>
@@ -465,7 +466,7 @@ ${!alreadyFailed ? `<button class="dli-run-btn" id="dli-run-btn">[ RUN INTEGRITY
 </div>
 <div class="dli-diff-summary">
   <div class="dli-diff-summary-title">1 difference found:</div>
-  Row: <strong>${t.drug}</strong> &nbsp;|&nbsp; Field: <strong>${t.field}</strong>
+  Row: <strong>${displayDashes(t.drug)}</strong> &nbsp;|&nbsp; Field: <strong>${t.field}</strong>
   &nbsp;|&nbsp; Current: <strong style="color:#cc3333">${t.tamperedValue}</strong>
   &nbsp;|&nbsp; Backup: <strong style="color:#33cc66">${t.correctValue}</strong>
 </div>`;
@@ -478,7 +479,7 @@ ${!alreadyFailed ? `<button class="dli-run-btn" id="dli-run-btn">[ RUN INTEGRITY
             const cls  = side === 'current' ? 'dli-diff-val-tampered' : 'dli-diff-val-correct';
             const rowCls = side === 'current' ? 'dli-diff-row-current' : 'dli-diff-row-backup';
             return `<tr class="${rowCls}">
-  <td><strong>${drug.name}</strong></td>
+  <td><strong>${displayDashes(drug.name)}</strong></td>
   <td>${drug.concMgPerMl}</td>
   <td>${drug.doseMin}</td>
   <td><span class="dli-diff-value-large ${cls}">${val}</span></td>
@@ -486,7 +487,7 @@ ${!alreadyFailed ? `<button class="dli-run-btn" id="dli-run-btn">[ RUN INTEGRITY
 </tr>`;
         }
         return `<tr class="dli-diff-unchanged">
-  <td>${drug.name}</td><td>${drug.concMgPerMl}</td>
+  <td>${displayDashes(drug.name)}</td><td>${drug.concMgPerMl}</td>
   <td>${drug.doseMin}</td><td>${drug.doseMax}</td><td>${drug.unit}</td>
 </tr>`;
     }
@@ -523,7 +524,7 @@ ${!alreadyFailed ? `<button class="dli-run-btn" id="dli-run-btn">[ RUN INTEGRITY
                 : `<div class="dli-restore-hint">Verify correct value from independent sources before restoring.</div>`;
 
         panel.innerHTML = `
-<div class="dli-verify-title">VERIFY CORRECT VALUE &mdash; ${t.drug} ${t.field}</div>
+<div class="dli-verify-title">VERIFY CORRECT VALUE &mdash; ${displayDashes(t.drug)} ${t.field}</div>
 <div class="dli-verify-values">
   <span class="dli-verify-backup-val">&#x25B6; Backup shows: <strong>${t.correctValue} ${this._getUnit(t)}</strong></span>
   <span class="dli-verify-tampered-val">&#x2717; Current (tampered): <strong>${t.tamperedValue} ${this._getUnit(t)}</strong></span>
@@ -569,13 +570,13 @@ ${restoreHint}`;
 
         const sublabel = isConsulted
             ? ''
-            : (!isAvailable ? `<small>${source.lockedMessage || ''}</small>` : '');
+            : (!isAvailable ? `<small>${displayDashes(source.lockedMessage || '')}</small>` : '');
 
         return `
 <div class="dli-source-row">
   <div class="${indicatorClass}">${indicatorText}</div>
   <div class="dli-source-label">
-    SOURCE ${this._sources.indexOf(source) >= 0 ? this._sources.indexOf(source) + 1 : ''} &mdash; ${source.label}
+    SOURCE ${this._sources.indexOf(source) >= 0 ? this._sources.indexOf(source) + 1 : ''} &mdash; ${displayDashes(source.label)}
     ${sublabel}
   </div>
   ${btnHtml}
@@ -596,29 +597,29 @@ ${restoreHint}`;
 
         if (source.id === 'paper_mar_charts') {
             bodyHtml = `
-<div class="dli-modal-row"><span class="dli-modal-key">Title:</span><span class="dli-modal-val">${c.title || 'MEDICATION ADMINISTRATION RECORD \u2014 WARD 7'}</span></div>
-<div class="dli-modal-row"><span class="dli-modal-key">Drug:</span><span class="dli-modal-val">${c.drug || 'Morphine Sulphate (IV)'}</span></div>
+<div class="dli-modal-row"><span class="dli-modal-key">Title:</span><span class="dli-modal-val">${displayDashes(c.title || 'MEDICATION ADMINISTRATION RECORD \u2014 WARD 7')}</span></div>
+<div class="dli-modal-row"><span class="dli-modal-key">Drug:</span><span class="dli-modal-val">${displayDashes(c.drug || 'Morphine Sulphate (IV)')}</span></div>
 <div class="dli-modal-row"><span class="dli-modal-key">Prescribed:</span><span class="dli-modal-val">Patient D. [anonymised] &mdash; Bed 2</span></div>
 <div class="dli-modal-row"><span class="dli-modal-key">Dose:</span><span class="dli-modal-val">2 mg/hr standard; <span class="dli-modal-val-green">max ${c.value || 4} ${c.unit || 'mg/hr'}</span></span></div>
-<div class="dli-modal-row"><span class="dli-modal-key">Note:</span><span class="dli-modal-val">${c.note || ''}</span></div>
-<div class="dli-modal-row"><span class="dli-modal-key">Prescriber:</span><span class="dli-modal-val">${c.prescriber || 'Dr. K. Mahmoud'} (signed)</span></div>
-<div class="dli-modal-row"><span class="dli-modal-key">Pharmacy:</span><span class="dli-modal-val">Verified &mdash; ${c.verified || 'J. Chen (23 Oct 2025)'}</span></div>`;
+<div class="dli-modal-row"><span class="dli-modal-key">Note:</span><span class="dli-modal-val">${displayDashes(c.note || '')}</span></div>
+<div class="dli-modal-row"><span class="dli-modal-key">Prescriber:</span><span class="dli-modal-val">${displayDashes(c.prescriber || 'Dr. K. Mahmoud')} (signed)</span></div>
+<div class="dli-modal-row"><span class="dli-modal-key">Pharmacy:</span><span class="dli-modal-val">Verified &mdash; ${displayDashes(c.verified || 'J. Chen (23 Oct 2025)')}</span></div>`;
         } else {
             bodyHtml = `
-<div class="dli-modal-row"><span class="dli-modal-key">Title:</span><span class="dli-modal-val">${c.title || 'ALARIS GP \u2014 DRUG LIBRARY CONFIGURATION GUIDE'}</span></div>
-<div class="dli-modal-row"><span class="dli-modal-key">Drug:</span><span class="dli-modal-val">${c.drug || 'Morphine Sulphate / Diamorphine'}</span></div>
+<div class="dli-modal-row"><span class="dli-modal-key">Title:</span><span class="dli-modal-val">${displayDashes(c.title || 'ALARIS GP \u2014 DRUG LIBRARY CONFIGURATION GUIDE')}</span></div>
+<div class="dli-modal-row"><span class="dli-modal-key">Drug:</span><span class="dli-modal-val">${displayDashes(c.drug || 'Morphine Sulphate / Diamorphine')}</span></div>
 <div class="dli-modal-row"><span class="dli-modal-key">Concentration:</span><span class="dli-modal-val">1 mg/mL (standard)</span></div>
 <div class="dli-modal-row"><span class="dli-modal-key">Dose range:</span><span class="dli-modal-val">0.5 &ndash; ${c.value || 4.0} ${c.unit || 'mg/hr'} (standard ward)</span></div>
 <div class="dli-modal-row"><span class="dli-modal-key">DOSE_MAX:</span><span class="dli-modal-val-amber">${c.value || 4.0} ${c.unit || 'mg/hr'} &larr; DO NOT EXCEED without specialist pharmacist override</span></div>
 <div class="dli-modal-row"><span class="dli-modal-key">Rate max:</span><span class="dli-modal-val">${c.value || 4.0} mL/hr</span></div>
-${c.warning ? `<div class="dli-modal-warning">${c.warning}</div>` : ''}`;
+${c.warning ? `<div class="dli-modal-warning">${displayDashes(c.warning)}</div>` : ''}`;
         }
 
         const overlay = document.createElement('div');
         overlay.className = 'dli-modal-overlay';
         overlay.innerHTML = `
 <div class="dli-modal">
-  <div class="dli-modal-title">${source.label}</div>
+  <div class="dli-modal-title">${displayDashes(source.label)}</div>
   <div class="dli-modal-body">${bodyHtml}</div>
   <button class="dli-modal-confirm-btn" id="dli-modal-confirm">CONFIRM &mdash; Value noted</button>
 </div>`;
@@ -718,7 +719,7 @@ ${c.warning ? `<div class="dli-modal-warning">${c.warning}</div>` : ''}`;
         panel.innerHTML = `
 <div class="dli-fleet-title">FLEET IMPACT ANALYSIS</div>
 <div class="dli-fleet-subtitle">
-  Pumps loaded with TAMPERED library version (${t.drug} ${t.field}: ${t.tamperedValue})
+  Pumps loaded with TAMPERED library version (${displayDashes(t.drug)} ${t.field}: ${t.tamperedValue})
 </div>
 <table class="dli-fleet-table">
   <thead>

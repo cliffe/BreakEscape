@@ -120,3 +120,33 @@ test('scenario text sinks run through displayDashes; matching and stored text do
     const notes = src('minigames/notes/notes-minigame.js');
     assert.match(notes, /dataset\.raw \?\? observationDiv\.textContent/, 'editing starts from the stored observation');
 });
+
+test('bespoke minigames show scenario text through displayDashes; ids and data keep the raw text', () => {
+    const src = (p) => readFileSync(join(js, p), 'utf8');
+    for (const p of [
+        'alarm-panel/alarm-panel-minigame.js', 'backup-recovery/backup-recovery-minigame.js',
+        'ble-scanner/ble-scanner-minigame.js', 'blockchain-explorer/blockchain-explorer-minigame.js',
+        'bluetooth/bluetooth-scanner-minigame.js', 'claims-management-system/claims-management-system-minigame.js',
+        'command-board/command-board-minigame.js', 'coverage-decision-form/coverage-decision-form-minigame.js',
+        'drug-library-integrity/drug-library-integrity-minigame.js', 'dual-auth/dual-auth-minigame.js',
+        'ehr-terminal/ehr-terminal-minigame.js', 'esd-pushbutton/esd-pushbutton-minigame.js',
+        'flag-station/flag-station-minigame.js', 'forensic-data-platform/forensic-data-platform-minigame.js',
+        'log-filter/log-filter-minigame.js', 'ncsc-brief/ncsc-brief-minigame.js',
+        'network-architecture/network-architecture-minigame.js', 'network-segmentation-map/network-segmentation-map-minigame.js',
+        'ransomware-display/ransomware-display-minigame.js', 'scada-historian/scada-historian-minigame.js',
+        'shredded-document/shredded-document-minigame.js', 'siem/siem-dashboard-minigame.js',
+        'sis-config-threshold/sis-config-threshold-minigame.js', 'warranty-checklist/warranty-checklist-minigame.js'
+    ]) {
+        assert.match(src('minigames/' + p), /import \{ displayDashes \} from '\.\.\/\.\.\/utils\/display-dashes\.js'/, p);
+    }
+    const backup = src('minigames/backup-recovery/backup-recovery-minigame.js');
+    assert.match(backup, /bannerEl\.textContent = displayDashes\(panel\.banner\)/);
+    assert.match(backup, /<div class="backup-recovery-source-name">\$\{escapeText\(source\.name\)\}/);
+    assert.match(backup, /data-source-id="\$\{escapeHtml\(source\.id\)\}"/, 'ids keep the raw text');
+    assert.match(backup, /data-slot-id="\$\{escapeHtml\(slot\.id\)\}"/, 'ids keep the raw text');
+    assert.match(src('minigames/command-board/command-board-minigame.js'), /text\.textContent = displayDashes\(String\(entry\.text/);
+    assert.match(src('minigames/ransomware-display/ransomware-display-minigame.js'), /displayDashes\(scenarioData\.encryptedSystems/);
+    assert.match(src('minigames/siem/siem-dashboard-minigame.js'), /description\.textContent = displayDashes\(alert\.description\)/);
+    assert.match(src('minigames/blockchain-explorer/blockchain-explorer-minigame.js'), /data-id="\$\{escapeHtml\(tx\.hash\)\}"/, 'ids keep the raw text');
+    assert.match(src('minigames/flag-station/flag-station-minigame.js'), /<span class="flag-value">\$\{this\.escapeHtml\(flag\)\}/, 'typed flags stay as typed');
+});

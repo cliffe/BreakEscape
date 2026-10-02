@@ -1,4 +1,5 @@
 import { MinigameScene } from '../framework/base-minigame.js';
+import { displayDashes } from '../../utils/display-dashes.js';
 
 // Bluetooth Scanner Minigame Scene implementation
 export class BluetoothScannerMinigame extends MinigameScene {
@@ -468,7 +469,7 @@ export class BluetoothScannerMinigame extends MinigameScene {
                 };
                 
                 let deviceContent = `<div class="bluetooth-device-name">
-                    <span>${device.name}</span>
+                    <span>${displayDashes(device.name)}</span>
                     <div class="bluetooth-device-icons">`;
                 
                 if (device.nearby && typeof device.signalStrength === 'number') {
@@ -502,7 +503,7 @@ export class BluetoothScannerMinigame extends MinigameScene {
                 }
 
                 deviceContent += `</div></div>`;
-                deviceContent += `<div class="bluetooth-device-details">MAC: ${device.mac}\n${device.details}</div>`;
+                deviceContent += `<div class="bluetooth-device-details">MAC: ${device.mac}\n${displayDashes(device.details)}</div>`;
                 deviceContent += `<div class="bluetooth-device-timestamp">Last seen: ${formattedDate} ${formattedTime}</div>`;
 
                 deviceElement.innerHTML = deviceContent;

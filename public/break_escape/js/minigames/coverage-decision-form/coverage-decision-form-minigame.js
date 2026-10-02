@@ -1,4 +1,5 @@
 import { MinigameScene } from '../framework/base-minigame.js';
+import { displayDashes } from '../../utils/display-dashes.js';
 
 /**
  * Coverage Decision Form Minigame
@@ -88,8 +89,8 @@ export class CoverageDecisionFormMinigame extends MinigameScene {
         this.gameContainer.innerHTML = `
 <div class="cdf-wrap">
   <div class="cdf-header">
-    <div class="cdf-header-title">${this._formTitle}</div>
-    <div class="cdf-header-sub">${headerSub}</div>
+    <div class="cdf-header-title">${displayDashes(this._formTitle)}</div>
+    <div class="cdf-header-sub">${displayDashes(headerSub)}</div>
   </div>
 
   <div class="cdf-body">
@@ -98,10 +99,10 @@ export class CoverageDecisionFormMinigame extends MinigameScene {
 
   <div class="cdf-footer">
     <div class="cdf-outcome-note" id="cdf-outcome-note">
-      <div class="cdf-outcome-speaker">${this._outcomeSpeaker}</div>
+      <div class="cdf-outcome-speaker">${displayDashes(this._outcomeSpeaker)}</div>
       <div id="cdf-outcome-text"></div>
     </div>
-    <div class="cdf-submitted-badge" id="cdf-submitted-badge">${badge}</div>
+    <div class="cdf-submitted-badge" id="cdf-submitted-badge">${displayDashes(badge)}</div>
     <button class="cdf-submit-btn" id="cdf-submit-btn" disabled>[SUBMIT RECOMMENDATION &#9654;]</button>
     <div class="cdf-hint" id="cdf-hint">Complete all ${this._sections.length} sections to submit your recommendation.</div>
     <button class="cdf-close-btn" id="cdf-close-btn">Close</button>
@@ -124,15 +125,15 @@ export class CoverageDecisionFormMinigame extends MinigameScene {
       <label class="cdf-radio-row" id="${section.id}-${opt.value}">
         <input type="radio" name="${section.id}" value="${opt.value}">
         <span>
-          <span>${opt.label}</span>
-          <span class="cdf-radio-sublabel">${opt.sublabel}</span>
+          <span>${displayDashes(opt.label)}</span>
+          <span class="cdf-radio-sublabel">${displayDashes(opt.sublabel)}</span>
         </span>
       </label>`).join('');
 
         return `
     <div class="cdf-section">
-      <div class="cdf-section-title">${section.title}</div>
-      <div class="cdf-section-desc">${section.description}</div>
+      <div class="cdf-section-title">${displayDashes(section.title)}</div>
+      <div class="cdf-section-desc">${displayDashes(section.description)}</div>
       ${options}
     </div>`;
     }
@@ -191,7 +192,7 @@ export class CoverageDecisionFormMinigame extends MinigameScene {
             const quoteKey     = this.gameContainer.querySelector(`input[name="${quoteSection}"]:checked`)?.value;
             const quote        = this._outcomeQuotes[quoteKey] || '';
             if (quote) {
-                outcomeText.textContent = quote;
+                outcomeText.textContent = displayDashes(quote);
                 outcomeNote.classList.add('visible');
             }
         }

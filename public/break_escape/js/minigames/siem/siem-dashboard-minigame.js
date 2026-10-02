@@ -1,4 +1,5 @@
 import { MinigameScene } from '../framework/base-minigame.js';
+import { displayDashes } from '../../utils/display-dashes.js';
 
 const STATE_KEY = 'mg01_siem_state';
 
@@ -443,11 +444,11 @@ export class SiemDashboardMinigame extends MinigameScene {
 
             const source = document.createElement('span');
             source.className = 'siem-source';
-            source.textContent = alert.source;
+            source.textContent = displayDashes(alert.source);
 
             const description = document.createElement('span');
             description.className = 'siem-description';
-            description.textContent = alert.description;
+            description.textContent = displayDashes(alert.description);
 
             const actions = document.createElement('span');
             actions.className = 'siem-actions';
@@ -510,7 +511,7 @@ export class SiemDashboardMinigame extends MinigameScene {
             item.className = 'siem-queue-item';
             item.innerHTML = `
                 <span class="siem-queue-sev sev-${alert.severity}">${alert.severity}</span>
-                <span class="siem-queue-text">${alert.source} - ${alert.description}</span>
+                <span class="siem-queue-text">${displayDashes(alert.source)} - ${displayDashes(alert.description)}</span>
             `;
             this.queueListEl.appendChild(item);
         });
@@ -636,7 +637,7 @@ export class SiemDashboardMinigame extends MinigameScene {
 
             const name = document.createElement('span');
             name.className = 'siem-source-name';
-            name.textContent = source;
+            name.textContent = displayDashes(source);
 
             const barContainer = document.createElement('div');
             barContainer.className = 'siem-source-bar-container';
@@ -886,7 +887,7 @@ export class SiemDashboardMinigame extends MinigameScene {
     showResultBanner(message, success) {
         if (!this.resultBannerEl) return;
 
-        this.resultBannerEl.textContent = message;
+        this.resultBannerEl.textContent = displayDashes(message);
         this.resultBannerEl.classList.remove('success', 'failure', 'show');
         this.resultBannerEl.classList.add(success ? 'success' : 'failure');
 

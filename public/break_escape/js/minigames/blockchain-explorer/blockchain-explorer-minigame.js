@@ -1,4 +1,5 @@
 import { MinigameScene } from '../framework/base-minigame.js';
+import { displayDashes } from '../../utils/display-dashes.js';
 
 function escapeHtml(value) {
     return String(value ?? '')
@@ -7,6 +8,11 @@ function escapeHtml(value) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+}
+
+// Visible text: escaped, with " -- " shown as an en dash (display only; ids use escapeHtml).
+function escapeText(value) {
+    return escapeHtml(displayDashes(String(value ?? '')));
 }
 
 function setGlobalAndNotify(varName, value) {
@@ -128,7 +134,7 @@ export class BlockchainExplorerMinigame extends MinigameScene {
 
     _renderAmount(n) {
         const num = typeof n === 'number' ? n : parseFloat(n) || 0;
-        return `${num.toFixed(4)} ${escapeHtml(this._currency)}`;
+        return `${num.toFixed(4)} ${escapeText(this._currency)}`;
     }
 
     _walletTxs(address) {
@@ -150,7 +156,7 @@ export class BlockchainExplorerMinigame extends MinigameScene {
 
     _walletLabel(address) {
         const w = this._wallets[address];
-        return w ? escapeHtml(w.displayName || 'Unknown Wallet') : 'Unknown Wallet';
+        return w ? escapeText(w.displayName || 'Unknown Wallet') : 'Unknown Wallet';
     }
 
     _canFlagDestination() {
@@ -386,7 +392,7 @@ export class BlockchainExplorerMinigame extends MinigameScene {
    opacity="${opacity}" transform="translate(${p.x},${p.y})">
   <rect class="bce-gn-rect" width="${NODE_W}" height="${NODE_H}" rx="3"/>
   <text class="bce-gn-type" x="9" y="13">${typeLabel}</text>
-  <text class="bce-gn-id" x="${NODE_W / 2}" y="31" text-anchor="middle">${escapeHtml(shortId)}</text>
+  <text class="bce-gn-id" x="${NODE_W / 2}" y="31" text-anchor="middle">${escapeText(shortId)}</text>
 </g>`;
 
             // Sub-label below node (wallet display name or tx date)
@@ -394,7 +400,7 @@ export class BlockchainExplorerMinigame extends MinigameScene {
                 ? this._walletLabel(node.id)
                 : (this._transactions[node.id]?.timestamp?.slice(0, 10) || '');
             if (sublabel) {
-                svgNodes += `<text class="bce-gn-sublabel" x="${p.cx}" y="${p.y + NODE_H + 11}" text-anchor="middle" opacity="${opacity}">${escapeHtml(sublabel)}</text>`;
+                svgNodes += `<text class="bce-gn-sublabel" x="${p.cx}" y="${p.y + NODE_H + 11}" text-anchor="middle" opacity="${opacity}">${escapeText(sublabel)}</text>`;
             }
         }
 
@@ -422,7 +428,7 @@ export class BlockchainExplorerMinigame extends MinigameScene {
         const scrollTop  = existingPane?.scrollTop  ?? 0;
 
         const caseRef = this._caseRef
-            ? `<span class="bce-case-ref">${escapeHtml(this._caseRef)}</span>`
+            ? `<span class="bce-case-ref">${escapeText(this._caseRef)}</span>`
             : '';
 
         this.gameContainer.innerHTML = `
@@ -430,7 +436,7 @@ export class BlockchainExplorerMinigame extends MinigameScene {
                 <div class="bce-header">
                     <div class="bce-title-group">
                         <span class="bce-title-icon">⛓</span>
-                        <span class="bce-title">${escapeHtml(this._title)}</span>
+                        <span class="bce-title">${escapeText(this._title)}</span>
                     </div>
                     ${caseRef}
                 </div>
@@ -475,7 +481,7 @@ export class BlockchainExplorerMinigame extends MinigameScene {
         const inputRows = tx.inputs.map(i => `
             <div class="bce-io-row">
                 <div class="bce-io-cell">
-                    <button class="bce-link" data-type="wallet" data-id="${escapeHtml(i.wallet)}" type="button">${escapeHtml(truncAddr(i.wallet))}</button>
+                    <button class="bce-link" data-type="wallet" data-id="${escapeHtml(i.wallet)}" type="button">${escapeText(truncAddr(i.wallet))}</button>
                     <span class="bce-link-sublabel">${this._walletLabel(i.wallet)}</span>
                 </div>
                 <span class="bce-amount bce-amount-in">+${this._renderAmount(i.amount)}</span>
@@ -489,7 +495,7 @@ export class BlockchainExplorerMinigame extends MinigameScene {
             .map(o => `
                 <div class="bce-io-row">
                     <div class="bce-io-cell">
-                        <button class="bce-link" data-type="wallet" data-id="${escapeHtml(o.wallet)}" type="button">${escapeHtml(truncAddr(o.wallet))}</button>
+                        <button class="bce-link" data-type="wallet" data-id="${escapeHtml(o.wallet)}" type="button">${escapeText(truncAddr(o.wallet))}</button>
                         <span class="bce-link-sublabel">${this._walletLabel(o.wallet)}</span>
                     </div>
                     <span class="bce-amount bce-amount-out">-${this._renderAmount(o.amount)}</span>
@@ -508,11 +514,11 @@ export class BlockchainExplorerMinigame extends MinigameScene {
             <div class="bce-divider"></div>
             <div class="bce-meta-grid">
                 <span class="bce-meta-label">Hash</span>
-                <span class="bce-meta-value">${escapeHtml(truncHash(tx.hash))}</span>
+                <span class="bce-meta-value">${escapeText(truncHash(tx.hash))}</span>
                 <span class="bce-meta-label">Block</span>
                 <span class="bce-meta-value">${tx.blockHeight?.toLocaleString() || '—'}</span>
                 <span class="bce-meta-label">Time</span>
-                <span class="bce-meta-value">${escapeHtml(tx.timestamp || '—')}</span>
+                <span class="bce-meta-value">${escapeText(tx.timestamp || '—')}</span>
                 <span class="bce-meta-label">Fee</span>
                 <span class="bce-meta-value">${this._renderAmount(tx.fee ?? 0)}</span>
                 ${confirms}
@@ -549,11 +555,11 @@ export class BlockchainExplorerMinigame extends MinigameScene {
             return `
                 <div class="bce-io-row bce-io-row-3col">
                     <div class="bce-io-cell">
-                        <button class="bce-link" data-type="tx" data-id="${escapeHtml(tx.hash)}" type="button">${escapeHtml(truncHash(tx.hash))}</button>
+                        <button class="bce-link" data-type="tx" data-id="${escapeHtml(tx.hash)}" type="button">${escapeText(truncHash(tx.hash))}</button>
                         <span class="bce-badge ${isOut ? 'bce-badge-out' : 'bce-badge-in'}">${isOut ? 'OUT' : 'IN'}</span>
                     </div>
                     <span class="bce-amount ${dirClass}">${sign}${this._renderAmount(relevant)}</span>
-                    <span class="bce-tx-time">${escapeHtml(timeStr)}</span>
+                    <span class="bce-tx-time">${escapeText(timeStr)}</span>
                 </div>
             `;
         }).join('');
@@ -568,7 +574,7 @@ export class BlockchainExplorerMinigame extends MinigameScene {
         const threatIntel = wallet.threatIntelMatch
             ? `<div class="bce-callout bce-callout-threat">
                 <div class="bce-callout-title">⬡ Threat Intel Match</div>
-                <div class="bce-callout-body">${escapeHtml(wallet.threatIntelMatch)}</div>
+                <div class="bce-callout-body">${escapeText(wallet.threatIntelMatch)}</div>
                </div>`
             : `<div class="bce-no-intel">No threat intelligence matches found for this address.</div>`;
 
@@ -592,9 +598,9 @@ export class BlockchainExplorerMinigame extends MinigameScene {
             <div class="bce-divider"></div>
             <div class="bce-meta-grid">
                 <span class="bce-meta-label">Address</span>
-                <span class="bce-meta-value">${escapeHtml(truncAddr(address))}</span>
+                <span class="bce-meta-value">${escapeText(truncAddr(address))}</span>
                 <span class="bce-meta-label">Label</span>
-                <span class="bce-meta-value">${escapeHtml(wallet.displayName || 'Unknown Wallet')}</span>
+                <span class="bce-meta-value">${escapeText(wallet.displayName || 'Unknown Wallet')}</span>
                 <span class="bce-meta-label">Balance</span>
                 <span class="bce-meta-value">${this._renderAmount(wallet.balance ?? 0)}</span>
             </div>

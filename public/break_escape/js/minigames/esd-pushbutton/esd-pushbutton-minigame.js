@@ -1,4 +1,5 @@
 import { MinigameScene } from '../framework/base-minigame.js';
+import { displayDashes } from '../../utils/display-dashes.js';
 import { applyActions } from '../../systems/apply-actions.js';
 import { resolveConditionalText } from '../../utils/conditional-text.js';
 
@@ -91,7 +92,7 @@ export class EsdPushbuttonMinigame extends MinigameScene {
 
         this.gameContainer.innerHTML = `
             <div class="esd-panel">
-                <div class="esd-label">${label}</div>
+                <div class="esd-label">${displayDashes(label)}</div>
                 <div class="esd-housing">
                     <div class="esd-guard" id="esd-guard" aria-label="Safety Guard"></div>
                     <button class="esd-button" id="esd-button" aria-label="ESD Button" disabled></button>
@@ -102,7 +103,7 @@ export class EsdPushbuttonMinigame extends MinigameScene {
             <div class="esd-confirm-modal" id="esd-confirm-modal" aria-hidden="true">
                 <div class="esd-confirm-card">
                     <h3>CONFIRM EMERGENCY SHUTDOWN?</h3>
-                    <p>${confirmDesc}</p>
+                    <p>${displayDashes(confirmDesc)}</p>
                     <div class="esd-confirm-actions">
                         <button class="esd-confirm" id="esd-confirm">CONFIRM - INITIATE SHUTDOWN</button>
                         <button class="esd-cancel" id="esd-cancel">CANCEL</button>
@@ -134,12 +135,12 @@ export class EsdPushbuttonMinigame extends MinigameScene {
             this.buttonElement.classList.add('pressed');
             this.buttonElement.setAttribute('disabled', 'true');
             this.ledElement.classList.add('active');
-            this.statusElement.textContent = alreadyActiveText;
+            this.statusElement.textContent = displayDashes(alreadyActiveText);
             return;
         }
 
         if (!this.authorizationGranted) {
-            this.statusElement.textContent = unauthorizedText;
+            this.statusElement.textContent = displayDashes(unauthorizedText);
             this.guardElement.classList.add('disabled');
             this.buttonElement.setAttribute('disabled', 'true');
         }
@@ -193,7 +194,7 @@ export class EsdPushbuttonMinigame extends MinigameScene {
         this.ledElement.classList.add('active');
 
         const confirmedText = this._sd.confirmedText || 'SHUTDOWN ACTIVE';
-        this.statusElement.textContent = confirmedText;
+        this.statusElement.textContent = displayDashes(confirmedText);
 
         this.applyEsdOutcome();
 

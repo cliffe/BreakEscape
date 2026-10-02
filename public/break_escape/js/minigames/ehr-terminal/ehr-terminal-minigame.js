@@ -1,4 +1,5 @@
 import { MinigameScene } from '../framework/base-minigame.js';
+import { displayDashes } from '../../utils/display-dashes.js';
 
 const DEFAULT_OFFLINE_MESSAGE = [
     'SYSTEM UNAVAILABLE',
@@ -44,8 +45,9 @@ const DEFAULT_PATIENTS = [
     }
 ];
 
+// Every use is a visible text sink, so " -- " is shown as an en dash here.
 function escapeHtml(value) {
-    return String(value || '')
+    return displayDashes(String(value || ''))
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')

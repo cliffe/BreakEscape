@@ -1,4 +1,5 @@
 import { MinigameScene } from '../framework/base-minigame.js';
+import { displayDashes } from '../../utils/display-dashes.js';
 
 const DEFAULT_TITLE = 'Warranty Compliance Checklist — MC-2023-ALBE-007';
 
@@ -15,6 +16,11 @@ function escapeHtml(value) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+}
+
+// Visible text: escaped, with " -- " shown as an en dash (display only; ids use escapeHtml).
+function escapeText(value) {
+    return escapeHtml(displayDashes(String(value ?? '')));
 }
 
 function ensureGlobalStores() {
@@ -169,7 +175,7 @@ export class WarrantyChecklistMinigame extends MinigameScene {
         }).join('');
 
         const claimRefsHtml = Array.isArray(warranty.claimRefs) && warranty.claimRefs.length > 0
-            ? warranty.claimRefs.map(r => `<span class="wcc-claim-refs">${escapeHtml(r)}</span>`).join('')
+            ? warranty.claimRefs.map(r => `<span class="wcc-claim-refs">${escapeText(r)}</span>`).join('')
             : '';
 
         const verdictBadge = verdict
@@ -177,18 +183,18 @@ export class WarrantyChecklistMinigame extends MinigameScene {
             : '';
 
         const hintHtml = warranty.hint && !isReadOnly
-            ? `<div class="wcc-hint">${escapeHtml(warranty.hint)}</div>`
+            ? `<div class="wcc-hint">${escapeText(warranty.hint)}</div>`
             : '';
 
         return `
             <div class="wcc-row${verdict ? ` wcc-row-${verdict}` : ''}">
                 <div class="wcc-row-header">
-                    <span class="wcc-code">${escapeHtml(warranty.code)}</span>
-                    <span class="wcc-row-title">${escapeHtml(warranty.title)}</span>
+                    <span class="wcc-code">${escapeText(warranty.code)}</span>
+                    <span class="wcc-row-title">${escapeText(warranty.title)}</span>
                     ${claimRefsHtml}
                     ${verdictBadge}
                 </div>
-                <div class="wcc-row-context">${escapeHtml(warranty.context || '')}</div>
+                <div class="wcc-row-context">${escapeText(warranty.context || '')}</div>
                 <div class="wcc-row-controls">
                     <div class="wcc-verdict-group">${verdictButtons}</div>
                 </div>
@@ -225,11 +231,11 @@ export class WarrantyChecklistMinigame extends MinigameScene {
                             <div class="wcc-doc-title">Warranty Compliance Checklist</div>
                             <div class="wcc-doc-meta">
                                 <span>Albion Energy Storage Ltd</span>
-                                <span class="wcc-doc-status wcc-status-${escapeHtml(statusInfo.className)}">${escapeHtml(statusInfo.text)}</span>
+                                <span class="wcc-doc-status wcc-status-${escapeText(statusInfo.className)}">${escapeText(statusInfo.text)}</span>
                             </div>
                             ${gateNote}
                             <div class="wcc-header-actions">
-                                <button id="wcc-submit-btn" class="wcc-header-btn wcc-header-btn-submit" type="button" ${submitDisabled}>${escapeHtml(submitLabel)}</button>
+                                <button id="wcc-submit-btn" class="wcc-header-btn wcc-header-btn-submit" type="button" ${submitDisabled}>${escapeText(submitLabel)}</button>
                             </div>
                         </div>
                         <div class="wcc-doc-body">

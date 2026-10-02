@@ -13,6 +13,7 @@
  */
 
 import { MinigameScene } from '../framework/base-minigame.js';
+import { displayDashes } from '../../utils/display-dashes.js';
 
 // Rack colour palette: A1 bright amber, A2 gold, A3 yellow, A4 pale amber
 const RACK_COLOURS = ['#f5a623', '#d4a017', '#e8d44d', '#f0c87a'];
@@ -153,9 +154,9 @@ export class ScadaHistorianMinigame extends MinigameScene {
         titleGroup.style.gap = '0';
         titleGroup.style.flexWrap = 'wrap';
         const titleEl = this._el('span', 'sh-header-title');
-        titleEl.textContent = this._title;
+        titleEl.textContent = displayDashes(this._title);
         const subtitleEl = this._el('span', 'sh-header-subtitle');
-        subtitleEl.textContent = this._subtitle;
+        subtitleEl.textContent = displayDashes(this._subtitle);
         titleGroup.appendChild(titleEl);
         titleGroup.appendChild(subtitleEl);
         const closeBtn = this._el('button', 'sh-close-btn');
@@ -181,7 +182,7 @@ export class ScadaHistorianMinigame extends MinigameScene {
             cb.dataset.rackId = rack.id;
             if (this._selectedRacks.has(rack.id)) cb.classList.add('checked');
             cb.textContent = this._selectedRacks.has(rack.id) ? '✓' : '';
-            const lbl = document.createTextNode(rack.label || rack.id);
+            const lbl = document.createTextNode(displayDashes(rack.label || rack.id));
             label.appendChild(cb);
             label.appendChild(lbl);
             label.addEventListener('click', () => this._toggleRack(rack.id));

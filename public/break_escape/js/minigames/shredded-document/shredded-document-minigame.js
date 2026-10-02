@@ -1,4 +1,5 @@
 import { MinigameScene } from '../framework/base-minigame.js';
+import { displayDashes } from '../../utils/display-dashes.js';
 
 function escapeHtml(value) {
     return String(value || '')
@@ -7,6 +8,11 @@ function escapeHtml(value) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+}
+
+// Visible text: escaped, with " -- " shown as an en dash (display only; ids use escapeHtml).
+function escapeText(value) {
+    return escapeHtml(displayDashes(String(value ?? '')));
 }
 
 function setGlobalAndNotify(varName, value) {
@@ -128,7 +134,7 @@ export class ShreddedDocumentMinigame extends MinigameScene {
         if (this.stateWriteVar) {
             setGlobalAndNotify(this.stateWriteVar, true);
         }
-        this.showSuccess(escapeHtml(this.successMessage), true, 3000);
+        this.showSuccess(escapeText(this.successMessage), true, 3000);
     }
 
     render() {
@@ -148,17 +154,17 @@ export class ShreddedDocumentMinigame extends MinigameScene {
 
     _renderCompleted() {
         const titleHtml = this.documentTitle
-            ? `<div class="sdm-doc-title">${escapeHtml(this.documentTitle)}</div>`
+            ? `<div class="sdm-doc-title">${escapeText(this.documentTitle)}</div>`
             : '';
 
         const stripsHtml = this.currentOrder
-            .map(s => `<div class="sdm-strip sdm-strip-locked" style="--tilt: ${s.tilt}deg"><span class="sdm-strip-text">${escapeHtml(s.text)}</span></div>`)
+            .map(s => `<div class="sdm-strip sdm-strip-locked" style="--tilt: ${s.tilt}deg"><span class="sdm-strip-text">${escapeText(s.text)}</span></div>`)
             .join('');
 
         this.gameContainer.innerHTML = `
             <div class="sdm-panel">
                 <div class="sdm-completed-banner">Document already reconstructed.</div>
-                <div class="sdm-success-reveal">${escapeHtml(this.successMessage)}</div>
+                <div class="sdm-success-reveal">${escapeText(this.successMessage)}</div>
                 <div class="sdm-scroll">
                     ${titleHtml}
                     <div class="sdm-strips-area">${stripsHtml}</div>
@@ -169,7 +175,7 @@ export class ShreddedDocumentMinigame extends MinigameScene {
 
     _renderPuzzle() {
         const titleHtml = this.documentTitle
-            ? `<div class="sdm-doc-title">${escapeHtml(this.documentTitle)}</div>`
+            ? `<div class="sdm-doc-title">${escapeText(this.documentTitle)}</div>`
             : '';
 
         const instructionText = this.allowRotation
@@ -185,7 +191,7 @@ export class ShreddedDocumentMinigame extends MinigameScene {
                 <div class="sdm-strip${rotatedClass}" draggable="true" data-index="${i}" style="--tilt: ${strip.tilt}deg">
                     <div class="sdm-strip-content">
                         <span class="sdm-drag-handle" aria-hidden="true">⠿</span>
-                        <span class="sdm-strip-text">${escapeHtml(strip.text)}</span>
+                        <span class="sdm-strip-text">${escapeText(strip.text)}</span>
                     </div>
                     ${flipBtn}
                 </div>
@@ -198,7 +204,7 @@ export class ShreddedDocumentMinigame extends MinigameScene {
 
         this.gameContainer.innerHTML = `
             <div class="sdm-panel">
-                <div class="sdm-instruction">${escapeHtml(instructionText)}</div>
+                <div class="sdm-instruction">${escapeText(instructionText)}</div>
                 <div class="sdm-scroll">
                     ${titleHtml}
                     <div class="sdm-strips-area">${emptyState}</div>

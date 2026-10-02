@@ -1,4 +1,5 @@
 import { MinigameScene } from '../framework/base-minigame.js';
+import { displayDashes } from '../../utils/display-dashes.js';
 
 /**
  * Alarm Panel Minigame
@@ -57,8 +58,8 @@ export class AlarmPanelMinigame extends MinigameScene {
         const SVG_W = 420;
         const SVG_H = 30 + this._lamps.length * ROW_H + 20;
 
-        const panelTitle = this._panelTitle || 'FACILITY ALARM PANEL';
-        const footer     = this._footer     || 'STATE-REACTIVE LAMP DISPLAY — READ ONLY';
+        const panelTitle = displayDashes(this._panelTitle || 'FACILITY ALARM PANEL');
+        const footer     = displayDashes(this._footer     || 'STATE-REACTIVE LAMP DISPLAY — READ ONLY');
 
         const rows = this._lamps.map((lamp, i) => {
             const cy   = 30 + i * ROW_H + ROW_H / 2;
@@ -69,8 +70,8 @@ export class AlarmPanelMinigame extends MinigameScene {
             return `
   <g class="ap-lamp-row" data-index="${i}">
     <circle id="ap-lamp-${i}" cx="${CX}" cy="${cy}" r="${R}" class="ap-off"/>
-    <text class="ap-label"  x="${CX + R + 14}" y="${cy - 7}">${lamp.label}</text>
-    <text class="ap-status" id="ap-status-${i}" x="${CX + R + 14}" y="${cy + 11}">${initialStatus}</text>
+    <text class="ap-label"  x="${CX + R + 14}" y="${cy - 7}">${displayDashes(lamp.label)}</text>
+    <text class="ap-status" id="ap-status-${i}" x="${CX + R + 14}" y="${cy + 11}">${displayDashes(initialStatus)}</text>
     <line class="ap-row-sep" x1="0" y1="${sepY}" x2="${SVG_W}" y2="${sepY}"/>
   </g>`;
         }).join('');
@@ -104,7 +105,7 @@ export class AlarmPanelMinigame extends MinigameScene {
             const globals = window.gameState?.globalVariables || {};
             const active  = lamp.states.find(s => !s.variable || !!globals[s.variable]);
             circle.className.baseVal = active.flash ? `${active.cssClass} ap-flash` : active.cssClass;
-            statusEl.textContent     = active.statusText;
+            statusEl.textContent     = displayDashes(active.statusText);
             statusEl.style.fill      = this._colourFor(active.cssClass);
             return;
         }
@@ -113,7 +114,7 @@ export class AlarmPanelMinigame extends MinigameScene {
         circle.className.baseVal = isOn
             ? (lamp.flash ? `${lamp.onClass} ap-flash` : lamp.onClass)
             : lamp.offClass;
-        statusEl.textContent = isOn ? lamp.onStatus : lamp.offStatus;
+        statusEl.textContent = displayDashes(isOn ? lamp.onStatus : lamp.offStatus);
         statusEl.style.fill  = this._colourFor(isOn ? lamp.onClass : lamp.offClass);
     }
 

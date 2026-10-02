@@ -1,4 +1,5 @@
 import { MinigameScene } from '../framework/base-minigame.js';
+import { displayDashes } from '../../utils/display-dashes.js';
 
 const DEFAULT_TITLE = 'Meridian Claims Management System';
 
@@ -9,6 +10,11 @@ function escapeHtml(value) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+}
+
+// Visible text: escaped, with " -- " shown as an en dash (display only; ids use escapeHtml).
+function escapeText(value) {
+    return escapeHtml(displayDashes(String(value ?? '')));
 }
 
 function ensureGlobalStores() {
@@ -286,7 +292,7 @@ export class ClaimsManagementSystemMinigame extends MinigameScene {
                 class="cms-nav-button${isActive ? ' active' : ''}"
                 data-cms-section="${escapeHtml(section.id)}"
             >
-                <span class="cms-nav-label">${escapeHtml(section.label)}</span>
+                <span class="cms-nav-label">${escapeText(section.label)}</span>
                 <span class="cms-nav-state${isViewed ? ' viewed' : ''}">${isViewed ? 'VIEWED' : 'PENDING'}</span>
             </button>
         `;
@@ -294,13 +300,13 @@ export class ClaimsManagementSystemMinigame extends MinigameScene {
 
     renderSectionBody(section) {
         const contentLines = (section.content || [])
-            .map((line) => `<li>${escapeHtml(line)}</li>`)
+            .map((line) => `<li>${escapeText(line)}</li>`)
             .join('');
 
         return `
             <div class="cms-content-header">
-                <h3 class="cms-content-title">${escapeHtml(section.heading)}</h3>
-                <span class="cms-content-status">${escapeHtml(section.status || 'Review Pending')}</span>
+                <h3 class="cms-content-title">${escapeText(section.heading)}</h3>
+                <span class="cms-content-status">${escapeText(section.status || 'Review Pending')}</span>
             </div>
             <ul class="cms-content-list">${contentLines}</ul>
         `;
@@ -322,15 +328,15 @@ export class ClaimsManagementSystemMinigame extends MinigameScene {
                     ? item.value
                     : 'Unavailable';
 
-                return `<div class="cms-summary-card"><span class="cms-summary-label">${escapeHtml(label)}</span><span class="cms-summary-value">${escapeHtml(value)}</span></div>`;
+                return `<div class="cms-summary-card"><span class="cms-summary-label">${escapeText(label)}</span><span class="cms-summary-value">${escapeText(value)}</span></div>`;
             });
         }
 
         if (cards.length === 0) {
             const reviewState = this.viewedSections.has(section.id) ? 'Viewed' : 'Pending';
             cards = [
-                `<div class="cms-summary-card"><span class="cms-summary-label">Section</span><span class="cms-summary-value">${escapeHtml(section.label)}</span></div>`,
-                `<div class="cms-summary-card"><span class="cms-summary-label">Review State</span><span class="cms-summary-value">${escapeHtml(reviewState)}</span></div>`
+                `<div class="cms-summary-card"><span class="cms-summary-label">Section</span><span class="cms-summary-value">${escapeText(section.label)}</span></div>`,
+                `<div class="cms-summary-card"><span class="cms-summary-label">Review State</span><span class="cms-summary-value">${escapeText(reviewState)}</span></div>`
             ];
         }
 
@@ -355,13 +361,13 @@ export class ClaimsManagementSystemMinigame extends MinigameScene {
             : [];
         const highlightsMarkup = highlights
             .slice(0, 4)
-            .map((item) => `<li>${escapeHtml(item)}</li>`)
+            .map((item) => `<li>${escapeText(item)}</li>`)
             .join('');
 
         return `
             <aside class="cms-context">
                 <h4>Evidence Relevance</h4>
-                <p>${escapeHtml(section.relevance || 'No additional guidance for this section.')}</p>
+                <p>${escapeText(section.relevance || 'No additional guidance for this section.')}</p>
                 ${highlightsMarkup ? `<ul class="cms-context-highlights">${highlightsMarkup}</ul>` : ''}
             </aside>
         `;
@@ -409,7 +415,7 @@ export class ClaimsManagementSystemMinigame extends MinigameScene {
             <div class="cms-panel">
                 <div class="cms-header">
                     <div class="cms-header-left">
-                        <h2 class="cms-title">${escapeHtml(this.params.title || DEFAULT_TITLE)}</h2>
+                        <h2 class="cms-title">${escapeText(this.params.title || DEFAULT_TITLE)}</h2>
                         <div class="cms-subtitle">MC-2023-ALBE-007 | Coverage Analysis Workspace</div>
                         <div class="cms-progress-wrap">
                             <div class="cms-progress-label">Review Progress: ${reviewedCount}/${totalCount} sections</div>
@@ -418,7 +424,7 @@ export class ClaimsManagementSystemMinigame extends MinigameScene {
                             </div>
                         </div>
                     </div>
-                    <div class="cms-header-right cms-header-right-${headerStatus.className}">${escapeHtml(headerStatus.text)}</div>
+                    <div class="cms-header-right cms-header-right-${headerStatus.className}">${escapeText(headerStatus.text)}</div>
                 </div>
 
                 <div class="cms-body">

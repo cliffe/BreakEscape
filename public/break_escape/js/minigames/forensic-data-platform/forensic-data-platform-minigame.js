@@ -1,4 +1,5 @@
 import { MinigameScene } from '../framework/base-minigame.js';
+import { displayDashes } from '../../utils/display-dashes.js';
 
 /**
  * MG-02 — Forensic Data Platform
@@ -213,8 +214,8 @@ function _renderTimeline(steps) {
 <li class="fdp-timeline-step">
   <div class="fdp-timeline-num${cls}">${num}</div>
   <div class="fdp-timeline-body">
-    <div class="fdp-timeline-label">${s.label}</div>
-    <div class="fdp-timeline-desc">${s.desc}</div>
+    <div class="fdp-timeline-label">${displayDashes(s.label)}</div>
+    <div class="fdp-timeline-desc">${displayDashes(s.desc)}</div>
   </div>
 </li>`;
     }).join('');
@@ -222,12 +223,12 @@ function _renderTimeline(steps) {
 }
 
 function _renderLogTable(block) {
-    const headers = block.columns.map(c => `<th>${c}</th>`).join('');
+    const headers = block.columns.map(c => `<th>${displayDashes(c)}</th>`).join('');
     const rows = block.rows.map(r => {
         const rowCls = r.highlight ? ' class="fdp-row-highlight"' : '';
         const cells  = r.cells.map(c => {
-            if (c && typeof c === 'object') return `<td class="${c.class || ''}">${c.html}</td>`;
-            return `<td>${c}</td>`;
+            if (c && typeof c === 'object') return `<td class="${c.class || ''}">${displayDashes(c.html)}</td>`;
+            return `<td>${displayDashes(c)}</td>`;
         }).join('');
         return `<tr${rowCls}>${cells}</tr>`;
     }).join('');
@@ -235,16 +236,16 @@ function _renderLogTable(block) {
 }
 
 function _renderSetpointTable(block) {
-    const rows = block.rows.map(r => `<tr><td>${r.label}</td><td>${r.value}</td></tr>`).join('');
+    const rows = block.rows.map(r => `<tr><td>${displayDashes(r.label)}</td><td>${displayDashes(r.value)}</td></tr>`).join('');
     return `<table class="fdp-setpoint-table"><tbody>${rows}</tbody></table>`;
 }
 
 function _renderDocumentExcerpt(block) {
-    return `<div class="fdp-doc-excerpt">${block.body}<div class="fdp-doc-source">${block.source}</div></div>`;
+    return `<div class="fdp-doc-excerpt">${displayDashes(block.body)}<div class="fdp-doc-source">${displayDashes(block.source)}</div></div>`;
 }
 
 function _renderList(block) {
-    const items = block.items.map(i => `<li>${i}</li>`).join('');
+    const items = block.items.map(i => `<li>${displayDashes(i)}</li>`).join('');
     return `<ul style="margin:6px 0 10px 18px; font-size:11px; color:#c9d1d9; line-height:1.7">${items}</ul>`;
 }
 
@@ -260,16 +261,16 @@ function _renderCallout(block) {
     };
     const cls       = CSS_CLASS[block.style] || 'fdp-evidence-gap';
     const titleCls  = TITLE_CLASS[block.style];
-    const titleHtml = (block.title && titleCls) ? `<div class="${titleCls}">${block.title}</div>` : '';
+    const titleHtml = (block.title && titleCls) ? `<div class="${titleCls}">${displayDashes(block.title)}</div>` : '';
     const extraStyle = block.style2 ? ` style="${block.style2}"` : '';
-    return `<div class="${cls}"${extraStyle}>${titleHtml}${block.body}</div>`;
+    return `<div class="${cls}"${extraStyle}>${titleHtml}${displayDashes(block.body)}</div>`;
 }
 
 function _renderBlocks(blocks, globals) {
     return blocks.map(block => {
         if (block.showIf && !globals[block.showIf]) return '';
         switch (block.type) {
-            case 'p':                return `<p>${block.html}</p>`;
+            case 'p':                return `<p>${displayDashes(block.html)}</p>`;
             case 'timeline':        return _renderTimeline(block.steps);
             case 'log-table':       return _renderLogTable(block);
             case 'setpoint-table':  return _renderSetpointTable(block);
@@ -337,14 +338,14 @@ export class ForensicDataPlatformMinigame extends MinigameScene {
         const confirmHint  = this.params.confirmHint  || 'Review all evidence before confirming.';
 
         const tabButtons = this._tabs.map(t =>
-            `<button class="fdp-tab" data-tab="${t.id}">${t.label}</button>`
+            `<button class="fdp-tab" data-tab="${t.id}">${displayDashes(t.label)}</button>`
         ).join('');
 
         this.gameContainer.innerHTML = `
 <div class="fdp-wrap">
   <div class="fdp-header">
-    <span class="fdp-title">${title}</span>
-    <span class="fdp-case">${caseRef}</span>
+    <span class="fdp-title">${displayDashes(title)}</span>
+    <span class="fdp-case">${displayDashes(caseRef)}</span>
   </div>
   <div class="fdp-tab-bar" id="fdp-tab-bar">
     ${tabButtons}
@@ -352,9 +353,9 @@ export class ForensicDataPlatformMinigame extends MinigameScene {
   <div class="fdp-panel" id="fdp-panel"></div>
   <div class="fdp-footer">
     <button class="fdp-confirm-btn" id="fdp-confirm-btn" disabled>
-      ${confirmLabel}
+      ${displayDashes(confirmLabel)}
     </button>
-    <div id="fdp-confirm-hint" class="fdp-confirm-hint">${confirmHint}</div>
+    <div id="fdp-confirm-hint" class="fdp-confirm-hint">${displayDashes(confirmHint)}</div>
   </div>
 </div>`;
 
@@ -395,10 +396,10 @@ export class ForensicDataPlatformMinigame extends MinigameScene {
 
         if (this._tabsSeen.has(gateTab)) {
             btn.disabled     = false;
-            hint.textContent = readyHint;
+            hint.textContent = displayDashes(readyHint);
         } else {
             btn.disabled     = true;
-            hint.textContent = confirmHint;
+            hint.textContent = displayDashes(confirmHint);
         }
     }
 
@@ -412,8 +413,8 @@ export class ForensicDataPlatformMinigame extends MinigameScene {
 
         const btn  = this.gameContainer.querySelector('#fdp-confirm-btn');
         const hint = this.gameContainer.querySelector('#fdp-confirm-hint');
-        if (btn)  { btn.disabled = true; btn.textContent = `${confirmLabel} — CONFIRMED`; }
-        if (hint) { hint.className = 'fdp-confirm-success'; hint.textContent = successText; }
+        if (btn)  { btn.disabled = true; btn.textContent = displayDashes(`${confirmLabel} — CONFIRMED`); }
+        if (hint) { hint.className = 'fdp-confirm-success'; hint.textContent = displayDashes(successText); }
 
         this._setGlobalAndNotify(confirmedVar, true);
         this._executeCompletionActions();
@@ -439,7 +440,7 @@ export class ForensicDataPlatformMinigame extends MinigameScene {
         const tab = this._tabs.find(t => t.id === tabId);
         if (!tab) { panel.innerHTML = ''; return; }
         const globals = window.gameState?.globalVariables || {};
-        const heading = tab.heading ? `<h3>${tab.heading}</h3>` : '';
+        const heading = tab.heading ? `<h3>${displayDashes(tab.heading)}</h3>` : '';
         panel.innerHTML = heading + _renderBlocks(tab.blocks, globals);
     }
 

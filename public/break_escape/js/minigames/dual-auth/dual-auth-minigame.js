@@ -1,6 +1,7 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { notifyServerUnlock } from '../../systems/unlock-system.js';
 import { resolveDualAuthText, escapeHtml } from './dual-auth-text.js';
+import { displayDashes } from '../../utils/display-dashes.js';
 
 export class DualAuthMinigame extends MinigameScene {
     constructor(container, params = {}) {
@@ -45,15 +46,15 @@ export class DualAuthMinigame extends MinigameScene {
         this.gameContainer.innerHTML = `
 <div class="da-panel-wrap">
   <div class="da-header">
-    <div class="da-title">${escapeHtml(this.text.heading)}</div>
+    <div class="da-title">${escapeHtml(displayDashes(this.text.heading))}</div>
     <div class="da-timer" id="da-timer">05:00</div>
   </div>
 
   <div class="da-panels">
     <div class="da-panel" id="da-panel-itsec">
       <div class="da-panel-header">
-        <div class="da-panel-label">${escapeHtml(this.text.itsec_label)}</div>
-        <div class="da-panel-name">${escapeHtml(this.text.itsec_name)}</div>
+        <div class="da-panel-label">${escapeHtml(displayDashes(this.text.itsec_label))}</div>
+        <div class="da-panel-name">${escapeHtml(displayDashes(this.text.itsec_name))}</div>
       </div>
       <div class="da-display" id="da-display-itsec">_ _ _ _</div>
       <div class="da-keypad" id="da-keypad-itsec"></div>
@@ -62,8 +63,8 @@ export class DualAuthMinigame extends MinigameScene {
 
     <div class="da-panel" id="da-panel-clinical">
       <div class="da-panel-header">
-        <div class="da-panel-label">${escapeHtml(this.text.clinical_label)}</div>
-        <div class="da-panel-name">${escapeHtml(this.text.clinical_name)}</div>
+        <div class="da-panel-label">${escapeHtml(displayDashes(this.text.clinical_label))}</div>
+        <div class="da-panel-name">${escapeHtml(displayDashes(this.text.clinical_name))}</div>
       </div>
       <div class="da-display" id="da-display-clinical">_ _ _ _</div>
       <div class="da-keypad" id="da-keypad-clinical"></div>
@@ -74,14 +75,14 @@ export class DualAuthMinigame extends MinigameScene {
   <div class="da-status-bar">
     <div class="da-status-text">AWAITING DUAL AUTHORISATION</div>
     <div class="da-status-indicators">
-      <div class="da-indicator" id="da-ind-itsec">${escapeHtml(this.text.itsec_indicator)}</div>
-      <div class="da-indicator" id="da-ind-clinical">${escapeHtml(this.text.clinical_indicator)}</div>
+      <div class="da-indicator" id="da-ind-itsec">${escapeHtml(displayDashes(this.text.itsec_indicator))}</div>
+      <div class="da-indicator" id="da-ind-clinical">${escapeHtml(displayDashes(this.text.clinical_indicator))}</div>
     </div>
   </div>
 
   <div class="da-authorise-wrap">
     <button class="da-authorise-btn" id="da-authorise" disabled>
-      ${escapeHtml(this.text.authorise_label)}
+      ${escapeHtml(displayDashes(this.text.authorise_label))}
     </button>
   </div>
 </div>`;
