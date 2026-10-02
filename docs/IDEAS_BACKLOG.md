@@ -59,6 +59,8 @@ Each entry: a short title, where it came from, the idea in two or three sentence
 
 ## Tooling
 
+- **Stacked-text check should read `mutuallyExclusiveGlobals`, and credit coverage should accept complementary conditions** (new-check fixes; S). Both checks still flag cases the agents showed are fine (m02 make_ransom_decision; credit sections split on x / !x).
+
 - **Lint: "Not X. Y." across sentences, in narration** (m04 script editor; S). The `not-x-but-y` rule misses the two-sentence form ("Not doubt. Irritation.") and narrator lines, and "She is not X; she Y".
 
 - **Validator: patrol legs longer than `changeDirectionInterval`** (m02 fixer; S). Warn when a waypoint leg can't be walked before the re-target timer fires.

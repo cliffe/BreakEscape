@@ -19,7 +19,7 @@ Updated 2026-10-02. Brief: `docs/agents/PASS4_BRIEF.md`. Log: `scenarios/PASS4_E
 - Waiting on user: P1 (Nightshade foreshadowing), P3 (m05 whodunnit), P4/P5 (lab sheets push/SSH example), P6 (Tesseract).
 
 ## Status (latest)
-- New-check fixes (crowded hubs, stacked texts, unread globals, empty credit sections) running for m02–m08, one Sonnet agent each, prompt docs/agents/PASS4_NEWCHECK_FIX_PROMPT.md. Commit each mission as it reports (verify claims first). m01 frozen.
+- New-check fixes DONE and committed for m02–m08 (m01 frozen).
 - ALL SEVEN MISSIONS (m02–m08) DONE AND COMMITTED (m02 4f7b8763). P8/P9/P12 done; P11 deferred (sprites later). Remaining: audio generation for m02–m08 (cost; ask the user), P-items in the log for the user, pushing lab sheets/SecGen (user said not yet).
 - User APPROVED the m07 dialogue approach for all missions (2026-10-02). Writer brief: docs/agents/PASS4_DIALOGUE_WRITER_PROMPT.md (MISSION/MSHORT/EXTRA).
 - m07: DONE, committed a6ba802c. USER: commit each mission as it completes. Engine committed 44e3c383, bible 9256ab10. Still uncommitted: tooling (tagdiff, dialoguelint, validator, inkcheck, missions.json — the recurring-checks agent is editing), docs (AGENTS.md, brief, log, backlog, README_ink_best_practices), test/js/ink-tagdiff (fix its 'unchanged at HEAD' test first).
