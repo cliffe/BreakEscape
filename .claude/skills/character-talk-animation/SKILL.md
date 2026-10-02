@@ -20,9 +20,9 @@ Produces the source portrait for a `<character>_talk.png` talk sheet, for a char
 
 For a source sprite `<name>.png`:
 
-| File                     | Produced by                   | Purpose                                                                   |
-| ------------------------ | ----------------------------- | ------------------------------------------------------------------------- |
-| `<name>_nonpixelart.png` | **this skill**                | Gemini illustration, square, waist-up, source of truth for the conversion |
+| File                     | Produced by                                              | Purpose                                                                   |
+| ------------------------ | -------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `<name>_nonpixelart.png` | **this skill**                                           | Gemini illustration, square, waist-up, source of truth for the conversion |
 | `<name>_talk_init.png`   | pixellab-character-pipeline, or the user via pixellab.ai | 128×128 pixel-art bust                                                    |
 | `<name>_talk.png`        | pixellab-character-pipeline, or the user via pixellab.ai | the final 2×2 talk sheet                                                  |
 
