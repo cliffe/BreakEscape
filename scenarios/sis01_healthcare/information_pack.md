@@ -4,9 +4,7 @@ This information pack contains comprehensive background information about the No
 
 ---
 
-
-
-## File: ./assurance_cases/assurance_case_overview.md
+## File: ./assurance_cases/assurance_case_overview\.md
 
 # Security-Informed Safety Assurance Case — Northgate General Hospital
 
@@ -145,7 +143,6 @@ This assurance case is a teaching artefact, not a production safety case. A real
 - Integration with the Trust's broader clinical risk management framework
 
 The assurance case also does not address the human factors dimension — the impact of cyber incidents on clinical staff workload, stress, and decision-making quality, all of which affect patient safety during a crisis.
-
 
 ## File: ./assurance_cases/cae_evidence_catalogue.md
 
@@ -323,7 +320,7 @@ This catalogue lists every evidence node referenced in the detailed CAE case ([d
 - **Supports**: CLAIM-HC-010 (Clinical fallback procedures maintain safe care during outage)
 - **Description**: Comprehensive clinical fallback procedure documentation maintained in every ward and clinical area, stored in clearly marked red folders ("Clinical Fallback — Cyber Incident") at the nursing station. The documentation includes: paper-based prescribing templates with mandatory double-check fields, manual infusion pump programming checklists (step-by-step with dose verification prompts), bedside observation charts (NEWS2 scoring), emergency drug dosing reference cards (adult and paediatric), manual allergy verification procedure (requiring verbal verification with patient and pharmacy cross-check), and a transition checklist for returning to electronic systems after restoration.
 
-    Biannual drill results document: staff participation rates (most recent: 78% of ward-based clinical staff), error rates during paper-based prescribing (most recent: 3 simulated dosing discrepancies in 47 simulated prescriptions, all caught by the double-check process), time-to-transition from electronic to manual workflows (most recent: average 22 minutes per ward), and a clinical safety assessment by the drill facilitator.
+  Biannual drill results document: staff participation rates (most recent: 78% of ward-based clinical staff), error rates during paper-based prescribing (most recent: 3 simulated dosing discrepancies in 47 simulated prescriptions, all caught by the double-check process), time-to-transition from electronic to manual workflows (most recent: average 22 minutes per ward), and a clinical safety assessment by the drill facilitator.
 - **Collection Method**: Procedures authored by the clinical governance team in collaboration with pharmacy, nursing, and clinical engineering. Drills planned and facilitated by the clinical education team using a structured exercise scenario. Results assessed by a multidisciplinary panel including clinical governance lead, pharmacy lead, and information security manager.
 - **Recurrence**: Procedures reviewed annually and updated following any system change. Drills conducted biannually (every six months). Post-drill improvement actions tracked by the clinical governance team.
 - **Confidence**: Medium — procedure documentation is comprehensive and physically accessible (no electronic system dependency). Drill results consistently show that staff unfamiliar with paper processes make more errors during the transition period. The 78% participation rate indicates that approximately one in five clinical staff has not participated in a recent drill. The 6.4% simulated error rate during paper prescribing (3/47) — though all errors were caught by the built-in double-check — confirms that manual processes are inherently less safe than electronic prescribing with automated guardrails.
@@ -507,7 +504,6 @@ This catalogue lists every evidence node referenced in the detailed CAE case ([d
 - **Traceability**: REQ-HC-SEC-016, REQ-HC-SEC-004
 - **Scenario Relevance**: Addresses the access control environment in which Scenario 02 operates. The move from shared credentials to individual named accounts and the restriction of the service account to application-only use are direct remediations for the Scenario 02 attack vector (Step 4 — harvesting the shared service account credential).
 
-
 ## File: ./assurance_cases/detailed_cae_case.md
 
 # Detailed Security-Informed Safety Case — Northgate General Hospital (CAE)
@@ -561,12 +557,12 @@ Arguments are developed using four structured reasoning patterns:
 
 Evidence is categorised into four types:
 
-| Type | Description | Examples |
-|------|-------------|---------|
-| **Design** | Architecture, configuration, and design artefacts | Network architecture diagrams, firewall rule sets, firmware signing specifications |
-| **Test** | Results from structured testing activities | Penetration test reports, functional test results, restoration drills |
-| **Operational** | Outputs from ongoing monitoring and audit | Audit logs, SIEM alerts, configuration drift reports |
-| **Process** | Documentation of procedures, training, and governance | Incident response plans, training records, governance meeting minutes |
+| Type            | Description                                           | Examples                                                                           |
+| --------------- | ----------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| **Design**      | Architecture, configuration, and design artefacts     | Network architecture diagrams, firewall rule sets, firmware signing specifications |
+| **Test**        | Results from structured testing activities            | Penetration test reports, functional test results, restoration drills              |
+| **Operational** | Outputs from ongoing monitoring and audit             | Audit logs, SIEM alerts, configuration drift reports                               |
+| **Process**     | Documentation of procedures, training, and governance | Incident response plans, training records, governance meeting minutes              |
 
 ### Confidence Assessment
 
@@ -674,6 +670,7 @@ The argument does not claim absolute protection against all firmware attacks. A 
 #### Evidence Nodes
 
 **E5: Manufacturer Code Signing Attestation**
+
 - **Type**: Design
 - **Description**: Written attestation from the infusion pump manufacturer confirming that all firmware images are cryptographically signed using RSA-2048 during the secure build process, with the signing key stored in a hardware security module (HSM).
 - **Collection method**: Obtained from manufacturer during procurement; renewed annually or upon request.
@@ -682,6 +679,7 @@ The argument does not claim absolute protection against all firmware attacks. A 
 - **Traceability**: REQ-HC-SEC-017, REQ-HC-SAF-011
 
 **E6: Unsigned Firmware Rejection Test Results**
+
 - **Type**: Test
 - **Description**: Results of controlled testing in which unsigned, tampered, and expired-signature firmware images were pushed to representative infusion pump units via the fleet management console. All three categories were rejected by the device with appropriate error logging.
 - **Collection method**: Conducted by clinical engineering team using manufacturer-provided test images in a non-production environment.
@@ -690,6 +688,7 @@ The argument does not claim absolute protection against all firmware attacks. A 
 - **Traceability**: REQ-HC-SEC-017, REQ-HC-SAF-011
 
 **E19: Firmware Version Register and Discrepancy Alerting**
+
 - **Type**: Operational
 - **Description**: The fleet management console maintains an asset register of expected firmware versions for each pump. A daily automated comparison identifies devices reporting versions that differ from the expected baseline and generates alerts to clinical engineering.
 - **Collection method**: Automated report generated by fleet management console.
@@ -752,6 +751,7 @@ The argument acknowledges a critical gap: in Scenario 02, the attacker modifies 
 #### Evidence Nodes
 
 **E1: Drug Library Change Audit Trail + Pharmacy Sign-Off**
+
 - **Type**: Operational
 - **Description**: Automated log of all drug library modifications on the infusion pump fleet management console, including timestamp, user identity, parameter changed, old value, and new value. Each change requires countersignature from a registered pharmacist before deployment to the pump fleet.
 - **Collection method**: Automated extraction from fleet management console audit database; pharmacist sign-off recorded in hospital pharmacy system.
@@ -760,6 +760,7 @@ The argument acknowledges a critical gap: in Scenario 02, the attacker modifies 
 - **Traceability**: REQ-HC-SEC-020, REQ-HC-SAF-001, REQ-HC-SAF-002
 
 **E2: Automated Version Comparison — Deployed vs. Authorised**
+
 - **Type**: Operational
 - **Description**: An automated tool that compares the drug library version hash currently deployed on each pump against the pharmacist-approved master version. Discrepancies generate an immediate alert to pharmacy governance and clinical engineering.
 - **Collection method**: Automated comparison triggered on each library deployment event and as a scheduled background check every four hours.
@@ -816,6 +817,7 @@ The compensating control argument addresses the scenario where the central stati
 #### Evidence Nodes
 
 **E3: Daily Alarm Configuration Audit Reports**
+
 - **Type**: Operational
 - **Description**: Automated script executed daily that queries alarm threshold settings from each connected patient monitor and compares them against the clinical governance-approved default profile for the relevant ward type (medical, surgical, critical care).
 - **Collection method**: Automated query via the patient monitoring central station; results logged and reviewed by clinical engineering.
@@ -824,6 +826,7 @@ The compensating control argument addresses the scenario where the central stati
 - **Traceability**: REQ-HC-SEC-021, REQ-HC-SAF-003, REQ-HC-SAF-004
 
 **E4: Automated Deviation Alert Records**
+
 - **Type**: Operational
 - **Description**: Records of alerts generated when any patient monitor's alarm threshold deviates from the approved default profile by more than the defined tolerance (±10% for heart rate, ±5% for SpO2). Each alert includes the monitor identifier, parameter, expected value, actual value, and timestamp.
 - **Collection method**: Automated alerting from the central station audit module; alerts forwarded to ward manager and clinical engineering simultaneously.
@@ -880,6 +883,7 @@ The compensating control argument acknowledges a critical limitation: the curren
 #### Evidence Nodes
 
 **E20: Device Authentication Testing**
+
 - **Type**: Test
 - **Description**: Results of controlled testing in which configuration commands (dose parameter changes, alarm threshold modifications, firmware update requests) were sent to representative infusion pumps and patient monitors from unauthorised sources — workstations not registered in the fleet management allow list, and raw network commands crafted using protocol analysis tools.
 - **Collection method**: Conducted by clinical engineering in a test environment, with manufacturer technical support participation.
@@ -888,6 +892,7 @@ The compensating control argument acknowledges a critical limitation: the curren
 - **Traceability**: REQ-HC-SEC-016, REQ-HC-SAF-001, REQ-HC-SAF-004
 
 **E21: Clinical Workstation Access Control Verification**
+
 - **Type**: Operational
 - **Description**: Quarterly verification that clinical workstations registered for device management access are correctly configured with role-based access controls, and that no unauthorised workstations have been added to the management application's allow list.
 - **Collection method**: Manual audit by clinical engineering comparing the management console's registered workstation list against the approved asset register.
@@ -954,6 +959,7 @@ The operational continuity argument demonstrates that restoration from these imm
 #### Evidence Nodes
 
 **E9: Backup Architecture Documentation (Immutability)**
+
 - **Type**: Design
 - **Description**: Technical documentation of the Trust's backup architecture, showing three-tier backup strategy: (1) on-site NAS with daily snapshots, (2) on-site tape library with weekly full backups, (3) off-site immutable cloud storage with WORM retention policies, separate IAM credentials not accessible from the enterprise Active Directory domain, and 90-day minimum retention period.
 - **Collection method**: Maintained by the infrastructure team; reviewed and updated quarterly.
@@ -962,6 +968,7 @@ The operational continuity argument demonstrates that restoration from these imm
 - **Traceability**: REQ-HC-SEC-012, REQ-HC-SAF-010, REQ-HC-SAF-012
 
 **E10: Quarterly Restoration Test Results**
+
 - **Type**: Test
 - **Description**: Results of quarterly restoration exercises in which the EHR, PACS, and device management console are restored from the off-site immutable backup to a test environment. Each exercise measures: restoration time against the defined RTO, data integrity verification (hash comparison of restored databases against backup checksums), and functional verification (clinicians confirm that restored systems behave correctly).
 - **Collection method**: Structured exercise conducted by infrastructure team with participation from clinical engineering and clinical representatives.
@@ -1022,6 +1029,7 @@ The argument acknowledges that content-level image manipulation (altering pixel 
 #### Evidence Nodes
 
 **E7: PACS Integrity Verification Testing Results**
+
 - **Type**: Test
 - **Description**: Results of structured testing of the PACS integrity verification mechanism. Tests included: (a) modification of patient identifier fields in stored DICOM headers — detection confirmed; (b) modification of study-level metadata (date, modality, body part) — detection confirmed; (c) substitution of image pixel data from a different study — detection confirmed for whole-image substitution, partial detection for localised pixel modification.
 - **Collection method**: Conducted by clinical engineering with radiology department participation, using test images in a non-production PACS environment.
@@ -1030,6 +1038,7 @@ The argument acknowledges that content-level image manipulation (altering pixel 
 - **Traceability**: REQ-HC-SAF-007
 
 **E8: Metadata Modification Audit Alert Testing**
+
 - **Type**: Test
 - **Description**: Results of testing the alert mechanism triggered when DICOM metadata is modified post-commit. Verified that alerts are generated, delivered to the radiology department lead and PACS administrator within defined SLA (15 minutes), and that the modified image is flagged in the clinical viewer with a visual integrity warning.
 - **Collection method**: Simulated metadata modification in non-production environment; alert delivery and clinical viewer behaviour observed and documented.
@@ -1090,6 +1099,7 @@ Third, the procedures include a defined process for recognising and correcting e
 #### Evidence Nodes
 
 **E11: Fallback Procedure Documentation + Drill Results**
+
 - **Type**: Process
 - **Description**: Comprehensive clinical fallback procedure documentation maintained in each ward area (printed, laminated, stored in clearly marked fallback folders). Covers: paper-based prescribing templates, manual infusion pump programming checklists, bedside observation charts, emergency drug dosing reference cards, manual allergy verification procedure. Biannual drill results document staff participation rates, error rates during manual processes, time-to-transition metrics, and a clinical safety assessment.
 - **Collection method**: Procedures authored and maintained by clinical governance team; drills planned and facilitated by clinical education team; results assessed by a multidisciplinary panel.
@@ -1154,6 +1164,7 @@ The defence-in-depth layer addresses the scenario where a novel application-laye
 #### Evidence Nodes
 
 **E12: Firewall Rule Audit (No Cross-Zone Exceptions)**
+
 - **Type**: Design
 - **Description**: Results of a comprehensive firewall rule audit confirming that all legacy exception rules permitting bidirectional access between specific clinical workstations and the enterprise zone have been removed. The audit verifies that the firewall rule set implements an explicit allow-list policy with only the minimum required cross-zone data flows: EHR-to-device-management prescription data (outbound, application-layer filtered), DICOM image transfer from clinical modalities to PACS (outbound only), and SIEM log forwarding from clinical zone to enterprise SIEM (outbound only).
 - **Collection method**: Conducted by a qualified firewall administrator with independent verification by a second administrator. Rule set exported and compared against the approved baseline.
@@ -1162,6 +1173,7 @@ The defence-in-depth layer addresses the scenario where a novel application-laye
 - **Traceability**: REQ-HC-SEC-007, REQ-HC-SEC-008, REQ-HC-SAF-001, REQ-HC-SAF-009
 
 **E13: Penetration Test — Enterprise to Clinical Zone Blocked**
+
 - **Type**: Test
 - **Description**: Results of an independent penetration test conducted by a CREST-accredited third party. The test scope included all enterprise-to-clinical zone attack vectors: direct network probing through the firewall, exploitation of permitted cross-zone data flows, scanning for residual dual-homed workstations, and attempted pivoting through clinical zone via application-layer attacks. The test confirmed that no enterprise-to-clinical traversal was achievable through the firewall. Two informational findings were noted regarding the permitted EHR-to-device data flow, but neither was exploitable.
 - **Collection method**: Commissioned by the Trust's Information Security Manager; conducted by an external CREST-accredited penetration testing firm.
@@ -1218,6 +1230,7 @@ The argument for CLAIM-HC-005 applies three layers of control. First, vendor rem
 #### Evidence Nodes
 
 **E14: Vendor Access Logs (Scheduled Windows Only)**
+
 - **Type**: Operational
 - **Description**: Audit logs from the vendor remote-access gateway demonstrating that all vendor VPN sessions were activated within scheduled maintenance windows only, and that no sessions were recorded outside these windows. Logs include session start/end times, source IP address, devices accessed, and actions performed.
 - **Collection method**: Automated extraction from vendor VPN gateway; monthly summary reviewed by clinical engineering.
@@ -1226,6 +1239,7 @@ The argument for CLAIM-HC-005 applies three layers of control. First, vendor rem
 - **Traceability**: REQ-HC-SEC-018, REQ-HC-SAF-001, REQ-HC-SAF-009
 
 **E15: MFA Enforcement Records for Vendor Sessions**
+
 - **Type**: Operational
 - **Description**: Records from the vendor VPN gateway's authentication system confirming that all vendor sessions were authenticated with MFA (password + hardware token or authenticator application). Records include the authentication method used for each session.
 - **Collection method**: Automated extraction from VPN gateway authentication logs.
@@ -1282,6 +1296,7 @@ Evidence E16 documents the results of joint IT/Clinical Engineering tabletop exe
 #### Evidence Nodes
 
 **E16: Joint IT/Clinical Engineering Tabletop Exercise Reports**
+
 - **Type**: Process
 - **Description**: Reports from biannual tabletop exercises in which IT security, clinical engineering, and clinical leadership rehearse responding to a cyber incident affecting clinical systems. Each exercise presents a scenario (based on Scenarios 01 and 02) and requires participants to make containment decisions while evaluating clinical safety impact. Reports document decisions made, clinical impact assessments performed, time-to-decision metrics, and identified improvement actions.
 - **Collection method**: Facilitated by the Trust's risk management team; observed by an independent assessor.
@@ -1290,6 +1305,7 @@ Evidence E16 documents the results of joint IT/Clinical Engineering tabletop exe
 - **Traceability**: REQ-HC-SEC-022, REQ-HC-SAF-009, REQ-HC-SAF-010
 
 **E17: Incident Response Plan with Clinical Impact Assessment**
+
 - **Type**: Process
 - **Description**: The Trust's integrated incident response plan, maintained as a controlled document. The plan includes: (a) clinical impact assessment checklist for each containment action category; (b) decision trees for common scenarios; (c) pre-defined communication templates for clinical staff notification; (d) escalation matrix to relevant governance committee; (e) post-incident clinical review procedure.
 - **Collection method**: Authored by IT Security with clinical engineering and clinical governance input; reviewed and approved by the joint governance committee.
@@ -1342,11 +1358,13 @@ This creates two mutually exclusive strategies for any given vulnerability discl
 **Argument**: The cybersecurity risk of delay outweighs the interim safety risk. Deploy the security patch to the infusion pump fleet immediately. Manage the interim safety risk (the period between patch deployment and completion of safety re-validation) through compensating clinical controls.
 
 **Compensating safety controls during the interim**:
+
 - Clinical monitoring: increase bedside observation frequency for patients on patched pumps until re-validation is complete.
 - Manual dose verification: require a second clinician to independently verify every dose delivered by a patched pump against the paper prescription.
 - Reduced device trust level: clinical protocols treat patched pumps as partially untrusted devices, triggering additional clinical checks.
 
 **Evidence Nodes**:
+
 - **E22: Clinical monitoring protocol for interim-patched devices** (Process) — documented protocol specifying increased bedside observation frequency and manual verification requirements for devices running unvalidated patches.
 - **E23: Manufacturer interim safety guidance** (Design) — manufacturer-provided guidance on the scope of the patch and its potential clinical impact, including any known interactions with safety-critical functions.
 
@@ -1357,11 +1375,13 @@ This creates two mutually exclusive strategies for any given vulnerability discl
 **Argument**: The safety risk of deploying an unvalidated patch outweighs the cybersecurity risk of delay. Defer the patch until full IEC 62304-compliant safety re-validation is complete. Manage the interim cybersecurity risk (the window of known vulnerability) through compensating network and monitoring controls.
 
 **Compensating cybersecurity controls during the interim**:
+
 - Enhanced network isolation: tighten firewall rules for the clinical zone, restricting permitted cross-zone data flows to the minimum required.
 - Enhanced monitoring: deploy additional monitoring on the clinical VLAN specifically targeting known exploitation indicators for the disclosed vulnerability.
 - Vendor access restriction: disable vendor remote access entirely until the patched firmware is validated and deployed.
 
 **Evidence Nodes**:
+
 - **E24: Enhanced isolation configuration during deferral** (Design) — firewall rule modification records showing additional restrictions applied during the vulnerability window.
 - **E25: Vulnerability-specific monitoring rules** (Operational) — IDS/IPS signatures or SIEM correlation rules deployed specifically to detect exploitation attempts for the disclosed vulnerability.
 
@@ -1404,11 +1424,8 @@ graph TD
 The choice between Strategy A and Strategy B depends on four factors:
 
 1. **Vulnerability severity (CVSS score and exploitability)**: A critical vulnerability with known active exploitation (CVSS ≥ 9.0, public exploit code available) favours Strategy A — the cybersecurity risk of delay is very high. A moderate vulnerability with no known exploit (CVSS 4.0–6.9, theoretical impact) may favour Strategy B — there is more time for proper validation.
-
 2. **Device safety class (IEC 62304)**: For Class C devices (failure could cause death or serious injury, such as infusion pump dosing control), the re-validation burden under IEC 62304 is highest, but so is the consequence of a safety defect introduced by the patch. Strategy B is generally preferred unless the vulnerability is actively exploited. For Class A devices (no injury possible), Strategy A can be adopted with minimal compensating controls.
-
 3. **Availability of compensating controls**: Strategy A requires robust clinical compensating controls (additional monitoring, manual verification). If the clinical area lacks the staffing to implement these controls (e.g., during a nightshift on an understaffed ward), Strategy A becomes less tenable. Strategy B requires robust network compensating controls (enhanced isolation, vulnerability-specific monitoring). If the clinical zone's monitoring infrastructure is immature, Strategy B becomes less tenable.
-
 4. **Manufacturer cooperation**: If the manufacturer provides interim safety guidance (E23) confirming that the patch does not affect safety-critical functions, Strategy A's residual risk is substantially reduced. If the manufacturer cannot or will not provide this guidance, Strategy A proceeds with higher uncertainty.
 
 **Recommendation for Northgate**: For the infusion pump fleet (IEC 62304 Class C software), the default strategy should be **Strategy B (defer patch)**, unless the vulnerability is assessed as critical severity with active exploitation. In that exceptional case, Strategy A should be adopted with enhanced clinical monitoring and with the consent of the joint IT/Clinical Engineering governance committee, documented as a formal risk acceptance with a defined time limit for completing safety re-validation.
@@ -1419,28 +1436,28 @@ The choice between Strategy A and Strategy B depends on four factors:
 
 ### Summary Table
 
-| Defeater ID | Claim(s) Affected | Defeater Condition | Mitigation | Status |
-|-------------|-------------------|--------------------|------------|--------|
-| D1 | CLAIM-HC-002 | Supply-chain compromise of manufacturer firmware signing key | Supply chain security assessment (REQ-HC-SEC-027); manufacturer cooperation (REQ-HC-SEC-026) | Accepted (R1) |
-| D2 | CLAIM-HC-002 | Zero-day vulnerability in firmware verification implementation | Network segmentation limits access; firmware version register detects discrepancy | Accepted (R1) |
-| D3 | CLAIM-HC-003 | Direct database modification bypassing audit trail (Scenario 02) | Automated version comparison (E2); offline pharmacy governance record | Partially mitigated |
-| D4 | CLAIM-HC-003 | Fleet management console unavailable (Scenario 01) | Clinical fallback procedures (CLAIM-HC-010); dual authorisation (REQ-HC-SAF-014) | Mitigated |
-| D5 | CLAIM-HC-004 | Central station compromised — audit and alerting unavailable | Independent bedside alarming (REQ-HC-SAF-003); clinical fallback procedures | Partially mitigated |
-| D6 | CLAIM-HC-004 | Attacker modifies clinical governance baseline profile alongside device thresholds | Independent paper record of approved profiles; quarterly governance review | Partially mitigated |
-| D7 | CLAIM-HC-009 | Shared service account credential compromise | Command logging (E1); session-origin verification | Partially mitigated |
-| D8 | CLAIM-HC-009 | Undocumented device command interfaces (debugging modes, vendor ports) | Pre-deployment security assessment (REQ-HC-SEC-027) | Partially mitigated |
-| D9 | CLAIM-HC-006 | Undetected data corruption prior to backup | 90-day WORM retention; clinical data reconciliation | Accepted (R2) |
-| D10 | CLAIM-HC-006 | Off-site backup authentication compromise | Separate IAM domain; MFA; WORM retention prevents deletion | Mitigated |
-| D11 | CLAIM-HC-008 | Subtle pixel-level image manipulation without metadata change | Clinical peer review; DICOM pixel data signatures (partial) | Partially mitigated |
-| D12 | CLAIM-HC-008 | PACS admin compromise disables integrity controls | Network segmentation; separate PACS admin credentials | Partially mitigated |
-| D13 | CLAIM-HC-010 | Staff not trained or unfamiliar with fallback procedures | Mandatory induction; biannual drills (78% participation) | Partially mitigated |
-| D14 | CLAIM-HC-010 | Fallback procedures introduce safety errors (transcription, legibility) | Double-check requirements (REQ-HC-SAF-014); additional pharmacy staffing | Accepted (inherent limitation) |
-| D15 | CLAIM-HC-001 | Novel cross-zone exploit via permitted application-layer data flow | Clinical zone monitoring (REQ-HC-SEC-019); application whitelisting (REQ-HC-SEC-011) | Accepted (R3) |
-| D16 | CLAIM-HC-001 | Configuration drift re-introduces firewall exception rules | Continuous change monitoring; quarterly dual-verified audit | Mitigated |
-| D17 | CLAIM-HC-005 | Vendor credential + MFA combined compromise | Scheduled-window activation; real-time session monitoring | Partially mitigated |
-| D18 | CLAIM-HC-005 | Vendor unsanctioned access within legitimate session | Session monitoring against work order scope; contractual audit rights | Partially mitigated |
-| D19 | CLAIM-HC-007 | Response plan not followed under crisis pressure | Tabletop exercises; printed decision trees independent of electronic systems | Partially mitigated |
-| D20 | CLAIM-HC-007 | Novel containment scenario not covered by decision trees | Escalation to governance committee; post-incident plan revision | Partially mitigated |
+| Defeater ID | Claim(s) Affected | Defeater Condition                                                                 | Mitigation                                                                                   | Status                         |
+| ----------- | ----------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | ------------------------------ |
+| D1          | CLAIM-HC-002      | Supply-chain compromise of manufacturer firmware signing key                       | Supply chain security assessment (REQ-HC-SEC-027); manufacturer cooperation (REQ-HC-SEC-026) | Accepted (R1)                  |
+| D2          | CLAIM-HC-002      | Zero-day vulnerability in firmware verification implementation                     | Network segmentation limits access; firmware version register detects discrepancy            | Accepted (R1)                  |
+| D3          | CLAIM-HC-003      | Direct database modification bypassing audit trail (Scenario 02)                   | Automated version comparison (E2); offline pharmacy governance record                        | Partially mitigated            |
+| D4          | CLAIM-HC-003      | Fleet management console unavailable (Scenario 01)                                 | Clinical fallback procedures (CLAIM-HC-010); dual authorisation (REQ-HC-SAF-014)             | Mitigated                      |
+| D5          | CLAIM-HC-004      | Central station compromised — audit and alerting unavailable                       | Independent bedside alarming (REQ-HC-SAF-003); clinical fallback procedures                  | Partially mitigated            |
+| D6          | CLAIM-HC-004      | Attacker modifies clinical governance baseline profile alongside device thresholds | Independent paper record of approved profiles; quarterly governance review                   | Partially mitigated            |
+| D7          | CLAIM-HC-009      | Shared service account credential compromise                                       | Command logging (E1); session-origin verification                                            | Partially mitigated            |
+| D8          | CLAIM-HC-009      | Undocumented device command interfaces (debugging modes, vendor ports)             | Pre-deployment security assessment (REQ-HC-SEC-027)                                          | Partially mitigated            |
+| D9          | CLAIM-HC-006      | Undetected data corruption prior to backup                                         | 90-day WORM retention; clinical data reconciliation                                          | Accepted (R2)                  |
+| D10         | CLAIM-HC-006      | Off-site backup authentication compromise                                          | Separate IAM domain; MFA; WORM retention prevents deletion                                   | Mitigated                      |
+| D11         | CLAIM-HC-008      | Subtle pixel-level image manipulation without metadata change                      | Clinical peer review; DICOM pixel data signatures (partial)                                  | Partially mitigated            |
+| D12         | CLAIM-HC-008      | PACS admin compromise disables integrity controls                                  | Network segmentation; separate PACS admin credentials                                        | Partially mitigated            |
+| D13         | CLAIM-HC-010      | Staff not trained or unfamiliar with fallback procedures                           | Mandatory induction; biannual drills (78% participation)                                     | Partially mitigated            |
+| D14         | CLAIM-HC-010      | Fallback procedures introduce safety errors (transcription, legibility)            | Double-check requirements (REQ-HC-SAF-014); additional pharmacy staffing                     | Accepted (inherent limitation) |
+| D15         | CLAIM-HC-001      | Novel cross-zone exploit via permitted application-layer data flow                 | Clinical zone monitoring (REQ-HC-SEC-019); application whitelisting (REQ-HC-SEC-011)         | Accepted (R3)                  |
+| D16         | CLAIM-HC-001      | Configuration drift re-introduces firewall exception rules                         | Continuous change monitoring; quarterly dual-verified audit                                  | Mitigated                      |
+| D17         | CLAIM-HC-005      | Vendor credential + MFA combined compromise                                        | Scheduled-window activation; real-time session monitoring                                    | Partially mitigated            |
+| D18         | CLAIM-HC-005      | Vendor unsanctioned access within legitimate session                               | Session monitoring against work order scope; contractual audit rights                        | Partially mitigated            |
+| D19         | CLAIM-HC-007      | Response plan not followed under crisis pressure                                   | Tabletop exercises; printed decision trees independent of electronic systems                 | Partially mitigated            |
+| D20         | CLAIM-HC-007      | Novel containment scenario not covered by decision trees                           | Escalation to governance committee; post-incident plan revision                              | Partially mitigated            |
 
 ### Defeater Landscape Analysis
 
@@ -1458,43 +1475,39 @@ The supply-chain defeaters (**D1**, **D17**, **D18**) deserve attention because 
 
 ### Per-Element Assessment
 
-| Element | Confidence | Key Factors |
-|---------|-----------|-------------|
-| G2: Medical Device Integrity | **Medium-High** | Strong design evidence (firmware code signing, drug library controls); weaker operational evidence (daily audits depend on staffing levels and console availability). Shared service account (D7) is a known weakness in device authentication. |
-| G3: Clinical Data Integrity and Availability | **Medium** | Backup immutability is well-evidenced (E9, E10) and High confidence for recoverability. PACS integrity controls are newer and less tested — pixel-level manipulation remains a gap (D11). Fallback procedures are comprehensively documented but drill results show imperfect staff compliance (78% participation, simulated errors during paper prescribing). |
-| G4: Enterprise-to-Clinical Isolation | **Medium-High** | Penetration testing (E13) provides strong, independently-verified point-in-time evidence. Firewall audit with continuous change monitoring (E12) provides ongoing assurance. Vendor access controls (E14, E15) are robust. Weakest link is the application-layer cross-zone data flows that the firewall must permit (D15). |
-| G1: Top-Level Goal | **Medium** | The defence-in-depth structure across all three sub-goals provides collective resilience. No single sub-goal has Low confidence. The weakest points are: (1) the time-bounded detection gap for drug library manipulation (D3); (2) the dependency of alarm auditing on the central station being online (D5); and (3) the inherent limitations of paper-based clinical fallback (D14). |
+| Element                                      | Confidence      | Key Factors                                                                                                                                                                                                                                                                                                                                                                             |
+| -------------------------------------------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| G2: Medical Device Integrity                 | **Medium-High** | Strong design evidence (firmware code signing, drug library controls); weaker operational evidence (daily audits depend on staffing levels and console availability). Shared service account (D7) is a known weakness in device authentication.                                                                                                                                         |
+| G3: Clinical Data Integrity and Availability | **Medium**      | Backup immutability is well-evidenced (E9, E10) and High confidence for recoverability. PACS integrity controls are newer and less tested — pixel-level manipulation remains a gap (D11). Fallback procedures are comprehensively documented but drill results show imperfect staff compliance (78% participation, simulated errors during paper prescribing).                          |
+| G4: Enterprise-to-Clinical Isolation         | **Medium-High** | Penetration testing (E13) provides strong, independently-verified point-in-time evidence. Firewall audit with continuous change monitoring (E12) provides ongoing assurance. Vendor access controls (E14, E15) are robust. Weakest link is the application-layer cross-zone data flows that the firewall must permit (D15).                                                             |
+| G1: Top-Level Goal                           | **Medium**      | The defence-in-depth structure across all three sub-goals provides collective resilience. No single sub-goal has Low confidence. The weakest points are: (1) the time-bounded detection gap for drug library manipulation (D3); (2) the dependency of alarm auditing on the central station being online (D5); and (3) the inherent limitations of paper-based clinical fallback (D14). |
 
 ### Confidence Improvement Pathway
 
 To raise overall confidence from Medium to Medium-High, the following improvements would be needed:
 
 1. **Continuous drug library hash verification**: Replace the four-hourly scheduled comparison (E2) with continuous, event-triggered verification on every drug library deployment. This would close the time-bounded window identified in D3.
-
 2. **Independent alarm audit mechanism**: Deploy a secondary alarm threshold verification mechanism that operates independently of the patient monitoring central station — for example, a standalone audit agent that queries bedside monitors directly.
-
 3. **Per-user device command authentication**: Replace the shared fleet management service account with per-user authentication for device command execution, closing the vulnerability identified in D7.
-
 4. **Increased fallback drill participation**: Achieve ≥90% staff participation in fallback procedure drills. Consider mandatory participation as a condition of clinical employment.
-
 5. **Independent third-party assurance case review**: Commission a qualified independent assessor to challenge the assurance case structure, test the evidence claims, and identify gaps not visible to the case authors.
 
 ---
 
 ## 10. Traceability Matrix
 
-| Claim | Cybersecurity Requirement(s) | Safety Requirement(s) | Evidence | Attack Scenario Reference |
-|-------|-----------------------------|-----------------------|----------|--------------------------|
-| CLAIM-HC-001 | REQ-HC-SEC-007, REQ-HC-SEC-008, REQ-HC-SEC-014 | REQ-HC-SAF-001, REQ-HC-SAF-003, REQ-HC-SAF-005, REQ-HC-SAF-009 | E12, E13 | Scenario 01, Steps 8–10 |
-| CLAIM-HC-002 | REQ-HC-SEC-017 | REQ-HC-SAF-011 | E5, E6, E19 | Scenario 02, Step 8 |
-| CLAIM-HC-003 | REQ-HC-SEC-020 | REQ-HC-SAF-001, REQ-HC-SAF-002 | E1, E2 | Scenario 02, Steps 5, 10 |
-| CLAIM-HC-004 | REQ-HC-SEC-021 | REQ-HC-SAF-003, REQ-HC-SAF-004 | E3, E4 | Scenario 02, Steps 6, 12 |
-| CLAIM-HC-005 | REQ-HC-SEC-018 | REQ-HC-SAF-001, REQ-HC-SAF-009 | E14, E15 | Scenario 02, Step 1 |
-| CLAIM-HC-006 | REQ-HC-SEC-012, REQ-HC-SEC-013 | REQ-HC-SAF-010, REQ-HC-SAF-012 | E9, E10 | Scenario 01, Step 7 |
-| CLAIM-HC-007 | REQ-HC-SEC-022 | REQ-HC-SAF-009, REQ-HC-SAF-010 | E16, E17 | Scenario 01, Step 13 |
-| CLAIM-HC-008 | REQ-HC-SEC-019 | REQ-HC-SAF-007 | E7, E8 | Scenario 02, Steps 7, 11 |
-| CLAIM-HC-009 | REQ-HC-SEC-016 | REQ-HC-SAF-001, REQ-HC-SAF-004 | E20, E21 | Scenario 02, Steps 3–5 |
-| CLAIM-HC-010 | REQ-HC-SEC-023 | REQ-HC-SAF-008, REQ-HC-SAF-010 | E11 | Scenario 01, Steps 11–13 |
+| Claim        | Cybersecurity Requirement(s)                   | Safety Requirement(s)                                          | Evidence    | Attack Scenario Reference |
+| ------------ | ---------------------------------------------- | -------------------------------------------------------------- | ----------- | ------------------------- |
+| CLAIM-HC-001 | REQ-HC-SEC-007, REQ-HC-SEC-008, REQ-HC-SEC-014 | REQ-HC-SAF-001, REQ-HC-SAF-003, REQ-HC-SAF-005, REQ-HC-SAF-009 | E12, E13    | Scenario 01, Steps 8–10   |
+| CLAIM-HC-002 | REQ-HC-SEC-017                                 | REQ-HC-SAF-011                                                 | E5, E6, E19 | Scenario 02, Step 8       |
+| CLAIM-HC-003 | REQ-HC-SEC-020                                 | REQ-HC-SAF-001, REQ-HC-SAF-002                                 | E1, E2      | Scenario 02, Steps 5, 10  |
+| CLAIM-HC-004 | REQ-HC-SEC-021                                 | REQ-HC-SAF-003, REQ-HC-SAF-004                                 | E3, E4      | Scenario 02, Steps 6, 12  |
+| CLAIM-HC-005 | REQ-HC-SEC-018                                 | REQ-HC-SAF-001, REQ-HC-SAF-009                                 | E14, E15    | Scenario 02, Step 1       |
+| CLAIM-HC-006 | REQ-HC-SEC-012, REQ-HC-SEC-013                 | REQ-HC-SAF-010, REQ-HC-SAF-012                                 | E9, E10     | Scenario 01, Step 7       |
+| CLAIM-HC-007 | REQ-HC-SEC-022                                 | REQ-HC-SAF-009, REQ-HC-SAF-010                                 | E16, E17    | Scenario 01, Step 13      |
+| CLAIM-HC-008 | REQ-HC-SEC-019                                 | REQ-HC-SAF-007                                                 | E7, E8      | Scenario 02, Steps 7, 11  |
+| CLAIM-HC-009 | REQ-HC-SEC-016                                 | REQ-HC-SAF-001, REQ-HC-SAF-004                                 | E20, E21    | Scenario 02, Steps 3–5    |
+| CLAIM-HC-010 | REQ-HC-SEC-023                                 | REQ-HC-SAF-008, REQ-HC-SAF-010                                 | E11         | Scenario 01, Steps 11–13  |
 
 ### Requirement Coverage Analysis
 
@@ -1553,19 +1566,13 @@ This healthcare safety case connects to the other two case studies in the CyBOK 
 ### 5. Open Questions for Learners
 
 1. **What happens to CLAIM-HC-001 if a dual-homed clinical workstation is discovered during a routine audit?** The firewall rule audit (E12) confirms no exception rules exist, but a workstation with two physical network interfaces could bypass the firewall entirely. How would the Trust detect this, and what is the appropriate response?
-
 2. **CLAIM-HC-003 relies on pharmacy governance as an independent verification mechanism. What if the pharmacy governance process is itself compromised?** For example, if the attacker social-engineers a pharmacist into approving a malicious drug library update, the automated comparison (E2) would report no discrepancy because the "approved" and "deployed" versions match.
-
 3. **The patching constraint (Section 7) assumes that the manufacturer provides timely security patches for medical device firmware. In practice, many device manufacturers do not — especially for legacy devices approaching end-of-life. How should the assurance case be modified if the manufacturer has ceased providing patches?** Which of the two strategies (A or B) is viable in this scenario?
-
 4. **The alarm threshold auditing (CLAIM-HC-004) runs daily. Could an attacker execute a time-bounded attack — modifying thresholds after the morning audit, exploiting the window, and restoring the original thresholds before the next day's audit?** What additional controls would detect this?
-
 5. **The clinical fallback procedures (CLAIM-HC-010) achieve 78% staff drill participation. Is this acceptable?** What participation rate would be required to claim "all clinical staff are competent in fallback procedures"? What are the practical barriers to 100% participation in a 24/7 hospital environment?
-
 6. **The assurance case treats the three sub-goals as semi-independent, but the Northgate incident demonstrates compounding effects — simultaneous failure of monitoring, prescribing, and clinical records is worse than any individual failure. Does the CAE structure adequately represent this compound risk?** How would it need to be modified to explicitly address multi-system failure scenarios?
 
-
-## File: ./regulatory_frameworks/overview.md
+## File: ./regulatory_frameworks/overview\.md
 
 # Regulatory Framework Overview — Healthcare
 
@@ -1632,6 +1639,7 @@ In the Northgate scenario, IEC 60601-1-8 is directly relevant to the patient mon
 IEC 62443 is a family of standards addressing cybersecurity for industrial automation and control systems (IACS). Although originally developed for industrial process control, IEC 62443 is increasingly applied to medical device networks, where networked clinical devices function as operational technology (OT) with safety-critical functions.
 
 The most relevant parts for the Northgate scenario are:
+
 - **IEC 62443-3-3** (System security requirements and security levels): Defines security requirements organised by foundational requirement (identification and authentication, use control, system integrity, data confidentiality, restricted data flow, timely response to events, resource availability). These map directly to many of the requirements in the Northgate cybersecurity requirements catalogue.
 - **IEC 62443-2-4** (Security program requirements for IACS service providers): Applicable to medical device vendors providing remote support and maintenance.
 
@@ -1643,7 +1651,6 @@ NIST Special Publication 800-82 provides guidance on securing industrial control
 
 NIST SP 800-82's six-step risk management process (identify assets, identify vulnerabilities, identify threats, determine impacts, set probability, implement controls) provides a structured approach to assessing the cyber-safety risk at Northgate. The standard also emphasises the importance of separating IT and OT networks, validating patch applicability before deployment to control systems, and maintaining manual overrides as a safety fallback — all principles that are directly applicable to the healthcare scenario.
 
-
 ## File: ./regulatory_frameworks/standards_mapping.md
 
 # Standards Mapping — Healthcare
@@ -1652,24 +1659,23 @@ Mapping between regulatory requirements, applicable standards, and their securit
 
 ---
 
-| Regulatory Requirement | Standard / Clause | Security Implication | Safety Implication |
-|------------------------|-------------------|---------------------|-------------------|
-| NHS trusts must implement appropriate access controls to prevent unauthorised access to patient data and clinical systems | NHS DSPT assertion 4.3; IEC 62443-3-3 SR 1.1 (Identification and authentication control) | Drives requirements for MFA on VPN access, privileged access management, and role-based access control across enterprise and clinical zones | Prevents unauthorised access to medical device management systems, protecting the integrity of infusion pump drug libraries and patient monitor configurations |
-| Operators of essential services must take proportionate measures to manage network and information security risks | NIS Regulations 2018, Regulation 10; IEC 62443-3-3 SR 5.1 (Network segmentation) | Drives the requirement for enterprise-to-clinical network segmentation, elimination of dual-homed workstations, and allow-list firewall rules | Segmentation is the primary architectural control preventing enterprise compromise from cascading to safety-critical clinical devices |
-| Operators of essential services must report incidents with significant impact on service continuity | NIS Regulations 2018, Regulation 11 | Requires incident detection, logging, and notification capabilities; drives SIEM deployment and alert triage SLAs | Timely incident detection enables earlier containment, reducing the window during which safety-critical systems are compromised |
-| Medical device manufacturers must consider cybersecurity throughout the product lifecycle | MHRA Cybersecurity Guidance; IEC 62304 Section 6 (Software maintenance) | Requires manufacturers to provide timely security patches and coordinated vulnerability disclosure; drives supply chain security requirements | Ensures safety-critical device software remains maintained against evolving cyber threats; reduces the vulnerability window for safety-certified devices |
-| Medical device risk management must identify hazardous situations including those arising from IT network integration | ISO 14971 Clause 4.4; IEC 62443-3-3 (general) | Requires that cyber threats are included as potential causes of hazardous situations in the device manufacturer's risk management file | Ensures that risks such as "drug library corruption leading to overdose" or "alarm manipulation leading to missed deterioration" are formally identified and controlled |
-| Medical device software changes, including security patches, must follow change control processes proportionate to the software safety class | IEC 62304 Section 8 (Problem resolution); IEC 62304 Section 9 (Software configuration management) | Creates the "patching paradox" — security patches cannot be deployed immediately because they require safety re-validation | Maintains the integrity of the safety case for device software, but creates a window of vulnerability during which security risk is elevated |
-| Alarm systems in medical equipment must meet requirements for signal generation, prioritisation, and perceptibility | IEC 60601-1-8 (Alarm systems) | Alarm system cybersecurity must ensure that alarm configurations cannot be remotely modified without authorisation | Alarm systems must maintain essential performance under fault conditions; raises the question of whether a cyber attack constitutes a "fault" within scope |
-| IACS networks must be divided into security zones with controlled conduits between them | IEC 62443-3-3 SR 5.1, SR 5.2 (Zone and conduit model) | Provides the formal framework for the enterprise / clinical / external zone architecture and the firewall conduits between them | Zone separation is the primary mechanism preventing enterprise cyber threats from reaching safety-critical OT (medical device) systems |
-| Healthcare providers must implement staff cybersecurity awareness training | NHS DSPT assertion 3.4; NCSC Phishing Guidance | Drives requirements for phishing awareness training and simulated exercises to reduce susceptibility to social engineering | Reduces the probability of the initial access vector (spear-phishing) that initiates the security-to-safety attack chain |
-| Backup and business continuity arrangements must ensure recovery of essential services | NHS DSPT assertion 10.3; NIS Regulations 2018 | Drives requirements for immutable/air-gapped backups, backup testing, and recovery time objectives | Enables timely recovery of safety-critical systems (EHR, device management, monitoring) following a destructive cyber event, minimising the period of degraded clinical safety |
-| Vendor remote access to IACS must be controlled, authenticated, and monitored | IEC 62443-2-4; IEC 62443-3-3 SR 1.13 | Requires MFA, scheduled-window activation, and session monitoring for manufacturer remote support connections to clinical device networks | Prevents a compromised vendor credential from being used to access medical device management systems and push malicious firmware or configuration changes |
-| Operators must maintain incident response plans that address continuity of essential services | NIS Regulations 2018; NHS DSPT assertion 9.5 | Drives the requirement for an integrated incident response plan coordinating IT containment with clinical operations | Ensures that IT containment decisions (e.g., severing network links) are informed by clinical impact analysis, preventing containment actions from creating new safety hazards |
-| Medical device networks must implement integrity controls to detect and prevent unauthorised modifications | IEC 62443-3-3 SR 3.4 (Software and information integrity); MHRA Guidance | Drives requirements for application whitelisting, configuration change detection, and firmware signature verification on the clinical device network | Protects the integrity of safety-critical device parameters (dose limits, alarm thresholds, firmware) against manipulation by an attacker within the clinical zone |
-| Risk assessment for IACS must consider the consequences of security events on the physical process | NIST SP 800-82 Section 3; ISO 14971 | Requires that cybersecurity risk assessment explicitly evaluates the impact of cyber events on patient care processes and safety outcomes | Bridges the gap between purely technical security risk assessment and clinical safety risk assessment, enabling the security-informed safety approach |
-| Healthcare organisations must comply with UK data protection law regarding patient data security | UK GDPR / Data Protection Act 2018; ICO guidance | Drives encryption, access control, and breach notification requirements for patient personal data | While primarily a data protection obligation, the integrity controls required for GDPR compliance also support the accuracy of clinical data used in safety-critical decisions |
-
+| Regulatory Requirement                                                                                                                       | Standard / Clause                                                                                 | Security Implication                                                                                                                                 | Safety Implication                                                                                                                                                             |
+| -------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| NHS trusts must implement appropriate access controls to prevent unauthorised access to patient data and clinical systems                    | NHS DSPT assertion 4.3; IEC 62443-3-3 SR 1.1 (Identification and authentication control)          | Drives requirements for MFA on VPN access, privileged access management, and role-based access control across enterprise and clinical zones          | Prevents unauthorised access to medical device management systems, protecting the integrity of infusion pump drug libraries and patient monitor configurations                 |
+| Operators of essential services must take proportionate measures to manage network and information security risks                            | NIS Regulations 2018, Regulation 10; IEC 62443-3-3 SR 5.1 (Network segmentation)                  | Drives the requirement for enterprise-to-clinical network segmentation, elimination of dual-homed workstations, and allow-list firewall rules        | Segmentation is the primary architectural control preventing enterprise compromise from cascading to safety-critical clinical devices                                          |
+| Operators of essential services must report incidents with significant impact on service continuity                                          | NIS Regulations 2018, Regulation 11                                                               | Requires incident detection, logging, and notification capabilities; drives SIEM deployment and alert triage SLAs                                    | Timely incident detection enables earlier containment, reducing the window during which safety-critical systems are compromised                                                |
+| Medical device manufacturers must consider cybersecurity throughout the product lifecycle                                                    | MHRA Cybersecurity Guidance; IEC 62304 Section 6 (Software maintenance)                           | Requires manufacturers to provide timely security patches and coordinated vulnerability disclosure; drives supply chain security requirements        | Ensures safety-critical device software remains maintained against evolving cyber threats; reduces the vulnerability window for safety-certified devices                       |
+| Medical device risk management must identify hazardous situations including those arising from IT network integration                        | ISO 14971 Clause 4.4; IEC 62443-3-3 (general)                                                     | Requires that cyber threats are included as potential causes of hazardous situations in the device manufacturer's risk management file               | Ensures that risks such as "drug library corruption leading to overdose" or "alarm manipulation leading to missed deterioration" are formally identified and controlled        |
+| Medical device software changes, including security patches, must follow change control processes proportionate to the software safety class | IEC 62304 Section 8 (Problem resolution); IEC 62304 Section 9 (Software configuration management) | Creates the "patching paradox" — security patches cannot be deployed immediately because they require safety re-validation                           | Maintains the integrity of the safety case for device software, but creates a window of vulnerability during which security risk is elevated                                   |
+| Alarm systems in medical equipment must meet requirements for signal generation, prioritisation, and perceptibility                          | IEC 60601-1-8 (Alarm systems)                                                                     | Alarm system cybersecurity must ensure that alarm configurations cannot be remotely modified without authorisation                                   | Alarm systems must maintain essential performance under fault conditions; raises the question of whether a cyber attack constitutes a "fault" within scope                     |
+| IACS networks must be divided into security zones with controlled conduits between them                                                      | IEC 62443-3-3 SR 5.1, SR 5.2 (Zone and conduit model)                                             | Provides the formal framework for the enterprise / clinical / external zone architecture and the firewall conduits between them                      | Zone separation is the primary mechanism preventing enterprise cyber threats from reaching safety-critical OT (medical device) systems                                         |
+| Healthcare providers must implement staff cybersecurity awareness training                                                                   | NHS DSPT assertion 3.4; NCSC Phishing Guidance                                                    | Drives requirements for phishing awareness training and simulated exercises to reduce susceptibility to social engineering                           | Reduces the probability of the initial access vector (spear-phishing) that initiates the security-to-safety attack chain                                                       |
+| Backup and business continuity arrangements must ensure recovery of essential services                                                       | NHS DSPT assertion 10.3; NIS Regulations 2018                                                     | Drives requirements for immutable/air-gapped backups, backup testing, and recovery time objectives                                                   | Enables timely recovery of safety-critical systems (EHR, device management, monitoring) following a destructive cyber event, minimising the period of degraded clinical safety |
+| Vendor remote access to IACS must be controlled, authenticated, and monitored                                                                | IEC 62443-2-4; IEC 62443-3-3 SR 1.13                                                              | Requires MFA, scheduled-window activation, and session monitoring for manufacturer remote support connections to clinical device networks            | Prevents a compromised vendor credential from being used to access medical device management systems and push malicious firmware or configuration changes                      |
+| Operators must maintain incident response plans that address continuity of essential services                                                | NIS Regulations 2018; NHS DSPT assertion 9.5                                                      | Drives the requirement for an integrated incident response plan coordinating IT containment with clinical operations                                 | Ensures that IT containment decisions (e.g., severing network links) are informed by clinical impact analysis, preventing containment actions from creating new safety hazards |
+| Medical device networks must implement integrity controls to detect and prevent unauthorised modifications                                   | IEC 62443-3-3 SR 3.4 (Software and information integrity); MHRA Guidance                          | Drives requirements for application whitelisting, configuration change detection, and firmware signature verification on the clinical device network | Protects the integrity of safety-critical device parameters (dose limits, alarm thresholds, firmware) against manipulation by an attacker within the clinical zone             |
+| Risk assessment for IACS must consider the consequences of security events on the physical process                                           | NIST SP 800-82 Section 3; ISO 14971                                                               | Requires that cybersecurity risk assessment explicitly evaluates the impact of cyber events on patient care processes and safety outcomes            | Bridges the gap between purely technical security risk assessment and clinical safety risk assessment, enabling the security-informed safety approach                          |
+| Healthcare organisations must comply with UK data protection law regarding patient data security                                             | UK GDPR / Data Protection Act 2018; ICO guidance                                                  | Drives encryption, access control, and breach notification requirements for patient personal data                                                    | While primarily a data protection obligation, the integrity controls required for GDPR compliance also support the accuracy of clinical data used in safety-critical decisions |
 
 ## File: ./requirements/claims.md
 
@@ -1681,46 +1687,25 @@ These claims form the bridge between the cybersecurity requirements and the func
 
 ## Claims
 
-**CLAIM-HC-001: Network Segmentation Protects Device Integrity**
-Claim: Provided that the medical device network is fully segmented from the enterprise IT network with no dual-homed workstations or legacy exception rules (REQ-HC-SEC-007, REQ-HC-SEC-008, REQ-HC-SEC-014), the risk of an enterprise-zone compromise propagating to infusion pump controllers, patient monitors, or ventilators remains within tolerable bounds (REQ-HC-SAF-001, REQ-HC-SAF-003, REQ-HC-SAF-005).
-Evidence required: Firewall rule audit confirming no cross-zone exceptions; network architecture diagram verified against physical configuration; penetration test demonstrating inability to reach clinical devices from enterprise zone.
+**CLAIM-HC-001: Network Segmentation Protects Device Integrity** Claim: Provided that the medical device network is fully segmented from the enterprise IT network with no dual-homed workstations or legacy exception rules (REQ-HC-SEC-007, REQ-HC-SEC-008, REQ-HC-SEC-014), the risk of an enterprise-zone compromise propagating to infusion pump controllers, patient monitors, or ventilators remains within tolerable bounds (REQ-HC-SAF-001, REQ-HC-SAF-003, REQ-HC-SAF-005). Evidence required: Firewall rule audit confirming no cross-zone exceptions; network architecture diagram verified against physical configuration; penetration test demonstrating inability to reach clinical devices from enterprise zone.
 
-**CLAIM-HC-002: Firmware Integrity Prevents Device Manipulation**
-Claim: Provided that medical device firmware updates are cryptographically signed and verified before installation (REQ-HC-SEC-017), the risk of an attacker deploying backdoored or manipulated firmware to infusion pumps or other clinical devices is effectively mitigated (REQ-HC-SAF-011).
-Evidence required: Manufacturer attestation of code signing process; device-side verification testing; fleet management console rejection testing with unsigned firmware images.
+**CLAIM-HC-002: Firmware Integrity Prevents Device Manipulation** Claim: Provided that medical device firmware updates are cryptographically signed and verified before installation (REQ-HC-SEC-017), the risk of an attacker deploying backdoored or manipulated firmware to infusion pumps or other clinical devices is effectively mitigated (REQ-HC-SAF-011). Evidence required: Manufacturer attestation of code signing process; device-side verification testing; fleet management console rejection testing with unsigned firmware images.
 
-**CLAIM-HC-003: Drug Library Change Control Preserves Dose Safety**
-Claim: Provided that infusion pump drug library changes are monitored, require pharmacy governance approval, and are verified before deployment (REQ-HC-SEC-020), the drug library dose range checking function remains trustworthy and effective (REQ-HC-SAF-001, REQ-HC-SAF-002).
-Evidence required: Drug library change audit trail; pharmacy governance sign-off records; automated comparison of deployed drug library version against authorised version.
+**CLAIM-HC-003: Drug Library Change Control Preserves Dose Safety** Claim: Provided that infusion pump drug library changes are monitored, require pharmacy governance approval, and are verified before deployment (REQ-HC-SEC-020), the drug library dose range checking function remains trustworthy and effective (REQ-HC-SAF-001, REQ-HC-SAF-002). Evidence required: Drug library change audit trail; pharmacy governance sign-off records; automated comparison of deployed drug library version against authorised version.
 
-**CLAIM-HC-004: Alarm Configuration Auditing Maintains Monitoring Effectiveness**
-Claim: Provided that patient monitor alarm thresholds are audited against clinical governance-approved defaults and deviations are alerted upon automatically (REQ-HC-SEC-021), the risk of silently manipulated alarm thresholds causing delayed clinical response is reduced to a tolerable level (REQ-HC-SAF-003, REQ-HC-SAF-004).
-Evidence required: Daily alarm configuration audit reports; automated alert records for threshold deviations; clinical governance committee approval of default alarm profiles.
+**CLAIM-HC-004: Alarm Configuration Auditing Maintains Monitoring Effectiveness** Claim: Provided that patient monitor alarm thresholds are audited against clinical governance-approved defaults and deviations are alerted upon automatically (REQ-HC-SEC-021), the risk of silently manipulated alarm thresholds causing delayed clinical response is reduced to a tolerable level (REQ-HC-SAF-003, REQ-HC-SAF-004). Evidence required: Daily alarm configuration audit reports; automated alert records for threshold deviations; clinical governance committee approval of default alarm profiles.
 
-**CLAIM-HC-005: Vendor Access Controls Prevent Supply-Chain Attack Path**
-Claim: Provided that vendor remote-access connections to the clinical device network require multi-factor authentication, operate only during scheduled windows, and are continuously monitored (REQ-HC-SEC-018), the risk of a compromised vendor credential being used to access the clinical zone is managed to a tolerable level (REQ-HC-SAF-001, REQ-HC-SAF-009).
-Evidence required: Vendor access logs showing session activation only during approved windows; MFA enforcement records; real-time monitoring alerts for vendor session anomalies.
+**CLAIM-HC-005: Vendor Access Controls Prevent Supply-Chain Attack Path** Claim: Provided that vendor remote-access connections to the clinical device network require multi-factor authentication, operate only during scheduled windows, and are continuously monitored (REQ-HC-SEC-018), the risk of a compromised vendor credential being used to access the clinical zone is managed to a tolerable level (REQ-HC-SAF-001, REQ-HC-SAF-009). Evidence required: Vendor access logs showing session activation only during approved windows; MFA enforcement records; real-time monitoring alerts for vendor session anomalies.
 
-**CLAIM-HC-006: Immutable Backups Enable Safety-Preserving Recovery**
-Claim: Provided that critical system backups are stored on immutable or air-gapped media, are regularly tested, and include the EHR, PACS, and device management configurations (REQ-HC-SEC-012, REQ-HC-SEC-013), clinically safe system recovery can be achieved within defined time limits following a ransomware or destructive attack (REQ-HC-SAF-010, REQ-HC-SAF-012).
-Evidence required: Backup architecture documentation showing immutability/air-gap; quarterly restoration test results; recovery time objective (RTO) test against safety-critical system recovery priority order.
+**CLAIM-HC-006: Immutable Backups Enable Safety-Preserving Recovery** Claim: Provided that critical system backups are stored on immutable or air-gapped media, are regularly tested, and include the EHR, PACS, and device management configurations (REQ-HC-SEC-012, REQ-HC-SEC-013), clinically safe system recovery can be achieved within defined time limits following a ransomware or destructive attack (REQ-HC-SAF-010, REQ-HC-SAF-012). Evidence required: Backup architecture documentation showing immutability/air-gap; quarterly restoration test results; recovery time objective (RTO) test against safety-critical system recovery priority order.
 
-**CLAIM-HC-007: Integrated Incident Response Prevents Containment-Induced Safety Hazards**
-Claim: Provided that the Trust's incident response plan integrates IT security containment decisions with clinical safety impact assessments (REQ-HC-SEC-022), network isolation and other containment actions will not inadvertently create patient safety hazards (REQ-HC-SAF-009, REQ-HC-SAF-010).
-Evidence required: Incident response plan documented and rehearsed with joint IT/Clinical Engineering tabletop exercises; exercise reports demonstrating that containment decisions are informed by clinical impact analysis; post-incident review confirming no containment-induced safety events.
+**CLAIM-HC-007: Integrated Incident Response Prevents Containment-Induced Safety Hazards** Claim: Provided that the Trust's incident response plan integrates IT security containment decisions with clinical safety impact assessments (REQ-HC-SEC-022), network isolation and other containment actions will not inadvertently create patient safety hazards (REQ-HC-SAF-009, REQ-HC-SAF-010). Evidence required: Incident response plan documented and rehearsed with joint IT/Clinical Engineering tabletop exercises; exercise reports demonstrating that containment decisions are informed by clinical impact analysis; post-incident review confirming no containment-induced safety events.
 
-**CLAIM-HC-008: PACS Integrity Controls Prevent Diagnostic Error**
-Claim: Provided that PACS image-patient identity bindings are cryptographically protected and that image modifications generate audit alerts requiring clinical confirmation (REQ-HC-SAF-007), the risk of wrong-patient diagnostic error or missed diagnoses due to image tampering is managed to a tolerable level.
-Evidence required: PACS integrity verification mechanism testing; audit alert generation testing for metadata modification; radiologist workflow verification confirming identity cross-checking is enforced.
+**CLAIM-HC-008: PACS Integrity Controls Prevent Diagnostic Error** Claim: Provided that PACS image-patient identity bindings are cryptographically protected and that image modifications generate audit alerts requiring clinical confirmation (REQ-HC-SAF-007), the risk of wrong-patient diagnostic error or missed diagnoses due to image tampering is managed to a tolerable level. Evidence required: PACS integrity verification mechanism testing; audit alert generation testing for metadata modification; radiologist workflow verification confirming identity cross-checking is enforced.
 
-**CLAIM-HC-009: Device Authentication Prevents Unauthorised Command Execution**
-Claim: Provided that medical devices authenticate the source of configuration commands and reject commands from unauthenticated sources (REQ-HC-SEC-016), the risk of an attacker sending unauthorised commands to infusion pumps, patient monitors, or ventilators from a compromised workstation is reduced to a tolerable level (REQ-HC-SAF-001, REQ-HC-SAF-004).
-Evidence required: Device authentication testing (commands from unauthorised sources rejected); clinical workstation access control verification; device management application access audit.
+**CLAIM-HC-009: Device Authentication Prevents Unauthorised Command Execution** Claim: Provided that medical devices authenticate the source of configuration commands and reject commands from unauthenticated sources (REQ-HC-SEC-016), the risk of an attacker sending unauthorised commands to infusion pumps, patient monitors, or ventilators from a compromised workstation is reduced to a tolerable level (REQ-HC-SAF-001, REQ-HC-SAF-004). Evidence required: Device authentication testing (commands from unauthorised sources rejected); clinical workstation access control verification; device management application access audit.
 
-**CLAIM-HC-010: Clinical Fallback Procedures Maintain Safe Care During Outage**
-Claim: Provided that documented clinical fallback procedures are maintained, regularly tested, and accessible at the point of care (REQ-HC-SEC-023, REQ-HC-SAF-008), clinicians can deliver safe care during any cyber-induced system outage, with defined process for recognising and correcting errors introduced during the manual phase (REQ-HC-SAF-010).
-Evidence required: Fallback procedure documentation in all clinical areas; biannual fallback procedure drill results; post-drill assessment confirming staff competence in paper-based clinical processes.
-
+**CLAIM-HC-010: Clinical Fallback Procedures Maintain Safe Care During Outage** Claim: Provided that documented clinical fallback procedures are maintained, regularly tested, and accessible at the point of care (REQ-HC-SEC-023, REQ-HC-SAF-008), clinicians can deliver safe care during any cyber-induced system outage, with defined process for recognising and correcting errors introduced during the manual phase (REQ-HC-SAF-010). Evidence required: Fallback procedure documentation in all clinical areas; biannual fallback procedure drill results; post-drill assessment confirming staff competence in paper-based clinical processes.
 
 ## File: ./requirements/cybersecurity_requirements.md
 
@@ -1732,76 +1717,37 @@ Evidence required: Fallback procedure documentation in all clinical areas; biann
 
 ### Identity and Access Management
 
-**REQ-HC-SEC-001: Multi-Factor Authentication for Remote Access**
-Description: All remote access connections (VPN, remote desktop) shall require multi-factor authentication combining at least two independent factors (e.g., password plus hardware token or authenticator application).
-Rationale: The Northgate incident's initial VPN compromise was enabled by single-factor authentication on contractor accounts. MFA would have prevented the attacker from using harvested credentials alone.
-Standard reference: NCSC guidance on multi-factor authentication; NHS DSPT assertion 4.3.
+**REQ-HC-SEC-001: Multi-Factor Authentication for Remote Access** Description: All remote access connections (VPN, remote desktop) shall require multi-factor authentication combining at least two independent factors (e.g., password plus hardware token or authenticator application). Rationale: The Northgate incident's initial VPN compromise was enabled by single-factor authentication on contractor accounts. MFA would have prevented the attacker from using harvested credentials alone. Standard reference: NCSC guidance on multi-factor authentication; NHS DSPT assertion 4.3.
 
-**REQ-HC-SEC-002: Privileged Access Management**
-Description: Domain administrator and other privileged accounts shall be managed through a privileged access management (PAM) solution with session recording, just-in-time access provisioning, and automatic credential rotation.
-Rationale: The attacker harvested cached domain admin credentials from a workstation where an administrator had recently logged in for routine troubleshooting. PAM controls would limit credential exposure.
-Standard reference: NCSC guidance on privileged access workstations; IEC 62443-3-3 SR 1.1.
+**REQ-HC-SEC-002: Privileged Access Management** Description: Domain administrator and other privileged accounts shall be managed through a privileged access management (PAM) solution with session recording, just-in-time access provisioning, and automatic credential rotation. Rationale: The attacker harvested cached domain admin credentials from a workstation where an administrator had recently logged in for routine troubleshooting. PAM controls would limit credential exposure. Standard reference: NCSC guidance on privileged access workstations; IEC 62443-3-3 SR 1.1.
 
-**REQ-HC-SEC-003: Contractor Account Governance**
-Description: Contractor and third-party accounts shall have defined expiry dates, shall be subject to the same MFA requirements as staff accounts, and shall be disabled within 24 hours of contract termination.
-Rationale: The contractor whose credentials were compromised had reused passwords across multiple employers. Account governance would limit the exposure window and enforce stronger credential standards.
-Standard reference: NHS DSPT assertion 4.2; ISO 27001 A.9.2.
+**REQ-HC-SEC-003: Contractor Account Governance** Description: Contractor and third-party accounts shall have defined expiry dates, shall be subject to the same MFA requirements as staff accounts, and shall be disabled within 24 hours of contract termination. Rationale: The contractor whose credentials were compromised had reused passwords across multiple employers. Account governance would limit the exposure window and enforce stronger credential standards. Standard reference: NHS DSPT assertion 4.2; ISO 27001 A.9.2.
 
-**REQ-HC-SEC-004: Role-Based Access Control**
-Description: Access to systems and data shall be controlled through role-based access control (RBAC), granting users the minimum privileges necessary for their role.
-Rationale: Broad access permissions enable lateral movement after initial compromise. RBAC limits the scope of any single compromised account.
-Standard reference: IEC 62443-3-3 SR 1.3; ISO 27001 A.9.1.
+**REQ-HC-SEC-004: Role-Based Access Control** Description: Access to systems and data shall be controlled through role-based access control (RBAC), granting users the minimum privileges necessary for their role. Rationale: Broad access permissions enable lateral movement after initial compromise. RBAC limits the scope of any single compromised account. Standard reference: IEC 62443-3-3 SR 1.3; ISO 27001 A.9.1.
 
 ### Network Security
 
-**REQ-HC-SEC-005: Perimeter Firewall and Web Filtering**
-Description: All internet-facing traffic shall pass through a next-generation firewall with URL filtering, SSL inspection, and intrusion prevention capabilities.
-Rationale: The initial phishing payload was delivered via a redirect through a legitimate cloud service that evaded basic URL reputation checking. Advanced web filtering could detect this pattern.
-Standard reference: NCSC guidance on network security; NIS Regulations 2018.
+**REQ-HC-SEC-005: Perimeter Firewall and Web Filtering** Description: All internet-facing traffic shall pass through a next-generation firewall with URL filtering, SSL inspection, and intrusion prevention capabilities. Rationale: The initial phishing payload was delivered via a redirect through a legitimate cloud service that evaded basic URL reputation checking. Advanced web filtering could detect this pattern. Standard reference: NCSC guidance on network security; NIS Regulations 2018.
 
-**REQ-HC-SEC-006: Email Security Controls**
-Description: Inbound email shall be filtered through a gateway with SPF/DKIM/DMARC validation, attachment sandboxing, and URL rewriting with time-of-click analysis.
-Rationale: The spear-phishing email that initiated the attack would be subject to multiple detection opportunities with layered email security controls.
-Standard reference: NCSC Phishing guidance; NHS DSPT assertion 8.1.
+**REQ-HC-SEC-006: Email Security Controls** Description: Inbound email shall be filtered through a gateway with SPF/DKIM/DMARC validation, attachment sandboxing, and URL rewriting with time-of-click analysis. Rationale: The spear-phishing email that initiated the attack would be subject to multiple detection opportunities with layered email security controls. Standard reference: NCSC Phishing guidance; NHS DSPT assertion 8.1.
 
-**REQ-HC-SEC-007: Enterprise-to-Clinical Network Segmentation**
-Description: The enterprise IT network and the clinical/medical device network shall be separated by a properly configured firewall with explicit allow-list rules. No legacy exception rules permitting broad bidirectional access shall remain in place.
-Rationale: Incomplete segmentation and legacy firewall exceptions allowed the ransomware to propagate from the enterprise zone to clinical device management systems. This is the critical control that prevents the security-to-safety pathway.
-Standard reference: IEC 62443-3-3 SR 5.1; NCSC CAF B.4 — Network Security.
+**REQ-HC-SEC-007: Enterprise-to-Clinical Network Segmentation** Description: The enterprise IT network and the clinical/medical device network shall be separated by a properly configured firewall with explicit allow-list rules. No legacy exception rules permitting broad bidirectional access shall remain in place. Rationale: Incomplete segmentation and legacy firewall exceptions allowed the ransomware to propagate from the enterprise zone to clinical device management systems. This is the critical control that prevents the security-to-safety pathway. Standard reference: IEC 62443-3-3 SR 5.1; NCSC CAF B.4 — Network Security.
 
-**REQ-HC-SEC-008: Elimination of Dual-Homed Workstations**
-Description: Clinical workstations shall not be configured with network interfaces on both the enterprise and clinical VLANs. Access to cross-zone applications shall be provided through application-layer gateways, jump servers, or virtualised environments.
-Rationale: Dual-homed workstations were the primary mechanism through which the attack crossed from the enterprise zone to the clinical device network.
-Standard reference: IEC 62443-3-3 SR 5.2; NIST SP 800-82 Section 5.
+**REQ-HC-SEC-008: Elimination of Dual-Homed Workstations** Description: Clinical workstations shall not be configured with network interfaces on both the enterprise and clinical VLANs. Access to cross-zone applications shall be provided through application-layer gateways, jump servers, or virtualised environments. Rationale: Dual-homed workstations were the primary mechanism through which the attack crossed from the enterprise zone to the clinical device network. Standard reference: IEC 62443-3-3 SR 5.2; NIST SP 800-82 Section 5.
 
-**REQ-HC-SEC-009: Internal Network Monitoring**
-Description: The internal network shall be monitored for anomalous traffic patterns including port scanning, unusual SMB activity, lateral movement indicators, and cross-zone traffic anomalies.
-Rationale: SIEM alerts indicating unusual SMB traffic were generated but dismissed as migration-related noise. Effective internal network monitoring with appropriate baselines would improve detection fidelity.
-Standard reference: IEC 62443-3-3 SR 6.1; NCSC CAF C.1 — Security Monitoring.
+**REQ-HC-SEC-009: Internal Network Monitoring** Description: The internal network shall be monitored for anomalous traffic patterns including port scanning, unusual SMB activity, lateral movement indicators, and cross-zone traffic anomalies. Rationale: SIEM alerts indicating unusual SMB traffic were generated but dismissed as migration-related noise. Effective internal network monitoring with appropriate baselines would improve detection fidelity. Standard reference: IEC 62443-3-3 SR 6.1; NCSC CAF C.1 — Security Monitoring.
 
 ### Endpoint Security
 
-**REQ-HC-SEC-010: Endpoint Detection and Response (EDR)**
-Description: All enterprise and clinical workstations shall run an EDR agent capable of detecting fileless attacks, credential dumping, and ransomware encryption behaviour, with alerts triaged within defined SLAs.
-Rationale: The EDR agent on the initially compromised workstation flagged the PowerShell execution but the alert was classified low-severity and not triaged promptly.
-Standard reference: NCSC guidance on endpoint security; NHS DSPT assertion 8.3.
+**REQ-HC-SEC-010: Endpoint Detection and Response (EDR)** Description: All enterprise and clinical workstations shall run an EDR agent capable of detecting fileless attacks, credential dumping, and ransomware encryption behaviour, with alerts triaged within defined SLAs. Rationale: The EDR agent on the initially compromised workstation flagged the PowerShell execution but the alert was classified low-severity and not triaged promptly. Standard reference: NCSC guidance on endpoint security; NHS DSPT assertion 8.3.
 
-**REQ-HC-SEC-011: Application Whitelisting on Clinical Workstations**
-Description: Clinical workstations in the medical device zone shall enforce application whitelisting, permitting only authorised clinical and management applications to execute.
-Rationale: Application whitelisting on clinical workstations would prevent the execution of attacker tools and ransomware payloads even if the workstation is compromised at the network level.
-Standard reference: IEC 62443-3-3 SR 3.4; NIST SP 800-82 Section 6.
+**REQ-HC-SEC-011: Application Whitelisting on Clinical Workstations** Description: Clinical workstations in the medical device zone shall enforce application whitelisting, permitting only authorised clinical and management applications to execute. Rationale: Application whitelisting on clinical workstations would prevent the execution of attacker tools and ransomware payloads even if the workstation is compromised at the network level. Standard reference: IEC 62443-3-3 SR 3.4; NIST SP 800-82 Section 6.
 
 ### Data Protection and Recovery
 
-**REQ-HC-SEC-012: Immutable Backup Architecture**
-Description: Critical system backups shall be stored on immutable or air-gapped media that cannot be encrypted or deleted from the production network. The 3-2-1 backup rule (three copies, two media types, one off-site) shall be implemented.
-Rationale: The attacker encrypted the on-site NAS and wiped the tape library controller, destroying all on-site backups. Immutable off-site backups would have enabled rapid recovery.
-Standard reference: NCSC Ransomware guidance; NHS DSPT assertion 10.3.
+**REQ-HC-SEC-012: Immutable Backup Architecture** Description: Critical system backups shall be stored on immutable or air-gapped media that cannot be encrypted or deleted from the production network. The 3-2-1 backup rule (three copies, two media types, one off-site) shall be implemented. Rationale: The attacker encrypted the on-site NAS and wiped the tape library controller, destroying all on-site backups. Immutable off-site backups would have enabled rapid recovery. Standard reference: NCSC Ransomware guidance; NHS DSPT assertion 10.3.
 
-**REQ-HC-SEC-013: Backup Testing and Validation**
-Description: Backup integrity and restorability shall be tested quarterly through actual restoration exercises, with results documented and deficiencies remediated.
-Rationale: The compromised backup infrastructure was not routinely tested. Regular validation would have identified the vulnerability to network-based encryption.
-Standard reference: ISO 27001 A.12.3; NHS DSPT assertion 10.3.
+**REQ-HC-SEC-013: Backup Testing and Validation** Description: Backup integrity and restorability shall be tested quarterly through actual restoration exercises, with results documented and deficiencies remediated. Rationale: The compromised backup infrastructure was not routinely tested. Regular validation would have identified the vulnerability to network-based encryption. Standard reference: ISO 27001 A.12.3; NHS DSPT assertion 10.3.
 
 ---
 
@@ -1809,47 +1755,23 @@ Standard reference: ISO 27001 A.12.3; NHS DSPT assertion 10.3.
 
 ### Device Network Security
 
-**REQ-HC-SEC-014: Clinical VLAN Isolation**
-Description: All networked medical devices shall be connected to a dedicated clinical VLAN that is logically and physically separated from the enterprise network. Cross-zone traffic shall be restricted to explicitly defined and minimal data flows.
-Rationale: The incomplete VLAN migration left three wards on a flat segment shared with enterprise systems, providing direct access to medical devices from compromised enterprise workstations.
-Standard reference: IEC 62443-3-3 SR 5.1; MHRA medical device cybersecurity guidance.
+**REQ-HC-SEC-014: Clinical VLAN Isolation** Description: All networked medical devices shall be connected to a dedicated clinical VLAN that is logically and physically separated from the enterprise network. Cross-zone traffic shall be restricted to explicitly defined and minimal data flows. Rationale: The incomplete VLAN migration left three wards on a flat segment shared with enterprise systems, providing direct access to medical devices from compromised enterprise workstations. Standard reference: IEC 62443-3-3 SR 5.1; MHRA medical device cybersecurity guidance.
 
-**REQ-HC-SEC-015: Medical Device Communication Encryption**
-Description: Communication between medical devices and management systems shall use encrypted protocols with mutual authentication where device capability permits.
-Rationale: Legacy protocols (HL7 v2 over TCP, unencrypted DICOM) transmit clinical data and device commands in cleartext, enabling eavesdropping and command injection by an attacker on the clinical VLAN.
-Standard reference: IEC 62443-3-3 SR 4.1; NIST SP 800-82 Section 6.
+**REQ-HC-SEC-015: Medical Device Communication Encryption** Description: Communication between medical devices and management systems shall use encrypted protocols with mutual authentication where device capability permits. Rationale: Legacy protocols (HL7 v2 over TCP, unencrypted DICOM) transmit clinical data and device commands in cleartext, enabling eavesdropping and command injection by an attacker on the clinical VLAN. Standard reference: IEC 62443-3-3 SR 4.1; NIST SP 800-82 Section 6.
 
-**REQ-HC-SEC-016: Medical Device Authentication**
-Description: Medical devices shall authenticate command sources before accepting configuration changes, firmware updates, or operational parameter modifications.
-Rationale: Infusion pumps at Northgate accepted commands from any workstation on the clinical VLAN without verifying the source's identity, enabling an attacker to push malicious drug library updates.
-Standard reference: IEC 62443-3-3 SR 1.2; MHRA medical device cybersecurity guidance.
+**REQ-HC-SEC-016: Medical Device Authentication** Description: Medical devices shall authenticate command sources before accepting configuration changes, firmware updates, or operational parameter modifications. Rationale: Infusion pumps at Northgate accepted commands from any workstation on the clinical VLAN without verifying the source's identity, enabling an attacker to push malicious drug library updates. Standard reference: IEC 62443-3-3 SR 1.2; MHRA medical device cybersecurity guidance.
 
-**REQ-HC-SEC-017: Firmware Integrity Verification**
-Description: Medical device firmware updates shall be cryptographically signed by the manufacturer and verified by the device before installation. The fleet management console shall reject unsigned or modified firmware images.
-Rationale: The infusion pump fleet accepted firmware updates without signature verification, enabling an attacker to push backdoored firmware via the compromised management console.
-Standard reference: IEC 62443-3-3 SR 3.3; IEC 62304 Section 6.
+**REQ-HC-SEC-017: Firmware Integrity Verification** Description: Medical device firmware updates shall be cryptographically signed by the manufacturer and verified by the device before installation. The fleet management console shall reject unsigned or modified firmware images. Rationale: The infusion pump fleet accepted firmware updates without signature verification, enabling an attacker to push backdoored firmware via the compromised management console. Standard reference: IEC 62443-3-3 SR 3.3; IEC 62304 Section 6.
 
-**REQ-HC-SEC-018: Vendor Remote Access Controls**
-Description: Vendor remote-access connections to the clinical device network shall require multi-factor authentication, shall be activated only during scheduled maintenance windows, and shall be logged and monitored in real time.
-Rationale: The infusion pump manufacturer's persistent VPN connection with shared credentials provided an alternative attack vector directly into the clinical zone, bypassing enterprise perimeter defences.
-Standard reference: IEC 62443-3-3 SR 1.13; NCSC Supply Chain guidance.
+**REQ-HC-SEC-018: Vendor Remote Access Controls** Description: Vendor remote-access connections to the clinical device network shall require multi-factor authentication, shall be activated only during scheduled maintenance windows, and shall be logged and monitored in real time. Rationale: The infusion pump manufacturer's persistent VPN connection with shared credentials provided an alternative attack vector directly into the clinical zone, bypassing enterprise perimeter defences. Standard reference: IEC 62443-3-3 SR 1.13; NCSC Supply Chain guidance.
 
 ### Device Monitoring and Logging
 
-**REQ-HC-SEC-019: Medical Device Log Aggregation**
-Description: Logs from networked medical devices and their management systems shall be forwarded to the central SIEM for correlation with enterprise security events.
-Rationale: Medical device logs at Northgate were not aggregated into the SIEM, creating a monitoring blind spot that prevented detection of the cross-zone compromise.
-Standard reference: IEC 62443-3-3 SR 6.2; NCSC CAF C.1.
+**REQ-HC-SEC-019: Medical Device Log Aggregation** Description: Logs from networked medical devices and their management systems shall be forwarded to the central SIEM for correlation with enterprise security events. Rationale: Medical device logs at Northgate were not aggregated into the SIEM, creating a monitoring blind spot that prevented detection of the cross-zone compromise. Standard reference: IEC 62443-3-3 SR 6.2; NCSC CAF C.1.
 
-**REQ-HC-SEC-020: Drug Library Change Monitoring**
-Description: All changes to infusion pump drug library configurations shall generate alerts to pharmacy governance and information security teams, with changes verified against the authorised drug library version before deployment.
-Rationale: The integrity attack scenario (Scenario 02) exploited the absence of automated change monitoring on the drug library, allowing malicious dose limit modifications to go undetected.
-Standard reference: MHRA medical device cybersecurity guidance; IEC 62443-3-3 SR 3.4.
+**REQ-HC-SEC-020: Drug Library Change Monitoring** Description: All changes to infusion pump drug library configurations shall generate alerts to pharmacy governance and information security teams, with changes verified against the authorised drug library version before deployment. Rationale: The integrity attack scenario (Scenario 02) exploited the absence of automated change monitoring on the drug library, allowing malicious dose limit modifications to go undetected. Standard reference: MHRA medical device cybersecurity guidance; IEC 62443-3-3 SR 3.4.
 
-**REQ-HC-SEC-021: Alarm Configuration Audit**
-Description: Patient monitor alarm threshold configurations shall be audited against clinical governance-approved defaults at least daily, with deviations triggering automated alerts to the ward manager and clinical engineering team.
-Rationale: Alarm threshold manipulation in Scenario 02 was undetectable without proactive configuration auditing.
-Standard reference: IEC 62443-3-3 SR 3.4; IEC 60601-1-8 (alarm systems).
+**REQ-HC-SEC-021: Alarm Configuration Audit** Description: Patient monitor alarm threshold configurations shall be audited against clinical governance-approved defaults at least daily, with deviations triggering automated alerts to the ward manager and clinical engineering team. Rationale: Alarm threshold manipulation in Scenario 02 was undetectable without proactive configuration auditing. Standard reference: IEC 62443-3-3 SR 3.4; IEC 60601-1-8 (alarm systems).
 
 ---
 
@@ -1857,59 +1779,31 @@ Standard reference: IEC 62443-3-3 SR 3.4; IEC 60601-1-8 (alarm systems).
 
 ### Incident Response
 
-**REQ-HC-SEC-022: Integrated IT/Clinical Engineering Incident Response Plan**
-Description: The Trust shall maintain an incident response plan that coordinates IT security containment actions with clinical engineering patient safety assessments, ensuring that network isolation decisions are informed by clinical impact analysis.
-Rationale: The decision to sever the enterprise-clinical network link was made under crisis conditions without a pre-planned framework for evaluating the clinical safety consequences of IT containment actions.
-Standard reference: NIS Regulations 2018; NCSC incident management guidance; NHS DSPT assertion 9.5.
+**REQ-HC-SEC-022: Integrated IT/Clinical Engineering Incident Response Plan** Description: The Trust shall maintain an incident response plan that coordinates IT security containment actions with clinical engineering patient safety assessments, ensuring that network isolation decisions are informed by clinical impact analysis. Rationale: The decision to sever the enterprise-clinical network link was made under crisis conditions without a pre-planned framework for evaluating the clinical safety consequences of IT containment actions. Standard reference: NIS Regulations 2018; NCSC incident management guidance; NHS DSPT assertion 9.5.
 
-**REQ-HC-SEC-023: Clinical Fallback Procedures**
-Description: Documented clinical fallback procedures (paper-based prescribing, manual device programming, bedside-only monitoring) shall be maintained, regularly tested, and accessible to all clinical staff without dependence on electronic systems.
-Rationale: When the EHR, fleet management console, and monitoring central stations became unavailable, clinicians had to improvise paper-based workarounds. Pre-defined fallback procedures reduce the risk of error during the transition.
-Standard reference: NHS DSPT assertion 9.6; CQC fundamental standards.
+**REQ-HC-SEC-023: Clinical Fallback Procedures** Description: Documented clinical fallback procedures (paper-based prescribing, manual device programming, bedside-only monitoring) shall be maintained, regularly tested, and accessible to all clinical staff without dependence on electronic systems. Rationale: When the EHR, fleet management console, and monitoring central stations became unavailable, clinicians had to improvise paper-based workarounds. Pre-defined fallback procedures reduce the risk of error during the transition. Standard reference: NHS DSPT assertion 9.6; CQC fundamental standards.
 
 ### Governance
 
-**REQ-HC-SEC-024: Joint IT Security / Clinical Engineering Governance**
-Description: The Trust shall establish a formal governance committee with joint membership from IT Security, Clinical Engineering, and clinical leadership, responsible for managing cybersecurity risks to networked medical devices.
-Rationale: At the time of the incident, no formal governance structure linked IT Security and Clinical Engineering. Security risks to medical devices fell between the two teams' remits.
-Standard reference: NIS Regulations 2018; NHS DSPT assertion 1.1.
+**REQ-HC-SEC-024: Joint IT Security / Clinical Engineering Governance** Description: The Trust shall establish a formal governance committee with joint membership from IT Security, Clinical Engineering, and clinical leadership, responsible for managing cybersecurity risks to networked medical devices. Rationale: At the time of the incident, no formal governance structure linked IT Security and Clinical Engineering. Security risks to medical devices fell between the two teams' remits. Standard reference: NIS Regulations 2018; NHS DSPT assertion 1.1.
 
-**REQ-HC-SEC-025: Medical Device Cyber Risk Register**
-Description: The Trust shall maintain a dedicated risk register for cybersecurity risks to networked medical devices, updated at least quarterly and reviewed by the joint governance committee.
-Rationale: Cybersecurity risks to medical devices were not systematically tracked, leading to incomplete awareness of the exposure created by the unfinished segmentation project.
-Standard reference: ISO 14971 (risk management); NHS DSPT assertion 1.4.
+**REQ-HC-SEC-025: Medical Device Cyber Risk Register** Description: The Trust shall maintain a dedicated risk register for cybersecurity risks to networked medical devices, updated at least quarterly and reviewed by the joint governance committee. Rationale: Cybersecurity risks to medical devices were not systematically tracked, leading to incomplete awareness of the exposure created by the unfinished segmentation project. Standard reference: ISO 14971 (risk management); NHS DSPT assertion 1.4.
 
 ### Supply Chain
 
-**REQ-HC-SEC-026: Manufacturer Patch Cooperation**
-Description: Procurement contracts for networked medical devices shall include requirements for the manufacturer to provide timely security patches, validated against the device's safety certification, with defined SLAs for critical vulnerability response.
-Rationale: Patching constraints on safety-certified devices are a structural vulnerability. Contractual obligations ensure manufacturers share responsibility for maintaining security throughout the device lifecycle.
-Standard reference: MHRA medical device cybersecurity guidance; IEC 62443-2-4.
+**REQ-HC-SEC-026: Manufacturer Patch Cooperation** Description: Procurement contracts for networked medical devices shall include requirements for the manufacturer to provide timely security patches, validated against the device's safety certification, with defined SLAs for critical vulnerability response. Rationale: Patching constraints on safety-certified devices are a structural vulnerability. Contractual obligations ensure manufacturers share responsibility for maintaining security throughout the device lifecycle. Standard reference: MHRA medical device cybersecurity guidance; IEC 62443-2-4.
 
-**REQ-HC-SEC-027: Supply Chain Security Assessment**
-Description: Before deployment, networked medical devices and their associated management software shall undergo a cybersecurity assessment covering default credentials, communication protocols, update mechanisms, and logging capabilities.
-Rationale: Several of the vulnerabilities exploited in both scenarios (unencrypted protocols, unsigned firmware, shared vendor credentials) could have been identified and mitigated during pre-deployment assessment.
-Standard reference: IEC 62443-3-3 SR 1.1; NCSC Supply Chain guidance.
+**REQ-HC-SEC-027: Supply Chain Security Assessment** Description: Before deployment, networked medical devices and their associated management software shall undergo a cybersecurity assessment covering default credentials, communication protocols, update mechanisms, and logging capabilities. Rationale: Several of the vulnerabilities exploited in both scenarios (unencrypted protocols, unsigned firmware, shared vendor credentials) could have been identified and mitigated during pre-deployment assessment. Standard reference: IEC 62443-3-3 SR 1.1; NCSC Supply Chain guidance.
 
 ### Security Awareness
 
-**REQ-HC-SEC-028: Phishing Awareness Training**
-Description: All staff with access to Trust email shall complete annual phishing awareness training, supplemented by regular simulated phishing exercises with targeted follow-up training for those who interact with simulated phishing messages.
-Rationale: The initial access vector was a spear-phishing email. While technical controls should be the primary defence, staff awareness reduces the probability of successful social engineering.
-Standard reference: NHS DSPT assertion 3.4; NCSC Phishing guidance.
+**REQ-HC-SEC-028: Phishing Awareness Training** Description: All staff with access to Trust email shall complete annual phishing awareness training, supplemented by regular simulated phishing exercises with targeted follow-up training for those who interact with simulated phishing messages. Rationale: The initial access vector was a spear-phishing email. While technical controls should be the primary defence, staff awareness reduces the probability of successful social engineering. Standard reference: NHS DSPT assertion 3.4; NCSC Phishing guidance.
 
-**REQ-HC-SEC-029: Clinical Staff Cyber-Safety Awareness**
-Description: Clinical staff operating networked medical devices shall receive targeted training on the relationship between cybersecurity and patient safety, including recognition of device anomalies that may indicate compromise and the clinical fallback procedures to follow.
-Rationale: The patient safety events in the Northgate scenario were exacerbated by clinicians not immediately recognising the cyberattack's impact on medical device functionality.
-Standard reference: NHS DSPT assertion 3.5; MHRA medical device guidance.
+**REQ-HC-SEC-029: Clinical Staff Cyber-Safety Awareness** Description: Clinical staff operating networked medical devices shall receive targeted training on the relationship between cybersecurity and patient safety, including recognition of device anomalies that may indicate compromise and the clinical fallback procedures to follow. Rationale: The patient safety events in the Northgate scenario were exacerbated by clinicians not immediately recognising the cyberattack's impact on medical device functionality. Standard reference: NHS DSPT assertion 3.5; MHRA medical device guidance.
 
 ### Vulnerability Management
 
-**REQ-HC-SEC-030: Clinical Zone Vulnerability Scanning**
-Description: The clinical device network shall be included in the Trust's vulnerability scanning programme, with scans conducted at least quarterly using techniques validated not to disrupt medical device operation.
-Rationale: The clinical workstation exploited in Scenario 02 ran an unpatched operating system with known vulnerabilities. Regular vulnerability scanning of the clinical zone would have identified this exposure.
-Standard reference: IEC 62443-3-3 SR 3.3; NCSC Vulnerability Management guidance.
-
+**REQ-HC-SEC-030: Clinical Zone Vulnerability Scanning** Description: The clinical device network shall be included in the Trust's vulnerability scanning programme, with scans conducted at least quarterly using techniques validated not to disrupt medical device operation. Rationale: The clinical workstation exploited in Scenario 02 ran an unpatched operating system with known vulnerabilities. Regular vulnerability scanning of the clinical zone would have identified this exposure. Standard reference: IEC 62443-3-3 SR 3.3; NCSC Vulnerability Management guidance.
 
 ## File: ./requirements/safety_requirements.md
 
@@ -1921,70 +1815,41 @@ Derived from the scenario hazard analysis. These requirements define the safety 
 
 ## Medical Device Safety
 
-**REQ-HC-SAF-001: Infusion Pump Dose Integrity**
-Description: Infusion pump dosing controls shall maintain prescribed parameters within clinically safe ranges under all network conditions, including network isolation, management console unavailability, and drug library update failure.
-Rationale: When the fleet management console was encrypted (Scenario 01) or the drug library was corrupted (Scenario 02), the safety barrier of dose range checking was either lost or subverted. The pump must enforce safe dose limits independently of network-dependent systems.
+**REQ-HC-SAF-001: Infusion Pump Dose Integrity** Description: Infusion pump dosing controls shall maintain prescribed parameters within clinically safe ranges under all network conditions, including network isolation, management console unavailability, and drug library update failure. Rationale: When the fleet management console was encrypted (Scenario 01) or the drug library was corrupted (Scenario 02), the safety barrier of dose range checking was either lost or subverted. The pump must enforce safe dose limits independently of network-dependent systems.
 
-**REQ-HC-SAF-002: Infusion Pump Fail-Safe on Drug Library Corruption**
-Description: If the infusion pump detects that its drug library has been modified outside the authorised update process or fails an integrity check, it shall revert to the last known-good drug library version and alert the operator.
-Rationale: The integrity attack in Scenario 02 succeeded because the pump accepted a corrupted drug library without verification. A fail-safe mechanism prevents silently degraded dose checking.
+**REQ-HC-SAF-002: Infusion Pump Fail-Safe on Drug Library Corruption** Description: If the infusion pump detects that its drug library has been modified outside the authorised update process or fails an integrity check, it shall revert to the last known-good drug library version and alert the operator. Rationale: The integrity attack in Scenario 02 succeeded because the pump accepted a corrupted drug library without verification. A fail-safe mechanism prevents silently degraded dose checking.
 
-**REQ-HC-SAF-003: Patient Monitor Alarm Functionality Under Network Loss**
-Description: Bedside patient monitors shall maintain independent local alarming at the bedside, including audible and visual alarms, when the ward central station is unavailable or when network connectivity to the central station is lost.
-Rationale: When the central station was encrypted, alarming depended entirely on bedside audibility. This requirement ensures that the bedside alarm is always the primary safety mechanism, with central station aggregation as an additional layer.
+**REQ-HC-SAF-003: Patient Monitor Alarm Functionality Under Network Loss** Description: Bedside patient monitors shall maintain independent local alarming at the bedside, including audible and visual alarms, when the ward central station is unavailable or when network connectivity to the central station is lost. Rationale: When the central station was encrypted, alarming depended entirely on bedside audibility. This requirement ensures that the bedside alarm is always the primary safety mechanism, with central station aggregation as an additional layer.
 
-**REQ-HC-SAF-004: Alarm Threshold Integrity**
-Description: Patient monitor alarm thresholds shall be protected against unauthorised modification. Changes to alarm thresholds shall require authenticated clinician authorisation and shall be logged with the identity of the authorising clinician.
-Rationale: In Scenario 02, alarm thresholds were silently modified via the central station without authentication. Clinician-authorised change control prevents remote manipulation of alarm parameters.
+**REQ-HC-SAF-004: Alarm Threshold Integrity** Description: Patient monitor alarm thresholds shall be protected against unauthorised modification. Changes to alarm thresholds shall require authenticated clinician authorisation and shall be logged with the identity of the authorising clinician. Rationale: In Scenario 02, alarm thresholds were silently modified via the central station without authentication. Clinician-authorised change control prevents remote manipulation of alarm parameters.
 
-**REQ-HC-SAF-005: Ventilator Autonomous Operation**
-Description: Ventilators shall maintain their core life-sustaining respiratory function independently of network connectivity. Loss of network connection shall not alter ventilator operating parameters, trigger a restart, or cause the device to enter a non-operational state.
-Rationale: Ventilators are life-sustaining devices. Network-dependent failure modes are unacceptable — the device must operate autonomously in all network conditions.
+**REQ-HC-SAF-005: Ventilator Autonomous Operation** Description: Ventilators shall maintain their core life-sustaining respiratory function independently of network connectivity. Loss of network connection shall not alter ventilator operating parameters, trigger a restart, or cause the device to enter a non-operational state. Rationale: Ventilators are life-sustaining devices. Network-dependent failure modes are unacceptable — the device must operate autonomously in all network conditions.
 
 ---
 
 ## Clinical Information Safety
 
-**REQ-HC-SAF-006: Clinical Data Integrity for Prescribing**
-Description: Medication prescribing systems shall verify the integrity of patient allergy records, drug interaction databases, and dose range data before presenting clinical decision support recommendations to prescribers.
-Rationale: If the EHR database is corrupted or restored from a potentially compromised backup, prescribing decisions based on unreliable data could cause harm. Integrity verification ensures that safety-critical clinical data is trustworthy.
+**REQ-HC-SAF-006: Clinical Data Integrity for Prescribing** Description: Medication prescribing systems shall verify the integrity of patient allergy records, drug interaction databases, and dose range data before presenting clinical decision support recommendations to prescribers. Rationale: If the EHR database is corrupted or restored from a potentially compromised backup, prescribing decisions based on unreliable data could cause harm. Integrity verification ensures that safety-critical clinical data is trustworthy.
 
-**REQ-HC-SAF-007: PACS Image-Patient Identity Binding**
-Description: The PACS shall maintain a verifiable binding between diagnostic images and patient identifiers that cannot be modified without generating an audit alert and requiring authorised clinical confirmation.
-Rationale: In Scenario 02, PACS metadata was manipulated to swap patient identifiers on diagnostic images, creating a wrong-patient error pathway. Integrity-protected identity binding prevents this attack.
+**REQ-HC-SAF-007: PACS Image-Patient Identity Binding** Description: The PACS shall maintain a verifiable binding between diagnostic images and patient identifiers that cannot be modified without generating an audit alert and requiring authorised clinical confirmation. Rationale: In Scenario 02, PACS metadata was manipulated to swap patient identifiers on diagnostic images, creating a wrong-patient error pathway. Integrity-protected identity binding prevents this attack.
 
-**REQ-HC-SAF-008: Clinical Fallback Availability**
-Description: Paper-based clinical fallback resources (medication charts, observation recording sheets, prescribing reference guides, emergency drug dosing tables) shall be maintained in each clinical area and shall be accessible without dependence on any electronic system.
-Rationale: When the EHR and device management systems were unavailable, clinicians improvised paper-based workarounds. Pre-positioned, up-to-date fallback resources reduce error in the transition to manual processes.
+**REQ-HC-SAF-008: Clinical Fallback Availability** Description: Paper-based clinical fallback resources (medication charts, observation recording sheets, prescribing reference guides, emergency drug dosing tables) shall be maintained in each clinical area and shall be accessible without dependence on any electronic system. Rationale: When the EHR and device management systems were unavailable, clinicians improvised paper-based workarounds. Pre-positioned, up-to-date fallback resources reduce error in the transition to manual processes.
 
 ---
 
 ## System-Level Safety
 
-**REQ-HC-SAF-009: Network Isolation Without Harm**
-Description: It shall be possible to fully isolate the clinical device network from the enterprise IT network without causing any medical device to enter an unsafe state, lose its current operating parameters, or fail to alarm on monitored patient parameters.
-Rationale: The decision to sever the enterprise-clinical network link was complicated by uncertainty about the impact on medical devices. This requirement ensures that the isolation action itself does not create a patient safety hazard.
+**REQ-HC-SAF-009: Network Isolation Without Harm** Description: It shall be possible to fully isolate the clinical device network from the enterprise IT network without causing any medical device to enter an unsafe state, lose its current operating parameters, or fail to alarm on monitored patient parameters. Rationale: The decision to sever the enterprise-clinical network link was complicated by uncertainty about the impact on medical devices. This requirement ensures that the isolation action itself does not create a patient safety hazard.
 
-**REQ-HC-SAF-010: Graceful Degradation of Clinical Systems**
-Description: When enterprise systems (EHR, PACS, email) become unavailable, clinical workflows shall degrade gracefully to documented manual procedures within defined time limits, with handover checklists and staff notification protocols.
-Rationale: The transition from electronic to paper-based clinical processes during the Northgate incident was uncoordinated, leading to information gaps and increased error risk.
+**REQ-HC-SAF-010: Graceful Degradation of Clinical Systems** Description: When enterprise systems (EHR, PACS, email) become unavailable, clinical workflows shall degrade gracefully to documented manual procedures within defined time limits, with handover checklists and staff notification protocols. Rationale: The transition from electronic to paper-based clinical processes during the Northgate incident was uncoordinated, leading to information gaps and increased error risk.
 
-**REQ-HC-SAF-011: Medical Device Firmware Integrity**
-Description: Medical devices shall verify the cryptographic integrity of firmware images before installation. Devices shall reject any firmware that does not carry a valid signature from the authorised manufacturer.
-Rationale: In Scenario 02, backdoored firmware was pushed to infusion pumps because the update mechanism did not verify signatures. Firmware integrity verification is a foundational safety requirement for networked devices.
+**REQ-HC-SAF-011: Medical Device Firmware Integrity** Description: Medical devices shall verify the cryptographic integrity of firmware images before installation. Devices shall reject any firmware that does not carry a valid signature from the authorised manufacturer. Rationale: In Scenario 02, backdoored firmware was pushed to infusion pumps because the update mechanism did not verify signatures. Firmware integrity verification is a foundational safety requirement for networked devices.
 
-**REQ-HC-SAF-012: Safety-Critical System Recovery Priority**
-Description: The Trust's disaster recovery plan shall define a recovery prioritisation order that places safety-critical clinical systems (patient monitoring, infusion pump management, ventilator connectivity) ahead of administrative systems.
-Rationale: During the Northgate recovery, effort was initially focused on restoring the EHR and email — high-visibility systems — rather than the less visible but more safety-critical monitoring and device management infrastructure.
+**REQ-HC-SAF-012: Safety-Critical System Recovery Priority** Description: The Trust's disaster recovery plan shall define a recovery prioritisation order that places safety-critical clinical systems (patient monitoring, infusion pump management, ventilator connectivity) ahead of administrative systems. Rationale: During the Northgate recovery, effort was initially focused on restoring the EHR and email — high-visibility systems — rather than the less visible but more safety-critical monitoring and device management infrastructure.
 
-**REQ-HC-SAF-013: Post-Incident Device Integrity Verification**
-Description: Following any cyber incident that may have affected the clinical device network, all networked medical devices shall undergo firmware and configuration verification against manufacturer baselines before being returned to clinical use.
-Rationale: After the Northgate ransomware event, uncertainty persisted about whether infusion pump firmware had been tampered with. Systematic post-incident verification provides assurance that devices are safe to use.
+**REQ-HC-SAF-013: Post-Incident Device Integrity Verification** Description: Following any cyber incident that may have affected the clinical device network, all networked medical devices shall undergo firmware and configuration verification against manufacturer baselines before being returned to clinical use. Rationale: After the Northgate ransomware event, uncertainty persisted about whether infusion pump firmware had been tampered with. Systematic post-incident verification provides assurance that devices are safe to use.
 
-**REQ-HC-SAF-014: Dual Authorisation for Safety-Critical Overrides**
-Description: Any action that overrides a safety control on a medical device (e.g., bypassing a dose limit, disabling an alarm, modifying a safety interlock) shall require dual authorisation from two independently authenticated clinicians.
-Rationale: Safety overrides are sometimes clinically necessary, but they reduce the margin of safety. Dual authorisation ensures that safety barriers are not reduced by a single compromised account or a single clinician error.
-
+**REQ-HC-SAF-014: Dual Authorisation for Safety-Critical Overrides** Description: Any action that overrides a safety control on a medical device (e.g., bypassing a dose limit, disabling an alarm, modifying a safety interlock) shall require dual authorisation from two independently authenticated clinicians. Rationale: Safety overrides are sometimes clinically necessary, but they reduce the margin of safety. Dual authorisation ensures that safety barriers are not reduced by a single compromised account or a single clinician error.
 
 ## File: ./storylines/attack_scenarios/scenario_01_ransomware_to_device_impact.md
 
@@ -2016,21 +1881,21 @@ The following configuration and environmental conditions make this attack possib
 
 ## 3. Step-by-Step Attack Chain
 
-| Step | Action Taken | System/Asset Affected | Detection Opportunity |
-|------|-------------|----------------------|----------------------|
-| **1. Spear-phishing delivery** | Attacker sends a targeted email impersonating a medical supplies vendor, containing a link to a malicious document-signing portal. | Finance workstation (Sarah Kelworth's PC) | Email gateway: URL reputation check could flag the redirect chain. SPF/DKIM/DMARC validation of sender domain. |
-| **2. Macro execution and initial payload** | Victim opens Word document and enables macros. A PowerShell downloader retrieves a fileless first-stage loader from a DarkVault C2 server, injected into a legitimate process. Persistence established via a disguised scheduled task. | Finance workstation — process memory, Task Scheduler | EDR: PowerShell execution with encoded commands flagged as suspicious (alert generated but classified low-severity). AMSI logging of script content. |
-| **3. VPN credential abuse** | Attacker authenticates to the Trust's SSL VPN using contractor credentials (Craig Ellison) harvested from a dark web credential dump. Session originates from a Romanian residential IP. | SSL VPN gateway | VPN logs: login from unusual geographic location. Impossible travel detection (if credential monitoring is in place). Absence of MFA is the enabling gap. |
-| **4. Internal reconnaissance** | From the VPN session, attacker deploys a network scanning tool. Maps Active Directory structure, identifies domain controllers, file servers, EHR application server, PACS, and dual-homed clinical workstations. | Enterprise network — Active Directory, network infrastructure | SIEM: port scanning activity, LDAP enumeration queries. IDS: signatures for common scanning tools (e.g., Nmap SYN scan patterns). |
-| **5. Credential harvesting** | On the compromised finance workstation, attacker executes an in-memory credential dumping tool. Extracts cached domain admin credentials from a recent troubleshooting session. | Finance workstation — LSASS process memory | EDR: access to LSASS process. Windows Event Log 4624/4672: privileged logon events. Credential Guard (if enabled) would prevent extraction. |
-| **6. Lateral movement and domain persistence** | Using domain admin credentials, attacker deploys a backdoor via a malicious Group Policy Object (GPO) pushed to all domain-joined workstations on next policy refresh. Establishes persistence on two domain controllers. | Domain controllers, all domain-joined workstations | SIEM: new GPO creation event. Windows Event Log: GPO modification (Event ID 5136). Change control: unscheduled GPO deployment. |
-| **7. Backup infrastructure compromise** | Attacker identifies the NAS appliance and tape library controller on the backup network. Encrypts backup catalogues on the NAS; wipes the tape library controller's index. | Backup NAS, tape library controller | Failed authentication alerts on backup systems (generated but misattributed). Network monitoring: unusual write volumes to backup storage. |
-| **8. Reconnaissance of clinical zone** | Attacker discovers dual-homed clinical workstations (interfaces on both enterprise and clinical VLANs). Accesses one workstation remotely using the compromised domain admin account. The attacker is now inside the clinical device network. | Dual-homed clinical workstations, clinical VLAN | Firewall logs: cross-zone traffic from enterprise to clinical VLAN via exception rules. Network flow analysis: new RDP/SMB sessions to clinical workstation IPs. |
-| **9. Enterprise ransomware deployment** | At 22:15 (outside working hours), attacker triggers ransomware across the enterprise zone via GPO propagation and direct SMB connections. 312 workstations, 4 file servers, and the email server encrypted within 40 minutes. EHR application server database encrypted. | Enterprise workstations, file servers, email server, EHR server | EDR: mass file encryption events, known ransomware file extensions. SIEM: volume of SMB write operations. SOC (if 24/7): cascade of endpoint alerts. On-call monitoring: automated service-down alerts at 22:38. |
-| **10. Clinical workstation encryption** | Ransomware propagates to dual-homed clinical workstations via the same GPO/SMB mechanism. The infusion pump fleet management console and the Ward 7 patient monitoring central station are encrypted. | Infusion pump management console, patient monitoring central station, PACS workstations | Clinical staff: management console becomes unresponsive. Central station displays ransom note instead of patient data. Medical device alerts: loss of connectivity to management server. |
-| **11. Loss of clinical monitoring capability** | Patient monitoring central station on Ward 7 goes offline. Bedside monitors continue functioning independently, but aggregated alarming at the nursing station is lost. During the night shift, two critical alarms are missed over a 90-minute window. | Ward 7 patient monitoring system (central station) | **No technical detection** — this is a safety consequence, not a technical event. Detection relies on clinical staff recognising the absence of central alarming. Clinical escalation protocols (if exercised). |
-| **12. Medication dosing error** | With the infusion pump fleet management console unavailable, a dose adjustment for a post-operative patient must be manually transcribed from a paper prescription. A ten-fold transcription error occurs. The error is partially administered before being caught by a second nurse during bedside verification. | Infusion pump (Ward 5), prescribing workflow | Bedside double-check protocol (partial detection — caught the error late). Barcode medication administration (unavailable — depends on EHR which is down). |
-| **13. Network isolation decision** | Trust emergency response team decides to sever the remaining enterprise-to-clinical network links at 14:30 Wednesday. All electronic clinical record access in affected wards is lost. Paper-based fallback procedures initiated. | Enterprise/clinical network boundary, all cross-zone data flows | N/A — this is a response action, not an attack step. |
+| Step                                           | Action Taken                                                                                                                                                                                                                                                                                                      | System/Asset Affected                                                                   | Detection Opportunity                                                                                                                                                                                            |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1. Spear-phishing delivery**                 | Attacker sends a targeted email impersonating a medical supplies vendor, containing a link to a malicious document-signing portal.                                                                                                                                                                                | Finance workstation (Sarah Kelworth's PC)                                               | Email gateway: URL reputation check could flag the redirect chain. SPF/DKIM/DMARC validation of sender domain.                                                                                                   |
+| **2. Macro execution and initial payload**     | Victim opens Word document and enables macros. A PowerShell downloader retrieves a fileless first-stage loader from a DarkVault C2 server, injected into a legitimate process. Persistence established via a disguised scheduled task.                                                                            | Finance workstation — process memory, Task Scheduler                                    | EDR: PowerShell execution with encoded commands flagged as suspicious (alert generated but classified low-severity). AMSI logging of script content.                                                             |
+| **3. VPN credential abuse**                    | Attacker authenticates to the Trust's SSL VPN using contractor credentials (Craig Ellison) harvested from a dark web credential dump. Session originates from a Romanian residential IP.                                                                                                                          | SSL VPN gateway                                                                         | VPN logs: login from unusual geographic location. Impossible travel detection (if credential monitoring is in place). Absence of MFA is the enabling gap.                                                        |
+| **4. Internal reconnaissance**                 | From the VPN session, attacker deploys a network scanning tool. Maps Active Directory structure, identifies domain controllers, file servers, EHR application server, PACS, and dual-homed clinical workstations.                                                                                                 | Enterprise network — Active Directory, network infrastructure                           | SIEM: port scanning activity, LDAP enumeration queries. IDS: signatures for common scanning tools (e.g., Nmap SYN scan patterns).                                                                                |
+| **5. Credential harvesting**                   | On the compromised finance workstation, attacker executes an in-memory credential dumping tool. Extracts cached domain admin credentials from a recent troubleshooting session.                                                                                                                                   | Finance workstation — LSASS process memory                                              | EDR: access to LSASS process. Windows Event Log 4624/4672: privileged logon events. Credential Guard (if enabled) would prevent extraction.                                                                      |
+| **6. Lateral movement and domain persistence** | Using domain admin credentials, attacker deploys a backdoor via a malicious Group Policy Object (GPO) pushed to all domain-joined workstations on next policy refresh. Establishes persistence on two domain controllers.                                                                                         | Domain controllers, all domain-joined workstations                                      | SIEM: new GPO creation event. Windows Event Log: GPO modification (Event ID 5136). Change control: unscheduled GPO deployment.                                                                                   |
+| **7. Backup infrastructure compromise**        | Attacker identifies the NAS appliance and tape library controller on the backup network. Encrypts backup catalogues on the NAS; wipes the tape library controller's index.                                                                                                                                        | Backup NAS, tape library controller                                                     | Failed authentication alerts on backup systems (generated but misattributed). Network monitoring: unusual write volumes to backup storage.                                                                       |
+| **8. Reconnaissance of clinical zone**         | Attacker discovers dual-homed clinical workstations (interfaces on both enterprise and clinical VLANs). Accesses one workstation remotely using the compromised domain admin account. The attacker is now inside the clinical device network.                                                                     | Dual-homed clinical workstations, clinical VLAN                                         | Firewall logs: cross-zone traffic from enterprise to clinical VLAN via exception rules. Network flow analysis: new RDP/SMB sessions to clinical workstation IPs.                                                 |
+| **9. Enterprise ransomware deployment**        | At 22:15 (outside working hours), attacker triggers ransomware across the enterprise zone via GPO propagation and direct SMB connections. 312 workstations, 4 file servers, and the email server encrypted within 40 minutes. EHR application server database encrypted.                                          | Enterprise workstations, file servers, email server, EHR server                         | EDR: mass file encryption events, known ransomware file extensions. SIEM: volume of SMB write operations. SOC (if 24/7): cascade of endpoint alerts. On-call monitoring: automated service-down alerts at 22:38. |
+| **10. Clinical workstation encryption**        | Ransomware propagates to dual-homed clinical workstations via the same GPO/SMB mechanism. The infusion pump fleet management console and the Ward 7 patient monitoring central station are encrypted.                                                                                                             | Infusion pump management console, patient monitoring central station, PACS workstations | Clinical staff: management console becomes unresponsive. Central station displays ransom note instead of patient data. Medical device alerts: loss of connectivity to management server.                         |
+| **11. Loss of clinical monitoring capability** | Patient monitoring central station on Ward 7 goes offline. Bedside monitors continue functioning independently, but aggregated alarming at the nursing station is lost. During the night shift, two critical alarms are missed over a 90-minute window.                                                           | Ward 7 patient monitoring system (central station)                                      | **No technical detection** — this is a safety consequence, not a technical event. Detection relies on clinical staff recognising the absence of central alarming. Clinical escalation protocols (if exercised).  |
+| **12. Medication dosing error**                | With the infusion pump fleet management console unavailable, a dose adjustment for a post-operative patient must be manually transcribed from a paper prescription. A ten-fold transcription error occurs. The error is partially administered before being caught by a second nurse during bedside verification. | Infusion pump (Ward 5), prescribing workflow                                            | Bedside double-check protocol (partial detection — caught the error late). Barcode medication administration (unavailable — depends on EHR which is down).                                                       |
+| **13. Network isolation decision**             | Trust emergency response team decides to sever the remaining enterprise-to-clinical network links at 14:30 Wednesday. All electronic clinical record access in affected wards is lost. Paper-based fallback procedures initiated.                                                                                 | Enterprise/clinical network boundary, all cross-zone data flows                         | N/A — this is a response action, not an attack step.                                                                                                                                                             |
 
 ---
 
@@ -2079,32 +1944,31 @@ Critically, the safety consequences are compounded by the loss of the EHR system
 
 ---
 
-## 6. MITRE ATT&CK Mapping
+## 6. MITRE ATT\&CK Mapping
 
-### Enterprise ATT&CK
+### Enterprise ATT\&CK
 
-| Attack Step | Tactic | Technique | ID |
-|-------------|--------|-----------|-----|
-| Spear-phishing email with malicious link | Initial Access | Phishing: Spearphishing Link | T1566.002 |
-| VPN credential abuse | Initial Access | Valid Accounts: Domain Accounts | T1078.002 |
-| Macro executes PowerShell downloader | Execution | Command and Scripting Interpreter: PowerShell | T1059.001 |
-| Fileless loader injected into legitimate process | Defence Evasion | Process Injection | T1055 |
-| Scheduled task persistence | Persistence | Scheduled Task/Job: Scheduled Task | T1053.005 |
-| In-memory credential dumping (LSASS) | Credential Access | OS Credential Dumping: LSASS Memory | T1003.001 |
-| Malicious GPO for lateral deployment | Lateral Movement | Group Policy Modification | T1484.001 |
-| Network scanning and AD enumeration | Discovery | Network Service Discovery / Remote System Discovery | T1046 / T1018 |
-| Backup encryption and destruction | Impact | Data Encrypted for Impact / Inhibit System Recovery | T1486 / T1490 |
-| Enterprise-wide ransomware deployment | Impact | Data Encrypted for Impact | T1486 |
+| Attack Step                                      | Tactic            | Technique                                           | ID            |
+| ------------------------------------------------ | ----------------- | --------------------------------------------------- | ------------- |
+| Spear-phishing email with malicious link         | Initial Access    | Phishing: Spearphishing Link                        | T1566.002     |
+| VPN credential abuse                             | Initial Access    | Valid Accounts: Domain Accounts                     | T1078.002     |
+| Macro executes PowerShell downloader             | Execution         | Command and Scripting Interpreter: PowerShell       | T1059.001     |
+| Fileless loader injected into legitimate process | Defence Evasion   | Process Injection                                   | T1055         |
+| Scheduled task persistence                       | Persistence       | Scheduled Task/Job: Scheduled Task                  | T1053.005     |
+| In-memory credential dumping (LSASS)             | Credential Access | OS Credential Dumping: LSASS Memory                 | T1003.001     |
+| Malicious GPO for lateral deployment             | Lateral Movement  | Group Policy Modification                           | T1484.001     |
+| Network scanning and AD enumeration              | Discovery         | Network Service Discovery / Remote System Discovery | T1046 / T1018 |
+| Backup encryption and destruction                | Impact            | Data Encrypted for Impact / Inhibit System Recovery | T1486 / T1490 |
+| Enterprise-wide ransomware deployment            | Impact            | Data Encrypted for Impact                           | T1486         |
 
-### ATT&CK for ICS (Clinical Device Zone)
+### ATT\&CK for ICS (Clinical Device Zone)
 
-| Attack Step | Tactic | Technique | ID |
-|-------------|--------|-----------|-----|
-| Pivot to dual-homed clinical workstation via enterprise credentials | Lateral Movement | Remote Services | T0886 |
-| Encryption of infusion pump fleet management console | Inhibit Response Function | Denial of Service | T0814 |
-| Encryption of patient monitoring central station | Impair Process Control | Denial of View | T0815 |
-| Loss of PACS availability | Inhibit Response Function | Data Destruction | T0809 |
-
+| Attack Step                                                         | Tactic                    | Technique         | ID    |
+| ------------------------------------------------------------------- | ------------------------- | ----------------- | ----- |
+| Pivot to dual-homed clinical workstation via enterprise credentials | Lateral Movement          | Remote Services   | T0886 |
+| Encryption of infusion pump fleet management console                | Inhibit Response Function | Denial of Service | T0814 |
+| Encryption of patient monitoring central station                    | Impair Process Control    | Denial of View    | T0815 |
+| Loss of PACS availability                                           | Inhibit Response Function | Data Destruction  | T0809 |
 
 ## File: ./storylines/attack_scenarios/scenario_02_device_integrity_compromise.md
 
@@ -2136,20 +2000,20 @@ The following configuration and environmental conditions make this attack possib
 
 ## 3. Step-by-Step Attack Chain
 
-| Step | Action Taken | System/Asset Affected | Detection Opportunity |
-|------|-------------|----------------------|----------------------|
-| **1. Initial access via vendor remote support** | Attacker compromises the infusion pump manufacturer's remote-access VPN credentials through a supply-chain phishing attack against a field service engineer. Authenticates to the vendor support portal, which provides direct network access to the clinical VLAN. | Vendor VPN gateway → Clinical VLAN | Vendor session logs: login from unusual IP. Clinical network: new VPN session to vendor support portal outside scheduled maintenance windows. |
-| **2. Clinical network reconnaissance** | From the vendor VPN session, attacker scans the clinical VLAN to map connected devices. Identifies 480 infusion pumps, 320 patient monitors, 60 ventilators, PACS servers, and clinical workstations. Enumerates device firmware versions and identifies unpatched devices. | Clinical VLAN — all connected devices | IDS (if deployed on clinical VLAN): network scan signatures. Device management console: unexpected device enumeration queries. |
-| **3. Clinical workstation compromise** | Attacker exploits a known vulnerability in an unpatched clinical workstation (running an outdated operating system required for compatibility with the infusion pump management software). Gains local administrator access. | Clinical workstation (infusion pump management console) | Vulnerability scanner (if run against clinical zone): known CVE present. Host-based IDS: exploitation artefacts. Event logs: new local administrator session. |
-| **4. Credential harvesting on clinical zone** | Attacker extracts cached credentials from the clinical workstation, including the service account used by the infusion pump fleet management application to communicate with individual pumps. | Clinical workstation — credential store | EDR (if deployed): credential access events. Application logs: service account used from unexpected context. |
-| **5. Infusion pump configuration manipulation** | Using the harvested service account credentials, attacker connects to infusion pump management interfaces and modifies drug library entries for three commonly used medications. Specifically: the maximum dose rate for morphine is increased from 4 mg/hr to 40 mg/hr, the concentration entry for heparin is altered, and the hard dose limit for a chemotherapy agent is removed. Changes are pushed as a "drug library update." | Infusion pump fleet — drug library configuration | Pharmacy verification: drug library change outside scheduled update cycle. Pump management console audit log: configuration changes not initiated by authorised staff. **Critical gap**: These logs exist but are not actively monitored. |
-| **6. Patient monitor alarm threshold modification** | Attacker accesses the patient monitoring central station and modifies default alarm thresholds for several monitored parameters. Heart rate alarm upper limit is raised from 130 bpm to 200 bpm; SpO2 low alarm is lowered from 90% to 75%. Changes are applied to the ward-level default profile, affecting all newly connected patients. | Patient monitoring central station — alarm configuration | Central station audit trail: threshold changes outside clinical governance process. Nursing staff: awareness that alarm defaults have changed (requires proactive checking). |
-| **7. PACS image manipulation** | Attacker accesses the PACS archive server (which stores DICOM images over unencrypted connections). Modifies metadata on several stored CT images — altering patient identifiers on two scans so that Patient A's imaging is associated with Patient B's clinical record, and vice versa. Additionally, subtly modifies a chest X-ray image to obscure a small pulmonary nodule. | PACS archive server — DICOM image store | DICOM audit trail: image modification events (if logging is enabled). Radiology workflow: patient identity mismatch detected during reporting (requires manual cross-checking). Image hash verification: absent at Northgate. |
-| **8. Persistence via firmware backdoor** | Attacker pushes a modified firmware image to a subset of ten infusion pumps via the fleet management console. The modified firmware includes a backdoor that allows remote command execution and persists across device reboots. The firmware update mechanism does not verify code signatures. | Ten infusion pumps — firmware | Firmware version audit: version mismatch between updated and non-updated pumps. Device behaviour: no immediately observable change (backdoor is dormant). Manufacturer checksum comparison: would detect modification but is not routinely performed. |
-| **9. Cover tracks** | Attacker clears relevant log entries on the clinical workstation and modifies the fleet management console's audit log to remove evidence of the unauthorised drug library update. Leaves the vendor VPN session idle to maintain access for future operations. | Clinical workstation logs, fleet management audit log, vendor VPN session | Log integrity monitoring (absent): would detect log truncation. SIEM correlation: gap in expected log sequence from clinical workstation. |
-| **10. Safety consequences manifest — medication error** | A nurse programmes an infusion pump with morphine for a post-surgical patient. The drug library, normally displaying a maximum rate of 4 mg/hr with a hard limit, now permits 40 mg/hr. Under time pressure, the nurse enters "40" instead of "4.0" (a common keystroke error). The pump's guardrail, which would normally reject this dose, accepts it. The patient receives a ten-fold morphine overdose before the error is detected through clinical observation of respiratory depression. | Infusion pump (Ward 3) — drug delivery | Smart pump guardrail: **bypassed** by the attacker's drug library modification. Clinical observation: respiratory depression detected, naloxone administered. |
-| **11. Safety consequences manifest — missed diagnosis** | A radiologist reports a chest X-ray as showing no abnormality. The image had been subtly modified to obscure a pulmonary nodule. The finding is only discovered three months later on a follow-up scan, by which time the lesion has grown. Separately, a patient undergoes a procedure based on imaging belonging to a different patient due to the PACS metadata swap. The error is caught when the surgeon notes anatomical inconsistencies during the procedure. | Radiology workflow — diagnostic accuracy; Surgical workflow — patient identification | Radiology peer review: may identify the missed finding retrospectively. Surgical safety checklist: anatomical inconsistency detected (near-miss). |
-| **12. Safety consequences manifest — delayed alarm response** | A patient on Ward 7 develops hypoxia (SpO2 drops to 82%). The alarm threshold has been lowered to 75%, so no alarm sounds until the patient's condition deteriorates further. A nurse performing routine observations identifies the patient's distress and initiates emergency intervention, but the response is delayed by approximately twelve minutes compared to normal alarm-triggered response. | Patient monitoring system (Ward 7) — alarm function | Clinical observation: staff detect patient distress visually. Post-incident alarm audit: threshold comparison against clinical governance standard. |
+| Step                                                          | Action Taken                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | System/Asset Affected                                                                | Detection Opportunity                                                                                                                                                                                                                                 |
+| ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1. Initial access via vendor remote support**               | Attacker compromises the infusion pump manufacturer's remote-access VPN credentials through a supply-chain phishing attack against a field service engineer. Authenticates to the vendor support portal, which provides direct network access to the clinical VLAN.                                                                                                                                                                                                                             | Vendor VPN gateway → Clinical VLAN                                                   | Vendor session logs: login from unusual IP. Clinical network: new VPN session to vendor support portal outside scheduled maintenance windows.                                                                                                         |
+| **2. Clinical network reconnaissance**                        | From the vendor VPN session, attacker scans the clinical VLAN to map connected devices. Identifies 480 infusion pumps, 320 patient monitors, 60 ventilators, PACS servers, and clinical workstations. Enumerates device firmware versions and identifies unpatched devices.                                                                                                                                                                                                                     | Clinical VLAN — all connected devices                                                | IDS (if deployed on clinical VLAN): network scan signatures. Device management console: unexpected device enumeration queries.                                                                                                                        |
+| **3. Clinical workstation compromise**                        | Attacker exploits a known vulnerability in an unpatched clinical workstation (running an outdated operating system required for compatibility with the infusion pump management software). Gains local administrator access.                                                                                                                                                                                                                                                                    | Clinical workstation (infusion pump management console)                              | Vulnerability scanner (if run against clinical zone): known CVE present. Host-based IDS: exploitation artefacts. Event logs: new local administrator session.                                                                                         |
+| **4. Credential harvesting on clinical zone**                 | Attacker extracts cached credentials from the clinical workstation, including the service account used by the infusion pump fleet management application to communicate with individual pumps.                                                                                                                                                                                                                                                                                                  | Clinical workstation — credential store                                              | EDR (if deployed): credential access events. Application logs: service account used from unexpected context.                                                                                                                                          |
+| **5. Infusion pump configuration manipulation**               | Using the harvested service account credentials, attacker connects to infusion pump management interfaces and modifies drug library entries for three commonly used medications. Specifically: the maximum dose rate for morphine is increased from 4 mg/hr to 40 mg/hr, the concentration entry for heparin is altered, and the hard dose limit for a chemotherapy agent is removed. Changes are pushed as a "drug library update."                                                            | Infusion pump fleet — drug library configuration                                     | Pharmacy verification: drug library change outside scheduled update cycle. Pump management console audit log: configuration changes not initiated by authorised staff. **Critical gap**: These logs exist but are not actively monitored.             |
+| **6. Patient monitor alarm threshold modification**           | Attacker accesses the patient monitoring central station and modifies default alarm thresholds for several monitored parameters. Heart rate alarm upper limit is raised from 130 bpm to 200 bpm; SpO2 low alarm is lowered from 90% to 75%. Changes are applied to the ward-level default profile, affecting all newly connected patients.                                                                                                                                                      | Patient monitoring central station — alarm configuration                             | Central station audit trail: threshold changes outside clinical governance process. Nursing staff: awareness that alarm defaults have changed (requires proactive checking).                                                                          |
+| **7. PACS image manipulation**                                | Attacker accesses the PACS archive server (which stores DICOM images over unencrypted connections). Modifies metadata on several stored CT images — altering patient identifiers on two scans so that Patient A's imaging is associated with Patient B's clinical record, and vice versa. Additionally, subtly modifies a chest X-ray image to obscure a small pulmonary nodule.                                                                                                                | PACS archive server — DICOM image store                                              | DICOM audit trail: image modification events (if logging is enabled). Radiology workflow: patient identity mismatch detected during reporting (requires manual cross-checking). Image hash verification: absent at Northgate.                         |
+| **8. Persistence via firmware backdoor**                      | Attacker pushes a modified firmware image to a subset of ten infusion pumps via the fleet management console. The modified firmware includes a backdoor that allows remote command execution and persists across device reboots. The firmware update mechanism does not verify code signatures.                                                                                                                                                                                                 | Ten infusion pumps — firmware                                                        | Firmware version audit: version mismatch between updated and non-updated pumps. Device behaviour: no immediately observable change (backdoor is dormant). Manufacturer checksum comparison: would detect modification but is not routinely performed. |
+| **9. Cover tracks**                                           | Attacker clears relevant log entries on the clinical workstation and modifies the fleet management console's audit log to remove evidence of the unauthorised drug library update. Leaves the vendor VPN session idle to maintain access for future operations.                                                                                                                                                                                                                                 | Clinical workstation logs, fleet management audit log, vendor VPN session            | Log integrity monitoring (absent): would detect log truncation. SIEM correlation: gap in expected log sequence from clinical workstation.                                                                                                             |
+| **10. Safety consequences manifest — medication error**       | A nurse programmes an infusion pump with morphine for a post-surgical patient. The drug library, normally displaying a maximum rate of 4 mg/hr with a hard limit, now permits 40 mg/hr. Under time pressure, the nurse enters "40" instead of "4.0" (a common keystroke error). The pump's guardrail, which would normally reject this dose, accepts it. The patient receives a ten-fold morphine overdose before the error is detected through clinical observation of respiratory depression. | Infusion pump (Ward 3) — drug delivery                                               | Smart pump guardrail: **bypassed** by the attacker's drug library modification. Clinical observation: respiratory depression detected, naloxone administered.                                                                                         |
+| **11. Safety consequences manifest — missed diagnosis**       | A radiologist reports a chest X-ray as showing no abnormality. The image had been subtly modified to obscure a pulmonary nodule. The finding is only discovered three months later on a follow-up scan, by which time the lesion has grown. Separately, a patient undergoes a procedure based on imaging belonging to a different patient due to the PACS metadata swap. The error is caught when the surgeon notes anatomical inconsistencies during the procedure.                            | Radiology workflow — diagnostic accuracy; Surgical workflow — patient identification | Radiology peer review: may identify the missed finding retrospectively. Surgical safety checklist: anatomical inconsistency detected (near-miss).                                                                                                     |
+| **12. Safety consequences manifest — delayed alarm response** | A patient on Ward 7 develops hypoxia (SpO2 drops to 82%). The alarm threshold has been lowered to 75%, so no alarm sounds until the patient's condition deteriorates further. A nurse performing routine observations identifies the patient's distress and initiates emergency intervention, but the response is delayed by approximately twelve minutes compared to normal alarm-triggered response.                                                                                          | Patient monitoring system (Ward 7) — alarm function                                  | Clinical observation: staff detect patient distress visually. Post-incident alarm audit: threshold comparison against clinical governance standard.                                                                                                   |
 
 ---
 
@@ -2198,29 +2062,28 @@ The most significant safety consequence of an integrity attack may be the erosio
 
 ---
 
-## 6. MITRE ATT&CK Mapping
+## 6. MITRE ATT\&CK Mapping
 
-### Enterprise ATT&CK
+### Enterprise ATT\&CK
 
-| Attack Step | Tactic | Technique | ID |
-|-------------|--------|-----------|-----|
-| Compromise vendor VPN credentials (supply chain) | Initial Access | Trusted Relationship | T1199 |
-| Exploit vulnerable clinical workstation | Initial Access | Exploitation of Public-Facing Application | T1190 |
-| Credential harvesting from clinical workstation | Credential Access | OS Credential Dumping | T1003 |
-| Clear log entries on workstation | Defence Evasion | Indicator Removal: Clear Windows Event Logs | T1070.001 |
+| Attack Step                                      | Tactic            | Technique                                   | ID        |
+| ------------------------------------------------ | ----------------- | ------------------------------------------- | --------- |
+| Compromise vendor VPN credentials (supply chain) | Initial Access    | Trusted Relationship                        | T1199     |
+| Exploit vulnerable clinical workstation          | Initial Access    | Exploitation of Public-Facing Application   | T1190     |
+| Credential harvesting from clinical workstation  | Credential Access | OS Credential Dumping                       | T1003     |
+| Clear log entries on workstation                 | Defence Evasion   | Indicator Removal: Clear Windows Event Logs | T1070.001 |
 
-### ATT&CK for ICS (Clinical Device Zone)
+### ATT\&CK for ICS (Clinical Device Zone)
 
-| Attack Step | Tactic | Technique | ID |
-|-------------|--------|-----------|-----|
-| Clinical network device enumeration | Discovery | Remote System Information Discovery | T0888 |
-| Modify infusion pump drug library | Impair Process Control | Modify Parameter | T0836 |
-| Modify patient monitor alarm thresholds | Impair Process Control | Modify Parameter | T0836 |
-| Push backdoored firmware to infusion pumps | Persistence | Module Firmware | T0839 |
-| Manipulate PACS DICOM images and metadata | Impair Process Control | Manipulate I/O Image | T0835 |
-| Abuse vendor remote access for persistent entry | Lateral Movement | Remote Services | T0886 |
-| Modify fleet management audit logs | Evasion | Modify Alarm Settings | T0838 |
-
+| Attack Step                                     | Tactic                 | Technique                           | ID    |
+| ----------------------------------------------- | ---------------------- | ----------------------------------- | ----- |
+| Clinical network device enumeration             | Discovery              | Remote System Information Discovery | T0888 |
+| Modify infusion pump drug library               | Impair Process Control | Modify Parameter                    | T0836 |
+| Modify patient monitor alarm thresholds         | Impair Process Control | Modify Parameter                    | T0836 |
+| Push backdoored firmware to infusion pumps      | Persistence            | Module Firmware                     | T0839 |
+| Manipulate PACS DICOM images and metadata       | Impair Process Control | Manipulate I/O Image                | T0835 |
+| Abuse vendor remote access for persistent entry | Lateral Movement       | Remote Services                     | T0886 |
+| Modify fleet management audit logs              | Evasion                | Modify Alarm Settings               | T0838 |
 
 ## File: ./storylines/northgate_incident.md
 
@@ -2331,6 +2194,7 @@ Full enterprise IT services are restored by Day 7. The clinical device network i
 ### Days 8–14 — Post-Incident Review
 
 An external review identifies the following root causes:
+
 1. Lack of multi-factor authentication on the VPN gateway
 2. Incomplete network segmentation leaving dual-homed workstations as crossing points
 3. Inadequate monitoring — SIEM alerts were dismissed as migration-related noise
@@ -2344,17 +2208,11 @@ An external review identifies the following root causes:
 The following moments in the Northgate Incident present meaningful choices for learners acting as incident responders or safety engineers:
 
 1. **Alert Triage (Day 1, Tuesday morning)**: The SIEM flags unusual SMB traffic. Do you escalate immediately and begin containment, or attribute it to the known migration project and continue monitoring? *Trade-off*: aggressive containment may disrupt the migration and create clinical downtime; delayed response allows the attacker more time.
-
 2. **Network Isolation Decision (Day 2, Wednesday afternoon)**: Do you sever the enterprise-to-clinical network link immediately? *Trade-off*: isolation protects medical devices from further compromise but removes clinicians' electronic access to patient records, introducing a different safety risk (medication errors from loss of allergy/drug interaction checking).
-
 3. **Backup Integrity Assessment (Day 2)**: On-site backups are encrypted. Do you attempt to restore from the potentially compromised tape library, or wait for the EHR vendor's hosted recovery image (estimated 18-hour delay)? *Trade-off*: faster restoration may reintroduce malware; waiting extends the period of manual clinical operations.
-
 4. **Infusion Pump Verification (Day 3)**: Clinical Engineering must decide whether to continue using infusion pumps that were on the compromised network segment, or take them out of service for firmware verification. *Trade-off*: removing pumps from service creates immediate clinical risk (fewer pumps available); leaving them in service carries integrity risk (firmware may have been tampered with, however unlikely).
-
 5. **Ransom Payment Deliberation (Day 2-3)**: The Trust Board must decide whether to pay the £1.2M ransom. *Trade-off*: payment might accelerate data recovery but funds criminal activity, provides no guarantee of decryption, and may violate NHS policy and UK counter-terrorism guidance.
-
 6. **Disclosure Timing (Day 2 onwards)**: When and how should the Trust disclose the incident to patients, the ICO, NHS England, and the media? *Trade-off*: early disclosure supports transparency and regulatory compliance but may cause panic; delayed disclosure allows time for clearer messaging but risks regulatory sanction and loss of public trust.
-
 
 ## File: ./system_architecture/network_architecture.md
 
@@ -2466,11 +2324,8 @@ Additionally, a set of **dual-homed clinical workstations** (shown with dashed b
 The architecture has three properties that are directly relevant to the security-informed safety argument:
 
 1. **Medical device dependence on enterprise services**: Infusion pumps and patient monitors ultimately depend on data originating in the enterprise zone (prescriptions, patient demographics). A loss of the enterprise zone therefore cascades to clinical device functionality.
-
 2. **The IT/OT boundary is porous**: The internal firewall is the intended trust boundary between IT and clinical OT systems, but the dual-homed workstations and legacy flat segments undermine it. An attacker who reaches the clinical zone inherits the weak authentication and unencrypted protocol environment of legacy medical devices.
-
 3. **Vendor remote access bypasses segmentation**: The infusion pump manufacturer's persistent VPN connection terminates directly in the clinical zone, providing an alternative entry point that bypasses the enterprise perimeter entirely. If the vendor's own credentials are compromised, the clinical zone is directly exposed.
-
 
 ## File: ./system_architecture/subsystem_descriptions.md
 
@@ -2544,8 +2399,7 @@ The enterprise IT environment comprises Active Directory domain services (authen
 
 **Key security vulnerabilities**: Active Directory is the highest-value target in the enterprise zone — domain admin compromise provides access to every domain-joined system, including the dual-homed clinical workstations. The backup infrastructure at Northgate was network-accessible from the enterprise zone without air-gapping or immutability controls, meaning that a ransomware attack that compromised the enterprise zone could also destroy the backup estate. The SIEM's coverage of the clinical zone was partial — medical device logs were not ingested, creating a monitoring blind spot.
 
-
-## File: ./system_architecture/system_overview.md
+## File: ./system_architecture/system_overview\.md
 
 # System Overview — Northgate General Hospital
 
@@ -2590,7 +2444,6 @@ At the time of the incident, several security gaps were known but unresolved:
 5. Medical device communication protocols lacked encryption and mutual authentication.
 6. No formal governance structure linked the IT Security team with Clinical Engineering for managing cyber risks to medical devices.
 
-
 ## File: ./theoretical_background/background.md
 
 # Theoretical Background: Cybersecurity and Patient Safety in Healthcare
@@ -2622,15 +2475,19 @@ The core concept of security-informed safety is the recognition that a cyber att
 Each link in this chain represents a distinct domain of analysis:
 
 ### Cyber Attack
-A threat actor exploits a vulnerability in the hospital's ICT environment. This might be a ransomware group encrypting servers, a sophisticated attacker manipulating medical device configurations, or an insider inadvertently introducing malware. The attack techniques are drawn from the standard cybersecurity threat landscape — phishing, credential abuse, lateral movement, privilege escalation — and are well-characterised by frameworks such as MITRE ATT&CK.
+
+A threat actor exploits a vulnerability in the hospital's ICT environment. This might be a ransomware group encrypting servers, a sophisticated attacker manipulating medical device configurations, or an insider inadvertently introducing malware. The attack techniques are drawn from the standard cybersecurity threat landscape — phishing, credential abuse, lateral movement, privilege escalation — and are well-characterised by frameworks such as MITRE ATT\&CK.
 
 ### Clinical System Compromise
+
 The cyber attack affects one or more clinical systems: the EHR becomes unavailable, medical device management consoles are encrypted, patient monitoring central stations go offline, or diagnostic imaging data is corrupted. The compromise may affect system *availability* (the system cannot be used), *integrity* (the system produces unreliable data), or both.
 
 ### Functional Safety Failure
+
 Clinical systems implement safety functions — dose range checking on infusion pumps, alarm threshold monitoring on patient monitors, allergy verification in the EHR. When these systems are compromised, their safety functions are degraded or lost. A dose range check that cannot execute because the drug library is corrupted has the same effect as no dose range check at all. An alarm that does not fire because its threshold has been manipulated is a silent failure with no visible warning.
 
 ### Patient Harm
+
 The degradation of safety functions creates a hazard — a condition with the potential to cause physical harm. In the Northgate scenario, the hazards include: medication dosing errors due to loss of electronic prescribing guardrails, delayed detection of patient deterioration due to loss of centralised alarming, and misdiagnosis due to corrupted imaging data. The hazard becomes a harm event when it coincides with a clinical situation that requires the safety function — a patient who needs a dose adjustment when the pump's drug library is corrupted, or a patient who deteriorates when the alarm system has been silently disabled.
 
 ### Key Concepts
@@ -2648,12 +2505,15 @@ The degradation of safety functions creates a hazard — a condition with the po
 Healthcare organisations face a diverse threat landscape, with three categories of threat actor accounting for the majority of incidents:
 
 ### Ransomware Groups (Most Common)
+
 Financially motivated ransomware-as-a-service operations are the most frequent attackers of healthcare organisations. Healthcare is an attractive target because of its low tolerance for downtime — hospitals cannot simply "go offline" while systems are recovered. The WannaCry attack of 2017 disrupted approximately one-third of NHS trusts in England, and the subsequent years have seen a steady increase in targeted ransomware campaigns against healthcare providers worldwide. Double-extortion models (encrypting data while exfiltrating and threatening to leak it) add regulatory and reputational pressure to the operational disruption. Ransomware attacks primarily affect availability, but they can cross into safety-critical territory when clinical devices and monitoring systems are within the blast radius.
 
 ### State-Sponsored Actors (Highest Sophistication)
+
 Nation-state cyber operations targeting healthcare are less frequent but represent the highest-capability threat. State-sponsored actors have conducted operations against healthcare research institutions (notably during the COVID-19 pandemic), medical device manufacturers, and hospital networks. Their objectives range from intellectual property theft to pre-positioning for potential disruption during geopolitical crises. The tools and techniques available to state-sponsored actors — zero-day exploits, supply-chain compromises, advanced persistent access — make them significantly harder to detect and contain than ransomware groups.
 
 ### Insiders (Most Underestimated)
+
 Insider threats encompass both malicious actors (disgruntled employees, financially motivated data thieves) and negligent individuals who inadvertently create security exposures. In healthcare, the insider threat is amplified by the large and diverse workforce, the use of temporary and agency staff, and the operational imperative to maintain broad system access for clinical care. Credential sharing, weak password practices, and the use of personal devices on clinical networks are endemic in many healthcare environments. The Northgate scenario illustrates the negligent insider pathway: a contractor's poor credential hygiene directly enabled the initial VPN compromise.
 
 ---
@@ -2663,15 +2523,19 @@ Insider threats encompass both malicious actors (disgruntled employees, financia
 Healthcare environments present a distinctive set of cybersecurity challenges that make them disproportionately vulnerable to attacks with safety consequences:
 
 ### Legacy Medical Devices
+
 Many networked medical devices run embedded operating systems that are years or decades behind current security standards. These devices were designed and certified for safety in an era before network connectivity was ubiquitous, and their software may not support modern encryption, authentication, or patching. Updating the software on a safety-certified medical device may trigger a recertification requirement under IEC 62304, creating a conflict between security best practice (patch promptly) and safety assurance (do not modify certified software without re-validation). This "patching paradox" is a defining challenge of healthcare cybersecurity.
 
 ### Poor Network Segmentation
+
 Effective network segmentation — isolating medical devices from enterprise IT systems — is the most important architectural defence against the security-to-safety pathway. In practice, many hospitals have incomplete or poorly maintained segmentation. Legacy flat networks, pragmatic firewall exceptions (to maintain clinical workflows), and dual-homed workstations all create pathways through which an enterprise compromise can reach clinical devices. The Northgate scenario is typical: the segmentation project was underway but incomplete at the time of the attack.
 
 ### Staff Social Engineering Susceptibility
+
 Healthcare workers operate under time pressure, are trained to be responsive and helpful, and frequently receive legitimate communications from unfamiliar external parties (referrals, vendor communications, patient enquiries). These characteristics make them susceptible to social engineering — particularly spear-phishing, which remains the most common initial access vector in healthcare cyber incidents. Security awareness training helps but cannot eliminate the risk entirely; layered technical controls (email filtering, URL sandboxing, endpoint detection) are essential complements.
 
 ### Patching Constraints on Safety-Certified Devices
+
 Beyond legacy devices, even modern medical equipment may have patching constraints. Device manufacturers must validate that security patches do not affect the device's safety-critical functions, a process that can take weeks or months. During this window, the device remains vulnerable. Some manufacturers do not provide timely patches at all, leaving hospitals dependent on compensating network-level controls (segmentation, monitoring) as their only defence.
 
 ---
@@ -2680,11 +2544,11 @@ Beyond legacy devices, even modern medical equipment may have patching constrain
 
 Security and safety engineering use overlapping but distinct terminology. The following table aligns key concepts across the two disciplines:
 
-| Security Concept | Safety Concept | Relationship |
-|-----------------|---------------|--------------|
-| **Threat** — An actor or event with the potential to exploit a vulnerability | **Hazard** — A condition with the potential to cause harm | A cyber threat can give rise to a safety hazard when it affects a safety-critical system |
-| **Vulnerability** — A weakness that can be exploited by a threat | **Failure mode** — A way in which a system can fail to perform its intended function | A cybersecurity vulnerability in a medical device can create a failure mode that compromises patient safety |
-| **Incident response** — The process of detecting, containing, and recovering from a security event | **Emergency procedure** — A pre-defined response to a safety-critical event | In a cyber-safety event, incident response and emergency procedures must be coordinated — IT containment actions can trigger clinical safety consequences |
-| **Risk** (security) — Likelihood of a threat exploiting a vulnerability × impact | **Risk** (safety) — Likelihood of a hazard leading to harm × severity | Security risk assessment and safety risk assessment must be integrated when the threat pathway leads to a safety hazard |
-| **Control** — A measure that reduces security risk (firewall, EDR, MFA) | **Safeguard / Safety barrier** — A measure that prevents or mitigates a hazardous event (alarm, interlock, dose limit) | In security-informed safety, some security controls also function as safety barriers (e.g., network segmentation prevents threats reaching safety-critical devices) |
-| **Attack surface** — The set of points where an attacker can interact with a system | **Exposure** — The extent to which people or systems are subject to a hazard | The cyber attack surface of a medical device network determines the exposure of patients to cyber-enabled safety hazards |
+| Security Concept                                                                                   | Safety Concept                                                                                                         | Relationship                                                                                                                                                        |
+| -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Threat** — An actor or event with the potential to exploit a vulnerability                       | **Hazard** — A condition with the potential to cause harm                                                              | A cyber threat can give rise to a safety hazard when it affects a safety-critical system                                                                            |
+| **Vulnerability** — A weakness that can be exploited by a threat                                   | **Failure mode** — A way in which a system can fail to perform its intended function                                   | A cybersecurity vulnerability in a medical device can create a failure mode that compromises patient safety                                                         |
+| **Incident response** — The process of detecting, containing, and recovering from a security event | **Emergency procedure** — A pre-defined response to a safety-critical event                                            | In a cyber-safety event, incident response and emergency procedures must be coordinated — IT containment actions can trigger clinical safety consequences           |
+| **Risk** (security) — Likelihood of a threat exploiting a vulnerability × impact                   | **Risk** (safety) — Likelihood of a hazard leading to harm × severity                                                  | Security risk assessment and safety risk assessment must be integrated when the threat pathway leads to a safety hazard                                             |
+| **Control** — A measure that reduces security risk (firewall, EDR, MFA)                            | **Safeguard / Safety barrier** — A measure that prevents or mitigates a hazardous event (alarm, interlock, dose limit) | In security-informed safety, some security controls also function as safety barriers (e.g., network segmentation prevents threats reaching safety-critical devices) |
+| **Attack surface** — The set of points where an attacker can interact with a system                | **Exposure** — The extent to which people or systems are subject to a hazard                                           | The cyber attack surface of a medical device network determines the exposure of patients to cyber-enabled safety hazards                                            |
