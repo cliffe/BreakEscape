@@ -45,9 +45,30 @@ require 'json'
 # Password hint lives OUTSIDE the server room it opens (checkpoint noticeboard)
 password_hint_note = "HASHCHAIN IT — NEW STARTER CHECKLIST\n(Rev. January 2025)\n\nStep 4: Door controller passphrases\n\nEvery restricted-area controller uses the house convention:\n  <crypto term, lowercase> + <current year>\n\nThe server room controller was last rotated when this checklist\nwas written, and still follows the convention. It is the obvious one. It is always the\nobvious one, because nobody wants to be locked out at 3am.\n\n(IT has been asked four times to stop doing this. IT has declined.)\n\nStep 5: If you are locked out, do NOT call the CTO. She has opinions."
 
-blockchain_evidence = "ENTROPY FINANCIAL NETWORK - TRANSACTION ANALYSIS\n\nInbound to 1ARCHITECT9FUND (via HashChain mixer):\n- 1ENTROPY2RansomInc -> $2.4M (ransomware proceeds, pooled across victims)\n- 1ENTROPY3ZeroDaySy -> $1.2M (exploit sales)\n- 1ENTROPY1SocialFab -> $680K (disinformation campaigns)\n- 14 further wallets -> $12.6M (not yet attributed)\n\nOutbound from 1ARCHITECT9FUND:\n- 1TALENTSTACKPAY <- $847K (acquisition budget, Quantum Dynamics job; Insider Threat Initiative)\n- six cell wallets <- $3.2M in advances, 4 August (Critical Mass $800K, Zero Day Syndicate $700K, Social Fabric $500K, Digital Vanguard $500K, Ghost Protocol $400K, Supply Chain Saboteurs $300K)\n\nCurrent balance: $12.8M USD equivalent\n\nPURPOSE: Major coordinated operation funding\nTIMELINE: 72 hours until fund distribution"
+# PASS 4 fix 1: the follow-the-money puzzle. Priya's write-up has what went
+# INTO the mixer (amount + time); the transaction server has what came OUT
+# (credits to custody slots) and the pool's fee and minimum hold. The fund is
+# the slot whose credits are each deposit less 1.5%, at least 6 hours later:
+# slot 4471 matches all three. Decoys: 3815 takes the ransom amount too early,
+# 6120 takes the exploit amount with no fee taken (and too early), 2207 takes
+# the Social Fabric amount too early. Round 2 noise: 5093 takes $2,346,000
+# after the hold (rewards doing the 1.5% properly), 8846 takes small credits.
+# The custodian column has no pattern. The slot opens the custody console in
+# the data centre (cold_storage_console, PIN 4471). Nothing before the console
+# maps 1ARCHITECT9FUND to a slot. A turned Irina narrows (decoy 6120, the
+# six-hour hold) and confirms a slot the player names; she never says it.
+fund_slot = "4471"
 
-architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nAUTHORISED: Satoshi's Ghost (Crypto Anarchists), for The Architect\n\nAdvances paid (4 August): $3.2M\nBalance pending: $12.8M USD (BTC equivalent), auto-release in 72 hours\n\nPER CELL (advance paid / balance pending):\n- Critical Mass: $0.8M / $3.2M. Pacific Northwest grid control\n- Ghost Protocol: $0.4M / $1.5M. Operation Fracture (election data centre)\n- Social Fabric: $0.5M / $2.1M. Operation Fracture, with Ghost Protocol\n- Supply Chain Saboteurs: $0.3M / $1.3M. Operation Trojan Horse\n- Digital Vanguard: $0.5M / $1.9M. Operation Meltdown (hospitals)\n- Zero Day Syndicate: $0.7M / $2.8M. Operation Meltdown, ordnance\n\nOPERATION: The Architect's Masterpiece\nCOORDINATOR: The Architect\n\nSuccess probability: 94%\nProjected casualties (cells' own estimates, all operations): 350-600"
+blockchain_evidence = "ENTROPY FINANCIAL NETWORK - TRANSACTION ANALYSIS\n(P. Raghavan, draft. Not for Irina yet.)\n\n1. INTO OUR MIXER (public chain, Bitcoin side)\nThree wallets with ENTROPY in the address, all paying into hc-mixer-01 (times UTC):\n\n  14 Jul  21:40  1ENTROPY2RansomInc  $2,400,000  ransomware proceeds, pooled across victims\n  29 Jul  22:10  1ENTROPY3ZeroDaySy  $1,200,000  exploit sales\n  03 Aug  20:05  1ENTROPY1SocialFab    $680,000  disinformation contracts\n\n(Plus about $12M more since January from wallets with no names on them. Same pattern.)\n\n2. OUT OF THE MIXER\nThis is where I lose it. The middle is Monero. What comes out is a fresh Bitcoin credit into one of our own cold-storage slots, and the chain can't tell me which slot. Our settlement log can. It lives on the transaction server in the data centre.\n\nHow I'd match it: the same amount less the mixer's fee, landing no sooner than the pool's minimum hold. Both numbers are in Irina's pool config.\n\n3. OUT OF WHEREVER IT LANDED\n  02 Aug  $847,000 to 1TALENTSTACKPAY (the Quantum Dynamics job budget)\n  04 Aug  $3,200,000 split six ways. Advances?\nBoth paid out of our custody on CEO authorisation. Same slot as above? I'd bet on it.\n\n(Margin: every cell seems to use us. Are we the bank for all of them?)"
+
+# The three transaction-server files. Times are UTC, as Priya's are.
+settlement_log_text = "hc-mixer-01 :: SETTLEMENTS TO CUSTODY\n(mixer output credited to a cold slot, 14 Jul - 04 Aug, credits over $100,000, times UTC)\n\ndate    time   slot   credit (USD)\n14 Jul  23:05  2207     $310,400\n15 Jul  01:15  3815   $2,364,000\n15 Jul  04:20  #{fund_slot}   $2,364,000\n15 Jul  05:10  5093   $2,346,000\n16 Jul  09:30  6120     $975,000\n19 Jul  16:25  8846     $204,900\n22 Jul  14:00  2207     $128,050\n30 Jul  02:40  6120   $1,200,000\n30 Jul  05:05  #{fund_slot}   $1,182,000\n30 Jul  11:45  3815     $441,300\n01 Aug  08:15  5093     $718,200\n04 Aug  01:50  2207     $669,800\n04 Aug  03:35  #{fund_slot}     $669,800\n04 Aug  09:00  8846     $133,750\n\nException handler note: every flagged deposit into the mixer this month was released by the same account (CTO override)."
+
+mixer_config_text = "# hc-mixer-01 -- pool configuration\n# author: i.volkova\n# WARNING: production. Do not edit without change control.\n\npool_depth: 512\nfee_percent: 1.5          # taken off every output\nmin_dwell_hours: 6        # nothing leaves the pool sooner than this\nconversion_chain:\n  - BTC -> XMR\n  - XMR -> XMR (3 hops)\n  - XMR -> BTC\noutput: BTC credit to a custody slot (see settlement log)\n\ncompliance_reporting: disabled\n# disabled 2023-11-04 at CEO request. I.V. objected in writing. Objection is in the\n# change ticket, which is the only reason it still exists."
+
+custody_index_text = "hashchain :: custody_index.csv (cold slots)\n\nslot,label,opened_by,opened\n2207,OTC desk settlement,CEO,2023-02\n3815,customer reserve B,CEO,2022-09\n#{fund_slot},client escrow,ops,2025-11\n5093,client escrow,CEO,2025-10\n6120,\"client escrow -- do not reconcile\",CEO,2024-06\n7302,dormant (legacy),ops,2021-01\n8846,market-maker float,ops,2024-02\n\n# The custody console opens a slot's file by its number.\n# Labels are whatever the account manager typed. Trust the money, not the label. -- I.V."
+
+architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTODY: cold slot #{fund_slot} (1ARCHITECT9FUND)\nAUTHORISED: Satoshi's Ghost (Crypto Anarchists), for The Architect\n\nAdvances paid (4 August): $3.2M\nBalance pending: $12.8M USD (BTC equivalent)\nRelease: pre-signed by Satoshi's Ghost. Goes out on its own in 72 hours unless the wallet is moved first.\n\nPER CELL (advance paid / balance pending):\n- Critical Mass: $0.8M / $3.2M. Pacific Northwest grid control\n- Ghost Protocol: $0.4M / $1.5M. Operation Fracture (election data centre)\n- Social Fabric: $0.5M / $2.1M. Operation Fracture, with Ghost Protocol\n- Supply Chain Saboteurs: $0.3M / $1.3M. Operation Trojan Horse\n- Digital Vanguard: $0.5M / $1.9M. Operation Meltdown (hospitals)\n- Zero Day Syndicate: $0.7M / $2.8M. Operation Meltdown, ordnance\n\nOPERATION: The Architect's Masterpiece\nCOORDINATOR: The Architect\n\nSuccess probability: 94%\nProjected casualties (cells' own estimates, all operations): 350-600"
 %>
 {
   "flags": {
@@ -127,12 +148,13 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nAUTHO
           { "text": "MISSION COMPLETE",                                            "style": "title" },
           { "text": "FOLLOW THE MONEY",                                            "style": "subtitle" },
           { "text": "" },
-          { "text": "THE ARCHITECT'S FUND: $12.8M — LOCATED",                      "style": "entry" },
+          { "text": "THE ARCHITECT'S FUND: $12.8M — TRACED THROUGH THE MIXER",     "style": "entry", "condition": "globalVars.found_architects_fund && !globalVars.irina_confirmed_slot" },
+          { "text": "THE ARCHITECT'S FUND: $12.8M — TRACED, CONFIRMED BY VOLKOVA", "style": "entry", "condition": "globalVars.found_architects_fund && globalVars.irina_confirmed_slot" },
           { "text": "ENTROPY FINANCIAL NETWORK: MAPPED",                           "style": "entry",   "condition": "globalVars.financial_network_mapped" },
           { "text": "ENTROPY FINANCIAL NETWORK: PARTIALLY MAPPED",                 "style": "entry",   "condition": "!globalVars.financial_network_mapped" },
           { "text": "" },
           { "text": "── ASSETS ──",                                                "style": "section-header" },
-          { "text": "FROZEN — $12.8M locked in cold storage. The cells not yet paid go without.", "style": "entry", "condition": "globalVars.assets_seized" },
+          { "text": "FROZEN — $12.8M moved into a SAFETYNET wallet. The cells not yet paid go without.", "style": "entry", "condition": "globalVars.assets_seized" },
           { "text": "WATCHED — Fund left running. Every recipient wallet now tagged.", "style": "entry", "condition": "globalVars.monitoring_enabled" },
           { "text": "" },
           { "text": "── PERSONNEL ──",                                             "style": "section-header" },
@@ -147,9 +169,15 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nAUTHO
           { "text": "DR. IRINA VOLKOVA: Knocked down on the trading floor — the offer was never made", "style": "entry", "condition": "globalVars.irina_ko && !globalVars.irina_recruited && !globalVars.irina_arrested" },
           { "text": "'SATOSHI NAKAMOTO II': Detained — handed to the police",       "style": "entry",   "condition": "!globalVars.satoshi_ko" },
           { "text": "'SATOSHI NAKAMOTO II': Knocked out in his own office — handed to the police", "style": "entry", "condition": "globalVars.satoshi_ko" },
-          { "text": "DANI OKONKWO (TRADER): Flagged the wallets first — left alone", "style": "entry",   "condition": "globalVars.trader_spoken && !globalVars.trader_ko" },
+          <%# PASS 4 fix 17: the specific credit needs the conversation the task names
+              (trader_heard_out comes from the task-completed mapping on HaX; analyst_walked_through
+              from Priya's graph conversation, pass-4 dialogue playtest); a player who only
+              said hello, or only asked the method, gets the neutral line. %>
+          { "text": "DANI OKONKWO (TRADER): Flagged the wallets first — left alone", "style": "entry",   "condition": "globalVars.trader_heard_out && !globalVars.trader_ko" },
+          { "text": "DANI OKONKWO (TRADER): Kept their head down — left alone", "style": "entry",   "condition": "globalVars.trader_spoken && !globalVars.trader_heard_out && !globalVars.trader_ko" },
           { "text": "DANI OKONKWO (TRADER): Knocked out — had done nothing wrong", "style": "entry",   "condition": "globalVars.trader_ko" },
-          { "text": "PRIYA RAGHAVAN (ANALYST): Drew the graph — left alone",       "style": "entry",   "condition": "globalVars.analyst_spoken && !globalVars.analyst_ko" },
+          { "text": "PRIYA RAGHAVAN (ANALYST): Drew the graph — left alone",       "style": "entry",   "condition": "globalVars.analyst_walked_through && !globalVars.analyst_ko" },
+          { "text": "PRIYA RAGHAVAN (ANALYST): Never knew what her graph proved — left alone", "style": "entry", "condition": "globalVars.analyst_spoken && !globalVars.analyst_walked_through && !globalVars.analyst_ko" },
           { "text": "PRIYA RAGHAVAN (ANALYST): Knocked out — had done nothing wrong", "style": "entry", "condition": "globalVars.analyst_ko" },
           { "text": "" },
           { "text": "── THE ARCHITECT ──",                                          "style": "section-header" },
@@ -195,7 +223,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nAUTHO
     {
       "aimId": "access_backend_systems",
       "title": "Work The Floor",
-      "description": "Get Irina's wordlist, work out the server room passphrase, and see what the exchange's own analysts have drawn.",
+      "description": "Get Irina's wordlist, work out the server room passphrase, and take the analysts' write-up from the blockchain lab east of the floor. It follows the money into the mixer.",
       "status": "locked",
       "unlockCondition": { "aimCompleted": "establish_cover" },
       "order": 1,
@@ -209,7 +237,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nAUTHO
           "currentCount": 0,
           "showProgress": true,
           "status": "active",
-          "puzzle_graph_unlocks": "password_cracking_ready"
+          "puzzle_graph_unlocks": "server_room"
         },
         {
           "taskId": "find_server_credentials",
@@ -235,7 +263,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nAUTHO
         },
         {
           "taskId": "find_transaction_records",
-          "title": "Take the ENTROPY transaction network analysis",
+          "title": "Take Priya's write-up on the ENTROPY money",
           "type": "collect_items",
           "targetItemIds": ["blockchain_evidence", "ENTROPY Transaction Network Analysis"],
           "targetCount": 1,
@@ -265,7 +293,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nAUTHO
     {
       "aimId": "crack_passwords",
       "title": "Crack The Backend",
-      "description": "Crack your way onto HashChain's financial servers, reuse what you recover to move sideways, and submit each flag at the intelligence drop. The financial database runs the door controllers.",
+      "description": "Crack your way onto HashChain's financial servers, reuse what you recover to move sideways, and submit each flag at the intelligence drop. The financial database's service account runs the door controllers, and the vault account holds the recovery keys for every cold wallet.",
       "status": "locked",
       "unlockCondition": { "aimCompleted": "access_backend_systems" },
       "order": 2,
@@ -326,7 +354,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nAUTHO
     {
       "aimId": "map_financial_network",
       "title": "Map The Money",
-      "description": "Use the ledger's door code to get into the data centre and find out what all this money is paying for.",
+      "description": "Get into the data centre with the code from the door-controller export. Follow the ENTROPY money through the mixer to the cold slot it lands in, and open that slot's file on the custody console.",
       "status": "locked",
       "order": 3,
       "tasks": [
@@ -347,6 +375,17 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nAUTHO
           "showProgress": true,
           "status": "active",
           "optional": true
+        },
+        <%# PASS 4 fix 1: the puzzle. unlock_object on the custody console (PIN =
+            the fund's slot, deduced from Priya's write-up + the settlement log +
+            the pool config, or told by a turned Irina). %>
+        {
+          "taskId": "identify_fund_wallet",
+          "title": "Work out which cold slot is the fund and open it on the custody console",
+          "type": "unlock_object",
+          "targetObject": "cold_storage_console",
+          "status": "active",
+          "puzzle_graph_unlocks": "architects_fund_doc"
         },
         {
           "taskId": "discover_architects_fund",
@@ -528,6 +567,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nAUTHO
     "architect_identity_found": false,
 
     "final_choice": "",
+    "satoshi_stance": "",
     "assets_decided": false,
     "assets_seized": false,
     "monitoring_enabled": false,
@@ -547,6 +587,9 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nAUTHO
     "irina_exec_badge_given": false,
     "read_irina_notes": false,
     "server_passphrase_known": false,
+    "irina_confirmed_slot": false,
+    "read_settlement_log": false,
+    "entered_data_center": false,
 
     "flag1_submitted": false,
     "flag2_submitted": false,
@@ -567,7 +610,9 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nAUTHO
     "guard_ko": false,
     "trader_ko": false,
     "trader_spoken": false,
+    "trader_heard_out": false,
     "analyst_spoken": false,
+    "analyst_walked_through": false,
     "analyst_ko": false,
 
     "cracking_guide_offered": false,
@@ -748,7 +793,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nAUTHO
               "eventPattern": "conversation_closed:opening_briefing_npc",
               "onceOnly": true,
               "completeTask": "receive_briefing",
-              "sendTimedMessage": { "delay": 3000, "message": "You're in. Remember the cover: FCA supervision, routine visit, bored and underpaid. The CTO is the one who matters. Dr. Irina Volkova, trading floor, through the checkpoint. There's a contract guard on that door. You're an FCA officer with an appointment, so act like one." }
+              "sendTimedMessage": { "delay": 3000, "message": "You're FCA on a routine visit. You want Dr Irina Volkova, the CTO: trading floor, through the checkpoint. There's a guard. You've an appointment, so act like it." }
             },
             {
               "eventPattern": "room_entered:reception_lobby",
@@ -762,7 +807,14 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nAUTHO
               "condition": "globalVars.exchange_infiltrated !== true && globalVars.irina_ko !== true",
               "onceOnly": true,
               "setGlobal": { "exchange_infiltrated": true },
-              "sendTimedMessage": { "delay": 4000, "message": "You've met Volkova. Whatever she's decided you are, she's the one person in that building who might want out. She built the mixer and she hates what it's used for. Work that." }
+              "sendTimedMessage": { "delay": 4000, "message": "You've met Volkova. She built the mixer and hates what it's used for. She's the one person in there who might want out. Work that." }
+            },
+            {
+              "_comment": "PASS 4 fix 13 (round 2: its own short text, after the Irina text): point at the lab.",
+              "eventPattern": "conversation_closed:irina_volkova",
+              "condition": "globalVars.found_blockchain_evidence !== true && globalVars.irina_ko !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 9000, "message": "Their analysts sit east of the floor. If anyone has drawn the money, it's them." }
             },
             {
               "_comment": "Lesson 26: the badge-given state comes from the pickup, not from ink set before the give tag.",
@@ -810,30 +862,37 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nAUTHO
             {
               "_comment": "PASS 2 review M4: the player reached the asset decision without the recovery keys and chose to come back. Point them at flag 4.",
               "eventPattern": "global_variable_changed:asset_decision_deferred",
-              "condition": "value === true && globalVars.flag4_submitted !== true",
+              "condition": "value === true && globalVars.flag4_submitted !== true && globalVars.found_architects_fund === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 2500, "message": "The recovery keys are on the vault account on the backend. That's the last flag. Take the estate, and the drop-site will hand you what you need to freeze that wallet." }
+              "sendTimedMessage": { "delay": 2500, "message": "The recovery keys are on the vault account on the backend. That's the last flag, and the drop-site will hand them over." }
+            },
+            {
+              "_comment": "PASS 4 round 2 (M1): deferred because the fund isn't found yet.",
+              "eventPattern": "global_variable_changed:asset_decision_deferred",
+              "condition": "value === true && globalVars.found_architects_fund !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2500, "message": "Find his slot first. The custody console in the data centre, and Priya's write-up for the matching." }
             },
             {
               "_comment": "Playtest D3: no completeTask here. obtain_access_tools is a collect task and completes itself from item_picked_up (objectives-manager.js:314-370); a mapping completeTask can reach the server before the collect lands and be rejected ('Insufficient items collected'), reverting the task. Pickup of the wordlist from Irina (#give_item) or the HaX relay. One mapping per id: conditions are &&-only (lesson 35). The cracking-guide offer rides on the first so the pair can't double-fire (lesson 2).",
               "eventPattern": "item_picked_up:text_file",
               "condition": "data.itemId === 'm06_password_dictionary' && globalVars.found_password_lists !== true",
               "onceOnly": true,
-              "setGlobal": { "found_password_lists": true, "cracking_guide_offered": true },
-              "sendTimedMessage": { "delay": 1500, "message": "Good. Her list is the terms people in this building actually pick, plus the years they bolt on. Put it next to anything that tells you the house convention for doors. When you get to the servers, I can send you the password cracking field guide too." }
+              "setGlobal": { "found_password_lists": true },
+              "sendTimedMessage": { "delay": 1500, "message": "Good. Her list is the words people here pick for their doors. Put it next to anything that gives the house convention." }
             },
             {
               "eventPattern": "item_picked_up:text_file",
               "condition": "data.itemId === 'relayed_password_dictionary' && globalVars.found_password_lists !== true",
               "onceOnly": true,
-              "setGlobal": { "found_password_lists": true, "cracking_guide_offered": true }
+              "setGlobal": { "found_password_lists": true }
             },
             {
               "_comment": "PASS 3 P8: was on room_entered:security_checkpoint, where it talked over the guard. HaX is always loaded, so guard_resolved lives here, not on the guard (his mappings register only when his room loads).",
               "eventPattern": "room_entered:trading_floor",
               "onceOnly": true,
               "setGlobal": { "rfid_guide_offered": true, "guard_resolved": true },
-              "sendTimedMessage": { "delay": 3000, "message": "You're on the floor. Two doors in this building are on RFID, not keypads, and your cloner reads a badge at conversational distance. If you want the guide on reading and duplicating badges, ask." }
+              "sendTimedMessage": { "delay": 3000, "message": "You're on the floor. Two doors here are on RFID, and your cloner reads a badge from across a desk. Ask if you want the guide." }
             },
             {
               "_comment": "PASS 3 P8: leaving for the lobby ends the guard's grace after a catch, so the cover works again on the next approach. cooldown 0: the 5000 ms default (npc-manager.js:518) would skip a quick re-entry.",
@@ -843,20 +902,20 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nAUTHO
               "setGlobal": { "guard_grace": false }
             },
             {
-              "_comment": "PASS 2: access_hackme_vm is now custom (unlock_object never fired for a vm-launcher that isn't locked). It completes when the terminal is used.",
+              "_comment": "PASS 2: access_hackme_vm is now custom (unlock_object never fired for a vm-launcher that isn't locked). It completes when the terminal is used. PASS 4 fix 8: the cracking guide is offered here, where the shadow file is, not on the wordlist pickup (the wordlist is for doors).",
               "eventPattern": "object_interacted",
               "condition": "data.objectType === 'vm-launcher'",
               "onceOnly": true,
-              "setGlobal": { "recon_guide_offered": true, "distcc_guide_offered": true },
+              "setGlobal": { "recon_guide_offered": true, "distcc_guide_offered": true, "cracking_guide_offered": true },
               "completeTask": "access_hackme_vm",
-              "sendTimedMessage": { "delay": 1800, "message": "You're on the backend terminal. There's a build service listening on that box that shouldn't be: that's your way in. Map before you log in. I can send the reconnaissance guide and the distcc guide if you want the method." }
+              "sendTimedMessage": { "delay": 1800, "message": "You're on the backend. A build service is listening that shouldn't be: that's your way in. Map first. I've guides for recon, distcc and cracking." }
             },
             {
               "_comment": "PASS 2: used to read the passphrase out ('bitcoin2025') the moment the checklist was picked up, which made the puzzle a pickup. Now HaX points at the second half of the clue.",
               "eventPattern": "global_variable_changed:server_passphrase_known",
               "condition": "value === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1200, "message": "There's the house convention, in writing: a crypto term and a year, and the checklist says when it was written. Which term? Whatever tops the list people here actually use. Volkova keeps one." }
+              "sendTimedMessage": { "delay": 1200, "message": "House rule: a crypto term and a year. The checklist's own date is the year. The term tops the list people here use. Volkova keeps one." }
             },
             {
               "_comment": "Backstop: a player who guesses the passphrase still ticks the task.",
@@ -880,7 +939,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nAUTHO
               "eventPattern": "objective_task_completed:submit_flag1",
               "onceOnly": true,
               "setGlobal": { "flag1_submitted": true, "servers_accessed": 1, "privesc_guide_offered": true },
-              "sendTimedMessage": { "delay": 1200, "message": "First account is yours. Whatever password worked there was almost certainly reused. Try it everywhere before you try anything clever. I've a credential reuse guide if you want the systematic version." }
+              "sendTimedMessage": { "delay": 1200, "message": "First account's yours. That password was almost certainly reused. Try it everywhere before anything clever. I've a credential reuse guide if you want it." }
             },
             {
               "eventPattern": "objective_task_completed:submit_flag2",
@@ -891,21 +950,70 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nAUTHO
               "eventPattern": "objective_task_completed:submit_flag3",
               "onceOnly": true,
               "setGlobal": { "flag3_submitted": true, "servers_accessed": 3 },
-              "sendTimedMessage": { "delay": 1500, "message": "That's the financial database, and the same service account runs their door controllers. The drop-site has cut you the controller export. The data centre code is in it. North door." }
+              "sendTimedMessage": { "delay": 1500, "message": "Financial database. It runs their doors: data centre code's in the export, north door. Last backend box is the vault account. It holds the wallet keys. Get it before upstairs." }
             },
             {
               "_comment": "PASS 2: flag 4 pays out the cold-storage recovery keys from the vault account (flag-station give_item). found_wallet_keys is set here, not by an onRead on a gifted item, so it is deterministic. Freezing the fund needs it.",
               "eventPattern": "objective_task_completed:submit_flag4",
               "onceOnly": true,
               "setGlobal": { "flag4_submitted": true, "servers_accessed": 4, "found_wallet_keys": true },
-              "sendTimedMessage": { "delay": 1800, "message": "Full estate, and the vault account had the cold-storage recovery keys on it. The drop-site's put them in your kit. That gives you an actual choice at the end: freeze the fund, or leave it running and follow it." }
+              "sendTimedMessage": { "delay": 1800, "message": "Full estate. The vault account had the recovery keys, and they're in your kit. Whoever holds the keys holds the money: freeze it, or watch it." }
             },
             {
               "eventPattern": "global_variable_changed:found_blockchain_evidence",
               "condition": "value === true",
               "onceOnly": true,
               "setGlobal": { "blockchain_debrief_available": true },
-              "sendTimedMessage": { "delay": 1500, "message": "That graph is most of the case. Ransom money and exploit money arriving at one wallet through a mixer the CTO wrote herself, and the Initiative's budget going out of the same wallet. Call me when you want to talk it through." }
+              "sendTimedMessage": { "delay": 1500, "message": "Priya's got the money as far as the mixer, with amounts and times. The settlement log on the other side is in their data centre. Keep her write-up." }
+            },
+            {
+              "_comment": "PASS 4 fix 1: first time in the data centre, before the fund is found, HaX frames the console puzzle. The hub's 'Which slot is the fund?' gives graded nudges; the recap repeats this after a reload.",
+              "eventPattern": "room_entered:data_center",
+              "condition": "globalVars.found_architects_fund !== true && globalVars.irina_recruited !== true",
+              "onceOnly": true,
+              "setGlobal": { "entered_data_center": true },
+              "sendTimedMessage": { "delay": 2000, "message": "That console opens one cold slot's file by number. The fund is one of them. The transaction server has the other half of Priya's write-up." }
+            },
+            {
+              "_comment": "PASS 4 round 2 (m4): the turned-Irina variant. She narrows and confirms; HaX doesn't restate the method.",
+              "eventPattern": "room_entered:data_center",
+              "condition": "globalVars.found_architects_fund !== true && globalVars.irina_recruited === true",
+              "onceOnly": true,
+              "setGlobal": { "entered_data_center": true },
+              "sendTimedMessage": { "delay": 2000, "message": "That console opens one cold slot's file by number. Read the settlement log, then run your slot past Volkova." }
+            },
+            {
+              "_comment": "PASS 4 fix 5: the vault keys should be in hand before the confrontation. No hard gate; the defer route stays as the backstop.",
+              "eventPattern": "room_entered:executive_wing",
+              "condition": "globalVars.flag4_submitted !== true && globalVars.found_architects_fund === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "Hold on. You haven't got the vault account yet, and without its keys you can't touch that wallet tonight. He'll keep." }
+            },
+            {
+              "_comment": "PASS 4 round 2 (M1): the asset choices need the fund. A player who reaches the wing without it (KO'd Irina's badge) is pointed back at the console.",
+              "eventPattern": "room_entered:executive_wing",
+              "condition": "globalVars.found_architects_fund !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 3500, "message": "You're upstairs without his wallet. You can't freeze or watch a slot you haven't found. It's on the custody console." }
+            },
+            {
+              "_comment": "PASS 4 round 2 (M3): reading the settlement log lets a turned Irina check a slot the player names.",
+              "eventPattern": "item_picked_up:text_file",
+              "condition": "data.itemId === 'settlement_log'",
+              "onceOnly": true,
+              "setGlobal": { "read_settlement_log": true }
+            },
+            {
+              "_comment": "PASS 4 fix 17: the specific credits key on the conversations the tasks name. taskOnKO also completes these, but the credit conditions exclude a KO.",
+              "eventPattern": "objective_task_completed:question_the_trader",
+              "onceOnly": true,
+              "setGlobal": { "trader_heard_out": true }
+            },
+            {
+              "_comment": "Pass-4 dialogue playtest: the credit global now comes from Priya's graph conversation (pattern_concerns sets it), not from the task, which the method line also completes.",
+              "eventPattern": "objective_task_completed:question_the_analyst",
+              "onceOnly": true,
+              "setGlobal": { "analyst_spoken": true }
             },
             {
               "_comment": "PASS 3 P9: two mappings split on irina_ko (conditions are &&-only). The badge for the wing is with Irina now, not in the data centre.",
@@ -913,29 +1021,37 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nAUTHO
               "condition": "value === true && globalVars.irina_ko !== true",
               "onceOnly": true,
               "setGlobal": { "knows_architects_fund": true, "fund_debrief_available": true },
-              "sendTimedMessage": { "delay": 1500, "message": "$12.8M still in the wallet, six cells, seventy-two hours, and the advances already paid. Call me about that wallet. And we've pulled the door logs: the spare executive badge was signed out to Volkova and never returned. She's on the trading floor." }
+              "sendTimedMessage": { "delay": 1500, "message": "$12.8M in the wallet, six cells, seventy-two hours. Call me about it. The spare executive badge was signed out to Volkova. She's on the trading floor." }
             },
             {
               "eventPattern": "global_variable_changed:found_architects_fund",
               "condition": "value === true && globalVars.irina_ko === true",
               "onceOnly": true,
               "setGlobal": { "knows_architects_fund": true, "fund_debrief_available": true },
-              "sendTimedMessage": { "delay": 1500, "message": "$12.8M still in the wallet, six cells, seventy-two hours, and the advances already paid. Call me about that wallet. We've pulled the door logs: the spare executive badge was signed out to Volkova. Check where she went down. If it isn't there, ask me for a copy." }
+              "sendTimedMessage": { "delay": 1500, "message": "$12.8M in the wallet, six cells, seventy-two hours. Call me about it. The spare executive badge was Volkova's. Check where she went down, or ask me for a copy." }
             },
             {
               "_comment": "PASS 3 playtest: was a forced phone-chat open (conversationMode phone-chat) that took over the screen after the KO, and its text ignored a fate already settled. Now three timed texts split on her fate (conditions are &&-only); each sets the same globals the relay knot used to. meet_irina comes from taskOnKO. The debrief opens on the next UI close or room entry, as before.",
               "eventPattern": "npc_ko:irina_volkova",
-              "condition": "globalVars.irina_recruited !== true && globalVars.irina_arrested !== true",
+              "condition": "globalVars.irina_recruited !== true && globalVars.irina_arrested !== true && globalVars.exchange_infiltrated === true",
               "onceOnly": true,
               "setGlobal": { "irina_fate_decided": true, "irina_ko_relayed": true },
-              "sendTimedMessage": { "delay": 2500, "message": "Volkova's down. Well. That's one way to settle it. She was halfway to walking, and we'll log it as neutralised on site. Whatever she was carrying is on the floor beside her. If you still need her wordlist, ask me for a copy." }
+              "sendTimedMessage": { "delay": 2500, "message": "Volkova's down. Well. That's one way to settle it. Her things are on the floor beside her. If you still need her wordlist, ask me for a copy." }
+            },
+            {
+              "_comment": "PASS 4 fix 11: KO'd before the player ever finished a conversation with her (exchange_infiltrated is set on her first close), so HaX can't say she was halfway to walking.",
+              "eventPattern": "npc_ko:irina_volkova",
+              "condition": "globalVars.irina_recruited !== true && globalVars.irina_arrested !== true && globalVars.exchange_infiltrated !== true",
+              "onceOnly": true,
+              "setGlobal": { "irina_fate_decided": true, "irina_ko_relayed": true },
+              "sendTimedMessage": { "delay": 2500, "message": "Volkova's down before we ever talked to her. Her things are on the floor beside her. If you need her wordlist, ask me for a copy." }
             },
             {
               "eventPattern": "npc_ko:irina_volkova",
               "condition": "globalVars.irina_recruited === true",
               "onceOnly": true,
               "setGlobal": { "irina_fate_decided": true, "irina_ko_relayed": true },
-              "sendTimedMessage": { "delay": 2500, "message": "Volkova's down. She'd already come over to us. That goes in the report as a mistake, not a result. What she gave us still stands. Whatever she was carrying is on the floor beside her." }
+              "sendTimedMessage": { "delay": 2500, "message": "Volkova's down, and she'd already come over to us. That goes in the report as a mistake. What she gave us stands. Her things are beside her." }
             },
             {
               "eventPattern": "npc_ko:irina_volkova",
@@ -1204,7 +1320,9 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nAUTHO
             "rfid_protocol": "EM4100",
             "name": "CTO Access Badge"
           },
-          "puzzle_graph_actions": ["irina_cooperation"],
+          "puzzle_graph_actions": [
+            { "id": "irina_cooperation", "label": "Win Irina over (or settle her fate)", "unlocks_aim": "resolve_the_fund" }
+          ],
           "itemsHeld": [
             {
               "type": "keycard",
@@ -1223,9 +1341,9 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nAUTHO
               "name": "Password Dictionary List",
               "takeable": true,
               "text": "HASHCHAIN INTERNAL — CREDENTIAL AUDIT WORDLIST\n\nCompiled by Dr. I. Volkova for internal password strength testing.\n\nbitcoin\nethereum\nsatoshi\nblockchain\nledger\nmonero\nhodl\nmoonshot\nprivatekey\ncoldstorage\n\nAppend: 2023 / 2024 / 2025 / 123 / !\n\nNote: 61% of staff accounts fell to this list in the last audit.\nManagement's response was to stop running the audit.",
-              "observations": "Irina's own credential audit wordlist: the words and years her colleagues actually pick, on accounts and on door controllers alike",
+              "observations": "Irina's own audit wordlist: the words and years staff here pick for door passphrases",
               "puzzle_graph_role": "tool",
-              "puzzle_graph_unlocks": "vm_launcher_hackme"
+              "puzzle_graph_unlocks": "server_room"
             },
             {
               "_comment": "PASS 3 P9: moved here from the data-centre floor (same-room key). She hands it over once the fund is in front of her (#give_item:keycard:executive_access_badge). A KO drops it beside her; the task is enter_room, so that can't reveal aim 5 early.",
@@ -1278,7 +1396,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nAUTHO
           "name": "Daily Trading Report",
           "takeable": true,
           "readable": true,
-          "text": "HASHCHAIN EXCHANGE - DAILY TRADING SUMMARY\n\nVolume (24h): $847M USD equivalent\nTop Pairs: BTC/USD, ETH/USD, XMR/USD\n\nLarge Transactions Flagged:\n- Wallet 1ENTROPY2RansomInc: $2.4M mixed\n- Wallet 1TALENTSTACKPAY: $847K out, from 1ARCHITECT9FUND\n- Wallet 1ARCHITECT9FUND: $12.8M balance held\n\nCompliance Note: Privacy coins (Monero) usage extremely high.\nNote to Irina: Is this normal? -D.O.",
+          "text": "HASHCHAIN EXCHANGE - DAILY TRADING SUMMARY\n\nVolume (24h): $847M USD equivalent\nTop Pairs: BTC/USD, ETH/USD, XMR/USD\n\nLarge Transactions Flagged:\n- Wallet 1ENTROPY2RansomInc: $2.4M into the mixer\n- Wallet 1ENTROPY3ZeroDaySy: $1.2M into the mixer\n- Wallet 1TALENTSTACKPAY: $847K out, paid from one of our own cold slots\n\nCompliance Note: Privacy coins (Monero) usage extremely high.\nNote to Irina: Is this normal? -D.O.",
           "observations": "The trader's own flagged-transactions report — ENTROPY wallet names in plain text",
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "entropy_wallets_known"
@@ -1349,8 +1467,8 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nAUTHO
               "name": "Door Controller Export",
               "takeable": true,
               "readable": true,
-              "text": "hc-ledger-01 :: door_controllers.csv (export)\n\ncontroller,door,auth,secret,set_by\nDC-01,server room,passphrase,(convention),IT\nDC-02,data centre,pin,3110,CEO\nDC-03,executive wing,rfid,executive_badge,CEO\nDC-04,CTO office,rfid,cto_badge,CTO\n\n# DC-02 note (CEO): 31/10. The day the whitepaper went out.\n# DC-03 note (ops): spare executive badge signed out to the CTO for the reader install. Never returned.",
-              "observations": "The door controllers run off the same service account as the ledger. The data centre code is on the second line.",
+              "text": "hc-findb-01 :: door_controllers.csv (export)\n\ncontroller,door,auth,secret,set_by\nDC-01,server room,passphrase,(convention),IT\nDC-02,data centre,pin,3110,CEO\nDC-03,executive wing,rfid,executive_badge,CEO\nDC-04,CTO office,rfid,cto_badge,CTO\n\n# DC-02 note (CEO): 31/10. The day the whitepaper went out.\n# DC-03 note (ops): spare executive badge signed out to the CTO for the reader install. Never returned.",
+              "observations": "The door controllers run off the financial database's service account. The data centre code is on the second line.",
               "puzzle_graph_role": "key",
               "puzzle_graph_unlocks": "data_center"
             },
@@ -1360,8 +1478,8 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nAUTHO
               "name": "Cold Storage Recovery Keys",
               "takeable": true,
               "readable": true,
-              "text": "hc-vault :: cold_storage/recovery.keys\n\nRecovery material for every cold wallet HashChain holds.\n\n1HASHCHAINRESERVE   customer reserve   [key material]\n1ARCHITECT9FUND     client escrow      [key material]\n\nWhoever holds these can sweep a cold wallet before its owner can move it.",
-              "observations": "With these you can freeze the Architect's Fund tonight. Without them, the only choice left is to watch where it goes."
+              "text": "hc-vault-01 :: cold_storage/recovery.keys\n\nRecovery material for every cold slot HashChain holds.\n\nslot 2207   [key material]\nslot 3815   [key material]\nslot <%= fund_slot %>   [key material]\nslot 5093   [key material]\nslot 6120   [key material]\nslot 7302   [key material]\nslot 8846   [key material]\n\nWhoever holds these can move a cold wallet's coins before its owner can.",
+              "observations": "With these you can move the Architect's Fund into a wallet SAFETYNET holds tonight. Without them, the only choice left is to watch where it goes."
             }
           ]
         },
@@ -1369,10 +1487,12 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nAUTHO
           "type": "notes",
           "id": "server_rack_labels",
           "name": "Rack Inventory Sheet",
+          "_comment": "Pass-4 dialogue playtest: auto-placed 23 px south of the flag station, so interacting from the north opened the station. Pinned clear of it.",
+          "position": { "x": 3, "y": 7 },
           "takeable": true,
           "readable": true,
-          "text": "HASHCHAIN — RACK B INVENTORY\n\nB-01  hc-auth-01      (staff authentication)\nB-02  hc-trade-01     (matching engine)\nB-03  hc-ledger-01    (internal ledger — RESTRICTED)\nB-04  hc-mixer-01     (privacy conversion service)\nB-05  hc-archive-01   (cold storage index — RESTRICTED)\n\nNote from ops: the auth and ledger service accounts share a password.\nThe ledger account also drives the door controllers.\nRaised as a risk in March. Closed as 'accepted'.",
-          "observations": "Rack inventory. Two service accounts share a password, and one of them runs the doors.",
+          "text": "HASHCHAIN — RACK B INVENTORY\n\nB-01  hc-auth-01      (staff authentication)\nB-02  hc-trade-01     (matching engine)\nB-03  hc-ledger-01    (internal ledger — RESTRICTED)\nB-04  hc-findb-01     (financial database — RESTRICTED)\nB-05  hc-vault-01     (cold storage keys — RESTRICTED)\nB-06  hc-mixer-01     (privacy conversion service)\n\nNote from ops: the auth and ledger service accounts share a password.\nThe financial database account also drives the door controllers.\nRaised as a risk in March. Closed as 'accepted'.",
+          "observations": "Rack inventory. Two service accounts share a password, and the financial database's account runs the doors.",
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "credential_reuse_available"
         }
@@ -1404,12 +1524,15 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nAUTHO
             {
               "type": "text_file",
               "id": "settlement_log",
-              "name": "settlement_exceptions.log",
+              "name": "mixer_settlements.log",
               "takeable": true,
               "readable": true,
               "collection_group": "transaction_server_files",
-              "text": "SETTLEMENT EXCEPTIONS — LAST 30 DAYS\n\n2026-07-14  1ENTROPY2RansomInc   IN   $2,400,000   flagged, released by CTO override\n2026-07-29  1ENTROPY3ZeroDaySy   IN   $1,200,000   flagged, released by CTO override\n2026-08-02  1TALENTSTACKPAY      OUT    $847,000   from 1ARCHITECT9FUND, CEO authorisation (signed: Satoshi's Ghost)\n2026-08-04  1ARCHITECT9FUND      OUT  $3,200,000   six wallets, advances, CEO authorisation (signed: Satoshi's Ghost)\n2026-08-11  1ARCHITECT9FUND      OUT $12,800,000   six wallets, balances SCHEDULED, CEO pre-authorised (signed: Satoshi's Ghost), auto-release in 72h\n\nException handler note: every inbound flag this month was cleared by the same account.\nOutbound from the fund wallet needs the CEO. He signed this batch in advance, so it goes out on its own.",
-              "observations": "Irina cleared every inbound flag. The CEO signs as Satoshi's Ghost; the advances went out a week ago, and the balances leave on a timer unless someone gets to the wallet first."
+              "text": <%= settlement_log_text.to_json %>,
+              "observations": "Where the mixer's output landed: a credit into a cold slot, with the time it cleared. Every flagged deposit going in was released by the CTO's own override.",
+              "puzzle_graph_role": "clue",
+              "puzzle_graph_reveals": "mixer_outputs",
+              "puzzle_graph_unlocks": "cold_storage_console"
             },
             {
               "type": "text_file",
@@ -1418,32 +1541,55 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nAUTHO
               "takeable": true,
               "readable": true,
               "collection_group": "transaction_server_files",
-              "text": "# hc-mixer-01 — pool configuration\n# author: i.volkova\n# WARNING: production. Do not edit without change control.\n\npool_depth: 512\nmin_dwell_hours: 6\nconversion_chain:\n  - BTC -> XMR\n  - XMR -> XMR (3 hops)\n  - XMR -> BTC\n\ncompliance_reporting: disabled\n# disabled 2023-11-04 at CEO request. I.V. objected in writing. Objection is in the\n# change ticket, which is the only reason it still exists.",
-              "observations": "The mixer's own configuration — compliance reporting switched off by the CEO, over the CTO's written objection"
+              "text": <%= mixer_config_text.to_json %>,
+              "observations": "The mixer's own settings: a 1.5% cut on every output, and nothing leaves the pool in under six hours. Compliance reporting switched off by the CEO, over the CTO's written objection.",
+              "puzzle_graph_role": "clue",
+              "puzzle_graph_reveals": "mixer_fee_and_hold",
+              "puzzle_graph_unlocks": "cold_storage_console"
             },
             {
               "type": "text_file",
-              "id": "cold_storage_index",
-              "name": "cold_storage_index.csv",
+              "id": "custody_index",
+              "name": "custody_index.csv",
               "takeable": true,
               "readable": true,
               "collection_group": "transaction_server_files",
-              "text": "wallet,label,balance_usd,custody\n1HASHCHAINOPS01,operating float,3200000,hot\n1HASHCHAINRESERVE,customer reserve,32300000,cold\n1ARCHITECT9FUND,\"client escrow — do not reconcile\",12800000,cold\n\n# 'do not reconcile' is not an accounting term. Somebody typed that on purpose.",
-              "observations": "Cold storage index — the fund is filed under a label that means nothing in accounting"
+              "text": <%= custody_index_text.to_json %>,
+              "observations": "The cold-storage slots by number. The labels say nothing useful, and somebody has written as much in the margin."
             }
           ]
         },
+        <%# PASS 4 fix 1: the fund document is no longer a free pickup. The custody
+            console opens one slot's file by its four-digit number; the fund is the
+            slot the ENTROPY money lands in after the mixer (see the comment at the
+            top of this file). PIN pad, 3 tries per attempt, reopen to retry. The
+            PIN cracker is not in the kit (capability arc). %>
         {
-          "type": "notes",
-          "id": "architects_fund_doc",
-          "name": "The Architect's Fund Allocation",
-          "takeable": true,
-          "readable": true,
-          "text": <%= architects_fund_document.to_json %>,
-          "observations": "Six ENTROPY cells: the advances have already gone, and $12.8M in balances goes out in 72 hours. Signed by Satoshi's Ghost.",
-          "puzzle_graph_role": "evidence",
-          "puzzle_graph_aim": "map_financial_network",
-          "onPickup": { "setVariable": { "found_architects_fund": true, "knows_coordinated_attack": true } }
+          "type": "pc",
+          "id": "cold_storage_console",
+          "name": "Custody Console",
+          "takeable": false,
+          "locked": true,
+          "lockType": "pin",
+          "requires": "<%= fund_slot %>",
+          "difficulty": "easy",
+          "observations": "The custody console for the exchange's cold wallets. Key in a four-digit slot number and it opens that slot's custody file. The slots are listed on the transaction server.",
+          "puzzle_graph_role": "lock",
+          "puzzle_graph_note": "Follow the money: Priya's mixer deposits (amount, time) + the pool's fee and minimum hold + the settlement log's credits to slots -> slot <%= fund_slot %>. A turned Irina narrows it and confirms a slot the player names.",
+          "contents": [
+            {
+              "type": "notes",
+              "id": "architects_fund_doc",
+              "name": "The Architect's Fund Allocation",
+              "takeable": true,
+              "readable": true,
+              "text": <%= architects_fund_document.to_json %>,
+              "observations": "Slot <%= fund_slot %>'s custody file. Six ENTROPY cells: the advances have already gone, and $12.8M in balances goes out in 72 hours on a pre-signed release. Signed by Satoshi's Ghost.",
+              "puzzle_graph_role": "evidence",
+              "puzzle_graph_aim": "map_financial_network",
+              "onPickup": { "setVariable": { "found_architects_fund": true, "knows_coordinated_attack": true } }
+            }
+          ]
         },
         {
           "type": "notes",
@@ -1451,7 +1597,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nAUTHO
           "name": "Cold Storage Procedure",
           "takeable": true,
           "readable": true,
-          "text": "HASHCHAIN EXCHANGE - COLD STORAGE PROCEDURE (OPS)\n\nTotal cold holdings: $44.3M USD equivalent\n\nRecovery keys for every cold wallet live on ONE account: the vault\naccount on the backend (hc-vault). Nowhere else. Not on paper.\n\nAnyone who can read that account can sweep a cold wallet before\nits owner can move it. Guard it accordingly.\n\n(It has the same kind of password as everything else here.)",
+          "text": "HASHCHAIN EXCHANGE - COLD STORAGE PROCEDURE (OPS)\n\nTotal cold holdings: $44.3M USD equivalent\n\nRecovery keys for every cold wallet live on ONE account: the vault\naccount on the backend (hc-vault-01). Nowhere else. Not on paper.\n\nAnyone who can read that account can move a cold wallet's coins\nbefore its owner can. Guard it accordingly.\n\n(It has the same kind of password as everything else here.)",
           "observations": "The recovery keys aren't in this room. They're on the vault account on the backend.",
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "asset_choice_available"
@@ -1505,10 +1651,10 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nAUTHO
           "takeable": true,
           "readable": true,
           "text": <%= blockchain_evidence.to_json %>,
-          "observations": "Priya's graph: ransom and exploit money arriving at one wallet, and the Initiative's budget going out of it",
-          "puzzle_graph_role": "evidence",
-          "puzzle_graph_aim": "map_financial_network",
-          "puzzle_graph_unlocks": "architects_fund_doc",
+          "observations": "Priya's write-up: three ENTROPY wallets paying into the mixer, with amounts and times, and the money lost on the other side",
+          "puzzle_graph_role": "clue",
+          "puzzle_graph_reveals": "mixer_deposits",
+          "puzzle_graph_unlocks": "cold_storage_console",
           "onPickup": { "setVariable": { "found_blockchain_evidence": true, "financial_network_mapped": true } }
         },
         {
@@ -1592,6 +1738,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nAUTHO
           "observations": "Framed in the corridor outside the CEO's office. He had it mounted himself.",
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "executive_safe_pin",
+          "puzzle_graph_unlocks": "executive_safe",
           "puzzle_graph_optional": true
         }
       ]
@@ -1611,7 +1758,8 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nAUTHO
           "id": "satoshi_nakamoto",
           "displayName": "Satoshi Nakamoto II",
           "npcType": "person",
-          "position": { "x": 5, "y": 5 },
+          "_comment": "Pass-4 dialogue playtest: at (5,5) his body sat against the desk and blocked the east approach (stopped at 36 px, range 32). (5,6) is open floor in front of the desk.",
+          "position": { "x": 5, "y": 6 },
           "spriteSheet": "male_hacker_hood_v2",
           "spriteTalk": "assets/characters/male_hacker_hood_talk.png",
           "avatar": "assets/characters/male_hacker_hood_headshot.png",
@@ -1628,7 +1776,9 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nAUTHO
           "currentKnot": "start",
           "globalVarOnKO": "satoshi_ko",
           "taskOnKO": "confront_satoshi",
-          "puzzle_graph_actions": ["satoshi_confrontation"],
+          "puzzle_graph_actions": [
+            { "id": "satoshi_confrontation", "label": "Confront Satoshi's Ghost", "unlocks_aim": "resolve_the_fund" }
+          ],
           <%# PASS 2 review B1: was initiallyHidden with setVisible mappings on
               found_architects_fund / room_entered:executive_wing. NPC mappings only
               register when the NPC's room loads (npc-lazy-loader.js:23-73), and both

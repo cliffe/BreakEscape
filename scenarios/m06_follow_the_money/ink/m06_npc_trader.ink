@@ -8,6 +8,9 @@ VAR topic_volume = false
 VAR topic_monero = false
 VAR topic_irina = false
 VAR first_meeting = true
+// Final round (m03 pattern): set by every exit, so the resting knot's re-entry
+// line shows on a reopen and never in the same batch as a goodbye.
+VAR hub_quiet = false
 
 // External variables
 VAR player_name = "Agent 0x00"
@@ -25,33 +28,33 @@ VAR player_name = "Agent 0x00"
     #speaker:narrator
     Narrator: A young trader watches six price charts at once, placing the occasional order without appearing to look at it.
 
-    Dani Okonkwo: Hey, you're the regulator, right? From the FCA?
+    Dani Okonkwo: You're the regulator, yeah? FCA?
 
-    Dani Okonkwo: Don't worry, we're legit. Mostly. *grins*
+    Dani Okonkwo: Don't worry, we're legit. Mostly.
 
     + [Mostly? That's an interesting qualifier.]
-        Dani Okonkwo: *laughs* I'm kidding. Everything's above board. Irina makes sure of that.
+        Dani Okonkwo: Joking. It's all above board. Irina makes sure. Honestly. Ignore me.
         -> hub
 
     + [It's a standard audit. Nothing to worry about, if everything's compliant.]
-        Dani Okonkwo: Cool cool. Let me know if you need anything.
+        Dani Okonkwo: Course. Yeah. Shout if you need me.
+        ~ hub_quiet = true
         -> hub
 
-    + [Tell me about the exchange's operations]
+    + [What does this place actually do?]
         -> operations_overview
-}
-
-{not first_meeting:
-    Dani Okonkwo: What's up?
+- else:
+    Dani Okonkwo: Hi again. What's up?
+    ~ hub_quiet = true
     -> hub
 }
 
 === operations_overview ===
 #speaker:trader
 
-Dani Okonkwo: We're a mid-size crypto exchange. Focus on privacy coins. Monero, Zcash, stuff like that.
+Dani Okonkwo: Mid-size exchange. Privacy coins, mostly. Monero, Zcash, that sort.
 
-Dani Okonkwo: High volume, fast transactions, low fees. Competitive market.
+Dani Okonkwo: Fast, cheap, loads of volume. It's a tough market, to be fair.
 
 + [Why focus on privacy coins?]
     -> privacy_coin_focus
@@ -65,6 +68,11 @@ Dani Okonkwo: High volume, fast transactions, low fees. Competitive market.
 // ===========================================
 
 === hub ===
+{ hub_quiet:
+    ~ hub_quiet = false
+- else:
+    Dani Okonkwo: {&Anything else?|Go on, then.|What else?}
+}
 
 + {not topic_volume} [Eight hundred million a day. Is that normal for you?]
     -> volume_discussion
@@ -75,9 +83,10 @@ Dani Okonkwo: High volume, fast transactions, low fees. Competitive market.
 + {not topic_irina} [What's Dr. Volkova like to work for?]
     -> irina_discussion
 
-+ [That's all, thanks]
++ [That's all, thanks.]
     #speaker:trader
-    Dani Okonkwo: No problem. Happy trading!
+    Dani Okonkwo: Safe. Er, I mean, no problem.
+    ~ hub_quiet = true
     #exit_conversation
     -> hub
 
@@ -89,27 +98,25 @@ Dani Okonkwo: High volume, fast transactions, low fees. Competitive market.
 #speaker:trader
 ~ topic_volume = true
 
-Dani Okonkwo: We're doing like $800-900 million USD equivalent per day.
+Dani Okonkwo: Eight, nine hundred million a day, dollar equivalent. Irina's kit holds up.
 
-Dani Okonkwo: Not bad for a mid-size exchange. Irina's infrastructure is solid.
+Dani Okonkwo: Mostly Bitcoin and Ethereum. Monero's gone mad lately though.
 
-Dani Okonkwo: Mostly Bitcoin, Ethereum, but the Monero volume has been crazy lately.
-
-+ [Crazy how?]
++ [Mad how?]
     -> monero_surge
 
-+ [That's impressive volume]
-    Dani Okonkwo: Yeah, privacy coin demand is skyrocketing.
++ [Busy, then.]
+    Dani Okonkwo: Rammed. Everyone wants privacy coins this year.
     -> hub
 
 === monero_surge ===
 #speaker:trader
 
-Dani Okonkwo: Like, 3-4x normal. Big wallets converting Bitcoin to Monero, mixing through multiple addresses, converting back.
+Dani Okonkwo: Three, four times normal. Big wallets go Bitcoin to Monero, round the houses, back to Bitcoin.
 
-Dani Okonkwo: Classic mixing pattern. Totally legal, but... yeah.
+Dani Okonkwo: Textbook mixing. Legal and that. But... yeah.
 
-+ [You report these patterns?]
++ [Do you report that?]
     -> reporting_discussion
 
 + [Is that suspicious?]
@@ -118,20 +125,20 @@ Dani Okonkwo: Classic mixing pattern. Totally legal, but... yeah.
 === reporting_discussion ===
 #speaker:trader
 
-Dani Okonkwo: Oh yeah, we flag everything. Irina runs analysis, files SARs when needed.
+Dani Okonkwo: We flag everything. Irina looks at it and files reports when she has to.
 
-Dani Okonkwo: We're compliant. Just... we're also privacy-focused. That's our brand.
+Dani Okonkwo: We're compliant. We're just also, like, private. That's the brand.
 
 -> hub
 
 === suspicious_activity ===
 #speaker:trader
 
-Dani Okonkwo: *shrugs* Depends on your perspective.
+Dani Okonkwo: Depends on your perspective.
 
-Dani Okonkwo: Some people want financial privacy. Some want to hide money. Hard to tell which is which from transaction patterns.
+Dani Okonkwo: Some people want privacy. Some want to hide money. From a chart they look the same.
 
-Dani Okonkwo: That's your job, I guess. *gestures at you*
+Dani Okonkwo: That's your job, innit?
 
 -> hub
 
@@ -143,33 +150,31 @@ Dani Okonkwo: That's your job, I guess. *gestures at you*
 #speaker:trader
 ~ topic_monero = true
 
-Dani Okonkwo: Satoshi's philosophy. "Financial freedom through cryptography."
+Dani Okonkwo: Satoshi's thing. "Financial freedom through cryptography." It's on the brochure.
 
-Dani Okonkwo: People should be able to transact without government surveillance. Privacy is a right.
+Dani Okonkwo: Pay who you like without the government watching. Privacy's a right, he says.
 
-+ [That sounds like ideology, not business]
++ [Sounds more like a religion than a business plan.]
     -> ideology_response
 
-+ [Privacy can enable illegal activity]
++ [Privacy also hides crime.]
     -> illegal_activity_response
 
 === ideology_response ===
 #speaker:trader
 
-Dani Okonkwo: It's both! Satoshi's a true believer, but it's also profitable.
+Dani Okonkwo: Bit of both. Satoshi believes it, and it pays.
 
-Dani Okonkwo: Privacy coin traders pay premium fees. We make bank.
+Dani Okonkwo: Privacy traders pay top fees. We do all right.
 
 -> hub
 
 === illegal_activity_response ===
 #speaker:trader
 
-Dani Okonkwo: Sure. And regular currency enables illegal activity too.
+Dani Okonkwo: So does cash. You going to shut every bank because some people launder?
 
-Dani Okonkwo: You gonna shut down every bank because some people launder money?
-
-Dani Okonkwo: We follow the law. We file reports. What people do with their privacy is their business.
+Dani Okonkwo: We follow the law. We file reports. After that it's their business. That's what I'm told.
 
 -> hub
 
@@ -181,13 +186,11 @@ Dani Okonkwo: We follow the law. We file reports. What people do with their priv
 #speaker:trader
 ~ topic_monero = true
 
-Dani Okonkwo: Monero's untraceable. That's the whole point.
+Dani Okonkwo: Monero can't be traced. That's the point of it.
 
-Dani Okonkwo: Bitcoin is pseudonymous; you can track wallets. Monero is truly anonymous.
+Dani Okonkwo: Bitcoin, you can follow a wallet. Monero, you can't. Great for privacy. Great for laundering too, I suppose.
 
-Dani Okonkwo: Makes it perfect for privacy. Also perfect for money laundering, I guess.
-
-+ [Do you think the exchange is being used for money laundering?]
++ [Is this place being used to launder?]
     -> laundering_opinion
 
 + [How does the mixing work?]
@@ -196,14 +199,14 @@ Dani Okonkwo: Makes it perfect for privacy. Also perfect for money laundering, I
 === laundering_opinion ===
 #speaker:trader
 
-Dani Okonkwo: *uncomfortable* I mean... I don't ask questions. I just execute trades.
+Dani Okonkwo: I mean... I don't ask. I just place trades.
 
-Dani Okonkwo: Irina and Satoshi handle compliance. I'm just the guy watching charts.
+Dani Okonkwo: Irina and Satoshi do compliance. I just watch the charts.
 
-+ [You must have suspicions]
++ [You've noticed something, though.]
     -> trader_suspicions
 
-+ [Fair enough]
++ [Fair enough.]
     -> hub
 
 === trader_suspicions ===
@@ -211,26 +214,22 @@ Dani Okonkwo: Irina and Satoshi handle compliance. I'm just the guy watching cha
 // Review M1: this is the "flagged the wallets" conversation the task names.
 #complete_task:question_the_trader
 
-Dani Okonkwo: *lowers voice* Between you and me? Some of the transaction patterns are... weird.
+Dani Okonkwo: *lowers voice* Between us? Some of it's weird. Big round sums going in late at night. Same wallets, same habit.
 
-Dani Okonkwo: Like, coordinated. Multiple big wallets mixing at the same time, same amounts, same destination patterns.
+Dani Okonkwo: I put the wallet names in the daily report. It's on the desk. One's got "ENTROPY" right there in the address.
 
-Dani Okonkwo: I put the wallet names in the daily report and flagged it to Irina. It's on the desk. One of them has "ENTROPY" right there in the address. She said she's investigating.
+Dani Okonkwo: Flagged it to Irina. She said she's on it.
 
-Dani Okonkwo: But honestly? I just want to keep my job and not think about it too hard.
+Dani Okonkwo: Honestly? I just want to keep my job and not think about it too hard.
 
 -> hub
 
 === mixing_explanation ===
 #speaker:trader
 
-Dani Okonkwo: User sends Bitcoin to us. We convert to Monero. Send through 5-10 different wallets.
+Dani Okonkwo: Bitcoin comes in. We turn it into Monero, bounce it round a few wallets, turn it back into Bitcoin somewhere new.
 
-Dani Okonkwo: Then convert back to Bitcoin from a completely unlinked address.
-
-Dani Okonkwo: Blockchain shows Bitcoin in, Bitcoin out. But the Monero middle step? Untraceable.
-
-Dani Okonkwo: Perfectly legal mixing service. We're transparent about it.
+Dani Okonkwo: The chain sees Bitcoin in, Bitcoin out. The middle's dark. Totally legal. We say so on the website.
 
 -> hub
 
@@ -242,36 +241,30 @@ Dani Okonkwo: Perfectly legal mixing service. We're transparent about it.
 #speaker:trader
 ~ topic_irina = true
 
-Dani Okonkwo: Irina's brilliant. Like, PhD in cryptography brilliant.
+Dani Okonkwo: Irina's scary clever. Like, proper PhD.
 
-Dani Okonkwo: She designed all our privacy protocols. Zero-knowledge proofs, homomorphic encryption...
+Dani Okonkwo: She wrote all our privacy stuff. Zero-knowledge proofs, homo-something encryption. Way over my head.
 
-Dani Okonkwo: Way above my pay grade. I just use the systems she builds.
-
-+ [Does she seem concerned about compliance?]
++ [Does she take compliance seriously?]
     -> irina_compliance
 
-+ [What's your impression of her?]
++ [Do you get on with her?]
     -> irina_impression
 
 === irina_compliance ===
 #speaker:trader
 
-Dani Okonkwo: Obsessively. She reviews every flagged transaction personally.
+Dani Okonkwo: Obsessively. Every flagged trade goes past her personally.
 
-Dani Okonkwo: Actually, she's been stressed lately. I think some of the activity patterns are bothering her.
-
-Dani Okonkwo: But she hasn't said anything specific.
+Dani Okonkwo: She's been stressed lately, mind. Something's bothering her. She won't say what.
 
 -> hub
 
 === irina_impression ===
 #speaker:trader
 
-Dani Okonkwo: Smart, intense, kinda distant. But fair.
+Dani Okonkwo: Intense. Bit distant. Fair, though.
 
-Dani Okonkwo: She believes in what we're doing: financial privacy as a right.
-
-Dani Okonkwo: I think she struggles with the fact that good tech can be used for bad things.
+Dani Okonkwo: She believes in the privacy thing. I think it gets to her, what people use it for.
 
 -> hub

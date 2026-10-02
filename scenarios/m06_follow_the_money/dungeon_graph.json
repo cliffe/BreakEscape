@@ -123,20 +123,14 @@
       "optional": false
     },
     {
-      "id": "lock_vm_launcher_hackme",
-      "label": "Vm Launcher Hackme",
-      "kind": "lock",
-      "optional": false
-    },
-    {
       "id": "executive_access_badge",
       "label": "Executive Access Badge",
       "kind": "key",
       "optional": false
     },
     {
-      "id": "action_",
-      "label": "",
+      "id": "action_irina_cooperation",
+      "label": "Win Irina over (or settle her fate)",
       "kind": "action",
       "optional": false
     },
@@ -165,9 +159,33 @@
       "optional": false
     },
     {
+      "id": "mixer_settlements_log",
+      "label": "mixer_settlements.log",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_cold_storage_console",
+      "label": "Cold Storage Console",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "mixer_pool_config_yml",
+      "label": "mixer_pool_config.yml",
+      "kind": "item",
+      "optional": false
+    },
+    {
       "id": "the_architect_s_fund_allocation",
       "label": "The Architect's Fund Allocation",
       "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "custody_console",
+      "label": "Custody Console",
+      "kind": "lock",
       "optional": false
     },
     {
@@ -186,12 +204,6 @@
       "id": "entropy_transaction_network_analysis",
       "label": "ENTROPY Transaction Network Analysis",
       "kind": "item",
-      "optional": false
-    },
-    {
-      "id": "lock_architects_fund_doc",
-      "label": "Architects Fund Doc",
-      "kind": "lock",
       "optional": false
     },
     {
@@ -234,6 +246,12 @@
       "id": "npc_satoshi_nakamoto_ii",
       "label": "Satoshi Nakamoto II",
       "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "action_satoshi_confrontation",
+      "label": "Confront Satoshi's Ghost",
+      "kind": "action",
       "optional": false
     },
     {
@@ -385,7 +403,7 @@
     },
     {
       "from": "password_dictionary_list",
-      "to": "lock_vm_launcher_hackme",
+      "to": "door_server_room",
       "soft": false
     },
     {
@@ -400,7 +418,7 @@
     },
     {
       "from": "npc_dr_irina_volkova",
-      "to": "action_",
+      "to": "action_irina_cooperation",
       "soft": false
     },
     {
@@ -425,7 +443,37 @@
     },
     {
       "from": "data_center",
+      "to": "mixer_settlements_log",
+      "soft": false
+    },
+    {
+      "from": "mixer_settlements_log",
+      "to": "lock_cold_storage_console",
+      "soft": false
+    },
+    {
+      "from": "data_center",
+      "to": "mixer_pool_config_yml",
+      "soft": false
+    },
+    {
+      "from": "mixer_pool_config_yml",
+      "to": "lock_cold_storage_console",
+      "soft": false
+    },
+    {
+      "from": "data_center",
+      "to": "lock_cold_storage_console",
+      "soft": false
+    },
+    {
+      "from": "lock_cold_storage_console",
       "to": "the_architect_s_fund_allocation",
+      "soft": false
+    },
+    {
+      "from": "data_center",
+      "to": "custody_console",
       "soft": false
     },
     {
@@ -440,7 +488,7 @@
     },
     {
       "from": "entropy_transaction_network_analysis",
-      "to": "lock_architects_fund_doc",
+      "to": "lock_cold_storage_console",
       "soft": false
     },
     {
@@ -464,6 +512,11 @@
       "soft": true
     },
     {
+      "from": "framed_press_clipping",
+      "to": "lock_executive_safe",
+      "soft": true
+    },
+    {
       "from": "satoshi_office",
       "to": "lock_executive_safe",
       "soft": false
@@ -480,7 +533,7 @@
     },
     {
       "from": "npc_satoshi_nakamoto_ii",
-      "to": "action_",
+      "to": "action_satoshi_confrontation",
       "soft": false
     },
     {
@@ -532,11 +585,6 @@
       "from": "vmfl_submit_flag3",
       "to": "vmch_submit_flag4",
       "soft": true
-    },
-    {
-      "from": "lock_vm_launcher_hackme",
-      "to": "hashchain_backend_server_terminal",
-      "soft": false
     },
     {
       "from": "hashchain_backend_server_terminal",

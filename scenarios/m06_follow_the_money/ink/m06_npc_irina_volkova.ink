@@ -30,6 +30,15 @@
 //   player's next choice, so a failed give can always be asked for again.
 // - P10: her research notes (read_irina_notes) give a low-trust player a way
 //   to turn her.
+//
+// PASS 4 (design):
+// - Fix 3 (round 2, M3): a turned Irina gives Satoshi's safe code and, while
+//   the fund isn't found, narrows the slot puzzle (6120 is his auditors' decoy;
+//   nothing inside her six-hour hold is his) without naming the slot. Once the
+//   player has the settlement log she checks a slot they name (slot_check);
+//   a right answer sets irina_confirmed_slot for the debrief and credits.
+//   Told, not handed over: a held text_file would drop readable on a KO
+//   (E20/E22). A detained Irina gives nothing.
 // ===========================================
 
 VAR irina_trust = 0              // -50 to 100 scale
@@ -58,10 +67,15 @@ VAR irina_badge_obtained = false   // set by the pickup mapping (lesson 26)
 VAR irina_badge_cloned = false     // set by HaX's card_cloned mapping (clone rule)
 VAR irina_exec_badge_given = false // set by the pickup mappings (lesson 26)
 VAR read_irina_notes = false       // onPickup of her research notes (P10)
+VAR architect_identity_found = false // safe opened (PASS 4 fix 3)
+VAR read_settlement_log = false      // settlement log picked up (round 2, M3)
 VAR given_time = false
 VAR asked_passwords = false   // playtest D1: the second ask always succeeds
 VAR wordlist_handed = false   // playtest D4: menu latch, same conversation
 VAR badge_handed = false
+// Final round (m03 pattern): set by every exit, so the resting knot's re-entry
+// line shows on a reopen and never in the same batch as a goodbye.
+VAR hub_quiet = false
 
 // ===========================================
 // INITIAL MEETING
@@ -79,6 +93,7 @@ VAR badge_handed = false
     -> first_meeting_scene
 }
 Dr. Irina Volkova: Back again. What do you need?
+~ hub_quiet = true
 -> hub
 
 === first_meeting_scene ===
@@ -92,33 +107,35 @@ Dr. Irina Volkova: You must be the FCA. Dr. Irina Volkova, Chief Technology Offi
 
 Dr. Irina Volkova: A supervisory visit. Always a pleasure, I'm sure.
 
-+ [Thank you for making the time, Dr. Volkova. I know a visit like this is disruptive.]
-    ~ irina_trust += 10
++ [Thanks for making the time, Dr Volkova. I know these visits are a nuisance.]
+    ~ irina_trust += 15
+    #influence_increased
     -> professional_response
 
-+ [Let's be efficient. I need backend servers, transaction logs and wallet infrastructure.]
++ [Let's be quick. I need your servers, your logs and your wallets.]
     ~ irina_trust -= 5
+    #influence_decreased
     ~ irina_suspicious = true
     -> suspicious_response
 
 + [Thirty-seven papers and nearly three thousand citations. I've read some of your work.]
-    ~ irina_trust += 15
+    ~ irina_trust += 25
+    #influence_increased
     -> academic_response
 
 === professional_response ===
 #speaker:irina_volkova
-Dr. Irina Volkova: I appreciate the courtesy. Most of your colleagues treat us as criminals from the first handshake.
+Dr. Irina Volkova: Courtesy. Your colleagues usually treat us as criminals from the first handshake.
 
-Dr. Irina Volkova: We run a privacy-focused exchange. That is not the same thing as an illegal one.
+Dr. Irina Volkova: We run a privacy exchange. The law permits those, last time I read it.
 
-~ irina_trust += 5
 -> audit_discussion
 
 === suspicious_response ===
 #speaker:irina_volkova
 Dr. Irina Volkova: Eager, aren't you?
 
-Dr. Irina Volkova: Supervisors usually start with paperwork. Customer checks, anti-laundering procedures. You went straight for the machines.
+Dr. Irina Volkova: Supervisors start with paperwork. Customer checks, anti-laundering. You went straight for the machines.
 
 ~ irina_suspicious = true
 -> audit_discussion
@@ -129,22 +146,24 @@ Dr. Irina Volkova: You read my work? Most people from your side see "cryptograph
 
 Dr. Irina Volkova: I built this exchange on sound principles. Zero-knowledge proofs, homomorphic encryption. Things I can defend.
 
-~ irina_trust += 10
 -> academic_discussion
 
 === academic_discussion ===
 #speaker:irina_volkova
 Dr. Irina Volkova: My research is about financial privacy. Governments should not be able to read every transaction a person makes.
 
-Dr. Irina Volkova: That is a privacy position, not a criminal one.
+Dr. Irina Volkova: I would call that a privacy position. Your office calls it something else.
 
 + [Financial surveillance worries me too. I understand the principle.]
     ~ irina_trust += 10
+    #influence_increased
+    Dr. Irina Volkova: Then we have that much in common.
     -> hub
 
-+ [It also launders money. That's why people like me visit exchanges like this.]
-    Dr. Irina Volkova: Fair. Ask for what you need and I'll show you it's documented.
++ [It also launders money. That's why I'm here.]
     ~ irina_trust += 5
+    #influence_increased
+    Dr. Irina Volkova: Fair. Ask for what you need and I'll show you it's documented.
     -> hub
 
 === audit_discussion ===
@@ -161,6 +180,11 @@ Dr. Irina Volkova: So what does the FCA want to see? Our customer checks are com
 // ===========================================
 
 === hub ===
+{ hub_quiet:
+    ~ hub_quiet = false
+- else:
+    Dr. Irina Volkova: {&Go on.|What else?|Yes?}
+}
 + {not found_password_lists and not wordlist_handed} [I'll need to test your password strength. What do people here actually use?]
     -> request_passwords
 
@@ -173,7 +197,7 @@ Dr. Irina Volkova: So what does the FCA want to see? Our customer checks are com
 + {not badge_discussion} [Tell me about your door access.]
     -> discuss_badges
 
-+ {badge_discussion and not irina_badge_obtained and not badge_handed and not irina_badge_cloned} [About your office badge.]
++ {badge_discussion and not irina_badge_obtained and not badge_handed and not irina_badge_cloned} [I need to check your office reader. Can I borrow your badge?]
     -> badge_followup
 
 + {not irina_badge_obtained and not badge_handed and not irina_badge_cloned} [(Let the cloner read her badge while she talks.)]
@@ -185,7 +209,7 @@ Dr. Irina Volkova: So what does the FCA want to see? Our customer checks are com
 + {irina_trust >= 20 and found_blockchain_evidence and not shown_casualties} [There's something you need to see, Dr. Volkova.]
     -> show_blockchain_evidence
 
-+ {found_architects_fund and not recruitment_offered} [I'm going to stop pretending. I'm not from the FCA.]
++ {found_architects_fund and not recruitment_offered} [I'm not from the FCA. I'm SAFETYNET, and your exchange banks ENTROPY.]
     -> reveal_identity
 
 + {recruitment_offered and not recruitment_accepted and not recruitment_refused} [I need an answer, Dr. Volkova.]
@@ -202,6 +226,7 @@ Dr. Irina Volkova: So what does the FCA want to see? Our customer checks are com
             Dr. Irina Volkova: Fine.
         }
     }
+    ~ hub_quiet = true
     #exit_conversation
     -> hub
 
@@ -216,6 +241,7 @@ Dr. Irina Volkova: So what does the FCA want to see? Our customer checks are com
 // ask always succeeds, so the passphrase clue can never be lost.
 {irina_trust >= 15 or asked_passwords:
     ~ irina_trust += 5
+    #influence_increased
     ~ wordlist_handed = true
     #give_item:text_file:m06_password_dictionary
     {irina_trust >= 20:
@@ -243,22 +269,24 @@ Dr. Irina Volkova: So what does the FCA want to see? Our customer checks are com
 === research_topic ===
 #speaker:irina_volkova
 ~ asked_research = true
+~ irina_trust += 10
+#influence_increased
 
 Dr. Irina Volkova: Post-quantum key exchange. Lattice-based. The day a quantum computer breaks elliptic curves, every wallet on earth is readable, and I would rather we were ready than surprised.
 
 Dr. Irina Volkova: It's the part of this job I'm still proud of.
-~ irina_trust += 10
 -> hub
 
 === paperwork_topic ===
 #speaker:irina_volkova
 ~ asked_paperwork = true
+~ irina_trust += 10
+#influence_increased
+~ irina_suspicious = false
 
-Dr. Irina Volkova: *thawing slightly* Now that's a supervisor's question.
+Dr. Irina Volkova: Now that's a supervisor's question.
 
 Dr. Irina Volkova: Every flagged transaction comes to me personally. I review it, I decide, I sign it off. That part I do by the book.
-~ irina_trust += 10
-~ irina_suspicious = false
 -> hub
 
 // ===========================================
@@ -271,15 +299,16 @@ Dr. Irina Volkova: Every flagged transaction comes to me personally. I review it
 
 Dr. Irina Volkova: Badges. Trading floor for staff, this one for my office, executive badges for the top floor.
 
-Dr. Irina Volkova: *taps the lanyard at her collar* Four years round my neck. The badges are the one part of our security I'd defend. Satoshi is paranoid about doors and careless about passwords, which is exactly backwards.
+Dr. Irina Volkova: *taps the lanyard at her collar* Four years round my neck. The badges are the one part of our security I'd defend.
+
+Dr. Irina Volkova: Satoshi is paranoid about doors and careless about passwords. Exactly backwards.
 -> hub
 
 === badge_followup ===
 #speaker:irina_volkova
 {irina_trust >= 25:
-    You: I'll need to check your office reader as part of the visit. Can I borrow the badge?
-
     ~ irina_trust += 5
+    #influence_increased
     ~ badge_handed = true
     #give_item:keycard:cto_access_badge
     Dr. Irina Volkova: *unclips it* Bring it back. And don't tell facilities I handed it over, they'll write a memo about it.
@@ -289,7 +318,7 @@ Dr. Irina Volkova: *taps the lanyard at her collar* Four years round my neck. Th
 - else:
     Dr. Irina Volkova: My badge stays on my neck for a visitor I met an hour ago. Nothing personal.
 
-    Narrator: Her lanyard hangs open at her collar, well within a cloner's range. She'd never feel it read.
+    Narrator: Her lanyard hangs open at her collar, well within a cloner's range.
     -> hub
 }
 
@@ -355,31 +384,34 @@ Dr. Irina Volkova: His wing is east of the data centre. He'll be at his desk; he
 === show_blockchain_evidence ===
 #speaker:narrator
 ~ shown_casualties = true
-Narrator: You lay the transaction graph on her desk. Ransom money in. Exploit money in. The Initiative's budget back out. All of it through the mixer she wrote.
+Narrator: You lay Priya's write-up on her desk. Money in from the cells, money back out, all of it through the mixer she wrote.
 
 #speaker:irina_volkova
-Dr. Irina Volkova: *goes still* Where did you get our internal analysis?
+Dr. Irina Volkova: Where did you get our internal analysis?
 
 + [You flagged these transactions yourself. You already knew.]
     Dr. Irina Volkova: I flagged them because they were wrong. Not because I knew what they paid for.
     -> evidence_pivot
-+ [It doesn't matter where. Read what it's paying for.]
++ [Never mind where. Read what it pays for.]
     -> evidence_pivot
 
 === evidence_pivot ===
 #speaker:irina_volkova
 {found_architects_fund:
-    You: The Architect's Fund. $12.8 million still to go out to six cells, and a projection of 350 to 600 dead. You built the machine that moves it.
+    Narrator: You put the fund allocation beside it, open at the casualty projection.
     ~ shown_architects_fund = true
-    Dr. Irina Volkova: *reads it twice* They costed the deaths. They put a number in a cell and moved on.
+    ~ irina_trust += 15
+    #influence_increased
+    Dr. Irina Volkova: They costed the deaths. They put a number in a cell and moved on.
 
     Dr. Irina Volkova: I told myself this was about privacy. Financial freedom. Not... this.
 - else:
-    You: Hospital ransoms. Exploit sales. All of it laundered clean through your infrastructure.
+    ~ irina_trust += 15
+    #influence_increased
+    Dr. Irina Volkova: RansomInc. That's the hospital money, pooled. It went through my mixer.
     Dr. Irina Volkova: I told myself it was about privacy. I am finding that harder to say out loud than I used to.
 }
 ~ moral_conflict_revealed = true
-~ irina_trust += 15
 -> reveal_identity
 
 // ===========================================
@@ -389,19 +421,19 @@ Dr. Irina Volkova: *goes still* Where did you get our internal analysis?
 === reveal_identity ===
 #speaker:irina_volkova
 ~ recruitment_offered = true
-You: I'm SAFETYNET. The exchange you built is the bank for every ENTROPY cell we've met.
+Narrator: You put your SAFETYNET credentials on the desk.
 
-Dr. Irina Volkova: *quietly* My work. Used to kill people.
+Dr. Irina Volkova: My work. Used to kill people.
 
-+ [You didn't see the whole picture. You can help us take it apart.]
++ [You built it believing in it. They turned it. Help us take it apart.]
     ~ irina_trust += 10
-    You: You built these systems believing in them. ENTROPY turned them into a weapon. Help us dismantle their network and that means something.
+    #influence_increased
     -> recruitment_decision
-+ [You built it and you profited. But cooperation is a way to make it right.]
++ [You're in this to your neck. The honest way out is helping us end it.]
     ~ irina_trust += 5
-    You: You're in this up to your neck. The honest way out is to help us end it, not to pretend you didn't know.
+    #influence_increased
     -> recruitment_decision
-+ [You're being detained, Dr. Volkova. Now.]
++ [Dr Volkova, I'm detaining you. The police will take it from here.]
     -> detain_irina
 
 === recruitment_decision ===
@@ -411,9 +443,9 @@ Dr. Irina Volkova: *quietly* My work. Used to kill people.
 - else:
     Dr. Irina Volkova: I won't turn on Satoshi on the strength of one conversation and a graph.
 
-    Dr. Irina Volkova: Financial privacy is a right. If some people abuse it, that is on them, not on me.
+    Dr. Irina Volkova: Financial privacy is a right. If people abuse it, that is on them.
 
-    + [Then you're complicit, and I'm treating you as complicit.]
+    + [Then you're complicit. You're detained until the police arrive.]
         ~ recruitment_refused = true
         -> detain_irina
     // PASS 3 P10: what she wrote in her own office is leverage.
@@ -423,7 +455,9 @@ Dr. Irina Volkova: *quietly* My work. Used to kill people.
     + {not given_time} [Think about it. I'll come back before anyone else does.]
         ~ given_time = true
         ~ irina_trust += 10
+        #influence_increased
         Dr. Irina Volkova: You're giving me time. Nobody in this building has ever done that.
+        ~ hub_quiet = true
         #exit_conversation
         -> hub
 }
@@ -439,18 +473,26 @@ Dr. Irina Volkova: I don't want to write it again.
 
 === recruit_accept ===
 #speaker:irina_volkova
-Narrator: She is quiet for a long moment.
-Dr. Irina Volkova: Then I'll help you. On one condition: what I give you tonight gets used. Not buried.
+Dr. Irina Volkova: ...Then I'll help you. On one condition: what I give you tonight gets used. Not buried.
 
-You: You'll know. You have my word.
+Narrator: You give her your word.
 
 ~ irina_recruited = true
 ~ irina_fate_decided = true
 #set_variable:irina_recruited=true
 #set_variable:irina_fate_decided=true
-Dr. Irina Volkova: Then start with the mixer. The pool keys, the wallet map, and the name on the account that pays me. All of it, tonight.
+{not found_architects_fund:
+    Dr. Irina Volkova: His wallet is one of our cold slots. Not 6120; that's the one he shows auditors.
+    Dr. Irina Volkova: And my pool holds everything six hours. Anything that landed sooner isn't his.
+}
+{not architect_identity_found:
+    Dr. Irina Volkova: His safe is 2140. The year the last bitcoin is mined. He told me once, as if it were clever.
+Dr. Irina Volkova: Whatever he keeps on The Architect is in there.
+}
+Dr. Irina Volkova: The pool keys and the wallet map go to your handler tonight, and the name on the account that pays me.
 
-Dr. Irina Volkova: And {player_name}? Thank you. For treating this as a choice.
+Dr. Irina Volkova: And {player_name}? Thank you for treating this as a choice.
+~ hub_quiet = true
 #exit_conversation
 -> after_choice
 
@@ -460,8 +502,6 @@ Dr. Irina Volkova: And {player_name}? Thank you. For treating this as a choice.
 
 === detain_irina ===
 #speaker:irina_volkova
-You: Dr. Irina Volkova, I'm detaining you for laundering and for facilitating terrorism. The police will take it from here.
-
 ~ irina_arrested = true
 ~ irina_fate_decided = true
 #set_variable:irina_arrested=true
@@ -470,11 +510,46 @@ You: Dr. Irina Volkova, I'm detaining you for laundering and for facilitating te
 {moral_conflict_revealed:
     Dr. Irina Volkova: *offers her wrists* I really did think I was building something good.
 - else:
-    Dr. Irina Volkova: *cold* This is exactly the state overreach we warned people about.
+    Dr. Irina Volkova: This is the state overreach we warned people about.
 }
 
-Dr. Irina Volkova: I hope it was worth it.
+Dr. Irina Volkova: All those papers. For this.
+~ hub_quiet = true
 #exit_conversation
+-> after_choice
+
+// ===========================================
+// SLOT CHECK (round 2, M3): she confirms, she doesn't solve
+// ===========================================
+
+=== slot_check ===
+#speaker:irina_volkova
+Dr. Irina Volkova: Which one?
++ [2207.]
+    -> slot_wrong
++ [3815.]
+    -> slot_wrong
++ [4471.]
+    -> slot_right
++ [5093.]
+    -> slot_wrong
++ [6120.]
+    Dr. Irina Volkova: I told you. That's the one he shows auditors.
+    -> after_choice
++ [8846.]
+    -> slot_wrong
++ [Let me look again.]
+    -> after_choice
+
+=== slot_wrong ===
+#speaker:irina_volkova
+Dr. Irina Volkova: No. Take my cut off each deposit, then check the times against my hold.
+-> after_choice
+
+=== slot_right ===
+#speaker:irina_volkova
+#set_variable:irina_confirmed_slot=true
+Dr. Irina Volkova: Yes. Every deposit I cleared ended up there.
 -> after_choice
 
 // ===========================================
@@ -483,13 +558,25 @@ Dr. Irina Volkova: I hope it was worth it.
 
 === after_choice ===
 #speaker:irina_volkova
-{irina_recruited:
-    Dr. Irina Volkova: I'm still here, and still yours. What do you need?
+{ hub_quiet:
+    ~ hub_quiet = false
 - else:
-    Narrator: She sits very still at her desk, waiting for the police, and doesn't look up.
+    {irina_recruited:
+        Dr. Irina Volkova: What else do you need?
+    - else:
+        Narrator: She sits very still at her desk, waiting for the police, and doesn't look up.
+    }
 }
 + {found_architects_fund and not irina_exec_badge_given and TURNS() > exec_badge_turn} [Satoshi's wing. You've a badge for it.]
     -> exec_badge_handover
++ {irina_recruited and not found_architects_fund and read_settlement_log} [I've read the settlement log. Check a slot for me.]
+    -> slot_check
 + [Nothing. Carry on.]
+    {irina_recruited:
+        Dr. Irina Volkova: Then be careful up there.
+    - else:
+        Narrator: She doesn't answer.
+    }
+    ~ hub_quiet = true
     #exit_conversation
     -> after_choice

@@ -10,6 +10,19 @@
 // - Event knots check their own state at the top and divert.
 // - Phone history is memory-only, so once-only texts have a backstop: the hub
 //   keeps sticky options for the Satoshi-KO decision and for Irina's items.
+//
+// PASS 4 (design):
+// - Fix 1: sticky "Which cold slot is the fund?" gives graded nudges for the
+//   custody-console puzzle (fund_hint_level); the recap repeats the method.
+// - Fix 3: the recap repeats what a turned Irina told the player.
+// - Fix 5: the recap asks for flag 4 before the confrontation.
+// - Fix 6: freeze = move the coins into a wallet we hold; the watch option
+//   says why arresting Satoshi doesn't tip ENTROPY off (pre-signed batch).
+// - Fix 15 (part): #exit_conversation after the reply line, not before it.
+// Round 2: hub ordered by relevance (urgent and progress-gated first, recap
+// near the top, early-game topics retired once spent, general advice cut);
+// the slot nudges are a ladder (method / where to start / near-answer); the
+// asset decision by phone needs the fund (M1); Irina narrows, never tells (M3).
 // ================================================
 
 VAR password_hint_given = false
@@ -21,6 +34,7 @@ VAR first_contact = true
 VAR relay_wordlist_sent = false
 VAR relay_cto_badge_sent = false
 VAR relay_exec_badge_sent = false
+VAR fund_hint_level = 0     // PASS 4 fix 1: graded nudges for the slot puzzle
 
 // External variables
 VAR player_name = "Agent 0x00"
@@ -58,6 +72,10 @@ VAR found_wallet_keys = false
 VAR assets_decided = false
 VAR monitoring_enabled = false
 VAR satoshi_ko = false
+VAR irina_confirmed_slot = false
+VAR read_settlement_log = false
+VAR entered_data_center = false   // set on first entering the data centre (dialogue pass)
+VAR architect_identity_found = false
 VAR reacted_password_lists = false
 VAR reacted_first_server = false
 VAR reacted_blockchain = false
@@ -83,25 +101,28 @@ VAR reacted_network = false
 
 === first_call ===
 #speaker:agent_0x99
-Agent HaX: {player_name}, you're inside HashChain Exchange. How's the FCA cover holding up?
-Agent HaX: This is a financial investigation. Follow the money, map the network, and find where ENTROPY's funding goes.
+{player_name}. You're inside. How's the FCA cover holding?
+Tonight's about money. Where it comes in, where it lands, who it pays.
 -> first_call_choices
 
 === first_call_choices ===
-+ [Cover is solid so far]
-    Agent HaX: Good. Keep it boring. Regulators visit crypto exchanges all the time.
++ {not guard_resolved} [Holding fine. Nobody's looked twice.]
+    Keep it boring. Regulators turn up at crypto exchanges every week.
     -> hub
-+ [What should I focus on first?]
++ {not guard_resolved} [What should I focus on first?]
     -> initial_guidance
-+ [I'll call if I need help]
+// Playtest round: a phone first opened late lands here; send it to the recap.
++ {guard_resolved} [I've been busy. Where are we up to?]
+    -> recap
++ [I'll call if I need you.]
+    I'm on the line. Call anytime.
     #exit_conversation
-    Agent HaX: Roger that. I'm tracking your progress. Call anytime.
     -> hub
 
 === initial_guidance ===
-Agent HaX: Priority one: build rapport with Irina Volkova, the CTO. She's your way in, and maybe more than that.
-Agent HaX: Priority two: the backend servers. That's where the financial records are.
-Agent HaX: Priority three: map the whole ENTROPY financial network. Every transaction linking cells together.
+Volkova first. The CTO, on the trading floor. She's your way in, and maybe more.
+Then the backend. That's where their records live.
+Everything after that is joining up the cells' money.
 -> hub
 
 // ================================================
@@ -109,31 +130,9 @@ Agent HaX: Priority three: map the whole ENTROPY financial network. Every transa
 // ================================================
 
 === hub ===
-+ {not password_hint_given} [Password cracking guidance]
-    -> password_help
-+ {not blockchain_hint_given} [Blockchain analysis tips]
-    -> blockchain_help
-+ {not irina_guidance_given and not irina_ko and not irina_fate_decided} [Irina Volkova recruitment strategy]
-    -> irina_guidance
-+ [Got any general advice?]
-    -> general_advice
-
-// Story beats, reachable once the player has hit them
-+ {found_password_lists and not reacted_password_lists} [I've got Volkova's wordlist. What do I do with it?]
-    ~ reacted_password_lists = true
-    -> on_password_lists_found
-+ {flag1_submitted and not reacted_first_server} [First server is cracked. What now?]
-    ~ reacted_first_server = true
-    -> on_first_server_cracked
-+ {blockchain_debrief_available and not reacted_blockchain} [Talk me through this transaction graph.]
-    ~ reacted_blockchain = true
-    -> on_blockchain_discovered
-+ {fund_debrief_available and not reacted_fund} [I've found The Architect's Fund.]
-    ~ reacted_fund = true
-    -> on_architects_fund_discovered
-+ {flag4_submitted and not reacted_network} [The whole estate is mapped. Where does that leave us?]
-    ~ reacted_network = true
-    -> on_network_complete
+// Urgent first: the decision Satoshi's KO left open (review B2/M4 safety net).
++ {satoshi_ko and not assets_decided} [About the fund. I'm ready to decide.]
+    -> on_satoshi_ko
 
 // PASS 3 P9: relayed copies, on request, only for what isn't picked up yet.
 + {irina_ko and not found_password_lists and not relay_wordlist_sent} [Send me Volkova's wordlist.]
@@ -142,6 +141,32 @@ Agent HaX: Priority three: map the whole ENTROPY financial network. Every transa
     -> relay_cto_badge
 + {irina_ko and found_architects_fund and not irina_exec_badge_given and not relay_exec_badge_sent} [I need the executive badge she signed out.]
     -> relay_exec_badge
+
+// PASS 4 fix 1: sticky, graded nudges for the custody-console puzzle.
++ {(entered_data_center or read_settlement_log) and not found_architects_fund} [Which cold slot is the fund?]
+    -> fund_hint
+
+// PASS 3 playtest (engine E9): phone history is memory-only, so HaX's timed
+// texts are gone after a reload. The recap repeats whatever still applies.
++ [Remind me where we are.]
+    -> recap
+
+// Story beats, each retired once the story has moved past it
++ {found_password_lists and not reacted_password_lists and not flag1_submitted} [I've got Volkova's wordlist. What do I do with it?]
+    ~ reacted_password_lists = true
+    -> on_password_lists_found
++ {flag1_submitted and not reacted_first_server and not flag3_submitted} [First server is cracked. What now?]
+    ~ reacted_first_server = true
+    -> on_first_server_cracked
++ {blockchain_debrief_available and not reacted_blockchain and not found_architects_fund} [Talk me through Priya's write-up.]
+    ~ reacted_blockchain = true
+    -> on_blockchain_discovered
++ {fund_debrief_available and not reacted_fund} [I've found The Architect's Fund.]
+    ~ reacted_fund = true
+    -> on_architects_fund_discovered
++ {flag4_submitted and not reacted_network} [The whole estate is mapped. Where does that leave us?]
+    ~ reacted_network = true
+    -> on_network_complete
 
 // Field guides, offered once the player has met the thing they explain
 + {cracking_guide_offered and not cracking_guide_hint_given} [Send me the offline password cracking guide.]
@@ -155,19 +180,17 @@ Agent HaX: Priority three: map the whole ENTROPY financial network. Every transa
 + {rfid_guide_offered and not rfid_guide_hint_given} [Send me the RFID cloning guide.]
     -> request_rfid_guide
 
-// PASS 3 playtest (engine E9): phone history is memory-only, so HaX's timed
-// texts are gone after a reload. The recap repeats whichever once-only
-// guidance still applies.
-+ [Remind me where we are.]
-    -> recap
+// Early-game topics, retired once the player is past them
++ {not password_hint_given and not flag1_submitted} [Any tips on their passwords?]
+    -> password_help
++ {not blockchain_hint_given and not found_blockchain_evidence} [Where do I start on the money trail?]
+    -> blockchain_help
++ {not irina_guidance_given and not irina_ko and not irina_fate_decided} [How do I play Volkova?]
+    -> irina_guidance
 
-// Review B2/M4 safety net: Satoshi can't be asked again once he's down.
-+ {satoshi_ko and not assets_decided} [About the fund. I'm ready to decide.]
-    -> on_satoshi_ko
-
-+ [I'm good for now]
++ [I'm good for now.]
+    Copy that. Call anytime.
     #exit_conversation
-    Agent HaX: Copy that. Call anytime.
     -> hub
 
 // ================================================
@@ -176,137 +199,132 @@ Agent HaX: Priority three: map the whole ENTROPY financial network. Every transa
 
 === password_help ===
 ~ password_hint_given = true
-Agent HaX: Passwords at crypto exchanges follow patterns. Crypto-themed terms plus years.
-Agent HaX: Think "bitcoin" or "satoshi" with a year bolted on. Irina keeps an audit list of the exact words her own people pick.
-Agent HaX: Once you crack the first account, look for credential reuse. Admins get lazy across systems.
+Crypto shops all do it. A coin name with a year bolted on.
+Volkova keeps an audit list of the exact words her people pick. Get it.
+And once one account falls, try that password on the rest. Admins reuse.
 -> password_help_choices
 
 === password_help_choices ===
-+ [What tools should I use?]
-    Agent HaX: Pull the shadow file, unshadow it, and run John the Ripper with its default list. That's enough for the backend.
-    Agent HaX: Irina's list is for the doors.
++ [And on the backend?]
+    The cracking guide covers it. John the Ripper's default list is enough there.
+    Volkova's list is for the doors.
     -> hub
-+ [Got it, thanks]
++ [Got it.]
     -> hub
 
 === blockchain_help ===
 ~ blockchain_hint_given = true
-Agent HaX: Blockchain transactions are public, but privacy coins make tracing nearly impossible without internal records.
-Agent HaX: Look for transaction analysis in the Blockchain Analysis Lab. It'll have wallet addresses and fund flows.
-Agent HaX: Key targets: the ransomware wallet and the TalentStack wallet. They should both connect through HashChain.
+The Blockchain Analysis Lab, east off the trading floor. Their analysts will have drawn it.
+The public chain gets you as far as the mixer. Past that, you need their own records.
+Look for the ransomware wallet and TalentStack's. Both run through HashChain.
 -> blockchain_help_choices
 
 === blockchain_help_choices ===
-+ [What am I looking for specifically?]
-    Agent HaX: Destination wallets. A master fund receiving money from all the cells.
-    Agent HaX: If there's coordinated funding, the internal records will show it.
++ [What's at the end of it?]
+    My guess? One wallet every cell draws on.
+    If it exists, their records will show where.
     -> hub
-+ [Thanks]
++ [Thanks.]
     -> hub
 
 === irina_guidance ===
 ~ irina_guidance_given = true
-Agent HaX: Irina is brilliant but conflicted. She built this infrastructure for "financial freedom".
-Agent HaX: Now it's funding ransomware, espionage and attacks. Our psych profile says she's troubled by it.
+She wrote the privacy code for "financial freedom". Now it washes ransom money.
+Our profile says that keeps her up at night. Not enough to quit.
 -> irina_guidance_choices
 
 === irina_guidance_choices ===
-+ [How do I recruit her?]
++ [How do I turn her?]
     -> recruitment_strategy
 + [What if she refuses?]
     -> arrest_strategy
 
 === recruitment_strategy ===
-Agent HaX: Show her the consequences of her work. The ransoms, the casualties, The Architect's plan.
-Agent HaX: Appeal to her ethics, not her ideology. She's a cryptographer, not a terrorist.
-Agent HaX: If she turns tonight, she can open the mixer for us before anyone notices she's talked.
+Show her what her code pays for. Evidence, in front of her.
+Don't argue privacy with her. She'll win. Argue about what it's buying.
+Turned tonight, she opens the mixer before anyone knows she's talked.
 -> hub
 
 === arrest_strategy ===
-Agent HaX: If she won't turn, detain her and hand her over with the evidence. Either way her expertise stops working for ENTROPY.
-Agent HaX: But try turning her first.
--> hub
-
-=== general_advice ===
-Agent HaX: Remember: most people at HashChain think they work at a legitimate exchange.
-Agent HaX: Irina and Satoshi know about ENTROPY. The traders and analysts are likely innocent.
--> general_advice_choices
-
-=== general_advice_choices ===
-+ [What about Satoshi Nakamoto II?]
-    -> satoshi_discussion
-+ [What's the priority target?]
-    -> priority_target
-+ [Understood]
-    -> hub
-
-=== satoshi_discussion ===
-Agent HaX: Satoshi is a true believer. "Financial freedom through cryptography."
-Agent HaX: Useful for understanding Crypto Anarchist ideology, but don't expect cooperation.
--> hub
-
-=== priority_target ===
-Agent HaX: The Architect's Fund. A master wallet funding the cells.
-Agent HaX: If we find it, we can map the network and decide what to do about the money.
+Then you detain her and the police get her with the evidence. She stops working for them either way.
+Try the other way first.
 -> hub
 
 === recap ===
 #speaker:agent_0x99
 {not guard_resolved:
-    Agent HaX: FCA supervision, routine visit, bored and underpaid. The CTO is the one who matters: Dr Irina Volkova, trading floor, through the checkpoint.
-    Agent HaX: There's a contract guard on that door. You're an FCA officer with an appointment, so act like one.
+    You're FCA, on a routine visit. You want Dr Irina Volkova, the CTO, on the trading floor.
+    There's a guard on the checkpoint. You've an appointment, so act like it.
 }
-{guard_resolved and not irina_badge_obtained and not irina_badge_cloned and not irina_ko:
-    Agent HaX: Two doors in this building are on RFID. Your cloner reads a badge at conversational distance; Volkova's office is west off the trading floor.
+{guard_resolved and not irina_badge_obtained and not irina_badge_cloned and not irina_ko and not irina_fate_decided:
+    Volkova's office is west off the trading floor, on RFID. Your cloner reads her badge from across a desk.
 }
 {not found_password_lists:
     {irina_ko:
-        Agent HaX: Volkova kept an audit wordlist of what people here pick. Ask me and I'll send you a copy.
+        Volkova kept a wordlist of what people here pick. Ask and I'll send a copy.
     - else:
-        Agent HaX: Volkova keeps an audit wordlist of what people here actually pick. Get it from her.
+        Volkova keeps a wordlist of what people here actually pick. Get it from her.
     }
 }
 {(found_password_lists or server_passphrase_known) and not flag1_submitted:
-    Agent HaX: The server room door: a crypto term and a year. The IT checklist at the checkpoint gives the convention and when it was written; the term is whatever tops Volkova's list.
+    The server room door takes a crypto term and a year. The checklist at the checkpoint gives the year.
+    The term is whatever tops Volkova's list.
+}
+{guard_resolved and not found_blockchain_evidence:
+    Priya Raghavan's write-up, in the lab east off the trading floor. It follows the money into the mixer. Take it.
 }
 {recon_guide_offered and not flag1_submitted:
-    Agent HaX: On the backend, there's a build service listening that shouldn't be. That's your way in. Map before you log in.
+    The backend has a build service listening that shouldn't be. That's your way in. Map first.
 }
 {flag1_submitted and not flag2_submitted:
-    Agent HaX: You've one account. Try that password everywhere before anything clever.
+    You've one account. Try that password everywhere before anything clever.
 }
 {flag2_submitted and not flag3_submitted:
-    Agent HaX: Next is the financial database. The same service account runs their door controllers.
+    Next, the financial database. Its service account runs their doors.
 }
 {flag3_submitted and not found_architects_fund:
-    Agent HaX: The data centre is north of the server room. The code's in the door controller export the drop-site gave you.
+    {not entered_data_center:
+        The data centre's through the north door of the server room. The code's in the door controller export.
+    }
+    The fund is one of the slots on the data centre's custody console.
+    {irina_recruited:
+        Volkova says it isn't 6120, and nothing inside her six-hour hold is his. She'll check a slot for you.
+    }
+}
+{flag3_submitted and not flag4_submitted:
+    Get the vault account before you go upstairs. It's the last box on the backend, and it holds the wallet keys.
 }
 {found_architects_fund and not irina_exec_badge_given:
     {irina_ko:
-        Agent HaX: The spare executive badge was signed out to Volkova. Check where she went down, or ask me for a copy.
+        The spare executive badge was signed out to Volkova. Check where she went down, or ask me for a copy.
     - else:
-        Agent HaX: The spare executive badge was signed out to Volkova. She's on the trading floor. The wing is east of the data centre.
+        Volkova has the spare executive badge. She's on the trading floor. The wing is east of the data centre.
     }
 }
 {found_architects_fund and irina_exec_badge_given and not satoshi_confronted:
-    Agent HaX: You've the badge. The executive wing is east of the data centre, and his office is north of that. Go and face him.
+    You've the badge. The wing's east of the data centre; his office is north of that.
 }
-{satoshi_confronted and not assets_decided:
-    Agent HaX: The wallet is still yours to decide: freeze it, or leave it running and watch it.
+{irina_recruited and not architect_identity_found:
+    Volkova says Satoshi's safe is 2140.
 }
-{asset_decision_deferred and not found_wallet_keys:
-    Agent HaX: The recovery keys are on the vault account on the backend. That's the last flag.
+{satoshi_confronted and found_architects_fund and not assets_decided:
+    The wallet is still yours to decide: freeze it, or leave it running and watch it.
+}
+{asset_decision_deferred and not found_architects_fund:
+    You can't decide about a wallet you haven't found. It's on the custody console.
+}
+{asset_decision_deferred and found_architects_fund and not found_wallet_keys:
+    The recovery keys are on the vault account on the backend. That's the last flag.
 }
 {assets_decided and not irina_fate_decided:
-    Agent HaX: The money's settled. Volkova isn't, and that's yours to decide.
+    The money's settled. Volkova isn't. That's your call.
 }
 {assets_decided and irina_fate_decided and not (flag1_submitted and flag2_submitted and flag3_submitted and flag4_submitted):
-    Agent HaX: Before I pull you out, finish the backend. I want all four flags at the drop-site.
+    Before I pull you out, finish the backend. I want all four flags at the drop-site.
 }
 {assets_decided and irina_fate_decided and flag1_submitted and flag2_submitted and flag3_submitted and flag4_submitted:
-    Agent HaX: That's everything. Walk out of there and I'll bring you in.
+    That's everything. Walk out of there and I'll bring you in.
 }
-Agent HaX: That's where we are.
 -> hub
 
 // ================================================
@@ -315,95 +333,118 @@ Agent HaX: That's where we are.
 
 === on_password_lists_found ===
 #speaker:agent_0x99
-Agent HaX: You've got Irina's password dictionary. Good.
-Agent HaX: That list is what people here pick for doors. Put it next to the house convention and the server room opens.
+That's what people here pick for their doors.
+Put it next to the house convention and the server room opens.
 -> hub
 
 === on_first_server_cracked ===
 #speaker:agent_0x99
-Agent HaX: First account is yours. Good cracking, {player_name}.
-Agent HaX: Now look for credential reuse. The same password across several servers is common.
-Agent HaX: Transaction records, wallet addresses, anything linking the cells. And watch for a master fund.
+Try that password on every other account before anything clever. Someone will have reused it.
+Then the financial database. Its account runs their doors.
 -> hub
 
 === on_blockchain_discovered ===
 #speaker:agent_0x99
-Agent HaX: {player_name}, I'm looking at the transaction analysis you found.
-Agent HaX: About $2.4 million in from the ransomware wallet. $847,000 back out to TalentStack for the Quantum Dynamics job. And advances going out to six cell wallets.
-Agent HaX: Money in from one cell, money out to others, and the same wallet in the middle every time.
+I've read it. She's good.
+Ransom and exploit money goes in. TalentStack's $847,000 and six advances come out of one of their cold slots.
+She loses it in the middle. Their own records close the gap.
 -> on_blockchain_choices
 
 === on_blockchain_choices ===
-+ [What's the destination?]
-    Agent HaX: The analysis calls it "1ARCHITECT9FUND". If this holds up, that's the account every cell draws on.
-    Agent HaX: Find the full records. We need to know how much is still in it and where it's going.
++ [Which slot?]
+    The settlement log in the data centre says which.
+    If she's right, that slot is the account every cell draws on.
     -> hub
-+ [This connects all the cells]
-    Agent HaX: Every cell we've met banks here. Social Fabric, the Crypto Anarchists, the Insider Threat Initiative.
-    Agent HaX: Find the allocation records. We need the whole structure.
++ [So every cell banks here.]
+    Every one we've met. Social Fabric, the Insider Threat Initiative, the lot.
+    Find the allocation and we'll have the whole shape of it.
     -> hub
 
 === on_architects_fund_discovered ===
 #speaker:agent_0x99
-Agent HaX: {player_name}, I'm looking at what you pulled from the data centre.
-Agent HaX: $12.8 million still in the wallet, pending for six cells. The advances have already gone out.
-Agent HaX: And look who signed it. "Satoshi's Ghost". That's the Crypto Anarchists' leader, and it's the man in the corner office upstairs.
-Agent HaX: Don't mix him up with Ghost Protocol on the same page. That's a different cell, and it's one of the ones being paid.
+I've got it in front of me.
+$12.8 million still in the wallet, pending for six cells. The advances have already gone.
+Look who signed it. Satoshi's Ghost. The Crypto Anarchists' leader, and the man in the corner office upstairs.
+Not Ghost Protocol, the other name on that page. They're one of the cells being paid.
 -> on_fund_choices
 
 === on_fund_choices ===
 + [The advances already went out.]
     -> coordinated_attack
-+ [350 to 600 projected dead...]
++ [Look at the projection line.]
     -> casualty_numbers
 
 === coordinated_attack ===
-Agent HaX: Advances first, balances in seventy-two hours. They're buying in stages, and the first stage is paid for.
-Agent HaX: Whatever we do with the wallet, it only touches what hasn't left yet.
+Advances first, balances in seventy-two hours. The first stage is already paid for.
+Whatever we do with the wallet only touches what hasn't left.
 -> critical_choice_preview
 
 === casualty_numbers ===
-Agent HaX: That's the cells' own estimate, across every operation on that page. They know people will die.
-Agent HaX: And they're calling it "The Architect's Masterpiece".
+Their own estimate, across every operation on that page.
+And they've called it "The Architect's Masterpiece".
 -> critical_choice_preview
 
 === critical_choice_preview ===
-Agent HaX: You're going to have to choose.
-Agent HaX: Freeze the wallet: the balances stop tonight, and the moment we do it they know we were here.
-Agent HaX: Or leave it running and watch it: we map every cell that draws on it, and the money reaches them.
+Which leaves you a choice.
+Freeze it, and the balances stop tonight. They'll know we were here the moment we do.
+Or watch it. We map every cell that draws on it, and the money reaches them.
 -> critical_choice_choices
 
 === critical_choice_choices ===
 + [What do you recommend?]
     -> handler_recommendation
-+ [I'll think about it]
++ [Let me think about it.]
+    Take your time. Not too much.
     #exit_conversation
-    Agent HaX: Take your time. Not too much.
     -> hub
 
 === handler_recommendation ===
-Agent HaX: I'll tell you what each one costs. The call is yours.
-Agent HaX: Freeze, and the cells still waiting go short, and ENTROPY knows its bank is burned. The advances are gone either way.
-Agent HaX: Watch, and the balances go to cells whose projection you've just read. In exchange we get the map.
+I'll give you the cost of each. The call's yours.
+If you freeze it, the cells still waiting go short, and ENTROPY knows its bank is burned.
+If you watch it, the balances pay for what's on that page, and we get the map.
+Watching still works with him arrested. The payout's pre-signed; we keep the arrest quiet until it's gone.
+The advances are gone either way.
 #exit_conversation
 -> hub
 
 === on_network_complete ===
 #speaker:agent_0x99
-Agent HaX: Full estate mapped. Outstanding work, {player_name}.
-Agent HaX: Satoshi's wing is on an executive badge. The door logs say the spare was signed out to Volkova.
-Agent HaX: And whatever you decide about Irina, make it count.
+That's the vault account, and the recovery keys are in your kit.
+Satoshi's wing is on an executive badge. The spare's signed out to Volkova.
+She's yours to decide about too. Don't leave it to the police by default.
 -> on_network_choices
 
 === on_network_choices ===
 + [What about the wallet?]
-    Agent HaX: Your call, in his office. Freeze it and the balances stop. Watch it and the balances reach the cells, and we learn who they are.
+    Your call, in his office. Freeze it and the balances stop.
+    Watch it and they reach the cells, and we learn who the cells are.
     #exit_conversation
     -> hub
-+ [I'm ready]
++ [I'm going up.]
+    He'll be expecting someone. Let it be you.
     #exit_conversation
-    Agent HaX: Good luck.
     -> hub
+
+// ================================================
+// FOLLOW THE MONEY: graded nudges (PASS 4 fix 1)
+// ================================================
+
+=== fund_hint ===
+#speaker:agent_0x99
+{not found_blockchain_evidence:
+    Get Priya's write-up first. It's in the lab east off the trading floor.
+    -> hub
+}
+~ fund_hint_level += 1
+{fund_hint_level:
+- 1:
+    Match each of Priya's deposits to a settlement credit: less the mixer's cut, after its hold.
+- 2:
+    Start with the biggest deposit. Look for it less the fee, at least six hours on.
+- else:
+    Two slots took $2,364,000 that night. Only one took it after the hold, and it took the other two as well.
+}
+-> hub
 
 // ================================================
 // KO RELAYS
@@ -416,19 +457,19 @@ Agent HaX: And whatever you decide about Irina, make it count.
 === relay_wordlist ===
 ~ relay_wordlist_sent = true
 #give_item:text_file:relayed_password_dictionary
-Agent HaX: Pulled off her workstation. Sent.
+Pulled off her workstation. Sent.
 -> hub
 
 === relay_cto_badge ===
 ~ relay_cto_badge_sent = true
 #give_item:keycard:relayed_cto_badge
-Agent HaX: Rebuilt from the reader logs. Sent. Her office is west off the trading floor.
+Rebuilt from the reader logs. Sent. Her office is west off the trading floor.
 -> hub
 
 === relay_exec_badge ===
 ~ relay_exec_badge_sent = true
 #give_item:keycard:relayed_executive_badge
-Agent HaX: Rebuilt from the reader logs. Sent. The wing's east of the data centre.
+Rebuilt from the reader logs. Sent. The wing's east of the data centre.
 -> hub
 
 // npc_ko:satoshi_nakamoto. The asset decision comes to the player by phone.
@@ -437,37 +478,44 @@ Agent HaX: Rebuilt from the reader logs. Sent. The wing's east of the data centr
 {assets_decided:
     -> hub
 }
-Agent HaX: He's down and he isn't getting up. Extraction's inbound for him.
-Agent HaX: For the file: that's Satoshi's Ghost, the Crypto Anarchists' leader. Not Ghost Protocol.
-Agent HaX: Which leaves the wallet to you. $12.8 million still pending. What do we do with it?
+He's down. Extraction's on its way for him.
+For the file, that's Satoshi's Ghost, the Crypto Anarchists' leader. Not Ghost Protocol.
+{found_architects_fund:
+    Which leaves the wallet to you. $12.8 million still pending. What do we do with it?
+- else:
+    Which leaves his wallet, and we don't know which slot it is yet.
+}
 -> satoshi_ko_choice
 
 === satoshi_ko_choice ===
-+ {found_wallet_keys} [Freeze it. Sweep the fund into cold storage tonight.]
-    You: Freeze it. Use the recovery keys and sweep the wallet before anyone notices he's stopped answering.
++ {found_architects_fund and found_wallet_keys} [Freeze it. Move it into our wallet before anyone notices he's gone quiet.]
     #set_variable:assets_seized=true
     #set_variable:assets_decided=true
     #set_variable:satoshi_arrested=true
     #set_variable:final_choice=seized_by_force
     #complete_task:decide_asset_strategy
-    Agent HaX: Done. The $12.8 million that hadn't gone out isn't going anywhere. The advances already reached the cells.
+    Done. The $12.8 million that hadn't gone out is in a wallet we hold. The advances already reached the cells.
     #set_variable:phone_decision_made=true
     #exit_conversation
     -> hub
-+ [Leave it running. Tag every wallet that draws on it.]
-    You: Leave it live. I want every cell that reaches for this money on a list.
++ {found_architects_fund} [Leave it running. I want every cell that reaches for it on a list.]
     #set_variable:monitoring_enabled=true
     #set_variable:assets_decided=true
     #set_variable:satoshi_arrested=true
     #set_variable:final_choice=monitored_by_force
     #complete_task:decide_asset_strategy
-    Agent HaX: Tagged and watching. The balances will reach the cells, and we'll see every one of them land.
+    Tagged and watching. The balances will reach the cells, and we'll see every one of them land.
     #set_variable:phone_decision_made=true
     #exit_conversation
     -> hub
-+ {not found_wallet_keys} [Not yet. I'll get the recovery keys first.]
++ {not found_architects_fund} [Not yet. I need to know which slot it is.]
     #set_variable:asset_decision_deferred=true
-    Agent HaX: They're on the vault account on the backend. Last flag. Call me when you have them.
+    The custody console in the data centre. Call me when you've opened it.
+    #exit_conversation
+    -> hub
++ {found_architects_fund and not found_wallet_keys} [Not yet. I'll get the recovery keys first.]
+    #set_variable:asset_decision_deferred=true
+    They're on the vault account on the backend. Last flag. Call me when you have them.
     #exit_conversation
     -> hub
 
@@ -480,8 +528,8 @@ Agent HaX: Which leaves the wallet to you. $12.8 million still pending. What do 
 ~ cracking_guide_hint_given = true
 #set_variable:cracking_guide_hint_given=true
 #give_item:lab-workstation:m06_cracking_field_guide
-Agent HaX: Offline cracking guide sent.
-Agent HaX: Everything you need to turn that readable shadow file into logins. Unshadow it, run John offline, then try each cracked password on the other accounts.
+Offline cracking guide sent.
+It turns that readable shadow file into logins. Then try each password on the other accounts.
 -> hub
 
 === request_distcc_guide ===
@@ -489,8 +537,8 @@ Agent HaX: Everything you need to turn that readable shadow file into logins. Un
 ~ distcc_guide_hint_given = true
 #set_variable:distcc_guide_hint_given=true
 #give_item:lab-workstation:m06_distcc_field_guide
-Agent HaX: distcc guide sent.
-Agent HaX: The worked example is from an earlier job. Here the build service is just the way onto the box; there's no flag on it.
+distcc guide sent.
+The example's from an earlier job. Here the build service just gets you on the box. No flag on it.
 -> hub
 
 === request_privesc_guide ===
@@ -498,8 +546,9 @@ Agent HaX: The worked example is from an earlier job. Here the build service is 
 ~ privesc_guide_hint_given = true
 #set_variable:privesc_guide_hint_given=true
 #give_item:lab-workstation:m06_privesc_field_guide
-Agent HaX: Privilege escalation and credential reuse guide sent.
-Agent HaX: One cracked account is a foothold, not an estate. Try the same credential everywhere before you try anything clever. The rack sheet says two of those boxes share a service account.
+Privilege escalation and credential reuse guide sent.
+The rack sheet says two of those boxes share a service account. Start there.
+Try the password you have everywhere before anything clever.
 -> hub
 
 === request_recon_guide ===
@@ -507,8 +556,8 @@ Agent HaX: One cracked account is a foothold, not an estate. Try the same creden
 ~ recon_guide_hint_given = true
 #set_variable:recon_guide_hint_given=true
 #give_item:lab-workstation:m06_recon_field_guide
-Agent HaX: Reconnaissance and network mapping guide sent.
-Agent HaX: Map the segment and fingerprint the services before you start guessing at logins.
+Reconnaissance and network mapping guide sent.
+Map the segment and fingerprint the services before you start guessing at logins.
 -> hub
 
 === request_rfid_guide ===
@@ -516,6 +565,6 @@ Agent HaX: Map the segment and fingerprint the services before you start guessin
 ~ rfid_guide_hint_given = true
 #set_variable:rfid_guide_hint_given=true
 #give_item:lab-workstation:m06_rfid_field_guide
-Agent HaX: RFID cloning guide sent.
-Agent HaX: Its example building is from an earlier job. Same method here: the cloner in your kit reads at conversational distance. Identify the protocol first.
+RFID cloning guide sent.
+The example building's from an earlier job. Same method: identify the protocol, then read from across a desk.
 -> hub

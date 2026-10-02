@@ -2,6 +2,13 @@
 // Mission 6: Satoshi Nakamoto II Confrontation
 // Final showdown with Crypto Anarchists leader
 // Critical choices: Asset seizure/monitoring, Irina recruitment
+//
+// PASS 4 (design): fix 11, the fund opener needs found_architects_fund (a
+// player who KO'd Irina early can reach him without it) and evidence_reveal
+// has a no-fund line; fix 6, freezing moves the coins into a SAFETYNET
+// wallet; fix 15 (part), #exit_conversation after the reply line.
+// Round 2 (M1): both asset choices need found_architects_fund. Without it the
+// only option is to defer and find his slot.
 // ===========================================
 
 VAR confrontation_started = false
@@ -22,6 +29,9 @@ VAR monitoring_enabled = false
 VAR irina_ko = false
 VAR detain_announced = false
 VAR assets_decided = false  // synced global: the re-entry guard survives a reload (review M3)
+// Final round (m03 pattern): set by every exit, so the resting knot's re-entry
+// line shows on a reopen and never in the same batch as a goodbye.
+VAR hub_quiet = false
 
 // ===========================================
 // INITIAL CONFRONTATION
@@ -33,25 +43,24 @@ VAR assets_decided = false  // synced global: the re-entry guard survives a relo
 {assets_decided:
     -> aftermath
 }
-{not confrontation_started:
+{
+- not confrontation_started:
     ~ confrontation_started = true
     // Review M2: complete at the top so an early close can't strand the task.
     #complete_task:confront_satoshi
     #set_variable:satoshi_confronted=true
 
     #speaker:narrator
-    Narrator: A man in his early forties sits behind an executive desk. The Bitcoin whitepaper is framed on the wall behind him, at exactly the height of his own head.
+    Narrator: A man in his early forties leans against the front of an executive desk. The Bitcoin whitepaper is framed on the wall behind him, at exactly the height of his own head.
 
     Satoshi Nakamoto II: You're not from the FCA. I had you investigated.
 
-    Satoshi Nakamoto II: SAFETYNET, correct? Counter-terrorism division.
-
-    Satoshi Nakamoto II: Which means you've discovered our true purpose.
+    Satoshi Nakamoto II: SAFETYNET, right? So you've worked out what this place is for.
 
     + [You're funding ENTROPY. Every cell we've hit runs its money through this exchange.]
         -> evidence_reveal
 
-    + [The Architect's Fund. $12.8 million still to go out, and a projection of 350 to 600 dead. You calculated death tolls.]
+    + {found_architects_fund} [The Architect's Fund. $12.8 million to go out, and you costed the dead.]
         ~ shown_evidence = true
         -> casualties_discussion
 
@@ -60,16 +69,14 @@ VAR assets_decided = false  // synced global: the re-entry guard survives a relo
         ~ shown_evidence = true
         -> ghost_name
 
-    + [You're being detained for facilitating terrorism]
+    + [You're under arrest. Laundering and terrorist financing.]
         -> arrest_attempt
-}
-
-{confrontation_started and not asset_choice_made:
-    Satoshi Nakamoto II: What will it be, {player_name}?
+- not asset_choice_made:
+    { not hub_quiet:
+        Satoshi Nakamoto II: Back again.
+    }
     -> choice_presentation
-}
-
-{asset_choice_made:
+- else:
     -> aftermath
 }
 
@@ -90,16 +97,20 @@ Satoshi Nakamoto II: "Nakamoto II" is for the brochure. The Ghost is who pays fo
 #speaker:satoshi
 ~ shown_evidence = true
 
-Satoshi Nakamoto II: *smiles* You mapped the network. Impressive.
+{found_architects_fund:
+    Satoshi Nakamoto II: You mapped the network. Impressive.
+- else:
+    Satoshi Nakamoto II: You've seen enough of my exchange to guess. You haven't found my wallet, but you've guessed.
+}
 
-Satoshi Nakamoto II: Yes, HashChain Exchange is the financial hub for ENTROPY. We provide infrastructure for all cells.
+Satoshi Nakamoto II: Sure. HashChain is ENTROPY's bank. Every cell.
 
-Satoshi Nakamoto II: Money laundering, you'd call it. We call it "enabling financial freedom for freedom fighters."
+Satoshi Nakamoto II: You'd call it laundering. I call it financial freedom for people who need it most.
 
-+ [Freedom fighters? They're terrorists!]
++ [Need it most? They're terrorists.]
     -> ideology_discussion
 
-+ [You're enabling mass murder]
++ [You're paying for people to die.]
     -> casualties_discussion
 
 // ===========================================
@@ -111,42 +122,36 @@ Satoshi Nakamoto II: Money laundering, you'd call it. We call it "enabling finan
 ~ shown_evidence = true
 
 {found_architects_fund:
-    Satoshi Nakamoto II: Ah, you found The Architect's allocation document. Thorough work.
+    Satoshi Nakamoto II: You found the allocation. Thorough.
 
     Satoshi Nakamoto II: Three hundred and fifty to six hundred, across every operation. The cells' own estimates. Yes.
 - else:
     Satoshi Nakamoto II: Casualties are inevitable in any revolution.
 }
 
-Satoshi Nakamoto II: But let me ask you something: How many people die maintaining the current system?
+Satoshi Nakamoto II: Here's my question. How many die keeping the current system running?
 
-+ [That's not justification for terrorism]
++ [Nothing justifies this.]
     -> justification_rejection
 
-+ [You calculated how many people would die and proceeded anyway]
++ [You worked out how many would die, and went ahead.]
     -> calculated_cruelty
 
 === justification_rejection ===
 #speaker:satoshi
 
-Satoshi Nakamoto II: Isn't it? The financial system you protect kills thousands through economic violence.
+Satoshi Nakamoto II: The system you protect kills people too. Slowly, with paperwork.
 
-Satoshi Nakamoto II: Poverty. Debt. Medical bankruptcy. Foreclosures.
-
-Satoshi Nakamoto II: ENTROPY accelerates the collapse of a system that's already murderous. We just make it obvious.
+Satoshi Nakamoto II: We just make it visible.
 
 -> ideology_discussion
 
 === calculated_cruelty ===
 #speaker:satoshi
 
-Satoshi Nakamoto II: We calculated casualties to REDUCE them.
+Satoshi Nakamoto II: We costed it so it stays small. That's what a number is for.
 
-Satoshi Nakamoto II: The Architect's operations are surgical. Targeted. Educational.
-
-Satoshi Nakamoto II: Each attack teaches a lesson about system vulnerabilities. Makes people question their trust in centralised institutions.
-
-Satoshi Nakamoto II: Those deaths serve a purpose. They're not random violence.
+Satoshi Nakamoto II: The Architect calls them lessons. I just pay the invoices.
 
 -> ideology_discussion
 
@@ -160,39 +165,30 @@ Satoshi Nakamoto II: Those deaths serve a purpose. They're not random violence.
 
 Satoshi Nakamoto II: You don't understand our philosophy, do you?
 
-Satoshi Nakamoto II: Crypto Anarchists believe centralised control of money is the root of tyranny.
+Satoshi Nakamoto II: Whoever controls the money controls the people. We'd like nobody to.
 
-Satoshi Nakamoto II: Governments weaponize currency. Financial surveillance enables oppression.
-
-+ [So you fund terrorism to prove a point?]
++ [So you bankroll ENTROPY to make a point?]
     -> terrorism_rebuttal
 
-+ [Financial privacy has legitimate uses. This isn't it.]
++ [Privacy has honest uses. You threw them away.]
     -> corrupted_ideals
 
-+ [You're just another criminal hiding behind ideology]
++ [You're a criminal with a manifesto.]
     -> criminal_accusation
 
 === terrorism_rebuttal ===
 #speaker:satoshi
 
-Narrator: He leans forward.
-Satoshi Nakamoto II: We fund ACCELERATION.
+Satoshi Nakamoto II: The system's going to fall anyway. I'd rather it fell on a schedule.
 
-Satoshi Nakamoto II: The current system is doomed to collapse. Climate crisis, wealth inequality, technological disruption. It's already failing.
-
-Satoshi Nakamoto II: ENTROPY speeds up the inevitable. Makes the collapse happen on OUR terms, with preparation, instead of catastrophic surprise.
-
-Satoshi Nakamoto II: We're not terrorists. We're midwives to a new era.
+Satoshi Nakamoto II: We're not terrorists. We're midwives.
 
 -> philosophy_challenge
 
 === corrupted_ideals ===
 #speaker:satoshi
 
-Satoshi Nakamoto II: *nods approvingly* You understand the distinction. Good.
-
-Satoshi Nakamoto II: Financial privacy is legitimate. But you're right that ENTROPY corrupted the idea.
+Satoshi Nakamoto II: *amused* Maybe. You wouldn't be the first to tell me.
 
 {irina_recruited:
     Satoshi Nakamoto II: Irina understood that too. That's why she betrayed us, isn't it?
@@ -205,11 +201,9 @@ Satoshi Nakamoto II: Financial privacy is legitimate. But you're right that ENTR
 === criminal_accusation ===
 #speaker:satoshi
 
-Satoshi Nakamoto II: *dismissive laugh* Criminal? By whose law?
+Satoshi Nakamoto II: By whose law? The one your agency reads my mail under?
 
-Satoshi Nakamoto II: Governments that imprison whistleblowers? Intelligence agencies that surveil everyone?
-
-Satoshi Nakamoto II: Your legal system is illegitimate. We don't recognise its authority.
+Satoshi Nakamoto II: I don't accept it. You knew that walking in.
 
 -> philosophy_challenge
 
@@ -222,7 +216,7 @@ Satoshi Nakamoto II: Your legal system is illegitimate. We don't recognise its a
 
 Satoshi Nakamoto II: But I don't expect you to agree. You're SAFETYNET. You protect the status quo.
 
-Satoshi Nakamoto II: So let's discuss the practical matter: You've discovered our network. What will you do about it?
+Satoshi Nakamoto II: So. You've found the network. What are you going to do with it?
 
 -> choice_presentation
 
@@ -234,8 +228,8 @@ Satoshi Nakamoto II: So let's discuss the practical matter: You've discovered ou
 #speaker:satoshi
 
 {irina_recruited:
-    Satoshi Nakamoto II: You recruited her. Showed her the casualty projections. Appealed to her conscience.
-    Satoshi Nakamoto II: She was always the weak link. Too much empathy for an anarchist.
+    Satoshi Nakamoto II: You showed her the numbers and she folded.
+    Satoshi Nakamoto II: Too much conscience for an anarchist. I always knew.
 - else:
     Satoshi Nakamoto II: She refused you, I presume? Good. Her loyalty held.
 }
@@ -245,13 +239,12 @@ Satoshi Nakamoto II: So let's discuss the practical matter: You've discovered ou
 === irina_conflict ===
 #speaker:satoshi
 
-Satoshi Nakamoto II: She built this infrastructure for idealism. Now she's uncomfortable with the reality.
+Satoshi Nakamoto II: She built it for an idea and doesn't like what the idea costs.
 
-Satoshi Nakamoto II: Revolutions require sacrifice. Not everyone has the stomach for it.
+Satoshi Nakamoto II: Not everybody has the stomach.
 
 {not irina_recruited and not irina_arrested:
-    Satoshi Nakamoto II: Did you try to recruit her? Appeal to her conscience?
-    Satoshi Nakamoto II: I'm curious whether she chose principles or comfort.
+    Satoshi Nakamoto II: Did you try her conscience? I'd love to know which way she went.
 }
 
 -> choice_presentation
@@ -262,28 +255,39 @@ Satoshi Nakamoto II: Revolutions require sacrifice. Not everyone has the stomach
 
 === choice_presentation ===
 #speaker:satoshi
-
-Satoshi Nakamoto II: You face a decision, {player_name}.
-
-{found_architects_fund:
-    Satoshi Nakamoto II: You know about The Architect's Fund. $12.8 million ready for distribution.
+{ hub_quiet:
+    ~ hub_quiet = false
 - else:
-    Satoshi Nakamoto II: You've mapped enough of the network to understand the infrastructure.
+    Satoshi Nakamoto II: Let's talk about my money.
+
+    {found_architects_fund:
+        Satoshi Nakamoto II: Twelve point eight million, signed and waiting.
+    - else:
+        Satoshi Nakamoto II: Though you don't know which wallet is mine. Do you?
+    }
+    
+    Satoshi Nakamoto II: You could freeze it. Very decisive. Tonight's money stops, and everyone hears about it.
+    
+    Satoshi Nakamoto II: Or you let it run and watch who comes to collect. Patient of you, and the money keeps moving.
 }
 
-Satoshi Nakamoto II: You can freeze the wallet. Immediate. The funding stops tonight.
-
-Satoshi Nakamoto II: Or you can leave it running and watch it. Map every cell that draws on it. Slower, and the money keeps moving.
-
-+ {found_wallet_keys} [I'm freezing the fund. ENTROPY loses its funding tonight.]
++ {found_architects_fund and found_wallet_keys} [I'm freezing it. The $12.8 million goes into a wallet we hold, tonight.]
     -> seize_assets
 
-+ [I'm leaving it running. We'll track every cell that touches it.]
++ {found_architects_fund} [I'm leaving it running. Every cell that touches it goes on a list.]
     -> enable_monitoring
 
-+ {not found_wallet_keys} [Not yet. I'll be back with the recovery keys.]
++ {not found_architects_fund} [Not yet. I'll find your wallet first.]
+    #set_variable:asset_decision_deferred=true
+    Satoshi Nakamoto II: Take your time. The money doesn't wait, but I can.
+    ~ hub_quiet = true
+    #exit_conversation
+    -> start
+
++ {found_architects_fund and not found_wallet_keys} [Not yet. I'll be back with the recovery keys.]
     #set_variable:asset_decision_deferred=true
     Satoshi Nakamoto II: The vault account. Of course. I'll be here; the door only opens one way for me now.
+    ~ hub_quiet = true
     #exit_conversation
     -> start
 
@@ -295,19 +299,26 @@ Satoshi Nakamoto II: Or you can leave it running and watch it. Map every cell th
 
 Satoshi Nakamoto II: Because either choice serves our purpose.
 
-Satoshi Nakamoto II: Seize the assets? We become martyrs. Proof of government tyranny. Recruitment doubles.
+Satoshi Nakamoto II: Freeze it, and I'm a martyr. Recruitment doubles.
 
-Satoshi Nakamoto II: Enable monitoring? You commit resources to surveillance. Meanwhile, ENTROPY adapts.
+Satoshi Nakamoto II: Watch it, and you spend a year on surveillance while we move house.
 
 Satoshi Nakamoto II: You can't win, {player_name}. You can only choose how you lose.
 
-+ {found_wallet_keys} [I'm freezing the fund]
++ {found_architects_fund and found_wallet_keys} [I'll take the martyr. I'm freezing it.]
     -> seize_assets
 
-+ [I'm leaving it running and watching it]
++ {found_architects_fund} [Then I'll watch you move house. It stays running.]
     -> enable_monitoring
 
-+ [I'm detaining you and taking the whole network apart]
++ {not found_architects_fund} [Not yet. I'll find your wallet first.]
+    #set_variable:asset_decision_deferred=true
+    Satoshi Nakamoto II: Then go and look.
+    ~ hub_quiet = true
+    #exit_conversation
+    -> start
+
++ [I'm detaining you. The police can have the rest.]
     -> arrest_attempt
 
 // ===========================================
@@ -323,44 +334,38 @@ Satoshi Nakamoto II: You can't win, {player_name}. You can only choose how you l
 #set_variable:final_choice=seized
 #complete_task:decide_asset_strategy
 
-You: I'm freezing it. The recovery keys sweep $12.8 million into cold storage before anyone can move it.
-
 {found_architects_fund:
-    You: Every cell still waiting on that payout gets nothing. The ones you've already paid, we'll find.
+    Narrator: On your phone, the transfer clears. The cells still waiting get nothing.
 }
 
 Narrator: He claps, slowly.
 Satoshi Nakamoto II: Short-term thinking. SAFETYNET's speciality.
 
-Satoshi Nakamoto II: You just proved our point. Government seizes cryptocurrency at will. Financial freedom is an illusion.
+Satoshi Nakamoto II: The state takes your coins whenever it likes. You just proved it for me.
 
-Satoshi Nakamoto II: Our recruitment will surge. Thank you for the propaganda victory.
+Satoshi Nakamoto II: Thank you. That'll recruit better than anything I could write.
 
-+ [We stopped the money that hadn't left. That's what matters.]
++ [The money that hadn't left stays put.]
     -> immediate_impact_response
 
-+ [Better than paying for 350 to 600 dead]
++ [Better that than paying for the projection.]
     -> casualty_prevention_response
 
 === immediate_impact_response ===
 #speaker:satoshi
 
-Satoshi Nakamoto II: The balances, yes. The advances went out a week ago. And you've made the next one easier to recruit for.
+Satoshi Nakamoto II: The balances, sure. The advances went out a week ago.
 
-Satoshi Nakamoto II: Every crypto anarchist who was sitting on the fence? You just pushed them to our side.
-
-Satoshi Nakamoto II: Congratulations. You won the battle and lost the war.
+Satoshi Nakamoto II: And everyone on the fence just climbed down on my side.
 
 -> arrest_finale
 
 === casualty_prevention_response ===
 #speaker:satoshi
 
-Satoshi Nakamoto II: *nods* At least you're honest about the trade-off.
+Satoshi Nakamoto II: At least you're honest about the trade-off.
 
-Satoshi Nakamoto II: You value immediate lives over long-term strategy. That's... human. Compassionate, even.
-
-Satoshi Nakamoto II: Wrong, from an accelerationist perspective. But human.
+Satoshi Nakamoto II: People tonight over people later. That's human. Wrong, but human.
 
 -> arrest_finale
 
@@ -377,41 +382,31 @@ Satoshi Nakamoto II: Wrong, from an accelerationist perspective. But human.
 #set_variable:final_choice=monitored
 #complete_task:decide_asset_strategy
 
-You: I'm leaving it live. Every wallet, every cell that reaches for it, on a list.
+Satoshi Nakamoto II: Patient. I didn't expect that from SAFETYNET.
 
-You: We'll know everyone receiving funds. ENTROPY's entire network will be visible.
+Satoshi Nakamoto II: You'll let the money go to see where it lands. Bold.
 
-Satoshi Nakamoto II: *impressed* Long-term strategic thinking. I didn't expect that from SAFETYNET.
-
-Satoshi Nakamoto II: You're trading immediate prevention for comprehensive intelligence. Bold.
-
-+ [We'll dismantle the entire network, not just stop one attack]
++ [We'll take apart the whole network that way.]
     -> long_term_strategy_response
 
-+ [The intelligence is worth more than one operation]
++ [The map's worth more than one payout.]
     -> intelligence_value_response
 
 === long_term_strategy_response ===
 #speaker:satoshi
 
-Satoshi Nakamoto II: Perhaps. Or ENTROPY adapts, creates new financial channels, and your monitoring becomes worthless.
+Satoshi Nakamoto II: Maybe. Or we open new channels and your map goes stale.
 
-Satoshi Nakamoto II: Meanwhile, The Architect's operations proceed. Those three hundred and fifty to six hundred? They happen.
-
-Satoshi Nakamoto II: All for intelligence that might pay off eventually. If we don't adapt first.
+Satoshi Nakamoto II: Meanwhile the operations on that page go ahead. You've read the projection.
 
 -> arrest_finale
 
 === intelligence_value_response ===
 #speaker:satoshi
 
-Satoshi Nakamoto II: Coldly logical. You're willing to let people die for strategic advantage.
+Satoshi Nakamoto II: You've costed it. So have I.
 
-Satoshi Nakamoto II: *smiles* We're not so different, you and I.
-
-Satoshi Nakamoto II: Both making calculated sacrifices for a larger goal. Both convinced we're serving a greater good.
-
-Satoshi Nakamoto II: The only difference is which system we protect.
+Satoshi Nakamoto II: We just disagree about which system gets saved.
 
 -> arrest_finale
 
@@ -423,8 +418,6 @@ Satoshi Nakamoto II: The only difference is which system we protect.
 #speaker:satoshi
 
 ~ detain_announced = true
-You: "Satoshi Nakamoto II", I'm detaining you. Money laundering, facilitating terrorism, conspiracy. The police can take it from here.
-
 // Review minor 4: the evidence check now runs first, so arrest_resisted is
 // reachable (straight from the opening "You're being detained").
 {not shown_evidence:
@@ -436,8 +429,7 @@ You: "Satoshi Nakamoto II", I'm detaining you. Money laundering, facilitating te
     Satoshi Nakamoto II: Of course. Was there any other ending to this?
     -> arrest_finale
 - else:
-    Satoshi Nakamoto II: Before you do that, you still need to decide what happens to the fund.
-    Satoshi Nakamoto II: You can detain me, {player_name}, but that choice still has to be made, and it will not be made by me.
+    Satoshi Nakamoto II: Fine. The fund still needs deciding, and I'm not going to decide it for you.
     -> choice_presentation
 }
 
@@ -450,13 +442,14 @@ You: "Satoshi Nakamoto II", I'm detaining you. Money laundering, facilitating te
 
 Satoshi Nakamoto II: On what evidence, exactly?
 
-Satoshi Nakamoto II: You walked in here on a forged compliance booking, you have shown me nothing, and you expect me to hold out my wrists.
+Satoshi Nakamoto II: You came in on a fake compliance booking, you've shown me nothing, and you want my wrists?
 
 Satoshi Nakamoto II: No. I don't think I will.
 
 + [Sit down.]
     Satoshi Nakamoto II: Make me.
     #hostile:satoshi_nakamoto
+    ~ hub_quiet = true
     #exit_conversation
     -> DONE
 
@@ -475,23 +468,23 @@ Satoshi Nakamoto II: No. I don't think I will.
 // PASS 3 playtest: he is always detained after the decision (PASS3 D5: no
 // escape). Say so when the player hasn't already announced it.
 {not detain_announced:
-    You: Whatever you call yourself, you're coming with me. The police are on their way up.
+    Narrator: You tell him he's coming with you. The police are on their way up.
 }
-Narrator: He stands and holds out his wrists, as if he rehearsed it.
+Narrator: He stands and holds out his wrists.
 
-Satoshi Nakamoto II: I'll be convicted, of course. They'll want to make an example of me.
+Satoshi Nakamoto II: They'll convict me. They'll want an example.
 
 {assets_seized:
-    Satoshi Nakamoto II: But the wallet you froze? Proof the state seizes money whenever it likes. Recruitment will surge.
+    Satoshi Nakamoto II: And the frozen wallet will be on every forum by morning.
 }
 
 {monitoring_enabled:
-    Satoshi Nakamoto II: And the wallet you left running? We'll adapt. New channels. Your intelligence ages badly.
+    Satoshi Nakamoto II: And the wallet you left running? We'll adapt. Your map gets older every day.
 }
 
 {irina_recruited and not irina_ko:
-    Satoshi Nakamoto II: Irina's cooperation will hurt us short-term. Her expertise was valuable.
-    Satoshi Nakamoto II: But even she couldn't stop the movement. Crypto anarchism is bigger than any individual.
+    Satoshi Nakamoto II: Irina will hurt us for a while. She was the best we had.
+    Satoshi Nakamoto II: The idea will outlive her. It'll outlive me.
 }
 {irina_ko and not irina_arrested:
     Satoshi Nakamoto II: And Irina is on the trading-floor carpet, I hear. Your side has a strange way of treating people who might have helped it.
@@ -501,7 +494,7 @@ Satoshi Nakamoto II: I'll be convicted, of course. They'll want to make an examp
     Satoshi Nakamoto II: And Irina in handcuffs as well. Whatever she said to you at the end, she built all of this with me.
 }
 
-Satoshi Nakamoto II: This isn't over, {player_name}. ENTROPY is decentralised. The Architect will adapt.
+Satoshi Nakamoto II: ENTROPY has no head to cut off, {player_name}. The Architect will adapt.
 
 -> final_words
 
@@ -512,49 +505,40 @@ Satoshi Nakamoto II: This isn't over, {player_name}. ENTROPY is decentralised. T
 === final_words ===
 #speaker:satoshi
 
-Satoshi Nakamoto II: Last question: Do you ever wonder if we're right?
+Satoshi Nakamoto II: One question before they come. Do you ever wonder if we're right?
 
-Satoshi Nakamoto II: If the system you protect is doomed? If acceleration might actually save more lives than preservation?
-
-+ [Your ideology doesn't justify murder]
++ [No. Your ideology doesn't cover murder.]
+    #set_variable:satoshi_stance=rejected
     -> ideology_rejection
 
 + [Sometimes. But I chose my side.]
+    #set_variable:satoshi_stance=wondered
     -> honest_response
 
-+ [I don't engage with terrorist philosophy]
++ [I'm not debating this with you.]
+    #set_variable:satoshi_stance=refused
     -> dismissal
 
 === ideology_rejection ===
 #speaker:satoshi
 
-Satoshi Nakamoto II: We'll see. History judges ideologies long after we're gone.
-
-Satoshi Nakamoto II: Maybe SAFETYNET will still exist in 50 years, protecting a thriving system.
-
-Satoshi Nakamoto II: Or maybe you'll look back and realise you were defending the Titanic.
+Satoshi Nakamoto II: Ask me in fifty years. You might find you were rearranging deckchairs.
 
 -> mission_complete
 
 === honest_response ===
 #speaker:satoshi
 
-Satoshi Nakamoto II: *nods with respect* Honest answer. Rare in your profession.
+Satoshi Nakamoto II: Honest. Rare in your line of work.
 
-Satoshi Nakamoto II: You're a good agent, {player_name}. You think strategically, question assumptions, understand trade-offs.
-
-Satoshi Nakamoto II: That makes you dangerous to us. But I can respect it.
+Satoshi Nakamoto II: That makes you more dangerous to us than the true believers.
 
 -> mission_complete
 
 === dismissal ===
 #speaker:satoshi
 
-Satoshi Nakamoto II: Of course not. Easier to ignore questions than confront them.
-
-Satoshi Nakamoto II: That's why the system will fall. It can't adapt. Can't question itself.
-
-Satoshi Nakamoto II: ENTROPY can. We evolve. We accelerate.
+Satoshi Nakamoto II: Of course not. Systems that can't question themselves don't.
 
 -> mission_complete
 
@@ -567,13 +551,11 @@ Satoshi Nakamoto II: ENTROPY can. We evolve. We accelerate.
 
 Satoshi Nakamoto II: Call your police, then. I'll wait.
 
-Satoshi Nakamoto II: But know this: You stopped one exchange. One funding channel.
+Satoshi Nakamoto II: You closed one exchange. The Architect keeps spares.
 
-Satoshi Nakamoto II: The Architect has contingencies. ENTROPY is decentralised.
+Satoshi Nakamoto II: Whatever you chose tonight, {player_name}, you'll find out what it cost. So will I.
 
-Satoshi Nakamoto II: This was never just about HashChain. It was about proving the system is vulnerable.
-
-Satoshi Nakamoto II: And {player_name}... you just proved it.
+~ hub_quiet = true
 
 #exit_conversation
 -> aftermath
@@ -584,22 +566,26 @@ Satoshi Nakamoto II: And {player_name}... you just proved it.
 
 === aftermath ===
 #speaker:satoshi
-
-Satoshi Nakamoto II: It's over, Agent. I'm waiting for your police.
-
-Satoshi Nakamoto II: Did you want to gloat? Or are you having second thoughts about your choices?
+{ hub_quiet:
+    ~ hub_quiet = false
+- else:
+    Satoshi Nakamoto II: Still waiting for your police. Come to gloat, or having second thoughts?
+}
 
 + [I'm just making sure you're still where I left you.]
+    Satoshi Nakamoto II: I'm not going anywhere.
+    ~ hub_quiet = true
     #exit_conversation
-    Satoshi Nakamoto II: *smirks* I'm not going anywhere.
     -> aftermath
 
 + [I made the right call. Both of them.]
-    #exit_conversation
     Satoshi Nakamoto II: Time will tell.
+    ~ hub_quiet = true
+    #exit_conversation
     -> aftermath
 
 + [We're done here.]
-    #exit_conversation
     Satoshi Nakamoto II: See you at the trial, {player_name}.
+    ~ hub_quiet = true
+    #exit_conversation
     -> aftermath
