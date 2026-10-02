@@ -4,7 +4,7 @@ How Break Escape's characters talk, written down so they sound like the same peo
 
 Read a character's entry before you write or edit a line for them. The craft rules that apply to everyone (line length, choices, subtext, words to avoid) are in the [dialogue style guide](../09_scenario_design/dialogue_style.md). The character files in this folder hold background and history; where their speech notes disagree with this bible, this bible wins, because it is based on what the game actually says.
 
-Sources: the ink in `scenarios/m01_*` to `m08_*`, the `voice` blocks in each `scenario.json.erb` (as of 2 October 2026), the character files in this folder, and the pass-3 voice audit (`docs/agents/PASS3_VOICE_AUDIT.md`). Where a character has drifted between missions, the entry says what changed and which version this bible adopts. The rule of thumb is m01 and m02, which are the most finished and have their audio cached.
+Sources: the ink in `scenarios/m01_*` to `m08_*`, the `voice` blocks in each `scenario.json.erb` (as of 2 October 2026), the character files in this folder, and the pass-3 voice audit (`docs/agents/PASS3_VOICE_AUDIT.md`). Where a character has drifted between missions, the entry says what changed and which version this bible adopts. The rule of thumb is m01 and m02, which are the most finished; m01's audio is cached, and m02's is regenerated after pass 4.
 
 Recurring characters covered: Agent HaX, Director Netherton, Nightshade, the Architect, the Narrator and the player. Dr Chen, Agent 0x42 and the other ENTROPY masterminds have canon files but don't yet speak in m01–m08; they have a short section of their own.
 
@@ -17,7 +17,7 @@ A recurring character's `style` has two parts:
 - **Identity**: the accent guard, pitch and core manner. This must be word for word the same in every mission, so the character sounds like one person.
 - **Scene**: a sentence or two about the situation in this mission ("speaking over a secure phone line", "tonight the dryness keeps slipping"). This may change.
 
-Costs: the TTS cache key is the line's text plus name, style and language. Changing any of those for a character discards every cached line for that character in that mission. m01 and m02 have large caches, so their voice blocks are frozen. For m03–m08, audio is generated after pass 4, so voice blocks can still be fixed.
+Costs: the TTS cache key is the line's text plus name, style and language. Changing any of those for a character discards every cached line for that character in that mission. m01 has a large cache, so its voice blocks are frozen. For m02–m08, audio is generated after pass 4, so voice blocks can still be fixed (m02's were left as they are).
 
 Two rules from the pass-3 audit:
 
@@ -100,7 +100,7 @@ The full voice settings for each recurring character are listed in their entry, 
 
 **Example lines.**
 
-> Director Magnus Netherton: Agent 0x00. Magnus Netherton -- I run this shop. We have not met, and I would rather it were under better circumstances, but circumstances are rather the point tonight. (`m02_opening_briefing.ink:31`)
+> Director Magnus Netherton: Agent 0x00. Magnus Netherton -- I run this shop. I would rather we had met under better circumstances, but circumstances are rather the point tonight. (`m02_opening_briefing.ink:31`)
 
 > Director Magnus Netherton: I am not going to qualify that. You did the thing. It is done. (`m07_closing_debrief.ink:84`)
 
@@ -261,7 +261,7 @@ One line each, so that writers can keep a mission's cast distinct and don't reus
 | Maya Chen (`maya_chen`) | Leda (en-US) | Chinese-American (California) | Frightened informant; short, hushed, checks the door. |
 | Derek Lawson (`derek_lawson`) | Algieba | RP | Smooth zealot; long, calm justifications, "education" not murder. |
 
-### m02 Ransomed Trust (frozen, audio cached)
+### m02 Ransomed Trust (dialogue revised in pass 4; audio regenerated after it)
 
 | Character (id) | Voice | Accent | Talks like |
 |---|---|---|---|
