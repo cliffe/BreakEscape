@@ -247,7 +247,7 @@ def check_unknown_fields(json_data)
   known_top_level = %w[
     scenario_id scenario_name scenario_brief endGoal version startRoom startPosition
     show_scenario_brief flags music startItemsInInventory globalVariables
-    player objectives rooms npcs phoneNPCs narrator timers _comment
+    player objectives rooms npcs phoneNPCs narrator timers _comment mutuallyExclusiveGlobals
   ]
 
   # Check top-level unknown fields
@@ -916,6 +916,10 @@ def check_objectives_wiring(json_data, base_dir)
         next unless lock_type  # Unlocked objects can only be targeted via other mechanisms.
 
         next if all_unlock_emitting_types.include?(lock_type)
+        # A 'flag' lock only has its `locked` flag cleared by the flag reward; the player's next click
+        # on a container goes through handleUnlock -> unlockTarget, which emits item_unlocked for any
+        # object with `contents` (m07 crisis_control_system, m01 entropy_encrypted_archive).
+        next if lock_type == 'flag' && obj['contents'].is_a?(Array) && !obj['contents'].empty?
 
         issues << "⚠️ WARNING: #{task_path} is type 'unlock_object' targeting '#{target_id}' " \
                   "(lockType: '#{lock_type}'). This lockType is not in the known set of types that emit " \
@@ -1021,6 +1025,27 @@ def check_objectives_wiring(json_data, base_dir)
     end
     json_data['startItemsInInventory']&.each { |item| scan_event_mappings.call(item['eventMappings']) }
 
+    # Phone NPCs whose eventMapping fires on 'npc_ko:<id>' open a phone conversation after that
+    # NPC is knocked out. A '#complete_task:' tag in such a phone NPC's ink is a KO fallback for
+    # the knocked-out NPC (m06 Satoshi, m05 Patricia), so remember the ink per KO'd NPC id.
+    ko_phone_ink = Hash.new { |h, k| h[k] = [] }
+    json_data['rooms']&.each do |_room_id, room|
+      room['npcs']&.each do |npc|
+        next unless npc['npcType'] == 'phone' && npc['storyPath']
+        ko_ids = Array(npc['eventMappings']).map { |m| m.is_a?(Hash) && m['eventPattern'].to_s[/\Anpc_ko:(.+)\z/, 1] }.compact
+        next if ko_ids.empty?
+        ink_text = nil
+        [npc['storyPath'].sub(/\.json$/, '.ink'), npc['storyPath'].sub(/\.ink$/, '.json')].each do |rel|
+          full = File.join(base_dir, rel)
+          if File.exist?(full)
+            ink_text = File.read(full)
+            break
+          end
+        end
+        ko_ids.each { |kid| ko_phone_ink[kid] << ink_text } if ink_text
+      end
+    end
+
     # Required (non-optional) tasks and their types.
     required_task_types = {}
     json_data['objectives']&.each do |aim|
@@ -1109,6 +1134,8 @@ def check_objectives_wiring(json_data, base_dir)
       next if event_completed_tasks.include?(tid)          # eventMapping fallback exists
       next if taskonko_tasks.include?(tid)                 # some NPC's taskOnKO covers it
       next if sources.any? { |s| s[:taskonko_match] }      # a completing NPC has taskOnKO for it
+      # every completing NPC has a KO-triggered phone conversation whose ink also completes the task
+      next if sources.all? { |s| ko_phone_ink[s[:npc_id]].any? { |c| c.include?("complete_task:#{tid}") } }
 
       npc_list = sources.map { |s| s[:npc_id] }.compact.uniq.join(', ')
       whom = sources.size == 1 ? 'that NPC' : 'those NPCs'
@@ -1216,6 +1243,20 @@ def check_objectives_wiring(json_data, base_dir)
       declared.is_a?(Array) ? declared.select { |s| s.is_a?(Array) && s.size > 1 } : []
     end
 
+    # `data.<field> === 'literal'` terms of a condition, as { field => literal }.
+    data_equalities = lambda do |cond|
+      next {} unless cond
+      cond.split('&&').each_with_object({}) do |part, h|
+        m = part.strip.match(/\Adata\.(\w+)\s*===\s*(['"])(.*)\2\z/m)
+        h[m[1]] = m[3] if m
+      end
+    end
+    data_disjoint = lambda do |c1, c2|
+      e1 = data_equalities.call(c1)
+      e2 = data_equalities.call(c2)
+      e1.any? { |k, v| e2.key?(k) && e2[k] != v }
+    end
+
     # Returns the set of indices (within `handlers`) that would newly become live
     # under the per-handler fix but are dominated (blocked) by an earlier handler
     # under some reachable variable assignment — i.e. two+ handlers can pass at once.
@@ -1244,7 +1285,12 @@ def check_objectives_wiring(json_data, base_dir)
           end
         end
         passing = handlers.select { |h| eval_condition.call(h[:condition], env) }
-        overlapping.merge(passing.map { |h| h[:idx] }) if passing.size > 1
+        # Handlers that test the same event field against different literals
+        # (data.itemId === 'a' vs 'b') cannot both pass for one event.
+        passing.combination(2).each do |x, y|
+          next if data_disjoint.call(x[:condition], y[:condition])
+          overlapping << x[:idx] << y[:idx]
+        end
       end
       overlapping
     end
@@ -1596,6 +1642,7 @@ def check_common_issues(json_data, valid_item_types = nil)
   has_opening_cutscene = false
   has_opening_briefing_timed_conversation = false
   has_closing_debrief = false
+  mission_ending_phone_candidates = []  # only reported when the mission has no event-driven closing debrief
   has_person_npcs = false
   has_npc_with_waypoints = false
   has_phone_contacts = false
@@ -1975,6 +2022,14 @@ def check_common_issues(json_data, valid_item_types = nil)
             obj['itemsHeld'].each_with_index do |item, item_idx|
               unless item['type']
                 issues << "❌ INVALID: '#{path}/itemsHeld[#{item_idx}]' has no 'type' field - #give_item matches on type."
+              end
+              # Flag-station rewards live in the station's itemsHeld; their graph edges count too.
+              if item['puzzle_graph_unlocks']
+                has_puzzle_graph_metadata = true
+                Array(item['puzzle_graph_unlocks']).each do |target|
+                  next if Array(obj['puzzle_graph_unlocks']).include?(target) # same route as the station itself
+                  puzzle_graph_unlock_targets << { target: target, path: "#{path}/itemsHeld[#{item_idx}]", optional: (item['puzzle_graph_optional'] == true) }
+                end
               end
             end
           end
@@ -2456,7 +2511,7 @@ def check_common_issues(json_data, valid_item_types = nil)
             m['sendTimedMessage']&.key?('targetKnot') || m['sendTimedMessage']&.key?('conversationMode')
           end
           if cutscene_event_mappings.any?
-            issues << "💡 BEST PRACTICE: '#{path}' appears to be a mission-ending phone NPC with sendTimedMessage. Consider using event-driven cutscene architecture instead: 1) Add #set_global:variable_name:true tag in Ink story, 2) Add #exit_conversation tag to close phone, 3) Create separate person NPC with eventMapping listening for global_variable_changed:variable_name. See scenarios/m01_first_contact/scenario.json.erb for reference implementation"
+            mission_ending_phone_candidates << "💡 BEST PRACTICE: '#{path}' appears to be a mission-ending phone NPC with sendTimedMessage. Consider using event-driven cutscene architecture instead: 1) Add #set_global:variable_name:true tag in Ink story, 2) Add #exit_conversation tag to close phone, 3) Create separate person NPC with eventMapping listening for global_variable_changed:variable_name. See scenarios/m01_first_contact/scenario.json.erb for reference implementation"
           end
         end
       end
@@ -2485,6 +2540,8 @@ def check_common_issues(json_data, valid_item_types = nil)
       break if has_closing_debrief
     end
   end
+
+  issues.concat(mission_ending_phone_candidates) unless has_closing_debrief
 
   # Check for orphaned global variable references
   orphaned_vars = global_variables_referenced - global_variables_defined
@@ -2872,6 +2929,257 @@ def check_recommended_fields(json_data)
   end
 
   warnings
+end
+
+# ============================================================================
+# RECURRING-BUG CHECKS (pass 4, October 2026)
+#
+# Each check below is a bug class that turned up in more than one mission's
+# pass-4 design review, dialogue review or playtest. README_scenario_design.md
+# ("Common bugs and how to avoid them") has the rule and an example of each.
+# All are WARNING or SUGGESTION: they point at something to look at, and a
+# deliberate design can stand. The ink-only classes (fall-through, blank
+# re-entry, popup placement, phone prefixes, exits with no reply, stage cues)
+# live in scripts/ink_runtime_check/dialoguelint.mjs instead.
+# ============================================================================
+
+# Engine-synced ink variables that are never scenario globals
+# (npc-conversation-state.js syncInventoryVariablesToStory, plus the bound externals).
+RECURRING_SYNCED_INK_VARS = %w[
+  has_keycard has_rfid_cloner card_protocol card_name card_card_id card_instant_clone
+  card_needs_attack card_uid_only player_name current_mission_id npc_location mission_phase
+  operational_stress_level equipment_status
+].freeze
+
+def recurring_norm_words(text)
+  text.to_s.downcase.gsub(/<%.*?%>/, ' ').gsub(/\*[^*]*\*/, ' ').scan(/[a-z0-9']+/)
+end
+
+def check_recurring_bugs(json_data, repo_root)
+  issues = []
+  rooms = json_data['rooms'].is_a?(Hash) ? json_data['rooms'] : {}
+  globals = (json_data['globalVariables'] || {}).keys.to_set
+  public_dir = File.join(repo_root, 'public/break_escape')
+
+  all_npcs = []
+  rooms.each do |rid, room|
+    Array(room['npcs']).each_with_index do |npc, i|
+      all_npcs << [rid, i, npc] if npc.is_a?(Hash)
+    end
+  end
+
+  # --- 1. lockpick_used_in_view mappings that can never fire (m02 Val, Bernie) -----------------
+  # The only emitter is the catch gate (lockpick-catch.js), which looks only at person NPCs in the
+  # player's room or the lock's room, and only at mappings with conversationMode 'person-chat'
+  # (npc-manager.js shouldInterruptLockpickingWithPersonChat).
+  neighbours = Hash.new { |h, k| h[k] = Set.new }
+  rooms.each do |rid, room|
+    (room['connections'] || {}).each_value do |v|
+      Array(v).each do |other|
+        next unless other.is_a?(String)
+        neighbours[rid] << other
+        neighbours[other] << rid
+      end
+    end
+  end
+  key_locked_object = lambda do |list|
+    Array(list).any? do |o|
+      next false unless o.is_a?(Hash)
+      (o['locked'] == true && o['lockType'] == 'key') || key_locked_object.call(o['contents'])
+    end
+  end
+  room_key_locked = ->(rid) { r = rooms[rid]; r.is_a?(Hash) && r['locked'] == true && r['lockType'] == 'key' }
+
+  all_npcs.each do |rid, i, npc|
+    Array(npc['eventMappings']).each_with_index do |m, mi|
+      next unless m.is_a?(Hash) && m['eventPattern'] == 'lockpick_used_in_view'
+      mpath = "rooms/#{rid}/npcs[#{i}]/eventMappings[#{mi}]"
+      if npc['npcType'] != 'person'
+        issues << "⚠️ WARNING: '#{mpath}' is a lockpick_used_in_view catch on a #{npc['npcType'] || 'non-person'} NPC. " \
+                  "Only person NPCs can see a pick (npc-manager.js), so it never fires. Move it to the watching person NPC."
+      elsif m['conversationMode'] != 'person-chat'
+        issues << "⚠️ WARNING: '#{mpath}' is a lockpick_used_in_view catch without \"conversationMode\": \"person-chat\". " \
+                  "The catch gate only looks at person-chat mappings (npc-manager.js shouldInterruptLockpickingWithPersonChat), " \
+                  "and nothing else emits the event, so a bark or setGlobal here never fires (m02 Bernie). Add the person-chat " \
+                  "conversation, or drop the mapping."
+      else
+        can_fire = key_locked_object.call(rooms[rid]['objects']) || room_key_locked.call(rid) ||
+                   neighbours[rid].any? { |n| room_key_locked.call(n) }
+        unless can_fire
+          issues << "⚠️ WARNING: '#{mpath}' (#{npc['id']}) is a lockpick_used_in_view catch, but room '#{rid}' has no " \
+                    "pickable lock: no key-locked container in it, it isn't key-locked itself, and no neighbouring room is " \
+                    "key-locked. The catch can only fire in the player's room or the lock's room, so it never fires (m02 Val " \
+                    "before the fix). Put the NPC where the pick happens, or give the room a key lock."
+        end
+      end
+    end
+  end
+
+  # --- 2. opening cutscene that doesn't wait for the game to load (m04) ----------------------------
+  start_room = json_data['startRoom']
+  if start_room && rooms[start_room]
+    Array(rooms[start_room]['npcs']).each_with_index do |npc, i|
+      tc = npc.is_a?(Hash) ? npc['timedConversation'] : nil
+      next unless tc.is_a?(Hash) && (tc['waitForEvent'].nil? || tc['waitForEvent'].to_s.empty?)
+      issues << "⚠️ WARNING: 'rooms/#{start_room}/npcs[#{i}]' (#{npc['id']}) has a start-room timedConversation with no " \
+                "waitForEvent, so it fires on the first timer tick while the game is still loading (the title screen and " \
+                "Mission Brief can land on top of it; m04). Add \"waitForEvent\": \"game_loaded\" as m01-m03 do."
+    end
+  end
+
+  # --- 3. an NPC-held note whose onRead/onPickup sets a gating global (m05 vetting files) -----------
+  # A handed-over note fires its onRead at once (npc-game-bridge.js _receiveNote), and a KO drop
+  # fires it on pickup: the global means "received", not "read".
+  dump = JSON.generate(json_data)
+  objectives_dump = JSON.generate(json_data['objectives'] || [])
+  all_npcs.each do |rid, i, npc|
+    Array(npc['itemsHeld']).each_with_index do |item, ii|
+      next unless item.is_a?(Hash)
+      %w[onRead onPickup].each do |hook|
+        vars = item.dig(hook, 'setVariable')
+        next unless vars.is_a?(Hash)
+        vars.each_key do |var|
+          gates = dump.include?("global_variable_changed:#{var}") || dump =~ /globalVars\.#{Regexp.escape(var)}\b/ ||
+                  objectives_dump =~ /\b#{Regexp.escape(var)}\b/
+          next unless gates
+          issues << "💡 SUGGESTION: 'rooms/#{rid}/npcs[#{i}]/itemsHeld[#{ii}]' (#{item['name'] || item['id']}) sets " \
+                    "'#{var}' in #{hook}, and '#{var}' drives a mapping, condition or objective. An NPC's note fires " \
+                    "#{hook} the moment it is handed over or picked up after a KO (npc-game-bridge.js), so '#{var}' means " \
+                    "\"received\", not \"read\" (m05 vetting files). Fine if that's the intent; otherwise gate on a later step."
+        end
+      end
+    end
+  end
+
+  # --- 4. sprites: missing files, legacy sheets, missing talk/viseme art (m04 Vance, m05, m06 Satoshi)
+  game_js = File.join(public_dir, 'js/core/game.js')
+  loaded_sheets = File.exist?(game_js) ? File.read(game_js).scan(/this\.load\.(?:atlas|spritesheet)\(\s*'([^']+)'/).flatten.to_set : nil
+  legacy_talk = { 'hacker' => 'assets/characters/hacker-talk.png', 'hacker-red' => 'assets/characters/hacker-red-talk.png' }
+  asset_exists = ->(rel) { rel.is_a?(String) && File.exist?(File.join(public_dir, rel)) }
+  all_npcs.each do |rid, i, npc|
+    next if npc['npcType'] == 'phone'
+    path = "rooms/#{rid}/npcs[#{i}]"
+    sheet = npc['spriteSheet']
+    if sheet && loaded_sheets && !loaded_sheets.include?(sheet)
+      issues << "⚠️ WARNING: '#{path}' (#{npc['id']}) uses spriteSheet '#{sheet}', which game.js never loads " \
+                "(no this.load.atlas/spritesheet for it). The NPC renders as a missing texture. Use a loaded sheet or add it to game.js."
+    end
+    %w[spriteTalk spriteVisemes avatar].each do |field|
+      val = npc[field]
+      next unless val.is_a?(String) && !val.empty?
+      next if asset_exists.call(val)
+      issues << "⚠️ WARNING: '#{path}' (#{npc['id']}) #{field} '#{val}' does not exist under public/break_escape/."
+    end
+    next unless sheet
+    if !npc['spriteTalk']
+      derived = legacy_talk[sheet] || "assets/characters/#{sheet}_talk.png"
+      unless asset_exists.call(derived)
+        issues << "⚠️ WARNING: '#{path}' (#{npc['id']}) has no spriteTalk and the derived portrait '#{derived}' doesn't " \
+                  "exist, so person-chat shows no face for them. Set spriteTalk to an existing *_talk.png."
+      end
+    end
+    if legacy_talk.key?(sheet)
+      issues << "💡 SUGGESTION: '#{path}' (#{npc['id']}) uses the legacy '#{sheet}' sheet: a generic hooded figure with no " \
+                "headshot or lip-sync. Give a speaking character a v2 sheet with talk, viseme and headshot art (m04 Vance, m05 recast)."
+    elsif !npc['spriteVisemes']
+      base = sheet.sub(/_v2\z/, '')
+      cand = ["assets/characters/#{sheet}_visemes.png", "assets/characters/#{base}_visemes.png"].find { |c| asset_exists.call(c) }
+      if cand
+        issues << "💡 SUGGESTION: '#{path}' (#{npc['id']}) has no spriteVisemes, but '#{cand}' exists for its sheet. " \
+                  "Add \"spriteVisemes\": \"#{cand}\" so their portrait lip-syncs."
+      end
+    end
+  end
+
+  # --- 5. different characters sharing one sprite sheet (m04 guard/operatives, m08 Phantom/Netherton)
+  player = json_data['player'].is_a?(Hash) ? json_data['player'] : {}
+  by_sheet = Hash.new { |h, k| h[k] = [] }
+  by_sheet[player['spriteSheet']] << [player['displayName'] || 'the player', 'player'] if player['spriteSheet']
+  all_npcs.each do |_rid, _i, npc|
+    next if npc['npcType'] == 'phone' || !npc['spriteSheet']
+    by_sheet[npc['spriteSheet']] << [npc['displayName'] || npc['id'], npc['id']]
+  end
+  by_sheet.each do |sheet, list|
+    names = list.map { |n, _| n.to_s.strip.downcase }.uniq
+    next if names.size < 2
+    who = list.map { |n, id| "#{n} (#{id})" }.uniq.join(', ')
+    issues << "💡 SUGGESTION: spriteSheet '#{sheet}' is shared by different characters: #{who}. On screen and in the " \
+              "portrait they look like the same person. Fine for a uniformed crew; otherwise give each their own sheet " \
+              "(m04 gate guard vs operatives, m08 Phantom vs Netherton)."
+  end
+
+  # --- 6. two pinned objects inside one interaction range of each other (m06 rack sheet / flag station)
+  rooms.each do |rid, room|
+    pinned = Array(room['objects']).each_with_index.select do |o, _|
+      o.is_a?(Hash) && o['position'].is_a?(Hash) && o['position']['x'].is_a?(Numeric) && o['position']['y'].is_a?(Numeric)
+    end
+    pinned.combination(2).each do |(a, ai), (b, bi)|
+      dx = (a['position']['x'] - b['position']['x']) * 32.0
+      dy = (a['position']['y'] - b['position']['y']) * 32.0
+      dist = Math.sqrt(dx * dx + dy * dy)
+      next if dist >= 32.0
+      issues << "⚠️ WARNING: rooms/#{rid}: objects[#{ai}] '#{a['name'] || a['id']}' and objects[#{bi}] '#{b['name'] || b['id']}' " \
+                "are pinned #{dist.round} px apart, inside the 32 px interaction range (constants.js INTERACTION_RANGE), so " \
+                "one click can open the other. Move them at least a tile apart. (Objects placed by Tiled slots aren't " \
+                "checked here; walk up to each one in a playtest.)"
+    end
+  end
+
+  # --- 7-9. ink cross-checks: timed text repeated in the ink, dead VARs, undeclared set_global ------
+  seen_ink = {}
+  all_npcs.each do |rid, i, npc|
+    sp = npc['storyPath']
+    next unless sp.is_a?(String)
+    ink_path = File.join(repo_root, sp.sub(/\.json\z/, '.ink'))
+    next unless File.exist?(ink_path)
+    code_lines = File.readlines(ink_path).reject { |l| l.strip.start_with?('//') }
+    code = code_lines.join
+
+    # 7. a bark/timed text repeated as the first line of the conversation it opens (m07 Architect)
+    messages = []
+    Array(npc['timedMessages']).each { |t| messages << t['message'] if t.is_a?(Hash) }
+    Array(npc['eventMappings']).each { |m| messages << m.dig('sendTimedMessage', 'message') if m.is_a?(Hash) && m['sendTimedMessage'].is_a?(Hash) }
+    spoken = code_lines.map(&:strip).reject { |l| l.empty? || l =~ /\A(?:[#~=*+{}\-<]|->|VAR |CONST |EXTERNAL |INCLUDE )/ }
+                       .map { |l| l.sub(/\A[A-Z][\w.'’() ]{0,40}:\s+/, '') }
+    messages.compact.uniq.each do |msg|
+      mw = recurring_norm_words(msg)
+      next if mw.size < 4
+      hit = spoken.find do |l|
+        lw = recurring_norm_words(l)
+        lw.size >= mw.size && lw.first(mw.size) == mw
+      end
+      next unless hit
+      issues << "⚠️ WARNING: rooms/#{rid}/npcs[#{i}] (#{npc['id']}): the timed text \"#{msg.to_s[0, 70]}\" is repeated at the start " \
+                "of a line in #{sp.sub(/\.json\z/, '.ink')} (\"#{hit[0, 70]}\"). The bark shows first and the chat opens on " \
+                "the same words (m07 Architect). Make the bark a teaser, or start the line somewhere else."
+    end
+
+    next if seen_ink[ink_path]
+    seen_ink[ink_path] = true
+    rel = sp.sub(/\.json\z/, '.ink')
+
+    # 8. a VAR the ink reads but nothing ever sets: its condition is dead (m06 recruitment_accepted)
+    code.scan(/^\s*VAR\s+(\w+)\s*=\s*(.+?)\s*$/).each do |var, default|
+      next if globals.include?(var) || RECURRING_SYNCED_INK_VARS.include?(var)
+      next unless ['false', '0', '""'].include?(default.strip)
+      assigned = code =~ /~\s*#{var}\s*(?:=|\+\+|--|\+=|-=)/ || code =~ /#\s*set_(?:variable|global):#{var}\b/
+      next if assigned
+      reads = code.scan(/\b#{var}\b/).size - 1
+      next if reads < 1
+      issues << "⚠️ WARNING: '#{rel}': VAR #{var} is read but never set (no '~ #{var} = …', and no scenario global of " \
+                "that name to sync in), so every condition on it is fixed at #{default.strip}. Set it where it should " \
+                "change, or test the variable that actually changes."
+    end
+
+    # 9. #set_global for a global the scenario never declares (typo, or missing from globalVariables)
+    code.scan(/#\s*set_global:(\w+)/).flatten.uniq.each do |var|
+      next if globals.include?(var)
+      issues << "⚠️ WARNING: '#{rel}' sets global '#{var}' (#set_global), but '#{var}' is not in scenario.globalVariables. " \
+                "Declare it (with its starting value) so it saves, syncs into other inks and can drive mappings, or fix the name."
+    end
+  end
+
+  issues
 end
 
 # ============================================================================
@@ -3477,6 +3785,7 @@ def main
     common_issues = check_common_issues(json_data, valid_item_types)
     common_issues += check_lock_credentials(json_data)
     common_issues += check_engine_limits(json_data)
+    common_issues += check_recurring_bugs(json_data, repo_root)
 
     # Check for recommended fields
     puts "Checking recommended fields..."

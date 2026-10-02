@@ -408,7 +408,15 @@
       "netexploit_guide_requested": false,
       "rfid_guide_requested": false,
       "recon_guide_requested": false,
-      "cyberchef_guide_requested": false
+      "cyberchef_guide_requested": false,
+      "proftpd_guide_requested": false,
+      "guard_told_safetynet": false,
+      "guard_bribed": false,
+      "called_it_murder": false,
+      "directive_decoded": false,
+      "revelation_heard": false,
+      "exec_wing_entered": false,
+      "guard_challenged": false
     },
     "npcs": [
       {
@@ -469,12 +477,20 @@
         "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_danny_choice.json",
         "currentKnot": "start",
         "room": "danny_office"
+      },
+      {
+        "id": "night_transition",
+        "npcType": "person",
+        "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_night_transition.json",
+        "currentKnot": "start",
+        "room": "reception_lobby"
       }
     ]
   },
   "m04_critical_failure": {
     "globals": {
       "player_name": "Agent 0x00",
+      "all_flags_in": false,
       "briefing_played": false,
       "mission_started": false,
       "agent_0x99_contacted": false,
@@ -495,6 +511,11 @@
       "plant_reader_seen": false,
       "fingerprint_kit_found": false,
       "vance_print_collected": false,
+      "vance_card_cloned": false,
+      "relay_card_cloned": false,
+      "cipher_walked": false,
+      "cell_alerted": false,
+      "voltage_print_on_bypass": false,
       "flag_network_scan_submitted": false,
       "flag_ftp_intel_submitted": false,
       "flag_privesc_submitted": false,
@@ -534,6 +555,8 @@
       "cyberchef_guide_hint_given": false,
       "privesc_guide_offered": false,
       "privesc_guide_hint_given": false,
+      "proftpd_guide_offered": false,
+      "proftpd_guide_hint_given": false,
       "server_room_reached": false,
       "attack_mechanism_known": false,
       "voltage_priority_discussed": false,
@@ -633,6 +656,16 @@
   },
   "m05_insider_trading": {
     "globals": {
+      "found_halloran_vetting": false,
+      "door_log_reasoned": false,
+      "it_notice_read": false,
+      "rfid_guide_offered": false,
+      "rfid_guide_hint_given": false,
+      "torres_suspected": false,
+      "found_door_log": false,
+      "found_halloran_alibi": false,
+      "halloran_questioned": false,
+      "halloran_accused": false,
       "briefing_played": false,
       "player_name": "Agent 0x00",
       "player_approach": "",
@@ -794,6 +827,12 @@
   },
   "m06_follow_the_money": {
     "globals": {
+      "irina_confirmed_slot": false,
+      "read_settlement_log": false,
+      "entered_data_center": false,
+      "satoshi_stance": "",
+      "trader_heard_out": false,
+      "analyst_walked_through": false,
       "player_name": "Agent 0x00",
       "briefing_played": false,
       "start_debrief_cutscene": false,
@@ -937,6 +976,11 @@
       "architect_signoff_done": false,
       "architect_contact": false,
       "flags_nag_sent": false,
+      "debrief_requested": false,
+      "debrief_timer_fired": false,
+      "architect_echo_heard": false,
+      "hurt_line_said": false,
+      "elena_met": false,
       "team_assignment": "",
       "team_assigned": false,
       "projection_revised": false,
@@ -1129,7 +1173,11 @@
       "hax_ko": false,
       "hax_person_met": false,
       "netherton_card_taken": false,
-      "debrief_backstop_fired": false
+      "debrief_backstop_fired": false,
+      "netherton_card_cloned": false,
+      "nightshade_print_lifted": false,
+      "access_nudge_sent": false,
+      "nightshade_ko_before_fate": false
     },
     "npcs": [
       {
