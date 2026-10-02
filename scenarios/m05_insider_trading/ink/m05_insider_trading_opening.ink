@@ -5,7 +5,6 @@
 
 // Variables for tracking player choices
 VAR player_approach = ""          // cautious, aggressive, diplomatic
-VAR mission_priority = ""          // thoroughness, speed, stealth
 VAR knows_full_stakes = false      // Did player ask about casualties?
 VAR knows_insider_profile = false  // Did player ask about insider psychology?
 VAR handler_trust = 50            // Agent 0x99's confidence (0-100)
@@ -272,19 +271,16 @@ Agent HaX: Last thing. How are you going to play it?
 
 + [Methodically. Document everything, interview everyone.]
     ~ player_approach = "cautious"
-    ~ mission_priority = "thoroughness"
     Agent HaX: Good. It's a puzzle. Give it the time it needs.
     -> final_instructions
 
 + [Fast and direct. Find the insider, stop the upload, get out.]
     ~ player_approach = "aggressive"
-    ~ mission_priority = "speed"
     Agent HaX: Speed's good.
     -> final_instructions
 
 + [I'll read the room when I get there.]
     ~ player_approach = "diplomatic"
-    ~ mission_priority = "stealth"
     ~ handler_trust += 5
     Agent HaX: Fair enough. Just keep hunches and proof in separate piles.
     -> final_instructions

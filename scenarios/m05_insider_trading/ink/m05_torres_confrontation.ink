@@ -23,7 +23,6 @@ VAR final_choice = ""  // "turn_double_agent", "arrest", "combat_nonlethal", "co
 VAR confront_stance = ""  // "sympathetic" or "hardline"
 VAR torres_turned = false
 VAR torres_arrested = false
-VAR torres_killed = false
 VAR elena_treatment_funded = false
 VAR entropy_program_exposed = false
 VAR fight_quiet = false
@@ -381,7 +380,6 @@ Narrator: His breathing is ragged, and blood is pooling under his head. The term
     -> post_ko_arrest
 
 + [Kill the upload and walk out. Leave him bleeding on the floor.]
-    ~ torres_killed = true
     #complete_task:make_critical_choice
     ~ final_choice = "combat_lethal"
     -> post_ko_handoff

@@ -26,7 +26,6 @@ VAR patricia_authorised_office = false
 VAR torres_ko = false
 VAR final_choice = ""
 VAR torres_arrested = false
-VAR torres_killed = false
 VAR torres_fate_by_phone = false
 VAR architect_approval_confirmed = false
 VAR recruiter_contacted_player = false
@@ -34,7 +33,6 @@ VAR flag1_submitted = false
 VAR flag2_submitted = false
 VAR flag3_submitted = false
 VAR flag4_submitted = false
-VAR bludit_server_discovered = false
 VAR torres_identified = false
 VAR patricia_authorised_server = false
 VAR server_door_seen = false
@@ -550,7 +548,6 @@ What are you doing with him?
     #exit_conversation
     -> support_hub
 + [I'm leaving him. He's not my problem.]
-    ~ torres_killed = true
     #complete_task:make_critical_choice
     ~ final_choice = "combat_lethal"
     ...Understood. I'll note the time.

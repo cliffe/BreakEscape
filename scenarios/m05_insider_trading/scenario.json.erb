@@ -152,6 +152,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           { "text": "RECRUITMENT PIPELINE — TalentStack link not documented", "style": "entry", "condition": "!globalVars.found_pamphlet && !globalVars.found_pipeline_list" },
           { "text": "BORROWED BADGE — Halloran's spare traced back to Torres", "style": "entry", "condition": "globalVars.door_log_reasoned && !globalVars.halloran_accused" },
           { "text": "WRONG ACCUSATION — Dr Ruth Halloran suspended, then cleared", "style": "warning", "condition": "globalVars.halloran_accused" },
+          { "text": "INSIDER NAMED — David Torres, though not every piece of evidence was recovered", "style": "entry", "_comment": "PASS 4 newcheck: catch-all so THE CASE never prints empty (found_pamphlet false with the pipeline list found matched no other line).", "condition": "!(globalVars.flag4_submitted && (globalVars.found_medical_bills || globalVars.found_torres_journal || globalVars.found_vetting_file) && globalVars.found_pamphlet) && !(!globalVars.found_pamphlet && !globalVars.found_pipeline_list) && !(globalVars.door_log_reasoned && !globalVars.halloran_accused) && !(globalVars.halloran_accused)" },
           { "text": "" },
           { "text": "── DAVID TORRES ──",                                  "style": "section-header" },
           { "text": "TURNED — working for SAFETYNET inside ENTROPY's network", "style": "entry", "condition": "globalVars.final_choice === 'turn_double_agent'" },
@@ -536,7 +537,6 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     "briefing_played": false,
     "player_name": "Agent 0x00",
     "player_approach": "",
-    "mission_priority": "",
     "knows_full_stakes": false,
     "knows_insider_profile": false,
     "handler_trust": 50,
@@ -545,7 +545,6 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     "confront_stance": "",
     "torres_turned": false,
     "torres_arrested": false,
-    "torres_killed": false,
     "torres_identified": false,
     "elena_treatment_funded": false,
     "entropy_program_exposed": false,
@@ -584,14 +583,12 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     "flag2_submitted": false,
     "flag3_submitted": false,
     "flag4_submitted": false,
-    "bludit_server_discovered": false,
     "architect_approval_confirmed": false,
     "recruiter_contacted_player": false,
     "recruiter_deal_offered": false,
     "recruiter_deal_accepted": false,
     "recruiter_deal_confessed": false,
 
-    "opening_briefing_ko": false,
     "patricia_ko": false,
     "owen_ko": false,
     "halloran_ko": false,
@@ -656,7 +653,6 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m05_insider_trading/ink/m05_insider_trading_opening.json",
           "currentKnot": "start",
-          "globalVarOnKO": "opening_briefing_ko",
           "taskOnKO": "receive_mission_briefing",
           "timedConversation": {
             "delay": 0,
@@ -1040,7 +1036,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "_comment": "Round 2: no longer completes access_bludit_vm. The launcher emits no event on real use, so the task completes on flag 1 (below).",
               "condition": "data.objectType === 'vm-launcher'",
               "onceOnly": true,
-              "setGlobal": { "bludit_guide_offered": true, "recon_guide_offered": true, "bludit_server_discovered": true },
+              "setGlobal": { "bludit_guide_offered": true, "recon_guide_offered": true },
               "sendTimedMessage": { "delay": 1500, "message": "QDC's research portal runs Bludit. I've two guides: one for mapping the network, one for the CMS. Ask and they're yours." }
             },
 <% (1..4).each do |n| %>
@@ -1083,7 +1079,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "condition": "globalVars.torres_identified === true && globalVars.recruiter_contacted_player !== true && globalVars.recruiter_texted !== true",
               "onceOnly": true,
               "setGlobal": { "recruiter_texted": true },
-              "sendTimedMessage": { "delay": 2000, "message": "TalentStack Executive Recruiting. We should talk before you do anything you can't take back. - R." }
+              "sendTimedMessage": { "delay": 7500, "message": "TalentStack Executive Recruiting. We should talk before you do anything you can't take back. - R." }
             }
 <% end %>
           ]
