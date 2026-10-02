@@ -104,7 +104,6 @@ And if the evidence is enough for you, let her go and secure it. Your call. None
 === request_rfid_guide ===
 #speaker:agent_0x99
 ~ rfid_guide_given = true
-#set_variable:rfid_guide_requested:true
 #give_item:lab-workstation:m03_rfid_field_guide
 RFID cloning guide sent.
 Read, crack, emulate. Reception's card is weak defaults -- a dictionary attack is near instant.
@@ -115,7 +114,6 @@ Sterling's is custom keys. Read it, then run Darkside. About half a minute.
 === request_recon_guide ===
 #speaker:agent_0x99
 ~ recon_guide_given = true
-#set_variable:recon_guide_requested:true
 #give_item:lab-workstation:m03_recon_field_guide
 Reconnaissance guide sent.
 Map before you touch anything. nmap the subnet, read the versions, then pick your target. The scan flag comes off a clean sweep.
@@ -125,7 +123,6 @@ Map before you touch anything. nmap the subnet, read the versions, then pick you
 === request_proftpd_guide ===
 #speaker:agent_0x99
 ~ proftpd_guide_given = true
-#set_variable:proftpd_guide_requested:true
 #give_item:lab-workstation:m03_proftpd_field_guide
 ProFTPD guide sent. That's the backdoor that took St. Catherine's down.
 Their FTP box runs the trojaned 1.3.3c build. Anonymous login gets you nothing that matters; the backdoor gets you root.
@@ -135,7 +132,6 @@ Their FTP box runs the trojaned 1.3.3c build. Anonymous login gets you nothing t
 === request_cyberchef_guide ===
 #speaker:agent_0x99
 ~ cyberchef_guide_given = true
-#set_variable:cyberchef_guide_requested:true
 #give_item:lab-workstation:m03_cyberchef_field_guide
 CyberChef guide sent.
 ROT13, Base64, hex. If a decode still looks scrambled, it's layered -- decode again. There's no key to find; encoding isn't encryption.
@@ -145,7 +141,6 @@ ROT13, Base64, hex. If a decode still looks scrambled, it's layered -- decode ag
 === request_lockpicking_guide ===
 #speaker:agent_0x99
 ~ lockpicking_guide_given = true
-#set_variable:lockpicking_guide_requested:true
 #give_item:lab-workstation:m03_lockpicking_field_guide
 Lockpicking guide sent.
 Light tension, find the binding pin, set it, repeat.
@@ -156,7 +151,6 @@ And only once the guard's turned away. Pick in his sightline and you're made.
 === request_netexploit_guide ===
 #speaker:agent_0x99
 ~ netexploit_guide_given = true
-#set_variable:netexploit_guide_requested:true
 #give_item:lab-workstation:m03_netexploit_field_guide
 distcc guide sent.
 The legacy distcc daemon on 3632 runs jobs for anyone who asks -- CVE-2004-2687. Point the distcc_exec module at it and the operational logs are yours.

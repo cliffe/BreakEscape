@@ -680,7 +680,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
             },
             {
               "eventPattern": "objective_task_completed:clone_rfid_card",
-              "setGlobal": { "mission_phase": "act2_infiltration", "time_of_day": "night" },
+              "setGlobal": { "mission_phase": "act2_infiltration" },
               "onceOnly": true
             },
             {
@@ -874,7 +874,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "eventPattern": "npc_ko:danny_foster",
               "condition": "globalVars.danny_fate === ''",
               "onceOnly": true,
-              "setGlobal": { "danny_ko": true, "danny_fate": "ko" }
+              "setGlobal": { "danny_fate": "ko" }
             },
 <% %w[reception_lobby main_hallway conference_room_01 server_room executive_wing_hallway executive_office danny_office].each do |r| %>
             {
@@ -1424,7 +1424,6 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           },
           "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_danny_choice.json",
           "currentKnot": "start",
-          "globalVarOnKO": "danny_ko",
           "taskOnKO": "danny_choice_made",
           "behavior": { "initiallyHidden": true },
           "eventMappings": [
@@ -1442,7 +1441,6 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
   },
 
   "globalVariables": {
-    "time_of_day": "daytime",
     "mission_phase": "act1_meeting",
     "victoria_influence": 0,
     "victoria_suspicious": 0,
@@ -1456,7 +1454,6 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     "danny_warned": false,
     "danny_protected": false,
     "danny_exposed": false,
-    "danny_ko": false,
     "danny_evidence_seen": false,
     "handler_trust": 50,
     "guard_detection_count": 0,
@@ -1489,13 +1486,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     "roster_seen": false,
     "usb_seen": false,
     "lockpicking_guide_offered": false,
-    "lockpicking_guide_requested": false,
     "netexploit_guide_offered": false,
-    "netexploit_guide_requested": false,
-    "rfid_guide_requested": false,
-    "recon_guide_requested": false,
-    "cyberchef_guide_requested": false,
-    "proftpd_guide_requested": false,
     "guard_told_safetynet": false,
     "guard_challenged": false,
     "guard_bribed": false,
