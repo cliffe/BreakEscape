@@ -102,14 +102,14 @@
   "secgen": {
     "scenario": "m08_the_mole (Break Escape SAFETYNET: Mission 8 — The Mole VMs)",
     "vulnerabilities": [
-      "GitList CVE-2018-1000533 (directory traversal)",
+      "GitList CVE-2018-1000533 (argument injection)",
       "Leaked credentials in repository",
       "Sudo misconfiguration",
       "Access log analysis"
     ],
     "flags": 4,
     "difficulty": "Intermediate",
-    "integrationMethod": "Dead drop system with evidence correlation"
+    "integrationMethod": "Evidence relay terminal; flags set story globals that drive the confrontation"
   },
   "mechanics": {
     "new": [
@@ -123,7 +123,7 @@
       "Lockpicking",
       "RFID cloning",
       "Social engineering (maximum emotional complexity)",
-      "Password cracking",
+      "Fingerprint lifting",
       "CyberChef puzzles"
     ]
   },
@@ -144,7 +144,7 @@
     },
     {
       "name": "Agent 0x47 'Nightshade'",
-      "role": "Operations Specialist / ENTROPY Mole",
+      "role": "Cryptographic-Hardware Analyst / ENTROPY Mole",
       "affiliation": "ENTROPY (Insider Threat Initiative)",
       "significance": "The traitor, ideological convert, central antagonist"
     },

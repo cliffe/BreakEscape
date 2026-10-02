@@ -136,13 +136,13 @@
     </div>
     <table>
       <tr><th>Aims (story objectives)</th><td class="val">6</td></tr>
-      <tr><th>Total tasks</th><td class="val">14</td></tr>
-      <tr><th>Optional tasks</th><td class="val">2 / 14</td></tr>
+      <tr><th>Total tasks</th><td class="val">15</td></tr>
+      <tr><th>Optional tasks</th><td class="val">2 / 15</td></tr>
       <tr><th>VM flag challenges</th><td class="val">4</td></tr>
       <tr><th>AND-gate convergences</th><td class="val">0</td></tr>
-      <tr><th>Physical locks (puzzle)</th><td class="val">7</td></tr>
+      <tr><th>Physical locks (puzzle)</th><td class="val">6</td></tr>
       <tr><th>Rooms</th><td class="val">9</td></tr>
-      <tr><th>Puzzle nodes / edges</th><td class="val">47 / 52</td></tr>
+      <tr><th>Puzzle nodes / edges</th><td class="val">50 / 62</td></tr>
       <tr><th>Story nodes / edges</th><td class="val">6 / 5</td></tr>
     </table>
   </div>
@@ -184,7 +184,6 @@
   fingerprint_kit{"Fingerprint Kit"}
   lock_badge_printer["Visitor Badge Printer<br/>PIN lock"]
   printed_server_zone_badge{"Printed Server-Zone Badge"}
-  visitor_badge_printer["Visitor Badge Printer"]
   director_office("Director M. Netherton")
   lock_director_safe["Director's Safe<br/>PIN lock"]
   interrogation_suite_code_card{"Interrogation Suite Code Card"}
@@ -192,12 +191,15 @@
   director_s_safe{"Director's Safe"}
   npc_director_magnus_netherton{"Director Magnus Netherton"}
   director_s_access_keycard_all_zones{"Director's Access Keycard -- All Zones"}
+  action_clone_the_director_card>"Clone the Director's card (after the three interviews)"]
+  action_read_the_door_audit_to_the_director>"Read the door audit to the Director (suite code aloud)"]
   operations_floor("Operations Floor")
   personnel_print_job_director_s_investigation_request{"Personnel Print Job -- Director's Investigation Request"}
   intel_analysis("Intelligence Analysis")
   four_site_night_tactical_board{"Four-Site Night Tactical Board"}
   phantom_s_off_book_notes{"Phantom's Off-Book Notes"}
   gitlist_repository_server["GitList Repository Server"]
+  server_access_log_excerpt{"Server Access Log (excerpt)"}
   global_threat_database_catalogue{"Global Threat Database Catalogue"}
   badge_audit_printout_leak_window{"Badge Audit Printout -- Leak Window"}
   npc_agent_0x47_nightshade{"Agent 0x47 'Nightshade'"}
@@ -206,6 +208,7 @@
   detention_disposition_screen{"Detention Disposition Screen"}
   break_room("Break Room")
   post_it_on_the_coffee_machine{"Post-It On The Coffee Machine"}
+  leak_timeline_someone_s_working_notes{"Leak Timeline (someone's working notes)"}
   usb_stick_personal_backup_enc{"USB Stick -- PERSONAL_BACKUP.enc"}
   insider_threat_initiative_deep_state_brief{"Insider Threat Initiative -- 'Deep State' Brief"}
   go_bag_locker_0x47{"Go-Bag -- Locker 0x47"}
@@ -227,10 +230,8 @@
   main_lobby --> rfid_cloner
   main_lobby --> fingerprint_kit
   main_lobby --> lock_badge_printer
-  lock_badge_printer --> printed_server_zone_badge
-  printed_server_zone_badge --> door_server_room
-  main_lobby -.-> visitor_badge_printer
-  visitor_badge_printer -.-> door_server_room
+  lock_badge_printer -.-> printed_server_zone_badge
+  printed_server_zone_badge -.-> door_server_room
   director_office --> lock_director_safe
   lock_director_safe --> interrogation_suite_code_card
   interrogation_suite_code_card --> door_interrogation_room
@@ -238,13 +239,16 @@
   director_office -.-> director_s_safe
   director_s_safe -.-> door_interrogation_room
   director_office --> npc_director_magnus_netherton
-  npc_director_magnus_netherton --> director_s_access_keycard_all_zones
-  director_s_access_keycard_all_zones --> door_server_room
+  npc_director_magnus_netherton -.-> director_s_access_keycard_all_zones
+  director_s_access_keycard_all_zones -.-> door_server_room
+  npc_director_magnus_netherton --> action_clone_the_director_card
+  npc_director_magnus_netherton --> action_read_the_door_audit_to_the_director
   operations_floor --> personnel_print_job_director_s_investigation_request
   personnel_print_job_director_s_investigation_request --> lock_director_safe
   intel_analysis --> four_site_night_tactical_board
   intel_analysis --> phantom_s_off_book_notes
   server_room --> gitlist_repository_server
+  server_room --> server_access_log_excerpt
   security_archives --> global_threat_database_catalogue
   security_archives --> badge_audit_printout_leak_window
   cryptography_lab --> npc_agent_0x47_nightshade
@@ -253,6 +257,8 @@
   interrogation_room --> detention_disposition_screen
   break_room --> post_it_on_the_coffee_machine
   post_it_on_the_coffee_machine --> door_security_archives
+  post_it_on_the_coffee_machine --> lock_badge_printer
+  break_room --> leak_timeline_someone_s_working_notes
   break_room --> lock_nightshade_locker
   lock_nightshade_locker --> usb_stick_personal_backup_enc
   lock_nightshade_locker --> insider_threat_initiative_deep_state_brief
@@ -271,16 +277,24 @@
   main_lobby --> cryptography_lab
   operations_floor --> intel_analysis
   cryptography_lab --> break_room
+  rfid_cloner --> action_clone_the_director_card
+  action_clone_the_director_card --> door_server_room
+  fingerprint_kit -.-> usb_stick_personal_backup_enc
+  server_access_log_excerpt -.-> action_read_the_door_audit_to_the_director
+  badge_audit_printout_leak_window -.-> action_read_the_door_audit_to_the_director
+  action_read_the_door_audit_to_the_director -.-> door_interrogation_room
+  leak_timeline_someone_s_working_notes -.-> action_read_the_door_audit_to_the_director
 
-  class door_server_room,door_security_archives,door_interrogation_room,lock_nightshade_locker,lock_badge_printer,visitor_badge_printer,lock_director_safe lock
+  class door_server_room,door_security_archives,door_interrogation_room,lock_nightshade_locker,lock_badge_printer,lock_director_safe lock
   class server_room,security_archives,interrogation_room,main_lobby,director_office,operations_floor,intel_analysis,cryptography_lab,break_room room
-  class lock_pick_kit,rfid_cloner,fingerprint_kit,sealed_psych_evaluation_agent_0x47,director_s_safe,personnel_print_job_director_s_investigation_request,four_site_night_tactical_board,phantom_s_off_book_notes,global_threat_database_catalogue,badge_audit_printout_leak_window,detention_disposition_screen,post_it_on_the_coffee_machine,usb_stick_personal_backup_enc,insider_threat_initiative_deep_state_brief,go_bag_locker_0x47,staff_locker_0x47 item
+  class lock_pick_kit,rfid_cloner,fingerprint_kit,sealed_psych_evaluation_agent_0x47,director_s_safe,personnel_print_job_director_s_investigation_request,four_site_night_tactical_board,phantom_s_off_book_notes,server_access_log_excerpt,global_threat_database_catalogue,badge_audit_printout_leak_window,detention_disposition_screen,post_it_on_the_coffee_machine,leak_timeline_someone_s_working_notes,usb_stick_personal_backup_enc,insider_threat_initiative_deep_state_brief,go_bag_locker_0x47,staff_locker_0x47 item
   class printed_server_zone_badge,interrogation_suite_code_card,npc_director_magnus_netherton,director_s_access_keycard_all_zones,npc_agent_0x47_nightshade,nightshade_s_locker_key key
+  class action_clone_the_director_card,action_read_the_door_audit_to_the_director action
   class gitlist_repository_server,vmch_recover_gitlist_exposure,vmch_recover_stashed_credentials,vmch_recover_home_flag,vmch_escalate_to_root vm
   class vmfl_recover_gitlist_exposure,vmfl_recover_stashed_credentials,vmfl_recover_home_flag,vmfl_escalate_to_root flag
 
   classDef optional stroke-dasharray:5 2
-  class lock_pick_kit,visitor_badge_printer,director_s_safe optional
+  class lock_pick_kit,printed_server_zone_badge,director_s_safe,director_s_access_keycard_all_zones optional
   class node_start start`,
       story:      `flowchart TD
 
@@ -347,7 +361,6 @@
   fingerprint_kit{"Fingerprint Kit"}
   lock_badge_printer["Visitor Badge Printer<br/>PIN lock"]
   printed_server_zone_badge{"Printed Server-Zone Badge"}
-  visitor_badge_printer["Visitor Badge Printer"]
   director_office("Director M. Netherton")
   lock_director_safe["Director's Safe<br/>PIN lock"]
   interrogation_suite_code_card{"Interrogation Suite Code Card"}
@@ -355,12 +368,15 @@
   director_s_safe{"Director's Safe"}
   npc_director_magnus_netherton{"Director Magnus Netherton"}
   director_s_access_keycard_all_zones{"Director's Access Keycard -- All Zones"}
+  action_clone_the_director_card>"Clone the Director's card (after the three interviews)"]
+  action_read_the_door_audit_to_the_director>"Read the door audit to the Director (suite code aloud)"]
   operations_floor("Operations Floor")
   personnel_print_job_director_s_investigation_request{"Personnel Print Job -- Director's Investigation Request"}
   intel_analysis("Intelligence Analysis")
   four_site_night_tactical_board{"Four-Site Night Tactical Board"}
   phantom_s_off_book_notes{"Phantom's Off-Book Notes"}
   gitlist_repository_server["GitList Repository Server"]
+  server_access_log_excerpt{"Server Access Log (excerpt)"}
   global_threat_database_catalogue{"Global Threat Database Catalogue"}
   badge_audit_printout_leak_window{"Badge Audit Printout -- Leak Window"}
   npc_agent_0x47_nightshade{"Agent 0x47 'Nightshade'"}
@@ -369,6 +385,7 @@
   detention_disposition_screen{"Detention Disposition Screen"}
   break_room("Break Room")
   post_it_on_the_coffee_machine{"Post-It On The Coffee Machine"}
+  leak_timeline_someone_s_working_notes{"Leak Timeline (someone's working notes)"}
   usb_stick_personal_backup_enc{"USB Stick -- PERSONAL_BACKUP.enc"}
   insider_threat_initiative_deep_state_brief{"Insider Threat Initiative -- 'Deep State' Brief"}
   go_bag_locker_0x47{"Go-Bag -- Locker 0x47"}
@@ -396,10 +413,8 @@
   main_lobby --> rfid_cloner
   main_lobby --> fingerprint_kit
   main_lobby --> lock_badge_printer
-  lock_badge_printer --> printed_server_zone_badge
-  printed_server_zone_badge --> door_server_room
-  main_lobby -.-> visitor_badge_printer
-  visitor_badge_printer -.-> door_server_room
+  lock_badge_printer -.-> printed_server_zone_badge
+  printed_server_zone_badge -.-> door_server_room
   director_office --> lock_director_safe
   lock_director_safe --> interrogation_suite_code_card
   interrogation_suite_code_card --> door_interrogation_room
@@ -407,13 +422,16 @@
   director_office -.-> director_s_safe
   director_s_safe -.-> door_interrogation_room
   director_office --> npc_director_magnus_netherton
-  npc_director_magnus_netherton --> director_s_access_keycard_all_zones
-  director_s_access_keycard_all_zones --> door_server_room
+  npc_director_magnus_netherton -.-> director_s_access_keycard_all_zones
+  director_s_access_keycard_all_zones -.-> door_server_room
+  npc_director_magnus_netherton --> action_clone_the_director_card
+  npc_director_magnus_netherton --> action_read_the_door_audit_to_the_director
   operations_floor --> personnel_print_job_director_s_investigation_request
   personnel_print_job_director_s_investigation_request --> lock_director_safe
   intel_analysis --> four_site_night_tactical_board
   intel_analysis --> phantom_s_off_book_notes
   server_room --> gitlist_repository_server
+  server_room --> server_access_log_excerpt
   security_archives --> global_threat_database_catalogue
   security_archives --> badge_audit_printout_leak_window
   cryptography_lab --> npc_agent_0x47_nightshade
@@ -422,6 +440,8 @@
   interrogation_room --> detention_disposition_screen
   break_room --> post_it_on_the_coffee_machine
   post_it_on_the_coffee_machine --> door_security_archives
+  post_it_on_the_coffee_machine --> lock_badge_printer
+  break_room --> leak_timeline_someone_s_working_notes
   break_room --> lock_nightshade_locker
   lock_nightshade_locker --> usb_stick_personal_backup_enc
   lock_nightshade_locker --> insider_threat_initiative_deep_state_brief
@@ -440,6 +460,13 @@
   main_lobby --> cryptography_lab
   operations_floor --> intel_analysis
   cryptography_lab --> break_room
+  rfid_cloner --> action_clone_the_director_card
+  action_clone_the_director_card --> door_server_room
+  fingerprint_kit -.-> usb_stick_personal_backup_enc
+  server_access_log_excerpt -.-> action_read_the_door_audit_to_the_director
+  badge_audit_printout_leak_window -.-> action_read_the_door_audit_to_the_director
+  action_read_the_door_audit_to_the_director -.-> door_interrogation_room
+  leak_timeline_someone_s_working_notes -.-> action_read_the_door_audit_to_the_director
   aim_take_the_brief -.-> aim_work_the_suspects
   aim_take_the_brief -.-> aim_get_into_the_repo
   aim_get_into_the_repo -.-> aim_correlate_the_evidence
@@ -450,17 +477,18 @@
   vmfl_recover_home_flag -.-> aim_correlate_the_evidence
   vmfl_escalate_to_root -.-> aim_correlate_the_evidence
 
-  class door_server_room,door_security_archives,door_interrogation_room,lock_nightshade_locker,lock_badge_printer,visitor_badge_printer,lock_director_safe lock
+  class door_server_room,door_security_archives,door_interrogation_room,lock_nightshade_locker,lock_badge_printer,lock_director_safe lock
   class server_room,security_archives,interrogation_room,main_lobby,director_office,operations_floor,intel_analysis,cryptography_lab,break_room room
-  class lock_pick_kit,rfid_cloner,fingerprint_kit,sealed_psych_evaluation_agent_0x47,director_s_safe,personnel_print_job_director_s_investigation_request,four_site_night_tactical_board,phantom_s_off_book_notes,global_threat_database_catalogue,badge_audit_printout_leak_window,detention_disposition_screen,post_it_on_the_coffee_machine,usb_stick_personal_backup_enc,insider_threat_initiative_deep_state_brief,go_bag_locker_0x47,staff_locker_0x47 item
+  class lock_pick_kit,rfid_cloner,fingerprint_kit,sealed_psych_evaluation_agent_0x47,director_s_safe,personnel_print_job_director_s_investigation_request,four_site_night_tactical_board,phantom_s_off_book_notes,server_access_log_excerpt,global_threat_database_catalogue,badge_audit_printout_leak_window,detention_disposition_screen,post_it_on_the_coffee_machine,leak_timeline_someone_s_working_notes,usb_stick_personal_backup_enc,insider_threat_initiative_deep_state_brief,go_bag_locker_0x47,staff_locker_0x47 item
   class printed_server_zone_badge,interrogation_suite_code_card,npc_director_magnus_netherton,director_s_access_keycard_all_zones,npc_agent_0x47_nightshade,nightshade_s_locker_key key
+  class action_clone_the_director_card,action_read_the_door_audit_to_the_director action
   class gitlist_repository_server,vmch_recover_gitlist_exposure,vmch_recover_stashed_credentials,vmch_recover_home_flag,vmch_escalate_to_root vm
   class vmfl_recover_gitlist_exposure,vmfl_recover_stashed_credentials,vmfl_recover_home_flag,vmfl_escalate_to_root flag
   class aim_take_the_brief,aim_get_into_the_repo,aim_correlate_the_evidence,aim_confront_the_mole,aim_close_the_investigation critical
   class aim_work_the_suspects aim
 
   classDef optional stroke-dasharray:5 2
-  class lock_pick_kit,visitor_badge_printer,director_s_safe optional
+  class lock_pick_kit,printed_server_zone_badge,director_s_safe,director_s_access_keycard_all_zones optional
   class node_start start`,
       rooms:      `flowchart TD
 

@@ -35,46 +35,53 @@ VAR gave_locker_key = false
 }
 // PASS 2 review: set first; a brief-gated mapping completes interview_nightshade (lesson 27).
 ~ nightshade_interviewed = true
-Narrator: The cryptography lab is quiet in a way the rest of the building is not. Nightshade looks up from a desk with nothing on it -- no photographs, no mug, no clutter -- and smiles like the last nine days never happened.
+Narrator: The Crypto Lab is quiet. Nightshade looks up from a desk with nothing on it, no photographs, no mug, and smiles as if the last nine days never happened.
 
-Agent 0x47 'Nightshade': There you are. I wondered when they'd send you. Of everyone in this building, they picked the one person who knows my tells. That's either a compliment or very poor planning. Sit. Ask me anything.
+Agent 0x47 'Nightshade': There you are. I wondered when they'd send you.
+Agent 0x47 'Nightshade': Of everyone in this building, they picked the one person who knows my tells. A compliment, or very poor planning. Ask me anything.
 -> hub
 
 === hub ===
 + { not asked_alibi } [Where were you when the plan leaked?]
     ~ asked_alibi = true
-    Agent 0x47 'Nightshade': Here, most likely. I'm always here. Pull the terminal logs -- I'd genuinely encourage it. Nothing clears a person like the truth, properly examined. And nothing convicts them like it either, of course, but I try not to dwell on the second half.
+    Agent 0x47 'Nightshade': Here, most likely. I'm always here. Pull the terminal logs. I'd genuinely encourage it.
+    Agent 0x47 'Nightshade': The truth clears people, properly examined. I've always found that a comfort.
     Narrator: He offers it without a flicker.
     -> hub
 + { not asked_fear } [Everyone here is terrified. You're not.]
     ~ asked_fear = true
     ~ nightshade_suspected = true
-    Agent 0x47 'Nightshade': Should I be? Fear is what you feel when the outcome is still uncertain. I made my peace with most outcomes a long time ago. It's a discipline. I could teach it to you -- though I don't think we're going to have the time. #set_global:nightshade_suspected:true
+    Agent 0x47 'Nightshade': Should I be? Fear is what you feel when the outcome is still uncertain. I made my peace with most outcomes long ago.
+    Agent 0x47 'Nightshade': It's a discipline. I could teach it to you, though I don't think we'll have the time. #set_global:nightshade_suspected:true
     -> hub
 + { not asked_dead } [Two of ours are dead.]
     ~ asked_dead = true
     ~ nightshade_suspected = true
     Narrator: He says it quietly.
-    Agent 0x47 'Nightshade': I know. I do know that. My calm is what caring costs, once you've decided the ship is going down and the only question left is how kind you can be on the way. #set_global:nightshade_suspected:true
+    Agent 0x47 'Nightshade': I know. I do know that.
+    Agent 0x47 'Nightshade': I've been grieving a long time, 0x00. Longer than nine days. It wears smooth. #set_global:nightshade_suspected:true
     -> hub
-+ { not asked_insiders } [You briefed me on catching insiders once. "The calm of someone who's decided the rules don't apply."]
++ { not asked_insiders } [Your insider briefing. "The calm of someone who's decided the rules don't apply."]
     ~ asked_insiders = true
     ~ nightshade_suspected = true
     Agent 0x47 'Nightshade': I did. The access a little too broad, the hours a little too odd, and the calm. Good. You were listening.
-    Agent 0x47 'Nightshade': I'd add one thing now, if I were giving that briefing again. Watch the person who teaches you what to look for. He has already checked that he doesn't fit it. #set_global:nightshade_suspected:true
+    Agent 0x47 'Nightshade': I'd add one thing now, if I were giving that briefing again.
+    Agent 0x47 'Nightshade': Don't rule anyone out because they wrote the list. #set_global:nightshade_suspected:true
     Narrator: He holds your eye a moment longer than a colleague would.
     -> hub
 + { mole_identified and not asked_logs } [The root logs have your account on the Portland plan. Forty-seven minutes.]
     ~ asked_logs = true
     ~ nightshade_suspected = true
     Agent 0x47 'Nightshade': Then you have root on our own repository. I'm genuinely impressed. Nobody's touched that box in years.
-    Agent 0x47 'Nightshade': Finish putting it through the relay. When you have all of it, I imagine the Director will want this conversation in a room with a recorder. I'll walk down myself. I'm not going to make anyone chase me. #set_global:nightshade_suspected:true
+    Agent 0x47 'Nightshade': Finish putting it through the relay. When it's all in, the Director will want this conversation in a room with a recorder.
+    Agent 0x47 'Nightshade': I'll walk down myself. I'm not going to make anyone chase me. #set_global:nightshade_suspected:true
     -> hub
 + { found_nightshade_profile and not asked_training } [Dr Okafor flagged you a year ago. "Ideological drift."]
     ~ asked_training = true
     ~ nightshade_suspected = true
     Narrator: The smile holds. Something behind it goes cold.
-    Agent 0x47 'Nightshade': You've been in the Director's safe. Good. Then you know Okafor was right, and you know he buried it. Yes, I said those words. I say a great many true things and nobody minds until the day they do.
+    Agent 0x47 'Nightshade': You've been in the Director's safe. Good. Then you know Okafor was right, and you know he buried it.
+    Agent 0x47 'Nightshade': Yes, I said those words. I say a great many true things, and nobody minds until the day they do.
     Agent 0x47 'Nightshade': Careful, 0x00. You're close to something now. Closer than is comfortable for either of us. #set_global:nightshade_suspected:true
     ~ nightshade_influence -= 1
     # influence_decreased
@@ -96,8 +103,10 @@ Agent 0x47 'Nightshade': There you are. I wondered when they'd send you. Of ever
 ~ accused_nightshade = true
 ~ nightshade_suspected = true
 Narrator: He doesn't blink.
-Agent 0x47 'Nightshade': Do you. On instinct, or on evidence? Because I know you, and I know which one you're running on, and it isn't evidence yet.
-Agent 0x47 'Nightshade': Here's what will happen. You'll leave, because you have to -- a hunch won't hold me. And I'll still be here when you come back, because I've nowhere I'd rather be and nothing I'm afraid of. Go and get your proof. I'd honestly rather you found me than guessed me. #set_global:nightshade_suspected:true #set_global:accused_nightshade:true
+Agent 0x47 'Nightshade': Do you. On instinct, or on evidence? I know you, and I know which one you're running on. It isn't evidence yet.
+Agent 0x47 'Nightshade': Here's what will happen. You'll leave, because a hunch won't hold me.
+Agent 0x47 'Nightshade': And I'll still be here when you come back. I've nowhere I'd rather be, and nothing I'm afraid of.
+Agent 0x47 'Nightshade': Go and get your proof. I'd rather you found me than guessed me. #set_global:nightshade_suspected:true #set_global:accused_nightshade:true
 -> hub
 
 === leave ===

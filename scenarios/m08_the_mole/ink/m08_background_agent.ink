@@ -25,7 +25,8 @@ Off-Duty Agent: Still here. Still not reading this.
 
 === testimony ===
 Off-Duty Agent: You didn't hear it from me. Two days before Portland I was in here from before eight.
-Off-Duty Agent: Went through to the lab for the stapler, just gone twenty past ten, half past at the latest. Someone at the bench at the far end. Had the build of the nerdy one, Cipher. Or not. I wasn't looking.
+Off-Duty Agent: Went through to the lab for the stapler. Just gone twenty past ten, half past at the latest.
+Off-Duty Agent: Someone at the bench at the far end. Had the build of the nerdy one, Cipher. Or not. I wasn't looking.
 Off-Duty Agent: I'm sitting where I can see the door. You should too.
 -> hub
 
@@ -36,9 +37,10 @@ Off-Duty Agent: I'm sitting where I can see the door. You should too.
     { mole_identified:
         Off-Duty Agent: Only that the Director's had the interrogation suite cleared. Nobody's said for who. Nobody needs to.
     - else:
-        Off-Duty Agent: Same rumours, different order. Nobody's looking at anybody.
+        Off-Duty Agent: Phantom's stopped being charming. Nightshade's the same as ever.
     }
     -> hub
 + [I'll leave you to it.]
+    Off-Duty Agent: Mind the door.
     #exit_conversation
     -> hub

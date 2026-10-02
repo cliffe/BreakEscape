@@ -24,11 +24,11 @@ ENTROPY's **Insider Threat Initiative** (see
 | `director_netherton` | Director Magnus Netherton | person | director_office | male_spy | Charon | briefing; gives all-zones keycard; holds safe combo |
 | `agent_cipher` | Agent 0x23 'Cipher' | person | operations_floor | male_nerd | Iapetus | red herring (innocent) |
 | `background_analyst` | Junior Analyst | person | operations_floor | female_office_worker | Kore | bark, no state |
-| `agent_phantom` | Agent 0x88 'Phantom' | person | intel_analysis | male_spy | Fenrir | red herring (innocent, off-book hunter) |
+| `agent_phantom` | Agent 0x88 'Phantom' | person | intel_analysis | male_office_worker (pass 4) | Fenrir | red herring (innocent, off-book hunter) |
 | `agent_nightshade` | Agent 0x47 'Nightshade' | person | cryptography_lab | **male_scientist** | Enceladus | the mole, pre-reveal interview |
 | `nightshade_confrontation` | Agent 0x47 'Nightshade' | person (hidden) | interrogation_room | **male_scientist** | Enceladus | confrontation; reveals on room entry + `all_flags_submitted` |
 | `agent_0x99_person` | Agent HaX | person | break_room | female_hacker_hood | Aoede | in-person emotional beat, no task |
-| `background_agent` | Off-Duty Agent | person | break_room | male_office_worker | Puck | bark, no state |
+| `background_agent` | Off-Duty Agent | person | break_room | male_hacker_hood (pass 4) | Puck | bark, no state |
 | `closing_debrief` | Director Magnus Netherton | person (hidden) | break_room | male_spy | Charon | debrief; reveals on `mission_complete` |
 
 Player: `player` / Agent 0x00 / `male_hacker_hood_down`. Narrator voice: Algenib.
@@ -229,3 +229,44 @@ See `PUZZLE_CHAINS_PLAN.md` (signed off after 3 review rounds).
   Netherton `audit_misreads`, `audit_reply`, `audit_skip_step4`; suspects `asked_audit`; Nightshade
   `gave_locker_key`; off-duty agent `met`.
 - **Voices:** unchanged from the voice audit (Nightshade = Enceladus).
+
+---
+
+## PASS 4 amendments (design stage, 2026-10-02; supersede everything above where they differ)
+
+See `DESIGN_REVIEW.md`, "Changes made (pass 4 design)".
+
+- **Voices (checked):** both Nightshade entries in §1 already read **Enceladus**. The voice bible's
+  drift note that this file lists Charon is out of date.
+- **Sprites:** `agent_phantom` is now `male_office_worker_v2` (round 2; `male_telecom`'s hi-vis read as
+  facilities), so he no longer shares the Director's `male_spy_v2`; `background_agent` moved to
+  `male_hacker_hood_v2` (talk sheet only) to free that sprite.
+- **Lock table, rfid row (replaces pass 3's):** server_room `server_zone_badge` ← the Director's card
+  **cloned** with the start-kit RFID cloner (`director_netherton.rfidCard`: card_id
+  `server_zone_badge`, EM4100, name "Director Netherton Keycard"), offered only once all three suspects
+  are interviewed or knocked out · `netherton_keycard` (itemsHeld; reaches the player only as a KO
+  drop) · `printed_server_badge` (badge printer, the earned early route).
+- **Print surface:** `encrypted_backup` (the USB stick in `nightshade_locker`) has `hasFingerprint`,
+  owner `Nightshade` (event slug `nightshade`), surface `glossy_dark`, difficulty easy, candidates
+  Cipher / Phantom / Director Netherton / Facilities.
+- **Task added:** `get_suite_code` (custom, required) in `confront_the_mole`, before
+  `confront_nightshade`; completed by four mappings on `closing_debrief`, all waiting for
+  `all_flags_submitted`.
+- **Globals added (round 2):** `access_nudge_sent`, `cipher_seen`, `phantom_seen`, `nightshade_seen`
+  (HaX's one hand-back text), `nightshade_ko_before_fate` (safety-net KO; credit and debrief read it
+  instead of `nightshade_confront_ko`). `nightshade_print_lifted` now comes from
+  `fingerprint_identified:nightshade`.
+- **Globals added:** `netherton_card_cloned` (card_cloned mapping on `agent_0x99`; credits),
+  `nightshade_print_lifted` (`fingerprint_collected:nightshade` on `agent_0x99`; confrontation line,
+  credits). `netherton_card_taken` now means "has the Director's access": set by the clone and by
+  picking up his dropped card. `mission_complete` is also set by the debrief backstop.
+- **Ink:** Netherton `take_keycard` removed; `access_request`, `access_offer`, `clone_card`,
+  `clone_debrief` and the function `interviews_done()` added; `audit_q1`–`audit_q4` removed (each
+  question now sits in its `audit_cN` after the state check); VAR `gave_keycard` removed; local VAR
+  `access_offered`; synced VARs `cipher_interviewed`, `phantom_interviewed`,
+  `nightshade_interviewed`, `phantom_ko`, `badge_cloned`. Confrontation: VARs
+  `nightshade_print_lifted`, `asked_cracker` (local). Cipher: `asked_handle` (local). HaX phone:
+  `netherton_card_taken`.
+- **Canon:** Netherton has run field operations for five years (director_netherton.md). Nightshade
+  has fifteen years' service and **taught the player's intake**; he did not train in the player's
+  cohort (m01 has the player on a first mission).

@@ -78,12 +78,6 @@
       "id": "printed_server_zone_badge",
       "label": "Printed Server-Zone Badge",
       "kind": "key",
-      "optional": false
-    },
-    {
-      "id": "visitor_badge_printer",
-      "label": "Visitor Badge Printer",
-      "kind": "lock",
       "optional": true
     },
     {
@@ -126,6 +120,18 @@
       "id": "director_s_access_keycard_all_zones",
       "label": "Director's Access Keycard -- All Zones",
       "kind": "key",
+      "optional": true
+    },
+    {
+      "id": "action_clone_the_director_card",
+      "label": "Clone the Director's card (after the three interviews)",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "action_read_the_door_audit_to_the_director",
+      "label": "Read the door audit to the Director (suite code aloud)",
+      "kind": "action",
       "optional": false
     },
     {
@@ -162,6 +168,12 @@
       "id": "gitlist_repository_server",
       "label": "GitList Repository Server",
       "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "server_access_log_excerpt",
+      "label": "Server Access Log (excerpt)",
+      "kind": "item",
       "optional": false
     },
     {
@@ -209,6 +221,12 @@
     {
       "id": "post_it_on_the_coffee_machine",
       "label": "Post-It On The Coffee Machine",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "leak_timeline_someone_s_working_notes",
+      "label": "Leak Timeline (someone's working notes)",
       "kind": "item",
       "optional": false
     },
@@ -329,20 +347,10 @@
     {
       "from": "lock_badge_printer",
       "to": "printed_server_zone_badge",
-      "soft": false
-    },
-    {
-      "from": "printed_server_zone_badge",
-      "to": "door_server_room",
-      "soft": false
-    },
-    {
-      "from": "main_lobby",
-      "to": "visitor_badge_printer",
       "soft": true
     },
     {
-      "from": "visitor_badge_printer",
+      "from": "printed_server_zone_badge",
       "to": "door_server_room",
       "soft": true
     },
@@ -384,11 +392,21 @@
     {
       "from": "npc_director_magnus_netherton",
       "to": "director_s_access_keycard_all_zones",
-      "soft": false
+      "soft": true
     },
     {
       "from": "director_s_access_keycard_all_zones",
       "to": "door_server_room",
+      "soft": true
+    },
+    {
+      "from": "npc_director_magnus_netherton",
+      "to": "action_clone_the_director_card",
+      "soft": false
+    },
+    {
+      "from": "npc_director_magnus_netherton",
+      "to": "action_read_the_door_audit_to_the_director",
       "soft": false
     },
     {
@@ -414,6 +432,11 @@
     {
       "from": "server_room",
       "to": "gitlist_repository_server",
+      "soft": false
+    },
+    {
+      "from": "server_room",
+      "to": "server_access_log_excerpt",
       "soft": false
     },
     {
@@ -454,6 +477,16 @@
     {
       "from": "post_it_on_the_coffee_machine",
       "to": "door_security_archives",
+      "soft": false
+    },
+    {
+      "from": "post_it_on_the_coffee_machine",
+      "to": "lock_badge_printer",
+      "soft": false
+    },
+    {
+      "from": "break_room",
+      "to": "leak_timeline_someone_s_working_notes",
       "soft": false
     },
     {
@@ -545,6 +578,41 @@
       "from": "cryptography_lab",
       "to": "break_room",
       "soft": false
+    },
+    {
+      "from": "rfid_cloner",
+      "to": "action_clone_the_director_card",
+      "soft": false
+    },
+    {
+      "from": "action_clone_the_director_card",
+      "to": "door_server_room",
+      "soft": false
+    },
+    {
+      "from": "fingerprint_kit",
+      "to": "usb_stick_personal_backup_enc",
+      "soft": true
+    },
+    {
+      "from": "server_access_log_excerpt",
+      "to": "action_read_the_door_audit_to_the_director",
+      "soft": true
+    },
+    {
+      "from": "badge_audit_printout_leak_window",
+      "to": "action_read_the_door_audit_to_the_director",
+      "soft": true
+    },
+    {
+      "from": "action_read_the_door_audit_to_the_director",
+      "to": "door_interrogation_room",
+      "soft": true
+    },
+    {
+      "from": "leak_timeline_someone_s_working_notes",
+      "to": "action_read_the_door_audit_to_the_director",
+      "soft": true
     }
   ]
 }

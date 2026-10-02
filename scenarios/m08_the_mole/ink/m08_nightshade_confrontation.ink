@@ -36,99 +36,129 @@ VAR found_go_bag = false
 VAR asked_bag = false
 VAR nightshade_ko = false
 VAR accused_nightshade = false
+// PASS 4 (fixes 1, 11)
+VAR nightshade_print_lifted = false
+VAR asked_cracker = false
 
 === start ===
 { fate_decided: -> after_choice }
 #complete_task:confront_nightshade
 ~ nightshade_confronted = true
-Narrator: The interrogation room records everything. Nightshade sits with his hands flat on the table, unhurried, and for the first time in nine days he looks like a man who has set something heavy down.
+Narrator: The interrogation room records everything. Nightshade stands at the table with both hands flat on it. He doesn't sit.
 
-Agent 0x47 'Nightshade': You found it. All of it. The repository, the credentials, the logs with my account all over them. I could have scrubbed every trace years ago, you know.
-You: Why didn't you?
+Agent 0x47 'Nightshade': You found it. Forty-seven minutes on the Portland plan, two days before you deployed. My account, my terminal, my mail.
+Agent 0x47 'Nightshade': The name they stripped off that intercept in the cable vault was mine.
+Agent 0x47 'Nightshade': I could have scrubbed every trace years ago. You're wondering why I didn't.
 { nightshade_suspected:
-    Agent 0x47 'Nightshade': Because you already knew. I watched you decide, across that desk in the lab. Some part of me wanted it to be you who closed the loop, not a stranger with a file. You, who trained beside me and never quite trusted the quiet.
+    Agent 0x47 'Nightshade': Because you'd already decided. I watched you do it, across my desk in the lab.
+    Agent 0x47 'Nightshade': Some part of me wanted it to be you who closed the loop. My student. You never did trust the quiet.
 - else:
-    Agent 0x47 'Nightshade': Because some part of me wanted to be caught by someone who'd understand it. I misjudged that, I think. You look at me like I'm a stranger. Fair. Sit down anyway. You've earned the truth.
+    Agent 0x47 'Nightshade': Because some part of me wanted to be caught by someone who'd understand. I misjudged that, I think.
+    Agent 0x47 'Nightshade': You look at me like a stranger. Fair enough.
 }
 // PASS 3 (impl review M2): after his answer to "Why didn't you?", so the
 // question keeps its meaning.
 { nightshade_ko:
     Agent 0x47 'Nightshade': You put me on the floor of my own lab. I've had worse from people I liked less.
 }
-{
-- named_on_evidence:
+{ named_on_evidence:
     Agent 0x47 'Nightshade': The door log. I walked past that reader every morning for fifteen years and never once thought of it as a witness.
-- accused_nightshade:
-    Agent 0x47 'Nightshade': You said it to my face before you could put it in front of anyone. You were right, and it didn't matter until tonight.
+}
+// PASS 4 (fix 10): its own block, so it plays alongside the door-log line.
+// The accusation is only on offer before flag 4, so this is always early.
+{ accused_nightshade:
+    Agent 0x47 'Nightshade': You said it to my face before you could prove it.
+    Agent 0x47 'Nightshade': I had the whole night to tidy up after that, and I didn't. Think about why.
+}
+// PASS 4 (fix 1): the thumbprint lifted off the USB stick.
+{ nightshade_print_lifted:
+    Agent 0x47 'Nightshade': And you printed the stick. Of course you did. I'd have told you nobody planted it, if you'd asked.
 }
 -> the_case
 
+// Script edit round (S1, approved): one line for the player before the candle.
 === the_case ===
-You: The logs put you on the Portland plan for forty-seven minutes, forty-eight hours before we deployed. The mail resolves to your account and an entropy.onion address. It's over, Nightshade. I only came for the why.
-Agent 0x47 'Nightshade': Order is a candle in a hurricane, {player_name}. We stand round it with our hands cupped, night after night, and we call it a career. ENTROPY only told me the truth I'd already worked out alone: the storm always wins. So I stopped shielding the flame. I helped the wind. It felt, God help me, like honesty.
--> hub
++ [It's over, Nightshade. Tell me why.]
+    Agent 0x47 'Nightshade': Order is a candle in a hurricane, {player_name}. We stand round it with our hands cupped, night after night, and call it a career.
+    Agent 0x47 'Nightshade': ENTROPY only told me what I'd already worked out alone. The storm always wins.
+    Agent 0x47 'Nightshade': So I stopped shielding the flame. I helped the wind. God help me, it felt like honesty.
+    -> hub
 
 === hub ===
+// Playtest round: the database reveal and the Architect come last among the topics.
 + { not asked_why } [Two people are dead. You keep talking about wind. Say what you actually did.]
     ~ asked_why = true
-    Narrator: He answers evenly.
-    Agent 0x47 'Nightshade': I gave them your deployment. I knew there would be four fires and one bucket, and that you would be standing in one of them. I didn't need to know which way the bucket went. Every way it went, people died. I did the arithmetic of who that would kill and I did it anyway. I wrote as much -- you read it. I'm not asking you to forgive the sum. I'm telling you I did it with my eyes open.
-    You: You're dressing murder up as physics so you can sleep at night.
-    Agent 0x47 'Nightshade': Perhaps. You always were better than me at the part I decided to skip.
+    Agent 0x47 'Nightshade': I gave them your deployment. Four fires, one bucket, and you in one of them. I did the arithmetic of who, and did it anyway.
+    Agent 0x47 'Nightshade': I'm not asking you to forgive the sum. I'm telling you I did it with my eyes open.
+    Agent 0x47 'Nightshade': You'd call it dressing murder up as physics. Perhaps. You always were better than me at the part I decided to skip.
     -> hub
-+ { found_go_bag and not asked_bag } [You had a flight to Montana for the morning after Portland. Why are you still here?]
++ { not asked_recruit } [When. When did they turn you?]
+    ~ asked_recruit = true
+    Agent 0x47 'Nightshade': Training. My own, in the barracks you slept in years later. They found me at twenty-three, half-formed and already tired.
+    Agent 0x47 'Nightshade': Not with money, {player_name}. Money buys a coward. They look for the ones who've started to suspect it's all a delaying action.
+    Agent 0x47 'Nightshade': Then they waited fifteen years. I doubt I was the only tired one they found.
+    -> hub
+// PASS 4 (fix 11): the PIN cracker, held back since m03 "on his bench".
++ { not asked_cracker } [Every mission, the PIN cracker stayed on your bench.]
+    ~ asked_cracker = true
+    Agent 0x47 'Nightshade': It did. Every lock it would have opened in a minute, you opened the long way.
+    Agent 0x47 'Nightshade': Nobody asks a careful man why he's keeping a device for study. I chose what you went in without.
+    -> hub
++ { not asked_taught } [Netherton told me to learn mole-catching from you.]
+    ~ asked_taught = true
+    Agent 0x47 'Nightshade': He did. Every word I taught you was true. I just never said where I'd learned it.
+    Agent 0x47 'Nightshade': If anyone ever used it on me, I wanted it to be you. Vanity, I know. It's the last one I've got.
+    -> hub
++ { found_go_bag and not asked_bag } [You had a flight to Montana the morning after Portland. Why are you still here?]
     ~ asked_bag = true
     Agent 0x47 'Nightshade': Because I wanted to see who they would send. I hoped it would be you.
     { asked_architect:
         Agent 0x47 'Nightshade': You have the coordinates now. Montana was always where I was going. I just wanted to see your face first.
     - else:
-        Agent 0x47 'Nightshade': Montana. You'll want to know why Montana. Ask me properly.
+        Agent 0x47 'Nightshade': Montana. Work out what Portland was really for, and where it went, and you'll have your Montana.
     }
     -> hub
-+ { not asked_recruit } [When. When did they turn you?]
-    ~ asked_recruit = true
-    Agent 0x47 'Nightshade': Training. The same barracks as you, the same instructors, the same bad coffee. They don't recruit with money, {player_name} -- money leaves a trail and buys a coward. They recruit the ones who've started to suspect the whole enterprise is a delaying action. They found me at twenty-three, half-formed and already tired. Then they waited. Fifteen years. That's the patience you're really up against tonight.
-    -> hub
-+ { not asked_taught } [You stood in a briefing and taught me how to catch an insider.]
-    ~ asked_taught = true
-    Agent 0x47 'Nightshade': I did. Every word of it was true. The access a little too broad, the hours a little too odd, the calm. I never said where I'd learned it.
-    Agent 0x47 'Nightshade': I thought, if anyone ever used it on me, I'd like it to be you. That's vanity, I know. It's the last one I've got.
-    -> hub
-+ { not asked_database } [Portland wasn't about the four attacks, was it.]
++ { not asked_database } [The four attacks were cover for something else. Weren't they?]
     ~ asked_database = true
     ~ database_theft_understood = true
-    Agent 0x47 'Nightshade': No. The attacks were the noise. While you and Netherton agonised over which fire to fight, they walked the global threat database out through a door I left open. Every vulnerability SAFETYNET has ever catalogued. That was the night's real work. The dead were... the cost of your attention being elsewhere.
+    Agent 0x47 'Nightshade': Yes. The attacks were the noise. While you and Netherton chose which fire to fight, they walked the threat database out through a door I left open.
+    Agent 0x47 'Nightshade': Every vulnerability SAFETYNET has ever catalogued. The dead were... the cost of your attention being elsewhere.
     -> hub
 + { asked_database and not asked_architect } [Then where did it go? Where's The Architect?]
     ~ asked_architect = true
     Narrator: He studies you for a long moment.
-    Agent 0x47 'Nightshade': You want the workshop. Tomb Gamma. I'll give it to you -- freely, because it's worth more than my silence and because I'd like, just once, to be the one who tips the board over.
-    Agent 0x47 'Nightshade': Forty-seven point two-three-eight-two north. One-twelve point five-one-five-six west. An old Cold War bunker in Montana. That's where the database went, and that's where you'll find the man who's been reading your mail for fifteen years. #set_global:tomb_gamma_location_known:true
+    Agent 0x47 'Nightshade': You want the workshop. Tomb Gamma. I'll give it to you freely. I'd like, just once, to be the one who tips the board over.
+    Agent 0x47 'Nightshade': Forty-seven point two-three-eight-two north. One-twelve point five-one-five-six west. #set_global:tomb_gamma_location_known:true
+    Agent 0x47 'Nightshade': An old Cold War bunker in Montana. The database went there, and so did the man who put me here fifteen years ago.
     ~ tomb_gamma_location_known = true
     -> hub
 + { asked_architect } [Enough. It's time to decide what happens to you.] -> the_choice
 + { not asked_architect } [Enough talk. What happens to you now.] -> the_choice
 
 === the_choice ===
-Narrator: The disposition screen on the wall behind you takes one entry per detainee, and {netherton_ko:the Director will countersign it when he is back on his feet|the Director countersigns whatever goes in}. Nightshade is the one asking, though, and after fifteen years you owe him the answer to his face.
+Narrator: The disposition screen behind you takes one entry per detainee, and {netherton_ko:the Director will countersign it when he is back on his feet|the Director countersigns whatever goes in}. Nightshade is watching you.
 Agent 0x47 'Nightshade': So. What does SAFETYNET do with a man who thinks he was right?
-+ [No deals. You go to the police with every page of this, and you answer for those two names in a courtroom. That's the whole difference between us.]
++ [No deals. The police get the file. You answer for those two names in court.]
     #complete_task:decide_the_fate
     ~ nightshade_arrested = true
     -> lock_in ->
-    Agent 0x47 'Nightshade': Clean. Predictable. I'd have expected nothing else from you, and I mean that as the compliment it is. Enter it. I won't fight it.
+    Agent 0x47 'Nightshade': Clean. Predictable. I'd expect nothing else from you, and I mean that as a compliment.
+    Agent 0x47 'Nightshade': Enter it. I won't fight it.
     -> aftermath
-+ [No cell and a clear conscience. You get a leash. You stay in play, you feed us ENTROPY, and you buy back one inch of what you took every single day.]
++ [No cell. A leash. Feed us ENTROPY, and pay it back an inch a day.]
     #complete_task:decide_the_fate
     ~ nightshade_triple_agent = true
     -> lock_in ->
     Narrator: A long pause.
-    Agent 0x47 'Nightshade': You've grown a ruthless streak since training. I approve of it, which should frighten you more than it does. I'll be your ghost inside their machine, for exactly as long as it suits me to be. Never forget I told you that part.
+    Agent 0x47 'Nightshade': You've grown a ruthless streak since I taught you. I approve, which should frighten you more than it does.
+    Agent 0x47 'Nightshade': I'll be your ghost inside their machine, for exactly as long as it suits me.
+    Agent 0x47 'Nightshade': Never forget I told you that part.
     -> aftermath
 
-// PASS 2 playtest D1: the engine's End Conversation button ignores
-// disableClose. Everything the outcome needs (fate, fate_decided, Tomb Gamma)
-// is written in the same step as the choice, so closing anywhere after it
+// PASS 2 playtest D1 found End Conversation ignoring disableClose; the engine
+// now hides it (base-minigame.js), so only a reload can interrupt the scene.
+// Everything the outcome needs (fate, fate_decided, Tomb Gamma) is still
+// written in the same step as the choice, so an interruption anywhere after it
 // leaves a complete state; the lines that follow are delivery only.
 === lock_in ===
 ~ fate_decided = true
@@ -140,17 +170,20 @@ Agent 0x47 'Nightshade': So. What does SAFETYNET do with a man who thinks he was
 
 === aftermath ===
 { gamma_volunteered:
-    Agent 0x47 'Nightshade': You never asked where it all went. I'll tell you anyway. It's worth more than my silence, and I'd like, just once, to be the one who tips the board over.
-    Agent 0x47 'Nightshade': Tomb Gamma. Forty-seven point two-three-eight-two north, one-twelve point five-one-five-six west. An old Cold War bunker in Montana. The database went there, and so will you.
+    Agent 0x47 'Nightshade': You never asked about The Architect. I'll tell you anyway. I'd like, just once, to be the one who tips the board over.
+    Agent 0x47 'Nightshade': Tomb Gamma. Forty-seven point two-three-eight-two north, one-twelve point five-one-five-six west.
+    Agent 0x47 'Nightshade': An old Cold War bunker in Montana. Everything they took from us went there, and so will you.
 - else:
     Agent 0x47 'Nightshade': Take the coordinates to Netherton. Tomb Gamma won't wait for you to grieve me.
 }
 { netherton_ko:
-    Narrator: You type the entry. The countersignature field stays empty, waiting for a Director who is still being looked at by the medic.
+    Narrator: You type the entry. The countersignature field stays empty. The Director is still with the medic.
 - else:
-    Narrator: You type the entry. The Director's countersignature appears on the screen before you have looked away from it.
+    Narrator: You type the entry. The Director's countersignature appears before you've looked away.
 }
-Narrator: You hold Nightshade's eye for a moment longer than you mean to. Then you go.
+// PASS 4 (dialogue): the teacher's line from m07, unexplained.
+Agent 0x47 'Nightshade': And 0x00. Let it hurt afterwards, not during.
+Narrator: You hold his eye a moment longer than you mean to. Then you go.
 #exit_conversation
 -> after_choice
 
