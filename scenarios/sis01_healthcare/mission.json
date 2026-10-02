@@ -1,0 +1,130 @@
+{
+  "display_name": "Northgate General: Code Black",
+  "description": "A ransomware attack has encrypted the cardiac ward monitoring station at Northgate General Hospital NHS Trust. With patient safety at immediate risk, you must triage the attack, isolate the network, verify the integrity of safety-critical clinical systems, and navigate competing governance obligations — all before a patient comes to harm.",
+  "difficulty_level": 3,
+  "secgen_scenario": "northgate_hospital",
+  "collection": "cybok_sis",
+  "branching": true,
+  "branches": ["bed4_escalated_early", "bed4_missed", "drug_tamper_caught", "drug_tamper_missed", "ico_notified_on_time", "ico_deadline_missed"],
+  "estimated_duration_minutes": 75,
+  "cybok": [
+    {
+      "ka": "SIS",
+      "topic": "Security-Informed Safety",
+      "keywords": [
+        "security-informed safety",
+        "safety case",
+        "claim-argument-evidence",
+        "cyber-physical hazard",
+        "emergent safety failure",
+        "normalisation of deviance",
+        "safety case invalidation"
+      ]
+    },
+    {
+      "ka": "SIS",
+      "topic": "Requirements and Reconciliation",
+      "keywords": [
+        "safety requirements in the presence of cyber threats",
+        "reconciling safety and security requirements",
+        "clinical safety engineering",
+        "IEC 80001",
+        "connected medical devices"
+      ]
+    },
+    {
+      "ka": "SIS",
+      "topic": "Architecture",
+      "keywords": [
+        "network segmentation",
+        "VLAN isolation",
+        "defence in depth",
+        "clinical network architecture",
+        "air gap vs connected systems"
+      ]
+    },
+    {
+      "ka": "SOIM",
+      "topic": "Incident Management",
+      "keywords": [
+        "ransomware incident response",
+        "SIEM triage",
+        "network isolation decision",
+        "dual authorisation",
+        "major incident declaration",
+        "recovery time objective",
+        "backup restoration"
+      ]
+    },
+    {
+      "ka": "SOIM",
+      "topic": "Monitoring",
+      "keywords": [
+        "SIEM alert triage",
+        "lateral movement detection",
+        "VPN anomaly detection",
+        "authentication log analysis",
+        "initial access vector identification"
+      ]
+    },
+    {
+      "ka": "LR",
+      "topic": "Privacy and Data Protection",
+      "keywords": [
+        "UK GDPR Article 33",
+        "UK GDPR Article 34",
+        "ICO 72-hour notification",
+        "special category health data",
+        "data controller obligations",
+        "DSPT",
+        "NHS data security"
+      ]
+    },
+    {
+      "ka": "HF",
+      "topic": "Organisational Security",
+      "keywords": [
+        "dual authorisation",
+        "escalation protocols",
+        "clinical governance",
+        "safety culture",
+        "normalisation of deviance",
+        "information governance",
+        "major incident command"
+      ]
+    },
+    {
+      "ka": "AAA",
+      "topic": "Authentication",
+      "keywords": [
+        "MFA enforcement",
+        "VPN access control",
+        "stale account management",
+        "leaver deprovisioning",
+        "contractor credential abuse"
+      ]
+    },
+    {
+      "ka": "MAT",
+      "topic": "Malicious Activities by Malware",
+      "keywords": [
+        "ransomware",
+        "ransomware impact on critical infrastructure",
+        "data exfiltration vs encryption",
+        "healthcare sector targeting"
+      ]
+    }
+  ],
+  "prerequisites": [],
+  "unlocks": [],
+  "campaign_critical": false,
+  "narrative_weight": "high",
+  "consequences_persist": true,
+  "lore_reveals": [
+    "DarkVault ransomware group's healthcare targeting methodology",
+    "The tension between security incident response and clinical governance",
+    "How a stale contractor VPN account with no MFA becomes a patient safety risk",
+    "Why safety cases must be living documents, not compliance artefacts"
+  ],
+  "facilitator_notes": "Designed for 4–6 players split across IT security and clinical roles. Facilitator should brief players on their role before starting. IT-track players focus on SIEM, VPN logs, and network isolation. Clinical-track players focus on Bed 4, drug library, and patient safety decisions. The Bed 4 consequence (patient enters CRITICAL at 22-minute mark if not escalated) is the primary time pressure. Facilitator verbally delivers placeholder PINs if custom minigames are not yet deployed."
+}

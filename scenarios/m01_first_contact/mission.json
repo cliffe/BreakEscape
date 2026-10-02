@@ -1,0 +1,34 @@
+{
+  "display_name": "First Contact",
+  "description": "Infiltrate Viral Dynamics Media to investigate suspected ENTROPY cell operations. Gather evidence of coordinated disinformation campaigns targeting local elections while maintaining your cover as an IT contractor. Your first mission to uncover the Social Fabric cell.",
+  "difficulty_level": 1,
+  "secgen_scenario": "intro_to_linux_security_lab",
+  "collection": "season_1",
+  "cybok": [
+    {
+      "ka": "NS",
+      "topic": "Network Protocols and Vulnerability",
+      "keywords": ["common network attacks"]
+    },
+    {
+      "ka": "SOIM",
+      "topic": "PENETRATION TESTING",
+      "keywords": ["PENETRATION TESTING - SOFTWARE TOOLS"]
+    },
+    {
+      "ka": "OS",
+      "topic": "Primitives for Isolation and Mediation",
+      "keywords": ["authentication and identification"]
+    },
+    {
+      "ka": "AAA",
+      "topic": "Authentication",
+      "keywords": ["user authentication"]
+    },
+    {
+      "ka": "CPS",
+      "topic": "Physical Security",
+      "keywords": ["Physical access control"]
+    }
+  ]
+}

@@ -1,0 +1,461 @@
+/* Text File Minigame Styles */
+
+/* Import VT font */
+@import url('https://fonts.googleapis.com/css2?family=VT323:wght@400&display=swap');
+
+/* Text File Minigame Container */
+.text-file-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: #ffffff;
+    border: 4px solid #d1d5db;
+    clip-path: polygon(
+      0px calc(100% - 10px),
+      2px calc(100% - 10px),
+      2px calc(100% - 6px),
+      4px calc(100% - 6px),
+      4px calc(100% - 4px),
+      6px calc(100% - 4px),
+      6px calc(100% - 2px),
+      10px calc(100% - 2px),
+      10px 100%,
+      calc(100% - 10px) 100%,
+      calc(100% - 10px) calc(100% - 2px),
+      calc(100% - 6px) calc(100% - 2px),
+      calc(100% - 6px) calc(100% - 4px),
+      calc(100% - 4px) calc(100% - 4px),
+      calc(100% - 4px) calc(100% - 6px),
+      calc(100% - 2px) calc(100% - 6px),
+      calc(100% - 2px) calc(100% - 10px),
+      100% calc(100% - 10px),
+      100% 10px,
+      calc(100% - 2px) 10px,
+      calc(100% - 2px) 6px,
+      calc(100% - 4px) 6px,
+      calc(100% - 4px) 4px,
+      calc(100% - 6px) 4px,
+      calc(100% - 6px) 2px,
+      calc(100% - 10px) 2px,
+      calc(100% - 10px) 0px,
+      10px 0px,
+      10px 2px,
+      6px 2px,
+      6px 4px,
+      4px 4px,
+      4px 6px,
+      2px 6px,
+      2px 10px,
+      0px 10px
+    );
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+}
+
+/* Mac-style Window Title Bar */
+.text-file-window-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: linear-gradient(to bottom, #f6f6f6 0%, #e8e8e8 100%);
+    border-bottom: 1px solid #d1d5db;
+    min-height: 28px;
+}
+
+.window-controls {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.window-control {
+    width: 12px;
+    height: 12px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.window-control.close {
+    background: #ff5f57;
+}
+
+.window-control.minimize {
+    background: #ffbd2e;
+}
+
+.window-control.maximize {
+    background: #28ca42;
+}
+
+.window-control:hover {
+    transform: scale(1.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.window-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: #333333;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    flex: 1;
+    text-align: center;
+    margin: 0 20px;
+}
+
+/* File Header Section */
+.file-header {
+    display: flex;
+    align-items: center;
+    padding: 16px 20px;
+    background: #f8f9fa;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.file-icon {
+    font-size: 24px;
+    margin-right: 12px;
+    color: #495057;
+}
+
+.file-info {
+    flex: 1;
+}
+
+.file-name {
+    font-size: 18px;
+    font-weight: bold;
+    color: #212529;
+    margin-bottom: 4px;
+}
+
+.file-meta {
+    display: flex;
+    gap: 12px;
+    font-size: 18px;
+    color: #6c757d;
+}
+
+.file-type {
+    background: #e9ecef;
+    padding: 2px 8px;
+    /* border-radius: 4px; */
+    border: 2px solid #dee2e6;
+    color: #495057;
+}
+
+.file-size {
+    color: #6c757d;
+}
+
+/* File Content Area */
+.file-content-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+    overflow: hidden;
+}
+
+.content-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 16px;
+    background: #f8f9fa;
+    border-bottom: 2px solid #e9ecef;
+    min-height: 36px;
+}
+
+.content-label {
+    font-size: 18px;
+    color: #495057;
+    font-weight: 500;
+}
+
+.content-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.action-btn {
+    background: #ffffff;
+    border: 2px solid #d1d5db;
+    color: #374151;
+    padding: 4px 12px;
+    /* border-radius: 6px; */
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.action-btn:hover {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.action-btn:active {
+    background: #e5e7eb;
+    transform: translateY(1px);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* File Content Display */
+.file-content {
+    flex: 1;
+    padding: 16px 20px 80px;
+    overflow: auto;
+    background: #ffffff;
+    border: none;
+    margin: 0;
+}
+
+.file-text {
+    color: #000000;
+    font-size: 20px;
+    line-height: 1.5;
+    margin: 0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    user-select: text;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    min-height: 300px;
+}
+
+/* File Observations Section */
+.file-observations {
+    margin: 0;
+    padding: 16px 20px 80px;
+    background: #fff3cd;
+    border-top: 1px solid #ffeaa7;
+}
+
+.file-observations h4 {
+    color: #856404;
+    font-size: 18px;
+    margin: 0 0 8px 0;
+    font-weight: bold;
+}
+
+.file-observations p {
+    color: #6c5700;
+    font-size: 18px;
+    line-height: 1.4;
+    margin: 0;
+}
+
+/* Text Selection Styling */
+.file-content ::selection {
+    background: #3b82f6;
+    color: #ffffff;
+}
+
+.file-content ::-moz-selection {
+    background: #3b82f6;
+    color: #ffffff;
+}
+
+/* Custom Scrollbar Styling */
+.file-content::-webkit-scrollbar {
+    width: 12px;
+}
+
+.file-content::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    /* border-radius: 6px; */
+}
+
+.file-content::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    /* border-radius: 6px; */
+    border: 2px solid #f1f5f9;
+}
+
+.file-content::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+.file-content::-webkit-scrollbar-corner {
+    background: #f1f5f9;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .text-file-container {
+        /* border-radius: 8px; */
+    }
+    
+    .text-file-window-header {
+        border-radius: 8px 8px 0 0;
+        padding: 6px 10px;
+        min-height: 24px;
+    }
+    
+    .window-control {
+        width: 10px;
+        height: 10px;
+    }
+    
+    .window-title {
+        font-size: 18px;
+        margin: 0 15px;
+    }
+    
+    .file-header {
+        padding: 12px 16px;
+    }
+    
+    .file-name {
+        font-size: 20px;
+    }
+    
+    .file-meta {
+        font-size: 18px;
+        gap: 8px;
+    }
+    
+    .content-header {
+        padding: 6px 12px;
+        min-height: 32px;
+    }
+    
+    .content-label {
+        font-size: 18px;
+    }
+    
+    .action-btn {
+        padding: 3px 8px;
+        font-size: 11px;
+    }
+    
+    .file-content {
+        padding: 12px 16px 80px;
+    }
+
+    .file-text {
+        font-size: 18px;
+    }
+
+    .file-observations {
+        padding: 12px 16px 80px;
+    }
+    
+    .file-observations h4 {
+        font-size: 18px;
+    }
+    
+    .file-observations p {
+        font-size: 18px;
+    }
+}
+
+/* Dark Mode Support (Optional) */
+@media (prefers-color-scheme: dark) {
+    .text-file-container {
+        background: #1f2937;
+        border-color: #374151;
+    }
+    
+    .text-file-window-header {
+        background: linear-gradient(to bottom, #374151 0%, #1f2937 100%);
+        border-bottom-color: #374151;
+    }
+    
+    .window-title {
+        color: #f9fafb;
+    }
+    
+    .file-header {
+        background: #374151;
+        border-bottom-color: #4b5563;
+    }
+    
+    .file-icon {
+        color: #d1d5db;
+    }
+    
+    .file-name {
+        color: #f9fafb;
+    }
+    
+    .file-meta {
+        color: #9ca3af;
+    }
+    
+    .file-type {
+        background: #4b5563;
+        border-color: #6b7280;
+        color: #d1d5db;
+    }
+    
+    .file-size {
+        color: #9ca3af;
+    }
+    
+    .content-header {
+        background: #374151;
+        border-bottom-color: #4b5563;
+    }
+    
+    .content-label {
+        color: #d1d5db;
+    }
+    
+    .action-btn {
+        background: #4b5563;
+        border-color: #6b7280;
+        color: #f9fafb;
+    }
+    
+    .action-btn:hover {
+        background: #6b7280;
+        border-color: #9ca3af;
+    }
+    
+    .action-btn:active {
+        background: #374151;
+    }
+    
+    .file-content {
+        background: #1f2937;
+    }
+    
+    .file-text {
+        color: #f9fafb;
+    }
+    
+    .file-observations {
+        background: #451a03;
+        border-top-color: #92400e;
+    }
+    
+    .file-observations h4 {
+        color: #fbbf24;
+    }
+    
+    .file-observations p {
+        color: #fcd34d;
+    }
+    
+    .file-content::-webkit-scrollbar-track {
+        background: #374151;
+    }
+    
+    .file-content::-webkit-scrollbar-thumb {
+        background: #6b7280;
+        border-color: #374151;
+    }
+    
+    .file-content::-webkit-scrollbar-thumb:hover {
+        background: #9ca3af;
+    }
+    
+    .file-content::-webkit-scrollbar-corner {
+        background: #374151;
+    }
+}

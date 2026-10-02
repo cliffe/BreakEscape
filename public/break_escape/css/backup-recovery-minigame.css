@@ -1,0 +1,365 @@
+.backup-recovery-minigame-container {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    max-width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 0;
+}
+
+.backup-recovery-game-container {
+    width: 80vw;
+    max-width: 1600px;
+    min-height: 80vh;
+    height: 80vh;
+    padding: 0;
+    margin: 0;
+    display: block;
+    background: transparent;
+    box-shadow: none;
+}
+
+.backup-recovery-shell {
+    --mg07-bg: #1a1f22;
+    --mg07-panel-bg: #232b2f;
+    --mg07-border: #7e8e95;
+    --mg07-text: #e8eef1;
+    --mg07-danger: #ca3e3e;
+    --mg07-warning: #d08a2f;
+    --mg07-success: #4f9a61;
+    --mg07-muted: #a8b4bb;
+
+    background: linear-gradient(180deg, #171c20 0%, var(--mg07-bg) 100%);
+    border: 2px solid var(--mg07-border);
+    color: var(--mg07-text);
+    min-height: 100%;
+    height: 100%;
+    padding: 56px 18px 72px 18px;
+    display: grid;
+    grid-template-rows: auto auto minmax(220px, 1fr) auto;
+    gap: 10px;
+}
+
+.backup-recovery-header {
+    border: 2px solid var(--mg07-border);
+    background: #111518;
+    color: var(--mg07-text);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    padding: 12px;
+}
+
+/* Key slots: what material the console currently holds (scenarioData `keySlots`). */
+.backup-recovery-slots {
+    list-style: none;
+    margin: 10px 0 0 0;
+    padding: 0;
+    display: grid;
+    gap: 2px;
+}
+
+.backup-recovery-slot {
+    display: grid;
+    grid-template-columns: auto minmax(0, 16em) minmax(0, 1fr);
+    gap: 10px;
+    font-family: 'GNF', monospace;
+    font-size: 21px;
+    line-height: 1.15;
+}
+
+.backup-recovery-slot.is-loaded {
+    color: #bff0cb;
+}
+
+.backup-recovery-slot.is-missing {
+    color: #f0c9a0;
+}
+
+.backup-recovery-slot-state {
+    color: var(--mg07-muted);
+}
+
+.backup-recovery-tiles {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    align-items: start;
+}
+
+.backup-recovery-tile {
+    border: 2px solid var(--mg07-border);
+    background: #272f34;
+    color: var(--mg07-text);
+    text-align: left;
+    padding: 12px;
+    min-height: 150px;
+    display: grid;
+    grid-template-rows: auto auto auto auto;
+    gap: 10px;
+    cursor: pointer;
+    align-content: start;
+}
+
+.backup-recovery-tile:hover,
+.backup-recovery-tile:focus-visible {
+    border-color: #c2d0d8;
+    background: #303b41;
+    outline: none;
+}
+
+.backup-recovery-tile.is-selected {
+    border-color: #f0b65b;
+    box-shadow: inset 0 0 0 2px #f0b65b;
+}
+
+/* Source blocked by an unmet prerequisite (scenarioData `requiresGlobal`).
+   Still selectable so the panel can explain why, but visibly not a live option. */
+.backup-recovery-tile.is-unavailable {
+    opacity: 0.45;
+    filter: grayscale(0.8);
+    cursor: not-allowed;
+}
+
+.backup-recovery-tile.is-unavailable.is-selected {
+    border-color: #c0504d;
+    box-shadow: inset 0 0 0 2px #c0504d;
+}
+
+.backup-recovery-tile-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.backup-recovery-icon {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    color: var(--mg07-muted);
+}
+
+.backup-recovery-marker {
+    width: 22px;
+    height: 22px;
+    border: 2px solid;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.backup-recovery-marker.is-danger {
+    color: #ffd8d8;
+    border-color: #8f1f1f;
+    background: #6e2525;
+}
+
+.backup-recovery-marker.is-warning {
+    color: #fff0d6;
+    border-color: #8b5b1a;
+    background: #7a5628;
+}
+
+.backup-recovery-source-name {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.backup-recovery-status-badge {
+    border: 2px solid;
+    display: inline-flex;
+    justify-self: start;
+    font-family: 'GNF', monospace;
+    font-size: 22px;
+    letter-spacing: 0.5px;
+    padding: 1px 8px;
+    line-height: 1.1;
+    align-self: start;
+}
+
+.backup-recovery-status-badge.is-danger {
+    color: #ffdcdc;
+    border-color: #8c2626;
+    background: #582323;
+}
+
+.backup-recovery-status-badge.is-warning {
+    color: #ffe6bf;
+    border-color: #946221;
+    background: #5d4525;
+}
+
+.backup-recovery-status-badge.is-success {
+    color: #d4ffe1;
+    border-color: #2f6f41;
+    background: #274d31;
+}
+
+.backup-recovery-eta {
+    font-family: 'GNF', monospace;
+    font-size: 23px;
+    color: var(--mg07-muted);
+    align-self: start;
+}
+
+.backup-recovery-panel {
+    border: 2px solid var(--mg07-border);
+    background: var(--mg07-panel-bg);
+    padding: 12px;
+    display: grid;
+    gap: 10px;
+    align-content: start;
+    overflow: auto;
+}
+
+.backup-recovery-panel-header {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.backup-recovery-panel-banner {
+    border: 2px solid;
+    font-family: 'GNF', monospace;
+    font-size: 23px;
+    line-height: 1.2;
+    padding: 6px 8px;
+}
+
+.backup-recovery-panel-banner.is-danger {
+    color: #ffe2e2;
+    border-color: #8c2626;
+    background: #582323;
+}
+
+.backup-recovery-panel-banner.is-warning {
+    color: #fff0dc;
+    border-color: #946221;
+    background: #5d4525;
+}
+
+.backup-recovery-panel-banner.is-neutral {
+    color: #e7eff3;
+    border-color: #5e707a;
+    background: #2a353b;
+}
+
+.backup-recovery-panel-bullets {
+    margin: 0;
+    padding-left: 18px;
+    display: grid;
+    gap: 4px;
+}
+
+.backup-recovery-panel-bullets li {
+    font-family: 'GNF', monospace;
+    font-size: 23px;
+    line-height: 1.15;
+    color: #d9e4ea;
+}
+
+.backup-recovery-actions {
+    display: flex;
+}
+
+.backup-recovery-confirm-btn {
+    width: 100%;
+    border: 2px solid #8f6323;
+    background: #c9882f;
+    color: #17100a;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 20px;
+    line-height: 1.45;
+    padding: 18px 14px;
+    cursor: pointer;
+}
+
+.backup-recovery-confirm-btn:hover:not(:disabled),
+.backup-recovery-confirm-btn:focus-visible:not(:disabled) {
+    background: #df9d41;
+    outline: none;
+}
+
+.backup-recovery-confirm-btn:disabled {
+    border-color: #5a6266;
+    background: #485257;
+    color: #aeb8bd;
+    cursor: not-allowed;
+}
+
+@media (max-width: 860px) {
+    .backup-recovery-minigame-container {
+        width: 100vw;
+        height: 100vh;
+        max-height: 100vh;
+    }
+
+    .backup-recovery-game-container {
+        width: 92vw;
+        height: 88vh;
+        min-height: 88vh;
+    }
+
+    .backup-recovery-shell {
+        padding: 54px 12px 68px 12px;
+        grid-template-rows: auto auto minmax(180px, 1fr) auto;
+    }
+
+    .backup-recovery-tiles {
+        grid-template-columns: 1fr;
+    }
+
+    .backup-recovery-tile {
+        min-height: 140px;
+    }
+
+    .backup-recovery-confirm-btn {
+        font-size: 14px;
+        padding: 16px 10px;
+    }
+}
+
+/* Outcome screen — shown after confirm, before minigame closes */
+
+.backup-recovery-shell--outcome {
+    grid-template-rows: auto 1fr;
+    padding-top: 80px;
+}
+
+.backup-recovery-outcome-panel {
+    border: 2px solid;
+    padding: 24px;
+    display: grid;
+    gap: 16px;
+    align-content: center;
+}
+
+.backup-recovery-outcome-panel--danger {
+    color: #ffe2e2;
+    border-color: #8c2626;
+    background: #2e1616;
+}
+
+.backup-recovery-outcome-panel--success {
+    color: #d4ffe1;
+    border-color: #2f6f41;
+    background: #162d1e;
+}
+
+.backup-recovery-outcome-panel--warning {
+    color: #fff0dc;
+    border-color: #946221;
+    background: #2e200e;
+}
+
+.backup-recovery-outcome-status {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    line-height: 1.5;
+}

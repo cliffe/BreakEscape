@@ -1,0 +1,327 @@
+/* Utility Classes */
+
+/* Visibility Utilities */
+.hidden {
+    display: none !important;
+}
+
+.show {
+    display: block !important;
+}
+
+.show-flex {
+    display: flex !important;
+}
+
+.show-inline {
+    display: inline !important;
+}
+
+.show-inline-block {
+    display: inline-block !important;
+}
+
+/* Positioning Utilities */
+.position-absolute {
+    position: absolute;
+}
+
+.position-relative {
+    position: relative;
+}
+
+.position-fixed {
+    position: fixed;
+}
+
+/* Z-index Utilities */
+.z-1 {
+    z-index: 1;
+}
+
+.z-2 {
+    z-index: 2;
+}
+
+.z-3 {
+    z-index: 3;
+}
+
+.z-1000 {
+    z-index: 1000;
+}
+
+/* Color Utilities */
+.success-border {
+    border: 2px solid #00ff00 !important;
+}
+
+.error-border {
+    border: 2px solid #ff0000 !important;
+}
+
+.warning-border {
+    border: 2px solid #ffaa00 !important;
+}
+
+/* Progress Utilities */
+.progress-0 {
+    width: 0% !important;
+}
+
+.progress-25 {
+    width: 25% !important;
+}
+
+.progress-50 {
+    width: 50% !important;
+}
+
+.progress-75 {
+    width: 75% !important;
+}
+
+.progress-100 {
+    width: 100% !important;
+}
+
+/* Background Utilities */
+.bg-success {
+    background-color: #2ecc71 !important;
+}
+
+.bg-error {
+    background-color: #e74c3c !important;
+}
+
+.bg-warning {
+    background-color: #f39c12 !important;
+}
+
+.bg-info {
+    background-color: #3498db !important;
+}
+
+.bg-dark {
+    background-color: #2c3e50 !important;
+}
+
+/* Text Color Utilities */
+.text-success {
+    color: #2ecc71 !important;
+}
+
+.text-error {
+    color: #e74c3c !important;
+}
+
+.text-warning {
+    color: #f39c12 !important;
+}
+
+.text-info {
+    color: #3498db !important;
+}
+
+.text-muted {
+    color: #95a5a6 !important;
+}
+
+.text-white {
+    color: #ffffff !important;
+}
+
+/* Pointer Events */
+.pointer-events-none {
+    pointer-events: none !important;
+}
+
+.pointer-events-auto {
+    pointer-events: auto !important;
+}
+
+/* Transition Utilities */
+.transition-fast {
+    transition: all 0.15s ease;
+}
+
+.transition-normal {
+    transition: all 0.3s ease;
+}
+
+.transition-slow {
+    transition: all 0.5s ease;
+}
+
+/* Transform Utilities */
+.scale-105 {
+    transform: scale(1.05);
+}
+
+.scale-110 {
+    transform: scale(1.1);
+}
+
+/* Box Shadow Utilities */
+.shadow-glow {
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+}
+
+.shadow-glow-strong {
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+}
+
+.shadow-success {
+    box-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
+}
+
+.shadow-error {
+    box-shadow: 0 0 10px rgba(231, 76, 60, 0.5);
+}
+
+/* Pixel Art Corner Utilities */
+.pixel-corners {
+  clip-path: polygon(
+    0px calc(100% - 10px),
+    2px calc(100% - 10px),
+    2px calc(100% - 6px),
+    4px calc(100% - 6px),
+    4px calc(100% - 4px),
+    6px calc(100% - 4px),
+    6px calc(100% - 2px),
+    10px calc(100% - 2px),
+    10px 100%,
+    calc(100% - 10px) 100%,
+    calc(100% - 10px) calc(100% - 2px),
+    calc(100% - 6px) calc(100% - 2px),
+    calc(100% - 6px) calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 6px),
+    calc(100% - 2px) calc(100% - 6px),
+    calc(100% - 2px) calc(100% - 10px),
+    100% calc(100% - 10px),
+    100% 10px,
+    calc(100% - 2px) 10px,
+    calc(100% - 2px) 6px,
+    calc(100% - 4px) 6px,
+    calc(100% - 4px) 4px,
+    calc(100% - 6px) 4px,
+    calc(100% - 6px) 2px,
+    calc(100% - 10px) 2px,
+    calc(100% - 10px) 0px,
+    10px 0px,
+    10px 2px,
+    6px 2px,
+    6px 4px,
+    4px 4px,
+    4px 6px,
+    2px 6px,
+    2px 10px,
+    0px 10px
+  );
+}
+
+/* For rendering icons that are 16px by 16px */
+.icon {
+  width: 32px;
+  height: 32px;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  vertical-align: middle;
+  /* margin-right: 4px; */
+}
+
+/* For rendering icons that are 8px by 8px */
+.icon-small {
+  width: 16px;
+  height: 16px;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  vertical-align: middle;
+  /* margin-right: 4px; */
+}
+
+/* For rendering icons that are 32px by 32px */
+.icon-large {
+  width: 64px;
+  height: 64px;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  vertical-align: middle;
+  /* margin-right: 4px; */
+}
+
+/* ─── CRT / Pixel-Art Button Effect ─────────────────────────────────────────
+   Single grouped selector that applies the bond-visualiser CRT aesthetic to
+   all game action buttons. Colour, sizing, and layout stay in each file.
+   Loads early so individual files can still override specifics if needed.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.minigame-button,
+.minigame-close-button,
+.minigame-open-new-tab-button,
+.modal-button,
+.password-modal-button,
+.tutorial-btn,
+.tutorial-skip,
+.btn,
+.modal-close-button,
+.person-chat-choice-button,
+.person-chat-continue-button,
+.session-overlay-btn {
+    image-rendering: pixelated;
+    border-radius: 0 !important;
+    cursor: pointer;
+    /* CRT scanlines layered over the button's existing background-color */
+    background-image: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, 0.10) 2px,
+        rgba(0, 0, 0, 0.10) 4px
+    ) !important;
+}
+
+/* Glow on hover — uses currentColor so it matches each button's text/border tint */
+.minigame-button:hover,
+.modal-button:hover,
+.password-modal-button:hover,
+.tutorial-btn:hover,
+.tutorial-skip:hover,
+.btn:hover,
+.modal-close-button:hover,
+.person-chat-choice-button:hover,
+.person-chat-continue-button:hover,
+.session-overlay-btn:hover {
+    box-shadow: 0 0 10px currentColor;
+}
+
+/* Session overlay: glow uses border-color since text is always white */
+#session-resume-btn:hover  { box-shadow: 0 0 10px #4CAF50; }
+#session-restart-btn:hover { box-shadow: 0 0 10px #777; }
+#session-new-btn:hover     { box-shadow: 0 0 10px #1a6fb0; }
+
+/* Physical "press" feel on click */
+.minigame-button:active,
+.modal-button:active,
+.password-modal-button:active,
+.tutorial-btn:active,
+.btn:active,
+.person-chat-choice-button:active,
+.person-chat-continue-button:active,
+.session-overlay-btn:active {
+    transform: scale(0.96);
+}
+.minigame-button:active,
+.modal-button:active,
+.password-modal-button:active,
+.tutorial-btn:active,
+.btn:active,
+.person-chat-choice-button:active,
+.person-chat-continue-button:active,
+.session-overlay-btn:active {
+    transform: scale(0.96);
+}

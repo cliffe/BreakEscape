@@ -1,0 +1,131 @@
+<%# =========================================================================== %>
+<%# CHAT MINIGAME DEMO                                                           %>
+<%# One small room that demonstrates every chat minigame type:                  %>
+<%#   1. person-chat  — walk up to Vega and interact (full-screen portrait)      %>
+<%#   2. phone-chat   — open a phone from inventory (LCD theme AND terminal theme)%>
+<%#   3. video-call   — read the Video Console to trigger a framed video call     %>
+<%# =========================================================================== %>
+{
+  "scenario_brief": "A sandbox room that demonstrates every chat minigame: talk to Vega in person, text two contacts on your phones, and accept a secure video call.",
+  "endGoal": "Try all three chat styles: person-chat, phone-chat, and video-call.",
+  "startRoom": "demo_room",
+
+  "globalVariables": {
+    "video_console_accessed": false
+  },
+
+  "player": {
+    "id": "player",
+    "displayName": "Agent 0x00",
+    "spriteSheet": "male_hacker_hood_down_v2",
+    "spriteTalk": "assets/characters/male_hacker_hood_down_talk.png",
+    "spriteConfig": { "idleFrameStart": 20, "idleFrameEnd": 23 }
+  },
+
+  "startItemsInInventory": [
+    {
+      "type": "phone",
+      "name": "Handler Phone",
+      "takeable": true,
+      "phoneId": "player_phone",
+      "npcIds": ["handler"],
+      "observations": "Your standard-issue comms phone (LCD theme). Handler is on it."
+    },
+    {
+      "type": "phone",
+      "name": "Burner Terminal",
+      "takeable": true,
+      "phoneId": "terminal_phone",
+      "npcIds": ["signal"],
+      "observations": "An anonymous black device running a terminal-style messenger."
+    }
+  ],
+
+  "rooms": {
+    "demo_room": {
+      "type": "room_office",
+      "connections": {},
+      "objects": [
+        {
+          "type": "text_file",
+          "name": "Video Console",
+          "takeable": false,
+          "text": "SECURE VIDEO NODE\n\nInbound encrypted call request detected.\nReading this node accepts the call.",
+          "observations": "A comms console blinking with an inbound video call. Reading it accepts the call.",
+          "onRead": { "setVariable": { "video_console_accessed": true } }
+        }
+      ],
+      "npcs": [
+        <%# --- 1. person-chat: an in-room NPC. Walk up + interact to open the full-screen portrait chat. --- %>
+        {
+          "id": "vega",
+          "displayName": "Vega",
+          "npcType": "person",
+          "position": { "x": 6, "y": 4 },
+          "spriteSheet": "female_hacker_hood_v2",
+          "spriteTalk": "assets/characters/female_hacker_hood_talk.png",
+          "spriteVisemes": "assets/characters/female_hacker_hood_visemes.png",
+          "spriteConfig": { "idleFrameStart": 20, "idleFrameEnd": 23 },
+          "storyPath": "scenarios/chat_minigame_demo/vega.json",
+          "currentKnot": "start",
+          "voice": {
+            "name": "Kore",
+            "style": "Calm, friendly colleague giving a quick tour. Clear and unhurried.",
+            "language": "en-GB"
+          }
+        },
+        <%# --- 2a. phone-chat (LCD theme): reachable by opening the Handler Phone in inventory. --- %>
+        {
+          "id": "handler",
+          "displayName": "Handler",
+          "npcType": "phone",
+          "storyPath": "scenarios/chat_minigame_demo/handler.json",
+          "avatar": "assets/npc/avatars/npc_helper.png",
+          "phoneId": "player_phone",
+          "currentKnot": "start",
+          "timedMessages": [
+            { "delay": 2500, "message": "You're online. Open me from your inventory whenever you're ready — this is the phone-chat view.", "type": "text" }
+          ]
+        },
+        <%# --- 2b. phone-chat (terminal theme): reachable by opening the Burner Terminal in inventory. --- %>
+        {
+          "id": "signal",
+          "displayName": "UNKNOWN",
+          "npcType": "phone",
+          "phoneTheme": "terminal",
+          "storyPath": "scenarios/chat_minigame_demo/signal.json",
+          "avatar": "assets/npc/avatars/npc_neutral.png",
+          "phoneId": "terminal_phone",
+          "currentKnot": "start"
+        },
+        <%# --- 3. video-call: a remote (phone) NPC rendered through person-chat's framed        --- %>
+        <%#        video-call view. Fires when the Video Console sets video_console_accessed=true.--- %>
+        {
+          "id": "cipher",
+          "displayName": "Cipher",
+          "npcType": "phone",
+          "storyPath": "scenarios/chat_minigame_demo/cipher.json",
+          "avatar": "assets/npc/avatars/npc_adversary.png",
+          "spriteTalk": "assets/characters/female_spy_talk.png",
+          "spriteVisemes": "assets/characters/female_spy_visemes.png",
+          "phoneId": "video_link",
+          "currentKnot": "start",
+          "voice": {
+            "name": "Charon",
+            "style": "Cool, confident remote contact on a video link. Faintly amused.",
+            "language": "en-GB"
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:video_console_accessed",
+              "condition": "value === true",
+              "onceOnly": true,
+              "conversationMode": "video-call",
+              "targetKnot": "incoming_call"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

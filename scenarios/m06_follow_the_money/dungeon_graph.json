@@ -1,0 +1,600 @@
+{
+  "scenario": "m06_follow_the_money",
+  "start_room": "reception_lobby",
+  "nodes": [
+    {
+      "id": "door_trading_floor",
+      "label": "Trading Floor<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "trading_floor",
+      "label": "Trading Floor",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_server_room",
+      "label": "Server Room<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "server_room",
+      "label": "Server Room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_data_center",
+      "label": "Data Centre<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "data_center",
+      "label": "Data Centre",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_irina_office",
+      "label": "Dr. I. Volkova, CTO<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "irina_office",
+      "label": "Dr. I. Volkova, CTO",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_executive_wing",
+      "label": "Executive<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "executive_wing",
+      "label": "Executive",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "reception_lobby",
+      "label": "HashChain Exchange",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lock_pick_kit",
+      "label": "Lock Pick Kit",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "rfid_cloner",
+      "label": "RFID Cloner",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "fingerprint_kit",
+      "label": "Fingerprint Kit",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "security_checkpoint",
+      "label": "Restricted",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "it_new_starter_checklist",
+      "label": "IT New Starter Checklist",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "daily_trading_report",
+      "label": "Daily Trading Report",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "npc_dr_irina_volkova",
+      "label": "Dr. Irina Volkova",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cto_access_badge",
+      "label": "CTO Access Badge",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "password_dictionary_list",
+      "label": "Password Dictionary List",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "executive_access_badge",
+      "label": "Executive Access Badge",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "action_irina_cooperation",
+      "label": "Win Irina over (or settle her fate)",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "hashchain_backend_server_terminal",
+      "label": "HashChain Backend Server Terminal",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_flag_station_financial",
+      "label": "Flag Station Financial",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "safetynet_financial_intelligence_drop",
+      "label": "SAFETYNET Financial Intelligence Drop",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "rack_inventory_sheet",
+      "label": "Rack Inventory Sheet",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "mixer_settlements_log",
+      "label": "mixer_settlements.log",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_cold_storage_console",
+      "label": "Cold Storage Console",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "mixer_pool_config_yml",
+      "label": "mixer_pool_config.yml",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "the_architect_s_fund_allocation",
+      "label": "The Architect's Fund Allocation",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "custody_console",
+      "label": "Custody Console",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "cold_storage_procedure",
+      "label": "Cold Storage Procedure",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "blockchain_lab",
+      "label": "Blockchain Analysis",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "entropy_transaction_network_analysis",
+      "label": "ENTROPY Transaction Network Analysis",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "cryptography_research_notes",
+      "label": "Cryptography Research Notes",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "email_from_the_architect",
+      "label": "Email: From The Architect",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_executive_safe",
+      "label": "Executive Safe",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "framed_press_clipping",
+      "label": "Framed Press Clipping",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "satoshi_office",
+      "label": "CEO",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "executive_safe",
+      "label": "Executive Safe",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "npc_satoshi_nakamoto_ii",
+      "label": "Satoshi Nakamoto II",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "action_satoshi_confrontation",
+      "label": "Confront Satoshi's Ghost",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "vmch_submit_flag1",
+      "label": "Crack the first server password and submit the flag",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_flag1",
+      "label": "Flag1 Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "lock_credential_reuse_available",
+      "label": "Credential Reuse Available",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "vmch_submit_flag2",
+      "label": "Reuse those credentials on the second account and submit the flag",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_flag2",
+      "label": "Flag2 Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "lock_financial_database_reachable",
+      "label": "Financial Database Reachable",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "vmch_submit_flag3",
+      "label": "Reach the financial database and submit the flag",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_flag3",
+      "label": "Flag3 Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "vmch_submit_flag4",
+      "label": "Take the whole estate and submit the final flag",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_flag4",
+      "label": "Flag4 Flag",
+      "kind": "flag",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_trading_floor",
+      "to": "trading_floor",
+      "soft": false
+    },
+    {
+      "from": "door_server_room",
+      "to": "server_room",
+      "soft": false
+    },
+    {
+      "from": "door_data_center",
+      "to": "data_center",
+      "soft": false
+    },
+    {
+      "from": "door_irina_office",
+      "to": "irina_office",
+      "soft": false
+    },
+    {
+      "from": "door_executive_wing",
+      "to": "executive_wing",
+      "soft": false
+    },
+    {
+      "from": "reception_lobby",
+      "to": "lock_pick_kit",
+      "soft": false
+    },
+    {
+      "from": "lock_pick_kit",
+      "to": "door_trading_floor",
+      "soft": false
+    },
+    {
+      "from": "reception_lobby",
+      "to": "rfid_cloner",
+      "soft": true
+    },
+    {
+      "from": "rfid_cloner",
+      "to": "door_irina_office",
+      "soft": true
+    },
+    {
+      "from": "reception_lobby",
+      "to": "fingerprint_kit",
+      "soft": false
+    },
+    {
+      "from": "security_checkpoint",
+      "to": "it_new_starter_checklist",
+      "soft": false
+    },
+    {
+      "from": "it_new_starter_checklist",
+      "to": "door_server_room",
+      "soft": false
+    },
+    {
+      "from": "trading_floor",
+      "to": "daily_trading_report",
+      "soft": false
+    },
+    {
+      "from": "trading_floor",
+      "to": "npc_dr_irina_volkova",
+      "soft": false
+    },
+    {
+      "from": "npc_dr_irina_volkova",
+      "to": "cto_access_badge",
+      "soft": false
+    },
+    {
+      "from": "cto_access_badge",
+      "to": "door_irina_office",
+      "soft": false
+    },
+    {
+      "from": "npc_dr_irina_volkova",
+      "to": "password_dictionary_list",
+      "soft": false
+    },
+    {
+      "from": "password_dictionary_list",
+      "to": "door_server_room",
+      "soft": false
+    },
+    {
+      "from": "npc_dr_irina_volkova",
+      "to": "executive_access_badge",
+      "soft": false
+    },
+    {
+      "from": "executive_access_badge",
+      "to": "door_executive_wing",
+      "soft": false
+    },
+    {
+      "from": "npc_dr_irina_volkova",
+      "to": "action_irina_cooperation",
+      "soft": false
+    },
+    {
+      "from": "server_room",
+      "to": "hashchain_backend_server_terminal",
+      "soft": false
+    },
+    {
+      "from": "hashchain_backend_server_terminal",
+      "to": "lock_flag_station_financial",
+      "soft": false
+    },
+    {
+      "from": "server_room",
+      "to": "safetynet_financial_intelligence_drop",
+      "soft": false
+    },
+    {
+      "from": "server_room",
+      "to": "rack_inventory_sheet",
+      "soft": false
+    },
+    {
+      "from": "data_center",
+      "to": "mixer_settlements_log",
+      "soft": false
+    },
+    {
+      "from": "mixer_settlements_log",
+      "to": "lock_cold_storage_console",
+      "soft": false
+    },
+    {
+      "from": "data_center",
+      "to": "mixer_pool_config_yml",
+      "soft": false
+    },
+    {
+      "from": "mixer_pool_config_yml",
+      "to": "lock_cold_storage_console",
+      "soft": false
+    },
+    {
+      "from": "data_center",
+      "to": "lock_cold_storage_console",
+      "soft": false
+    },
+    {
+      "from": "lock_cold_storage_console",
+      "to": "the_architect_s_fund_allocation",
+      "soft": false
+    },
+    {
+      "from": "data_center",
+      "to": "custody_console",
+      "soft": false
+    },
+    {
+      "from": "data_center",
+      "to": "cold_storage_procedure",
+      "soft": false
+    },
+    {
+      "from": "blockchain_lab",
+      "to": "entropy_transaction_network_analysis",
+      "soft": false
+    },
+    {
+      "from": "entropy_transaction_network_analysis",
+      "to": "lock_cold_storage_console",
+      "soft": false
+    },
+    {
+      "from": "irina_office",
+      "to": "cryptography_research_notes",
+      "soft": false
+    },
+    {
+      "from": "irina_office",
+      "to": "email_from_the_architect",
+      "soft": false
+    },
+    {
+      "from": "email_from_the_architect",
+      "to": "lock_executive_safe",
+      "soft": false
+    },
+    {
+      "from": "executive_wing",
+      "to": "framed_press_clipping",
+      "soft": true
+    },
+    {
+      "from": "framed_press_clipping",
+      "to": "lock_executive_safe",
+      "soft": true
+    },
+    {
+      "from": "satoshi_office",
+      "to": "lock_executive_safe",
+      "soft": false
+    },
+    {
+      "from": "satoshi_office",
+      "to": "executive_safe",
+      "soft": true
+    },
+    {
+      "from": "satoshi_office",
+      "to": "npc_satoshi_nakamoto_ii",
+      "soft": false
+    },
+    {
+      "from": "npc_satoshi_nakamoto_ii",
+      "to": "action_satoshi_confrontation",
+      "soft": false
+    },
+    {
+      "from": "vmch_submit_flag1",
+      "to": "vmfl_submit_flag1",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_flag1",
+      "to": "lock_credential_reuse_available",
+      "soft": false
+    },
+    {
+      "from": "vmch_submit_flag2",
+      "to": "vmfl_submit_flag2",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_flag1",
+      "to": "vmch_submit_flag2",
+      "soft": true
+    },
+    {
+      "from": "vmfl_submit_flag2",
+      "to": "lock_financial_database_reachable",
+      "soft": false
+    },
+    {
+      "from": "vmch_submit_flag3",
+      "to": "vmfl_submit_flag3",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_flag2",
+      "to": "vmch_submit_flag3",
+      "soft": true
+    },
+    {
+      "from": "vmfl_submit_flag3",
+      "to": "door_data_center",
+      "soft": false
+    },
+    {
+      "from": "vmch_submit_flag4",
+      "to": "vmfl_submit_flag4",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_flag3",
+      "to": "vmch_submit_flag4",
+      "soft": true
+    },
+    {
+      "from": "hashchain_backend_server_terminal",
+      "to": "vmch_submit_flag1",
+      "soft": false
+    },
+    {
+      "from": "reception_lobby",
+      "to": "security_checkpoint",
+      "soft": false
+    }
+  ]
+}

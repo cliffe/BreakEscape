@@ -1,0 +1,13 @@
+{
+  "frameSize": 128,
+  "visemes": [
+    "rest",
+    "teeth",
+    "round",
+    "small_open",
+    "medium_open",
+    "wide_open",
+    "blink"
+  ],
+  "source": "teeth, medium_open, wide_open: male_security_guard_talk.png frames 1, 2, 3 pasted into the bust inside the lips ellipse (68.5,31, 5x3.5); round:i03, small_open:i04 (pixellab /inpaint-image-pro-flash, mouth mask [63, 27, 74, 33]); blink:i01 (eyes [61, 19, 77, 23])"
+}

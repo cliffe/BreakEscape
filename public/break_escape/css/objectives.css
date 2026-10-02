@@ -1,0 +1,246 @@
+/* Objectives Panel - Top Right HUD
+ * Pixel-art aesthetic: sharp corners, 2px borders
+ */
+
+.objectives-panel {
+  position: fixed;
+  top: 14px;
+  left: 20px;
+  width: 280px;
+  max-height: 60vh;
+  background: rgba(0, 0, 0, 0.85);
+  border: 2px solid #444;
+  font-family: 'GNF', monospace;
+  z-index: 1300;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.objectives-panel.collapsed {
+  max-height: 40px;
+}
+
+.objectives-panel.collapsed .objectives-content {
+  display: none;
+}
+
+.objectives-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(40, 40, 60, 0.9);
+  border-bottom: 2px solid #444;
+  cursor: pointer;
+  user-select: none;
+}
+
+.objectives-header:hover {
+  background: rgba(50, 50, 70, 0.9);
+}
+
+.objectives-title {
+  color: #fff;
+  font-size: 18px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.objectives-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.objectives-toggle {
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 8px;
+  font-family: inherit;
+}
+
+.objectives-toggle:hover {
+  color: #fff;
+}
+
+.objectives-content {
+  max-height: calc(60vh - 40px);
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.objectives-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.objectives-content::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.objectives-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.objectives-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Aim Styling */
+.objective-aim {
+  margin-bottom: 12px;
+}
+
+.objective-aim:last-child {
+  margin-bottom: 0;
+}
+
+.aim-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  color: #ffcc00;
+  font-size: 16px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.aim-toggle {
+  font-size: 10px;
+  color: #666;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.aim-header:hover .aim-toggle {
+  color: #aaa;
+}
+
+.objective-aim.aim-collapsed .aim-tasks {
+  max-height: 0;
+  opacity: 0;
+}
+
+.aim-completed .aim-header {
+  color: #4ade80;
+  opacity: 0.7;
+}
+.aim-completed .aim-title {
+  text-decoration: line-through;
+}
+
+.aim-icon {
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.aim-title {
+  line-height: 1.2;
+}
+
+.aim-tasks {
+  padding-left: 20px;
+  border-left: 2px solid #333;
+  margin-left: 6px;
+  overflow: hidden;
+  max-height: 500px;
+  transition: max-height 0.35s ease, opacity 0.35s ease;
+  opacity: 1;
+}
+
+/* Task Styling */
+.objective-task {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 4px 0;
+  color: #ccc;
+  font-size: 14px;
+}
+
+.task-completed {
+  color: #4ade80;
+  opacity: 0.6;
+}
+.task-completed .task-title {
+  text-decoration: line-through;
+}
+
+.task-icon {
+  font-size: 10px;
+  color: #888;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.task-completed .task-icon {
+  color: #4ade80;
+}
+
+.task-title {
+  line-height: 1.3;
+}
+
+.task-progress {
+  color: #888;
+  font-size: 12px;
+}
+
+.no-objectives {
+  color: #666;
+  text-align: center;
+  padding: 20px;
+  font-style: italic;
+}
+
+/* Animation for new objectives */
+@keyframes objective-pulse {
+  0% { background-color: rgba(255, 204, 0, 0.3); }
+  100% { background-color: transparent; }
+}
+
+@keyframes task-complete-flash {
+  0% { background-color: rgba(74, 222, 128, 0.4); }
+  100% { background-color: transparent; }
+}
+
+.objective-aim.new-objective {
+  animation: objective-pulse 1s ease-out;
+}
+
+.objective-task.new-task {
+  animation: task-complete-flash 0.8s ease-out;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .objectives-panel {
+    width: 260px;
+    right: 10px;
+    max-height: 50vh;
+  }
+
+  .objectives-panel.collapsed {
+    width: 180px;
+  }
+  
+  .objectives-title {
+    font-size: 16px;
+  }
+  
+  .aim-header {
+    font-size: 14px;
+  }
+  
+  .objective-task {
+    font-size: 12px;
+  }
+}
+
+/* Hide panel during certain game states */
+.objectives-panel.hidden,
+.minigame-active .objectives-panel {
+  display: none !important;
+}

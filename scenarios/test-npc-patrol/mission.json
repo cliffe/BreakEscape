@@ -1,0 +1,7 @@
+{
+  "display_name": "NPC Patrol Test",
+  "description": "Technical test for NPC patrol route system.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing"
+}

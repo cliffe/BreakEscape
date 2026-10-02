@@ -1,0 +1,159 @@
+{
+  "scenario_brief": "Test scenario for NPC patrol and lockpick detection",
+  "endGoal": "Test NPC line-of-sight detection and lockpicking interruption",
+  "startRoom": "patrol_corridor",
+  
+  "player": {
+    "id": "player",
+    "displayName": "Agent 0x00",
+    "spriteSheet": "hacker",
+    "spriteTalk": "assets/characters/hacker-talk.png",
+    "spriteConfig": {
+      "idleFrameStart": 20,
+      "idleFrameEnd": 23
+    }
+  },
+  
+  "rooms": {
+    "patrol_corridor": {
+      "type": "room_office",
+      "connections": {
+        "north": "secure_vault"
+      },
+      "npcs": [
+        {
+          "id": "patrol_with_face",
+          "displayName": "Patrol + Face Player",
+          "npcType": "person",
+          "position": { "x": 5, "y": 5 },
+          "spriteSheet": "female_security_guard_v2",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/security-guard.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96,
+            "patrol": {
+              "enabled": true,
+              "speed": 100,
+              "changeDirectionInterval": 4000,
+              "bounds": {
+                "x": 128,
+                "y": 128,
+                "width": 128,
+                "height": 128
+              }
+            }
+          },
+          "los": {
+            "enabled": true,
+            "range": 125,
+            "angle": 120,
+            "visualize": true
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "lockpick_used_in_view",
+              "targetKnot": "on_lockpick_used",
+              "conversationMode": "person-chat",
+              "cooldown": 0
+            }
+          ],
+          "_comment": "Patrols normally, but stops to face player when within 3 tiles. Can see player within 250px at 120° FOV"
+        },
+        {
+          "id": "security_guard",
+          "displayName": "Security Guard",
+          "npcType": "person",
+          "position": { "x": 5, "y": 4 },
+          "spriteSheet": "male_security_guard_v2",
+          "spriteTalk": "assets/characters/hacker-red-talk.png",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/security-guard.json",
+          "currentKnot": "start",
+          "behavior": {
+            "patrol": {
+              "enabled": true,
+              "route": [
+                { "x": 2, "y": 3 },
+                { "x": 8, "y": 3 },
+                { "x": 8, "y": 6 },
+                { "x": 2, "y": 6 }
+              ],
+              "speed": 40,
+              "pauseTime": 10
+            }
+          },
+          "los": {
+            "enabled": true,
+            "range": 150,
+            "angle": 140,
+            "visualize": true
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "lockpick_used_in_view",
+              "targetKnot": "on_lockpick_used",
+              "conversationMode": "person-chat",
+              "cooldown": 0
+            }
+          ],
+          "itemsHeld": [
+            {
+              "type": "key",
+              "name": "Vault Key",
+              "takeable": true,
+              "opens_lock": "vault_key",
+              "keyPins": [75, 30, 50, 25],
+              "observations": "A key that unlocks the secure vault door"
+            }
+          ],
+          "_comment": "Follows route patrol, detects player within 300px at 140° FOV"
+        }
+      ],
+      "objects": [
+        {
+          "type": "lockpick",
+          "name": "Lock Pick Set",
+          "takeable": true,
+          "observations": "A complete lock picking set with various picks and tension wrenches"
+        }
+      ]
+    },
+    "secure_vault": {
+      "type": "room_office",
+      "connections": {
+        "south": "patrol_corridor"
+      },
+      "locked": true,
+      "lockType": "key",
+      "requires": "vault_key",
+      "keyPins": [75, 30, 50, 25],
+      "difficulty": "medium",
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Classified Files",
+          "takeable": true,
+          "readable": true,
+          "text": "These files contain sensitive security protocols and encryption keys. Do not leave unattended.",
+          "observations": "Highly classified files stored in the secure vault"
+        },
+        {
+          "type": "key",
+          "name": "Vault Key",
+          "takeable": true,
+          "opens_lock": "vault_key",
+          "keyPins": [75, 30, 50, 25],
+          "observations": "A key that unlocks the secure vault door"
+        }
+      ]
+    }
+  }
+}

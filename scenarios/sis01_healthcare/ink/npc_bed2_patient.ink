@@ -1,0 +1,26 @@
+// ==================================================
+// NPC: Bed 2 Patient (Ms A. Okafor, post-surgical)
+// Scenario: Northgate Hospital Ward 7
+// Role: Patient state display (infusion pump consequence)
+// ==================================================
+
+=== state_stable ===
+Narrator: Ms Okafor is resting quietly. A morphine infusion runs via the pump on the pole beside her bed. The pump display shows a steady flow rate and stable vitals on the bedside screen.
+-> hub
+
+=== state_sedated ===
+Narrator: Ms Okafor is slumped to one side, unresponsive to ambient ward sounds. Her breathing is shallow and slow. The pump indicator is glowing amber — the rate is higher than prescribed.
+-> hub
+
+=== state_critical ===
+Narrator: Ms Okafor is critically unresponsive. Her breathing has become irregular and dangerously slow. The pump accepted the erroneous rate without flagging the dangerous increase.
+-> hub
+
+=== state_deceased ===
+Narrator: Ms Okafor is still. Her breathing has stopped. The pump display shows a dose rate no living patient could survive — accepted without alarm by a library that no longer knew what was safe.
+-> hub
+
+=== hub ===
++ [Step back]
+    #exit_conversation
+    -> hub

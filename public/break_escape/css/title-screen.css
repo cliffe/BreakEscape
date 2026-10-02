@@ -1,0 +1,106 @@
+/* Title Screen Minigame Styles */
+
+@keyframes crtFlicker {
+    0%   { opacity: 1; }
+    92%  { opacity: 1; }
+    93%  { opacity: 0.85; }
+    94%  { opacity: 1; }
+    98%  { opacity: 1; }
+    99%  { opacity: 0.9; }
+    100% { opacity: 1; }
+}
+
+.title-screen-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background: transparent;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: #fff;
+    font-family: 'Press Start 2P', monospace;
+    animation: crtFlicker 4s step-end infinite;
+}
+
+/* CRT scanlines — same technique as bond-visualiser.css */
+.title-screen-container::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, 0.18) 2px,
+        rgba(0, 0, 0, 0.18) 4px
+    );
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* CRT vignette */
+.title-screen-container::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.9) 100%);
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Phase 1: logo fades in, zooms toward 200%, then quickly dissolves as it arrives */
+@keyframes logoFadeZoom {
+    0%   { opacity: 0; transform: scale(1);    }
+    20%  { opacity: 1; transform: scale(1);    }
+    85%  { opacity: 1; transform: scale(1.92); }
+    100% { opacity: 0; transform: scale(2);    }
+}
+
+.title-screen-logo {
+    position: absolute;
+    width: 300px;
+    filter: drop-shadow(0 0 20px rgba(126, 18, 214, 0.3));
+    animation: logoFadeZoom 2.5s ease-in-out forwards;
+    transform-origin: center center;
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* Phase 2: mission name typed out terminal-style */
+.title-screen-title {
+    font-size: 24px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-align: center;
+    color: #00ff41;
+    margin: 0;
+    padding: 0;
+    line-height: 1.5;
+    position: relative;
+    z-index: 2;
+}
+
+@keyframes titleCursorBlink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0; }
+}
+
+.title-screen-cursor {
+    display: inline;
+    color: #00ff41;
+    animation: titleCursorBlink 0.7s step-end infinite;
+}
+
+.title-screen-prompt {
+    position: relative;
+    z-index: 2;
+    margin-top: 20px;
+    font-size: 24px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    color: #00ff41;
+    animation: titleCursorBlink 1.2s step-end infinite;
+    cursor: pointer;
+}

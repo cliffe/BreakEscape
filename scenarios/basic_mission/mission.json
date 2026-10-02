@@ -1,0 +1,7 @@
+{
+  "display_name": "Basic Mission",
+  "description": "A minimal test mission.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "requires_vms": false
+}

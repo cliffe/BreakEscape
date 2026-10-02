@@ -1,0 +1,37 @@
+{
+  "display_name": "Information Gathering: Scanning",
+  "description": "Learn essential network scanning techniques including ping sweeps, port scanning, service identification, and operating system detection. Your reconnaissance specialist instructor will guide you through Nmap and other scanning tools before you practice in a hands-on VM lab environment.",
+  "difficulty_level": 1,
+  "secgen_scenario": "labs/introducing_attacks/5_scanning.xml",
+  "collection": "vm_labs",
+  "cybok": [
+    {
+      "ka": "AB",
+      "topic": "Models",
+      "keywords": ["kill chains"]
+    },
+    {
+      "ka": "MAT",
+      "topic": "Malicious Activities by Malware",
+      "keywords": ["cyber kill chain"]
+    },
+    {
+      "ka": "NS",
+      "topic": "PENETRATION TESTING",
+      "keywords": [
+        "PENETRATION TESTING - NETWORK MAPPING - FINGERPRINTING",
+        "PENETRATION TESTING - NETWORK MAPPING - NMAP",
+        "PENETRATION TESTING - NETWORK MAPPING - PING"
+      ]
+    },
+    {
+      "ka": "SOIM",
+      "topic": "PENETRATION TESTING",
+      "keywords": [
+        "PENETRATION TESTING - NETWORK MAPPING - RECONNAISSANCE",
+        "PENETRATION TESTING - SOFTWARE TOOLS"
+      ]
+    }
+  ]
+}
+

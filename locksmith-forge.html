@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Locksmith Forge - Lockpicking Challenges</title>
+    
+    <!-- Google Fonts - Press Start 2P, VT323 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    
+    <!-- Web Font Loader script to ensure fonts load properly -->
+    <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js"></script>
+    <script>
+      WebFont.load({
+        google: {
+          families: ['Press Start 2P', 'GNF']
+        },
+        active: function() {
+          console.log('Fonts loaded successfully');
+        }
+      });
+    </script>
+    
+    <style>
+        body {
+            font-family: 'GNF', monospace;
+            background: #333;
+            color: #ffffff;
+            margin: 0;
+            padding: 10px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 5px;
+            }
+        }
+
+        .minigame-close-button, #minigame-cancel, .minigame-header {
+          display: none;
+        }
+        
+        .header {
+            background: rgba(0, 0, 0, 0.95);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border: 2px solid #444;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+            max-width: 800px;
+            width: 100%;
+            color: #00ff00;
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                padding: 10px;
+                margin-bottom: 10px;
+            }
+        }
+        
+        .level-display {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 12px;
+            text-shadow: 0 0 10px #00ff00;
+        }
+        
+        @media (max-width: 768px) {
+            .level-display {
+                font-size: 16px;
+                margin-bottom: 10px;
+            }
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            font-size: 13px;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        
+        @media (max-width: 768px) {
+            .stats {
+                font-size: 12px;
+                gap: 3px;
+            }
+        }
+        
+        .stat {
+            background: #333;
+            padding: 6px 12px;
+            border-radius: 5px;
+            border: 1px solid #00ff00;
+        }
+        
+        @media (max-width: 768px) {
+            .stat {
+                padding: 4px 8px;
+            }
+        }
+        
+        .game-container {
+            background: rgba(0, 0, 0, 0.95);
+            border-radius: 10px;
+            padding: 15px;
+            border: 2px solid #444;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+            margin-bottom: 15px;
+            min-height: 350px;
+            position: relative;
+            max-width: 800px;
+            width: 100%;
+        }
+        
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 10px;
+                margin-bottom: 10px;
+                min-height: 300px;
+            }
+        }
+        
+        #gameContainer {
+            width: 100%;
+            background: #1a1a1a;
+            /* border: 1px solid #444; */
+            border-radius: 5px;
+            position: relative;
+        }
+        
+        .phaser-game-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        
+        canvas {
+            display: block;
+            margin: 0 auto;
+        }
+        
+        input:disabled, select:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .control-group label {
+            color: #00ff00;
+            font-weight: bold;
+        }
+        
+        .control-group input:disabled + .range-value {
+            color: #00ff00;
+            font-weight: bold;
+        }
+        
+        .controls {
+            background: #333;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #00ff00;
+        }
+        
+        .control-group {
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        label {
+            font-weight: bold;
+            min-width: 120px;
+            text-align: right;
+        }
+        
+        input[type="range"] {
+            width: 200px;
+        }
+        
+        .range-value {
+            min-width: 40px;
+            text-align: left;
+        }
+        
+        button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            margin: 5px;
+        }
+        
+        button:hover {
+            background: #00cc00;
+        }
+        
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border: 1px solid #444;
+            min-height: 20px;
+            font-family: 'GNF', monospace;
+            font-size: 18px;
+            max-width: 800px;
+            width: 100%;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 18px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 10px;
+            border: 1px solid #444;
+            overflow: hidden;
+            margin: 8px 0;
+            max-width: 800px;
+        }
+        
+        @media (max-width: 768px) {
+            .progress-bar {
+                height: 16px;
+                margin: 6px 0;
+            }
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff00, #00cc00);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .achievement {
+            font-family: 'Press Start 2P', monospace;
+            background: #ffaa00;
+            color: #000;
+            padding: 8px;
+            border-radius: 5px;
+            margin: 8px 0;
+            font-weight: bold;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        
+        @media (max-width: 768px) {
+            .achievement {
+                padding: 6px;
+                margin: 6px 0;
+                font-size: 12px;
+            }
+        }
+        
+        @keyframes glow {
+            from { box-shadow: 0 0 5px #ffaa00; }
+            to { box-shadow: 0 0 20px #ffaa00, 0 0 30px #ffaa00; }
+        }
+        
+        .progress-achievement {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 90%;
+            z-index: 10;
+        }
+        
+        @media (max-width: 768px) {
+            .progress-achievement {
+                font-size: 12px;
+            }
+        }
+        
+
+    </style>
+</head>
+<body>
+    
+    <div class="header">
+        <div class="level-display">LEVEL <span id="currentLevel">1</span></div>
+        <div class="stats">
+            <div class="stat">Pins: <span id="pinCount">3</span></div>
+            <div class="stat" id="sensitivityStat">Sensitivity: <span id="sensitivity">5</span></div>
+            <div class="stat" id="liftSpeedStat">Lift Speed: <span id="liftSpeed">1.0</span></div>
+            <div class="stat" id="bindingHintsStat">Binding Order: <span id="bindingHints">Enabled</span></div>
+            <div class="stat" id="alignmentHintsStat">Pin Alignment: <span id="alignmentHints">Enabled</span></div>
+            <div class="stat" id="gameModeStat">Mode: <span id="gameMode">Lockpicking</span></div>
+        </div>
+    </div>
+    
+    <div class="game-container">
+        <div id="gameContainer"></div>
+    </div>
+    
+    <div class="controls" style="display: none;">
+        <!-- Controls hidden - parameters are automatically set by level -->
+        <div class="control-group">
+            <label>Threshold Sensitivity:</label>
+            <input type="range" id="thresholdSensitivity" min="1" max="10" value="5" step="1" disabled>
+            <span class="range-value" id="thresholdSensitivityValue">5</span>
+        </div>
+        
+        <div class="control-group">
+            <label>Highlight Binding Order:</label>
+            <select id="highlightBindingOrder" disabled>
+                <option value="enabled">Enabled</option>
+                <option value="disabled">Disabled</option>
+            </select>
+        </div>
+        
+        <div class="control-group">
+            <label>Pin Alignment Highlighting:</label>
+            <select id="pinAlignmentHighlighting" disabled>
+                <option value="enabled">Enabled</option>
+                <option value="disabled">Disabled</option>
+            </select>
+        </div>
+        
+        <div class="control-group">
+            <label>Lift Speed:</label>
+            <input type="range" id="liftSpeedRange" min="0.5" max="3.0" value="1.0" step="0.1" disabled>
+            <span class="range-value" id="liftSpeedValue">1.0</span>
+        </div>
+        
+        <div class="control-group">
+            <button id="startButton">Restart Level</button>
+            <button id="resetButton">Reset Progress</button>
+            
+        </div>
+    </div>
+        
+    <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+        <div class="progress-achievement" id="progressAchievement"></div>
+    </div>
+    
+    <div id="achievements"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+    <script type="module">
+        import { LockpickingMinigamePhaser } from './js/minigames/lockpicking/lockpicking-game-phaser.js';
+        
+        class ProgressiveLockpicking {
+            constructor() {
+                this.maxLevel = 50;
+                this.levelConfig = this.generateLevelConfig();
+                
+                // Load saved progress from localStorage
+                this.loadProgress();
+                
+                this.currentGame = null;
+                
+                this.initializeUI();
+                this.bindEvents();
+                this.updateDisplay();
+            }
+            
+            loadProgress() {
+                try {
+                    const savedProgress = localStorage.getItem('lockpickingProgress');
+                    if (savedProgress) {
+                        const progress = JSON.parse(savedProgress);
+                        this.currentLevel = Math.max(1, Math.min(this.maxLevel, progress.currentLevel || 1));
+                        this.successCount = progress.successCount || 0;
+                        this.failureCount = progress.failureCount || 0;
+                    } else {
+                        this.currentLevel = 1;
+                        this.successCount = 0;
+                        this.failureCount = 0;
+                    }
+                } catch (error) {
+                    console.warn('Failed to load progress from localStorage:', error);
+                    this.currentLevel = 1;
+                    this.successCount = 0;
+                    this.failureCount = 0;
+                }
+            }
+            
+            saveProgress() {
+                try {
+                    const progress = {
+                        currentLevel: this.currentLevel,
+                        successCount: this.successCount,
+                        failureCount: this.failureCount,
+                        lastSaved: new Date().toISOString()
+                    };
+                    localStorage.setItem('lockpickingProgress', JSON.stringify(progress));
+                } catch (error) {
+                    console.warn('Failed to save progress to localStorage:', error);
+                }
+            }
+            
+            generateLevelConfig() {
+                const config = {};
+                
+                for (let level = 1; level <= this.maxLevel; level++) {
+                   // Add base progression across 10-level blocks
+                    const blockNumber = Math.floor((level - 1) / 10) + 1;
+                    // Determine position within the current 10-level block (1-10)
+                    const positionInBlock = ((level - 1) % 10) + 1;
+                    
+                    
+                    // Each set of 10 levels starts with 3 pins + 1 for each block of 10 levels
+                    let pinCount = Math.min(8, blockNumber + 2); // updated below
+                    console.log('pinCount', pinCount);
+                    console.log('blockNumber', blockNumber);
+                    
+                    // Alternate between increasing speed and sensitivity within each 10-level block
+                    let sensitivity = 1;
+                    let liftSpeed = 0.6;
+                    
+                    if (positionInBlock % 2 === 1) {
+                        // odd numbers: increase sensitivity
+                        sensitivity = 1 + Math.floor((positionInBlock - 1) / 2);
+                    } else {
+                        // even numbers: increase speed
+                        const speedLevel = positionInBlock - 5;
+                        liftSpeed = 0.6 + (speedLevel * 0.1);
+                    }
+
+                    // Add base progression across 10-level blocks
+                    sensitivity += blockNumber;
+                    liftSpeed += (blockNumber * 0.2);
+
+                    // every 3rd, 5th level, increase pin count
+                    if (positionInBlock >= 5) {
+                        pinCount = Math.min(8, pinCount + 2); // max 8 pins
+                    } else if (positionInBlock >= 3) {
+                        pinCount = Math.min(8, pinCount + 1); // max 8 pins
+                    }
+                    
+                    // Ensure values stay within bounds
+                    sensitivity = Math.max(1, Math.min(8, sensitivity));
+                    liftSpeed = Math.max(0.5, Math.min(3.0, liftSpeed));
+                    
+                    // Hint settings based on position in 10-level block
+                    let highlightBindingOrder = 'enabled';
+                    let pinAlignmentHighlighting = 'enabled';
+                    let keyMode = false; // Default to lockpicking mode
+                    
+                    // Level 6 of each 10-level block: Key selection challenge
+                    if (positionInBlock === 6) {
+                        keyMode = true;
+                    }
+                    
+                    // Last 3 levels of each 10-level block remove hints progressively
+                    if (positionInBlock === 8) {
+                        // 8th level: remove binding order highlighting
+                        highlightBindingOrder = 'disabled';
+                    } else if (positionInBlock === 9) {
+                        // 9th level: remove pin alignment highlighting
+                        pinAlignmentHighlighting = 'disabled';
+                    } else if (positionInBlock === 10) {
+                        // 10th level: remove both
+                        highlightBindingOrder = 'disabled';
+                        pinAlignmentHighlighting = 'disabled';
+                    }
+                    
+                    config[level] = {
+                        pinCount,
+                        difficulty: this.getDifficulty(level),
+                        sensitivity,
+                        liftSpeed: parseFloat(liftSpeed.toFixed(2)),
+                        highlightBindingOrder,
+                        pinAlignmentHighlighting,
+                        keyMode
+                    };
+                }
+                
+                return config;
+            }
+            
+            getDifficulty(level) {
+                if (level <= 5) return 'easy';
+                if (level <= 15) return 'medium';
+                if (level <= 30) return 'difficult';
+                if (level <= 40) return 'hard';
+                return 'expert';
+            }
+            
+            initializeUI() {
+                // Initialize range inputs
+                this.updateRangeValue('thresholdSensitivity');
+                this.updateRangeValue('liftSpeedRange');
+                
+                // Set initial values from level config
+                this.updateControlsFromLevel();
+            }
+            
+            bindEvents() {
+                // Range input events
+                document.getElementById('thresholdSensitivity').addEventListener('input', (e) => {
+                    this.updateRangeValue('thresholdSensitivity');
+                });
+                
+                document.getElementById('liftSpeedRange').addEventListener('input', (e) => {
+                    this.updateRangeValue('liftSpeedRange');
+                });
+                
+                // Button events
+                document.getElementById('startButton').addEventListener('click', () => {
+                    this.startChallenge();
+                });
+                
+                document.getElementById('resetButton').addEventListener('click', () => {
+                    this.resetLevel();
+                });
+                
+
+            }
+            
+            updateRangeValue(id) {
+                const input = document.getElementById(id);
+                const value = input.value;
+                const valueDisplay = document.getElementById(id + 'Value');
+                if (valueDisplay) {
+                    valueDisplay.textContent = value;
+                }
+            }
+            
+            updateControlsFromLevel() {
+                const config = this.levelConfig[this.currentLevel];
+                if (!config) return;
+                
+                document.getElementById('thresholdSensitivity').value = config.sensitivity;
+                document.getElementById('liftSpeedRange').value = config.liftSpeed;
+                document.getElementById('highlightBindingOrder').value = config.highlightBindingOrder;
+                document.getElementById('pinAlignmentHighlighting').value = config.pinAlignmentHighlighting;
+                
+                this.updateRangeValue('thresholdSensitivity');
+                this.updateRangeValue('liftSpeedRange');
+            }
+            
+            startChallenge() {
+                if (this.currentGame) {
+                    this.currentGame.cleanup();
+                }
+                
+                const config = this.levelConfig[this.currentLevel];
+                const params = {
+                    pinCount: config.pinCount,
+                    difficulty: config.difficulty,
+                    thresholdSensitivity: config.sensitivity,
+                    highlightBindingOrder: config.highlightBindingOrder === 'enabled',
+                    pinAlignmentHighlighting: config.pinAlignmentHighlighting === 'enabled',
+                    liftSpeed: config.liftSpeed,
+                    lockable: { id: 'progressive-challenge' },
+                    closeButtonText: 'Reset',
+                    closeButtonAction: 'reset'
+                };
+                
+                // Add key mode parameters if this is a key selection level
+                if (config.keyMode) {
+                    params.keyMode = true;
+                    params.skipStartingKey = true; // Skip creating initial key, go straight to selection
+                }
+                
+                this.updateStatus(`Starting Level ${this.currentLevel}...`);
+                
+                console.log('Creating minigame with params:', params);
+                console.log('Game container:', document.getElementById('gameContainer'));
+                
+                this.currentGame = new LockpickingMinigamePhaser(
+                    document.getElementById('gameContainer'),
+                    params
+                );
+                
+                console.log('Minigame created:', this.currentGame);
+                
+                // Initialize the minigame
+                this.currentGame.init();
+                
+                console.log('Minigame initialized');
+                
+                // Start the minigame
+                this.currentGame.start();
+                
+                // If this is a key mode level, automatically show key selection
+                if (config.keyMode) {
+                    setTimeout(() => {
+                        // Start key selection challenge
+                        this.currentGame.startWithKeySelection();
+                    }, 500); // Small delay to ensure game is fully initialized
+                }
+                
+                console.log('Minigame started');
+                
+                // Listen for completion by overriding the complete method
+                const originalComplete = this.currentGame.complete.bind(this.currentGame);
+                this.currentGame.complete = (success) => {
+                    console.log('Minigame completed with success:', success);
+                    this.handleChallengeComplete(success);
+                    originalComplete(success);
+                };
+            }
+            
+            handleChallengeComplete(success) {
+                if (success) {
+                    this.successCount++;
+                    this.saveProgress();
+                    
+                    // Check if this was the final level
+                    if (this.currentLevel === this.maxLevel) {
+                        this.updateStatus(`🎊 INCREDIBLE! You've completed ALL ${this.maxLevel} levels! You are a TRUE MASTER LOCKPICKER! 🎊`);
+                        this.showAchievement(`👑 LEGENDARY LOCKPICKER - ALL LEVELS COMPLETE! 👑`);
+                    } else {
+                        // Check for milestone levels
+                        const milestoneMessages = {
+                            1: {
+                                status: `🎯 Great start! 🎯`,
+                                achievement: `🌟 First Steps - Level 1 Complete! 🌟`
+                            },
+                            10: {
+                                status: `🔥 Excellent progress! 🔥`,
+                                achievement: `⚡ Rising Star - Level 10 Complete! ⚡`
+                            },
+                            20: {
+                                status: `💪 Impressive! 💪`,
+                                achievement: `🏅 Skillful Picker - Level 20 Complete! 🏅`
+                            },
+                            30: {
+                                status: `🚀 Outstanding! 🚀`,
+                                achievement: `🎖️ Expert Level - Level 30 Complete! 🎖️`
+                            },
+                            40: {
+                                status: `⚔️ Phenomenal! ⚔️`,
+                                achievement: `🏆 Elite Picker - Level 40 Complete! 🏆`
+                            }
+                        };
+                        
+                        const milestone = milestoneMessages[this.currentLevel];
+                        if (milestone) {
+                            this.updateStatus(milestone.status);
+                            this.showAchievement(milestone.achievement);
+                        } else {
+                            const config = this.levelConfig[this.currentLevel];
+                            if (config && config.keyMode) {
+                                this.updateStatus(`Key selection challenge completed!`);
+                                this.showAchievement(`🔑 Key Master - Level ${this.currentLevel} Complete! 🔑`);
+                            } else {
+                                this.updateStatus(`Level ${this.currentLevel} completed successfully!`);
+                                this.showAchievement(`Level ${this.currentLevel} Complete!`);
+                            }
+                        }
+                    }
+                    
+                    // Progress to next level after a delay
+                    setTimeout(() => {
+                        const nextLevel = Math.min(this.currentLevel + 1, this.maxLevel);
+                        this.currentLevel = nextLevel;
+                        this.saveProgress();
+                        this.updateDisplay();
+                        this.updateControlsFromLevel();
+                        
+                        // Check if player has reached the final level
+                        if (this.currentLevel === this.maxLevel) {
+                            this.updateStatus(`🎉 CONGRATULATIONS! You've reached the ultimate challenge - Level ${this.currentLevel}! 🎉`);
+                            this.showAchievement(`🏆 MASTER LOCKPICKER - Level ${this.currentLevel} Unlocked! 🏆`);
+                        } else {
+                            this.updateStatus(`Starting Level ${this.currentLevel}...`);
+                        }
+                        
+                        // Auto-start the next level
+                        setTimeout(() => {
+                            this.startChallenge();
+                        }, 1000);
+                    }, 2000);
+                } else {
+                    this.failureCount++;
+                    this.saveProgress();
+                    this.updateStatus(`Level ${this.currentLevel} failed. Retrying...`);
+                    
+                    // Auto-retry after a delay
+                    setTimeout(() => {
+                        this.startChallenge();
+                    }, 2000);
+                }
+                
+                this.updateProgress();
+            }
+            
+            resetLevel() {
+                this.currentLevel = 1;
+                this.successCount = 0;
+                this.failureCount = 0;
+                this.saveProgress();
+                this.updateDisplay();
+                this.updateControlsFromLevel();
+                this.updateStatus(`Progress reset. Ready for Level ${this.currentLevel}`);
+                this.updateProgress();
+                
+                // Auto-start the first level
+                setTimeout(() => {
+                    this.startChallenge();
+                }, 500);
+            }
+            
+
+            
+            updateDisplay() {
+                document.getElementById('currentLevel').textContent = this.currentLevel;
+                
+                const config = this.levelConfig[this.currentLevel];
+                if (config) {
+                    // Update values
+                    document.getElementById('pinCount').textContent = config.pinCount;
+                    document.getElementById('bindingHints').textContent = config.highlightBindingOrder === 'enabled' ? 'Visible' : 'Hidden';
+                    document.getElementById('alignmentHints').textContent = config.pinAlignmentHighlighting === 'enabled' ? 'Visible' : 'Hidden';
+                    document.getElementById('sensitivity').textContent = config.sensitivity;
+                    document.getElementById('liftSpeed').textContent = config.liftSpeed;
+                    document.getElementById('gameMode').textContent = config.keyMode ? 'Key Selection' : 'Lockpicking';
+                    
+                    // Show/hide stats based on game mode
+                    const lockpickingStats = ['sensitivityStat', 'liftSpeedStat', 'bindingHintsStat', 'alignmentHintsStat'];
+                    lockpickingStats.forEach(statId => {
+                        const statElement = document.getElementById(statId);
+                        if (statElement) {
+                            statElement.style.display = config.keyMode ? 'none' : 'block';
+                        }
+                    });
+                    
+                    // Apply highlighting based on level position
+                    this.highlightBasedOnLevel(config);
+                }
+                
+                // Update progress bar to reflect current level
+                this.updateProgress();
+            }
+            
+            highlightBasedOnLevel(config) {
+                // Determine position within the current 10-level block (1-10)
+                const positionInBlock = ((this.currentLevel - 1) % 10) + 1;
+                const blockNumber = Math.floor((this.currentLevel - 1) / 10);
+                
+                // Get all stat elements
+                const statElements = document.querySelectorAll('.stat');
+                
+                statElements.forEach(stat => {
+                    const span = stat.querySelector('span');
+                    if (!span) return;
+                    
+                    const statType = span.id;
+                    let shouldHighlight = false;
+                    
+                    // Determine what should be highlighted based on level position
+                    switch (statType) {
+                        case 'pinCount':
+                            // Highlight on levels 3 and 5 (when pin count increases)
+                            shouldHighlight = (positionInBlock === 3 || positionInBlock === 5);
+                            break;
+                            
+                        case 'sensitivity':
+                            // odd numbers: increase sensitivity
+                            shouldHighlight = (positionInBlock % 2 === 1);
+                            break;
+                            
+                        case 'liftSpeed':
+                            // even numbers: increase speed
+                            shouldHighlight = (positionInBlock % 2 === 0);
+                            break;
+                            
+                        case 'bindingHints':
+                            // Highlight when binding order hints are enabled
+                            shouldHighlight = (config.highlightBindingOrder === 'disabled');
+                            break;
+                            
+                        case 'alignmentHints':
+                            // Highlight when pin alignment hints are enabled
+                            shouldHighlight = (config.pinAlignmentHighlighting === 'disabled');
+                            break;
+                            
+                        case 'gameMode':
+                            // Highlight when in key selection mode
+                            shouldHighlight = config.keyMode;
+                            break;
+                            
+                        default:
+                            shouldHighlight = false;
+                    }
+                    
+                    if (shouldHighlight) {
+                        // Highlight the value
+                        stat.style.backgroundColor = '#2a4a2a';
+                        stat.style.color = '#00ff00';
+                        stat.style.fontWeight = 'bold';
+                        stat.style.transition = 'all 0.3s ease';
+                        stat.style.opacity = '1';
+                    } else {
+                        // Show normally (slightly faded)
+                        stat.style.backgroundColor = '';
+                        stat.style.color = '';
+                        stat.style.fontWeight = '';
+                        stat.style.opacity = '0.7';
+                    }
+                });
+            }
+            
+            updateStatus(message) {
+                const feedbackElement = document.querySelector('.lockpick-feedback');
+                if (feedbackElement) {
+                    feedbackElement.textContent = message;
+                }
+            }
+            
+            updateProgress() {
+                const progress = (this.currentLevel - 1) / this.maxLevel * 100;
+                document.getElementById('progressFill').style.width = progress + '%';
+            }
+            
+            showAchievement(message) {
+                const achievements = document.getElementById('achievements');
+                const achievement = document.createElement('div');
+                achievement.className = 'achievement';
+                achievement.textContent = message;
+                
+                achievements.appendChild(achievement);
+                
+                // Display achievement message in progress bar
+                const progressAchievement = document.getElementById('progressAchievement');
+                if (progressAchievement) {
+                    progressAchievement.textContent = message;
+                    
+                    // Clear the progress bar message after 5 seconds
+                    setTimeout(() => {
+                        progressAchievement.textContent = '';
+                    }, 5000);
+                }
+                
+                // Remove achievement popup after 5 seconds
+                setTimeout(() => {
+                    if (achievement.parentNode) {
+                        achievement.parentNode.removeChild(achievement);
+                    }
+                }, 5000);
+            }
+        }
+        
+        // Initialize the progressive lockpicking system
+        document.addEventListener('DOMContentLoaded', () => {
+            const progressiveSystem = new ProgressiveLockpicking();
+            // Auto-start the current level (could be loaded from saved progress)
+            setTimeout(() => {
+                progressiveSystem.startChallenge();
+            }, 500);
+        });
+    </script>
+</body>
+</html> 

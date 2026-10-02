@@ -1,0 +1,578 @@
+<%
+# ============================================================================
+# THE LOCKPICK GAUNTLET - SCENARIO FILE
+# ============================================================================
+# Break Escape - SAFETYNET physical-entry training range
+#
+# A long sequence of rooms split into two phases:
+#
+#   PHASE 1 — PICKING: eight pin-tumbler doors of slowly increasing
+#   lockpicking difficulty. Mirrors the old locksmith-forge level curve:
+#   pin count climbs 3 -> 8, tolerances tighten tutorial -> easy -> medium
+#   -> hard. The player carries ONLY a lockpick set, so each door routes
+#   straight to the lockpicking mini-game.
+#
+#   PHASE 2 — KEY SELECTION: three "key rooms". Each room holds THREE keys,
+#   only one of which is cut to open that room's forward door. This mirrors
+#   the locksmith-forge "key mode" (config.keyMode / startWithKeySelection):
+#   once the player is carrying key items, the door opens the key-selection
+#   mini-game and they must pick the key whose bitting matches the lock.
+#   (Picks are run first, before any key is collected, because carrying keys
+#   makes every later door default to key-selection in the engine.)
+#
+# ROOM LAYOUT (linear vertical climb, north = deeper into the range):
+#   Antechamber (lockpick set)
+#     -> Gate 1 (pick, 3 pins, tutorial)
+#       -> ... -> Gate 7 (pick, 7 pins, hard)
+#         -> Key Room A: pick 8-pin door to enter; holds 3 four-cut keys
+#           -> Keyed Door 1 (4 pins, KEY SELECTION); holds 3 six-cut keys
+#             -> Keyed Door 2 (6 pins, KEY SELECTION); holds 3 eight-cut keys
+#               -> Vault (8 pins, KEY SELECTION) -> recover trophy -> SUCCESS
+#
+# In each key room, the CORRECT key's keyPins exactly match the forward
+# door's keyPins (so its cuts align); the two decoys share the same number
+# of cuts but a different bitting, so they will not turn the lock.
+# ============================================================================
+%>
+{
+  "scenario_brief": "SAFETYNET physical-entry training range. PHASE 1: pick your way through eight pin-tumbler doors, each harder than the last. PHASE 2: in the key rooms beyond, every door comes with three candidate keys — only one is cut to fit. Read the lock, match the bitting, and reach the trophy vault.",
+  "show_scenario_brief": "on_start",
+  "endGoal": "Pick all eight gauntlet doors, then select the correct key for each of the three keyed doors and recover the Grandmaster's Trophy from the vault.",
+
+  "startRoom": "antechamber",
+
+  "player": {
+    "id": "player",
+    "displayName": "Agent 0x00",
+    "spriteSheet": "hacker",
+    "spriteTalk": "assets/characters/hacker-talk.png",
+    "spriteConfig": {
+      "idleFrameStart": 20,
+      "idleFrameEnd": 23
+    }
+  },
+
+  "globalVariables": {
+    "gauntlet_briefed": false,
+    "trophy_recovered": false
+  },
+
+  "objectives": [
+    {
+      "aimId": "pick_the_gauntlet",
+      "title": "Phase 1 — Pick the Gauntlet",
+      "description": "Pick each pin-tumbler door in sequence. Pin counts and tolerances climb as you go.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "pick_gate_1",
+          "title": "Pick Gate 1 (3 pins — tutorial)",
+          "type": "unlock_room",
+          "targetRoom": "gate_1",
+          "status": "active",
+          "showProgress": true
+        },
+        {
+          "taskId": "pick_gate_2",
+          "title": "Pick Gate 2 (4 pins — easy)",
+          "type": "unlock_room",
+          "targetRoom": "gate_2",
+          "status": "active"
+        },
+        {
+          "taskId": "pick_gate_3",
+          "title": "Pick Gate 3 (5 pins — easy)",
+          "type": "unlock_room",
+          "targetRoom": "gate_3",
+          "status": "active"
+        },
+        {
+          "taskId": "pick_gate_4",
+          "title": "Pick Gate 4 (5 pins — medium)",
+          "type": "unlock_room",
+          "targetRoom": "gate_4",
+          "status": "active"
+        },
+        {
+          "taskId": "pick_gate_5",
+          "title": "Pick Gate 5 (6 pins — medium)",
+          "type": "unlock_room",
+          "targetRoom": "gate_5",
+          "status": "active"
+        },
+        {
+          "taskId": "pick_gate_6",
+          "title": "Pick Gate 6 (6 pins — hard)",
+          "type": "unlock_room",
+          "targetRoom": "gate_6",
+          "status": "active"
+        },
+        {
+          "taskId": "pick_gate_7",
+          "title": "Pick Gate 7 (7 pins — hard)",
+          "type": "unlock_room",
+          "targetRoom": "gate_7",
+          "status": "active"
+        },
+        {
+          "taskId": "pick_key_room_a",
+          "title": "Pick the door to Key Room A (8 pins — hard)",
+          "type": "unlock_room",
+          "targetRoom": "key_room_a",
+          "status": "active",
+          "onComplete": { "unlockAim": "master_the_keys" }
+        }
+      ]
+    },
+    {
+      "aimId": "master_the_keys",
+      "title": "Phase 2 — Select the Right Key",
+      "description": "Each keyed door comes with three candidate keys. Match the bitting to the lock and open the correct one.",
+      "status": "locked",
+      "order": 1,
+      "unlockCondition": { "aimCompleted": "pick_the_gauntlet" },
+      "missionConclusion": true,
+      "conclusionScreen": { "type": "end_screen" },
+      "tasks": [
+        {
+          "taskId": "select_keyed_door_1",
+          "title": "Open Keyed Door 1 with the correct 4-cut key",
+          "type": "unlock_room",
+          "targetRoom": "keyed_door_1",
+          "status": "active"
+        },
+        {
+          "taskId": "select_keyed_door_2",
+          "title": "Open Keyed Door 2 with the correct 6-cut key",
+          "type": "unlock_room",
+          "targetRoom": "keyed_door_2",
+          "status": "active"
+        },
+        {
+          "taskId": "select_vault",
+          "title": "Open the Vault with the correct 8-cut key",
+          "type": "unlock_room",
+          "targetRoom": "vault",
+          "status": "active"
+        },
+        {
+          "taskId": "retrieve_trophy",
+          "title": "Recover the Grandmaster's Trophy",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+
+  "rooms": {
+    "antechamber": {
+      "type": "room_reception",
+      "door_sign": "Range Entry",
+      "connections": {
+        "north": "gate_1"
+      },
+      "objects": [
+        {
+          "type": "lockpick",
+          "name": "Lock Pick Set",
+          "takeable": true,
+          "observations": "A complete lock-picking set: tension wrench and a row of picks. Take it — you'll need it for the eight gates ahead.",
+          "puzzle_graph_role": "tool",
+          "puzzle_graph_unlocks": ["gate_1", "gate_2", "gate_3", "gate_4", "gate_5", "gate_6", "gate_7", "key_room_a"]
+        },
+        {
+          "type": "notes",
+          "name": "Range Briefing",
+          "takeable": false,
+          "readable": true,
+          "text": "SAFETYNET LOCKPICK GAUNTLET\n\nPHASE 1 — PICKING\nEight pin-tumbler doors. Each adds a pin or a nastier bitting. Gate 1 is a gentle 3-pin lock with hints on; by Key Room A you'll be setting 8 pins. Work the binding pin first, set it on the shear line, move on.\n\nPHASE 2 — KEY SELECTION\nBeyond the gates lie three key rooms. Each holds THREE keys, but only one is cut to fit that room's forward door. Inspect the lock, compare the bitting on each key, and turn the one that matches.\n\nTake the lock pick set and start with the door to the north.",
+          "observations": "A laminated briefing card bolted to the wall.",
+          "onRead": { "setVariable": { "gauntlet_briefed": true } },
+          "puzzle_graph_reveals": "Explains the two phases: lockpicking progression, then key selection."
+        }
+      ]
+    },
+
+    "gate_1": {
+      "type": "room_office",
+      "door_sign": "Gate 1 — 3 Pins",
+      "locked": true,
+      "lockType": "key",
+      "requires": "gauntlet_lock_1",
+      "keyPins": [40, 60, 30],
+      "difficulty": "tutorial",
+      "connections": {
+        "south": "antechamber",
+        "north": "gate_2"
+      },
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Tier 1 Placard",
+          "takeable": false,
+          "readable": true,
+          "text": "TIER 1 — 3 pins, well-spaced bitting. Binding order and pin alignment hints are on. This is the gentle one.",
+          "observations": "A small placard on the inner wall."
+        }
+      ]
+    },
+
+    "gate_2": {
+      "type": "room_meeting",
+      "door_sign": "Gate 2 — 4 Pins",
+      "locked": true,
+      "lockType": "key",
+      "requires": "gauntlet_lock_2",
+      "keyPins": [50, 30, 60, 40],
+      "difficulty": "easy",
+      "connections": {
+        "south": "gate_1",
+        "north": "gate_3"
+      },
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Tier 2 Placard",
+          "takeable": false,
+          "readable": true,
+          "text": "TIER 2 — 4 pins. One extra pin to set. Take your time finding which one binds first.",
+          "observations": "A placard on the inner wall."
+        }
+      ]
+    },
+
+    "gate_3": {
+      "type": "room_break",
+      "door_sign": "Gate 3 — 5 Pins",
+      "locked": true,
+      "lockType": "key",
+      "requires": "gauntlet_lock_3",
+      "keyPins": [35, 65, 25, 55, 45],
+      "difficulty": "easy",
+      "connections": {
+        "south": "gate_2",
+        "north": "gate_4"
+      },
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Tier 3 Placard",
+          "takeable": false,
+          "readable": true,
+          "text": "TIER 3 — 5 pins, a slightly wider spread of cut depths. Still on easy tolerances.",
+          "observations": "A placard on the inner wall."
+        }
+      ]
+    },
+
+    "gate_4": {
+      "type": "room_office",
+      "door_sign": "Gate 4 — 5 Pins (Medium)",
+      "locked": true,
+      "lockType": "key",
+      "requires": "gauntlet_lock_4",
+      "keyPins": [60, 30, 70, 40, 25],
+      "difficulty": "medium",
+      "connections": {
+        "south": "gate_3",
+        "north": "gate_5"
+      },
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Tier 4 Placard",
+          "takeable": false,
+          "readable": true,
+          "text": "TIER 4 — 5 pins, but tighter tolerances and a couple of deep cuts. The shear line is less forgiving now.",
+          "observations": "A placard on the inner wall."
+        }
+      ]
+    },
+
+    "gate_5": {
+      "type": "room_it",
+      "door_sign": "Gate 5 — 6 Pins (Medium)",
+      "locked": true,
+      "lockType": "key",
+      "requires": "gauntlet_lock_5",
+      "keyPins": [40, 65, 25, 55, 35, 70],
+      "difficulty": "medium",
+      "connections": {
+        "south": "gate_4",
+        "north": "gate_6"
+      },
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Tier 5 Placard",
+          "takeable": false,
+          "readable": true,
+          "text": "TIER 5 — 6 pins. The extra pin and varied bitting make the binding order harder to read.",
+          "observations": "A placard on the inner wall."
+        }
+      ]
+    },
+
+    "gate_6": {
+      "type": "room_ceo",
+      "door_sign": "Gate 6 — 6 Pins (Hard)",
+      "locked": true,
+      "lockType": "key",
+      "requires": "gauntlet_lock_6",
+      "keyPins": [30, 70, 45, 20, 60, 35],
+      "difficulty": "hard",
+      "connections": {
+        "south": "gate_5",
+        "north": "gate_7"
+      },
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Tier 6 Placard",
+          "takeable": false,
+          "readable": true,
+          "text": "TIER 6 — 6 pins on hard tolerances, including a very shallow and a very deep cut. Light, precise tension is everything.",
+          "observations": "A placard on the inner wall."
+        }
+      ]
+    },
+
+    "gate_7": {
+      "type": "room_meeting",
+      "door_sign": "Gate 7 — 7 Pins (Hard)",
+      "locked": true,
+      "lockType": "key",
+      "requires": "gauntlet_lock_7",
+      "keyPins": [55, 25, 65, 35, 75, 20, 50],
+      "difficulty": "hard",
+      "connections": {
+        "south": "gate_6",
+        "north": "key_room_a"
+      },
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Tier 7 Placard",
+          "takeable": false,
+          "readable": true,
+          "text": "TIER 7 — 7 pins, extreme bitting. The last pure pick. Beyond this lies the key vault. Keep your hand steady.",
+          "observations": "A placard on the inner wall."
+        }
+      ]
+    },
+
+    "key_room_a": {
+      "type": "room_office",
+      "door_sign": "Key Room A — 8 Pins (Hard)",
+      "locked": true,
+      "lockType": "key",
+      "requires": "gauntlet_lock_8",
+      "keyPins": [40, 70, 25, 60, 30, 75, 45, 20],
+      "difficulty": "hard",
+      "connections": {
+        "south": "gate_7",
+        "north": "keyed_door_1"
+      },
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Key Selection Briefing",
+          "takeable": false,
+          "readable": true,
+          "text": "PHASE 2 — KEY SELECTION\n\nFrom here on, the doors are key-operated. On this bench are THREE four-cut keys. Only one is bitted to open the door north (Keyed Door 1).\n\nWhen you try the door, the key panel shows the lock's pin heights. Compare each key's cuts to the lock and turn the one that matches. The wrong keys will bind.",
+          "observations": "A briefing card on the key bench."
+        },
+        {
+          "type": "key",
+          "name": "Brass Key (4-cut)",
+          "takeable": true,
+          "opens_lock": "key_door_1",
+          "keyPins": [50, 25, 65, 40],
+          "observations": "A brass key with four cuts. One of three candidates for Keyed Door 1.",
+          "puzzle_graph_role": "key",
+          "puzzle_graph_unlocks": "keyed_door_1"
+        },
+        {
+          "type": "key",
+          "name": "Steel Key (4-cut)",
+          "takeable": true,
+          "opens_lock": "decoy_1a",
+          "keyPins": [30, 60, 35, 55],
+          "observations": "A steel key with four cuts. Candidate for Keyed Door 1.",
+          "puzzle_graph_role": "key",
+          "puzzle_graph_optional": true,
+          "puzzle_graph_note": "Decoy — bitting does not match Keyed Door 1."
+        },
+        {
+          "type": "key",
+          "name": "Nickel Key (4-cut)",
+          "takeable": true,
+          "opens_lock": "decoy_1b",
+          "keyPins": [45, 70, 20, 55],
+          "observations": "A nickel key with four cuts. Candidate for Keyed Door 1.",
+          "puzzle_graph_role": "key",
+          "puzzle_graph_optional": true,
+          "puzzle_graph_note": "Decoy — bitting does not match Keyed Door 1."
+        }
+      ]
+    },
+
+    "keyed_door_1": {
+      "type": "room_it",
+      "door_sign": "Keyed Door 1 — Select the Key (4-cut)",
+      "locked": true,
+      "lockType": "key",
+      "requires": "key_door_1",
+      "keyPins": [50, 25, 65, 40],
+      "difficulty": "medium",
+      "connections": {
+        "south": "key_room_a",
+        "north": "keyed_door_2"
+      },
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Key Room B Briefing",
+          "takeable": false,
+          "readable": true,
+          "text": "Well chosen. On this bench are THREE six-cut keys for the next door (Keyed Door 2). More pins means more cuts to compare — inspect carefully.",
+          "observations": "A briefing card on the key bench."
+        },
+        {
+          "type": "key",
+          "name": "Gold Key (6-cut)",
+          "takeable": true,
+          "opens_lock": "key_door_2",
+          "keyPins": [40, 65, 25, 55, 30, 70],
+          "observations": "A gold key with six cuts. One of three candidates for Keyed Door 2.",
+          "puzzle_graph_role": "key",
+          "puzzle_graph_unlocks": "keyed_door_2"
+        },
+        {
+          "type": "key",
+          "name": "Iron Key (6-cut)",
+          "takeable": true,
+          "opens_lock": "decoy_2a",
+          "keyPins": [60, 30, 45, 20, 65, 35],
+          "observations": "An iron key with six cuts. Candidate for Keyed Door 2.",
+          "puzzle_graph_role": "key",
+          "puzzle_graph_optional": true,
+          "puzzle_graph_note": "Decoy — bitting does not match Keyed Door 2."
+        },
+        {
+          "type": "key",
+          "name": "Copper Key (6-cut)",
+          "takeable": true,
+          "opens_lock": "decoy_2b",
+          "keyPins": [25, 55, 70, 40, 30, 60],
+          "observations": "A copper key with six cuts. Candidate for Keyed Door 2.",
+          "puzzle_graph_role": "key",
+          "puzzle_graph_optional": true,
+          "puzzle_graph_note": "Decoy — bitting does not match Keyed Door 2."
+        }
+      ]
+    },
+
+    "keyed_door_2": {
+      "type": "room_ceo",
+      "door_sign": "Keyed Door 2 — Select the Key (6-cut)",
+      "locked": true,
+      "lockType": "key",
+      "requires": "key_door_2",
+      "keyPins": [40, 65, 25, 55, 30, 70],
+      "difficulty": "hard",
+      "connections": {
+        "south": "keyed_door_1",
+        "north": "vault"
+      },
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Vault Key Briefing",
+          "takeable": false,
+          "readable": true,
+          "text": "Last bench. THREE eight-cut keys here — one opens the Vault to the north. Eight cuts to match against eight pins. This is the master test.",
+          "observations": "A briefing card on the key bench."
+        },
+        {
+          "type": "key",
+          "name": "Master Key (8-cut)",
+          "takeable": true,
+          "opens_lock": "key_vault",
+          "keyPins": [40, 70, 25, 60, 30, 75, 45, 20],
+          "observations": "A heavy key with eight cuts. One of three candidates for the Vault.",
+          "puzzle_graph_role": "key",
+          "puzzle_graph_unlocks": "vault"
+        },
+        {
+          "type": "key",
+          "name": "Bronze Key (8-cut)",
+          "takeable": true,
+          "opens_lock": "decoy_3a",
+          "keyPins": [30, 60, 45, 20, 70, 35, 55, 25],
+          "observations": "A bronze key with eight cuts. Candidate for the Vault.",
+          "puzzle_graph_role": "key",
+          "puzzle_graph_optional": true,
+          "puzzle_graph_note": "Decoy — bitting does not match the Vault."
+        },
+        {
+          "type": "key",
+          "name": "Silver Key (8-cut)",
+          "takeable": true,
+          "opens_lock": "decoy_3b",
+          "keyPins": [55, 25, 65, 35, 75, 20, 50, 40],
+          "observations": "A silver key with eight cuts. Candidate for the Vault.",
+          "puzzle_graph_role": "key",
+          "puzzle_graph_optional": true,
+          "puzzle_graph_note": "Decoy — bitting does not match the Vault."
+        }
+      ]
+    },
+
+    "vault": {
+      "type": "room_servers",
+      "door_sign": "The Vault — Select the Key (8-cut)",
+      "locked": true,
+      "lockType": "key",
+      "requires": "key_vault",
+      "keyPins": [40, 70, 25, 60, 30, 75, 45, 20],
+      "difficulty": "hard",
+      "connections": {
+        "south": "keyed_door_2"
+      },
+      "objects": [
+        {
+          "type": "safe",
+          "id": "grandmaster_trophy",
+          "name": "Grandmaster's Trophy",
+          "takeable": false,
+          "interactable": true,
+          "locked": false,
+          "observations": "A polished trophy on a plinth — the prize for clearing the gauntlet. Interact with it to claim victory.",
+          "triggerOnInteract": [
+            {
+              "type": "set_global",
+              "key": "trophy_recovered",
+              "value": true
+            },
+            {
+              "type": "complete_task",
+              "taskId": "retrieve_trophy"
+            },
+            {
+              "type": "show_end_screen",
+              "outcome": "success",
+              "title": "GAUNTLET CLEARED",
+              "body": "Eight doors picked, three locks keyed. You read every lock, matched every bitting, and recovered the Grandmaster's Trophy — a true SAFETYNET master locksmith.",
+              "buttonText": "Return to Missions"
+            }
+          ],
+          "puzzle_graph_role": "item",
+          "puzzle_graph_aim": "master_the_keys"
+        }
+      ]
+    }
+  }
+}

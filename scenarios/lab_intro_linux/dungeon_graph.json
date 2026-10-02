@@ -1,0 +1,97 @@
+{
+  "scenario": "lab_intro_linux",
+  "start_room": "instruction_room",
+  "nodes": [
+    {
+      "id": "door_lockpicking_room",
+      "label": "Lockpicking Room<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lockpicking_room",
+      "label": "Lockpicking Room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lock_document_bag_1",
+      "label": "Locked Briefcase<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_document_bag_2",
+      "label": "Locked Briefcase<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_document_bag_3",
+      "label": "Locked Bag<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_document_bag_4",
+      "label": "Locked Briefcase<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_document_bag_5",
+      "label": "Locked Bag<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "vmch_submit_all_flags",
+      "label": "Submit all required flags from desktop",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_all_flags",
+      "label": "All Flags Flag",
+      "kind": "flag",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_lockpicking_room",
+      "to": "lockpicking_room",
+      "soft": false
+    },
+    {
+      "from": "lockpicking_room",
+      "to": "lock_document_bag_1",
+      "soft": false
+    },
+    {
+      "from": "lockpicking_room",
+      "to": "lock_document_bag_2",
+      "soft": false
+    },
+    {
+      "from": "lockpicking_room",
+      "to": "lock_document_bag_3",
+      "soft": false
+    },
+    {
+      "from": "lockpicking_room",
+      "to": "lock_document_bag_4",
+      "soft": false
+    },
+    {
+      "from": "lockpicking_room",
+      "to": "lock_document_bag_5",
+      "soft": false
+    },
+    {
+      "from": "vmch_submit_all_flags",
+      "to": "vmfl_submit_all_flags",
+      "soft": false
+    }
+  ]
+}

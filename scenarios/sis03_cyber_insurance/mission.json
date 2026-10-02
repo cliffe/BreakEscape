@@ -1,0 +1,124 @@
+{
+  "display_name": "Meridian Cyber Insurance: Coverage Determination",
+  "description": "T+48 hours after the Albion Battery Hall incident. As the Meridian Claims Team, you must verify the forensic causal chain of the £8.2M cyber insurance claim, assess warranty compliance, and navigate the tension between technical forensics and insurance policy coverage — all while pressured to minimise payout.",
+  "difficulty_level": 4,
+  "secgen_scenario": "meridian_insurance",
+  "collection": "cybok_sis",
+  "branching": true,
+  "branches": ["claim_approved_full", "claim_approved_partial", "claim_rejected_negligence", "coverage_warranty_gap", "policy_exclusion_triggered", "subrogation_path"],
+  "estimated_duration_minutes": 60,
+  "cybok": [
+    {
+      "ka": "SIS",
+      "topic": "Security-Informed Safety in Critical Infrastructure",
+      "keywords": [
+        "cyber-physical hazard causality",
+        "forensic evidence chain",
+        "incident attribution",
+        "safety case post-breach",
+        "compensating control failure analysis"
+      ]
+    },
+    {
+      "ka": "SIS",
+      "topic": "Safety Requirements and Risk Management",
+      "keywords": [
+        "warranty coverage under cyber threat",
+        "equipment failure vs cyber-induced failure",
+        "risk transfer and residual risk",
+        "contractual safety obligations",
+        "OES operator duty of care"
+      ]
+    },
+    {
+      "ka": "SIS",
+      "topic": "Audit and Compliance",
+      "keywords": [
+        "IEC 61511 compliance verification",
+        "patch management audit trail",
+        "compensating control documentation",
+        "configuration management records",
+        "safety case maintenance evidence"
+      ]
+    },
+    {
+      "ka": "SOIM",
+      "topic": "Incident Forensics",
+      "keywords": [
+        "digital forensics — OT systems",
+        "attack timeline reconstruction",
+        "log correlation and timing",
+        "root cause vs contributing factors",
+        "evidence preservation in critical infrastructure"
+      ]
+    },
+    {
+      "ka": "LR",
+      "topic": "Cyber Insurance and Risk Transfer",
+      "keywords": [
+        "cyber insurance policy exclusions",
+        "war exclusions and APT coverage",
+        "warranty vs insurance",
+        "subrogation rights",
+        "insured vs insurer interests"
+      ]
+    },
+    {
+      "ka": "LR",
+      "topic": "Regulation and Liability",
+      "keywords": [
+        "Operator of Essential Services duty",
+        "corporate negligence liability",
+        "regulatory investigation immunity",
+        "third-party liability exposure",
+        "NIS Regulations 2018 compliance as defence"
+      ]
+    },
+    {
+      "ka": "HF",
+      "topic": "Organisational Risk and Culture",
+      "keywords": [
+        "risk register inaction",
+        "cost vs safety trade-offs",
+        "compensating control false confidence",
+        "deferred maintenance debt",
+        "normalisation of deviance — post-incident review"
+      ]
+    },
+    {
+      "ka": "AAA",
+      "topic": "Access Control and Breach Attribution",
+      "keywords": [
+        "contractor deprovisioning failure",
+        "VPN access abuse",
+        "MFA enforcement gaps",
+        "lateral movement attribution",
+        "compromised credential lifecycle"
+      ]
+    },
+    {
+      "ka": "MAT",
+      "topic": "APT and Targeted Attacks",
+      "keywords": [
+        "GREYMANTLE APT group targeting",
+        "supply chain compromise vector",
+        "printer firmware exploitation",
+        "OT-specific APT tactics",
+        "sector-specific threat intelligence"
+      ]
+    }
+  ],
+  "prerequisites": ["sis02_energy"],
+  "unlocks": [],
+  "campaign_critical": true,
+  "narrative_weight": "high",
+  "consequences_persist": true,
+  "lore_reveals": [
+    "How APT groups use printer firmware as a beachhead — harder to patch than endpoints and often trusted on engineering networks",
+    "The insurance industry's struggle with cyber coverage for critical infrastructure — most policies were written before OT-specific attacks",
+    "How a technical win (incident contained, SIS integrity verified, no patient harm) can become a financial loss when viewed through the insurance lens",
+    "Why compensating controls must be documented, tested, and audited — not just assumed to work because they exist on paper",
+    "The downstream impact of deferred maintenance debt: every day a patch is delayed multiplies the forensic liability"
+  ],
+  "facilitator_notes": "Designed for 2–4 players split across claims assessment, technical forensics, and policy/compliance roles. Suggested split: 1 player as Claims Manager (leads final recommendation, faces upper management pressure), 1–2 players as Technical Forensic Reviewers (focus on FDP terminal, VM challenge, forensic evidence), 1 player as Policy/Compliance Officer (focus on warranty, coverage exclusions, regulatory duties).\n\nThis scenario is a natural sequel to Case 2 (Albion Battery Hall: Code Red). If played in sequence, the FDP terminal reflects decisions players made in Case 2: did they patch? did they maintain compensating controls? did they notify regulators on time? The forensic evidence evolves based on Case 2 outcomes.\n\nKey decision points to facilitate:\n1. TECHNICAL vs POLICY: Players who focus only on technical attribution may miss the policy question: 'Is this a covered peril?' A thorough forensics report is worthless if the policy excludes it.\n2. DUTY OF CARE DILEMMA: Albion has a regulatory duty as an Operator of Essential Services. Did they fulfil it? If yes, does it affect insurance coverage? If no, does it trigger negligence?\n3. SUBROGATION PATH: If the claim is approved, can Meridian pursue the APT group (impossible) or the printer manufacturer (more realistic)? Let players debate liability assignment.\n\nPhysical props and game board:\n- Meridian claims office: desk with FDP terminal (laptop or phone interface), filing cabinet (PIN-locked), evidence folders\n- Digital forensics challenge: FDP interface shows sanitized disk image; players extract timeline and log fragments\n- Claim form paperwork: printed £8.2M claim summary, coverage schedule, warranty clause excerpts (highlight exclusions)\n- Decision board: three recommendation boxes (APPROVE FULL / APPROVE PARTIAL / REJECT) with evidence slots so players can build their case\n\nTiming: Expect 60 minutes for a thorough run. If players focus only on forensics, 45 minutes. If they debate policy and subrogation, 75 minutes."
+}

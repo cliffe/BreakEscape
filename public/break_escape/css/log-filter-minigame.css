@@ -1,0 +1,892 @@
+/* =========================================================
+   Log Filter Minigame — VM-02 / MG-06
+   Used by: LogFilterMinigame (log-filter)
+   logType: "vpn" (MG-06 sis01_healthcare)
+           "ics_rdp" (VM-02 sis02_energy)
+   ========================================================= */
+
+/* ── Wrapper / overlay ─────────────────────────────────── */
+.lf-wrapper {
+    position: absolute;
+    inset: 0;
+    background: #12121e;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Courier New', Courier, monospace;
+    color: #d0d0e0;
+    overflow: hidden;
+    box-sizing: border-box;
+    border: 2px solid #ffffff;
+}
+
+/* ── Header ─────────────────────────────────────────────── */
+.lf-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #0d0d1a;
+    border-bottom: 2px solid #ffffff;
+    padding: 6px 10px;
+    flex-shrink: 0;
+}
+
+.lf-header-title {
+    font-size: 13px;
+    font-weight: bold;
+    color: #ffffff;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.lf-close-btn {
+    background: #1e1e30;
+    border: 1px solid #ffffff;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 11px;
+    cursor: pointer;
+    padding: 2px 8px;
+    letter-spacing: 0.05em;
+}
+
+.lf-close-btn:hover {
+    background: #3a3a50;
+}
+
+/* ── Tab bar ─────────────────────────────────────────────── */
+.lf-tab-bar {
+    display: flex;
+    background: #0d0d1a;
+    border-bottom: 2px solid #444466;
+    flex-shrink: 0;
+    padding: 0 6px;
+    gap: 4px;
+}
+
+.lf-tab-btn {
+    background: #1a1a2e;
+    border: 1px solid #444466;
+    border-bottom: none;
+    color: #8888aa;
+    font-family: inherit;
+    font-size: 11px;
+    cursor: pointer;
+    padding: 4px 10px;
+    letter-spacing: 0.03em;
+    position: relative;
+    margin-bottom: -2px;
+}
+
+.lf-tab-btn:hover {
+    background: #22223a;
+    color: #ccccee;
+}
+
+.lf-tab-active {
+    background: #12121e !important;
+    border-color: #8888ff !important;
+    color: #ffffff !important;
+}
+
+/* Pulsing amber dot for unvisited additional tabs */
+.lf-tab-unread::after {
+    content: ' ●';
+    color: #ffaa00;
+    animation: lf-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes lf-pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.3; }
+}
+
+/* ── Body — two-pane layout ──────────────────────────────── */
+.lf-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+}
+
+/* ── Left pane: filter builder ───────────────────────────── */
+.lf-filter-pane {
+    width: 220px;
+    min-width: 220px;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #333355;
+    background: #0e0e1c;
+    padding: 8px;
+    gap: 6px;
+    overflow-y: auto;
+}
+
+.lf-filter-pane-label {
+    font-size: 10px;
+    color: #7777aa;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border-bottom: 1px solid #333355;
+    padding-bottom: 4px;
+    margin-bottom: 2px;
+}
+
+.lf-add-filter-btn {
+    background: #1a2a1a;
+    border: 1px solid #447744;
+    color: #66cc66;
+    font-family: inherit;
+    font-size: 11px;
+    cursor: pointer;
+    padding: 4px 8px;
+    text-align: left;
+    letter-spacing: 0.03em;
+}
+
+.lf-add-filter-btn:hover {
+    background: #223322;
+    border-color: #66cc66;
+}
+
+/* Filter picker dropdown */
+.lf-filter-picker {
+    background: #1a1a2e;
+    border: 1px solid #555577;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.lf-filter-category {
+    font-size: 10px;
+    color: #9999bb;
+    padding: 2px 4px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.lf-filter-category:hover {
+    background: #2a2a44;
+    color: #ffffff;
+}
+
+.lf-filter-category-open {
+    color: #aaaaff;
+    background: #1e1e38;
+}
+
+.lf-filter-values {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding-left: 10px;
+}
+
+.lf-filter-value-item {
+    font-size: 10px;
+    color: #8888aa;
+    padding: 2px 4px;
+    cursor: pointer;
+}
+
+.lf-filter-value-item:hover {
+    background: #2a2a44;
+    color: #ccccff;
+}
+
+.lf-filter-text-input {
+    font-family: inherit;
+    font-size: 10px;
+    background: #111122;
+    border: 1px solid #444466;
+    color: #ccccee;
+    padding: 2px 4px;
+    width: calc(100% - 10px);
+    margin-left: 10px;
+    box-sizing: border-box;
+}
+
+/* Active filter tokens */
+.lf-active-filters-label {
+    font-size: 10px;
+    color: #666688;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.lf-filter-tokens {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.lf-filter-token {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #1a2a3a;
+    border: 1px solid #2255aa;
+    color: #88aaff;
+    font-size: 10px;
+    padding: 2px 5px;
+    letter-spacing: 0.03em;
+    gap: 4px;
+}
+
+.lf-filter-token-remove {
+    background: none;
+    border: none;
+    color: #8899cc;
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.lf-filter-token-remove:hover {
+    color: #ff6666;
+}
+
+/* Token colour variants by category */
+.lf-token-status      { border-color: #aa6600; color: #ffaa44; background: #201400; }
+.lf-token-access_level{ border-color: #226688; color: #66bbdd; background: #001820; }
+.lf-token-account     { border-color: #556655; color: #99cc99; background: #101a10; }
+.lf-token-source_ip   { border-color: #226688; color: #88bbdd; background: #001820; }
+.lf-token-time        { border-color: #553388; color: #bb88ff; background: #180028; }
+.lf-token-country     { border-color: #226688; color: #66bbdd; background: #001820; }
+.lf-token-mfa         { border-color: #553388; color: #bb88ff; background: #180028; }
+.lf-token-result      { border-color: #447744; color: #88cc88; background: #081408; }
+.lf-token-user        { border-color: #556655; color: #99cc99; background: #101a10; }
+
+/* Command preview */
+.lf-command-preview-label {
+    font-size: 10px;
+    color: #666688;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 4px;
+}
+
+.lf-command-preview {
+    background: #070710;
+    border: 1px solid #225522;
+    color: #44ee44;
+    font-size: 10px;
+    padding: 5px 6px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    line-height: 1.5;
+    min-height: 50px;
+}
+
+.lf-clear-filters-btn {
+    background: #1a0a0a;
+    border: 1px solid #773333;
+    color: #cc6666;
+    font-family: inherit;
+    font-size: 10px;
+    cursor: pointer;
+    padding: 3px 6px;
+    text-align: left;
+    margin-top: auto;
+}
+
+.lf-clear-filters-btn:hover {
+    background: #2a1010;
+    border-color: #cc6666;
+}
+
+/* ── Right pane: log table ────────────────────────────────── */
+.lf-log-pane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.lf-log-table-wrap {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: auto;
+    background: #0e0e1c;
+}
+
+.lf-log-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10px;
+    min-width: 600px;
+}
+
+.lf-log-table th {
+    background: #111128;
+    color: #9999cc;
+    text-align: left;
+    padding: 4px 6px;
+    border-bottom: 1px solid #333355;
+    font-weight: bold;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    white-space: nowrap;
+    letter-spacing: 0.04em;
+}
+
+.lf-log-table td {
+    padding: 3px 6px;
+    border-bottom: 1px solid #1a1a2e;
+    color: #b0b0cc;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.lf-log-row:hover td {
+    background: #1a1a32;
+}
+
+.lf-row-dim td {
+    opacity: 0.28;
+}
+
+.lf-row-dim:hover td {
+    opacity: 0.5;
+}
+
+.lf-row-selected td {
+    background: #1e2244 !important;
+}
+
+/* Anomaly row highlight */
+.lf-anomaly-row td {
+    background: #1e1200 !important;
+}
+
+.lf-anomaly-row:hover td {
+    background: #2a1a00 !important;
+}
+
+.lf-anomaly-row.lf-row-selected td {
+    background: #2e2200 !important;
+}
+
+/* Status badges */
+.lf-badge {
+    display: inline-block;
+    padding: 1px 5px;
+    font-size: 9px;
+    font-weight: bold;
+    letter-spacing: 0.05em;
+}
+
+.lf-status-active {
+    background: #cc7700;
+    color: #000000;
+}
+
+.lf-status-closed {
+    color: #559944;
+}
+
+.lf-status-failed {
+    color: #cc4444;
+}
+
+.lf-status-accept {
+    color: #559944;
+}
+
+.lf-status-reject {
+    color: #cc4444;
+}
+
+/* Access level / type badges */
+.lf-level-engineer   { color: #5599cc; }
+.lf-level-contractor { color: #cc9944; }
+.lf-level-admin      { color: #cc5555; }
+
+/* Anomaly field highlights (within anomaly row) */
+.lf-anomaly-row .lf-field-account  { color: #ffbb44; font-weight: bold; }
+.lf-anomaly-row .lf-field-ip       { color: #ffaa33; }
+.lf-anomaly-row .lf-field-duration { color: #ffaa33; }
+
+/* Duration growing indicator */
+.lf-duration-growing {
+    color: #ffaa33;
+}
+
+/* Session ID column */
+.lf-field-session-id { color: #5599bb; }
+.lf-field-timestamp  { color: #8888aa; }
+
+/* ── Session detail panel ────────────────────────────────── */
+.lf-session-detail {
+    background: #111122;
+    border-top: 1px solid #444466;
+    padding: 8px 10px;
+    flex-shrink: 0;
+    max-height: 160px;
+    overflow-y: auto;
+}
+
+.lf-detail-header {
+    font-size: 11px;
+    color: #ffffff;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid #333355;
+    padding-bottom: 4px;
+    margin-bottom: 6px;
+}
+
+.lf-detail-grid {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    gap: 2px 8px;
+    font-size: 10px;
+    margin-bottom: 8px;
+}
+
+.lf-detail-label {
+    color: #7777aa;
+    white-space: nowrap;
+}
+
+.lf-detail-value {
+    color: #ccccee;
+}
+
+.lf-detail-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+}
+
+.lf-detail-btn {
+    background: #151530;
+    border: 1px solid #445566;
+    color: #88aacc;
+    font-family: inherit;
+    font-size: 10px;
+    cursor: pointer;
+    padding: 3px 8px;
+    letter-spacing: 0.03em;
+}
+
+.lf-detail-btn:hover {
+    background: #1e2240;
+    border-color: #6688aa;
+    color: #ccddee;
+}
+
+.lf-detail-btn-flag {
+    border-color: #885500;
+    color: #ffaa33;
+    background: #1e1200;
+}
+
+.lf-detail-btn-flag:hover {
+    background: #2a1a00;
+    border-color: #cc8800;
+    color: #ffcc55;
+}
+
+.lf-detail-btn-flag:disabled,
+.lf-detail-btn-flag[disabled] {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.lf-session-flagged-banner {
+    color: #44cc44;
+    font-size: 10px;
+    padding: 3px 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.lf-tab2-prompt {
+    margin-top: 6px;
+    background: #1a1200;
+    border: 1px solid #aa7700;
+    color: #ffcc66;
+    font-size: 10px;
+    padding: 5px 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.lf-tab2-prompt-btn {
+    background: #2a1e00;
+    border: 1px solid #aa7700;
+    color: #ffcc44;
+    font-family: inherit;
+    font-size: 10px;
+    cursor: pointer;
+    padding: 2px 7px;
+    white-space: nowrap;
+}
+
+.lf-tab2-prompt-btn:hover {
+    background: #3a2e00;
+}
+
+/* ── Overlay (threat intel, account history, flag confirm) ── */
+.lf-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.72);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.lf-overlay-panel {
+    background: #111122;
+    border: 2px solid #ffffff;
+    width: min(480px, 92%);
+    max-height: 85%;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.lf-overlay-header {
+    background: #0d0d1a;
+    border-bottom: 1px solid #444466;
+    padding: 6px 10px;
+    font-size: 11px;
+    font-weight: bold;
+    color: #ffffff;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.lf-overlay-close {
+    background: none;
+    border: 1px solid #666688;
+    color: #9999bb;
+    font-family: inherit;
+    font-size: 10px;
+    cursor: pointer;
+    padding: 1px 6px;
+}
+
+.lf-overlay-close:hover {
+    border-color: #ffffff;
+    color: #ffffff;
+}
+
+.lf-overlay-body {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.lf-overlay-divider {
+    border: none;
+    border-top: 1px solid #333355;
+    margin: 4px 0;
+}
+
+/* Threat intel */
+.lf-threat-grid {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 3px 8px;
+    font-size: 11px;
+}
+
+.lf-threat-label {
+    color: #7777aa;
+}
+
+.lf-threat-value {
+    color: #ccccee;
+}
+
+.lf-threat-known-bad {
+    color: #ff4444;
+    font-weight: bold;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    margin-top: 4px;
+    border: 1px solid #cc2222;
+    padding: 3px 6px;
+    background: #200000;
+    align-self: flex-start;
+}
+
+/* Account history */
+.lf-account-grid {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 3px 8px;
+    font-size: 11px;
+}
+
+.lf-account-label {
+    color: #7777aa;
+}
+
+.lf-account-value {
+    color: #ccccee;
+}
+
+.lf-account-deprovisioned {
+    color: #ff4444;
+    font-weight: bold;
+}
+
+.lf-account-gap-note {
+    color: #ffaa33;
+    font-weight: bold;
+}
+
+.lf-account-anomaly-badge {
+    margin-top: 6px;
+    background: #200000;
+    border: 1px solid #cc2222;
+    color: #ff6666;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 4px 8px;
+    text-align: center;
+    letter-spacing: 0.04em;
+}
+
+/* Flag confirm modal */
+.lf-flag-confirm-body {
+    font-size: 11px;
+    line-height: 1.5;
+    color: #ccccee;
+}
+
+.lf-flag-confirm-body strong {
+    color: #ffffff;
+}
+
+.lf-flag-confirm-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    justify-content: flex-end;
+}
+
+.lf-flag-confirm-btn {
+    background: #1a2a1a;
+    border: 1px solid #447744;
+    color: #66cc66;
+    font-family: inherit;
+    font-size: 11px;
+    cursor: pointer;
+    padding: 4px 12px;
+    letter-spacing: 0.03em;
+}
+
+.lf-flag-confirm-btn:hover {
+    background: #223322;
+    border-color: #66cc66;
+}
+
+.lf-flag-cancel-btn {
+    background: #1a1a28;
+    border: 1px solid #555577;
+    color: #8888aa;
+    font-family: inherit;
+    font-size: 11px;
+    cursor: pointer;
+    padding: 4px 12px;
+}
+
+.lf-flag-cancel-btn:hover {
+    background: #22223a;
+    color: #aaaacc;
+}
+
+/* ── Tab 2: Audit log ─────────────────────────────────────── */
+.lf-audit-pane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.lf-audit-header-bar {
+    background: #0e0e1c;
+    border-bottom: 1px solid #333355;
+    padding: 6px 10px;
+    flex-shrink: 0;
+}
+
+.lf-audit-title {
+    font-size: 11px;
+    color: #ffffff;
+    font-weight: bold;
+}
+
+.lf-audit-subtitle {
+    font-size: 10px;
+    color: #7777aa;
+    margin-top: 2px;
+}
+
+.lf-audit-table-wrap {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: auto;
+    background: #0e0e1c;
+}
+
+.lf-audit-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10px;
+    min-width: 560px;
+}
+
+.lf-audit-table th {
+    background: #111128;
+    color: #9999cc;
+    text-align: left;
+    padding: 4px 6px;
+    border-bottom: 1px solid #333355;
+    font-weight: bold;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+
+.lf-audit-table td {
+    padding: 3px 6px;
+    border-bottom: 1px solid #1a1a2e;
+    color: #b0b0cc;
+    white-space: nowrap;
+}
+
+.lf-audit-row:hover td {
+    background: #1a1a32;
+}
+
+.lf-audit-anomaly-row td {
+    background: #1e1200 !important;
+    cursor: pointer;
+}
+
+.lf-audit-anomaly-row:hover td {
+    background: #2a1a00 !important;
+}
+
+.lf-audit-anomaly-row .lf-audit-operator {
+    color: #ffbb44;
+    font-weight: bold;
+}
+
+.lf-audit-chevron {
+    color: #ffaa33;
+    font-weight: bold;
+}
+
+.lf-audit-error-row td {
+    background: #1e0000 !important;
+    color: #cc6666 !important;
+}
+
+/* Audit detail overlay */
+.lf-audit-detail-grid {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 3px 8px;
+    font-size: 11px;
+}
+
+.lf-audit-detail-label {
+    color: #7777aa;
+}
+
+.lf-audit-detail-value {
+    color: #ccccee;
+}
+
+.lf-audit-critical {
+    margin-top: 8px;
+    background: #1e0000;
+    border: 1px solid #cc2222;
+    padding: 6px 8px;
+    font-size: 11px;
+    line-height: 1.5;
+    color: #ff8888;
+    animation: lf-critical-pulse 2s ease-in-out infinite;
+}
+
+@keyframes lf-critical-pulse {
+    0%, 100% { border-color: #cc2222; }
+    50%       { border-color: #ff4444; }
+}
+
+/* ── Status bar ───────────────────────────────────────────── */
+.lf-status-bar {
+    background: #080810;
+    border-top: 1px solid #333355;
+    padding: 4px 10px;
+    font-size: 10px;
+    color: #666688;
+    display: flex;
+    gap: 16px;
+    flex-shrink: 0;
+}
+
+.lf-status-bar-count {
+    color: #9999bb;
+}
+
+/* Completion banner */
+.lf-complete-banner {
+    background: #001a00;
+    border: 1px solid #44aa44;
+    color: #66cc66;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 5px 10px;
+    text-align: center;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+}
+
+/* ── Scrollbar styling ────────────────────────────────────── */
+.lf-log-table-wrap::-webkit-scrollbar,
+.lf-audit-table-wrap::-webkit-scrollbar,
+.lf-filter-pane::-webkit-scrollbar,
+.lf-session-detail::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.lf-log-table-wrap::-webkit-scrollbar-track,
+.lf-audit-table-wrap::-webkit-scrollbar-track,
+.lf-filter-pane::-webkit-scrollbar-track,
+.lf-session-detail::-webkit-scrollbar-track {
+    background: #0a0a18;
+}
+
+.lf-log-table-wrap::-webkit-scrollbar-thumb,
+.lf-audit-table-wrap::-webkit-scrollbar-thumb,
+.lf-filter-pane::-webkit-scrollbar-thumb,
+.lf-session-detail::-webkit-scrollbar-thumb {
+    background: #333355;
+    border-radius: 3px;
+}

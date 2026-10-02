@@ -1,0 +1,1498 @@
+<%
+# ERB Helper Methods for Mission 3: Ghost in the Machine
+require 'base64'
+require 'json'
+
+# Encoding helper functions
+def rot13(text)
+  text.tr("A-Za-z", "N-ZA-Mn-za-m")
+end
+
+def base64_encode(text)
+  Base64.strict_encode64(text)
+end
+
+def hex_encode(text)
+  text.unpack('H*').first
+end
+
+def json_escape(text)
+  text.to_json[1..-2]  # Remove surrounding quotes from .to_json output
+end
+
+# Narrative content variables
+#
+# CONTINUITY: m02 Ransomed Trust is the source of truth for these figures.
+#   exploit  - the ProFTPD 1.3.3c source backdoor (the trojaned 2010 release);
+#              it has no CVE of its own, so none is quoted in this mission
+#   sale     - invoice ZDS-2024-0847 to Ghost (Ransomware Incorporated);
+#              exploit $25,000 within a $55,000 package (incl. 214-hospital recon)
+#   attack   - Friday 15 November 2024, 02:47; ransom GBP 150,000 in Bitcoin
+#   deaths   - m02 ends with two or six dead depending on the player's recovery
+#              choice, so nothing in m03 states a count
+# m03 is set in early December 2024, "last month" from St. Catherine's.
+#
+# SAFE CHAIN (pass 2, reworded pass 3): the catalogue safe no longer shares the
+# founding year with the password. The server-room whiteboard (the night team's ROT13
+# house style, kept from the day staff) says Sable is mailing the new code from her office; Sterling's
+# unsent draft to the night team is stored as raw MIME with a Base64 body and
+# carries the code.
+#   whiteboard (server room) -> Sterling's PC (exec office) -> draft -> wall safe
+catalogue_safe_code = "5829"
+whiteboard_message_encoded = rot13("NIGHT TEAM: CATALOGUE STAYS IN THE WALL SAFE. SABLE HAS CHANGED THE CODE. SHE IS MAILING THE NEW ONE FROM HER OFFICE - DO NOT WRITE IT ON THIS BOARD.")
+
+client_roster_content = "ZERO DAY -- ACTIVE CLIENT ROSTER (export)\n- GHOST / Ransomware Incorporated: healthcare package, DELIVERED\n- OBSIDIAN: ransomware deployment, Q4 pricing sent\n- VORTEX: credential harvesting\n- CRITICAL MASS: grid storage / BMS access, Phase 2 priority\n- ECLIPSE: industrial espionage"
+client_roster_hex = hex_encode(client_roster_content)
+
+architect_directive = "PHASE 2 -- INFRASTRUCTURE.\nZero Day supplies. Critical Mass executes.\nPriority one: grid storage and substation control (BMS, SCADA). Priority two: hospitals on generator when the grid drops.\nThe window opens within weeks. Winter.\nSt. Catherine's was the proof of concept. Either they paid, or they buried people. Both fund us; both teach the next client.\n-- A"
+architect_directive_double = base64_encode(rot13(architect_directive))
+
+lore_fragment_1 = "ZERO DAY: A BRIEF HISTORY (internal -- not for day staff)\n\nWhiteHat Security Services: founded 2010 by Victoria Sterling. Legitimate pentest firm. Still is, on the ground floor.\n\nThe research division is the other thing. It stopped reporting what it found to vendors and started selling it -- first quietly, then as a marketplace. Cell name: Zero Day Syndicate. Cell lead: 0day (identity held).\n\nSterling runs the front and the sales floor under the sign-off name SABLE. She answers to 0day and, above him, the Architect.\n\nHouse line: 'Every vulnerability we sell proves security was already broken. We just got paid for the honesty.'"
+
+lore_fragment_2 = "Q4 2024 EXPLOIT CATALOGUE (internal)\n\nPremium tier:\n- ProFTPD 1.3.3c source backdoor: $25,000 (healthcare premium +40% applied)\n- Apache Struts2 RCE: $18,000\n- Windows SMBv3 RCE: $45,000\n\nStandard tier:\n- distcc 2.x remote exec (CVE-2004-2687): $3,200 (legacy estates)\n- Assorted SQLi vectors: $800-$2,400\n\nNote: healthcare buyers carry a 40% premium. They pay fast and they pay quietly.\n\nSOLD: ProFTPD package to GHOST (Ransomware Incorporated), inv. ZDS-2024-0847. Target: St. Catherine's Regional Medical Centre. Approved: SABLE."
+
+lore_fragment_3_encoded = architect_directive_double
+
+operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training network)\n\n[2024-10-21 14:32] ProFTPD 1.3.3c source backdoor\n  Buyer: GHOST (Ransomware Incorporated), verified\n  Invoice: ZDS-2024-0847 -- package $55,000 incl. 214-hospital recon\n  Premium: healthcare +40%\n  Approved: SABLE\n  Status: DELIVERED\n\n[2024-11-15 02:47] Deployment confirmed\n  Target: St. Catherine's Regional Medical Centre\n  Ransom demand: GBP 150,000 (BTC)\n\n[NOTE] Architect sign-off on file. Phase 2 sourcing continues."
+
+%>
+{
+  "scenario_brief": "Somebody sold Ghost the way into St. Catherine's. The trail leads to WhiteHat Security, a respectable pentest firm with Zero Day Syndicate's exploit market running out of its back rooms. Walk in as a recruit, clone your way past the card readers, and come back after hours for their training network and the paper trail. Then decide what happens to the people who made that night possible.",
+
+  "show_scenario_brief": "on_resume",
+
+  "narrator": {
+    "id": "narrator",
+    "skipTextValidation": true,
+    "voice": {
+      "name": "Algenib",
+      "style": "Cinematic noir detective voice over narrator.",
+      "language": "en-GB"
+    }
+  },
+
+  "music": {
+    "events": [
+      {
+        "trigger": "game_loaded",
+        "condition": "!globalVars.briefing_played",
+        "playlist": "cutscene",
+        "fade": false
+      },
+      {
+        "trigger": "game_loaded",
+        "condition": "globalVars.briefing_played === true",
+        "playlist": "noir",
+        "fade": false
+      },
+      {
+        "trigger": "conversation_closed:briefing_cutscene",
+        "playlist": "noir",
+        "fade": true
+      },
+      {
+        "trigger": "npc_hostile_state_changed",
+        "condition": "isHostile === true",
+        "playlist": "threat",
+        "fade": true
+      },
+      {
+        "trigger": "all_hostiles_ko",
+        "playlist": "noir",
+        "fade": true
+      },
+      {
+        "trigger": "global_variable_changed:victoria_choice_made",
+        "condition": "value === true",
+        "playlist": "spy-action",
+        "fade": true
+      },
+      {
+        "trigger": "conversation_closed:closing_debrief",
+        "playlist": "victory",
+        "track": "Ghost in the Wire",
+        "autoStop": true,
+        "disableClose": true,
+        "fade": true,
+        "credits": [
+          { "text": "MISSION COMPLETE", "style": "title" },
+          { "text": "GHOST IN THE MACHINE", "style": "subtitle" },
+          { "text": "" },
+          { "text": "ZERO DAY SYNDICATE: EXPOSED", "style": "entry", "condition": "globalVars.victoria_fate !== 'recruited'" },
+          { "text": "ZERO DAY SYNDICATE: COMPROMISED — from the inside", "style": "entry", "condition": "globalVars.victoria_fate === 'recruited'" },
+          { "text": "ST. CATHERINE'S LINK: PROVEN — ProFTPD exploit traced to GHOST", "style": "entry" },
+          { "text": "ZERO DAY CATALOGUE: IN SAFETYNET HANDS — vendors warned, buyers on notice", "style": "entry", "condition": "(globalVars.catalogue_seen === true || globalVars.lore_catalogue_found === true) && globalVars.victoria_fate !== 'recruited'" },
+          { "text": "ZERO DAY CATALOGUE: IN SAFETYNET HANDS — vendors quietly warned", "style": "entry", "condition": "(globalVars.catalogue_seen === true || globalVars.lore_catalogue_found === true) && globalVars.victoria_fate === 'recruited'" },
+          { "text": "ZERO DAY CATALOGUE: NOT RECOVERED — what else they hold is still unknown", "style": "warning", "condition": "globalVars.catalogue_seen !== true && globalVars.lore_catalogue_found !== true && globalVars.victoria_fate !== 'arrested'" },
+          { "text": "ZERO DAY CATALOGUE: SEIZED WITH THE MARKETPLACE — but not in our hands", "style": "warning", "condition": "globalVars.catalogue_seen !== true && globalVars.lore_catalogue_found !== true && globalVars.victoria_fate === 'arrested'" },
+          { "text": "" },
+          { "text": "── DECISIONS ──", "style": "section-header" },
+          { "text": "VICTORIA STERLING: TURNED — a cold asset now, not a convert", "style": "entry", "condition": "globalVars.victoria_fate === 'recruited'" },
+          { "text": "VICTORIA STERLING: ARRESTED — marketplace seized, the name kept from The Architect", "style": "entry", "condition": "globalVars.victoria_fate === 'arrested'" },
+          { "text": "VICTORIA STERLING: ESCAPED — the evidence stayed, she didn't", "style": "entry", "condition": "globalVars.victoria_fate === 'escaped'" },
+          { "text": "VICTORIA STERLING: NEUTRALISED — taken down on site", "style": "entry", "condition": "globalVars.victoria_fate === 'ko'" },
+          { "text": "DANNY FOSTER: PROTECTED — came in on his own, name kept out of the report", "style": "entry", "condition": "globalVars.danny_fate === 'protected'" },
+          { "text": "DANNY FOSTER: EXPOSED — named in full, charged alongside Zero Day", "style": "entry", "condition": "globalVars.danny_fate === 'exposed'" },
+          { "text": "DANNY FOSTER: LEFT TO CHOOSE — phone off, whereabouts unknown", "style": "warning", "condition": "globalVars.danny_fate === 'left'" },
+          { "text": "DANNY FOSTER: TAKEN DOWN IN HIS OWN OFFICE", "style": "warning", "condition": "globalVars.danny_fate === 'ko'" },
+          { "text": "DANNY FOSTER: NEVER FOUND — his name is still in the recon files", "style": "warning", "condition": "!globalVars.danny_fate" },
+          { "text": "WHITEHAT RECEPTION: KNOCKED OUT AT HER OWN DESK", "style": "warning", "condition": "globalVars.receptionist_ko === true" },
+          { "text": "PERFECT STEALTH — never detected by security", "style": "entry", "condition": "globalVars.guard_detection_count === 0 && globalVars.exec_office_entered === true && globalVars.guard_knocked_out !== true && globalVars.guard_told_safetynet !== true && globalVars.guard_bribed !== true && globalVars.guard_challenged !== true" },
+          { "text": "" },
+          { "text": "THE ARCHITECT: identity still unknown. Phase 2 looms.", "style": "warning" },
+          { "text": "ENTROPY: Still operational. The hunt continues.", "style": "warning" }
+        ]
+      }
+    ]
+  },
+
+  "objectives": [
+    {
+      "aimId": "act1_gain_access",
+      "title": "Get Inside WhiteHat",
+      "description": "Your visitor pass gets you as far as reception. Clone your way through the access control and get face to face with Victoria Sterling.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "clone_reception_badge",
+          "title": "Clone a staff badge to reach the conference area",
+          "description": "Scan the receptionist's MIFARE badge with the RFID cloner, then emulate it at the conference room door",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "meet_victoria",
+          "title": "Meet Victoria Sterling",
+          "description": "Make contact with Victoria Sterling in the conference room",
+          "type": "npc_conversation",
+          "targetNPC": "victoria_sterling",
+          "status": "active"
+        },
+        {
+          "taskId": "clone_rfid_card",
+          "title": "Clone Victoria's executive keycard",
+          "description": "Get close enough to copy Victoria's custom-key executive keycard — your route into the server room",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "aimId": "act2_breach_server_room",
+      "title": "Breach The Server Room",
+      "description": "After hours, emulate Victoria's keycard at the server room door, get onto the training network, and pull the evidence that ties Zero Day to St. Catherine's.",
+      "status": "locked",
+      "order": 1,
+      "unlockCondition": { "aimCompleted": "act1_gain_access" },
+      "tasks": [
+        {
+          "taskId": "submit_network_scan_flag",
+          "title": "Map the training network and submit the scan flag",
+          "description": "Sweep the training network from the VM terminal and submit what the scan turns up at the drop-site terminal",
+          "type": "submit_flags",
+          "targetFlags": ["flag_station_dropsite:ghost_in_machine_vm_network-flag1"],
+          "targetCount": 1,
+          "currentCount": 0,
+          "showProgress": true,
+          "status": "active"
+        },
+        {
+          "taskId": "submit_ftp_flag",
+          "title": "Pull the FTP intelligence and submit the flag",
+          "description": "Get into the FTP service and submit what you find at the drop-site terminal",
+          "type": "submit_flags",
+          "targetFlags": ["flag_station_dropsite:ghost_in_machine_vm_network-flag2"],
+          "targetCount": 1,
+          "currentCount": 0,
+          "showProgress": true,
+          "status": "active"
+        },
+        {
+          "taskId": "submit_http_flag",
+          "title": "Decode the pricing intel and submit the flag",
+          "description": "Pull the pricing material off the web service, decode it, and submit the flag at the drop-site terminal",
+          "type": "submit_flags",
+          "targetFlags": ["flag_station_dropsite:ghost_in_machine_vm_network-flag3"],
+          "targetCount": 1,
+          "currentCount": 0,
+          "showProgress": true,
+          "status": "active"
+        },
+        {
+          "taskId": "submit_distcc_flag",
+          "title": "Exploit the legacy distcc service and submit the flag",
+          "description": "Get command execution through the legacy distcc daemon and submit the flag at the drop-site terminal",
+          "type": "submit_flags",
+          "targetFlags": ["flag_station_dropsite:ghost_in_machine_vm_network-flag4"],
+          "targetCount": 1,
+          "currentCount": 0,
+          "showProgress": true,
+          "status": "active"
+        },
+        {
+          "taskId": "find_operational_logs",
+          "title": "Recover Zero Day's operational transaction logs",
+          "description": "Exploit distcc to recover the operational transaction logs that name GHOST and St. Catherine's",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "aimId": "search_executive_office",
+      "title": "Search Sterling's Office",
+      "description": "Sterling's private office holds the client roster and the paper trail. Get through the door and crack her machine.",
+      "status": "locked",
+      "order": 2,
+      "unlockCondition": { "aimCompleted": "act1_gain_access" },
+      "tasks": [
+        {
+          "taskId": "access_victoria_computer",
+          "title": "Crack Victoria's office computer",
+          "description": "Crack the password on Victoria Sterling's executive office computer",
+          "type": "unlock_object",
+          "targetObject": "victoria_computer",
+          "status": "active"
+        },
+        {
+          "taskId": "decode_client_roster",
+          "title": "Recover Sterling's client roster",
+          "description": "Find the client roster export on Sterling's computer",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "aimId": "collect_lore",
+      "title": "Zero Day's Paper Trail",
+      "description": "Sterling's people keep records of themselves. Find what they wrote down.",
+      "status": "locked",
+      "order": 3,
+      "unlockCondition": { "aimCompleted": "act1_gain_access" },
+      "tasks": [
+        {
+          "taskId": "lore_fragment_1",
+          "title": "Zero Day Origins",
+          "description": "Open the filing cabinet in Sterling's office",
+          "type": "unlock_object",
+          "targetObject": "exec_filing_cabinet",
+          "status": "active"
+        },
+        {
+          "taskId": "lore_fragment_2",
+          "title": "Exploit Catalogue",
+          "description": "Open the server room wall safe and find the exploit catalogue",
+          "type": "unlock_object",
+          "targetObject": "wall_safe_server",
+          "status": "active"
+        },
+        {
+          "taskId": "decode_whiteboard",
+          "title": "Read the night team's whiteboard",
+          "description": "Find what the night team wrote on the server room whiteboard. It sits with the wall safe it is about.",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "lore_fragment_3",
+          "title": "The Architect's Directive",
+          "description": "Read the drive hidden in Sterling's desk",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "aimId": "perfect_stealth",
+      "title": "Perfect Stealth",
+      "description": "Get into Sterling's office without the guard ever knowing you were there: never stopped, never caught, no deals, no knockouts",
+      "status": "locked",
+      "order": 4,
+      "unlockCondition": { "aimCompleted": "act1_gain_access" },
+      "tasks": [
+        {
+          "taskId": "zero_detection",
+          "title": "Get into Sterling's office unseen",
+          "description": "Get past the executive-wing guard into Sterling's office without him ever stopping you, without talking or paying your way past him, and without knocking him out",
+          "type": "custom",
+          "status": "active",
+          "optional": true
+        }
+      ]
+    },
+    {
+      "aimId": "moral_choices",
+      "title": "Settle Accounts",
+      "description": "Decide what happens to the people who made St. Catherine's possible.",
+      "status": "locked",
+      "order": 5,
+      "missionConclusion": true,
+      "unlockCondition": { "aimCompleted": "act2_breach_server_room" },
+      <%# Ending gate: the mandatory flag nodes from the dungeon graph -- the
+          technical work this mission is not allowed to skip. Story tasks are
+          not listed: they cost score if unfinished, they never withhold the
+          ending. See README_scenario_design.md#concluderequires. %>
+      "concludeRequires": {
+        "tasksCompleted": [
+          "submit_network_scan_flag",
+          "submit_ftp_flag",
+          "submit_http_flag",
+          "submit_distcc_flag"
+        ]
+      },
+      "conclusionScreen": { "type": "bond_visualiser" },
+      "tasks": [
+        {
+          "taskId": "danny_choice_made",
+          "title": "Decide Danny Foster's fate",
+          "description": "Decide whether to protect Danny Foster from the collateral damage of the sweep",
+          "type": "custom",
+          "status": "active",
+          "optional": true
+        },
+        {
+          "taskId": "victoria_choice_made",
+          "title": "Confront Victoria and decide her fate",
+          "description": "Confront Victoria Sterling and decide her fate",
+          "type": "custom",
+          "status": "active"
+        },
+        <%# The conclusion aim's LAST task. bond_visualiser opens the moment the
+            server confirms this aim's last task (objectives-manager.js
+            handleMissionConcluded), and victoria_choice_made is also what launches
+            the debrief -- so ending the aim there put the credits over the debrief.
+            This task completes on the debrief's last line (m05/m06 pattern). %>
+        {
+          "taskId": "hear_debrief",
+          "title": "Report back to Agent HaX",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+
+  "startRoom": "reception_lobby",
+
+  "startItemsInInventory": [
+    {
+      "type": "phone",
+      "name": "Your Phone",
+      "takeable": true,
+      "phoneId": "player_phone",
+      "npcIds": ["agent_0x99"],
+      "observations": "Your secure phone with encrypted connection to SAFETYNET"
+    },
+    {
+      "type": "rfid_cloner",
+      "name": "RFID Cloner",
+      "takeable": true,
+      "observations": "Concealed RFID cloning device — get close to a keycard to copy it",
+      "puzzle_graph_role": "tool"
+    },
+    {
+      "type": "lockpick",
+      "name": "Lock Pick Kit",
+      "takeable": true,
+      "observations": "Professional lock picking kit for bypassing physical locks",
+      "puzzle_graph_role": "tool",
+      "puzzle_graph_unlocks": ["executive_office", "exec_filing_cabinet", "server_filing_cabinet"],
+      "puzzle_graph_optional": true
+    }
+  ],
+
+  "player": {
+    "id": "player",
+    "displayName": "Agent 0x00",
+    "spriteSheet": "male_hacker_hood_down_v2",
+    "spriteTalk": "assets/characters/male_hacker_hood_down_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 10
+    }
+  },
+
+  "rooms": {
+    "reception_lobby": {
+      "type": "room_reception",
+      "connections": {
+        "north": "main_hallway"
+      },
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Building Directory",
+          "takeable": false,
+          "readable": true,
+          "text": "WhiteHat Security Services -- Floor Directory\n\nRECEPTION (you are here)\nMAIN HALLWAY: straight ahead, north\n  - Conference room: first door on the left (card access)\n  - Server room: end of the hallway (executive cards only)\nEXECUTIVE WING: east off the main hallway\n  - CEO's office, consultants' offices\n\nVisitors: please sign in at the desk. Staff badges are required beyond reception.",
+          "observations": "Floor directory by the reception desk"
+        },
+        {
+          "type": "notes",
+          "name": "Company Founding Plaque",
+          "takeable": false,
+          "readable": true,
+          "text": "WhiteHat Security Services\nFounded 2010 by Victoria Sterling\n\n\"Security Through Economics\"",
+          "observations": "A brass plaque behind the desk, polished more often than anything else in the lobby",
+          "puzzle_graph_role": "clue",
+          "puzzle_graph_unlocks": ["victoria_computer"],
+          "puzzle_graph_optional": true
+        }
+      ],
+      "npcs": [
+        {
+          "id": "briefing_cutscene",
+          "displayName": "Agent HaX",
+          "npcType": "person",
+          "position": {"x": 500, "y": 500},
+          "spriteSheet": "female_spy_v2",
+          "spriteTalk": "assets/characters/female_spy_talk.png",
+          "spriteVisemes": "assets/characters/female_spy_visemes.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "behavior": { "initiallyHidden": true },
+          "voice": {
+            "name": "Aoede",
+            "style": "Intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Use a steady, mid-range pitch. Speak quickly with a sense of urgency, as if time is short.",
+            "language": "en-GB"
+          },
+          "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_opening_briefing.json",
+          "currentKnot": "start",
+          "timedConversation": {
+            "delay": 0,
+            "targetKnot": "start",
+            "background": "assets/backgrounds/hq1.png",
+            "waitForEvent": "game_loaded",
+            "skipIfGlobal": "briefing_played",
+            "setGlobalOnStart": "briefing_played"
+          }
+        },
+        {
+          "_comment": "SEED NPC (continuity): Director Magnus Netherton, co-speaker in the opening briefing. Hidden, no task, no gating global.",
+          "id": "director_netherton",
+          "displayName": "Director Magnus Netherton",
+          "npcType": "person",
+          "position": {"x": 480, "y": 500},
+          "spriteSheet": "male_spy_v2",
+          "spriteTalk": "assets/characters/male_spy_talk.png",
+          "spriteVisemes": "assets/characters/male_spy_visemes.png",
+          "avatar": "assets/characters/male_spy_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "behavior": { "initiallyHidden": true },
+          "voice": {
+            "name": "Charon",
+            "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried; sets the stakes then lets his people run the detail.",
+            "language": "en-GB"
+          }
+        },
+        {
+          "_comment": "SEED NPC (continuity): Agent 0x47 'Nightshade', SAFETYNET's technical analyst, a trusted colleague who chips in on the exploit/cloning detail. Hidden, no task, no gating global. NO hint of the m08 betrayal.",
+          "id": "agent_nightshade",
+          "displayName": "Agent 0x47 'Nightshade'",
+          "npcType": "person",
+          "position": {"x": 520, "y": 500},
+          "spriteSheet": "male_scientist_v2",
+          "spriteTalk": "assets/characters/male_scientist_talk.png",
+          "spriteVisemes": "assets/characters/male_scientist_visemes.png",
+          "avatar": "assets/characters/male_scientist_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "behavior": { "initiallyHidden": true },
+          "voice": {
+            "name": "Enceladus",
+            "style": "SAFETYNET's technical analyst. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, precise, technically fluent; a colleague you trust.",
+            "language": "en-GB"
+          }
+        },
+        {
+          "id": "receptionist_npc",
+          "displayName": "Receptionist",
+          "npcType": "person",
+          "position": {"x": 6, "y": 3},
+          "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_npc_receptionist.json",
+          "currentKnot": "start",
+          "globalVarOnKO": "receptionist_ko",
+          "taskOnKO": "clone_reception_badge",
+          "spriteSheet": "female_office_worker_v2",
+          "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "voice": {
+            "name": "Kore",
+            "style": "Front-desk receptionist at a smart tech firm, mid-twenties. Speak with a consistent South Wales (Cardiff) accent throughout -- do not shift to any other accent. Bright, slightly high pitch; quick, chatty pace. Genuinely friendly, a little in awe of her boss and not remotely suspicious of visitors.",
+            "language": "en-GB"
+          },
+          "eventMappings": [
+            {
+              "_comment": "Pass 3c: the badge clone counts only when it is saved in the cloner (card_cloned is emitted on Save). Kept on the receptionist (start room, always loaded) so it doesn't share the card_cloned pattern with HaX's Victoria handler.",
+              "eventPattern": "card_cloned",
+              "condition": "data.cardName === 'Staff Access Badge'",
+              "onceOnly": true,
+              "setGlobal": { "reception_badge_cloned": true },
+              "completeTask": "clone_reception_badge"
+            }
+          ],
+          "rfidCard": {
+            "card_id": "receptionist_badge",
+            "rfid_protocol": "MIFARE_Classic_Weak_Defaults",
+            "name": "Staff Access Badge"
+          },
+          "itemsHeld": [
+            {
+              "type": "id_badge",
+              "id": "visitor_badge",
+              "name": "Visitor Badge",
+              "takeable": true,
+              "observations": "WhiteHat Security visitor badge — keep it visible inside the building"
+            },
+            {
+              "type": "keycard",
+              "card_id": "receptionist_badge",
+              "rfid_protocol": "MIFARE_Classic_Weak_Defaults",
+              "name": "Staff Access Badge",
+              "takeable": true,
+              "observations": "The receptionist's physical staff badge — opens the conference area. If you took it the hard way, you skipped cloning it.",
+              "puzzle_graph_note": "Cloned from her lanyard with the RFID cloner (or dropped on a KO)",
+              "puzzle_graph_unlocks": ["conference_room_01"],
+              "puzzle_graph_and_with": "rfid_cloner"
+            }
+          ]
+        },
+        {
+          "id": "agent_0x99",
+          "displayName": "Agent HaX",
+          "npcType": "phone",
+          "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_phone_agent0x99.json",
+          "avatar": "assets/characters/female_spy_headshot.png",
+          "phoneId": "player_phone",
+          "currentKnot": "start",
+          "voice": {
+            "name": "Aoede",
+            "style": "Intelligence handler speaking over a secure phone line. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Use a steady, mid-range pitch. Speak quickly with urgency, as if time is short.",
+            "language": "en-GB"
+          },
+          "itemsHeld": [
+            {
+              "_comment": "Fallback for a KO before the clone. Since engine 18237332 a KO'd NPC in a later-loaded room keeps its sprite, so Victoria's physical keycard should drop too; this relay stays as the belt-and-braces route (authoring rule: required items held by an NPC get a fallback). HaX hands it over by phone (on_victoria_ko_card).",
+              "type": "keycard",
+              "id": "relayed_executive_keycard",
+              "card_id": "victoria_keycard_clone",
+              "rfid_protocol": "MIFARE_Classic_Custom_Keys",
+              "name": "Executive Keycard (Nightshade's copy)",
+              "takeable": true,
+              "observations": "A working copy of Sterling's executive card, built by Nightshade from the reader logs. Opens what hers opens."
+            },
+            {
+              "type": "lab-workstation",
+              "id": "m03_rfid_field_guide",
+              "name": "SAFETYNET Field Guide: RFID Cloning",
+              "takeable": true,
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/rfid-cloning/",
+              "observations": "Read, crack, emulate: cloning MIFARE badges — weak-default cards in seconds, custom-key cards with a recovery attack"
+            },
+            {
+              "type": "lab-workstation",
+              "id": "m03_lockpicking_field_guide",
+              "name": "SAFETYNET Field Guide: Lockpicking",
+              "takeable": true,
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/lockpicking/",
+              "observations": "Pin-tumbler lockpicking technique with operational notes on staying out of the guard's line of sight"
+            },
+            {
+              "type": "lab-workstation",
+              "id": "m03_recon_field_guide",
+              "name": "SAFETYNET Field Guide: Reconnaissance and Network Mapping",
+              "takeable": true,
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/reconnaissance-and-network-mapping/",
+              "observations": "nmap host and service discovery — map the training network before you touch it"
+            },
+            {
+              "type": "lab-workstation",
+              "id": "m03_netexploit_field_guide",
+              "name": "SAFETYNET Field Guide: distcc Exploitation",
+              "takeable": true,
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/distcc-exploitation/",
+              "observations": "Exploit the legacy distcc daemon (CVE-2004-2687) for command execution and the operational logs"
+            },
+            {
+              "type": "lab-workstation",
+              "id": "m03_cyberchef_field_guide",
+              "name": "SAFETYNET Field Guide: Encoding and Decoding with CyberChef",
+              "takeable": true,
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/encoding-and-decoding-with-cyberchef/",
+              "observations": "ROT13, Base64, hex and multi-layer decoding — encoding is not encryption"
+            },
+            {
+              "type": "lab-workstation",
+              "id": "m03_proftpd_field_guide",
+              "name": "SAFETYNET Field Guide: ProFTPD Exploitation Workflow",
+              "takeable": true,
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/proftpd-exploitation-workflow/",
+              "observations": "Confirm the ProFTPD 1.3.3c backdoor, configure, launch, verify the shell -- the exploit behind St. Catherine's"
+            }
+          ],
+          <%# Pass 4: the phone lights up as play starts (m01 pattern). A reload skips
+              the briefing, so its close event never fires again and this isn't resent. %>
+          "timedMessages": [
+            {
+              "delay": 3000,
+              "message": "Reception first. Lean in near her lanyard and let the cloner read her badge. Message me if you get stuck.",
+              "type": "text",
+              "waitForEvent": "conversation_closed:briefing_cutscene"
+            }
+          ],
+          "eventMappings": [
+            {
+              "_comment": "Pass 4 round 2: delay 0 so the warning lands as the player walks in, before they reach the guard or the door. exec_wing_entered lets the debrief tell 'never went near him' from 'went near him and never got caught'.",
+              "eventPattern": "room_entered:executive_wing_hallway",
+              "onceOnly": true,
+              "setGlobal": { "lockpicking_guide_offered": true, "exec_wing_entered": true },
+              "sendTimedMessage": { "delay": 0, "message": "Sterling's office is keyed, not carded -- that's your pick kit. A guard works this corridor; pick only when his back's turned, or you're made. Lockpicking guide if you want it." }
+            },
+            {
+              "eventPattern": "room_entered:server_room",
+              "onceOnly": true,
+              "setGlobal": { "netexploit_guide_offered": true },
+              "sendTimedMessage": { "delay": 2500, "message": "You're at their VM terminal. Recon first, then the services, then the legacy distcc box -- that's where their records are. Submit everything at the drop-site terminal. Guides on request." }
+            },
+            <%# Pass 3c: a clone counts only when the card is actually saved in the
+                cloner. card_cloned is emitted on Save (rfid-minigame.js handleSaveCard)
+                and carries only cardName. Closing the flipper before Save leaves the
+                global false, and the ink offers the clone again (m04 Vance pattern). %>
+            {
+              "eventPattern": "card_cloned",
+              "condition": "data.cardName === 'Executive Keycard'",
+              "onceOnly": true,
+              "setGlobal": { "victoria_card_cloned": true },
+              "completeTask": "clone_rfid_card"
+            },
+            {
+              "_comment": "Pass 4: a receptionist KO also completes this task (taskOnKO), but then the badge is on the floor, not in the cloner. globalVarOnKO is written before taskOnKO fires (npc-hostile.js), so the condition holds.",
+              "eventPattern": "objective_task_completed:clone_reception_badge",
+              "condition": "globalVars.receptionist_ko !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "Reception badge is in the cloner. Emulate it at the conference room reader. Read, crack, emulate -- same order every time." }
+            },
+            {
+              "eventPattern": "npc_ko:receptionist_npc",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2500, "message": "The receptionist's down. Her staff badge will be on the floor by her if you still need it. And an empty front desk gets noticed. Sterling will notice." }
+            },
+            {
+              "eventPattern": "objective_task_completed:clone_rfid_card",
+              "setGlobal": { "mission_phase": "act2_infiltration" },
+              "onceOnly": true
+            },
+            {
+              "_comment": "Pass 4: the post-clone phone call is replaced by the night_transition cutscene (reception_lobby), which plays on the first hallway entry after the clone. HaX's instruction follows as a text the player can reread.",
+              "eventPattern": "conversation_closed:night_transition",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 0, "message": "You're in. Server room's at the north end of the main hallway: use Sterling's card at the reader. Mind the guard in the executive wing." }
+            },
+            {
+              "eventPattern": "item_picked_up:workstation",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1200, "message": "That's their CyberChef workstation. Anything that looks like gibberish on paper, paste it in. Encoding isn't encryption -- if it doesn't read after one pass, try another." }
+            },
+            <%# Pass 3e: the PC call used to open on the unlock task, which fires as the
+                password screen succeeds, so the phone replaced the PC's file list and the
+                player had to interact again. It now waits until the player opens one of
+                the PC's files (the draft or the roster, both onRead). pc_call_done keeps
+                it to one call whichever file comes first. %>
+            {
+              "eventPattern": "global_variable_changed:draft_seen",
+              "condition": "value === true && globalVars.pc_call_done !== true",
+              "targetKnot": "on_victoria_computer_accessed",
+              "conversationMode": "phone-chat",
+              "setGlobal": { "pc_call_done": true },
+              "onceOnly": true
+            },
+            {
+              "_comment": "Keyed on the roster task (completed by the roster_seen mapping) rather than roster_seen itself, so it doesn't share a pattern with that mapping.",
+              "eventPattern": "objective_task_completed:decode_client_roster",
+              "condition": "globalVars.pc_call_done !== true",
+              "targetKnot": "on_victoria_computer_accessed",
+              "conversationMode": "phone-chat",
+              "setGlobal": { "pc_call_done": true },
+              "onceOnly": true
+            },
+            {
+              "eventPattern": "objective_task_completed:lore_fragment_1",
+              "onceOnly": true,
+              "setGlobal": { "lore_history_found": true }
+            },
+            {
+              "eventPattern": "objective_task_completed:lore_fragment_2",
+              "setGlobal": { "lore_catalogue_found": true },
+              "onceOnly": true
+            },
+            {
+              "_comment": "Pass 3c: the catalogue call used to open on objective_task_completed:lore_fragment_2, which fires when the safe unlocks, so the phone covered the PIN result. It now waits until the player reads the catalogue (its onRead sets catalogue_seen), well after the PIN screen has gone.",
+              "eventPattern": "global_variable_changed:catalogue_seen",
+              "condition": "value === true",
+              "targetKnot": "on_exploit_catalog_found",
+              "conversationMode": "phone-chat",
+              "onceOnly": true
+            },
+            {
+              "eventPattern": "objective_task_completed:lore_fragment_3",
+              "targetKnot": "on_architect_directive_found",
+              "conversationMode": "phone-chat",
+              "setGlobal": { "lore_directive_found": true },
+              "onceOnly": true
+            },
+            <%# Pass 4 (fix 22): one line per flag so the VM stretch doesn't go quiet.
+                If this flag is the last of the four, the all-flags message follows
+                it two seconds later, which reads as a natural sequence. The distcc
+                flag has its own call. %>
+            {
+              "eventPattern": "objective_task_completed:submit_network_scan_flag",
+              "onceOnly": true,
+              "setGlobal": { "flag_scan_submitted": true },
+              "sendTimedMessage": { "delay": 2000, "message": "Scan's in. That's their lab mapped. One of those services should look familiar: the FTP server runs the build that opened St. Catherine's." }
+            },
+            {
+              "eventPattern": "objective_task_completed:submit_ftp_flag",
+              "onceOnly": true,
+              "setGlobal": { "flag_ftp_submitted": true },
+              "sendTimedMessage": { "delay": 2000, "message": "FTP's in. The backdoor they sold Ghost, running on their own training box. They rehearse on what they sell." }
+            },
+            {
+              "eventPattern": "objective_task_completed:submit_http_flag",
+              "onceOnly": true,
+              "setGlobal": { "flag_http_submitted": true },
+              "sendTimedMessage": { "delay": 2000, "message": "Price list's in. ROT13, and they filed it as confidential. Encoding isn't a lock." }
+            },
+            {
+              "eventPattern": "objective_task_completed:submit_distcc_flag",
+              "targetKnot": "m2_revelation_call",
+              "conversationMode": "phone-chat",
+              "completeTask": "find_operational_logs",
+              "setGlobal": { "flag_distcc_submitted": true },
+              "onceOnly": true
+            },
+            <%# The confrontation opens only when all four flags are in, because the
+                ending is gated on all four (concludeRequires). Confronting Victoria
+                earlier would roll the debrief and then refuse the conclusion. The
+                flags can land in any order, so each flag global carries the same
+                all-four check; only the last one to arrive passes it. %>
+            {
+              "eventPattern": "global_variable_changed:flag_scan_submitted",
+              "condition": "value === true && globalVars.flag_ftp_submitted === true && globalVars.flag_http_submitted === true && globalVars.flag_distcc_submitted === true && globalVars.night_confrontation_ready !== true",
+              "onceOnly": true,
+              "setGlobal": { "night_confrontation_ready": true }
+            },
+            {
+              "eventPattern": "global_variable_changed:flag_ftp_submitted",
+              "condition": "value === true && globalVars.flag_scan_submitted === true && globalVars.flag_http_submitted === true && globalVars.flag_distcc_submitted === true && globalVars.night_confrontation_ready !== true",
+              "onceOnly": true,
+              "setGlobal": { "night_confrontation_ready": true }
+            },
+            {
+              "eventPattern": "global_variable_changed:flag_http_submitted",
+              "condition": "value === true && globalVars.flag_scan_submitted === true && globalVars.flag_ftp_submitted === true && globalVars.flag_distcc_submitted === true && globalVars.night_confrontation_ready !== true",
+              "onceOnly": true,
+              "setGlobal": { "night_confrontation_ready": true }
+            },
+            {
+              "eventPattern": "global_variable_changed:flag_distcc_submitted",
+              "condition": "value === true && globalVars.flag_scan_submitted === true && globalVars.flag_ftp_submitted === true && globalVars.flag_http_submitted === true && globalVars.night_confrontation_ready !== true",
+              "onceOnly": true,
+              "setGlobal": { "night_confrontation_ready": true }
+            },
+            {
+              "_comment": "Pass 4 round 2: only once the distcc revelation call has played to its end (revelation_heard, set by a tag on its last knot). If distcc is the last flag, the revelation_heard mapping below sends this instead, after the call.",
+              "eventPattern": "global_variable_changed:night_confrontation_ready",
+              "condition": "value === true && globalVars.victoria_ko !== true && globalVars.revelation_heard === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 4000, "message": "Everything's off their network. Sterling's waiting in the conference room. Want a say in Danny Foster's fate? His office is in the executive wing -- go there first, then her." }
+            },
+            <%# Victoria KO. Keyed on npc_ko:<id>. In pass 2 globalVarOnKO did not emit a
+                change event, so handlers on global_variable_changed:victoria_ko never
+                fired (playtest D2). Engine 18237332 now emits it, but npc_ko stays the
+                key: it fires BEFORE globalVarOnKO is written, so these handlers set
+                victoria_ko themselves.
+                Several handlers fire together on purpose: they complete different
+                tasks. Her fate is settled only once the network work is in, so the
+                debrief can't roll before the evidence exists. %>
+            {
+              "eventPattern": "npc_ko:victoria_sterling",
+              "condition": "globalVars.victoria_choice_made !== true",
+              "onceOnly": true,
+              "completeTask": "meet_victoria",
+              "setGlobal": { "victoria_ko": true, "victoria_fate": "ko" }
+            },
+            {
+              "eventPattern": "npc_ko:victoria_sterling",
+              "onceOnly": true,
+              "completeTask": "clone_rfid_card"
+            },
+            {
+              "_comment": "D3: knocked out before her card was cloned. Her physical card should now drop (engine 18237332), but HaX still hands over a working copy by phone so the server room stays reachable whatever the drop does.",
+              "eventPattern": "npc_ko:victoria_sterling",
+              "condition": "globalVars.mission_phase !== 'act2_infiltration'",
+              "onceOnly": true,
+              "targetKnot": "on_victoria_ko_card",
+              "conversationMode": "phone-chat"
+            },
+            {
+              "_comment": "Night KO: all four flags already in, and she's in front of you. Settle it now.",
+              "eventPattern": "npc_ko:victoria_sterling",
+              "condition": "globalVars.night_confrontation_ready === true && globalVars.victoria_choice_made !== true",
+              "onceOnly": true,
+              "completeTask": "victoria_choice_made",
+              "setGlobal": { "victoria_choice_made": true }
+            },
+            {
+              "_comment": "Day-KO path. Settling her fate the instant the last flag lands would fire the debrief on top of the revelation call and the drop-site. Instead HaX sends the player back to her, and the fate settles on entering the conference room.",
+              "eventPattern": "global_variable_changed:night_confrontation_ready",
+              "condition": "value === true && globalVars.victoria_ko === true && globalVars.victoria_choice_made !== true && globalVars.revelation_heard === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 6000, "message": "Everything's off their network. Sterling's still in the conference room where you left her. Want a say in Danny's end? His office first." }
+            },
+            {
+              "_comment": "Pass 4 round 2: distcc was the last flag, so night_confrontation_ready was set while the revelation call was still playing. Send the all-flags message once the call has ended. The texts here and in the two night_confrontation_ready mappings above are copies: edit each pair together (dialogue stage, finding 8: both are over the 30-word cap).",
+              "eventPattern": "global_variable_changed:revelation_heard",
+              "condition": "value === true && globalVars.night_confrontation_ready === true && globalVars.victoria_ko !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2000, "message": "Everything's off their network. Sterling's waiting in the conference room. Want a say in Danny Foster's fate? His office is in the executive wing -- go there first, then her." }
+            },
+            {
+              "eventPattern": "global_variable_changed:revelation_heard",
+              "condition": "value === true && globalVars.night_confrontation_ready === true && globalVars.victoria_ko === true && globalVars.victoria_choice_made !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2000, "message": "Everything's off their network. Sterling's still in the conference room where you left her. Want a say in Danny's end? His office first." }
+            },
+            {
+              "eventPattern": "room_entered:conference_room_01",
+              "condition": "globalVars.victoria_ko === true && globalVars.night_confrontation_ready === true && globalVars.victoria_choice_made !== true",
+              "onceOnly": true,
+              "completeTask": "victoria_choice_made",
+              "setGlobal": { "victoria_choice_made": true }
+            },
+            {
+              "eventPattern": "npc_ko:danny_foster",
+              "condition": "globalVars.danny_fate === ''",
+              "onceOnly": true,
+              "setGlobal": { "danny_fate": "ko" }
+            },
+<% %w[reception_lobby main_hallway conference_room_01 server_room executive_wing_hallway executive_office danny_office].each do |r| %>
+            {
+              "_comment": "hear_debrief backstop: it completes on the debrief's last line. If the page reloads mid-debrief, debrief_played is already set and the debrief won't replay, so the next room entry completes the task and the mission can conclude.",
+              "eventPattern": "room_entered:<%= r %>",
+              "condition": "globalVars.debrief_played === true",
+              "onceOnly": true,
+              "completeTask": "hear_debrief"
+            },
+<% end %>
+            {
+              "eventPattern": "global_variable_changed:whiteboard_seen",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "decode_whiteboard"
+            },
+            {
+              "eventPattern": "global_variable_changed:roster_seen",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "decode_client_roster"
+            },
+            {
+              "eventPattern": "global_variable_changed:usb_seen",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "lore_fragment_3"
+            }
+          ]
+        },
+        {
+          "_comment": "Closing debrief: hidden in-person scene at HQ (m02 pattern), launched when Victoria's fate is settled.",
+          "id": "closing_debrief",
+          "displayName": "Agent HaX",
+          "npcType": "person",
+          "position": {"x": 500, "y": 500},
+          "spriteSheet": "female_spy_v2",
+          "avatar": "assets/characters/female_spy_headshot.png",
+          "spriteTalk": "assets/characters/female_spy_talk.png",
+          "spriteVisemes": "assets/characters/female_spy_visemes.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_closing_debrief.json",
+          "currentKnot": "start",
+          "behavior": { "initiallyHidden": true },
+          "voice": {
+            "name": "Aoede",
+            "style": "Intelligence handler giving a mission debrief in person. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Use a steady, mid-range pitch. Measured now the job is done.",
+            "language": "en-GB"
+          },
+          "eventMappings": [
+            {
+              "_comment": "Pass 3b: leaving the executive-wing corridor ends the guard's grace, so the next catch is a new strike.",
+              "eventPattern": "room_entered:main_hallway",
+              "condition": "globalVars.guard_grace === true",
+              "cooldown": 0,
+              "setGlobal": { "guard_grace": false }
+            },
+            {
+              "eventPattern": "room_entered:danny_office",
+              "condition": "globalVars.guard_grace === true",
+              "cooldown": 0,
+              "setGlobal": { "guard_grace": false }
+            },
+            {
+              "_comment": "Pass 3, P6: Perfect Stealth needs the player to have got past the guard into Sterling's office. Kept on this always-loaded NPC rather than HaX so it doesn't share a room_entered pattern with HaX's hear_debrief backstop.",
+              "eventPattern": "room_entered:executive_office",
+              "onceOnly": true,
+              "setGlobal": { "exec_office_entered": true }
+            },
+            {
+              "eventPattern": "global_variable_changed:victoria_choice_made",
+              "condition": "value === true && globalVars.debrief_played !== true",
+              "onceOnly": true,
+              "conversationMode": "person-chat",
+              "targetKnot": "start",
+              "background": "assets/backgrounds/hq1.png",
+              "disableClose": true
+            }
+          ]
+        },
+        {
+          "_comment": "Pass 4 (design review fix 1): the day-to-night turn as a scene. Hidden narrator-only cutscene in the always-loaded start room. It plays on the first main-hallway entry after Victoria's card is saved (or she is knocked out), which is the first moment the player has left her room. clone_call_done is saved with game state, so a reload doesn't replay it. HaX's text follows on conversation_closed:night_transition.",
+          "id": "night_transition",
+          "displayName": "Agent 0x00",
+          "npcType": "person",
+          "position": {"x": 500, "y": 500},
+          "spriteSheet": "male_hacker_hood_down_v2",
+          "spriteTalk": "assets/characters/male_hacker_hood_down_talk.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_night_transition.json",
+          "currentKnot": "start",
+          "behavior": { "initiallyHidden": true },
+          "voice": {
+            "name": "Algenib",
+            "style": "Cinematic noir detective voice over narrator.",
+            "language": "en-GB"
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "room_entered:main_hallway",
+              "condition": "globalVars.mission_phase === 'act2_infiltration' && globalVars.clone_call_done !== true",
+              "onceOnly": true,
+              "conversationMode": "person-chat",
+              "targetKnot": "start"
+            },
+            {
+              "_comment": "Pass 4 round 2: clone_call_done is set when the scene closes, not when it opens, so a reload mid-scene replays it (the onceOnly trigger is also only persisted on close). Person-chat runs a batch's tags at its start, so an ink tag on the last line would not wait.",
+              "eventPattern": "conversation_closed:night_transition",
+              "onceOnly": true,
+              "setGlobal": { "clone_call_done": true }
+            }
+          ]
+        }
+      ]
+    },
+
+    "main_hallway": {
+      "type": "hall_1x2gu",
+      "connections": {
+        "south": "reception_lobby",
+        "west": "conference_room_01",
+        "north": "server_room",
+        "east": "executive_wing_hallway"
+      },
+      "objects": [],
+      "npcs": []
+    },
+
+    "conference_room_01": {
+      "type": "room_office",
+      "locked": true,
+      "lockType": "rfid",
+      "requires": "receptionist_badge",
+      "connections": {
+        "east": "main_hallway"
+      },
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Presentation Materials",
+          "takeable": false,
+          "readable": true,
+          "text": "WhiteHat Security Services -- Selected Engagements\n\nRetail, logistics, two county councils, a building society. Clean reports, happy clients, a testimonial from a bank.\n\nThe healthcare page is blank except for the heading.",
+          "observations": "A glossy portfolio squared off on the conference table"
+        },
+        {
+          "type": "notes",
+          "name": "Conference Whiteboard",
+          "takeable": false,
+          "readable": true,
+          "text": "TRAINING LAB -- isolated, server room terminal only\n\nRecon -> enumerate -> exploit -> report\n\nServices: FTP, web, and one labelled LEGACY BUILD (distcc) with three underlines.\n\nIn the corner, smaller: \"students do NOT touch the legacy build after hours\"",
+          "observations": "The training lab diagram Sterling likes to stand beside"
+        }
+      ],
+      "npcs": [
+        {
+          "id": "victoria_sterling",
+          "displayName": "Victoria Sterling",
+          "npcType": "person",
+          "position": {"x": 5, "y": 4},
+          "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_npc_victoria.json",
+          "currentKnot": "start",
+          "globalVarOnKO": "victoria_ko",
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "voice": {
+            "name": "Despina",
+            "style": "CEO and former conference speaker, late forties. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Smooth, low-to-mid pitch; unhurried, polished pace. Cool, precise and amused; never raises her voice, because she has never needed to.",
+            "language": "en-GB"
+          },
+          "eventMappings": [
+            {
+              "_comment": "Once her fate is decided she leaves the room (arrested, walked out, or back to running the front). A KO'd body stays where it fell.",
+              "eventPattern": "global_variable_changed:victoria_choice_made",
+              "condition": "value === true && globalVars.victoria_fate !== 'ko'",
+              "onceOnly": true,
+              "setVisible": false
+            }
+          ],
+          "rfidCard": {
+            "card_id": "victoria_keycard_clone",
+            "rfid_protocol": "MIFARE_Classic_Custom_Keys",
+            "name": "Executive Keycard"
+          },
+          "itemsHeld": [
+            {
+              "type": "keycard",
+              "card_id": "victoria_keycard_clone",
+              "rfid_protocol": "MIFARE_Classic_Custom_Keys",
+              "name": "Executive Keycard",
+              "takeable": true,
+              "observations": "Victoria's physical executive keycard — opens the server room. Taking it off her means you never needed to clone it.",
+              "puzzle_graph_note": "Cloned at the whiteboard during the interview with the RFID cloner (or dropped on a KO)",
+              "puzzle_graph_unlocks": ["server_room"],
+              "puzzle_graph_and_with": "rfid_cloner"
+            }
+          ]
+        }
+      ]
+    },
+
+    "server_room": {
+      "type": "room_servers",
+      "connections": {
+        "south": "main_hallway"
+      },
+      "locked": true,
+      "lockType": "rfid",
+      "requires": "victoria_keycard_clone",
+      "objects": [
+        {
+          "type": "safe",
+          "id": "server_filing_cabinet",
+          "name": "Filing Cabinet",
+          "takeable": false,
+          "locked": true,
+          "lockType": "key",
+          "keyPins": [30, 45, 35, 50],
+          "difficulty": "easy",
+          "observations": "A four-drawer filing cabinet, locked. Day-staff paperwork; not where the sensitive material lives.",
+          "contents": [
+            {
+              "type": "notes",
+              "name": "Training Lab Runbook",
+              "takeable": true,
+              "readable": true,
+              "text": "STUDENT RUNBOOK -- TRAINING LAB\n\n1. nmap the lab network from the server room terminal. Everything you need answers a scan.\n2. The FTP box runs ProFTPD 1.3.3c, the trojaned 2010 build. Anonymous login works; nothing that matters lives in the anonymous folder.\n3. The web host serves the price list. It is only encoded, not encrypted.\n4. The legacy build runs distcc. Do not run exploits against it without sign-off.\n\nInstructor note: the legacy box is not a toy. Leave it alone."
+            }
+          ]
+        },
+        {
+          "type": "safe",
+          "id": "wall_safe_server",
+          "name": "Wall Safe",
+          "_comment": "Pass 3b: pinned high on the west wall (tiles, room-relative). room_servers has its two safe slots stacked 26 px apart at the west wall (x 10-11, y 200/226), so the filing cabinet and this safe landed on top of each other and an interact by the safe opened the cabinet's pick. The strip left of the first server row (x 0-68, y 64-88) is clear in the template.",
+          "position": { "x": 0.6, "y": 2.6 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "pin",
+          "requires": "<%= catalogue_safe_code %>",
+          "difficulty": "medium",
+          "observations": "A wall safe with a four-digit keypad. Whoever set it didn't write the code anywhere obvious.",
+          "contents": [
+            {
+              "type": "text_file",
+              "name": "Exploit Catalogue",
+              "takeable": true,
+              "readable": true,
+              "text": "<%= json_escape(lore_fragment_2) %>",
+              "observations": "Zero Day's price list. The healthcare line names Ghost, St. Catherine's and Sable's sign-off.",
+              "onRead": { "setVariable": { "catalogue_seen": true } }
+            }
+          ]
+        },
+        {
+          "type": "notes",
+          "name": "Server Room Whiteboard",
+          "takeable": false,
+          "readable": true,
+          "text": "<%= whiteboard_message_encoded %>",
+          "observations": "Someone has written a note across the whiteboard. The letters are scrambled but the word lengths and punctuation hold -- each letter swapped for another, not gibberish. The decoding laptop will read it.",
+          "onRead": { "setVariable": { "whiteboard_seen": true } },
+          "puzzle_graph_role": "clue",
+          "puzzle_graph_unlocks": ["wall_safe_server"],
+          "puzzle_graph_and_with": "cyberchef_workstation",
+          "puzzle_graph_optional": true
+        },
+        {
+          "type": "vm-launcher",
+          "id": "vm_launcher_zero_day",
+          "name": "VM Access Terminal",
+          "takeable": false,
+          "observations": "Zero Day's VM access terminal. From here you reach their training network -- the box they rehearse exploits on before they sell them.",
+          "puzzle_graph_role": "vm",
+          "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
+          "vm": <%= vm_object('ghost_in_machine_vm_network', {"id":1,"title":"Zero Day Training Network","ip":"192.168.100.0/24","enable_console":true}) %>
+        },
+        {
+          "type": "workstation",
+          "id": "cyberchef_workstation",
+          "name": "CyberChef Workstation",
+          "_comment": "Pass 3e: pinned on the west small desk. room_servers puts the workstation and flag-station slots on top of each other on the east desk (260,166 / 262,172), so interacting with the drop-site picked the laptop up. Elevation keeps it drawn on top of the desk.",
+          "position": { "x": 4.53, "y": 5.25, "elevation": 32 },
+          "takeable": true,
+          "puzzle_graph_role": "tool",
+          "puzzle_graph_note": "Decoding tool — take it, then paste the whiteboard, Sterling's draft, the client roster and the desk drive to reveal the intel",
+          "observations": "A laptop left open on CyberChef. Take it, then paste anything encoded you find — ROT13, Base64, hex, and layered combinations all decode here. Encoding is not encryption; there is no key to find."
+        },
+        {
+          "type": "flag-station",
+          "id": "flag_station_dropsite",
+          "name": "Drop-Site Terminal",
+          "takeable": false,
+          "observations": "A SAFETYNET drop-site terminal. Submit the flags you recover from the training network here; each one goes straight to HaX.",
+          "acceptsVms": ["ghost_in_machine_vm_network"],
+          "flags": <%= flags_for_vm('ghost_in_machine_vm_network', ['flag{network_scan_complete}', 'flag{ftp_intel_gathered}', 'flag{pricing_intel_decoded}', 'flag{distcc_legacy_compromised}']) %>,
+          <%# rewards[i] pairs with flags[i]. The distcc flag pays out the transaction
+              log as a document the player carries (m02 71e8852e pattern). %>
+          "flagRewards": [
+            { "type": "emit_event", "event_name": "m03_scan_flag_submitted", "description": "Network map recorded" },
+            { "type": "emit_event", "event_name": "m03_ftp_flag_submitted", "description": "FTP intelligence recorded" },
+            { "type": "emit_event", "event_name": "m03_http_flag_submitted", "description": "Pricing intelligence recorded" },
+            { "type": "give_item", "item_name": "Zero Day Transaction Log", "description": "distcc flag submitted - the drop-site prints the recovered transaction log" }
+          ],
+          "itemsHeld": [
+            {
+              "type": "text_file",
+              "id": "zero_day_transaction_log",
+              "name": "Zero Day Transaction Log",
+              "takeable": true,
+              "readable": true,
+              "text": "<%= json_escape(operational_log_content) %>",
+              "observations": "Printed by the drop-site from what you pulled off the distcc box. The sale to Ghost, with Sable's approval on it."
+            }
+          ]
+        }
+      ],
+      "npcs": []
+    },
+
+    "executive_wing_hallway": {
+      "type": "hall_1x2gu",
+      "connections": {
+        "west": "main_hallway",
+        "north": "executive_office",
+        "south": "danny_office"
+      },
+      "objects": [],
+      "npcs": [
+        {
+          "_comment": "Pass 2: moved here from main_hallway (no pickable lock there, so the lockpick LoS check could never fire). Visible all mission; his ink is phase-aware (staff-only by day, closed building at night). Since engine 18237332 a hidden or KO'd NPC no longer sees lockpicking, so knocking him out makes picks free; Perfect Stealth therefore excludes a KO (pass 3, P6). Patrol kept to x 5..8, y 3..4 of the 10x6 hall: clear of the west doorway (y2.5) and the south door (bottom-left), under the north door he watches.",
+          "id": "night_guard",
+          "displayName": "Security Guard",
+          "npcType": "person",
+          "position": {"x": 6, "y": 3},
+          "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_npc_guard.json",
+          "currentKnot": "start",
+          "spriteSheet": "male_security_guard_v2",
+          "spriteTalk": "assets/characters/male_security_guard_talk.png",
+          "spriteVisemes": "assets/characters/male_security_guard_visemes.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "voice": {
+            "name": "Algieba",
+            "style": "Contract security guard in his fifties. Speak with a consistent Estuary English (Essex) accent throughout -- do not shift to any other accent. Low, slightly gravelly pitch; slow, flat pace. Tired, dry and procedural; not stupid, and not paid enough to be a hero.",
+            "language": "en-GB"
+          },
+          "globalVarOnKO": "guard_knocked_out",
+          "behavior": {
+            "_comment": "Pass 3: hostile tuning set explicitly to m01's mildest guard-type NPC (Sarah: chaseSpeed 100, attackDamage 10, pauseToAttack true). Before this he used the engine defaults (chaseSpeed 145, attackDamage 10, pauseToAttack true, npc-behavior.js:343-347). He also no longer goes hostile on a detection without a choice (m03_npc_guard.ink on_lockpick_detected). Pass 3c: facePlayer and pauseForPlayer default to true with a 96 px radius (npc-behavior.js:318-328), and every point of this loop is within 96 px of the office door, so he stopped and turned to face anyone at the door: no back-turned window existed. Both off; he walks his loop and the cone does the work. Pass 3e: the 140-degree cone put his west-end dwell (facing up, about 63-69 degrees off the door line) on the cone edge, so the same moment sometimes caught and sometimes didn't. The loop now ends with a short step east into the (5,3) dwell, so he dwells facing east, clearly inside a 120-degree cone (about 25 degrees off the door line); every other dwell is clearly outside. Window: seen about 4.9 s (west dwell, then east under the door), safe about 8.1 s (east dwell facing down, the walk west, the step up) of a 13 s loop.",
+            "hostile": {
+              "chaseSpeed": 100,
+              "attackDamage": 10,
+              "pauseToAttack": true
+            },
+            "facePlayer": false,
+            "patrol": {
+              "enabled": true,
+              "pauseForPlayer": false,
+              "waypoints": [
+                { "x": 5, "y": 3, "dwellTime": 2500 },
+                { "x": 8, "y": 3 },
+                { "x": 8, "y": 4, "dwellTime": 2500 },
+                { "x": 4, "y": 4 },
+                { "x": 4, "y": 3 }
+              ],
+              "speed": 40,
+              "loop": true
+            }
+          },
+          "los": {
+            "enabled": true,
+            "range": 150,
+            "angle": 120,
+            "visualize": true
+          },
+          "eventMappings": [
+            {
+              "_comment": "Deliberately repeatable. Pass 3b: one approach = one strike. The ink sets guard_grace on a catch and plays a no-strike 'still here' line until the player leaves the corridor (closing_debrief clears it on main_hallway / danny_office entry). Cooldown cut from 30 s to 3 s because the engine's interrupt gate (npc-manager.js shouldInterruptLockpickingWithPersonChat) ignores the mapping cooldown, so a retry inside a long cooldown was swallowed silently: no pick, no line. Pass 4 round 2: once the player has told him they're SAFETYNET or paid him, he keeps his word and doesn't catch the pick (the LOS gate evaluates this condition, npc-manager.js shouldInterruptLockpickingWithPersonChat). Perfect Stealth excludes both routes.",
+              "condition": "globalVars.guard_told_safetynet !== true && globalVars.guard_bribed !== true",
+              "eventPattern": "lockpick_used_in_view",
+              "targetKnot": "on_lockpick_detected",
+              "conversationMode": "person-chat",
+              "background": "assets/backgrounds/background1.png",
+              "onceOnly": false,
+              "cooldown": 3000
+            }
+          ]
+        }
+      ]
+    },
+
+    "executive_office": {
+      "type": "room_ceo",
+      "connections": {
+        "south": "executive_wing_hallway"
+      },
+      "locked": true,
+      "lockType": "key",
+      "keyPins": [35, 50, 30, 45, 55],
+      "difficulty": "medium",
+      "objects": [
+        {
+          "type": "safe",
+          "id": "exec_filing_cabinet",
+          "name": "Filing Cabinet",
+          "takeable": false,
+          "locked": true,
+          "lockType": "key",
+          "keyPins": [45, 35, 55, 30, 50],
+          "difficulty": "medium",
+          "observations": "A locked cabinet in the corner of Sterling's office. Not day-staff paperwork.",
+          "contents": [
+            {
+              "type": "text_file",
+              "name": "Zero Day: A Brief History",
+              "takeable": true,
+              "readable": true,
+              "text": "<%= json_escape(lore_fragment_1) %>",
+              "observations": "An internal history, written for the people who already know what the firm is."
+            }
+          ]
+        },
+        {
+          "type": "pc",
+          "id": "victoria_computer",
+          "name": "Executive Computer",
+          "takeable": false,
+          "locked": true,
+          "lockType": "password",
+          "requires": "Sterling2010",
+          "postitNote": "IT reset: Surname + year founded (e.g. Smith1999). Change it!",
+          "showPostit": true,
+          "difficulty": "medium",
+          "observations": "Victoria Sterling's executive computer, password protected. A helpdesk slip is stuck to the monitor: your password was reset to the house default, surname plus the year we were founded (e.g. Smith1999). Please change it at next login. It doesn't look as if she did.",
+          "contents": [
+            {
+              "type": "text_file",
+              "name": "Unsent email to the night team (raw source)",
+              "takeable": true,
+              "readable": true,
+              "text": "<%= base64_encode('To: night team. From: Sable.\nCatalogue safe re-coded to 5829 -- memorise it, do not write it on the board again.\nObsidian Q4 pricing goes out Friday: ProFTPD-class $25k, Struts $18k, healthcare +40% as ever.\nArchitect wants the Phase 2 list same day. -V') %>",
+              "observations": "An unsent email to the night team, shown as raw message source. Her mail client saved it before it was ever sent: one unbroken block of upper and lower case letters, digits, + and /. Not a word of English in it.",
+              "onRead": { "setVariable": { "draft_seen": true } },
+              "puzzle_graph_role": "clue",
+              "puzzle_graph_unlocks": ["wall_safe_server"],
+              "puzzle_graph_and_with": "cyberchef_workstation",
+              "puzzle_graph_optional": true
+            },
+            {
+              "type": "text_file",
+              "name": "Client Roster",
+              "takeable": true,
+              "readable": true,
+              "text": "<%= client_roster_hex %>",
+              "observations": "A raw export from the marketplace database: nothing but digits and the letters a to f, in pairs.",
+              "onRead": { "setVariable": { "roster_seen": true } }
+            }
+          ]
+        },
+        {
+          "type": "suitcase",
+          "name": "Desk Drawer",
+          "takeable": false,
+          "locked": false,
+          "observations": "A shallow compartment under the top drawer of Sterling's desk, not locked. She did not expect anyone to go through her desk.",
+          "contents": [
+            {
+              "type": "text_file",
+              "name": "Hidden USB Drive",
+              "takeable": true,
+              "readable": true,
+              "text": "<%= lore_fragment_3_encoded %>",
+              "observations": "A drive with one file on it: one unbroken block of letters, digits, + and /. Whoever wrote it didn't want it read at a glance, and one pass may not be enough.",
+              "onRead": { "setVariable": { "usb_seen": true } }
+            }
+          ]
+        }
+      ],
+      "npcs": []
+    },
+
+    "danny_office": {
+      "type": "room_office",
+      "connections": {
+        "north": "executive_wing_hallway"
+      },
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Performance Review",
+          "takeable": false,
+          "readable": true,
+          "text": "Danny Foster -- annual review. \"Exceptional standards. Strong instincts on responsible disclosure. A conscience the team relies on.\" Signed: V. Sterling.",
+          "observations": "Danny Foster's performance review, signed by Sterling herself"
+        },
+        {
+          "type": "notes",
+          "name": "Family Photo",
+          "takeable": false,
+          "readable": true,
+          "text": "Danny with his wife and their daughter, maybe four. She's holding a crayon sign: 'MY DAD IS A GOOD HACKER'.",
+          "observations": "A framed photo on the desk, turned so he can see it while he works"
+        },
+        {
+          "type": "pc",
+          "name": "Danny's Workstation",
+          "takeable": false,
+          "locked": false,
+          "observations": "Danny's computer, unlocked. Open on his own files.",
+          "contents": [
+            {
+              "type": "text_file",
+              "name": "Folder: GHOST -- Hospital Infrastructure Assessment",
+              "takeable": true,
+              "readable": true,
+              "text": "GHOST -- HOSPITAL INFRASTRUCTURE ASSESSMENT (D. Foster)\n\nNetwork map of St. Catherine's Regional. Patient monitoring and critical care topology. FTP server flagged: ProFTPD, unpatched source build. Exploitation feasibility: HIGH.\n\nEmail, D. Foster to V. Sterling: \"Assessment complete. FTP vulnerability confirmed exploitable, architecture documented. Ready for the client. -DF\"\n\nSterling's reply, one line: \"Perfect. Security-awareness client, as discussed. Bill it to research.\"",
+              "observations": "The reconnaissance that made St. Catherine's possible -- with Sterling's lie about the client sitting right underneath it.",
+              "onRead": { "setVariable": { "danny_evidence_seen": true } }
+            },
+            {
+              "type": "text_file",
+              "name": "Personal notes (unsent)",
+              "takeable": true,
+              "readable": true,
+              "text": "It was my map. My vulnerability notes. She said it was a security-awareness client.\n\nThen I saw the news. The ward. The topology matched exactly what I documented.\n\nI asked her. She said I was being paranoid, that hospitals get attacked all the time. Then she offered me a raise and called me 'essential'. She knows that I know.\n\nI should go to someone. But if I do, I'm the man who drew the map. What happens to them? To me?",
+              "observations": "Danny's own notes to himself. Not sent to anyone."
+            }
+          ]
+        }
+      ],
+      "npcs": [
+        {
+          "id": "danny_foster",
+          "displayName": "Danny Foster",
+          "npcType": "person",
+          "position": {"x": 5, "y": 4},
+          "spriteSheet": "male_nerd_v2",
+          "spriteTalk": "assets/characters/male_nerd_talk.png",
+          "spriteVisemes": "assets/characters/male_nerd_visemes.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "voice": {
+            "name": "Iapetus",
+            "style": "Security consultant in his late thirties, exhausted and frightened. Speak with a consistent East Midlands (Nottingham) accent throughout -- do not shift to any other accent. Mid-range pitch that tightens and rises under stress; quiet, quick pace. Quick to explain himself, close to tears without ever quite getting there.",
+            "language": "en-GB"
+          },
+          "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_danny_choice.json",
+          "currentKnot": "start",
+          "taskOnKO": "danny_choice_made",
+          "behavior": { "initiallyHidden": true },
+          "eventMappings": [
+            {
+              "_comment": "Night-only scene (he is 'sitting in the dark'). Out at client sites in the afternoon; appears when the player enters his office after mission_phase flips. Not onceOnly: setVisible is idempotent, and re-firing re-reveals him after a reload (an initiallyHidden NPC is re-hidden on room load, npc-sprites.js:222). His office has no pickable lock, so a hidden Danny can't trip a lockpick LoS interrupt.",
+              "eventPattern": "room_entered:danny_office",
+              "condition": "globalVars.mission_phase === 'act2_infiltration'",
+              "setVisible": true
+            }
+          ],
+          "observations": "Danny Foster, a WhiteHat consultant. He looks like a man who hasn't slept properly in weeks."
+        }
+      ]
+    }
+  },
+
+  "globalVariables": {
+    "mission_phase": "act1_meeting",
+    "victoria_influence": 0,
+    "victoria_suspicious": 0,
+    "victoria_trusts_player": false,
+    "victoria_trust": 50,
+    "victoria_choice_made": false,
+    "victoria_recruited": false,
+    "victoria_arrested": false,
+    "victoria_escaped": false,
+    "danny_innocence_confirmed": false,
+    "danny_warned": false,
+    "danny_protected": false,
+    "danny_exposed": false,
+    "danny_evidence_seen": false,
+    "handler_trust": 50,
+    "guard_detection_count": 0,
+    "guard_knocked_out": false,
+    "receptionist_ko": false,
+    "victoria_ko": false,
+    "victoria_fate": "",
+    "player_approach": "",
+    "knows_m2_connection": false,
+    "danny_fate": "",
+    "flag_scan_submitted": false,
+    "flag_ftp_submitted": false,
+    "flag_http_submitted": false,
+    "flag_distcc_submitted": false,
+    "lore_history_found": false,
+    "lore_catalogue_found": false,
+    "lore_directive_found": false,
+    "briefing_played": false,
+    "night_confrontation_ready": false,
+    "victoria_card_cloned": false,
+    "reception_badge_cloned": false,
+    "debrief_played": false,
+    "clone_call_done": false,
+    "whiteboard_seen": false,
+    "draft_seen": false,
+    "catalogue_seen": false,
+    "exec_office_entered": false,
+    "pc_call_done": false,
+    "guard_grace": false,
+    "roster_seen": false,
+    "usb_seen": false,
+    "lockpicking_guide_offered": false,
+    "netexploit_guide_offered": false,
+    "guard_told_safetynet": false,
+    "guard_challenged": false,
+    "guard_bribed": false,
+    "called_it_murder": false,
+    "directive_decoded": false,
+    "revelation_heard": false,
+    "exec_wing_entered": false
+  }
+}

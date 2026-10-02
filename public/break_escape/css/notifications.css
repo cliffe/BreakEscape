@@ -1,0 +1,174 @@
+/* Notification System Styles */
+
+#notification-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 600px;
+    max-width: 90%;
+    z-index: 2000;
+    font-family: 'Press Start 2P';
+    pointer-events: none;
+}
+
+.notification {
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 15px 20px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+    opacity: 0;
+    transform: translateY(-20px);
+    pointer-events: auto;
+    position: relative;
+    overflow: hidden;
+}
+
+.notification.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.notification.info {
+    border-left: 4px solid #3498db;
+}
+
+.notification.success {
+    border-left: 4px solid #2ecc71;
+}
+
+.notification.warning {
+    border-left: 4px solid #f39c12;
+}
+
+.notification.error {
+    border-left: 4px solid #e74c3c;
+}
+
+.notification-title {
+    font-weight: bold;
+    margin-bottom: 5px;
+    font-size: 18px;
+}
+
+.notification-message {
+    font-size: 20px;
+    font-family: 'GNF', monospace;
+    line-height: 1.4;
+}
+
+.notification-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    cursor: pointer;
+    font-size: 18px;
+    color: #aaa;
+}
+
+.notification-close:hover {
+    color: white;
+}
+
+.notification-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background-color: rgba(255, 255, 255, 0.5);
+    width: 100%;
+}
+
+/* Confirmation dialog */
+.game-confirm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    z-index: 3000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Press Start 2P', monospace;
+}
+
+.game-confirm-dialog {
+    background: rgba(10, 10, 20, 0.97);
+    border: 2px solid #3498db;
+    padding: 28px 32px;
+    max-width: 460px;
+    width: 90%;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.7);
+}
+
+.game-confirm-message {
+    font-family: 'GNF', monospace;
+    font-size: 22px;
+    color: #e0e0e0;
+    line-height: 1.5;
+    margin-bottom: 22px;
+}
+
+.game-confirm-buttons {
+    display: flex;
+    gap: 14px;
+    justify-content: flex-end;
+}
+
+.game-confirm-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    padding: 10px 18px;
+    cursor: pointer;
+    border: 2px solid;
+    background: transparent;
+    transition: background 0.15s, color 0.15s;
+}
+
+.game-confirm-ok {
+    color: #2ecc71;
+    border-color: #2ecc71;
+}
+
+.game-confirm-ok:hover {
+    background: #2ecc71;
+    color: #000;
+}
+
+.game-confirm-cancel {
+    color: #aaa;
+    border-color: #555;
+}
+
+.game-confirm-cancel:hover {
+    background: #555;
+    color: #fff;
+}
+
+/* Display modal (gameDisplay) — extends confirm dialog styles */
+.game-display-dialog {
+    max-width: 600px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.game-display-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 13px;
+    color: #3498db;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #2a4a6a;
+}
+
+.game-display-body {
+    font-family: 'GNF', monospace;
+    font-size: 22px;
+    color: #e0e0e0;
+    line-height: 1.5;
+    overflow-y: auto;
+    flex: 1;
+    margin-bottom: 20px;
+    padding-right: 4px;
+}

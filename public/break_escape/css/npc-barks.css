@@ -1,0 +1,167 @@
+/* NPC Bark Notifications */
+
+/* Bark container positioned above inventory */
+#npc-bark-container {
+  position: fixed;
+  bottom: 80px; /* Above inventory bar */
+  left: 20px;
+  z-index: 9999 !important;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column-reverse; /* Stack upward */
+  gap: 8px;
+  max-width: 300px;
+}
+
+/* Individual bark notification styled like phone message */
+.npc-bark {
+  background: #5fcf69; /* Phone screen green */
+  color: #000;
+  padding: 12px 15px;
+  border: 2px solid #000;
+  font-family: 'GNF', monospace;
+  font-size: 18px;
+  line-height: 1.4;
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.3);
+  pointer-events: auto;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+  word-wrap: break-word;
+  animation: bark-slide-up 0.3s ease-out;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.npc-bark:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.3);
+  background: #6fe079;
+}
+
+/* NPC Avatar in bark */
+.npc-bark-avatar {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  border: 2px solid #000;
+}
+
+/* Bark text content */
+.npc-bark-text {
+  flex: 1;
+}
+
+/* Dismiss (×) button on each bark */
+.npc-bark-dismiss {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: #000;
+  font-size: 20px;
+  font-family: 'GNF', monospace;
+  line-height: 1;
+  padding: 0 0 0 6px;
+  cursor: pointer;
+  opacity: 0.5;
+  pointer-events: auto;
+}
+
+.npc-bark-dismiss:hover {
+  opacity: 1;
+}
+
+/* "Clear all" button — sits at the visual top of the bark stack */
+.npc-bark-clear-all {
+  pointer-events: auto;
+  background: #222;
+  color: #5fcf69;
+  border: 2px solid #000;
+  font-family: 'GNF', monospace;
+  font-size: 14px;
+  padding: 5px 10px;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.4);
+  transition: transform 0.1s, box-shadow 0.1s, background 0.1s;
+  align-self: flex-start;
+}
+
+.npc-bark-clear-all:hover {
+  background: #333;
+  transform: translate(-2px, -2px);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.4);
+}
+
+@keyframes bark-slide-up {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes bark-slide-out {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+}
+
+/* Phone access button (will be added later) */
+.phone-access-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 64px;
+  height: 64px;
+  background: #5fcf69;
+  border: 2px solid #000;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
+  z-index: 9998;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.phone-access-button:hover {
+  background: #4fb759;
+  transform: translate(-2px, -2px);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
+}
+
+.phone-access-button-icon {
+  width: 40px;
+  height: 40px;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+.phone-access-button-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 24px;
+  height: 24px;
+  background: #ff0000;
+  color: #fff;
+  border: 2px solid #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  font-family: 'GNF', monospace;
+}

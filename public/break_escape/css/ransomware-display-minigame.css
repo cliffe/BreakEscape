@@ -1,0 +1,219 @@
+.ransomware-display-minigame-container {
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+    overflow: hidden;
+}
+
+.ransomware-display-game-container {
+    height: 100vh;
+    display: flex;
+}
+
+.ransomware-display-bg {
+    width: 100%;
+    height: 100%;
+    padding: 16px;
+    box-sizing: border-box;
+    background-color: #000000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.ransomware-display-bg::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='8' y='11' width='8' height='7' fill='%23ff4d4d'/%3E%3Crect x='9' y='12' width='6' height='5' fill='%23000000'/%3E%3Crect x='9' y='7' width='6' height='4' fill='%23ff4d4d'/%3E%3Crect x='10' y='8' width='4' height='3' fill='%23000000'/%3E%3C/svg%3E");
+    background-size: 30px 30px;
+    background-repeat: repeat;
+    opacity: 0.10;
+    pointer-events: none;
+}
+
+.ransomware-display-panel {
+    width: min(1420px, 98vw);
+    max-width: 1420px;
+    max-height: 96vh;
+    background: #3d0000;
+    border: 2px solid #a80000;
+    padding: 30px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    z-index: 1;
+    font-family: 'Press Start 2P', monospace;
+    color: #ffffff;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.ransomware-display-icon {
+    color: #ff8080;
+    font-size: 32px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 14px;
+}
+
+/* 24x24 pixel-art icons shown at an integer 3x (72px). */
+.ransomware-display-icon-img {
+    width: 72px;
+    height: 72px;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+    flex: none;
+}
+
+.ransomware-display-title {
+    margin: 0 0 16px 0;
+    font-size: 24px;
+    line-height: 1.5;
+    text-align: center;
+    color: #ff3434;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.ransomware-display-body {
+    margin: 0;
+    padding: 14px;
+    border: 2px solid #6a0000;
+    background: #220000;
+    color: #efefef;
+    font-family: 'GNF', monospace;
+    font-size: 20px;
+    line-height: 1.8;
+    white-space: pre-wrap;
+    flex: 1;
+    overflow: auto;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Per-terminal lines (scenarioData `extraLines`): what this machine says that the others don't. */
+.ransomware-display-extra {
+    flex: none;
+    margin-top: 10px;
+    border-color: #a80000;
+    color: #ffd0d0;
+}
+
+.ransomware-display-timer-row {
+    margin-top: 14px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: center;
+    color: #ffcf63;
+    font-size: 16px;
+}
+
+#ransomware-timer-value {
+    font-size: 28px;
+    color: #ffb100;
+    font-weight: bold;
+}
+
+#ransomware-timer-value.expired {
+    color: #ff4646;
+}
+
+.ransomware-display-note {
+    margin-top: 12px;
+    border: 2px solid #676767;
+    background: #1d1d1d;
+    color: #d9d9d9;
+    padding: 8px;
+    font-size: 10px;
+    text-align: center;
+}
+
+.ransomware-display-note.warning {
+    border-color: #ff8b00;
+    color: #ffd8a3;
+}
+
+.ransomware-display-actions {
+    margin-top: 16px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.ransomware-display-btn {
+    border: 2px solid #6f6f6f;
+    background: #2b2b2b;
+    color: #ececec;
+    min-height: 78px;
+    padding: 8px;
+    text-align: center;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+    font-family: 'Press Start 2P', monospace;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.ransomware-display-btn .icon {
+    font-size: 28px;
+    color: #bdbdbd;
+    margin: 0 auto;
+}
+
+.ransomware-display-btn .label {
+    font-size: 14px;
+    line-height: 1.3;
+    font-family: 'Press Start 2P', monospace;
+}
+
+.ransomware-display-btn.contact.selected,
+.ransomware-display-btn.contact:hover:not(:disabled) {
+    border-color: #b20000;
+    color: #ff9f9f;
+}
+
+.ransomware-display-btn.report.selected,
+.ransomware-display-btn.report:hover:not(:disabled) {
+    border-color: #2d6bff;
+    color: #9ec0ff;
+}
+
+.ransomware-display-btn.recovery.selected,
+.ransomware-display-btn.recovery:hover:not(:disabled) {
+    border-color: #2ea74b;
+    color: #9de4ad;
+}
+
+.ransomware-display-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+@media (max-width: 840px) {
+    .ransomware-display-panel {
+        padding: 12px;
+    }
+
+    .ransomware-display-title {
+        font-size: 12px;
+    }
+
+    .ransomware-display-body {
+        font-size: 18px;
+    }
+
+    .ransomware-display-actions {
+        grid-template-columns: 1fr;
+    }
+}

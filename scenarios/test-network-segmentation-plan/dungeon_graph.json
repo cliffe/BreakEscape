@@ -1,0 +1,10 @@
+{
+  "scenario": "test-network-segmentation-plan",
+  "start_room": "it_security_office",
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
+}

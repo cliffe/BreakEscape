@@ -1,0 +1,447 @@
+{
+  "scenario": "m05_insider_trading",
+  "start_room": "reception_lobby",
+  "nodes": [
+    {
+      "id": "door_server_hallway",
+      "label": "Server Hallway<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "server_hallway",
+      "label": "Server Hallway",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_server_room",
+      "label": "Server Room — Password Access. Contact IT.<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "server_room",
+      "label": "Server Room — Password Access. Contact IT.",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_torres_office",
+      "label": "Torres Office<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "torres_office",
+      "label": "Torres Office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_data_center",
+      "label": "Key Vault — Fingerprint Access. Cryptography Lead Only.<br/>Biometric lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "data_center",
+      "label": "Key Vault — Fingerprint Access. Cryptography Lead Only.",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "reception_lobby",
+      "label": "Reception Lobby",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lock_pick_kit",
+      "label": "Lock Pick Kit",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_torres_briefcase",
+      "label": "Torres Briefcase",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_patricia_filing_cabinet",
+      "label": "Patricia Filing Cabinet",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "rfid_cloner",
+      "label": "RFID Cloner",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "fingerprint_kit",
+      "label": "Fingerprint Kit",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "npc_owen_gallagher",
+      "label": "Owen Gallagher",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "open_office_area",
+      "label": "Open Office Area",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "it_spare_office_card",
+      "label": "IT Spare Office Card",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "server_password_sticky_note",
+      "label": "Server Password Sticky Note",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "bludit_cms_server_terminal",
+      "label": "Bludit CMS Server Terminal",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "mug",
+      "label": "Mug",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "npc_dr_ruth_halloran",
+      "label": "Dr Ruth Halloran",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "research_lab",
+      "label": "Research Lab",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "research_badge",
+      "label": "Research Badge",
+      "kind": "key",
+      "optional": true
+    },
+    {
+      "id": "sealed_talentstack_envelope",
+      "label": "Sealed TalentStack Envelope",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "upload_schedule",
+      "label": "Upload Schedule",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "data_package_manifest",
+      "label": "Data Package Manifest",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "npc_david_torres",
+      "label": "David Torres",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "action_confront_torres",
+      "label": "Confront Torres and decide his fate",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "vmch_submit_flag1",
+      "label": "Submit Flag 1: Leaked Bludit admin credentials (recon)",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_flag1",
+      "label": "Flag1 Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "vmch_submit_flag2",
+      "label": "Submit Flag 2: Authenticated Bludit image-upload RCE",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_flag2",
+      "label": "Flag2 Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "vmch_submit_flag3",
+      "label": "Submit Flag 3: The insider's staging manifest (user access)",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_flag3",
+      "label": "Flag3 Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "vmch_submit_flag4",
+      "label": "Submit Flag 4: The Architect's acquisition authorisation (root)",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_flag4",
+      "label": "Flag4 Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "main_corridor",
+      "label": "Main Corridor",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "patricia_office",
+      "label": "Patricia Office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "break_room",
+      "label": "Break Room",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_server_hallway",
+      "to": "server_hallway",
+      "soft": false
+    },
+    {
+      "from": "door_server_room",
+      "to": "server_room",
+      "soft": false
+    },
+    {
+      "from": "door_torres_office",
+      "to": "torres_office",
+      "soft": false
+    },
+    {
+      "from": "door_data_center",
+      "to": "data_center",
+      "soft": false
+    },
+    {
+      "from": "reception_lobby",
+      "to": "lock_pick_kit",
+      "soft": false
+    },
+    {
+      "from": "lock_pick_kit",
+      "to": "lock_torres_briefcase",
+      "soft": false
+    },
+    {
+      "from": "lock_pick_kit",
+      "to": "lock_patricia_filing_cabinet",
+      "soft": false
+    },
+    {
+      "from": "reception_lobby",
+      "to": "rfid_cloner",
+      "soft": false
+    },
+    {
+      "from": "rfid_cloner",
+      "to": "door_server_hallway",
+      "soft": false
+    },
+    {
+      "from": "reception_lobby",
+      "to": "fingerprint_kit",
+      "soft": false
+    },
+    {
+      "from": "open_office_area",
+      "to": "npc_owen_gallagher",
+      "soft": false
+    },
+    {
+      "from": "npc_owen_gallagher",
+      "to": "it_spare_office_card",
+      "soft": false
+    },
+    {
+      "from": "it_spare_office_card",
+      "to": "door_torres_office",
+      "soft": false
+    },
+    {
+      "from": "npc_owen_gallagher",
+      "to": "server_password_sticky_note",
+      "soft": false
+    },
+    {
+      "from": "server_password_sticky_note",
+      "to": "door_server_room",
+      "soft": false
+    },
+    {
+      "from": "server_room",
+      "to": "bludit_cms_server_terminal",
+      "soft": false
+    },
+    {
+      "from": "torres_office",
+      "to": "mug",
+      "soft": false
+    },
+    {
+      "from": "mug",
+      "to": "door_data_center",
+      "soft": false
+    },
+    {
+      "from": "torres_office",
+      "to": "lock_torres_briefcase",
+      "soft": false
+    },
+    {
+      "from": "research_lab",
+      "to": "npc_dr_ruth_halloran",
+      "soft": false
+    },
+    {
+      "from": "npc_dr_ruth_halloran",
+      "to": "research_badge",
+      "soft": true
+    },
+    {
+      "from": "research_badge",
+      "to": "door_server_hallway",
+      "soft": true
+    },
+    {
+      "from": "patricia_office",
+      "to": "lock_patricia_filing_cabinet",
+      "soft": false
+    },
+    {
+      "from": "data_center",
+      "to": "sealed_talentstack_envelope",
+      "soft": false
+    },
+    {
+      "from": "data_center",
+      "to": "upload_schedule",
+      "soft": false
+    },
+    {
+      "from": "data_center",
+      "to": "data_package_manifest",
+      "soft": false
+    },
+    {
+      "from": "data_center",
+      "to": "npc_david_torres",
+      "soft": false
+    },
+    {
+      "from": "npc_david_torres",
+      "to": "action_confront_torres",
+      "soft": false
+    },
+    {
+      "from": "vmch_submit_flag1",
+      "to": "vmfl_submit_flag1",
+      "soft": false
+    },
+    {
+      "from": "vmch_submit_flag2",
+      "to": "vmfl_submit_flag2",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_flag1",
+      "to": "vmch_submit_flag2",
+      "soft": true
+    },
+    {
+      "from": "vmch_submit_flag3",
+      "to": "vmfl_submit_flag3",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_flag2",
+      "to": "vmch_submit_flag3",
+      "soft": true
+    },
+    {
+      "from": "vmch_submit_flag4",
+      "to": "vmfl_submit_flag4",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_flag3",
+      "to": "vmch_submit_flag4",
+      "soft": true
+    },
+    {
+      "from": "bludit_cms_server_terminal",
+      "to": "vmch_submit_flag1",
+      "soft": false
+    },
+    {
+      "from": "reception_lobby",
+      "to": "main_corridor",
+      "soft": false
+    },
+    {
+      "from": "reception_lobby",
+      "to": "patricia_office",
+      "soft": false
+    },
+    {
+      "from": "main_corridor",
+      "to": "break_room",
+      "soft": false
+    },
+    {
+      "from": "main_corridor",
+      "to": "open_office_area",
+      "soft": false
+    },
+    {
+      "from": "open_office_area",
+      "to": "research_lab",
+      "soft": false
+    }
+  ]
+}

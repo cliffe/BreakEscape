@@ -1,0 +1,68 @@
+# Bundle
+vendor/bundle/
+vendor/cache/
+.bundle/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Rails
+/log/*
+/tmp/*
+!/log/.keep
+!/tmp/.keep
+test/dummy/log/*
+test/dummy/tmp/*
+test/dummy/storage/*
+.env.local
+.env.*.local
+
+# Database
+*.sqlite3
+*.sqlite3-*
+/db/*.sqlite3
+
+# Logs
+*.log
+
+# Temporary files
+.byebug_history
+.spring.pid
+
+public/break_escape/assets/characters/wip/*
+# Playwright playtest harness (see .claude/skills/playtest-scenario)
+node_modules/
+package-lock.json
+
+# TTS audio cache — regenerated on demand, ~117MB of mp3
+tts_cache/
+
+# Playtest session scratch — large or per-run, all regenerable. Reports, flag
+# XMLs and checked-in scripts under tools/playtest are committed; the raw
+# transcripts and the plumbing one run needs to talk to its browser are not.
+tools/playtest/*.jsonl
+tools/playtest/pipes/
+tools/playtest/pipes-*/
+tools/playtest/*.pid
+tools/playtest/cmd[0-9]*.sh
+
+# Python bytecode (tools/, skill scripts)
+__pycache__/
+
+# Playtest debris (per-game flag sheets, verify dumps, screenshots, scratch)
+tools/playtest/*-flags-game*.xml
+tools/playtest/*-verify*.txt
+tools/playtest/*-scratch/
+tools/playtest/*.png
+tools/playtest/**/*.png
+
+# Agents sometimes create a repo-root scratchpad; real scratch space is the session scratchpad
+/scratchpad/

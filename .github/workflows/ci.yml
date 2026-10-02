@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  lint:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Install packages
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y sqlite3 libsqlite3-dev
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        env:
+          BUNDLE_BUILD__SQLITE3: "--enable-system-libraries"
+        with:
+          ruby-version: 2.7.8
+          bundler-cache: true
+
+      - name: Lint code for consistent style
+        run: bin/rubocop -f github
+
+  test:
+    runs-on: ubuntu-22.04
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Install packages
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y sqlite3 libsqlite3-dev libpq-dev
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        env:
+          BUNDLE_BUILD__SQLITE3: "--enable-system-libraries"
+        with:
+          ruby-version: 2.7.8
+          bundler-cache: true
+
+      - name: Run tests
+        env:
+          RAILS_ENV: test
+          BE_DB_USER: postgres
+          BE_DB_PASSWORD: postgres
+          BE_DB_HOST: localhost
+        run: |
+          bin/rails db:prepare
+          bin/rails test

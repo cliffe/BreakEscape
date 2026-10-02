@@ -1,0 +1,2139 @@
+<%
+# ============================================================================
+# MISSION 1: FIRST CONTACT - SCENARIO FILE (REVISED LAYOUT)
+# ============================================================================
+# Break Escape - Season 1: The Architect's Shadow
+#
+# This file defines the game world structure: rooms, NPCs, objects, items
+# For mission metadata (display name, CyBOK mappings, etc.), see mission.json
+#
+# ROOM LAYOUT:
+#   Reception → Main Office Area (KEY) → Multiple rooms branch:
+#     - Storage Closet (unlocked, Derek's safe)
+#     - Break Room (unlocked, clues)
+#     - Conference Room (unlocked, evidence)
+#     - IT Room (PIN 2468, Kevin + lockpicks + keycard)
+#     - Manager's Office (unlocked, safe with Derek's key, briefcase for lockpick)
+#     - Maya's Office (unlocked, informant)
+#     - Derek's Office (KEY or LOCKPICK)
+#       └→ Derek's Office connects to Server Room (KEYCARD)
+# ============================================================================
+
+# ERB Helper Methods
+def rot13(text)
+  text.tr('A-Za-z', 'N-ZA-Mn-za-m')
+end
+
+def base64_encode(text)
+  Base64.strict_encode64(text)
+end
+# Narrative Content Variables
+client_list_message = "Client list update: Coordinating with ZDS for technical infrastructure deployment. Phase 3 timeline: 2 weeks. FILING_CABINET_PIN: 0419"
+password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_Admin, Derek0419"
+%>
+{
+  "flags": {
+    "shatter_server": <%= vm_flags_json('shatter_server') %>
+  },
+
+  "narrator": {
+    "id": "narrator",
+    "skipTextValidation": true,
+    "voice": {
+      "name": "Algenib",
+      "style": "Cinematic noir detective voice over narrator.",
+      "language": "en-GB"
+    }
+  },
+
+  "scenario_brief": "Infiltrate Viral Dynamics Media to investigate suspected ENTROPY operations. Gather evidence of disinformation campaigns while maintaining cover as an IT contractor.",
+  "show_scenario_brief": "on_resume",
+
+  "validSprites": [
+    "male_hacker_hood",
+    "male_hacker_hood_down",
+    "female_hacker_hood",
+    "female_hacker_hood_down"
+  ],
+
+  "music": {
+    "events": [
+      {
+        "trigger": "game_loaded",
+        "condition": "!globalVars.briefing_played",
+        "playlist": "cutscene",
+        "fade": false,
+        "comment": "Opening briefing cutscene — play immediately, no fade (first run only)"
+      },
+      {
+        "trigger": "game_loaded",
+        "condition": "globalVars.briefing_played === true",
+        "playlist": "noir",
+        "fade": false,
+        "comment": "Cutscene already seen (resume) — skip straight to noir"
+      },
+      {
+        "trigger": "conversation_closed:briefing_cutscene",
+        "playlist": "noir",
+        "fade": true,
+        "comment": "Briefing ends → mission proper begins"
+      },
+      {
+        "trigger": "npc_hostile_state_changed",
+        "condition": "isHostile === true",
+        "playlist": "threat",
+        "fade": true,
+        "comment": "Any NPC turns hostile → switch to tension music"
+      },
+      {
+        "trigger": "all_hostiles_ko",
+        "playlist": "noir",
+        "fade": true,
+        "comment": "All hostile NPCs KO'd — back to noir"
+      },
+      {
+        "trigger": "global_variable_changed:start_debrief_cutscene",
+        "condition": "value === true",
+        "playlist": "spy-action",
+        "fade": true,
+        "comment": "Final debrief begins — spy-action mood while Agent HaX debrief plays"
+      },
+      {
+        "trigger": "conversation_closed:closing_debrief_person",
+        "playlist": "victory",
+        "track": "Ghost in the Wire",
+        "autoStop": true,
+        "disableClose": true,
+        "fade": true,
+        "comment": "Debrief ends — play one specific victory track with mission credits scroll",
+        "credits": [
+          { "text": "MISSION COMPLETE",                          "style": "title",    "condition": "!globalVars.player_launched_attack" },
+          { "text": "MISSION FAILED",                            "style": "title",    "condition": "globalVars.player_launched_attack" },
+          { "text": "FIRST CONTACT",                             "style": "subtitle" },
+          { "text": "" },
+          { "text": "OPERATION SHATTER: NEUTRALIZED",            "style": "entry",    "condition": "!globalVars.player_launched_attack" },
+          { "text": "OPERATION SHATTER: EXECUTED",               "style": "entry",    "condition": "globalVars.player_launched_attack" },
+          { "text": "LIVES SAVED: 42-85 (estimated)",            "style": "entry",    "condition": "!globalVars.player_launched_attack" },
+          { "text": "ESTIMATED CASUALTIES: 42-85 — Attack not stopped in time", "style": "entry", "condition": "globalVars.player_launched_attack" },
+          { "text": "" },
+          { "text": "── EVIDENCE ──",                            "style": "section-header" },
+          { "text": "COMPLETE — All critical documents recovered",          "style": "entry", "condition": "globalVars.found_casualty_projections && globalVars.found_target_database" },
+          { "text": "SUBSTANTIAL — Casualty projections secured",           "style": "entry", "condition": "globalVars.found_casualty_projections && !globalVars.found_target_database" },
+          { "text": "SUBSTANTIAL — Target database secured",                "style": "entry", "condition": "!globalVars.found_casualty_projections && globalVars.found_target_database" },
+          { "text": "PARTIAL — Forensics team recovering additional files", "style": "entry", "condition": "!globalVars.found_casualty_projections && !globalVars.found_target_database" },
+          { "text": "" },
+          { "text": "── PERSONNEL ──",                           "style": "section-header" },
+          { "text": "DEREK LAWSON: Neutralized — In custody",                                 "style": "entry",   "condition": "globalVars.derek_fight_triggered" },
+          { "text": "DEREK LAWSON: Surrendered — In custody",                                 "style": "entry",   "condition": "globalVars.derek_surrendered" },
+          { "text": "DEREK LAWSON: Arrested — In custody",                                    "style": "entry",   "condition": "globalVars.derek_confronted && !globalVars.derek_fight_triggered && !globalVars.derek_surrendered" },
+          { "text": "SARAH O'BRIEN: Removed — No ENTROPY connection",                        "style": "entry",   "condition": "globalVars.sarah_ko" },
+          { "text": "MAYA CHEN: Removed — Intelligence lost — No ENTROPY connection",         "style": "entry",   "condition": "globalVars.maya_ko" },
+          { "text": "MAYA CHEN: Identity protected",                                           "style": "entry",   "condition": "!globalVars.maya_ko && globalVars.maya_identity_protected" },
+          { "text": "MAYA CHEN: Identity compromised — Under SAFETYNET protection",           "style": "entry",   "condition": "!globalVars.maya_ko && !globalVars.maya_identity_protected" },
+          { "text": "KEVIN PARK: Removed — Evidence confirms no ENTROPY connection",          "style": "entry",   "condition": "globalVars.kevin_ko" },
+          { "text": "KEVIN PARK: Protected from frame-up — Career intact",                    "style": "entry",   "condition": "!globalVars.kevin_ko && globalVars.kevin_protected" },
+          { "text": "KEVIN PARK: Wrongly reported as ENTROPY operative — Being cleared",      "style": "entry",   "condition": "!globalVars.kevin_ko && globalVars.kevin_choice === 'wrongly_accused'" },
+          { "text": "KEVIN PARK: Arrested under Derek's frame-up — Later cleared",            "style": "entry",   "condition": "!globalVars.kevin_ko && globalVars.kevin_choice === 'ignore'" },
+          { "text": "KEVIN PARK: Status unknown",                                              "style": "entry",   "condition": "!globalVars.kevin_ko && !globalVars.kevin_choice" },
+          { "text": "" },
+          { "text": "The Architect remains at large...",         "style": "warning" }
+        ]
+      }
+    ]
+  },
+
+  "objectives": [
+    {
+      "aimId": "establish_access",
+      "title": "Establish Access",
+      "description": "Get into the building and begin your investigation",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "check_in_reception",
+          "title": "Check in at reception",
+          "type": "npc_conversation",
+          "targetNPC": "sarah_martinez",
+          "status": "active"
+        },
+        {
+          "taskId": "access_main_office",
+          "title": "Access the main office area",
+          "type": "enter_room",
+          "targetRoom": "main_office_area",
+          "status": "active",
+          "onComplete": { "unlockAim": "survey_offices" }
+        }
+      ]
+    },
+    {
+      "aimId": "survey_offices",
+      "title": "Survey the Scene",
+      "description": "Explore the open offices and gather ambient intelligence before going deeper",
+      "status": "locked",
+      "order": 1,
+      "tasks": [
+        {
+          "taskId": "collect_office_intel",
+          "title": "Collect pieces of office intelligence",
+          "type": "collect_items",
+          "targetItems": ["notes"],
+          "targetCount": 4,
+          "currentCount": 0,
+          "status": "active",
+          "showProgress": true,
+          "optional": true
+        },
+        {
+          "taskId": "find_it_code",
+          "title": "Find the IT room access code",
+          "type": "unlock_room",
+          "targetRoom": "it_room",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "aimId": "build_the_case",
+      "title": "Build the Case",
+      "description": "Access restricted areas, gather formal investigation evidence, and secure access to Derek's office",
+      "status": "locked",
+      "unlockCondition": { "aimCompleted": "survey_offices" },
+      "order": 2,
+      "tasks": [
+        {
+          "taskId": "access_it_room",
+          "title": "Access the IT room",
+          "type": "enter_room",
+          "targetRoom": "it_room",
+          "status": "active"
+        },
+        {
+          "taskId": "meet_kevin",
+          "title": "Meet Kevin Park",
+          "type": "npc_conversation",
+          "targetNPC": "kevin_park",
+          "status": "active"
+        },
+        {
+          "taskId": "talk_to_maya",
+          "title": "Talk to the informant",
+          "type": "npc_conversation",
+          "targetNPC": "maya_chen",
+          "status": "active",
+          "optional": true
+        },
+        {
+          "taskId": "collect_investigation_docs",
+          "title": "Gather investigation evidence",
+          "type": "collect_items",
+          "targetItems": ["notes2"],
+          "targetCount": 6,
+          "currentCount": 0,
+          "status": "active",
+          "showProgress": true,
+          "optional": true
+        },
+        {
+          "taskId": "find_derek_access",
+          "title": "Find access to Derek's office",
+          "type": "collect_items",
+          "targetItemIds": ["Derek's Office Key", "derek_office_key", "Lock Pick Kit"],
+          "targetCount": 1,
+          "currentCount": 0,
+          "status": "active",
+          "showProgress": true
+        }
+      ]
+    },
+    {
+      "aimId": "search_derek_office",
+      "title": "Search Derek's Office",
+      "description": "Break into Derek's office and secure his operational evidence",
+      "status": "locked",
+      "unlockCondition": { "aimCompleted": "build_the_case" },
+      "order": 3,
+      "tasks": [
+        {
+          "taskId": "access_derek_office",
+          "title": "Enter Derek's office",
+          "type": "enter_room",
+          "targetRoom": "derek_office",
+          "status": "active",
+          "onComplete": { "unlockAim": "capture_technical_evidence" }
+        },
+        {
+          "taskId": "unlock_derek_computer",
+          "title": "Unlock Derek's computer",
+          "type": "unlock_object",
+          "targetObject": "derek_computer",
+          "status": "active"
+        },
+        {
+          "taskId": "search_derek_computer",
+          "title": "Search Derek's computer",
+          "type": "collect_items",
+          "targetGroup": "dereks_computer_files",
+          "targetCount": 2,
+          "currentCount": 0,
+          "status": "active",
+          "showProgress": true
+        },
+        {
+          "taskId": "decode_derek_notes",
+          "title": "Decode Derek's encoded notes",
+          "type": "manual",
+          "status": "active"
+        },
+        {
+          "taskId": "open_derek_cabinet",
+          "title": "Open Derek's filing cabinet",
+          "type": "unlock_object",
+          "targetObject": "derek_cabinet",
+          "status": "active",
+          "onComplete": { "unlockTask": "collect_operational_evidence", "setGlobal": { "derek_cabinet_opened": true } }
+        },
+        {
+          "taskId": "collect_operational_evidence",
+          "title": "Secure Derek's operational documents",
+          "type": "collect_items",
+          "targetItems": ["notes4"],
+          "targetCount": 3,
+          "currentCount": 0,
+          "status": "locked",
+          "showProgress": true
+        },
+        {
+          "taskId": "open_derek_personal_safe",
+          "title": "Open Derek's personal safe",
+          "type": "unlock_object",
+          "targetObject": "derek_personal_safe",
+          "status": "active",
+          "onComplete": { "setGlobal": { "derek_personal_safe_opened": true } }
+        },
+        {
+          "taskId": "open_derek_storage_safe",
+          "title": "Open Derek's safe in the storage room",
+          "type": "unlock_object",
+          "targetObject": "derek_storage_safe",
+          "status": "active",
+          "onComplete": { "setGlobal": { "derek_storage_safe_opened": true } }
+        }
+      ]
+    },
+    {
+      "aimId": "capture_technical_evidence",
+      "title": "Capture Technical Evidence",
+      "description": "Infiltrate server systems and extract digital proof of ENTROPY's operation",
+      "status": "locked",
+      "order": 4,
+      "tasks": [
+        {
+          "taskId": "access_server_room",
+          "title": "Access the server room",
+          "type": "enter_room",
+          "targetRoom": "server_room",
+          "status": "active",
+          "onComplete": { "unlockAim": "capture_technical_evidence" }
+        },
+        {
+          "taskId": "access_vm",
+          "title": "Access Kali Linux audit station",
+          "type": "manual",
+          "status": "active"
+        },
+        {
+          "taskId": "submit_ssh_flag",
+          "title": "Unlock the ENTROPY encrypted archive",
+          "type": "submit_flags",
+          "targetFlags": ["shatter_server:flag_1"],
+          "targetCount": 1,
+          "currentCount": 0,
+          "status": "active",
+          "showProgress": true,
+          "puzzle_graph_unlocks": "entropy_encrypted_archive",
+          "onComplete": { "unlockAim": "decrypt_entropy_intel" }
+        },
+        {
+          "taskId": "submit_linux_flag",
+          "title": "Submit directory traversal evidence",
+          "type": "submit_flags",
+          "targetFlags": ["flag_station_dropsite:shatter_server-flag1"],
+          "targetCount": 1,
+          "currentCount": 0,
+          "status": "active",
+          "showProgress": true
+        },
+        {
+          "taskId": "submit_sudo_flag",
+          "title": "Submit encoded deployment intelligence",
+          "type": "submit_flags",
+          "targetFlags": ["flag_station_dropsite:shatter_server-flag2"],
+          "targetCount": 1,
+          "currentCount": 0,
+          "status": "active",
+          "showProgress": true
+        }
+      ]
+    },
+    {
+      "aimId": "decrypt_entropy_intel",
+      "title": "Decrypt ENTROPY Intelligence",
+      "description": "The VM revealed a passphrase — use it to access the encrypted ENTROPY archive in the server room",
+      "status": "locked",
+      "unlockCondition": { "aimCompleted": "capture_technical_evidence" },
+      "order": 5,
+      "tasks": [
+        {
+          "taskId": "open_entropy_archive",
+          "title": "Open the ENTROPY encrypted archive",
+          "type": "unlock_object",
+          "targetObject": "entropy_encrypted_archive",
+          "status": "active",
+          "onComplete": { "unlockTask": "collect_entropy_intel" }
+        },
+        {
+          "taskId": "collect_entropy_intel",
+          "title": "Secure top-secret ENTROPY intelligence",
+          "type": "collect_items",
+          "targetItems": ["notes5"],
+          "targetCount": 2,
+          "currentCount": 0,
+          "status": "locked",
+          "showProgress": true
+        }
+      ]
+    },
+    {
+      "aimId": "return_intel",
+      "title": "Return Intel",
+      "description": "Report your findings on Operation Shatter back to SAFETYNET",
+      "status": "locked",
+      "unlockCondition": { "aimCompleted": "decrypt_entropy_intel" },
+      "order": 6,
+      "tasks": [
+        {
+          "taskId": "inform_safetynet_operation_shatter",
+          "title": "Report Operation Shatter to SAFETYNET",
+          "type": "npc_conversation",
+          "targetNPC": "agent_0x99",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "aimId": "disrupt_the_cell",
+      "title": "Disrupt the Cell",
+      "description": "Confront Derek Lawson and disrupt ENTROPY's operation",
+      "status": "locked",
+      "unlockCondition": { "aimCompleted": "decrypt_entropy_intel" },
+      "order": 7,
+      "tasks": [
+        {
+          "taskId": "confront_derek",
+          "title": "Confront Derek Lawson",
+          "type": "npc_conversation",
+          "targetNPC": "derek_lawson",
+          "status": "active",
+          "onComplete": { "unlockAim": "deactivate_the_launch" }
+        }
+      ]
+    },
+    {
+      "aimId": "deactivate_the_launch",
+      "title": "Deactivate the Launch",
+      "description": "The launch device is in your hands. Abort Operation Shatter before it's too late.",
+      "status": "locked",
+      "unlockCondition": { "aimCompleted": "disrupt_the_cell" },
+      "order": 8,
+      "tasks": [
+        {
+          "taskId": "deactivate_launch",
+          "title": "Deactivate the Launch",
+          "type": "manual",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "aimId": "close_the_case",
+      "title": "Close the Case",
+      "description": "Operation Shatter is deactivated. File your debrief and close the mission.",
+      "status": "locked",
+      "unlockCondition": { "aimsCompleted": ["deactivate_the_launch"] },
+      "order": 9,
+      "missionConclusion": true,
+      <%# Ending gate: the three VM flags are the technical work this mission is
+          not allowed to skip. Story tasks are not listed -- they cost score if
+          unfinished, they do not withhold the ending. %>
+      "concludeRequires": {
+        "tasksCompleted": ["submit_ssh_flag", "submit_linux_flag", "submit_sudo_flag"]
+      },
+      "tasks": [
+        {
+          "taskId": "use_launch_device",
+          "title": "Use the ENTROPY Launch Device",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+
+  "startRoom": "reception_area",
+
+  "startItemsInInventory": [
+    {
+      "type": "phone",
+      "name": "Your Phone",
+      "takeable": true,
+      "phoneId": "player_phone",
+      "npcIds": ["agent_0x99"],
+      "observations": "Your secure phone with encrypted connection to SAFETYNET"
+    }
+  ],
+
+  "player": {
+    "id": "player",
+    "displayName": "Agent",
+    "spriteSheet": "female_hacker_hood_v2",
+    "spriteTalk": "assets/characters/hacker-talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+
+  "rooms": {
+    "reception_area": {
+      "type": "room_reception",
+      "connections": {
+        "north": "main_office_area"
+      },
+      "npcs": [
+        {
+          "id": "briefing_cutscene",
+          "displayName": "Agent HaX",
+          "npcType": "person",
+          "position": { "x": 500, "y": 500 },
+          "spriteSheet": "female_spy_v2",
+          "spriteTalk": "assets/characters/female_spy_talk.png",
+          "spriteVisemes": "assets/characters/female_spy_visemes.png",
+          "spriteConfig": {
+            "idleFrameRate": 6,
+            "walkFrameRate": 10
+          },
+          "storyPath": "scenarios/m01_first_contact/ink/m01_opening_briefing.json",
+          "currentKnot": "start",
+          "voice": {
+            "name": "Aoede",
+            "style": "Professional intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Speak quickly with a sense of urgency, as if time is short.",
+            "language": "en-GB"
+          },
+          "timedConversation": {
+            "delay": 0,
+            "targetKnot": "start",
+            "background": "assets/backgrounds/hq1.png",
+            "waitForEvent": "game_loaded",
+            "skipIfGlobal": "briefing_played",
+            "setGlobalOnStart": "briefing_played"
+          }
+        },
+        {
+          "id": "sarah_martinez",
+          "displayName": "Sarah O'Brien",
+          "npcType": "person",
+          "position": { "x": 4, "y": 2.25 },
+          "spriteSheet": "female_office_worker_v2",
+          "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "spriteConfig": {
+            "idleFrameRate": 2,
+            "walkFrameRate": 10
+          },
+          "storyPath": "scenarios/m01_first_contact/ink/m01_npc_sarah.json",
+          "currentKnot": "start",
+          "voice": {
+            "name": "Kore",
+            "style": "Friendly, warm receptionist in her early thirties. Speak with a consistent Irish (Dublin) accent throughout — do not shift to any other accent. Use a warm, mid-range pitch. Speak naturally and helpfully.",
+            "language": "en-GB"
+          },
+          "globalVarOnKO": "sarah_ko",
+          "taskOnKO": "check_in_reception",
+          "behavior": {
+            "hostile": {
+              "chaseSpeed": 100,
+              "attackDamage": 10,
+              "pauseToAttack": true
+            }
+          },
+          "itemsHeld": [
+            {
+              "type": "id_badge",
+              "name": "Visitor Badge",
+              "takeable": true,
+              "observations": "Temporary visitor badge for office access"
+            },
+            {
+              "type": "key",
+              "name": "Main Office Key",
+              "takeable": true,
+              "opens_lock": "main_office_key",
+              "keyPins": [45, 25, 55, 35],
+              "observations": "Key to the main office area",
+              "puzzle_graph_unlocks": "main_office_area"
+            }
+          ]
+        },
+        {
+          "id": "agent_0x99",
+          "displayName": "Agent HaX",
+          "npcType": "phone",
+          "storyPath": "scenarios/m01_first_contact/ink/m01_phone_agent0x99.json",
+          "avatar": "assets/characters/female_spy_headshot.png",
+          "phoneId": "player_phone",
+          "currentKnot": "first_call",
+          "voice": {
+            "name": "Aoede",
+            "style": "Intelligence handler speaking over a secure phone line. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Speak quickly with urgency, as if time is short.",
+            "language": "en-GB"
+          },
+          "itemsHeld": [
+            {
+              "type": "lab-workstation",
+              "id": "safetynet_field_guide_ssh_basics",
+              "name": "SAFETYNET Field Guide: SSH Access and Linux Basics",
+              "takeable": true,
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/ssh-access-and-linux-basics/",
+              "observations": "Field guide to Linux commands, SSH bruteforce, and filesystem navigation"
+            },
+            {
+              "type": "lab-workstation",
+              "id": "safetynet_field_guide_priv_escalation",
+              "name": "SAFETYNET Field Guide: Privilege Escalation via Sudo",
+              "takeable": true,
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/privilege-escalation/",
+              "observations": "Field guide to sudo permissions, privilege escalation tactics, and moving laterally within Linux systems"
+            },
+            {
+              "type": "lab-workstation",
+              "id": "safetynet_field_guide_encoding_decoding_cyberchef",
+              "name": "SAFETYNET Field Guide: Encoding and Decoding with CyberChef",
+              "takeable": true,
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/encoding-and-decoding-with-cyberchef/",
+              "observations": "Field guide to identifying Base64 and ROT13 encoded notes and decoding them with CyberChef"
+            },
+            {
+              "type": "lab-workstation",
+              "id": "safetynet_field_guide_lockpicking",
+              "name": "SAFETYNET Field Guide: Lockpicking",
+              "takeable": true,
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/lockpicking/",
+              "observations": "Field guide to pin tumbler lock picking — tension application, pin setting, and technique for security testing"
+            }
+          ],
+          "timedMessages": [
+            {
+              "delay": 3000,
+              "message": "Agent, I'm your handler for this op. Message me if you need any guidance.",
+              "type": "text",
+              "waitForEvent": "conversation_closed:briefing_cutscene"
+            }
+          ],
+          "eventMappings": [
+            {
+              "eventPattern": "npc_attacked:sarah_martinez",
+              "onceOnly": true,
+              "sendTimedMessage": {
+                "delay": 1500,
+                "message": "Unorthodox check-in. Her items will be on the floor when she goes down."
+              }
+            },
+            {
+              "eventPattern": "npc_ko:sarah_martinez",
+              "onceOnly": true,
+              "sendTimedMessage": {
+                "delay": 2000,
+                "message": "Check-in resolved. Sarah's key and badge are on the floor — she's got nothing to do with any of this."
+              }
+            },
+            {
+              "eventPattern": "npc_attacked:maya_chen",
+              "onceOnly": true,
+              "sendTimedMessage": {
+                "delay": 1500,
+                "message": "That's the informant, Agent. She came to us."
+              }
+            },
+            {
+              "eventPattern": "npc_ko:maya_chen",
+              "onceOnly": true,
+              "sendTimedMessage": {
+                "delay": 2000,
+                "message": "We may never know what Maya had to tell us. She wasn't ENTROPY — she was trying to help."
+              }
+            },
+            {
+              "eventPattern": "npc_attacked:kevin_park",
+              "onceOnly": true,
+              "sendTimedMessage": {
+                "delay": 1500,
+                "message": "That's one way to get the lockpick. Remember to minimise casualties where you can."
+              }
+            },
+            {
+              "eventPattern": "npc_ko:kevin_park",
+              "onceOnly": true,
+              "sendTimedMessage": {
+                "delay": 2000,
+                "message": "Kevin's down. His items are on the floor. For the record — he's got nothing to do with ENTROPY."
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kevin_accused",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": {
+                "delay": 1500,
+                "message": "Hold on — those logs pointing at Kevin were filed by Derek. Check his office before you do anything you can't take back."
+              }
+            },
+            {
+              "eventPattern": "door_unlock_attempt",
+              "condition": "data.connectedRoom === 'derek_office'",
+              "onceOnly": true,
+              "setGlobal": { "derek_office_locked_seen": true },
+              "sendTimedMessage": {
+                "delay": 1500,
+                "message": "That door's locked. A lockpick or a spare key would get you in."
+              }
+            },
+            {
+              "eventPattern": "item_picked_up:lockpick",
+              "onceOnly": true,
+              "setGlobal": { "has_lockpick": true, "lockpicking_guide_offered": true },
+              "sendTimedMessage": {
+                "delay": 1000,
+                "message": "Lockpick acquired. 🦎 Take a look around — any locked doors or containers you haven't been able to open? That key won't fit everything. Message me if you want the lockpicking field guide."
+              }
+            },
+            {
+              "eventPattern": "room_entered:main_office_area",
+              "onceOnly": true,
+              "sendTimedMessage": {
+                "delay": 1500,
+                "message": "You're in. 🦎 Get a feel for the place — check the desks, filing cabinets, notice boards. The IT room is east, break room is west. Start broad before you go deep."
+              }
+            },
+            {
+              "eventPattern": "room_entered:server_room",
+              "onceOnly": true,
+              "completeTask": "access_server_room",
+              "unlockTask": "access_vm",
+              "setGlobal": { "server_room_entered": true },
+              "sendTimedMessage": {
+                "delay": 1000,
+                "message": "You're in the server room. 🦎 That Kali terminal is connected to ENTROPY's Operation Shatter infrastructure — a live attack server. Use what you've learned about Dereks username/passwords, and servers."
+              }
+            },
+            {
+              "eventPattern": "object_interacted",
+              "condition": "data.objectType === 'vm-launcher'",
+              "onceOnly": true,
+              "completeTask": "access_vm",
+              "sendTimedMessage": {
+                "delay": 800,
+                "message": "That's your Kali terminal. 🦎 ENTROPY's attack infrastructure is accessible from here. You need to get in remotely — check what you've found on Derek for the target details and credentials. Message me if you want the field guide — it covers the tools for this."
+              }
+            },
+            {
+              "eventPattern": "item_picked_up:notes",
+              "condition": "data.itemName === 'My Passwords'",
+              "onceOnly": true,
+              "setGlobal": { "password_list_found": true },
+              "sendTimedMessage": {
+                "delay": 1500,
+                "message": "Derek's password list. 🦎 Save those to a file on the Kali — one password per line — then feed it to Hydra with `-P passwords.txt`. That's your wordlist for the SSH brute force. I can upload a Linux and SSH field guide if you want it."
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:password_list_found",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": { "field_guide_offered": true },
+              "sendTimedMessage": {
+                "delay": 3000,
+                "message": "This password list could be useful when you get to the server room. I've put together a field guide on Linux commands, SSH bruteforce, and filesystem navigation. It should help you move faster once you're inside their Kali system. Let me know if you want it."
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:ssh_flag_submitted",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": { "priv_esc_guide_offered": true },
+              "sendTimedMessage": {
+                "delay": 2000,
+                "message": "You have SSH access. 🦎 I’ve pushed the privilege escalation guide to your terminal — check sudo permissions and move into the target account from there."
+              }
+            },
+            {
+              "eventPattern": "room_entered:derek_office",
+              "onceOnly": true,
+              "setGlobal": { "derek_office_entered": true },
+              "sendTimedMessage": {
+                "delay": 1000,
+                "message": "You're in Derek's office. Computer's locked — try something he'd remember. Filing cabinets, encoded notes. Be thorough."
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:derek_pc_unlocked",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": {
+                "delay": 1000,
+                "message": "You're in. Check his files carefully — framing evidence, operational plans, anything about a safe combination."
+              }
+            },
+            {
+              "eventPattern": "item_picked_up:workstation",
+              "onceOnly": true,
+              "setGlobal": { "cyberchef_guide_offered": true },
+              "sendTimedMessage": {
+                "delay": 1500,
+                "message": "Patricia's CyberChef workstation — good find. I can upload a field guide for Base64 and ROT13 decoding if you want it. Message me when you're ready."
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:whiteboard_cipher_seen",
+              "condition": "value === true && !globalVars.cyberchef_guide_offered",
+              "onceOnly": true,
+              "setGlobal": { "cyberchef_guide_offered": true },
+              "sendTimedMessage": {
+                "delay": 1500,
+                "message": "Those notes are encoded, and now you've got a proper lead. I can upload a CyberChef field guide for Base64 and ROT13 if you want a faster decode workflow."
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:whiteboard_cipher_seen",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "decode_derek_notes"
+            },
+            {
+              "eventPattern": "global_variable_changed:derek_personal_safe_opened",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "open_derek_personal_safe",
+              "sendTimedMessage": {
+                "delay": 1500,
+                "message": "The Architect's Letter. Physical correspondence — this is rare. Derek was trusted enough to receive direct contact. That letter is critical evidence. Secure it."
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:derek_storage_safe_opened",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "open_derek_storage_safe",
+              "sendTimedMessage": {
+                "delay": 1500,
+                "message": "Derek decoded that note and used the combination. He wasn't just hiding things — he was actively running the operation out of this building."
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:derek_cabinet_opened",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "open_derek_cabinet",
+              "sendTimedMessage": {
+                "delay": 1000,
+                "message": "Filing cabinet open. Secure everything inside — casualty projections, manifesto, deployment assets. All of it is evidence."
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:contingency_file_read",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": {
+                "delay": 2000,
+                "message": "You found a contingency plan in Derek's files. Read it carefully — this looks significant."
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:whiteboard_cipher_seen",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": {
+                "delay": 1500,
+                "message": "That text is encoded. Two quick rules for identifying what type: if it ends in `=` or `==` and only uses letters, numbers, `+`, and `/` — that's Base64. If it still has spaces and readable word-lengths but the letters look scrambled — that's a substitution cipher, probably ROT13. Have a look at which profile fits, then use the CyberChef workstation. Message me if you get stuck."
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:framing_evidence_seen",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": {
+                "delay": 2000,
+                "message": "You found something on the PC. Read it carefully — not just the content. Check who filed what, whether the headers add up. Details matter."
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:entropy_reveal_read",
+              "condition": "value === true && !globalVars.derek_confronted",
+              "onceOnly": true,
+              "sendTimedMessage": {
+                "delay": 2500,
+                "message": "That's the full picture. 🦎 The Architect is real. ENTROPY is a network. Derek is one node — but there are others, and none of them know each other. Stopping Operation Shatter buys time. Finding The Architect ends the war. Find Derek — you have everything you need to confront him now."
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:entropy_reveal_read",
+              "condition": "value === true && globalVars.derek_confronted === true",
+              "onceOnly": true,
+              "sendTimedMessage": {
+                "delay": 2500,
+                "message": "That's the full picture — and Derek's already contained. 🦎 Use the launch device to end Operation Shatter, then call me for debrief."
+              }
+            },
+            {
+              "eventPattern": "objective_aim_completed:decrypt_entropy_intel",
+              "onceOnly": true,
+              "sendTimedMessage": {
+                "delay": 3000,
+                "message": "All intelligence secured. You have everything you need and the window to act is open. 🦎 Don't let it close."
+              }
+            },
+            {
+              "eventPattern": "room_entered:testing",
+              "onceOnly": true,
+              "sendTimedMessage": {
+                "delay": 1000,
+                "message": "Mission complete. Return to HQ for debrief."
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:ssh_flag_submitted",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "submit_ssh_flag",
+              "unlockAim": "decrypt_entropy_intel",
+              "sendTimedMessage": {
+                "delay": 3000,
+                "message": "ENTROPY archive decryption key confirmed. 🦎 The archive is unlocked — open it in the server room and pull the intelligence inside."
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:linux_flag_submitted",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "submit_linux_flag",
+              "sendTimedMessage": {
+                "delay": 1500,
+                "message": "Directory traversal evidence secured. 🦎 Navigate the Operation Shatter directory structure — there's more in there."
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:sudo_flag_submitted",
+              "condition": "value === true && !globalVars.ssh_flag_submitted && !globalVars.launch_code_submitted",
+              "onceOnly": true,
+              "completeTask": "submit_sudo_flag",
+              "sendTimedMessage": {
+                "delay": 2000,
+                "message": "Encoded deployment intel secured — the shatter_configuration confirms full operation scope. 🦎 Two things left: ~/launch_code/launch_flag in the shatter account goes into Derek's device. And the ENTROPY archive opens with the DECRYPTION_KEY from derek's account."
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:sudo_flag_submitted",
+              "condition": "value === true && globalVars.ssh_flag_submitted && !globalVars.launch_code_submitted",
+              "onceOnly": true,
+              "completeTask": "submit_sudo_flag",
+              "sendTimedMessage": {
+                "delay": 2000,
+                "message": "Encoded deployment intel secured — the shatter_configuration confirms full operation scope. 🦎 One thing left: ~/launch_code/launch_flag in the shatter account goes into Derek's device."
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:sudo_flag_submitted",
+              "condition": "value === true && !globalVars.ssh_flag_submitted && globalVars.launch_code_submitted",
+              "onceOnly": true,
+              "completeTask": "submit_sudo_flag",
+              "sendTimedMessage": {
+                "delay": 2000,
+                "message": "Encoded deployment intel secured — the shatter_configuration confirms full operation scope. 🦎 One thing left: open the ENTROPY archive with the DECRYPTION_KEY from derek's account."
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:sudo_flag_submitted",
+              "condition": "value === true && globalVars.ssh_flag_submitted && globalVars.launch_code_submitted",
+              "onceOnly": true,
+              "completeTask": "submit_sudo_flag",
+              "sendTimedMessage": {
+                "delay": 2000,
+                "message": "Encoded deployment intel secured — the shatter_configuration confirms full operation scope. 🦎 All flags in."
+              }
+            },
+            {
+              "eventPattern": "item_picked_up:launch-device",
+              "onceOnly": true,
+              "sendTimedMessage": {
+                "delay": 1500,
+                "message": "You have the launch device. 🦎 Priority one: disable the launch. Use the device to abort Operation Shatter — the authorization code is in the shatter account at `~/launch_code/launch_flag`. Enter it to end this."
+              }
+            },
+            {
+              "eventPattern": "attack_aborted",
+              "onceOnly": true,
+              "completeTask": ["deactivate_launch", "use_launch_device"],
+              "sendTimedMessage": {
+                "delay": 2000,
+                "message": "Abort confirmed. Operation Shatter is dead. 🦎 Both codes secured. Call me when you're ready to debrief."
+              }
+            },
+            {
+              "eventPattern": "attack_launched",
+              "onceOnly": true,
+              "completeTask": ["deactivate_launch", "use_launch_device"],
+              "sendTimedMessage": {
+                "delay": 4000,
+                "message": "...I'm seeing reports. 🦎 Hospital switchboards. Emergency lines flooded. The attack went through. Call me."
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:ssh_flag_submitted",
+              "condition": "value === true && globalVars.linux_flag_submitted && globalVars.sudo_flag_submitted && !globalVars.derek_confronted",
+              "onceOnly": true,
+              "sendTimedMessage": {
+                "delay": 3000,
+                "message": "All technical flags secured. 🦎 The ENTROPY archive is unlocked, so read it if you haven't. Then find Derek — you have everything you need."
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:linux_flag_submitted",
+              "condition": "value === true && globalVars.ssh_flag_submitted && globalVars.sudo_flag_submitted && !globalVars.derek_confronted",
+              "onceOnly": true,
+              "sendTimedMessage": {
+                "delay": 3000,
+                "message": "All technical flags secured. 🦎 The ENTROPY archive is unlocked, so read it if you haven't. Then find Derek — you have everything you need."
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:sudo_flag_submitted",
+              "condition": "value === true && globalVars.ssh_flag_submitted && globalVars.linux_flag_submitted && !globalVars.derek_confronted",
+              "onceOnly": true,
+              "sendTimedMessage": {
+                "delay": 3000,
+                "message": "All technical flags secured. 🦎 The ENTROPY archive is unlocked, so read it if you haven't. Then find Derek — you have everything you need."
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:ssh_flag_submitted",
+              "condition": "value === true && globalVars.linux_flag_submitted && globalVars.sudo_flag_submitted && globalVars.derek_confronted === true",
+              "onceOnly": true,
+              "sendTimedMessage": {
+                "delay": 3000,
+                "message": "All technical evidence secured. Derek is already contained. 🦎 Call me when you're ready for debrief."
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:linux_flag_submitted",
+              "condition": "value === true && globalVars.ssh_flag_submitted && globalVars.sudo_flag_submitted && globalVars.derek_confronted === true",
+              "onceOnly": true,
+              "sendTimedMessage": {
+                "delay": 3000,
+                "message": "All technical evidence secured. Derek is already contained. 🦎 Call me when you're ready for debrief."
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:sudo_flag_submitted",
+              "condition": "value === true && globalVars.ssh_flag_submitted && globalVars.linux_flag_submitted && globalVars.derek_confronted === true",
+              "onceOnly": true,
+              "sendTimedMessage": {
+                "delay": 3000,
+                "message": "All technical evidence secured. Derek is already contained. 🦎 Call me when you're ready for debrief."
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:derek_confronted",
+              "condition": "value === true && globalVars.entropy_reveal_read === true",
+              "onceOnly": true,
+              "sendTimedMessage": {
+                "delay": 1000,
+                "message": "Derek is contained and ENTROPY's full picture is in your hands. 🦎 Use the launch device — then call me for debrief."
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:derek_confronted",
+              "condition": "value === true && !globalVars.entropy_reveal_read",
+              "onceOnly": true,
+              "sendTimedMessage": {
+                "delay": 1000,
+                "message": "Derek is contained. You still need to access the ENTROPY encrypted archive in the server room — the full picture is in there. Finish that, then call me."
+              }
+            }
+          ]
+        },
+        {
+          "id": "closing_debrief_person",
+          "displayName": "Agent HaX",
+          "npcType": "person",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:start_debrief_cutscene",
+              "condition": "value === true",
+              "conversationMode": "person-chat",
+              "targetKnot": "start",
+              "background": "assets/backgrounds/hq1.png",
+              "onceOnly": true,
+              "disableClose": true
+            }
+          ],
+          "position": { "x": 500, "y": 500 },
+          "spriteSheet": "female_spy_v2",
+          "avatar": "assets/characters/female_spy_headshot.png",
+          "spriteTalk": "assets/characters/female_spy_talk.png",
+          "spriteVisemes": "assets/characters/female_spy_visemes.png",
+          "spriteConfig": {
+            "idleFrameRate": 6,
+            "walkFrameRate": 10
+          },
+          "voice": {
+            "name": "Aoede",
+            "style": "Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Speak quickly with urgency, as if reviewing critical information under time pressure.",
+            "language": "en-GB"
+          },
+          "storyPath": "scenarios/m01_first_contact/ink/m01_closing_debrief.json",
+          "currentKnot": "start",
+          "behavior": {
+            "initiallyHidden": true
+          }
+        }
+      ],
+      "objects": [
+        {
+          "type": "phone",
+          "id": "reception_desk_phone",
+          "name": "Reception Desk Phone",
+          "phoneId": "reception_desk_phone",
+          "takeable": false,
+          "readable": true,
+          "puzzle_graph_unlocks": "it_room",
+          "puzzle_graph_reveals": "it_room_pin",
+          "voice": "Hi Sarah, it's Kevin from IT. Just leaving this message to confirm the door code update I mentioned in the meeting. The IT room PIN has been changed to 2468 — please shred the old one from the maintenance folder. Also, uh... heads up. I've been noticing some unusual access patterns on the server logs, and I really think we need to talk offline before I escalate. I'm not sure who to trust at management level right now. Call me when you're back. Cheers.",
+          "ttsVoice": {
+            "name": "Charon",
+            "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+            "language": "en-GB"
+          },
+          "avatar": "assets/characters/male_nerd_headshot.png",
+          "sender": "Kevin Park (IT)",
+          "timestamp": "Yesterday, 6:47 PM",
+          "observations": "The message light is blinking — one unheard voicemail"
+        },
+        {
+          "type": "notes",
+          "name": "Building Directory",
+          "takeable": true,
+          "readable": true,
+          "text": "Viral Dynamics Media - Staff Directory\n\nRECEPTION:\nSarah O'Brien - Receptionist\n\nIT ROOM (East Wing, PIN required):\nKevin Park - IT Manager\n  └─ SERVER ROOM accessible via IT Room (RFID card required)\n\nPRIVATE OFFICES (North Wing, via Hallways):\nDerek Lawson - Senior Marketing Manager\nMaya Chen - Content Analyst\nKevin Park - IT Manager (usually in IT Room)\nManager's Office - VACANT (fmr. Patricia Wells)",
+          "observations": "Posted directory of office staff"
+        },
+        {
+          "type": "notes",
+          "name": "Visitor Sign-In Log",
+          "takeable": false,
+          "readable": true,
+          "text": "VISITOR SIGN-IN LOG\n\nRecent Entries:\n- 11:47 PM - D. Lawson (employee late access)\n- 11:52 PM - D. Lawson (employee late access)\n- 12:03 AM - D. Lawson (employee late access)\n\nNote: Multiple late-night entries for Derek Lawson this month.",
+          "observations": "Sign-in log showing suspicious after-hours access patterns"
+        }
+      ]
+    },
+
+    "main_office_area": {
+      "type": "room_office",
+      "locked": true,
+      "lockType": "key",
+      "requires": "main_office_key",
+      "keyPins": [45, 25, 55, 35],
+      "door_sign": "Main Office",
+      "connections": {
+        "south": "reception_area",
+        "north": ["hallway_west", "hallway_east"],
+        "east": "it_room",
+        "west": "break_room"
+      },
+      "npcs": [],
+      "objects": [
+        {
+          "type": "safe",
+          "name": "Main Filing Cabinet",
+          "takeable": false,
+          "locked": true,
+          "lockType": "pin",
+          "requires": "2024",
+          "observations": "Digital filing cabinet with keypad lock - requires 4-digit PIN",
+          "contents": [
+            {
+              "type": "office-misc-pencils",
+              "name": "Pencil Cup",
+              "takeable": true,
+              "observations": "A cup stuffed with pencils and a red marker. Normal office clutter."
+            },
+            {
+              "type": "office-misc-stapler",
+              "name": "Stapler",
+              "takeable": true,
+              "observations": "A heavy-duty stapler. Someone kept this locked away?"
+            },
+            {
+              "type": "office-misc-pens",
+              "name": "Pen Set",
+              "takeable": true,
+              "observations": "A set of matching branded pens. 'Viral Dynamics' embossed in silver."
+            },
+            {
+              "type": "notes",
+              "name": "Viral Dynamics Business Outline",
+              "takeable": true,
+              "readable": true,
+              "text": "VIRAL DYNAMICS MEDIA — STRATEGIC OVERVIEW\nCLASSIFICATION: INTERNAL / EXECUTIVE EYES ONLY\n\nMISSION STATEMENT\nViral Dynamics empowers clients to achieve large-scale, measurable shifts in public sentiment through precision-targeted social media engagement. All operations comply with applicable advertising and communications law.\n\nSERVICE TIERS\n\n[TIER 1 — INSIGHT]\nProprietary psychographic profiling. We segment populations by personality, political tendency, and emotional trigger patterns using aggregated social data. OCEAN model scoring applied across >200M profiles.\n\n[TIER 2 — AMPLIFY]\nCoordinated organic-style content distribution. Micro-targeted messaging delivered via networks of managed social accounts. Authenticated users only — no bot farms. Content is legally truthful; framing is our expertise.\n\n[TIER 3 — INFLUENCE]\nLong-tail narrative seeding. Sustained 6–18 month campaigns to shift baseline attitudes on target topics (e.g., electoral candidates, public health policy, corporate reputation). Clients include political campaigns, foreign governments (UK restriction applies), and corporate PR.\n\nCLIENT CONFIDENTIALITY\nAll client engagements are conducted under strict NDA. No public attribution. Engagement outcomes are deniable by design.",
+              "observations": "A glossy internal document outlining Viral Dynamics's core business — psychographic profiling and influence campaigns at scale. Legal. Meticulous. Chilling."
+            }
+          ]
+        },
+        {
+          "type": "chalkboard",
+          "name": "Office Chalkboard",
+          "takeable": false,
+          "observations": "A shared chalkboard covered in campaign schedules and meeting reminders."
+        },
+        {
+          "type": "chalkboard",
+          "name": "Office Chalkboard",
+          "takeable": false,
+          "observations": "A shared chalkboard covered in campaign schedules and meeting reminders. At the bottom in faded marker: 'Office safe — think election year. (2024 if you've already forgotten, Karen.)'"
+        },
+        {
+          "type": "bin",
+          "name": "Office Recycling Bin",
+          "takeable": false,
+          "observations": "A recycling bin tucked under a desk",
+          "locked": false,
+          "contents": [
+            {
+              "type": "notes",
+              "name": "Maintenance Checklist",
+              "takeable": true,
+              "readable": true,
+              "puzzle_graph_unlocks": "it_room",
+              "puzzle_graph_optional": true,
+              "puzzle_graph_reveals": "it_room_pin",
+              "text": "VIRAL DYNAMICS - MAINTENANCE LOG\n\nIT Room Access:\nKevin keeps forgetting the code. He said he'd leave\na voicemail for Sarah with the updated PIN after the\naudit — check the reception desk phone if you need it.\n\nLast updated: 2 weeks ago",
+              "observations": "Discarded maintenance checklist with access codes scrawled on it"
+            }
+          ]
+        }
+      ]
+    },
+
+    "storage_closet": {
+      "type": "small_room_storage_1x1gu",
+      "locked": false,
+      "door_sign": "Storage",
+      "connections": {
+        "west": "hallway_east"
+      },
+      "objects": [
+        {
+          "type": "safe",
+          "id": "derek_storage_safe",
+          "name": "Derek's Safe",
+          "takeable": false,
+          "locked": true,
+          "lockType": "pin",
+          "requires": "1337",
+          "observations": "A personal safe — 4-digit PIN. Someone's been storing things in here privately.",
+          "contents": [
+            {
+              "type": "notes",
+              "name": "Server Access Details",
+              "takeable": true,
+              "readable": true,
+              "text": "shatter_server\nIP: 172.16.0.2\nUser: derek\n\nUse with password list for SSH access.",
+              "observations": "A printed reference note stored alongside the password list — server address and username for the ENTROPY attack infrastructure"
+            },
+            {
+              "type": "notes",
+              "name": "My Passwords",
+              "takeable": true,
+              "readable": true,
+              "puzzle_graph_unlocks": "vm_launcher_intro_linux",
+              "puzzle_graph_reveals": "derek_ssh_password",
+              "text": "Derek0419\nDerek_0419\n0419Derek\nApril19Derek\nViralDynamics\nViralMedia2024\nMarketing2024\nCampaign2024\nSocialFabric2024\nViral_Dynamics_Admin\nViralAdmin0419\nOperationShatter\nOpShatter2024\nEntropy2024\nZDS_Partner\nTrustIsLie\nVerifyEverything\nFilingCabinet0419\nInevitable\nTheArchitect\nPatriciaKnew\nMisinformation\nNetworkSegment\nSafetyNet\nDerek_Marketing\n0419Marketing\nArchitect0419",
+              "observations": "A printed list of Derek's passwords for the shatter_server (172.16.0.2). Username: derek. Connect via SSH to test credentials."
+            }
+          ]
+        },
+        {
+          "type": "notes",
+          "name": "Maintenance Log (Backup)",
+          "takeable": true,
+          "readable": true,
+          "puzzle_graph_unlocks": "it_room",
+          "puzzle_graph_optional": true,
+          "puzzle_graph_reveals": "it_room_pin",
+          "text": "MAINTENANCE ACCESS CODES (BACKUP COPY)\n\nIT Room: 2468",
+          "observations": "Backup copy of maintenance codes"
+        }
+      ]
+    },
+
+    "break_room": {
+      "type": "room_break",
+      "locked": false,
+      "door_sign": "Break Room",
+      "connections": {
+        "east": "main_office_area",
+        "south": "conference_room"
+      },
+      "npcs": [
+        {
+          "id": "derek_lawson",
+          "displayName": "Derek Lawson",
+          "npcType": "person",
+          "position": { "x": 5, "y": 4 },
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "spriteConfig": {
+            "idleFrameRate": 6,
+            "walkFrameRate": 10
+          },
+          "storyPath": "scenarios/m01_first_contact/ink/m01_derek_confrontation.json",
+          "restartOnRetalk": false,
+          "currentKnot": "start",
+          "voice": {
+            "name": "Algieba",
+            "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+            "language": "en-GB"
+          },
+          "globalVarOnKO": "derek_confronted",
+          "taskOnKO": "confront_derek",
+          "eventMappings": [
+            {
+              "eventPattern": "npc_ko:derek_lawson",
+              "condition": "globalVars.derek_fight_triggered === true",
+              "conversationMode": "person-chat",
+              "targetKnot": "fight_outcome",
+              "onceOnly": true
+            },
+            {
+              "eventPattern": "global_variable_changed:derek_confronted",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "confront_derek"
+            }
+          ],
+          "behavior": {
+            "hostile": {
+              "chaseSpeed": 145,
+              "attackDamage": 25,
+              "pauseToAttack": true
+            }
+          },
+          "itemsHeld": [
+            {
+              "type": "launch-device",
+              "id": "entropy_launch_device",
+              "mode": "launch-abort",
+              "name": "ENTROPY Launch Device",
+              "takeable": true,
+              "observations": "A ruggedised tactical device. Screen: OPERATION SHATTER — ARMED. T-72 HOURS TO LAUNCH WINDOW.",
+              "acceptsVms": ["shatter_server"],
+              "flags": ["shatter_server:flag_3"],
+              "flagRewards": [
+                { "type": "set_global", "key": "launch_code_submitted", "value": true }
+              ],
+              "onAbort": {
+                "setGlobal": { "player_aborted_attack": true, "ready_for_debrief": true },
+                "emitEvent": "attack_aborted"
+              },
+              "onLaunch": {
+                "setGlobal": { "player_launched_attack": true, "ready_for_debrief": true },
+                "emitEvent": "attack_launched"
+              },
+              "abortConfirmText": "ABORT OPERATION SHATTER?\n\nThis will terminate all active attack vectors. The attack will not proceed.",
+              "launchConfirmText": "EXECUTE OPERATION SHATTER?\n\n2,347,832 people will receive simultaneous coordinated emergency disinformation.\n\nProjected casualties among vulnerable populations.\n\nThis cannot be undone."
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Office Gossip",
+          "takeable": true,
+          "readable": true,
+          "text": "Overheard at the coffee machine:\n\n'Did you hear Patricia got fired?'\n'The old manager? Yeah, weird timing.'\n'She was asking too many questions about Derek's projects.'\n'And now her office is just... empty.'\n'Creepy if you ask me.'",
+          "observations": "Someone has noted some overhead gossip about the former manager's sudden departure"
+        },
+        {
+          "type": "notes",
+          "name": "Break Room Calendar",
+          "takeable": false,
+          "readable": true,
+          "text": "MARCH — VIRAL DYNAMICS\n\nFri 14 ✓  |  Sat 15 ✓  |  Sun 16\nMon 17 ✓  |  Tue 18 ✓  |  Wed 19 ✓\nThu 20 ✓  |  Fri 21 ✓  |  Sat 22\n\n► SUNDAY: 'LAUNCH'",
+          "observations": "Calendar with this coming Sunday marked 'LAUNCH' in Derek's handwriting"
+        },
+        {
+          "type": "bin",
+          "name": "Recycling Bin",
+          "takeable": false,
+          "observations": "A recycling bin tucked in a corner of the break room",
+          "locked": false,
+          "contents": [
+            {
+              "type": "notes",
+              "name": "Anniversary Card",
+              "takeable": true,
+              "readable": true,
+              "puzzle_graph_unlocks": ["derek_computer", "derek_cabinet"],
+              "puzzle_graph_optional": true,
+              "puzzle_graph_reveals": "anniversary_pin_0419",
+              "observations": "An anniversary card someone tossed out — April 19th circled inside",
+              "text": "🎂 HAPPY ANNIVERSARY! 🎂\n\nTo Derek & Lisa,\nCongratulations on 10 years!\nApril 19th - a day to remember!\n\nFrom your Viral Dynamics family\n\n(Note: Several signatures, including Maya, Kevin, Sarah)"
+            },
+            {
+              "type": "notes",
+              "name": "Coffee Shop Receipt",
+              "takeable": true,
+              "readable": true,
+              "text": "THE DAILY GRIND - RECEIPT\nDate: Last Tuesday, 11:47 PM\n\nNote on back (handwriting):\n'Derek meeting with unknown contact AGAIN.\nDiscussing \"Phase 3 timeline\" and \"The Architect.\"\nThis is the 5th late-night meeting this month.\nSomething is very wrong here.'\n\n- Anonymous concerned employee",
+              "observations": "Receipt with handwritten note about Derek's suspicious meetings"
+            },
+            {
+              "type": "notes",
+              "name": "Sticky Note on Fridge",
+              "takeable": true,
+              "readable": true,
+              "text": "Derek —\n\nYou've been in here a lot this week. Everything okay?\nYou seem stressed.\n\n- Maya\n\n(Handwritten reply below, different ink:)\n'Big project. Wraps up Sunday. After that, I'll be gone for a while.'",
+              "observations": "Exchange between Maya and Derek — he's planning to disappear after Sunday"
+            }
+          ]
+        }
+      ]
+    },
+
+    "conference_room": {
+      "type": "room_meeting",
+      "locked": false,
+      "door_sign": "Conference Room",
+      "connections": {
+        "north": "break_room"
+      },
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Meeting Calendar",
+          "takeable": false,
+          "readable": true,
+          "text": "CONFERENCE ROOM CALENDAR\n\nMonday: Derek - 'External Partner Sync' (recurring)\nTuesday: All Hands (cancelled)\nWednesday: Derek - 'ZDS Infrastructure Review'\nThursday: Derek - 'Campaign Coordination'\nFriday: Derek - 'Phase 3 Planning'\n\nNote: Derek has booked this room for 'external calls' almost every day this month.",
+          "observations": "Meeting calendar showing Derek's suspicious scheduling patterns"
+        },
+        {
+          "type": "bin",
+          "name": "Paper Bin",
+          "takeable": false,
+          "observations": "A paper recycling bin beside the conference table",
+          "locked": false,
+          "contents": [
+            {
+              "type": "notes",
+              "name": "ZDS Meeting Notes",
+              "takeable": true,
+              "readable": true,
+              "text": "MEETING NOTES - ZDS Infrastructure Review\nDate: Last Wednesday\nAttendees: Derek Lawson, [REDACTED]\n\nAgenda:\n1. Technical infrastructure status - CONFIRMED\n2. Message deployment timeline - ON SCHEDULE\n3. Target list finalization - 2.3M profiles ready\n4. Casualty projections review - ACCEPTABLE\n\nAction Items:\n- Derek to confirm Phase 3 launch window\n- ZDS to provide backup exfiltration routes",
+              "observations": "Meeting notes revealing coordination with Zero Day Syndicate"
+            },
+            {
+              "type": "notes",
+              "name": "Campaign Timeline",
+              "takeable": true,
+              "readable": true,
+              "text": "OPERATION SHATTER - CAMPAIGN TIMELINE\n\nWeek 1-2: Content creation ✓\nWeek 3-4: Narrative seeding ✓\nWeek 5: Coordinated release - PENDING\n\nTarget Planning:\n- Vulnerable demographic cohorts (tailored misinformation / panic leverage)\n- Immediate responders (act on first alert)\n- Forward-first amplifiers (share without verification)\n- High-density cascade corridors (metro clusters)\n\nProjected Impact: SIGNIFICANT\n\nNote: 'The Architect' has approved final timeline.",
+              "observations": "Campaign timeline for Operation Shatter"
+            }
+          ]
+        }
+      ]
+    },
+
+    "it_room": {
+      "type": "room_it",
+      "locked": true,
+      "lockType": "pin",
+      "requires": "2468",
+      "door_sign": "IT Department",
+      "connections": {
+        "west": "main_office_area",
+        "south": "server_room"
+      },
+      "npcs": [
+        {
+          "id": "kevin_park",
+          "displayName": "Kevin Park",
+          "npcType": "person",
+          "position": { "x": 3, "y": 5.5 },
+          "spriteSheet": "male_nerd_v2",
+          "spriteTalk": "assets/characters/male_nerd_talk.png",
+          "spriteVisemes": "assets/characters/male_nerd_visemes.png",
+          "spriteConfig": {
+            "idleFrameRate": 6,
+            "walkFrameRate": 10
+          },
+          "storyPath": "scenarios/m01_first_contact/ink/m01_npc_kevin.json",
+          "currentKnot": "start",
+          "voice": {
+            "name": "Charon",
+            "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+            "language": "en-GB"
+          },
+          "globalVarOnKO": "kevin_ko",
+          "behavior": {
+            "hostile": {
+              "chaseSpeed": 145,
+              "attackDamage": 15,
+              "pauseToAttack": false
+            }
+          },
+          "itemsHeld": [
+            {
+              "type": "lockpick",
+              "name": "Lock Pick Kit",
+              "takeable": true,
+              "puzzle_graph_unlocks": ["patricia_briefcase", "derek_office"],
+              "observations": "Professional lock picking kit - for security testing"
+            },
+            {
+              "type": "keycard",
+              "name": "Server Room Keycard",
+              "takeable": true,
+              "opens_lock": "server_keycard",
+              "puzzle_graph_unlocks": "server_room",
+              "observations": "Kevin's keycard for server room access"
+            },
+            {
+              "type": "notes",
+              "name": "Lock Pick Instructions",
+              "takeable": true,
+              "readable": true,
+              "text": "LOCK PICK KIT — QUICK REFERENCE\n\nThis kit is for authorised security testing only.\n\nHOW TO USE (pin tumbler locks):\n\n1. INSERT the tension wrench into the bottom of the keyhole.\n   Apply light rotational pressure in the direction the key turns.\n   Too much pressure and the pins won't move — keep it light.\n\n2. INSERT the pick above the wrench and feel for the pins.\n   There are usually 4–6 pins stacked vertically inside the barrel.\n\n3. LIFT each pin gently until you feel it set.\n   A set pin produces a faint click and the barrel rotates slightly.\n   Work from the back of the lock toward the front.\n\n4. Once ALL pins are set, the barrel turns and the lock opens.\n\nTIPS:\n- Light tension is everything. If you're forcing it, ease off.\n- Go slow. Rushing resets the pins.\n- Practice on unlocked locks to get a feel for pin feedback.\n- Harder locks have more pins or security pins — same method, more patience.",
+              "observations": "A laminated reference card tucked inside the lock pick kit"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "pc",
+          "name": "IT Monitoring Station",
+          "takeable": false,
+          "locked": false,
+          "observations": "Network monitoring displays showing server activity",
+          "contents": [
+            {
+              "type": "text_file",
+              "name": "Server Access Log",
+              "takeable": false,
+              "readable": true,
+              "text": "UNAUTHORIZED ACCESS LOG\n\nFlagged Entries:\n- Derek Lawson accessed SERVER_ROOM at 11:52 PM (no ticket)\n- Derek Lawson accessed SERVER_ROOM at 12:03 AM (no ticket)\n- Derek Lawson accessed BACKUP_SYSTEM at 2:15 AM (no ticket)\n\nNote: I've flagged these to management 3 times. No response.\nSomething's not right.\n- Kevin",
+              "observations": "Kevin's log of Derek's unauthorized server access"
+            }
+          ]
+        },
+        {
+          "type": "notes2",
+          "name": "IT Security Concerns",
+          "takeable": true,
+          "readable": true,
+          "text": "MEMO TO MANAGEMENT (UNSENT)\n\nRE: Security Concerns - Derek Lawson\n\nI've documented multiple instances of Derek accessing the server room without authorization. When I asked him about it, he said he was 'checking campaign servers.'\n\nWe don't have campaign servers in that room.\n\nI think he's doing something he shouldn't be, but I don't know who to trust. The last person who raised concerns about Derek was Patricia, and she got fired.\n\nI'm keeping this memo in case something happens to me too.\n\n- Kevin Park, IT Manager",
+          "observations": "Kevin's unsent memo expressing concerns about Derek"
+        }
+      ]
+    },
+
+    "hallway_west": {
+      "type": "hall_1x2gu",
+      "locked": false,
+      "connections": {
+        "south": "main_office_area",
+        "north": ["manager_office", "kevin_office"],
+        "east": "hallway_east"
+      },
+      "objects": []
+    },
+
+    "hallway_east": {
+      "type": "hall_1x2gu",
+      "locked": false,
+      "connections": {
+        "south": "main_office_area",
+        "north": ["maya_office", "derek_office"],
+        "west": "hallway_west",
+        "east": "storage_closet"
+      },
+      "objects": []
+    },
+
+    "manager_office": {
+      "type": "small_office_room2_1x1gu",
+      "locked": false,
+      "door_sign": "Patricia Wells — Manager",
+      "connections": {
+        "south": "hallway_west"
+      },
+      "objects": [
+        {
+          "type": "suitcase",
+          "id": "patricia_briefcase",
+          "name": "Patricia's Briefcase",
+          "takeable": false,
+          "locked": true,
+          "lockType": "key",
+          "keyPins": [40, 60, 30, 50],
+          "difficulty": "medium",
+          "observations": "Former manager's briefcase - she left it behind when she was escorted out. No key available - would need to pick the lock.",
+          "contents": [
+            {
+              "type": "key",
+              "name": "Derek's Office Key",
+              "takeable": true,
+              "opens_lock": "derek_office_key",
+              "keyPins": [35, 55, 45, 25],
+              "puzzle_graph_unlocks": "derek_office",
+              "observations": "Spare key to Derek Lawson's office - Patricia must have kept a copy"
+            },
+            {
+              "type": "notes2",
+              "name": "Patricia's Investigation Notes",
+              "takeable": true,
+              "readable": true,
+              "text": "MY INVESTIGATION NOTES - PATRICIA WELLS\n\nDerek Lawson is hiding something. I've documented:\n- Late night server access (no business justification)\n- Encrypted communications with external parties\n- Large data transfers to unknown destinations\n- References to someone called 'The Architect'\n\nI'm going to confront him tomorrow.\n\nUpdate: HR called me in. I'm being 'let go' for 'performance issues.' This is retaliation. If you're reading this, I was right about Derek.\n\nOne thing: he's sentimental about dates. People like him always reuse things they care about.",
+              "observations": "Former manager's investigation notes - reveals she was fired for getting too close"
+            },
+            {
+              "type": "workstation",
+              "id": "cyberchef_workstation",
+              "name": "CyberChef Workstation",
+              "takeable": true,
+              "puzzle_graph_role": "tool",
+              "puzzle_graph_note": "Decoding tool — required with Encoded Note (1) and Encoded Note (2) to derive safe/PC/cabinet PINs",
+              "observations": "A laptop preloaded with CyberChef — Patricia's personal crypto analysis tool. Take it.",
+              "storyPath": "scenarios/m01_first_contact/ink/m01_terminal_cyberchef.json",
+              "currentKnot": "start"
+            },
+            {
+              "type": "notes",
+              "name": "Patricia's Note — CyberChef",
+              "takeable": true,
+              "readable": true,
+              "text": "PATRICIA'S NOTES — ENCODING METHODS\n\nI found evidence Derek is obfuscating messages using two very basic schemes: Base64 and ROT13. He leaves encoded notes around, probably thinking no one will notice.\n\n─────────────────────────────────\nBASE64\n─────────────────────────────────\nBase64 converts text to a string of letters, numbers, + and /.\nIt almost always ends in = or ==.\n\nExample:\n  Plain:   Meet at the server room\n  Base64:  TWVldCBhdCB0aGUgc2VydmVyIHJvb20=\n\nAnother:\n  Plain:   1337\n  Base64:  MTMzNw==\n\nTo decode: open CyberChef, drag in 'From Base64', paste the text.\nOr on Kali terminal:\n  echo \"MTMzNw==\" | base64 -d\n\n─────────────────────────────────\nROT13\n─────────────────────────────────\nROT13 shifts every letter 13 places. A→N, B→O, etc.\nSpaces and punctuation stay the same, so word lengths are preserved.\n\nExample:\n  Plain:   Derek is the leak\n  ROT13:   Qrexr vf gur yrny\n\nAnother:\n  Plain:   Filing cabinet pin is 0419\n  ROT13:   Svyvat pnovarg cva vf 0419\n\nTo decode: open CyberChef, drag in 'ROT13', paste the text.\nOr on Kali terminal:\n  echo \"Svyvat pnovarg cva vf 0419\" | tr 'A-Za-z' 'N-ZA-Mn-za-m'\n\n─────────────────────────────────\nTIP: If it ends in = — try Base64 first.\nIf the words look scrambled but the lengths match — try ROT13.\n─────────────────────────────────",
+              "observations": "Patricia's handwritten notes on the encoding methods Derek uses"
+            },
+            {
+              "type": "notes2",
+              "name": "ENTROPY Infiltration Timeline",
+              "takeable": true,
+              "readable": true,
+              "text": "══════════════════════════════\n           HOW ENTROPY INFILTRATED VIRAL DYNAMICS\n              [PATRICIA'S RECONSTRUCTION]\n══════════════════════════════\n\n18 MONTHS AGO:\nDerek Lawson hired as 'Senior Marketing Manager'\nBackground check clean - too clean?\n\n12 MONTHS AGO:\nDerek requests 'enhanced privacy' for his systems\nStarts working late nights regularly\n\n9 MONTHS AGO:\nFirst references to 'external partners' in meeting notes\nDerek begins booking conference room for 'private calls'\n\n6 MONTHS AGO:\nI notice unusual server access patterns\nStart documenting Derek's activities\n\n3 MONTHS AGO:\nConfront Derek - he deflects, becomes hostile\nStart finding evidence of coordination with 'ZDS'\n\n1 MONTH AGO:\nDiscovered references to 'The Architect' and 'Operation Shatter'\nProjected casualties document - 42-85 deaths\nThis is bigger than corporate espionage\n\nTODAY:\nFired for 'performance issues'\nThey're protecting him\nSomeone needs to stop this\n\n══════════════════════════════\nIf you found this, you're the someone.\n══════════════════════════════",
+              "observations": "Patricia's reconstruction of how ENTROPY infiltrated the company - LOCKPICK ONLY"
+            }
+          ]
+        },
+        {
+          "type": "phone",
+          "id": "patricia_desk_phone",
+          "name": "Patricia's Desk Phone",
+          "phoneId": "patricia_desk_phone",
+          "takeable": false,
+          "readable": true,
+          "voice": "Patricia... it's Maya. I know you probably won't hear this. They cleared out your desk so fast. I just — I needed to say it somewhere. You were right about Derek. I'm sorry we didn't back you up when it mattered. Be safe.",
+          "ttsVoice": {
+            "name": "Leda",
+            "style": "Content analyst in her late twenties. Speak with a consistent Chinese-American (California) accent throughout — do not shift to any other accent. Soft, mid-to-high pitch; quiet, hesitant pace. Nervous and concerned. Speaking quietly, like she doesn't want to be overheard.",
+            "language": "en-US"
+          },
+          "avatar": "assets/characters/female_scientist_headshot.png",
+          "sender": "Maya Chen",
+          "timestamp": "3 days ago, 8:02 AM",
+          "observations": "Patricia's desk phone — message light still blinking. Someone called after she was fired."
+        },
+        {
+          "type": "notes",
+          "name": "Termination Letter",
+          "takeable": true,
+          "readable": true,
+          "text": "VIRAL DYNAMICS MEDIA\nHUMAN RESOURCES\n\nTO: Patricia Wells\nRE: Termination of Employment\n\nEffective immediately, your employment with Viral Dynamics Media is terminated due to performance concerns.\n\nPlease collect your personal belongings and return your access badge to security.\n\nWe wish you well in your future endeavors.\n",
+          "observations": "Patricia's termination letter - suspiciously vague. This is clearly a form letter. No specific performance issues cited."
+        }
+      ]
+    },
+
+    "kevin_office": {
+      "type": "small_office_room1_1x1gu",
+      "locked": false,
+      "door_sign": "Kevin Park — IT",
+      "connections": {
+        "south": "hallway_west"
+      },
+      "objects": [
+        {
+          "type": "pc",
+          "name": "Kevin's Workstation",
+          "takeable": false,
+          "lockType": "password",
+          "requires": "tiaspbiqe2r",
+          "showKeyboard": true,
+          "maxAttempts": 3,
+          "locked": true,
+          "postitNote": "tiaspbiqe2r - this is a secure password but is quite easy 2 remember",
+          "showPostit": true,
+          "observations": "Kevin's personal workstation. He's been in the IT room all day.",
+          "contents": [
+            {
+              "type": "text_file",
+              "name": "Server Access Log",
+              "takeable": false,
+              "readable": true,
+              "onRead": { "setVariable": { "framing_evidence_seen": true } },
+              "text": "AUTOMATED SERVER ACCESS LOG\n\nAccount: kevin_park@viraldynamics.com\nPeriod: Last 30 days\n\nFlagged Events:\n  11:47 PM  SERVER_ROOM  [Keycard: KP-0094]\n  11:52 PM  SERVER_ROOM  [Keycard: KP-0094]\n  12:03 AM  SERVER_ROOM  [Keycard: KP-0094]\n  02:15 AM  BACKUP_SYSTEM  [Session: KPARK_2]\n\nData Transfer Summary:\n  External transfer detected: 847 MB → 185.220.101.x\n\nNote: Log generated and filed by D. Lawson.\n",
+              "observations": "Server access logs on Kevin's workstation that appear to show him exfiltrating data — suspiciously convenient. This file appears to implicate Kevin — but compare with the files in Derek's office"
+            },
+            {
+              "type": "text_file",
+              "name": "Draft Email (Unsent)",
+              "takeable": false,
+              "readable": true,
+              "onRead": { "setVariable": { "framing_evidence_seen": true } },
+              "text": "══════════════════════════════\n   VIRAL DYNAMICS MAIL - DRAFT (RECOVERED)\n   NOTE: Draft found in Kevin's account — never sent\n══════════════════════════════\n\nFROM:    kevin_park@viraldynamics.com\nTO:      secure-relay@zds-partners.net\nSUBJECT: access confirmed - phase 3\n\n> Access window arranged as discussed.\n> Server credentials attached.\n> Keep this channel dark.\n\n[HEADER ANOMALIES DETECTED:\n  Origin IP: 10.0.1.47 — matches D. Lawson's workstation\n  Session metadata: author=D.LAWSON\n  Timestamp: 4 minutes before Kevin's session began]",
+              "observations": "A draft email in Kevin's account that would frame him — but the metadata points to Derek"
+            }
+          ]
+        },
+        {
+          "type": "notes",
+          "name": "Out of Office Note",
+          "takeable": true,
+          "readable": true,
+          "puzzle_graph_unlocks": "it_room",
+          "puzzle_graph_optional": true,
+          "puzzle_graph_reveals": "it_room_pin",
+          "text": "Gone to check the servers again.\nIf you need me, I'm in the IT Room (east of main office, PIN: 2468).\nServer room is through the IT room — back door, RFID reader.\n- Kevin\n\nP.S. Yes I finally memorised the code. Please stop writing it on the whiteboard.\nP.P.S. If my name is showing up somewhere it shouldn't be, talk to me before you assume anything. Someone has been filing things in my name and I've been trying to figure out who.",
+          "observations": "Note from Kevin — he's in the IT room, not here"
+        },
+        {
+          "type": "notes2",
+          "name": "IT Incident Log",
+          "takeable": true,
+          "readable": true,
+          "text": "IT INCIDENT LOG - K. Park\n\nWeek of incident:\n- Multiple unauthorised server room accesses flagged (D. Lawson)\n- Raised with management x3 — no response\n- Logs show data exfiltration attempts to external IP\n- I've started keeping my own records in case something happens\n\nNote to self: Talk to Patricia. She was asking the same questions.",
+          "observations": "Kevin's personal incident log — he's been tracking Derek's behaviour"
+        }
+      ]
+    },
+
+    "maya_office": {
+      "type": "small_office_room3_1x1gu",
+      "locked": false,
+      "door_sign": "Maya Chen — Research",
+      "connections": {
+        "south": "hallway_east"
+      },
+      "npcs": [
+        {
+          "id": "maya_chen",
+          "displayName": "Maya Chen",
+          "npcType": "person",
+          "position": { "x": 2, "y": 4 },
+          "spriteSheet": "female_scientist_v2",
+          "spriteTalk": "assets/characters/female_scientist_talk.png",
+          "spriteVisemes": "assets/characters/female_scientist_visemes.png",
+          "spriteConfig": {
+            "idleFrameRate": 6,
+            "walkFrameRate": 10
+          },
+          "storyPath": "scenarios/m01_first_contact/ink/m01_npc_maya.json",
+          "currentKnot": "start",
+          "voice": {
+            "name": "Leda",
+            "style": "Content analyst in her late twenties. Speak with a consistent Chinese-American (California) accent throughout — do not shift to any other accent. Soft, mid-to-high pitch; quiet, hesitant pace. Nervous and concerned.",
+            "language": "en-US"
+          },
+          "globalVarOnKO": "maya_ko"
+        }
+      ],
+      "objects": [
+        {
+          "type": "notes2",
+          "name": "Disinformation Research",
+          "takeable": true,
+          "readable": true,
+          "text": "RESEARCH NOTES - MAYA CHEN\n\nI was hired to analyze content effectiveness.\nWhat I found was something else entirely.\n\nThe 'campaigns' we're running aren't marketing.\nThey're psychological operations.\n\nTarget demographics aren't customers.\nThey're victims.\n\nI tried to raise concerns internally.\nPatricia listened. Then Patricia got fired.\n\nI'm documenting everything now.\nSomeone needs to know the truth.\n\n(If you're reading this and you're not Derek, we should talk.)",
+          "observations": "Maya's research notes revealing her concerns"
+        },
+        {
+          "type": "notes2",
+          "name": "SAFETYNET Contact",
+          "takeable": true,
+          "readable": true,
+          "text": "SECURE COMMUNICATION\n\nTo: SAFETYNET Tip Line\nFrom: Anonymous\n\nI work at Viral Dynamics Media.\nSomething terrible is being planned.\nThey call it 'Operation Shatter.'\nPeople will die.\n\nPlease send someone.\n\n- An ally",
+          "observations": "Maya's tip to SAFETYNET - she's the informant who triggered this mission"
+        }
+      ]
+    },
+
+    "derek_office": {
+      "type": "small_office_room1_1x1gu",
+      "locked": true,
+      "lockType": "key",
+      "requires": "derek_office_key",
+      "keyPins": [35, 55, 45, 25],
+      "difficulty": "medium",
+      "door_sign": "Derek Lawson — Operations",
+      "connections": {
+        "south": "hallway_east"
+      },
+      "npcs": [],
+      "objects": [
+        {
+          "type": "pc",
+          "id": "derek_computer",
+          "name": "Derek's Computer",
+          "takeable": false,
+          "locked": true,
+          "lockType": "password",
+          "requires": "0419",
+          "postitNote": "Anniversary",
+          "showPostit": true,
+          "observations": "Derek's personal workstation — password locked",
+          "contents": [
+            {
+              "type": "text_file",
+              "name": "IT Security Anomaly Report",
+              "takeable": false,
+              "readable": true,
+              "collection_group": "dereks_computer_files",
+              "onRead": { "setVariable": { "framing_evidence_seen": true } },
+              "text": "══════════════════════════════\n   VIRAL DYNAMICS MEDIA - IT SECURITY ANOMALY REPORT\n   Reference: ITSA-2024-047  |  Auto-generated: AutoSec v2.1\n══════════════════════════════\n\nFLAGGED ACCOUNT: K.PARK (kevin_park@viraldynamics.com)\nPriority: HIGH\n\nANOMALOUS ACCESS EVENTS:\n\n  11:47 PM  SERVER_ROOM  [Keycard: KP-0094]\n  12:03 AM  SERVER_ROOM  [Keycard: KP-0094]\n  02:15 AM  BACKUP_SYSTEM via server terminal  [Session: KPARK_2]\n\nDATA TRANSFER DETECTED:\n  847 MB exported to external IP: 185.220.101.x (Tor exit node)\n  Transfer initiated from session KPARK_2\n\nSECURITY NOTE:\n  Primary K.PARK workstation session was simultaneously active\n  during events at 11:47 PM and 12:03 AM.\n  Possible credential delegation or shared access.\n\n[Filed for compliance review]\n[SUBMITTED BY: D. Lawson (Senior Marketing Manager) — IT Manager sign-off bypassed]",
+              "observations": "Auto-generated security report flagging Kevin Park's credentials for suspicious server access"
+            },
+            {
+              "type": "text_file",
+              "name": "Recovered Email - K.Park",
+              "takeable": false,
+              "readable": true,
+              "collection_group": "dereks_computer_files",
+              "onRead": { "setVariable": { "framing_evidence_seen": true } },
+              "text": "══════════════════════════════\n   FORENSIC EMAIL RECOVERY - VIRAL DYNAMICS MAIL SERVER\n   Recovered from: Deleted Items / Overwritten Drafts\n══════════════════════════════\n\nFROM:    kevin_park@viraldynamics.com\n         [HEADER MISMATCH DETECTED - See forensic notes]\nTO:      secure-relay@zds-partners.net\nDATE:    [TIMESTAMP INCONSISTENT WITH MAIL SERVER LOGS]\nSUBJECT: access confirmed - phase 3\n\n> Access window arranged as discussed.\n> Server credentials attached (encrypted).\n> Logs will be clean by morning.\n> Keep this channel dark.\n>\n> - K.P.\n\n══════════════════════════════\nFORENSIC NOTES:\n  Header origin IP does not match K.Park's workstation.\n  Timestamp predates account session by 4 minutes.\n  Draft metadata shows author: D.LAWSON\n══════════════════════════════",
+              "observations": "Recovered email purportedly from Kevin Park to an external contact — forensic metadata flags inconsistencies"
+            },
+            {
+              "type": "text_file",
+              "name": "Personal Notes - Safe",
+              "takeable": false,
+              "readable": true,
+              "puzzle_graph_unlocks": "derek_personal_safe",
+              "puzzle_graph_reveals": "personal_safe_pin_0319",
+              "text": "Safe combo — my birthday (19th March).",
+              "observations": "A brief personal note tucked in a desktop folder"
+            },
+            {
+              "type": "text_file",
+              "id": "contingency_files",
+              "name": "CONTINGENCY - IT Audit Response",
+              "takeable": false,
+              "readable": true,
+              "onRead": { "setVariable": { "contingency_file_read": true } },
+              "text": "══════════════════════════════\n       CONTINGENCY PLAN: IT AUDIT RESPONSE\n              [ACTIVATE IF COMPROMISED]\n══════════════════════════════\n\nIf audit discovers anomalies, activate CONTINGENCY.\n\nIT Manager Kevin Park becomes the fall guy.\nHis access patterns can be retroactively modified.\nHis termination provides closure for the company and\nends investigation.\n\nPREPARED EVIDENCE:\n- Fake security logs showing Kevin accessing servers at odd hours\n- Forged email from Kevin to 'unknown external party'\n- Timeline framing Kevin as source of data breach\n\nKevin helped you. Gave you access. Trusted you.\nAnd Derek is going to destroy his career—maybe his life—\nto cover ENTROPY's tracks.",
+              "observations": "Derek's plan to frame Kevin for everything"
+            }
+          ]
+        },
+        {
+          "type": "notes",
+          "name": "Encoded Note (1)",
+          "takeable": true,
+          "readable": true,
+          "onRead": { "setVariable": { "whiteboard_cipher_seen": true } },
+          "puzzle_graph_unlocks": "derek_storage_safe",
+          "puzzle_graph_and_with": "cyberchef_workstation",
+          "puzzle_graph_reveals": "storage_safe_pin_1337",
+          "text": "<%= base64_encode("Storage room safe — 1337\nssh username: derek") %>",
+          "observations": "A printed note left on the desk — the text looks like encoded gibberish. Base64, maybe?"
+        },
+        {
+          "type": "notes",
+          "name": "Encoded Note (2)",
+          "takeable": true,
+          "readable": true,
+          "onRead": { "setVariable": { "whiteboard_cipher_seen": true } },
+          "puzzle_graph_unlocks": ["derek_computer", "derek_cabinet"],
+          "puzzle_graph_and_with": "cyberchef_workstation",
+          "puzzle_graph_reveals": "anniversary_pin_0419",
+          "text": "<%= rot13('Password reminder: anniversary. You know the date.') %>",
+          "observations": "A handwritten note with scrambled-looking text — letters are wrong but word lengths look normal. ROT13?"
+        },
+        {
+          "type": "safe",
+          "id": "derek_personal_safe",
+          "name": "Derek's Personal Safe",
+          "takeable": false,
+          "locked": true,
+          "lockType": "pin",
+          "requires": "0319",
+          "observations": "A small personal safe tucked under the desk — 4-digit PIN",
+          "contents": [
+            {
+              "type": "notes",
+              "name": "The Architect's Letter",
+              "takeable": true,
+              "readable": true,
+              "text": "FROM: The Architect\nTO: CELL_SOCIAL_FABRIC [All Members]\n\nI write to you because your work represents the purest expression of our philosophy. While others dismantle systems through code and infrastructure, you reshape the very foundation of belief.\n\nTrust is the ultimate vulnerability. Every system, every institution, every relationship depends on it. And trust, unlike encryption, cannot be patched.\n\nYour upcoming operation will demonstrate this truth on a scale never before attempted. When it succeeds, the world will finally understand: in the digital age, truth is merely consensus, and consensus can be manufactured.\n\nThe weak will perish in confusion. The strong will learn to verify.\n\nEntropy is inevitable. We merely accelerate the lesson.\n\n- The Architect",
+              "observations": "Encrypted correspondence revealing ENTROPY leadership structure"
+            }
+          ]
+        },
+        {
+          "type": "safe",
+          "id": "derek_cabinet",
+          "name": "Derek's Filing Cabinet",
+          "takeable": false,
+          "locked": true,
+          "lockType": "pin",
+          "requires": "0419",
+          "observations": "Metal filing cabinet with a digital keypad lock - requires 4-digit PIN",
+          "contents": [
+            {
+              "type": "notes4",
+              "name": "Operation Shatter Casualty Projections",
+              "takeable": true,
+              "readable": true,
+              "text": "══════════════════════════════\n         OPERATION SHATTER - IMPACT ASSESSMENT\n              [INTERNAL PLANNING DOCUMENT]\n══════════════════════════════\n\nPROJECTED CASUALTY ANALYSIS:\n\nNOTE: Model weights demographic vulnerability—tailored payloads seed panic unevenly; systemic overload amplifies outcomes.\n\nDirect Casualties (First 24 Hours):\n- Cardiac events from panic: 12-24 fatalities\n- Critical care delayed or diverted due to false facility alerts: 8-14 fatalities\n- Emergency lines saturated—real callers unable to reach services in time: 8-14 fatalities\n- Violence from incitement: 5-15 fatalities\n- Traffic accidents from panic: 10-20 fatalities\n\nESTIMATED DIRECT DEATHS: 42-85 people\n\nSTRATEGIC JUSTIFICATION:\nThese deaths are not the goal—they are the demonstration.\nWhen truth emerges that fake messages caused real deaths,\ntrust in ALL digital communications collapses permanently.\n\nThis is not terrorism. This is education at scale.\n\nAPPROVED: The Architect",
+              "observations": "Derek's calculated death projections - critical evidence",
+              "onPickup": { "setVariable": { "found_casualty_projections": true } }
+            },
+            {
+              "type": "notes4",
+              "name": "Social Fabric Manifesto",
+              "takeable": true,
+              "readable": true,
+              "text": "══════════════════════════════\n          ENTROPY CELL: SOCIAL FABRIC\n       OPERATIONAL PHILOSOPHY DOCUMENT\n            [RECOVERED INTELLIGENCE]\n══════════════════════════════\n\nPHILOSOPHY:\n\nSecurity professionals focus on technical defenses—\nfirewalls, encryption, access controls. They miss the\nmost vulnerable attack surface: human belief systems.\n\nPeople don't believe what's true. They believe what\naligns with their existing narratives.\n\nWe don't hack systems. We hack perception.\n\nOPERATIONAL METHODS:\n- Fabricate content that confirms existing fears\n- Segment demographic cohorts for panic leverage—tune fiction accordingly\n- Profile who trusts which channels—and how fast they act\n- Exploit trust in institutional communications\n- Create panic through coordinated false information\n\nACCEPTABLE LOSSES:\nSome will die so others learn the lesson:\nVerify everything. Trust nothing.\nUnverified trust kills at scale. Only the adaptable survive.",
+              "observations": "ENTROPY operational philosophy - critical intelligence"
+            },
+            {
+              "type": "notes4",
+              "name": "Campaign Materials",
+              "takeable": true,
+              "readable": true,
+              "text": "CONFIDENTIAL - OPERATION SHATTER ASSETS\n\nTarget: 2.3 million profiled individuals\n\nDemographic & behavioural targeting:\n- High-leverage cohorts (composite stress/isolation indices—aggregated scoring only)\n- Tailored message variants per segment (hospital / bank / gov vectors)\n- Zero-verification responders; institutional-channel subscribers\n- Forward-first amplifiers; high-density metro cascade corridors\n\nDeployment Assets:\n- Fabricated hospital closure notices\n- Fake bank failure announcements\n- Forged government emergency alerts\n- Coordinated social media panic accounts\n\nLaunch Window: This Sunday, 6:00 AM",
+              "observations": "Evidence of coordinated disinformation campaign"
+            }
+          ]
+        },
+        {
+          "type": "notes",
+          "name": "Derek's Calendar",
+          "takeable": true,
+          "readable": true,
+          "text": "DEREK LAWSON - PERSONAL CALENDAR\n\nToday: Client meeting (cover for this operation)\nTomorrow: Final coordination call with ZDS\nSunday: LAUNCH DAY - Operation Shatter goes live\n\nNote to self: Remember to activate Kevin contingency if audit finds anything. His fingerprints are already on the fake logs.",
+          "observations": "Derek's calendar showing Operation Shatter launches Sunday"
+        }
+      ]
+    },
+
+    "server_room": {
+      "type": "room_servers",
+      "locked": true,
+      "lockType": "rfid",
+      "requires": "server_keycard",
+      "door_sign": "Server Room — Authorised Access Only",
+      "connections": {
+        "north": "it_room"
+      },
+      "ambientSound": "server_room_ventilation",
+      "ambientVolume": 0.4,
+      "npcs": [],
+      "objects": [
+        {
+          "type": "vm-launcher",
+          "id": "vm_launcher_intro_linux",
+          "name": "VM Access Terminal",
+          "sprite": "vm-launcher-kali",
+          "takeable": false,
+          "observations": "A Kali Linux system IT have prepared for your security audit.",
+          "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
+          "vm": <%= vm_object('intro_to_linux_security_lab', {"id":1,"title":"kali","ip":"192.168.100.50","enable_console":true}) %>,
+          "showPostit": true,
+          "postitNote": "user: kali\npassword: kali"
+        },
+        {
+          "type": "flag-station",
+          "id": "flag_station_dropsite",
+          "name": "SAFETYNET Drop-Site Terminal",
+          "takeable": false,
+          "observations": "Secure SAFETYNET terminal for submitting intercepted intelligence and VM flags",
+          "acceptsVms": ["shatter_server"],
+          "flags": ["shatter_server:flag_2", "shatter_server:flag_4"],
+          "hintOnlyFlags": {
+            "shatter_server:flag_1": "Decryption Key validated — this key unlocks the ENTROPY encrypted archive in the server room.",
+            "shatter_server:flag_3": "Launch authorization code validated — enter it into the ENTROPY launch device."
+          },
+          "flagRewards": [
+            {
+              "type": "set_global",
+              "key": "linux_flag_submitted",
+              "value": true,
+              "description": "Directory traversal intel submitted (deployment_notes in operation_shatter/)"
+            },
+            {
+              "type": "set_global",
+              "key": "sudo_flag_submitted",
+              "value": true,
+              "description": "Encoded deployment intel submitted (shatter_configuration, base64) — requires sudo to shatter account"
+            }
+          ]
+        },
+        {
+          "type": "safe",
+          "id": "entropy_encrypted_archive",
+          "name": "ENTROPY Encrypted Archive",
+          "takeable": false,
+          "locked": true,
+          "lockType": "flag",
+          "requires": "shatter_server:flag_1",
+          "completesTask": "submit_ssh_flag",
+          "puzzle_graph_note": "Unlocked by VM flag shatter_server:flag_1 (SSH brute force into derek account using passwords wordlist)",
+          "observations": "A ruggedised encrypted drive in a reinforced case. Stamped: ENTROPY — EYES ONLY. The decryption key is stored on shatter_server (172.16.0.2) in derek's account. Submit it here to unlock.",
+          "flagRewards": [
+            {
+              "type": "set_global",
+              "key": "ssh_flag_submitted",
+              "value": true,
+              "description": "ENTROPY archive decryption key confirmed — SSH brute force into derek's account complete"
+            }
+          ],
+          "contents": [
+            {
+              "type": "notes5",
+              "name": "Operation Shatter: Architect's Authorization",
+              "takeable": true,
+              "readable": true,
+              "text": "══════════════════════════════\n     OPERATION SHATTER — FINAL AUTHORIZATION\n        [RECOVERED FROM ENCRYPTED ARCHIVE]\n══════════════════════════════════════\n\nTO:   Cell Social Fabric — Field Command\nFROM: The Architect\nRE:   Final Authorization — Operation Shatter\n\nYou have my full authorization to proceed.\n\nThe infrastructure is in place. The profiles are compiled.\nThe message vectors are loaded and ready for deployment.\n\nThis Sunday at 06:00, you will demonstrate to the world\nthat digital trust is not a foundation — it is a fiction.\n\nWhen 2.3 million people receive simultaneous, credible\nemergency alerts telling them their bank has collapsed,\ntheir hospital is closed, the emergency grid is locking up —\nthe panic that follows will be measurable.\nProfiling concentrates the opening shock; congestion and contagion do the rest.\nHistoric.\n\nThe casualties are regrettable. They are also necessary.\nThe world must learn: nothing digital can be trusted.\nNot banks. Not hospitals. Not governments. Not each other.\n\nWe will force the lesson.\n\nDo not fail me.\n\n  — The Architect\n\n[TOP SECRET — ENTROPY COMMAND INTELLIGENCE]",
+              "observations": "Direct authorization from The Architect for Operation Shatter — signed command ordering the attack"
+            },
+            {
+              "type": "notes5",
+              "name": "ENTROPY Network Architecture",
+              "takeable": true,
+              "readable": true,
+              "onPickup": { "setVariable": { "entropy_reveal_read": true } },
+              "text": "══════════════════════════════\n        ENTROPY — COMMAND ARCHITECTURE\n        [RECOVERED FROM ENCRYPTED ARCHIVE]\n══════════════════════════════\n\nCOMMAND HIERARCHY (recovered from root partition)\n\nLEVEL 0 — THE ARCHITECT\n  [Identity: CLASSIFIED — Omega clearance required]\n  Role: Strategic vision, final authorization\n  Method: Encrypted dead-drop only. No direct contact.\n\nLEVEL 1 — OPERATIONAL CELLS (independent, compartmentalized)\n  │\n  ├── CELL: SOCIAL FABRIC\n  │     Operative: Derek Lawson (Viral Dynamics Media)\n  │     Specialty: Disinformation at scale\n  │     Operation: SHATTER [ACTIVE]\n  │\n  ├── CELL: ZERO DAY SYNDICATE\n  │     Specialty: Infrastructure compromise\n  │     Role: Technical support for SHATTER\n  │\n  ├── CELL: [REDACTED]\n  │     Status: Active — details above current clearance\n  │\n  └── CELL: [REDACTED]\n        Status: Active — details above current clearance\n\nOPERATIONAL PRINCIPLE:\n  No cell knows another. No cell can burn another.\n  Only The Architect holds the full picture.\n\n[TOP SECRET — ENTROPY COMMAND INTELLIGENCE]",
+              "observations": "ENTROPY's full command structure — reveals the network is far larger than one operative. \n\nThis file confirms what you already suspect: Derek Lawson is one node. ENTROPY is the network. Stopping Operation Shatter is not enough."
+            },
+            {
+              "type": "notes",
+              "name": "Operation Shatter Target Database",
+              "takeable": true,
+              "readable": true,
+              "text": "══════════════════════════════\n       OPERATION SHATTER - TARGET DEMOGRAPHICS\n            [PSYCHOLOGICAL WARFARE DATABASE]\n══════════════════════════════\n\nTOTAL PROFILES: 2,347,832\nCOLLECTION PERIOD: 90 days\n\nSEGMENT 1: HIGH-LEVERAGE STRESS COHORTS\nPopulation: 47,832 individuals\n- Composite indices from fused datasets (financial strain, care-load proxies, isolation markers—aggregated only)\n- Sub-cluster message variants tuned for fastest initial uptake\n- Simulations show steeper panic-response curves vs population baseline\nVulnerability Score: 9.2/10\n\nSEGMENT 2: CASCADE AMPLIFIERS\nPopulation: 156,432 individuals\n- High re-share velocity during breaking-news spikes\n- Large local follower networks / neighbourhood mesh apps\n- Pattern: amplify before authenticate\nVulnerability Score: 8.7/10\n\nSEGMENT 3: CROSS-CHANNEL SUPER-USERS\nPopulation: 89,247 individuals\n- Active simultaneously across social, messaging, and carrier alerts\n- Maximizes coordinated-blast reach when payloads align\nVulnerability Score: 9.5/10\n\nSEGMENT 4: ISOLATION × INSTITUTIONAL TRUST\nPopulation: 34,891 individuals\n- Limited corroboration networks—fewer peers to sanity-check an alert\n- High trust in SMS/email presenting as hospital, bank, or government channels\n- Geographic concentration in dense metro corridors—minutes-level propagation\nVulnerability Score: 9.8/10",
+              "observations": "Database of 2.3 million people profiled for demographic and behavioural vulnerability to coordinated panic",
+              "onPickup": { "setVariable": { "found_target_database": true } }
+            }
+          ]
+        }
+      ]
+    }
+  },
+
+  "globalVariables": {
+    "player_name": "Agent Zero",
+    "briefing_played": false,
+    "mission_started": false,
+    "agent_0x99_contacted": false,
+
+    "final_choice": "",
+    "derek_confronted": false,
+    "derek_surrendered": false,
+    "derek_fight_triggered": false,
+    "confrontation_approach": "",
+    "derek_knows_safetynet": false,
+    "derek_showed_remorse": false,
+
+    "kevin_choice": "",
+    "kevin_protected": false,
+    "kevin_ko": false,
+    "kevin_accused": false,
+    "kevin_warned": false,
+    "framing_evidence_seen": false,
+    "derek_office_locked_seen": false,
+    "contingency_file_read": false,
+    "security_audit_completed": false,
+    "audit_correct_answers": 0,
+    "audit_wrong_answers": 0,
+    "sarah_ko": false,
+    "maya_ko": false,
+
+    "found_casualty_projections": false,
+    "found_target_database": false,
+    "entropy_archive_opened": false,
+    "entropy_reveal_read": false,
+    "has_lockpick": false,
+    "server_room_entered": false,
+    "derek_office_entered": false,
+    "derek_pc_unlocked": false,
+    "derek_cabinet_opened": false,
+    "derek_personal_safe_opened": false,
+    "derek_storage_safe_opened": false,
+    "whiteboard_cipher_seen": false,
+    "decoded_whiteboard": false,
+
+    "talked_to_maya": false,
+    "talked_to_kevin": false,
+    "maya_identity_protected": true,
+    "discussed_operation": false,
+
+    "start_debrief_cutscene": false,
+    "operation_shatter_reported": false,
+
+    "objectives_completed": 0,
+    "lore_collected": 0,
+    "evidence_collected": false,
+    "current_task": "",
+
+    "ssh_flag_submitted": false,
+    "linux_flag_submitted": false,
+    "sudo_flag_submitted": false,
+    "navigation_flag_submitted": false,
+
+    "password_list_found": false,
+    "lockpicking_guide_offered": false,
+    "lockpicking_guide_requested": false,
+    "lockpicking_guide_hint_given": false,
+
+    "field_guide_offered": false,
+    "field_guide_requested": false,
+    "field_guide_received": false,
+    "priv_esc_guide_offered": false,
+    "priv_esc_guide_hint_given": false,
+    "priv_esc_guide_requested": false,
+    "cyberchef_guide_offered": false,
+    "cyberchef_guide_hint_given": false,
+    "cyberchef_guide_requested": false,
+
+    "launch_code_submitted": false,
+    "player_aborted_attack": false,
+    "player_launched_attack": false,
+    "ready_for_debrief": false,
+
+    "all_flags_submitted": false
+  }
+}

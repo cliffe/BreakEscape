@@ -1,0 +1,64 @@
+RFID Keycard System - Placeholder Asset Editing Instructions
+=============================================================
+
+The placeholder assets have been created by copying existing sprites.
+They now need to be edited to match the specifications.
+
+KEYCARDS (assets/objects/keycard*.png)
+---------------------------------------
+Current: Copy of key.png
+Needs:
+  1. Rectangular card shape (32x48px)
+  2. Rounded corners (2-3px radius)
+  3. Small RFID chip graphic (8x8px gold square in upper-right)
+  4. Color variants:
+     - keycard.png: Gray/white (#CCCCCC)
+     - keycard-ceo.png: Gold (#FFD700)
+     - keycard-security.png: Blue (#4169E1)
+     - keycard-maintenance.png: Green (#32CD32)
+
+Tools: GIMP, Photoshop, Paint.NET, or Photopea (online)
+
+RFID CLONER (assets/objects/rfid_cloner.png)
+---------------------------------------------
+Current: Copy of bluetooth_scanner.png or phone.png
+Needs:
+  1. More rectangular device shape (48x48px)
+  2. Orange accent color (#FF8200)
+  3. Small black screen in upper portion
+  4. Flipper Zero-inspired design
+  5. Optional: Small antenna or wave indication
+
+Reference: Google "Flipper Zero" for design inspiration
+
+ICONS (assets/icons/)
+--------------------
+Current: Copy of signal.png
+Needs:
+  rfid-icon.png (24x24px):
+    - Simple RFID wave symbol (3 curved lines)
+    - Monochrome white or orange
+
+  nfc-waves.png (32x32px):
+    - Concentric circles or radio waves
+    - Orange color (#FF8200)
+
+These can be very simple - clarity at small size is key.
+
+OPTIONAL: Create final professional assets
+-------------------------------------------
+The placeholders will work for development and testing.
+For final release, consider:
+  - Hiring a pixel artist
+  - Using asset creation tools (Aseprite, Pyxel Edit)
+  - Commissioning custom sprites
+
+COLOR PALETTE REFERENCE
+-----------------------
+Flipper Zero Orange: #FF8200
+CEO Gold: #FFD700
+Security Blue: #4169E1
+Maintenance Green: #32CD32
+Generic Gray: #CCCCCC
+Device Dark Gray: #2B2B2B
+Screen Black: #000000

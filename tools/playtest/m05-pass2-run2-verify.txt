@@ -1,0 +1,14 @@
+game            1166  (mission 49)
+created         2026-09-30 20:46:02 UTC
+last write      2026-09-30 20:55:04 UTC
+played for      542s of wall clock
+current room    "reception_lobby"
+unlocked rooms  8: reception_lobby, patricia_office, main_corridor, open_office_area, torres_office, server_hallway, server_room, data_center
+unlocked objs   0: 
+inventory       11: Your Phone, Notepad, Contractor Pass, Cloned Staff Badge, Torres Office Keycard, Lockpick Set, Server Password Sticky Note, Personal Journal, Upload Schedule, Data Package Manifest, Sealed TalentStack Envelope
+NPCs met        9: opening_briefing, director_netherton, agent_nightshade, agent_0x99_handler, recruiter, closing_debrief_trigger, patricia_morgan, kevin_park, david_torres
+flags submitted 4: flag{m05_insider_trading_qdc_research_server_1_15d29e}, flag{m05_insider_trading_qdc_research_server_2_5a5c85}, flag{m05_insider_trading_qdc_research_server_3_899853}, flag{m05_insider_trading_qdc_research_server_4_6426e0}
+globals set     33: architect_approval_confirmed, briefing_played, case_exfil, case_motive, case_ready_notified, confront_stance, debrief_played, elena_treatment_funded, final_choice, flag1_submitted, flag2_submitted, flag3_submitted, flag4_submitted, found_manifest, found_pipeline_list, found_torres_journal, found_upload_schedule, knows_full_stakes, knows_insider_profile, lockpick_obtained, mission_priority, office_card_obtained, patricia_authorised_office, patricia_ko, player_approach, player_name, recruiter_contacted_player, recruiter_deal_accepted, recruiter_deal_confessed, recruiter_deal_offered, server_badge_obtained, torres_identified, torres_turned
+
+VERDICT: progress recorded — 7 rooms beyond the first, 0 objects unlocked, 4 flags submitted.
+Cross-check the specifics above against the report.

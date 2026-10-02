@@ -1,0 +1,223 @@
+/* ============================================================
+   Shredded Document Reconstruction Minigame (MG-B)
+   ============================================================ */
+
+.sdm-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+.sdm-game-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+    margin: 0 !important;
+}
+
+.sdm-container .minigame-close-button {
+    top: 0;
+    right: 0;
+}
+
+/* ── Outer panel ─────────────────────────────────────────── */
+
+.sdm-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: #1a1a2e;
+    font-family: 'Press Start 2P', monospace;
+}
+
+/* ── Instruction bar ─────────────────────────────────────── */
+
+.sdm-instruction {
+    padding: 8px 14px;
+    font-size: 7px;
+    color: #8a9bb5;
+    border-bottom: 2px solid #2a3a5a;
+    line-height: 1.6;
+    flex-shrink: 0;
+}
+
+/* ── Scrollable strip area ───────────────────────────────── */
+
+.sdm-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 20px;
+}
+
+/* ── Document title ──────────────────────────────────────── */
+
+.sdm-doc-title {
+    font-size: 7px;
+    color: #4a6090;
+    letter-spacing: 1px;
+    text-align: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #2a3a5a;
+}
+
+/* ── Strip list ──────────────────────────────────────────── */
+
+.sdm-strips-area {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 8px;
+}
+
+/* ── Individual strip tile ───────────────────────────────── */
+
+.sdm-strip {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    background: #f5f0e8;
+    border-top: 1px dashed #b0a090;
+    border-bottom: 1px dashed #b0a090;
+    border-left: 3px solid #8a7a6a;
+    border-right: 3px solid #8a7a6a;
+    cursor: grab;
+    user-select: none;
+    overflow: hidden;
+    transform: rotate(var(--tilt, 0deg));
+    box-shadow: 2px 3px 6px rgba(0, 0, 0, 0.22);
+    transition: opacity 0.1s;
+    min-height: 34px;
+}
+
+.sdm-strip:active {
+    cursor: grabbing;
+}
+
+/* Drag states */
+
+.sdm-strip-dragging {
+    opacity: 0.45;
+    border-color: #6a82aa !important;
+}
+
+.sdm-insert-before::before,
+.sdm-insert-after::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #4a90d9;
+    border-radius: 2px;
+    z-index: 2;
+}
+
+.sdm-insert-before::before {
+    top: -6px;
+}
+
+.sdm-insert-after::after {
+    bottom: -6px;
+}
+
+/* Rotated strip — rotate the content wrapper, flip button stays upright */
+
+.sdm-strip-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+
+.sdm-strip-rotated .sdm-strip-content {
+    transform: rotate(180deg);
+}
+
+/* Locked (completed) strip */
+
+.sdm-strip-locked {
+    cursor: default;
+    border-color: #6a9a6a;
+    background: #f0f5f0;
+}
+
+/* ── Strip contents ──────────────────────────────────────── */
+
+.sdm-drag-handle {
+    color: #b0a090;
+    font-size: 14px;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.sdm-strip-text {
+    font-family: 'GNF', monospace;
+    font-size: 17px;
+    color: #1a1008;
+    line-height: 1.3;
+    flex: 1;
+}
+
+.sdm-strip-locked .sdm-strip-text {
+    color: #2a3a1a;
+}
+
+/* ── Flip button ─────────────────────────────────────────── */
+
+.sdm-flip-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    background: #e8e0d0;
+    color: #5a4a3a;
+    border: 2px solid #b0a090;
+    padding: 3px 6px;
+    cursor: pointer;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.sdm-flip-btn:hover {
+    background: #d8cfc0;
+    border-color: #8a7a6a;
+}
+
+/* ── Completed state ─────────────────────────────────────── */
+
+.sdm-completed-banner {
+    padding: 10px 16px;
+    background: #062010;
+    border-bottom: 2px solid #00c853;
+    color: #00c853;
+    font-size: 7px;
+    letter-spacing: 1px;
+    flex-shrink: 0;
+}
+
+.sdm-success-reveal {
+    padding: 10px 16px;
+    background: #081808;
+    border-bottom: 2px solid #2a3a5a;
+    color: #c8ffcc;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 1.4;
+    flex-shrink: 0;
+}
+
+/* ── Empty state ─────────────────────────────────────────── */
+
+.sdm-empty-state {
+    font-size: 7px;
+    color: #4a6090;
+    text-align: center;
+    padding: 24px 0;
+}
+

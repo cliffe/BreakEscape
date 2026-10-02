@@ -1,0 +1,100 @@
+{
+  "name": "RFID System Test",
+  "description": "Test scenario for RFID keycard lock system",
+  "scenario_brief": "Test scenario for RFID keycard lock system with RFID Flipper. Clone the guard's badge to access the secure server room.",
+  "startRoom": "test_lobby",
+  "endGoal": "Successfully clone the security guard's master keycard and unlock the secure room",
+  "globalVariables": {},
+  "player": {
+    "id": "player",
+    "displayName": "Agent 0x00",
+    "spriteSheet": "hacker",
+    "startX": 200,
+    "startY": 200
+  },
+  "startItemsInInventory": [
+    {
+      "type": "rfid_cloner",
+      "name": "RFID Flipper",
+      "saved_cards": [],
+      "observations": "A portable multi-tool for pentesters. Can read and emulate RFID cards."
+    }
+  ],
+  "rooms": {
+    "test_lobby": {
+      "name": "Test Lobby",
+      "type": "room_reception",
+      "connections": {
+        "north": "test_secure"
+      },
+      "npcs": [
+        {
+          "id": "security_guard",
+          "displayName": "Security Guard",
+          "npcType": "person",
+          "position": { "x": 6, "y": 4 },
+          "spriteSheet": "hacker-red",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/rfid-security-guard-fixed.json",
+          "currentKnot": "start",
+          "rfidCard": {
+            "card_id": "master_keycard",
+            "rfid_protocol": "EM4100",
+            "name": "Master Keycard"
+          }
+        }
+      ],
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Security Notice",
+          "position": { "x": 250, "y": 300 },
+          "takeable": true,
+          "readable": true,
+          "note_title": "RFID Access Control",
+          "note_content": "All high-security areas require RFID badge access. Master keycards (FF prefix) have universal access. Standard employee badges (01 prefix) have limited access.\n\nThe guard in this room has the master keycard. If you have an RFID cloner, you can scan their badge to clone it.",
+          "observations": "Instructions about the RFID security system"
+        }
+      ]
+    },
+    "test_secure": {
+      "name": "Secure Server Room",
+      "type": "room_servers",
+      "connections": {
+        "south": "test_lobby"
+      },
+      "locked": true,
+      "lockType": "rfid",
+      "requires": ["master_keycard"],
+      "npcs": [],
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Success Note",
+          "position": { "x": 300, "y": 300 },
+          "takeable": true,
+          "readable": true,
+          "note_title": "RFID Test Passed!",
+          "note_content": "Congratulations! You successfully:\n\n1. ✓ Found the RFID Flipper\n2. ✓ Cloned the Security Guard's master keycard\n3. ✓ Emulated the cloned card to unlock the door\n\nThe RFID system is working perfectly!",
+          "observations": "A congratulations message",
+          "isEndGoal": true
+        },
+        {
+          "type": "keycard",
+          "name": "CEO Keycard",
+          "rfid_hex": "FFAA55CC33",
+          "rfid_facility": 255,
+          "rfid_card_number": 43597,
+          "rfid_protocol": "EM4100",
+          "card_id": "ceo_keycard",
+          "position": { "x": 350, "y": 300 },
+          "takeable": true,
+          "observations": "The CEO's personal keycard. Ultimate access level."
+        }
+      ]
+    }
+  }
+}

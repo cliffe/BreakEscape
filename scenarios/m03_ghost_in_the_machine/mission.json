@@ -1,0 +1,49 @@
+{
+  "display_name": "Ghost in the Machine",
+  "description": "Infiltrate Zero Day Syndicate under the guise of a security researcher recruit. Clone Victoria Sterling's RFID keycard, exploit vulnerable training network services, and uncover evidence linking Zero Day to the St. Catherine's Hospital ransomware attack. Your investigation reveals The Architect's Phase 2 plans targeting critical infrastructure.",
+  "difficulty_level": 2,
+  "secgen_scenario": "m03_ghost_in_the_machine",
+  "collection": "season_1",
+  "cybok": [
+    {
+      "ka": "NS",
+      "topic": "Network Security",
+      "keywords": ["nmap scanning", "Service enumeration", "Banner grabbing", "Network reconnaissance"]
+    },
+    {
+      "ka": "MAT",
+      "topic": "Attacks and exploitation",
+      "keywords": ["ProFTPD 1.3.3c source backdoor", "CVE-2004-2687", "distcc exploitation", "Remote code execution", "Zero-day marketplace", "EXPLOITATION"]
+    },
+    {
+      "ka": "AC",
+      "topic": "Applied Cryptography",
+      "keywords": ["Encoding vs encryption", "ROT13", "Base64", "Hexadecimal", "Multi-layer decoding"]
+    },
+    {
+      "ka": "HF",
+      "topic": "Human Factors",
+      "keywords": ["Social engineering", "Cover identity", "Trust exploitation"]
+    },
+    {
+      "ka": "SS",
+      "topic": "Systems Security",
+      "keywords": ["Service vulnerabilities", "Legacy services", "Evidence correlation"]
+    },
+    {
+      "ka": "RMG",
+      "topic": "Risk Management and Governance",
+      "keywords": ["Vulnerability economics", "Exploit pricing", "Ethical decision-making", "Moral dilemmas"]
+    },
+    {
+      "ka": "CPS",
+      "topic": "Physical Security",
+      "keywords": ["Physical access control", "RFID cloning", "Lock bypass", "PIN code systems"]
+    },
+    {
+      "ka": "AAA",
+      "topic": "Authentication",
+      "keywords": ["RFID authentication", "Default and reset passwords", "Access control bypass", "Credential theft", "Identity spoofing"]
+    }
+  ]
+}

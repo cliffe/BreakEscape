@@ -1,0 +1,96 @@
+{
+  "display_name": "Critical Failure",
+  "description": "Infiltrate the Albion Energy Storage facility — 200 MWh of grid-scale lithium-ion battery storage — where ENTROPY's Critical Mass cell has weaponised the BMS and SCADA systems to drive the battery racks into thermal runaway. Eleven people are on site and 240,000 are on the feed. Confirm the falsified telemetry against a physical instrument, work the OT network from the engineering workshop, and get to the hardwired Emergency Shutdown before the 0800 trigger — past the man holding the remote.",
+  "difficulty_level": 2,
+  "secgen_scenario": "m04_critical_failure",
+  "collection": "season_1",
+  "cybok": [
+    {
+      "ka": "SOIM",
+      "topic": "PENETRATION TESTING",
+      "keywords": [
+        "VULNERABILITY ANALYSIS / VULNERABILITY SCANNING",
+        "AUDIT APPROACH",
+        "PENETRATION TESTING - SOFTWARE TOOLS",
+        "Infrastructure incident response",
+        "Attack mechanism analysis"
+      ]
+    },
+    {
+      "ka": "MAT",
+      "topic": "Attacks and exploitation",
+      "keywords": [
+        "EXPLOITATION",
+        "distcc CVE-2004-2687",
+        "sudoedit CVE-2023-22809",
+        "Remote code execution",
+        "Infrastructure attacks",
+        "Multi-cell coordination",
+        "APT tactics"
+      ]
+    },
+    {
+      "ka": "NS",
+      "topic": "Network Security",
+      "keywords": [
+        "SCADA networks",
+        "ICS security",
+        "Network scanning (Nmap)",
+        "Service enumeration",
+        "FTP analysis",
+        "HTTP analysis",
+        "Network topology"
+      ]
+    },
+    {
+      "ka": "SS",
+      "topic": "Systems Security",
+      "keywords": [
+        "Vulnerability exploitation",
+        "Privilege escalation",
+        "Linux security"
+      ]
+    },
+    {
+      "ka": "CPS",
+      "topic": "Cyber-Physical Systems / Physical Security",
+      "keywords": [
+        "SCADA/ICS protection",
+        "Critical infrastructure",
+        "Industrial control systems",
+        "Physical access control",
+        "RFID access systems",
+        "Physical security integration"
+      ]
+    },
+    {
+      "ka": "AB",
+      "topic": "Adversarial Behaviours",
+      "keywords": [
+        "Physical + cyber attacks",
+        "Insider threats",
+        "Cover identities"
+      ]
+    },
+    {
+      "ka": "HF",
+      "topic": "Human Factors",
+      "keywords": [
+        "Social engineering",
+        "Cover identity maintenance",
+        "Crisis decision-making",
+        "Tactical choices",
+        "Public disclosure ethics",
+        "Operational security"
+      ]
+    },
+    {
+      "ka": "AAA",
+      "topic": "Authentication",
+      "keywords": [
+        "RFID authentication",
+        "Access control bypass"
+      ]
+    }
+  ]
+}

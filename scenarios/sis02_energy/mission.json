@@ -1,0 +1,173 @@
+{
+  "display_name": "Albion Battery Hall: Code Red",
+  "description": "An overnight APT attack has falsified sensor data and silently disabled safety protections at a 200 MWh battery storage facility. Players arrive to find a normal-looking SCADA display hiding an imminent thermal runaway. They must detect the anomaly using analog instrumentation, initiate an emergency shutdown that cannot be hacked, and navigate the tension between network containment and continued safety-critical control.",
+  "difficulty_level": 4,
+  "secgen_scenario": "albion_battery_hall",
+  "collection": "cybok_sis",
+  "branching": true,
+  "branches": [
+    "esd_early_before_network_isolated",
+    "esd_late_hydrogen_advisory_triggered",
+    "network_isolated_before_esd",
+    "sis_tamper_discovered",
+    "patch_active_management",
+    "patch_deferral",
+    "ncsc_notified_on_time",
+    "trent_water_notified"
+  ],
+  "estimated_duration_minutes": 70,
+  "cybok": [
+    {
+      "ka": "SIS",
+      "topic": "Security-Informed Safety: Language and Concepts",
+      "keywords": [
+        "security-informed safety",
+        "cyber-physical hazard",
+        "sensor data falsification",
+        "independent instrumentation",
+        "defence in depth",
+        "safety case invalidation",
+        "cyber-induced process hazard",
+        "SIL — Safety Integrity Level"
+      ]
+    },
+    {
+      "ka": "SIS",
+      "topic": "Architecture",
+      "keywords": [
+        "SIS independence",
+        "IEC 61511",
+        "SIL 2 certification",
+        "IT/OT boundary",
+        "Purdue model",
+        "network segmentation in ICS",
+        "hardwired ESD",
+        "engineering port isolation",
+        "defence in depth — OT"
+      ]
+    },
+    {
+      "ka": "SIS",
+      "topic": "Patching and Security Updates",
+      "keywords": [
+        "SIS firmware patching",
+        "recertification cost",
+        "IEC 61511 clause 4.2.14",
+        "patch deferral risk",
+        "compensating controls",
+        "safety case maintenance",
+        "risk register review",
+        "active patch management vs deferral"
+      ]
+    },
+    {
+      "ka": "SIS",
+      "topic": "Incident Response in OT Environments",
+      "keywords": [
+        "OT incident response",
+        "ICS-specific containment",
+        "network isolation trade-off",
+        "SCADA availability vs security",
+        "historian anomaly detection",
+        "access log analysis — ICS",
+        "emergency shutdown activation",
+        "jump server compromise"
+      ]
+    },
+    {
+      "ka": "SIS",
+      "topic": "Requirements and Reconciliation",
+      "keywords": [
+        "safety requirements under cyber threat",
+        "cross-sector dependency",
+        "shared infrastructure risk",
+        "cascading failure pathways",
+        "Trent Water shared file server",
+        "CLAIM-EN-001 IT/OT boundary",
+        "CLAIM-EN-002 SIS network isolation",
+        "CLAIM-EN-008 hardwired ESD"
+      ]
+    },
+    {
+      "ka": "SIS",
+      "topic": "Organisational Culture and Safety Management",
+      "keywords": [
+        "normalisation of deviance",
+        "risk register inaction",
+        "compensating control effectiveness",
+        "safety case as living document",
+        "SOC monitoring scope governance",
+        "risk accepted vs risk mitigated",
+        "configuration management failure",
+        "temporary becoming permanent"
+      ]
+    },
+    {
+      "ka": "SOIM",
+      "topic": "Monitoring",
+      "keywords": [
+        "OT monitoring scope",
+        "historian trend analysis",
+        "flat-line sensor IoC",
+        "behavioural anomaly detection",
+        "SCADA blind spot",
+        "SOC contract limitations",
+        "ICS visibility gap",
+        "process parameter cross-validation"
+      ]
+    },
+    {
+      "ka": "NS",
+      "topic": "Network Architecture and Security",
+      "keywords": [
+        "jump server configuration",
+        "historian dual-home",
+        "bidirectional RDP risk",
+        "OT network segmentation",
+        "Modbus proxy exposure",
+        "data diode",
+        "SCADA DMZ",
+        "commissioning configuration debt"
+      ]
+    },
+    {
+      "ka": "AAA",
+      "topic": "Authentication",
+      "keywords": [
+        "dormant account exploitation",
+        "deprovisioning failure",
+        "contractor account lifecycle",
+        "RDP session detection",
+        "authentication bypass — SIS",
+        "OT access control",
+        "privileged account management"
+      ]
+    },
+    {
+      "ka": "LR",
+      "topic": "Cyber and Privacy Law",
+      "keywords": [
+        "NIS Regulations 2018",
+        "Operator of Essential Services",
+        "72-hour notification obligation",
+        "COMAH Regulations 2015",
+        "HSE COMAH notification",
+        "cross-sector OES coordination",
+        "regulatory investigation",
+        "de-identified incident reporting"
+      ]
+    }
+  ],
+  "prerequisites": [],
+  "unlocks": ["meridian_insurance_case"],
+  "campaign_critical": true,
+  "narrative_weight": "high",
+  "consequences_persist": true,
+  "lore_reveals": [
+    "The GREYMANTLE APT used a printer firmware supply chain compromise as initial access — a technique that bypasses most endpoint monitoring",
+    "Battery Hall 1 temperatures reached 51°C with the SIS configured to allow 85°C — the margin between 'alarming reading' and 'thermal runaway' was eliminated overnight",
+    "The compensating control accepted in lieu of the SIS patch (OT monitoring) was never actually implemented — the risk register approved a control that did not exist",
+    "The analog thermometer that detected the attack was the only sensor in the facility that could not be falsified — because it was not connected to any network"
+  ],
+  "facilitator_notes": "Designed for 3–5 players split across engineering and security roles. Suggested split: 1–2 players as SCADA Engineers (focus on Battery Hall walkdown, ESD, SIS investigation) and 1–2 players as IT/OT Security (focus on historian analysis, access log investigation, network isolation). One player can act as Incident Commander (coordinates between tracks, makes the network isolation decision, handles NIS competent-authority notification and NCSC coordination).\n\nKey decision points to prompt discussion:\n1. THE THERMOMETER MOMENT: When players read the analog thermometer showing 51°C vs. SCADA 28°C — resist the urge to tell them what to do. Let them work out the discrepancy. The best learning happens when players briefly doubt the thermometer.\n2. ESD vs. ISOLATION TIMING: Marcus Webb's guidance is ESD first, then isolation. Players who reverse this order should encounter the consequence in Marcus's dialogue. Facilitate discussion: 'Why does the order matter?'\n3. PATCH DECISION: The Priya S. debrief patch choice should be a genuine discussion. Neither answer is automatically wrong — deferral with genuinely effective compensating controls is defensible. The key learning is that Albion's compensating controls were not effective.\n\nPhysical prop setup:\n- Analog thermometer dial: pre-set to 51°C, mounted on wall near battery rack prop. DO NOT label it — players should discover and read it.\n- ESD pushbutton: large red mushroom-head in yellow housing. Connect to game server via GPIO relay.\n- Alarm panel: custom multi-lamp panel with individually controllable LEDs. State driven by game server.\n- Incident Response folder: printed and mounted in holder on wall.\n- SIS certification documents: printed A4 in locked filing cabinet prop.\n\nThis scenario is the recommended precursor to the Meridian Insurance case (Case 3). If played in sequence, the consequences players created here (did they defer the patch? did they press ESD in time?) directly affect the insurance scenario."
+}

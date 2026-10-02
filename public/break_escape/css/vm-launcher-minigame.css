@@ -1,0 +1,212 @@
+/**
+ * VM Launcher Minigame Styles
+ */
+
+.vm-launcher {
+    padding: 15px;
+    font-family: 'GNF', 'Courier New', monospace;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.vm-launcher-description {
+    color: #888;
+    margin-bottom: 15px;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.vm-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.vm-card {
+    background: #1a1a1a;
+    border: 2px solid #333;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.vm-card:hover {
+    border-color: #00ff00;
+    background: #1f1f1f;
+}
+
+.vm-card.selected {
+    border-color: #00ff00;
+    background: rgba(0, 255, 0, 0.1);
+}
+
+.vm-card.launching {
+    opacity: 0.7;
+    cursor: wait;
+}
+
+.vm-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.vm-title {
+    color: #00ff00;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.vm-status {
+    font-size: 12px;
+    padding: 3px 8px;
+    border-radius: 0;
+}
+
+.vm-status.online {
+    background: #00aa00;
+    color: #000;
+}
+
+.vm-status.offline {
+    background: #aa0000;
+    color: #fff;
+}
+
+.vm-status.console {
+    background: #0088ff;
+    color: #fff;
+}
+
+.vm-details {
+    display: flex;
+    gap: 20px;
+    font-size: 14px;
+    color: #aaa;
+}
+
+.vm-detail-label {
+    color: #666;
+}
+
+.vm-ip {
+    font-family: 'Courier New', monospace;
+    color: #ffaa00;
+}
+
+.vm-actions {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.vm-action-btn {
+    background: #00aa00;
+    color: #fff;
+    border: 2px solid #000;
+    padding: 10px 20px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.vm-action-btn:hover:not(:disabled) {
+    background: #00cc00;
+}
+
+.vm-action-btn:disabled {
+    background: #333;
+    color: #666;
+    cursor: not-allowed;
+}
+
+.vm-action-btn.launching {
+    background: #666;
+}
+
+.launch-status {
+    text-align: center;
+    padding: 10px;
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+.launch-status.success {
+    color: #00ff00;
+}
+
+.launch-status.error {
+    color: #ff4444;
+}
+
+.launch-status.loading {
+    color: #ffaa00;
+}
+
+.no-vms-message {
+    text-align: center;
+    padding: 40px;
+    color: #888;
+}
+
+.no-vms-message h4 {
+    color: #ffaa00;
+    margin-bottom: 15px;
+}
+
+.standalone-instructions {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    padding: 15px;
+    margin-top: 15px;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.standalone-instructions h4 {
+    color: #00ff00;
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+.standalone-instructions code {
+    background: #000;
+    padding: 2px 6px;
+    color: #ffaa00;
+}
+
+.standalone-instructions ol {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.standalone-instructions li {
+    margin: 8px 0;
+    color: #ccc;
+}
+
+/* Hacktivity mode: iframe fills the panel with no extra padding */
+.vm-launcher.vm-launcher-iframe {
+    padding: 0;
+    max-height: none;
+    overflow: hidden;
+}
+
+.vm-launcher-iframe iframe {
+    display: block;
+    width: 100%;
+    height: 100vh;
+    border: none;
+}
+
+
+
+
+
+
+
+
+

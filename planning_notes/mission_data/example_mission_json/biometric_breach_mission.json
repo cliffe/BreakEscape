@@ -1,0 +1,29 @@
+{
+  "display_name": "Biometric Breach",
+  "description": "Investigate a security breach at a high-security research facility. Use biometric forensics tools to identify the intruder, track their movements through the facility, and recover stolen research data before it leaves the building.",
+  "difficulty_level": 3,
+  "secgen_scenario": null,
+  "collection": "security_investigations",
+  "cybok": [
+    {
+      "ka": "AAA",
+      "topic": "Authentication",
+      "keywords": ["Biometric authentication", "Fingerprint analysis", "Identity verification", "Multi-factor authentication"]
+    },
+    {
+      "ka": "F",
+      "topic": "Artifact Analysis",
+      "keywords": ["Digital forensics", "Evidence collection", "Fingerprint forensics"]
+    },
+    {
+      "ka": "SOIM",
+      "topic": "Security Operations & Incident Management",
+      "keywords": ["Incident response", "Security monitoring", "Access control investigation"]
+    },
+    {
+      "ka": "HF",
+      "topic": "Human Factors",
+      "keywords": ["Physical security bypass", "Social engineering awareness"]
+    }
+  ]
+}

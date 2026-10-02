@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title><%= @mission.display_name %> - BreakEscape</title>
+  <%= csrf_meta_tags %>
+  <%= csp_meta_tag %>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+
+  <%# All fonts are self-hosted in /break_escape/assets/fonts/ via fonts.css %>
+
+  <%# Load game CSS files %>
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/fonts.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/main.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/utilities.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/notifications.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/panels.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/hud.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/player_preferences.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/minigames-framework.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/dusting.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/lockpicking.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/modals.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/notes.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/bluetooth-scanner.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/ble-scanner.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/biometrics-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/container-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/phone-chat-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/person-chat-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/rfid-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/npc-interactions.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/pin.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/minigames-framework.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/password-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/ransomware-display-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/siem-dashboard-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/ehr-terminal-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/backup-recovery-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/esd-pushbutton-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/command-board-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/sis-config-threshold-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/infusion-pump-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/network-architecture-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/alarm-panel-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/claims-management-system-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/forensic-data-platform-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/ncsc-brief-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/scada-historian-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/coverage-decision-form-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/cryptex-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/combination-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/log-filter-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/drug-library-integrity-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/warranty-checklist-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/blockchain-explorer-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/shredded-document-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/text-file-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/vpn-log-viewer-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/npc-barks.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/objectives.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/tutorial.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/vm-launcher-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/flag-station-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/network-segmentation-map-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/music-widget.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/bond-visualiser.css') %>">
+  <%= break_escape_import_map %>
+</head>
+<body>
+  <div id="game-container">
+    <div id="loading">Loading...</div>
+  </div>
+
+  <%# Notification System %>
+  <div id="notification-container"></div>
+
+  <%# Toggle Buttons Container %>
+  <div id="toggle-buttons-container">
+    <!-- Biometrics is now handled as a minigame -->
+  </div>
+
+  <!-- Music Controller Button (populated by music-widget.js) -->
+  <div id="music-widget-btn-anchor"></div>
+
+  <%# Inventory Container %>
+  <div id="inventory-container"></div>
+
+  <%# Laptop Popup %>
+  <div id="laptop-popup">
+    <div class="laptop-frame">
+      <div class="laptop-screen">
+        <div class="title-bar">
+          <span>Crypto Workstation</span>
+          <button id="crypto-open-new-tab-btn" class="minigame-open-new-tab-button" title="Open in new tab">↑</button>
+          <button id="crypto-close-btn" class="minigame-close-button">×</button>
+        </div>
+        <div id="cyberchef-container">
+          <iframe id="cyberchef-frame" src=""></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# Lab Workstation Popup %>
+  <div id="lab-popup">
+    <div class="laptop-frame">
+      <div class="laptop-screen">
+        <div class="title-bar">
+          <span>Lab Sheet</span>
+          <button id="lab-open-new-tab-btn" class="minigame-open-new-tab-button" title="Open in new tab">↑</button>
+          <button id="lab-close-btn" class="minigame-close-button">×</button>
+        </div>
+        <div id="lab-container">
+          <iframe id="lab-frame" src=""></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# Password Modal %>
+  <div id="password-modal">
+    <div class="password-modal-content">
+      <div class="password-modal-title">
+        Enter Password
+      </div>
+      <input id="password-modal-input" type="password" autocomplete="off" autofocus>
+      <div class="password-modal-checkbox-container">
+        <input type="checkbox" id="password-modal-show">
+        <label for="password-modal-show" class="password-modal-checkbox-label">Show password</label>
+      </div>
+      <div class="password-modal-buttons">
+        <button id="password-modal-ok" class="password-modal-button">OK</button>
+        <button id="password-modal-cancel" class="password-modal-button">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <%# Player Preferences Modal %>
+  <%= render 'break_escape/player_preferences/modal' %>
+
+  <%# Popup Overlay %>
+  <div class="popup-overlay"></div>
+
+  <%
+    # Compute the embedded VM set panel URL directly so the JS widget can load it
+    # without an intermediate redirect (which has fragile guard conditions).
+    _vm_set_panel_url    = ''
+    _vm_set_activate_url = ''
+    _vm_set_activated    = false
+    _vm_set_activated_until = nil
+    if BreakEscape::Mission.hacktivity_mode?
+      _vm_set_id = (@game.vm_set_id.presence ||
+                    (@game.player_state.is_a?(Hash) && @game.player_state['vm_set_id']))&.to_i
+      if _vm_set_id.to_i > 0
+        _vm_set = defined?(::VmSet) ? ::VmSet.find_by(id: _vm_set_id) : nil
+        if _vm_set&.sec_gen_batch&.event
+          _helpers = Rails.application.routes.url_helpers
+          _vm_set_panel_url = _helpers.event_sec_gen_batch_vm_set_path(
+            _vm_set.sec_gen_batch.event,
+            _vm_set.sec_gen_batch,
+            _vm_set,
+            embedded: 1
+          )
+          _vm_set_activate_url = _helpers.activate_and_start_event_sec_gen_batch_vm_set_path(
+            _vm_set.sec_gen_batch.event,
+            _vm_set.sec_gen_batch,
+            _vm_set
+          )
+          _vm_set_activated       = _vm_set.activated
+          _vm_set_activated_until = _vm_set.activated_until
+        end
+      end
+    end
+  %>
+  <%# Bootstrap configuration for client %>
+  <script nonce="<%= content_security_policy_nonce %>">
+    window.breakEscapeConfig = {
+      gameId: <%= @game.id %>,
+      apiBasePath: '/break_escape/games/<%= @game.id %>',
+      assetsPath: '/break_escape/assets',
+      assetsVersion: '<%= BreakEscape::ASSETS_VERSION %>',
+      csrfToken: '<%= form_authenticity_token %>',
+      hacktivityMode: <%= BreakEscape::Mission.hacktivity_mode? ? 'true' : 'false' %>,
+      vmSetId: <%= @game.player_state.is_a?(Hash) ? (@game.player_state['vm_set_id'] || 'null') : 'null' %>,
+      playerSprite: '<%= @player_preference&.selected_sprite || 'male_hacker_hood_v2' %>',
+      hasProgress: <%= @game.has_progress? ? 'true' : 'false' %>,
+      hasSiblings: <%= (@mission_sessions.length > 1) ? 'true' : 'false' %>,
+      vmPanelUrl: '<%= BreakEscape::Mission.hacktivity_mode? ? vm_panel_game_path(@game) : '' %>',
+      vmSetPanelUrl: '<%= _vm_set_panel_url %>',
+      vmSetActivateUrl: '<%= _vm_set_activate_url %>',
+      vmSetActivated: <%= _vm_set_activated ? 'true' : 'false' %>,
+      vmSetActivatedUntil: <%= raw(_vm_set_activated_until&.iso8601.to_json) %>,
+      vmActivationMode: '<%= BreakEscape::Mission.hacktivity_mode? ? @game.mission.vm_activation_mode.to_s : '' %>',
+      missionConcludedAt: <%= raw(@game.mission_concluded_at&.iso8601.to_json) %>,
+      missionId: <%= @game.mission_id %>,
+      missionDisplayName: <%= raw(@mission.display_name.to_json) %>,
+      // Dev-only Playwright/agent test bridge (window.__test). Never true in
+      // production, so main.js never imports the bridge code there.
+      testBridge: <%= Rails.env.production? ? 'false' : 'true' %>
+    };
+    console.log('🔧 breakEscapeConfig initialized:', window.breakEscapeConfig);
+    console.log('🎨 Player sprite from server:', window.breakEscapeConfig.playerSprite);
+
+    // Wire up workstation buttons without inline onclick (CSP: unsafe-inline blocked)
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('crypto-open-new-tab-btn')
+        .addEventListener('click', function() { openCryptoWorkstationInNewTab(); });
+      document.getElementById('crypto-close-btn')
+        .addEventListener('click', function() { closeLaptop(); });
+      document.getElementById('lab-open-new-tab-btn')
+        .addEventListener('click', function() { openLabWorkstationInNewTab(); });
+      document.getElementById('lab-close-btn')
+        .addEventListener('click', function() { closeLabWorkstation(); });
+    });
+  </script>
+
+  <%# Tab lifecycle: signals liveness to the Hacktivity parent page and
+      listens for a cross-tab close command from Abandon / Reset / Restart. %>
+  <script nonce="<%= content_security_policy_nonce %>">
+    (function () {
+      var cfg    = window.breakEscapeConfig;
+      var gameId = cfg && cfg.gameId;
+      if (!gameId) return;
+
+      var aliveKey = 'be_alive_' + gameId;
+      var closeKey = 'be_close_' + gameId;
+
+      // Name this window so the parent can focus it with window.open('', name)
+      window.name = 'be_game_' + gameId;
+
+      // Write initial heartbeat, refresh every 5 s
+      function beat() { try { localStorage.setItem(aliveKey, Date.now()); } catch (e) {} }
+      beat();
+      var hb = setInterval(beat, 5000);
+
+      // Remove the heartbeat on close so the parent reverts to "Continue" immediately
+      window.addEventListener('beforeunload', function () {
+        clearInterval(hb);
+        try { localStorage.removeItem(aliveKey); } catch (e) {}
+      });
+
+      // Listen for a close command written by the parent (Abandon / Reset / Restart)
+      window.addEventListener('storage', function (e) {
+        if (e.key === closeKey && e.newValue) {
+          try { localStorage.removeItem(closeKey); } catch (ex) {}
+          window.close();
+        }
+      });
+    }());
+  </script>
+
+  <%# Load required libraries before the game module %>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js" nonce="<%= content_security_policy_nonce %>"></script>
+  <script src="https://cdn.jsdelivr.net/npm/easystarjs@0.4.4/bin/easystar-0.4.4.js" nonce="<%= content_security_policy_nonce %>"></script>
+  <script src="<%= be_asset_path('/break_escape/assets/vendor/ink.js') %>" nonce="<%= content_security_policy_nonce %>"></script>
+
+  <%# Load game JavaScript (ES6 module) %>
+  <script type="module" src="<%= be_asset_path('/break_escape/js/main.js') %>" nonce="<%= content_security_policy_nonce %>"></script>
+
+  <%# Load Hacktivity ActionCable integration for VM console support %>
+  <% if BreakEscape::Mission.hacktivity_mode? %>
+    <script type="module" src="<%= be_asset_path('/break_escape/js/systems/hacktivity-cable.js') %>" nonce="<%= content_security_policy_nonce %>"></script>
+  <% end %>
+
+  <%# Session resume/restart dialog — not shown in hacktivity mode %>
+  <% unless BreakEscape::Mission.hacktivity_mode? %>
+  <div id="session-resume-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.92); z-index:20000; justify-content:center; align-items:center; flex-direction:column; gap:30px; font-family:'Press Start 2P', monospace;">
+    <h1 style="color:#00ff00; font-size:28px; margin:0; text-align:center; line-height:1.5;">RESUME SESSION?</h1>
+    <p style="color:#cccccc; font-size:16px; font-family:'GNF', monospace; margin:0;">You have a saved session for this mission.</p>
+    <div style="display:flex; gap:20px; flex-wrap:wrap; justify-content:center;">
+      <button id="session-resume-btn" class="session-overlay-btn" style="padding:15px 40px; font-size:16px; font-family:'GNF', monospace; background:#4CAF50; color:#fff; border:2px solid #4CAF50;">Resume</button>
+      <button id="session-restart-btn" class="session-overlay-btn" style="padding:15px 40px; font-size:16px; font-family:'GNF', monospace; background:#555; color:#fff; border:2px solid #777;">Restart</button>
+      <button id="session-new-btn" class="session-overlay-btn" style="padding:15px 40px; font-size:16px; font-family:'GNF', monospace; background:#1a6fb0; color:#fff; border:2px solid #1a6fb0;">New Session</button>
+    </div>
+    <% other_sessions = @mission_sessions.each_with_index.reject { |sid, _i| sid == @game.id } %>
+    <% if other_sessions.any? %>
+    <div style="border-top:1px solid #333; padding-top:20px; width:100%; max-width:600px; text-align:center;">
+      <p style="color:#888; font-size:12px; font-family:'Press Start 2P', monospace; margin:0 0 14px;">OTHER SESSIONS</p>
+      <div id="session-list" style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center; min-height:44px;">
+        <% other_sessions.each do |session_id, i| %>
+          <a href="/break_escape/games/<%= session_id %>?skip_resume=1" class="session-overlay-btn session-list-item" style="padding:10px 24px; font-size:16px; font-family:'GNF', monospace; background:#2a2a2a; color:#aaa; border:2px solid #555; text-decoration:none; display:none;">Load session #<%= i + 1 %></a>
+        <% end %>
+      </div>
+      <% if other_sessions.length > 6 %>
+      <div id="session-pagination" style="display:flex; align-items:center; justify-content:center; gap:16px; margin-top:14px;">
+        <button id="session-prev-btn" class="session-overlay-btn" style="padding:6px 18px; font-size:14px; font-family:'GNF', monospace; background:#2a2a2a; color:#aaa; border:2px solid #555;" disabled>&#9664; Prev</button>
+        <span id="session-page-indicator" style="color:#666; font-size:11px; font-family:'Press Start 2P', monospace;"></span>
+        <button id="session-next-btn" class="session-overlay-btn" style="padding:6px 18px; font-size:14px; font-family:'GNF', monospace; background:#2a2a2a; color:#aaa; border:2px solid #555;">Next &#9654;</button>
+      </div>
+      <% end %>
+    </div>
+    <% end %>
+    <p id="session-restart-status" style="color:#ffaa00; font-size:14px; font-family:'GNF', monospace; margin:0; display:none;">Resetting...</p>
+  </div>
+  <script nonce="<%= content_security_policy_nonce %>">
+    document.addEventListener('DOMContentLoaded', function() {
+      if (!window.breakEscapeConfig || !window.breakEscapeConfig.hasProgress) return;
+      var skipParams = new URLSearchParams(window.location.search);
+      if (skipParams.get('skip_resume')) {
+        skipParams.delete('skip_resume');
+        var cleanUrl = window.location.pathname + (skipParams.toString() ? '?' + skipParams.toString() : '');
+        history.replaceState(null, '', cleanUrl);
+        return;
+      }
+
+      var overlay = document.getElementById('session-resume-overlay');
+      var newSessionBtn = document.getElementById('session-new-btn');
+      overlay.style.display = 'flex';
+
+      // Paginate the "OTHER SESSIONS" list (5 per page)
+      (function() {
+        var items = Array.prototype.slice.call(document.querySelectorAll('.session-list-item'));
+        if (!items.length) return;
+        var perPage = 6;
+        var totalPages = Math.ceil(items.length / perPage);
+        var currentPage = 0;
+        var prevBtn = document.getElementById('session-prev-btn');
+        var nextBtn = document.getElementById('session-next-btn');
+        var indicator = document.getElementById('session-page-indicator');
+
+        function showPage(page) {
+          items.forEach(function(el, idx) {
+            el.style.display = (idx >= page * perPage && idx < (page + 1) * perPage) ? 'inline-block' : 'none';
+          });
+          if (indicator) indicator.textContent = (page + 1) + ' / ' + totalPages;
+          if (prevBtn) prevBtn.disabled = (page === 0);
+          if (nextBtn) nextBtn.disabled = (page >= totalPages - 1);
+        }
+
+        if (prevBtn) prevBtn.addEventListener('click', function() { if (currentPage > 0) showPage(--currentPage); });
+        if (nextBtn) nextBtn.addEventListener('click', function() { if (currentPage < totalPages - 1) showPage(++currentPage); });
+
+        showPage(0);
+      })();
+
+      document.getElementById('session-resume-btn').addEventListener('click', function() {
+        overlay.style.display = 'none';
+      });
+
+      document.getElementById('session-restart-btn').addEventListener('click', function() {
+        var status = document.getElementById('session-restart-status');
+        status.style.display = 'block';
+        document.getElementById('session-resume-btn').disabled = true;
+        document.getElementById('session-restart-btn').disabled = true;
+        newSessionBtn.disabled = true;
+
+        fetch(window.breakEscapeConfig.apiBasePath + '/reset', {
+          method: 'POST',
+          headers: {
+            'X-CSRF-Token': window.breakEscapeConfig.csrfToken,
+            'Content-Type': 'application/json'
+          }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.success) {
+            window.location.reload();
+          } else {
+            status.textContent = 'Error: ' + (data.error || 'Reset failed');
+            document.getElementById('session-resume-btn').disabled = false;
+            document.getElementById('session-restart-btn').disabled = false;
+            newSessionBtn.disabled = false;
+          }
+        })
+        .catch(function() {
+          status.textContent = 'Network error. Please try again.';
+          document.getElementById('session-resume-btn').disabled = false;
+          document.getElementById('session-restart-btn').disabled = false;
+          newSessionBtn.disabled = false;
+        });
+      });
+
+      newSessionBtn.addEventListener('click', function() {
+        var status = document.getElementById('session-restart-status');
+        status.textContent = 'Starting new session...';
+        status.style.display = 'block';
+        document.getElementById('session-resume-btn').disabled = true;
+        document.getElementById('session-restart-btn').disabled = true;
+        newSessionBtn.disabled = true;
+
+        fetch(window.breakEscapeConfig.apiBasePath + '/new_session', {
+          method: 'POST',
+          headers: {
+            'X-CSRF-Token': window.breakEscapeConfig.csrfToken,
+            'Content-Type': 'application/json'
+          }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.success) {
+            window.location.href = data.redirect_url;
+          } else {
+            status.textContent = 'Error: ' + (data.error || 'Failed');
+            document.getElementById('session-resume-btn').disabled = false;
+            document.getElementById('session-restart-btn').disabled = false;
+            newSessionBtn.disabled = false;
+          }
+        })
+        .catch(function() {
+          status.textContent = 'Network error. Please try again.';
+          document.getElementById('session-resume-btn').disabled = false;
+          document.getElementById('session-restart-btn').disabled = false;
+          newSessionBtn.disabled = false;
+        });
+      });
+    });
+  </script>
+  <% end %>
+
+  <%# Mobile touch handling %>
+  <script nonce="<%= content_security_policy_nonce %>">
+    document.addEventListener('DOMContentLoaded', function() {
+      // Scroll down so mobile browser URL bars retract and give the game full screen space.
+      // Works on Chrome Android (address bar hides on scroll) and iOS Safari (100dvh handles it
+      // but the small scroll also helps on older devices where dvh isn't supported).
+      if ('ontouchstart' in window) {
+        // Ensure the document is at least 1px taller than the viewport so scrollTo works.
+        document.body.style.minHeight = (window.innerHeight + 1) + 'px';
+        setTimeout(function() {
+          window.scrollTo(0, 1);
+          // Restore body height after URL bar has had time to retract.
+          setTimeout(function() {
+            document.body.style.minHeight = '';
+          }, 500);
+        }, 200);
+      }
+
+      // Prevent Phaser from capturing touch events that should be used for zooming
+      var gameContainer = document.getElementById('game-container');
+
+      // Allow zooming on the document level
+      document.addEventListener('gesturestart', function(e) {
+        e.preventDefault();
+      });
+
+      document.addEventListener('gesturechange', function(e) {
+        e.preventDefault();
+      });
+
+      // Prevent default touch behavior only within the game container
+      gameContainer.addEventListener('touchmove', function(e) {
+        // Only prevent default if it's not a multi-touch gesture (like pinch-to-zoom)
+        if (e.touches.length <= 1) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+    });
+  </script>
+</body>
+</html>
