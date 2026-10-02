@@ -1,3 +1,4 @@
+import { displayDashes } from '../../utils/display-dashes.js';
 
 /**
  * KeySelection
@@ -294,7 +295,7 @@ export class KeySelection {
                 
                 // Add key label (use name if available, otherwise use number)
                 const keyName = keyData.name || `Key ${actualIndex + 1}`;
-                const keyLabel = scene.add.text(keyX + keyWidth/2, keyY + keyHeight + 5, keyName, {
+                const keyLabel = scene.add.text(keyX + keyWidth/2, keyY + keyHeight + 5, displayDashes(keyName), {
                     fontSize: '16px',
                     fill: '#ffffff',
                     fontFamily: 'VT323'

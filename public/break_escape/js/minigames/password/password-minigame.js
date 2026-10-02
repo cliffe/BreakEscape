@@ -1,6 +1,7 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { ASSETS_PATH } from '../../config.js';
 import { makeDraggable } from '../../utils/helpers.js';
+import { displayDashes } from '../../utils/display-dashes.js';
 
 export class PasswordMinigame extends MinigameScene {
     constructor(container, params) {
@@ -42,7 +43,7 @@ export class PasswordMinigame extends MinigameScene {
         
         // Customize the header
         this.headerElement.innerHTML = `
-            <h3>${this.params.title || 'Password Entry'}</h3>
+            <h3>${displayDashes(this.params.title || 'Password Entry')}</h3>
             <p>Enter the correct password to proceed</p>
         `;
         

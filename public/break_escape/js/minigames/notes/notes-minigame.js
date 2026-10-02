@@ -1,4 +1,5 @@
 import { MinigameScene } from '../framework/base-minigame.js';
+import { displayDashes } from '../../utils/display-dashes.js';
 
 // Load fonts
 const fontLink1 = document.createElement('link');
@@ -106,7 +107,7 @@ export class NotesMinigame extends MinigameScene {
         
         // Create title content with optional star icon
         const titleContent = document.createElement('span');
-        titleContent.textContent = this.item?.scenarioData?.name || 'Note';
+        titleContent.textContent = displayDashes(this.item?.scenarioData?.name || 'Note');
         noteTitle.appendChild(titleContent);
         
         // Add star icon for important notes
@@ -123,7 +124,7 @@ export class NotesMinigame extends MinigameScene {
         // Add note content
         const noteText = document.createElement('div');
         noteText.className = 'notes-minigame-text';
-        noteText.textContent = this.noteContent;
+        noteText.textContent = displayDashes(this.noteContent);
         textBox.appendChild(noteText);
         
         contentArea.appendChild(textBox);
@@ -135,7 +136,8 @@ export class NotesMinigame extends MinigameScene {
 
                     const observationDiv = document.createElement('div');
                     observationDiv.className = 'notes-minigame-observation';
-                    observationDiv.innerHTML = this.observationText;
+                    observationDiv.innerHTML = displayDashes(this.observationText);
+                    observationDiv.dataset.raw = this.observationText;
                     observationDiv.style.cursor = 'pointer'; // Make it clear it's clickable
                     observationDiv.title = 'Click to edit observations';
                     observationDiv.addEventListener('click', () => this.editObservations(observationDiv));
@@ -364,7 +366,7 @@ export class NotesMinigame extends MinigameScene {
             
             // Create title content with optional star icon
             const titleContent = document.createElement('span');
-            titleContent.textContent = currentNote.title;
+            titleContent.textContent = displayDashes(currentNote.title);
             noteTitle.appendChild(titleContent);
             
             // Add star icon for important notes
@@ -378,7 +380,7 @@ export class NotesMinigame extends MinigameScene {
         }
         
         if (noteText) {
-            noteText.textContent = this.noteContent;
+            noteText.textContent = displayDashes(this.noteContent);
         }
         
         // Update observation container
@@ -388,7 +390,8 @@ export class NotesMinigame extends MinigameScene {
             const editBtn = observationContainer.querySelector('.notes-minigame-edit-btn');
             
             if (this.observationText) {
-                observationDiv.innerHTML = this.observationText;
+                observationDiv.innerHTML = displayDashes(this.observationText);
+                observationDiv.dataset.raw = this.observationText;
                 observationDiv.style.color = '#666';
                 observationDiv.style.cursor = 'pointer';
                 observationDiv.title = 'Click to edit observations';
@@ -520,7 +523,7 @@ export class NotesMinigame extends MinigameScene {
     }
     
     editObservations(observationDiv) {
-        const currentText = observationDiv.textContent.trim();
+        const currentText = (observationDiv.dataset.raw ?? observationDiv.textContent).trim();
         const isPlaceholder = currentText === 'Click edit to add your observations...';
         const originalText = isPlaceholder ? '' : currentText;
         
@@ -544,7 +547,8 @@ export class NotesMinigame extends MinigameScene {
             console.log('Save button clicked');
             
             const newText = textarea.value.trim();
-            observationDiv.innerHTML = newText || '<em>Click edit to add your observations...</em>';
+            observationDiv.dataset.raw = newText || '';
+            observationDiv.innerHTML = newText ? displayDashes(newText) : '<em>Click edit to add your observations...</em>';
             observationDiv.style.color = newText ? '#666' : '#999';
             
             // Update the stored observation text
@@ -574,7 +578,7 @@ export class NotesMinigame extends MinigameScene {
             
             // Restore original text
             if (originalText) {
-                observationDiv.innerHTML = originalText;
+                observationDiv.innerHTML = displayDashes(originalText);
                 observationDiv.style.color = '#666';
             } else {
                 observationDiv.innerHTML = '<em>Click edit to add your observations...</em>';

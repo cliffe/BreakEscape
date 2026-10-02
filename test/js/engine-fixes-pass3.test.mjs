@@ -29,7 +29,12 @@ const js = (p) => {
     }
     if (p.endsWith('rfid-ui.js')) {
         copy('minigames/rfid/rfid-protocols.js');
-        return copy(p, { "'./rfid-protocols.js'": "'./rfid-protocols.mjs'" });
+        copy('utils/display-dashes.js');
+        return copy(p, { "'./rfid-protocols.js'": "'./rfid-protocols.mjs'", "'../../utils/display-dashes.js'": "'./display-dashes.mjs'" });
+    }
+    if (p.endsWith('scenario-timer.js')) {
+        copy('utils/display-dashes.js');
+        return copy(p, { "'../utils/display-dashes.js'": "'./display-dashes.mjs'" });
     }
     return copy(p);
 };

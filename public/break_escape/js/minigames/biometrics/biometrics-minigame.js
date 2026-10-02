@@ -4,6 +4,7 @@ import { generatePrint, drawPrint } from '../dusting/fingerprint-generator.js';
 import { drawSampleThumbnail } from './fingerprint-reader-minigame.js';
 import { labelForSample, percent, FIELD_NOTES } from './fingerprint-reader-helpers.js';
 import { applyArtSlot } from './fingerprint-art.js';
+import { displayDashes } from '../../utils/display-dashes.js';
 
 // A surface that has given a lift this good is done: the kit skips it.
 const EXCELLENT_LIFT = 0.85;
@@ -394,7 +395,7 @@ export class BiometricsMinigame extends MinigameScene {
             const header = document.createElement('div');
             header.className = 'sample-header';
             const name = document.createElement('strong');
-            name.textContent = labelForSample(sample);
+            name.textContent = displayDashes(labelForSample(sample));
             const type = document.createElement('span');
             type.className = 'sample-type';
             type.textContent = sample.type;

@@ -18,6 +18,7 @@ import {
 } from './dusting-model.js';
 import { ART_SLOTS, SURFACE_SLOT, preloadArt, onArtLoaded, drawSlot, artRect, hasArt, slotCanvas, refreshSlotCanvases } from './dusting-art.js';
 import { displayNameForOwner, bestLiftFromObject } from '../../systems/biometric-samples.js';
+import { displayDashes } from '../../utils/display-dashes.js';
 
 // Load dusting-specific CSS
 if (!document.getElementById('dusting-css')) {
@@ -83,7 +84,7 @@ function hexToRgb(h) {
 }
 
 function escapeHtml(s) {
-    return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    return displayDashes(String(s ?? '')).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
 /** Copy a print's arrays shifted by (sx, sy) so the print sits somewhere different on the surface. */
@@ -257,7 +258,7 @@ export class DustingMinigame extends MinigameScene {
         this.panel = this.root.querySelector('.dusting-panel');
         this.statusEl = this.root.querySelector('.dusting-status');
         this.forensicEl = this.root.querySelector('.dusting-forensic');
-        this.root.querySelector('.dusting-object').textContent = this.data.name || 'Surface';
+        this.root.querySelector('.dusting-object').textContent = displayDashes(this.data.name || 'Surface');
         this.img = this.ctx.createImageData(N, N);
         this.hcBox = this.root.querySelector('.dusting-opt-hc');
         this.steadyBox = this.root.querySelector('.dusting-opt-steady');

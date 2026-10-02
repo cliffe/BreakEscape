@@ -1,3 +1,4 @@
+import { displayDashes } from '../utils/display-dashes.js';
 // Notification System
 // Handles showing and managing notifications in the game
 
@@ -18,9 +19,9 @@ export function showNotification(message, type = 'info', title = '', duration = 
     // Create notification content
     let notificationContent = '';
     if (title) {
-        notificationContent += `<div class="notification-title">${title}</div>`;
+        notificationContent += `<div class="notification-title">${displayDashes(title)}</div>`;
     }
-    notificationContent += `<div class="notification-message">${message.replace(/\n/g, "<br>")}</div>`;
+    notificationContent += `<div class="notification-message">${displayDashes(message).replace(/\n/g, "<br>")}</div>`;
     notificationContent += `<div class="notification-close">×</div>`;
     
     if (duration > 0) {
@@ -86,8 +87,8 @@ export function gameDisplay(message, title = '') {
         overlay.className = 'game-confirm-overlay';
         overlay.innerHTML = `
             <div class="game-confirm-dialog game-display-dialog">
-                ${title ? `<div class="game-display-title">${title}</div>` : ''}
-                <div class="game-display-body">${message.replace(/\n/g, '<br>')}</div>
+                ${title ? `<div class="game-display-title">${displayDashes(title)}</div>` : ''}
+                <div class="game-display-body">${displayDashes(message).replace(/\n/g, '<br>')}</div>
                 <div class="game-confirm-buttons">
                     <button class="game-confirm-btn game-confirm-ok">Close</button>
                 </div>
@@ -106,7 +107,7 @@ export function gameConfirm(message, confirmLabel = 'Confirm', cancelLabel = 'Ca
         overlay.className = 'game-confirm-overlay';
         overlay.innerHTML = `
             <div class="game-confirm-dialog">
-                <div class="game-confirm-message">${message.replace(/\n/g, '<br>')}</div>
+                <div class="game-confirm-message">${displayDashes(message).replace(/\n/g, '<br>')}</div>
                 <div class="game-confirm-buttons">
                     <button class="game-confirm-btn game-confirm-ok">${confirmLabel}</button>
                     <button class="game-confirm-btn game-confirm-cancel">${cancelLabel}</button>

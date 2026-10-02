@@ -98,3 +98,25 @@ test('the dash change is display-only: TTS and history keep the typed text', () 
     const phone = readFileSync(join(js, 'minigames/phone-chat/phone-chat-ui.js'), 'utf8');
     assert.match(phone, /this\.playVoiceMessage\(transcript, playButton\)/);
 });
+
+test('scenario text sinks run through displayDashes; matching and stored text do not', () => {
+    const src = (p) => readFileSync(join(js, p), 'utf8');
+    for (const p of [
+        'ui/info-label.js', 'ui/interaction-menu.js', 'ui/objectives-panel.js', 'ui/scenario-timer.js',
+        'systems/notifications.js', 'minigames/framework/base-minigame.js', 'minigames/password/password-minigame.js',
+        'minigames/container/container-minigame.js', 'minigames/text-file/text-file-minigame.js',
+        'minigames/notes/notes-minigame.js', 'minigames/dusting/dusting-game.js',
+        'minigames/biometrics/biometrics-minigame.js', 'minigames/biometrics/fingerprint-reader-minigame.js',
+        'minigames/lockpicking/key-selection.js', 'minigames/rfid/rfid-ui.js'
+    ]) {
+        assert.match(src(p), /import \{ displayDashes \} from '[./]+\/utils\/display-dashes\.js'/, p);
+    }
+    const text = src('minigames/text-file/text-file-minigame.js');
+    assert.match(text, /let content = displayDashes\(this\.textFileData\.fileContent\)/);
+    assert.match(text, /textArea\.value = this\.textFileData\.fileContent;/, 'clipboard copy keeps the original');
+    const container = src('minigames/container/container-minigame.js');
+    assert.match(container, /itemImg\.alt = item\.name;/, 'alt text keeps the raw name');
+    assert.match(container, /displayDashes\(c\?\.name \|\| ''\) === name/, 'test-state lookup compares the shown name');
+    const notes = src('minigames/notes/notes-minigame.js');
+    assert.match(notes, /dataset\.raw \?\? observationDiv\.textContent/, 'editing starts from the stored observation');
+});

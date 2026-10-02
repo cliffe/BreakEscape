@@ -6,6 +6,7 @@ import {
     READER_FORENSIC_LINE, labelForSample, messageForOutcome, headingForOutcome, failureReasonForOutcome, percent
 } from './fingerprint-reader-helpers.js';
 import { applyArtSlot } from './fingerprint-art.js';
+import { displayDashes } from '../../utils/display-dashes.js';
 
 const THUMB_SIZE = 64;   // logical pixels; shown at 2x so the pixels stay square
 const THUMB_SCALE = 2;
@@ -65,7 +66,7 @@ function signTextFor(lockable, type) {
 
 function escapeHtml(text) {
     const div = document.createElement('div');
-    div.textContent = text == null ? '' : String(text);
+    div.textContent = text == null ? '' : displayDashes(String(text));
     return div.innerHTML;
 }
 
@@ -147,7 +148,7 @@ export class FingerprintReaderMinigame extends MinigameScene {
 
         const text = document.createElement('div');
         text.className = 'fpr-card-label';
-        text.textContent = label;
+        text.textContent = displayDashes(label);
         const quality = document.createElement('div');
         quality.className = 'fpr-card-quality';
         quality.textContent = `Quality ${pct}%`;

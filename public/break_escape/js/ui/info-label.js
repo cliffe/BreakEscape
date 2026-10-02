@@ -7,6 +7,7 @@
 
 import { INTERACTION_RANGE, INTERACTION_RANGE_SQ } from '../utils/constants.js';
 import { resolveObjectField } from '../utils/conditional-text.js';
+import { displayDashes } from '../utils/display-dashes.js';
 
 const SIDE_DOOR_RANGE_SQ  = INTERACTION_RANGE_SQ * 4;  // 2× radius for E/W doors
 const SIDE_DOOR_Y_OFFSET  = INTERACTION_RANGE / 2;
@@ -132,7 +133,7 @@ function _applyText(text) {
     if (!labelEl || text === displayedText) return;
     displayedText = text;
     if (text) {
-        labelEl.textContent = text;
+        labelEl.textContent = displayDashes(text);
         labelEl.classList.add('visible');
     } else {
         labelEl.classList.remove('visible');

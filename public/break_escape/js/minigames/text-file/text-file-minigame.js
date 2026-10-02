@@ -1,4 +1,5 @@
 import { MinigameScene } from '../framework/base-minigame.js';
+import { displayDashes } from '../../utils/display-dashes.js';
 
 export class TextFileMinigame extends MinigameScene {
     constructor(container, params) {
@@ -23,7 +24,7 @@ export class TextFileMinigame extends MinigameScene {
         
         // Customize the header
         this.headerElement.innerHTML = `
-            <h3><img src="/break_escape/assets/icons/text-file.png" alt="Document" class="icon"> ${this.textFileData.fileName}</h3>
+            <h3><img src="/break_escape/assets/icons/text-file.png" alt="Document" class="icon"> ${displayDashes(this.textFileData.fileName)}</h3>
             <p>Viewing text file contents</p>
         `;
         
@@ -59,14 +60,14 @@ export class TextFileMinigame extends MinigameScene {
                         <button class="window-control minimize" title="Minimize"></button>
                         <button class="window-control maximize" title="Maximize"></button>
                     </div>
-                    <div class="window-title">${this.textFileData.fileName}</div>
+                    <div class="window-title">${displayDashes(this.textFileData.fileName)}</div>
                     <div></div>
                 </div>
                 
                 <div class="file-header">
                     <div class="file-icon"><img src="/break_escape/assets/objects/text_file.png" alt="Document" class="icon-large"></div>
                     <div class="file-info">
-                        <div class="file-name">${this.textFileData.fileName}</div>
+                        <div class="file-name">${displayDashes(this.textFileData.fileName)}</div>
                         <div class="file-meta">
                             <span class="file-type">${this.textFileData.fileType.toUpperCase()}</span>
                             <span class="file-size">${this.getFileSize()}</span>
@@ -89,7 +90,7 @@ export class TextFileMinigame extends MinigameScene {
                 ${this.textFileData.observations ? `
                 <div class="file-observations">
                     <h4><img src="/break_escape/assets/icons/copy-sm.png" alt="Clipboard" class="icon-small"> Observations:</h4>
-                    <p>${this.textFileData.observations}</p>
+                    <p>${displayDashes(this.textFileData.observations)}</p>
                 </div>
                 ` : ''}
             </div>
@@ -108,7 +109,7 @@ export class TextFileMinigame extends MinigameScene {
     
     formatFileContent() {
         // Format the file content for display
-        let content = this.textFileData.fileContent;
+        let content = displayDashes(this.textFileData.fileContent);
         
         // Escape HTML characters
         content = content.replace(/&/g, '&amp;')

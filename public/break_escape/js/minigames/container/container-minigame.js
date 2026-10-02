@@ -2,6 +2,7 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { addToInventory, removeFromInventory } from '../../systems/inventory.js';
 import { makeDraggable } from '../../utils/helpers.js';
+import { displayDashes } from '../../utils/display-dashes.js';
 
 export class ContainerMinigame extends MinigameScene {
     constructor(container, params) {
@@ -51,7 +52,7 @@ export class ContainerMinigame extends MinigameScene {
                           el.querySelector('.desktop-icon-label')?.textContent || '').trim();
             // scenarioData for this entry, matched by name — tells us whether
             // clicking opens a viewer or just pockets the item.
-            const data = (this.contents || []).find(c => (c?.name || '') === name) || {};
+            const data = (this.contents || []).find(c => displayDashes(c?.name || '') === name) || {};
             const opensViewer = !!(data.readable || data.noteContent || data.text ||
                                    ['notes', 'note', 'text-file', 'document'].includes(data.type));
             return {
@@ -177,8 +178,8 @@ export class ContainerMinigame extends MinigameScene {
         // Update header with container name
         if (this.headerElement) {
             this.headerElement.innerHTML = `
-                <h3>${this.containerItem.scenarioData.name}</h3>
-                <p>${this.containerItem.scenarioData.observations || ''}</p>
+                <h3>${displayDashes(this.containerItem.scenarioData.name)}</h3>
+                <p>${displayDashes(this.containerItem.scenarioData.observations || '')}</p>
             `;
         }
 
@@ -257,8 +258,8 @@ export class ContainerMinigame extends MinigameScene {
                          alt="${this.containerItem.scenarioData.name}"
                          class="container-image">
                     <div class="container-info">
-                        <h4>${this.containerItem.scenarioData.name}</h4>
-                        <p>${this.containerItem.scenarioData.observations || ''}</p>
+                        <h4>${displayDashes(this.containerItem.scenarioData.name)}</h4>
+                        <p>${displayDashes(this.containerItem.scenarioData.observations || '')}</p>
                     </div>
                 </div>
 
@@ -283,8 +284,8 @@ export class ContainerMinigame extends MinigameScene {
                         alt="${this.containerItem.scenarioData.name}"
                         class="container-image">
                 <div class="container-info">
-                    <h4>${this.containerItem.scenarioData.name}</h4>
-                    <p>${this.containerItem.scenarioData.observations || ''}</p>
+                    <h4>${displayDashes(this.containerItem.scenarioData.name)}</h4>
+                    <p>${displayDashes(this.containerItem.scenarioData.observations || '')}</p>
                 </div>
             </div>
             <div class="container-minigame desktop-mode">
@@ -309,7 +310,7 @@ export class ContainerMinigame extends MinigameScene {
         if (this.containerItem.scenarioData.postitNote && this.containerItem.scenarioData.showPostit) {
             const postit = document.createElement('div');
             postit.className = 'postit-note';
-            postit.textContent = this.containerItem.scenarioData.postitNote;
+            postit.textContent = displayDashes(this.containerItem.scenarioData.postitNote);
             makeDraggable(postit);
             this.gameContainer.appendChild(postit);
         }
@@ -340,7 +341,7 @@ export class ContainerMinigame extends MinigameScene {
             itemImg.className = 'container-content-item';
             itemImg.src = `/break_escape/assets/objects/${item.type}.png`;
             itemImg.alt = item.name;
-            itemImg.title = item.name;
+            itemImg.title = displayDashes(item.name);
             
             // Add item data
             itemImg.scenarioData = item;
@@ -361,7 +362,7 @@ export class ContainerMinigame extends MinigameScene {
             // Create tooltip
             const tooltip = document.createElement('div');
             tooltip.className = 'container-content-tooltip';
-            tooltip.textContent = item.name;
+            tooltip.textContent = displayDashes(item.name);
             
             slot.appendChild(itemImg);
             slot.appendChild(tooltip);
@@ -389,7 +390,7 @@ export class ContainerMinigame extends MinigameScene {
             
             const iconLabel = document.createElement('div');
             iconLabel.className = 'desktop-icon-label';
-            iconLabel.textContent = item.name;
+            iconLabel.textContent = displayDashes(item.name);
             
             // Add item data
             iconImg.scenarioData = item;
@@ -719,7 +720,7 @@ export class ContainerMinigame extends MinigameScene {
             }
             
             // Show success message
-            this.showMessage(`Added ${item.name} to inventory`, 'success');
+            this.showMessage(`Added ${displayDashes(item.name)} to inventory`, 'success');
             
             // If container is now empty, update display
             if (this.contents.length === 0) {
@@ -730,7 +731,7 @@ export class ContainerMinigame extends MinigameScene {
             }
         } else {
             if (window.playUISound) window.playUISound('reject');
-            this.showMessage(`Failed to add ${item.name} to inventory`, 'error');
+            this.showMessage(`Failed to add ${displayDashes(item.name)} to inventory`, 'error');
         }
     }
 
@@ -748,14 +749,14 @@ export class ContainerMinigame extends MinigameScene {
         // Add container to inventory
         const addResult = await addToInventory(this.containerItem);
         if (addResult && addResult.ok) {
-            this.showMessage(`Added ${this.containerItem.scenarioData.name} to inventory`, 'success');
+            this.showMessage(`Added ${displayDashes(this.containerItem.scenarioData.name)} to inventory`, 'success');
             
             // Close the minigame after a short delay
             setTimeout(() => {
                 this.complete(true);
             }, 1500);
         } else {
-            this.showMessage(`Failed to add ${this.containerItem.scenarioData.name} to inventory`, 'error');
+            this.showMessage(`Failed to add ${displayDashes(this.containerItem.scenarioData.name)} to inventory`, 'error');
         }
     }
     

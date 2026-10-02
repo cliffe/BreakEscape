@@ -7,6 +7,7 @@
  * 
  * @module objectives-panel
  */
+import { displayDashes } from '../utils/display-dashes.js';
 
 export class ObjectivesPanel {
   constructor(objectivesManager) {
@@ -159,7 +160,7 @@ export class ObjectivesPanel {
    */
   escapeHtml(text) {
     const div = document.createElement('div');
-    div.textContent = text;
+    div.textContent = displayDashes(text);
     return div.innerHTML;
   }
   

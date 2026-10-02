@@ -14,6 +14,7 @@
  */
 
 import { getProtocolInfo, detectProtocol } from './rfid-protocols.js';
+import { displayDashes } from '../../utils/display-dashes.js';
 
 export class RFIDUIRenderer {
     constructor(minigame) {
@@ -185,7 +186,7 @@ export class RFIDUIRenderer {
             availableCards.forEach(card => {
                 const cardItem = document.createElement('div');
                 cardItem.className = 'flipper-menu-item';
-                cardItem.textContent = `> ${card.scenarioData?.name || 'Keycard'}`;
+                cardItem.textContent = `> ${displayDashes(card.scenarioData?.name || 'Keycard')}`;
                 cardItem.addEventListener('click', () => {
                     this.minigame.handleCardTap(card);
                 });
@@ -232,7 +233,7 @@ export class RFIDUIRenderer {
             savedCards.forEach(card => {
                 const cardItem = document.createElement('div');
                 cardItem.className = 'flipper-menu-item';
-                cardItem.textContent = `> ${card.name}`;
+                cardItem.textContent = `> ${displayDashes(card.name)}`;
                 cardItem.addEventListener('click', () => this.showCardDetails(card));
                 cardList.appendChild(cardItem);
             });
@@ -281,7 +282,7 @@ export class RFIDUIRenderer {
         // Card name
         const name = document.createElement('div');
         name.className = 'flipper-card-name';
-        name.textContent = card.name || 'Card';
+        name.textContent = displayDashes(card.name || 'Card');
         screen.appendChild(name);
 
         // Card data fields
@@ -346,7 +347,7 @@ export class RFIDUIRenderer {
         // Card name
         const name = document.createElement('div');
         name.className = 'flipper-card-name';
-        name.textContent = card.name || 'Card';
+        name.textContent = displayDashes(card.name || 'Card');
         screen.appendChild(name);
 
         // Card data fields

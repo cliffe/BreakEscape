@@ -1,3 +1,4 @@
+import { displayDashes } from '../../utils/display-dashes.js';
 /**
  * test-bridge/minigames.js — the __test.minigame namespace.
  *
@@ -187,7 +188,9 @@ export const minigameBridge = {
             if (!el) return fail(`no-item-at-index:${nameOrIndex}`, { items: nodes.map(labelOf) });
         } else {
             const needle = String(nameOrIndex).toLowerCase();
-            const matches = nodes.filter(n => labelOf(n).toLowerCase().includes(needle));
+            // Labels are shown with display dashes, so accept the author's " -- " form too.
+            const needleShown = displayDashes(needle);
+            const matches = nodes.filter(n => { const l = labelOf(n).toLowerCase(); return l.includes(needle) || l.includes(needleShown); });
             if (!matches.length) return fail(`no-item-matching:${nameOrIndex}`, { items: nodes.map(labelOf) });
             if (matches.length > 1) {
                 return fail('item-ambiguous', {

@@ -1,3 +1,4 @@
+import { displayDashes } from '../utils/display-dashes.js';
 /**
  * Interaction disambiguation menu.
  *
@@ -184,13 +185,13 @@ export function showInteractionMenu(candidates, clientX, clientY) {
 
         const label = document.createElement('span');
         label.className = 'be-im-label';
-        label.textContent = c.label;
+        label.textContent = displayDashes(c.label);
         text.appendChild(label);
 
         if (c.detail) {
             const detail = document.createElement('span');
             detail.className = 'be-im-detail';
-            detail.textContent = c.detail;
+            detail.textContent = displayDashes(c.detail);
             text.appendChild(detail);
         }
 

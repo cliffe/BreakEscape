@@ -1,3 +1,4 @@
+import { displayDashes } from '../utils/display-dashes.js';
 /**
  * ScenarioTimerUI - Countdown timer HUD widget for scenario events
  * 
@@ -287,7 +288,7 @@ class ScenarioTimerUI {
     const timeStr = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     
     // Update label and clock
-    this.labelElement.textContent = nextTimer.label || 'Incoming Event';
+    this.labelElement.textContent = displayDashes(nextTimer.label || 'Incoming Event');
     this.clockElement.textContent = timeStr;
     
     // Update urgency class

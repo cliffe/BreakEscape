@@ -1,3 +1,4 @@
+import { displayDashes } from '../../utils/display-dashes.js';
 // Base class for minigame scenes
 export class MinigameScene {
     constructor(container, params) {
@@ -21,7 +22,7 @@ export class MinigameScene {
         this.container.innerHTML = `
             <button class="minigame-close-button" id="minigame-close" ${disableClose ? 'style="display:none"' : ''}>&times;</button>
             <div class="minigame-header">
-                <h3>${this.params.title || 'Minigame'}</h3>
+                <h3>${displayDashes(this.params.title || 'Minigame')}</h3>
             </div>
             <div class="minigame-game-container"></div>
             <div class="minigame-message-container"></div>
