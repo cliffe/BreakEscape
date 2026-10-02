@@ -406,5 +406,6 @@ Narrator: He takes his jacket from the chair, careful with the sleeves. At the d
 Narrator: The console position is empty. The chair is still turned towards the door.
 
 + [Get to work.]
+    Narrator: Nobody answers. The console hums on without him.
     #exit_conversation
     -> already_resolved

@@ -47,7 +47,6 @@ VAR moral_conflict_revealed = false
 VAR shown_casualties = false
 VAR shown_architects_fund = false
 VAR recruitment_offered = false
-VAR recruitment_accepted = false
 VAR recruitment_refused = false
 VAR badge_discussion = false
 VAR exec_badge_turn = -1   // TURNS() at the last hand-over
@@ -212,7 +211,7 @@ Dr. Irina Volkova: So what does the FCA want to see? Our customer checks are com
 + {found_architects_fund and not recruitment_offered} [I'm not from the FCA. I'm SAFETYNET, and your exchange banks ENTROPY.]
     -> reveal_identity
 
-+ {recruitment_offered and not recruitment_accepted and not recruitment_refused} [I need an answer, Dr. Volkova.]
++ {recruitment_offered and not irina_recruited and not recruitment_refused} [I need an answer, Dr. Volkova.]
     -> recruitment_decision
 
 + [That's all for now.]

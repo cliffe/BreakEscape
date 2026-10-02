@@ -382,6 +382,7 @@ Narrator: The dock door bangs open onto the loading bay and the cold, and he's g
     -> voltage_captured_end
 
 + [Not yet.]
+    Voltage: Take your time. The number won't.
     #exit_conversation
     -> voltage_after_trigger
 

@@ -377,6 +377,7 @@ Narrator: The service door swings. The stairwell is empty both ways.
 Narrator: Her laptop lies by the backup rack, screen dark. The load-shed tables are half done.
 
 + [Nothing to find here.]
+    Narrator: The half-finished tables stay as she left them.
     #exit_conversation
     -> already_gone
 
