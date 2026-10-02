@@ -45,9 +45,9 @@ VAR hub_quiet = false
 -> challenge
 
 === challenge ===
-Narrator: He clocks you at thirty feet and his hand goes to his belt before his face does anything at all. The flashlight beam finds your chest and stays there.
+Narrator: He clocks you at thirty feet. His hand goes to his belt before his face moves. The flashlight finds your chest.
 
-Ray Hollis: Building's evacuated. Has been forty minutes. So you're either lost or you're the other thing.
+Ray Hollis: Building's been evacuated forty minutes. So you're lost, or you're the other thing.
 
 -> back
 
@@ -87,7 +87,7 @@ Ray Hollis: Building's evacuated. Has been forty minutes. So you're either lost 
     -> leverage_partial
 // PASS 2: the label said "I'm not here to fight you" and led straight to
 // him panicking; the label now says what the player actually does.
-+ [Walk straight at him. "I'm not here to fight you, Ray."]
++ [Walk at him. "I'm not here to fight you, Ray."]
     -> hostile_option
 + [Back off. I'm leaving.]
     -> evade
@@ -98,7 +98,7 @@ Ray Hollis: Building's evacuated. Has been forty minutes. So you're either lost 
     -> back
 }
 ~ bluff_burned = true
-Narrator: He does not look at a list. He does not have a list. He looks at your hands.
+Narrator: He doesn't check a list. He watches your hands.
 
 Ray Hollis: Contractors came out with everyone else. I walked them out myself.
 
@@ -111,9 +111,9 @@ Ray Hollis: Try again, and stand still while you do it.
     -> back
 }
 ~ pressed_once = true
-Ray Hollis: What I know is my shift ends at six and there's a number in my account that says stand here.
+Ray Hollis: What I know is my shift ends at six, and there's a number in my account that says stand here.
 
-Narrator: It comes out too fast, and he hears it come out, and something behind his eyes goes very still.
+Narrator: It comes out too fast, and he hears it.
 
 Ray Hollis: That's not what I meant.
 
@@ -128,18 +128,18 @@ Ray Hollis: That's not what I meant.
 ~ asked_partial = true
 Ray Hollis: The log doesn't say who. Then go and find something that does.
 
-Narrator: He says it like a man who knows exactly where that something is, and is hoping you don't.
+Narrator: His eyes go past you to the ops-floor door, and come back.
 -> back
 
 === leverage ===
-Narrator: You say the date. Not the accusation, just the date, and the way it lands tells you everything the paperwork already told you.
+Narrator: You say the date and nothing else. It lands.
 
 {visitor_log_read:
     Ray Hollis: That log's meant to stay in the desk drawer.
-    You: It was. It isn't now. Compliance record, three years' retention, and your login is on a credential renewal for a man who is upstairs putting eight point four million people in the dark.
+    Narrator: You hold up the handover sheet. His login, against Mercer's renewal.
 - else:
     Ray Hollis: Halvorsen. She never could leave a thing alone.
-    You: The station's print history, with your login on it. A credential renewal for a man who is upstairs putting eight point four million people in the dark.
+    Narrator: You hold up the handover sheet. His login, against Mercer's renewal.
 }
 
 Narrator: The flashlight beam drops to the floor. His hand stays where it is.
@@ -167,26 +167,26 @@ Ray Hollis: What do you want.
 #set_global:hollis_resolved:talked
 #give_item:keycard:hollis_server_badge
 #complete_task:clear_the_checkpoint
-Narrator: He unclips the badge with two fingers and holds it out at arm's length, as if it were the part of him that had done it.
+Narrator: He unclips the badge and holds it out at arm's length.
 
 Ray Hollis: Six months I've been waiting for somebody to come and ask. Turns out I just wanted the asking over with.
 
-Ray Hollis: There's a badge station behind me runs contractor stock. You'd have got in either way. I want you to know I know that.
+Ray Hollis: Badge station behind me prints contractor stock. You'd have got in either way. I know that.
 
 // PASS 3: what only talking him round gets. The vault rule (P6) and Park.
-Ray Hollis: Day after the OptiGrid cabling survey, their plant guy reset the vault keypad. I held the riser door. He read the number off the plate on the transfer switch. Said that way nobody has to write it down.
+Ray Hollis: Day after the OptiGrid survey, their plant guy reset the vault keypad. I held the riser door.
 
-Ray Hollis: When the alarms went tonight, same guy came back in against the crowd. Bag, cable cutter. Went down the riser. He hasn't come up.
+Ray Hollis: He read the number off the plate on the transfer switch. Said that way nobody has to write it down.
 
-You: Go.
+Ray Hollis: Tonight, same guy came back in against the crowd. Bag, cable cutter. Went down the riser. Hasn't come up.
 
-Narrator: He goes out through the muster door and does not look back.
+Narrator: He goes out through the muster door and doesn't look back.
 
 #exit_conversation
 -> already_dealt
 
 === deal_refused ===
-Narrator: The hand comes back up. Not levelled -- just back up, which is worse, because it means he has stopped deciding and started reacting.
+Narrator: The hand comes back up. He has stopped deciding and started reacting.
 
 Ray Hollis: No. No, I've thought about that room. I'm not sitting in it.
 
@@ -196,7 +196,7 @@ Ray Hollis: No. No, I've thought about that room. I'm not sitting in it.
     -> deal_take
 
 === hostile_option ===
-Narrator: He backs into the turnstile frame with nowhere further to go, which is the exact circumstance in which frightened men make the loudest decision available to them.
+Narrator: He backs into the turnstile frame. Nowhere left to go.
 
 Ray Hollis: Stay there. STAY THERE.
 
@@ -206,7 +206,7 @@ Ray Hollis: Stay there. STAY THERE.
     -> evade
 
 === goes_loud ===
-Ray Hollis: I can't afford you. I'm sorry. I genuinely am.
+Ray Hollis: I can't afford you. I'm sorry. I mean it.
 
 Narrator: He comes off the frame at you.
 
@@ -217,7 +217,7 @@ Narrator: He comes off the frame at you.
 -> parked
 
 === evade ===
-Narrator: You give him the corner and the corner gives you his blind side. He sweeps the flashlight across the turnstiles twice, finds an empty checkpoint both times, and settles back into the pattern he has walked for six months.
+Narrator: You give him the corner, and the corner gives you his blind side. His flashlight sweeps the turnstiles twice and finds nothing.
 
 Ray Hollis: Yeah. Thought so.
 
@@ -230,7 +230,7 @@ Ray Hollis: Yeah. Thought so.
 -> back
 
 === wary_again ===
-Narrator: He is halfway along the patrol and jumpier than he was. The flashlight comes up fast.
+Narrator: He is jumpier now. The flashlight comes up fast.
 
 Ray Hollis: Something's in here. I know something's in here.
 
@@ -244,7 +244,7 @@ Narrator: The checkpoint is empty. His radio sits on the desk with the battery o
     -> already_dealt
 
 === down_and_out ===
-Narrator: He is face down by the turnstiles, breathing. Whatever he knew about the sixteenth of June is going with him to a hospital, and then to a lawyer.
+Narrator: He is face down by the turnstiles, breathing. Whatever he knew about the sixteenth of June goes with him.
 
 + [Leave him.]
     #exit_conversation

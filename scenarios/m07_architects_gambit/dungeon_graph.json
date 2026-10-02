@@ -75,6 +75,12 @@
       "optional": false
     },
     {
+      "id": "threat_desk_summary_tasking_02_41_pt",
+      "label": "Threat Desk Summary -- Tasking 02:41 PT",
+      "kind": "item",
+      "optional": false
+    },
+    {
       "id": "lock_badge_printer",
       "label": "Contractor Badge Station<br/>PIN lock",
       "kind": "lock",
@@ -195,6 +201,12 @@
       "optional": false
     },
     {
+      "id": "andgate1",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    },
+    {
       "id": "vmch_recover_coordination_traffic",
       "label": "Mount the attack host's open NFS export and submit the flag on it",
       "kind": "vm",
@@ -282,6 +294,11 @@
     {
       "from": "security_checkpoint",
       "to": "fingerprint_kit",
+      "soft": false
+    },
+    {
+      "from": "security_checkpoint",
+      "to": "threat_desk_summary_tasking_02_41_pt",
       "soft": false
     },
     {
@@ -400,11 +417,6 @@
       "soft": false
     },
     {
-      "from": "backup_power_transfer_switch",
-      "to": "door_cable_vault",
-      "soft": false
-    },
-    {
       "from": "cable_vault",
       "to": "recovered_site_reference_tomb_gamma",
       "soft": false
@@ -412,6 +424,21 @@
     {
       "from": "cable_vault",
       "to": "intercepted_mail_deployment_confirmed",
+      "soft": false
+    },
+    {
+      "from": "safetynet_relay_terminal",
+      "to": "andgate1",
+      "soft": true
+    },
+    {
+      "from": "andgate1",
+      "to": "door_cable_vault",
+      "soft": false
+    },
+    {
+      "from": "backup_power_transfer_switch",
+      "to": "andgate1",
       "soft": false
     },
     {
@@ -453,6 +480,11 @@
       "from": "vmfl_escalate_on_attack_host",
       "to": "vmch_terminate_cascade_scripts",
       "soft": true
+    },
+    {
+      "from": "vmfl_terminate_cascade_scripts",
+      "to": "lock_crisis_control_system",
+      "soft": false
     },
     {
       "from": "vm_access_terminal",

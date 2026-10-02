@@ -2,7 +2,7 @@
 
 # m07_architects_gambit — Scenario Graph Reference
 
-Four ENTROPY operations went live inside the same sixty seconds. SAFETYNET has one agent in range and one tactical team. You are the agent, and you are already on the approach road to a regional grid control facility outside Portland where a cascade sequence is loaded on the control system, waiting for a host inside the building to start it. When it runs, the lights go out across three states -- 8.4 million people, 147 substations, in winter. The team can reach exactly one of the other three crises. You decide which. Two go unanswered, and somebody will read out what happened at both.
+Four ENTROPY operations went live inside the same sixty seconds. SAFETYNET has one agent in range and one tactical team. You are the agent, forty minutes from a grid control facility outside Portland, where a loaded sequence can black out three states in winter. The team can reach one of the other three crises. You decide which. Two go unanswered, and somebody will read out what happened at both.
 
 ## Scenario Statistics
 
@@ -12,9 +12,9 @@ Four ENTROPY operations went live inside the same sixty seconds. SAFETYNET has o
 | Total tasks | 18 (5 optional) |
 | VM flag challenges | 4 |
 | Physical locks | 8 |
-| AND-gate convergences | 0 |
+| AND-gate convergences | 1 |
 | Rooms | 6 |
-| Puzzle graph nodes / edges | 40 / 44 |
+| Puzzle graph nodes / edges | 42 / 48 |
 | Story graph nodes / edges | 6 / 5 |
 
 ## Critical Path
@@ -81,6 +81,7 @@ flowchart TD
   lock_pick_kit{"Lock Pick Kit"}
   rfid_cloner{"RFID Cloner"}
   fingerprint_kit{"Fingerprint Kit"}
+  threat_desk_summary_tasking_02_41_pt{"Threat Desk Summary -- Tasking 02:41 PT"}
   lock_badge_printer["Contractor Badge Station<br/>PIN lock"]
   printed_contractor_badge{"Printed Contractor Badge"}
   contractor_badge_station["Contractor Badge Station"]
@@ -101,6 +102,7 @@ flowchart TD
   backup_power_transfer_switch{"Backup Power Transfer Switch"}
   recovered_site_reference_tomb_gamma{"Recovered Site Reference -- 'Tomb Gamma'"}
   intercepted_mail_deployment_confirmed{"Intercepted Mail -- Deployment Confirmed"}
+  andgate1((" + "))
   vmch_recover_coordination_traffic["Mount the attack host's open NFS export and submit the flag on it"]
   vmfl_recover_coordination_traffic{"Recover Coordination Traffic Flag"}
   vmch_intercept_c2_channel["Find the listener on the attack host, read what it sends and submit the flag"]
@@ -118,6 +120,7 @@ flowchart TD
   lock_pick_kit -.-> door_generator_room
   security_checkpoint --> rfid_cloner
   security_checkpoint --> fingerprint_kit
+  security_checkpoint --> threat_desk_summary_tasking_02_41_pt
   security_checkpoint --> lock_badge_printer
   lock_badge_printer --> printed_contractor_badge
   printed_contractor_badge --> door_server_room
@@ -141,9 +144,11 @@ flowchart TD
   scada_control --> signed_casualty_projection
   generator_room --> plant_maintenance_log
   generator_room --> backup_power_transfer_switch
-  backup_power_transfer_switch --> door_cable_vault
   cable_vault --> recovered_site_reference_tomb_gamma
   cable_vault --> intercepted_mail_deployment_confirmed
+  safetynet_relay_terminal -.-> andgate1
+  andgate1 --> door_cable_vault
+  backup_power_transfer_switch --> andgate1
   vmch_recover_coordination_traffic --> vmfl_recover_coordination_traffic
   vmch_intercept_c2_channel --> vmfl_intercept_c2_channel
   vmfl_recover_coordination_traffic -.-> vmch_intercept_c2_channel
@@ -152,15 +157,17 @@ flowchart TD
   vmfl_intercept_c2_channel -.-> vmch_escalate_on_attack_host
   vmch_terminate_cascade_scripts --> vmfl_terminate_cascade_scripts
   vmfl_escalate_on_attack_host -.-> vmch_terminate_cascade_scripts
+  vmfl_terminate_cascade_scripts --> lock_crisis_control_system
   vm_access_terminal --> vmch_recover_coordination_traffic
   security_checkpoint --> operations_floor
 
   class door_server_room,door_scada_control,door_generator_room,door_cable_vault,lock_badge_printer,contractor_badge_station,lock_crisis_control_system,cascade_control_system lock
   class server_room,scada_control,generator_room,cable_vault,security_checkpoint,operations_floor room
-  class lock_pick_kit,rfid_cloner,fingerprint_kit,audited_visitor_log,shift_handover_sheet,safetynet_relay_terminal,signed_casualty_projection,plant_maintenance_log,recovered_site_reference_tomb_gamma,intercepted_mail_deployment_confirmed item
+  class lock_pick_kit,rfid_cloner,fingerprint_kit,threat_desk_summary_tasking_02_41_pt,audited_visitor_log,shift_handover_sheet,safetynet_relay_terminal,signed_casualty_projection,plant_maintenance_log,recovered_site_reference_tomb_gamma,intercepted_mail_deployment_confirmed item
   class printed_contractor_badge,npc_ray_hollis,facility_access_badge_server_zone,plant_maintenance_key,npc_elena_rodriguez,backup_power_transfer_switch key
   class vm_access_terminal,vmch_recover_coordination_traffic,vmch_intercept_c2_channel,vmch_escalate_on_attack_host,vmch_terminate_cascade_scripts vm
   class action_question_elena action
+  class andgate1 gate
   class vmfl_recover_coordination_traffic,vmfl_intercept_c2_channel,vmfl_escalate_on_attack_host,vmfl_terminate_cascade_scripts flag
 
   classDef optional stroke-dasharray:5 2
@@ -192,7 +199,7 @@ flowchart TD
 
   aim_commit_the_team{{"Commit The Team And Get Inside"}}
   aim_reach_the_control_network{{"Get Onto The Control Network"}}
-  aim_trace_the_intrusion{{"Trace How They Got In"}}
+  aim_trace_the_intrusion{{"Trace How They Got In (Optional)"}}
   aim_reach_the_control_room{{"Get Into The Control Room"}}
   aim_take_the_attack_host{{"Take The Attack Host Off The Board"}}
   aim_end_the_sequence{{"Stop The Sequence And Report"}}
@@ -244,6 +251,7 @@ flowchart TD
   lock_pick_kit{"Lock Pick Kit"}
   rfid_cloner{"RFID Cloner"}
   fingerprint_kit{"Fingerprint Kit"}
+  threat_desk_summary_tasking_02_41_pt{"Threat Desk Summary -- Tasking 02:41 PT"}
   lock_badge_printer["Contractor Badge Station<br/>PIN lock"]
   printed_contractor_badge{"Printed Contractor Badge"}
   contractor_badge_station["Contractor Badge Station"]
@@ -264,6 +272,7 @@ flowchart TD
   backup_power_transfer_switch{"Backup Power Transfer Switch"}
   recovered_site_reference_tomb_gamma{"Recovered Site Reference -- 'Tomb Gamma'"}
   intercepted_mail_deployment_confirmed{"Intercepted Mail -- Deployment Confirmed"}
+  andgate1((" + "))
   vmch_recover_coordination_traffic["Mount the attack host's open NFS export and submit the flag on it"]
   vmfl_recover_coordination_traffic{"Recover Coordination Traffic Flag"}
   vmch_intercept_c2_channel["Find the listener on the attack host, read what it sends and submit the flag"]
@@ -274,7 +283,7 @@ flowchart TD
   vmfl_terminate_cascade_scripts{"Terminate Cascade Scripts Flag"}
   aim_commit_the_team{{"Commit The Team And Get Inside"}}
   aim_reach_the_control_network{{"Get Onto The Control Network"}}
-  aim_trace_the_intrusion{{"Trace How They Got In"}}
+  aim_trace_the_intrusion{{"Trace How They Got In (Optional)"}}
   aim_reach_the_control_room{{"Get Into The Control Room"}}
   aim_take_the_attack_host{{"Take The Attack Host Off The Board"}}
   aim_end_the_sequence{{"Stop The Sequence And Report"}}
@@ -287,6 +296,7 @@ flowchart TD
   lock_pick_kit -.-> door_generator_room
   security_checkpoint --> rfid_cloner
   security_checkpoint --> fingerprint_kit
+  security_checkpoint --> threat_desk_summary_tasking_02_41_pt
   security_checkpoint --> lock_badge_printer
   lock_badge_printer --> printed_contractor_badge
   printed_contractor_badge --> door_server_room
@@ -310,9 +320,11 @@ flowchart TD
   scada_control --> signed_casualty_projection
   generator_room --> plant_maintenance_log
   generator_room --> backup_power_transfer_switch
-  backup_power_transfer_switch --> door_cable_vault
   cable_vault --> recovered_site_reference_tomb_gamma
   cable_vault --> intercepted_mail_deployment_confirmed
+  safetynet_relay_terminal -.-> andgate1
+  andgate1 --> door_cable_vault
+  backup_power_transfer_switch --> andgate1
   vmch_recover_coordination_traffic --> vmfl_recover_coordination_traffic
   vmch_intercept_c2_channel --> vmfl_intercept_c2_channel
   vmfl_recover_coordination_traffic -.-> vmch_intercept_c2_channel
@@ -321,6 +333,7 @@ flowchart TD
   vmfl_intercept_c2_channel -.-> vmch_escalate_on_attack_host
   vmch_terminate_cascade_scripts --> vmfl_terminate_cascade_scripts
   vmfl_escalate_on_attack_host -.-> vmch_terminate_cascade_scripts
+  vmfl_terminate_cascade_scripts --> lock_crisis_control_system
   vm_access_terminal --> vmch_recover_coordination_traffic
   security_checkpoint --> operations_floor
   aim_commit_the_team -.-> aim_reach_the_control_network
@@ -342,10 +355,11 @@ flowchart TD
 
   class door_server_room,door_scada_control,door_generator_room,door_cable_vault,lock_badge_printer,contractor_badge_station,lock_crisis_control_system,cascade_control_system lock
   class server_room,scada_control,generator_room,cable_vault,security_checkpoint,operations_floor room
-  class lock_pick_kit,rfid_cloner,fingerprint_kit,audited_visitor_log,shift_handover_sheet,safetynet_relay_terminal,signed_casualty_projection,plant_maintenance_log,recovered_site_reference_tomb_gamma,intercepted_mail_deployment_confirmed item
+  class lock_pick_kit,rfid_cloner,fingerprint_kit,threat_desk_summary_tasking_02_41_pt,audited_visitor_log,shift_handover_sheet,safetynet_relay_terminal,signed_casualty_projection,plant_maintenance_log,recovered_site_reference_tomb_gamma,intercepted_mail_deployment_confirmed item
   class printed_contractor_badge,npc_ray_hollis,facility_access_badge_server_zone,plant_maintenance_key,npc_elena_rodriguez,backup_power_transfer_switch key
   class vm_access_terminal,vmch_recover_coordination_traffic,vmch_intercept_c2_channel,vmch_escalate_on_attack_host,vmch_terminate_cascade_scripts vm
   class action_question_elena action
+  class andgate1 gate
   class vmfl_recover_coordination_traffic,vmfl_intercept_c2_channel,vmfl_escalate_on_attack_host,vmfl_terminate_cascade_scripts flag
   class aim_commit_the_team,aim_reach_the_control_room,aim_take_the_attack_host,aim_end_the_sequence critical
   class aim_reach_the_control_network,aim_trace_the_intrusion aim

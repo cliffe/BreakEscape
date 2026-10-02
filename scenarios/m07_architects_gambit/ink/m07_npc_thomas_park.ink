@@ -33,7 +33,7 @@ VAR park_greeted = false
 === entry ===
 // PASS 2: the transfer switch is upstairs in the generator hall; he is in the
 // vault, cutting the control run that feeds it (the jumper upstairs is his too).
-Narrator: He is kneeling at an open junction box on the control run that feeds the transfer switch upstairs, a flashlight propped on the cable tray. He does not stop working when the door moves.
+Narrator: He is kneeling at an open junction box on the control run to the transfer switch. He doesn't stop working.
 
 Thomas Park: Four minutes and I'd have been out. Four.
 
@@ -55,42 +55,41 @@ Thomas Park: Four minutes and I'd have been out. Four.
 === refuse ===
 Thomas Park: No.
 
-Narrator: He does not look up. The stripped conductor in his left hand is a finger's width from the terminal block and he holds it there, steady, like a man making a point he has made before.
+Narrator: He doesn't look up. The stripped wire in his hand stays a finger's width from the terminal.
 
-Thomas Park: I lean four inches and this whole building goes to candles. You want to keep talking, talk quieter.
+Thomas Park: I lean four inches and this building goes to candles. Talk quieter.
 -> hub
 
 === paid ===
-Thomas Park: Job's a building. Cut the backup, walk out, get paid. Nobody briefs me on the rest and I don't ask, because asking is how you end up in a room with someone like you.
+Thomas Park: Job's a building. Cut the backup, walk out, get paid. I don't ask about the rest.
+Thomas Park: Asking is how you end up in a room with someone like you.
 -> hub
 
 === projection ===
-Narrator: You hold the page where the flashlight can find it. He reads two lines, which is all it takes, because the number is on the second one and it has a doctor's signature under it.
+Narrator: You hold the page where the flashlight can find it. He reads two lines. The number is on the second.
 
-Thomas Park: Two hundred and forty.
+Thomas Park: Two hundred and forty. Three hundred and eighty-five.
 
-You: To three hundred and eighty-five. Over seventy-two hours. That is what the backup power is standing between.
+Narrator: The trunk runs hum.
 
-Narrator: He is quiet long enough that you can hear the trunk runs hum.
+Thomas Park: They said a building. Empty, they said. Nobody in it.
 
-Thomas Park: They said data centre. They said nobody's in it.
-
-+ [Nobody is. That was never the point.]
++ [The building's empty. The people are on the other end of the wires.]
     -> stand_down
-+ [You still have four minutes. Use them differently.]
++ [You've got four minutes. Spend them walking out.]
     -> stand_down
 
 === stand_down ===
 ~ park_resolved = "talked"
 #set_global:park_resolved:talked
 #complete_task:neutralise_park
-Narrator: He lays the conductor down on the insulated mat, deliberately, then puts both hands flat on his knees where you can see them.
+Narrator: He lays the wire down on the mat and puts his hands on his knees.
 
-Thomas Park: I'm not going to help you. I want that on record. I'm just not doing this one.
+Thomas Park: I'm not helping you. Put that on record. I'm just not doing this one.
 
-Thomas Park: The vault trunks are tapped at the north run. That's not me. That's been there months.
+Thomas Park: The north trunk run's tapped. Months ago. Not me.
 
-Narrator: He picks up his bag, leaves the flashlight burning on the floor, and walks out past you without hurrying.
+Narrator: He picks up his bag and walks out past you, unhurried.
 
 #exit_conversation
 -> gone
@@ -98,7 +97,7 @@ Narrator: He picks up his bag, leaves the flashlight burning on the floor, and w
 === goes_loud ===
 Thomas Park: Right.
 
-Narrator: He drops the conductor and comes up off his knees with the crimping tool already swinging.
+Narrator: He comes up off his knees with the crimping tool swinging.
 
 ~ park_resolved = "ko"
 #set_global:park_resolved:ko
@@ -107,7 +106,7 @@ Narrator: He drops the conductor and comes up off his knees with the crimping to
 -> parked
 
 === evade ===
-Narrator: You take the door frame back into the dark of the stairwell. He waits, counting, then decides the noise was the building settling and goes back to the junction box.
+Narrator: You back into the dark of the stairwell. He waits, then goes back to the junction box.
 
 ~ park_resolved = "evaded"
 #set_global:park_resolved:evaded
@@ -115,20 +114,20 @@ Narrator: You take the door frame back into the dark of the stairwell. He waits,
 -> hub
 
 === back_at_it ===
-Narrator: He is still at the junction box, working faster now, and the flashlight beam swings to the door before you have finished opening it.
+Narrator: He is still at the junction box, working faster. His flashlight finds the door before you're through it.
 
 Thomas Park: Second time. There isn't a third.
 -> hub
 
 === gone ===
-Narrator: The junction box cover is back on and finger-tight. His flashlight is still lying on the mat, burning down.
+Narrator: The junction box cover is back on, finger-tight. His flashlight lies on the mat, burning down.
 
-+ [Take the flashlight and move.]
++ [Move on.]
     #exit_conversation
     -> gone
 
 === down_and_out ===
-Narrator: He is out cold against the cable rack with the crimping tool a few feet from his hand. The backup power stays up, which was the only thing he was ever going to change here.
+Narrator: He is out cold against the cable rack. The backup power stays up.
 
 + [Move on.]
     #exit_conversation

@@ -42,7 +42,7 @@ Four flags, all submitted at `flag_station_safetynet_relay`; `targetFlags` use `
 3. Server room: Elena (optional; revision, password, vault number). VM flags 1 and 2. **Read the relay decode** in the inventory.
 4. Open the control room door (CascadeWindow19) and anything else you want **before** flag 3.
 5. Flag 3, then flag 4 inside the 15-minute window.
-6. Cascade Control System → printout → the Architect's sign-off → debrief → credits.
+6. Cascade Control System → printout → the Architect's sign-off → (the plant and vault are still open; go down now if you skipped them) → call HaX, "Bring me in." (or wait 8 minutes) → debrief → credits.
 7. Optional: generator hall (key or picks). The log says the vault code was reset and the old one is void; the transfer switch plate reads S/N 0098-4703. Vault keypad 4703. Read the trunk runs (the splice), deal with Park (the casualty projection from the control room talks him down), take the mole intercept and the Tomb Gamma dossier.
 
 ## The delegation and the redirect
@@ -51,6 +51,6 @@ The briefing projections are ENTROPY's own; Trojan Horse is understated. The rev
 
 ## Endings and recorded state
 
-`grid_saved`, `countdown_expired`, `team_assignment`, `team_redirected`, `redirect_declined`, `projection_revised`, `mercer_fate`, `mercer_stance`, `mercer_told_diversion`, `elena_outcome`, `hollis_resolved`, `park_resolved`, `vault_entered`, `found_tomb_gamma`, `found_mole_evidence`, `debrief_stance`, and the four `*_ko` latches. All are read by the debrief and/or the credits.
+`grid_saved`, `countdown_expired`, `team_assignment`, `team_redirected`, `redirect_declined`, `projection_revised`, `mercer_fate`, `mercer_stance`, `mercer_told_diversion`, `elena_outcome`, `elena_met`, `hollis_resolved`, `park_resolved`, `vault_entered`, `found_tomb_gamma`, `found_mole_evidence`, `debrief_stance`, and the four `*_ko` latches. All are read by the debrief and/or the credits.
 
 Park's endings: talked (switch intact), knocked out, evaded, fought off, seen and left to work, never found. Every outcome except talked and knocked out ends with the cut finished. Hollis's endings: talked, knocked out, evaded, left at his post.

@@ -12,6 +12,18 @@ that uses it. A name that exists in ink but not in this file is a bug.
 
 ---
 
+## PASS 4 amendments (2026-10-02) — these supersede everything below where they differ
+
+Source: `DESIGN_REVIEW.md`, "Changes made (pass 4 design)".
+
+- **New globals:** `debrief_requested` (HaX's `bring_me_in`, or the timer below; required by every `closing_debrief` trigger), `debrief_timer_fired` (the `debrief_fallback` timer, 9 min after `grid_saved` since round 2; HaX's mappings turn it into `debrief_requested`), `elena_met` (Elena's `opening`), `architect_echo_heard` (the Architect's `t30_close`; gates HaX's `topic_teacher`).
+- **New timer:** `debrief_fallback`.
+- **New start item:** `threat_desk_summary` (text_file, the briefing figures on paper).
+- **New knots:** HaX `bring_me_in`, `topic_teacher`; debrief stitch `revision_payoff.revision_lesson`.
+- **Removed mapping:** the recon-guide offer on `room_entered:server_room`; `recon_guide_offered` is now set by the vm-launcher mapping with `nfs_guide_offered`.
+- **Aim title:** `trace_the_intrusion` is "Trace How They Got In (Optional)". Task ids unchanged.
+- **Round 2:** HaX knot `topic_park`; HaX local `park_hint_given`; HaX VARs `casualty_projection_found`, `park_ko`, `park_resolved` (synced). New mappings: `item_picked_up:key` → `maintenance_key_found` (the key's `onPickup` never runs), a post-abort `npc_ko:james_mercer` row, a found-intercept variant of the sign-off text, three flags-missing variants of the fallback. `take_the_debrief` retitled "Call HaX when you're ready to be brought in" (id unchanged). Round 3: `hurt_line_said` is now a synced global (declared in `globalVariables`), set by HaX mappings on `team_assigned` or first ops-floor entry, not in `first_call_committed`.
+
 ## PASS 3 amendments (2026-10-01) — these supersede everything below where they differ
 
 Source: `PUZZLE_CHAINS_PLAN.md` (signed off after review round 3).
