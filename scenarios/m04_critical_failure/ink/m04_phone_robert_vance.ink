@@ -33,6 +33,10 @@ VAR server_room_reached = false    // global; set on entering the workshop (PASS
 VAR plant_reader_seen = false      // global; set on entering Hall 2 (PASS 3 P8)
 VAR asked_plant_reader = false
 VAR robert_vance_ko = false        // global; Vance knocked out -- nobody answers
+// PASS 4 fix 13: urgency now reads the real state (urgency_stage 2 is never set).
+VAR anomaly_detected = false
+VAR hydrogen_alarm = false
+VAR racks_vented = false
 
 EXTERNAL player_name()
 
@@ -66,9 +70,9 @@ EXTERNAL player_name()
 
 === vance_phone_support_start ===
 {vance_support_calls == 1:
-    Robert Vance: {player_name()}. I'm on the ops desk with both screens up.
+    {player_name()}. What do you need?
 - else:
-    Robert Vance: Still here. Still watching it climb.
+    Still here. Still watching it climb.
 }
 
 -> support_hub
@@ -79,19 +83,19 @@ EXTERNAL player_name()
 
 === support_hub ===
 {robert_vance_ko: -> vance_no_answer}
-+ {not asked_charge_control} [How do the charge-control systems work?]
++ {not asked_charge_control} [How do the charge controls work?]
     ~ asked_charge_control = true
     ~ vance_trust_level += 3
     # influence_increased
     -> charge_control_systems_explanation
 
-+ {server_room_reached and not asked_server_room} [I'm in the engineering workshop. What am I looking for?]
++ {server_room_reached and not asked_server_room} [I'm in the workshop. What am I looking for?]
     ~ asked_server_room = true
     ~ vance_trust_level += 3
     # influence_increased
     -> server_room_guidance
 
-+ {not asked_disabling} [How do I disable their attack safely?]
++ {not asked_disabling} [How do I shut this down safely?]
     ~ asked_disabling = true
     ~ vance_trust_level += 3
     # influence_increased
@@ -99,16 +103,17 @@ EXTERNAL player_name()
 
 + {plant_reader_seen and not asked_plant_reader} [The plant room's on a fingerprint reader.]
     ~ asked_plant_reader = true
-    Robert Vance: HV room. Authorised persons only, and tonight that's me. I can't come: Voltage is on the other side, and somebody has to watch the real numbers.
-    Robert Vance: They didn't need me on the ninth. I log every round on the Hall 1 panel. They'll have had it off that. Do what they did.
+    HV room. Authorised persons only, and tonight that's me.
+    I can't leave the desk. Voltage is through there, and somebody has to watch the real numbers.
+    They didn't need me on the ninth. I log every round on the Hall 1 panel. They lifted my print off it. Do the same.
     -> support_hub
 
-+ [What should I prioritise right now?]
++ [What should I be doing right now?]
     ~ vance_trust_level += 5
     # influence_increased
     -> priority_guidance
 
-+ [How urgent is this?]
++ [How bad is it?]
     ~ vance_trust_level += 3
     # influence_increased
     -> urgency_assessment
@@ -124,11 +129,13 @@ EXTERNAL player_name()
 === charge_control_systems_explanation ===
 ~ guidance_provided = "charge_control_systems"
 
-Robert Vance: Three rack banks. A, B and C, each with its own BMS and its own cooling loop.
+Three rack banks, A, B and C, and each one's got its own management unit and its own cooling loop.
 
-Robert Vance: They're driven over SCADA, and SCADA is theirs, so nothing you type at a terminal will hold — they'll just push it back.
+They all run over SCADA, and SCADA is theirs. Type a change at a terminal and they'll just push it back.
 
-Robert Vance: The one control they can't reach is the hardwired ESD in the plant room. That's what isolates the banks and forces the vent fans. Everything comes down to that button.
+The one thing they can't reach is the hardwired shutdown in the plant room.
+
+It isolates the banks and forces the vents. It all comes down to that button.
 
 -> support_hub
 
@@ -136,12 +143,12 @@ Robert Vance: The one control they can't reach is the hardwired ESD in the plant
 ~ guidance_provided = "server_room"
 
 {attack_mechanism_known:
-    Robert Vance: You've already got their infrastructure mapped. That's the hard part done.
-    Robert Vance: Now it's the shutdown. Nothing you do from a terminal will hold -- they own that layer.
+    You've got their setup mapped. That's the hard part done.
+    Now it's the shutdown. Nothing you type will hold. They own that layer.
 - else:
-    Robert Vance: The terminal in there can reach our SCADA backup server.
-    Robert Vance: If they staged anything, they staged it on that box.
-    Robert Vance: Scan the network, look at what's listening, find where they got in. Anything you pull, put it through the drop-site terminal.
+    The terminal in there reaches the BMS jump server.
+    If they staged anything, it's on that box.
+    Scan it, see what's listening, find their way in. Anything you pull goes through the drop-site terminal.
 }
 
 -> support_hub
@@ -149,61 +156,61 @@ Robert Vance: The one control they can't reach is the hardwired ESD in the plant
 === safe_disabling_guidance ===
 ~ guidance_provided = "disabling"
 
-Robert Vance: One thing, and it isn't a keyboard.
+One thing, and it isn't a keyboard.
 
-Robert Vance: Every control path in this plant runs through SCADA, and SCADA is theirs. Delete their script and they'll push it again before you've closed the window.
+Every control path runs through SCADA, and SCADA is theirs. Delete their script and they'll push it back before you've closed the window.
 
-Robert Vance: The Emergency Shutdown pushbutton in the plant room is hardwired. Physical contacts straight to the bank isolators, no network in the middle. It's the one thing they could never touch.
+The shutdown button in the plant room is hardwired. Straight to the bank isolators, no network in the middle. The one thing they couldn't touch.
 
-Robert Vance: Get to it and press it. That's the mission.
+Get to it and press it. That's the mission.
 
 {urgency_stage >= 3:
-    Robert Vance: And be quick about it. I'm watching bank B climb while we talk.
+    And be quick. I'm watching bank B climb while we talk.
 - else:
-    Robert Vance: Take it methodically. Rushing this is how you trip the thing you're trying to stop.
+    Steady, though. Rush it and you trip the very thing you're stopping.
 }
 
 -> support_hub
 
 === priority_guidance ===
 {not attack_mechanism_known:
-    Robert Vance: Find out how they're driving the SCADA network. Everything else waits on that.
-    Robert Vance: The jump-server terminal in the workshop is your way in.
+    Find out how they're driving the SCADA network. Everything waits on that.
+    The jump-server terminal in the workshop is your way in.
 }
 {attack_mechanism_known and urgency_stage >= 3:
-    Robert Vance: We're past planning. Get to the hardwired ESD and press it -- that's the only thing left that works.
+    We're past planning. Get to the hardwired shutdown and press it. It's the only thing left that works.
 }
 {attack_mechanism_known and urgency_stage < 3:
-    Robert Vance: You know what they did. Now get to the ESD and press it.
+    You know what they did. Now get to the shutdown and press it.
 }
 
 -> support_hub
 
 === urgency_assessment ===
-{urgency_stage >= 4:
-    Robert Vance: Bad. Rack temperatures are past the advisory and climbing toward runaway.
-    Robert Vance: The hardwired ESD is built for exactly this — it isolates the bank and forces the vents. Get to it.
-}
-{urgency_stage == 3:
-    Robert Vance: Charge parameters are drifting yellow. There's time. Not a lot.
-}
-{urgency_stage == 2:
-    Robert Vance: Anomalies, nothing critical yet. Use the time while you've got it.
-}
-{urgency_stage < 2:
-    Robert Vance: Stable, for now. But it won't stay stable on its own.
-    Robert Vance: They've set it for 0800.
+{
+- racks_vented:
+    Bank B's gone. A and C are holding, for now.
+    The hardwired shutdown isolates what's left and forces the vents. Get to it.
+- hydrogen_alarm:
+    Bank B's venting hydrogen. That's the stage before fire.
+    The ESD is built for exactly this. Get to it.
+- anomaly_detected:
+    The historian has the cells past sixty and climbing. My screens still say twenty-eight.
+    They've set it for 0800, but cells that hot don't wait for a clock.
+- else:
+    The historian reads hotter than my screens. Read the dial in Hall 1 and you'll see by how much.
+    They've set it for 0800.
 }
 
 -> support_hub
 
 === support_call_end ===
-Robert Vance: Call me if you need it.
+Call me if you need it.
 
 {urgency_stage >= 3:
-    Robert Vance: And hurry.
+    And hurry.
 - else:
-    Robert Vance: I'm not going anywhere.
+    I'm not going anywhere.
 }
 
 -> support_hub

@@ -17,8 +17,14 @@
 
 VAR cipher_alerted_team = false
 VAR radio_interrupted = false
+// PASS 4 (fixes 6-7). Globals, synced. cipher_walked: he left when told about
+// the night crew (hidden by his setVisible mapping). cell_alerted: his radio
+// call got out, so Relay is waiting in Hall 2.
+VAR cipher_walked = false
+VAR cell_alerted = false
 
 === start ===
+{cipher_walked: -> cipher_gone}
 {radio_interrupted or cipher_alerted_team: -> cipher_standoff}
 -> cipher_detection
 
@@ -53,6 +59,7 @@ ENTROPY Operative 'Cipher': Hey. Hey! This bay's locked off for maintenance. Who
 
 === cipher_alerts_team ===
 ~ cipher_alerted_team = true
+~ cell_alerted = true
 
 ENTROPY Operative 'Cipher': Voltage, Hall 1. We've got a live one.
 
@@ -93,14 +100,30 @@ ENTROPY Operative 'Cipher': I'm not walking. Not tonight.
 === cipher_doubt ===
 ENTROPY Operative 'Cipher': Nobody's in the halls at night. That's the whole point of doing it at night.
 
-Narrator: He says it like a line he has been given, and not one he has checked.
+Narrator: He says it too fast.
 
 * [There's a night crew in Hall 2. Go and look.]
     ENTROPY Operative 'Cipher': ...You're lying.
-    Narrator: He wants it to be a lie. He does not move to check.
-    -> cipher_refuses
+    Narrator: His eyes go to the Hall 2 door, and stay there.
+    -> cipher_walks
 
 * [Ask him yourself. He's in the plant room.]
     Narrator: He raises the handset again.
     ENTROPY Operative 'Cipher': I will.
     -> cipher_alerts_team
+
+// PASS 4 fix 7: the words land. He goes to look, and doesn't come back. The
+// global is set last, because its mapping hides him at once.
+=== cipher_walks ===
+ENTROPY Operative 'Cipher': If you're lying, I'm coming back for you.
+Narrator: He clips the handset back on his belt, unradioed, and walks for the Hall 2 door without looking at you again.
+#complete_task:neutralize_operative_cipher
+~ cipher_walked = true
+#exit_conversation
+-> cipher_gone
+
+// Resting knot (lesson 21): he is hidden, but the story never ends.
+=== cipher_gone ===
++ [(He's gone.)]
+    #exit_conversation
+    -> cipher_gone

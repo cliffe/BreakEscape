@@ -30,8 +30,14 @@ VAR operative_static_defeated = false
 // the trigger_race timer when he reaches the laptop first.
 VAR voltage_fight_started = false
 VAR vented_by_trigger = false
-VAR racks_vented = false              // engine-owned; the 12-minute vent or the race
+VAR racks_vented = false              // engine-owned; the 14-minute vent or the race
 VAR operatives_defeated = 0
+// PASS 4 fix 21: set when the player identifies his print on the bypass module. Read only.
+VAR voltage_print_on_bypass = false
+// Round 2 (playtest issue 4): his count reads all three KO globals; the old
+// operatives_defeated counter only ever counted Cipher and Relay.
+VAR operative_cipher_defeated = false
+VAR operative_relay_defeated = false
 
 // External variables (set by game)
 EXTERNAL player_name()
@@ -65,7 +71,7 @@ EXTERNAL player_name()
 === voltage_standoff_resumed ===
 Voltage: *not looking up from the laptop* Still here.
 
-Voltage: Nothing you say next is going to be new.
+Voltage: Nothing you say next will be new.
 
 + [Say nothing.]
     #exit_conversation
@@ -76,37 +82,48 @@ Voltage: Nothing you say next is going to be new.
 
 // Voltage at laptop, notices player entry
 
-You're good. Better than the usual SAFETYNET drones.
+So they sent someone.
 
-{operatives_defeated >= 2:
-    You put two of my people down. Impressive.
+~ temp down = 0
+{operative_cipher_defeated:
+    ~ down = down + 1
 }
-{operatives_defeated == 1:
+{operative_relay_defeated:
+    ~ down = down + 1
+}
+{operative_static_defeated:
+    ~ down = down + 1
+}
+{
+- down >= 3:
+    Three of my people down. Thorough.
+- down == 2:
+    Two of my people down.
+- down == 1:
     You got past my people.
-}
-{operatives_defeated == 0:
-    Sneaky approach. I respect that.
+- else:
+    And not one of my people saw you come.
 }
 
-But you're too late. This facility's security is a joke. We've been here for three days setting this up.
+But you're late. This place has no security worth the name, and we've had three days in it.
 
-* [The attack is over, Voltage. Stand down.]
+* [It's over, Voltage. Stand down.]
     -> voltage_professional_approach
 
-* [You're not torching this battery hall.]
+* [You're not burning this hall down.]
     -> voltage_confrontational
 
 === voltage_professional_approach ===
 #speaker:voltage
 
-Professional to the end. I can respect that.
+Polite. They train that into you.
 
 -> voltage_has_leverage
 
 === voltage_confrontational ===
 #speaker:voltage
 
-Bold. But conviction doesn't stop attacks.
+Bold. Conviction never stopped an attack.
 
 -> voltage_threatens_trigger
 
@@ -115,14 +132,14 @@ Bold. But conviction doesn't stop attacks.
 
 // Voltage hand moves near laptop
 
-// PASS 3 playtest D4: after the 12-minute vent the threat must match the hall.
+// PASS 3 playtest D4: after the vent (14 min since pass 4) the threat must match the hall.
 {racks_vented:
-    Bank B's already gone. One keystroke and A and C follow it, the hall burns, and 240,000 people lose power by noon.
+    Bank B's already gone. One keystroke and A and C follow it, and the grid goes down with them.
 - else:
-    One keystroke and I trigger it now. The racks go critical, the hall burns, and 240,000 people lose power by noon.
+    One keystroke and it's now, not eight o'clock. The racks go critical, the hall burns, and the grid drops.
 }
 
-Your move, agent.
+Your move.
 
 * [Then we do this the hard way.]
     -> confrontation_choice
@@ -135,7 +152,7 @@ Your move, agent.
 
 // Voltage hand moves to laptop
 
-One keystroke. That's all it takes.
+Look at my hand. Then look at the clock.
 
 -> voltage_has_leverage
 
@@ -144,16 +161,16 @@ One keystroke. That's all it takes.
 
 You want to talk? Fine.
 
-This facility? It's one test run. The Architect has operations in six cities.
+This site is one test run. The Architect has six cities on the go.
 
-Coordinated infrastructure attacks with Social Fabric ready to amplify the panic.
+Infrastructure attacks, and Social Fabric ready to turn the panic into a riot.
 
-You think stopping this changes anything? You stopped ONE attack. How many others can you stop?
+You stop this one. How many of the others can you be standing in front of?
 
 * [We'll stop all of them. Starting with you.]
     -> confrontation_choice
 
-* [Why infrastructure? Why target civilians?]
+* [Why infrastructure? Why civilians?]
     -> voltage_ideology_explanation
 
 * [Who is The Architect?]
@@ -162,56 +179,58 @@ You think stopping this changes anything? You stopped ONE attack. How many other
 === voltage_ideology_explanation ===
 #speaker:voltage
 
-Voltage: You want the reasoning. Everyone wants the reasoning.
+Voltage: You want the reasoning. They always want the reasoning.
 
-Voltage: Two hundred megawatt-hours in a shed on a floodplain, holding up a city that never asked whether it should. Budget cuts, ageing cells, one fake maintenance company and we walked in through the front.
+Voltage: Two hundred megawatt-hours in a shed on a floodplain, holding up a city that never asked whether it should.
 
-Voltage: We didn't make it fragile. We just stopped pretending it isn't.
+Voltage: Budget cuts, ageing cells, one fake maintenance firm, and we walked in the front.
 
-* [How many people does the hall take with it?]
+Voltage: We didn't make it fragile. We just stopped pretending it wasn't.
+
+* [How many does the hall take with it?]
     ~ asked_the_number = true
     -> voltage_states_the_number
 
-* [You've been told to say all that.]
+* [Someone wrote that speech for you.]
     Voltage: *almost amused* I wrote it.
     -> voltage_states_the_number
 
 === voltage_states_the_number ===
 #speaker:voltage
 
-Narrator: He answers without hesitating, and without looking away from you, which is the part you will remember.
+Narrator: He answers without hesitating, and without looking away.
 
-Voltage: Eleven on site tonight. Nine of them in Hall 2 on the night crew, two in the gatehouse.
+Voltage: Eleven on site tonight. Nine on the night crew in Hall 2, two in the gatehouse.
 
-Voltage: On the feed, best case, forty-odd. Care homes on oxygen concentrators, the dialysis unit at St Aldate's, home ventilators. That's the number Blackout signed and I countersigned.
+Voltage: On the feed, best case, forty-odd. Oxygen concentrators, the dialysis unit at St Aldate's, home ventilators. That's the number Blackout signed, and I countersigned.
 
 Voltage: You think I don't know it. I know it to one decimal place.
 
 * [And you came anyway.]
-    Voltage: I came *because* of it.
-    Voltage: A grid that kills fifty when it stumbles is a grid that shouldn't have been built that way. Somebody has to make that legible.
+    Voltage: I came because of it.
+    Voltage: A grid that kills fifty when it stumbles was built wrong. Somebody has to make that legible.
     -> voltage_owns_it
 
 * [Say their names, then.]
-    Narrator: For the first time, something moves behind his face. It isn't doubt. It's irritation at being slowed down.
-    Voltage: *flat* I don't need to know their names to know the number.
+    Narrator: For the first time something moves behind his face. His eyes go to the laptop clock.
+    Voltage: *flat* I don't need their names to know the number.
     -> voltage_owns_it
 
 === voltage_owns_it ===
 #speaker:voltage
 
-Voltage: There's no version of this where I'm the one who blinks. You should have worked that out in the corridor.
+Voltage: There's no version of this where I blink. You should have worked that out on the way in.
 
 -> confrontation_choice
 
 === voltage_architect_deflection ===
 #speaker:voltage
 
-Voltage: The Architect? You'll never find them.
+Voltage: The Architect? You'll never find him.
 
-Voltage: Not in your databases, not in your surveillance, not through your informants. Directives come down and cells execute. That's the whole architecture.
+Voltage: Not in your databases, not on your cameras, not from your informants. Directives come down, cells carry them out. That's the whole of it.
 
-Voltage: I run this site. Blackout signs Critical Mass. Above that it stops being a person you can arrest.
+Voltage: I run this site. Blackout signs for Critical Mass. Above him it stops being a person you can arrest.
 
 -> confrontation_choice
 
@@ -239,7 +258,7 @@ Voltage: So. The button, or me.
 {operative_static_defeated:
     Voltage: Static's down. So it's you, me, and one keystroke.
 - else:
-    Voltage: You genuinely don't get to have both, and I'd think about it quickly.
+    Voltage: You don't get to have both. I'd decide quickly.
 }
 
 + [I'm taking you down. Now.] #color:red
@@ -274,25 +293,17 @@ Narrator: He moves for the bench and you move for him, and the plant room stops 
 === choice_arrest ===
 #speaker:voltage
 
-Narrator: He looks at your hands, then at the door behind you, and does the arithmetic he has done all night.
+Narrator: He looks at your hands, then at the door behind you.
 
 // PASS 3 P11a: only reachable with Static down.
-Voltage: Static's down, isn't he.
+Voltage: Nobody left to stop you. All right.
 
-+ [Blackout signed it. You countersigned. Tell that to a court.]
-    // DELIBERATE EXCEPTION to the engine-owns-voltage_captured rule in the header:
-    // the peaceful arrest has no KO, so globalVarOnKO never fires. This is the only
-    // signal that Voltage was taken alive, so ink sets it here and it syncs back.
-    // Every OTHER path leaves voltage_captured to the engine.
-    ~ voltage_captured = true
-    ~ voltage_confronted = true
-    #complete_task:confront_voltage
-    Voltage: ...A court. Fine. A court can have the number too.
-    Narrator: He steps back from the bench with his hands open, and lets you take the laptop off it.
-    #exit_conversation
-    // Story stays live so re-talk re-enters the resting knot, not "(End of
-    // conversation)" (lesson 21).
-    -> voltage_captured_end
+// PASS 4 fix 21: the optional second print gives the arrest line its evidence.
++ {voltage_print_on_bypass} [Your thumb's on the bypass module. Blackout signed, you countersigned. Tell that to a court.]
+    -> arrest_taken
+
++ {not voltage_print_on_bypass} [Blackout signed it. You countersigned. Tell that to a court.]
+    -> arrest_taken
 
 // PASS 3 (round 3, M2): the old "Last chance. Step away." made him refuse and
 // fire #hostile from a surrender demand. With Static down the arrest stands;
@@ -300,16 +311,32 @@ Voltage: Static's down, isn't he.
 + [Not yet.]
     -> confrontation_choice
 
+=== arrest_taken ===
+#speaker:voltage
+// DELIBERATE EXCEPTION to the engine-owns-voltage_captured rule in the header:
+// the peaceful arrest has no KO, so globalVarOnKO never fires. This is the only
+// signal that Voltage was taken alive, so ink sets it here and it syncs back.
+// Every OTHER path leaves voltage_captured to the engine.
+~ voltage_captured = true
+~ voltage_confronted = true
+#complete_task:confront_voltage
+Voltage: ...A court. Fine. Let them read the casualty model. I signed it.
+Narrator: He steps back from the bench with his hands open, and lets you take the laptop off it.
+#exit_conversation
+// Story stays live so re-talk re-enters the resting knot, not "(End of
+// conversation)" (lesson 21).
+-> voltage_captured_end
+
 // ---------- GO FOR THE BUTTON ----------
 
 === choice_button ===
 #speaker:voltage
 
-Narrator: You break for the wall. He does not try to stop you -- he goes the other way, for the dock door, and that tells you exactly how he had this ranked.
+Narrator: You break for the wall. He doesn't try to stop you. He goes the other way, for the dock door.
 
-Voltage: *already moving* Good. That's the right call.
+Voltage: Good. That's the right call.
 
-Voltage: You save your eleven and your forty. I'll be somewhere else by the time anyone counts them.
+Voltage: You save your eleven and your forty. I'll be long gone before anyone counts them.
 
 ~ voltage_escaped = true
 ~ voltage_confronted = true
@@ -350,7 +377,7 @@ Narrator: The dock door bangs open onto the loading bay and the cold, and he's g
     ~ voltage_captured = true
     ~ voltage_confronted = true
     #complete_task:confront_voltage
-    Voltage: Why not. The number's already moving.
+    Voltage: Why not. The number's moving already.
     #exit_conversation
     -> voltage_captured_end
 
@@ -375,7 +402,7 @@ Narrator: The dock door bangs open onto the loading bay and the cold, and he's g
 #complete_task:confront_voltage
 
 + [Nothing you want to tell me?]
-    Voltage: I told you the number. That's the only true thing anyone said in here tonight.
+    Voltage: I told you the number. The only true thing anyone said in here tonight.
     -> voltage_captured_end
 
 + [Say nothing.]
@@ -395,12 +422,12 @@ Narrator: The dock door bangs open onto the loading bay and the cold, and he's g
 #complete_task:confront_voltage
 
 + [Look through the dock door.]
-    Narrator: The loading bay is empty and cold. A vehicle was here; it isn't now. Voltage made the exchange he wanted -- the grid for his own head start.
+    Narrator: The loading bay is empty and cold. A vehicle was here. It isn't now.
     #exit_conversation
     -> voltage_escape_success
 
 + [Turn back to the button.]
     #exit_conversation
-    Narrator: The red mushroom head is still on the wall behind you, and the racks are still climbing. That is the only thing that matters now.
+    Narrator: The red mushroom head is still on the wall behind you, and the racks are still climbing.
     -> voltage_escape_success
 

@@ -140,9 +140,9 @@
       <tr><th>Optional tasks</th><td class="val">4 / 18</td></tr>
       <tr><th>VM flag challenges</th><td class="val">4</td></tr>
       <tr><th>AND-gate convergences</th><td class="val">0</td></tr>
-      <tr><th>Physical locks (puzzle)</th><td class="val">9</td></tr>
+      <tr><th>Physical locks (puzzle)</th><td class="val">7</td></tr>
       <tr><th>Rooms</th><td class="val">9</td></tr>
-      <tr><th>Puzzle nodes / edges</th><td class="val">43 / 46</td></tr>
+      <tr><th>Puzzle nodes / edges</th><td class="val">43 / 52</td></tr>
       <tr><th>Story nodes / edges</th><td class="val">6 / 5</td></tr>
     </table>
   </div>
@@ -193,7 +193,6 @@
   bms_jump_server_terminal["BMS Jump Server Terminal"]
   fingerprint_kit{"Fingerprint Kit"}
   optigrid_job_card_4782_back_page{"OptiGrid Job Card #4782 (back page)"}
-  optigrid_tool_case["OptiGrid Tool Case"]
   security_office("Security Office")
   access_control_export_hv_plant_room{"Access Control Export: HV Plant Room"}
   battery_hall_1("BATTERY HALL 1 — RESTRICTED ACCESS — PPE REQUIRED")
@@ -203,9 +202,10 @@
   npc_entropy_operative_relay{"ENTROPY Operative 'Relay'"}
   workshop_keycard_level_2{"Workshop Keycard (Level 2)"}
   lock_esd_pushbutton["Emergency Shutdown Pushbutton — Rack Banks A-C"]
+  npc_voltage_critical_mass_leader{"Voltage (Critical Mass Leader)"}
+  action_deal_with_voltage>"Deal with Voltage: fight, arrest, or let him run"]
   loading_dock("Loading Dock")
   social_fabric_safehouse_card_encoded{"Social Fabric Safehouse Card (Encoded)"}
-  abandoned_extraction_go_bag["Abandoned Extraction Go-Bag"]
   vmch_submit_network_scan_flag["Submit the flag from the fake rack status page"]
   vmfl_submit_network_scan_flag{"Network Scan Flag"}
   vmch_submit_ftp_intel_flag["Submit the intelligence file from their FTP service"]
@@ -235,7 +235,6 @@
   lock_optigrid_tool_case --> fingerprint_kit
   fingerprint_kit --> door_plant_room
   lock_optigrid_tool_case --> optigrid_job_card_4782_back_page
-  engineering_workshop --> optigrid_tool_case
   security_office --> access_control_export_hv_plant_room
   security_office --> lock_security_equipment_locker
   battery_hall_1 --> analogue_thermometer_rack_bank_c_wall
@@ -246,9 +245,10 @@
   npc_entropy_operative_relay --> workshop_keycard_level_2
   workshop_keycard_level_2 --> door_engineering_workshop
   plant_room --> lock_esd_pushbutton
+  plant_room --> npc_voltage_critical_mass_leader
+  npc_voltage_critical_mass_leader --> action_deal_with_voltage
   loading_dock --> lock_extraction_gobag
   lock_extraction_gobag --> social_fabric_safehouse_card_encoded
-  loading_dock --> abandoned_extraction_go_bag
   vmch_submit_network_scan_flag --> vmfl_submit_network_scan_flag
   vmch_submit_ftp_intel_flag --> vmfl_submit_ftp_intel_flag
   vmfl_submit_network_scan_flag -.-> vmch_submit_ftp_intel_flag
@@ -261,12 +261,18 @@
   operations_office --> scada_control_room
   operations_office --> security_office
   scada_control_room --> battery_hall_1
+  analogue_thermometer_rack_bank_c_wall --> lock_esd_pushbutton
+  vmfl_submit_network_scan_flag --> lock_esd_pushbutton
+  vmfl_submit_ftp_intel_flag --> lock_esd_pushbutton
+  vmfl_submit_distcc_exploit_flag --> lock_esd_pushbutton
+  vmfl_submit_privesc_flag --> lock_esd_pushbutton
+  action_deal_with_voltage --> lock_esd_pushbutton
 
-  class door_engineering_workshop,door_battery_hall_2,door_plant_room,lock_security_equipment_locker,lock_optigrid_tool_case,lock_extraction_gobag,optigrid_tool_case,lock_esd_pushbutton,abandoned_extraction_go_bag lock
+  class door_engineering_workshop,door_battery_hall_2,door_plant_room,lock_security_equipment_locker,lock_optigrid_tool_case,lock_extraction_gobag,lock_esd_pushbutton lock
   class engineering_workshop,battery_hall_2,plant_room,main_entrance,operations_office,scada_control_room,security_office,battery_hall_1,loading_dock room
   class rfid_cloner,lock_pick_kit,maintenance_work_orders,scada_hmi_main_display,fingerprint_kit,optigrid_job_card_4782_back_page,access_control_export_hv_plant_room,analogue_thermometer_rack_bank_c_wall,h_gas_detector_panel,duty_round_panel,social_fabric_safehouse_card_encoded item
-  class npc_robert_vance,facility_access_keycard_level_1,npc_entropy_operative_relay,workshop_keycard_level_2 key
-  class action_meet_robert_vance action
+  class npc_robert_vance,facility_access_keycard_level_1,npc_entropy_operative_relay,workshop_keycard_level_2,npc_voltage_critical_mass_leader key
+  class action_meet_robert_vance,action_deal_with_voltage action
   class bms_jump_server_terminal,vmch_submit_network_scan_flag,vmch_submit_ftp_intel_flag,vmch_submit_distcc_exploit_flag,vmch_submit_privesc_flag vm
   class vmfl_submit_network_scan_flag,vmfl_submit_ftp_intel_flag,vmfl_submit_distcc_exploit_flag,vmfl_submit_privesc_flag flag
 
@@ -347,7 +353,6 @@
   bms_jump_server_terminal["BMS Jump Server Terminal"]
   fingerprint_kit{"Fingerprint Kit"}
   optigrid_job_card_4782_back_page{"OptiGrid Job Card #4782 (back page)"}
-  optigrid_tool_case["OptiGrid Tool Case"]
   security_office("Security Office")
   access_control_export_hv_plant_room{"Access Control Export: HV Plant Room"}
   battery_hall_1("BATTERY HALL 1 — RESTRICTED ACCESS — PPE REQUIRED")
@@ -357,9 +362,10 @@
   npc_entropy_operative_relay{"ENTROPY Operative 'Relay'"}
   workshop_keycard_level_2{"Workshop Keycard (Level 2)"}
   lock_esd_pushbutton["Emergency Shutdown Pushbutton — Rack Banks A-C"]
+  npc_voltage_critical_mass_leader{"Voltage (Critical Mass Leader)"}
+  action_deal_with_voltage>"Deal with Voltage: fight, arrest, or let him run"]
   loading_dock("Loading Dock")
   social_fabric_safehouse_card_encoded{"Social Fabric Safehouse Card (Encoded)"}
-  abandoned_extraction_go_bag["Abandoned Extraction Go-Bag"]
   vmch_submit_network_scan_flag["Submit the flag from the fake rack status page"]
   vmfl_submit_network_scan_flag{"Network Scan Flag"}
   vmch_submit_ftp_intel_flag["Submit the intelligence file from their FTP service"]
@@ -395,7 +401,6 @@
   lock_optigrid_tool_case --> fingerprint_kit
   fingerprint_kit --> door_plant_room
   lock_optigrid_tool_case --> optigrid_job_card_4782_back_page
-  engineering_workshop --> optigrid_tool_case
   security_office --> access_control_export_hv_plant_room
   security_office --> lock_security_equipment_locker
   battery_hall_1 --> analogue_thermometer_rack_bank_c_wall
@@ -406,9 +411,10 @@
   npc_entropy_operative_relay --> workshop_keycard_level_2
   workshop_keycard_level_2 --> door_engineering_workshop
   plant_room --> lock_esd_pushbutton
+  plant_room --> npc_voltage_critical_mass_leader
+  npc_voltage_critical_mass_leader --> action_deal_with_voltage
   loading_dock --> lock_extraction_gobag
   lock_extraction_gobag --> social_fabric_safehouse_card_encoded
-  loading_dock --> abandoned_extraction_go_bag
   vmch_submit_network_scan_flag --> vmfl_submit_network_scan_flag
   vmch_submit_ftp_intel_flag --> vmfl_submit_ftp_intel_flag
   vmfl_submit_network_scan_flag -.-> vmch_submit_ftp_intel_flag
@@ -421,12 +427,18 @@
   operations_office --> scada_control_room
   operations_office --> security_office
   scada_control_room --> battery_hall_1
+  analogue_thermometer_rack_bank_c_wall --> lock_esd_pushbutton
+  vmfl_submit_network_scan_flag --> lock_esd_pushbutton
+  vmfl_submit_ftp_intel_flag --> lock_esd_pushbutton
+  vmfl_submit_distcc_exploit_flag --> lock_esd_pushbutton
+  vmfl_submit_privesc_flag --> lock_esd_pushbutton
+  action_deal_with_voltage --> lock_esd_pushbutton
   aim_get_inside -.-> aim_confirm_the_lie
   aim_confirm_the_lie -.-> aim_reach_the_workshop
   aim_reach_the_workshop -.-> aim_map_the_attack
   aim_confirm_the_lie -.-> aim_take_back_the_plant
   aim_map_the_attack -.-> aim_stop_the_runaway
-  main_entrance -.-> aim_get_inside
+  operations_office -.-> aim_get_inside
   door_engineering_workshop -.-> aim_reach_the_workshop
   vmfl_submit_network_scan_flag -.-> aim_map_the_attack
   vmfl_submit_ftp_intel_flag -.-> aim_map_the_attack
@@ -438,11 +450,11 @@
   analogue_thermometer_rack_bank_c_wall -.-> aim_confirm_the_lie
   lock_esd_pushbutton -.-> aim_stop_the_runaway
 
-  class door_engineering_workshop,door_battery_hall_2,door_plant_room,lock_security_equipment_locker,lock_optigrid_tool_case,lock_extraction_gobag,optigrid_tool_case,lock_esd_pushbutton,abandoned_extraction_go_bag lock
+  class door_engineering_workshop,door_battery_hall_2,door_plant_room,lock_security_equipment_locker,lock_optigrid_tool_case,lock_extraction_gobag,lock_esd_pushbutton lock
   class engineering_workshop,battery_hall_2,plant_room,main_entrance,operations_office,scada_control_room,security_office,battery_hall_1,loading_dock room
   class rfid_cloner,lock_pick_kit,maintenance_work_orders,scada_hmi_main_display,fingerprint_kit,optigrid_job_card_4782_back_page,access_control_export_hv_plant_room,analogue_thermometer_rack_bank_c_wall,h_gas_detector_panel,duty_round_panel,social_fabric_safehouse_card_encoded item
-  class npc_robert_vance,facility_access_keycard_level_1,npc_entropy_operative_relay,workshop_keycard_level_2 key
-  class action_meet_robert_vance action
+  class npc_robert_vance,facility_access_keycard_level_1,npc_entropy_operative_relay,workshop_keycard_level_2,npc_voltage_critical_mass_leader key
+  class action_meet_robert_vance,action_deal_with_voltage action
   class bms_jump_server_terminal,vmch_submit_network_scan_flag,vmch_submit_ftp_intel_flag,vmch_submit_distcc_exploit_flag,vmch_submit_privesc_flag vm
   class vmfl_submit_network_scan_flag,vmfl_submit_ftp_intel_flag,vmfl_submit_distcc_exploit_flag,vmfl_submit_privesc_flag flag
   class aim_get_inside,aim_confirm_the_lie,aim_reach_the_workshop,aim_map_the_attack,aim_stop_the_runaway critical
@@ -536,55 +548,56 @@
   rc_safetynet_field_guide_distcc_12{"SAFETYNET Field Guide: distcc Exploitation"}
   rc_safetynet_field_guide_cyberchef_13{"SAFETYNET Field Guide: Encoding and Decoding with CyberChef"}
   rc_safetynet_field_guide_privesc_14{"SAFETYNET Field Guide: Privilege Escalation via Sudo"}
-  rc_relayed_workshop_keycard_15{"Workshop Keycard (relayed copy)"}
-  rc_npc_robert_vance_16("Robert Vance")
-  rc_npc_agent_hax_17("Agent HaX")
-  rc_obj18_18{"Vance's BMS Monitoring Terminal"}
-  rc_obj19_19{"Maintenance Work Orders"}
-  rc_obj20_20{"Facility Layout Map"}
-  rc_obj21_21{"Budget Cut Memo"}
-  rc_npc_robert_vance_22("Robert Vance")
-  rc_vance_level1_keycard_23{"Facility Access Keycard (Level 1)"}
-  rc_scada_hmi_display_24{"SCADA HMI — Main Display"}
-  rc_obj25_25{"Thermal & Charge Parameters Log"}
-  rc_obj26_26{"Emergency Shutdown Procedure"}
-  rc_vm_launcher_bms_jump_server_27{"BMS Jump Server Terminal"}
-  rc_flag_station_dropsite_28{"SAFETYNET Drop-Site Terminal"}
-  rc_obj29_29{"Workshop Access Log"}
-  rc_obj30_30{"Network Monitoring Station"}
-  rc_optigrid_tool_case_31[["OptiGrid Tool Case"]]
-  rc_obj32_32{"Fingerprint Kit"}
-  rc_obj33_33{"OptiGrid Job Card #4782 (back page)"}
-  rc_obj34_34{"Security Camera Monitors"}
-  rc_obj35_35{"Camera System Logs"}
-  rc_obj36_36{"Access Control Export: HV Plant Room"}
-  rc_security_equipment_locker_37[["Security Equipment Locker"]]
-  rc_obj38_38{"Spare Keycard (Level 1)"}
-  rc_obj39_39{"Incident Response Guide"}
-  rc_analog_thermometer_40{"Analogue Thermometer — Rack Bank C Wall"}
-  rc_rack_status_panel_41{"Battery Rack Status Panels (Digital)"}
-  rc_hydrogen_detector_42{"H₂ Gas Detector Panel"}
-  rc_obj43_43{"BESS Process Diagram"}
-  rc_hall1_round_panel_44{"Duty Round Panel"}
-  rc_npc_entropy_operative_cipher_45("ENTROPY Operative 'Cipher'")
-  rc_obj46_46{"Cipher's Intelligence Note"}
-  rc_obj47_47{"Rack Bank Maintenance Manifest"}
-  rc_obj48_48{"BMS Interlock-Bypass Module"}
-  rc_obj49_49{"Emergency Procedures"}
-  rc_npc_entropy_operative_relay_50("ENTROPY Operative 'Relay'")
-  rc_obj51_51{"Workshop Keycard (Level 2)"}
-  rc_obj52_52{"OptiGrid Operations Log"}
-  rc_esd_pushbutton_53{"Emergency Shutdown Pushbutton — Rack Banks A-C"}
-  rc_obj54_54{"ENTROPY Command Laptop"}
-  rc_obj55_55{"Facility Blueprints (Marked)"}
-  rc_obj56_56{"The Architect's Directive"}
-  rc_npc_voltage_critical_mass_leader_57("Voltage (Critical Mass Leader)")
-  rc_npc_entropy_operative_static_58("ENTROPY Operative 'Static'")
-  rc_obj59_59{"Critical Mass Coordination Log"}
-  rc_obj60_60{"Loading Dock Schedule"}
-  rc_obj61_61{"Voltage's Escape Plan"}
-  rc_extraction_gobag_62[["Abandoned Extraction Go-Bag"]]
-  rc_obj63_63{"Social Fabric Safehouse Card (Encoded)"}
+  rc_safetynet_field_guide_proftpd_15{"SAFETYNET Field Guide: ProFTPD Backdoor"}
+  rc_relayed_workshop_keycard_16{"Workshop Keycard (relayed copy)"}
+  rc_npc_robert_vance_17("Robert Vance")
+  rc_npc_agent_hax_18("Agent HaX")
+  rc_obj19_19{"Vance's BMS Monitoring Terminal"}
+  rc_obj20_20{"Maintenance Work Orders"}
+  rc_obj21_21{"Facility Layout Map"}
+  rc_obj22_22{"Budget Cut Memo"}
+  rc_npc_robert_vance_23("Robert Vance")
+  rc_vance_level1_keycard_24{"Facility Access Keycard (Level 1)"}
+  rc_scada_hmi_display_25{"SCADA HMI — Main Display"}
+  rc_obj26_26{"Thermal & Charge Parameters Log"}
+  rc_obj27_27{"Emergency Shutdown Procedure"}
+  rc_vm_launcher_bms_jump_server_28{"BMS Jump Server Terminal"}
+  rc_flag_station_dropsite_29{"SAFETYNET Drop-Site Terminal"}
+  rc_obj30_30{"Workshop Access Log"}
+  rc_obj31_31{"Network Monitoring Station"}
+  rc_optigrid_tool_case_32[["OptiGrid Tool Case"]]
+  rc_obj33_33{"Fingerprint Kit"}
+  rc_obj34_34{"OptiGrid Job Card #4782 (back page)"}
+  rc_obj35_35{"Security Camera Monitors"}
+  rc_obj36_36{"Camera System Logs"}
+  rc_obj37_37{"Access Control Export: HV Plant Room"}
+  rc_security_equipment_locker_38[["Security Equipment Locker"]]
+  rc_obj39_39{"Spare Keycard (Level 1)"}
+  rc_obj40_40{"Incident Response Guide"}
+  rc_analog_thermometer_41{"Analogue Thermometer — Rack Bank C Wall"}
+  rc_rack_status_panel_42{"Battery Rack Status Panels (Digital)"}
+  rc_hydrogen_detector_43{"H₂ Gas Detector Panel"}
+  rc_obj44_44{"BESS Process Diagram"}
+  rc_hall1_round_panel_45{"Duty Round Panel"}
+  rc_npc_entropy_operative_cipher_46("ENTROPY Operative 'Cipher'")
+  rc_obj47_47{"Cipher's Intelligence Note"}
+  rc_obj48_48{"Rack Bank Maintenance Manifest"}
+  rc_bms_bypass_module_49{"BMS Interlock-Bypass Module"}
+  rc_obj50_50{"Emergency Procedures"}
+  rc_npc_entropy_operative_relay_51("ENTROPY Operative 'Relay'")
+  rc_obj52_52{"Workshop Keycard (Level 2)"}
+  rc_obj53_53{"OptiGrid Operations Log"}
+  rc_esd_pushbutton_54{"Emergency Shutdown Pushbutton — Rack Banks A-C"}
+  rc_obj55_55{"ENTROPY Command Laptop"}
+  rc_obj56_56{"Facility Blueprints (Marked)"}
+  rc_obj57_57{"The Architect's Directive"}
+  rc_npc_voltage_critical_mass_leader_58("Voltage (Critical Mass Leader)")
+  rc_npc_entropy_operative_static_59("ENTROPY Operative 'Static'")
+  rc_obj60_60{"Critical Mass Coordination Log"}
+  rc_obj61_61{"Loading Dock Schedule"}
+  rc_obj62_62{"Voltage's Escape Plan"}
+  rc_extraction_gobag_63[["Abandoned Extraction Go-Bag"]]
+  rc_obj64_64{"Social Fabric Safehouse Card (Encoded)"}
 
   main_entrance --> operations_office
   operations_office --> scada_control_room
@@ -608,61 +621,62 @@
   rc_npc_agent_hax_7 --> rc_safetynet_field_guide_distcc_12
   rc_npc_agent_hax_7 --> rc_safetynet_field_guide_cyberchef_13
   rc_npc_agent_hax_7 --> rc_safetynet_field_guide_privesc_14
-  rc_npc_agent_hax_7 --> rc_relayed_workshop_keycard_15
-  main_entrance --> rc_npc_robert_vance_16
-  main_entrance --> rc_npc_agent_hax_17
-  operations_office --> rc_obj18_18
+  rc_npc_agent_hax_7 --> rc_safetynet_field_guide_proftpd_15
+  rc_npc_agent_hax_7 --> rc_relayed_workshop_keycard_16
+  main_entrance --> rc_npc_robert_vance_17
+  main_entrance --> rc_npc_agent_hax_18
   operations_office --> rc_obj19_19
   operations_office --> rc_obj20_20
   operations_office --> rc_obj21_21
-  operations_office --> rc_npc_robert_vance_22
-  rc_npc_robert_vance_22 --> rc_vance_level1_keycard_23
-  scada_control_room --> rc_scada_hmi_display_24
-  scada_control_room --> rc_obj25_25
+  operations_office --> rc_obj22_22
+  operations_office --> rc_npc_robert_vance_23
+  rc_npc_robert_vance_23 --> rc_vance_level1_keycard_24
+  scada_control_room --> rc_scada_hmi_display_25
   scada_control_room --> rc_obj26_26
-  engineering_workshop --> rc_vm_launcher_bms_jump_server_27
-  engineering_workshop --> rc_flag_station_dropsite_28
-  engineering_workshop --> rc_obj29_29
+  scada_control_room --> rc_obj27_27
+  engineering_workshop --> rc_vm_launcher_bms_jump_server_28
+  engineering_workshop --> rc_flag_station_dropsite_29
   engineering_workshop --> rc_obj30_30
-  engineering_workshop --> rc_optigrid_tool_case_31
-  rc_optigrid_tool_case_31 --> rc_obj32_32
-  rc_optigrid_tool_case_31 --> rc_obj33_33
-  security_office --> rc_obj34_34
+  engineering_workshop --> rc_obj31_31
+  engineering_workshop --> rc_optigrid_tool_case_32
+  rc_optigrid_tool_case_32 --> rc_obj33_33
+  rc_optigrid_tool_case_32 --> rc_obj34_34
   security_office --> rc_obj35_35
   security_office --> rc_obj36_36
-  security_office --> rc_security_equipment_locker_37
-  rc_security_equipment_locker_37 --> rc_obj38_38
-  rc_security_equipment_locker_37 --> rc_obj39_39
-  battery_hall_1 --> rc_analog_thermometer_40
-  battery_hall_1 --> rc_rack_status_panel_41
-  battery_hall_1 --> rc_hydrogen_detector_42
-  battery_hall_1 --> rc_obj43_43
-  battery_hall_1 --> rc_hall1_round_panel_44
-  battery_hall_1 --> rc_npc_entropy_operative_cipher_45
-  rc_npc_entropy_operative_cipher_45 --> rc_obj46_46
-  battery_hall_2 --> rc_obj47_47
+  security_office --> rc_obj37_37
+  security_office --> rc_security_equipment_locker_38
+  rc_security_equipment_locker_38 --> rc_obj39_39
+  rc_security_equipment_locker_38 --> rc_obj40_40
+  battery_hall_1 --> rc_analog_thermometer_41
+  battery_hall_1 --> rc_rack_status_panel_42
+  battery_hall_1 --> rc_hydrogen_detector_43
+  battery_hall_1 --> rc_obj44_44
+  battery_hall_1 --> rc_hall1_round_panel_45
+  battery_hall_1 --> rc_npc_entropy_operative_cipher_46
+  rc_npc_entropy_operative_cipher_46 --> rc_obj47_47
   battery_hall_2 --> rc_obj48_48
-  battery_hall_2 --> rc_obj49_49
-  battery_hall_2 --> rc_npc_entropy_operative_relay_50
-  rc_npc_entropy_operative_relay_50 --> rc_obj51_51
-  rc_npc_entropy_operative_relay_50 --> rc_obj52_52
-  plant_room --> rc_esd_pushbutton_53
-  plant_room --> rc_obj54_54
+  battery_hall_2 --> rc_bms_bypass_module_49
+  battery_hall_2 --> rc_obj50_50
+  battery_hall_2 --> rc_npc_entropy_operative_relay_51
+  rc_npc_entropy_operative_relay_51 --> rc_obj52_52
+  rc_npc_entropy_operative_relay_51 --> rc_obj53_53
+  plant_room --> rc_esd_pushbutton_54
   plant_room --> rc_obj55_55
   plant_room --> rc_obj56_56
-  plant_room --> rc_npc_voltage_critical_mass_leader_57
-  plant_room --> rc_npc_entropy_operative_static_58
-  rc_npc_entropy_operative_static_58 --> rc_obj59_59
-  loading_dock --> rc_obj60_60
+  plant_room --> rc_obj57_57
+  plant_room --> rc_npc_voltage_critical_mass_leader_58
+  plant_room --> rc_npc_entropy_operative_static_59
+  rc_npc_entropy_operative_static_59 --> rc_obj60_60
   loading_dock --> rc_obj61_61
-  loading_dock --> rc_extraction_gobag_62
-  rc_extraction_gobag_62 --> rc_obj63_63
+  loading_dock --> rc_obj62_62
+  loading_dock --> rc_extraction_gobag_63
+  rc_extraction_gobag_63 --> rc_obj64_64
 
   class main_entrance,operations_office,scada_control_room,security_office,battery_hall_1,loading_dock room
   class engineering_workshop,battery_hall_2,plant_room lock
-  class rc_obj1_1,rc_obj2_2,rc_safetynet_field_guide_rfid_cloning_8,rc_safetynet_field_guide_lockpicking_9,rc_safetynet_field_guide_recon_network_mapping_10,rc_safetynet_field_guide_vuln_analysis_11,rc_safetynet_field_guide_distcc_12,rc_safetynet_field_guide_cyberchef_13,rc_safetynet_field_guide_privesc_14,rc_relayed_workshop_keycard_15,rc_obj18_18,rc_obj19_19,rc_obj20_20,rc_obj21_21,rc_vance_level1_keycard_23,rc_scada_hmi_display_24,rc_obj25_25,rc_obj26_26,rc_vm_launcher_bms_jump_server_27,rc_flag_station_dropsite_28,rc_obj29_29,rc_obj30_30,rc_obj32_32,rc_obj33_33,rc_obj34_34,rc_obj35_35,rc_obj36_36,rc_obj38_38,rc_obj39_39,rc_analog_thermometer_40,rc_rack_status_panel_41,rc_hydrogen_detector_42,rc_obj43_43,rc_hall1_round_panel_44,rc_obj46_46,rc_obj47_47,rc_obj48_48,rc_obj49_49,rc_obj51_51,rc_obj52_52,rc_esd_pushbutton_53,rc_obj54_54,rc_obj55_55,rc_obj56_56,rc_obj59_59,rc_obj60_60,rc_obj61_61,rc_obj63_63 item
-  class rc_npc_agent_hax_3,rc_npc_director_magnus_netherton_4,rc_npc_agent_0x47_nightshade_5,rc_npc_security_guard_6,rc_npc_agent_hax_7,rc_npc_robert_vance_16,rc_npc_agent_hax_17,rc_npc_robert_vance_22,rc_npc_entropy_operative_cipher_45,rc_npc_entropy_operative_relay_50,rc_npc_voltage_critical_mass_leader_57,rc_npc_entropy_operative_static_58 npc
-  class rc_optigrid_tool_case_31,rc_security_equipment_locker_37,rc_extraction_gobag_62 container
+  class rc_obj1_1,rc_obj2_2,rc_safetynet_field_guide_rfid_cloning_8,rc_safetynet_field_guide_lockpicking_9,rc_safetynet_field_guide_recon_network_mapping_10,rc_safetynet_field_guide_vuln_analysis_11,rc_safetynet_field_guide_distcc_12,rc_safetynet_field_guide_cyberchef_13,rc_safetynet_field_guide_privesc_14,rc_safetynet_field_guide_proftpd_15,rc_relayed_workshop_keycard_16,rc_obj19_19,rc_obj20_20,rc_obj21_21,rc_obj22_22,rc_vance_level1_keycard_24,rc_scada_hmi_display_25,rc_obj26_26,rc_obj27_27,rc_vm_launcher_bms_jump_server_28,rc_flag_station_dropsite_29,rc_obj30_30,rc_obj31_31,rc_obj33_33,rc_obj34_34,rc_obj35_35,rc_obj36_36,rc_obj37_37,rc_obj39_39,rc_obj40_40,rc_analog_thermometer_41,rc_rack_status_panel_42,rc_hydrogen_detector_43,rc_obj44_44,rc_hall1_round_panel_45,rc_obj47_47,rc_obj48_48,rc_bms_bypass_module_49,rc_obj50_50,rc_obj52_52,rc_obj53_53,rc_esd_pushbutton_54,rc_obj55_55,rc_obj56_56,rc_obj57_57,rc_obj60_60,rc_obj61_61,rc_obj62_62,rc_obj64_64 item
+  class rc_npc_agent_hax_3,rc_npc_director_magnus_netherton_4,rc_npc_agent_0x47_nightshade_5,rc_npc_security_guard_6,rc_npc_agent_hax_7,rc_npc_robert_vance_17,rc_npc_agent_hax_18,rc_npc_robert_vance_23,rc_npc_entropy_operative_cipher_46,rc_npc_entropy_operative_relay_51,rc_npc_voltage_critical_mass_leader_58,rc_npc_entropy_operative_static_59 npc
+  class rc_optigrid_tool_case_32,rc_security_equipment_locker_38,rc_extraction_gobag_63 container
   class node_start start`
     };
     const rendered = {};

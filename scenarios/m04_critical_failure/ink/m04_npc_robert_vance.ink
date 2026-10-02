@@ -15,6 +15,10 @@ VAR plant_reader_seen = false      // global; set by HaX's room_entered:battery_
 VAR discussed_optigrid = false
 VAR scada_threat_confirmed = false
 VAR vance_met = false              // First meeting completed; re-talk lands in the hub
+// PASS 4 fix 9: globals, read only. Hard evidence lets a cover-route player
+// bring Vance in later, as HaX advises.
+VAR anomaly_detected = false
+VAR evidence_maintenance_logs_found = false
 
 // Game state variables
 VAR operatives_defeated = 0
@@ -43,9 +47,9 @@ EXTERNAL player_name()
 
 // Vance looks up from desk, visibly tired and annoyed
 
-A grid-safety audit at 4 AM? You regulator types have interesting schedules.
+A grid-safety audit at four in the morning. You regulator lot keep strange hours.
 
-+ [Just doing my job, Mr Vance.]
++ [Just doing the job, Mr Vance.]
     ~ vance_trust_level += 5
     # influence_increased
     -> vance_professional_response
@@ -62,13 +66,13 @@ A grid-safety audit at 4 AM? You regulator types have interesting schedules.
 === vance_professional_response ===
 #speaker:robert_vance
 
-Right. Well, I run a tight ship here despite our budget constraints.
+Right. I run a tight ship here, budget and all.
 
-Whatever boxes you need checked, let's get it done quickly—we have a facility to operate.
+Tick your boxes and let's be quick about it. I've a plant to keep running.
 
-+ [I'll need access to employee records]
++ [I'll need the staff records.]
     -> access_request
-+ [Tell me about recent maintenance work]
++ [Tell me about the recent maintenance work.]
     ~ discussed_optigrid = true
     -> maintenance_question
 
@@ -77,16 +81,16 @@ Whatever boxes you need checked, let's get it done quickly—we have a facility 
 
 // Vance's expression softens slightly
 
-I appreciate that. Look, I know you're doing your job.
+I appreciate that. I know you're only doing your job.
 
-It's just... we're understaffed, underfunded, and now I've got an audit four hours early.
+It's just, we're short-staffed, short of money, and now an audit four hours early.
 
-+ [I understand the pressure you're under. I'll be as efficient as possible.]
++ [I know the pressure you're under. I'll be quick.]
     ~ vance_trust_level += 10
     # influence_increased
     -> vance_cooperation_gained
 
-+ [Has there been unusual activity recently?]
++ [Anything out of the ordinary lately?]
     -> concerns_question
 
 === vance_defensive_response ===
@@ -94,14 +98,14 @@ It's just... we're understaffed, underfunded, and now I've got an audit four hou
 
 // Vance becomes defensive
 
-Concerns? We passed our last three inspections with flying colours.
+Concerns? We passed our last three inspections clean.
 
-Our safety record is spotless. Who's been talking?
+Safety record's spotless. Who've you been listening to?
 
-+ [Just routine procedure. May I see your employee records?]
++ [Routine, that's all. Can I see the staff records?]
     -> access_request_reluctant
 
-+ [Actually, I should be frank with you about why I'm really here.]
++ [I should be straight with you about why I'm really here.]
     -> early_reveal_opportunity
 
 === access_request ===
@@ -110,9 +114,9 @@ Our safety record is spotless. Who's been talking?
 ~ vance_trust_level += 3
 # influence_increased
 
-Employee records? Fine. But I want to know what you're looking for.
+Staff records? Fine. But tell me what you're after.
 
-We don't have anything to hide.
+We've nothing to hide.
 
 -> vance_provides_access
 
@@ -121,7 +125,7 @@ We don't have anything to hide.
 
 // Vance reluctantly agrees
 
-Fine. But this better be routine. I run this site on a skeleton crew and we keep 240,000 people on grid power.
+Fine. But this had better be routine. I run this place on a skeleton crew, and it keeps two hundred and forty thousand people on power.
 
 -> vance_provides_access
 
@@ -131,16 +135,16 @@ Fine. But this better be routine. I run this site on a skeleton crew and we keep
 ~ vance_trust_level += 5
 # influence_increased
 
-Maintenance? OptiGrid came in on the ninth for control-system upgrades.
+Maintenance? OptiGrid came in on the ninth, control-system upgrades.
 
-Their cards worked and they quoted an order number. I've still not found the order itself.
+Cards worked, they quoted an order number. I've still not found the order.
 
-+ [I'd like to review those access logs if possible.]
++ [I'd like to see those access logs.]
     ~ vance_trust_level += 5
     # influence_increased
     -> optigrid_interest
 
-+ [Any other contractors recently?]
++ [Any other contractors in lately?]
     -> contractors_inquiry
 
 === optigrid_interest ===
@@ -148,34 +152,34 @@ Their cards worked and they quoted an order number. I've still not found the ord
 
 // Vance shows slight concern at specific interest
 
-Sure, I can pull those. They checked out—proper credentials.
+I can pull those. They checked out, proper credentials.
 
 Is there a problem?
 
 + [Just being thorough.]
     -> vance_provides_access
 
-+ [Actually, there's something important you should know.]
++ [There's something you need to know.]
     -> early_reveal_opportunity
 
 === contractors_inquiry ===
 #speaker:robert_vance
 
-Just OptiGrid this month. We've had budget cuts—only essential maintenance.
+Just OptiGrid this month. Budget cuts, essential work only.
 
-That's why an audit at this hour is... frustrating. We're doing our best with limited resources.
+Which is why an audit at this hour is... hard going. We do what we can with what we've got.
 
 -> vance_provides_access
 
 === concerns_question ===
 #speaker:robert_vance
 
-Unusual activity? Not that I've noticed. Why?
+Unusual? Not that I've seen. Why?
 
-+ [Standard question. Part of the inspection process.]
++ [Standard question. Part of the inspection.]
     -> vance_provides_access
 
-+ [I think we should have a private conversation about something.]
++ [There's something we should talk about in private.]
     -> early_reveal_opportunity
 
 === vance_cooperation_gained ===
@@ -185,7 +189,7 @@ Unusual activity? Not that I've noticed. Why?
 
 Alright. What do you need?
 
-Employee records, maintenance logs, facility access—I'll get you whatever you need.
+Staff records, maintenance logs, access to the halls. Whatever it takes.
 
 -> vance_provides_access
 
@@ -198,14 +202,15 @@ Employee records, maintenance logs, facility access—I'll get you whatever you 
     Auditors get escorted, not carded. When the shift settles I'll walk you round myself.
 }
 
-The workshop's on the contractor's cards, and the plant room's HV. Authorised persons only.
+The workshop's on the contractors' cards. The plant room's high-voltage, authorised persons only.
 
 -> vance_provides_access_choices
 
 // Separate knot so the choices are knot-level (choices inside a {cond:} block
 // don't gather reliably) and so a resumed clone lands on a choice-owning knot.
 === vance_provides_access_choices ===
-#speaker:robert_vance
+// Round 2: no #speaker here. On a choices-only knot the tag printed an empty
+// "None: " line before the choices (playtest issue 7).
 
 + {not vance_provided_keycard} [(Lean in over the site map while the cloner reads his lanyard.)]
     -> vance_clone_cover
@@ -215,28 +220,28 @@ The workshop's on the contractor's cards, and the plant room's HV. Authorised pe
 // second arrival found the first two consumed and the third gated off, leaving
 // an empty choice list and running out of content -- the cause of all 601
 // failing paths in this file.
-+ [Thank you. I'll start reviewing employee records.]
++ [Thank you. I'll start on the staff records.]
     -> initial_meeting_end_professional
 
-+ [I appreciate your cooperation, Mr Vance.]
++ [I appreciate it, Mr Vance.]
     ~ vance_trust_level += 5
     # influence_increased
     -> initial_meeting_end_grateful
 
-+ {discussed_optigrid} [Before I start—about those OptiGrid technicians. I need the full details.]
++ {discussed_optigrid} [Before I start. Those OptiGrid technicians. I need the full picture.]
     -> optigrid_details_request
 
 === optigrid_details_request ===
 #speaker:robert_vance
 
-Three technicians, here for two days. Network infrastructure maintenance and SCADA optimisation.
+Three of them, here two days. Network work and SCADA optimisation, they said.
 
-They had cards and an order number. I never found the order behind it. What's your concern?
+Cards and an order number. I never found the order behind it. What's your concern?
 
-+ [Nothing yet. Just compiling information]
++ [Nothing yet. Just building a picture.]
     -> initial_meeting_end_professional
 
-+ [I think we should talk about what's really happening here]
++ [We should talk about what's really going on here.]
     -> early_reveal_opportunity
 
 // ===========================================
@@ -266,7 +271,7 @@ Narrator: He keeps talking.
 
 === vance_clone_ally ===
 #speaker:robert_vance
-Robert Vance: I'm not handing over my card. If this goes wrong I need to get into the halls. Copy it. You've got something that does that.
+Robert Vance: I'm not handing my card over. If this goes wrong I need the halls. Copy it. You've got something for that.
 Narrator: You hold the cloner up to his lanyard.
 #clone_keycard:facility_keycard_level1
 Narrator: He watches the screen like it might bite.
@@ -310,7 +315,7 @@ Narrator: The cloner reads.
 
 ~ vance_met = true
 
-Let me know if you need anything else. I'll be right here at the ops desk, monitoring systems.
+Anything else, I'm at the ops desk. Watching the screens.
 
 // TRIGGERS: Task 1.2 completion
 
@@ -324,9 +329,9 @@ Let me know if you need anything else. I'll be right here at the ops desk, monit
 ~ vance_trust_level += 5
 # influence_increased
 
-Of course. And look... if you do find anything, let me know.
+Of course. And... if you find anything, come to me.
 
-This facility is my responsibility. These people depend on us.
+This place is my responsibility. People depend on it.
 
 #exit_conversation
 -> vance_hub
@@ -340,7 +345,8 @@ This facility is my responsibility. These people depend on us.
 // ===========================================
 
 === vance_hub ===
-#speaker:robert_vance
+// Round 2: no #speaker here. On a choices-only knot the tag printed an empty
+// "None: " line before the choices (playtest issue 7).
 
 // Flat knot-level choices with conditions (choices inside a {cond: ...} block
 // don't gather reliably). At least one is always available in every state.
@@ -358,17 +364,25 @@ This facility is my responsibility. These people depend on us.
     -> vance_plant_reader_ally
 
 + {plant_reader_seen and not vance_is_ally} [The plant room's on a fingerprint reader.]
-    Robert Vance: It's an HV room, and you're an auditor.
+    Robert Vance: Aye, it reads prints. Authorised persons only. It's an HV room, and you're an auditor.
     -> vance_hub
 
 + {vance_is_ally} [What should I be doing right now?]
-    Robert Vance: The SCADA screens are lying to you -- I'm watching the historian and the real rack temperatures are climbing. Get to a hardwired ESD. The software won't save us.
+    Robert Vance: The screens are lying to you. I'm on the historian, and the real rack temperatures are climbing. Get to the hardwired shutdown. Software won't save us.
     -> vance_hub
 
 + {vance_is_ally} [Stay on the ops desk. I'll call if I need the engineering side.]
-    Robert Vance: I'm not going anywhere. Call me the moment you're moving.
+    Robert Vance: I'm not going anywhere. Call the moment you're moving.
     #exit_conversation
     -> vance_hub
+
+// PASS 4 fix 9: the reveal is no longer locked to the first meeting. With
+// hard evidence in hand, a cover-route player can drop the cover here.
++ {not vance_is_ally and anomaly_detected} [I'm not an auditor. Your Hall 1 dial reads 61. Your screen says 28.]
+    -> vance_early_reveal
+
++ {not vance_is_ally and not anomaly_detected and evidence_maintenance_logs_found} [I'm not an auditor. That OptiGrid crew you emailed about is still in your building.]
+    -> vance_early_reveal
 
 + {not vance_is_ally} [A few more questions about the facility.]
     Robert Vance: Make it quick. I've got a plant to run.
@@ -380,10 +394,12 @@ This facility is my responsibility. These people depend on us.
     -> vance_hub
 
 === vance_plant_reader_ally ===
-#speaker:robert_vance
+// Round 2: no #speaker here. On a choices-only knot the tag printed an empty
+// "None: " line before the choices (playtest issue 7).
 + [Then come and open it.]
     Robert Vance: With Voltage on the other side? And somebody has to watch the real numbers.
-    Robert Vance: They didn't need me on the ninth. I log every round on the Hall 1 panel. They'll have had it off that. Do what they did.
+    Robert Vance: They didn't need me on the ninth. I log every round on the Hall 1 panel. They'll have lifted it off that. Do what they did.
+    Robert Vance: One finger, no second check. We'll be fixing that.
     -> vance_hub
 + [Understood.]
     -> vance_hub
@@ -398,9 +414,9 @@ This facility is my responsibility. These people depend on us.
 
 // Vance looks concerned
 
-Alright, you've got my attention. What's this really about?
+Alright. You've got my attention. What's this really about?
 
-+ [You deserve the truth. ENTROPY operatives are inside your facility.]
++ [You deserve the truth. ENTROPY are inside your facility.]
     -> vance_early_reveal
 
 + [Nothing. Just being cautious. Let's continue the inspection.]
@@ -413,20 +429,20 @@ Alright, you've got my attention. What's this really about?
 ~ vance_trust_level += 30
 # influence_increased
 
-Narrator: You drop the cover. Not a state auditor — SAFETYNET. Intelligence that ENTROPY operatives are inside his facility, and that his battery storage is the target.
+Narrator: You drop the cover and tell him who you work for. ENTROPY operatives are inside his facility, and his battery storage is the target.
 
 // Vance's face goes pale, sits down heavily
 
 ...What?
 
-ENTROPY? Here? At my facility?
+ENTROPY. Here. In my plant.
 
-+ [Completely serious. At least three operatives targeting your battery management systems.]
++ [Deadly serious. At least three of them, and your battery systems are the target.]
     ~ vance_trust_level += 10
     # influence_increased
     -> vance_processes_threat
 
-+ [Those OptiGrid technicians you mentioned? That was them. They weren't contractors.]
++ [Those OptiGrid technicians. That was them. Never contractors.]
     ~ vance_trust_level += 5
     # influence_increased
     -> vance_optigrid_realization
@@ -434,14 +450,14 @@ ENTROPY? Here? At my facility?
 === vance_processes_threat ===
 #speaker:robert_vance
 
-My God. 240,000 people depend on this grid.
+My God. Two hundred and forty thousand people on this grid.
 
-How much time do we have?
+How long have we got?
 
-+ [Our intelligence shows an attack scheduled for 0800 hours.]
++ [Our intelligence puts the attack at 0800.]
     -> vance_timeline_reaction
 
-+ [I'm working to identify and stop the attack. But I need your help.]
++ [I can stop it, but I need your help.]
     -> vance_commits_immediately
 
 === vance_optigrid_realization ===
@@ -452,16 +468,16 @@ How much time do we have?
 
 // Vance's expression shows horror and guilt
 
-I... I let them in. I signed off on their access.
+I let them in. Their cards worked and I didn't chase the order.
 
-They had proper credentials, background checks... Oh God, what have I done?
+Credentials, background checks, all of it. God. What have I done?
 
-+ [You had no way of knowing. Their credentials were forged. Focus on stopping them now.]
++ [You couldn't have known. The credentials were forged. Stop them with me now.]
     ~ vance_trust_level += 15
     # influence_increased
     -> vance_commits_to_helping
 
-+ [This isn't your fault. Help me stop them—that's what matters.]
++ [This isn't on you. Help me stop them. That's what matters.]
     ~ vance_trust_level += 10
     # influence_increased
     -> vance_commits_to_helping
@@ -474,9 +490,9 @@ They had proper credentials, background checks... Oh God, what have I done?
 
 // Checks clock, does mental calculation
 
-That's less than four hours from now.
+That's under four hours.
 
-What do you need from me?
+Right. Then there's no time to waste.
 
 -> vance_commits_to_helping
 
@@ -499,13 +515,13 @@ Tell me what you need. Anything.
 ~ vance_trust_level += 20
 # influence_increased
 
-Facility access, SCADA system knowledge, anything.
+You'll have the halls. And I know the SCADA side better than they do.
 
-240,000 people depend on this grid. We're stopping this.
+Not on my site. We're stopping this.
 
-I'll pull up all the access logs and SCADA monitoring data from right here.
+I'll have the access logs and the monitoring up from here.
 
-Come back to the ops desk the moment you need the SCADA side — we'll find what they did to my systems. And I'm on comms if you're moving.
+Come back to the ops desk when you need the SCADA side, and I'm on comms while you move.
 
 // PASS 3 P2: the ally paths bypass vance_provides_access, so the card is copied
 // here (12 ally paths, M3). The exit is its own knot so the clone can't share
@@ -513,7 +529,8 @@ Come back to the ops desk the moment you need the SCADA side — we'll find what
 -> vance_commits_choices
 
 === vance_commits_choices ===
-#speaker:robert_vance
+// Round 2: no #speaker here. On a choices-only knot the tag printed an empty
+// "None: " line before the choices (playtest issue 7).
 + {not vance_provided_keycard} [I'll need into the halls.]
     -> vance_clone_ally
 + [I'm going.]
@@ -533,6 +550,6 @@ Come back to the ops desk the moment you need the SCADA side — we'll find what
 
 // Vance looks confused but lets it go
 
-Alright... well, you know where to find me if you need something.
+Alright. You know where I am if you need me.
 
 -> initial_meeting_end_professional

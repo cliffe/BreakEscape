@@ -30,8 +30,19 @@ VAR cyberchef_guide_offered = false
 VAR cyberchef_guide_hint_given = false
 VAR privesc_guide_offered = false
 VAR privesc_guide_hint_given = false
+VAR proftpd_guide_offered = false
+VAR proftpd_guide_hint_given = false
+VAR relay_card_cloned = false        // PASS 4: Relay's card copied on the quiet route
 VAR operative_relay_defeated = false
 VAR fingerprint_kit_found = false
+// PLAYTEST ROUND: all four flags in (set by the flag mappings), and the evidence
+// globals, so the hint can name what still holds the ESD when the flags are done.
+VAR all_flags_in = false
+VAR anomaly_detected = false
+VAR evidence_maintenance_logs_found = false
+VAR evidence_access_logs_found = false
+VAR evidence_camera_tampering_found = false
+VAR evidence_reader_spoof_found = false
 
 // Game state variables
 VAR vance_is_ally = false
@@ -73,7 +84,7 @@ EXTERNAL player_name()
 // Progress-gated advice. Each option appears only once the player is actually
 // at that beat, and disappears once used -- so the hub always reflects where
 // they are, and never offers a hint for a problem they haven't met yet.
-+ {server_room_reached and not server_room_advice_given} [I'm on the OT network. What am I looking at?]
++ {server_room_reached and not server_room_advice_given and not all_flags_in} [I'm on the OT network. What am I looking at?]
     -> event_server_room_entered
 
 + {attack_mechanism_known and not voltage_priority_discussed} [I've got their attack mechanism mapped.]
@@ -102,6 +113,9 @@ EXTERNAL player_name()
 + {privesc_guide_offered and not privesc_guide_hint_given} [Send me the sudo guide.]
     -> request_privesc_guide
 
++ {proftpd_guide_offered and not proftpd_guide_hint_given} [Send me the ProFTPD guide.]
+    -> request_proftpd_guide
+
 + {cyberchef_guide_offered and not cyberchef_guide_hint_given} [Send me the CyberChef decoding guide.]
     -> request_cyberchef_guide
 
@@ -111,7 +125,7 @@ EXTERNAL player_name()
 
 + [Nothing right now.]
     #exit_conversation
-    Agent HaX: Line's open. Call it in when you have something.
+    Line's open. Call it in when you have something.
     -> support_hub
 
 // ===========================================
@@ -123,57 +137,63 @@ EXTERNAL player_name()
 === request_rfid_guide ===
 ~ rfid_guide_hint_given = true
 #give_item:lab-workstation:safetynet_field_guide_rfid_cloning
-Agent HaX: Sending it now. Read the card, crack the keys, emulate it at the reader — that's the whole shape of it.
+Sent. Old prox cards just shout their number. Read it, save it, play it back at the reader.
 -> support_hub
 
 === request_lockpicking_guide ===
 ~ lockpicking_guide_hint_given = true
 #give_item:lab-workstation:safetynet_field_guide_lockpicking
-Agent HaX: On its way. Tension wrench first, then pick the pins one at a time. Don't force it.
+On its way. Tension wrench first, then pick the pins one at a time. Don't force it.
 -> support_hub
 
 === request_recon_guide ===
 ~ recon_guide_hint_given = true
 #give_item:lab-workstation:safetynet_field_guide_recon_network_mapping
-Agent HaX: Sent. Find what's alive on that subnet before you touch anything.
+Sent. Find what's alive on that subnet before you touch anything.
 -> support_hub
 
 === request_vuln_guide ===
 ~ vuln_guide_hint_given = true
 #give_item:lab-workstation:safetynet_field_guide_vuln_analysis
-Agent HaX: Sent. Once you know what's listening, this tells you what's worth pushing on.
+Sent. Once you know what's listening, it tells you what's worth pushing on.
 -> support_hub
 
 === request_distcc_guide ===
 ~ distcc_guide_hint_given = true
 #give_item:lab-workstation:safetynet_field_guide_distcc
-Agent HaX: Sent. It's an old daemon that runs compile jobs for anyone who asks. That's your command execution.
+Sent. Old daemon, runs compile jobs for anyone who asks. That's your way onto the box.
 -> support_hub
 
 === request_privesc_guide ===
 ~ privesc_guide_hint_given = true
 #give_item:lab-workstation:safetynet_field_guide_privesc
-Agent HaX: Sent. Once you're on the box, check what sudo will let you do. That's how the crew got to the calibration file.
+Sent. On the box, check what sudo lets you run. That's how the crew reached the calibration file.
+-> support_hub
+
+=== request_proftpd_guide ===
+~ proftpd_guide_hint_given = true
+#give_item:lab-workstation:safetynet_field_guide_proftpd
+Sent. Same backdoor as St Catherine's. Someone poisoned the build at source, and every copy carried it.
 -> support_hub
 
 === request_cyberchef_guide ===
 ~ cyberchef_guide_hint_given = true
 #give_item:lab-workstation:safetynet_field_guide_cyberchef
-Agent HaX: Sent. Paste it in, hit Magic, and it'll tell you what it is.
+Sent. Paste it in, hit Magic, and it'll tell you what it is.
 -> support_hub
 
 === operative_down_advice ===
 {operatives_defeated >= 2:
-    Agent HaX: Two down. That's both halls clear, which means the only one left is the one who matters.
+    Two down. Both halls clear. The only one left is the one who matters.
 - else:
     {operative_relay_defeated:
-        Agent HaX: One down. Check what she dropped: that's the workshop card.
+        One down. Check what she dropped: that's the workshop card.
     - else:
-        Agent HaX: One down. Check what he dropped. Relay's the one carrying a workshop card.
+        One down. Check what he dropped. Relay's the one carrying a workshop card.
     }
 }
 
-Agent HaX: And {player_name()} — the hall doesn't care who's winning. Watch the hydrogen panel.
+And {player_name()}, the hall doesn't care who's winning. Watch the hydrogen panel.
 
 -> support_hub
 
@@ -188,12 +208,37 @@ Agent HaX: And {player_name()} — the hall doesn't care who's winning. Watch th
 === on_relay_ko_card ===
 #speaker:agent_0x99
 #give_item:keycard:relayed_workshop_keycard
-Agent HaX: Relay's down. I've pulled her Level 2 number off the reader logs and pushed a copy to your kit. That's the workshop.
+Relay's down. I've pulled her Level 2 number off the reader logs and pushed you a copy. That's the workshop.
 -> on_relay_ko_card_choices
 
 === on_relay_ko_card_choices ===
 + [On it.]
     #exit_conversation
+    -> support_hub
+
+// ===========================================
+// THE 61°C TURN (round 2, re-review M2)
+// Reached by an eventMapping (phone-chat) on anomaly_detected. HaX quotes
+// Nightshade's read (his briefing line asked for a real reading). Text knot then
+// a choices-only knot (E13), like on_relay_ko_card. The reply branches on
+// server_room_reached, so a late dial reading (the aim cascade) still fits.
+// ===========================================
+
+=== on_anomaly_confirmed ===
+#speaker:agent_0x99
+Nightshade's got your reading. Sixty-one degrees on the Hall 1 battery thermometer, against twenty-eight on the screens.
+His words: those cells are past safe, and they won't wait for 0800, trigger or no trigger.
+The screens lie because ENTROPY feed them. That dial isn't on ENTROPY's network.
+-> on_anomaly_confirmed_choices
+
+=== on_anomaly_confirmed_choices ===
++ {not server_room_reached} [Then where do I start?]
+    #exit_conversation
+    With how they're driving it. The workshop, off Hall 1.
+    -> support_hub
++ {server_room_reached} [Then the dial was the last piece.]
+    #exit_conversation
+    It was. Grid control can see the difference now.
     -> support_hub
 
 // ===========================================
@@ -227,11 +272,9 @@ Agent HaX: Relay's down. I've pulled her Level 2 number off the reader logs and 
 {vance_is_ally:
     ~ handler_confidence += 15
 
-    Good. Vance's cooperation will be valuable—he knows those systems inside out.
-
-    Use his SCADA expertise when you need it.
+    Good. Lean on Vance when you need to. Nobody on that site knows those systems better.
 - else:
-    How's he taking the cover story? Suspicious or cooperative?
+    How's he taking the cover? Buying it, or watching you?
 
     -> vance_cover_status
 }
@@ -239,34 +282,34 @@ Agent HaX: Relay's down. I've pulled her Level 2 number off the reader logs and 
 
 === vance_status_inquiry_choices ===
 
-+ [Understood. Continuing investigation]
++ [Understood. I'll keep looking.]
     -> first_call_objectives
 
 === vance_cover_status ===
 #speaker:agent_0x99
 
-* [Cooperative. Providing facility access.]
+* [Cooperative. He's getting me access.]
     ~ handler_confidence += 5
     -> vance_cooperation_acknowledged
 
-* [Sceptical, but he's complying with the audit cover.]
+* [Sceptical, but he's going along with the audit.]
     -> vance_skeptical_acknowledged
 
-* [I told him the truth about ENTROPY. He's fully on board.]
+* [I told him the truth about ENTROPY. He's in.]
     ~ handler_confidence += 10
     -> vance_revealed_acknowledged
 
 === vance_cooperation_acknowledged ===
 #speaker:agent_0x99
 
-Good. Maintain the cover until you have hard evidence. Then bring him in fully if needed.
+Good. Hold the cover until you've got hard evidence. Then bring him in.
 
 -> first_call_objectives
 
 === vance_skeptical_acknowledged ===
 #speaker:agent_0x99
 
-Keep him cooperative. If you find evidence of compromise, that'll convince him.
+Keep him onside. Find proof of the breach and it'll convince him for you.
 
 -> first_call_objectives
 
@@ -275,34 +318,32 @@ Keep him cooperative. If you find evidence of compromise, that'll convince him.
 
 ~ handler_confidence += 10
 
-Bold move. But if he's committed, use him—SCADA expertise will help identify their attack vector.
+Bold. If he's in, use him. He knows how they'd have moved through those systems.
 
 -> first_call_objectives
 
 === investigation_update ===
 #speaker:agent_0x99
 
-Copy that. Remember your objectives:
-
-Identify the attack vector. Disable it. Capture operatives if possible—especially Voltage.
+Copy. Find how they're driving the attack, then kill it. Take Voltage alive if you can.
 
 -> first_call_objectives
 
 === intel_update ===
 #speaker:agent_0x99
 
-Nothing new. Signals intelligence still shows encrypted traffic between the facility and external nodes.
+Nothing new. Still encrypted traffic between the site and somewhere outside.
 
-Whatever they're planning, it's scheduled for 0800. You've got time, but not much.
+Whatever it is, it's set for 0800. Time, but not much.
 
 -> first_call_objectives
 
 === first_call_objectives ===
 #speaker:agent_0x99
 
-Priority one: find how they're compromising the SCADA network.
+First job: find how they got onto the SCADA network.
 
-Look for a way onto the OT network — the engineering workshop, the network infrastructure, anything that explains remote control.
+The way on is the engineering workshop, off Battery Hall 1. Start there.
 
 {vance_is_ally:
     Vance can point you to the right systems.
@@ -311,15 +352,13 @@ Look for a way onto the OT network — the engineering workshop, the network inf
 
 === first_call_objectives_choices ===
 
-+ [Roger that. Moving to investigate]
++ [On it.]
     -> first_call_end
 
 === first_call_end ===
 #speaker:agent_0x99
 
-Stay sharp. These aren't amateurs. If you encounter hostiles, defend yourself.
-
-Call if you need guidance.
+Stay sharp. If anyone comes at you, defend yourself. Call if you need me.
 
 #exit_conversation
 -> support_hub
@@ -336,14 +375,14 @@ Call if you need guidance.
 ~ server_room_advice_given = true
 ~ handler_confidence += 10
 
-{player_name()}, good work reaching the engineering workshop.
+{player_name()}, you're in the workshop. That's their way in.
 
-That's their access point—the BMS jump server and the SCADA network infrastructure run through there.
+The BMS jump server runs through there, and so does the route onto the SCADA network.
 -> event_server_room_entered_choices
 
 === event_server_room_entered_choices ===
 
-+ [There's a network investigation terminal here. SCADA backup server.]
++ [There's a terminal here into the BMS jump server.]
     -> vm_guidance
 
 + [What specifically should I investigate?]
@@ -354,43 +393,39 @@ That's their access point—the BMS jump server and the SCADA network infrastruc
 
 ~ handler_confidence += 5
 
-Perfect. Use it to scan the SCADA network topology.
+Good. Scan what's on that network first, then see what each box is running.
 
-Identify compromised systems, enumerate services, find their attack mechanism.
-
-Submit flags at the drop-site terminal when you find intelligence.
+Where they got in is on the jump server. Anything you find goes into the drop-site terminal.
 -> vm_guidance_choices
 
 === vm_guidance_choices ===
 
-+ [Understood. Beginning network analysis]
++ [On it.]
     -> server_room_event_end
 
 === investigation_guidance ===
 #speaker:agent_0x99
 
-Look for network access points, compromised services, remote control mechanisms.
+What's listening, and what shouldn't be.
 
-They had three operatives here for hours—they installed something.
-
-Find it, analyse it, and we'll know how to disable their attack.
+Three of them were in here for hours. They left something behind. Find it, and we'll know how to pull the attack apart.
 -> investigation_guidance_choices
 
 === investigation_guidance_choices ===
 
-+ [On it]
++ [Will do.]
     -> server_room_event_end
 
 === server_room_event_end ===
 #speaker:agent_0x99
 
 {operatives_defeated >= 1:
-    And {player_name()}—you've already encountered hostiles. Stay alert. There may be more.
+    And {player_name()}, you've already met one of them. There'll be more.
 - else:
-    Watch your back. Those operatives are armed and won't hesitate.
+    Watch your back. They won't hesitate.
 }
 
-Call when you've got intel.
+Call when you've got something.
 
 #exit_conversation
 -> support_hub
@@ -406,14 +441,14 @@ Call when you've got intel.
 ~ attack_mechanism_known = true
 ~ handler_confidence += 20
 
-{player_name()}, I'm seeing your flag submissions. Outstanding work.
+{player_name()}, your flags are landing. Grid control can see it too.
 
-You've identified their whole approach. They own the SCADA layer and they're holding a remote trigger on top of it.
+They own the SCADA layer, and there's a remote trigger sitting on top of it.
 -> event_attack_mechanism_identified_choices
 
 === event_attack_mechanism_identified_choices ===
 
-+ [The software side is theirs. Anything I do from a terminal, they can undo.]
++ [The software's theirs. Anything I do from a keyboard, they undo.]
     -> three_vector_confirmation
 
 + [Where's the remote trigger mechanism?]
@@ -424,18 +459,22 @@ You've identified their whole approach. They own the SCADA layer and they're hol
 
 ~ handler_confidence += 10
 
-Correct. Physical devices on the rack banks, malicious SCADA script, and their command laptop.
+Right. Faked temperatures, interlocks bypassed, an overcharge on a timer.
 
-Which is why the answer isn't software. There's a hardwired Emergency Shutdown pushbutton in the plant room -- physical contacts, no network path. It's the one thing they couldn't reach from SCADA. Press it and the attack is dead.
+So you don't fight it with software.
+
+The plant room has a hardwired shutdown button, no network path. The one thing they couldn't reach.
+
+Press it and the attack's dead.
 
 -> voltage_priority_update
 
 === trigger_location_discussion ===
 #speaker:agent_0x99
 
-Based on your intel, the remote trigger is with Voltage—plant room command centre.
+Your intel puts the trigger with Voltage, in the plant room.
 
-That's where you'll find him. And that's where this ends.
+That's where he is, and where this ends.
 
 -> voltage_priority_update
 
@@ -444,47 +483,45 @@ That's where you'll find him. And that's where this ends.
 
 ~ voltage_priority_discussed = true
 
-Listen carefully. Voltage is high-value intelligence.
+{player_name()}, listen. Voltage is worth more to us talking than down.
 
-He knows about The Architect, multi-cell coordination, future operations.
+He knows The Architect, how the cells coordinate, what's coming next.
 -> voltage_priority_update_choices
 
 === voltage_priority_update_choices ===
 
-* [Should I prioritise capturing Voltage even if it's riskier?]
+* [Do I take Voltage even if it's the riskier play?]
     -> capture_vs_speed_guidance
 
-* [Understood. I'll attempt to capture him.]
+* [Understood. I'll try to take him alive.]
     ~ handler_confidence += 10
     -> capture_attempt_acknowledged
 
-* [Attack prevention is priority one. Capture is secondary.]
+* [The attack comes first. Voltage second.]
     -> attack_priority_acknowledged
 
 === capture_vs_speed_guidance ===
 #speaker:agent_0x99
 
-Your call on the ground. Here's the analysis:
+Your call on the ground. Both ways cost something.
 
-Going for him is high intel value and a riskier engagement — he's holding the trigger, and cornered he will use it.
+Go for him and you're close to the trigger he's holding. Cornered, he'll use it.
 
-Going for the shutdown is the safe play. The grid holds, but he walks out of that dock and we lose him.
+Go for the button and the grid holds, but he's out the dock and gone.
 
-I trust your judgement. Choose based on the tactical situation.
+You'll see it better than I will. Make the call there.
 -> capture_vs_speed_guidance_choices
 
 === capture_vs_speed_guidance_choices ===
 
-+ [I'll make the call when I confront him. Tactical situation dependent.]
++ [I'll decide when I'm in the room with him.]
     ~ handler_confidence += 15
     -> judgment_trusted
 
 === capture_attempt_acknowledged ===
 #speaker:agent_0x99
 
-Good. But {player_name()}—if he threatens to trigger the attack, stop him by any means.
-
-Lives first. Intelligence second.
+Good. But if he reaches for that trigger, stop him any way you have to. Lives first.
 
 -> final_phase_briefing
 
@@ -493,42 +530,42 @@ Lives first. Intelligence second.
 
 ~ handler_confidence += 5
 
-Solid priorities. Stop the attack. If Voltage escapes but the attack fails, that's still a win.
+Right priorities. If he runs but the attack fails, that's still a win.
 
 -> final_phase_briefing
 
 === judgment_trusted ===
 #speaker:agent_0x99
 
-That's the right approach. Adapt to what you find.
+That's the approach. Work with what you find.
 
 -> final_phase_briefing
 
 === final_phase_briefing ===
 #speaker:agent_0x99
 
-Final phase objectives:
+Last stretch. In the plant room:
 
-One—neutralise Voltage and any remaining operatives in the plant room.
+Deal with Voltage and anyone still standing with him.
 
-Two—secure or destroy the remote trigger laptop.
+Keep him off that laptop.
 
-Three—get to the hardwired ESD pushbutton in the plant room and press it.
+Then the hardwired shutdown button. Press it.
 
 {operatives_defeated >= 2:
-    You've already taken down {operatives_defeated} operatives. You're doing this.
+    {operatives_defeated} of them down already. You're almost there.
 }
 {operatives_defeated == 1:
-    You've neutralised one operative. Expect resistance from the others.
+    One down. The rest won't make it easy.
 }
 {operatives_defeated == 0:
-    Their people are still on their feet. Be ready for combat.
+    Their people are still up. Be ready.
 }
 -> final_phase_briefing_choices
 
 === final_phase_briefing_choices ===
 
-* [Ready. Moving to the plant room now.]
+* [Ready. Heading for the plant room.]
     ~ handler_confidence += 10
     -> final_encouragement
 
@@ -536,16 +573,16 @@ Three—get to the hardwired ESD pushbutton in the plant room and press it.
 #speaker:agent_0x99
 
 {handler_confidence >= 80:
-    You've got this, {player_name()}. Textbook operation so far. Finish it.
+    Clean run so far, {player_name()}. Finish it.
 }
 {handler_confidence >= 60 and handler_confidence < 80:
-    Good work so far. Stay sharp for the final push.
+    Good so far. Stay sharp for the last of it.
 }
 {handler_confidence < 60:
-    Be careful. This is the most dangerous phase.
+    Careful. This is the worst of it.
 }
 
-240,000 people are counting on you. Bring it home.
+Two hundred and forty thousand people are on that grid.
 
 #exit_conversation
 -> support_hub
@@ -560,7 +597,7 @@ Three—get to the hardwired ESD pushbutton in the plant room and press it.
 
 ~ handler_contacted += 1
 
-{player_name()}, go ahead. What do you need?
+{player_name()}, go ahead.
 
 // These are STICKY (+). As once-only (*) choices they were consumed after
 // three visits, and `guidance_call_end` routes back here ("One more thing...")
@@ -569,13 +606,13 @@ Three—get to the hardwired ESD pushbutton in the plant room and press it.
 -> player_guidance_request_choices
 
 === player_guidance_request_choices ===
-+ [What's my next priority?]
++ [What should I be doing right now?]
     -> priority_guidance
 
-+ [Intel update?]
++ [Anything new on your end?]
     -> intel_status_update
 
-+ [I'm stuck. Suggestions?]
++ [I'm stuck. Where do I look?]
     -> tactical_suggestions
 
 + [Nothing. Just checking in.]
@@ -585,75 +622,87 @@ Three—get to the hardwired ESD pushbutton in the plant room and press it.
 #speaker:agent_0x99
 
 {not server_room_reached:
-    Get to the engineering workshop, off Battery Hall 1. That's where they got onto the SCADA network.
+    The engineering workshop, off Battery Hall 1. That's where they got onto the SCADA network. It wants a Level 2 card.
+    {relay_card_cloned or operative_relay_defeated:
+        You've got Relay's. Use it on the workshop door.
+    - else:
+        Relay carries one. She walks Hall 2, and Hall 2 opens on Vance's card.
+    }
 
     {vance_is_ally:
         Vance can point you to it from the ops desk.
     }
 }
 {server_room_reached and not attack_mechanism_known:
-    Use the VM terminal in the workshop. Investigate the SCADA network.
-
-    Identify their attack mechanism. Submit flags when you find intel.
+    {
+    - all_flags_in and not (evidence_maintenance_logs_found or evidence_access_logs_found or evidence_camera_tampering_found or evidence_reader_spoof_found):
+        Your flags are in. Grid control still wants the break-in on paper.
+        Vance's work orders in the operations office, the access log in the workshop, or the camera log in the security office.
+    - all_flags_in and not anomaly_detected:
+        Your flags are in. Grid control still wants a real reading off the racks.
+        The dial thermometer on the Rack Bank C wall in Hall 1. It isn't on their network.
+    - else:
+        Work the terminal in the workshop. Find how they're driving the attack, and drop the flags as you go.
+    }
 }
 {server_room_reached and attack_mechanism_known:
-    You know the attack mechanism. Now disable it.
+    You know how they did it. Now stop it.
 
-    Confront Voltage in the plant room. Secure the remote trigger. Disable all attack vectors.
+    Voltage's in the plant room with the trigger. Deal with him, then the shutdown button.
 }
 -> priority_guidance_choices
 
 === priority_guidance_choices ===
 
-+ [Understood]
++ [Right.]
     -> guidance_call_end
 
 === intel_status_update ===
 #speaker:agent_0x99
 
 {attack_mechanism_known:
-    You've got their whole mechanism on record now. That's the case made.
+    Their whole mechanism's on record now. That's the case made.
 - else:
     {server_room_reached:
-        You're on the OT network. Keep pulling flags and get them into the drop-site terminal.
+        You're on the network. Keep pulling flags into the drop-site terminal.
     - else:
-        Nothing submitted yet. The intel is on the BMS jump server in the workshop — scan it, and submit what you find at the drop-site.
+        Nothing in yet. The intel's on the BMS jump server in the workshop. Scan it, submit what you find.
     }
 }
 
 {operatives_defeated >= 2:
-    Both hall operatives neutralised. Static and Voltage will be waiting in the plant room.
+    Both halls clear. Static and Voltage are waiting in the plant room.
 }
 {operatives_defeated == 1:
-    One operative neutralised. Stay alert for the others.
+    One down. Stay alert for the rest.
 }
 {operatives_defeated == 0:
-    No confirmed hostile encounters yet. They're here—be ready.
+    No contact yet. They're here. Be ready.
 }
 -> intel_status_update_choices
 
 === intel_status_update_choices ===
 
-+ [Thanks]
++ [Thanks.]
     -> guidance_call_end
 
 === tactical_suggestions ===
 #speaker:agent_0x99
 
-What's the situation?
+What's the problem?
 
 // Sticky + a fallback: this knot is re-enterable from the guidance hub, and as
 // once-only choices it emptied on the fourth visit.
 -> tactical_suggestions_choices
 
 === tactical_suggestions_choices ===
-+ [I can't find where to go next.]
++ [I can't work out where to go next.]
     -> navigation_help
 
-+ [Having trouble with a combat encounter.]
++ [One of them's giving me trouble.]
     -> combat_help
 
-+ [The VM network challenge is confusing.]
++ [The network side has me lost.]
     -> vm_challenge_help
 
 + [Actually, I'm fine.]
@@ -663,39 +712,47 @@ What's the situation?
 #speaker:agent_0x99
 
 {not server_room_reached:
-    Workshop access: off Battery Hall 1, and it wants a Level 2 card. Vance's card only reaches Level 1.
+    The workshop's off Battery Hall 1, and it wants a Level 2 card. Vance's only reaches Level 1.
 
     {operative_relay_defeated:
-        Relay's down. Her card should be on the floor where she fell, and I've pushed you a copy anyway.
+        Relay's down. Her card's on the floor by her, and I've pushed you a copy anyway.
     - else:
-        Relay, in the inverter room, carries a workshop card. Hall 2 opens on Vance's card.
+        {relay_card_cloned:
+            You've got Relay's card. Play it at the workshop door.
+        - else:
+            Relay's in the inverter room, and she carries a workshop card. Hall 2 opens on Vance's.
+        }
     }
 }
 {server_room_reached:
-    Plant room: off Hall 2. The reader wants Vance's print.
+    The plant room's off Hall 2, and the reader wants Vance's print.
 
     {fingerprint_kit_found:
-        You've got the crew's kit. Now you need somewhere he touches every round.
+        You've got the crew's kit. Now find somewhere he touches on every round.
     - else:
-        You need a kit, and somewhere he touches every round. The crew got through it somehow.
+        You need a kit, and somewhere he touches every round. Their tool case is in the workshop. Start there.
     }
 }
 -> navigation_help_choices
 
 === navigation_help_choices ===
 
-+ [That helps, thanks]
++ [That helps. Thanks.]
     -> guidance_call_end
 
 === combat_help ===
 #speaker:agent_0x99
 
-Use cover. These operatives have training, but so do you.
+Use cover. They've got training, but so have you.
 
-Stealth takedowns when possible. Direct engagement if necessary.
+And you don't have to win every fight. Most won't chase far.
+
+{not operative_relay_defeated and not relay_card_cloned:
+    Relay's card copies like Vance's did, if you keep her talking.
+}
 
 {vance_is_ally:
-    Vance might have intel on operative locations if you ask.
+    Vance may know where the others are, if you ask him.
 }
 -> combat_help_choices
 
@@ -707,20 +764,20 @@ Stealth takedowns when possible. Direct engagement if necessary.
 === vm_challenge_help ===
 #speaker:agent_0x99
 
-Start with network scanning—Nmap. Map the SCADA topology.
+Start with a scan to map the network. Nmap.
 
-Then enumerate services—FTP and HTTP will have intelligence files.
+Then see what each box is running. The FTP and web services are holding intel.
 
-Finally, exploit vulnerable services to access attack control mechanisms.
+Then push on the weak one to get a foothold. The guides cover each step.
 
 {vance_is_ally:
-    Vance can provide SCADA context if you need technical clarification.
+    Vance can fill in the SCADA side if you get stuck.
 }
 -> vm_challenge_help_choices
 
 === vm_challenge_help_choices ===
 
-+ [Got it, thanks]
++ [Got it. Thanks.]
     -> guidance_call_end
 
 === guidance_call_end ===
@@ -744,7 +801,7 @@ Anything else?
 === call_final_end ===
 #speaker:agent_0x99
 
-Stay safe out there. Call if you need me.
+Stay safe. Call if you need me.
 
 #exit_conversation
 -> support_hub

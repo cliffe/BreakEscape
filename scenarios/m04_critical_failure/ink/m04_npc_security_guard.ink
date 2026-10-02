@@ -36,10 +36,10 @@ Narrator: The guard looks up from the desk as you approach.
 
 Security Guard: Morning. Bit early for visitors.
 
-* [State grid-safety regulator. I'm here for an inspection.]
+* [Grid-safety regulator. I'm here for the audit.]
     -> guard_credentials_check
 
-* [I'm here for an inspection of the facility.]
+* [Just a routine visit. Won't take long.]
     -> guard_inspection_response
 
 * [(Try to slip past the guard)]
@@ -48,7 +48,7 @@ Security Guard: Morning. Bit early for visitors.
 === guard_credentials_check ===
 #speaker:security_guard
 
-State auditor? This early?
+The regulator? This early?
 
 Narrator: He turns your badge over, glances at the clipboard, hands it back.
 
@@ -63,7 +63,7 @@ Security Guard: Alright, sign in here. Mr Vance said there was an audit today. D
 === guard_directions ===
 #speaker:security_guard
 
-Security Guard: Operations office, straight down the hall. He'll be at his desk or in the control room at this hour.
+Security Guard: He'll be at his desk or in the control room at this hour.
 
 -> guard_entry_granted
 

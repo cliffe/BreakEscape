@@ -45,7 +45,7 @@ ENTROPY Operative 'Static': He doesn't need long. I just need you to be slow.
     ENTROPY Operative 'Static': He doesn't have to wait for me. That's the job.
     -> static_refuses
 
-+ [Move him.]
++ [Out of my way.]
     -> static_refuses
 
 === static_refuses ===

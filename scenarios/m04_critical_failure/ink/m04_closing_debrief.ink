@@ -30,6 +30,20 @@ VAR lore_safehouse_address_found = false
 // does not stand and deliver closing remarks.
 VAR robert_vance_ko = false
 
+// PASS 4. Engine-owned globals, read only.
+// fix 14: the three operative KOs (the old operatives_defeated counter only ever
+// counted Cipher and Relay) and the guard's KO.
+VAR operative_cipher_defeated = false
+VAR operative_relay_defeated = false
+VAR operative_static_defeated = false
+VAR security_guard_ko = false
+// fix 7: Cipher talked out of the hall. fix 5: how the cards were got.
+// fix 21: Voltage's print identified on the bypass module.
+VAR cipher_walked = false
+VAR vance_card_cloned = false
+VAR relay_card_cloned = false
+VAR voltage_print_on_bypass = false
+
 // External variables (set by game)
 EXTERNAL player_name()
 
@@ -52,7 +66,7 @@ EXTERNAL player_name()
 
 // Agent HaX on screen
 
-{player_name()}, report. What's the status?
+{player_name()}, report.
 
 * {not racks_vented} [Shutdown engaged before the racks went. Banks isolated, hall intact.]
     -> debrief_attack_stopped
@@ -72,7 +86,7 @@ EXTERNAL player_name()
 {racks_vented:
     Bank B's gone, but you isolated A and C and forced the vents. It could have been the whole hall. It wasn't.
 - else:
-    Good work. Thermal runaway aborted before a single cell vented, the banks are isolated, systems secured.
+    Clean. Runaway aborted before a single cell vented. Banks isolated.
 }
 
 {vance_trust_level >= 70 and not robert_vance_ko:
@@ -85,26 +99,32 @@ EXTERNAL player_name()
 {robert_vance_ko:
     The facility manager's being treated by medics. He'll live. He won't be filing a commendation.
 }
-
-{voltage_captured:
-    And you captured Voltage. Excellent.
-- else:
-    Voltage escaped?
+{security_guard_ko:
+    And the gate guard's in A&E with a sore head. He was the one person on site doing his job by the book.
 }
 
--> debrief_intelligence_gathered
+{voltage_captured:
+    And you've got Voltage.
+- else:
+    And Voltage got out through the dock.
+}
+
+// PLAYTEST ROUND: a player beat, so the outcome and the intelligence aren't one
+// fifteen-bubble run before the first choice.
++ [What did we get out of there?]
+    -> debrief_intelligence_gathered
 
 === debrief_voltage_status ===
 #speaker:agent_0x99
 
 {voltage_captured:
-    Excellent. Voltage is high-value intelligence.
+    Good. Nobody else in that building knows the chain above Blackout.
 
-    His interrogation will provide significant insight into The Architect's infrastructure initiative.
+    He'll talk. Men like him always want to explain themselves.
 - else:
-    Unfortunate. But the attack is stopped—that's the priority.
+    A shame. But the attack's stopped, and that was the job.
 
-    Lives saved matter more than one operative.
+    Lives over one operative, every time.
 }
 
 -> debrief_intelligence_gathered
@@ -121,9 +141,19 @@ EXTERNAL player_name()
 The directive said it: Zero Day supplies, Critical Mass executes, grid storage this winter. Tonight was that plan, running.
 
 {voltage_captured:
-    Voltage's interrogation has already begun. He's defiant, but he's confirming cross-cell operations.
+    Voltage is in a room now. So far he's given us one thing: his casualty figure.
 - else:
     Voltage is gone, so the paper will have to talk.
+}
+{voltage_print_on_bypass:
+    {voltage_captured:
+        And his print on that bypass module puts his own hand in the cabinet. That'll stand up in court.
+    - else:
+        His print's on that bypass module. When someone does find him, it'll be waiting.
+    }
+}
+{cipher_walked:
+    Cipher went to look at the night crew and kept walking. Police picked him up on the access road. He's talking.
 }
 
 {lore_cross_cell_coordination_found or lore_architect_directive_found:
@@ -133,31 +163,64 @@ The directive said it: Zero Day supplies, Critical Mass executes, grid storage t
 }
 
 {lore_safehouse_address_found:
-    And that card from the go-bag. It decodes to Calder Wharf, Social Fabric's regional safehouse. A team's on it.
+    And that card from the go-bag. It decodes to Calder Wharf, Social Fabric's regional safehouse. That goes on the board.
 }
 
 Keep the crew's fingerprint kit. Forensics can have the case.
 
-This wasn't random.
+// PLAYTEST ROUND: second player beat before the what-failed lesson.
++ [And how did they get in? How did I?]
+    -> debrief_what_failed
 
-Social Fabric was ready with disinformation campaigns in three cities—they planned to amplify the panic from thermal runaway.
+// ===========================================
+// PASS 4 fix 5: what failed (m01 pattern, m01_closing_debrief.ink:149-175).
+// The three weaknesses the player used, and the fix for each, in plain lines.
+// ===========================================
 
-* [The Architect. They're coordinating all of this.]
+=== debrief_what_failed ===
+#speaker:agent_0x99
+
+Agent HaX: Before you write it up. Three things let them in. Two of them let you in too.
+{vance_card_cloned:
+    Agent HaX: Vance's door card copied from across his own desk. Old prox hands its number to anything that asks.
+- else:
+    Agent HaX: Their door cards are old prox. They hand their number to anything that asks. You could have had Vance's from across his desk.
+}
+{relay_card_cloned:
+    Agent HaX: You did it to Relay too, while she was talking.
+}
+Agent HaX: The HV door took one finger, and that finger was on a panel he touched every two hours. A print names you. It can't prove you're the one standing there.
+Agent HaX: And the control room believed its own sensors. The one honest instrument in the place was a dial nobody had wired to anything.
+Agent HaX: Encrypted cards. A second factor on the HV door, and a reader that checks for a live finger. A gauge in every hall that isn't on the bus.
+
+* [It goes in the report. Vance will want every line.]
+    -> debrief_big_picture
+
+* [The budget let them in as much as the readers did.]
+    Agent HaX: Put that in too. It's the line nobody upstairs will want to read.
+    -> debrief_big_picture
+
+=== debrief_big_picture ===
+#speaker:agent_0x99
+
+None of this was random.
+
+Social Fabric had disinformation ready in three cities, to turn the fire into a panic.
+
+* [The Architect. He's running all of it.]
     -> debrief_architect_revelation
 
-* [How extensive is this coordination?]
+* [How far does this reach?]
     -> debrief_scale_explanation
 
 === debrief_architect_revelation ===
 #speaker:agent_0x99
 
-Yes. The same name the Zero Day directive carried. The Architect.
+The same name the Zero Day directive carried. The Architect.
 
-Now we've watched one of their coordinated strikes run start to finish — we know how the cells fit together, not just that they do.
+We've just watched one of his strikes run start to finish. Now we know how the cells fit together.
 
-This facility was a test run.
-
-The Architect is planning something bigger—coordinated infrastructure attacks with synchronised disinformation campaigns.
+This site was a rehearsal. The real thing is bigger, and it's coming.
 
 -> debrief_task_force_announcement
 
@@ -165,48 +228,41 @@ The Architect is planning something bigger—coordinated infrastructure attacks 
 #speaker:agent_0x99
 
 {voltage_captured:
-    Voltage mentioned operations in six cities.
+    Voltage put it at six cities.
 
-    OptiGrid Solutions—their cover company—has contracts at 40 facilities nationwide.
-
-    We're running full security audits now.
+    OptiGrid, their cover firm, has contracts at forty sites nationwide. We're auditing every one.
 - else:
-    The documents reference operations in multiple cities.
+    The documents name several cities.
 
-    OptiGrid Solutions contracts appear at dozens of critical infrastructure sites.
+    OptiGrid's contracts turn up at dozens of infrastructure sites.
 }
 
-This is coordinated at an unprecedented level.
+We've never seen it run this tight.
 
 -> debrief_task_force_announcement
 
 === debrief_task_force_announcement ===
 #speaker:agent_0x99
 
-SAFETYNET is forming a special task force dedicated to hunting The Architect and dismantling coordinated ENTROPY operations.
+// PASS 4 fix 22: Task Force Null, Voltage's interrogation and Calder Wharf are
+// open threads; no later mission picks them up yet, so nothing here promises a
+// date or a result.
+Netherton wants a standing team on The Architect. Hunt the coordination, not the cells.
 
-Task Force Null.
+He's calling it Task Force Null. Your name's on his list.
 
-You're being assigned.
-
-* [What's Task Force Null's mission?]
+* [What would Task Force Null do?]
     -> task_force_mission_explanation
 
-* [I'm ready. When do we start?]
+* [I'm in. When do we start?]
     -> task_force_accepted
 
 === task_force_mission_explanation ===
 #speaker:agent_0x99
 
-This isn't about stopping individual cells anymore.
+Find whoever sends the directives. Every cell we've hit so far was working from the same ones.
 
-We're going after the network. The Architect. The coordination infrastructure.
-
-You've proven yourself across four missions now.
-
-First Contact. Ransomed Trust. Ghost in the Machine. And now this—Critical Failure.
-
-You're ready for this.
+Four missions now, and you're still standing. The last of them nearly didn't go that way.
 
 -> task_force_accepted
 
@@ -215,9 +271,9 @@ You're ready for this.
 
 ~ task_force_null_assigned = true
 
-Good. Task Force Null briefing is tomorrow at 0600.
+He'll call when he's ready. Not tonight.
 
-Now—there's one more decision to make.
+First, one more decision.
 
 {racks_vented:
     {vented_by_trigger:
@@ -226,13 +282,11 @@ Now—there's one more decision to make.
         Agent HaX: The banks are isolated, but Bank B went before you got to the button.
     }
     Agent HaX: Nine on the night crew in Hall 2. Two more on the feed before the grid caught up.
-    Agent HaX: You stopped the rest of it. I need you to hold on to that, because the number you're going to read tomorrow is not zero.
+    Agent HaX: You stopped the rest of it. Hold on to that, because the number you read tomorrow won't be zero.
 - else:
-    Agent HaX: Eleven people on site tonight walked out of there. Forty-odd on that feed never knew they were on it.
-    Agent HaX: That's the whole job. That's what it looks like when it works.
+    Agent HaX: Eleven people walked out of there tonight. Forty-odd on that feed never knew they were on it.
 }
 
-Agent HaX: But...
 
 -> disclosure_decision
 
@@ -241,17 +295,15 @@ Agent HaX: But...
 
 // Robert Vance present, listening
 
-How do we handle this publicly?
-
-The facility manager needs to know our approach.
+How do we handle this publicly? Vance needs to hear it too.
 
 * [Full public disclosure. People have a right to know.]
     -> disclosure_full_public
 
-* [Classify the incident. Let the facility patch vulnerabilities quietly.]
+* [Keep it classified. Let them patch it quietly.]
     -> disclosure_quiet
 
-* [Acknowledge a security incident without full details. Controlled narrative.]
+* [Say there was an incident. Keep the details back.]
     -> disclosure_partial
 
 === disclosure_full_public ===
@@ -259,22 +311,22 @@ The facility manager needs to know our approach.
 
 ~ disclosure_choice = "full"
 
-Full transparency. We reveal the attack attempt, facility vulnerabilities, and ENTROPY threat.
+Full transparency. The attack, the holes it came through, ENTROPY. All of it.
 
 {not robert_vance_ko:
     // Robert Vance reacts
     #speaker:robert_vance
     {vance_trust_level >= 70:
-        Robert Vance: It'll damage the facility's reputation, but... people have a right to know how close this came.
+        Robert Vance: It'll hurt us. People should still know how close it came.
     - else:
-        Robert Vance: The public backlash will be severe. But I understand the reasoning.
+        Robert Vance: There'll be hell to pay for this place. Fair enough.
     }
     #speaker:agent_0x99
 }
 
-The public gets the truth and the warning that goes with it. Albion takes a reputational hit, every other storage site gets audited, and someone in Parliament finally has to answer for the funding. It forces the change the sector's been dodging.
+The public gets the truth and the warning with it. Albion takes the hit, every other storage site gets audited, and someone in Parliament finally answers for the funding.
 
-Approved.
+Netherton will back that.
 
 -> disclosure_outcome
 
@@ -283,24 +335,22 @@ Approved.
 
 ~ disclosure_choice = "quiet"
 
-We classify the incident. Frame it as a "maintenance issue" that was resolved.
-
-Facility patches vulnerabilities quietly.
+We classify it. A maintenance fault, resolved. Albion patches the holes quietly.
 
 {not robert_vance_ko:
     // Robert Vance reacts
     #speaker:robert_vance
     {vance_trust_level >= 70:
-        Robert Vance: I understand the reasoning, but... is it right to hide this from the people we serve?
+        Robert Vance: I'll keep my mouth shut. Doesn't mean I like it. Those people are on our feed.
     - else:
-        Robert Vance: Thank you. The facility can't afford the reputational damage right now.
+        Robert Vance: Good. One more headline and they'd close us.
     }
     #speaker:agent_0x99
 }
 
-The public never hears how close this came. Albion's reputation survives, the upgrades happen quietly, and nothing forces the wider sector to move. Stability, bought with silence.
+Nobody hears how close this came. Albion's name survives, the upgrades happen, and nothing makes the rest of the sector move. Stability, bought with silence.
 
-Approved.
+Netherton won't argue.
 
 -> disclosure_outcome
 
@@ -309,38 +359,38 @@ Approved.
 
 ~ disclosure_choice = "partial"
 
-Acknowledge a "security incident" without full details. Controlled narrative.
+An incident, acknowledged. No detail.
 
 {not robert_vance_ko:
     // Robert Vance reacts
     #speaker:robert_vance
     {vance_trust_level >= 70:
-        Robert Vance: A middle ground. People know something happened without full panic. I can work with that.
+        Robert Vance: Something, not everything. I can live with that.
     - else:
-        Robert Vance: Probably the most politically viable option.
+        Robert Vance: That'll go down well upstairs, I suppose.
     }
     #speaker:agent_0x99
 }
 
-People are told an incident happened, not the whole of it. Enough awareness to push some improvement, not enough to start a panic. A controlled middle.
+People hear something happened, not all of it. Enough to push some change, not enough to start a panic.
 
-Approved.
+Netherton can live with that.
 
 -> disclosure_outcome
 
 === disclosure_outcome ===
 #speaker:agent_0x99
 
-Decision recorded.
+Done.
 
 {disclosure_choice == "full":
-    Public statement will be coordinated with local authorities.
+    Statement goes out with the local authorities.
 }
 {disclosure_choice == "quiet":
-    Incident remains classified. Cover story prepared.
+    It stays classified. Cover story's prepared.
 }
 {disclosure_choice == "partial":
-    Controlled statement will be prepared for media.
+    A controlled statement goes to the press.
 }
 
 {not robert_vance_ko:
@@ -349,21 +399,21 @@ Decision recorded.
     {vance_trust_level >= 80:
         Robert Vance: Thank you.
 
-        Robert Vance: I don't know your real name, but... thank you.
+        Robert Vance: I don't know what you are. I know what you did.
 
         {casualties_occurred:
             Robert Vance: You kept it to one bank. Without you it was the whole hall.
         - else:
-            Robert Vance: You saved this facility. You kept 240,000 people on supply, and nobody in that hall died.
+            Robert Vance: Nobody in that hall died, and two hundred and forty thousand never lost the lights.
         }
     }
     {vance_trust_level >= 50 and vance_trust_level < 80:
-        Robert Vance: You did good work here.
+        Robert Vance: You did right by this place.
 
-        Robert Vance: This facility won't forget it.
+        Robert Vance: I'll not forget it.
     }
     {vance_trust_level < 50:
-        Robert Vance: I appreciate what you did, even if I don't fully understand it.
+        Robert Vance: I don't follow all of it. I know the hall's still standing.
     }
 }
 
@@ -384,16 +434,16 @@ Decision recorded.
 === debrief_end_respectful ===
 #speaker:robert_vance
 
-Robert Vance: This facility's been operating on hope and duct tape for too long.
+Robert Vance: We've run this place on hope and gaffer tape for years.
 
-Robert Vance: That changes now. I'll make sure of it.
+Robert Vance: That stops on my shift.
 
 -> mission_complete
 
 === debrief_end_professional ===
 #speaker:robert_vance
 
-Robert Vance: I'll begin implementing security overhauls immediately.
+Robert Vance: I'll have those card readers out by the end of the week.
 
 -> mission_complete
 
@@ -402,7 +452,7 @@ Robert Vance: I'll begin implementing security overhauls immediately.
 
 Noted. It'll be in the report either way.
 
-The methods are a separate conversation. You put a facility manager on the floor of his own operations office tonight.
+The methods are a separate conversation. You put a facility manager on the floor of his own office tonight.
 
 -> mission_complete
 
@@ -413,22 +463,20 @@ The methods are a separate conversation. You put a facility manager on the floor
 
 Get some rest, {player_name()}.
 
-Task Force Null briefing tomorrow at 0600.
-
 {voltage_captured:
-    Voltage's interrogation will provide actionable intelligence.
+    Voltage will keep.
 - else:
-    We'll find Voltage. And The Architect.
+    Voltage is out there. So is The Architect.
 }
 
-{operatives_defeated >= 3:
-    You neutralised all their operatives. Textbook operation.
-}
-{operatives_defeated == 2:
-    Two operatives down. Clean work.
+{
+- operative_cipher_defeated and operative_relay_defeated and operative_static_defeated:
+    All three of his crew down. Thorough.
+- not operative_cipher_defeated and not operative_relay_defeated and not operative_static_defeated:
+    And not one of his crew on the floor. Harder than it looks.
 }
 
-This is just the beginning.
+Sleep. I'll call.
 
 // Task 3.3 completes HERE, at the end of the debrief, so the bond_visualiser
 // conclusion screen is raised after the player has actually heard it.

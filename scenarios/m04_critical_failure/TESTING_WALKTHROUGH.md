@@ -5,12 +5,15 @@
 > Setting: Albion Energy Storage — 200 MWh grid-scale lithium-ion BESS.
 > The pass-2 version of this file (games 1161–1164) is superseded: the lock chain changed.
 > Pass-3 browser playtests passed: `tools/playtest/m04-pass3a-report.md` (fingerprint chain) and `m04-pass3b-report.md` (race and endings; games 1224, 1227 completed). Follow-up fixes after those runs are folded in below.
+> Updated 2026-10-02 for the pass-4 design fixes (`DESIGN_REVIEW.md` → "Changes made (pass 4 design)"; playtest script `PASS4_PLAYTEST.md`). Route changes: Relay challenges you on entering Hall 2; her card can be cloned instead of won; Cipher can be talked out of the hall; `enter_facility` ticks in the operations office; a cover-route player can bring Vance in later; an optional second print on the Hall 2 bypass module.
 > Ids renamed 2026-10-01: `chen_*` → `vance_*` (globals `vance_trust_level`, `vance_is_ally`, `vance_provided_keycard`, `vance_phone_available`, `vance_knows_truth`, and every ink knot/VAR).
 
 ## Prerequisites
 
-- **Validator** — schema passes (with the `biometric` lockType), 0 room overlaps, door alignment OK, critical path 4 hops. Six known benign onceOnly-pair warnings on `agent_0x99`:
-  - `room_entered:battery_hall_2`: the reader bark plus the RFID guide offer for players who never cloned.
+- **Validator** — schema passes (with the `biometric` lockType), 0 room overlaps, door alignment OK, critical path 4 hops. Eleven known benign onceOnly-pair warnings on `agent_0x99` (round 2 added three splits: the kit text on `attack_mechanism_known`, the workshop text in two parts, and the work-order text gated on `anomaly_detected`):
+  - `conversation_closed:operative_relay`: the reader bark plus the RFID guide offer for players who never cloned (pass 4: re-keyed from `room_entered:battery_hall_2` so they wait for Relay's challenge to close).
+  - `global_variable_changed:anomaly_detected`: Nightshade's 61°C read plus the silent ESD-authorisation check.
+  - `objective_aim_completed:map_the_attack`: the `attack_mechanism_known` setter plus the text (shown only while Voltage is up; otherwise the ESD-armed text covers it).
   - `objective_task_completed:submit_ftp_intel_flag`: the methodology tick and distcc offer, plus the conditional sudo offer.
   - `objective_task_completed:submit_distcc_exploit_flag`: the methodology tick plus the privesc offer.
   - `objective_task_completed:submit_network_scan_flag`: the methodology tick plus the Zero Day bark.
@@ -48,7 +51,7 @@ Minimum route: entrance → ops → SCADA → Hall 1 → Hall 2 → Hall 1 → w
 
 ## Aim 1 — Get Inside
 1. **Briefing** plays once. `mission_objectives` names the kit: "your picks, and the cloner from the WhiteHat job. No PIN cracker this time."
-2. **Reception** → `enter_facility`. The guard expects an audit today, "not this early".
+2. **Reception.** The guard expects an audit today, "not this early". `enter_facility` ("Get past the checkpoint into the operations office") ticks on entering the operations office (pass 4; it used to tick on spawn).
 3. **Vance** → `meet_robert_vance`. **No card is handed over.**
    - **Cover route:** "Auditors get escorted, not carded." Choose "(Lean in over the site map while the cloner reads his lanyard.)" → RFID clone (EM4100, instant) → resumes on "The cloner buzzes once…".
    - **Ally route:** after the reveal, "I'll need into the halls." → he tells you to copy it → clone → "That's uncomfortably easy…" → "Right. Going."
@@ -56,47 +59,55 @@ Minimum route: entrance → ops → SCADA → Hall 1 → Hall 2 → Hall 1 → w
    - **Retry:** a cancelled clone returns with the choice still there. The hub also offers "(Ask about the site map again, and stand close.)" on the cover route or "Let me copy your card." for an ally.
    - **Other routes to Hall 2:** pick the security locker for the spare Level 1, or KO Vance (he drops his card).
    - **After the clone:** HaX offers the RFID guide (6 s after the conversation really closes). An ally Vance texts at 2.5 s. A player who got Level 1 from the locker or a KO drop gets the RFID guide offer on first entering Hall 2 (6 s, after the reader bark).
+   - **Late reveal (pass 4):** a cover-route player who has read the work orders or the 61°C dial gets a hub choice ("I'm not an auditor…") that runs the reveal and ally path. The `conversation_closed:robert_vance` mapping then opens his phone, and the "vindicated" credit is reachable.
    - **Vance's phone before allying:** shows only "(He's at the ops desk. Talk to him there.)", with no message. Once `vance_is_ally` flips, reopening routes to his support hub. If he is KO'd: "(No answer.)".
 
 ## Aim 2 — Confirm the Telemetry Is Lying
 4. Work orders (ops), camera log or **reader export** (security office) → `find_infiltration_evidence`. The export shows Vance's print opening the plant room on 9–10 Jan and at 03:58 tonight, 23 minutes after his card put him in the ops office.
-5. **Hall 1 analogue thermometer** → `anomaly_detected`, `identify_scada_anomalies`. The H₂ panel reads 1.1% (amber), and HaX says the workshop wants a Level 2 card Vance doesn't carry.
+5. **Hall 1 analogue thermometer** → `anomaly_detected`, `identify_scada_anomalies`. HaX opens a short phone conversation (round 2): she quotes Nightshade's read of the 61, and the player's one reply lands on the workshop pointer (or, if the workshop is already reached, "Then the dial was the last piece."). The H₂ panel reads 1.1% (amber). On entering Hall 1, HaX says the workshop wants a Level 2 card: "Relay has, and it's old prox, like his."
+   - **Cipher (optional)** stands at the far end of the hall. Leave him and nothing happens. Talk to him: "Hall 2 is venting…" or "Put the radio down." stalls his radio; then "Whatever Voltage told you…" → "There's a night crew in Hall 2. Go and look." makes him walk (`cipher_walked`, task done, he disappears; credit and debrief line). If he gets the radio call out, `cell_alerted` is set and Relay is waiting for you.
    - **Seed:** the **Duty Round Panel** (Hall 1 at (6, 7), west half, on the aisle; moved up from row 8, where it drew over the workshop wall) answers "You need a fingerprint kit…" before the kit.
 
 ## Aim 3 — Reach the Engineering Workshop
-6. **Hall 2** opens on the cloned Level 1. HaX: "That plant-room door is biometric. Picks and cloner won't touch it." (`plant_reader_seen`).
-   - Try the plant door: "requires Robert Vance's fingerprint". **This is the encounter.**
-7. **Relay** → KO → `neutralize_operative_relay`. She drops **Workshop Keycard (Level 2)**, and HaX relays a copy by phone.
-   - Cipher in Hall 1 is optional; his task now sits in `take_back_the_plant` as optional.
+6. **Hall 2** opens on the cloned Level 1. **Relay's challenge opens by itself** on first entry (pass 4; `room_entered:battery_hall_2` person-chat, probed in game 1363). If Cipher radioed, she opens with "Cipher said we had a live one."
+   - After her chat closes, HaX: "And that plant-room door is biometric. Picks and cloner won't touch it." (`plant_reader_seen`), plus the RFID guide offer for a player who never cloned.
+   - Try the plant door with no prints: the reader refuses. Without the kit, HaX texts once: "…Check what they left in the workshop."
+7. **Relay** — two ways to the Level 2 card, both complete `neutralize_operative_relay`:
+   - **Fight:** KO → she drops **Workshop Keycard (Level 2)**, and HaX relays a copy by phone.
+   - **Quiet:** in her standoff, "(Keep her talking. Step in close enough for the cloner to find her card.)" → RFID clone (EM4100, instant) → "The cloner buzzes once. She hears it." → she turns hostile. The `card_cloned` mapping (`data.cardName === 'Workshop Card Level 2'`) sets `relay_card_cloned` and completes the task; HaX: "…Get out of her reach." Once hostile she sweeps her walk faster (patrol speed 70) but chases only within 3 tiles (`aggroDistance` 96) at 100 px/s, slower than the player's 150, so backing off costs one hit at most. The engine has no chase leash: if you run through a door with her on your heels she follows until the gap opens. Slip past to the plant door (about 123–133 px from her west stop) while she is away from the west end. The workshop door takes the cloned card.
+   - **Every route to the fight now passes `relay_last_chance`** (round 2): "(Close the gap before she moves. The cloner's already reading.)" (a rushed clone; a missed read returns to the same choice) or "Then we do this the hard way." So the quiet route survives any first reply, including the radio call.
 8. **Workshop** (Level 2) → `locate_compromised_systems`.
-   - HaX's bark now says the four flags make the case. The SAFETYNET Tasking Note is gone.
+   - HaX's bark says the four flags make the case, and ends "And that OptiGrid case under the bench is theirs. Open it." 
    - **OptiGrid Tool Case** (lockpick) → **Fingerprint Kit** + **Job Card #4782** ("His thumb's on the Hall 1 round panel every 2 hrs."). HaX's kit bark fires.
 
 ## Aim 4 — Map the Attack
 9. VM flags at the drop-site (flag 1 web, 2 ProFTPD, 4 distcc, 3 sudoedit).
-   - The scan flag triggers HaX's "Same backdoored build you met at St Catherine's."
+   - The scan flag triggers HaX's "Same backdoored build you met at St Catherine's", which now offers the ProFTPD guide (hub: "Send me the ProFTPD guide.").
    - The FTP flag offers the distcc and sudo guides in one message. A distcc-first player gets the sudo offer then.
-10. `map_the_attack` complete → `attack_mechanism_known` → timers start: `h2_advisory` at 6 min (Hall 2, Bank B) and `racks_vent` at 12 min.
+10. `map_the_attack` complete → `attack_mechanism_known` → timers start: `h2_advisory` at 8 min (Hall 2, Bank B) and `racks_vent` at 14 min (round 2; were 6 and 12).
 
 ## Aim 4b — Take the Plant Back
-11. **Hall 1 round panel** with the kit → the fingerprint kit minigame → "Robert Vance" sample. It can be done before the VM; that saves time under the clock.
+11. **Hall 1 round panel** with the kit → the fingerprint kit minigame → "Robert Vance" sample. It can be done before the VM; the kit bark says so ("Lift his print now, while nothing's counting down."). Reference cards: Security Guard, Cipher, Relay (Static dropped). The print bark now carries the lesson: "A print tells a reader who you are. It can't tell it you're standing there."
+    - **Optional second print (pass 4):** the **BMS Interlock-Bypass Module** in Hall 2 is a print surface (owner Voltage, easy, pale surface, so black powder). Identify it as Voltage → `voltage_print_on_bypass`, a HaX text, a credit line, a debrief line, and the arrest choice gains "Your thumb's on the bypass module…". "Use normally" still shows its text.
     - **Ally:** Vance names the panel in person or by phone.
 12. **Plant door** opens with the sample → `get_past_plant_reader`.
 13. **Static**, then **Voltage**.
     - **Static up:** "You genuinely don't get to have both". Choices: fight or button only.
     - **Static down:** "Static's down. So it's you, me, and one keystroke." The arrest is offered; its sub-menu is the court line or "Not yet." (back to the stances).
-    - **After the 12-minute vent**, his first threat reads "Bank B's already gone. One keystroke and A and C follow it…".
+    - **After the 14-minute vent**, his first threat reads "Bank B's already gone. One keystroke and A and C follow it…".
     - **Fight (or any punch on Voltage):** HaX: "He's going for the laptop. Drop him." (1.5 s, skipped if he's already down). The **25 s race** is the on-screen countdown (first in `timers`).
       - KO him in time: race cancelled, `voltage_captured`.
       - Too slow: "HE REACHED THE LAPTOP", `racks_vented`, `vented_by_trigger`. The fight continues and the ESD still saves A and C.
     - **Button:** he escapes via the dock.
 
 ## Aim 5 — Stop the Thermal Runaway (conclusion)
-14. **ESD.** The refusal names the missing condition (variants for thermal, network and trigger holder). Press → `attack_prevented`, `mission_complete`.
+14. **ESD.** The refusal is now grid control's permissive ("NOT ARMED. GRID PERMISSIVE NOT RECEIVED…") and still names the missing condition (thermal, network, trigger holder). Press → `attack_prevented`, `mission_complete`.
 15. **Debrief.**
     - **Opener:** exactly one Bank B option per state (intact / vented by the clock / "He reached the laptop").
     - **Intel:** lines branch on the lore globals; the safehouse line rewards opening the go-bag.
     - **Kit:** "Keep the crew's fingerprint kit."
+    - **What failed (pass 4):** HaX names the three weaknesses (prox cards, a one-finger HV reader, a control room that believed its own sensors) and the fixes; the clone line branches on `vance_card_cloned` and `relay_card_cloned`; one choice.
+    - **Threads:** Task Force Null, Voltage's questioning and Calder Wharf are open threads now, with no date or result promised. Lines for the guard's KO, Cipher walking, Voltage's print, and "not one of his crew on the floor" / "all three of his crew down" from the three `operative_*_defeated` globals.
     - **Vance's thanks:** branch on `casualties_occurred`; every Vance line carries an explicit "Robert Vance:" prefix (the playtest saw it attributed to HaX).
     - Then credits.
 
@@ -117,6 +128,14 @@ Minimum route: entrance → ops → SCADA → Hall 1 → Hall 2 → Hall 1 → w
   - **g3** a player KO or reload mid-race, then walk back: Voltage is in `voltage_after_trigger` ("It's done. You were gone long enough, and Bank B went with it."), with **no** button stance.
   - **g5 (human playtest needed)** the real fight with Static still up. A game over then always costs Bank B (the restart forfeits the race); the scripted playtests used `debugKO`, so fairness under real combat is unjudged.
   - **g4** after the 12-min vent, a fight starts **no** race and **no** telegraph.
+
+## Combat (round 2)
+
+NPC damage per hit: Cipher 4, Relay 5, Static 4, Voltage 12 (were 12, 15, 18, 22). NPCs attack about every 2 s and have 100 HP; the engine reads only `attackDamage` from the scenario, and there is no heal item or regen. A bot that fought all three took about 14 hits, which is now about 60 HP.
+
+## Global variables added in pass 4
+
+`vance_card_cloned`, `relay_card_cloned`, `cipher_walked`, `cell_alerted`, `voltage_print_on_bypass`, `proftpd_guide_offered`, `proftpd_guide_hint_given`.
 
 ## Global variables added in pass 3
 

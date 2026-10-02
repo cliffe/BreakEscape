@@ -135,12 +135,6 @@
       "optional": false
     },
     {
-      "id": "optigrid_tool_case",
-      "label": "OptiGrid Tool Case",
-      "kind": "lock",
-      "optional": false
-    },
-    {
       "id": "security_office",
       "label": "Security Office",
       "kind": "room",
@@ -195,6 +189,18 @@
       "optional": false
     },
     {
+      "id": "npc_voltage_critical_mass_leader",
+      "label": "Voltage (Critical Mass Leader)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "action_deal_with_voltage",
+      "label": "Deal with Voltage: fight, arrest, or let him run",
+      "kind": "action",
+      "optional": false
+    },
+    {
       "id": "loading_dock",
       "label": "Loading Dock",
       "kind": "room",
@@ -204,12 +210,6 @@
       "id": "social_fabric_safehouse_card_encoded",
       "label": "Social Fabric Safehouse Card (Encoded)",
       "kind": "item",
-      "optional": false
-    },
-    {
-      "id": "abandoned_extraction_go_bag",
-      "label": "Abandoned Extraction Go-Bag",
-      "kind": "lock",
       "optional": false
     },
     {
@@ -363,11 +363,6 @@
       "soft": false
     },
     {
-      "from": "engineering_workshop",
-      "to": "optigrid_tool_case",
-      "soft": false
-    },
-    {
       "from": "security_office",
       "to": "access_control_export_hv_plant_room",
       "soft": false
@@ -418,6 +413,16 @@
       "soft": false
     },
     {
+      "from": "plant_room",
+      "to": "npc_voltage_critical_mass_leader",
+      "soft": false
+    },
+    {
+      "from": "npc_voltage_critical_mass_leader",
+      "to": "action_deal_with_voltage",
+      "soft": false
+    },
+    {
       "from": "loading_dock",
       "to": "lock_extraction_gobag",
       "soft": false
@@ -425,11 +430,6 @@
     {
       "from": "lock_extraction_gobag",
       "to": "social_fabric_safehouse_card_encoded",
-      "soft": false
-    },
-    {
-      "from": "loading_dock",
-      "to": "abandoned_extraction_go_bag",
       "soft": false
     },
     {
@@ -490,6 +490,36 @@
     {
       "from": "scada_control_room",
       "to": "battery_hall_1",
+      "soft": false
+    },
+    {
+      "from": "analogue_thermometer_rack_bank_c_wall",
+      "to": "lock_esd_pushbutton",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_network_scan_flag",
+      "to": "lock_esd_pushbutton",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_ftp_intel_flag",
+      "to": "lock_esd_pushbutton",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_distcc_exploit_flag",
+      "to": "lock_esd_pushbutton",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_privesc_flag",
+      "to": "lock_esd_pushbutton",
+      "soft": false
+    },
+    {
+      "from": "action_deal_with_voltage",
+      "to": "lock_esd_pushbutton",
       "soft": false
     }
   ]
