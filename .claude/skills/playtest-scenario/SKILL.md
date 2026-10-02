@@ -83,6 +83,20 @@ Never reconstruct a trace from what you expected to happen. If a command was not
 - An unlocked door can still be shut, and `enter` opens it before walking through. An unlocked door that has *vanished* is normal — see above.
 - `converse` stops once the conversation stops saying anything new, so hub NPCs no longer burn the whole turn budget. Pass `choices` when you need a branch.
 
+### Harness gotchas from pass 4 (October 2026)
+
+Each of these cost at least one pass-4 run (reports in `tools/playtest/m0*-pass4-*report.md`):
+
+- **`bootstrap` drives the opening briefing for you.** It auto-picks choice 1 at each menu, and on a long briefing hub it can loop (m07 Netherton, ~90 s). When the briefing is under test, don't bootstrap through it: let the title screen go, then drive the briefing by hand. Don't close the title screen with `mg close` either; that has closed the briefing underneath it (m03, m06).
+- **The resume overlay makes `bootstrap` loop.** After a reload with `resume:"resume"`, the "Resume / Restart / New Session" overlay's own Resume button isn't in the helper's list, so it clicked "◀ Prev" in OTHER SESSIONS hundreds of times (6.5 minutes in m02 and m06). Click Resume through the DOM instead (an `eval` that finds the button by its exact text), then carry on.
+- **Run `verify-run.rb` through Rails:** `BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/verify-run.rb <game_id>`. Plain `ruby` fails.
+- **Read the credits while they play.** They are one `#bv-cr-label` element (inside `#bv-credits-overlay`) that changes about every 3.5 s, and they don't replay after a reload. Attach a MutationObserver to `#bv-cr-label` before the last debrief line, and read the lines from it; `.bv-stage` is the visualiser panel, not the credits.
+- **Use a private scratch subfolder** of the session scratchpad named for your run (`<mission>-<role>/`), never a generic name at the root (`lint.txt`, `matrix.sh`, `session.jsonl`): parallel agents overwrite each other's files.
+- **Go headless when the machine is loaded.** The headed default is for the user to watch, but with other playtests running a headed browser has hung at "ready", and a backgrounded Wayland window throttled the game to a few px per second (m02, m03, m04). Check `uptime`; above a load of about 10, or with other playtests running, pass `--headless` and say so in the report. Timings from a loaded machine aren't representative.
+- **`enter` may need a second call, or a pointer move first.** Under load a door can need repeated `enter`; after a door is unlocked and its sprite has gone, `enter` can fail with `no-known-doorway` until a `room` call lists it, and walking through with `moveTo` + `walk` works.
+- **`mg choose` is unreliable on long hubs and number-only choices.** A regex on a choice whose text is just a number ("5093.") reads as a list number and fails with `choice-no-match`; on long menus pick with `{"cmd":"mg","action":"clickText","args":["<exact choice text>"]}` instead.
+- **Interaction range is 32 px (24 px for some objects).** `interact` from 36 px reports `no-effect-confirmed`. Walk closer, and if a spot can't be reached from the side you approach, report it: that is a layout finding for the scenario (m02 Bed 4, m06 rack sheet and Satoshi, m08 locker).
+
 ## Token discipline
 
 Playtests are long. These constraints matter more here than in most skills:

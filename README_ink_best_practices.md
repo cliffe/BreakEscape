@@ -2,6 +2,8 @@
 
 > **Canonical location.** This root `README_ink_best_practices.md` is the authoritative guide for writing NPC dialogue and interactive-story ink in Break Escape. Pair it with the `npc-dialog-review` skill (dialogue-quality review) and `README_scenario_design.md` + the `scenario-design-review` skill (structure/solvability review).
 
+> **Writing style.** This file covers ink mechanics. For what characters say and how (line jobs, information first, subtext, choices, line lengths, AI tells), see the [dialogue style guide](story_design/universe_bible/09_scenario_design/dialogue_style.md). For how each recurring character sounds, see the [voice bible](story_design/universe_bible/04_characters/voice_bible.md).
+
 ## Dialogue Attribution: Inline Prefixes (Primary Method)
 
 The primary way to attribute dialogue in Break Escape Ink is the **inline `Character Name: text` prefix format**. The engine parses the character name, looks it up in the character registry, and displays the correct portrait and label automatically. No `# speaker:` tag needed.
@@ -883,6 +885,71 @@ VAR talked_before = false
 ~ talked_before = true
 -> hub
 ```
+
+## Common ink bugs (pass 4)
+
+These came up in more than one mission during the pass-4 dialogue reviews and playtests (October 2026). Most are caught by `node scripts/ink_runtime_check/dialoguelint.mjs scenarios/<mission>/` (rule name in brackets); the rest are for the reviewer. `README_scenario_design.md` ("Common bugs and how to avoid them") has the scenario-file side.
+
+**1. A first meeting that falls into the return visit** (`choice-fallthrough`). Ink doesn't stop at choices: it keeps running to the end of the flow and gathers every choice it passes. So a block that offers choices and is followed by more content prints that content as well, and merges both sets of choices. In m06, Dani, Priya and Satoshi greeted a first-time visitor with "Hi again":
+```ink
+// ❌ first block flips the flag, so the second block runs too
+{first_meeting:
+    ~ first_meeting = false
+    Dani: You're the regulator, yeah?
+    + [Mostly?] -> hub
+}
+{not first_meeting:
+    Dani: Hi again. What's up?
+    -> hub
+}
+// ✅ one block, with - else:
+{first_meeting:
+    ~ first_meeting = false
+    Dani: You're the regulator, yeah?
+    + [Mostly?] -> hub
+- else:
+    Dani: Hi again. What's up?
+    -> hub
+}
+```
+
+**2. A resting knot that prints nothing** (`blank-reentry`, person-chat). After `#exit_conversation` the story is saved where it diverts to, and a re-talk re-enters that knot (person-chat re-navigates to the knot, not the stitch, that owns the saved choices). If the knot opens straight on its choices, the player gets the buttons with no fresh line; playtesters read it as a blank screen (m03 receptionist and Victoria, m04 Vance, m08 Netherton). The engine may fall back to re-showing the last line, but a re-entry line gives better context. Add one, and skip it once after a goodbye so the farewell batch doesn't end on a greeting. Vary it, or it repeats after every topic (m06 Irina's "I'm still here, and still yours" after each answer):
+```ink
+=== hub ===
+{hub_quiet:
+    ~ hub_quiet = false          // set to true on every exit choice
+- else:
+    Receptionist: {&What else can I help with?|Anything else?|Ask away.}
+}
++ [...]
+```
+Phone inks are the exception: the thread shows the history, and a phone resting knot should hold choices only (the pass-3 re-navigation rule).
+
+**3. An influence tag that lands on narration** (`tag-on-narrator`). A tag on its own line attaches to the next line of text. Before a divert, that's the first line of the next knot; if that line is `Narrator:`, the "+ Influence" popup shows over the narration (m06 Irina's evidence scene). Put the tag directly above a line the NPC speaks.
+
+**4. The contact's own name in a phone ink** (`phone-self-prefix`). Phone lines take no `Name:` prefix for the contact (m01's phone ink has none); keep a prefix only when someone else speaks. `Narrator:` lines render as narration in both chats; use them sparingly on the phone.
+
+**5. A spoken goodbye with no answer** (`exit-no-reply`). The engine shows the chosen text as the player's own bubble. If the choice then goes straight to `#exit_conversation` (or `END`), the chat closes on the player's words, waiting for a click (m08 "[I'll leave you to it.]", "[Understood, Director.]"; m03 "[She is. Goodnight.]"). Give the NPC a one-line reply. Put the tag on its own line after the reply, or above it, never ahead of a divert that leaves the reply behind:
+```ink
++ [I'll leave you to it.]
+    Off-Duty Agent: Shut the door on your way.
+    #exit_conversation
+    -> hub
+```
+
+**6. Asterisk cues** (`stage-cue-in-info`, `stage-cue-density`). `*a beat*` shows on screen as written and steers the voice. m01 uses about one per 37 spoken lines. Never put one on a line carrying a number or a code ("\*reading\* Two hundred and forty." in m07): the player has to read past it to get the information.
+
+**7. "Not X. Y."** (`not-x-but-y`). The two-sentence form ("Not doubt. Irritation."), the pronoun form ("She is not startled. She has been waiting.") and "like X, and not Y" are the same AI tell as "it's not X, it's Y", in narration as much as in dialogue. A villain may keep one per scene.
+
+**8. A timed text repeated as the first line** (validator). A bark or `sendTimedMessage` text appears before the chat opens. If the knot then opens on the same words, the player reads them twice (m07 Architect, "Agent 0x00. Don't look for the trace."). Make the bark a teaser.
+
+**9. Variables nobody sets** (validator). A `VAR` read in a condition, never assigned with `~`, and with no scenario global of the same name to sync in, is fixed at its default (m06 `recruitment_accepted`). A `#set_global` name missing from `globalVariables` is usually a typo.
+
+**10. For the reviewer** (no lint):
+- `#speaker:` tags don't choose the speaker. Person-chat acts only on `#speaker:player` and `#speaker:npc[:id]`; a two-part tag like `#speaker:analyst` is ignored and the `Name:` prefix decides (m06). Write the prefix.
+- Status answers ("Where do I stand?", "Remind me where we are", "What's the clock?") must branch on the globals that change, down to the step the player is on. Four missions had a recap that went stale halfway through.
+- A choice can only quote or answer what the player has heard on this route. Check every choice against each way into its knot (m03 "[…I signed myself in.]" after a KO route; m04 Relay answering a reply nobody gave).
+- Don't say the same fact twice in a row, across a choice and its reply, or across two speakers (m04 gate guard, Vance's phone opener, the debrief's "Voltage is out through the dock").
 
 ## Debugging
 

@@ -78,12 +78,15 @@ Everything else goes into the approval log for the user: engine or server change
 - A playtest isn't a pass until `tools/playtest/verify-run.rb` shows progress on the server. Testers keep an earned-secrets table: anything typed from the solution guide or set by console is "exercised, not earned".
 - Engine changes get node tests (`test/js/`), the Rails suite (`bin/rails test`), the phone reopen check (`node scripts/ink_runtime_check/reopencheck.mjs scripts/ink_runtime_check/missions.json`) and a browser regression across the affected missions before they're committed.
 - Ink rewrites get `scripts/ink_runtime_check/tagdiff.mjs` against the last commit: every changed tag, knot, variable, divert or choice condition must be explained.
+- The bug classes that recurred across pass 4 are checked automatically: the validator's recurring-bug checks (lockpick catches that can't fire, opening cutscene without `waitForEvent`, sprite art, look-alikes, dead `VAR`s, undeclared `#set_global`, repeated bark lines) and `node scripts/ink_runtime_check/dialoguelint.mjs scenarios/<m>/` (fall-through choices, blank re-entry, popup on narration, phone prefixes, exits with no reply, stage cues). Clear or justify each finding before a mission goes to playtest; the rest of the list is in `README_scenario_design.md` ("Common bugs and how to avoid them") and the review skills. Use `--skip-ink --no-graph` to validate a mission someone else is editing without rewriting its files.
 - Look at the screenshots yourself before calling UI work done.
 
 ## Housekeeping
 
 - Agents that stop mid-run leave headless browsers and stuck harness commands behind. List them with `ps`, check what they are, and kill them **by PID**. Never use `pkill -f` with a pattern that also appears in your own command line, because it kills your own shell.
 - When taking over from an agent that spawned children, list the live agents first and stop its children, or you get duplicate builders overwriting each other.
+- Agents share one working tree. Never `git stash`, `git checkout -- <file>` or `git reset` to get a clean baseline, because that pulls other agents' unsaved work out from under them. Compare against `git show HEAD:<path>` or use a worktree instead.
+- Give each parallel agent its own scratch subfolder (`<mission>-<role>/`). Agents that share the scratchpad root overwrite each other's helper scripts and check outputs.
 - Delete stray files a harness writes into the repo root, after looking at them.
 - Commit in logical groups (engine, tooling, docs, one commit per mission). Where a shared file mixes several fixes, commit them together rather than leaving an intermediate commit that doesn't run.
 - If a usage limit is near, stop launching agents, write the resume note, and say that nothing restarts on its own.

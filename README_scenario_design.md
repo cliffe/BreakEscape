@@ -61,6 +61,7 @@ The validator performs three phases:
    - **Ink speaker prefixes** that resolve to no NPC `id` / `displayName` (the engine would render the literal `Name: ...` inside another character's bubble)
    - **Ink character hazards** — `//` inside dialogue, a standalone `*emote*` at line start, `**bold**`, unpaired `*`, unbalanced `[ ]` in a choice
    - **`submit_flags` tasks** missing `targetFlags` / `targetCount` (the task could never complete)
+   - **Recurring bugs from pass 4** (`check_recurring_bugs`; see [Common bugs and how to avoid them](#common-bugs-and-how-to-avoid-them)): `lockpick_used_in_view` catches that can never fire, a start-room cutscene without `waitForEvent`, an NPC-held note whose `onRead` sets a gating global, missing or legacy sprite art, one sprite sheet shared by different characters, pinned objects inside one interaction range, a timed text repeated in the ink it opens, ink `VAR`s read but never set, and `#set_global` names missing from `globalVariables`
 4. **Recommended fields** – warnings for missing `globalVariables`, `objectives`, `observations`, NPC `position`, `currentKnot`, etc.
 5. **Suggestions** – guidance for adding VM launchers, flag stations, opening cutscenes, closing debriefs, patrol NPCs, and variety in lock types
 
@@ -1545,6 +1546,36 @@ These are the mistakes that most often leave a mission unfinishable or silently 
 - **Do not park a hidden or KO'd guard in a room with a pickable lock.** Their line-of-sight cone still interrupts lockpicking.
 - **SAFETYNET has no arrest powers.** Agents detain and hand suspects to the police. The handler is displayed as "Agent HaX". Her NPC id stays `agent_0x99` in every mission (m05 uses `agent_0x99_handler`): it is the shared handler id, so don't rename it to match the display name. Other renamed NPCs do get matching ids.
 - **Use UK English** in player-facing text, including "Cyber Security" with a space.
+
+### Common bugs and how to avoid them
+
+These turned up in more than one mission during the pass-4 reviews and playtests (October 2026). Each has a rule, an example, and where it is caught: **validator** (`ruby scripts/validate_scenario.rb`), **lint** (`node scripts/ink_runtime_check/dialoguelint.mjs scenarios/<m>/`) or **review** (the `scenario-design-review` and `npc-dialog-review` checklists, and playtests). The ink-side classes are written up in more detail in `README_ink_best_practices.md` ("Common ink bugs").
+
+Scenario file:
+
+- **A lockpick catch needs a lock to catch.** A `lockpick_used_in_view` mapping fires only for a person NPC with `conversationMode: "person-chat"`, when the player picks a key lock in that NPC's room or a door into it. *m02: Val's catch sat in a room with no pickable lock, and Bernie's had no person-chat, so neither ever fired.* (validator)
+- **The opening cutscene waits for the game.** Give the start-room `timedConversation` `"waitForEvent": "game_loaded"`. *m04 and m05 fired theirs on the first tick, under the title screen.* (validator)
+- **A note an NPC hands over counts as read on hand-over.** Its `onRead` fires the moment it is given, or picked up after a KO. Don't let that global open an aim or decide a case the player is meant to reach by reading. *m05: Patricia's vetting file named Torres the instant she passed it across.* (validator, suggestion)
+- **Every speaking character has their own art.** Give each one a v2 sheet with `spriteTalk`, `spriteVisemes` and a headshot `avatar`, and don't give two different characters the same sheet. *m04: Vance was on the generic `hacker` sheet and the gate guard looked like the operatives; m08: Phantom and Netherton were twins.* (validator)
+- **Keep interactable things a tile apart, and NPCs out of the furniture.** The interaction range is 32 px. *m06: the rack sheet 23 px from the flag station opened the station; Satoshi against his desk could only be reached from one side; m02: Bed 4's bedhead unit kept the player 36 px from the bed.* Pinned objects are checked (validator); Tiled-slot objects and furniture aren't, so walk up to each one in a playtest (review).
+- **A bark doesn't repeat the line it opens.** A `sendTimedMessage` or `timedMessages` text shows first; if the chat then opens on the same words, the player reads them twice. *m07: "Agent 0x00. Don't look for the trace." then the same line again.* (validator)
+- **Every ink `VAR` that's read is set somewhere, and every `#set_global` is declared.** A read-only `VAR` with no same-named global is a dead condition; an undeclared `#set_global` is usually a typo. *m06: `recruitment_accepted` was read and never set; m08: `witness_heard` was set and never read (harmless, but say so).* (validator)
+- **Task, aim and item names don't give the answer away.** *m05: an item called "Torres Office Keycard" and the to-do list "Get a keycard for Torres' office" solved the whodunnit before it began; m04: the aim describing the plant-room fingerprint reader appeared in Hall 1, before the player had seen the reader.* (review)
+- **Status answers follow progress.** A sticky "Where do I stand?", "Remind me where we are" or "What's the clock?" answer must branch on the globals that change, down to the step the player is on. *m03, m04, m06 and m07 all had a recap that was right for the first half and wrong for the second.* (review, playtest)
+- **The first phone contact checks progress.** A contact first opened late in the mission must not offer its opening check-in. *m06: opened at the data centre, HaX asked how the FCA cover was holding.* (review, playtest)
+- **Credits and debrief lines match what the player did.** Check each conditional line against every route that can reach it. *m03: "the guard never logged you" and PERFECT STEALTH after the guard had challenged the player; m06: Priya's "Drew the graph" credit after one question.* (review)
+
+Ink (details and examples in `README_ink_best_practices.md`):
+
+- **Choices in a `{cond: ...}` block don't stop the flow.** Use `- else:` inside the block, never a second `{not cond: ...}` block after it. *m06: Dani, Priya and Satoshi greeted a first-time visitor with "Hi again".* (lint: `choice-fallthrough`)
+- **A knot a conversation parks on prints a line.** A re-talk re-enters the knot that owns the saved choices; if it prints nothing, the player gets the buttons with no fresh line, which playtesters read as a blank screen. Add a re-entry line. *m03 receptionist and Victoria, m04 Vance, m08 Netherton.* (lint: `blank-reentry`)
+- **Influence tags sit above a spoken line.** Before a divert, the tag attaches to the next knot's first line. *m06: Irina's "+ Influence" popped up on a Narrator line.* (lint: `tag-on-narrator`)
+- **Phone contacts' lines take no `Name:` prefix.** *m03, m04, m08 phone inks.* (lint: `phone-self-prefix`)
+- **A spoken goodbye gets a reply.** *m08: "[I'll leave you to it.]" closed the chat on the player's own bubble.* (lint: `exit-no-reply`)
+- **Asterisk cues stay rare and off key information.** *m07: "\*reading\* Two hundred and forty."* (lint: `stage-cue-in-info`, `stage-cue-density`)
+- **No "Not X. Y." or "She is not X. She Y." in dialogue or narration.** (lint: `not-x-but-y`)
+- **`#speaker:` tags don't pick the speaker.** Only `#speaker:player` and `#speaker:npc[:id]` do anything in person-chat; a two-part tag such as `#speaker:analyst` is ignored and the `Name:` prefix decides. Write the prefix. *m06 `#speaker:analyst`, `#speaker:trader`.* (review)
+- **Choices only quote what the player has heard.** A choice that answers or quotes a line the NPC hasn't said, or states something that didn't happen on this route, reads as a bug. *m03: "[The desk was empty when I came in. I signed myself in.]" on a route where the player never signed in; m04: Relay answered a reply nobody gave.* (review)
 
 ## Dungeon Graph Metadata
 

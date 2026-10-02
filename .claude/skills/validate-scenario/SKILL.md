@@ -29,6 +29,24 @@ Present **only** the items that need attention:
 
 **Good practices and suggestions** — don't list these individually. Summarise ✅ in one line. For 💡 suggestions: mention the count, but briefly filter for relevance — skip generic feature-add suggestions if the scenario is already feature-complete or the suggestion doesn't fit the scenario's theme. E.g. *"4 good-practice confirmations. 9 suggestions (2 relevant to this scenario: …)."*
 
+**Recurring-bug checks (pass 4).** `check_recurring_bugs` adds warnings and suggestions for bug classes that turned up in several missions. Read them as "go and look", not as errors. What each one means (rule and examples in `README_scenario_design.md`, "Common bugs and how to avoid them"):
+
+| Message starts / contains | Meaning | Usual fix |
+|---|---|---|
+| `lockpick_used_in_view catch on a … NPC` / `without "conversationMode"` | the catch can never fire: only person NPCs with a person-chat mapping catch a pick | move it to the watching person NPC, add the person-chat |
+| `… has no pickable lock` | no key-locked container in the NPC's room, the room isn't key-locked, no key-locked neighbour | put the watcher where the pick happens (m02 Val) |
+| `start-room timedConversation with no waitForEvent` | the opening cutscene fires while the game is still loading | add `"waitForEvent": "game_loaded"` |
+| `means "received", not "read"` (suggestion) | an NPC-held note's `onRead` sets a global that drives a mapping/condition/aim; it fires on hand-over or KO pickup | fine if intended; otherwise gate on a later step (m05) |
+| `game.js never loads` / `does not exist under public` / `derived portrait` | missing sprite sheet, talk, viseme or avatar file | point at a real file |
+| `legacy 'hacker' sheet` / `has no spriteVisemes, but …` (suggestions) | a speaking character without lip-sync art, or with art available but not wired | use a v2 sheet; add the `spriteVisemes` path |
+| `shared by different characters` (suggestion) | two different characters look identical | fine for a uniformed crew; otherwise recast |
+| `inside the 32 px interaction range` | two pinned objects so close one click opens the other | move them a tile apart |
+| `timed text … is repeated at the start of a line` | the bark and the chat's first line say the same thing | make the bark a teaser |
+| `VAR … is read but never set` | a dead condition: nothing ever changes it | set it where it should change, or test the variable that does |
+| `sets global … not in scenario.globalVariables` | undeclared `#set_global`, often a typo | declare it or fix the name |
+
+For the ink-side classes (fall-through choices, blank re-entry, popup placement, phone prefixes, exits with no reply, stage cues) also run `node scripts/ink_runtime_check/dialoguelint.mjs scenarios/<mission>/` and report its `check` and `warn` counts for the new rules. To check a mission another agent is editing without rewriting its compiled ink or dungeon graph, add `--skip-ink --no-graph`.
+
 Then on its own line, report the dungeon graph stats:
 > Graph: Puzzle 33 nodes / 40 edges · Story 5/4 · Integrated 38/56 · Critical path (4 hops): Aim A → Aim B → …
 

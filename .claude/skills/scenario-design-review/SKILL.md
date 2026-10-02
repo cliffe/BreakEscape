@@ -179,6 +179,17 @@ Report as a short table:
 
 Flag under **Must fix** only an NPC whose KO soft-locks the *mission* — i.e. strands a **critical-path** task or removes the sole source of a gating item/unlock needed to complete the mission. A KO that only strands a **side / lore** objective is acceptable (note it, don't escalate it, unless the side arc is important enough that the author clearly intends it to survive a KO). Flag under **Should fix** any NPC whose KO leaves the debrief/credits contradictory (missing or unhandled `globalVarOnKO`).
 
+### 2i. Recurring bugs the scripts can't see (pass 4)
+
+The validator's `check_recurring_bugs` and `dialoguelint.mjs` catch the mechanical half of the pass-4 recurring classes (see `README_scenario_design.md`, "Common bugs and how to avoid them"). Run `node scripts/ink_runtime_check/dialoguelint.mjs scenarios/<mission>/` alongside the validator and fold its `choice-fallthrough`, `blank-reentry`, `tag-on-narrator`, `phone-self-prefix` and `exit-no-reply` findings into the report. Then check these by reading, since no script can:
+
+- **Spoilers in names.** Read every aim description, task title and item `name` as a player would see it at the moment it appears. Does any of them name the answer (a culprit, a code's owner, the reader's enrolled print) before the player has earned it? (m05 "Torres Office Keycard"; m04's plant-room aim visible in Hall 1.)
+- **Status answers go stale.** For each re-askable handler topic ("Where do I stand?", "Remind me where we are", "What's the clock?", "What should I focus on?"), list the mission's stages and check the answer at each one. A recap that's right for the first half and wrong for the second is the commonest stale line (m03, m04, m06, m07).
+- **A late first contact.** If the player first opens a phone contact late in the mission, what does it offer? Its opening check-in must branch on progress (m06: HaX asked about the FCA cover at the data centre).
+- **Credits and debrief versus every route.** For each conditional credit or debrief line, list the routes that reach it and check it's true on all of them (m03 PERFECT STEALTH after a challenge; m06 Priya's credit after one question).
+- **Interaction reach.** For each Tiled-slot object and each NPC near furniture, can the player stand within 32 px of it from the side they'll approach? The validator only checks pinned objects. Ask the playtest to walk up to each one (m06 rack sheet and Satoshi, m02 Bed 4, m08 locker).
+- **Look-alikes.** If the validator suggests a shared sprite sheet, decide whether it's a uniformed crew (fine) or two people the player has to tell apart (recast).
+
 ---
 
 ## Step 3 — produce a prioritised action list
