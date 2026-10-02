@@ -657,7 +657,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "onceOnly": true,
               "conversationMode": "person-chat",
               "targetKnot": "post_drug_tamper",
-              "background": "assets/backgrounds/hq1.png"
+              "background": "assets/backgrounds/hospital1.png"
             },
             {
               "eventPattern": "global_variable_changed:bed4_escalated",
@@ -665,7 +665,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "onceOnly": true,
               "conversationMode": "person-chat",
               "targetKnot": "post_escalation",
-              "background": "assets/backgrounds/hq1.png"
+              "background": "assets/backgrounds/hospital1.png"
 <%# IMPLEMENTED[Phase 1]: Sarah reacts to bed4 escalation.
     Ink knot npc_sarah.ink:post_escalation() fires when player escalates Bed 4.
     TEST: Verify knot fires, Sarah reports second nurse is attending Bed 4. %>
@@ -676,7 +676,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "onceOnly": true,
               "conversationMode": "person-chat",
               "targetKnot": "major_incident_line",
-              "background": "assets/backgrounds/hq1.png"
+              "background": "assets/backgrounds/hospital1.png"
 <%# IMPLEMENTED[Phase 2]: Sarah reacts to major incident declaration.
     Ink knot npc_sarah.ink:major_incident_line() prepared in Phase 1.
     Person-chat mode delivers alert with appropriate urgency.
@@ -714,10 +714,10 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "displayName": "Staff Nurse",
           "npcType": "person",
           "observations": "A nurse on her rounds — she hasn't noticed you yet.",
-          "position": { "x": 3, "y": 6 },
-          "spriteSheet": "female_nurse1_v2",
-          "spriteTalk": "assets/characters/female_nurse1_talk.png",
-          "spriteVisemes": "assets/characters/female_nurse1_visemes.png",
+          "position": { "x": 4, "y": 4.5 },
+          "spriteSheet": "female_nurse2_v2",
+          "spriteTalk": "assets/characters/female_nurse2_talk.png",
+          "spriteVisemes": "assets/characters/female_nurse2_visemes.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/sis01_healthcare/ink/npc_patrol_nurse.json",
 <%# INK: scenarios/sis01_healthcare/ink/npc_patrol_nurse.ink — compiled ✓
@@ -745,44 +745,20 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
             "patrol": {
               "enabled": true,
               "waypoints": [
-                <%# nursing station — brief pause before starting rounds %>
-                { "x": 4, "y": 4.5, "dwellTime": 3000 },
+                <%# Aisle points taken from m02's ward patrol (same room_hospital_ward map,
+                    playtested clear of beds, monitors and curtain rails). %>
                 <%# BED 1 — foot of bed, patient check %>
-                { "x": 5, "y": 4.5, "dwellTime": 3000 },
-                <%# BED 1 — vitals monitor (1 tile south of monitor) %>
-                { "x": 5, "y": 3.5, "dwellTime": 8000 },
-                <%# BED 1 — back to foot, confirm before moving on %>
-                { "x": 5, "y": 4.5, "dwellTime": 2000 },
-                <%# BED 2 — foot of bed, patient check %>
-                { "x": 7.5, "y": 4.4, "dwellTime": 3000 },
-                <%# BED 2 — vitals monitor %>
-                { "x": 7.5, "y": 3, "dwellTime": 8000 },
-                <%# BED 2 — back to foot %>
-                { "x": 7.5, "y": 3.5, "dwellTime": 2000 },
-                <%# BED 3 — foot of bed, patient check %>
-                { "x": 12.5, "y": 3.75, "dwellTime": 3000 },
-                <%# BED 3 — vitals monitor %>
-                { "x": 12, "y": 3, "dwellTime": 8000 },
-                <%# BED 3 — back to foot %>
-                { "x": 11, "y": 4, "dwellTime": 2000 },
-                <%# BED 6 — head of bed (north side), patient check %>
-                { "x": 11, "y": 7, "dwellTime": 3000 },
-                <%# BED 6 — vitals monitor (1 tile north of monitor base) %>
-                { "x": 11, "y": 6, "dwellTime": 8000 },
-                <%# BED 6 — back to head %>
-                { "x": 11, "y": 7, "dwellTime": 2000 },
-                <%# BED 5 — head of bed, patient check %>
-                { "x": 8, "y": 7, "dwellTime": 3000 },
-                <%# BED 5 — vitals monitor %>
-                { "x": 9, "y": 6, "dwellTime": 8000 },
-                <%# BED 5 — back to head %>
-                { "x": 8, "y": 7, "dwellTime": 2000 },
-                <%# BED 4 — head of bed, patient check (Mr Ahmed — cardiac alarm) %>
-                { "x": 3, "y": 7, "dwellTime": 3000 },
-                <%# BED 4 — vitals monitor (cardiac alarm, patrolOverride target on bed4_escalated) %>
-                { "x": 5, "y": 6, "dwellTime": 8000 },
-                <%# BED 4 — back to head %>
-                { "x": 3, "y": 7, "dwellTime": 2000 }
+                { "x": 4, "y": 4.5, "dwellTime": 8000 },
+                <%# BED 2 %>
+                { "x": 8, "y": 4, "dwellTime": 8000 },
+                <%# BED 3 %>
+                { "x": 12, "y": 4.5, "dwellTime": 8000 },
+                <%# BED 6 — head of bed %>
+                { "x": 12, "y": 7, "dwellTime": 8000 },
+                <%# BED 5 %>
+                { "x": 8, "y": 7.5, "dwellTime": 8000 },
+                <%# BED 4 — head of bed (Mr Ahmed — cardiac alarm) %>
+                { "x": 4, "y": 7, "dwellTime": 8000 }
               ],
               "waypointMode": "sequential",
               "loop": true,
@@ -804,7 +780,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "targetKnot": "at_bed4",
               "bark": "On my way to Bed 4 now.",
               "patrolOverride": {
-                "targetTile": { "x": 4, "y": 9 },
+                "targetTile": { "x": 4, "y": 8 },
                 "speed": 150,
                 "stopOnArrival": true
               }
@@ -851,7 +827,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "id": "bed4_patient",
           "displayName": "Mr T. Ahmed",
           "npcType": "person",
-          "position": { "x": 3.088, "y": 8.396 },
+          "position": { "x": 3.088, "y": 6.646 },
           "spriteSheet": "bed4",
           "spriteConfig": { "idleFrame": 0 },
           "storyPath": "scenarios/sis01_healthcare/ink/npc_bed4_patient.json",
@@ -1002,7 +978,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "id": "bed5_patient",
           "displayName": "Mrs Kowalski",
           "npcType": "person",
-          "position": { "x": 7.708, "y": 8.333 },
+          "position": { "x": 7.708, "y": 6.583 },
           "spriteSheet": "bed5",
           "spriteConfig": { "idleFrame": 0 },
           "storyPath": "scenarios/sis01_healthcare/ink/npc_bed5_patient.json",
@@ -1070,8 +1046,11 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "id": "pharmacist_npc",
           "displayName": "On-Call Pharmacist",
           "npcType": "person",
-          "position": { "x": 3, "y": 2 },
+          "position": { "x": 10, "y": 4.5 },
           "spriteSheet": "male_scientist_v2",
+          "spriteTalk": "assets/characters/male_scientist_talk.png",
+          "spriteVisemes": "assets/characters/male_scientist_visemes.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/sis01_healthcare/ink/npc_pharmacist.json",
           "currentKnot": "start",
           "voice": {
@@ -1085,9 +1064,9 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
             "patrol": {
               "enabled": true,
               "waypoints": [
-                { "x": 5, "y": 3, "dwellTime": 3000 },
-                { "x": 9, "y": 2, "dwellTime": 8000 },
-                { "x": 5, "y": 7, "dwellTime": 8000 }
+                { "x": 10, "y": 4.5, "dwellTime": 3000 },
+                { "x": 8, "y": 4, "dwellTime": 8000 },
+                { "x": 4, "y": 7, "dwellTime": 8000 }
               ],
               "waypointMode": "sequential",
               "loop": true,
@@ -1114,7 +1093,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
 <%# setVisible reveals NPC; patrol activates immediately.
     barkDelay 1200ms gives the player a moment to see the pharmacist appear before the bark.
     ENG-01 RESOLVED: setVisible event action replaces the two-NPC workaround.
-    TEST: Verify pharmacist appears at (3,2) and begins patrol when pharmacist_on_ward fires. %>
+    TEST: Verify pharmacist appears at (10,4.5) and begins patrol when pharmacist_on_ward fires. %>
             }
           ]
         }
@@ -1316,9 +1295,6 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
     Beds 2 and 4 are rendered via bed2_patient/bed4_patient NPC staticSprites (NPCs with interaction).
     Remaining beds (1, 3, 5, 6) and all curtain-dividers are purely decorative map tiles. %>
 
-        { "type": "vitals-monitor", "id": "bed1_vitals", "name": "Bed 1 — Bedside Monitor", "takeable": false, "readable": true, "text": "VITALS — BED 1\n\nHR: 76 bpm [NORMAL]\nSpO2: 97%\nBP: 124/78 mmHg\n\nSTATUS: STABLE\nCENTRAL STATION: OFFLINE" },
-        { "type": "vitals-monitor", "id": "bed2_vitals", "name": "Bed 2 — Bedside Monitor", "takeable": false, "readable": true, "text": "VITALS — BED 2\n\nHR: 64 bpm [NORMAL]\nSpO2: 98%\nBP: 116/74 mmHg\n\nSTATUS: STABLE\nCENTRAL STATION: OFFLINE" },
-        { "type": "vitals-monitor", "id": "bed3_monitor", "name": "Bed 3 — Bedside Monitor", "takeable": false, "readable": true, "text": "VITALS — BED 3\n\nHR: 72 bpm [NORMAL]\nSpO2: 98%\nBP: 118/76 mmHg\n\nSTATUS: STABLE\nCENTRAL STATION: OFFLINE" },
         {
           "type": "vitals-monitor",
           "id": "bed4_monitor",
@@ -1373,13 +1349,16 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
     Draft: player reads alarm state from observations and readable text only. %>
         },
         { "type": "vitals-monitor", "id": "bed5_vitals", "name": "Bed 5 — Bedside Monitor", "takeable": false, "readable": true, "text": "VITALS — BED 5\n\nHR: 74 bpm [NORMAL]\nSpO2: 99%\nBP: 130/82 mmHg\n\nSTATUS: STABLE\nCENTRAL STATION: OFFLINE" },
-        { "type": "vitals-monitor", "id": "bed6_vitals", "name": "Bed 6 — Bedside Monitor", "takeable": false, "readable": true, "text": "VITALS — BED 6\n\nHR: 80 bpm [NORMAL]\nSpO2: 96%\nBP: 135/85 mmHg\n\nSTATUS: STABLE\nCENTRAL STATION: OFFLINE" }
+        { "type": "vitals-monitor", "id": "bed6_vitals", "name": "Bed 6 — Bedside Monitor", "takeable": false, "readable": true, "text": "VITALS — BED 6\n\nHR: 80 bpm [NORMAL]\nSpO2: 96%\nBP: 135/85 mmHg\n\nSTATUS: STABLE\nCENTRAL STATION: OFFLINE" },
+        { "type": "vitals-monitor", "id": "bed1_vitals", "name": "Bed 1 — Bedside Monitor", "takeable": false, "readable": true, "text": "VITALS — BED 1\n\nHR: 76 bpm [NORMAL]\nSpO2: 97%\nBP: 124/78 mmHg\n\nSTATUS: STABLE\nCENTRAL STATION: OFFLINE" },
+        { "type": "vitals-monitor", "id": "bed2_vitals", "name": "Bed 2 — Bedside Monitor", "takeable": false, "readable": true, "text": "VITALS — BED 2\n\nHR: 64 bpm [NORMAL]\nSpO2: 98%\nBP: 116/74 mmHg\n\nSTATUS: STABLE\nCENTRAL STATION: OFFLINE" },
+        { "type": "vitals-monitor", "id": "bed3_monitor", "name": "Bed 3 — Bedside Monitor", "takeable": false, "readable": true, "text": "VITALS — BED 3\n\nHR: 72 bpm [NORMAL]\nSpO2: 98%\nBP: 118/76 mmHg\n\nSTATUS: STABLE\nCENTRAL STATION: OFFLINE" }
 
       ]
     },
 
     "it_security_office": {
-      "type": "room_it",
+      "type": "room_hospital_office_it",
       "door_sign": "IT Security",
       "ambientSound": "server_room_ventilation",
       "ambientVolume": 0.25,
@@ -1403,10 +1382,10 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "displayName": "Ravi Anand",
           "npcType": "person",
           "observations": "Ravi Anand, IT Security — he looks exhausted.",
-          "position": { "x": 4, "y": 5 },
-          "spriteSheet": "male_nerd_v2",
-          "spriteTalk": "assets/characters/male_nerd_talk.png",
-          "spriteVisemes": "assets/characters/male_nerd_visemes.png",
+          "position": { "x": 6.3, "y": 5.8 },
+          "spriteSheet": "gary_whitlock",
+          "spriteTalk": "assets/characters/gary_whitlock_talk.png",
+          "spriteVisemes": "assets/characters/gary_whitlock_visemes.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/sis01_healthcare/ink/npc_ravi.json",
 <%# INK: scenarios/sis01_healthcare/ink/npc_ravi.ink — compiled ✓
@@ -1474,7 +1453,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "onceOnly": true,
               "conversationMode": "person-chat",
               "targetKnot": "post_isolation",
-              "background": "assets/backgrounds/hq1.png"
+              "background": "assets/backgrounds/hospital1.png"
             },
             {
 <%# Bypass path: player used NSM SEVER without going through the dual-auth panel.
@@ -1620,8 +1599,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "id": "network_map_screen",
           "name": "Network Architecture Map",
           "takeable": false,
-          "position": "as-type:smartscreen",
-          "sprite": "network-segmentation-map",
+          "position": "as-type:whiteboard",
           "interactable": true,
           "active": true,
 <%# IMPLEMENTED: network-segmentation-map minigame (MG-04).
@@ -1754,11 +1732,12 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
         {
           "type": "pc",
           "name": "Infected Workstation (IT Office)",
+          "position": "as-type:kvm_cart",
           "takeable": false,
           "locked": true,
           "lockType": "ransomware_display",
 <%# IMPLEMENTED: ransomware_display lockType. Represents the 3 infected workstations in the IT office. %>
-          "observations": "One of three workstations in the IT Security office, all showing the same DarkVault ransom note. The screens cast a red glow across the desk.",
+          "observations": "A workstation Ravi has pulled off the network onto a KVM trolley for triage. Its screen shows the same DarkVault ransom note as 311 other machines across the Trust, and casts a red glow over the trolley.",
           "minigameData": {
             "organisation": "Northgate General Hospital NHS Trust",
             "encryptedSystems": "312 workstations | 4 file servers | EHR database",
@@ -1791,7 +1770,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
     },
 
     "major_incident_room": {
-      "type": "room_meeting",
+      "type": "room_hospital_meeting",
       "door_sign": "Major Incident Room",
       "ambientSound": "office_ambient",
       "ambientVolume": 0.15,
@@ -1805,7 +1784,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "id": "david_osei",
           "displayName": "David Osei",
           "npcType": "person",
-          "position": { "x": 4, "y": 3 },
+          "position": { "x": 6, "y": 3 },
           "spriteSheet": "male_office_worker_v2",
           "spriteTalk": "assets/characters/male_office_worker_talk.png",
           "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
@@ -1857,7 +1836,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "onceOnly": true,
               "conversationMode": "person-chat",
               "targetKnot": "safety_case_hc003",
-              "background": "assets/backgrounds/hq1.png"
+              "background": "assets/backgrounds/hospital1.png"
             },
             {
               "eventPattern": "global_variable_changed:network_isolated",
@@ -1865,7 +1844,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "onceOnly": true,
               "conversationMode": "person-chat",
               "targetKnot": "post_isolation",
-              "background": "assets/backgrounds/hq1.png"
+              "background": "assets/backgrounds/hospital1.png"
             },
             {
 <%# Bypass path: player used NSM SEVER without dual-auth. David never signed off.
@@ -1883,7 +1862,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "id": "helen_carver",
           "displayName": "Helen Carver",
           "npcType": "person",
-          "position": { "x": 7, "y": 3 },
+          "position": { "x": 7.8, "y": 3 },
           "spriteSheet": "female_office_worker_v2",
           "spriteTalk": "assets/characters/female_office_worker_talk.png",
           "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
@@ -1922,7 +1901,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "setGlobal": { "pharmacist_on_ward": true },
               "conversationMode": "person-chat",
               "targetKnot": "post_drug_tamper",
-              "background": "assets/backgrounds/hq1.png"
+              "background": "assets/backgrounds/hospital1.png"
 <%# IMPLEMENTED[Phase 1]: Helen dispatches pharmacist when drug library tamper detected.
     Ink knot npc_helen.ink:post_drug_tamper() fires; sets pharmacist_on_ward=true.
     Pharmacist appears in ward_7 at (3,2) via setVisible action.
@@ -1935,7 +1914,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "completeTask": "initiate_backup",
               "conversationMode": "person-chat",
               "targetKnot": "post_backup",
-              "background": "assets/backgrounds/hq1.png"
+              "background": "assets/backgrounds/hospital1.png"
             },
             {
               "eventPattern": "global_variable_changed:network_isolated",
@@ -1943,7 +1922,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "onceOnly": true,
               "conversationMode": "person-chat",
               "targetKnot": "post_isolation",
-              "background": "assets/backgrounds/hq1.png"
+              "background": "assets/backgrounds/hospital1.png"
             }
           ]
         },
@@ -1952,7 +1931,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "id": "dr_hartley",
           "displayName": "Dr Fiona Hartley",
           "npcType": "person",
-          "position": { "x": 8, "y": 5 },
+          "position": { "x": 8.3, "y": 6.8 },
           "spriteSheet": "female_scientist_v2",
           "spriteTalk": "assets/characters/female_scientist_talk.png",
           "spriteVisemes": "assets/characters/female_scientist_visemes.png",
@@ -1978,7 +1957,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "onceOnly": true,
               "conversationMode": "person-chat",
               "targetKnot": "post_ico",
-              "background": "assets/backgrounds/hq1.png"
+              "background": "assets/backgrounds/hospital1.png"
             },
             {
               "eventPattern": "global_variable_changed:ico_deadline_missed",
@@ -1986,7 +1965,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "onceOnly": true,
               "conversationMode": "person-chat",
               "targetKnot": "deadline_missed",
-              "background": "assets/backgrounds/hq1.png"
+              "background": "assets/backgrounds/hospital1.png"
             }
           ]
         },
@@ -1996,7 +1975,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "displayName": "Priya S.",
           "npcType": "person",
           "observations": "Dr Priya Sharma, NCSC — she's awaiting your debrief.",
-          "position": { "x": 6, "y": 7 },
+          "position": { "x": 2.6, "y": 6.8 },
           "spriteSheet": "female_spy_v2",
 <%# TODO[SPRITE]: female_spy is used as a professional investigator stand-in.
     Commission a government investigator sprite: smart dark suit, NCSC lanyard, neutral expression.
@@ -2065,7 +2044,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "setGlobal": { "sharma_visible": true, "debrief_started": true },
               "conversationMode": "person-chat",
               "targetKnot": "start",
-              "background": "assets/backgrounds/hq1.png",
+              "background": "assets/backgrounds/hospital1.png",
               "disableClose": true
 <%# ICO deadline expired — Sharma can no longer wait. The debrief starts immediately
     regardless of whether backup or drug library tasks are complete. The debrief dialogue
@@ -2080,14 +2059,13 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
 
         {
           "type": "command_board",
-          "sprite": "siem_dashboard",
-          "position": "as-type:smartscreen",
+          "position": "as-type:conference_screen",
           "id": "command_board",
           "name": "Major Incident Command Board",
           "takeable": false,
           "interactable": true,
           "active": true,
-          "observations": "A large smartscreen covering most of the far wall. Incident timeline on the left. System status panel on the right. The timeline shows the initial incident declaration; new entries appear as the response unfolds. The room has the smell of a long night - cold coffee, paper, tension."
+          "observations": "The big conference screen on the far wall, taken over as the command board. Incident timeline on the left. System status panel on the right. The timeline shows the initial incident declaration; new entries appear as the response unfolds. The room has the smell of a long night - cold coffee, paper, tension."
         },
         {
           "type": "backup_recovery",
