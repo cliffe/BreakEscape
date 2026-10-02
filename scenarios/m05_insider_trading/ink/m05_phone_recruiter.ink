@@ -2,6 +2,9 @@
 // ACT 2/3 PHONE NPC: The Recruiter
 // Mission 5: Insider Trading
 // Break Escape - Antagonist, ENTROPY Insider Threat Initiative
+// PASS 4 (dialogue): her own lines carry no prefix (phone convention).
+// She keeps one rhetorical "not X, Y" (the final statement), as a villain's
+// habit of speech.
 // ===========================================
 
 // Variables for tracking interactions
@@ -56,11 +59,13 @@ Narrator: Caller ID: TALENTSTACK EXECUTIVE RECRUITING.
 
 #speaker:recruiter
 
-The Recruiter: {player_name}. Or whatever they're calling you this week.
+{player_name}. Or whatever they're calling you this week.
 
-The Recruiter: I run TalentStack. Executive search, mostly technical roles. You've spent the last few hours putting a name to one of my placements, so I thought I'd save you the trouble of wondering who I am.
+I run TalentStack. Executive search, mostly technical roles.
 
-The Recruiter: David Torres. QD-001, if you prefer the file number.
+You've spent the last few hours putting a name to one of my placements. I thought I'd save you wondering who I am.
+
+David Torres. QD-001, if you prefer the file number.
 
 ~ recruiter_contacted_player = true
 
@@ -70,53 +75,60 @@ The Recruiter: David Torres. QD-001, if you prefer the file number.
 // Playtest 3b: a reopened chat re-navigates here (E10); never resume a pre-confrontation menu once the fate is set.
 {final_choice != "": -> post_confrontation_contact}
 * [You radicalised a man whose wife is dying.]
-    The Recruiter: I identified a man whose wife was dying and offered him a way to keep paying for her treatment. You're describing the outcome as though I invented the cancer.
+    I identified a man whose wife was dying, and offered him a way to keep paying for her treatment.
+    You're describing the outcome as though I invented the cancer.
     -> recruiter_introduction
 
 * [How many more "placements" do you have?]
-    The Recruiter: Forty-seven under evaluation, last I checked. Give or take. Torres was never the only iron in the fire.
+    Forty-seven under evaluation, last I checked. Give or take. Torres was never the only iron in the fire.
     -> recruiter_introduction
 
 * [Say nothing. Let her fill the silence.]
     You: ...
-    The Recruiter: Considered, agent. Most people open with an accusation. Very well -- I'll carry both halves of the conversation.
+    Considered, agent. Most people open with an accusation. Very well. I'll carry both halves of the conversation.
     -> recruiter_introduction
 
 === recruiter_introduction ===
 #speaker:recruiter
 
-The Recruiter: Every person has a price. That isn't cynicism, it's an operating philosophy, and it has never once failed me. The only variable is what currency they'll take.
+Everyone has a price. I call that an operating philosophy, and it has never once failed me.
 
-The Recruiter: Torres took debt relief and a standing consultancy retainer. Cheaper than most, if you're keeping score.
+The only variable is what currency they'll take.
+
+Torres took debt relief and a standing consultancy retainer. Cheaper than most, if you're keeping score.
 
 -> recruiter_introduction_choices
 
 === recruiter_introduction_choices ===
 // Playtest 3b: a reopened chat re-navigates here (E10); never resume a pre-confrontation menu once the fate is set.
 {final_choice != "": -> post_confrontation_contact}
-* [He's not a "line item." He's a person.]
+* [You're talking about him like a receipt.]
     -> recruiter_line_item
 
-* [What was in it for QDC? What were you actually after?]
+* [What were you actually after?]
     -> recruiter_reveals_target
 
 === recruiter_line_item ===
 #speaker:recruiter
 
-The Recruiter: He was a line item. There are forty-seven more candidates in the pipeline right now.
+He was a line item, agent. There are forty-seven more candidates in the pipeline right now.
 
-The Recruiter: I don't say that to be cruel. I say it because it's accurate, and accuracy is the only thing I owe you.
+I don't say that to be cruel. I say it because it's accurate, and accuracy is the only thing I owe you.
 
-The Recruiter: You'll want to feel sorry for him. Go ahead. It doesn't cost me anything, and it won't change what happens to the other forty-seven if you don't move faster than I do.
+You'll want to feel sorry for him. Go ahead. It costs me nothing.
+
+And it won't help the other forty-seven, unless you move faster than I do.
 
 -> recruiter_reveals_target
 
 === recruiter_reveals_target ===
 #speaker:recruiter
 
-The Recruiter: Project Heisenberg was never going to a foreign buyer. Nobody's shopping this around. ENTROPY wants the quantum-safe key material and the rollout schedule for the National Emergency-Services Dispatch Network. Nine-nine-nine call routing.
+Project Heisenberg was never going to a foreign buyer. Nobody's shopping this around.
 
-The Recruiter: We keep it. We integrate it. That's the whole disposition.
+ENTROPY wants the key material and the rollout schedule for your national dispatch network. Nine-nine-nine call routing.
+
+We keep it. We integrate it. That's the whole disposition.
 
 -> recruiter_reveals_target_choices
 
@@ -132,11 +144,11 @@ The Recruiter: We keep it. We integrate it. That's the whole disposition.
 === recruiter_confirms_casualties ===
 #speaker:recruiter
 
-The Recruiter: I'm talking about a forty-to-seventy-minute failover window during the key-rotation cutover, across twelve regions, in the first wave alone.
+I'm talking about a forty-to-seventy-minute failover window during the key-rotation cutover, across twelve regions, in the first wave alone.
 
-The Recruiter: The Architect's office ran the numbers before signing off. Thirty to forty-five excess deaths, concentrated where minutes actually decide things -- cardiac, stroke, structure fires.
+The Architect's office ran the numbers before signing off. Thirty to forty-five excess deaths, where minutes decide things: cardiac, stroke, structure fires.
 
-The Recruiter: It's filed as an acceptable cost of acquisition. I didn't file it. I just recruited the man who could get us the schedule.
+It's filed as an acceptable cost of acquisition. I didn't file it. I just recruited the man who could get us the schedule.
 
 ~ recruiter_persuasion_attempted = true
 
@@ -146,11 +158,11 @@ The Recruiter: It's filed as an acceptable cost of acquisition. I didn't file it
 // Playtest 3b: a reopened chat re-navigates here (E10); never resume a pre-confrontation menu once the fate is set.
 {final_choice != "": -> post_confrontation_contact}
 * [That number was known before Torres ever touched the data.]
-    The Recruiter: Known and signed. Yes.
+    Known and signed. Yes.
     -> recruiter_deal
 
 * [You're a fanatic dressed up as a headhunter.]
-    The Recruiter: I'm a recruiter who is very good at her job. Fanaticism is somebody else's department -- I just staff the operation.
+    I'm a recruiter who is very good at her job. Fanaticism is somebody else's department. I just staff the operation.
     -> recruiter_deal
 
 // ===========================================
@@ -160,15 +172,17 @@ The Recruiter: It's filed as an acceptable cost of acquisition. I didn't file it
 === recruiter_deal ===
 #speaker:recruiter
 
-The Recruiter: Here's why I actually called.
+Here's why I actually called. What you do with Torres doesn't much interest me. He's already spent.
 
-The Recruiter: You're going to confront Torres. Whatever you decide about him doesn't much interest me -- he's already spent. But I'd rather you didn't spend the next six months chasing my other forty-seven candidates.
+But I'd rather you didn't spend the next six months chasing my other forty-seven.
 
-The Recruiter: Under Torres' keyboard there's an envelope addressed to a PO box in Reading. Forty-seven names. {found_pipeline_list: You've already opened it, I expect.} Leave it out of your report. Let my courier have it.
+Under Torres' keyboard there's an envelope addressed to a PO box in Reading. Forty-seven names.
 
-The Recruiter: In return, nothing in this operation points at you personally. No loose thread, no file with your face in it, no complications on your next job.
+{found_pipeline_list: You've already opened it, I expect.} Leave it out of your report. Let my courier have it.
 
-The Recruiter: Every person has a price, agent. I'm asking what yours is.
+In return, nothing in this operation points at you. No loose thread, no file with your face in it.
+
+Everyone has a price, agent. I'm asking what yours is.
 
 ~ recruiter_deal_offered = true
 
@@ -184,16 +198,18 @@ The Recruiter: Every person has a price, agent. I'm asking what yours is.
     -> recruiter_deal_terms
 
 * [I'm done talking. This call's over.]
-    The Recruiter: Time's short for both of us, then.
+    Time's short for both of us, then.
     #exit_conversation
     -> idle
 
 === recruiter_deal_terms ===
 #speaker:recruiter
 
-The Recruiter: Nothing dramatic. You forget the number forty-seven. The envelope goes to Reading, not to your handler.
+Nothing dramatic. You forget the number forty-seven. The envelope goes to Reading, not to your handler.
 
-The Recruiter: In exchange, you get a clean report, a grateful handler, and one fewer thing keeping you up at night. Most agents take that trade without needing it spelled out.
+You get a clean report, a grateful handler, and one less thing keeping you up at night.
+
+Most agents take that trade without needing it spelled out.
 
 -> recruiter_deal_terms_choices
 
@@ -214,9 +230,9 @@ The Recruiter: In exchange, you get a clean report, a grateful handler, and one 
 ~ recruiter_deal_accepted = true
 ~ recruiter_deal_decided = true
 
-The Recruiter: Sensible. You'll get your clean report, and I'll get my quiet. That's the whole of the arrangement.
+Sensible. You get your clean report, and I get my quiet. That's the whole arrangement.
 
-The Recruiter: Handle Torres however suits you. The other forty-seven were never your problem to begin with.
+Do what you like with Torres. The other forty-seven were never your problem.
 
 #speaker:narrator
 Narrator: The line goes dead.
@@ -228,11 +244,13 @@ Narrator: The line goes dead.
 #speaker:recruiter
 ~ recruiter_deal_decided = true
 
-The Recruiter: Noted. For what it's worth, that's what I expected -- your file reads as somebody who finishes what they start.
+Noted. For what it's worth, I expected it. Your file reads like someone who finishes what they start.
 
-The Recruiter: Understand what you're choosing, though. Forty-seven candidates is a number that changes weekly. You won't reach all of them before I've closed on a few more.
+Understand what you're choosing, though. Forty-seven is a number that changes weekly.
 
-The Recruiter: Good luck with Torres. He was cheap. The next one might cost me more, and I'll enjoy the work regardless.
+You won't reach all of them before I've closed on a few more.
+
+Good luck with Torres. He was cheap. The next one might cost me more, and I'll enjoy the work regardless.
 
 ~ recruiter_deal_accepted = false
 #speaker:narrator
@@ -260,9 +278,9 @@ Narrator: The line goes dead.
     -> recruiter_deal
 }
 
-The Recruiter: Still deciding? The offer doesn't improve with age, agent.
+Still deciding? The offer doesn't improve with age, agent.
 
-The Recruiter: Forty-seven names. One phone call from you either protects them or leaves them exactly where they are -- in my pipeline.
+Forty-seven names. One call from you protects them, or leaves them where they are. In my pipeline.
 
 -> mid_mission_contact_choices
 
@@ -270,11 +288,11 @@ The Recruiter: Forty-seven names. One phone call from you either protects them o
 // Playtest 3b: a reopened chat re-navigates here (E10); never resume a pre-confrontation menu once the fate is set.
 {final_choice != "": -> post_confrontation_contact}
 + [I already told you. No deal.]
-    The Recruiter: Consistent. I can respect that, even while I disagree with it.
+    Consistent. I can respect that, while I disagree with it.
     -> end_contact
 
 + [I'm going to find every one of them.]
-    The Recruiter: You're welcome to try. I have a considerable head start.
+    You're welcome to try. I have a considerable head start.
     -> end_contact
 
 + [I'm done talking. This call's over.]
@@ -295,9 +313,9 @@ The Recruiter: Forty-seven names. One phone call from you either protects them o
 === deal_accepted_response ===
 #speaker:recruiter
 
-The Recruiter: Sensible. The file's forgotten on my end too -- as far as anyone official is concerned, this call never happened.
+Sensible. The file's forgotten on my end too. As far as anyone official knows, this call never happened.
 
-The Recruiter: You'll sleep fine. Most people do, once they've priced it out.
+You'll sleep fine. Most people do, once they've priced it out.
 
 -> deal_accepted_response_choices
 
@@ -308,9 +326,9 @@ The Recruiter: You'll sleep fine. Most people do, once they've priced it out.
 === deal_refused_response ===
 #speaker:recruiter
 
-The Recruiter: Torres is dealt with, one way or another, and you didn't take the trade. I respect that more than I expected to.
+Torres is dealt with, one way or another, and you didn't take the trade. I respect that more than I expected to.
 
-The Recruiter: It changes nothing about the other forty-seven. I'll simply be more careful with whoever's next.
+It changes nothing about the other forty-seven. I'll simply be more careful with whoever's next.
 
 -> deal_refused_response_choices
 
@@ -319,19 +337,21 @@ The Recruiter: It changes nothing about the other forty-seven. I'll simply be mo
     -> recruiter_final_statement
 
 + [You talk about people like inventory.]
-    The Recruiter: Inventory doesn't have a price, agent. People do. That's the entire distinction I've built a career on.
+    Inventory doesn't have a price, agent. People do. I've built a career on the difference.
     -> recruiter_final_statement
 
 === recruiter_final_statement ===
 #speaker:recruiter
 
-The Recruiter: Here's what I'd like you to sit with, whatever you decided about Torres.
+Here's what I'd like you to sit with, whatever you decided about Torres.
 
-The Recruiter: I didn't lie to him once. I told him exactly what he was trading and exactly what it would cost other people. He signed anyway. Everyone I recruit signs anyway.
+I didn't lie to him once. I told him exactly what he was trading, and what it would cost other people.
 
-The Recruiter: That's not a defence. It's just the part nobody wants to hear -- that the price was real, and he still took it.
+He signed anyway. Everyone I recruit signs anyway.
 
-The Recruiter: Forty-seven names, agent. The clock on those didn't stop because you found one of mine.
+That's not a defence. It's the part nobody wants to hear: the price was real, and he still took it.
+
+Forty-seven names, agent. The clock on those didn't stop because you found one of mine.
 
 #speaker:narrator
 Narrator: The line goes dead.
@@ -344,8 +364,8 @@ Narrator: The line goes dead.
 // moment has passed.
 === never_talked_terms ===
 #speaker:recruiter
-The Recruiter: {player_name}. Torres is dealt with, and we never did talk terms. Pity.
-The Recruiter: There was an envelope under his keyboard I'd have liked back. Whatever you did with it, the next one will cost me more.
+{player_name}. Torres is dealt with, and we never did talk terms. Pity.
+There was an envelope under his keyboard I'd have liked back. Whatever you did with it, the next one will cost me more.
 #speaker:narrator
 Narrator: The line goes dead.
 #exit_conversation
@@ -354,7 +374,7 @@ Narrator: The line goes dead.
 === end_contact ===
 #speaker:recruiter
 
-The Recruiter: Think it over. I'm not in a hurry.
+Think it over. I'm not in a hurry.
 
 #speaker:narrator
 Narrator: She hangs up first.

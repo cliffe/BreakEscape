@@ -43,6 +43,21 @@
 #   briefcase, Patricia's cabinet: picks (by design)
 #   Naming: Patricia in person, Patricia by phone (patricia_phone), or HaX.
 #
+# THE WHODUNNIT (pass 4, user decision on design-review fix 10):
+#   Nothing names Torres before the player has evidence. Red herring: Dr
+#   Halloran. Owen's badge-reader log (server_door_log) shows HER SPARE badge
+#   on the server hallway at night; Lisa and her vetting file add a row with
+#   the CEO and a TalentStack approach. All of it is fair and all of it clears
+#   her: the same log has Torres' badge on the front door six minutes before
+#   each entry, and she was in Zurich on the first night (the lanyard's
+#   dates, or her own answer). Round 2: her vetting file is untidy on purpose
+#   and the files come only after the log; no single early action sets
+#   torres_suspected; on the log alone the player must pick the reason. torres_suspected (set by
+#   evidence that points at him) opens the office-card asks and the "Find Out
+#   Why" aim. Naming offers the names the player has reasons for; naming
+#   Halloran with the log suspends her (halloran_accused): a trust, debrief
+#   and credits cost, a HaX nudge, and the mission stays completable.
+#
 # HYBRID ARCHITECTURE:
 #   - VM: Bludit CMS research portal (leaked credentials, authenticated
 #     image-upload RCE, then user and root on the box)
@@ -52,6 +67,13 @@
 # Narrative Content Variables
 server_room_password = "quantum2024"
 password_hint_sticky = "Server room temp password (expires Friday): #{server_room_password}\n\n- O"
+# PASS 4 (whodunnit): the badge log. Read quickly it says Halloran; read
+# properly, Torres comes through the front door six minutes before her spare
+# reaches the server hallway, every time, and her own badge never comes in.
+# Round 2: Ben Ashworth and Amara Okafor make it a narrowing-down. Round 3:
+# only Amara is explained on the sheet; Ben is cleared by checking his times
+# against the incident log (23:47, transfers 02:00-04:00).
+door_log_text = "QDC BADGE READERS - AFTER-HOURS SWIPES (19:00-07:00)\nWed 16 Sep to Tue 6 Oct. Pulled by O. Gallagher for Security.\n\nWed 23 Sep  23:41  Main entrance    #4408 D. TORRES\nWed 23 Sep  23:47  Server hallway   #4471 R. HALLORAN (spare)\nThu 24 Sep  20:05  Main entrance    #4419 B. ASHWORTH\nThu 24 Sep  20:11  Server hallway   #4419 B. ASHWORTH\nTue 29 Sep  19:20  Main entrance    #4412 A. OKAFOR\nTue 29 Sep  22:05  Main entrance    #4412 A. OKAFOR (exit)\nWed 30 Sep  01:52  Main entrance    #4408 D. TORRES\nWed 30 Sep  01:58  Server hallway   #4471 R. HALLORAN (spare)\nFri 02 Oct  01:59  Main entrance    #4408 D. TORRES\nFri 02 Oct  02:05  Server hallway   #4471 R. HALLORAN (spare)\nSun 04 Oct  22:10  Main entrance    #4430 O. GALLAGHER\nSun 04 Oct  23:55  Main entrance    #4430 O. GALLAGHER (exit)\nMon 05 Oct  01:46  Main entrance    #4408 D. TORRES\nMon 05 Oct  01:52  Server hallway   #4471 R. HALLORAN (spare)\n\n#4462 R. HALLORAN (primary): no after-hours swipes in this period.\n\n[Pencilled at the bottom: \"4471 is a visitor spare. Spares are meant to be signed out. Amara stayed in the lab. Sunday was me, patching the core switch. - O\"]"
 torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing retainer if I finish the upload tonight. Elena's first trial dose is Monday.\n\nI know what this costs. Thirty to forty-five people, by their own projections. Ambulances that don't arrive in time.\n\nI've talked myself round with their philosophy. The system is rotten. Collateral damage for the greater good.\n\nI read that back and I don't recognise the man who wrote it. What have I become?"
 %>
 {
@@ -66,6 +88,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
   },
 
   "scenario_brief": "Infiltrate Quantum Dynamics Corporation to identify and stop an insider threat. ENTROPY's Insider Threat Initiative has recruited an employee to exfiltrate quantum-safe key material for the National Emergency-Services Dispatch Network. You have 4 hours to find the insider, build the case, and stop the final upload.",
+
+  "show_scenario_brief": "on_resume",
 
   "music": {
     "events": [
@@ -121,11 +145,13 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           { "text": "INSIDER TRADING",                                     "style": "subtitle" },
           { "text": "" },
           { "text": "OPERATION SCHRÖDINGER: STOPPED",                       "style": "entry" },
-          { "text": "CIVILIAN LIVES SAVED: 30-45 (estimated, first rollout wave)", "style": "entry", "condition": "globalVars.knows_full_stakes" },
+          { "text": "CIVILIAN LIVES SAVED: 30-45 (estimated, first rollout wave)", "style": "entry" },
           { "text": "" },
           { "text": "── THE CASE ──",                                      "style": "section-header" },
           { "text": "MOTIVE, MEANS AND AUTHORISATION — all on file",       "style": "entry", "condition": "globalVars.flag4_submitted && (globalVars.found_medical_bills || globalVars.found_torres_journal || globalVars.found_vetting_file) && globalVars.found_pamphlet" },
           { "text": "RECRUITMENT PIPELINE — TalentStack link not documented", "style": "entry", "condition": "!globalVars.found_pamphlet && !globalVars.found_pipeline_list" },
+          { "text": "BORROWED BADGE — Halloran's spare traced back to Torres", "style": "entry", "condition": "globalVars.door_log_reasoned && !globalVars.halloran_accused" },
+          { "text": "WRONG ACCUSATION — Dr Ruth Halloran suspended, then cleared", "style": "warning", "condition": "globalVars.halloran_accused" },
           { "text": "" },
           { "text": "── DAVID TORRES ──",                                  "style": "section-header" },
           { "text": "TURNED — working for SAFETYNET inside ENTROPY's network", "style": "entry", "condition": "globalVars.final_choice === 'turn_double_agent'" },
@@ -153,6 +179,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           { "text": "OFFER LEFT UNANSWERED — she rang off without a yes", "style": "entry", "condition": "globalVars.recruiter_deal_offered && !globalVars.recruiter_deal_decided" },
           { "text": "OFFER TAKEN — forty-seven names left in her pipeline", "style": "warning", "condition": "globalVars.recruiter_deal_accepted && !globalVars.recruiter_deal_confessed" },
           { "text": "OFFER TAKEN, THEN CONFESSED — the list went in late",  "style": "warning", "condition": "globalVars.recruiter_deal_accepted && globalVars.recruiter_deal_confessed" },
+          { "text": "NEVER HEARD HER OFFER — the TalentStack list went to SAFETYNET", "style": "entry", "condition": "!globalVars.recruiter_deal_offered && globalVars.found_pipeline_list" },
+          { "text": "NEVER HEARD HER OFFER — the TalentStack list was never recovered", "style": "warning", "condition": "!globalVars.recruiter_deal_offered && !globalVars.found_pipeline_list" },
           { "text": "" },
           { "text": "── QUANTUM DYNAMICS ──",                              "style": "section-header" },
           { "text": "CEO'S STAND-DOWN — on file with the Home Office review", "style": "entry", "condition": "globalVars.found_stand_down_email" },
@@ -247,14 +275,6 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "status": "active"
         },
         {
-          "taskId": "obtain_torres_keycard",
-          "title": "Get a keycard for Torres' office",
-          "type": "collect_items",
-          "targetCount": 1,
-          "targetItemIds": ["torres_office_keycard", "relayed_torres_office_card"],
-          "status": "active"
-        },
-        {
           "taskId": "find_server_password",
           "title": "Find the server room password",
           "type": "collect_items",
@@ -263,8 +283,17 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "status": "active"
         },
         {
+          "taskId": "find_door_log",
+          "title": "Find out whose badge was in the server hallway at night",
+          "type": "collect_items",
+          "targetCount": 1,
+          "targetItemIds": ["server_door_log", "relayed_door_log"],
+          "status": "active",
+          "optional": true
+        },
+        {
           "taskId": "find_vetting_file",
-          "title": "Ask Patricia for the vetting files",
+          "title": "Find out who on the team is under pressure",
           "type": "collect_items",
           "targetCount": 1,
           "targetItemIds": ["torres_vetting_file"],
@@ -288,11 +317,23 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
       "description": "Build the personal side of the case",
       "status": "locked",
       "order": 2,
-      "unlockCondition": { "aimCompleted": "investigate_employees" },
+      <%# PASS 4 (whodunnit): opens when the evidence first points at Torres, not
+          when aim 2 completes, so the to-do list never names him early. The
+          torres_suspected mapping on agent_0x99_handler calls unlockAim; the
+          server derives the same condition on load (game.rb:1174). %>
+      "unlockCondition": { "globalVariable": "torres_suspected", "equals": true },
       "tasks": [
         {
+          "taskId": "obtain_torres_keycard",
+          "title": "Get IT's spare card for his office",
+          "type": "collect_items",
+          "targetCount": 1,
+          "targetItemIds": ["torres_office_keycard", "relayed_torres_office_card"],
+          "status": "active"
+        },
+        {
           "taskId": "access_torres_office",
-          "title": "Get into David Torres' office",
+          "title": "Get into his office",
           "type": "enter_room",
           "targetRoom": "torres_office",
           "status": "active"
@@ -333,7 +374,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
         },
         {
           "taskId": "access_bludit_vm",
-          "title": "Open the research portal terminal",
+          "title": "Get into the research portal",
           "type": "custom",
           "status": "active"
         },
@@ -359,7 +400,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
         },
         {
           "taskId": "submit_flag3",
-          "title": "Submit Flag 3: Torres' exfiltration staging manifest (user access)",
+          "title": "Submit Flag 3: The insider's staging manifest (user access)",
           "type": "submit_flags",
           "targetFlags": ["flag_station_evidence:qdc_research_server-flag3"],
           "targetCount": 1,
@@ -486,12 +527,9 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
   "player": {
     "id": "player",
     "displayName": "Agent 0x00",
-    "spriteSheet": "hacker",
-    "spriteTalk": "assets/characters/hacker-talk.png",
-    "spriteConfig": {
-      "idleFrameStart": 20,
-      "idleFrameEnd": 23
-    }
+    "spriteSheet": "male_hacker_hood_down_v2",
+    "spriteTalk": "assets/characters/male_hacker_hood_down_talk.png",
+    "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 }
   },
 
   "globalVariables": {
@@ -576,7 +614,18 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     "lockpicking_guide_offered": false,
     "lockpicking_guide_hint_given": false,
     "recon_guide_offered": false,
-    "recon_guide_hint_given": false
+    "recon_guide_hint_given": false,
+    "rfid_guide_offered": false,
+    "rfid_guide_hint_given": false,
+
+    "torres_suspected": false,
+    "found_door_log": false,
+    "found_halloran_alibi": false,
+    "halloran_questioned": false,
+    "halloran_accused": false,
+    "found_halloran_vetting": false,
+    "door_log_reasoned": false,
+    "it_notice_read": false
   },
 
   "endGoal": "Identify the insider with both halves of the case (motive and proof of exfiltration), stop the final upload, and decide David Torres' fate: turn him, hand him to the police, expose the programme, or fight.",
@@ -599,11 +648,12 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
             "language": "en-GB"
           },
           "position": { "x": 500, "y": 500 },
-          "spriteSheet": "hacker",
-          "spriteConfig": {
-            "idleFrameStart": 20,
-            "idleFrameEnd": 23
-          },
+          "_comment": "PASS 4 fix 9: same v2 sheet as the debrief HaX (closing_debrief_trigger), so she looks the same at both ends of the mission.",
+          "spriteSheet": "female_spy_v2",
+          "spriteTalk": "assets/characters/female_spy_talk.png",
+          "spriteVisemes": "assets/characters/female_spy_visemes.png",
+          "avatar": "assets/characters/female_spy_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m05_insider_trading/ink/m05_insider_trading_opening.json",
           "currentKnot": "start",
           "globalVarOnKO": "opening_briefing_ko",
@@ -612,6 +662,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
             "delay": 0,
             "targetKnot": "start",
             "background": "assets/backgrounds/hq1.png",
+            "waitForEvent": "game_loaded",
             "skipIfGlobal": "briefing_played",
             "setGlobalOnStart": "briefing_played"
           }
@@ -635,7 +686,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           }
         },
         {
-          "_comment": "SEED NPC (continuity): Agent 0x47 'Nightshade', trusted SAFETYNET technical analyst who chips in on the technical detail. Hidden, no task, no gating global. NO hint of the m08 betrayal.",
+          "_comment": "SEED NPC (continuity): Agent 0x47 'Nightshade', trusted SAFETYNET technical analyst who chips in on the technical detail. Hidden, no task, no gating global. Subtle m08 foreshadowing only (user decision P1, 2026-10-02): at most one quiet line.",
           "id": "agent_nightshade",
           "displayName": "Agent 0x47 'Nightshade'",
           "npcType": "person",
@@ -702,10 +753,10 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
             {
               "type": "keycard",
               "id": "relayed_torres_office_card",
-              "name": "Torres Office Card (relayed copy)",
+              "name": "Spare Office Card (relayed copy)",
               "takeable": true,
               "opens_lock": "office_keycard",
-              "observations": "A copy of IT's spare card for David Torres' office, rebuilt by SAFETYNET from the reader logs."
+              "observations": "A copy of IT's spare card for the office beyond the open-plan, rebuilt by SAFETYNET from the reader logs."
             },
             {
               "_comment": "PASS 2 review M3: Patricia-KO fallback for obtain_security_badge (a collect_items task needs the item).",
@@ -726,6 +777,26 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "onRead": { "setVariable": { "server_password_obtained": true } }
             },
             {
+              "_comment": "PASS 4 fix 13: offered on the hallway reader bark. The clone is a critical-path technique.",
+              "type": "lab-workstation",
+              "id": "safetynet_field_guide_rfid_cloning",
+              "name": "SAFETYNET Field Guide: RFID Cloning",
+              "takeable": true,
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/rfid-cloning/",
+              "observations": "Field guide to reading, cloning and emulating proximity access cards"
+            },
+            {
+              "_comment": "PASS 4 (whodunnit): Owen-KO copy of the badge-reader log. Distinct name from Owen's (E18).",
+              "type": "notes",
+              "id": "relayed_door_log",
+              "name": "Badge-Reader Log (from IT's archive)",
+              "takeable": true,
+              "readable": true,
+              "text": <%= door_log_text.to_json %>,
+              "observations": "SAFETYNET pulled the after-hours badge log out of QDC's IT archive after Owen went down.",
+              "onRead": { "setVariable": { "found_door_log": true } }
+            },
+            {
               "type": "lab-workstation",
               "id": "safetynet_field_guide_privilege_escalation",
               "name": "SAFETYNET Field Guide: Privilege Escalation via Sudo",
@@ -741,7 +812,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "eventPattern": "conversation_closed:opening_briefing",
               "onceOnly": true,
               "completeTask": "receive_mission_briefing",
-              "sendTimedMessage": { "delay": 3000, "message": "You're in. Patricia Morgan's office is just off reception, on the east side. Start with her. Four hours, and the clock's already running." }
+              "sendTimedMessage": { "delay": 3000, "message": "You're in. Patricia Morgan's office is off reception, on the east side. Start with her. The clock's running." }
             },
             {
               "_comment": "Playtest D4 backstop: the briefing was marked played (setGlobalOnStart) but never finished, e.g. a reload mid-cutscene. The task is custom, so this completes it without the server needing the NPC encountered.",
@@ -795,7 +866,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "eventPattern": "item_picked_up:notes",
               "condition": "data.itemId === 'medical_bills'",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "Three hundred and eighty thousand dollars, and the insurer walked away. That's the kind of trouble ENTROPY goes looking for. Call me when you want to talk it through." }
+              "sendTimedMessage": { "delay": 1500, "message": "Three hundred and eighty thousand dollars, and the insurer walked away. That's the trouble ENTROPY goes looking for. Call me if you want to talk it through." }
             },
             {
               "eventPattern": "item_picked_up:notes",
@@ -807,6 +878,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "eventPattern": "global_variable_changed:flag1_submitted",
               "condition": "value === true",
               "onceOnly": true,
+              "completeTask": "access_bludit_vm",
               "sendTimedMessage": { "delay": 1500, "message": "First flag verified. Three to go. Call if you want a status check." }
             },
             {
@@ -820,7 +892,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "condition": "value === true",
               "onceOnly": true,
               "setGlobal": { "privesc_guide_offered": true },
-              "sendTimedMessage": { "delay": 1500, "message": "Third flag verified. His staging manifest, under his own name. One more: the authorisation behind it, somewhere only root can read. I've a sudo guide if you want it." }
+              "sendTimedMessage": { "delay": 1500, "message": "Third flag verified. His staging manifest, under his own name. Last one's the authorisation behind it, where only root can read. Sudo guide's yours if you want it." }
             },
             {
               "_comment": "PASS 3 (E11 audit): with the fate already set, the debrief follows at once and this 'call me' would land after it.",
@@ -833,12 +905,21 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
             <%# PASS 2: "enough to name him" = one motive item AND one exfil item.
                 Each piece of evidence latches case_motive or case_exfil; the
                 nudge fires when the second half lands. && only (see _comment). %>
-<% %w[found_medical_bills found_torres_journal found_vetting_file].each do |g| %>
+<%# Round 3 (F1): the vetting file is motive only. Its onRead fires on
+    hand-over (npc-game-bridge.js:17-30), so it must not decide the case
+    before the player has read it; naming him does that. %>
+            {
+              "eventPattern": "global_variable_changed:found_vetting_file",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": { "case_motive": true }
+            },
+<% %w[found_medical_bills found_torres_journal].each do |g| %>
             {
               "eventPattern": "global_variable_changed:<%= g %>",
               "condition": "value === true",
               "onceOnly": true,
-              "setGlobal": { "case_motive": true }
+              "setGlobal": { "case_motive": true, "torres_suspected": true }
             },
 <% end %>
 <% %w[flag3_submitted found_manifest found_upload_schedule].each do |g| %>
@@ -846,20 +927,42 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "eventPattern": "global_variable_changed:<%= g %>",
               "condition": "value === true",
               "onceOnly": true,
-              "setGlobal": { "case_exfil": true }
+              "setGlobal": { "case_exfil": true, "torres_suspected": true }
             },
 <% end %>
+            {
+              "_comment": "PASS 4 (whodunnit): the first evidence that points at Torres opens 'Find Out Why' (its unlockCondition is this global). Set by the bills/journal and exfil latches above and by ink (a reasoned partial naming). Round 3: not by the vetting file or Halloran's answer.",
+              "eventPattern": "global_variable_changed:torres_suspected",
+              "condition": "value === true",
+              "onceOnly": true,
+              "unlockAim": "gather_evidence"
+            },
+            {
+              "_comment": "PASS 4 (whodunnit): a wrong accusation gets a nudge, so a stuck player can recover.",
+              "eventPattern": "global_variable_changed:halloran_accused",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 15000, "message": "Halloran's suspended on your word. Check it holds. Where was she on the twenty-third, and whose badge came through the front door just before hers?", "skipIfGlobal": "torres_identified" }
+            },
 <% [%w[case_motive case_exfil], %w[case_exfil case_motive]].each do |me, other| %>
-<% [["!== true", "Call Patricia and give her the name. She won't move on anything less."], ["=== true", "Patricia's out of it, so call me and give me the name."]].each do |ko, tail| %>
+<% [["!== true", "Patricia will act on that. Call her."], ["=== true", "Patricia's out of it, so call me and give me the name."]].each do |ko, tail| %>
             {
               "eventPattern": "global_variable_changed:<%= me %>",
               "condition": "value === true && globalVars.<%= other %> === true && globalVars.case_ready_notified !== true && globalVars.torres_identified !== true && globalVars.patricia_ko <%= ko %>",
               "onceOnly": true,
               "setGlobal": { "case_ready_notified": true },
-              "sendTimedMessage": { "delay": 2000, "message": "That's both halves: why he'd do it, and proof it's leaving the building. <%= tail %>" }
+              "_comment": "Round 3: 8 s, so it doesn't stack with the vault and print texts; worded to read right after a partial naming too.",
+              "sendTimedMessage": { "delay": 8000, "message": "That's both halves: why he'd do it, and proof it's leaving the building. <%= tail %>" }
             },
 <% end %>
 <% end %>
+            {
+              "_comment": "PASS 4 fix 4: the Recruiter's text lands while the player is being sent to the vault, so HaX flags it. Single-term condition (&&-only rule). Skipped if the player has already rung her back.",
+              "eventPattern": "global_variable_changed:recruiter_texted",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 12000, "message": "That TalentStack number is the Recruiter. Hear her out if you want. Just don't give her anything.", "skipIfGlobal": "recruiter_contacted_player" }
+            },
             {
               "_comment": "PASS 2 review M3: completing the collect task without the item is rejected server-side (game.rb:1179-1210). HaX hands over a real id_badge and authorises the office card on Patricia's behalf.",
               "eventPattern": "npc_ko:patricia_morgan",
@@ -877,13 +980,21 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "eventPattern": "door_unlock_attempt",
               "condition": "data.connectedRoom === 'server_hallway'",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "Staff prox reader. Your cloner will take a card off anyone who carries one. Owen's lanyard is the nearest." }
+              "setGlobal": { "rfid_guide_offered": true },
+              "sendTimedMessage": { "delay": 1500, "message": "Staff prox reader. Your cloner will take a card off anyone who carries one. Owen's lanyard is the nearest. I've a cloning guide if you want it." }
             },
             {
               "eventPattern": "door_unlock_attempt",
-              "condition": "data.connectedRoom === 'torres_office'",
+              "condition": "data.connectedRoom === 'torres_office' && globalVars.torres_suspected === true",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 1500, "message": "Torres' office. IT holds a spare for every office, and Owen won't part with it without a reason." }
+            },
+            {
+              "_comment": "Round 3 (F5): before suspicion there is no Owen ask yet, so the bark doesn't name him or promise one.",
+              "eventPattern": "door_unlock_attempt",
+              "condition": "data.connectedRoom === 'torres_office' && globalVars.torres_suspected !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "Office keycard. IT holds a spare for every office. You'd need a reason Owen can write in his log." }
             },
             {
               "_comment": "PASS 3 P5/P7: door_unlock_attempt fires before the lock check (unlock-system.js:110-118), so the bark is worded to be true whether or not the player already has the password.",
@@ -894,11 +1005,19 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "sendTimedMessage": { "delay": 1500, "message": "Password lock. IT sets these; the notice by the door says who." }
             },
             {
+              "_comment": "Playtest round: split on torres_print_collected, so the pointer never arrives after the print text.",
               "eventPattern": "door_unlock_attempt",
-              "condition": "data.connectedRoom === 'data_center'",
+              "condition": "data.connectedRoom === 'data_center' && globalVars.torres_print_collected !== true",
               "onceOnly": true,
               "setGlobal": { "vault_reader_seen": true },
               "sendTimedMessage": { "delay": 1500, "message": "Fingerprint reader on the key vault. It takes the cryptography lead's print, and you've got the kit." }
+            },
+            {
+              "eventPattern": "door_unlock_attempt",
+              "condition": "data.connectedRoom === 'data_center' && globalVars.torres_print_collected === true && globalVars.vault_reader_seen !== true",
+              "onceOnly": true,
+              "setGlobal": { "vault_reader_seen": true },
+              "sendTimedMessage": { "delay": 1500, "message": "That's the vault reader. You've already lifted his print. Use it." }
             },
             {
               "_comment": "PASS 3 P6, re-keyed by the fingerprint redesign: fires on a lift of Torres' print. Lifted prints are saved with the game, so torres_print_collected is safe to read.",
@@ -918,11 +1037,11 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
 <% end %>
             {
               "eventPattern": "object_interacted",
+              "_comment": "Round 2: no longer completes access_bludit_vm. The launcher emits no event on real use, so the task completes on flag 1 (below).",
               "condition": "data.objectType === 'vm-launcher'",
               "onceOnly": true,
-              "completeTask": "access_bludit_vm",
               "setGlobal": { "bludit_guide_offered": true, "recon_guide_offered": true, "bludit_server_discovered": true },
-              "sendTimedMessage": { "delay": 1500, "message": "That's QDC's research portal. Bludit. I've got two guides for it: mapping the network first, then the CMS exploitation chain. Ask and they're yours." }
+              "sendTimedMessage": { "delay": 1500, "message": "QDC's research portal runs Bludit. I've two guides: one for mapping the network, one for the CMS. Ask and they're yours." }
             },
 <% (1..4).each do |n| %>
             {
@@ -930,7 +1049,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "condition": "globalVars.final_choice !== '' && globalVars.flag<%= n %>_submitted !== true && globalVars.flags_nag_sent !== true",
               "onceOnly": true,
               "setGlobal": { "flags_nag_sent": true },
-              "sendTimedMessage": { "delay": 2000, "message": "The upload's dead. Good. Before I pull you out, finish the job on that research server. I want all four flags in the drop-site, or the file on the Architect has holes in it." }
+              "sendTimedMessage": { "delay": 2000, "message": "The upload's dead. Good. Before I pull you out, finish that research server. All four flags in the drop-site, or the file on the Architect has holes." }
             },
 <% end %>
             {
@@ -980,7 +1099,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
             "language": "en-GB"
           },
           "storyPath": "scenarios/m05_insider_trading/ink/m05_phone_patricia.json",
-          "avatar": "assets/npc/avatars/npc_neutral.png",
+          "avatar": "assets/characters/female_security_guard_headshot.png",
           "phoneId": "player_phone",
           "currentKnot": "start",
           "eventMappings": [
@@ -1052,8 +1171,9 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "name": "Building Directory",
           "takeable": true,
           "readable": true,
-          "text": "QUANTUM DYNAMICS CORPORATION - Staff Directory\n\nSECURITY:\nPatricia Morgan - Chief Security Officer (off reception)\n\nRESEARCH:\nDr Ruth Halloran - Chief Scientist, research lab\nDavid Torres - Cryptography Lead, office beyond the open-plan\n\nIT/OPERATIONS:\nOwen Gallagher - Systems Administrator, open-plan office\n\nMARKETING:\nLisa Park - Marketing Coordinator\n\nServer hallway: staff badge only.",
-          "observations": "Building directory listing key personnel"
+          "_comment": "PASS 4 fix 16: the directory now lists the eight cleared cryptography staff behind Patricia's 'one of eight' (incident log), so the suspect pool is something the player can see. Halloran + five seniors (Torres among them) + two juniors, matching Patricia's suspects_overview.",
+          "text": "QUANTUM DYNAMICS CORPORATION - Staff Directory\n\nSECURITY:\nPatricia Morgan - Chief Security Officer (off reception)\n\nIT/OPERATIONS:\nOwen Gallagher - Systems Administrator, open-plan office\n\nMARKETING:\nLisa Park - Marketing Coordinator, break room end\n\nCRYPTOGRAPHY DIVISION (Project Heisenberg; developed vetting, 8 badges):\nDr Ruth Halloran - Chief Scientist, research lab\nDavid Torres - Cryptography Lead, office beyond the open-plan\nDr Amara Okafor - Senior Researcher\nDr Tomasz Wierzbicki - Senior Researcher\nDr Hannah Leigh - Senior Researcher\nDr Sanjay Rao - Senior Researcher\nBen Ashworth - Junior Engineer\nChloe Marsh - Junior Engineer\n\nServer hallway: staff badge only.",
+          "observations": "Building directory listing the staff, with the cryptography division in full"
         }
       ]
     },
@@ -1075,7 +1195,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "takeable": true,
           "readable": true,
           "position": { "x": 7, "y": 4 },
-          "text": "COLLECTION FOR ELENA TORRES\n\nMany of you know David's wife Elena is very unwell. The treatment that might help isn't available here, and the insurer has said no.\n\nIf you'd like to chip in, the tin is in the break room. Every bit helps.\n\nThank you - Lisa (Marketing)\n\n[Someone has written underneath in biro: \"Raised so far: £2,140. Target: don't ask.\"]",
+          "_comment": "PASS 4 (whodunnit): no names. Lisa says whose family it is if asked.",
+          "text": "COLLECTION FOR A COLLEAGUE'S FAMILY\n\nSome of you know that one of our colleagues has a family member who is very unwell. The treatment that might help isn't available here, and the insurer has said no.\n\nIf you'd like to chip in, the tin is in the break room. Every bit helps. Please be discreet.\n\nThank you - Lisa (Marketing)\n\n[Someone has written underneath in biro: \"Raised so far: £2,140. Target: don't ask.\"]",
           "observations": "A handwritten flyer pinned to the corridor noticeboard"
         }
       ]
@@ -1097,12 +1218,11 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
             "language": "en-GB"
           },
           "position": { "x": 4, "y": 4 },
-          "spriteSheet": "hacker",
-          "spriteTalk": "assets/characters/hacker-talk.png",
-          "spriteConfig": {
-            "idleFrameStart": 20,
-            "idleFrameEnd": 23
-          },
+          "spriteSheet": "female_office_worker_v2",
+          "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "avatar": "assets/characters/female_office_worker_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m05_insider_trading/ink/m05_npc_lisa_park.json",
           "currentKnot": "start",
           "globalVarOnKO": "lisa_ko",
@@ -1116,7 +1236,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "name": "TalentStack Leaflet",
           "takeable": true,
           "readable": true,
-          "text": "TALENTSTACK EXECUTIVE RECRUITING\n\"Every career has a turning point.\"\n\nFeeling undervalued? Carrying more than anyone knows?\nWe place exceptional people with partners who reward loyalty - and who look after their families.\n\nDiscreet. Confidential. Life-changing.\n\n[On the back, in blue ink, the same neat hand as the office whiteboards: \"R. called again. Retainer + the debt, all of it. Say yes by Thurs.\" The initials \"D.T.\" have been scribbled out.]",
+          "text": "TALENTSTACK EXECUTIVE RECRUITING\n\"Every career has a turning point.\"\n\nFeeling undervalued? Carrying more than anyone knows?\nWe place exceptional people with partners who reward loyalty - and who look after their families.\n\nDiscreet. Confidential. Life-changing.\n\n[On the back, in small neat capitals and blue ink: \"R. CALLED AGAIN. RETAINER + THE DEBT, ALL OF IT. SAY YES BY THURS.\" Someone has scribbled over a pair of initials until the paper tore.]",
           "observations": "A glossy recruitment leaflet, screwed up and dropped behind the coffee machine. Someone has written on the back.",
           "onRead": { "setVariable": { "found_pamphlet": true } }
         }
@@ -1142,12 +1262,11 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
             "language": "en-GB"
           },
           "position": { "x": 6, "y": 4 },
-          "spriteSheet": "hacker",
-          "spriteTalk": "assets/characters/hacker-talk.png",
-          "spriteConfig": {
-            "idleFrameStart": 20,
-            "idleFrameEnd": 23
-          },
+          "spriteSheet": "male_telecom_v2",
+          "spriteTalk": "assets/characters/male_telecom_talk.png",
+          "spriteVisemes": "assets/characters/male_telecom_visemes.png",
+          "avatar": "assets/characters/male_telecom_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m05_insider_trading/ink/m05_npc_owen_gallagher.json",
           "currentKnot": "start",
           "globalVarOnKO": "owen_ko",
@@ -1162,11 +1281,22 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
             {
               "type": "keycard",
               "id": "torres_office_keycard",
-              "name": "Torres Office Keycard",
+              "name": "IT Spare Office Card",
               "opens_lock": "office_keycard",
               "takeable": true,
-              "observations": "IT's spare card for David Torres' office",
+              "observations": "IT's spare card for the office beyond the open-plan",
               "puzzle_graph_unlocks": "torres_office"
+            },
+            {
+              "_comment": "PASS 4 (whodunnit): the red herring and its answer in one document. Given from his hub once Patricia's incident log has been read.",
+              "type": "notes",
+              "id": "server_door_log",
+              "name": "Server Hallway Badge Log",
+              "takeable": true,
+              "readable": true,
+              "text": <%= door_log_text.to_json %>,
+              "observations": "A printout of every after-hours badge swipe for three weeks, pulled by Owen",
+              "onRead": { "setVariable": { "found_door_log": true } }
             },
             {
               "type": "notes",
@@ -1204,7 +1334,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "readable": true,
           "position": { "x": 3, "y": 2.3 },
           "text": "IT SECURITY NOTICE\n\nSERVER ROOM: password access.\nAfter-hours server access must be logged with IT in advance.\nThe temporary password is rotated by IT and expires Friday.\n\nForgotten it? Contact O. Gallagher (IT), open-plan office.\n\n- IT Department",
-          "observations": "A printed notice taped beside the server-room door"
+          "observations": "A printed notice taped beside the server-room door",
+          "onRead": { "setVariable": { "it_notice_read": true } }
         }
       ]
     },
@@ -1226,6 +1357,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "id": "vm_launcher_bludit",
           "name": "Bludit CMS Server Terminal",
           "takeable": false,
+          "puzzle_graph_role": "vm",
+          "puzzle_graph_note": "PASS 4 fix 16: hangs the VM flag chain off the server room in the dungeon graph",
           "position": { "x": 2, "y": 7 },
           "observations": "A terminal on the research network. QDC's Bludit research portal is somewhere on this subnet.",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
@@ -1286,7 +1419,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "takeable": true,
           "readable": true,
           "text": <%= torres_journal_excerpt.to_json %>,
-          "observations": "A battered notebook in the desk tray. The last few pages are written hard enough to dent the paper.",
+          "observations": "A battered notebook in the desk tray, written in small neat capitals in blue ink. The last few pages are pressed hard enough to dent the paper.",
           "onRead": { "setVariable": { "found_torres_journal": true } }
         },
         {
@@ -1344,13 +1477,13 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
             "style": "Cryptography research lead in her mid-forties. Speak with a consistent educated Irish (Dublin) accent throughout — do not shift to any other accent. Clear, mid-range pitch; measured, precise pace. Sharp, protective of her team and impatient with sloppy reasoning.",
             "language": "en-GB"
           },
-          "position": { "x": 6, "y": 5 },
-          "spriteSheet": "hacker-red",
-          "spriteTalk": "assets/characters/hacker-red-talk.png",
-          "spriteConfig": {
-            "idleFrameStart": 20,
-            "idleFrameEnd": 23
-          },
+          "_comment": "Playtest round: moved one tile south, off the chair row, so the player can reach her from the open floor (was 6,5; 35 px against the 32 px reach). Not browser-checked.",
+          "position": { "x": 6, "y": 6 },
+          "spriteSheet": "female_scientist_v2",
+          "spriteTalk": "assets/characters/female_scientist_talk.png",
+          "spriteVisemes": "assets/characters/female_scientist_visemes.png",
+          "avatar": "assets/characters/female_scientist_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m05_insider_trading/ink/m05_npc_dr_halloran.json",
           "currentKnot": "start",
           "globalVarOnKO": "halloran_ko",
@@ -1370,7 +1503,19 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           ]
         }
       ],
-      "objects": []
+      "objects": [
+        {
+          "_comment": "PASS 4 (whodunnit): Halloran's alibi for the first night on the badge log (Wed 23 Sep).",
+          "type": "notes",
+          "id": "zurich_lanyard",
+          "name": "Conference Lanyard",
+          "takeable": true,
+          "readable": true,
+          "text": "ETH ZÜRICH - POST-QUANTUM CRYPTOGRAPHY WORKSHOP\nMon 21 - Fri 25 September\n\nDR RUTH HALLORAN\nSPEAKER\n\n[On the back, a boarding pass stub: LHR-ZRH, Sun 20 Sep. Return Sat 26 Sep.]",
+          "observations": "A conference lanyard hung over the corner of a monitor",
+          "onRead": { "setVariable": { "found_halloran_alibi": true } }
+        }
+      ]
     },
 
     "patricia_office": {
@@ -1390,12 +1535,11 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
             "language": "en-GB"
           },
           "position": { "x": 3, "y": 3 },
-          "spriteSheet": "hacker-red",
-          "spriteTalk": "assets/characters/hacker-red-talk.png",
-          "spriteConfig": {
-            "idleFrameStart": 20,
-            "idleFrameEnd": 23
-          },
+          "spriteSheet": "female_security_guard_v2",
+          "spriteTalk": "assets/characters/female_security_guard_talk.png",
+          "spriteVisemes": "assets/characters/female_security_guard_visemes.png",
+          "avatar": "assets/characters/female_security_guard_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m05_insider_trading/ink/m05_npc_patricia_morgan.json",
           "currentKnot": "start",
           "globalVarOnKO": "patricia_ko",
@@ -1419,6 +1563,17 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "onRead": { "setVariable": { "found_vetting_file": true } }
             },
             {
+              "_comment": "PASS 4 (whodunnit), round 2: the second flagged file, deliberately untidy (late report, no travel dates, its own cancelled interview). It clears her only alongside the lanyard's dates and the badge log. It does not set found_halloran_alibi.",
+              "type": "notes",
+              "id": "halloran_vetting_file",
+              "name": "Vetting Aftercare File: R. Halloran",
+              "takeable": true,
+              "readable": true,
+              "text": "QDC PERSONNEL SECURITY - VETTING AFTERCARE (RESTRICTED)\n\nSubject: Dr Ruth Halloran, Chief Scientist\nClearance: Developed Vetting\n\nChange of circumstances: DECLARED (late)\n\nForeign travel: conference, Switzerland, September. Dates to follow. [Not yet supplied.]\nContact report: approached at a conference dinner by an executive recruiter (TalentStack). Reported to Security by email eleven days later.\nKnown context: open dispute with the CEO's office over publishing Heisenberg results.\n\nAction: follow-up interview requested.\nCancelled by the CEO's office: \"Classified project. Do not disturb the team.\"\n\n- P. Morgan",
+              "observations": "Patricia's vetting file on Dr Halloran",
+              "onRead": { "setVariable": { "found_halloran_vetting": true } }
+            },
+            {
               "_comment": "PASS 3 P8: Patricia's own copy, handed over from her confession knot. The cabinet holds the other copy for a player who picks it. Its NAME must differ from the cabinet copy: the server's item lookup matches id OR name and searches room containers before NPC itemsHeld (games_controller.rb:1543-1606), so a shared name resolved her give to the locked cabinet and was rejected (playtest 3b).",
               "type": "notes",
               "id": "ceo_stand_down_copy",
@@ -1439,7 +1594,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "name": "Security Incident Log",
           "takeable": true,
           "readable": true,
-          "text": "QUANTUM DYNAMICS - SECURITY INCIDENT LOG\n\nRECENT FLAGGED ACTIVITY:\n\n[2 weeks ago] Cryptography badge: after-hours server room access (23:47)\n[1 week ago] Research share: unusual transfer volumes, 02:00-04:00\n[5 days ago] Cryptography badge: failed logins on the restricted portal\n[3 days ago] Research share: large downloads, key-material directory\n\nNOTE: Escalated to management. Awaiting response.\nManagement response: 'Cryptography team is on a classified project. Activity authorised.'\n\nThe badge is always one of eight. The hours are always the same. Something is wrong. -PM",
+          "text": "QUANTUM DYNAMICS - SECURITY INCIDENT LOG\n\nRECENT FLAGGED ACTIVITY:\n\n[2 weeks ago] Cryptography badge: after-hours server hallway access (23:47)\n[1 week ago] Research share: unusual transfer volumes, 02:00-04:00\n[5 days ago] Cryptography badge: failed logins on the restricted portal\n[3 days ago] Research share: large downloads, key-material directory\n\nNOTE: Escalated to management. Awaiting response.\nManagement response: 'Cryptography team is on a classified project. Activity authorised.'\n\nThe badge is always one of eight. The hours are always the same. Something is wrong. -PM\n\n[Added in pencil: \"Owen keeps the reader logs. Ask him whose badge.\"]",
           "observations": "Patricia's log of flagged activity from the cryptography team",
           "onRead": { "setVariable": { "found_incident_log": true } }
         },
@@ -1490,16 +1645,19 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
             "language": "en-GB"
           },
           "position": { "x": 5, "y": 7 },
-          "spriteSheet": "hacker-red",
-          "spriteTalk": "assets/characters/hacker-red-talk.png",
-          "spriteConfig": {
-            "idleFrameStart": 20,
-            "idleFrameEnd": 23
-          },
+          "_comment": "Round 2 recast: beard and glasses read as the cryptography lead (playtest: the cap and hi-vis read as maintenance).",
+          "spriteSheet": "male_nerd_v2",
+          "spriteTalk": "assets/characters/male_nerd_talk.png",
+          "spriteVisemes": "assets/characters/male_nerd_visemes.png",
+          "avatar": "assets/characters/male_nerd_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m05_insider_trading/ink/m05_torres_confrontation.json",
           "currentKnot": "start",
           "globalVarOnKO": "torres_ko",
           "taskOnKO": "confront_torres",
+          "puzzle_graph_actions": [
+            { "id": "confront_torres", "label": "Confront Torres and decide his fate" }
+          ],
           "behavior": {
             "initiallyHidden": true,
             "hostile": {
@@ -1555,6 +1713,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "type": "notes",
           "id": "talentstack_envelope",
           "name": "Sealed TalentStack Envelope",
+          "puzzle_graph_role": "item",
           "takeable": true,
           "readable": true,
           "text": "Inside a padded envelope addressed to a PO box in Reading, a printed spreadsheet:\n\nTALENTSTACK - CANDIDATE EVALUATION, NEXT COHORT\n\n47 rows. Initials, employer, role, clearance, and a column headed PRESSURE: 'mortgage arrears', 'custody case', 'gambling', 'carer, no respite', 'passed over x3'.\n\nEmployers include two water companies, a hospital trust, a council payroll office and a rail signalling contractor.\n\nA compliments slip is clipped to the top: \"D. - drop this at the usual place after tonight's upload. Last job, then you're clear. - R.\"",
@@ -1565,6 +1724,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "type": "notes",
           "id": "upload_schedule",
           "name": "Upload Schedule",
+          "puzzle_graph_role": "item",
           "takeable": true,
           "readable": true,
           "text": "OPERATION SCHRÖDINGER - UPLOAD SCHEDULE\n\nSTATUS: FINAL APPROVAL GRANTED\n\nData package: Project Heisenberg key material + 999 dispatch rollout schedule\nDestination: ENTROPY drop-site (retained, not resold)\nUpload window: TONIGHT, 20:30\nOperator on site: D. Torres\n\nAcquisition budget released to the Initiative: $847,000 in cryptocurrency, via the TalentStack wallet.\nOperator compensation (from that budget): debt relief + standing consultancy retainer.\n\nApproved by: The Architect",
@@ -1575,6 +1735,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "type": "notes",
           "id": "data_package_manifest",
           "name": "Data Package Manifest",
+          "puzzle_graph_role": "item",
           "takeable": true,
           "readable": true,
           "text": "PROJECT HEISENBERG - PACKAGE CONTENTS\nStaged by: D. Torres\n\n- quantum-safe_key_material_v3.tar.gpg - lattice-based key exchange parameters, production candidate set\n- dispatch_network_rollout_schedule.xlsx - National Emergency-Services Dispatch Network (999 call routing), phased cutover dates by region including key-rotation windows\n- handover_note.txt - sloppy admin credential note from the research portal\n\nImpact assessment (ENTROPY copy):\n- Hold the dispatch network's key material through a rotation window\n- Force a degraded routing path for ambulance, fire and police dispatch\n- Retain the capability. Not for resale.\n\nProjected casualties: 30-45 excess civilian deaths, first rollout wave",

@@ -4,6 +4,12 @@
 > after pass 3 and its implementation review (NPC ids renamed: `owen_gallagher`,
 > `dr_halloran`) (see `PUZZLE_CHAINS_PLAN.md` §0). Codes, rooms and order below
 > match the current build.
+>
+> **Pass 4 (2 October 2026):** m05 is now a whodunnit. Nothing names Torres
+> before the evidence does; Dr Halloran is the red herring (her spare badge on
+> the night log); naming is a choice of names; the "Find Out Why" aim opens on
+> `torres_suspected`. See `DESIGN_REVIEW.md`, "Changes made (pass 4 design)",
+> and `PASS4_PLAYTEST.md`.
 
 ## Prerequisites
 
@@ -49,6 +55,33 @@ give her the name" once. `found_pamphlet` (break room), `found_pipeline_list`
 (data-centre envelope) and `found_stand_down_email` (CEO's email) are optional
 and show in the debrief and credits.
 
+**Who (pass 4).** The naming menu ("Go on, then. Who?") offers only names the
+player has a reason for:
+
+- "Dr Ruth Halloran…" once the badge log is read (`found_door_log`), until she
+  has been accused. With her alibi known (`found_halloran_alibi`) Patricia
+  refuses it at no cost. Without it, Halloran is suspended
+  (`halloran_accused`): Patricia's influence -2, HaX's nudge text after 15 s,
+  Torres mentions it, debrief line and trust -10, a WRONG ACCUSATION credit.
+- "Ben Ashworth" once the log is read: refused, no cost ("Thursday at eight? The transfers run two till four"; the sheet no longer explains him, round 3).
+- Round 3: every Torres naming without both halves uses one reason menu (log decoy, strain, Halloran's word, the front-door times, money, staging, "cryptography lead"). A wrong reason ends the conversation; only the front-door reason sets `door_log_reasoned`.
+- "David Torres" once the log is read or `torres_suspected` is set. Both halves
+  → named. Motive or exfil only → not named, but `torres_suspected` is set and
+  the office search is authorised. Log only → "why?": the main-entrance times
+  (or, after asking Halloran, her lab) is accepted (`door_log_reasoned`); strain
+  or expertise is refused at no cost. Nothing → "On what?".
+
+`torres_suspected` (opens "Find Out Why" and every office-card ask) is set by (round 3: not by Torres' vetting file):
+reading Torres' vetting file, the medical bills or journal, flag 3, the
+manifest or schedule (mappings), or a partial naming (ink). Round 2: asking
+Halloran about her spare no longer sets it.
+
+The badge log: Halloran's spare #4471 reaches the server hallway four nights,
+each six minutes after Torres' own #4408 comes in the main entrance; her
+primary badge never comes in after hours. Her alibi for Wed 23 Sep (Zurich,
+21–25 Sep) is on the lanyard in her lab, in her vetting file, and in her own
+answer.
+
 ## Aim 1 — Get Inside Quantum Dynamics
 
 1. The opening briefing plays (Netherton, Nightshade, HaX). HaX names your kit
@@ -78,17 +111,31 @@ and show in the debrief and credits.
    - ask Patricia (in person) via "I need your help with something" → "The
      server room wants a password Owen won't give me", then back to Owen.
 
-   He hands over the sticky note (`quantum2024`) → `find_server_password`. He
+   (Round 2: reading the IT notice by the door also opens this ask.) He hands over the sticky note (`quantum2024`) → `find_server_password`. He
    also says the key vault past the server room reads **David's thumb and
-   nobody else's**.
-9. Office keycard: ask Patricia for office access, then Owen →
-   `obtain_torres_keycard`.
-10. Optional: vetting files from Patricia (`find_vetting_file`); TalentStack
-    leaflet in the break room (`find_entropy_pamphlet`); Lisa (break room) and
-    Dr Ruth Halloran (research lab). Halloran's spare badge is a second hallway
-    route.
+   nobody else's**, and that you can't change a thumb.
+9. The badge log: with the incident log read, ask Owen "Patricia's log has a
+   crypto badge in the server hallway at 23:47. Whose?" He hands over the
+   **Server Hallway Badge Log** → `find_door_log` (optional), and says "That's
+   Halloran's spare". Read the main-entrance lines too.
+10. Clear (or accuse) Halloran: in the research lab, "Your spare badge has been
+    through the server hallway after midnight. Four times." She gives the
+    Zurich alibi, says the spare hangs on the hook by the door, and that David
+    works in her lab late → `halloran_questioned`, `torres_suspected`. The
+    **Conference Lanyard** on her monitor carries the same alibi.
+11. Optional: vetting files from Patricia (`find_vetting_file`, "Find out who
+    on the team is under pressure"), only once the badge log is read
+    (round 2): **two** files, Torres (undeclared debts) and Halloran (late
+    report, no dates, cancelled interview; not an alibi on its own). TalentStack leaflet in the break room (`find_entropy_pamphlet`);
+    its handwriting matches the journal. Lisa says whose collection it is when
+    asked, and mentions Halloran's row with the CEO. Halloran's spare badge is a
+    second hallway route unless she has been accused.
 
-## Aim 3 — Find Out Why
+## Aim 3 — Find Out Why (opens on `torres_suspected`)
+
+First, the office keycard: once `torres_suspected` is set, ask Patricia (in
+person or by phone) for his office, or name him with part of the case, then
+Owen → `obtain_torres_keycard`. Before that, neither Patricia nor Owen offers it.
 
 11. North from the open-plan into `torres_office` → `access_torres_office`.
 12. Read the **journal** → `find_journal`.
@@ -107,7 +154,7 @@ and show in the debrief and credits.
 ## Aim 4 — Prove the Exfiltration on the Server
 
 16. Hallway → `server_room` (password `quantum2024`) → `access_server_room`.
-17. Bludit terminal → `access_bludit_vm`; four flags at the drop-site →
+17. Bludit terminal; four flags (`access_bludit_vm` now ticks on flag 1) at the drop-site →
     `submit_flag1..4`. After flag 3 HaX offers the sudo guide.
 18. North door: the key-vault fingerprint reader (`vault_reader_seen`). With
     Torres' print it opens → `access_data_center`. Without it: "requires David
@@ -118,13 +165,16 @@ and show in the debrief and credits.
 ## Aim 5 — Decide What Happens to Him *(mission conclusion)*
 
 20. Name Torres, in any of three ways → `identify_torres`, `torres_identified`:
-    - by **phone**: Patricia → "I know who it is";
-    - **in person** in Patricia's office;
+    - by **phone**: Patricia → "I know who it is" → "David Torres";
+    - **in person** in Patricia's office ("I think I know who it is");
     - to **HaX** if Patricia is KO'd.
 
-    Every route also authorises the office spare and, if you haven't met the
-    vault reader yet, tells you it reads his fingerprint. Torres appears at
-    the upload terminal.
+    Every route also authorises the office spare. The closing lines depend on
+    state: with flags outstanding, "Stop him first", then finish the portal;
+    then "You've got his print. Go." / the fingerprint hint / "You'll need his
+    print first." Torres appears at the upload terminal.
+    HaX texts about the Recruiter ~6 s after her text, unless you've already
+    rung her.
 21. When the naming conversation closes, the Recruiter **texts**
     (`recruiter_texted`). Ring her back from the phone for her offer: leave the
     envelope out of your report. If you confront Torres first and ring her
@@ -133,10 +183,15 @@ and show in the debrief and credits.
     if you heard the offer and never answered (`recruiter_deal_decided`).
 22. Confront Torres. His new line: "The vault logged me in twice tonight. One
     of them was you." Choices as before:
-    - turn;
+    - turn: the argument depends on evidence (journal quote with
+      `found_torres_journal`, the Architect's price with `flag4_submitted`,
+      Elena always);
     - hold him for the police, with or without the treatment deal;
-    - expose;
+    - expose (anonymous source; the debrief says what it cost SAFETYNET);
     - fight, then a post-KO choice.
+
+    On the talk endings the upload is stopped by a choice: pull the drive
+    yourself, or make him cancel it.
 23. `concludeRequires` = all four flags. The debrief fires when the Torres
     conversation closes with all four flags in; otherwise on the last flag.
 24. Debrief and credits. The CEO line reads one way or the other depending on
@@ -152,9 +207,16 @@ and show in the debrief and credits.
 
   Her phone then only offers "(Ring her. It rings out.)", with no reply and no
   unread badge. Her desk log stays readable.
-- **Owen KO**: his office card and password note drop. HaX's `on_owen_ko_relay`
-  gives copies of the staff badge, the office card and the password (from IT's
-  ticket queue), and says the vault line.
+  Patricia-KO lines (pass 4): the arrest line, post-KO narration, HaX's advice
+  and safety net, `after_choice` and three debrief branches no longer name
+  her. Her dropped items include both vetting files.
+- **Owen KO**: his office card, password note and badge log drop. HaX's
+  `on_owen_ko_relay` gives copies of the staff badge, the office card and the
+  password (from IT's ticket queue), plus the badge log if not yet read, and
+  says the vault line.
+- **Wrong accusation**: Halloran accused → suspended (her greeting changes, no
+  spare badge), HaX nudge, `general_advice` points at the alibi and the
+  front-door lines. Torres can still be named the usual way.
 - **Torres KO**: `post_ko_choice` (`disableClose`); safety net on re-entering the
   data centre.
 - Lisa / Halloran KO only close their optional interviews.
@@ -190,6 +252,15 @@ and show in the debrief and credits.
       the CEO line.
 - [ ] Mid-mission reload: no intro replays; the cloner card survives.
 - [ ] All four flags submit; the debrief waits for them; credits roll.
+- [ ] Pass 4: before any evidence, no to-do item, Patricia choice or Owen
+      choice names Torres; the corridor flyer names nobody.
+- [ ] Pass 4: badge log → Halloran questioned → "Find Out Why" appears and the
+      office ask opens.
+- [ ] Pass 4: accuse Halloran with the log only → suspended, nudge text,
+      Torres still nameable; WRONG ACCUSATION in the credits.
+- [ ] Pass 4: never ring the Recruiter → credits show "NEVER HEARD HER OFFER".
+- [ ] Pass 4: v2 sprites render at every NPC position; no two on-screen NPCs
+      share a sheet.
 
 ## Not verified here
 

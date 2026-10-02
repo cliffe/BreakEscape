@@ -52,7 +52,7 @@
     {
       "ka": "AAA",
       "topic": "Authentication",
-      "keywords": ["RFID authentication", "Access control bypass", "Credential theft"]
+      "keywords": ["RFID authentication", "Biometric authentication", "Access control bypass", "Credential theft"]
     }
   ],
 
