@@ -56,3 +56,9 @@ tools/playtest/cmd[0-9]*.sh
 
 # Python bytecode (tools/, skill scripts)
 __pycache__/
+
+# Playtest debris (per-game flag sheets, verify dumps, screenshots, scratch)
+tools/playtest/*-flags-game*.xml
+tools/playtest/*-verify*.txt
+tools/playtest/*-scratch/
+tools/playtest/*.png
