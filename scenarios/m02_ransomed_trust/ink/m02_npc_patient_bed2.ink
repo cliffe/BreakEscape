@@ -5,15 +5,16 @@
 // ===========================================
 
 VAR spoke_to_player = false
+// Pass 4 dialogue: re-entry line for a re-talk, skipped once after an answer or a goodbye.
+VAR hub_quiet = false
 
 === start ===
 {not spoke_to_player:
     ~ spoke_to_player = true
-    Mrs Hargreaves: *eyes open, barely* ...that you, love?
+    Mrs Hargreaves: *barely* ...that you, love?
     -> first_words
 }
 {spoke_to_player:
-    Mrs Hargreaves: ...still at it, love?
     -> hub
 }
 
@@ -21,23 +22,31 @@ VAR spoke_to_player = false
 
 Mrs Hargreaves: ...can't see me screen. Sister says it's down.
 
-Mrs Hargreaves: *breath* That screen tells them. If me heart's doing what it should.
+Mrs Hargreaves: That screen tells them. If me heart's doing what it should.
 
-Mrs Hargreaves: Three weeks I've watched that screen.
+Mrs Hargreaves: Three weeks I've watched it.
 
-* [The machine keeping you going is still working. We're working to restore the monitors.]
+* [Your machine's still running. We're getting the screens back.]
     Mrs Hargreaves: ...good.
-    Mrs Hargreaves: I know this machine. Me and it have an understanding.
-    Mrs Hargreaves: *breath* I just don't like not being able to see.
+    Mrs Hargreaves: Me and this machine have an understanding.
+    Mrs Hargreaves: I just don't like not seeing.
+    ~ hub_quiet = true
     -> hub
 
-* [How are you feeling right now?]
+* [How are you feeling?]
     Mrs Hargreaves: Like I'm plugged into summat I can't switch off. Which I am.
-    Mrs Hargreaves: *very faint* Don't fuss. I've had good days and bad days on this thing.
-    Mrs Hargreaves: Today's... a day.
+    Mrs Hargreaves: Don't fuss. Today's... a day.
+    ~ hub_quiet = true
     -> hub
 
 === hub ===
+{hub_quiet:
+    ~ hub_quiet = false
+- else:
+    Mrs Hargreaves: ...still at it, love?
+}
 + [I'll let you rest.]
+    Mrs Hargreaves: Mind how you go.
+    ~ hub_quiet = true
     #exit_conversation
     -> hub

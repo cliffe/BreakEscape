@@ -38,12 +38,23 @@ VAR lore_zds_invoice_found = false
 VAR lore_ghosts_manifesto_found = false
 VAR insider_asset_exposed = false
 
+// Pass 4: if the inside asset was never named, Reeves confronts the player here and
+// HIS scene sets mission_complete as it closes; this terminal sets awaiting_ambush
+// instead. Setting both in one pass used to start the debrief on top of the ambush.
+VAR insider_identified = false
+VAR insider_confronted = false
+VAR night_security_supervisor_ko = false
+VAR awaiting_ambush = false
+
 === start ===
 #speaker:computer
 
 // Decision already made: read-only outcome, never the decision menu again.
 {mission_complete:
     -> decision_recorded
+}
+{awaiting_ambush:
+    -> ambush_backstop
 }
 {not backdoor_fully_exploited:
     -> relay_locked_investigation
@@ -81,15 +92,27 @@ HOSPITAL COMMUNICATIONS TERMINAL
 
 Evidence package FAILED AUTHENTICATION.
 
-The SAFETYNET forensic record is incomplete. A public submission must include verified proof of the intrusion -- the exploited backdoor and the recovered decryption keys. Right now there is nothing on file to prove how ENTROPY got in.
+The SAFETYNET forensic record is incomplete. A public release needs verified proof of the intrusion: the exploited backdoor and the recovered keys.
 
-Finish working the backup server. Recover the evidence off it. Then the archive will accept a release.
+Nothing on file yet proves how ENTROPY got in.
+
+Finish working the backup server and recover the evidence. The archive will then accept a release.
+
+-> relay_locked_investigation_choices
 
 // No DONE: a finished story would leave the terminal with no choices on reopen. Stepping
 // away re-enters start, so the gates are re-checked against the current globals.
+// Round 3 (resting-knot rule): a reopen after flag 4 resumes HERE, at the knot that
+// owns the saved choice, so this knot re-checks its own gate and goes back to start.
+// Pass 4 dialogue: stepping away rests here too, not at start, so the locked screen
+// isn't printed into the thread again on every exit (playtest confirm3, game 1438).
+=== relay_locked_investigation_choices ===
+{backdoor_fully_exploited or mission_complete:
+    -> start
+}
 + [Step away from the terminal.]
     #exit_conversation
-    -> start
+    -> relay_locked_investigation_choices
 
 === relay_locked_incident ===
 #speaker:computer
@@ -100,13 +123,18 @@ HOSPITAL COMMUNICATIONS TERMINAL
 
 Evidence release held: incident still active.
 
-The forensic record checks out, but the emergency is not yet resolved. Patient systems must be recovered and the ransom decision logged at the recovery console before this evidence can go to public record.
+The forensic record checks out, but the emergency is still live.
 
-Resolve the incident first. Then decide what the world gets to see.
+Recover the patient systems and log the ransom decision at the recovery console first. Then decide what the world gets to see.
+-> relay_locked_incident_choices
 
+=== relay_locked_incident_choices ===
+{ransom_decision_made or mission_complete:
+    -> start
+}
 + [Step away from the terminal.]
     #exit_conversation
-    -> start
+    -> relay_locked_incident_choices
 
 === decision_menu ===
 
@@ -130,7 +158,7 @@ Resolve the incident first. Then decide what the world gets to see.
 
 CONFIRM UPLOAD?
 
-The board chair's cover-up memo, the budget decisions, and six months of Gary Whitlock's ignored security warnings will be authenticated, attributed, and transmitted.
+The board chair's cover-up memo, the budget decisions and six months of Gary Whitlock's ignored warnings will be authenticated, attributed and transmitted.
 
 St. Catherine's board cannot suppress this.
 
@@ -160,21 +188,18 @@ TRANSMISSION COMPLETE.
 
 St. Catherine's board will face a public inquiry within 48 hours.
 
-Gary Whitlock's warnings are on record. His vindication is not an internal matter anymore.
+Gary Whitlock's warnings are on the public record.
 
-Forty-three other hospitals on ENTROPY's reconnaissance list will see this story. Some of them will patch their servers before anyone has to teach them the same lesson.
+Forty-three other hospitals on ENTROPY's reconnaissance list will see this story. Some will patch before anyone teaches them the same lesson.
 
 {lore_zds_invoice_found or lore_ghosts_manifesto_found or insider_asset_exposed:
-This is no longer only a budget scandal at one hospital. The material you assembled reaches past the board and into ENTROPY itself -- and it is all now on the public record, attributed and timestamped.
+The material you assembled reaches past the board and into ENTROPY itself. All of it is now public, attributed and timestamped.
 }
 
 #complete_task:decide_hospital_exposure
 ~ exposed_hospital = true
-~ mission_complete = true
 #set_global:exposed_hospital:true
-#set_global:mission_complete:true
-#exit_conversation
--> outcome_idle
+-> close_decision
 
 // ===========================================
 // SUPPRESS PATH
@@ -204,7 +229,7 @@ The sector-wide vulnerability profile does not become public knowledge.
 
 Evidence retained. No transmission.
 
-St. Catherine's board has privately committed to a full security overhaul. Gary Whitlock's employment situation will be resolved through internal channels.
+St. Catherine's board has privately committed to a full security overhaul. Gary Whitlock's position will be resolved through internal channels.
 
 The sector-wide risk profile -- 214 hospitals scanned, 147 with critical vulnerabilities -- remains unpublished.
 
@@ -212,10 +237,28 @@ Other hospitals will not learn from this until something similar happens to them
 
 #complete_task:decide_hospital_exposure
 ~ exposed_hospital = false
-~ mission_complete = true
 #set_global:exposed_hospital:false
-#set_global:mission_complete:true
+-> close_decision
+
+// Either finish the mission here, or hand the ending to Reeves' ambush.
+=== close_decision ===
+{insider_identified or insider_confronted or night_security_supervisor_ko:
+    ~ mission_complete = true
+    #set_global:mission_complete:true
+- else:
+    ~ awaiting_ambush = true
+    #set_global:awaiting_ambush:true
+}
 #exit_conversation
+-> outcome_idle
+
+// Backstop: the ambush was due but never ran (a reload between the two, say).
+// The man on the post has gone; the mission ends here.
+=== ambush_backstop ===
+~ mission_complete = true
+The supervisor's post beside the relay is empty. Whoever stood here has gone.
+#set_global:insider_asset_escaped:true
+#set_global:mission_complete:true
 -> outcome_idle
 
 // ===========================================
@@ -231,9 +274,9 @@ HOSPITAL COMMUNICATIONS TERMINAL
 Outgoing relay: CLOSED. The release decision is on record and cannot be changed.
 
 {exposed_hospital:
-    Status: TRANSMITTED. The board liability email, FY2024 budget report, Gary Whitlock's advisory archive and the SAFETYNET forensic record are in the public record.
+    Status: TRANSMITTED. The board email, the FY2024 budget report, Gary Whitlock's advisory archive and the SAFETYNET forensic record are public.
 - else:
-    Status: WITHHELD. Nothing was transmitted. The evidence stays internal and the sector-wide risk profile remains unpublished.
+    Status: WITHHELD. Nothing was transmitted. The evidence stays internal, and the sector-wide risk profile stays unpublished.
 }
 
 -> outcome_idle

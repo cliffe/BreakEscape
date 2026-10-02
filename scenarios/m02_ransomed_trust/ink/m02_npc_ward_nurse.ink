@@ -23,6 +23,9 @@ VAR spoke_about_patients = false
 VAR spoke_about_manual = false
 VAR spoke_about_timeline = false
 VAR gave_lanyard = false
+// Pass 4 dialogue: a re-talk re-navigates to hub, so the hub carries the return
+// greeting (and the burned-cover beat). hub_quiet skips it once after a reply or a goodbye.
+VAR hub_quiet = false
 
 // Synced from globalVars by engine at call-open
 VAR cover_burned = false
@@ -34,7 +37,7 @@ VAR offline_keys_recovered = false
 // ===========================================
 
 === start ===
-{cover_burned and not cover_restored and spoke_about_patients:
+{cover_burned and not cover_restored and not gave_lanyard and spoke_about_patients:
     -> burned_entry
 }
 {spoke_about_patients:
@@ -43,28 +46,27 @@ VAR offline_keys_recovered = false
 -> first_meeting
 
 === first_meeting ===
-Narrator: Six beds. One nurse working the far end with a clipboard, and Sister Doyle planted at the side of bed two, not moving, eyes on a machine that is doing a woman's breathing for her.
+Narrator: Six beds. A nurse working the far end with a clipboard, and Sister Doyle planted at bed two, eyes on the machine that is breathing for a woman.
 
 Sister Doyle: *without looking round* Are you meant to be on my ward?
 
-Sister Doyle: Because I've had four people through here tonight who weren't, and every one of them wanted to tell me about the computers.
+Sister Doyle: I've had four people through here tonight who weren't, and every one of them wanted to tell me about the computers.
 
 * [Security consultant. I'm here to get your monitoring back.]
-    Sister Doyle: *dry* Right. The computers.
+    Sister Doyle: Right. The computers.
     -> stakes
 
 * [What am I looking at? Talk me through the ward.]
     ~ showed_empathy = true
     ~ influence += 2
     # influence_increased
-    Sister Doyle: *looks at you properly for the first time* You want to know what you're looking at.
-    Sister Doyle: Right. Two minutes, and I'm not leaving this bed while I do it.
+    Sister Doyle: *looks round for the first time* Two minutes. And I'm not leaving this bed while I do it.
     -> ward_tour
 
 * [No. Tell me to go and I'll go.]
     ~ influence += 2
     # influence_increased
-    Sister Doyle: *pause* ...No. Stay.
+    Sister Doyle: ...No. Stay.
     Sister Doyle: You're the first one tonight who's asked instead of announcing.
     -> stakes
 
@@ -76,13 +78,15 @@ Sister Doyle: Because I've had four people through here tonight who weren't, and
 ~ spoke_about_patients = true
 #complete_task:talk_to_ward_nurse
 
-Narrator: She nods down the row as she talks, and does not lower her voice, because these are her patients and she is not going to discuss them as though they cannot hear.
+Narrator: She nods down the row as she talks. She doesn't lower her voice. These are her patients, and they can hear.
 
-Sister Doyle: Bed four. Mr Pryce, sixty-seven, ventilated. The machine's on its own power so it keeps breathing for him whatever happens. It's the monitoring that fed the station, and the station's dark.
+Sister Doyle: Bed four. Mr Pryce, sixty-seven, ventilated. The machine has its own power. It's the monitoring that's gone dark.
 
-Sister Doyle: Bed two. Mrs Hargreaves, on ECMO. That's her heart and her lungs, both, sat in a box beside the bed. If that alarms and nobody's stood next to it, she has about four minutes.
+Sister Doyle: Bed two. Mrs Hargreaves, on ECMO. That's her heart and her lungs, both, in a box beside the bed.
 
-Sister Doyle: Bed five's Ms Chen, post-op, and she's been watching this bed all night because she's worked out I can't be everywhere. Seventy-one years old and she's doing my obs for me with her eyes.
+Sister Doyle: If that alarms and nobody's stood next to it, she has about four minutes.
+
+Sister Doyle: Bed five's Ms Chen. Seventy-one, post-op, and she's been doing my obs for me with her eyes.
 
 Sister Doyle: Six beds in this bay. Two more bays down the corridor. Forty-seven altogether.
 
@@ -90,9 +94,8 @@ Sister Doyle: Six beds in this bay. Two more bays down the corridor. Forty-seven
     ~ showed_empathy = true
     ~ influence += 2
     # influence_increased
-    Sister Doyle: Four minutes.
-    Sister Doyle: So I stand here. That's the whole plan -- I stand at this bed and I watch it with my own eyes, and Priya runs everybody else on paper.
-    Sister Doyle: Twenty years of training and tonight I'm an alarm.
+    Sister Doyle: So I stand here. That's the whole plan. I watch this bed with my own eyes, and Priya runs everybody else on paper.
+    Sister Doyle: Twenty years of training, and tonight I'm an alarm.
     -> hub_intro
 
 * [What are you most frightened of?]
@@ -108,28 +111,24 @@ Sister Doyle: Six beds in this bay. Two more bays down the corridor. Forty-seven
 === the_fear ===
 ~ showed_empathy = true
 
-Narrator: She says it quietly, and she does not stop looking at bed two while she says it.
+Sister Doyle: The small thing. Always the small one.
 
-Sister Doyle: Not the big thing. The small one.
+Sister Doyle: A drift across three readings. The screen would have flagged it orange at ten past. I'll see it at half past, when I get back round.
 
-Sister Doyle: A number I'd have caught. A trend across three readings that the screen would have flagged in orange at ten past, and I'll see it at half past because that's when I got back round.
+Sister Doyle: Twenty minutes. That's the whole difference between the machine watching and me watching.
 
-Sister Doyle: Twenty minutes. That's all it is. That's the whole difference between the machine watching and me watching.
-
-Sister Doyle: I'm good at this. I've been good at this for twenty years. I'm not good enough to be six machines.
+Sister Doyle: I've been good at this for twenty years. I'm not good enough to be six machines.
 
 * [Then let's give you your machines back.]
     ~ influence += 2
     # influence_increased
-    Narrator: She is already looking back at the machine.
-
-    Sister Doyle: Go on then.
+    Sister Doyle: *eyes already back on bed two* Go on, then.
     -> hub_intro
 
-* [Nobody could be. That's not a failing, that's arithmetic.]
+* [Nobody could be. Nobody should have to be.]
     ~ influence += 3
     # influence_increased
-    Sister Doyle: Tell that to me at half past, when I'm the one holding the chart.
+    Sister Doyle: Tell me that at half past, when I'm the one holding the chart.
     -> hub_intro
 
 // ===========================================
@@ -140,15 +139,16 @@ Sister Doyle: I'm good at this. I've been good at this for twenty years. I'm not
 ~ spoke_about_patients = true
 #complete_task:talk_to_ward_nurse
 
-Sister Doyle: Forty-seven across three wards. Ventilators, ECMO, dialysis, all of them fed into a monitoring system that stopped existing at ten to three.
+Sister Doyle: Forty-seven across three wards. Ventilators, ECMO, dialysis, all fed into a monitoring system that died at ten to three.
 
-Sister Doyle: The machines still run. It's the watching that's gone.
+Sister Doyle: The machines still run. Nobody's watching them.
 
-Sister Doyle: Two of us, forty-seven patients, manual obs every fifteen minutes and a biro.
+Sister Doyle: Two of us, manual obs every fifteen minutes, and a biro.
 
 -> hub_intro
 
 === hub_intro ===
+~ hub_quiet = true
 -> hub
 
 // ===========================================
@@ -156,13 +156,21 @@ Sister Doyle: Two of us, forty-seven patients, manual obs every fifteen minutes 
 // ===========================================
 
 === hub ===
-+ {not spoke_about_manual} [How are you managing it without the systems?]
+{hub_quiet:
+    ~ hub_quiet = false
+- else:
+    {cover_burned and not cover_restored and not gave_lanyard and not burned_entry:
+        -> burned_entry
+    }
+    Sister Doyle: {offline_keys_recovered and not good_news: Tell me you've something.|{&Still here, then.|What is it?|Quick, then.}}
+}
++ {not spoke_about_manual} [How are you managing without the systems?]
     -> manual_work
 
 + {not spoke_about_timeline} [How long can you keep this up?]
     -> timeline
 
-+ {cover_burned and not cover_restored and not gave_lanyard} [Sister -- somebody's told security I was never booked in. I need something that gets me back up that corridor.]
++ {cover_burned and not cover_restored and not gave_lanyard} [Security think I was never booked in. I need a way back up that corridor.]
     -> the_lanyard
 
 + {offline_keys_recovered} [I've got the offline keys. Your monitors are coming back.]
@@ -170,28 +178,33 @@ Sister Doyle: Two of us, forty-seven patients, manual obs every fifteen minutes 
 
 + [I'll let you work.]
     Sister Doyle: {influence >= 4: Go on. And thank you for looking at them properly.|Aye.}
+    ~ hub_quiet = true
     #exit_conversation
     -> hub
 
 === manual_work ===
 ~ spoke_about_manual = true
 
-Sister Doyle: Obs every fifteen minutes. Blood pressure by cuff, sats by probe, temp, respiratory rate, written down.
+Sister Doyle: Obs every fifteen minutes. Cuff, probe, thermometer, biro.
 
-Sister Doyle: Drug rounds off a paper chart we printed at two before the printers went as well. Which means if a doctor changes a dose tonight, it changes on my bit of paper and nowhere else, and God help whoever's on at seven.
+Sister Doyle: Drug rounds off a paper chart we printed at two, before the printers went as well.
 
-Sister Doyle: We're managing. I want to be very clear that "managing" is not a compliment. Managing is what you do instead of the actual standard.
+Sister Doyle: If a doctor changes a dose tonight, it changes on my bit of paper and nowhere else. God help whoever's on at seven.
+
+Sister Doyle: We're managing. And managing is what you do instead of the actual standard.
 
 + [You shouldn't have to be doing this at all.]
     ~ influence += 2
     # influence_increased
-    Sister Doyle: No. But here we are, and there's a woman in bed two, so.
+    Sister Doyle: No. But there's a woman in bed two, so.
+    ~ hub_quiet = true
     -> hub
 
 + [Understood. Every hour I save you is a real hour.]
     ~ influence += 1
     # influence_increased
     Sister Doyle: It is. Go and save me some.
+    ~ hub_quiet = true
     -> hub
 
 // ===========================================
@@ -203,33 +216,33 @@ Sister Doyle: We're managing. I want to be very clear that "managing" is not a c
 
 Sister Doyle: Generators are good for twelve hours from lockdown. We're four in.
 
-Sister Doyle: Eight hours. That's what you've got, and I'll tell you now, the last two of those are going to be very bad ones whatever anybody decides in a boardroom.
+Sister Doyle: Eight hours, then. And the last two will be very bad ones, whatever anybody decides in a boardroom.
 
-Sister Doyle: The registrar worked out a number. Risk per hour. He came and told me it, at half two, like it was helpful.
+Sister Doyle: The registrar worked out a risk per hour. Came and told me it at half two, like it was helpful.
 
 Sister Doyle: I asked him not to say it again on my ward.
 
-Narrator: She flicks a page over on the clipboard.
-
-Sister Doyle: If it's the emergency kit you're after -- far end of this ward, through the door at the back. Backup gear's in there.
+Sister Doyle: If it's the emergency kit you're after: far end of this ward, through the door at the back. Backup gear's in there.
 
 {showed_empathy:
     #complete_task:gather_pin_clues
-    Sister Doyle: There's a PIN safe on it. In twenty years that override has never once been changed, and it's the year this place was founded -- it's on the plaque in the lobby if you want to feel clever about it.
-    Sister Doyle: Take it. If knowing that gets those monitors back one minute sooner then I don't care who I'm not supposed to tell.
+    Sister Doyle: There's a PIN safe on it. The override's the year this place was founded. It's on the plaque in the lobby.
+    Sister Doyle: Twenty years and nobody's changed it. If knowing that gets those monitors back a minute sooner, I don't care who I'm not supposed to tell.
 - else:
-    Sister Doyle: There's a PIN safe on it. Old institutional code -- the sort of thing that's written down in half a dozen places in this building if you actually stop and look at anything.
+    Sister Doyle: There's a PIN safe on it. Old institutional code. It's written up in half a dozen places in this building, if you stop and look.
     Sister Doyle: I haven't the time to walk you round it. I've patients to watch.
 }
 
 + [I'll be as fast as I can.]
-    Sister Doyle: Fast and right. In that order, and if you can only have one, have the second.
+    Sister Doyle: Fast and right. If you can only have one, have the second.
+    ~ hub_quiet = true
     -> hub
 
 + {showed_empathy} [Thank you, Sister.]
     ~ influence += 2
     # influence_increased
     Sister Doyle: Go on.
+    ~ hub_quiet = true
     -> hub
 
 // ===========================================
@@ -245,45 +258,49 @@ Sister Doyle: If it's the emergency kit you're after -- far end of this ward, th
     -> lanyard_refused
 }
 
+// Pass 4: the lanyard is what the player shows Val; it no longer restores cover by itself.
 === lanyard_given ===
 ~ gave_lanyard = true
-~ cover_restored = true
 #give_item:id_badge:bank_staff_lanyard
 #set_global:staff_lanyard_obtained:true
-#set_global:cover_restored:true
 
-Narrator: She does not take her eyes off the machine.
+Narrator: She doesn't take her eyes off the machine.
 
 Sister Doyle: Priya. Ward office, second drawer, the green ribbons. Bring one.
 
-Narrator: Nurse Raval fetches it without breaking her round. Sister Doyle takes it one-handed and holds it out to you, still watching bed two.
+Narrator: Nurse Raval fetches it without breaking her round. Sister Doyle holds it out to you one-handed, still watching bed two.
 
-Sister Doyle: Agency staff. We get four a week through here and half of them never hand them back, so nobody counts them.
+Sister Doyle: Agency staff. We get four a week, and half of them never hand them back, so nobody counts them.
 
-Sister Doyle: It's not your name and it's not your face and I've just committed about three separate disciplinaries handing it to you.
+Sister Doyle: It's not your name or your face, and I've just earned myself about three disciplinaries.
 
-Sister Doyle: But you stood and looked at Mrs Hargreaves like she was a person and not a statistic, and I've decided that's my evidence base.
+Sister Doyle: But you looked at Mrs Hargreaves like she was a person. I've decided that's my evidence base.
 
 * [I won't waste it.]
     ~ influence += 3
     # influence_increased
     Sister Doyle: You'd better not. Go.
+    ~ hub_quiet = true
     #exit_conversation
     -> hub
 
 * [Why risk your job on me?]
-    Sister Doyle: Because everybody upstairs is having a meeting about it and you're the only one running.
-    Sister Doyle: Now go on before I think about it properly.
+    Sister Doyle: Everybody upstairs is having a meeting about it. You're the only one running.
+    Sister Doyle: Now go, before I think about it properly.
+    ~ hub_quiet = true
     #exit_conversation
     -> hub
 
 === lanyard_refused ===
-Sister Doyle: *not unkindly, but not turning round either* You want me to hand a hospital identity to a man I met an hour ago who's just told me security don't think he exists.
+Sister Doyle: *not turning round* You want a hospital identity from me, an hour after we met, when security say you don't exist.
 
-Sister Doyle: I've six critical beds and no monitoring. I cannot also be the one who decides who you are.
+Sister Doyle: I've six critical beds and no monitoring. I can't also be the one who decides who you are.
 
-Sister Doyle: Try IT -- up the link, along the main corridor, then through the handover room. Gary is in there, and he's the sort who'd rather be sacked for helping than for nothing.
+Sister Doyle: Try IT. Up the link, along the main corridor, then through the handover room.
 
+Sister Doyle: Gary's in there. He'd rather be sacked for helping than for nothing.
+
+~ hub_quiet = true
 #exit_conversation
 -> hub
 
@@ -297,11 +314,12 @@ Narrator: She stops.
 Sister Doyle: Say that again.
 
 + [The offline keys. Your monitoring's coming back tonight.]
+    Narrator: She closes her eyes for about a second and a half. It's the first time all night she's looked away from that machine.
     ~ influence += 3
     # influence_increased
-    Narrator: She closes her eyes for about a second and a half. It is the first time all night she has looked away from that machine.
     Sister Doyle: Right.
-    Sister Doyle: *eyes back on the monitor* Right. Well. Go and do the rest of it, then.
+    Sister Doyle: Right. Well. Go and do the rest of it, then.
+    ~ hub_quiet = true
     #exit_conversation
     -> hub
 
@@ -313,15 +331,15 @@ Sister Doyle: Say that again.
 {offline_keys_recovered:
     Sister Doyle: Tell me you've something.
 - else:
-    Narrator: She has not moved from bed two.
-
     Sister Doyle: Still here, then.
 }
+~ hub_quiet = true
 -> hub
 
 === burned_entry ===
-Sister Doyle: There's been a man round asking whether anybody let an unbadged stranger onto my ward.
+Sister Doyle: A man's been round asking if anybody let an unbadged stranger onto my ward.
 
-Sister Doyle: I said I'd not seen anyone. Which is a lie, and I'd like you to know I don't tell them for fun.
+Sister Doyle: I said I'd seen nobody. That's a lie, and I don't tell them for fun.
 
+~ hub_quiet = true
 -> hub

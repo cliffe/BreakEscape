@@ -20,6 +20,7 @@ VAR vulnerability_guide_hint_given = false
 VAR exploitation_guide_hint_given = false
 VAR scanning_exploitation_guide_hint_given = false
 VAR infoleak_note_hint_given = false
+VAR cyberchef_guide_hint_given = false
 VAR ghost_reaction_discussed = false
 VAR ghost_deal_discussed = false
 VAR board_email_discussed = false
@@ -54,9 +55,20 @@ VAR bernie_trusts_player = false
 VAR staff_lanyard_obtained = false
 VAR insider_identified = false
 VAR insider_evidence_partial = false
+VAR insider_badge_id_found = false
+VAR reached_security_office = false
+VAR ghost_offer_made = false
+VAR cyberchef_guide_offered = false
+VAR inspected_asset_post = false
+VAR slow_path_window_open = false
+VAR bed4_manually_stabilised = false
+VAR patient_bed4_deceased = false
+VAR val_opened_office = false
+VAR ghost_keys_used = false
 
 // Local
 VAR cover_advice_given = false
+VAR named_suspect = ""
 VAR insider_advice_given = false
 
 EXTERNAL player_name()
@@ -75,24 +87,33 @@ EXTERNAL player_name()
 === first_call ===
 #speaker:agent_0x99
 
-Agent HaX: {player_name()}. You're in. Good.
+{player_name()}. You're in. Good.
 
-Agent HaX: Forty-seven on generators, twelve hours of fuel, and a board vote in four.
+Forty-seven on generators, twelve hours of fuel, and a board vote in four.
 
-Agent HaX: Front desk first -- get yourself into their paper log, because the electronic one no longer exists. Then Dr. Kim. She's past the ward, up through the handover room. She called us in.
+Front desk first. Get into their paper log, because the electronic one no longer exists.
+Then Dr. Kim. Past the ward, up through the handover room. She called us in.
+-> first_call_choices
 
-+ [Understood]
+// Playtest round: the opening menu rests in its own choices-only knot. After a reload
+// (or once the player is past the front desk) it hands straight over to the hub.
+=== first_call_choices ===
+{dr_kim_met or cover_burned or flag_ssh_submitted:
+    -> support_hub
+}
++ [Understood.]
+    Copy. Call when you need me.
     -> support_hub
 
 + [What should I know going in?]
-    Agent HaX: One thing above everything else. Nobody in that building can grant you access to anything.
-    Agent HaX: Their access control server is encrypted along with the rest of it. Kim can authorise you until she's hoarse and not a single reader will care.
-    Agent HaX: So every door in there is a person, a mechanical key, or your picks. Plan around that and you'll be fine. Assume a badge will save you and you'll waste an hour.
+    One thing above all. Nobody in that building can grant you access to anything.
+    Their access control server is encrypted with the rest of it. Kim can authorise you until she's hoarse and no reader will care.
+    Every door in there is a person, a mechanical key, or your picks. Assume a badge saves you and you'll waste an hour.
     -> support_hub
 
 + [Anything I should be careful of?]
-    Agent HaX: The institutional failure in there is going to make you angry. Gary Whitlock warned them seven times and got told to stop escalating. Feel it later.
-    Agent HaX: And be careful who you are rude to. You are going to need at least one of those people to vouch for you before the night is out, and you will not know which one until it's too late to fix.
+    The failure in there will make you angry. Gary Whitlock warned them seven times and got told to stop escalating. Feel it later.
+    And be careful who you're rude to. You'll need one of them to vouch for you tonight, and you won't know which until too late.
     -> support_hub
 
 // ===========================================
@@ -103,106 +124,107 @@ Agent HaX: Front desk first -- get yourself into their paper log, because the el
 === support_hub ===
 #speaker:agent_0x99
 
-// URGENT: cover burned, player needs a way back into the corridor
-+ {cover_burned and not cover_restored and not cover_advice_given} [My booking's been pulled. What are my options?]
+// Round 2 (playtest: the hub reached 20 buttons and the ones that mattered were
+// buried). Order: what needs doing now, then "where are we", then one button for
+// all the field guides, then the reactions and hints. Follow-ups that go stale sit
+// in choices-only knots that re-check their own state (PASS3 phone rule).
+
+// ---- Now ----
++ {slow_path_window_open and not bed4_manually_stabilised and not patient_bed4_deceased} [Bed 4. What do I do?]
+    -> bed4_help
+
++ {cover_burned and not cover_restored and not reached_security_office and not cover_advice_given} [My booking's been pulled. What are my options?]
     -> cover_burned_advice
 
-// Who did it, and what it tells us
-+ {cover_burned and not insider_advice_given} [Who pulls a consultant's booking in the middle of a ransomware incident?]
-    -> cover_burned_who
++ {insider_badge_id_found and not insider_identified} [I know whose badge SC-4471 is.]
+    -> name_the_badge
 
-// Urgent: Ghost made contact
-+ {ghost_contacted_player and not ghost_reaction_discussed} [Ghost just reached out to me]
-    -> ghost_contact_reaction
++ {ghost_deal_accepted and not ransom_decision_made} [I have Ghost's decryption keys  --  does that change things?]
+    -> ghost_deal_recovery_advice
 
-// Ghost deal follow-through
-+ {ghost_deal_accepted and not ghost_deal_discussed} [I took Ghost's deal  --  free keys for publishing the evidence]
-    -> ghost_deal_reaction
-
-// Board cover-up email surface
-+ {board_coverup_email_found and not board_email_discussed} [I found the board's cover-up email]
-    -> board_email_reaction
-
-// Pre-Kim: starting point
-+ {not dr_kim_met and not hint_start_given} [Where do I start?]
-    -> hint_start
-
-// Post-Kim, pre-server-room: getting in
-+ {dr_kim_met and not flag_ssh_submitted and not hint_lockpick_given} [Any tips for getting into the server room?]
-    -> hint_lockpick
-
-// Social engineering Gary
-+ {dr_kim_met and not flag_ssh_submitted and not hint_password_given} [How do I get Gary to cooperate?]
-    -> hint_password
-
-// Optional field guide: lockpicking (offered early -- offices off reception are locked)
-+ {lockpicking_guide_offered and not lockpicking_guide_hint_given} [Can you send me the lockpicking field guide?]
-    -> request_lockpicking_guide
-
-// Optional field guide: scanning/recon
-+ {scanning_guide_offered and not scanning_guide_hint_given} [Can you send me the scanning field guide?]
-    -> request_scanning_guide
-
-// Optional field guide: SSH access and bruteforce
-+ {ssh_guide_offered and not ssh_guide_hint_given} [Can you send me the SSH access and bruteforce field guide?]
-    -> request_ssh_guide
-
-// VM phase: ProFTPD
-+ {flag_ssh_submitted and not flag_proftpd_submitted and not hint_vm_given} [I need help with the ProFTPD exploitation.]
-    -> hint_vm
-
-// Optional field guide: vulnerability triage
-+ {vulnerability_guide_offered and not vulnerability_guide_hint_given} [Can you send me the vulnerability analysis field guide?]
-    -> request_vulnerability_guide
-
-// Optional field guide: scanning-to-exploitation (offered on reaching the Kali/VM box)
-+ {scanning_exploitation_guide_offered and not scanning_exploitation_guide_hint_given} [Can you send me the scanning and exploitation field guide?]
-    -> request_scanning_exploitation_guide
-
-// Optional field guide: exploitation workflow
-+ {exploitation_guide_offered and not exploitation_guide_hint_given} [Can you send me the ProFTPD exploitation field guide?]
-    -> request_exploitation_guide
-
-// Optional field guide: privilege escalation
-+ {privesc_guide_offered and not privesc_guide_hint_given} [Can you send me the privilege escalation field guide?]
-    -> request_privesc_guide
-
-// Optional field note: information leakage / PIN oracle (offered on finding the ENTROPY cracker)
-+ {infoleak_note_offered and not infoleak_note_hint_given} [Can you send me the information-leak field note?]
-    -> request_infoleak_note
-
-// Encoding/decoding (useful throughout VM phase)
-+ {flag_ssh_submitted and not hint_encoding_given} [I need help with encoding and decoding.]
-    -> hint_encoding
-
-// Safe phase: offline keys
-+ {flag_database_submitted and not offline_keys_recovered and not hint_pin_given} [I need the offline backup keys]
-    -> hint_pin_safe
-
-// Decision phase: moral support
 + {restore_manifest_obtained and not ransom_decision_made and not hint_ransom_given} [Can you help me think through the ransom decision?]
     -> hint_ransom_decision
 
-// Ghost deal option when approaching recovery console
-+ {offline_keys_recovered and not ransom_decision_made and ghost_deal_accepted} [I have Ghost's decryption keys  --  does that change things?]
-    -> ghost_deal_recovery_advice
-
-// ENTROPY ideology discussion (only after Ghost's log is found)
-+ {flag_ghost_log_submitted and not ideology_discussed} [ENTROPY's ideology  --  how do we fight true believers?]
-    -> discuss_ideology
-
-// Post-decision: point to press terminal
 + {ransom_decision_made and not mission_complete} [I've made the recovery decision  --  what's left?]
     -> hint_press_terminal
 
-// Always available
-+ [Got any general advice?]
++ [Remind me where we are.]
     -> general_advice
 
+// ---- Field guides: one button, the list behind it ----
++ {(lockpicking_guide_offered and not lockpicking_guide_hint_given) or (scanning_guide_offered and not scanning_guide_hint_given) or (ssh_guide_offered and not ssh_guide_hint_given) or (vulnerability_guide_offered and not vulnerability_guide_hint_given) or (scanning_exploitation_guide_offered and not scanning_exploitation_guide_hint_given) or (exploitation_guide_offered and not exploitation_guide_hint_given) or (privesc_guide_offered and not privesc_guide_hint_given) or (cyberchef_guide_offered and not cyberchef_guide_hint_given) or (infoleak_note_offered and not infoleak_note_hint_given)} [Send me a field guide.]
+    -> field_guides
+
+// ---- Reactions ----
++ {cover_burned and not insider_advice_given} [Who pulls a consultant's booking in the middle of a ransomware incident?]
+    -> cover_burned_who
+
++ {ghost_contacted_player and not ghost_reaction_discussed} [Ghost just reached out to me]
+    -> ghost_contact_reaction
+
++ {ghost_deal_accepted and ransom_decision_made and not ghost_deal_discussed} [I took Ghost's deal  --  free keys for publishing the evidence]
+    -> ghost_deal_reaction
+
++ {board_coverup_email_found and not board_email_discussed} [I found the board's cover-up email]
+    -> board_email_reaction
+
++ {flag_ghost_log_submitted and not ideology_discussed} [ENTROPY's ideology  --  how do we fight true believers?]
+    -> discuss_ideology
+
+// ---- Hints for where the player is ----
++ {not dr_kim_met and not hint_start_given and not cover_burned and not flag_ssh_submitted} [Where do I start?]
+    -> hint_start
+
++ {dr_kim_met and not flag_ssh_submitted and not hint_lockpick_given} [Any tips for getting into the server room?]
+    -> hint_lockpick
+
++ {dr_kim_met and not flag_ssh_submitted and not hint_password_given} [How do I get Gary to cooperate?]
+    -> hint_password
+
++ {flag_ssh_submitted and not flag_proftpd_submitted and not hint_vm_given} [I need help with the ProFTPD exploitation.]
+    -> hint_vm
+
++ {flag_ssh_submitted and not hint_encoding_given} [I need help with encoding and decoding.]
+    -> hint_encoding
+
++ {flag_database_submitted and not offline_keys_recovered and not hint_pin_given} [I need the offline backup keys]
+    -> hint_pin_safe
+
 + [I'm good for now]
-    Agent HaX: Copy that. Call anytime, {player_name()}.
+    Copy that. Call anytime, {player_name()}.
     #exit_conversation
     -> DONE
+
+// Choices-only: the guides on offer and not yet sent.
+=== field_guides ===
++ {lockpicking_guide_offered and not lockpicking_guide_hint_given} [The lockpicking guide.]
+    -> request_lockpicking_guide
++ {scanning_guide_offered and not scanning_guide_hint_given} [The recon and network mapping guide.]
+    -> request_scanning_guide
++ {ssh_guide_offered and not ssh_guide_hint_given} [The SSH access guide.]
+    -> request_ssh_guide
++ {scanning_exploitation_guide_offered and not scanning_exploitation_guide_hint_given} [The scanning-to-exploitation guide.]
+    -> request_scanning_exploitation_guide
++ {vulnerability_guide_offered and not vulnerability_guide_hint_given} [The vulnerability analysis guide.]
+    -> request_vulnerability_guide
++ {exploitation_guide_offered and not exploitation_guide_hint_given} [The ProFTPD exploitation guide.]
+    -> request_exploitation_guide
++ {privesc_guide_offered and not privesc_guide_hint_given} [The privilege escalation guide.]
+    -> request_privesc_guide
++ {cyberchef_guide_offered and not cyberchef_guide_hint_given} [The CyberChef guide.]
+    -> request_cyberchef_guide
++ {infoleak_note_offered and not infoleak_note_hint_given} [The note on the PIN oracle.]
+    -> request_infoleak_note
++ [Not now.]
+    -> support_hub
+
+=== bed4_help ===
+#speaker:agent_0x99
+Patient ward, Bed 4, Mr Pryce. His ventilator's out of sync and nothing carries the alarm to the desk.
+There's a hand bag clipped to the bed frame. Come at him from the side or the foot.
+Breathe for him until a nurse can take over.
+Nurse Raval will be heading to him too. If she's there first, take the bag from her. Go now.
+-> support_hub
 
 // ===========================================
 // COVER BURN SUPPORT
@@ -214,47 +236,60 @@ Agent HaX: Front desk first -- get yourself into their paper log, because the el
 #speaker:agent_0x99
 ~ cover_advice_given = true
 
-Agent HaX: Right. Deep breath. This is recoverable and it is not the first time.
+Right. This is recoverable.
 
-Agent HaX: What you have lost is not access -- you never had any. What you have lost is the benefit of the doubt. Everything you have opened tonight, you opened because somebody chose to believe you.
+You haven't lost access. You never had any. You've lost the benefit of the doubt.
+Everything you've opened tonight, you opened because somebody chose to believe you.
 
-Agent HaX: So go and get that back from somebody who has a reason to give it.
+So go and get that back from somebody who has a reason to give it.
+-> cover_burned_advice_choices
 
+=== cover_burned_advice_choices ===
+{cover_restored or reached_security_office:
+    -> support_hub
+}
 + [Give me the options.]
-    Agent HaX: Three, that I can see from here.
-    Agent HaX: One. A real hospital lanyard. Gary in IT has a drawer of blank contractor passes, and the ward office keeps agency lanyards. Either will stand up in a corridor at four in the morning.
-    Agent HaX: Two. Reception. If Bernie will log a correction under her own staff number, that beats an anonymous phone call, because control have actually met her.
-    Agent HaX: Three. The officer in the security office. She is not an idiot and she has her own suspicions about somebody in that building. Give her a reason and she may make the call on her own judgement.
+    Val Okonkwo on the main corridor has the only key to her office, and her office is the only way to the server room.
+    So it comes down to her.
+    Show her a real hospital lanyard.
+    Gary has blank contractor passes, the ward keeps agency ones, and there was a spare in the handover room.
+    Or get Bernie on reception to log a correction under her own staff number.
+    That beats an anonymous phone call, because control have actually met her.
+    Or give Val a reason. She is not an idiot, and she has her own suspicions about somebody in that building.
+    Or pick her door while her back is turned. If she catches you at it, you will have made her point for her.
     -> support_hub
 
 + [And if none of them will help me?]
-    Agent HaX: Then you go the long way round and you stay out of that corridor, and it costs you time you have not got.
-    Agent HaX: {staff_lanyard_obtained: You already have a pass, though. Use it.|I would start with IT. Gary has every reason to want you in that server room.}
+    Then you watch her beat, and you pick that door the moment she walks away from it.
+    It costs you the one person on that corridor who might have backed you.
+    {staff_lanyard_obtained: You already have a pass, though. Use it.|I would start with IT. Gary has every reason to want you in that server room.}
     -> support_hub
 
 + [Understood. I'll sort it.]
-    Agent HaX: Good. Quickly, please.
+    Good. Quickly, please.
     -> support_hub
 
 === cover_burned_who ===
 #speaker:agent_0x99
 ~ insider_advice_given = true
 
-Agent HaX: Somebody who knew exactly which lever to pull, is the honest answer.
+Somebody who knew exactly which lever to pull.
 
-Agent HaX: Think about what that call actually required. It required knowing you existed, knowing your booking was informal, knowing the access system was down so nobody could check, and knowing that hospital security would default to challenge rather than assume.
+Think what that call required. Knowing you existed. Knowing your booking was informal. Knowing the access system was down so nobody could check.
+And knowing security would challenge rather than assume.
 
-Agent HaX: That is not a hacker. Ghost is on the network, and if Ghost wanted you stopped they had cleaner ways. That is somebody standing in the building with a telephone and a working knowledge of the procedures.
+If Ghost wanted you stopped, Ghost had cleaner ways.
+This is somebody standing in the building with a telephone and a working knowledge of the procedures.
 
 {insider_evidence_partial:
-    Agent HaX: And you have already found the thing that says an ENTROPY affiliate is embedded in that staff. So stop treating those as two separate problems, because they are not.
+    And you've already found that an ENTROPY affiliate is embedded in that staff. Stop treating those as two problems. They're one.
 - else:
-    Agent HaX: Which means when Ghost tells you they had help inside -- and they will -- take it seriously.
+    Which means when Ghost tells you they had help inside -- and they will -- take it seriously.
 }
 
 + [So I'm looking for staff, not an intruder.]
-    Agent HaX: You are looking for somebody with standing. Somebody a receptionist would let sign a book on her behalf.
-    Agent HaX: Whoever burned you did it because you were about to reach something. Work out what, and you will have worked out who.
+    You're looking for somebody with standing. Someone the night staff wave through without asking.
+    Whoever burned you did it because you were about to reach something. Work out what, and you will have worked out who.
     -> support_hub
 
 + [Noted. I'll keep pulling.]
@@ -268,21 +303,21 @@ Agent HaX: That is not a hacker. Ghost is on the network, and if Ghost wanted yo
 #speaker:agent_0x99
 ~ ghost_reaction_discussed = true
 
-Agent HaX: Ghost's watching the network. They've been on it since before you arrived.
+Ghost's watching the network. They've been on it since before you arrived.
 
-Agent HaX: They know which rooms you've accessed. They may be able to suspend your SAFETYNET connection temporarily.
+They know which rooms you've opened, and they can cut your line to me for a few seconds.
 
-Agent HaX: Don't let that rattle you. They can't act against you directly. This is psychological pressure.
+That's pressure, nothing more. They can't stop you from there.
 
 + [Ghost seems to think they're justified]
-    Agent HaX: They do. ENTROPY cells are ideological -- they've convinced themselves that calculated harm is acceptable if it changes the system.
-    Agent HaX: Ghost isn't wrong about St. Catherine's negligence. That doesn't make their methods right.
-    Agent HaX: Their logic is their problem. Your job is those 47 patients.
+    They do. ENTROPY cells are ideological -- they've convinced themselves that calculated harm is acceptable if it changes the system.
+    Ghost's right about St. Catherine's. Ghost also costed the dead first.
+    Their logic is their problem. Your job is those 47 patients.
     -> support_hub
 
 + [Ghost cut my SAFETYNET connection briefly]
-    Agent HaX: Noted. Network-level access. We knew they had it.
-    Agent HaX: Don't rely on me for anything time-critical from here on. What you're doing has to be done in the field.
+    Noted. Network-level access. We knew they had it.
+    Don't rely on me for anything time-critical from here on. What you're doing has to be done in the field.
     -> support_hub
 
 + [Understood. Staying focused.]
@@ -292,51 +327,51 @@ Agent HaX: Don't let that rattle you. They can't act against you directly. This 
 #speaker:agent_0x99
 ~ ghost_deal_discussed = true
 
-Agent HaX: You made a deal with Ghost.
+You made a deal with Ghost.
 
-Agent HaX: Free decryption keys. No ransom payment. Faster recovery, ENTROPY denied the money.
+Free decryption keys. No ransom payment. Faster recovery, ENTROPY denied the money.
 
-Agent HaX: In exchange: you publish the board's negligence from the press terminal.
+In exchange: you publish the board's negligence from the press terminal.
 
 #speaker:narrator
 Narrator: A pause.
 
 #speaker:agent_0x99
-Agent HaX: Ghost gets exactly what they wanted without spending £150,000.
+Ghost gets exactly what they wanted without spending £150,000.
 
-Agent HaX: You're still the one making the final choice at that terminal. Ghost's deal doesn't override your judgement.
+You're still the one making the final choice at that terminal. Ghost's deal doesn't override your judgement.
 
 + [Is it wrong to have taken it?]
-    Agent HaX: I don't know. You took resources from a terrorist to save lives and deny them funding simultaneously.
-    Agent HaX: The ethics depend entirely on what you do at the press terminal. Don't let Ghost own that decision.
+    I don't know. You took a terrorist's keys to save lives, and kept the money off them.
+    The ethics depend entirely on what you do at the press terminal. Don't let Ghost own that decision.
     -> support_hub
 
 + [I'm going to honour it]
-    Agent HaX: Then publish everything. Make it count.
+    Then publish everything. Make it count.
     -> support_hub
 
 + [I might not honour it]
-    Agent HaX: That's your call. Ghost will notice the breach. So will I.
+    That's your call. Ghost will notice the breach. So will I.
     -> support_hub
 
 === board_email_reaction ===
 #speaker:agent_0x99
 ~ board_email_discussed = true
 
-Agent HaX: The board was planning to terminate Gary and bury his warnings before anyone asked questions.
+The board was going to sack Gary and bury his warnings before anyone asked questions.
 
-Agent HaX: That's not negligence anymore. That's deliberate cover-up of the conditions that created this crisis.
+That's a deliberate cover-up of what created this crisis.
 
-Agent HaX: That email is going to matter at the press terminal. Keep it in mind.
+That email will matter at the press terminal.
 
 + [This changes how I see the exposure decision]
-    Agent HaX: It should. Publishing just the budget decisions is one thing. Publishing the cover-up is another.
-    Agent HaX: The hospital made two distinct failures. You'll decide which gets the full public record.
+    It should. Publishing just the budget decisions is one thing. Publishing the cover-up is another.
+    The hospital made two distinct failures. You'll decide which gets the full public record.
     -> support_hub
 
 + [Gary had no idea the board was planning this]
-    Agent HaX: Probably not. He warned them in good faith.
-    Agent HaX: If you want his vindication to be public, the press terminal is the mechanism.
+    Probably not. He warned them in good faith.
+    If you want his vindication to be public, the press terminal is the mechanism.
     -> support_hub
 
 + [Noted]
@@ -350,16 +385,18 @@ Agent HaX: That email is going to matter at the press terminal. Keep it in mind.
 #speaker:agent_0x99
 ~ hint_start_given = true
 
-Agent HaX: Front desk, then through the ward to the offices.
+Front desk, then through the ward to the offices.
 
-Agent HaX: The night coordinator on reception is holding every mechanical override key in that building on a hook behind her, because Estates dumped them on her this morning. That includes IT. She is the first lock in this mission and she is a person, not a door.
+The night coordinator on reception has every mechanical override key on a hook behind her. Estates dumped them on her this morning.
+That includes IT. The first lock tonight is a person.
 
-Agent HaX: Then Dr. Kim, the CTO. She called us in and she is out of options, which makes her useful and slightly unpredictable.
+Then Dr. Kim, the CTO. She called us in and she is out of options, which makes her useful and slightly unpredictable.
 
 + [What about Gary Whitlock?]
-    Agent HaX: IT administrator. Main corridor, far door, behind that override lock.
-    Agent HaX: He warned them about this exact vulnerability seven times and got told to stop escalating. He is furious, guilty and holding the only working credential in the building.
-    Agent HaX: Desk first, Kim second, Gary third. The order buys you goodwill you will want later.
+    IT administrator. Off the night handover room, behind that override lock.
+    He warned them about this exact weakness seven times and got told to stop escalating.
+    He's furious, and he holds the only working credential in the building.
+    Desk first, Kim second, Gary third. The order buys you goodwill you will want later.
     -> support_hub
 
 + [Understood]
@@ -369,20 +406,23 @@ Agent HaX: Then Dr. Kim, the CTO. She called us in and she is out of options, wh
 #speaker:agent_0x99
 ~ hint_lockpick_given = true
 
-Agent HaX: The server room is the one door in that hospital where picks and charm are both useless.
+The server room is the one door in that hospital where picks and charm are both useless.
 
-Agent HaX: RFID, on a standalone offline controller -- which is why it still works when nothing else does. It will only accept a card that already exists, and no new card can be issued, because the thing that issues them is encrypted.
+RFID, on a standalone offline controller. That's why it still works.
+It only takes a card that already exists, and no new card can be issued, because the machine that issues them is encrypted.
 
-Agent HaX: Gary has one. That is the entire route. Get it from him, or take it off him, but you are not getting past that reader any other way.
+Gary has one. That's the entire route.
+Get it from him, or take it off him. There's no other way past that reader.
 
 + [And the IT department door itself?]
-    Agent HaX: Standard pin tumbler on a mechanical override. Reception has the key, and your picks will do it if she won't.
-    Agent HaX: One warning -- her desk faces that door. Picking a lock she has already offered you the key to is not a clever look.
+    Standard pin tumbler on a mechanical override. Reception has the key, and your picks will do it if she won't.
+    The security office is the same kind of lock, and Val Okonkwo walks the corridor in front of it.
+    Pick that one with her watching and you will be explaining yourself.
     -> support_hub
 
 + [What if Gary won't play?]
-    Agent HaX: Then give him a reason. He has a locked filing cabinet in there full of the warnings nobody read.
-    Agent HaX: Put one of those in front of him and you stop being another person who wants something from him.
+    Then give him a reason. He has a locked filing cabinet in there full of the warnings nobody read.
+    Put one of those in front of him and you stop being another person who wants something from him.
     -> support_hub
 
 + [Got it]
@@ -392,15 +432,15 @@ Agent HaX: Gary has one. That is the entire route. Get it from him, or take it o
 #speaker:agent_0x99
 ~ hint_password_given = true
 
-Agent HaX: Gary has spent six months being treated as an overhead. Don't be the fifth person tonight to walk in and treat him as one.
+Gary has spent six months being treated as an overhead. Don't be the fifth person tonight to walk in and treat him as one.
 
-Agent HaX: He does not want sympathy, he wants somebody to acknowledge he was right in writing. Give him that and he'll open every drawer he owns.
+He does not want sympathy, he wants somebody to acknowledge he was right in writing. Give him that and he'll open every drawer he owns.
 
-Agent HaX: And do not, whatever you do, ask him how he let this happen. He will hand you the card and stop being any further use to you at all.
+And whatever you do, don't ask how he let this happen. He'll hand you the card and be no further use.
 
 + [What am I actually after from him?]
-    Agent HaX: The server room card, and the credentials on the backup box. Shared admin login, never rotated -- Emma2018, Hospital1987, StCatherines.
-    Agent HaX: He'll tell you if he trusts you. If he doesn't, it's on a sticky note stuck to his monitor, which tells you everything about the state of that department.
+    The server room card, and the credentials on the backup box. Shared admin login, never rotated -- Emma2018, Hospital1987, StCatherines.
+    He'll tell you if he trusts you. If not, it's on a sticky note on his monitor, which tells you everything about that department.
     -> support_hub
 
 + [Understood]
@@ -410,15 +450,15 @@ Agent HaX: And do not, whatever you do, ask him how he let this happen. He will 
 #speaker:agent_0x99
 ~ hint_vm_given = true
 
-Agent HaX: The ProFTPD 1.3.3c backdoor. Remote code execution via a backdoor planted in the source code itself.
+The ProFTPD 1.3.3c backdoor. Remote code execution via a backdoor planted in the source code itself.
 
-Agent HaX: A clean release shipped days later, back in 2010. St. Catherine's is still running the poisoned build. Your target.
+A clean release shipped days later, back in 2010. St. Catherine's is still running the poisoned build. Your target.
 
-Agent HaX: The exploit gets you root on the backup server. From there, navigate the filesystem for encrypted database backups.
+The exploit gets you root on the backup server. From there, work the filesystem for the encrypted database backups.
 
 + [What's the full exploit chain?]
-    Agent HaX: SSH access to confirm the server's reachable. ProFTPD exploit for root. Then filesystem navigation to the database backups.
-    Agent HaX: Submit each step as a flag at the drop-site terminal. Each flag unlocks the next piece of intelligence.
+    SSH access to confirm the server's reachable. ProFTPD exploit for root. Then filesystem navigation to the database backups.
+    Submit each step as a flag at the drop-site terminal. Each flag unlocks the next piece of intelligence.
     -> support_hub
 
 + [Got it]
@@ -430,13 +470,108 @@ Agent HaX: The exploit gets you root on the backup server. From there, navigate 
 #set_variable:lockpicking_guide_requested:true
 #give_item:lab-workstation:m02_lockpicking_field_guide
 
-Agent HaX: Lockpicking guide uploaded to your terminal.
+Lockpicking guide uploaded to your terminal.
 
-Agent HaX: Light tension, find the binding pin, set it, repeat. Read the lock by feel -- don't force it.
+Light tension, find the binding pin, set it, repeat. Read the lock by feel -- don't force it.
 
 + [Received]
-    Agent HaX: Quiet and patient gets you through any of those doors. Go.
+    Quiet and patient gets you through any of those doors. Go.
     -> support_hub
+
+=== request_cyberchef_guide ===
+#speaker:agent_0x99
+~ cyberchef_guide_hint_given = true
+#set_variable:cyberchef_guide_requested:true
+#give_item:lab-workstation:m02_cyberchef_field_guide
+
+CyberChef guide's on your terminal.
+
+Look at the shape before you reach for a tool. Letters swapped but word lengths kept is a rotation.
+A long run of letters, digits and the odd equals sign at the end is Base64. Pairs of 0-9 and a-f are hex.
+
++ [Received]
+    And remember it's encoding, not encryption. Anybody can undo it. That's the point of finding it.
+    -> support_hub
+
+// ===========================================
+// NAMING THE BADGE (pass 4)
+// The player makes the deduction; HaX only pushes back on a wrong name. Choices
+// sit in their own knot so a phone re-navigation replays no text, and it re-checks
+// insider_identified because the player can also name him to his face.
+// ===========================================
+
+=== name_the_badge ===
+#speaker:agent_0x99
+{insider_identified:
+    -> support_hub
+}
+Go on. Whose is it?
+-> name_the_badge_choices
+
+// Round 2/3 (re-review M1): plain names, the right one not first, and every name
+// goes through the same reason step, so picking a name gives nothing away. Wrong
+// names and wrong reasons get pushback and cost nothing. named_suspect is local.
+=== name_the_badge_choices ===
+{insider_identified:
+    -> support_hub
+}
++ [Val Okonkwo.]
+    ~ named_suspect = "val"
+    -> badge_reason
++ [Gary Whitlock.]
+    ~ named_suspect = "gary"
+    -> badge_reason
++ [Graham Reeves.]
+    ~ named_suspect = "reeves"
+    -> badge_reason
++ [Dr Kim.]
+    ~ named_suspect = "kim"
+    -> badge_reason
++ [I'm not sure yet.]
+    Then go and look. Every post keeps a log.
+    -> support_hub
+
+=== badge_reason ===
+#speaker:agent_0x99
+{insider_identified:
+    -> support_hub
+}
+{named_suspect == "val":Val|}{named_suspect == "gary":Gary|}{named_suspect == "reeves":Reeves|}{named_suspect == "kim":Kim|}. Show me how you got there.
+-> badge_reason_choices
+
+=== badge_reason_choices ===
+{insider_identified:
+    -> support_hub
+}
++ [They're on nobody's rota.]
+    {named_suspect == "reeves":
+        That makes him odd. It doesn't make him SC-4471. What ties the badge to him?
+    - else:
+        They're on a rota, or a payroll, or a board list. Odd is the man who isn't. What ties the badge to anyone?
+    }
+    -> badge_reason_choices
++ [They had the access and the motive.]
+    So did half the building tonight. What ties that badge to one person?
+    -> badge_reason_choices
++ {inspected_asset_post} [The boardroom post log puts badge SC-4471 on their post.]
+    {named_suspect == "reeves":
+        -> badge_named_reeves
+    }
+    The post log puts SC-4471 on the boardroom comms post. That isn't their post. Who stands that one?
+    -> name_the_badge_choices
++ [I'll come back with proof.]
+    Do. A post log beats a hunch.
+    -> support_hub
+
+=== badge_named_reeves ===
+#speaker:agent_0x99
+~ insider_identified = true
+#set_global:insider_identified:true
+#complete_task:unmask_identify
+That's how I read it.
+Badge SC-4471, the boardroom comms post, a man on nobody's rota. And the call that pulled your booking came from the phone on his post.
+He's still standing next to that terminal. Your call how you handle him.
+-> support_hub
 
 === request_ssh_guide ===
 #speaker:agent_0x99
@@ -444,12 +579,12 @@ Agent HaX: Light tension, find the binding pin, set it, repeat. Read the lock by
 #set_variable:ssh_guide_requested:true
 #give_item:lab-workstation:m02_ssh_bruteforce_field_guide
 
-Agent HaX: SSH access and bruteforce guide sent.
+SSH access and bruteforce guide sent.
 
-Agent HaX: Confirm the port's open, test a sensible username against a focused wordlist with Hydra, then connect. Foothold first, exploitation after.
+Confirm the port's open, test a sensible username against a focused wordlist with Hydra, then connect. Foothold first, exploitation after.
 
 + [Got it]
-    Agent HaX: Start small on the wordlist and expand only if you need to. Move.
+    Start small on the wordlist and expand only if you need to. Move.
     -> support_hub
 
 === request_privesc_guide ===
@@ -458,12 +593,12 @@ Agent HaX: Confirm the port's open, test a sensible username against a focused w
 #set_variable:privesc_guide_requested:true
 #give_item:lab-workstation:m02_privilege_escalation_field_guide
 
-Agent HaX: Privilege escalation guide uploaded.
+Privilege escalation guide uploaded.
 
-Agent HaX: Enumerate with sudo -l first, then take the smallest step that reaches the files you need. Read with sudo cat where you can.
+Enumerate with sudo -l first, then take the smallest step that reaches the files you need. Read with sudo cat where you can.
 
 + [Understood]
-    Agent HaX: Least intrusive path that works. Don't kick down doors you can walk through.
+    Least intrusive path that works. Don't kick down doors you can walk through.
     -> support_hub
 
 === request_infoleak_note ===
@@ -472,14 +607,15 @@ Agent HaX: Enumerate with sudo -l first, then take the smallest step that reache
 #set_variable:infoleak_note_requested:true
 #give_item:lab-workstation:m02_infoleak_field_note
 
-Agent HaX: Field note's on your terminal.
+Field note's on your terminal.
 
-Agent HaX: Clamp the cracker on and read the lights. Greens are the right digit in the right slot; ambers are the right digit in the wrong slot. Each guess you make, the pattern of lights rules out combinations -- four or five rows and the code has nowhere left to hide.
+Clamp the cracker on and read the lights. Greens are the right digit in the right slot, ambers the right digit in the wrong slot.
+Each guess, the lights rule out combinations. Four or five rows and the code has nowhere to hide.
 
-Agent HaX: And take the lesson wider than one safe. Any system that tells an attacker how close they got is leaking. Build them so a wrong answer says nothing but "wrong".
+Take the lesson past one safe. Any system that tells an attacker how close they got is leaking. A wrong answer should say only "wrong".
 
 + [Received]
-    Agent HaX: Their tool, their safe, their keys. I do enjoy the symmetry. Go.
+    Their tool, their safe, their keys. I do enjoy the symmetry. Go.
     -> support_hub
 
 === request_scanning_guide ===
@@ -488,12 +624,12 @@ Agent HaX: And take the lesson wider than one safe. Any system that tells an att
 #set_variable:scanning_guide_requested:true
 #give_item:lab-workstation:m02_scanning_field_guide
 
-Agent HaX: Uploading the recon guide now.
+Uploading the recon guide now.
 
-Agent HaX: Use it to map live hosts, enumerate services, and confirm the backup server attack surface before you commit to exploitation.
+Use it to find what's alive on that network and what the backup server's running. Then decide how you go in.
 
 + [Received]
-    Agent HaX: Good. Fast reconnaissance, clean notes, then strike.
+    Good. Map first, then move.
     -> support_hub
 
 === request_vulnerability_guide ===
@@ -502,12 +638,12 @@ Agent HaX: Use it to map live hosts, enumerate services, and confirm the backup 
 #set_variable:vulnerability_guide_requested:true
 #give_item:lab-workstation:m02_vulnerability_field_guide
 
-Agent HaX: Sending vulnerability analysis guide.
+Sending vulnerability analysis guide.
 
-Agent HaX: You already have access. Now classify exposed services, match likely weakness classes, and avoid wasting time on dead paths.
+You're in. This one helps you work out which of those services will actually give.
 
 + [Got it]
-    Agent HaX: Exactly. Prioritise what is exploitable now, not everything that looks noisy.
+    Go for what's open now. Ignore the noise.
     -> support_hub
 
 === request_scanning_exploitation_guide ===
@@ -516,12 +652,13 @@ Agent HaX: You already have access. Now classify exposed services, match likely 
 #set_variable:scanning_exploitation_guide_requested:true
 #give_item:lab-workstation:m02_scanning_exploitation_field_guide
 
-Agent HaX: Scanning and exploitation guide uploaded.
+Scanning and exploitation guide uploaded.
 
-Agent HaX: It runs the whole chain -- Nmap fingerprint, research the CVE, feed the scan into Metasploit, configure the exploit and payload, then validate the shell. Work it top to bottom and you won't miss a step.
+It runs the whole chain. Nmap fingerprint, research the CVE, feed the scan into Metasploit, set the exploit and payload, validate the shell.
+Work it top to bottom and you won't miss a step.
 
-+ [Thanks, I needed this]
-    Agent HaX: Scan first, match the version exactly, and don't improvise until you've got a stable session.
++ [Got it.]
+    Scan first, match the version exactly, and don't improvise until you've got a stable session.
     -> support_hub
 
 === request_exploitation_guide ===
@@ -530,29 +667,29 @@ Agent HaX: It runs the whole chain -- Nmap fingerprint, research the CVE, feed t
 #set_variable:exploitation_guide_requested:true
 #give_item:lab-workstation:m02_exploitation_field_guide
 
-Agent HaX: ProFTPD exploitation workflow uploaded.
+ProFTPD exploitation workflow uploaded.
 
-Agent HaX: It covers Metasploit module selection, payload/listener alignment, and post-exploitation checks so you can execute without guesswork.
+Module, payload, listener, and what to check once you're in. It's all there.
 
-+ [Thanks, I needed this]
-    Agent HaX: Use it, adapt to what the target gives you, and keep momentum.
++ [Got it.]
+    Adapt it to whatever the box gives you.
     -> support_hub
 
 === hint_encoding ===
 #speaker:agent_0x99
 ~ hint_encoding_given = true
 
-Agent HaX: Encoding is not encryption. Important distinction.
+Encoding isn't encryption.
 
-Agent HaX: Encoding -- Base64, ROT13, hex -- transforms data for storage or transit. No secret key. Reversible by anyone with the right tool.
+Encoding -- Base64, ROT13, hex -- transforms data for storage or transit. No secret key. Reversible by anyone with the right tool.
 
-Agent HaX: Encryption requires a key. Without it, the data is meaningless.
+Encryption requires a key. Without it, the data is meaningless.
 
-Agent HaX: ENTROPY uses encoding for obfuscation and encryption for actual security. When you find something encoded, use CyberChef.
+ENTROPY uses encoding for obfuscation and encryption for actual security. When you find something encoded, use CyberChef.
 
 + [How do I use CyberChef for Base64?]
-    Agent HaX: Workstation in the server room. Open CyberChef, drag "From Base64" into the recipe, paste your text. Instant decode.
-    Agent HaX: For ROT13, same process -- drag the ROT13 operation in.
+    Workstation in the server room. Open CyberChef, drag "From Base64" into the recipe, paste your text. Instant decode.
+    For ROT13, same process -- drag the ROT13 operation in.
     -> support_hub
 
 + [Understood]
@@ -562,18 +699,19 @@ Agent HaX: ENTROPY uses encoding for obfuscation and encryption for actual secur
 #speaker:agent_0x99
 ~ hint_pin_given = true
 
-Agent HaX: Ghost's logs confirmed offline backup keys are in a physical PIN safe. Emergency equipment store, far end of the ward.
+Ghost's logs confirmed offline backup keys are in a physical PIN safe. Emergency equipment store, far end of the ward.
 
-Agent HaX: Four-digit code. Hospitals use institutional dates -- founding years, significant administrative anniversaries.
+Four-digit code. Hospitals use institutional dates -- founding years, significant administrative anniversaries.
 
-Agent HaX: The answer's somewhere in the building. Check plaques, framed documents, administrative notices.
+The answer's somewhere in the building. Check plaques, framed documents, administrative notices.
 
 + [I've already found a clue]
-    Agent HaX: Trust it. Hospitals are consistent about this kind of thing.
+    Trust it. Hospitals are consistent about this kind of thing.
     -> support_hub
 
 + [What if I can't find the PIN?]
-    Agent HaX: Then you go in the noisy way. There's a sealed case in the server room, pushed in behind the rack -- not hospital kit, no key for it in the building. Pick the latch; your picks will do it. Whoever left it there wanted that safe as badly as you do.
+    Then the noisy way. There's a sealed case behind the rack in the server room. Not hospital kit, no key for it anywhere.
+    Pick the latch; your picks will do it. Whoever left it there wanted that safe as badly as you do.
     -> support_hub
 
 + [Got it]
@@ -584,79 +722,94 @@ Agent HaX: The answer's somewhere in the building. Check plaques, framed documen
 ~ hint_ransom_given = true
 
 {offline_keys_recovered and ghost_key_material_obtained:
-    Agent HaX: You have both key sets. Independent recovery is genuinely on the table, which it wasn't an hour ago.
+    You have both key sets. Independent recovery is genuinely on the table, which it wasn't an hour ago.
 - else:
     {offline_keys_recovered:
-        Agent HaX: You have the escrow set. That's twelve hours on its own. Ghost's key material out of the staging cache would make it four.
+        You have the escrow set. That's twelve hours on its own. Ghost's key material out of the staging cache would make it four.
     - else:
-        Agent HaX: Right now the console will take a restore manifest and a ransom payment, and that's all. The escrow keys in the storage safe are what give you a choice.
+        Right now the console takes a restore manifest and a ransom payment, and that's all.
+    The escrow keys in the storage safe are what give you a choice.
     }
 }
 
-Agent HaX: Now -- Ghost will have given you numbers. Deaths per hour, one figure for paying and a worse one for not. I want you to put those down.
+Ghost will have given you numbers. Deaths per hour, one figure for paying and a worse one for not.
+Put them down.
 
-Agent HaX: Not because they're comforting. Because nobody on earth can tell you how many people a six-hour delay kills in a specific ward on a specific night, and the person offering to is selling something.
+Nobody can tell you how many a six-hour delay kills on a specific ward on a specific night.
+The person offering to is selling something.
 
-Agent HaX: What's actually true is smaller and harder. Paying is faster, and it pays them. Doing it yourself is slower, and it doesn't. Everything past that is somebody's guess wearing a decimal point.
+What's true is smaller and harder. Paying is faster, and it pays them. Doing it yourself is slower, and it doesn't.
+Everything past that is a guess wearing a decimal point.
+-> hint_ransom_decision_choices
 
+=== hint_ransom_decision_choices ===
+{ransom_decision_made:
+    -> support_hub
+}
 + [What would you choose?]
-    Agent HaX: I'm not going to answer that.
-    Agent HaX: What I'll say: don't let Ghost's framing decide it for you. They designed this dilemma. Don't let them own your answer.
+    I'm not going to answer that.
+    What I'll say: don't let Ghost's framing decide it for you. They designed this dilemma. Don't let them own your answer.
     -> support_hub
 
 + [Is there a third option?]
-    {ghost_contacted_player:
-        Agent HaX: Ghost may have offered one. Free keys in exchange for publishing the evidence.
-        Agent HaX: If they did -- that's a real option. Fast recovery, no funding, but Ghost's lesson lands publicly.
-        Agent HaX: It's your call whether to engage with that.
+    {ghost_offer_made:
+        Ghost offered you one. Free keys in exchange for publishing the evidence.
+        It's a real option. Fastest of the lot, no funding -- but Ghost's keys stay Ghost's.
+        Whatever they unlock, Ghost can reach again. And Ghost's lesson lands publicly.
+        It's your call whether to engage with that.
         -> support_hub
     }
-    Agent HaX: Not through official channels. The recovery console has the options available to you.
+    Not through official channels. The recovery console has the options available to you.
     -> support_hub
 
 + [I'll make the call]
-    Agent HaX: Good. Recovery console in the server room. Take the decision you can live with.
+    Good. Recovery console in the server room. Take the decision you can live with.
     -> support_hub
 
 === ghost_deal_recovery_advice ===
 #speaker:agent_0x99
 
-Agent HaX: If Ghost's keys are legitimate, that's your fastest path.
+If Ghost's keys are legitimate, that's your fastest path.
 
-Agent HaX: No ransom paid. No ENTROPY funding. Recovery in under an hour.
+No ransom paid. No ENTROPY funding. Recovery in under an hour.
 
-Agent HaX: The cost is the agreement: publish the evidence at the press terminal.
+The cost is twofold. You publish the evidence at the press terminal.
+And the keys are Ghost's, so whatever they unlock, Ghost can reach again. We'd be weeks getting them out of that network.
 
-Agent HaX: Make sure you understand what you're agreeing to before you initiate recovery.
+Make sure you understand what you're agreeing to before you initiate recovery.
+-> ghost_deal_recovery_advice_choices
 
+=== ghost_deal_recovery_advice_choices ===
+{ransom_decision_made:
+    -> support_hub
+}
 + [The keys are real  --  Ghost transmitted them]
-    Agent HaX: Then use them. And follow through at the press terminal.
-    Agent HaX: Or don't. You're the one who has to decide what that means.
+    Then use them. And follow through at the press terminal.
+    Or don't. You're the one who has to decide what that means.
     -> support_hub
 
 + [I haven't decided what to do with Ghost's deal yet]
-    Agent HaX: Then decide before you walk into the recovery console. Don't go in uncertain.
+    Then decide before you walk into the recovery console. Don't go in uncertain.
     -> support_hub
 
 === discuss_ideology ===
 #speaker:agent_0x99
 ~ ideology_discussed = true
 
-Agent HaX: You've read Ghost's calculations. They projected deaths before the operation started and proceeded anyway.
+You've read Ghost's calculations. They projected deaths before the operation started and proceeded anyway.
 
-Agent HaX: This is what ENTROPY looks like across every cell we've uncovered. Not opportunistic criminals. True believers with risk models.
+This is what ENTROPY looks like across every cell we've uncovered. True believers, with risk models.
 
 + [How do you fight that?]
-    Agent HaX: Evidence and consequences, long term.
-    Agent HaX: True believers lose credibility when their predicted outcomes don't materialise.
-    Agent HaX: If hospitals sector-wide improve security after this -- and attacks drop -- Ghost's ideology loses its proof of concept.
-    Agent HaX: Frustrating timeline. But that's what works against ideological movements.
+    Evidence and consequences, long term.
+    True believers lose credibility when their predicted outcomes don't materialise.
+    If hospitals sector-wide improve security after this -- and attacks drop -- Ghost's ideology loses its proof of concept.
     -> support_hub
 
 + [Ghost's diagnosis is hard to argue with]
-    Agent HaX: I know. Institutional negligence is real. The board's decisions were genuinely bad.
-    Agent HaX: The question isn't whether the diagnosis is accurate. It's whether calculating deaths as acceptable costs and proceeding anyway is a line you can cross and still be the good guys.
-    Agent HaX: Ghost crossed it. That's why we're here.
+    I know. Institutional negligence is real. The board's decisions were genuinely bad.
+    The diagnosis is accurate. The question is whether you can count deaths as acceptable costs, carry on, and still be the good guys.
+    Ghost crossed it. That's why we're here.
     -> support_hub
 
 + [Understood. Staying focused.]
@@ -665,22 +818,27 @@ Agent HaX: This is what ENTROPY looks like across every cell we've uncovered. No
 === hint_press_terminal ===
 #speaker:agent_0x99
 
-Agent HaX: Conference room. Hospital communications terminal.
+Conference room. Hospital communications terminal.
 
-Agent HaX: The board liability email. Gary's six months of warnings. The full budget record.
+The board liability email. Gary's six months of warnings. The full budget record.
 
-Agent HaX: Transmit and it's public record within the hour. Don't transmit and it stays internal.
+Transmit and it's public record within the hour. Don't transmit and it stays internal.
 
-Agent HaX: That's the last decision of this mission.
+That's the last decision of this mission.
+-> hint_press_terminal_choices
 
+=== hint_press_terminal_choices ===
+{mission_complete:
+    -> support_hub
+}
 + [What's the right choice here?]
-    Agent HaX: Public exposure forces sector-wide change. Forty-three other hospitals on ENTROPY's reconnaissance list might patch before someone teaches them the same lesson.
-    Agent HaX: Quiet resolution protects St. Catherine's. Gary's vindication stays an internal matter.
-    Agent HaX: I'm not going to tell you which is right.
+    Public exposure forces sector-wide change. Forty-three other hospitals on ENTROPY's reconnaissance list might patch before someone teaches them the same lesson.
+    Quiet resolution protects St. Catherine's. Gary's vindication stays an internal matter.
+    I'm not going to tell you which is right.
     -> support_hub
 
 + {ghost_deal_accepted} [I agreed to publish as part of Ghost's deal]
-    Agent HaX: Then you know what you need to do. The question is whether you're honouring it.
+    Then you know what you need to do. The question is whether you're honouring it.
     -> support_hub
 
 + [Got it. Conference room.]
@@ -693,39 +851,58 @@ Agent HaX: That's the last decision of this mission.
 === general_advice ===
 #speaker:agent_0x99
 
-{cover_burned and not cover_restored:
-    Agent HaX: One thing at a time. Get your standing back, then get to that server room. Everything else can wait.
+{slow_path_window_open and not bed4_manually_stabilised and not patient_bed4_deceased:
+    Bed 4 is alarming and nobody's coming for him. Patient ward, now -- talk to Mr Pryce and bag him by hand.
+    -> support_hub
+}
+{cover_burned and not reached_security_office and not cover_restored:
+    One thing at a time. Get past Val and through her office to the server room. Everything else can wait.
+    -> support_hub
+}
+{cover_burned and not reached_security_office and cover_restored and not val_opened_office:
+    Bernie's word is on the log. Val will have heard. Ask her to open her office.
+    -> support_hub
+}
+{insider_badge_id_found and not insider_identified and not mission_complete and not inspected_asset_post:
+    Badge SC-4471 sits on a post somewhere in this building, and every post keeps a log. Find it before you name anybody.
+}
+{insider_badge_id_found and not insider_identified and not mission_complete and inspected_asset_post:
+    Badge SC-4471 is on the boardroom comms post. You've seen who stands there. Tell me who, and why -- or tell him.
+}
+{scanning_guide_offered and not flag_ssh_submitted:
+    You're in the server room. Map the backup server from the Kali terminal, then get an SSH session with Gary's shared credential.
+    Each flag goes in the drop-site.
     -> support_hub
 }
 {not dr_kim_met:
-    Agent HaX: Reception first, then Kim. You want the override key and you want somebody who has met you willing to say so.
+    Reception first, then Kim. You want the override key and you want somebody who has met you willing to say so.
     -> support_hub
 }
 {dr_kim_met and not flag_ssh_submitted:
-    Agent HaX: Gary is your route to the server room, and cooperation gets you three things where theft only gets you one.
+    Gary is your route to the server room, and cooperation gets you three things where theft only gets you one.
     -> support_hub
 }
 {flag_ssh_submitted and not restore_manifest_obtained:
-    Agent HaX: Two tracks. Keep working down their backup server -- the database backup on it is what gets the recovery console a clean restore point, and it won't restore anything without one.
-    Agent HaX: And the safe in emergency storage has the offline keys. You want both for independent recovery.
+    Two tracks. Keep working the backup server. The database backup on it is the restore point the console needs, and it won't restore without one.
+    And the safe in emergency storage has the offline keys. You want both to recover on your own.
     -> support_hub
 }
 {restore_manifest_obtained and not ransom_decision_made and not offline_keys_recovered:
-    Agent HaX: The console has its restore point. The escrow keys in the emergency storage safe are what stop the ransom being your only way through it.
+    The console has its restore point. The escrow keys in the emergency storage safe are what stop the ransom being your only way through it.
     -> support_hub
 }
 {restore_manifest_obtained and not ransom_decision_made and offline_keys_recovered and not ghost_key_material_obtained and flag_ghost_log_submitted:
-    Agent HaX: Escrow keys and a restore point -- that's twelve hours. Ghost's key material is in the staging cache in the rack. Take it and you've got four.
+    Escrow keys and a restore point is twelve hours. Ghost's key material is in the staging cache. Take it and you've got four.
     -> support_hub
 }
 {restore_manifest_obtained and not ransom_decision_made and offline_keys_recovered:
-    Agent HaX: You have what the console needs to restore without paying. Recovery console in the server room.
-    Agent HaX: Take the decision you can live with. But remember the clock.
+    You have what the console needs to restore without paying. Recovery console in the server room.
+    Take the decision you can live with. But remember the clock.
     -> support_hub
 }
 {ransom_decision_made:
-    Agent HaX: Conference room. Press terminal. That's the last step.
+    Conference room. Press terminal. That's the last step.
     -> support_hub
 }
-Agent HaX: You know what you're doing. Trust your training.
+You know what you're doing. Go.
 -> support_hub

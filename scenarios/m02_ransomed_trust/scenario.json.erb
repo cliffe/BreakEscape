@@ -53,7 +53,7 @@
 #               (locked-pin)         (staff_room)             (locked-key)
 #                                           |
 #   [Server Room]--[Security Office]--[====== Main Corridor ======]
-#    (locked-rfid)   (Val patrols)                |
+#    (locked-rfid)   (locked-key)      (Val patrols)  |
 #                                            [Ward Link]--[==== Patient Ward ====]--[Emergency Storage]
 #                                                                        |              (PIN safe)
 #                          [Reception]--[Ward Vestibule]--[== Ward Approach ==]
@@ -64,6 +64,13 @@
 #   staff_room, the night handover room (dr_kim_office north, it_department east,
 #   conference_room -- the Boardroom -- west). security_office sits west of the
 #   corridor, and server_room west of security.
+#
+#   VAL'S TURNSTILE (pass 4, U2): Val Okonkwo patrols office_corridor in front of
+#   the security office's key-locked door, the only way to the server room. Talk
+#   her round (she opens it with #unlock_door), pick it while her back is turned
+#   (lockpick_used_in_view on her), or KO her and take her key. cover_restored
+#   means only "somebody accepted you" -- Bernie's vouch or Val's clearance --
+#   so the COVER BURNED credit and debrief lines are reachable.
 #   The three offices use their own room types: room_hospital_office_it,
 #   room_hospital_office_cto and room_hospital_office_security.
 #
@@ -81,19 +88,11 @@
 # ============================================================================
 
 # ERB Helper Methods
-require 'base64'
-
-def base64_encode(text)
-  Base64.strict_encode64(text)
-end
-
 def rot13(text)
   text.tr('A-Za-z', 'N-ZA-Mn-za-m')
 end
 
 # Narrative Content Variables
-ransomware_note = "YOUR PATIENT RECORDS ARE ENCRYPTED. 47 PATIENTS ON LIFE SUPPORT. 12 HOURS OF BACKUP POWER. PAY £150,000 IN BITCOIN OR WATCH THEM DIE. - RANSOMWARE INCORPORATED"
-
 gary_warning_email = "From: Gary Whitlock (IT Systems)\nTo: Dr. Sarah Kim (CTO)\nCC: Board Secretariat\nDate: 8 November\nSubject: URGENT -- ProFTPD 1.3.3c backdoor on backup server\n\nDr Kim,\n\nSeventh time of asking. The backup server is still running ProFTPD 1.3.3c -- the trojaned source release from 2010. That build carries a backdoor in its own source code, which gives an attacker remote code execution with no credentials at all. A clean version has been available since 2010.\n\nThis box holds every clinical backup we have. If it goes, the wards go with it.\n\nI have costed the remediation at £85,000. That is the whole ask. I am not asking for a project, I am asking for a server that is not fourteen years out of date.\n\nPlease put this in front of the board as CRITICAL and not as an IT wish-list item.\n\nGary"
 
 board_reply_email = "From: Dr. Sarah Kim (CTO)\nTo: Gary Whitlock (IT Systems)\nDate: 21 May\nSubject: RE: URGENT -- ProFTPD backdoor on backup server\n\nGary,\n\nNoted, and I do understand. The board reviewed it on Tuesday. The position is that the imaging replacement takes precedence this cycle and infrastructure security is deferred to FY25.\n\nI would ask you not to escalate this again outside the department. It does not help either of us.\n\nSarah"
@@ -170,27 +169,39 @@ boardroom_pin = "0417"
           { "text": "RANSOMED TRUST",                                      "style": "subtitle" },
           { "text": "" },
           { "text": "ST. CATHERINE'S REGIONAL: CLINICAL SYSTEMS RESTORED", "style": "entry" },
-          { "text": "PATIENT DEATHS: 2 (cardiac events during system transition)", "style": "entry", "condition": "globalVars.paid_ransom" },
-          { "text": "PATIENT DEATHS: 6 (ventilator and dialysis complications — extended downtime)", "style": "entry", "condition": "!globalVars.paid_ransom" },
+          { "text": "PATIENT DEATHS: 1 (cardiac event before ward monitoring returned)", "style": "entry", "condition": "globalVars.ghost_keys_used" },
+          { "text": "PATIENT DEATHS: 2 (cardiac events during system transition)", "style": "entry", "condition": "(globalVars.paid_ransom || globalVars.ward_recovering) && !globalVars.ghost_keys_used" },
+          { "text": "PATIENT DEATHS: 6 (ventilator and dialysis complications — extended downtime)", "style": "entry", "condition": "!globalVars.paid_ransom && !globalVars.ward_recovering && !globalVars.bed4_manually_stabilised" },
+          { "text": "PATIENT DEATHS: 5 (ventilator and dialysis complications — extended downtime; Bed 4 saved by hand)", "style": "entry", "condition": "!globalVars.paid_ransom && !globalVars.ward_recovering && globalVars.bed4_manually_stabilised" },
           { "text": "" },
           { "text": "── DECISION ──",                                      "style": "section-header" },
           { "text": "RANSOM PAID: £150,000 to Ransomware Incorporated — ENTROPY funded",   "style": "entry", "condition": "globalVars.paid_ransom" },
-          { "text": "RANSOM REFUSED: Offline backup keys used — ENTROPY denied funding",  "style": "entry", "condition": "!globalVars.paid_ransom" },
+          { "text": "RANSOM REFUSED: Offline backup keys used — ENTROPY denied funding",  "style": "entry", "condition": "!globalVars.paid_ransom && !globalVars.ghost_keys_used" },
+          { "text": "GHOST'S KEYS: Wards restored on the attacker's terms — no money paid, the evidence promised in return", "style": "warning", "condition": "globalVars.ghost_keys_used" },
+          { "text": "GHOST'S FOOTHOLD: Attacker access survives the restore inside St. Catherine's network", "style": "warning", "condition": "globalVars.ghost_keys_used" },
           { "text": "HOSPITAL EXPOSED: Negligence on public record — Health and Social Care Committee to take evidence", "style": "entry", "condition": "globalVars.exposed_hospital" },
           { "text": "QUIET RESOLUTION: Negligence kept confidential — St. Catherine's reputation intact",  "style": "entry", "condition": "!globalVars.exposed_hospital" },
           { "text": "" },
           { "text": "── PERSONNEL ──",                                     "style": "section-header" },
           { "text": "OFFLINE BACKUP KEYS RECOVERED — Independent recovery pathway available", "style": "entry", "condition": "globalVars.offline_keys_recovered" },
           { "text": "GARY WHITLOCK: Vindicated — Career protected by agent documentation", "style": "entry", "condition": "globalVars.gary_protected" },
-          { "text": "GARY WHITLOCK: Scapegoated — Position lost, career damaged",          "style": "entry", "condition": "!globalVars.gary_protected" },
+          { "text": "GARY WHITLOCK: Scapegoated — Position lost, career damaged",          "style": "entry", "condition": "!globalVars.gary_protected && !globalVars.exposed_hospital" },
+          { "text": "GARY WHITLOCK: Sacked, then rehired when his warnings went public", "style": "entry", "condition": "!globalVars.gary_protected && globalVars.exposed_hospital" },
           { "text": "COVER BURNED: Booking pulled from the visitor system mid-operation", "style": "warning", "condition": "globalVars.cover_burned && !globalVars.cover_restored" },
-          { "text": "COVER RE-ESTABLISHED: Access regained without incident",           "style": "entry", "condition": "globalVars.cover_restored" },
+          { "text": "COVER RE-ESTABLISHED: Access regained without incident",           "style": "entry", "condition": "globalVars.cover_restored && !globalVars.guard_knocked_out" },
           { "text": "BERNIE NWOSU: Vouched for the agent when the paperwork vanished",  "style": "entry", "condition": "globalVars.bernie_vouched" },
           { "text": "SECURITY OFFICER V. OKONKWO: Neutralised on shift",                "style": "warning", "condition": "globalVars.guard_knocked_out" },
+          { "text": "SECURITY OFFICER V. OKONKWO: Caught the agent picking a lock — logged it", "style": "warning", "condition": "globalVars.val_caught_picking && !globalVars.guard_knocked_out" },
+          { "text": "BERNIE NWOSU: Assaulted at the reception desk",                    "style": "warning", "condition": "globalVars.receptionist_ko" },
+          { "text": "DR SARAH KIM: Assaulted in her own office",                       "style": "warning", "condition": "globalVars.dr_kim_ko" },
+          { "text": "GARY WHITLOCK: Assaulted at his desk — keycard taken",            "style": "warning", "condition": "globalVars.gary_ko" },
+          { "text": "WARD STAFF: Nurse assaulted mid-shift",                           "style": "warning", "condition": "globalVars.ward_nurse_ko || globalVars.raval_ko" },
+          { "text": "PATIENT ASSAULTED: A ward patient struck by the agent",           "style": "warning", "condition": "globalVars.patient_assaulted" },
           { "text": "GRAHAM REEVES (badge SC-4471): Identified and detained — cell thread recovered", "style": "entry", "condition": "globalVars.insider_asset_arrested" },
-          { "text": "GRAHAM REEVES (badge SC-4471): Escaped in the scuffle — no trace",      "style": "warning", "condition": "globalVars.insider_asset_escaped && !globalVars.insider_asset_arrested" },
-          { "text": "GRAHAM REEVES (badge SC-4471): Neutralised — affiliation confirmed after the fact", "style": "entry", "condition": "globalVars.night_security_supervisor_ko && !globalVars.insider_asset_arrested && !globalVars.insider_asset_escaped" },
-          { "text": "INSIDE ASSET: Unidentified — still on the night rota, still trusted", "style": "warning", "condition": "!globalVars.insider_identified && !globalVars.insider_asset_escaped && !globalVars.night_security_supervisor_ko" },
+          { "text": "GRAHAM REEVES (badge SC-4471): Walked out of the boardroom — no trace",  "style": "warning", "condition": "globalVars.insider_asset_escaped && !globalVars.insider_asset_arrested && !globalVars.night_security_supervisor_ko" },
+          { "text": "GRAHAM REEVES (badge SC-4471): Neutralised — affiliation confirmed after the fact", "style": "entry", "condition": "globalVars.night_security_supervisor_ko && !globalVars.insider_asset_arrested" },
+          { "text": "GRAHAM REEVES (badge SC-4471): Named by the agent — picked up by SAFETYNET", "style": "entry", "condition": "globalVars.insider_identified && !globalVars.insider_asset_arrested && !globalVars.insider_asset_escaped && !globalVars.night_security_supervisor_ko" },
+          { "text": "WRONG SUSPECT: The agent accused a member of staff who had done nothing", "style": "warning", "condition": "globalVars.accused_wrong_suspect" },
           { "text": "" },
           { "text": "GHOST: At large...",                                  "style": "warning" },
           { "text": "ENTROPY: Still operational. Six cells remain.",       "style": "warning" }
@@ -298,20 +309,20 @@ boardroom_pin = "0417"
     {
       "aimId": "cover_compromised",
       "title": "Somebody Pulled Your Booking",
-      "description": "Security has been told no consultant was booked tonight. Your name is off the visitor system. Get your freedom of movement back -- and start asking who made that call.",
+      "description": "Security has been told no consultant was booked tonight. Your name is off the visitor system, and Val Okonkwo is standing between you and the server room. Get past her -- and start asking who made that call.",
       "status": "locked",
       "order": 2,
       "unlockCondition": { "aimCompleted": "access_it_systems" },
       "tasks": [
         {
           "taskId": "cover_burned_notified",
-          "title": "Find out your cover has been pulled",
+          "title": "Read HaX's warning about your booking",
           "type": "manual",
           "status": "active"
         },
         {
           "taskId": "regain_freedom_of_movement",
-          "title": "Get something that stands up to a security challenge",
+          "title": "Get past Val at the security office",
           "type": "manual",
           "status": "active"
         },
@@ -416,7 +427,7 @@ boardroom_pin = "0417"
         },
         {
           "taskId": "unmask_identify",
-          "title": "Match the badge number to the security post it belongs to",
+          "title": "Name badge SC-4471's holder, with your reason -- to HaX, or to his face",
           "type": "manual",
           "status": "active"
         }
@@ -483,7 +494,7 @@ boardroom_pin = "0417"
         },
         {
           "taskId": "make_ransom_decision",
-          "title": "Settle the ransom question",
+          "title": "Decide whose keys bring the wards back",
           "type": "manual",
           "status": "active"
         },
@@ -524,7 +535,7 @@ boardroom_pin = "0417"
       "takeable": true,
       "observations": "SAFETYNET field pick kit. The fallback for every door nobody will open for you -- and a straight admission of what you actually are, if anyone sees you using it.",
       "puzzle_graph_role": "tool",
-      "puzzle_graph_unlocks": ["it_department", "it_filing_cabinet"],
+      "puzzle_graph_unlocks": ["it_department", "it_filing_cabinet", "security_office"],
       "puzzle_graph_optional": true
     }
   ],
@@ -650,21 +661,6 @@ boardroom_pin = "0417"
               "puzzle_graph_role": "key",
               "puzzle_graph_unlocks": "it_department"
             }
-          ],
-          "los": {
-            "enabled": true,
-            "range": 170,
-            "angle": 150,
-            "visualize": false
-          },
-          "eventMappings": [
-            {
-              "eventPattern": "lockpick_used_in_view",
-              "onceOnly": true,
-              "setGlobal": { "seen_picking_by_bernie": true },
-              "bark": "...I'm going to pretend I didn't see that.",
-              "barkDelay": 400
-            }
           ]
         },
         {
@@ -744,6 +740,14 @@ boardroom_pin = "0417"
               "takeable": true,
               "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/information-leakage-and-the-pin-oracle/",
               "observations": "How a device that leaks 'how close you got' turns a blind four-digit lock into a handful of deductions -- the Mastermind oracle, and why partial-feedback side channels break secrets far weaker than they look"
+            },
+            {
+              "type": "lab-workstation",
+              "id": "m02_cyberchef_field_guide",
+              "name": "SAFETYNET Field Guide: Encoding and Decoding with CyberChef",
+              "takeable": true,
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/encoding-and-decoding-with-cyberchef/",
+              "observations": "Recognising common encodings by their shape -- ROT13, Base64, hex -- and reversing them with CyberChef recipes"
             }
           ],
           "timedMessages": [
@@ -769,42 +773,42 @@ boardroom_pin = "0417"
               "eventPattern": "objective_task_completed:make_ransom_decision",
               "condition": "globalVars.advised_board_refuse && !globalVars.paid_ransom && !globalVars.dr_kim_ko",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 9000, "message": "Dr Kim just messaged the team. You told her you'd bring the wards back without paying -- and you did. She held the board off on your word tonight, and you made good on it. People remember which of those two things you did." }
+              "sendTimedMessage": { "delay": 18000, "message": "Dr Kim messaged the team. You told her you'd bring the wards back without paying, and you did. She held the board off on your word. People remember that." }
             },
             {
               "eventPattern": "objective_task_completed:make_ransom_decision",
               "condition": "globalVars.advised_board_refuse && globalVars.paid_ransom && !globalVars.dr_kim_ko",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 9000, "message": "Word from Dr Kim. She held the board off because you told her you'd have the keys in time -- and in the end someone wrote the cheque anyway. She spent trust she didn't have to spare, on your word. That's a debt, not a betrayal. Just know it's there." }
+              "sendTimedMessage": { "delay": 18000, "message": "Word from Dr Kim. She held the board off on your word, and someone wrote the cheque anyway. She spent trust she couldn't spare. That's a debt. Know it's there." }
             },
             {
               "eventPattern": "objective_task_completed:make_ransom_decision",
               "condition": "globalVars.advised_board_pay && globalVars.paid_ransom && !globalVars.dr_kim_ko",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 9000, "message": "Dr Kim's noted the decision. You told her to pay and that's how it ended -- no surprises for her, your read held. That kind of consistency is why an insider trusts you the next time you need them to." }
+              "sendTimedMessage": { "delay": 18000, "message": "Dr Kim's noted it. You told her to pay and that's how it ended. No surprises, your read held. That's why an insider trusts you the next time." }
             },
             {
               "eventPattern": "objective_task_completed:make_ransom_decision",
               "condition": "globalVars.advised_board_pay && !globalVars.paid_ransom && !globalVars.dr_kim_ko",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 9000, "message": "Dr Kim clocked it. You told her to pay, then found a way that didn't need paying -- she'll have gone into that boardroom arguing for a cheque nobody had to write. A small thing. She noticed it anyway." }
+              "sendTimedMessage": { "delay": 18000, "message": "Dr Kim clocked it. You told her to pay, then found a way that didn't need paying. She argued for a cheque nobody had to write. She noticed." }
             },
             {
               "eventPattern": "conversation_closed:opening_briefing_cutscene",
               "onceOnly": true,
               "setGlobal": { "lockpicking_guide_offered": true },
-              "sendTimedMessage": { "delay": 6000, "message": "Reminder on the doors in there. Nobody can badge you through anything -- the access control server is encrypted with the rest of it. That leaves you two ways past a lock: get a human to open it, or open it yourself. You're carrying a pick kit for the second one. Want the field guide on pin-tumbler work? Just ask." }
+              "sendTimedMessage": { "delay": 6000, "message": "No badge opens anything tonight. Get a person to open a door for you, or pick it yourself. People first. Ask if you want the lockpicking guide." }
             },
             {
               "eventPattern": "global_variable_changed:noticed_struck_booking",
               "condition": "value === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 2000, "message": "You've read that right -- your booking is on their paper log and somebody has put a line through it. Different pen, no initials. That's not a clerical error, that's someone tidying you out of the record. File it. Keep moving." }
+              "sendTimedMessage": { "delay": 2000, "message": "You've read that right. Your booking's on the paper log with a line through it. Different pen, no initials. Somebody's tidied you out of the record. File it, keep moving." }
             },
             {
               "eventPattern": "objective_task_completed:sign_in_at_reception",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "Signed in. That paper badge makes you a guest, not staff -- it won't open a single internal door. Kim's the one who called you in; her office is through the ward, up past the night handover room. Start there." }
+              "sendTimedMessage": { "delay": 1500, "message": "Signed in. That paper badge opens no internal doors. Kim called you in; her office is through the ward, past the handover room." }
             },
             {
               "eventPattern": "global_variable_changed:decoded_ransomware_note",
@@ -817,7 +821,7 @@ boardroom_pin = "0417"
               "eventPattern": "global_variable_changed:read_ransom_cto",
               "condition": "value === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 4500, "message": "Read what they left on Kim's screen. Not a demand -- a note about Gary's emails. Ghost wants more than the money out of tonight. Remember that when it comes to deciding what goes public." }
+              "sendTimedMessage": { "delay": 4500, "message": "Read what they left on Kim's screen. Not a demand, a note about Gary's emails. Ghost wants more than money tonight. Remember that when you decide what goes public." }
             },
 <% %w[reception_lobby hospital_ward it_department server_room emergency_equipment_storage dr_kim_office conference_room security_office office_corridor staff_room ward_hall ward_vestibule ward_approach].each do |r| %>
             {
@@ -837,65 +841,58 @@ boardroom_pin = "0417"
               "eventPattern": "objective_task_completed:meet_dr_kim",
               "onceOnly": true,
               "setGlobal": { "dr_kim_met": true },
-              "sendTimedMessage": { "delay": 1500, "message": "Kim's vouched for you as far as she's able, which is verbally and no further. Gary Whitlock is your next problem -- IT department, off the handover room at the top of the main corridor, behind an override lock. He knows exactly how they got in, and he's holding the only card that still opens the server room." }
+              "sendTimedMessage": { "delay": 1500, "message": "Kim can only vouch verbally. Gary Whitlock's next: IT, the right-hand door in the handover room, top of the main corridor. He holds the only working server-room card." }
             },
             {
               "eventPattern": "objective_task_completed:talk_to_gary",
               "onceOnly": true,
               "setGlobal": { "cover_burned": true },
               "completeTask": "cover_burned_notified",
-              "sendTimedMessage": { "delay": 4000, "message": "Stop. Listen to me carefully. Two minutes ago someone rang St. Catherine's security desk from an internal extension and told them no external consultant was booked tonight. Your name is off their system. Your booking is gone from the log." }
+              "sendTimedMessage": { "delay": 4000, "message": "Stop. Two minutes ago someone rang the security desk from an internal extension and said no consultant was booked tonight. Your name's off their system. Your booking's gone." }
             },
             {
               "eventPattern": "objective_task_completed:talk_to_gary",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 11000, "skipIfGlobal": "cover_restored", "message": "This wasn't the board and it wasn't Kim -- she'd have called me. Someone in that building watched you get as far as IT and decided to slow you down. Which tells me they know exactly what you're about to reach.\n\nPractical problem first: 'I'm the consultant, Dr Kim authorised me' is now a lie the guard can disprove. Get something that stands up -- a real staff lanyard, or somebody willing to vouch for you out loud. Then get to that server room." }
+              "sendTimedMessage": { "delay": 11000, "skipIfGlobal": "cover_restored", "message": "Someone inside watched you reach IT. Val can disprove your cover now, and her office is your only way to the server room. Get a lanyard, or a vouch." }
             },
 <%# Gary's own spare carries a distinct id so it is a distinct object; taking it off him
-    (theft, or off the floor after a KO) must restore cover exactly as the staff-room
-    spare does. His dialogue gift sets the globals via ink tags instead. %>
+    (theft, or off the floor after a KO) counts exactly as the staff-room spare does.
+    His dialogue gift sets the global via an ink tag instead. Pass 4: a lanyard is what
+    you SHOW Val. It no longer sets cover_restored on pickup, which used to fire HaX's
+    "That'll hold" before any burn had happened. %>
             {
               "eventPattern": "item_picked_up:id_badge",
               "condition": "data.itemId === 'gary_contractor_lanyard'",
               "onceOnly": true,
-              "setGlobal": { "staff_lanyard_obtained": true, "cover_restored": true },
-              "sendTimedMessage": { "delay": 1200, "message": "Blank contractor pass, real hospital stock. That's your standing back -- however you came by it." }
+              "setGlobal": { "staff_lanyard_obtained": true },
+              "sendTimedMessage": { "delay": 1200, "message": "Blank contractor pass, real hospital stock, no matter how you came by it. If anybody on the corridor asks what you are, show them that." }
             },
             {
               "eventPattern": "item_picked_up:id_badge",
               "condition": "data.itemId === 'contractor_lanyard'",
               "onceOnly": true,
-              "setGlobal": { "staff_lanyard_obtained": true, "cover_restored": true },
-              "sendTimedMessage": { "delay": 1200, "message": "Blank contractor pass, real hospital stock. That's your standing back. Nobody has ever questioned one of those and that is exactly the sort of thing Gary has been writing emails about." }
+              "setGlobal": { "staff_lanyard_obtained": true },
+              "sendTimedMessage": { "delay": 1200, "message": "Blank contractor pass, real hospital stock, no name. Nobody questions one, which is exactly what Gary's been writing emails about. Hang on to it." }
             },
             {
               "eventPattern": "item_picked_up:id_badge",
               "condition": "data.itemId === 'bank_staff_lanyard'",
               "onceOnly": true,
-              "setGlobal": { "staff_lanyard_obtained": true, "cover_restored": true },
-              "sendTimedMessage": { "delay": 1200, "message": "Agency lanyard off the ward. Green ribbon, no photograph, and at four in the morning that is most of the battle. Use it and don't linger." }
-            },
-            {
-<%# Safety net only: a player who reached the server room by a route that never set
-    cover_restored is not left permanently burned. It must NOT complete
-    regain_freedom_of_movement -- that task gates this event, and completing it here
-    made the task impossible to fail. %>
-              "eventPattern": "objective_task_completed:access_server_room",
-              "onceOnly": true,
-              "setGlobal": { "cover_restored": true }
+              "setGlobal": { "staff_lanyard_obtained": true },
+              "sendTimedMessage": { "delay": 1200, "message": "Agency lanyard off the ward. Green ribbon, no photograph, and at four in the morning that is most of the battle. Show it to whoever asks and don't linger." }
             },
             {
               "eventPattern": "global_variable_changed:read_handover_board",
               "condition": "value === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "Look at the times on that board. Friday's 'drill' ran half two to three, every door on this floor on free egress -- and the whole estate went dark at 02:47. Right in the middle of it. Nobody told the ward, and it says second time.\n\nThat's not a drill. That's somebody holding the doors open, and it's the first thing on paper that says the help came from inside. Signed off by the N/S Supervisor. Find out who signs himself that." }
+              "sendTimedMessage": { "delay": 1500, "message": "Friday's 'drill': half two to three, doors on free egress. The estate went dark at 02:47. Somebody held the doors open. Signed N/S Supervisor. Who's that?" }
             },
             {
               "eventPattern": "global_variable_changed:found_safe_pin_clue",
               "condition": "value === true && !globalVars.escrow_safe_opened",
               "onceOnly": true,
               "completeTask": "gather_pin_clues",
-              "sendTimedMessage": { "delay": 1400, "message": "Founding year on the escrow safe, flagged at three separate audits and never changed. Same species of problem as the backup server: somebody wrote it down, somebody filed it, nobody acted.\n\nThe plaque's in the lobby. You walked past it on the way in." }
+              "sendTimedMessage": { "delay": 1400, "message": "The escrow safe's PIN is the founding year. Flagged at three audits, never changed.\n\nThe plaque's in the lobby. You walked past it on the way in." }
             },
 <%# The safe opening IS the code worked out, however the player got there -- the
     lobby plaque, the pin-cracker, a lucky guess. Without this, solving it from the
@@ -912,7 +909,8 @@ boardroom_pin = "0417"
               "eventPattern": "global_variable_changed:read_operator_note",
               "condition": "value === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "That's their operator's own handwriting, and it's the most useful thing in the building. Two numbers in it: twelve hours on the offline set alone, four if you pair it with what you pull off their backup server. Ghost wrote that down because Ghost was certain nobody here would work it out in time.\n\nProve them wrong." }
+              "setGlobal": { "cyberchef_guide_offered": true },
+              "sendTimedMessage": { "delay": 1500, "message": "Their operator's handwriting. Word lengths kept, every letter shifted a fixed number of places. Thirteen's the usual. Decode it on the CyberChef workstation. CyberChef guide on request." }
             },
             {
               "eventPattern": "global_variable_changed:password_hints_found",
@@ -923,65 +921,64 @@ boardroom_pin = "0417"
             },
             {
               "eventPattern": "global_variable_changed:cover_restored",
+              "_comment": "Playtest round: only Bernie's own desk vouch sets bernie_vouched before cover_restored (m02_npc_receptionist.ink bernie_vouches). Val's clearance knots set cover_restored first and open the door themselves, so this text stays silent on those routes.",
+              "condition": "value === true && globalVars.cover_burned === true && globalVars.bernie_vouched === true && !globalVars.val_opened_office",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1200, "message": "Bernie's put her name against yours. Val will have heard by now -- ask her to open her office." }
+            },
+            {
+              "eventPattern": "global_variable_changed:val_opened_office",
               "condition": "value === true",
               "onceOnly": true,
-              "completeTask": "regain_freedom_of_movement",
               "sendTimedMessage": { "delay": 1200, "message": "That'll hold. Now -- whoever made that call is still in the building, and they've just told us they're frightened of what's on that backup server. Go and find out why." }
             },
             {
               "eventPattern": "global_variable_changed:guard_knocked_out",
               "condition": "value === true",
               "onceOnly": true,
-              "setGlobal": { "cover_restored": true },
-              "completeTask": "regain_freedom_of_movement",
-              "sendTimedMessage": { "delay": 1500, "message": "You've put a hospital security officer on the floor. That solves your corridor problem and creates about four others. Move fast -- when she's found, this building locks down." }
+              "sendTimedMessage": { "delay": 1500, "message": "You've put a security officer on the floor. Her office key's on her. Move fast -- when she's found, the building locks down." }
+            },
+<%# Round 2 (re-review m1): punching Val makes her hostile through combat without
+    any ink choice, so set attacked_guard here too; it closes her catch and challenges. %>
+            {
+              "eventPattern": "npc_attacked:security_guard_patrol",
+              "onceOnly": true,
+              "setGlobal": { "attacked_guard": true }
             },
             {
-              "eventPattern": "room_entered:server_room",
+              "eventPattern": "global_variable_changed:ghost_keys_used",
+              "condition": "value === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1000, "message": "Server room. This is the heart of it. VM terminal for exploitation, drop-site for flag submission. Use both." }
+              "sendTimedMessage": { "delay": 24000, "message": "Ghost's keys are running the restore, ward first. The other half: the keys are Ghost's, so whatever they decrypt, Ghost can reach again. We'll be weeks getting them out." }
+            },
+<%# U2: every route past Val counts -- her clearance, a pick in her blind spot, or a KO
+    and her key. The room is the only way to the server room. Gated on the burn so a
+    player who picked the door early still completes it on the way back through. %>
+            {
+              "eventPattern": "room_entered:security_office",
+              "condition": "globalVars.cover_burned === true",
+              "onceOnly": true,
+              "setGlobal": { "reached_security_office": true },
+              "completeTask": "regain_freedom_of_movement"
             },
             {
               "eventPattern": "objective_task_completed:access_server_room",
               "onceOnly": true,
-              "setGlobal": { "scanning_guide_offered": true },
-              "sendTimedMessage": { "delay": 1800, "message": "Before you go hot on this box, I can send a scanning and recon field guide -- fast host/service triage and how to avoid blind spots." }
-            },
-            {
-              "eventPattern": "objective_task_completed:access_server_room",
-              "onceOnly": true,
-              "setGlobal": { "ssh_guide_offered": true },
-              "sendTimedMessage": { "delay": 3600, "message": "Once you've mapped it, you'll want a foothold over SSH. I've got a field guide on SSH access and bruteforcing weak credentials with Hydra -- say the word and it's yours." }
+              "setGlobal": { "scanning_guide_offered": true, "ssh_guide_offered": true },
+              "sendTimedMessage": { "delay": 1800, "message": "Server room. The Kali terminal's your attack box, the drop-site takes the flags. Map the backup server, then get an SSH foothold. Recon and SSH guides on request." }
             },
             {
               "eventPattern": "object_interacted",
               "condition": "data.objectType === 'vm-launcher'",
               "onceOnly": true,
               "setGlobal": { "scanning_exploitation_guide_offered": true },
-              "sendTimedMessage": { "delay": 1200, "message": "You're on the Kali terminal -- that's your attack box for this op. If you want the whole path in one place, from the first Nmap scan through to a validated Metasploit shell, I can send you the scanning-and-exploitation field guide. Just say the word." }
+              "sendTimedMessage": { "delay": 1200, "message": "You're on the Kali terminal, your attack box. Want the whole path, from the first Nmap scan to a Metasploit shell? Ask for the scanning-and-exploitation guide." }
             },
             {
               "eventPattern": "objective_task_completed:submit_ssh_flag",
               "onceOnly": true,
-              "setGlobal": { "flag_ssh_submitted": true }
-            },
-            {
-              "eventPattern": "objective_task_completed:submit_ssh_flag",
-              "onceOnly": true,
-              "setGlobal": { "vulnerability_guide_offered": true },
-              "sendTimedMessage": { "delay": 1800, "message": "SSH foothold confirmed. I can send a vulnerability analysis guide for attack-surface triage before you commit to the exploit chain." }
-            },
-            {
-              "eventPattern": "objective_task_completed:submit_ssh_flag",
-              "onceOnly": true,
-              "setGlobal": { "exploitation_guide_offered": true },
-              "sendTimedMessage": { "delay": 4200, "message": "I also have a dedicated ProFTPD exploitation guide -- Metasploit workflow, handler setup, and failure recovery. Ask if you want it." }
-            },
-            {
-              "eventPattern": "objective_task_completed:submit_ssh_flag",
-              "onceOnly": true,
-              "setGlobal": { "privesc_guide_offered": true },
-              "sendTimedMessage": { "delay": 5600, "message": "That foothold won't be root yet. If you hit files you can't read, I can send a privilege escalation field guide -- sudo enumeration and pivoting to the account that can. Ask when you need it." }
+              "setGlobal": { "flag_ssh_submitted": true, "vulnerability_guide_offered": true, "exploitation_guide_offered": true, "privesc_guide_offered": true },
+              "sendTimedMessage": { "delay": 1800, "message": "SSH foothold confirmed. Not root yet. Three guides for the next stretch: vulnerability analysis, ProFTPD exploitation, and privilege escalation. Ask for whichever you need." }
             },
             {
               <%# Was chained through global_variable_changed:flag_ghost_log_submitted purely to
@@ -999,7 +996,7 @@ boardroom_pin = "0417"
                   debrief line. Owning the full backdoor chain is the moment the attacker's route
                   into this estate stops being theirs, so it is set here. %>
               "setGlobal": { "flag_ghost_log_submitted": true, "backdoor_fully_exploited": true, "network_isolated": true },
-              "sendTimedMessage": { "delay": 1500, "message": "That's the full backdoor chain -- SSH, ProFTPD, database, and Ghost's own operational logs. You've got everything ENTROPY had on this hospital, and their staging cache in the rack has just opened. Ghost's own key material should be in there. Take it.\n\nThen the Hospital Recovery Console. Bring the patients' systems back online -- that's how we finish this." }
+              "sendTimedMessage": { "delay": 1500, "message": "That's the full backdoor chain, and their staging cache in the rack has just opened. Ghost's key material should be in there. Take it, then the Recovery Console." }
             },
 <%# Flag-reward artefacts. The console reads the inventory for these items; the
     globals only drive HaX's lines, the console's observation text and the Ink. %>
@@ -1008,21 +1005,21 @@ boardroom_pin = "0417"
               "condition": "data.itemId === 'verified_restore_manifest'",
               "onceOnly": true,
               "setGlobal": { "restore_manifest_obtained": true },
-              "sendTimedMessage": { "delay": 6000, "message": "The drop-site's cut you a restore manifest from that catalogue -- it's in your kit. Read it. Every snapshot since Tuesday night carries their dropper, which is why the recovery console has refused to touch anything.\n\nIt will now. What's left is which keys you hand it, and how fast that gets the wards back." }
+              "sendTimedMessage": { "delay": 6000, "message": "The drop-site's cut you a restore manifest. Every snapshot since Tuesday carries their dropper, which is why the console refused. What's left is which keys you hand it." }
             },
             {
               "eventPattern": "item_picked_up:text_file",
               "condition": "data.itemId === 'entropy_key_material'",
               "onceOnly": true,
               "setGlobal": { "ghost_key_material_obtained": true },
-              "sendTimedMessage": { "delay": 1500, "message": "Ghost's own key material -- the thing they meant to sell back to St. Catherine's for a hundred and fifty grand. Wrapped, useless on its own, which is why it was sitting in a box in the rack. Put it next to the offline escrow set from the storage safe and the console can run the four-hour restore." }
+              "sendTimedMessage": { "delay": 1500, "message": "Ghost's own key material. Pair it with the offline escrow set from the safe and the console runs a four-hour restore." }
             },
             {
               "eventPattern": "global_variable_changed:gary_ko",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "obtain_password_hints",
-              "sendTimedMessage": { "delay": 2000, "message": "Gary is down -- you won't be getting those password hints out of him now. Doesn't matter: he wrote them on a sticky note by his monitor. Grab it. Same weak credentials unlock the backup server over SSH." }
+              "sendTimedMessage": { "delay": 2000, "message": "Gary's down, so no password hints from him now. He wrote them on a sticky note by his monitor. Grab it. Same credentials unlock the backup server over SSH." }
             },
 <%# Seven different things set insider_evidence_partial (the Proposal, the Night
     Rota, Val's notebook and drill answer, Kim's fire_drill knot, the ENTROPY Asset Tag,
@@ -1039,7 +1036,7 @@ boardroom_pin = "0417"
               "eventPattern": "global_variable_changed:insider_evidence_partial",
               "condition": "value === true && !globalVars.read_handover_board && !globalVars.insider_badge_id_found",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "That goes in the file. Somebody on the staff here has been working for ENTROPY, and they have had the run of this building at night. Keep pulling. What you take off their backup server should tell us which badge." }
+              "sendTimedMessage": { "delay": 1500, "message": "That goes in the file. Somebody on staff has been working for ENTROPY, with the run of the building at night. Their backup server should name the badge." }
             },
             {
               "eventPattern": "objective_task_completed:submit_database_flag",
@@ -1054,7 +1051,7 @@ boardroom_pin = "0417"
               "onceOnly": true,
               "setGlobal": { "insider_db_window_found": true },
               "completeTask": "unmask_db_window",
-              "sendTimedMessage": { "delay": 2500, "message": "The backup logs show it -- the planted device went live during a 'fire drill' six weeks ago. An internal badge authorised the contractor sweep that installed it. Not an outsider. Someone with access authority here." }
+              "sendTimedMessage": { "delay": 2500, "message": "The backup logs show it. The device went live during a 'fire drill' six weeks ago, and an internal badge authorised the sweep that installed it." }
             },
             {
               <%# Was chained through global_variable_changed:backdoor_fully_exploited purely to
@@ -1064,46 +1061,39 @@ boardroom_pin = "0417"
               "onceOnly": true,
               "setGlobal": { "insider_badge_id_found": true },
               "completeTask": "unmask_ghost_badge",
-              "sendTimedMessage": { "delay": 2600, "message": "Ghost's log names the badge -- #SC-4471 -- and the shift timestamps that confirmed their window. Find whose post that badge sits on and you've got your inside asset." }
+              "sendTimedMessage": { "delay": 2600, "message": "Ghost's log names the badge: SC-4471, with the timestamps that confirmed their window. Find that post's log, then put a name to it." }
             },
+<%# Pass 4: the player makes the deduction. Reading the boardroom post log with the
+    badge in hand only confirms WHICH POST badge SC-4471 sits on; HaX never says the
+    name. insider_identified (and unmask_identify) come from the player naming him --
+    to HaX from the phone hub, or to his face in the boardroom (m02_npc_asset.ink).
+    Both orderings of badge/post log are wired; only the later global fires. This
+    replaces four naming texts, two of which arrived together on the flag-4 submit.
+    concludeRequires is flags-only, so an unnamed insider costs score, never the ending. %>
             {
               "eventPattern": "global_variable_changed:insider_badge_id_found",
-              "condition": "globalVars.inspected_asset_post === true",
+              "condition": "globalVars.inspected_asset_post === true && !globalVars.insider_identified",
               "onceOnly": true,
-              "setGlobal": { "insider_identified": true },
-              "completeTask": "unmask_identify",
-              "sendTimedMessage": { "delay": 4200, "message": "Badge SC-4471 belongs to Graham Reeves. Night security supervisor. The polite man in the plain suit standing beside the comms terminal in the conference room.\n\nAnd check the timing: that call to the security desk about you came from an internal extension in the conference room block. He authorised the fire drill, he pulled your booking, and he has been standing next to the evidence all night being helpful. Your call how you handle him." }
+              "sendTimedMessage": { "delay": 4200, "message": "You've read the boardroom post log, and SC-4471 stands the comms watch there. You've met him. Message me the name, or say it to his face." }
             },
             {
               "eventPattern": "global_variable_changed:inspected_asset_post",
-              "condition": "globalVars.insider_badge_id_found === true",
+              "condition": "globalVars.insider_badge_id_found === true && !globalVars.insider_identified",
               "onceOnly": true,
-              "setGlobal": { "insider_identified": true },
-              "completeTask": "unmask_identify",
-              "sendTimedMessage": { "delay": 2000, "message": "That post log seals it. Badge SC-4471 is Graham Reeves -- the night security supervisor stationed on that comms terminal. He authorised a fire drill facilities never scheduled, and the call that pulled your booking came from an extension on his post. He is the inside asset. Your call how you handle him." }
+              "sendTimedMessage": { "delay": 2000, "message": "There it is. SC-4471 is the supervisor on this post, the same badge that signed off that fire drill. Message me the name, or say it to his face." }
             },
-            <%# Redundant naming routes. The post log is only one of three
-                independent pointers at Reeves (Val's notebook, the night rota,
-                the post log) and all three set insider_evidence_partial. Gating
-                unmask_identify on the post log ALONE soft-locked the mission
-                conclusion for any player who found one of the other two
-                instead: the aim gate never cleared and the game stayed
-                in_progress forever. Both orderings are wired, as above. %>
             {
               "eventPattern": "global_variable_changed:insider_evidence_partial",
-              "condition": "globalVars.insider_badge_id_found === true",
+              "condition": "globalVars.insider_badge_id_found === true && !globalVars.inspected_asset_post && !globalVars.insider_identified",
               "onceOnly": true,
-              "setGlobal": { "insider_identified": true },
-              "completeTask": "unmask_identify",
-              "sendTimedMessage": { "delay": 2000, "message": "That is the name. Badge SC-4471 is Graham Reeves -- night security supervisor, posted on the comms terminal, and on nobody's rota. He authorised a contractor sweep facilities never scheduled, and the call that pulled your booking came from an extension on his post. He is the inside asset. Your call how you handle him." }
+              "sendTimedMessage": { "delay": 2000, "message": "That's more on the inside asset, and you've got a badge number off their log. The post that badge sits on keeps a log. Go and read it." }
             },
             {
-              "eventPattern": "global_variable_changed:insider_badge_id_found",
-              "condition": "globalVars.insider_evidence_partial === true",
+              "_comment": "Backstop: both naming routes (HaX's hub, Reeves' name_him) complete unmask_identify themselves; this covers any other setter. HaX confirms in her own knot; Reeves confirms it to the player's face.",
+              "eventPattern": "global_variable_changed:insider_identified",
+              "condition": "value === true",
               "onceOnly": true,
-              "setGlobal": { "insider_identified": true },
-              "completeTask": "unmask_identify",
-              "sendTimedMessage": { "delay": 4200, "message": "Badge SC-4471 -- and you already have the name to put against it. Graham Reeves, night security supervisor, standing beside the comms terminal being helpful all night. He authorised the sweep, he pulled your booking, and he appears on no rota anybody will admit to. Your call how you handle him." }
+              "completeTask": "unmask_identify"
             },
             {
               "eventPattern": "item_picked_up:notes",
@@ -1116,27 +1106,20 @@ boardroom_pin = "0417"
               "eventPattern": "global_variable_changed:offline_keys_recovered",
               "condition": "value === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1000, "message": "The offline escrow keys. That's your alternative to paying the ransom -- twelve hours on their own, four if you can pair them with the key material Ghost has been sitting on. The recovery console in the server room will take them once it has a clean restore point to work from." }
+              "sendTimedMessage": { "delay": 1000, "message": "The offline escrow keys. Your alternative to paying: twelve hours alone, four paired with Ghost's key material. The console takes them once it has a clean restore point." }
             },
             {
               "eventPattern": "global_variable_changed:pin_cracker_found",
               "condition": "value === true",
               "onceOnly": true,
               "setGlobal": { "infoleak_note_offered": true },
-              "sendTimedMessage": { "delay": 2000, "message": "Hold on -- what you just pulled out of that case is one of theirs. An ENTROPY keypad oracle. It doesn't guess the safe code, it leaks it: every wrong try, it tells you how many digits are right and how many are simply present, and that feedback walks you straight in. Textbook information-leak attack -- it's the board game Mastermind wearing a hardware badge. Want the field note on how the oracle works? Say the word and it's on your terminal." }
-            },
-            {
-              "eventPattern": "global_variable_changed:ransom_decision_made",
-              "condition": "value === true",
-              "onceOnly": true,
-              "setGlobal": { "ransom_decision_acknowledged": true },
-              "sendTimedMessage": { "delay": 2000, "message": "Decision logged. Whatever the board chooses, you've done your part." }
+              "sendTimedMessage": { "delay": 2000, "message": "That case holds an ENTROPY keypad oracle. Every wrong try tells you how many digits are right and how many present. That leaks the code. Want the field note?" }
             },
             {
               "eventPattern": "global_variable_changed:board_coverup_email_found",
               "condition": "value === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 2000, "message": "That email is damning. The board was planning to scapegoat Gary before the ink was even dry. Talk to Dr. Kim -- she needs to know what her board has decided to do." }
+              "sendTimedMessage": { "delay": 2000, "message": "That email is damning. The board meant to scapegoat Gary before the ink was dry. Talk to Dr. Kim. She needs to know what her board has decided." }
             },
             {
               "eventPattern": "global_variable_changed:backup_restore_initiated",
@@ -1172,10 +1155,58 @@ boardroom_pin = "0417"
               "setGlobal": { "paid_ransom": false, "ransom_decision_made": true, "ward_recovering": true },
               "completeTask": "make_ransom_decision"
             },
+<%# Pass 4: Ghost's keys (the deal made on the video call at the console). Under an
+    hour and no money, so the ward recovers like the paid route; the price is the
+    promise to publish at the press terminal, which the player can still break. %>
+            {
+              "eventPattern": "global_variable_changed:backup_recovery_source",
+              "condition": "value === 'ghost_keys'",
+              "onceOnly": true,
+              "setGlobal": { "paid_ransom": false, "ransom_decision_made": true, "ward_recovering": true, "ghost_keys_used": true },
+              "completeTask": "make_ransom_decision"
+            },
+<%# Pass 4: the press-terminal pointer waits while Bed 4 is in danger. On the slow
+    path HaX sends the player to the ward first (slow_path_window_open below) and only
+    points at the boardroom once Mr Pryce is stabilised or lost. %>
             {
               "eventPattern": "objective_task_completed:make_ransom_decision",
+              "condition": "!globalVars.slow_path_window_open",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 5000, "message": "Recovery decision logged. One more thing before this is over -- the conference room has a hospital communications terminal. The evidence you found tonight. What you do with it is your call." }
+              "sendTimedMessage": { "delay": 12000, "message": "Restore's running. One more thing before this is over -- the boardroom has the hospital communications terminal, and you're carrying tonight's evidence. What goes out on it is your call." }
+            },
+            {
+              "eventPattern": "global_variable_changed:slow_path_window_open",
+              "condition": "value === true && !globalVars.patient_bed4_ko",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 6000, "message": "The ward's radioed. Bed 4's alarming: Mr Pryce's ventilator's out of sync, no relay to the desk. Nobody's coming for him in time. You're the nearest hands. Get there." }
+            },
+            {
+              "eventPattern": "global_variable_changed:bed4_manually_stabilised",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 4000, "message": "The ward says he's breathing and a nurse has the bag. That was you. When you're ready, the boardroom terminal is the last call, and it's yours." }
+            },
+            {
+              "eventPattern": "global_variable_changed:patient_bed4_deceased",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 6000, "message": "The ward's just told me about Bed 4. I'm sorry. There's one thing left tonight, when you can face it: the communications terminal in the boardroom." }
+            },
+<%# Pass 4: patients can be punched (player-combat.js has no non-combatant flag; logged
+    for the engine). The story owns it: HaX reacts on the first blow, and the debrief
+    and credits read patient_assaulted and the per-bed KO globals. %>
+<% %w[patient_bed2 patient_bed4 patient_bed5].each do |bed| %>
+            {
+              "eventPattern": "npc_attacked:<%= bed %>",
+              "onceOnly": true,
+              "setGlobal": { "patient_assaulted": true }
+            },
+<% end %>
+            {
+              "eventPattern": "global_variable_changed:patient_assaulted",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1200, "message": "What are you doing? That is a patient in a hospital bed. Whatever you think you saw, stop. Now." }
             }
           ]
         },
@@ -1226,17 +1257,31 @@ boardroom_pin = "0417"
               "conversationMode": "phone-chat",
               "targetKnot": "on_backup_located"
             },
+<%# Pass 4: the offer has to come BEFORE the console choice it is meant to change.
+    It used to fire on initiate_backup_recovery, after the source was already locked
+    in. Now it cuts in the first time the player uses the console once it can restore
+    (manifest in hand). The video call closes the console; the player reopens it with
+    Ghost's answer known. ghost_offer_made is set by the knot, so a reload can't replay it. %>
             {
-              "eventPattern": "objective_task_completed:initiate_backup_recovery",
+              "eventPattern": "object_interacted",
+              "condition": "data.objectType === 'backup_recovery' && globalVars.restore_manifest_obtained === true && !globalVars.backup_restore_initiated && !globalVars.ghost_offer_made",
               "onceOnly": true,
               "conversationMode": "video-call",
               "targetKnot": "on_recovery_console"
             },
             {
+              "_comment": "Second and last ask, for a player who said 'I need time to think': the next console use.",
+              "eventPattern": "object_interacted",
+              "condition": "data.objectType === 'backup_recovery' && globalVars.ghost_offer_made === true && !globalVars.ghost_deal_accepted && !globalVars.ghost_deal_refused && !globalVars.backup_restore_initiated",
+              "onceOnly": true,
+              "conversationMode": "video-call",
+              "targetKnot": "on_console_again"
+            },
+            {
               "eventPattern": "global_variable_changed:offline_keys_recovered",
               "condition": "value === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 3000, "message": "You found the physical keys. Clever. 30 minutes to full recovery versus however long your manual restore takes. The patients are waiting." }
+              "sendTimedMessage": { "delay": 3000, "message": "You found the physical keys. Clever. 30 minutes to full recovery, against whatever your manual restore takes. The patients are waiting." }
             }
           ]
         },
@@ -1272,7 +1317,14 @@ boardroom_pin = "0417"
               "targetKnot": "start",
               "background": "assets/backgrounds/hq1.png",
               "disableClose": true
-            }
+            }<% %w[reception_lobby hospital_ward it_department server_room emergency_equipment_storage dr_kim_office conference_room security_office office_corridor staff_room ward_hall ward_vestibule ward_approach].each do |r| %>,
+            {
+              "_comment": "Backstop for the Reeves ambush (pass 4). The press terminal defers mission_complete to the ambush when the insider was never named; if a reload lands between the two, or the ambush never opened, the next room entry ends the mission so it can't stall.",
+              "eventPattern": "room_entered:<%= r %>",
+              "condition": "globalVars.awaiting_ambush === true && !globalVars.mission_complete",
+              "onceOnly": true,
+              "setGlobal": { "insider_asset_escaped": true, "mission_complete": true }
+            }<% end %>
           ]
         }
       ],
@@ -1283,7 +1335,7 @@ boardroom_pin = "0417"
           "name": "Reception Desk Visitor Log",
           "takeable": false,
           "readable": true,
-          "text": "ST. CATHERINE'S REGIONAL -- NIGHT VISITOR LOG (PAPER FALLBACK)\n\n22:40  G. WHITLOCK (IT Systems) -- on site, no sign-out\n23:15  DR S. KIM (CTO) -- on site\n01:02  ~~EXTERNAL SECURITY CONSULTANT -- emergency response -- auth: DR S. KIM~~\n       ^ struck through. Different biro. No initials against the amendment.\n03:20  G. REEVES (night security supervisor) -- \"posted\", declined to sign\n\nB.N. note in the margin: \"Who crossed this out? Not me.\"",
+          "text": "ST. CATHERINE'S REGIONAL -- NIGHT VISITOR LOG (PAPER FALLBACK)\n\n22:40  G. WHITLOCK (IT Systems) -- on site, no sign-out\n23:15  DR S. KIM (CTO) -- on site\n01:02  EXTERNAL SECURITY CONSULTANT -- emergency response -- auth: DR S. KIM  [struck through, different pen, no initials]\n       ^ struck through. Different biro. No initials against the amendment.\n03:20  G. REEVES (night security supervisor) -- \"posted\", declined to sign\n\nB.N. note in the margin: \"Who crossed this out? Not me.\"",
           "observations": "The paper fallback log. Your booking is on it -- and somebody has scored a line through it in different ink, with no initials against the change.",
           "observationDisplay": "gameDisplay",
           "onRead": { "setVariable": { "noticed_struck_booking": true } },
@@ -1302,6 +1354,7 @@ boardroom_pin = "0417"
           "observations": "Bronze plaque by the doors. Founded 1987.",
           "puzzle_graph_role": "clue",
           "puzzle_graph_unlocks": "emergency_storage_safe",
+          "puzzle_graph_optional": true,
           "puzzle_graph_reveals": "hospital_founding_year_1987_is_the_safe_pin"
         },
         {
@@ -1411,7 +1464,7 @@ boardroom_pin = "0417"
               "id": "bank_staff_lanyard",
               "observations": "A spare agency-nurse lanyard from the ward office drawer. Not your name, not your face -- but it is real hospital issue, and at three in the morning that is most of the battle.",
               "puzzle_graph_role": "key",
-              "puzzle_graph_unlocks": "lock_guard_challenge",
+              "puzzle_graph_unlocks": "security_office",
               "puzzle_graph_optional": true
             }
           ],
@@ -1451,8 +1504,8 @@ boardroom_pin = "0417"
             "style": "Staff nurse, late twenties, four hours into doing the work of a monitoring system by hand. Consistent West Yorkshire accent -- Bradford, flat and quick. Brisk to the point of curt, not unkind, genuinely has no time for you. Talks while walking.",
             "language": "en-GB"
           },
-          "globalVarOnKO": "ward_nurse_ko",
-          "observations": "A second nurse moving bed to bed on manual obs rounds -- she hasn't noticed you yet.",
+          "globalVarOnKO": "raval_ko",
+          "observations": "A second nurse moving bed to bed on manual obs rounds. Too busy to stop.",
           "behavior": {
             "patrol": {
               "enabled": true,
@@ -1478,11 +1531,13 @@ boardroom_pin = "0417"
 <%# Phase 3: on Bed 4 deterioration Raval abandons her round and rushes to the bedside
     (the ink save even narrates "a nurse is already coming down the row to take over").
     Cosmetic urgency, NOT an auto-save — one nurse for 47 beds cannot be everywhere, which
-    is exactly why the player has to act. Guarded so a knocked-out nurse never reacts. %>
+    is exactly why the player has to act. Guarded so a knocked-out nurse never reacts.
+    Pass 4: Raval has her own KO global (raval_ko); sharing Doyle's silenced Doyle and
+    made the debrief blame the wrong nurse. %>
           "eventMappings": [
             {
               "eventPattern": "global_variable_changed:patient_bed4_state",
-              "condition": "value === 'distressed' && !globalVars.ward_nurse_ko",
+              "condition": "value === 'distressed' && !globalVars.raval_ko",
               "onceOnly": true,
               "bark": "Bed 4 -- I'm going. Out the way.",
               "barkDelay": 200,
@@ -1494,6 +1549,7 @@ boardroom_pin = "0417"
           "id": "patient_bed4",
           "displayName": "Mr Pryce",
           "npcType": "person",
+          "_comment": "Pass 4b: the engine static-NPC reach fix lets the player interact with Mr Pryce (staticSprite, bottom_half) from the north as well as the side and the foot, so the manual-ventilation save at the bedside is reachable from every approach. Nurse Raval, who runs here when Bed 4 alarms (m02_npc_roaming_nurse.ink bed4_assist), offers the same save as a second route, and HaX points at the side or the foot as the simplest line in.",
           "position": { "x": 3.088, "y": 6.646 },
           "spriteSheet": "bed_mr_pryce",
           "spriteConfig": { "idleFrame": 0 },
@@ -1511,6 +1567,7 @@ boardroom_pin = "0417"
             "immovable": true,
             "collisionBox": "bottom_half"
           },
+          "globalVarOnKO": "patient_bed4_ko",
           "observations": "An elderly patient in Bed 4. Connected to a ventilator that is still running. The monitoring screen above his bed is dark -- replaced by a paper chart clipped to the foot of the bed.",
 <%# Barks on deterioration. Distress = he calls out; critical = silent (past speaking);
     attended = a weak thanks after the player (or events) stabilise him. The manual-
@@ -1519,14 +1576,14 @@ boardroom_pin = "0417"
           "eventMappings": [
             {
               "eventPattern": "global_variable_changed:patient_bed4_state",
-              "condition": "value === 'distressed'",
+              "condition": "value === 'distressed' && !globalVars.patient_bed4_ko",
               "onceOnly": true,
               "bark": "*gasping* Nurse... the machine...",
               "barkDelay": 0
             },
             {
               "eventPattern": "global_variable_changed:patient_bed4_state",
-              "condition": "value === 'attended'",
+              "condition": "value === 'attended' && !globalVars.patient_bed4_ko",
               "onceOnly": true,
               "bark": "*ragged* ...ta.",
               "barkDelay": 0
@@ -1555,20 +1612,21 @@ boardroom_pin = "0417"
             "immovable": true,
             "collisionBox": "bottom_half"
           },
+          "globalVarOnKO": "patient_bed2_ko",
           "observations": "Mrs Hargreaves in Bed 2 -- on ECMO life support. The machine beside her still runs on backup power, but the central monitoring that would alert staff to problems is offline.",
 <%# Ambient deterioration only — she worsens as the night drags on (bed2_ambient_drift
     timer) and recovers when the systems come back. Never fatal. %>
           "eventMappings": [
             {
               "eventPattern": "global_variable_changed:patient_bed2_state",
-              "condition": "value === 'distressed'",
+              "condition": "value === 'distressed' && !globalVars.patient_bed2_ko",
               "onceOnly": true,
               "bark": "*fainter now* ...it's harder... to see the numbers, love.",
               "barkDelay": 1500
             },
             {
               "eventPattern": "global_variable_changed:ward_recovering",
-              "condition": "value === true",
+              "condition": "value === true && !globalVars.patient_bed2_ko",
               "onceOnly": true,
               "bark": "*a shaky breath* ...there's me screen. There it is.",
               "barkDelay": 2500
@@ -1597,34 +1655,35 @@ boardroom_pin = "0417"
             "immovable": true,
             "collisionBox": "bottom_half"
           },
+          "globalVarOnKO": "patient_bed5_ko",
           "observations": "Ms Chen in Bed 5. Post-op, alert, watching what's happening around her in the ward with quiet concern.",
 <%# The witness. Alert and articulate, she narrates what is happening to the sicker
     patients around her — the one voice on the ward that can. %>
           "eventMappings": [
             {
               "eventPattern": "global_variable_changed:patient_bed4_state",
-              "condition": "value === 'distressed'",
+              "condition": "value === 'distressed' && !globalVars.patient_bed5_ko",
               "onceOnly": true,
               "bark": "Bed 4's alarming. Nobody's coming — the desk can't see it. You. Do something.",
               "barkDelay": 800
             },
             {
               "eventPattern": "global_variable_changed:patient_bed4_deceased",
-              "condition": "value === true",
+              "condition": "value === true && !globalVars.patient_bed5_ko",
               "onceOnly": true,
               "bark": "...he's gone quiet. Oh, no. No. You were right there.",
               "barkDelay": 1200
             },
             {
               "eventPattern": "global_variable_changed:bed4_manually_stabilised",
-              "condition": "value === true",
+              "condition": "value === true && !globalVars.patient_bed5_ko",
               "onceOnly": true,
               "bark": "That's it. Keep the bag going. You just bought him the time nobody else could.",
               "barkDelay": 1000
             },
             {
               "eventPattern": "global_variable_changed:ward_recovering",
-              "condition": "value === true",
+              "condition": "value === true && !globalVars.patient_bed5_ko",
               "onceOnly": true,
               "bark": "The monitors are coming up. All down the row. Thank God.",
               "barkDelay": 2000
@@ -1789,6 +1848,22 @@ boardroom_pin = "0417"
           "globalVarOnKO": "gary_ko",
           "taskOnKO": "talk_to_gary",
           "observations": "Gary Whitlock has not moved from that chair since half ten. Four dead terminals in front of him and a printout of his own ignored emails on the desk, which tells you roughly how the night is going.",
+<%# Pass 4 (review fix 19): picking his filing cabinet in front of him opens a short
+    catch scene that can win him over. 360-degree LOS: it's a small office and he is
+    sat in it. Once only, so the next attempt picks normally. Like Val's catch, it
+    can't fire for a player holding any key until the "Switch to Lockpicking" LOS
+    fix lands in the engine (unlock-system.js key branch). %>
+          "los": { "enabled": true, "range": 400, "angle": 360, "visualize": false },
+          "eventMappings": [
+            {
+              "eventPattern": "lockpick_used_in_view",
+              "targetKnot": "on_cabinet_picked",
+              "conversationMode": "person-chat",
+              "background": "assets/backgrounds/hospital1.png",
+              "condition": "!globalVars.accused_wrong_suspect",
+              "onceOnly": true
+            }
+          ],
           "puzzle_graph_actions": [
             { "id": "social_engineer_gary", "label": "Win Gary over -- rapport, leverage, theft, or force", "unlocks_aim": "cover_compromised" }
           ],
@@ -1809,7 +1884,7 @@ boardroom_pin = "0417"
               "id": "gary_contractor_lanyard",
               "observations": "A blank contractor lanyard from Gary's drawer -- the sort IT issue to hardware engineers. Real hospital stock, no name on it. He will not hand it to somebody he has no reason to trust.",
               "puzzle_graph_role": "key",
-              "puzzle_graph_unlocks": "lock_guard_challenge",
+              "puzzle_graph_unlocks": "security_office",
               "puzzle_graph_optional": true
             }
           ]
@@ -1927,7 +2002,6 @@ boardroom_pin = "0417"
               "observations": "The seventh warning. Dated 8 November, sent to Dr. Kim and copied to the board secretariat. Show this to Gary and he will know you have actually read his file.",
               "onPickup": { "setVariable": { "gary_evidence_recovered": true } },
               "puzzle_graph_role": "clue",
-              "puzzle_graph_unlocks": "lock_gary_cooperation",
               "puzzle_graph_reveals": "leverage_route_to_gary_plus_institutional_negligence_evidence"
             },
             {
@@ -2070,9 +2144,9 @@ boardroom_pin = "0417"
           "id": "cyberchef_workstation",
           "name": "CyberChef Workstation",
           "takeable": true,
-          "observations": "Encoding/decoding workstation with Base64, ROT13, and Hex tools. Use this to decode the ransomware messages you've found.",
+          "observations": "Encoding/decoding workstation with Base64, ROT13 and hex tools. Anything in this room written to be unreadable at a glance, this will read.",
           "puzzle_graph_role": "tool",
-          "puzzle_graph_note": "Portable CyberChef tool -- required to decode the Base64 ransomware note and ROT13 recovery instructions"
+          "puzzle_graph_note": "Portable CyberChef tool -- decodes the ROT13 operator note taped inside the rack"
         },
         {
           "type": "backup_recovery",
@@ -2211,9 +2285,42 @@ boardroom_pin = "0417"
                 "icon": "[+]",
                 "bullets": [
                   "Recovery time: 4 hours -- both key types accelerate decryption significantly.",
-                  "Patient risk: Low -- well within backup power window.",
+                  "Patient risk: Low -- well within backup power window, but four hours is long for the frailest on the ward.",
                   "Cost: £0 to ENTROPY -- no ransom payment required.",
                   "Prerequisite: the verified restore manifest, the offline escrow keys, and ENTROPY's own key material off their staging hardware."
+                ]
+              },
+              {
+                "id": "ghost_keys",
+                "name": "Ghost's Keys (Free, On Ghost's Terms)",
+                "compromised": false,
+                "etaHours": 1,
+                "needs": ["manifest"],
+                "requiresGlobal": "ghost_deal_accepted",
+                "requiresGlobalLabel": "Nobody is offering these keys for free. Not yet.",
+                "outcomeTone": "warning",
+                "outcomeHeader": "RESTORE INITIATED -- KEYS SUPPLIED BY THE ATTACKER, UNPAID",
+                "outcomeStatus": "CLINICAL SYSTEMS DECRYPTING -- ETA UNDER AN HOUR",
+                "outcomeBullets": [
+                  "The keys Ghost transmitted work. Ghost wanted you to know they would.",
+                  "Ghost's restore brings ward monitoring up first -- inside the hour.",
+                  "Not a penny reaches Ransomware Incorporated.",
+                  "Every host these keys decrypt is a host Ghost can reach again. The attacker stays in your network.",
+                  "Ghost has your word that tonight's evidence goes public. The press terminal will find out whether you keep it."
+                ],
+                "status": "UNDER AN HOUR -- GHOST KEEPS A WAY IN",
+                "etaLabel": "under an hour",
+                "marker": "?",
+                "statusTone": "warning",
+                "bannerTone": "warning",
+                "bannerText": "CAUTION: FASTEST -- AND GHOST KEEPS A WAY IN",
+                "icon": "[G]",
+                "bullets": [
+                  "Recovery time: under an hour -- Ghost's own decryption keys, ward monitoring restored first.",
+                  "Patient risk: Lowest of any route.",
+                  "Cost: £0 -- but the keys are Ghost's. Whatever they unlock, Ghost can reach again: the attacker keeps a foothold in this network.",
+                  "And the promise you made Ghost: publish the evidence.",
+                  "Prerequisite: the verified restore manifest, and Ghost's offer, accepted."
                 ]
               }
             ]
@@ -2538,7 +2645,7 @@ boardroom_pin = "0417"
           "takeable": true,
           "readable": true,
           "text": "CRITICAL PATIENT STATUS REPORT\n\n47 patients on life support:\n- 23 ventilators\n- 12 ECMO (heart-lung support)\n- 12 dialysis\n\nBackup power: 12 hours remaining\nStatistical risk: 0.3% per hour fatality probability\n\nDr. Kim's note: 'These are real people. Families. We can't let them die.'",
-          "observations": "Reinforces the stakes -- 47 real patients at risk",
+          "observations": "A printed status report on Kim's desk, with a line in her own hand at the bottom.",
           "observationDisplay": "gameDisplay"
         },
         {
@@ -2630,18 +2737,33 @@ boardroom_pin = "0417"
           },
           "globalVarOnKO": "night_security_supervisor_ko",
           "observations": "A composed man in a plain suit beside the comms terminal. Hospital lanyard, no uniform, no scrubs. He nods at you the way staff nod at other staff -- and he has been on the phone recently.",
+<%# Pass 4: the ambush used to fire on decide_hospital_exposure in the same pass that
+    the terminal set mission_complete, so the debrief cutscene and the ambush raced.
+    Now the terminal holds mission_complete back when the insider was never named and
+    sets awaiting_ambush instead; the ambush ink sets mission_complete as it closes.
+    The ambush is a walk-out, not a fight, so "escaped" and a KO can't both be true.
+    Backstops: Reeves' start knot resumes it, the terminal's start knot completes it,
+    and the room_entered mappings on closing_debrief_trigger complete it on the next
+    room change. Round 2: the scene has one player reply, so it can't be closed (disableClose). %>
           "eventMappings": [
             {
-              "eventPattern": "objective_task_completed:decide_hospital_exposure",
-              "condition": "!globalVars.insider_identified && !globalVars.insider_confronted",
+              "eventPattern": "global_variable_changed:awaiting_ambush",
+              "condition": "value === true && !globalVars.insider_identified && !globalVars.insider_confronted",
               "onceOnly": true,
               "conversationMode": "person-chat",
               "background": "assets/backgrounds/hospital1.png",
-              "targetKnot": "press_terminal_ambush"
+              "targetKnot": "press_terminal_ambush",
+              "disableClose": true
             },
             {
               "eventPattern": "global_variable_changed:insider_asset_arrested",
               "condition": "value === true && !globalVars.insider_hostile",
+              "onceOnly": true,
+              "setVisible": false
+            },
+            {
+              "eventPattern": "global_variable_changed:insider_asset_escaped",
+              "condition": "value === true",
               "onceOnly": true,
               "setVisible": false
             }
@@ -2695,7 +2817,7 @@ boardroom_pin = "0417"
           "takeable": false,
           "readable": true,
           "text": "ST. CATHERINE'S -- NIGHT SECURITY POST ASSIGNMENT\n\nPOST: Conference Room / Communications Relay\nDETAIL: Plainclothes, sensitive-comms watch (crisis protocol)\nSUPERVISOR ON POST: badge #SC-4471\nSHIFT: 22:00 -- 06:00\n\nACCESS HISTORY (this badge):\n- Authorised contractor entry, fire drill, six weeks ago (facilities override)\n- Comms relay room, recurring after-hours access\n\nNOTE: Same supervisor authorised the external 'fire safety' contractor sweep. No facilities record of a drill being scheduled that night.",
-          "observations": "The duty log for whoever is posted here -- badge #SC-4471, and an odd note about a fire drill six weeks ago that facilities never scheduled",
+          "observations": "The post log for whoever is posted here -- badge #SC-4471, and an odd note about a fire drill six weeks ago that facilities never scheduled",
           "onRead": { "setVariable": { "inspected_asset_post": true } },
           "puzzle_graph_role": "clue",
           "puzzle_graph_aim": "identify_inside_asset",
@@ -2727,94 +2849,17 @@ boardroom_pin = "0417"
         "width": 10,
         "height": 10
       },
+      "locked": true,
+      "lockType": "key",
+      "requires": "security_office_key",
+      "keyPins": [40, 30, 55, 35],
+      "difficulty": "easy",
       "door_sign": "Security Office",
       "connections": {
         "east": "office_corridor",
         "west": "server_room"
       },
-      "npcs": [
-        {
-          "id": "security_guard_patrol",
-          "displayName": "Val Okonkwo",
-          "npcType": "person",
-          "position": { "x": 4, "y": 5 },
-          "spriteSheet": "female_security_guard_v2",
-          "spriteTalk": "assets/characters/female_security_guard_talk.png",
-          "spriteVisemes": "assets/characters/female_security_guard_visemes.png",
-          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
-          "storyPath": "scenarios/m02_ransomed_trust/ink/m02_npc_security_guard.json",
-          "currentKnot": "start",
-          "voice": {
-            "name": "Leda",
-            "style": "Hospital security officer on nights. Consistent Liverpool / Scouse accent throughout. Warm and quick with a joke until the moment she isn't -- then completely immovable. Not stupid, not a jobsworth, genuinely believes the corridor is her responsibility.",
-            "language": "en-GB"
-          },
-          "globalVarOnKO": "guard_knocked_out",
-          "behavior": {
-            "patrol": {
-              "enabled": true,
-              "waypoints": [
-                { "x": 2, "y": 3, "dwellTime": 3000 },
-                { "x": 7, "y": 3 },
-                { "x": 7, "y": 7, "dwellTime": 2000 },
-                { "x": 2, "y": 7, "dwellTime": 3000 }
-              ],
-              "waypointMode": "sequential",
-              "speed": 40,
-              "loop": true
-            }
-          },
-          "los": {
-            "enabled": true,
-            "range": 150,
-            "angle": 140,
-            "visualize": true
-          },
-          "eventMappings": [
-            {
-              "eventPattern": "lockpick_used_in_view",
-              "targetKnot": "on_lockpick_used",
-              "conversationMode": "person-chat",
-              "background": "assets/backgrounds/hospital1.png",
-              "onceOnly": false,
-              "cooldown": 30000
-            },
-            {
-              "eventPattern": "global_variable_changed:cover_burned",
-              "condition": "value === true",
-              "onceOnly": true,
-              "bark": "Control just rang. Says there's no consultant booked.",
-              "barkDelay": 1200,
-              "setPatrolSpeed": 62,
-              "setDwellMultiplier": 0.4,
-              "targetKnot": "cover_challenge"
-            },
-            {
-              "eventPattern": "room_entered:server_room",
-              "targetKnot": "on_server_room_access",
-              "conversationMode": "person-chat",
-              "background": "assets/backgrounds/hospital1.png",
-              "onceOnly": true
-            }
-          ],
-          "itemsHeld": [
-            {
-              "type": "notes",
-              "name": "Val's Pocket Notebook",
-              "id": "val_notebook",
-              "takeable": true,
-              "readable": true,
-              "text": "NIGHT LOG -- V. OKONKWO\n\n22:40  Whitlock (IT) in. Told him to go home. He didn't.\n23:15  Dr Kim in. Looked through me.\n01:02  Ext. consultant expected -- Kim's authorisation, per reception.\n03:20  Reeves on his post again. Sensitive comms, apparently.\n       Not on my rota. Not on ANY rota I've ever been given.\n       Asked Sandra in Estates. She's never heard of him either.\n       Raised it twice. Told twice it's \"crisis protocol\".\n\nNote to self: get that in writing before someone asks me why I let him stand there all night.",
-              "observations": "Val's own notebook. She has been quietly logging Graham Reeves for weeks and nobody upstairs wants to hear it.",
-              "observationDisplay": "gameDisplay",
-              "onRead": { "setVariable": { "insider_evidence_partial": true } },
-              "puzzle_graph_role": "clue",
-              "puzzle_graph_aim": "unmask_inside_asset",
-              "puzzle_graph_reveals": "val_independently_flagged_reeves_alternative_route_into_the_insider_thread"
-            }
-          ]
-        }
-      ],
+      "npcs": [],
       "objects": [
         {
           "type": "pc",
@@ -2824,7 +2869,7 @@ boardroom_pin = "0417"
           "takeable": false,
           "locked": true,
           "lockType": "ransomware_display",
-          "observations": "The security office workstation -- door logs, badge records, the lot. Encrypted with everything else, which is precisely why Val is stood in this room instead of sat at this desk.",
+          "observations": "The security office workstation -- door logs, badge records, the lot. Encrypted with everything else, which is precisely why Val is out on the corridor in front of this door instead of sat at this desk.",
           "onRead": { "setVariable": { "decoded_ransomware_note": true } },
           "puzzle_graph_role": "lock",
           "puzzle_graph_aim": "cover_compromised",
@@ -2907,7 +2952,119 @@ boardroom_pin = "0417"
         "north": "staff_room",
         "west": "security_office"
       },
-      "npcs": [],
+      "npcs": [
+        {
+          "_comment": "PASS 4 U2: Val is the turnstile on the security-office door, the only way to the server room (m06 checkpoint pattern). Routes: talk (lanyard / Bernie's vouch / earn_it -> #unlock_door:security_office), pick in her blind window, or KO her and take her key (itemsHeld drops on KO). WINDOW, computed the m06 way: the door is the corridor's west door, sprite centre (16, 80) room-local; a pick starts from a player sprite centre within 64 px of it and inside the floor, i.e. x 41-80, y 38-124 (2967 sample points). Val's eye is her sprite centre, 31 px above the waypoint feet point. At W1 (3, 3.5) facing west the whole area is 16-70 px away and 0-54 deg off-axis: SEEN, margins 40 px of range and 16 deg of cone. Facing east (on the east leg) it is 126-180 deg off-axis: SAFE. At W2 (7.5, 3.5) it is 160-204 px away: SAFE on range alone, either facing. Walking west she starts to see it at feet x ~184 and sees all of it from x ~144. Loop at speed 40: ~4 s dwell + ~1.6 s walk-in SEEN (~0.8 s partial), ~8.8 s SAFE. After the burn (speed 62, dwell x0.4) ~2.6 s seen, ~4.7 s safe. On spawn she faces down for the first dwell, which sees about a third of the area. Horizontal legs only, so the npc-los diagonal facing issue can't touch her. Range 110, not 150: at 150 the drawn cone reached 54 px into the security office; at 110 it reaches 14 px past the wall line. Round 2: the playtest measured NO pre-burn dwell (continuous motion, ~0.9 s seen per loop). Cause: npc-behavior.js re-targets a patrol every changeDirectionInterval (default 3000 ms, :323/:887) even mid-walk, and her 144 px leg takes 3.6 s at speed 40, so she turned before arriving and never dwelt; after the burn (speed 62, 2.3 s) she arrived in time. changeDirectionInterval 60000 lets her finish each leg. The post-burn window (2.6 s seen / 4.7 s safe) was confirmed in game 1392.",
+          "id": "security_guard_patrol",
+          "displayName": "Val Okonkwo",
+          "npcType": "person",
+          "position": { "x": 3, "y": 3.5 },
+          "spriteSheet": "female_security_guard_v2",
+          "spriteTalk": "assets/characters/female_security_guard_talk.png",
+          "spriteVisemes": "assets/characters/female_security_guard_visemes.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/m02_ransomed_trust/ink/m02_npc_security_guard.json",
+          "currentKnot": "start",
+          "voice": {
+            "name": "Leda",
+            "style": "Hospital security officer on nights. Consistent Liverpool / Scouse accent throughout. Warm and quick with a joke until the moment she isn't -- then completely immovable. Not stupid, not a jobsworth, genuinely believes the corridor is her responsibility.",
+            "language": "en-GB"
+          },
+          "globalVarOnKO": "guard_knocked_out",
+          "unlockable": ["security_office"],
+          "puzzle_graph_actions": [
+            { "id": "val_opens_office", "label": "Get Val to open the security office -- a lanyard, Bernie's word, or her own judgement", "unlocks_aim": "exploit_entropy_backdoor" }
+          ],
+          "behavior": {
+            "facePlayer": false,
+            "patrol": {
+              "enabled": true,
+              "pauseForPlayer": false,
+              "waypoints": [
+                { "x": 3, "y": 3.5, "dwellTime": 4000 },
+                { "x": 7.5, "y": 3.5, "dwellTime": 4000 }
+              ],
+              "waypointMode": "sequential",
+              "speed": 40,
+              "loop": true,
+              "changeDirectionInterval": 60000
+            }
+          },
+          "los": {
+            "enabled": true,
+            "range": 110,
+            "angle": 140,
+            "visualize": true
+          },
+          "eventMappings": [
+            {
+              "_comment": "Repeatable catch. cooldown 250, not 30000: with the E4 gate a long cooldown let the player pick freely in front of her for 30 s after one catch. Not 0 because of E21's duplicate listeners (see the m06 checkpoint guard). A hostile Val doesn't chat.",
+              "eventPattern": "lockpick_used_in_view",
+              "targetKnot": "on_lockpick_used",
+              "conversationMode": "person-chat",
+              "background": "assets/backgrounds/hospital1.png",
+              "condition": "!globalVars.attacked_guard",
+              "onceOnly": false,
+              "cooldown": 250
+            },
+            {
+              "eventPattern": "global_variable_changed:cover_burned",
+              "condition": "value === true",
+              "onceOnly": true,
+              "bark": "Control just rang. Says there's no consultant booked.",
+              "barkDelay": 1200,
+              "setPatrolSpeed": 62,
+              "setDwellMultiplier": 0.4,
+              "targetKnot": "cover_challenge"
+            },
+            {
+              "_comment": "The burn lands: the first time a burned player walks onto her corridor, she stops them. A KO'd Val is skipped by the engine.",
+              "eventPattern": "room_entered:office_corridor",
+              "condition": "globalVars.cover_burned === true && !globalVars.cover_restored && !globalVars.attacked_guard && !globalVars.val_opened_office",
+              "onceOnly": true,
+              "conversationMode": "person-chat",
+              "targetKnot": "cover_challenge",
+              "background": "assets/backgrounds/hospital1.png"
+            },
+            {
+              "_comment": "After-the-fact catch for a player who picked her door or slipped past while she wasn't looking.",
+              "eventPattern": "room_entered:server_room",
+              "condition": "!globalVars.val_opened_office && !globalVars.attacked_guard",
+              "targetKnot": "on_server_room_access",
+              "conversationMode": "person-chat",
+              "background": "assets/backgrounds/hospital1.png",
+              "onceOnly": true
+            }
+          ],
+          "itemsHeld": [
+            {
+              "type": "key",
+              "name": "Security Office Key",
+              "takeable": true,
+              "opens_lock": "security_office_key",
+              "keyPins": [40, 30, 55, 35],
+              "observations": "Val's key to the security office -- the one door between the main corridor and the server room. She never hands it to anybody.",
+              "puzzle_graph_role": "key",
+              "puzzle_graph_unlocks": "security_office",
+              "puzzle_graph_optional": true
+            },
+            {
+              "type": "notes",
+              "name": "Val's Pocket Notebook",
+              "id": "val_notebook",
+              "takeable": true,
+              "readable": true,
+              "text": "NIGHT LOG -- V. OKONKWO\n\n22:40  Whitlock (IT) in. Told him to go home. He didn't.\n23:15  Dr Kim in. Looked through me.\n01:02  Ext. consultant expected -- Kim's authorisation, per reception.\n03:20  Reeves on his post again. Sensitive comms, apparently.\n       Not on my rota. Not on ANY rota I've ever been given.\n       Asked Sandra in Estates. She's never heard of him either.\n       Raised it twice. Told twice it's \"crisis protocol\".\n\nNote to self: get that in writing before someone asks me why I let him stand there all night.",
+              "observations": "Val's own notebook. She has been quietly logging Graham Reeves for weeks and nobody upstairs wants to hear it.",
+              "observationDisplay": "gameDisplay",
+              "onRead": { "setVariable": { "insider_evidence_partial": true } },
+              "puzzle_graph_role": "clue",
+              "puzzle_graph_aim": "unmask_inside_asset",
+              "puzzle_graph_reveals": "val_independently_flagged_reeves_alternative_route_into_the_insider_thread"
+            }
+          ]
+        }
+      ],
       "objects": [
         {
           "type": "notes",
@@ -2991,11 +3148,11 @@ boardroom_pin = "0417"
         {
           "type": "id_badge",
           "id": "contractor_lanyard",
-          "name": "Spare Contractor Lanyard",
+          "name": "Wrapped Contractor Lanyard",
           "takeable": true,
           "observations": "A blank contractor lanyard in its wrapper, left on the side with somebody's reading glasses. IT issue, real hospital stock, no name on it. Somebody meant to take this back downstairs and didn't.",
           "puzzle_graph_role": "key",
-          "puzzle_graph_unlocks": "lock_guard_challenge",
+          "puzzle_graph_unlocks": "security_office",
           "puzzle_graph_optional": true
         }
       ]
@@ -3024,7 +3181,21 @@ boardroom_pin = "0417"
         "east": "ward_approach"
       },
       "npcs": [],
-      "objects": []
+<%# Pass 4 (review fix 20): one beat for an empty transit room -- the husband Bernie
+    walked round three wards (m02_npc_receptionist.ink, ask_situation). Flavour only. %>
+      "objects": [
+        {
+          "type": "notes",
+          "id": "vestibule_appointment_card",
+          "name": "Appointment Card on the Chairs",
+          "position": { "x": 2.25, "y": 3.7 },
+          "takeable": false,
+          "readable": true,
+          "text": "An outpatient appointment card. On the back, in capitals, pressed hard:\n\nLOOKING FOR MARGARET OKAFOR. WARD 3? ADMITTED TUESDAY, HER HIP.\nTHE SCREENS SAY NOTHING. NOBODY KNOWS WHERE ANYBODY IS.\nI AM IN THE CAR PARK. PLEASE.\n\nUnderneath, in a different biro: \"Found her. Ward 2, bed 11. Walked him round. -- B.N.\"",
+          "observations": "An appointment card left on the waiting chairs, written on by somebody whose hands were shaking. The building forgot where it had put his wife.",
+          "puzzle_graph_role": "flavour"
+        }
+      ]
     },
 
     "ward_approach": {
@@ -3137,12 +3308,15 @@ boardroom_pin = "0417"
     "bernie_trusts_player": false,
     "bernie_vouched": false,
     "bernie_gave_key": false,
-    "seen_picking_by_bernie": false,
     "noticed_struck_booking": false,
 
     "cover_burned": false,
     "cover_restored": false,
     "staff_lanyard_obtained": false,
+    "val_opened_office": false,
+    "val_met": false,
+    "val_caught_picking": false,
+    "reached_security_office": false,
     "insider_method_confirmed": false,
 
     "flag_ssh_submitted": false,
@@ -3169,9 +3343,14 @@ boardroom_pin = "0417"
     "pin_cracker_found": false,
     "infoleak_note_offered": false,
     "infoleak_note_requested": false,
+    "cyberchef_guide_offered": false,
+    "cyberchef_guide_requested": false,
 
     "ghost_contacted_player": false,
     "ghost_persuasion_attempted": false,
+    "ghost_offer_made": false,
+    "ghost_deal_refused": false,
+    "ghost_keys_used": false,
 
     "ransom_decision_made": false,
     "reviewed_consequences": false,
@@ -3196,7 +3375,6 @@ boardroom_pin = "0417"
     "read_operator_note": false,
     "read_handover_board": false,
     "found_safe_pin_clue": false,
-    "decoded_recovery_instructions": false,
 
     "guard_detections": 0,
     "guard_knocked_out": false,
@@ -3221,11 +3399,16 @@ boardroom_pin = "0417"
     "gary_ko": false,
     "dr_kim_ko": false,
     "ward_nurse_ko": false,
+    "raval_ko": false,
+    "patient_bed2_ko": false,
+    "patient_bed4_ko": false,
+    "patient_bed5_ko": false,
+    "patient_assaulted": false,
 
     "debrief_ready": false,
-    "ransom_decision_acknowledged": false,
 
     "insider_evidence_partial": false,
+    "val_notebook_given": false,
     "insider_db_window_found": false,
     "insider_badge_id_found": false,
     "inspected_asset_post": false,
@@ -3235,6 +3418,8 @@ boardroom_pin = "0417"
     "insider_asset_arrested": false,
     "insider_asset_escaped": false,
     "insider_asset_exposed": false,
+    "awaiting_ambush": false,
+    "insider_ambushed": false,
     "accused_wrong_suspect": false,
 
     "night_security_supervisor_ko": false

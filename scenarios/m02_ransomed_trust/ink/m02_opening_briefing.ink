@@ -26,28 +26,32 @@ EXTERNAL player_name()
 // ===========================================
 
 === start ===
-Narrator: A secure operations room. The wall screen holds a hospital floor plan gone entirely red. A tall man in a creased suit stands at the head of the table; you have heard the name, never shared the room.
+Narrator: A secure operations room. On the wall screen, a hospital floor plan gone entirely red. At the head of the table, a tall man in a creased suit you know only by name.
 
-Director Magnus Netherton: Agent 0x00. Magnus Netherton -- I run this shop. We have not met, and I would rather it were under better circumstances, but circumstances are rather the point tonight.
+Director Magnus Netherton: Agent 0x00. Magnus Netherton -- I run this shop. I would rather we had met under better circumstances, but circumstances are rather the point tonight.
 
-Director Magnus Netherton: I am not going to brief you myself. I have a handler who knows this one cold, and a hospital that is running out of time while I make introductions. HaX -- it's yours.
+Director Magnus Netherton: I have a handler who knows this one cold, and a hospital running out of time while I make introductions. HaX -- it's yours.
 
-Agent HaX: {player_name()}. I'll be quick -- a hospital doesn't have the patience for me to be slow.
+Agent HaX: {player_name()}. I'll be quick. The hospital can't afford slow.
 
-Agent HaX: St. Catherine's Regional went dark at 02:47 this morning. Every clinical system encrypted in the same minute. Patient monitoring, medication records, imaging -- all of it sitting behind a ransom screen.
+Agent HaX: St. Catherine's Regional went dark at 02:47 this morning. Every clinical system encrypted in the same minute.
 
-Agent HaX: Forty-seven people are on life support in there right now, running on backup generators. Twelve hours of power. Less, if anything trips. After that, the machines keeping them breathing start going quiet.
+Agent HaX: Monitoring, medication records, imaging. All of it behind a ransom screen.
+
+Agent HaX: Forty-seven people are on life support in there, running on backup generators. Twelve hours of power, less if anything trips.
+
+Agent HaX: After that, the machines keeping them breathing start going quiet.
 
 * [Who did this?]
-    Agent HaX: I'll give you the name and then I'll give you the part that matters, and they're not the same answer.
+    Agent HaX: There's a name, and there's the part that matters. Ask me in that order.
     -> briefing_hub
 
 * [Why is SAFETYNET on a ransomware call? Isn't this one for the police?]
     -> why_us
 
 * [Then we shouldn't be standing here. What do you need?]
-    Director Magnus Netherton: *from the head of the table* Good.
-    Agent HaX: Ask me what you need on the way, then. The car's downstairs either way.
+    Director Magnus Netherton: Good.
+    Agent HaX: Ask me on the way, then. The car's downstairs.
     -> briefing_hub
 
 // ===========================================
@@ -57,11 +61,11 @@ Agent HaX: Forty-seven people are on life support in there right now, running on
 === why_us ===
 #speaker:agent_0x99
 
-Agent HaX: Normally? You'd be right. The police work a hospital ransomware case most weeks. This one landed on our desk because of what you pulled out of Viral Dynamics last time.
+Agent HaX: Normally, yes. The police work a hospital ransomware case most weeks. This one's ours because of what you pulled out of Viral Dynamics.
 
-Agent HaX: Derek Lawson's outfit. Social Fabric. The intelligence from that op didn't just burn his cell -- it gave us the first real map of how ENTROPY's cells trade with each other. Who builds what. Who buys from whom.
+Agent HaX: Derek Lawson's cell, Social Fabric. That material gave us our first real map of how ENTROPY's cells trade with each other. Who builds what, who buys from whom.
 
-Agent HaX: One line in that material matches this attack almost exactly. So no. This isn't ordinary crime. This is them.
+Agent HaX: One entry in it matches this attack almost exactly. This is them.
 
 ~ knows_entropy_link = true
 -> briefing_hub
@@ -72,12 +76,12 @@ Agent HaX: One line in that material matches this attack almost exactly. So no. 
 
 === briefing_hub ===
 #speaker:agent_0x99
-{briefing_hub > 1: Agent HaX: Any other questions?}
+{briefing_hub > 1: Agent HaX: {&What else?|Anything else?|Go on.}}
 
-+ {not knows_entropy_link} [How can you be sure this is ENTROPY and not some ordinary crew?]
++ {not knows_entropy_link} [How can you be sure it's ENTROPY and not an ordinary crew?]
     -> q_entropy_link
 
-+ {not asked_zds} [You said the cells trade with each other. Trade what, exactly?]
++ {not asked_zds} [You said the cells trade with each other. Trade what?]
     -> q_zds
 
 + {not asked_ransomware} [So who actually pulled the trigger on this?]
@@ -95,11 +99,13 @@ Agent HaX: One line in that material matches this attack almost exactly. So no. 
 #speaker:agent_0x99
 ~ knows_entropy_link = true
 
-Agent HaX: Two things. First, the note in Derek's material -- Social Fabric was cataloguing the other cells, and one entry describes this playbook: exploit a neglected system, encrypt everything, squeeze a public service that can't afford downtime.
+Agent HaX: Two things. Social Fabric was cataloguing the other cells, and one entry describes this playbook exactly.
 
-Agent HaX: Second, the ransom note itself. Same signature we flagged in that intelligence. It's not the usual pay-or-else. It's clinical. Written like a business invoice. That is a tell.
+Agent HaX: Find a neglected system, encrypt everything, squeeze a public service that can't afford downtime.
 
-Agent HaX: ENTROPY doesn't do this for money alone. They do it to prove a point -- that everything you rely on is one unpatched box away from collapse. This is a lesson, and the patients are the chalkboard.
+Agent HaX: And the ransom note reads like a business invoice. Same signature we flagged in Derek's material.
+
+Agent HaX: ENTROPY want to show that everything you rely on is one unpatched box from collapse. The patients are their chalkboard.
 
 -> briefing_hub
 
@@ -107,11 +113,11 @@ Agent HaX: ENTROPY doesn't do this for money alone. They do it to prove a point 
 #speaker:agent_0x99
 ~ asked_zds = true
 
-Agent HaX: Exploits, mostly. The Zero Day Syndicate -- that's the name they trade under, and it was all through Derek's notes. ENTROPY's arms shop. Their whole business is finding and weaponising software flaws, then selling them on to whoever's paying.
+Agent HaX: Exploits, mostly. The Zero Day Syndicate, ENTROPY's arms shop. They find software flaws, weaponise them, and sell them to whoever's paying.
 
-Agent HaX: They didn't need anything clever here. St. Catherine's backup server is running software that's been known-vulnerable for years. A public advisory, a patch available the whole time. Nobody applied it.
+Agent HaX: Nothing clever needed here. St. Catherine's backup server runs software with a public advisory and a patch that's been out for years. Nobody applied it.
 
-Agent HaX: That's the ugly truth of it. Half the NHS is holding critical systems together with software this old. ENTROPY isn't breaking down the door -- the Syndicate just noticed it was never locked, and sold the address on.
+Agent HaX: Half the NHS is held together with software that old. The Syndicate noticed this door was never locked, and sold the address.
 
 -> briefing_hub
 
@@ -119,11 +125,15 @@ Agent HaX: That's the ugly truth of it. Half the NHS is holding critical systems
 #speaker:agent_0x99
 ~ asked_ransomware = true
 
-Agent HaX: A cell we hadn't confirmed until now -- but Derek's notes named them. Ransomware Incorporated. And they run exactly like the name says. Like a company. Professional ransom notes, a payment portal, even "support" for victims who get stuck paying.
+Agent HaX: A cell we hadn't confirmed until Derek's notes named them. Ransomware Incorporated.
 
-Agent HaX: They buy the way in from the Syndicate, then they specialise in the part that hurts -- hospitals, councils, anyone who'll pay fast because the alternative is unthinkable.
+Agent HaX: They run like a company. Professional ransom notes, a payment portal, even "support" for victims who get stuck paying.
 
-Agent HaX: The operative on the ground goes by Ghost. Cold. Methodical. Runs the numbers on how many people die at each hour of downtime and prices the ransom against it. Part of your job today is confirming this cell is real -- and everything you find in there that ties it back to the Syndicate is gold to us.
+Agent HaX: They buy the way in from the Syndicate and go after whoever will pay fastest. Hospitals. Councils.
+
+Agent HaX: The operative on the ground calls themselves Ghost. Ghost prices the ransom against how many people die for each hour of downtime.
+
+Agent HaX: Confirm the cell is real. Anything that ties it back to the Syndicate, bring it home.
 
 -> briefing_hub
 
@@ -131,11 +141,13 @@ Agent HaX: The operative on the ground goes by Ghost. Cold. Methodical. Runs the
 #speaker:agent_0x99
 ~ knows_stakes = true
 
-Agent HaX: Two clocks, and they're both bad. The generators give you twelve hours before life support starts failing. And the hospital board votes on paying the ransom in about four.
+Agent HaX: Two clocks. The generators give you twelve hours before life support starts failing. The hospital board votes on paying the ransom in about four.
 
-Agent HaX: If they pay, the systems come back fast -- and ENTROPY walks away a hundred and fifty thousand richer, funding the next hospital, the next council. If they refuse and you don't get those systems back in time, people die on the ward.
+Agent HaX: If they pay, the systems come back fast, and ENTROPY walks off a hundred and fifty thousand pounds richer. That funds the next hospital.
 
-Agent HaX: Your job is to take that choice off the table. Recover the decryption keys yourself, and nobody has to decide between their patients and their principles.
+Agent HaX: If they refuse and you're too slow, people die on the ward.
+
+Agent HaX: Recover the decryption keys yourself, and nobody has to choose between their patients and their principles.
 
 -> briefing_hub
 
@@ -146,11 +158,11 @@ Agent HaX: Your job is to take that choice off the table. Recover the decryption
 === mission_objectives ===
 #speaker:agent_0x99
 
-Agent HaX: Three things, then. Get inside St. Catherine's and reach their crisis lead -- she's expecting a security consultant.
+Agent HaX: Three things, then. Get inside St. Catherine's and reach their crisis lead. She's expecting a security consultant.
 
 Agent HaX: Get into their IT systems and find how the attackers got in. It'll be that neglected backup server.
 
-Agent HaX: Then turn their own backdoor against them -- exploit it, recover the decryption keys, and bring those patients' systems home before either clock runs out.
+Agent HaX: Then turn their own backdoor on them. Recover the decryption keys and bring those systems home before either clock runs out.
 
 * [What's my cover?]
     -> cover_story
@@ -164,29 +176,33 @@ Agent HaX: Then turn their own backdoor against them -- exploit it, recover the 
 === cover_story ===
 #speaker:agent_0x99
 
-Agent HaX: Their CTO, Dr. Sarah Kim, put out a call at one this morning for an emergency security consultant. We made sure you were the one who answered it.
+Agent HaX: Their CTO, Dr. Sarah Kim, put out a call at one this morning for an emergency security consultant. We made sure you answered it.
 
-Agent HaX: So this isn't a false flag. You are genuinely booked, genuinely expected, and there is genuinely a line in their visitor log with your job title on it. She has no idea SAFETYNET is involved and no idea this is ENTROPY. To her you're a contractor on a very bad night. Keep it that way.
+Agent HaX: So you're genuinely booked. There's a line in their visitor log with your job title on it.
+
+Agent HaX: Kim doesn't know SAFETYNET's involved, or that this is ENTROPY. To her you're a contractor on a very bad night. Keep it that way.
 
 + [Then what's the problem? I walk in the front door.]
     Agent HaX: You do. That's the easy half, and it's the half everyone plans for.
     -> security_warning
 
-+ [So how much access does being expected actually buy me?]
-    Agent HaX: Tonight? Rather less than it has ever bought anybody. Let me explain why.
++ [So how much access does being expected buy me?]
+    Agent HaX: Tonight? Less than it's ever bought anybody.
     -> security_warning
 
 === security_warning ===
 #speaker:agent_0x99
 
-Agent HaX: You walk in the front door and then you stop, because here is the thing everyone gets wrong about this one.
+Agent HaX: Here's what everyone gets wrong about this one.
 
-Agent HaX: Ransomware Incorporated encrypted the access control server along with the rest of the estate.
+Agent HaX: Ransomware Incorporated encrypted the access control server along with everything else.
 
-Agent HaX: Think about what that means. Not "the doors are locked down". The system that decides who is allowed where is itself sat behind the ransom screen. There is no permission left to give you. Kim can authorise you at the top of her voice and it will not move a single reader, because there is nothing in that building still listening.
+Agent HaX: The system that decides who's allowed where is behind the ransom screen. There's no permission left to give you.
+
+Agent HaX: Kim can authorise you all she likes. It won't move a single reader.
 
 * [So a badge is worthless.]
-    Agent HaX: A badge is a piece of card with your name on it. It proves a human being vouched for you. That is genuinely all it does tonight.
+    Agent HaX: A badge is a bit of card with your name on it. It proves a human being vouched for you. That's all it does tonight.
     -> security_routes
 
 * [Then how does anyone get through their own doors?]
@@ -195,19 +211,24 @@ Agent HaX: Think about what that means. Not "the doors are locked down". The sys
 === security_routes ===
 #speaker:agent_0x99
 
-Agent HaX: Same way they did it in 1987. Estates emptied every mechanical override onto the reception desk this morning, and beyond that it's whoever happens to be standing next to the door.
+Agent HaX: Old-fashioned. Estates emptied every mechanical override onto the reception desk. Beyond that, it's whoever's standing next to the door.
 
-Agent HaX: Which gives you three routes and no fourth. Get a member of staff to hand you a key or walk you through -- that's clean, and it's your first choice every time. Get hold of a physical credential that already exists. Or open it yourself, which you're equipped for, and which is a confession if anyone sees you do it.
+Agent HaX: So, three routes. Get a member of staff to give you a key or walk you through. That's clean, and it's your first choice every time.
 
-Agent HaX: This is a mission about people, {player_name()}. The lockpicks are what you use when you've failed at the actual job.
+Agent HaX: Or get hold of a physical credential that already exists.
+
+Agent HaX: Or open it yourself. You're equipped for that, and it's a confession if anyone sees you do it.
+
+Agent HaX: This is a mission about people, {player_name()}. The picks are for when you've failed at the actual job.
 
 + [Who's worth working on?]
-    Agent HaX: Three names. The night coordinator on reception has the override keys and eleven years of institutional memory. Dr. Kim has guilt, which is a lever whether you like it or not.
-    Agent HaX: And Gary Whitlock, their IT administrator. He flagged this exact weakness seven times and got told to stop escalating. He holds the server room card -- and that reader is on an isolated controller, so his card is the only working credential left in the entire building. Win him over.
+    Agent HaX: The night coordinator on reception has the override keys and eleven years of memory. Dr. Kim has guilt, which is a lever whether you like it or not.
+    Agent HaX: And Gary Whitlock, the IT administrator. He flagged this weakness seven times and was told to stop escalating.
+    Agent HaX: He holds the server room card. That reader's isolated, so his card is the only working credential in the building. Win him over.
     -> final_instructions
 
 + [Understood. I'll talk my way in where I can.]
-    Agent HaX: Do. And be pleasant to people who can't help you as well as people who can. You will not know which is which until about four in the morning.
+    Agent HaX: Do. And be pleasant to the people who can't help you as well. You won't know which is which until about four in the morning.
     -> final_instructions
 
 // ===========================================
@@ -218,15 +239,17 @@ Agent HaX: This is a mission about people, {player_name()}. The lockpicks are wh
 #speaker:agent_0x99
 
 {not asked_ransomware:
-    Agent HaX: One name before you go in. The operative running this calls themselves Ghost -- Ransomware Incorporated's own hand, the one who encrypted the place and set the price against a body count. Cold, and precise about it.
+    Agent HaX: One name before you go. The operative running this calls themselves Ghost. Ghost encrypted the place and set the price against a body count.
 }
 
-Agent HaX: Two more things. Ghost is still in the wires, watching that network. If they reach out, don't expect threats. Expect arithmetic. Don't let it get in your head.
+Agent HaX: Ghost is still in the wires, watching that network. If they reach out, it'll be arithmetic. Don't let it get in your head.
 
-Agent HaX: And be alert to the possibility that Ghost had help getting in. Fourteen months of preparation, and they picked the one hospital in the country with an immaculate paper trail of ignored warnings. That is not something you find with a scanner. That is something somebody tells you.
+Agent HaX: And Ghost may have had help. Fourteen months of preparation, and they picked the one hospital with a perfect paper trail of ignored warnings.
+
+Agent HaX: You don't find that with a scanner. Somebody tells you.
 
 {knows_stakes:
-    Agent HaX: And whatever the ward looks like in there -- those numbers on the board are on ENTROPY. Not on you. Just do the work and get the keys.
+    Agent HaX: Whatever the ward looks like in there, those numbers are on ENTROPY. Do the work and get the keys.
 }
 
 Agent HaX: Good luck, {player_name()}. Forty-seven lives, twelve hours. Go.

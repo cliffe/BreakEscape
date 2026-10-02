@@ -39,6 +39,18 @@
       "optional": false
     },
     {
+      "id": "door_security_office",
+      "label": "Security Office<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "security_office",
+      "label": "Security Office",
+      "kind": "room",
+      "optional": false
+    },
+    {
       "id": "reception_lobby",
       "label": "Reception",
       "kind": "room",
@@ -66,7 +78,7 @@
       "id": "hospital_founding_plaque",
       "label": "Hospital Founding Plaque",
       "kind": "item",
-      "optional": false
+      "optional": true
     },
     {
       "id": "lock_emergency_storage_safe",
@@ -153,12 +165,6 @@
       "optional": true
     },
     {
-      "id": "lock_lock_guard_challenge",
-      "label": "Lock Guard Challenge",
-      "kind": "lock",
-      "optional": false
-    },
-    {
       "id": "action_talk_to_ward_nurse",
       "label": "Hear from Sister Doyle what the outage costs -- and earn the safe code",
       "kind": "action",
@@ -222,12 +228,6 @@
       "id": "gary_s_email_archive_warning_7_of_7",
       "label": "Gary's Email Archive -- Warning 7 of 7",
       "kind": "item",
-      "optional": false
-    },
-    {
-      "id": "lock_lock_gary_cooperation",
-      "label": "Lock Gary Cooperation",
-      "kind": "lock",
       "optional": false
     },
     {
@@ -441,12 +441,6 @@
       "optional": false
     },
     {
-      "id": "security_office",
-      "label": "Security Office",
-      "kind": "room",
-      "optional": false
-    },
-    {
       "id": "lock_security_desk_terminal",
       "label": "Security Desk Terminal (Encrypted)<br/>Ransomware terminal",
       "kind": "lock",
@@ -471,18 +465,6 @@
       "optional": false
     },
     {
-      "id": "npc_val_okonkwo",
-      "label": "Val Okonkwo",
-      "kind": "key",
-      "optional": false
-    },
-    {
-      "id": "val_s_pocket_notebook",
-      "label": "Val's Pocket Notebook",
-      "kind": "item",
-      "optional": false
-    },
-    {
       "id": "office_corridor",
       "label": "Main Corridor",
       "kind": "room",
@@ -492,6 +474,30 @@
       "id": "ward_board",
       "label": "Ward Board",
       "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "npc_val_okonkwo",
+      "label": "Val Okonkwo",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "security_office_key",
+      "label": "Security Office Key",
+      "kind": "key",
+      "optional": true
+    },
+    {
+      "id": "val_s_pocket_notebook",
+      "label": "Val's Pocket Notebook",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "action_val_opens_office",
+      "label": "Get Val to open the security office -- a lanyard, Bernie's word, or her own judgement",
+      "kind": "action",
       "optional": false
     },
     {
@@ -521,6 +527,24 @@
     {
       "id": "ward_clerk_s_laptop",
       "label": "Ward Clerk's Laptop",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "wrapped_contractor_lanyard",
+      "label": "Wrapped Contractor Lanyard",
+      "kind": "key",
+      "optional": true
+    },
+    {
+      "id": "ward_vestibule",
+      "label": "Ward Vestibule",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "appointment_card_on_the_chairs",
+      "label": "Appointment Card on the Chairs",
       "kind": "item",
       "optional": false
     },
@@ -603,12 +627,6 @@
       "optional": false
     },
     {
-      "id": "ward_vestibule",
-      "label": "Ward Vestibule",
-      "kind": "room",
-      "optional": false
-    },
-    {
       "id": "ward_hall",
       "label": "Ward Link",
       "kind": "room",
@@ -632,6 +650,11 @@
       "soft": false
     },
     {
+      "from": "door_security_office",
+      "to": "security_office",
+      "soft": false
+    },
+    {
       "from": "reception_lobby",
       "to": "lock_pick_kit",
       "soft": true
@@ -647,6 +670,11 @@
       "soft": true
     },
     {
+      "from": "lock_pick_kit",
+      "to": "door_security_office",
+      "soft": true
+    },
+    {
       "from": "reception_lobby",
       "to": "reception_desk_visitor_log",
       "soft": false
@@ -654,12 +682,12 @@
     {
       "from": "reception_lobby",
       "to": "hospital_founding_plaque",
-      "soft": false
+      "soft": true
     },
     {
       "from": "hospital_founding_plaque",
       "to": "lock_emergency_storage_safe",
-      "soft": false
+      "soft": true
     },
     {
       "from": "reception_lobby",
@@ -728,7 +756,7 @@
     },
     {
       "from": "bank_staff_lanyard",
-      "to": "lock_lock_guard_challenge",
+      "to": "door_security_office",
       "soft": true
     },
     {
@@ -792,11 +820,6 @@
       "soft": false
     },
     {
-      "from": "gary_s_email_archive_warning_7_of_7",
-      "to": "lock_lock_gary_cooperation",
-      "soft": false
-    },
-    {
       "from": "lock_it_filing_cabinet",
       "to": "dr_kim_s_reply_21_may",
       "soft": false
@@ -838,7 +861,7 @@
     },
     {
       "from": "spare_contractor_lanyard",
-      "to": "lock_lock_guard_challenge",
+      "to": "door_security_office",
       "soft": true
     },
     {
@@ -1027,9 +1050,24 @@
       "soft": false
     },
     {
-      "from": "security_office",
+      "from": "office_corridor",
+      "to": "ward_board",
+      "soft": false
+    },
+    {
+      "from": "office_corridor",
       "to": "npc_val_okonkwo",
       "soft": false
+    },
+    {
+      "from": "npc_val_okonkwo",
+      "to": "security_office_key",
+      "soft": true
+    },
+    {
+      "from": "security_office_key",
+      "to": "door_security_office",
+      "soft": true
     },
     {
       "from": "npc_val_okonkwo",
@@ -1037,8 +1075,8 @@
       "soft": false
     },
     {
-      "from": "office_corridor",
-      "to": "ward_board",
+      "from": "npc_val_okonkwo",
+      "to": "action_val_opens_office",
       "soft": false
     },
     {
@@ -1068,13 +1106,18 @@
     },
     {
       "from": "staff_room",
-      "to": "spare_contractor_lanyard",
+      "to": "wrapped_contractor_lanyard",
       "soft": true
     },
     {
-      "from": "spare_contractor_lanyard",
-      "to": "lock_lock_guard_challenge",
+      "from": "wrapped_contractor_lanyard",
+      "to": "door_security_office",
       "soft": true
+    },
+    {
+      "from": "ward_vestibule",
+      "to": "appointment_card_on_the_chairs",
+      "soft": false
     },
     {
       "from": "ward_approach",
@@ -1179,11 +1222,6 @@
     {
       "from": "dr_kim_office",
       "to": "staff_room",
-      "soft": false
-    },
-    {
-      "from": "security_office",
-      "to": "office_corridor",
       "soft": false
     },
     {

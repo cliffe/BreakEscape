@@ -5,42 +5,51 @@
 // ===========================================
 
 VAR spoke_to_player = false
+// Pass 4 dialogue: re-entry line for a re-talk, skipped once after an answer or a goodbye.
+VAR hub_quiet = false
 
 === start ===
 {not spoke_to_player:
     ~ spoke_to_player = true
-    Narrator: She lowers her book.
-
-    Ms Chen: You'll be the one they've brought in about the computers.
+    Ms Chen: *lowering her book* You'll be the one they've brought in about the computers.
     -> first_words
 }
 {spoke_to_player:
-    Ms Chen: Any progress, or are we still guessing?
     -> hub
 }
 
 === first_words ===
 
-Ms Chen: They've told us it's a cyber attack. Ransomware, the young doctor said, as though that explained itself.
+Ms Chen: The young doctor said "ransomware", as though the word explained itself.
 
-Ms Chen: Forty years I taught in Edinburgh and I never once had to think about it. Now here we are.
+Ms Chen: Forty years I taught in Edinburgh and never once had to think about it.
 
-* [We're working on it. Your care isn't affected.]
-    Ms Chen: That's what the nurse said, and I believe her about me.
-    Ms Chen: But Mrs Hargreaves in bed two is on that machine, and the screen above her is off.
-    Ms Chen: I've been watching her since three. I've nothing else to do and Sister cannot be in six places.
+* [We're working on it. Your own care isn't affected.]
+    Ms Chen: I believe the nurse about me.
+    Ms Chen: But Mrs Hargreaves in bed two is on that machine, and the screen above her has been off since three.
+    Ms Chen: I've been watching it for her. Sister cannot be in six places.
+    ~ hub_quiet = true
     -> hub
 
 * [How are you holding up?]
-    Ms Chen: I've had my operation. I'm just waiting now, and waiting I can do.
-    Ms Chen: It's the ones who cannot tell you they're in trouble that I'd worry about, if I were you.
+    Ms Chen: I've had my operation. Waiting I can do.
+    Ms Chen: If I were you, I'd worry about the ones who can't tell you they're in trouble.
+    ~ hub_quiet = true
     -> hub
 
 === hub ===
-+ [Thank you for watching out for your neighbours.]
-    Ms Chen: That's not watching out. That's just being in the same room as somebody.
+{hub_quiet:
+    ~ hub_quiet = false
+- else:
+    Ms Chen: Any progress, or are we still guessing?
+}
++ [Thank you for watching the others.]
+    Ms Chen: I'm in the same room as them. What else would I do?
+    ~ hub_quiet = true
     -> hub
 
 + [I'll let you rest.]
+    Ms Chen: Go and fix it, then.
+    ~ hub_quiet = true
     #exit_conversation
     -> hub

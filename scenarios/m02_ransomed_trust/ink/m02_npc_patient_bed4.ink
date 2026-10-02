@@ -22,6 +22,8 @@ VAR patient_bed4_deceased = false
 
 VAR spoke_to_player = false
 VAR read_chart = false
+// Pass 4 dialogue: re-entry line for a re-talk, skipped once after an answer or a goodbye.
+VAR hub_quiet = false
 
 === start ===
 {patient_bed4_deceased:
@@ -35,58 +37,74 @@ VAR read_chart = false
 }
 ~ spoke_to_player = true
 
-Narrator: Mr Pryce is awake. The ventilator beside him cycles on its own power; the monitor above the bed, which should be reporting him to the nurses' station, is dark.
+Narrator: Mr Pryce is awake. The ventilator runs on its own battery. The monitor above him, which should be reporting him to the nurses' station, is dark.
 
-Narrator: His eyes track to you, then to the dead screen above the bed.
+Narrator: His eyes go to you, then to the dead screen.
 
 Mr Pryce: ...you the one.
 
-Mr Pryce: *breath* Fixing it.
+Mr Pryce: Fixing it.
 
-* [I am. Systems should be back tonight.]
-    Mr Pryce: *long breath* Good.
-    Mr Pryce: Sister's been. Every fifteen minutes. *breath* All night.
+* [I am. We'll have the systems back tonight.]
+    Mr Pryce: Good.
+    Mr Pryce: Sister's been. Every fifteen minutes... all night.
     Mr Pryce: She's tired. Tell someone.
+    ~ hub_quiet = true
     -> hub
 
-* [Yes. How are you doing, Mr Pryce?]
-    Narrator: One hand moves, barely.
-
-    Mr Pryce: Breathing.
-    Mr Pryce: Machine's doing it. *breath* But it's getting done.
-    Mr Pryce: Forty years I fixed buses. *breath* Never trusted a thing with no gauge on it.
+* [I am. How are you doing, Mr Pryce?]
+    Mr Pryce: Breathing. Machine's doing it.
+    Mr Pryce: Forty years I fixed buses.
+    Mr Pryce: ...never trusted a thing with no gauge on it.
+    ~ hub_quiet = true
     -> hub
 
 * [Rest. I'll come back when it's done.]
-    Mr Pryce: *breath* Mm.
+    Mr Pryce: Mm.
+    ~ hub_quiet = true
     -> hub
 
 === hub ===
+// Pass 4 dialogue: a re-talk re-navigates here, not to start, so the alarm and
+// the death are checked here too (otherwise a player who spoke to him earlier
+// never sees the manual-ventilation save).
+{patient_bed4_deceased:
+    -> deceased_state
+}
+{ bed4_manually_stabilised == false && (patient_bed4_state == "distressed" || patient_bed4_state == "critical"):
+    -> emergency
+}
+{hub_quiet:
+    ~ hub_quiet = false
+- else:
+    Mr Pryce: ...still here.
+}
 + {not read_chart} [Check the paper chart at the foot of the bed.]
     -> the_chart
 
 + [I'll let you rest.]
-    Mr Pryce: *breath* Go on.
+    Mr Pryce: Go on.
+    ~ hub_quiet = true
     #exit_conversation
     -> hub
 
 === the_chart ===
 ~ read_chart = true
 
-Narrator: Blood pressure 138 over 86. Sats 94 percent. Last observation recorded fourteen minutes ago in biro, initialled A.D.
+Narrator: Blood pressure 138 over 86. Sats 94 per cent. Last obs fourteen minutes ago, in biro, initialled A.D.
 
-Narrator: The monitor above the bed would have written this line every thirty seconds and flagged anything drifting. Tonight it depends entirely on when a nurse can next get back down the row.
+Narrator: The monitor would have logged that every thirty seconds and flagged any drift. Tonight the next reading waits for a nurse to get back down the row.
 
 Narrator: He watches you read it.
 
 Mr Pryce: Fourteen minutes.
 
-Mr Pryce: *breath* Long time, fourteen minutes.
+Mr Pryce: Long time... fourteen minutes.
 
+~ hub_quiet = true
 -> hub
 
 === returning ===
-Mr Pryce: *eyes open* ...still here.
 -> hub
 
 // ===========================================
@@ -94,29 +112,29 @@ Mr Pryce: *eyes open* ...still here.
 // Reached only while distressed/critical and not yet stabilised.
 // ===========================================
 === emergency ===
-Narrator: The ventilator alarm is going -- a hard, repeating tone with no relay to carry it to the desk. Mr Pryce's chest is fighting the machine.
+Narrator: The ventilator alarm is going: a hard, repeating tone, with no relay to carry it to the desk. Mr Pryce's chest is fighting the machine.
 
 { patient_bed4_state == "critical":
-    Narrator: He is past speaking now. His lips have gone dusky and his eyes find you and hold. There is very little time.
+    Narrator: He's past speaking now. His lips have gone dusky. His eyes find you and hold.
 - else:
-    Mr Pryce: *straining* ...the machine... it's not... *gasp*
+    Mr Pryce: *straining* ...the machine... it's...
 }
 
-Narrator: The circuit has desynchronised and gone into an alarm state. A manual resuscitation bag is clipped to the bed frame. You know how this goes: seal the bag, breathe for him by hand, hold him until a nurse can reach the bed.
+Narrator: The circuit has fallen out of sync. A manual resuscitation bag is clipped to the bed frame. Seal it, breathe for him by hand, and hold him until a nurse comes.
 
-* [Switch to manual ventilation -- bag him myself.]
+* [Switch to manual ventilation. Bag him myself.]
     ~ bed4_manually_stabilised = true
     ~ patient_bed4_state = "attended"
-    Narrator: You unclip the bag, seal it over his mouth and nose and start squeezing -- steady, timed to his chest. The dusky colour eases. The alarm drops from a scream to a slow, survivable beep.
-    Mr Pryce: *ragged* ...ta.
-    Narrator: A nurse is already coming down the row to take over. He is stable -- not fixed, the systems still have to come back -- but alive, and no longer alone with a dead screen.
+    Narrator: You seal the bag over his mouth and nose and squeeze, timed to his chest. The dusky colour eases. The alarm drops to a slow, steady beep.
+    Mr Pryce: ...ta.
+    Narrator: A nurse is coming down the row to take over. The systems still have to come back, but he's breathing, and he isn't alone with a dead screen.
     #set_global:bed4_manually_stabilised:true
     #set_global:patient_bed4_state:attended
     #exit_conversation
     -> DONE
 
 + [Shout down the ward for a nurse and keep looking for a fix.]
-    Narrator: You call for help down the bay and step back. Whether a nurse reaches him before the machine wins is not something you can control from over here.
+    Narrator: You call down the bay for help and step back. Whether a nurse reaches him before the machine wins is out of your hands now.
     #exit_conversation
     -> DONE
 
@@ -124,8 +142,8 @@ Narrator: The circuit has desynchronised and gone into an alarm state. A manual 
 // DECEASED
 // ===========================================
 === deceased_state ===
-Narrator: The bed is still. The ventilator cycles on out of habit, breathing for a man who has stopped fighting it. Someone has half-drawn the curtain.
+Narrator: The bed is still. The ventilator cycles on, breathing for a man who has stopped fighting it. Someone has half-drawn the curtain.
 
-Narrator: There is nothing to say to him now.
+Narrator: There's nothing to say to him now.
 #exit_conversation
 -> DONE

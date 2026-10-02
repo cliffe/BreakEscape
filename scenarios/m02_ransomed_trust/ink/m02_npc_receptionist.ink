@@ -28,13 +28,18 @@ VAR observed_stranger = false
 VAR asked_about_reeves_hours = false
 VAR gave_key = false
 VAR was_honest = false
+// Pass 4 dialogue: a re-talk re-navigates to hub, so the hub carries the return
+// greeting and the cover-burn phone call. hub_quiet skips it once after a reply or
+// a goodbye; met_after_burn stops the phone call replaying for a player who first
+// met her after the burn (she has already told them).
+VAR hub_quiet = false
+VAR met_after_burn = false
 
 // Synced from globalVars by engine at call-open
 VAR cover_burned = false
 VAR cover_restored = false
 VAR bernie_trusts_player = false
 VAR noticed_struck_booking = false
-VAR seen_picking_by_bernie = false
 VAR insider_identified = false
 
 // ===========================================
@@ -52,20 +57,21 @@ VAR insider_identified = false
 
 === first_meeting ===
 {cover_burned:
-    Narrator: Bernie Nwosu is holding a phone handset away from her ear with an expression of flat disbelief. She puts it down as you reach the desk.
-    Bernie Nwosu: Right. Before you say anything -- security control have just rung me about a consultant who apparently doesn't exist.
-    Bernie Nwosu: I'm going to guess that's you, and I'm going to want your version first.
+    ~ met_after_burn = true
+    Narrator: Bernie Nwosu is holding a phone handset away from her ear. She puts it down as you reach the desk.
+    Bernie Nwosu: Before you say anything. Security control have just rung me about a consultant who apparently doesn't exist.
+    Bernie Nwosu: I'm guessing that's you. I want your version first.
     -> the_struck_entry
 }
-Narrator: Ten past four in the morning. Every screen behind the desk is black, the lights are running amber off the generators, and somewhere above you a ventilator is doing its work in a ward with nobody watching the numbers.
+Narrator: Ten past four in the morning. Every screen behind the desk is black, and the lights run amber off the generators.
 
-Narrator: Bernie Nwosu is holding the entire front of this hospital together with a clipboard, a landline and a biro that is visibly on its last legs.
+Narrator: Bernie Nwosu is holding the front of this hospital together with a clipboard, a landline and a dying biro.
 
-Bernie Nwosu: *not looking up* If it's about the computers -- I know. If it's about your appointment, it's cancelled. If it's about the vending machine, that's been broken since March and is nothing to do with any of this.
+Bernie Nwosu: *not looking up* If it's the computers, I know. If it's your appointment, it's cancelled.
 
-Bernie Nwosu: And if you're press, there's a car park you can stand in.
+Bernie Nwosu: If it's the vending machine, that's been broken since March. And if you're press, there's a car park you can stand in.
 
-* [I'm the security consultant Dr. Kim called in. I'm here for the ransomware.]
+* [I'm the security consultant Dr. Kim called in. It's about the ransomware.]
     ~ bernie_influence += 1
     # influence_increased
     -> route_consultant
@@ -73,7 +79,7 @@ Bernie Nwosu: And if you're press, there's a car park you can stand in.
 * [I need Dr. Kim. Where is she?]
     -> route_demand
 
-* [You've been on this desk since it started, haven't you.]
+* [You've been on this desk since it started, haven't you?]
     ~ bernie_influence += 2
     # influence_increased
     -> route_human
@@ -83,34 +89,33 @@ Bernie Nwosu: And if you're press, there's a car park you can stand in.
 // ===========================================
 
 === route_consultant ===
-Narrator: She looks up properly for the first time.
-
 Bernie Nwosu: Say that again.
 
-Bernie Nwosu: Because I have had the police, I have had two journalists and I have had a man from head office who wanted to know if the incident had been "logged in the incident system". Which is encrypted. Along with the incident.
+Bernie Nwosu: I've had the police, two journalists, and a man from head office asking if it's been "logged in the incident system".
 
-Bernie Nwosu: So. Security consultant. Go on then. Convince me.
+Bernie Nwosu: Which is encrypted. Along with the incident.
 
-* [Dr. Kim requested emergency incident response at one o'clock this morning. Check your log.]
+Bernie Nwosu: So. Security consultant. Convince me.
+
+* [Dr. Kim called for emergency incident response at one this morning. Check your log.]
     ~ was_honest = true
     ~ bernie_influence += 2
     # influence_increased
+    Bernie Nwosu: Oh, I will.
     -> the_struck_entry
 
-* [I don't need to convince you. I need to be pointed at your IT department.]
+* [I don't need to convince you. Just point me at IT.]
     ~ bernie_influence -= 1
     # influence_decreased
-    Bernie Nwosu: Everyone who's ever nicked something from this hospital has walked in talking exactly like that.
+    Bernie Nwosu: Everyone who's ever nicked something from this hospital walked in talking like that.
     -> the_struck_entry
 
 * [I can't. Ring her extension and ask her yourself.]
     ~ was_honest = true
+    Narrator: She dials four digits and waits. Somewhere up on the admin corridor, a phone rings out.
     ~ bernie_influence += 3
     # influence_increased
-    Narrator: She picks up the handset, dials four digits and waits. Somewhere up on the admin corridor, a phone rings out unanswered.
-    Narrator: She replaces the receiver.
-
-    Bernie Nwosu: She's not answering. She hasn't answered since three.
+    Bernie Nwosu: Not answering. She hasn't answered since three.
     Bernie Nwosu: But you told me to ring, which is more than the journalists did.
     -> the_struck_entry
 
@@ -119,22 +124,24 @@ Bernie Nwosu: So. Security consultant. Go on then. Convince me.
 // ===========================================
 
 === route_demand ===
-Bernie Nwosu: *finally looking up* And you are?
+Bernie Nwosu: And you are?
 
-Bernie Nwosu: Because there are forty-seven people on generators upstairs and I have got no way of checking who anybody is tonight. So "I need Dr. Kim" isn't a sentence, love. It's a start of one.
+Bernie Nwosu: Forty-seven people upstairs on generators, and I've no way of checking who anybody is tonight.
+
+Bernie Nwosu: So "I need Dr. Kim" isn't a sentence. It's the start of one.
 
 * [Emergency security consultant. She called me in at one this morning.]
     ~ was_honest = true
     ~ bernie_influence += 2
     # influence_increased
-    Bernie Nwosu: Right. That, I can work with.
+    Bernie Nwosu: Right. That I can work with.
     -> the_struck_entry
 
-* [Every minute you spend on this is a minute those generators are burning.]
+* [Every minute you spend on this, those generators are burning.]
     ~ bernie_influence -= 2
     # influence_decreased
-    Bernie Nwosu: *very evenly* I have counted every one of those minutes tonight. Don't you dare use them on me.
-    Narrator: She holds your eye for a second longer than is comfortable, then reaches for the paper log anyway.
+    Bernie Nwosu: *very evenly* I've counted every one of those minutes tonight. Don't you dare use them on me.
+    Narrator: She holds your eye a second too long, then reaches for the paper log anyway.
     -> the_struck_entry
 
 // ===========================================
@@ -142,13 +149,11 @@ Bernie Nwosu: Because there are forty-seven people on generators upstairs and I 
 // ===========================================
 
 === route_human ===
-Narrator: The biro stops.
+Bernie Nwosu: Two forty-seven. I was on my break. The whole wall of screens went at once, like somebody threw a switch.
 
-Bernie Nwosu: Two forty-seven. I was on my break. Whole wall of screens went at once, like somebody threw a switch.
+Bernie Nwosu: Eleven years I've done this desk. Fires, floods, the roof coming in on Paediatrics.
 
-Bernie Nwosu: Eleven years I've done this desk. Fire alarms, floods, the roof coming in on Paediatrics. Never had the building just... stop knowing who anybody was.
-
-Narrator: She straightens up.
+Bernie Nwosu: Never had the building just... stop knowing who anybody was.
 
 Bernie Nwosu: Anyway. You're not a patient and you're not press. What are you?
 
@@ -156,12 +161,13 @@ Bernie Nwosu: Anyway. You're not a patient and you're not press. What are you?
     ~ was_honest = true
     ~ bernie_influence += 2
     # influence_increased
+    Bernie Nwosu: Did she, now. Let's have a look.
     -> the_struck_entry
 
 * [I'm the person who's going to get your screens back.]
     ~ bernie_influence += 1
     # influence_increased
-    Bernie Nwosu: *snorts* You and the four other men who've said that tonight. Go on then.
+    Bernie Nwosu: You and four others tonight. Go on, then.
     -> the_struck_entry
 
 // ===========================================
@@ -175,16 +181,14 @@ Narrator: She turns the paper log round so you can both read it. Halfway down, i
 
 Narrator: A line has been ruled through it. Different biro. No initials.
 
-Bernie Nwosu: *quietly* Now that's interesting, because that's my log and that's not my crossing-out.
+Bernie Nwosu: That's my log. And that's somebody else's crossing-out.
 
 Bernie Nwosu: Nobody amends this book but me. That's the whole point of the book.
 
 * [Who's been behind this desk tonight?]
-    Bernie Nwosu: Me. Only me. I've not been to the toilet since two.
-    Bernie Nwosu: *pause* Well. Except when I walked the police out to the car park. Five minutes, maybe.
-    Narrator: She looks at the page again.
-
-    Bernie Nwosu: Five minutes.
+    Bernie Nwosu: Me. Only me. I've not been to the loo since two.
+    Bernie Nwosu: Except when I walked the police out to the car park. Five minutes, maybe.
+    Bernie Nwosu: ...Five minutes.
     -> offer_key
 
 * [Does it matter? You know I'm expected.]
@@ -194,9 +198,9 @@ Bernie Nwosu: Nobody amends this book but me. That's the whole point of the book
 * [Leave it exactly as it is. Don't tidy it up.]
     ~ bernie_influence += 2
     # influence_increased
-    Bernie Nwosu: *slowly* You want me to preserve it.
+    Bernie Nwosu: You want me to preserve it.
     Bernie Nwosu: You're not really a consultant, are you.
-    Narrator: She lets the question sit there for a moment, then decides -- visibly -- not to ask it again.
+    Narrator: She lets the question sit, then visibly decides not to ask it again.
     Bernie Nwosu: Right. It stays as it is.
     -> offer_key
 
@@ -211,42 +215,44 @@ Bernie Nwosu: Nobody amends this book but me. That's the whole point of the book
 #set_global:bernie_gave_key:true
 #give_item:key:it_override_key
 
-Narrator: She writes you into the log by hand, in biro, pressing hard.
+Narrator: She writes you into the log by hand, pressing hard.
 
-Bernie Nwosu: Right. You're in the book. And before you ask -- no, I can't give you a badge that does anything, because none of the readers work and they can't issue new cards. The whole permissions system is sat behind that ransom screen with everything else.
+Bernie Nwosu: You're in the book. And no, I can't give you a badge that does anything.
 
-Bernie Nwosu: Which is why Estates dumped every mechanical override on my hook this morning and made it my problem.
+Bernie Nwosu: The readers are down, and the permissions system's behind that ransom screen with everything else.
 
-Narrator: She unhooks a worn brass key and holds it a moment before letting go of it.
+Bernie Nwosu: So Estates dumped every mechanical override on my hook and made it my problem.
 
-Bernie Nwosu: IT's off the handover room -- straight through Ward Three, up the link, along the main corridor, then it's the door on your right as you go in. Gary is in there and he's not come out since half ten, so knock properly.
+Narrator: She unhooks a worn brass key and holds it a moment before she lets go.
+
+Bernie Nwosu: IT's off the handover room. Through Ward Three, along the link and up the main corridor. In the handover room, IT's the door on your right.
+
+Bernie Nwosu: Gary's in there. He's not come out since half ten, so knock properly.
 
 {was_honest:
     ~ bernie_influence += 2
     ~ bernie_trusts_player = true
     # influence_increased
     #set_global:bernie_trusts_player:true
-    Bernie Nwosu: And listen -- you told me the truth when you could've fed me something easier. I've clocked that.
-    Bernie Nwosu: Anything goes sideways for you in here tonight, you come back to this desk. Yeah?
+    Bernie Nwosu: And listen. You told me the truth when you could've fed me something easier. I've clocked that.
+    Bernie Nwosu: Anything goes sideways for you tonight, you come back to this desk. Yeah?
 }
 {not was_honest:
     Bernie Nwosu: Sign it back in when you're done. I'll be here. I'm always here.
 }
 
+~ hub_quiet = true
 -> hub
 
 // ===========================================
 // RETURN VISITS
 // ===========================================
 
+// Pass 4: the "I watched you pick a door" branch is gone. Nothing could ever set it --
+// reception has no key lock and her catch mapping wasn't a person-chat.
 === returning ===
-{seen_picking_by_bernie:
-    Bernie Nwosu: *without looking up* I gave you a key.
-    Bernie Nwosu: I watched you crouch down at a door I had already given you the key to, and do... whatever that was.
-    Bernie Nwosu: I'm not going to ask. I want that on record. I am choosing not to ask.
-    -> hub
-}
-Bernie Nwosu: Back already. Go on -- what's broken now?
+Bernie Nwosu: Back already. Go on, what's broken now?
+~ hub_quiet = true
 -> hub
 
 // ===========================================
@@ -254,81 +260,82 @@ Bernie Nwosu: Back already. Go on -- what's broken now?
 // ===========================================
 
 === cover_burned_entry ===
-Narrator: Bernie is holding the handset away from her ear with an expression of pure disbelief.
+Narrator: Bernie is holding the handset away from her ear.
 
-Bernie Nwosu: *into the phone* No. No, because I signed them in myself. With my own hand. In my own book.
+Bernie Nwosu: *into the phone* No. I signed them in myself. With my own hand, in my own book.
 
-Bernie Nwosu: *pause* Then whoever told you that is wrong, isn't -- hello?
+Bernie Nwosu: Then whoever told you that is wrong, isn't -- hello?
 
-Narrator: She looks at the dead receiver, then at you.
+Bernie Nwosu: That was security control. Somebody's rung them from an internal line to say there's no consultant booked tonight. Never was.
 
-Bernie Nwosu: That was security control. Somebody's rung them from an internal line and told them there is no consultant booked tonight and there never was.
-
+~ hub_quiet = true
 -> hub
 
 === which_extension ===
 ~ asked_about_reeves_hours = true
 Bernie Nwosu: Control wouldn't say. They never do.
 
-Bernie Nwosu: I'll tell you what I can tell you, though. There's four internal phones on this side of the building that aren't behind a locked door tonight, and three of them are on my desk.
+Bernie Nwosu: But there's four internal phones on this side of the building that aren't behind a locked door tonight. Three of them are on my desk.
 
 Bernie Nwosu: The fourth one's in the boardroom.
 
 {observed_stranger:
-    Bernie Nwosu: *slowly* Which is where your man in the plain suit has been stood all night, isn't it.
+    Bernie Nwosu: Which is where your man in the plain suit's been stood all night, isn't it.
     Bernie Nwosu: ...I've said that out loud now. I can't unsay it.
 }
+~ hub_quiet = true
 -> hub
 
 === bernie_vouches ===
 ~ cover_restored = true
 #set_global:bernie_vouched:true
 #set_global:cover_restored:true
+
+Narrator: She doesn't hesitate. She dials, and her voice goes flat and official, eleven years of front desk in it.
+
 ~ bernie_influence += 3
 # influence_increased
+Bernie Nwosu: Night reception, Nwosu. Logging a correction. The external consultant was booked at 01:02 on Dr Kim's authority and signed in by me personally.
 
-Narrator: She does not hesitate. She dials, and when it connects her voice changes into something flat and official that she has clearly been using on this desk for eleven years.
+Bernie Nwosu: I'm naming myself as the vouching officer. Yes. Put it against my name. All of it.
 
-Bernie Nwosu: Night reception, Nwosu. I'm logging a correction. The external consultant is signed in by me personally at 01:02, countersigned by Dr Kim, and I am naming myself as the vouching officer.
-
-Bernie Nwosu: *pause* Yes. Put it against my name. All of it.
-
-Narrator: She hangs up and writes something in the book, pressing hard.
-
-Bernie Nwosu: There. Now if you turn out to be something other than what you've told me, it's my job as well as yours. So don't.
+Bernie Nwosu: There. If you turn out to be something other than what you've told me, it's my job as well as yours. So don't.
 
 * [Understood. Thank you.]
     Bernie Nwosu: Go on. Before somebody rings them back.
+    ~ hub_quiet = true
     #exit_conversation
     -> hub
 
 * [Why would you do that for me?]
-    Bernie Nwosu: Because somebody's been at my book, and somebody's been on my phone, and I don't like being made a liar in my own lobby.
-    Bernie Nwosu: Also you told me the truth this morning when you didn't have to. That's rarer than you'd think.
+    Bernie Nwosu: Somebody's been at my book and on my phone. I don't like being made a liar in my own lobby.
+    Bernie Nwosu: And you told me the truth this morning when you didn't have to. That's rarer than you'd think.
+    ~ hub_quiet = true
     #exit_conversation
     -> hub
 
 === bernie_hesitates ===
-Bernie Nwosu: *long pause* I want to.
+Bernie Nwosu: I want to.
 
-Bernie Nwosu: But I've got a supervisor telling me one thing and a phone call telling me another, and if I put my name to the wrong one of those I'm out of a job I've done for eleven years.
+Bernie Nwosu: But I've a supervisor telling me one thing and a phone call telling me another. Back the wrong one and I'm out of a job I've done eleven years.
 
 Bernie Nwosu: I signed you in. That's on the page. That's what I've got.
 
 * [That's fair. I'll find another way.]
     ~ bernie_influence += 1
     # influence_increased
-    Bernie Nwosu: *quietly* If it helps -- the wards issue their own lanyards. Sister Doyle's got a drawer full for the agency staff.
+    Bernie Nwosu: If it helps, the wards issue their own lanyards. Sister Doyle's got a drawer full for the agency staff.
     Bernie Nwosu: I didn't say that.
+    ~ hub_quiet = true
     #exit_conversation
     -> hub
 
-+ [Eleven years and you'd rather be right on paper than right.]
++ [Eleven years, and you'd rather be right on paper than right.]
+    Narrator: She turns back to her forms.
     ~ bernie_influence -= 2
     # influence_decreased
-    Narrator: She turns back to her forms.
-
     Bernie Nwosu: Off you go.
+    ~ hub_quiet = true
     #exit_conversation
     -> hub
 
@@ -337,19 +344,27 @@ Bernie Nwosu: I signed you in. That's on the page. That's what I've got.
 // ===========================================
 
 === hub ===
-+ {cover_burned and not cover_restored and bernie_trusts_player} [I need you to say that to security control. Out loud, on the record, under your own name.]
+{hub_quiet:
+    ~ hub_quiet = false
+- else:
+    {cover_burned and not cover_restored and not cover_burned_entry and not met_after_burn:
+        -> cover_burned_entry
+    }
+    Bernie Nwosu: {&Back already. What's broken now?|Go on, then.|What do you need?}
+}
++ {cover_burned and not cover_restored and bernie_trusts_player} [Say that to security control. On the record, under your own name.]
     -> bernie_vouches
 
 + {cover_burned and not cover_restored and not bernie_trusts_player} [You know I'm meant to be here. Back me up.]
     -> bernie_hesitates
 
-+ {cover_burned and not asked_about_reeves_hours} [That call came off an internal line. Which extensions can reach control?]
++ {cover_burned and not asked_about_reeves_hours} [That call came off an internal line. Which phones can reach control?]
     -> which_extension
 
 + {not asked_situation} [How bad is it upstairs, honestly?]
     -> ask_situation
 
-+ {not observed_stranger} [You're on this desk all night. Has anyone come through who doesn't belong?]
++ {not observed_stranger} [Has anyone come through tonight who doesn't belong?]
     -> observe_stranger
 
 + {observed_stranger and not asked_about_reeves_hours} [This man in the plain suit. How long has he been around?]
@@ -360,6 +375,7 @@ Bernie Nwosu: I signed you in. That's on the page. That's what I've got.
 
 + [I should get moving.]
     Bernie Nwosu: {bernie_influence >= 4: Go on. And come back if you need me.|Right you are.}
+    ~ hub_quiet = true
     #exit_conversation
     -> hub
 
@@ -368,23 +384,25 @@ Bernie Nwosu: I signed you in. That's on the page. That's what I've got.
 
 Bernie Nwosu: Honestly? Nobody knows anything about anybody.
 
-Bernie Nwosu: We can't tell you what you're allergic to. We can't tell you what you were given at eight. We can't tell you which consultant is yours or when your surgery is or whether your mum was moved to another ward.
+Bernie Nwosu: We can't tell you what you're allergic to, or what you were given at eight, or whether your mum's been moved.
 
-Bernie Nwosu: A man came in at four looking for his wife. I had to walk him round three wards reading names off the ends of beds.
+Bernie Nwosu: A man came in at four looking for his wife. I walked him round three wards reading names off the ends of beds.
 
-Bernie Nwosu: That's what it is. It's not the money. It's that this place has forgotten everybody in it.
+Bernie Nwosu: Forget the money. This place has forgotten everybody in it.
 
 + [How are you still standing?]
     ~ bernie_influence += 2
     # influence_increased
-    Bernie Nwosu: *small laugh* Vending machine's broken, so it's not that.
+    Bernie Nwosu: Vending machine's broken, so it's not the caffeine.
     Bernie Nwosu: You just keep going, don't you. Same as the girls upstairs.
+    ~ hub_quiet = true
     -> hub
 
 + [Then let's give it its memory back.]
     ~ bernie_influence += 1
     # influence_increased
     Bernie Nwosu: You say that like it's a thing a person can do.
+    ~ hub_quiet = true
     -> hub
 
 // ===========================================
@@ -396,23 +414,28 @@ Bernie Nwosu: That's what it is. It's not the money. It's that this place has fo
 === observe_stranger ===
 ~ observed_stranger = true
 
-Bernie Nwosu: *lowering her voice without seeming to decide to* Now you mention it.
+Bernie Nwosu: *lowering her voice* Now you mention it.
 
-Bernie Nwosu: There's a fella on the night security detail. Plain suit, no uniform, no lanyard from us. Very polite. Very. Stands himself down by the boardroom and the comms relay and doesn't move.
+Bernie Nwosu: There's a fella on night security. Plain suit, no uniform, no lanyard from us. Very polite. Very.
 
-Bernie Nwosu: Everybody signs this book. Contractors, engineers, the lot, all night long. He never has. Says he's "posted", like that's an answer.
+Bernie Nwosu: He stands himself by the boardroom and the comms relay and doesn't move.
+
+Bernie Nwosu: Everybody signs this book. Contractors, engineers, the lot. He never has. Says he's "posted", like that's an answer.
 
 + [What's his name?]
     Bernie Nwosu: Reeves. Graham, I think. Says it like you should already know it.
+    ~ hub_quiet = true
     -> hub
 
 + [Have you raised it with anyone?]
-    Bernie Nwosu: Val's raised it. Val on security -- she's in that office by the server room, and she's had him in her notebook for weeks.
-    Bernie Nwosu: Got told it's crisis protocol. Twice. By people who won't put it in writing.
+    Bernie Nwosu: Val has. Val on security. She walks the main corridor outside the security office, and she's had him in her notebook for weeks.
+    Bernie Nwosu: Got told it was crisis protocol and to leave it. Twice.
+    ~ hub_quiet = true
     -> hub
 
 + [Probably nothing. But thanks.]
-    Bernie Nwosu: That's what I keep telling myself. It's been that sort of night.
+    Bernie Nwosu: That's what I keep telling myself.
+    ~ hub_quiet = true
     -> hub
 
 === reeves_hours ===
@@ -420,39 +443,41 @@ Bernie Nwosu: Everybody signs this book. Contractors, engineers, the lot, all ni
 
 Bernie Nwosu: Since the summer, he says.
 
-Bernie Nwosu: And here's the thing I keep chewing on. Eleven years I've sat at this desk. Every face that comes through those doors, twice a night, for eleven years.
+Bernie Nwosu: Eleven years I've sat at this desk. Every face through those doors, twice a night.
 
-Bernie Nwosu: I had never once clapped eyes on that man before this started.
+Bernie Nwosu: I'd never once clapped eyes on that man before this started.
 
+~ hub_quiet = true
 -> hub
 
 === reeves_confirmed ===
 Bernie Nwosu: *very still* Reeves.
 
-Bernie Nwosu: Six weeks ago there was a fire drill. Half two in the morning, no warning, nothing on the board. Estates were livid -- they hadn't scheduled it.
+Bernie Nwosu: Six weeks ago there was a fire drill. Half two in the morning, nothing on the board. Estates were livid. They hadn't scheduled it.
 
-Bernie Nwosu: He walked two men in high-vis through this lobby and told me they were with facilities. I asked for names for the book.
+Bernie Nwosu: He walked two men in high-vis through this lobby and said they were with facilities. I asked for names for the book.
 
-Bernie Nwosu: He said, "That's alright, Bernie, I'll sign for them." And I let him. Because he was security and I was on my own and it was half two in the morning.
+Bernie Nwosu: He said, "That's alright, Bernie, I'll sign for them." And I let him.
 
-Narrator: She puts the biro down.
+Bernie Nwosu: He was security, I was on my own, and it was half two in the morning.
 
-Bernie Nwosu: I let him.
+Bernie Nwosu: ...I let him.
 
-* [That wasn't your failure. It was his job to be believed.]
+* [That's on him. His whole job was to be believed.]
     ~ bernie_influence += 2
     # influence_increased
-    Bernie Nwosu: *not convinced, but grateful* Aye. Well.
-    Bernie Nwosu: You go and be somebody's failure back at him.
+    Bernie Nwosu: Yeah. Well.
+    Bernie Nwosu: Go and make it cost him.
+    ~ hub_quiet = true
     #exit_conversation
     -> hub
 
-+ [Write it down. Exactly as you just said it, and sign it.]
++ [Write it down, exactly as you just said it, and sign it.]
+    Narrator: She's already reaching for a fresh sheet.
     ~ bernie_influence += 2
     # influence_increased
-    Narrator: She is already reaching for a fresh sheet.
-
     Bernie Nwosu: Every word.
     Bernie Nwosu: If somebody's going to ask questions about tonight, they can have mine in writing.
+    ~ hub_quiet = true
     #exit_conversation
     -> hub
