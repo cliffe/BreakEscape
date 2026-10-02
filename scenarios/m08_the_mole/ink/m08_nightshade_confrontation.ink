@@ -14,7 +14,6 @@
 // ================================================
 
 VAR player_name = "Agent 0x00"
-VAR nightshade_confronted = false
 VAR nightshade_arrested = false
 VAR nightshade_triple_agent = false
 VAR tomb_gamma_location_known = false
@@ -43,7 +42,6 @@ VAR asked_cracker = false
 === start ===
 { fate_decided: -> after_choice }
 #complete_task:confront_nightshade
-~ nightshade_confronted = true
 Narrator: The interrogation room records everything. Nightshade stands at the table with both hands flat on it. He doesn't sit.
 
 Agent 0x47 'Nightshade': You found it. Forty-seven minutes on the Portland plan, two days before you deployed. My account, my terminal, my mail.

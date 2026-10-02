@@ -191,6 +191,7 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
           { "text": "THE USB STICK: His thumbprint on the casing. Nobody planted the mail.", "style": "entry", "condition": "globalVars.nightshade_print_lifted" },
           { "text": "THE SERVER ROOM: The Director's card, cloned off his lanyard while he studied the maps", "style": "entry", "condition": "globalVars.netherton_card_cloned" },
           { "text": "THE SERVER ROOM: A badge off SAFETYNET's own visitor printer", "style": "entry", "condition": "globalVars.badge_cloned" },
+          { "text": "THE SERVER ROOM: The Director's own card, picked up off his office floor", "style": "warning", "condition": "globalVars.netherton_card_taken && !globalVars.netherton_card_cloned" },
           { "text": "GLOBAL THREAT DATABASE: Confirmed stolen during the four-site night", "style": "warning", "condition": "globalVars.database_theft_understood" },
           { "text": "" },
           { "text": "── ON THE RECORD ──", "style": "section-header" },
@@ -1335,7 +1336,7 @@ CREDITS
           "observations": "The index to SAFETYNET's crown jewels. The status line at the bottom is new, and it is red.",
           "observationDisplay": "gameDisplay",
           "text": "SAFETYNET GLOBAL THREAT DATABASE -- CATALOGUE\nCLASSIFICATION: TOP SECRET\n\nEvery known vulnerability, worldwide, in one place:\n  47,239 zero-days\n  12,847 unpatched criticals\n  8,923 infrastructure weaknesses\n  23,451 supply-chain vectors\n\nSTATUS: COMPROMISED.\n\nThe four-site night was never really about the attacks. While we spent the night choosing which crisis to answer, the database was exfiltrated through a backdoor nobody was watching. ENTROPY now holds every weakness we have ever catalogued.\n\nThe attacks were the noise. This was the theft.",
-          "onRead": { "setVariable": { "found_database_catalog": true, "database_theft_understood": true } },
+          "onRead": { "setVariable": { "database_theft_understood": true } },
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "m7_true_objective_was_the_database"
         },
@@ -1495,7 +1496,6 @@ CREDITS
           },
           "currentKnot": "start",
           "behavior": { "initiallyHidden": true },
-          "globalVarOnKO": "nightshade_confront_ko",
           "taskOnKO": "confront_nightshade",
           "eventMappings": [
             {
@@ -1740,7 +1740,6 @@ CREDITS
     "found_access_logs": false,
     "found_nightshade_profile": false,
     "found_deep_state_manual": false,
-    "found_database_catalog": false,
     "database_theft_understood": false,
     "found_phantom_lead": false,
     "found_access_logs_hint": false,
@@ -1759,7 +1758,6 @@ CREDITS
 
 <%# --- Case resolution ---------------------------------------------------- %>
     "mole_identified": false,
-    "nightshade_confronted": false,
 
 <%# --- The fate choice (set at disposition_terminal / confrontation ink) --- %>
     "nightshade_arrested": false,
@@ -1773,7 +1771,6 @@ CREDITS
 <%# --- Knockout latches (globalVarOnKO targets) --------------------------- %>
     "netherton_ko": false,
     "nightshade_ko": false,
-    "nightshade_confront_ko": false,
     "cipher_ko": false,
     "phantom_ko": false,
 
@@ -1800,7 +1797,6 @@ CREDITS
     "audit_closed": false,
     "cipher_audit_confirmed": false,
     "nightshade_audit_confirmed": false,
-    "witness_heard": false,
     "found_go_bag": false,
     "hax_ko": false,
     "hax_person_met": false,

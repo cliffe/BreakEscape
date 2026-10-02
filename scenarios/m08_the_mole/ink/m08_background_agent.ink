@@ -10,13 +10,11 @@
 // replaying after a reload; the hub repeats it on request.
 VAR mole_identified = false
 VAR met = false
-VAR witness_heard = false
 
 === start ===
 { met: -> return_visit }
 ~ met = true
-~ witness_heard = true
-Narrator: He doesn't look up from the magazine. #set_global:witness_heard:true
+Narrator: He doesn't look up from the magazine.
 -> testimony
 
 === return_visit ===
