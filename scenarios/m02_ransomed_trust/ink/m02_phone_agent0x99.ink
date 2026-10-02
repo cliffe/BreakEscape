@@ -124,62 +124,39 @@ Then Dr. Kim. Past the ward, up through the handover room. She called us in.
 === support_hub ===
 #speaker:agent_0x99
 
-// Round 2 (playtest: the hub reached 20 buttons and the ones that mattered were
-// buried). Order: what needs doing now, then "where are we", then one button for
-// all the field guides, then the reactions and hints. Follow-ups that go stale sit
-// in choices-only knots that re-check their own state (PASS3 phone rule).
+// Round 3 (pass 4 crowded-hub): m01's pattern. Topics that arrive later in the
+// mission sit first, so the newest and most relevant choices are at the top; spent
+// topics retire through their "not ..._given/_discussed" guards; the two fixed
+// choices ("Remind me where we are", exit) sit last. Bed 4 stays on top because its
+// window is timed and a patient's breathing depends on it. Follow-ups that go stale
+// sit in choices-only knots that re-check their own state (PASS3 phone rule).
 
-// ---- Now ----
 + {slow_path_window_open and not bed4_manually_stabilised and not patient_bed4_deceased} [Bed 4. What do I do?]
     -> bed4_help
-
-+ {cover_burned and not cover_restored and not reached_security_office and not cover_advice_given} [My booking's been pulled. What are my options?]
-    -> cover_burned_advice
-
-+ {insider_badge_id_found and not insider_identified} [I know whose badge SC-4471 is.]
-    -> name_the_badge
-
-+ {ghost_deal_accepted and not ransom_decision_made} [I have Ghost's decryption keys  --  does that change things?]
-    -> ghost_deal_recovery_advice
-
-+ {restore_manifest_obtained and not ransom_decision_made and not hint_ransom_given} [Can you help me think through the ransom decision?]
-    -> hint_ransom_decision
 
 + {ransom_decision_made and not mission_complete} [I've made the recovery decision  --  what's left?]
     -> hint_press_terminal
 
-+ [Remind me where we are.]
-    -> general_advice
-
-// ---- Field guides: one button, the list behind it ----
-+ {(lockpicking_guide_offered and not lockpicking_guide_hint_given) or (scanning_guide_offered and not scanning_guide_hint_given) or (ssh_guide_offered and not ssh_guide_hint_given) or (vulnerability_guide_offered and not vulnerability_guide_hint_given) or (scanning_exploitation_guide_offered and not scanning_exploitation_guide_hint_given) or (exploitation_guide_offered and not exploitation_guide_hint_given) or (privesc_guide_offered and not privesc_guide_hint_given) or (cyberchef_guide_offered and not cyberchef_guide_hint_given) or (infoleak_note_offered and not infoleak_note_hint_given)} [Send me a field guide.]
-    -> field_guides
-
-// ---- Reactions ----
-+ {cover_burned and not insider_advice_given} [Who pulls a consultant's booking in the middle of a ransomware incident?]
-    -> cover_burned_who
-
-+ {ghost_contacted_player and not ghost_reaction_discussed} [Ghost just reached out to me]
-    -> ghost_contact_reaction
-
 + {ghost_deal_accepted and ransom_decision_made and not ghost_deal_discussed} [I took Ghost's deal  --  free keys for publishing the evidence]
     -> ghost_deal_reaction
 
-+ {board_coverup_email_found and not board_email_discussed} [I found the board's cover-up email]
-    -> board_email_reaction
++ {restore_manifest_obtained and not ransom_decision_made and not hint_ransom_given} [Can you help me think through the ransom decision?]
+    -> hint_ransom_decision
+
++ {ghost_deal_accepted and not ransom_decision_made} [I have Ghost's decryption keys  --  does that change things?]
+    -> ghost_deal_recovery_advice
+
++ {insider_badge_id_found and not insider_identified} [I know whose badge SC-4471 is.]
+    -> name_the_badge
 
 + {flag_ghost_log_submitted and not ideology_discussed} [ENTROPY's ideology  --  how do we fight true believers?]
     -> discuss_ideology
 
-// ---- Hints for where the player is ----
-+ {not dr_kim_met and not hint_start_given and not cover_burned and not flag_ssh_submitted} [Where do I start?]
-    -> hint_start
++ {flag_database_submitted and not offline_keys_recovered and not hint_pin_given} [I need the offline backup keys]
+    -> hint_pin_safe
 
-+ {dr_kim_met and not flag_ssh_submitted and not hint_lockpick_given} [Any tips for getting into the server room?]
-    -> hint_lockpick
-
-+ {dr_kim_met and not flag_ssh_submitted and not hint_password_given} [How do I get Gary to cooperate?]
-    -> hint_password
++ {board_coverup_email_found and not board_email_discussed} [I found the board's cover-up email]
+    -> board_email_reaction
 
 + {flag_ssh_submitted and not flag_proftpd_submitted and not hint_vm_given} [I need help with the ProFTPD exploitation.]
     -> hint_vm
@@ -187,8 +164,29 @@ Then Dr. Kim. Past the ward, up through the handover room. She called us in.
 + {flag_ssh_submitted and not hint_encoding_given} [I need help with encoding and decoding.]
     -> hint_encoding
 
-+ {flag_database_submitted and not offline_keys_recovered and not hint_pin_given} [I need the offline backup keys]
-    -> hint_pin_safe
++ {cover_burned and not cover_restored and not reached_security_office and not cover_advice_given} [My booking's been pulled. What are my options?]
+    -> cover_burned_advice
+
++ {cover_burned and not insider_advice_given} [Who pulls a consultant's booking in the middle of a ransomware incident?]
+    -> cover_burned_who
+
++ {ghost_contacted_player and not ghost_reaction_discussed} [Ghost just reached out to me]
+    -> ghost_contact_reaction
+
++ {(lockpicking_guide_offered and not lockpicking_guide_hint_given) or (scanning_guide_offered and not scanning_guide_hint_given) or (ssh_guide_offered and not ssh_guide_hint_given) or (vulnerability_guide_offered and not vulnerability_guide_hint_given) or (scanning_exploitation_guide_offered and not scanning_exploitation_guide_hint_given) or (exploitation_guide_offered and not exploitation_guide_hint_given) or (privesc_guide_offered and not privesc_guide_hint_given) or (cyberchef_guide_offered and not cyberchef_guide_hint_given) or (infoleak_note_offered and not infoleak_note_hint_given)} [Send me a field guide.]
+    -> field_guides
+
++ {dr_kim_met and not flag_ssh_submitted and not hint_lockpick_given} [Any tips for getting into the server room?]
+    -> hint_lockpick
+
++ {dr_kim_met and not flag_ssh_submitted and not hint_password_given} [How do I get Gary to cooperate?]
+    -> hint_password
+
++ {not dr_kim_met and not hint_start_given and not cover_burned and not flag_ssh_submitted} [Where do I start?]
+    -> hint_start
+
++ [Remind me where we are.]
+    -> general_advice
 
 + [I'm good for now]
     Copy that. Call anytime, {player_name()}.
@@ -467,7 +465,6 @@ The exploit gets you root on the backup server. From there, work the filesystem 
 === request_lockpicking_guide ===
 #speaker:agent_0x99
 ~ lockpicking_guide_hint_given = true
-#set_variable:lockpicking_guide_requested:true
 #give_item:lab-workstation:m02_lockpicking_field_guide
 
 Lockpicking guide uploaded to your terminal.
@@ -481,7 +478,6 @@ Light tension, find the binding pin, set it, repeat. Read the lock by feel -- do
 === request_cyberchef_guide ===
 #speaker:agent_0x99
 ~ cyberchef_guide_hint_given = true
-#set_variable:cyberchef_guide_requested:true
 #give_item:lab-workstation:m02_cyberchef_field_guide
 
 CyberChef guide's on your terminal.
@@ -576,7 +572,6 @@ He's still standing next to that terminal. Your call how you handle him.
 === request_ssh_guide ===
 #speaker:agent_0x99
 ~ ssh_guide_hint_given = true
-#set_variable:ssh_guide_requested:true
 #give_item:lab-workstation:m02_ssh_bruteforce_field_guide
 
 SSH access and bruteforce guide sent.
@@ -590,7 +585,6 @@ Confirm the port's open, test a sensible username against a focused wordlist wit
 === request_privesc_guide ===
 #speaker:agent_0x99
 ~ privesc_guide_hint_given = true
-#set_variable:privesc_guide_requested:true
 #give_item:lab-workstation:m02_privilege_escalation_field_guide
 
 Privilege escalation guide uploaded.
@@ -604,7 +598,6 @@ Enumerate with sudo -l first, then take the smallest step that reaches the files
 === request_infoleak_note ===
 #speaker:agent_0x99
 ~ infoleak_note_hint_given = true
-#set_variable:infoleak_note_requested:true
 #give_item:lab-workstation:m02_infoleak_field_note
 
 Field note's on your terminal.
@@ -621,7 +614,6 @@ Take the lesson past one safe. Any system that tells an attacker how close they 
 === request_scanning_guide ===
 #speaker:agent_0x99
 ~ scanning_guide_hint_given = true
-#set_variable:scanning_guide_requested:true
 #give_item:lab-workstation:m02_scanning_field_guide
 
 Uploading the recon guide now.
@@ -635,7 +627,6 @@ Use it to find what's alive on that network and what the backup server's running
 === request_vulnerability_guide ===
 #speaker:agent_0x99
 ~ vulnerability_guide_hint_given = true
-#set_variable:vulnerability_guide_requested:true
 #give_item:lab-workstation:m02_vulnerability_field_guide
 
 Sending vulnerability analysis guide.
@@ -649,7 +640,6 @@ You're in. This one helps you work out which of those services will actually giv
 === request_scanning_exploitation_guide ===
 #speaker:agent_0x99
 ~ scanning_exploitation_guide_hint_given = true
-#set_variable:scanning_exploitation_guide_requested:true
 #give_item:lab-workstation:m02_scanning_exploitation_field_guide
 
 Scanning and exploitation guide uploaded.
@@ -664,7 +654,6 @@ Work it top to bottom and you won't miss a step.
 === request_exploitation_guide ===
 #speaker:agent_0x99
 ~ exploitation_guide_hint_given = true
-#set_variable:exploitation_guide_requested:true
 #give_item:lab-workstation:m02_exploitation_field_guide
 
 ProFTPD exploitation workflow uploaded.

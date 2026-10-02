@@ -6,7 +6,6 @@
 
 // Variables for tracking interactions
 VAR ghost_contacted_player = false
-VAR ghost_persuasion_attempted = false
 VAR player_confronted_ghost = false
 
 // Variables synced from globalVars by engine at call-open
@@ -167,8 +166,6 @@ Less than five per cent of what they spent on the scanner. Sit with that.
 
 They'll find it down the back of a sofa, and still tell the inquiry it was an impossible position.
 
-~ ghost_persuasion_attempted = true
-#set_global:ghost_persuasion_attempted:true
 Or they don't pay, and you spend the night doing by hand what a key does in a minute.
 
 I don't mind which. One outcome gets written up in the trade press. The other in a coroner's court.

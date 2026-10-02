@@ -19,7 +19,6 @@
 
 EXTERNAL player_name()
 
-VAR kim_influence = 0
 VAR kim_guilt_revealed = false
 VAR topic_attack_vector = false
 VAR topic_gary = false
@@ -62,12 +61,10 @@ Dr. Sarah Kim: Three things, quickly. I'm waiting on a board call that's been re
 Dr. Sarah Kim: Forty-seven patients on generators. Twelve hours of fuel. And the board votes on paying these people in four.
 
 * [Then let's not waste any of it. Tell me how they got in.]
-    ~ kim_influence += 5
     # influence_increased
     -> explain_attack
 
 * [You called us in. That took nerve, given what the vote's going to cost you.]
-    ~ kim_influence += 10
     # influence_increased
     Dr. Sarah Kim: Nerve. That's a generous word for it.
     Dr. Sarah Kim: I'd already decided who was to blame. I wanted somebody in the building who wasn't me.
@@ -75,7 +72,6 @@ Dr. Sarah Kim: Forty-seven patients on generators. Twelve hours of fuel. And the
     -> explain_attack
 
 * [Four things. You've missed one. What do you actually need from me?]
-    ~ kim_influence += 8
     # influence_increased
     Dr. Sarah Kim: ...Yes. All right.
     Dr. Sarah Kim: I need an alternative. Any alternative. I cannot walk into that room with nothing but a Bitcoin address.
@@ -120,20 +116,17 @@ Narrator: She looks at the dead screen on her desk.
 Dr. Sarah Kim: "Never once failed." That was the actual sentence. I said it out loud in March.
 
 * [You made a clinical trade-off with the information you had. That's the job.]
-    ~ kim_influence += 8
     # influence_increased
     Dr. Sarah Kim: I had the information. That's the difficulty. It was in my inbox seven times.
     -> access_problem
 
 * [You had a written warning from your own administrator. Seven of them.]
-    ~ kim_influence -= 5
     # influence_decreased
     Dr. Sarah Kim: I know exactly how many. I replied to all of them.
     Dr. Sarah Kim: Better you say it to me than a coroner. Get on with your job.
     -> access_problem
 
 * [Save it for the inquiry. Right now I need doors.]
-    ~ kim_influence += 5
     # influence_increased
     Dr. Sarah Kim: *almost relieved* Thank you. Yes. Doors.
     -> access_problem
@@ -156,7 +149,6 @@ Dr. Sarah Kim: I am the Chief Technology Officer of this hospital, and I cannot 
     -> access_because
 
 * [Your badge system is encrypted along with everything else.]
-    ~ kim_influence += 10
     # influence_increased
     Dr. Sarah Kim: Thank you. Yes. Somebody listens.
     -> access_because
@@ -198,6 +190,35 @@ Dr. Sarah Kim: Gary has one. I don't.
 - else:
     Dr. Sarah Kim: {cover_burned and not cover_restored and not cover_reaction: I've heard. Security control rang the switchboard about you.|{offline_keys_recovered: Tell me you have something I can take into that room.|{&Progress?|Yes?|What do you need?}}}
 }
+// Newest topics first (m01 support_hub pattern); spent topics retire; the fixed
+// choices (boardroom code, goodbye) sit last.
++ {insider_evidence_partial and not insider_identified and not accuse_kim} [Someone in here helped ENTROPY in. You cut the budget. Was it you?]
+    -> accuse_kim
+
++ {cover_burned and not cover_restored and not cover_reaction} [Someone's rung security and told them I was never booked.]
+    -> cover_reaction
+
++ {board_coverup_email_found and not player_warned_kim} [Your board chair has already written to Legal about Gary. Did you know?]
+    -> board_coverup
+
++ {topic_gary and not player_warned_kim} [Gary doesn't carry this alone. I want that on the record.]
+    -> protect_gary
+
++ {not topic_escrow} [There's an offline key escrow in the emergency store. What's on that safe?]
+    -> escrow_safe
+
++ {topic_ransom_vote and not advised_on_vote} [You asked what to tell the board. I'll answer properly now.]
+    -> ransom_decision_input
+
++ {not topic_ransom_vote} [Talk me through this board vote.]
+    -> explain_board_vote
+
++ {not topic_fire_drill} [Anything odd on nights lately? Drills, alarms?]
+    -> fire_drill
+
++ {not topic_gary} [Tell me about Gary Whitlock.]
+    -> discuss_gary
+
 // Escape hatch. access_problem carries #complete_task:meet_dr_kim, the
 // access_it_systems aim unlock and the badge, but it sits only on the
 // the_deferral spine. A player who asks after Gary at explain_attack lands in
@@ -206,35 +227,8 @@ Dr. Sarah Kim: Gary has one. I don't.
 + {not access_explained} [I need to get into IT. What can you actually authorise?]
     -> access_problem
 
-+ {not topic_gary} [Tell me about Gary Whitlock.]
-    -> discuss_gary
-
-+ {not topic_ransom_vote} [Talk me through this board vote.]
-    -> explain_board_vote
-
-+ {topic_ransom_vote and not advised_on_vote} [You asked what to tell the board. I'll answer properly now.]
-    -> ransom_decision_input
-
-+ {not topic_fire_drill} [Anything odd on nights lately? Drills, alarms?]
-    -> fire_drill
-
 + [What's the code for the boardroom?]
     -> boardroom_code
-
-+ {not topic_escrow} [There's an offline key escrow in the emergency store. What's on that safe?]
-    -> escrow_safe
-
-+ {topic_gary and not player_warned_kim} [Gary doesn't carry this alone. I want that on the record.]
-    -> protect_gary
-
-+ {board_coverup_email_found and not player_warned_kim} [Your board chair has already written to Legal about Gary. Did you know?]
-    -> board_coverup
-
-+ {cover_burned and not cover_restored} [Someone's rung security and told them I was never booked.]
-    -> cover_reaction
-
-+ {insider_evidence_partial and not insider_identified} [Someone in here helped ENTROPY in. You cut the budget. Was it you?]
-    -> accuse_kim
 
 + [I need to get on.]
     {offline_keys_recovered:
@@ -266,7 +260,6 @@ Dr. Sarah Kim: And what will finish me, when I'm old, is that he'll believe it w
     -> hub
 
 + [Then go and tell him. It costs you nothing.]
-    ~ kim_influence += 10
     # influence_increased
     Dr. Sarah Kim: When the wards are back.
     Dr. Sarah Kim: If I go in now, I'm asking him to forgive me while his patients are on generators. That's management, dressed as an apology.
@@ -275,7 +268,6 @@ Dr. Sarah Kim: And what will finish me, when I'm old, is that he'll believe it w
 
 === protect_gary ===
 ~ player_warned_kim = true
-~ kim_influence += 15
 # influence_increased
 #complete_task:learn_about_scapegoating
 #set_global:gary_protected:true
@@ -298,7 +290,6 @@ Dr. Sarah Kim: If they want a name on this, they can have the correct one.
     -> hub
 
 + [I'll make sure it reaches the right people.]
-    ~ kim_influence += 5
     # influence_increased
     Dr. Sarah Kim: Do.
     ~ hub_quiet = true
@@ -321,7 +312,6 @@ Dr. Sarah Kim: So they've decided it was him, and that he isn't to be allowed to
 
 Narrator: She sets both phones down.
 
-~ kim_influence += 15
 # influence_increased
 Dr. Sarah Kim: Whatever happens on this vote, that doesn't.
 
@@ -345,7 +335,6 @@ Dr. Sarah Kim: Nobody had scheduled it. It isn't on the annual plan, and there's
 Dr. Sarah Kim: We put it down to a fault on the panel and moved on. We had a scanner to install.
 
 * [Somebody walked contractors in that night, under cover of a drill nobody called.]
-    ~ kim_influence += 5
     ~ insider_evidence_partial = true
     # influence_increased
     #set_global:insider_evidence_partial:true
@@ -386,7 +375,6 @@ Dr. Sarah Kim: If those keys are still in there, they're the only thing in this 
 -> hub
 
 === boardroom_code ===
-#set_global:found_boardroom_code:true
 {topic_ransom_vote:
     Dr. Sarah Kim: Nought-four-one-seven.
     Dr. Sarah Kim: It's been the same since I arrived, and it's written in my desk diary. That tells you a lot about us.
@@ -424,7 +412,6 @@ Dr. Sarah Kim: Careful. I'll say it on that call as though I thought of it mysel
 + [Pay. Whatever it costs later, the people on those generators are yours tonight.]
     #set_global:advised_board_pay:true
     #set_global:advised_board_refuse:false
-    ~ kim_influence += 10
     # influence_increased
     Dr. Sarah Kim: Then that's what I'll argue.
     Dr. Sarah Kim: And if anyone asks who advised it, my name goes on it. Not yours.
@@ -434,7 +421,6 @@ Dr. Sarah Kim: Careful. I'll say it on that call as though I thought of it mysel
 + [Don't pay. Give me the time and I'll bring you the keys myself.]
     #set_global:advised_board_refuse:true
     #set_global:advised_board_pay:false
-    ~ kim_influence += 5
     # influence_increased
     Dr. Sarah Kim: You're asking me to stake forty-seven lives on you being quick.
     Dr. Sarah Kim: ...All right. I'll hold them off as long as I can.
@@ -445,7 +431,6 @@ Dr. Sarah Kim: Careful. I'll say it on that call as though I thought of it mysel
 + [It isn't my decision. Buy me time and I'll change the options.]
     #set_global:advised_board_refuse:false
     #set_global:advised_board_pay:false
-    ~ kim_influence += 8
     # influence_increased
     Dr. Sarah Kim: Everyone in this building has had an opinion tonight.
     Dr. Sarah Kim: You're the first to say the decision isn't theirs to make. Time I can buy. Go.
@@ -468,7 +453,6 @@ Dr. Sarah Kim: And I can't fix it. There's no system left to correct the record 
 Dr. Sarah Kim: Somebody in this building understood that before you did, and before I did.
 
 * [Then they know what's on that backup server.]
-    ~ kim_influence += 5
     # influence_increased
     Dr. Sarah Kim: Then get to it before they do anything else clever.
     ~ hub_quiet = true
@@ -489,7 +473,6 @@ Dr. Sarah Kim: *very still* I rang SAFETYNET at one this morning. I brought you 
 Dr. Sarah Kim: If I were working with these people, I'd be the least competent traitor in the history of the profession.
 
 + [You're right. That doesn't add up. I'm sorry.]
-    ~ kim_influence -= 5
     # influence_decreased
     Dr. Sarah Kim: I made a catastrophic decision in March. Inviting them in wasn't part of it.
     Dr. Sarah Kim: Now stop spending time we don't have, and go and find who did.

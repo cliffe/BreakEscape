@@ -797,7 +797,7 @@ boardroom_pin = "0417"
               "eventPattern": "conversation_closed:opening_briefing_cutscene",
               "onceOnly": true,
               "setGlobal": { "lockpicking_guide_offered": true },
-              "sendTimedMessage": { "delay": 6000, "message": "No badge opens anything tonight. Get a person to open a door for you, or pick it yourself. People first. Ask if you want the lockpicking guide." }
+              "sendTimedMessage": { "delay": 8000, "message": "No badge opens anything tonight. Get a person to open a door for you, or pick it yourself. People first. Ask if you want the lockpicking guide." }
             },
             {
               "eventPattern": "global_variable_changed:noticed_struck_booking",
@@ -1049,7 +1049,6 @@ boardroom_pin = "0417"
                   pattern here). Now fires directly off the flag submission. %>
               "eventPattern": "objective_task_completed:submit_database_flag",
               "onceOnly": true,
-              "setGlobal": { "insider_db_window_found": true },
               "completeTask": "unmask_db_window",
               "sendTimedMessage": { "delay": 2500, "message": "The backup logs show it. The device went live during a 'fire drill' six weeks ago, and an internal badge authorised the sweep that installed it." }
             },
@@ -1061,7 +1060,7 @@ boardroom_pin = "0417"
               "onceOnly": true,
               "setGlobal": { "insider_badge_id_found": true },
               "completeTask": "unmask_ghost_badge",
-              "sendTimedMessage": { "delay": 2600, "message": "Ghost's log names the badge: SC-4471, with the timestamps that confirmed their window. Find that post's log, then put a name to it." }
+              "sendTimedMessage": { "delay": 6500, "message": "Ghost's log names the badge: SC-4471, with the timestamps that confirmed their window. Find that post's log, then put a name to it." }
             },
 <%# Pass 4: the player makes the deduction. Reading the boardroom post log with the
     badge in hand only confirms WHICH POST badge SC-4471 sits on; HaX never says the
@@ -1281,7 +1280,7 @@ boardroom_pin = "0417"
               "eventPattern": "global_variable_changed:offline_keys_recovered",
               "condition": "value === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 3000, "message": "You found the physical keys. Clever. 30 minutes to full recovery, against whatever your manual restore takes. The patients are waiting." }
+              "sendTimedMessage": { "delay": 6000, "message": "You found the physical keys. Clever. 30 minutes to full recovery, against whatever your manual restore takes. The patients are waiting." }
             }
           ]
         },
@@ -2621,7 +2620,6 @@ boardroom_pin = "0417"
           "text": "Open on the desk, this week's page.\n\nTue -- Board, 09:00. Boardroom keypad <%= boardroom_pin %> (CHANGE THIS)\nWed -- Estates snag list. Read it this time.\nThu -- G. Whitlock 1:1. Postponed (again).\nFri -- ?\n\nBottom of the page, pressed hard enough to score the paper: \"Should have listened in May.\"",
           "observations": "Her working diary. A keypad code she has been meaning to change for months, a reminder to finally read the Estates snag list, and a line at the bottom she wrote for nobody but herself.",
           "observationDisplay": "gameDisplay",
-          "onRead": { "setVariable": { "found_boardroom_code": true } },
           "puzzle_graph_role": "clue",
           "puzzle_graph_unlocks": ["emergency_storage_safe", "conference_room"],
           "puzzle_graph_optional": true,
@@ -3300,9 +3298,7 @@ boardroom_pin = "0417"
     "gary_evidence_recovered": false,
     "gary_gave_lanyard": false,
 
-    "kim_influence": 0,
     "player_warned_kim": false,
-    "found_boardroom_code": false,
 
     "bernie_influence": 0,
     "bernie_trusts_player": false,
@@ -3327,27 +3323,17 @@ boardroom_pin = "0417"
     "network_isolated": false,
 
     "lockpicking_guide_offered": false,
-    "lockpicking_guide_requested": false,
     "ssh_guide_offered": false,
-    "ssh_guide_requested": false,
     "privesc_guide_offered": false,
-    "privesc_guide_requested": false,
     "scanning_guide_offered": false,
-    "scanning_guide_requested": false,
     "vulnerability_guide_offered": false,
-    "vulnerability_guide_requested": false,
     "exploitation_guide_offered": false,
-    "exploitation_guide_requested": false,
     "scanning_exploitation_guide_offered": false,
-    "scanning_exploitation_guide_requested": false,
     "pin_cracker_found": false,
     "infoleak_note_offered": false,
-    "infoleak_note_requested": false,
     "cyberchef_guide_offered": false,
-    "cyberchef_guide_requested": false,
 
     "ghost_contacted_player": false,
-    "ghost_persuasion_attempted": false,
     "ghost_offer_made": false,
     "ghost_deal_refused": false,
     "ghost_keys_used": false,
@@ -3409,7 +3395,6 @@ boardroom_pin = "0417"
 
     "insider_evidence_partial": false,
     "val_notebook_given": false,
-    "insider_db_window_found": false,
     "insider_badge_id_found": false,
     "inspected_asset_post": false,
     "insider_identified": false,
