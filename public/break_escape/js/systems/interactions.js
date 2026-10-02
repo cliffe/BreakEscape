@@ -11,6 +11,7 @@ import { addToInventory, createItemIdentifier } from './inventory.js';
 import { playUISound, playGameSound } from './ui-sounds.js';
 import { applyActions } from './apply-actions.js';
 import { resolveObjectField } from '../utils/conditional-text.js';
+import { npcReachDistSq } from './npc-reach.js';
 
 let gameRef = null;
 
@@ -376,9 +377,10 @@ export function checkObjectInteractions() {
                 const isNPCHostile = sprite.npcId && window.npcHostileSystem && window.npcHostileSystem.isNPCHostile(sprite.npcId);
 
                 // Use simple radial distance from player centre (matches visual highlight zone)
+                // (static-sprite NPCs also measure to their collision body, npc-reach.js)
                 const npcDx = sprite.x - px;
                 const npcDy = sprite.y - py;
-                const distanceSq = npcDx * npcDx + npcDy * npcDy;
+                const distanceSq = npcReachDistSq(player, sprite, npcDx * npcDx + npcDy * npcDy);
 
                 if (distanceSq <= INTERACTION_RANGE_SQ && sprite.visible) {
                     if (!sprite.isHighlighted) {
@@ -1668,10 +1670,11 @@ export function tryInteractWithNearest() {
     let best = null;
     let bestScore = Infinity;
 
-    function consider(objX, objY, handleFn, rangeSq = INTERACTION_RANGE_SQ) {
+    function consider(objX, objY, handleFn, rangeSq = INTERACTION_RANGE_SQ, npcSprite = null) {
         const dx = objX - px;
         const dy = objY - py;
-        const distSq = dx * dx + dy * dy;
+        const plainSq = dx * dx + dy * dy;
+        const distSq = npcSprite ? npcReachDistSq(player, npcSprite, plainSq) : plainSq;
         if (distSq > rangeSq) return;
         const dist = Math.sqrt(distSq);
         const score = angularDiff(objX, objY) * 1000 + dist;
@@ -1707,7 +1710,7 @@ export function tryInteractWithNearest() {
             room.npcSprites.forEach(sprite => {
                 if (!sprite.active || !sprite._isNPC || !sprite.visible) return;
                 if (sprite.npcId && window.npcHostileSystem && window.npcHostileSystem.isNPCKO(sprite.npcId)) return;
-                consider(sprite.x, sprite.y, () => tryInteractWithNPC(sprite));
+                consider(sprite.x, sprite.y, () => tryInteractWithNPC(sprite), INTERACTION_RANGE_SQ, sprite);
             });
         }
     });
@@ -1741,7 +1744,7 @@ export function tryInteractWithNPC(npcSprite) {
     }
 
     // Check if NPC is within interaction range of the player
-    const distanceSq = getInteractionDistance(player, npcSprite.x, npcSprite.y);
+    const distanceSq = npcReachDistSq(player, npcSprite, getInteractionDistance(player, npcSprite.x, npcSprite.y));
     const distance = Math.sqrt(distanceSq);
 
     // Only interact if within range
@@ -1772,7 +1775,8 @@ export function isObjectInInteractionRange(sprite) {
     if (!player || !sprite) return false;
     const dx = sprite.x - player.x;
     const dy = sprite.y - player.y;
-    return (dx * dx + dy * dy) <= INTERACTION_RANGE_SQ;
+    const distSq = dx * dx + dy * dy;
+    return (sprite._isNPC ? npcReachDistSq(player, sprite, distSq) : distSq) <= INTERACTION_RANGE_SQ;
 }
 
 // Export for global access

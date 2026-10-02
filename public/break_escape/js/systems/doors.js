@@ -16,6 +16,7 @@ import {
     DOOR_INTERACTION_RANGE
 } from '../utils/constants.js';
 import { handleUnlock, notifyServerUnlock } from './unlock-system.js';
+import { isRepeatInteraction } from './interaction-repeat.js';
 
 let gameRef = null;
 let rooms = null;
@@ -587,6 +588,16 @@ async function handleDoorInteraction(doorSprite) {
 
     if (distance > DOOR_INTERACTION_RANGE) {
         console.log('Door too far to interact');
+        return;
+    }
+
+    // One click reaches two handlers: the door's own zone (above) and game.js's
+    // scene pointerdown, which gathers the door as the one interactable near the
+    // tap. If the first call opens no minigame at once (a lockpick catch, a
+    // server check, a refusal) the second ran too: two unlock attempts, and the
+    // second could open the lockpick under a catch. Ignore a repeat on the same door.
+    if (isRepeatInteraction(doorSprite)) {
+        console.log('Door interaction already handled for this click');
         return;
     }
 

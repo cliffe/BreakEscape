@@ -99,3 +99,26 @@ test('"Switch to Lockpicking" switches as before when nobody is watching, or wit
         assert.match(parent.feedback[0], /Lockpicking mode/);
     }
 });
+
+// m02 game 1417: one click reached the door twice, 2 ms apart. The first call
+// caught the player; the second found Val's mapping on cooldown and let the pick
+// through, so the lockpick opened under the catch scene.
+test('a second attempt on the same lock straight after a catch is still blocked, with no second event', () => {
+    const d = setup();
+    const lock = { doorProperties: { roomId: 'checkpoint', connectedRoom: 'office' } };
+    assert.equal(catchLockpickInView(lock)?.id, 'guard');
+    assert.equal(catchLockpickInView(lock)?.id, 'guard');
+    assert.equal(d.emitted.length, 1);
+    // A different lock is a fresh decision
+    assert.equal(catchLockpickInView({ doorProperties: { roomId: 'checkpoint', connectedRoom: 'store' } })?.id, 'guard');
+    assert.equal(d.emitted.length, 2);
+});
+
+test('the hold does not outlive its catcher: a new NPC set-up decides afresh', () => {
+    setup();
+    const lock = { doorProperties: { roomId: 'checkpoint', connectedRoom: 'office' } };
+    assert.equal(catchLockpickInView(lock)?.id, 'guard');
+    const d = setup({ guardRoom: 'elsewhere' });
+    assert.equal(catchLockpickInView(lock), null);
+    assert.equal(d.emitted.length, 0);
+});

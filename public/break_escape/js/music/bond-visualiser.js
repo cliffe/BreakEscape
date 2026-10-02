@@ -18,6 +18,7 @@
  */
 
 import MusicController from './music-controller.js';
+import { displayDashes } from '../utils/display-dashes.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────
 const PIX = 4; // pixel block size for all drawing
@@ -1273,7 +1274,7 @@ function _startCredits(lines) {
         label.style.opacity = '0';
         _creditsTimerId = setTimeout(() => {
             label.style.cssText = `text-align:center;padding:0 10%;transition:opacity 0.4s ease;${baseStyle}`;
-            label.textContent   = item.text;
+            label.textContent   = displayDashes(item.text);
             label.style.opacity = '1';
             _creditsTimerId = setTimeout(showNext, 3000);
         }, 450); // brief fade-out gap before switching text

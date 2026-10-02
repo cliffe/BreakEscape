@@ -19,6 +19,7 @@ import InkEngine from '../../systems/ink/ink-engine.js';
 import { processGameActionTags, determineSpeaker as determineSpeakerFromTags } from '../helpers/chat-helpers.js';
 import npcConversationStateManager from '../../systems/npc-conversation-state.js';
 import TTSManager from '../../systems/tts-manager.js';
+import { rememberNpcLine, getRememberedNpcLine, reopenContextLine } from './person-chat-reopen.js';
 
 // Configuration constants for dialogue auto-advance timing
 const DIALOGUE_AUTO_ADVANCE_DELAY = 5000; // Default delay in milliseconds for new dialogue text (5 seconds)
@@ -84,6 +85,7 @@ export class PersonChatMinigame extends MinigameScene {
         this.pendingContinueCallback = null; // Callback waiting for player click in click-through mode
         this.isProcessingDialogue = false; // PHASE 0: State locking to prevent race conditions during dialogue advancement
         this.pendingKnotJump = null; // Knot to jump to after current dialogue sequence completes
+        this.isResumedConversation = false; // Saved story state restored this session (a reopen)
 
         // TTS Manager for voice synthesis
         this.ttsManager = new TTSManager();
@@ -472,6 +474,9 @@ export class PersonChatMinigame extends MinigameScene {
                 );
                 
                 if (stateRestored) {
+                    // A reopen: if the resumed story prints nothing before its choices,
+                    // showCurrentDialogue re-displays the NPC's last line (person-chat-reopen.js).
+                    this.isResumedConversation = true;
                     // If we restored state, reset the story ended flag in case it was marked as ended before
                     this.conversation.storyEnded = false;
                     // A story that ran to DONE/END has no position: restoring it (full state) or only
@@ -559,6 +564,9 @@ export class PersonChatMinigame extends MinigameScene {
         try {
             // Get current content without advancing
             const result = this.conversation.continue();
+            // Only the first display after a reopen may need the context line
+            const isReopen = this.isResumedConversation;
+            this.isResumedConversation = false;
 
             // Store result for later use
             this.lastResult = result;
@@ -619,11 +627,24 @@ export class PersonChatMinigame extends MinigameScene {
                         console.log(`🗣️ Single line dialogue - showing with choices immediately`);
                         this.ui.showChoices(result.choices);
                         this.ui.showDialogue(result.text, speaker, true); // preserveChoices=true
+                        rememberNpcLine(this.npcId, { text: result.text, speaker });
                     }
                 } else {
                     // No text, just choices - show them immediately
                     this.ui.showChoices(result.choices);
-                    console.log(`📋 No text, just showing choices`);
+                    // Reopened at a hub: continuing printed nothing, so show the NPC's last
+                    // line again rather than a blank box. Display only: no tags, no TTS.
+                    const context = reopenContextLine({
+                        isReopen,
+                        result,
+                        remembered: getRememberedNpcLine(this.npcId)
+                    });
+                    if (context) {
+                        this.ui.showDialogue(context.text, context.speaker, true); // preserveChoices=true
+                        console.log(`📋 Reopened at a choice point - re-showing last line from ${context.speaker}`);
+                    } else {
+                        console.log(`📋 No text, just showing choices`);
+                    }
                 }
             } else if (result.text && result.text.trim()) {
                 // Have text but no choices - use displayAccumulatedDialogue for proper speaker parsing
@@ -1326,6 +1347,7 @@ export class PersonChatMinigame extends MinigameScene {
             block.isNarrator || false, // isNarrator
             block.narratorCharacter || null // narratorCharacter
         );
+        rememberNpcLine(this.npcId, { text: line, speaker: block.speaker, isNarrator: block.isNarrator });
 
         // Determine auto-advance delay — use TTS audio duration if available
         let advanceDelay = DIALOGUE_AUTO_ADVANCE_DELAY;
@@ -1418,6 +1440,7 @@ export class PersonChatMinigame extends MinigameScene {
             if (result.text && result.text.trim()) {
                 console.log(`🗣️ Calling showDialogue with speaker: ${speaker}`);
                 this.ui.showDialogue(result.text, speaker);
+                rememberNpcLine(this.npcId, { text: result.text, speaker });
             } else {
                 console.log(`⚠️ Skipping showDialogue - no text or text is empty`);
             }

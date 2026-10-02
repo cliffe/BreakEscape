@@ -12,10 +12,25 @@
  * `beforeEmit` runs after the decision and before the event, so a caller can
  * close an open minigame first (the conversation must not open on top of it).
  */
+// A catch holds for a moment: a second attempt on the same lock straight after
+// (one click reaching two handlers, before the catch conversation has opened)
+// must not find the mapping on cooldown and let the pick through. The repeat
+// gets the same catcher back and emits nothing.
+export const CATCH_HOLD_MS = 1000;
+const recentCatches = new WeakMap();
+
 export function catchLockpickInView(lockable, { beforeEmit } = {}) {
+    const now = Date.now();
     const npcManager = window.npcManager;
     const roomIds = lockpickWatchRooms(lockable);
     if (!npcManager || roomIds.length === 0) return null;
+
+    const recent = lockable && typeof lockable === 'object' ? recentCatches.get(lockable) : null;
+    if (recent && now - recent.at < CATCH_HOLD_MS && recent.manager === npcManager &&
+        npcManager.npcs?.get?.(recent.npc.id) === recent.npc && roomIds.includes(recent.npc.roomId)) {
+        console.log(`🚫 LOCKPICKING STILL BLOCKED: "${recent.npc.id}" caught this lock ${now - recent.at}ms ago`);
+        return recent.npc;
+    }
 
     const player = window.player;
     const playerPos = player?.sprite?.getCenter
@@ -28,6 +43,7 @@ export function catchLockpickInView(lockable, { beforeEmit } = {}) {
     const roomId = npc.roomId;
 
     console.log(`🚫 LOCKPICKING INTERRUPTED: Triggering person-chat with NPC "${npc.id}"`);
+    if (lockable && typeof lockable === 'object') recentCatches.set(lockable, { npc, manager: npcManager, at: now });
     if (beforeEmit) beforeEmit(npc);
     npcManager.eventDispatcher?.emit('lockpick_used_in_view', {
         npcId: npc.id,

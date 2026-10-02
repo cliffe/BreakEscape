@@ -5,6 +5,7 @@
 import { ASSETS_PATH } from '../config.js';
 import TTSManager from './tts-manager.js';
 import { phoneBarkText } from '../minigames/phone-chat/phone-chat-speaker.js';
+import { displayDashes } from '../utils/display-dashes.js';
 
 export default class NPCBarkSystem {
   constructor(npcManager) {
@@ -333,7 +334,7 @@ export default class NPCBarkSystem {
     const textSpan = document.createElement('span');
     textSpan.className = 'npc-bark-text';
     const displayName = npcName || npcId || 'NPC';
-    textSpan.textContent = `${displayName}: ${text}`;
+    textSpan.textContent = `${displayName}: ${displayDashes(text)}`;
     el.appendChild(textSpan);
 
     // Dismiss (×) button
@@ -661,7 +662,7 @@ export default class NPCBarkSystem {
               border-radius: 8px; margin-bottom: 8px; max-width: 80%;
             `;
           }
-          msgDiv.textContent = msg.text;
+          msgDiv.textContent = displayDashes(msg.text);
           messagesContainer.appendChild(msgDiv);
         });
         
@@ -680,7 +681,7 @@ export default class NPCBarkSystem {
             border-radius: 8px; margin-bottom: 8px; max-width: 80%;
             margin-left: auto; text-align: right;
           `;
-          playerMsg.textContent = playerChoiceText;
+          playerMsg.textContent = displayDashes(playerChoiceText);
           messagesContainer.appendChild(playerMsg);
           messagesContainer.scrollTop = messagesContainer.scrollHeight;
           
@@ -706,7 +707,7 @@ export default class NPCBarkSystem {
             background: #2a5a8a; color: white; padding: 10px;
             border-radius: 8px; margin-bottom: 8px; max-width: 80%;
           `;
-          msg.textContent = result.text.trim();
+          msg.textContent = displayDashes(result.text.trim());
           messagesContainer.appendChild(msg);
           messagesContainer.scrollTop = messagesContainer.scrollHeight;
           console.log('✅ Message added:', result.text.trim().substring(0, 50) + '...');
@@ -730,7 +731,7 @@ export default class NPCBarkSystem {
               padding: 10px; cursor: pointer; font-size: 14px;
               transition: background 0.2s;
             `;
-            btn.textContent = choice.text;
+            btn.textContent = displayDashes(choice.text);
             btn.addEventListener('mouseenter', () => {
               btn.style.background = '#6ab0ff';
             });

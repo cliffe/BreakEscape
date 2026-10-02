@@ -12,6 +12,7 @@
  */
 
 import PersonChatPortraits from './person-chat-portraits.js';
+import { displayDashes } from '../../utils/display-dashes.js';
 
 export default class PersonChatUI {
     /**
@@ -384,7 +385,8 @@ export default class PersonChatUI {
         }
         
         // Update dialogue text
-        this.elements.dialogueText.textContent = text;
+        // " -- " shows as an en dash; the caller's text (and TTS input) is unchanged
+        this.elements.dialogueText.textContent = displayDashes(text);
         
         console.log(`📝 Set dialogue text, element content: "${this.elements.dialogueText.textContent}"`);
         
@@ -475,9 +477,9 @@ export default class PersonChatUI {
             
             // Add number prefix for choices 1-9
             if (idx < 9) {
-                choiceButton.textContent = `${idx + 1}. ${choice.text}`;
+                choiceButton.textContent = `${idx + 1}. ${displayDashes(choice.text)}`;
             } else {
-                choiceButton.textContent = choice.text;
+                choiceButton.textContent = displayDashes(choice.text);
             }
             
             this.elements.choicesContainer.appendChild(choiceButton);

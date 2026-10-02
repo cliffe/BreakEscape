@@ -11,6 +11,7 @@ import { ASSETS_PATH } from '../../config.js';
 import TTSManager from '../../systems/tts-manager.js';
 import MusicController from '../../music/music-controller.js';
 import { displayPhoneLine } from './phone-chat-speaker.js';
+import { displayDashes } from '../../utils/display-dashes.js';
 
 export default class PhoneChatUI {
     /**
@@ -452,7 +453,7 @@ export default class PhoneChatUI {
             </div>
             <div class="contact-info">
                 <div class="contact-name">${npc.displayName || npc.id}</div>
-                <div class="contact-last-message">${lastMessagePreview}</div>
+                <div class="contact-last-message">${displayDashes(lastMessagePreview)}</div>
             </div>
             <div class="contact-meta">
                 ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
@@ -567,14 +568,14 @@ export default class PhoneChatUI {
         const isVoiceMessage = type === 'npc' && trimmedText.toLowerCase().startsWith('voice:');
 
         if (this.isTerminalTheme && type === 'npc' && !isVoiceMessage) {
-            return this._typewriterMessage(trimmedText, scrollToBottom);
+            return this._typewriterMessage(displayDashes(trimmedText), scrollToBottom);
         }
 
         if (type === 'narrator') {
             // Narration: centred, italic, muted; no bubble, tail, avatar, time or typeout
             const narration = document.createElement('div');
             narration.className = 'message-narration';
-            narration.textContent = trimmedText;
+            narration.textContent = displayDashes(trimmedText);
             this.elements.messagesContainer.appendChild(narration);
             if (scrollToBottom) {
                 this.scrollToBottom();
@@ -622,7 +623,7 @@ export default class PhoneChatUI {
             // Transcript
             const transcriptDiv = document.createElement('div');
             transcriptDiv.className = 'transcript';
-            transcriptDiv.innerHTML = `<strong>Transcript:</strong><br>${transcript}`;
+            transcriptDiv.innerHTML = `<strong>Transcript:</strong><br>${displayDashes(transcript)}`;
             
             voiceDisplay.appendChild(audioControls);
             voiceDisplay.appendChild(transcriptDiv);
@@ -633,7 +634,7 @@ export default class PhoneChatUI {
             // Regular text message
             const messageText = document.createElement('div');
             messageText.className = 'message-text';
-            messageText.textContent = trimmedText;
+            messageText.textContent = displayDashes(trimmedText);
             
             messageBubble.appendChild(messageText);
             
@@ -746,7 +747,7 @@ export default class PhoneChatUI {
             const choiceButton = document.createElement('button');
             choiceButton.className = 'choice-button';
             choiceButton.dataset.index = index;
-            choiceButton.textContent = choice.text;
+            choiceButton.textContent = displayDashes(choice.text);
             
             this.elements.choicesContainer.appendChild(choiceButton);
         });

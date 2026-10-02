@@ -87,6 +87,9 @@ export function createNPCSprite(scene, npc, roomData) {
         
         // Set collision box - three cases: static prop, atlas character, legacy character
         if (npc.behavior?.staticSprite === true) {
+            // Interaction reach also measures to this body (npc-reach.js), since a
+            // large body can hold the player out of centre-to-centre range.
+            sprite._staticNpc = true;
             if (npc.behavior?.collisionBox === 'bottom_half') {
                 // Collision body covers only the bottom half of the sprite.
                 // bodyYOffset correction (below) = h/2 + h/4 - h/2 = h/4, so the sprite

@@ -1,3 +1,5 @@
+import { displayDashes } from '../utils/display-dashes.js';
+
 /**
  * Shared action executor for scenario-defined action descriptors.
  *
@@ -205,7 +207,7 @@ export function showEndScreen(opts = {}) {
     ].join(';');
 
     const titleEl = document.createElement('h1');
-    titleEl.textContent = title;
+    titleEl.textContent = displayDashes(title);
     titleEl.style.cssText = [
         `color:${outcome === 'failure' ? '#ff2222' : '#22ff88'}`,
         'font-size:26px', 'font-weight:normal', 'margin:0',
@@ -214,7 +216,7 @@ export function showEndScreen(opts = {}) {
     ].join(';');
 
     const bodyEl = document.createElement('p');
-    bodyEl.innerHTML = body;
+    bodyEl.innerHTML = displayDashes(body);
     bodyEl.style.cssText = [
         'color:#cccccc', 'font-size:20px', 'font-family:"VT323",monospace',
         'margin:0', 'text-align:center', 'max-width:680px', 'line-height:1.7'

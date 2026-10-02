@@ -14,6 +14,7 @@
  */
 
 import { isWorldPointOnScreen, getCanvas } from './input.js';
+import { staticNpcBodyDistSq } from '../npc-reach.js';
 // Imported, never mirrored: an `inRange` that disagrees with the game's own
 // threshold makes the bridge claim an interaction will work when the click
 // will actually just walk the player closer.
@@ -308,7 +309,10 @@ function describeNPC(sprite, roomId, px, py, mx, my) {
     // interactions.js:1670. Report both numbers, as for objects.
     const npcId = sprite.npcId || null;
     const npc = npcId ? window.npcManager?.npcs?.get?.(npcId) : null;
-    const d = dist(px, py, sprite.x, sprite.y);
+    // Static-sprite NPCs are also measured to their collision body (npc-reach.js)
+    const edgeSq = staticNpcBodyDistSq(window.player, sprite);
+    const edge = edgeSq === null ? Infinity : Math.sqrt(edgeSq);
+    const d = Math.min(dist(px, py, sprite.x, sprite.y), edge);
     const di = Math.min(dist(mx, my, sprite.x, sprite.y), d);
     const hostile = npcId ? !!window.npcHostileSystem?.isNPCHostile?.(npcId) : false;
     const ko = npcId ? !!window.npcHostileSystem?.isNPCKO?.(npcId) : false;
