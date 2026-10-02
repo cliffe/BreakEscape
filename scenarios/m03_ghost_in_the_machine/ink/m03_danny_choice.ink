@@ -5,6 +5,8 @@ EXTERNAL player_name()
 VAR danny_fate = ""
 VAR danny_evidence_seen = false
 VAR player_choice_made = false
+// Final round: a return visit gets its own line, skipped once after an exit.
+VAR rest_quiet = false
 
 // Root divert. When a conversation has ended (-> DONE), the engine restores only
 // its variables on the next talk and continues from the root (npc-conversation-
@@ -22,7 +24,12 @@ VAR player_choice_made = false
 Narrator: The office is small and lived-in. A framed photo faces the chair. On the screen, a folder is still open: "GHOST -- Hospital Infrastructure Assessment".
 Narrator: A man is sitting in the dark with his coat on, as if he has been about to leave for hours and hasn't managed it. He doesn't startle.
 Danny Foster: You're not one of ours. I'd know you.
-Danny Foster: You've seen it. The hospital files.
+// Pass 4 (fix 9): only assume the player has read his files if they have.
+{ danny_evidence_seen:
+    Danny Foster: You've seen it. The hospital files.
+- else:
+    Danny Foster: You're here about the hospital. Aren't you.
+}
 * [SAFETYNET. I'm investigating the St. Catherine's attack.]
     -> reveal
 * [St. Catherine's. Your reconnaissance. People died.]
@@ -32,7 +39,7 @@ Danny Foster: You've seen it. The hospital files.
 
 === reveal ===
 #speaker:danny_foster
-Danny Foster: *very quietly* SAFETYNET.
+Danny Foster: SAFETYNET.
 Danny Foster: I didn't know. You have to believe that. She told me it was a security-awareness client. That's what the paperwork says because that's what she told me to write.
 Danny Foster: And then I saw the news, and I knew exactly what I'd handed her.
 -> the_question
@@ -54,73 +61,93 @@ Danny Foster: I did the work. Careful work. And then the ransomware ran on the e
 #speaker:danny_foster
 ~ danny_evidence_seen = true
 Danny Foster: When I worked it out, I went to her. She told me I was paranoid. Then she gave me a raise and called me essential.
-Danny Foster: She was buying my silence and I was letting her, because the alternative is this. A stranger in my office at night, and me trying to explain that I'm not what the map makes me look like.
+Danny Foster: She was buying my silence and I was letting her. The alternative is this.
+Danny Foster: A stranger in my office at night, and me trying to explain I'm not what the map makes me look like.
 Danny Foster: So. What happens now?
-+ [Come in on your own. Testify against Sterling. I'll argue you were deceived.]
++ [Come in and testify. You were deceived -- I'll put that in the report myself.]
     -> protect
-+ [You drew the map. You took the money to stay quiet. That's a choice, and you'll answer for it.]
++ [You drew the map, took the money, stayed quiet. You'll answer for it.]
     -> expose
-+ [This isn't my call to make for you. Decide it yourself.]
++ [This isn't my call. You know what you did. Decide it yourself.]
     -> leave
 
 === protect ===
 #speaker:danny_foster
-You: You were lied to. The reconnaissance was legitimate work under a false client. Come in voluntarily and cooperate, and I'll put that in the report myself. Not immunity. But the truth, in your favour.
 Danny Foster: *shakily* You'd do that.
-You: Sterling goes down for what she did with your work. You don't have to go down with her. But you have to come in, and you have to tell them everything.
-Danny Foster: Everything. Yes. God, yes.
-Narrator: He reaches for his phone with a hand that isn't quite steady, and for the first time all night he looks like a man who might sleep.
-~ danny_fate = "protected"
-#set_global:danny_fate:protected
-~ player_choice_made = true
-#complete_task:danny_choice_made
-#exit_conversation
--> after_choice
++ [Sterling goes down for her part. You don't have to go down with her -- but you tell them everything.]
+    Danny Foster: Everything. Yes. God, yes.
+    Narrator: He reaches for his phone with a hand that isn't quite steady, and for the first time all night he looks like a man who might sleep.
+    ~ danny_fate = "protected"
+    #set_global:danny_fate:protected
+    ~ player_choice_made = true
+    #complete_task:danny_choice_made
+    ~ rest_quiet = true
+    #exit_conversation
+    -> after_choice
 
 === expose ===
 #speaker:danny_foster
-You: You documented the systems. You handed over the exploit path. And when you knew what it was for, you took her money and said nothing. Deceived at the start, complicit by the end.
 Danny Foster: *quietly* You're not wrong. That's the worst of it. You're not wrong.
-You: I'm logging all of it. The recon, the emails, the raise. Prosecutors decide the charge, not me. Cooperating will help you. Nothing erases it.
-Danny Foster: *defeated* Then I'll cooperate. For whatever it's worth. Just -- in whatever you write, say that I didn't know at the start. Please.
-Narrator: He doesn't argue. Somewhere in the last few months he stopped believing he'd get to.
-~ danny_fate = "exposed"
-#set_global:danny_fate:exposed
-~ player_choice_made = true
-#complete_task:danny_choice_made
-#exit_conversation
--> after_choice
++ [I'm logging it all -- recon, emails, the raise. Cooperating helps you. Nothing erases it.]
+    Danny Foster: *defeated* Then I'll cooperate. For what it's worth. Just -- in whatever you write, say I didn't know at the start. Please.
+    Narrator: He doesn't argue. Somewhere in the last few months he stopped believing he'd get to.
+    ~ danny_fate = "exposed"
+    #set_global:danny_fate:exposed
+    ~ player_choice_made = true
+    #complete_task:danny_choice_made
+    ~ rest_quiet = true
+    #exit_conversation
+    -> after_choice
 
 === leave ===
 #speaker:danny_foster
-You: You already know what you did and what you owe. That decision belongs to you, not to a stranger in your office at four in the morning.
-You: Sterling is who I came for. What you do next is between you and whoever you pick up that phone to call.
 Danny Foster: That's almost worse. At least a decision made for me isn't mine.
-You: It's the only one that'll hold, though. Make it.
-Narrator: You leave him with the photo, the open folder, and the phone. Whatever he does with the three of them, he does alone.
-~ danny_fate = "left"
-#set_global:danny_fate:left
-~ player_choice_made = true
-#complete_task:danny_choice_made
-#exit_conversation
--> after_choice
++ [Yours is the only one that'll hold. Make it.]
+    Narrator: You leave him with the photo, the open folder, and the phone. Whatever he does with the three of them, he does alone.
+    ~ danny_fate = "left"
+    #set_global:danny_fate:left
+    ~ player_choice_made = true
+    #complete_task:danny_choice_made
+    ~ rest_quiet = true
+    #exit_conversation
+    -> after_choice
 
 === after_choice ===
 // Resting point (m02 pattern): choices first, never DONE, so a re-talk in the
 // same session lands here instead of "(End of conversation)".
 #speaker:danny_foster
+{ rest_quiet:
+    ~ rest_quiet = false
+- else:
+    { danny_fate == "protected":
+        Danny Foster: *quietly* I've made the call.
+    }
+    { danny_fate == "exposed":
+        Danny Foster: I'm still here. I said I would be.
+    }
+    { danny_fate == "left":
+        Danny Foster: Still deciding.
+    }
+    { danny_fate == "" or danny_fate == "ko":
+        Narrator: He hasn't moved.
+    }
+}
 + {danny_fate == "protected"} [Danny's on the phone to SAFETYNET. Leave him to it.]
     Danny Foster: They're sending someone for me. Thank you. I mean it.
+    ~ rest_quiet = true
     #exit_conversation
     -> after_choice
 + {danny_fate == "exposed"} [Danny's sitting very still. Leave him.]
     Danny Foster: I'm not going anywhere. You know where to find me.
+    ~ rest_quiet = true
     #exit_conversation
     -> after_choice
 + {danny_fate == "left"} [Danny's still staring at the phone. Leave him.]
     Danny Foster: I'm still deciding. Let me.
+    ~ rest_quiet = true
     #exit_conversation
     -> after_choice
 + {danny_fate == "" or danny_fate == "ko"} [Leave]
+    ~ rest_quiet = true
     #exit_conversation
     -> after_choice

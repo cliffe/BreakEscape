@@ -1,12 +1,12 @@
 # Ghost in the Machine (m03) — Testing Walkthrough
 
-> Updated in the pass-2 improvement and the pass-3 puzzle-chains pass (`PUZZLE_CHAINS_PLAN.md`). Last updated: 2026-10-01.
-> Reconciled against: dungeon_graph.md (regenerated 2026-09-30).
+> Updated in the pass-2 improvement, the pass-3 puzzle-chains pass (`PUZZLE_CHAINS_PLAN.md`) and the pass-4 design fixes (`DESIGN_REVIEW.md`, "Changes made"). Last updated: 2026-10-02.
+> Reconciled against: dungeon_graph.md (regenerated 2026-10-02).
 
 ## Prerequisites
 - `ruby scripts/validate_scenario.rb scenarios/m03_ghost_in_the_machine/scenario.json.erb` → schema passes, **0 INVALID, 0 mission-critical soft-locks**. Three benign warnings only: two `rfidCard` "unknown field" notes (engine reads the field; schema doesn't list it) and one deliberately-repeatable guard `lockpick_used_in_view` cutscene (`cooldown: 30000`).
-- `./scripts/compile-ink.sh m03_ghost_in_the_machine` → 7 files, 0 failures, no loose ends.
-- Graph: Puzzle 25/25, Story 6/5, Integrated 31/37. Critical path (2 hops): **Get Inside WhiteHat → Breach The Server Room → Settle Accounts**.
+- `./scripts/compile-ink.sh m03_ghost_in_the_machine` → 8 files (pass 4 adds `m03_night_transition.ink`), 0 failures, no loose ends.
+- Graph (pass 4): Puzzle 36/43, Story 6/5, Integrated 42/55. The VM launcher now leads to the four challenges, both badges come off their holders through an AND-gate with the cloner, and the plaque, whiteboard and draft carry clue edges. Critical path (2 hops): **Get Inside WhiteHat → Breach The Server Room → Settle Accounts**.
 
 ### Minigames / locks
 | System | Status |
@@ -30,7 +30,7 @@ Player starts with: phone, **RFID Cloner**, **Lock Pick Kit**.
 **Re-talking (round 4):** person-chat conversations never reach DONE (m02 pattern). Every exit is `#exit_conversation` followed by a divert to a choice-first resting knot: receptionist `hub` (night-aware, leads to `closing_up`), Victoria `idle`, Danny `after_choice`, guard `guard_idle`. A second talk in the same session therefore shows those choices, not "(End of conversation)". Victoria's clone tags run once, guarded by the `victoria_card_cloned` global; the post-clone choices live in `clone_debrief`.
 
 - [ ] Same session, no reload: re-talk to the receptionist after "End conversation" (day hub; at night "You're still here? It's late."), to Danny after deciding, and to Victoria after the clone Save (no RFID loop; at night "Sterling. We need to talk.")
-- [ ] Reload after the clone, then enter the main hallway: the clone-success call does **not** replay (`clone_call_done`)
+- [ ] Reload after the night cutscene, then enter the main hallway: the cutscene does **not** replay (`clone_call_done`)
 
 **Guard (pass 2):** the security guard is **visible all mission** in the **executive wing** (a hidden guard would still trip the engine's lockpick LoS check invisibly). His ink is phase-aware: a staff-only line in the afternoon, the night excuse flow after `mission_phase` flips to `act2_infiltration`. He patrols x 2..8 of that corridor and watches the office door — pick the exec-office lock in his line of sight and it costs a detection (`on_lockpick_detected`, repeatable with a 30s cooldown).
 
@@ -48,7 +48,7 @@ Player starts with: phone, **RFID Cloner**, **Lock Pick Kit**.
    - *KO fallback*: `taskOnKO: clone_reception_badge`; the receptionist drops a physical **Staff Access Badge** keycard (`card_id: receptionist_badge`) that opens the conference door directly.
 5. **Main Hallway → Conference Room door (west)** — RFID lock (`requires: receptionist_badge`); emulate the cloned/looted badge → door opens.
 6. **Conference Room — Victoria Sterling** — Talk → `start` knot fires **`#complete_task:meet_victoria`**.
-7. **Victoria hub** — (pass 3) Play the curious recruit: the openly accusing choices (and "innocent people") raise `victoria_suspicious`; a narrator line warns when it reaches 10. Taking "[Play the eager recruit again]" (offered once warned) lowers it by 10. If the player goes to the board still at 10+ without that beat, the read drops once in `clone_check_1` (`read_dropped`); retry via eager beat → "[Drift back to the whiteboard]". Build influence to ≥ 20 (or exhaust both topics), then "Move closer to examine the whiteboard" → `clone_rfid_opportunity` → … → `clone_complete` → `#clone_keycard:victoria_keycard_clone` + **`clone_rfid_card`**. Handler sets `mission_phase: act2_infiltration` and points you at the server room after hours. (pass 3c) The task completes only on **Save** (HaX `card_cloned` mapping, `cardName === 'Executive Keycard'`, which also sets `victoria_card_cloned`). If the flipper is closed before Save, re-talk offers "[Lean back towards the whiteboard. The cloner needs another read.]".
+7. **Victoria hub** — (pass 3) Play the curious recruit: the openly accusing choices (and "innocent people") raise `victoria_suspicious`; a narrator line warns when it reaches 10. Taking "[Play the eager recruit again]" (offered once warned) lowers it by 10. If the player goes to the board still at 10+ without that beat, the read drops once in `clone_check_1` (`read_dropped`); retry via eager beat → "[Drift back to the whiteboard]". Build influence to ≥ 20 (or exhaust both topics), then "Move closer to examine the whiteboard" → `clone_rfid_opportunity` → … → `clone_complete` → `#clone_keycard:victoria_keycard_clone` + **`clone_rfid_card`**. Handler sets `mission_phase: act2_infiltration`. (pass 4) On the first entry to the main hallway after that, the hidden `night_transition` NPC plays a short narrated cutscene (you leave with the afternoon visitors; eleven that night you're back) and sets `clone_call_done`; HaX then texts the server-room instruction. This replaces the old "sit tight" phone call (`on_rfid_clone_success`, removed). (pass 3c) The task completes only on **Save** (HaX `card_cloned` mapping, `cardName === 'Executive Keycard'`, which also sets `victoria_card_cloned`). If the flipper is closed before Save, re-talk offers "[Lean back towards the whiteboard. The cloner needs another read.]".
    - *KO fallback*: HaX handlers on `npc_ko:victoria_sterling` (not `global_variable_changed:victoria_ko`, which the engine never emits) set `victoria_ko` + `victoria_fate: ko` and complete `meet_victoria` + `clone_rfid_card`. If she is KO'd before her card is cloned, HaX calls (`on_victoria_ko_card`) and gives **Executive Keycard (Nightshade's copy)** (`card_id: victoria_keycard_clone`), which opens the server room.
 
 **Aim completes when** 4, 6, 7 done → unlocks `act2_breach_server_room`, `search_executive_office`, `collect_lore`, `perfect_stealth`.
@@ -84,14 +84,14 @@ Player starts with: phone, **RFID Cloner**, **Lock Pick Kit**.
 
 14. **Executive Office — Filing Cabinet** (key, lockpick) → **lore_fragment_1** (`unlock_object exec_filing_cabinet`) — Zero Day history.
 15. **Server Room — Wall Safe** (PIN `5829`) → **lore_fragment_2** (`unlock_object wall_safe_server`); Agent `on_exploit_catalog_found`. The code is **not** the founding year: the whiteboard (step 10) says it lives in Sterling's drafts; her unsent draft on the office PC (step 12) carries `5829`. Chain: whiteboard → PC (password `Sterling2010`, founding year 2010) → draft → safe.
-16. **Executive Office — Desk Drawer, Hidden USB Drive** — Read → `usb_seen` → handler completes **lore_fragment_3**; Agent `on_architect_directive_found`. Decode Base64 → ROT13 (layered) at CyberChef.
+16. **Executive Office — Desk Drawer, Hidden USB Drive** — Read → `usb_seen` → handler completes **lore_fragment_3**; Agent `on_architect_directive_found`. Decode Base64 → ROT13 (layered) at CyberChef. (pass 4) HaX asks what it says: three answers, one only knowable from the decoded text (grid storage and substations, then hospitals on generator, winter). The right one sets `directive_decoded`; a wrong one gets "You're still a layer down" and the choice stays open; "I haven't got it to read yet" leaves it on her hub as "About the drive from her desk". Nothing is gated on it; the debrief says "took both layers off it yourself" only when it is set.
 
 ---
 
 ## Aim: Perfect Stealth (`perfect_stealth`) *(parallel; optional)*
 [Unlocks after: `act1_gain_access` complete]
 
-17. **zero_detection** *(optional)* — completed by `#complete_task:zero_detection` at the top of the closing debrief when `guard_detection_count == 0` **and** `exec_office_entered` (set on entering Sterling's office) **and not** `guard_knocked_out` (pass 3) (`m03_closing_debrief.ink`, `start`). Earned by timing the guard patrol and never lockpicking in his LoS.
+17. **zero_detection** *(optional; pass 4 title "Get into Sterling's office unseen")* — completed by `#complete_task:zero_detection` at the top of the closing debrief when `guard_detection_count == 0` **and** `exec_office_entered` (set on entering Sterling's office) **and not** `guard_knocked_out` (pass 3) (`m03_closing_debrief.ink`, `start`). Earned by timing the guard patrol and never lockpicking in his LoS.
 
 ---
 
@@ -99,7 +99,7 @@ Player starts with: phone, **RFID Cloner**, **Lock Pick Kit**.
 [Unlocks after: `act2_breach_server_room` complete. `concludeRequires.tasksCompleted`: `submit_network_scan_flag`, `submit_ftp_flag`, `submit_http_flag`, `submit_distcc_flag`]
 
 18. **Danny's Office — Danny Foster** *(optional task)* — A live **Danny Foster** NPC. Talk to him for the confrontation (his open PC also holds the readable hospital-recon folder and his personal notes). Choose **protect / expose / leave** → `#set_global:danny_fate:<x>` + **`#complete_task:danny_choice_made`**. KO backstop: `taskOnKO` completes the task, and the HaX handler sets `danny_fate: ko`.
-19. **Return to Victoria (after hours)** — `night_confrontation_ready` is set by the HaX handler once **all four** flags are in (each flag sets its own `flag_*_submitted` global; whichever arrives last passes the all-four check). Her `start` then diverts to `nighttime_confrontation`. Choose a fate: **cold-recruit / arrest / escape** → `#set_global:victoria_fate:<x>` + `victoria_<x>` + **`#set_global:victoria_choice_made:true`** + **`#complete_task:victoria_choice_made`**.
+19. **Return to Victoria (after hours)** — (pass 4) Before all four flags are in, talking to her at night plays `night_on_call` (she's on the phone, back to the door; you back out) and her idle choice reads "[Look in on Sterling]". `night_confrontation_ready` is set by the HaX handler once **all four** flags are in (each flag sets its own `flag_*_submitted` global; whichever arrives last passes the all-four check). Her `start` then diverts to `nighttime_confrontation`. Choose a fate: **cold-recruit / arrest / escape** → `#set_global:victoria_fate:<x>` + `victoria_<x>` + **`#set_global:victoria_choice_made:true`** + **`#complete_task:victoria_choice_made`**.
    - *KO path*: `victoria_fate: ko` is set on the KO. **Night KO** (all four flags already in): the handler sets `victoria_choice_made` immediately. **Day KO**: once the fourth flag lands, HaX sends the player back to the conference room, and `victoria_choice_made` is set on entering it — so the debrief doesn't fire on top of the revelation call and the drop-site.
 20. **Win** — (round 5) `moral_choices` now ends on **`hear_debrief`**, completed on the debrief's last line, so the bond visualiser and credits come **after** the debrief. `debrief_played` is set at its top; a room-entry backstop completes `hear_debrief` if the page reloads mid-debrief. Previously: `global_variable_changed:victoria_choice_made` fires the **closing_debrief** NPC (four-fate branch: recruited/arrested/escaped/KO) + spy-action music → debrief → **`#mission_complete`** → victory credits. `concludeRequires` (the four flag tasks) satisfied. `victoria_choice_made` drives the ending branch but does not gate it.
 
@@ -194,6 +194,30 @@ Reconciliation is clean: every Puzzle Graph node maps to a walkthrough step (ser
 - [ ] (3c) Debrief names what you left behind (filing-cabinet history / wall-safe catalogue / desk drive)
 - [ ] (3f) Credits: watch `#bv-credits-overlay` (one line at a time, about 3.5 s each), not the visualiser panel. Exactly one DANNY FOSTER line plays: his fate, or "NEVER FOUND" if you never met him
 - [ ] KO Victoria before the clone: if her keycard drops, HaX's line ("If her card's come loose, leave it…") still reads true
+
+## Pass 4 (design review) checks
+- [ ] HaX's first text ("Reception first. Lean in near her lanyard…") arrives about 3 s after the briefing closes, and is not resent after a reload
+- [ ] Briefing: HaX is in the room (no "patched in over comms", no "thanks for picking up"); Netherton names Operation Cyber Arsenal; the address is Callaghan Square, Cardiff; the clone topic names the whiteboard as the moment
+- [ ] Save Victoria's clone, stay in her room: no cutscene yet, and she still talks as in the afternoon; walk into the main hallway: the night cutscene plays once, then HaX's text "You're in. Server room's at the north end…"
+- [ ] At night, before the fourth flag: talking to Victoria plays her phone call and ends; the receptionist (if conscious) says she came back for her charger and asks whether Ms. Sterling is expecting you
+- [ ] Each of the scan, FTP and price-list flags gets a one-line HaX text; if it's the last of the four, the all-flags message follows it ("Sterling hasn't left: she's in the conference room, off the phone now…")
+- [ ] KO the receptionist: no "badge is in the cloner" text; HaX texts that her badge is on the floor and the desk will be noticed. Meeting Victoria: "Our receptionist isn't at her desk…" and the eager-recruit walk-back is on offer. At night: "Nor do they leave my receptionist on her own floor." Debrief line and a WHITEHAT RECEPTION credit (warning)
+- [ ] Night, tell the guard "SAFETYNET": Victoria's opener says the guard rang her and drops "Who are you with?"; the debrief mentions it. Pay the £500 bribe: the debrief mentions the receipt
+- [ ] Pick Sterling's office in the afternoon in the guard's view: no torch in the catch line
+- [ ] Danny, without opening his folder first: "You're here about the hospital. Aren't you."
+- [ ] Debrief, drive never opened: the search team recovered it and HaX gives its substance, then the Architect section plays (as for a found drive); final assessment says the drive was left "for the search team"
+- [ ] Debrief "For the report, here's what let you in": MIFARE line only if you cloned a badge, password line only if you opened a file on her PC, distcc line always, encoding line only if you opened an encoded item
+- [ ] Debrief "You called it murder with an invoice. Now we have the invoice." only if you picked that briefing choice
+- [ ] Recruited ending: "Whether she stays turned is anyone's guess." (no promise of later missions)
+- [ ] Phone hint menu: every topic is still on offer after you've read it once
+
+### Pass 4 round 2
+- [ ] Night scene shows the player's own portrait on a plain backdrop (no HaX sprite, no circuit-board frame); `clone_call_done` is set when it closes, so a reload mid-scene replays it, and a reload after it does not. HaX's "You're in… use Sterling's card at the reader. Mind the guard in the executive wing." arrives within about a second of the close
+- [ ] HaX's guard warning arrives as you walk into the executive wing, before you can reach him or the door
+- [ ] Tell the guard you're SAFETYNET, or pay the £500: he no longer catches the pick. Perfect Stealth is then not awarded; the debrief says "you'd talked your way past him"
+- [ ] Never enter the executive wing: no guard line in the debrief opening. Enter it but not the office: "you never gave him the chance"
+- [ ] Submit distcc last: the all-flags text arrives about 2 s after the revelation call's last line ("Finish up, then Sterling…"), never inside it (`revelation_heard`). Submit another flag last: it arrives as before
+- [ ] Drive check: the three answers differ only in details from the decoded text; the right one is the middle option
 
 ## Development Status
 All systems implemented. Manual test consoles: submit flags at the Drop-Site Terminal; take the CyberChef workstation and paste the encoded whiteboard/roster/USB text; each decode task completes on **reading** its item (`whiteboard_seen` / `roster_seen` / `usb_seen`). To force the ending in testing, set `globalVars.victoria_choice_made = true` after `submit_distcc_flag`.

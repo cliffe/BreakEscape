@@ -21,6 +21,13 @@ VAR victoria_fate = ""
 VAR usb_seen = false
 VAR lore_directive_found = false
 VAR roster_seen = false
+// Pass 4 synced globals. receptionist_ko: she noticed the empty front desk (fix 2).
+// clone_call_done: set when the night-transition scene plays, so from then on it
+// is night (fix 3); mission_phase flips while the player is still in her room.
+// guard_told_safetynet: the guard rang her (fix 6).
+VAR receptionist_ko = false
+VAR clone_call_done = false
+VAR guard_told_safetynet = false
 // Local state (pass 3). P4: Victoria's suspicion decides whether the custom-key read
 // lands first time. P1: the recruit offer is refused once without the drive.
 VAR suspicion_warned = false
@@ -33,6 +40,10 @@ VAR recruit_refused = false
 VAR asked_lab_services = false
 VAR asked_lab_access = false
 VAR asked_lab_praise = false
+// Playtest round: set by every exit so idle/hub re-entry lines show on a reopen,
+// not in the same batch as a goodbye.
+VAR idle_quiet = false
+VAR hub_quiet = false
 
 // Root divert. When a conversation has ended (-> DONE), the engine restores only
 // its variables on the next talk and continues from the root (npc-conversation-
@@ -52,24 +63,39 @@ VAR asked_lab_praise = false
 { night_confrontation_ready:
     -> nighttime_confrontation
 }
+// Pass 4 (fix 3): at night, before the network work is in, she is on a call and
+// the player backs out unseen. The confrontation waits for all four flags.
+{ clone_call_done:
+    -> night_on_call
+}
 #complete_task:meet_victoria
 { not recruitment_discussed:
     #display:victoria-professional
-    Narrator: Victoria Sterling stands as you enter. Professional attire, confident bearing.
+    Narrator: Victoria Sterling rises as you come in, composed and sure of herself.
     Victoria Sterling: You must be {player_name()}. Welcome to WhiteHat Security.
     Victoria Sterling: I'm Victoria Sterling, CEO. Have a seat.
     Narrator: She gestures to the conference table.
+    // Pass 4 (fix 2): a knocked-out receptionist doesn't go unnoticed. Feeds the
+    // P4 suspicion logic, and opens the "eager recruit" walk-back.
+    { receptionist_ko:
+        ~ victoria_suspicious = victoria_suspicious + 10
+        ~ suspicion_warned = true
+        Victoria Sterling: Our receptionist isn't at her desk. You didn't pass her on the way in?
+        Narrator: She says it lightly. She watches your face the whole time she says it.
+    }
     ~ recruitment_discussed = true
     -> first_impression
 }
 { recruitment_discussed && not victoria_card_cloned:
     #display:victoria-neutral
     Victoria Sterling: Back for more conversation?
+    ~ hub_quiet = true
     -> hub
 }
 { victoria_card_cloned:
     #display:victoria-neutral
     Victoria Sterling: We covered the main points. I'll be in touch about the training programme.
+    ~ idle_quiet = true
     #exit_conversation
     -> idle
 }
@@ -83,17 +109,15 @@ Victoria Sterling: Solid technical skills. But that's not why you're here.
     ~ victoria_influence = victoria_influence + 5
     # influence_increased
     -> philosophy_intro
-* [I'm interested in advanced research]
+* [I want cutting-edge research. Real impact.]
     ~ victoria_influence = victoria_influence + 10
     # influence_increased
-    You: I want to work on cutting-edge research. Real impact.
     Victoria Sterling: "Real impact." Good. Let's talk about what that means.
     -> philosophy_intro
-* [I heard Zero Day does interesting work]
+* [I've heard Zero Day's training programmes are... unconventional.]
     ~ victoria_influence = victoria_influence + 5
     # influence_increased
     ~ victoria_suspicious = victoria_suspicious + 5
-    You: I've heard Zero Day's training programmes are... unconventional.
     Victoria Sterling: *slight pause* We push boundaries, yes. Let me explain our approach.
     -> philosophy_intro
 
@@ -101,23 +125,20 @@ Victoria Sterling: Solid technical skills. But that's not why you're here.
 #speaker:victoria_sterling
 Victoria Sterling: The traditional security model is broken. Researchers find vulnerabilities, report them to vendors, wait months for patches.
 Victoria Sterling: Meanwhile, those same vulnerabilities get discovered by others. Sold on dark markets. Exploited.
-* [That's the responsible disclosure debate]
+* [The responsible disclosure versus full disclosure debate. Classic dilemma.]
     ~ victoria_influence = victoria_influence + 10
     # influence_increased
-    You: The responsible disclosure versus full disclosure debate. Classic dilemma.
     Victoria Sterling: Exactly. But there's a third option most won't discuss.
     -> market_efficiency_pitch
-* [Researchers deserve to be paid]
+* [Researchers deserve fair pay for what they find.]
     ~ victoria_influence = victoria_influence + 15
     # influence_increased
-    You: Researchers deserve compensation for their work. Fair pay for valuable discoveries.
-    Victoria Sterling: *warmly* Finally. Someone who gets it.
+    Victoria Sterling: *warmly* Good. You'd be amazed how many people choke on that sentence.
     -> market_efficiency_pitch
-* [Sounds like you sell vulnerabilities]
+* [This sounds like you're advocating selling vulnerabilities.]
     ~ victoria_influence = victoria_influence - 5
     # influence_decreased
     ~ victoria_suspicious = victoria_suspicious + 10
-    You: This sounds like you're advocating selling vulnerabilities.
     Victoria Sterling: "Selling" is such a crude term. Think of it as market-driven research incentives.
     { victoria_suspicious >= 10 and not suspicion_warned:
         ~ suspicion_warned = true
@@ -128,27 +149,32 @@ Victoria Sterling: Meanwhile, those same vulnerabilities get discovered by other
 === market_efficiency_pitch ===
 #speaker:victoria_sterling
 Victoria Sterling: We provide liquidity to the vulnerability market.
-Victoria Sterling: Every system tends toward disorder. That's thermodynamics - entropy is inevitable.
+Victoria Sterling: Every system tends towards disorder. That's thermodynamics - entropy is inevitable.
 Victoria Sterling: The question isn't whether systems will fail. It's who benefits from that knowledge.
 ~ topic_free_market = true
 -> hub
 
 === hub ===
-+ {not topic_zero_day_philosophy} [Ask about Zero Day's mission]
+{ hub_quiet:
+    ~ hub_quiet = false
+- else:
+    Victoria Sterling: {&Go on.|What else?|Ask.}
+}
++ {not topic_zero_day_philosophy} [What is Zero Day actually for?]
     -> zero_day_philosophy
-+ {not topic_ethics} [Question the ethics]
++ {not topic_ethics} [Can I ask about the ethics of it?]
     -> ethics_discussion
-+ {(victoria_influence >= 20 or (topic_zero_day_philosophy and topic_ethics)) && not rfid_clone_started} [Move closer to examine the whiteboard]
++ {(victoria_influence >= 20 or (topic_zero_day_philosophy and topic_ethics)) && not rfid_clone_started} [Is that your training lab on the whiteboard?]
     -> clone_rfid_opportunity
 + {rfid_clone_started && not rfid_clone_complete && not read_dropped} [Keep her talking about the lab]
     -> clone_rfid_distraction
 + {read_dropped && not rfid_clone_complete && (victoria_suspicious < 10 or eager_act_done)} [Drift back to the whiteboard]
     -> clone_retry
-+ {(suspicion_warned or read_dropped) && not eager_act_done && not rfid_clone_complete} [Play the eager recruit again]
++ {(suspicion_warned or read_dropped) && not eager_act_done && not rfid_clone_complete} [{receptionist_ko:Nobody was at the desk, so I found my own way in.|Sorry about earlier. Freelance habit -- I test every client's story.}]
     -> eager_recruit
 + {rfid_clone_complete && not victoria_card_cloned} [Lean back towards the whiteboard. The cloner needs another read.]
     -> clone_recapture
-+ [End the conversation]
++ [Thank you. I've taken enough of your time.]
     #speaker:victoria_sterling
     { victoria_influence >= 30:
         Victoria Sterling: I think you'd be a good fit for our training programme. I'll be in touch.
@@ -160,6 +186,7 @@ Victoria Sterling: The question isn't whether systems will fail. It's who benefi
     { victoria_influence < 10:
         Victoria Sterling: I'm not sure you're the right fit for Zero Day's culture. We'll be in touch.
     }
+    ~ idle_quiet = true
     #exit_conversation
     -> idle
 
@@ -174,29 +201,27 @@ Victoria Sterling: We discover, we price according to demand, we connect buyers 
     ~ victoria_influence = victoria_influence + 5
     # influence_increased
     -> moral_rationalization
-* [That sounds like wilful ignorance]
+* [And you don't care what the buyers do? That's wilful ignorance.]
     ~ victoria_influence = victoria_influence - 10
     # influence_decreased
     ~ victoria_suspicious = victoria_suspicious + 10
-    You: "Not our concern"? That's wilful ignorance of the consequences.
-    Victoria Sterling: *a touch defensive* It's recognising the reality of how markets work.
+    Victoria Sterling: It's recognising the reality of how markets work.
     { victoria_suspicious >= 10 and not suspicion_warned:
         ~ suspicion_warned = true
         Narrator: Her smile stays exactly where it was. Her eyes don't. A recruit wouldn't have said that.
     }
     -> moral_rationalization
-* [The free market argument]
+* [So you're applying free-market principles to vulnerability research.]
     ~ victoria_influence = victoria_influence + 15
     # influence_increased
-    You: So you're applying free market principles to vulnerability research.
-    Victoria Sterling: *smiles* Precisely. Supply and demand. Transparent economics.
+    Victoria Sterling: Precisely. Supply and demand. Transparent economics.
     -> moral_rationalization
 
 === moral_rationalization ===
 #speaker:victoria_sterling
 Victoria Sterling: We live in a world where vulnerabilities exist whether we like it or not.
-Victoria Sterling: Our choice isn't between exploit sales happening or not happening. They already happen.
-Victoria Sterling: Our choice is whether security researchers get fairly compensated, or whether only criminals profit.
+Victoria Sterling: Exploit sales happen with or without us.
+Victoria Sterling: So either the researcher gets paid, or the criminal does. I know which I'd rather fund.
 ~ victoria_influence = victoria_influence + 5
 # influence_increased
 -> hub
@@ -206,29 +231,26 @@ Victoria Sterling: Our choice is whether security researchers get fairly compens
 ~ topic_ethics = true
 Victoria Sterling: Let me guess - you want to ask about the "morality" of selling exploits.
 Victoria Sterling: Go ahead. I've heard every argument.
-* [What about innocent people getting hurt?]
+* [What about when exploits you sold hurt people? Hospitals, infrastructure?]
     ~ victoria_influence = victoria_influence - 5
     # influence_decreased
     ~ victoria_suspicious = victoria_suspicious + 5
-    You: What about when exploits you sold hurt innocent people? Hospitals, critical infrastructure?
     Victoria Sterling: *evenly* That's on the buyer, not the researcher who discovered the vulnerability.
     { victoria_suspicious >= 10 and not suspicion_warned:
         ~ suspicion_warned = true
         Narrator: Her smile stays exactly where it was. Her eyes don't. A recruit wouldn't have said that.
     }
     -> ethics_response_harm
-* [There's a difference between research and weaponization]
+* [There's a line between research and making weapons. Where do you draw it?]
     ~ victoria_influence = victoria_influence + 5
     # influence_increased
-    You: There's a line between security research and creating weapons. Where do you draw that line?
     Victoria Sterling: Interesting question. Most people don't even acknowledge there is a line to discuss.
     -> ethics_response_nuance
-* [I'm not here to judge]
+* [I'm not here to judge your business model. Just to understand it.]
     ~ victoria_influence = victoria_influence + 15
     # influence_increased
     ~ player_approach = "diplomatic"
-    You: I'm not here to judge your business model. I'm here to understand it.
-    Victoria Sterling: *pleased* That's refreshing. Most people lead with moral indignation.
+    Victoria Sterling: That's refreshing. Most people lead with moral indignation.
     -> ethics_response_pragmatic
 
 === ethics_response_harm ===
@@ -250,7 +272,7 @@ Victoria Sterling: If someone uses a crowbar to break into a house, you don't bl
 
 === ethics_response_pragmatic ===
 #speaker:victoria_sterling
-Victoria Sterling: Pragmatism. I appreciate that.
+Victoria Sterling: Good. Indignation is cheap, and it pays nobody's rent.
 Victoria Sterling: The truth is, I sleep fine at night because I believe in information freedom.
 Victoria Sterling: Vulnerabilities are facts about reality. Suppressing facts doesn't make anyone safer.
 ~ victoria_influence = victoria_influence + 10
@@ -260,10 +282,9 @@ Victoria Sterling: Vulnerabilities are facts about reality. Suppressing facts do
 
 === clone_rfid_opportunity ===
 #speaker:victoria_sterling
-Narrator: You stand and move toward the whiteboard, getting closer to Victoria.
-You: This network diagram - is this your training lab architecture?
+Narrator: You get up and go to the board, close to Victoria.
 { victoria_influence >= 20:
-    Victoria Sterling: Yes. The 192.168.100.0 subnet. Students practise on isolated VMs.
+    Victoria Sterling: Yes. An isolated network, real services. Students practise on it from the server room.
 - else:
     Victoria Sterling: *curtly* The training lab. Since you're so interested.
 }
@@ -277,8 +298,13 @@ Narrator: The cloner in your pocket starts reading her card. Custom keys: you'll
 #speaker:victoria_sterling
 ~ eager_act_done = true
 ~ victoria_suspicious = victoria_suspicious - 10
-You: I came in swinging earlier. Freelance habit -- you poke at a client's story to see if it holds. Yours does.
-Victoria Sterling: *coolly* Does it. Well. Most people don't bother to walk it back.
+// Pass 4 round 2: after a receptionist KO the doubt is about the empty desk, not
+// a pointed question, so the walk-back answers that.
+{ receptionist_ko:
+    Victoria Sterling: *coolly* How thoughtful.
+- else:
+    Victoria Sterling: *coolly* Does it. Well. Most people don't bother to walk it back.
+}
 Narrator: She doesn't warm to you. But she stops watching your hands.
 -> hub
 
@@ -304,7 +330,7 @@ Narrator: Back at the board. The cloner finds her card again and starts a fresh 
     ~ asked_lab_praise = true
     ~ victoria_influence = victoria_influence + 5
     # influence_increased
-    Victoria Sterling: We pride ourselves on authenticity. Real exploits, real scenarios.
+    Victoria Sterling: Nothing in there is a toy. My students break real things.
     -> clone_check_1
 
 === clone_check_1 ===
@@ -326,9 +352,8 @@ Victoria Sterling: Real Zero Day research requires understanding market dynamics
     ~ victoria_influence = victoria_influence + 5
     # influence_increased
     -> clone_check_2
-* [Who are your typical buyers?]
+* [Who typically buys from Zero Day?]
     ~ victoria_suspicious = victoria_suspicious + 5
-    You: Who typically buys from Zero Day?
     Victoria Sterling: *slight pause* Clients who need access to specialised research. I can't discuss specifics.
     -> clone_check_2
 
@@ -342,20 +367,17 @@ Narrator: She walks back to the table. The cloner's read stalls halfway, then dr
 === clone_check_2 ===
 #speaker:victoria_sterling
 Victoria Sterling: You're asking good questions. Technical competence is common. Strategic thinking is rare.
-* [I believe in understanding the full picture]
+Narrator: Nearly there. Keep her talking.
+* [Technical skills alone aren't enough. You need the whole ecosystem.]
     ~ victoria_influence = victoria_influence + 10
     # influence_increased
-    You: Technical skills alone aren't enough. You need to understand the ecosystem.
     Victoria Sterling: Exactly. That's why most security researchers stay poor while we thrive.
     -> clone_complete
-* [Stay focused on the whiteboard]
-    Narrator: You pretend to study the network diagram.
-    You: This training lab must have taken significant investment.
+* [This lab can't have been cheap to build.]
+    Narrator: Your eyes stay on the network diagram.
     Victoria Sterling: Worth every penny. Our students go operational faster than any university programme.
     -> clone_complete
-* [Just a few more seconds...]
-    Narrator: Keep her talking.
-    You: And the certifications - do you offer any formal credentials?
+* [Do you offer any formal certifications?]
     Victoria Sterling: We don't believe in traditional certifications. Results speak louder than paper.
     -> clone_complete
 
@@ -390,10 +412,9 @@ Narrator: She answers at length. She likes this diagram.
     -> hub
 }
 Victoria Sterling: I think that covers the basic philosophy. The training programme starts next month if you're interested.
-* [I'm very interested]
+* [This is exactly the kind of work I've been looking for.]
     ~ victoria_influence = victoria_influence + 10
     # influence_increased
-    You: This is exactly the kind of work I've been looking for.
     Victoria Sterling: Excellent. I'll have my assistant send you the enrolment details.
     -> meeting_end
 * [Let me think it over. This is a significant decision.]
@@ -414,28 +435,39 @@ Victoria Sterling: Feel free to look around the office if you'd like. Reception 
 Victoria Sterling: I have another meeting in a few minutes. But we'll be in touch.
 Narrator: Victoria's phone buzzes. She glances at it.
 Victoria Sterling: Excuse me, I need to take this.
+~ idle_quiet = true
 #exit_conversation
 -> idle
 
 === nighttime_confrontation ===
 #speaker:victoria_sterling
 #display:victoria-neutral
-Narrator: Victoria is standing by the window. Coat on, a slim bag over one shoulder. She is not startled. She has been waiting.
+Narrator: Victoria is standing by the window. Coat on, a slim bag over one shoulder. She has been waiting for you.
 Victoria Sterling: You came back after hours. Recruits don't do that.
-{ victoria_suspicious >= 10 or read_dropped or suspicion_warned:
-    Victoria Sterling: You asked about the training network twice this afternoon. Once is curiosity. Twice is an inventory.
+{ receptionist_ko:
+    Victoria Sterling: Nor do they leave my receptionist on her own floor. She can't remember your face. I can.
 - else:
+  { victoria_suspicious >= 10 or read_dropped or suspicion_warned:
+    Victoria Sterling: You asked about the training network twice this afternoon. Once is curiosity. Twice is an inventory.
+  - else:
     Victoria Sterling: You were very easy to like this afternoon. That should have worried me sooner.
+  }
 }
-Victoria Sterling: So let's not perform the part where I'm surprised. Who are you with?
+// Pass 4 (fix 6): telling her own guard costs the player the question.
+{ guard_told_safetynet:
+    Victoria Sterling: And my night guard rang me earlier, terribly excited. SAFETYNET, he said. I expect he promised you he wouldn't.
+    Victoria Sterling: So let's not perform the part where I'm surprised. Say what you came to say.
+- else:
+    Victoria Sterling: So let's not perform the part where I'm surprised. Who are you with?
+}
 * [SAFETYNET. And I know the name on your approvals. Sable.]
     Victoria Sterling: *drily* Nobody's said that name to my face before. You really have been thorough.
     -> the_reckoning
 * [St. Catherine's Hospital. Your ProFTPD exploit. People died on that ward.]
     Victoria Sterling: I sold a vulnerability. What a buyer builds with it is a buyer's problem.
-    You: You charged a healthcare premium. Forty per cent. You priced the bodies in.
-    Victoria Sterling: I priced the urgency in. Hospitals pay fast, and they pay quietly. That isn't cruelty. It's arithmetic.
-    -> the_reckoning
+    ++ [Forty per cent extra for a hospital. You priced the bodies in.]
+        Victoria Sterling: I priced the urgency in. Hospitals pay fast, and they pay quietly. That isn't cruelty. It's arithmetic.
+        -> the_reckoning
 * {usb_seen or lore_directive_found or roster_seen} [Phase 2. Critical Mass. The grid. You're already sourcing the targets.]
     Victoria Sterling: *a beat* So you've been through my office. Then you understand how far past me this runs. And how little arresting me changes it.
     -> the_reckoning
@@ -446,22 +478,22 @@ Victoria Sterling: So let's not perform the part where I'm surprised. Who are yo
 Victoria Sterling: Let me spare us the scene you're braced for. You want the confession. The tears for the ward.
 Victoria Sterling: I read every obituary. I can recite them in order. It changed nothing I believe.
 Victoria Sterling: Vulnerabilities are facts. Someone will always sell the facts. Better a professional who logs the sale than a criminal who doesn't.
-You: That's the story you tell yourself so you can sleep.
-Victoria Sterling: I sleep perfectly. That's the part people like you can never forgive.
-Narrator: She settles the bag on her shoulder. The coat, the bag — she has been ready to leave since before you crossed the threshold.
-Victoria Sterling: To the Architect I'm a line item. Sable, Zero Day, this office — all of it is rented. All of it replaceable.
-Victoria Sterling: So decide what you actually want from the next thirty seconds. I have a car downstairs, and you have exactly one move.
--> confrontation_decision
++ [That's the story you tell yourself so you can sleep.]
+    Victoria Sterling: I sleep perfectly. That's the part people like you can never forgive.
+    Narrator: She settles the bag on her shoulder. The coat, the bag -- she has been ready to leave since before you crossed the threshold.
+    Victoria Sterling: To the Architect I'm a line item. Sable, Zero Day, this office -- all of it is rented. All of it replaceable.
+    Victoria Sterling: So decide what you actually want from the next thirty seconds. I have a car downstairs, and you have exactly one move.
+    -> confrontation_decision
 
 === confrontation_decision ===
 // P1: the deal needs the drive from her desk. Without it she declines once.
-+ {usb_seen or lore_directive_found} [I have the Phase 2 directive from your desk. Give me the Architect, and I'll fight for a deal.]
++ {usb_seen or lore_directive_found} [I have your Phase 2 directive. Give me the Architect and I'll fight for a deal. Not immunity.]
     -> confrontation_recruit
 + {not (usb_seen or lore_directive_found) and not recruit_refused} [Work for us.]
     -> recruit_declined
-+ [You're not walking out of here. Bag down.]
++ [You're not walking out of here. Bag down, hands where I can see them.]
     -> confrontation_arrest
-+ [Go. I've already got what I need off your servers.]
++ [Go. I've got what I need off your servers. You're just the signature now.]
     -> confrontation_escape
 
 === recruit_declined ===
@@ -473,50 +505,55 @@ Victoria Sterling: Still one move. Choose it.
 
 === confrontation_recruit ===
 #speaker:victoria_sterling
-You: Then be useful. The Architect's channels, the payment rails, Phase 2 — all of it. Do that and I'll fight for a deal. Not immunity. A deal.
 Victoria Sterling: *considering* Not immunity. At least you're honest. Most of your people lead with a promise they can't keep.
 Victoria Sterling: Then you already have the what. I'm the when.
 Narrator: She lets the bag slide off her shoulder onto the desk.
 Victoria Sterling: I don't have the Architect's name. Nobody does. But I have the comms protocol, the rails the money moves on, and the Phase 2 window.
-You: When.
-Victoria Sterling: Weeks. Not months. The assets are already moving into position.
-Victoria Sterling: Understand what this is, {player_name()}. I'm not doing it because you moved me. I'm doing it because you're a better bet than a shallow grave. Don't mistake the one for the other.
+Victoria Sterling: The window opens in weeks. The assets are already moving into position.
+Victoria Sterling: Understand what this is, {player_name()}. You didn't move me. You're simply a better bet than a shallow grave.
 ~ victoria_fate = "recruited"
 #set_global:victoria_recruited:true
 #set_global:victoria_fate:recruited
 #set_global:victoria_choice_made:true
 #complete_task:victoria_choice_made
+~ idle_quiet = true
 #exit_conversation
 -> idle
 
 === confrontation_arrest ===
 #speaker:victoria_sterling
-You: You're not going anywhere. Put the bag down. Hands where I can see them.
 Narrator: You put yourself between Victoria and the door. She measures the distance, the odds, and lets the bag drop.
 Victoria Sterling: *quietly* You understand this stops nothing. I'm a desk. They'll have it filled by Monday.
-You: Then I'll take whoever sits at it next, too.
-Victoria Sterling: *almost amused* Careful. That very nearly had a body count of its own.
 Victoria Sterling: The evidence is real. The name is real. And none of it reaches the Architect. Enjoy the paperwork.
 ~ victoria_fate = "arrested"
 #set_global:victoria_arrested:true
 #set_global:victoria_fate:arrested
 #set_global:victoria_choice_made:true
 #complete_task:victoria_choice_made
+~ idle_quiet = true
 #exit_conversation
 -> idle
 
 === confrontation_escape ===
 #speaker:victoria_sterling
-Narrator: You have the logs. That is the case. What you don't have is a reason to bleed for the collar.
-You: Go. I've got everything I need off your servers. You're just the signature on it now.
+Narrator: You have the logs. That is the case.
 Victoria Sterling: *unhurried* A professional to the end. I could almost have used you.
-Victoria Sterling: For what little it's worth — the dead at St. Catherine's were never the point. They were the proof of concept.
+Victoria Sterling: For what little it's worth -- St. Catherine's was a proof of concept. You'll see the rest.
 Narrator: She's past you and gone before the lift doors settle. The evidence stays. So does she, somewhere out beyond it.
 ~ victoria_fate = "escaped"
 #set_global:victoria_escaped:true
 #set_global:victoria_fate:escaped
 #set_global:victoria_choice_made:true
 #complete_task:victoria_choice_made
+~ idle_quiet = true
+#exit_conversation
+-> idle
+
+=== night_on_call ===
+#speaker:victoria_sterling
+Victoria Sterling: *low, into her phone, back to the door* No. Not tonight. I said I'd deal with it myself.
+Narrator: She hasn't heard you come in. You ease back out before she turns round.
+~ idle_quiet = true
 #exit_conversation
 -> idle
 
@@ -524,12 +561,14 @@ Narrator: She's past you and gone before the lift doors settle. The evidence sta
 #speaker:victoria_sterling
 Victoria Sterling: We're done, {player_name()}. You made your choice.
 + [Leave]
+    ~ idle_quiet = true
     #exit_conversation
     -> idle
 
 === out_cold ===
 Narrator: She's out cold. Whatever she knows, she isn't saying it tonight.
 + [Leave her]
+    ~ idle_quiet = true
     #exit_conversation
     -> idle
 
@@ -537,15 +576,42 @@ Narrator: She's out cold. Whatever she knows, she isn't saying it tonight.
 // the engine saves the story at these choices and restores it here next time.
 // The conditions cover every state, so the knot is never empty.
 === idle ===
+{ idle_quiet:
+    ~ idle_quiet = false
+- else:
+    { victoria_fate == "ko":
+        Narrator: She's still out cold.
+    - else:
+        { victoria_fate != "":
+            Narrator: Sterling has nothing more to say to you.
+        - else:
+            { night_confrontation_ready:
+                Narrator: Sterling hasn't left. The light's still on in the conference room.
+            - else:
+                { clone_call_done:
+                    Narrator: Sterling's still on the phone, her back to the door.
+                - else:
+                    Victoria Sterling: Was there something else?
+                }
+            }
+        }
+    }
+}
 + {victoria_fate == "" and night_confrontation_ready} [Sterling. We need to talk.]
     -> nighttime_confrontation
-+ {victoria_fate == "" and not night_confrontation_ready and not victoria_card_cloned} [Pick the conversation back up]
++ {victoria_fate == "" and not night_confrontation_ready and not victoria_card_cloned and not clone_call_done} [Pick the conversation back up]
     -> start
-+ {victoria_fate == "" and not night_confrontation_ready and victoria_card_cloned} [Thank her for her time]
++ {victoria_fate == "" and not night_confrontation_ready and victoria_card_cloned and not clone_call_done} [Thank her for her time]
+    -> start
++ {victoria_fate == "" and not night_confrontation_ready and clone_call_done} [Look in on Sterling]
     -> start
 + {victoria_fate == "ko"} [She's out cold. Leave her.]
+    Narrator: You leave her where she fell.
+    ~ idle_quiet = true
     #exit_conversation
     -> idle
 + {victoria_fate != "" and victoria_fate != "ko"} [There's nothing more to say to her.]
+    Narrator: She doesn't look up as you go.
+    ~ idle_quiet = true
     #exit_conversation
     -> idle

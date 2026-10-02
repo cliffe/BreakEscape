@@ -69,9 +69,57 @@
       "optional": false
     },
     {
+      "id": "company_founding_plaque",
+      "label": "Company Founding Plaque",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "lock_victoria_computer",
+      "label": "Victoria Computer",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "npc_receptionist",
+      "label": "Receptionist",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "staff_access_badge",
+      "label": "Staff Access Badge",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "npc_victoria_sterling",
+      "label": "Victoria Sterling",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "executive_keycard",
+      "label": "Executive Keycard",
+      "kind": "key",
+      "optional": false
+    },
+    {
       "id": "lock_wall_safe_server",
       "label": "Wall Safe<br/>PIN lock",
       "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "server_room_whiteboard",
+      "label": "Server Room Whiteboard",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "vm_access_terminal",
+      "label": "VM Access Terminal",
+      "kind": "vm",
       "optional": false
     },
     {
@@ -81,9 +129,27 @@
       "optional": false
     },
     {
-      "id": "lock_victoria_computer",
-      "label": "Executive Computer<br/>Password lock",
-      "kind": "lock",
+      "id": "unsent_email_to_the_night_team_raw_source",
+      "label": "Unsent email to the night team (raw source)",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "andgate1",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    },
+    {
+      "id": "andgate2",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    },
+    {
+      "id": "andgate3",
+      "label": "+",
+      "kind": "gate",
       "optional": false
     },
     {
@@ -175,16 +241,6 @@
       "soft": false
     },
     {
-      "from": "rfid_cloner",
-      "to": "door_conference_room_01",
-      "soft": false
-    },
-    {
-      "from": "rfid_cloner",
-      "to": "door_server_room",
-      "soft": false
-    },
-    {
       "from": "reception_lobby",
       "to": "lock_pick_kit",
       "soft": true
@@ -205,6 +261,36 @@
       "soft": true
     },
     {
+      "from": "reception_lobby",
+      "to": "company_founding_plaque",
+      "soft": true
+    },
+    {
+      "from": "company_founding_plaque",
+      "to": "lock_victoria_computer",
+      "soft": true
+    },
+    {
+      "from": "reception_lobby",
+      "to": "npc_receptionist",
+      "soft": false
+    },
+    {
+      "from": "npc_receptionist",
+      "to": "staff_access_badge",
+      "soft": false
+    },
+    {
+      "from": "conference_room_01",
+      "to": "npc_victoria_sterling",
+      "soft": false
+    },
+    {
+      "from": "npc_victoria_sterling",
+      "to": "executive_keycard",
+      "soft": false
+    },
+    {
       "from": "server_room",
       "to": "lock_server_filing_cabinet",
       "soft": false
@@ -212,6 +298,16 @@
     {
       "from": "server_room",
       "to": "lock_wall_safe_server",
+      "soft": false
+    },
+    {
+      "from": "server_room",
+      "to": "server_room_whiteboard",
+      "soft": true
+    },
+    {
+      "from": "server_room",
+      "to": "vm_access_terminal",
       "soft": false
     },
     {
@@ -227,6 +323,61 @@
     {
       "from": "executive_office",
       "to": "lock_victoria_computer",
+      "soft": false
+    },
+    {
+      "from": "lock_victoria_computer",
+      "to": "unsent_email_to_the_night_team_raw_source",
+      "soft": true
+    },
+    {
+      "from": "rfid_cloner",
+      "to": "andgate1",
+      "soft": true
+    },
+    {
+      "from": "andgate1",
+      "to": "door_conference_room_01",
+      "soft": false
+    },
+    {
+      "from": "staff_access_badge",
+      "to": "andgate1",
+      "soft": false
+    },
+    {
+      "from": "rfid_cloner",
+      "to": "andgate2",
+      "soft": true
+    },
+    {
+      "from": "andgate2",
+      "to": "door_server_room",
+      "soft": false
+    },
+    {
+      "from": "executive_keycard",
+      "to": "andgate2",
+      "soft": false
+    },
+    {
+      "from": "cyberchef_workstation",
+      "to": "andgate3",
+      "soft": true
+    },
+    {
+      "from": "andgate3",
+      "to": "lock_wall_safe_server",
+      "soft": false
+    },
+    {
+      "from": "server_room_whiteboard",
+      "to": "andgate3",
+      "soft": false
+    },
+    {
+      "from": "unsent_email_to_the_night_team_raw_source",
+      "to": "andgate3",
       "soft": false
     },
     {
@@ -263,6 +414,11 @@
       "from": "vmfl_submit_http_flag",
       "to": "vmch_submit_distcc_flag",
       "soft": true
+    },
+    {
+      "from": "vm_access_terminal",
+      "to": "vmch_submit_network_scan_flag",
+      "soft": false
     },
     {
       "from": "reception_lobby",

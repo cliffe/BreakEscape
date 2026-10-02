@@ -136,7 +136,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           { "text": "DANNY FOSTER: LEFT TO CHOOSE — phone off, whereabouts unknown", "style": "warning", "condition": "globalVars.danny_fate === 'left'" },
           { "text": "DANNY FOSTER: TAKEN DOWN IN HIS OWN OFFICE", "style": "warning", "condition": "globalVars.danny_fate === 'ko'" },
           { "text": "DANNY FOSTER: NEVER FOUND — his name is still in the recon files", "style": "warning", "condition": "!globalVars.danny_fate" },
-          { "text": "PERFECT STEALTH — never detected by security", "style": "entry", "condition": "globalVars.guard_detection_count === 0 && globalVars.exec_office_entered === true && globalVars.guard_knocked_out !== true" },
+          { "text": "WHITEHAT RECEPTION: KNOCKED OUT AT HER OWN DESK", "style": "warning", "condition": "globalVars.receptionist_ko === true" },
+          { "text": "PERFECT STEALTH — never detected by security", "style": "entry", "condition": "globalVars.guard_detection_count === 0 && globalVars.exec_office_entered === true && globalVars.guard_knocked_out !== true && globalVars.guard_told_safetynet !== true && globalVars.guard_bribed !== true && globalVars.guard_challenged !== true" },
           { "text": "" },
           { "text": "THE ARCHITECT: identity still unknown. Phase 2 looms.", "style": "warning" },
           { "text": "ENTROPY: Still operational. The hunt continues.", "style": "warning" }
@@ -180,7 +181,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     {
       "aimId": "act2_breach_server_room",
       "title": "Breach The Server Room",
-      "description": "Come back once the building has emptied. Emulate Victoria's keycard, get onto the training network, and pull the evidence that ties Zero Day to St. Catherine's.",
+      "description": "After hours, emulate Victoria's keycard at the server room door, get onto the training network, and pull the evidence that ties Zero Day to St. Catherine's.",
       "status": "locked",
       "order": 1,
       "unlockCondition": { "aimCompleted": "act1_gain_access" },
@@ -188,7 +189,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
         {
           "taskId": "submit_network_scan_flag",
           "title": "Map the training network and submit the scan flag",
-          "description": "Sweep the 192.168.100.0/24 training network and submit what the scan turns up at the drop-site terminal",
+          "description": "Sweep the training network from the VM terminal and submit what the scan turns up at the drop-site terminal",
           "type": "submit_flags",
           "targetFlags": ["flag_station_dropsite:ghost_in_machine_vm_network-flag1"],
           "targetCount": 1,
@@ -306,15 +307,15 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     {
       "aimId": "perfect_stealth",
       "title": "Perfect Stealth",
-      "description": "Complete the mission without being detected by the guard",
+      "description": "Get into Sterling's office without the guard ever knowing you were there: never stopped, never caught, no deals, no knockouts",
       "status": "locked",
       "order": 4,
       "unlockCondition": { "aimCompleted": "act1_gain_access" },
       "tasks": [
         {
           "taskId": "zero_detection",
-          "title": "Complete Mission Undetected",
-          "description": "Complete all objectives without triggering guard detection",
+          "title": "Get into Sterling's office unseen",
+          "description": "Get past the executive-wing guard into Sterling's office without him ever stopping you, without talking or paying your way past him, and without knocking him out",
           "type": "custom",
           "status": "active",
           "optional": true
@@ -389,8 +390,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
       "name": "RFID Cloner",
       "takeable": true,
       "observations": "Concealed RFID cloning device — get close to a keycard to copy it",
-      "puzzle_graph_role": "tool",
-      "puzzle_graph_unlocks": ["conference_room_01", "server_room"]
+      "puzzle_graph_role": "tool"
     },
     {
       "type": "lockpick",
@@ -435,7 +435,10 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "takeable": false,
           "readable": true,
           "text": "WhiteHat Security Services\nFounded 2010 by Victoria Sterling\n\n\"Security Through Economics\"",
-          "observations": "A brass plaque behind the desk, polished more often than anything else in the lobby"
+          "observations": "A brass plaque behind the desk, polished more often than anything else in the lobby",
+          "puzzle_graph_role": "clue",
+          "puzzle_graph_unlocks": ["victoria_computer"],
+          "puzzle_graph_optional": true
         }
       ],
       "npcs": [
@@ -548,7 +551,10 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "rfid_protocol": "MIFARE_Classic_Weak_Defaults",
               "name": "Staff Access Badge",
               "takeable": true,
-              "observations": "The receptionist's physical staff badge — opens the conference area. If you took it the hard way, you skipped cloning it."
+              "observations": "The receptionist's physical staff badge — opens the conference area. If you took it the hard way, you skipped cloning it.",
+              "puzzle_graph_note": "Cloned from her lanyard with the RFID cloner (or dropped on a KO)",
+              "puzzle_graph_unlocks": ["conference_room_01"],
+              "puzzle_graph_and_with": "rfid_cloner"
             }
           ]
         },
@@ -625,18 +631,29 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "observations": "Confirm the ProFTPD 1.3.3c backdoor, configure, launch, verify the shell -- the exploit behind St. Catherine's"
             }
           ],
+          <%# Pass 4: the phone lights up as play starts (m01 pattern). A reload skips
+              the briefing, so its close event never fires again and this isn't resent. %>
+          "timedMessages": [
+            {
+              "delay": 3000,
+              "message": "Reception first. Lean in near her lanyard and let the cloner read her badge. Message me if you get stuck.",
+              "type": "text",
+              "waitForEvent": "conversation_closed:briefing_cutscene"
+            }
+          ],
           "eventMappings": [
             {
+              "_comment": "Pass 4 round 2: delay 0 so the warning lands as the player walks in, before they reach the guard or the door. exec_wing_entered lets the debrief tell 'never went near him' from 'went near him and never got caught'.",
               "eventPattern": "room_entered:executive_wing_hallway",
               "onceOnly": true,
-              "setGlobal": { "lockpicking_guide_offered": true },
-              "sendTimedMessage": { "delay": 1500, "message": "Sterling's office is keyed, not carded, so it's your pick kit. There's a guard on this corridor. Wait until his back's turned before you kneel at that door; if he sees you picking, you're made. I've a lockpicking field guide if you want it." }
+              "setGlobal": { "lockpicking_guide_offered": true, "exec_wing_entered": true },
+              "sendTimedMessage": { "delay": 0, "message": "Sterling's office is keyed, not carded -- that's your pick kit. A guard works this corridor; pick only when his back's turned, or you're made. Lockpicking guide if you want it." }
             },
             {
               "eventPattern": "room_entered:server_room",
               "onceOnly": true,
               "setGlobal": { "netexploit_guide_offered": true },
-              "sendTimedMessage": { "delay": 2500, "message": "You're at their VM terminal. Recon first, then the services, then the legacy distcc daemon -- that's where their records live. Their FTP box is running the same backdoored ProFTPD that took St. Catherine's down. They rehearse on what they sell. Submit everything at the drop-site. I've field guides on recon, ProFTPD, distcc and CyberChef if you want them." }
+              "sendTimedMessage": { "delay": 2500, "message": "You're at their VM terminal. Recon first, then the services, then the legacy distcc box -- that's where their records are. Submit everything at the drop-site terminal. Guides on request." }
             },
             <%# Pass 3c: a clone counts only when the card is actually saved in the
                 cloner. card_cloned is emitted on Save (rfid-minigame.js handleSaveCard)
@@ -650,9 +667,16 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "completeTask": "clone_rfid_card"
             },
             {
+              "_comment": "Pass 4: a receptionist KO also completes this task (taskOnKO), but then the badge is on the floor, not in the cloner. globalVarOnKO is written before taskOnKO fires (npc-hostile.js), so the condition holds.",
               "eventPattern": "objective_task_completed:clone_reception_badge",
+              "condition": "globalVars.receptionist_ko !== true",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 1500, "message": "Reception badge is in the cloner. Emulate it at the conference room reader. Read, crack, emulate -- same order every time." }
+            },
+            {
+              "eventPattern": "npc_ko:receptionist_npc",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2500, "message": "The receptionist's down. Her staff badge will be on the floor by her if you still need it. And an empty front desk gets noticed. Sterling will notice." }
             },
             {
               "eventPattern": "objective_task_completed:clone_rfid_card",
@@ -660,18 +684,15 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "onceOnly": true
             },
             {
-              "_comment": "D6: the clone completes mid-conversation with Victoria, so the call waits until the player has left her room. D14: onceOnly does not survive a reload, so the clone_call_done global (saved with game state) stops it replaying.",
-              "eventPattern": "room_entered:main_hallway",
-              "condition": "globalVars.mission_phase === 'act2_infiltration' && globalVars.victoria_ko !== true && globalVars.clone_call_done !== true",
-              "targetKnot": "on_rfid_clone_success",
-              "conversationMode": "phone-chat",
-              "setGlobal": { "clone_call_done": true },
-              "onceOnly": true
+              "_comment": "Pass 4: the post-clone phone call is replaced by the night_transition cutscene (reception_lobby), which plays on the first hallway entry after the clone. HaX's instruction follows as a text the player can reread.",
+              "eventPattern": "conversation_closed:night_transition",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 0, "message": "You're in. Server room's at the north end of the main hallway: use Sterling's card at the reader. Mind the guard in the executive wing." }
             },
             {
               "eventPattern": "item_picked_up:workstation",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1200, "message": "That's their decoding laptop. Anything that looks like gibberish on paper, paste it in. Encoding isn't encryption -- if it doesn't read after one pass, try another." }
+              "sendTimedMessage": { "delay": 1200, "message": "That's their CyberChef workstation. Anything that looks like gibberish on paper, paste it in. Encoding isn't encryption -- if it doesn't read after one pass, try another." }
             },
             <%# Pass 3e: the PC call used to open on the unlock task, which fires as the
                 password screen succeeds, so the phone replaced the PC's file list and the
@@ -720,20 +741,27 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "setGlobal": { "lore_directive_found": true },
               "onceOnly": true
             },
+            <%# Pass 4 (fix 22): one line per flag so the VM stretch doesn't go quiet.
+                If this flag is the last of the four, the all-flags message follows
+                it two seconds later, which reads as a natural sequence. The distcc
+                flag has its own call. %>
             {
               "eventPattern": "objective_task_completed:submit_network_scan_flag",
               "onceOnly": true,
-              "setGlobal": { "flag_scan_submitted": true }
+              "setGlobal": { "flag_scan_submitted": true },
+              "sendTimedMessage": { "delay": 2000, "message": "Scan's in. That's their lab mapped. One of those services should look familiar: the FTP server runs the build that opened St. Catherine's." }
             },
             {
               "eventPattern": "objective_task_completed:submit_ftp_flag",
               "onceOnly": true,
-              "setGlobal": { "flag_ftp_submitted": true }
+              "setGlobal": { "flag_ftp_submitted": true },
+              "sendTimedMessage": { "delay": 2000, "message": "FTP's in. The backdoor they sold Ghost, running on their own training box. They rehearse on what they sell." }
             },
             {
               "eventPattern": "objective_task_completed:submit_http_flag",
               "onceOnly": true,
-              "setGlobal": { "flag_http_submitted": true }
+              "setGlobal": { "flag_http_submitted": true },
+              "sendTimedMessage": { "delay": 2000, "message": "Price list's in. ROT13, and they filed it as confidential. Encoding isn't a lock." }
             },
             {
               "eventPattern": "objective_task_completed:submit_distcc_flag",
@@ -773,10 +801,11 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "setGlobal": { "night_confrontation_ready": true }
             },
             {
+              "_comment": "Pass 4 round 2: only once the distcc revelation call has played to its end (revelation_heard, set by a tag on its last knot). If distcc is the last flag, the revelation_heard mapping below sends this instead, after the call.",
               "eventPattern": "global_variable_changed:night_confrontation_ready",
-              "condition": "value === true && globalVars.victoria_ko !== true",
+              "condition": "value === true && globalVars.victoria_ko !== true && globalVars.revelation_heard === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 4000, "message": "That's everything off their network. And Sterling's card just went through the conference room reader. She's still in the building. She's waiting for someone. If you want a say in what happens to Danny Foster, his office is in the executive wing: go there first. Then go and see her." }
+              "sendTimedMessage": { "delay": 4000, "message": "Everything's off their network. Sterling's waiting in the conference room. Want a say in Danny Foster's fate? His office is in the executive wing -- go there first, then her." }
             },
             <%# Victoria KO. Keyed on npc_ko:<id>. In pass 2 globalVarOnKO did not emit a
                 change event, so handlers on global_variable_changed:victoria_ko never
@@ -817,9 +846,22 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
             {
               "_comment": "Day-KO path. Settling her fate the instant the last flag lands would fire the debrief on top of the revelation call and the drop-site. Instead HaX sends the player back to her, and the fate settles on entering the conference room.",
               "eventPattern": "global_variable_changed:night_confrontation_ready",
-              "condition": "value === true && globalVars.victoria_ko === true && globalVars.victoria_choice_made !== true",
+              "condition": "value === true && globalVars.victoria_ko === true && globalVars.victoria_choice_made !== true && globalVars.revelation_heard === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 6000, "message": "That's everything off their network. Sterling's still in the conference room where you left her. Go back and we'll close this out -- and if you want a say in Danny Foster's end, his office first." }
+              "sendTimedMessage": { "delay": 6000, "message": "Everything's off their network. Sterling's still in the conference room where you left her. Want a say in Danny's end? His office first." }
+            },
+            {
+              "_comment": "Pass 4 round 2: distcc was the last flag, so night_confrontation_ready was set while the revelation call was still playing. Send the all-flags message once the call has ended. The texts here and in the two night_confrontation_ready mappings above are copies: edit each pair together (dialogue stage, finding 8: both are over the 30-word cap).",
+              "eventPattern": "global_variable_changed:revelation_heard",
+              "condition": "value === true && globalVars.night_confrontation_ready === true && globalVars.victoria_ko !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2000, "message": "Everything's off their network. Sterling's waiting in the conference room. Want a say in Danny Foster's fate? His office is in the executive wing -- go there first, then her." }
+            },
+            {
+              "eventPattern": "global_variable_changed:revelation_heard",
+              "condition": "value === true && globalVars.night_confrontation_ready === true && globalVars.victoria_ko === true && globalVars.victoria_choice_made !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2000, "message": "Everything's off their network. Sterling's still in the conference room where you left her. Want a say in Danny's end? His office first." }
             },
             {
               "eventPattern": "room_entered:conference_room_01",
@@ -912,6 +954,39 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "disableClose": true
             }
           ]
+        },
+        {
+          "_comment": "Pass 4 (design review fix 1): the day-to-night turn as a scene. Hidden narrator-only cutscene in the always-loaded start room. It plays on the first main-hallway entry after Victoria's card is saved (or she is knocked out), which is the first moment the player has left her room. clone_call_done is saved with game state, so a reload doesn't replay it. HaX's text follows on conversation_closed:night_transition.",
+          "id": "night_transition",
+          "displayName": "Agent 0x00",
+          "npcType": "person",
+          "position": {"x": 500, "y": 500},
+          "spriteSheet": "male_hacker_hood_down_v2",
+          "spriteTalk": "assets/characters/male_hacker_hood_down_talk.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_night_transition.json",
+          "currentKnot": "start",
+          "behavior": { "initiallyHidden": true },
+          "voice": {
+            "name": "Algenib",
+            "style": "Cinematic noir detective voice over narrator.",
+            "language": "en-GB"
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "room_entered:main_hallway",
+              "condition": "globalVars.mission_phase === 'act2_infiltration' && globalVars.clone_call_done !== true",
+              "onceOnly": true,
+              "conversationMode": "person-chat",
+              "targetKnot": "start"
+            },
+            {
+              "_comment": "Pass 4 round 2: clone_call_done is set when the scene closes, not when it opens, so a reload mid-scene replays it (the onceOnly trigger is also only persisted on close). Person-chat runs a batch's tags at its start, so an ink tag on the last line would not wait.",
+              "eventPattern": "conversation_closed:night_transition",
+              "onceOnly": true,
+              "setGlobal": { "clone_call_done": true }
+            }
+          ]
         }
       ]
     },
@@ -950,7 +1025,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "name": "Conference Whiteboard",
           "takeable": false,
           "readable": true,
-          "text": "TRAINING LAB -- 192.168.100.0/24\n\nRecon -> enumerate -> exploit -> report\n\nHosts: FTP, web, and a box labelled LEGACY BUILD (distcc) with three underlines.\n\nIn the corner, smaller: \"students do NOT touch .50 after hours\"",
+          "text": "TRAINING LAB -- isolated, server room terminal only\n\nRecon -> enumerate -> exploit -> report\n\nServices: FTP, web, and one labelled LEGACY BUILD (distcc) with three underlines.\n\nIn the corner, smaller: \"students do NOT touch the legacy build after hours\"",
           "observations": "The training lab diagram Sterling likes to stand beside"
         }
       ],
@@ -993,7 +1068,10 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "rfid_protocol": "MIFARE_Classic_Custom_Keys",
               "name": "Executive Keycard",
               "takeable": true,
-              "observations": "Victoria's physical executive keycard — opens the server room. Taking it off her means you never needed to clone it."
+              "observations": "Victoria's physical executive keycard — opens the server room. Taking it off her means you never needed to clone it.",
+              "puzzle_graph_note": "Cloned at the whiteboard during the interview with the RFID cloner (or dropped on a KO)",
+              "puzzle_graph_unlocks": ["server_room"],
+              "puzzle_graph_and_with": "rfid_cloner"
             }
           ]
         }
@@ -1025,7 +1103,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "name": "Training Lab Runbook",
               "takeable": true,
               "readable": true,
-              "text": "STUDENT RUNBOOK -- 192.168.100.0/24\n\n1. nmap the subnet. Everything you need is on live hosts.\n2. The FTP box runs ProFTPD 1.3.3c, the trojaned 2010 build. Anonymous login works; nothing that matters lives in the anonymous folder.\n3. The web host serves the price list. It is only encoded, not encrypted.\n4. The legacy build runs distcc. Do not run exploits against it without sign-off.\n\nInstructor note: the legacy box is not a toy. Leave it alone."
+              "text": "STUDENT RUNBOOK -- TRAINING LAB\n\n1. nmap the lab network from the server room terminal. Everything you need answers a scan.\n2. The FTP box runs ProFTPD 1.3.3c, the trojaned 2010 build. Anonymous login works; nothing that matters lives in the anonymous folder.\n3. The web host serves the price list. It is only encoded, not encrypted.\n4. The legacy build runs distcc. Do not run exploits against it without sign-off.\n\nInstructor note: the legacy box is not a toy. Leave it alone."
             }
           ]
         },
@@ -1060,7 +1138,11 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "readable": true,
           "text": "<%= whiteboard_message_encoded %>",
           "observations": "Someone has written a note across the whiteboard. The letters are scrambled but the word lengths and punctuation hold -- each letter swapped for another, not gibberish. The decoding laptop will read it.",
-          "onRead": { "setVariable": { "whiteboard_seen": true } }
+          "onRead": { "setVariable": { "whiteboard_seen": true } },
+          "puzzle_graph_role": "clue",
+          "puzzle_graph_unlocks": ["wall_safe_server"],
+          "puzzle_graph_and_with": "cyberchef_workstation",
+          "puzzle_graph_optional": true
         },
         {
           "type": "vm-launcher",
@@ -1068,6 +1150,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "name": "VM Access Terminal",
           "takeable": false,
           "observations": "Zero Day's VM access terminal. From here you reach their training network -- the box they rehearse exploits on before they sell them.",
+          "puzzle_graph_role": "vm",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
           "vm": <%= vm_object('ghost_in_machine_vm_network', {"id":1,"title":"Zero Day Training Network","ip":"192.168.100.0/24","enable_console":true}) %>
         },
@@ -1171,7 +1254,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           },
           "eventMappings": [
             {
-              "_comment": "Deliberately repeatable. Pass 3b: one approach = one strike. The ink sets guard_grace on a catch and plays a no-strike 'still here' line until the player leaves the corridor (closing_debrief clears it on main_hallway / danny_office entry). Cooldown cut from 30 s to 3 s because the engine's interrupt gate (npc-manager.js shouldInterruptLockpickingWithPersonChat) ignores the mapping cooldown, so a retry inside a long cooldown was swallowed silently: no pick, no line.",
+              "_comment": "Deliberately repeatable. Pass 3b: one approach = one strike. The ink sets guard_grace on a catch and plays a no-strike 'still here' line until the player leaves the corridor (closing_debrief clears it on main_hallway / danny_office entry). Cooldown cut from 30 s to 3 s because the engine's interrupt gate (npc-manager.js shouldInterruptLockpickingWithPersonChat) ignores the mapping cooldown, so a retry inside a long cooldown was swallowed silently: no pick, no line. Pass 4 round 2: once the player has told him they're SAFETYNET or paid him, he keeps his word and doesn't catch the pick (the LOS gate evaluates this condition, npc-manager.js shouldInterruptLockpickingWithPersonChat). Perfect Stealth excludes both routes.",
+              "condition": "globalVars.guard_told_safetynet !== true && globalVars.guard_bribed !== true",
               "eventPattern": "lockpick_used_in_view",
               "targetKnot": "on_lockpick_detected",
               "conversationMode": "person-chat",
@@ -1235,7 +1319,11 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "readable": true,
               "text": "<%= base64_encode('To: night team. From: Sable.\nCatalogue safe re-coded to 5829 -- memorise it, do not write it on the board again.\nObsidian Q4 pricing goes out Friday: ProFTPD-class $25k, Struts $18k, healthcare +40% as ever.\nArchitect wants the Phase 2 list same day. -V') %>",
               "observations": "An unsent email to the night team, shown as raw message source. Her mail client saved it before it was ever sent: one unbroken block of upper and lower case letters, digits, + and /. Not a word of English in it.",
-              "onRead": { "setVariable": { "draft_seen": true } }
+              "onRead": { "setVariable": { "draft_seen": true } },
+              "puzzle_graph_role": "clue",
+              "puzzle_graph_unlocks": ["wall_safe_server"],
+              "puzzle_graph_and_with": "cyberchef_workstation",
+              "puzzle_graph_optional": true
             },
             {
               "type": "text_file",
@@ -1406,6 +1494,14 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     "netexploit_guide_requested": false,
     "rfid_guide_requested": false,
     "recon_guide_requested": false,
-    "cyberchef_guide_requested": false
+    "cyberchef_guide_requested": false,
+    "proftpd_guide_requested": false,
+    "guard_told_safetynet": false,
+    "guard_challenged": false,
+    "guard_bribed": false,
+    "called_it_murder": false,
+    "directive_decoded": false,
+    "revelation_heard": false,
+    "exec_wing_entered": false
   }
 }

@@ -13,7 +13,7 @@
     {
       "ka": "MAT",
       "topic": "Attacks and exploitation",
-      "keywords": ["CVE-2004-2687", "distcc exploitation", "Remote code execution", "Zero-day marketplace", "EXPLOITATION"]
+      "keywords": ["ProFTPD 1.3.3c source backdoor", "CVE-2004-2687", "distcc exploitation", "Remote code execution", "Zero-day marketplace", "EXPLOITATION"]
     },
     {
       "ka": "AC",
@@ -28,7 +28,7 @@
     {
       "ka": "SS",
       "topic": "Systems Security",
-      "keywords": ["Service vulnerabilities", "Docker networks", "Evidence correlation"]
+      "keywords": ["Service vulnerabilities", "Legacy services", "Evidence correlation"]
     },
     {
       "ka": "RMG",
@@ -43,7 +43,7 @@
     {
       "ka": "AAA",
       "topic": "Authentication",
-      "keywords": ["RFID authentication", "Access control bypass", "Credential theft", "Identity spoofing"]
+      "keywords": ["RFID authentication", "Default and reset passwords", "Access control bypass", "Credential theft", "Identity spoofing"]
     }
   ]
 }
