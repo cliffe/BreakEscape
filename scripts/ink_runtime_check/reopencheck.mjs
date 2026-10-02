@@ -25,7 +25,9 @@ const REPO = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const js = join(REPO, 'public/break_escape/js');
 const tmp = mkdtempSync(join(tmpdir(), 'reopencheck-'));
 writeFileSync(join(tmp, 'ink-engine.mjs'), readFileSync(join(js, 'systems/ink/ink-engine.js'), 'utf8'));
-writeFileSync(join(tmp, 'pcc.mjs'), readFileSync(join(js, 'minigames/phone-chat/phone-chat-conversation.js'), 'utf8'));
+writeFileSync(join(tmp, 'phone-chat-speaker.mjs'), readFileSync(join(js, 'minigames/phone-chat/phone-chat-speaker.js'), 'utf8'));
+writeFileSync(join(tmp, 'pcc.mjs'), readFileSync(join(js, 'minigames/phone-chat/phone-chat-conversation.js'), 'utf8')
+    .replace("'./phone-chat-speaker.js'", "'./phone-chat-speaker.mjs'"));
 
 globalThis.window = { gameState: { globalVariables: {} } };
 globalThis.inkjs = createRequire(import.meta.url)(join(REPO, 'public/break_escape/assets/vendor/ink.js'));

@@ -20,9 +20,12 @@ const js = join(here, '../../public/break_escape/js');
 const dir = mkdtempSync(join(tmpdir(), 'phone-reopen-test-'));
 const copy = (src, name, fix = s => s) => writeFileSync(join(dir, name), fix(readFileSync(join(js, src), 'utf8')));
 copy('systems/npc-los.js', 'npc-los.mjs');
-copy('systems/npc-manager.js', 'npc-manager.mjs', s => s.replace("'./npc-los.js'", "'./npc-los.mjs'"));
+copy('minigames/phone-chat/phone-chat-speaker.js', 'phone-chat-speaker.mjs');
+copy('systems/npc-manager.js', 'npc-manager.mjs', s => s.replace("'./npc-los.js'", "'./npc-los.mjs'")
+    .replace("'../minigames/phone-chat/phone-chat-speaker.js'", "'./phone-chat-speaker.mjs'"));
 copy('systems/ink/ink-engine.js', 'ink-engine.mjs');
-copy('minigames/phone-chat/phone-chat-conversation.js', 'phone-chat-conversation.mjs');
+copy('minigames/phone-chat/phone-chat-conversation.js', 'phone-chat-conversation.mjs',
+    s => s.replace("'./phone-chat-speaker.js'", "'./phone-chat-speaker.mjs'"));
 
 globalThis.window = { gameState: { globalVariables: {} } };
 globalThis.inkjs = createRequire(import.meta.url)(join(here, '../../public/break_escape/assets/vendor/ink.js'));
@@ -268,10 +271,13 @@ test('the unload flush sends only threads changed since the last confirmed sync'
     assert.deepEqual(Object.keys(m.exportPhoneState({ onlyChanged: true })), ['hax']);
 });
 
-test('the phone-chat explicit-knot path files history under the NPC id (E16)', () => {
+test('the phone-chat explicit-knot path keeps the thread (E16; pass-4 m03 greeting loss)', () => {
     const src = readFileSync(join(js, 'minigames/phone-chat/phone-chat-minigame.js'), 'utf8');
     assert.ok(!src.includes('conversationHistory.set(this.npcId'), 'this.npcId is undefined in the minigame');
-    assert.ok(src.includes('conversationHistory.set(npcId, filteredHistory)'));
+    // A scripted call used to drop every line that wasn't a timed text or bark,
+    // taking the hub greeting and earlier exchanges with it
+    assert.ok(!src.includes('history.filter(msg => msg.isBark || msg.timed)'));
+    assert.ok(!src.includes('conversationHistory.set(npcId, filteredHistory)'));
 });
 
 test('a text notification without its own knot reopens the thread rather than jumping to currentKnot', () => {

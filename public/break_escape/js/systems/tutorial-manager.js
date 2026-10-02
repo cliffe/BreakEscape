@@ -6,6 +6,33 @@
 const TUTORIAL_STORAGE_KEY = 'tutorial_completed';
 const TUTORIAL_DECLINED_KEY = 'tutorial_declined';
 
+// The answer is also kept in the game's own global variables, which the server
+// saves (state-sync.js) and restores on load (game.js savedGlobalVariables).
+// localStorage alone is lost in a fresh browser profile or a partitioned iframe,
+// so the prompt came back on every reload of a game the player had declined it in.
+const TUTORIAL_COMPLETED_GLOBAL = 'engine_tutorial_completed';
+const TUTORIAL_DECLINED_GLOBAL = 'engine_tutorial_declined';
+
+function readStorage(key) {
+    try { return localStorage.getItem(key); } catch (e) { return null; }
+}
+
+function writeStorage(key, value) {
+    try { localStorage.setItem(key, value); } catch (e) { /* storage blocked */ }
+}
+
+function gameFlag(name) {
+    return window.gameState?.globalVariables?.[name] === true;
+}
+
+function setGameFlag(name) {
+    const globals = window.gameState?.globalVariables;
+    if (!globals || globals[name] === true) return;
+    globals[name] = true;
+    // Save now rather than at the next 30 s sync, so an early reload keeps it
+    window.stateSync?.sync?.();
+}
+
 export class TutorialManager {
     constructor() {
         this.active = false;
@@ -49,28 +76,30 @@ export class TutorialManager {
      * Check if tutorial has been completed before
      */
     hasCompletedTutorial() {
-        return localStorage.getItem(TUTORIAL_STORAGE_KEY) === 'true';
+        return readStorage(TUTORIAL_STORAGE_KEY) === 'true' || gameFlag(TUTORIAL_COMPLETED_GLOBAL);
     }
 
     /**
      * Check if tutorial was declined
      */
     hasDeclinedTutorial() {
-        return localStorage.getItem(TUTORIAL_DECLINED_KEY) === 'true';
+        return readStorage(TUTORIAL_DECLINED_KEY) === 'true' || gameFlag(TUTORIAL_DECLINED_GLOBAL);
     }
 
     /**
      * Mark tutorial as completed
      */
     markCompleted() {
-        localStorage.setItem(TUTORIAL_STORAGE_KEY, 'true');
+        writeStorage(TUTORIAL_STORAGE_KEY, 'true');
+        setGameFlag(TUTORIAL_COMPLETED_GLOBAL);
     }
 
     /**
      * Mark tutorial as declined
      */
     markDeclined() {
-        localStorage.setItem(TUTORIAL_DECLINED_KEY, 'true');
+        writeStorage(TUTORIAL_DECLINED_KEY, 'true');
+        setGameFlag(TUTORIAL_DECLINED_GLOBAL);
     }
 
     /**
@@ -466,6 +495,11 @@ export class TutorialManager {
 
         localStorage.removeItem(TUTORIAL_STORAGE_KEY);
         localStorage.removeItem(TUTORIAL_DECLINED_KEY);
+        const globals = window.gameState?.globalVariables;
+        if (globals) {
+            globals[TUTORIAL_COMPLETED_GLOBAL] = false;
+            globals[TUTORIAL_DECLINED_GLOBAL] = false;
+        }
 
         if (this.active && this.tutorialOverlay) {
             document.body.removeChild(this.tutorialOverlay);
@@ -482,6 +516,11 @@ export class TutorialManager {
     static resetTutorial() {
         localStorage.removeItem(TUTORIAL_STORAGE_KEY);
         localStorage.removeItem(TUTORIAL_DECLINED_KEY);
+        const globals = window.gameState?.globalVariables;
+        if (globals) {
+            globals[TUTORIAL_COMPLETED_GLOBAL] = false;
+            globals[TUTORIAL_DECLINED_GLOBAL] = false;
+        }
     }
 }
 

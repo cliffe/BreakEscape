@@ -7,6 +7,8 @@
  * @module phone-chat-history
  */
 
+import { displayPhoneLine } from './phone-chat-speaker.js';
+
 export default class PhoneChatHistory {
     /**
      * Create a PhoneChatHistory instance
@@ -266,8 +268,9 @@ export default class PhoneChatHistory {
         let text = `Conversation with ${npcName}\n`;
         text += `${'='.repeat(40)}\n\n`;
         
-        history.forEach((message, index) => {
-            const speaker = message.type === 'npc' ? npcName : 'You';
+        history.forEach((original, index) => {
+            const message = { ...original, ...displayPhoneLine(original.type, original.text, npc) };
+            const speaker = message.type === 'npc' ? npcName : message.type === 'narrator' ? 'Narrator' : 'You';
             const timestamp = includeTimestamps ? ` [${this.formatTimestamp(message.timestamp)}]` : '';
             
             text += `${speaker}${timestamp}:\n`;

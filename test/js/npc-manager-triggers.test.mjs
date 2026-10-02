@@ -16,8 +16,11 @@ const here = dirname(fileURLToPath(import.meta.url));
 const sys = join(here, '../../public/break_escape/js/systems');
 const dir = mkdtempSync(join(tmpdir(), 'npc-manager-test-'));
 writeFileSync(join(dir, 'npc-los.mjs'), readFileSync(join(sys, 'npc-los.js'), 'utf8'));
+writeFileSync(join(dir, 'phone-chat-speaker.mjs'),
+    readFileSync(join(sys, '../minigames/phone-chat/phone-chat-speaker.js'), 'utf8'));
 writeFileSync(join(dir, 'npc-manager.mjs'),
-    readFileSync(join(sys, 'npc-manager.js'), 'utf8').replace("'./npc-los.js'", "'./npc-los.mjs'"));
+    readFileSync(join(sys, 'npc-manager.js'), 'utf8').replace("'./npc-los.js'", "'./npc-los.mjs'")
+        .replace("'../minigames/phone-chat/phone-chat-speaker.js'", "'./phone-chat-speaker.mjs'"));
 
 globalThis.window = { gameState: { globalVariables: {} } };
 const { default: NPCManager } = await import(pathToFileURL(join(dir, 'npc-manager.mjs')).href);

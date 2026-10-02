@@ -119,6 +119,13 @@ export class ToolManager {
     switchToPickMode() {
         // Switch from key selection mode to lockpicking mode
         console.log('Switching from key mode to lockpicking mode');
+
+        // An NPC watching catches the pick (same gate as the direct pick path);
+        // the gate closes this minigame and opens the conversation.
+        const gate = this.parent.params?.beforeSwitchToPickMode;
+        if (typeof gate === 'function' && gate()) {
+            return;
+        }
         
         // Hide the mode switch button
         const switchBtn = document.getElementById('lockpicking-switch-mode-btn');

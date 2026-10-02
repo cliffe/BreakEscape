@@ -8,6 +8,7 @@
 
 import { generateKeyCutsForLock, doesKeyMatchLock, PREDEFINED_LOCK_CONFIGS } from './key-lock-system.js';
 import KeyCutCalculator from '../utils/key-cut-calculator.js';
+import { catchLockpickInView } from './lockpick-catch.js';
 
 // Maps Phaser texture keys to their actual filenames (where key !== filename stem)
 const TEXTURE_KEY_TO_FILE = {
@@ -409,6 +410,17 @@ export function startKeySelectionMinigame(lockable, type, playerKeys, requiredKe
         ),
         inventoryKeys: keysToShow,
         requiredKeyId: requiredKeyId,
+        // "Switch to Lockpicking" runs the same watcher gate as the direct pick path.
+        // Caught: close this minigame quietly, then the NPC's conversation opens.
+        beforeSwitchToPickMode: () => !!catchLockpickInView(lockable, {
+            beforeEmit: () => {
+                const mg = window.MinigameFramework?.currentMinigame;
+                if (mg) {
+                    mg.gameResult = { caughtLockpicking: true };
+                    mg.complete(false);
+                }
+            }
+        }),
         onComplete: (success, result) => {
             if (success) {
                 // Detect which mode completed the unlock while currentMinigame is still live.
@@ -427,6 +439,8 @@ export function startKeySelectionMinigame(lockable, type, playerKeys, requiredKe
                         unlockTargetCallback(lockable, type, lockable.layer, unlockMethod);
                     }, 100);
                 }
+            } else if (result?.caughtLockpicking) {
+                console.log('KEY SELECTION CLOSED: caught switching to lockpicking');
             } else {
                 console.log('KEY SELECTION FAILED');
                 window.gameAlert('The selected key doesn\'t work with this lock.', 'error', 'Wrong Key', 4000);

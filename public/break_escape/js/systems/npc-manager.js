@@ -2,6 +2,7 @@
 // OPTIMIZED: InkEngine caching, event listener cleanup, debug logging
 // default export NPCManager
 import { isInLineOfSight, drawLOSCone, clearLOSCone, getNPCFacingDirection } from './npc-los.js';
+import { classifyPhoneLine, phoneStepLines } from '../minigames/phone-chat/phone-chat-speaker.js';
 
 /**
  * Safe condition evaluator — replaces eval() for CSP compliance (unsafe-eval blocked).
@@ -287,14 +288,17 @@ export default class NPCManager {
    * Returns the NPC if one should handle lockpick_used_in_view with person-chat
    * Otherwise returns null
    */
-  shouldInterruptLockpickingWithPersonChat(roomId, playerPosition = null) {
-    if (!roomId) return null;
+  shouldInterruptLockpickingWithPersonChat(roomIdOrIds, playerPosition = null) {
+    // One room id or several (lockpick-catch.js passes the player's room and the lock's room)
+    const roomIds = (Array.isArray(roomIdOrIds) ? roomIdOrIds : [roomIdOrIds]).filter(Boolean);
+    if (roomIds.length === 0) return null;
+    const roomId = roomIds.join(',');
     
     console.log(`👁️ [LOS CHECK] shouldInterruptLockpickingWithPersonChat: roomId="${roomId}", playerPos=${playerPosition ? `(${playerPosition.x.toFixed(0)}, ${playerPosition.y.toFixed(0)})` : 'null'}`);
     
     for (const npc of this.npcs.values()) {
       // NPC must be in the specified room and be a 'person' type NPC
-      if (npc.roomId !== roomId || npc.npcType !== 'person') continue;
+      if (!roomIds.includes(npc.roomId) || npc.npcType !== 'person') continue;
       
       // Hidden or KO'd NPCs see nothing
       if (window.npcHostileSystem?.isNPCKO?.(npc.id)) continue;
@@ -322,7 +326,7 @@ export default class NPCManager {
         // Only interrupt if one of those mappings would actually fire now (E4).
         // Otherwise the pick was swallowed: no minigame and no conversation.
         // The payload matches what unlock-system emits, minus the lockable.
-        const gateEventData = { npcId: npc.id, roomId, timestamp: Date.now() };
+        const gateEventData = { npcId: npc.id, roomId: npc.roomId, timestamp: Date.now() };
         const firing = lockpickMappings.find(({ mapping, index }) =>
           this._mappingWouldFire(npc.id, 'lockpick_used_in_view',
             this._buildMappingConfig(mapping, index), gateEventData).fire);
@@ -419,13 +423,17 @@ export default class NPCManager {
     if (!this.conversationHistory.has(npcId)) {
       this.conversationHistory.set(npcId, []);
     }
-    this.conversationHistory.get(npcId).push({
+    // An ink line written as the player's ("You: …") is stored as theirs (U3)
+    ({ type, text } = classifyPhoneLine(type, text));
+    const message = {
       type,
       text,
       timestamp: Date.now(),
-      read: type === 'player', // Player messages are automatically marked as read
+      read: type === 'player' || type === 'narrator', // Player and narration lines are automatically read
       ...metadata
-    });
+    };
+    if (type === 'player' || type === 'narrator') message.read = true;
+    this.conversationHistory.get(npcId).push(message);
     this._log('debug', `Added ${type} message to ${npcId}:`, text);
   }
 
@@ -614,6 +622,14 @@ export default class NPCManager {
       return;
     }
     
+    // A lockpick catch is addressed to the one NPC who saw it (lockpick-catch.js
+    // names it). Every other NPC with a lockpick_used_in_view mapping ignores it,
+    // wherever they are.
+    if (eventPattern === 'lockpick_used_in_view' && eventData?.npcId && eventData.npcId !== npcId) {
+      console.log(`⏭️ Skipping ${eventPattern} for ${npcId}: caught by ${eventData.npcId}`);
+      return;
+    }
+
     // Check if event should be handled (once-only, maxTriggers, cooldown, condition)
     const check = this._mappingWouldFire(npcId, eventPattern, config, eventData);
     if (!check.fire) {
@@ -1080,8 +1096,20 @@ export default class NPCManager {
       // Navigate to the knot
       inkEngine.goToKnot(knotName);
       
-      // Get the text from the knot
-      const result = inkEngine.continue();
+      // Get the text from the knot. A knot that opens with the player's line ("You: …"
+      // or #speaker:player) goes in the thread as the player's, and the bark is the
+      // first line after it that is the NPC's (U3).
+      // Narration ("Narrator: …", #speaker:narrator) is skipped the same way (never a bark).
+      const leadingLines = r => (r.text ? phoneStepLines(r.text, r.tags).map(l => classifyPhoneLine('npc', l)) : []);
+      let result = inkEngine.continue();
+      for (let guard = 0; guard < 50 && result.text; guard++) {
+        const lines = leadingLines(result);
+        if (lines.length === 0 || lines.some(l => l.type === 'npc')) break;
+        lines.forEach(l => this.addMessage(npcId, l.type, l.text.trim(), {
+          eventPattern, knot: knotName, isBark: true
+        }));
+        result = inkEngine.continue();
+      }
       
       if (result.text) {
         
@@ -1341,6 +1369,22 @@ export default class NPCManager {
 
     this.eventDispatcher.on(eventName, listener);
     console.log(`[NPCManager] Registered event listener for conversation '${eventName}'`);
+  }
+
+  /**
+   * Is an opening cutscene still to come? True while a timed conversation that
+   * starts within `withinMs` of game start (or of game_loaded) is undelivered and
+   * not skipped by its guard global. introduceScenario (helpers.js) waits on this
+   * so the Mission Brief popup doesn't end the briefing: the briefing sets its
+   * guard global when it starts, so a displaced briefing never comes back.
+   */
+  hasPendingOpeningConversation(withinMs = 10000) {
+    const globals = window.gameState?.globalVariables || {};
+    return this.timedConversations.some(c =>
+      !c.delivered &&
+      (c.delay || 0) <= withinMs &&
+      (!c.waitForEvent || c.waitForEvent === 'game_loaded') &&
+      !(c.skipIfGlobal && globals[c.skipIfGlobal]));
   }
 
   // Start checking for timed messages (call this when game starts)
@@ -1699,6 +1743,9 @@ export default class NPCManager {
           }
           copy.read = !!msg.read;
           if (typeof copy.timestamp !== 'number') copy.timestamp = Date.now();
+          // A thread saved before U3 holds "You: …" lines as the NPC's
+          const line = classifyPhoneLine(copy.type, copy.text);
+          if (line.type !== copy.type) Object.assign(copy, line, { read: true });
           return copy;
         });
       this.conversationHistory.set(npcId, history);

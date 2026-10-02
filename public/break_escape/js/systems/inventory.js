@@ -155,6 +155,7 @@ export function processInitialInventoryItems() {
             // Create inventory sprite for this object
             const inventoryItem = createInventorySprite(itemData);
             if (inventoryItem) {
+                inventoryItem._restoredFromSave = true; // its onPickup ran when first taken
                 addToInventory(inventoryItem);
             }
         });
@@ -284,6 +285,31 @@ function receiveRewardNote(item) {
         itemId: item.id,
         collectionGroup: item.collection_group || null,
         roomId: window.currentPlayerRoom
+    });
+}
+
+/**
+ * Apply an item's onPickup.setVariable when the player takes it. Notes and text
+ * files apply it when read (interactions.js, container-minigame.js); this covers
+ * keys and every other takeable that gets an inventory slot. Only variables whose
+ * value changes are set, so an item whose read already applied it, or a scenario
+ * mapping that sets the same latch from item_picked_up, fires nothing twice.
+ * Items restored from the server on reload are skipped: their pickup already ran
+ * and the saved globals are authoritative.
+ */
+export function applyPickupAction(sprite) {
+    const item = sprite?.scenarioData;
+    const setVariable = item?.onPickup?.setVariable;
+    if (!setVariable || sprite._restoredFromSave) return;
+    const globals = window.gameState?.globalVariables;
+    if (!globals) return;
+    Object.entries(setVariable).forEach(([varName, value]) => {
+        const oldValue = globals[varName];
+        if (oldValue === value) return;
+        globals[varName] = value;
+        console.log(`🎒 onPickup.setVariable: ${varName} = ${value}`);
+        window.npcConversationStateManager?.broadcastGlobalVariableChange(varName, value, null);
+        window.eventDispatcher?.emit(`global_variable_changed:${varName}`, { name: varName, value, oldValue });
     });
 }
 
@@ -591,6 +617,8 @@ export async function addToInventory(sprite) {
         // Add to inventory array
         window.inventory.items.push(itemImg);
         
+        applyPickupAction(sprite);
+
         // Emit NPC event for item pickup
         if (window.eventDispatcher) {
             window.eventDispatcher.emit(`item_picked_up:${sprite.scenarioData.type}`, {
@@ -668,6 +696,8 @@ function addKeyToInventory(sprite) {
         lockType: sprite.scenarioData?.lockType
     });
     
+    applyPickupAction(sprite);
+
     // Emit item_picked_up event for keys (matching regular item pickup event format)
     if (window.eventDispatcher) {
         window.eventDispatcher.emit(`item_picked_up:key`, {

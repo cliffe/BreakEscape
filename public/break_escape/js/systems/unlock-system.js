@@ -15,6 +15,7 @@ import { unlockDoor } from './doors.js';
 import { startLockpickingMinigame, startKeySelectionMinigame, startPinMinigame, startPasswordMinigame, startRansomwareDisplayMinigame, startBackupRecoveryMinigame, startInfusionPumpMinigame } from './minigame-starters.js';
 import { playUISound } from './ui-sounds.js';
 import { startFingerprintReader } from '../minigames/biometrics/fingerprint-reader-minigame.js';
+import { catchLockpickInView } from './lockpick-catch.js';
 
 // Helper function to notify server of unlock and get room/container data
 export async function notifyServerUnlock(lockable, type, method) {
@@ -189,28 +190,9 @@ export function handleUnlock(lockable, type) {
                 console.log('LOCKPICK AVAILABLE - STARTING LOCKPICKING MINIGAME');
                 
                 // CHECK: Should any NPC interrupt with person-chat instead?
-                const roomId = lockable.doorProperties?.roomId || window.currentRoomId;
-                if (window.npcManager && roomId) {
-                    // Get player position for LOS check
-                    const playerPos = window.player?.sprite?.getCenter ? 
-                      window.player.sprite.getCenter() : 
-                      { x: window.player?.x || 0, y: window.player?.y || 0 };
-                    
-                    const interruptingNPC = window.npcManager.shouldInterruptLockpickingWithPersonChat(roomId, playerPos);
-                    if (interruptingNPC) {
-                        console.log(`🚫 LOCKPICKING INTERRUPTED: Triggering person-chat with NPC "${interruptingNPC.id}"`);
-                        
-                        // Trigger the lockpick event which will start person-chat
-                        if (window.npcManager.eventDispatcher) {
-                            window.npcManager.eventDispatcher.emit('lockpick_used_in_view', {
-                                npcId: interruptingNPC.id,
-                                roomId: roomId,
-                                lockable: lockable,
-                                timestamp: Date.now()
-                            });
-                        }
-                        return;  // Don't start lockpicking minigame
-                    }
+                // (same gate as "Switch to Lockpicking" in the key minigame)
+                if (catchLockpickInView(lockable)) {
+                    return;  // Don't start lockpicking minigame
                 }
                 
                 let difficulty = lockable.doorProperties?.difficulty || lockable.scenarioData?.difficulty || lockable.properties?.difficulty || lockRequirements.difficulty || 'medium';

@@ -881,10 +881,15 @@ class NPCBehavior {
             return;
         }
 
-        // Time to choose a new patrol target?
+        // Time to choose a new patrol target? Random wandering re-targets every
+        // changeDirectionInterval. A waypoint patrol keeps walking to its waypoint
+        // (a leg longer than the interval used to be cut short, so the NPC never
+        // arrived or dwelt: m02 Val, 3.6 s legs against the 3 s default) and only
+        // re-targets if it has stopped making progress for that long.
+        const intervalElapsed = time - this.lastPatrolChange > this.config.patrol.changeDirectionInterval;
         if (!this.patrolTarget ||
             this.currentPath.length === 0 ||
-            time - this.lastPatrolChange > this.config.patrol.changeDirectionInterval) {
+            (intervalElapsed && (!this._isWaypointPatrol() || this._patrolStalled(time)))) {
             // Don't fire another findWorldPath while one is already in flight, and
             // respect the retry backoff set after a failed path request.
             if (this._pathfindingInProgress) return;
@@ -956,6 +961,28 @@ class NPCBehavior {
             // No path found, choose new target
             this.chooseNewPatrolTarget(time);
         }
+    }
+
+    /** Does this patrol follow waypoints (single-room or a multi-room route)? */
+    _isWaypointPatrol() {
+        const patrol = this.config.patrol;
+        return (patrol.waypoints?.length > 0) ||
+            !!(patrol.multiRoom && patrol.route?.length > 0);
+    }
+
+    /**
+     * True once the NPC has moved less than 4 px for a whole changeDirectionInterval
+     * since its current target was chosen (blocked by another NPC or furniture).
+     */
+    _patrolStalled(time) {
+        const { x, y } = this.npcBodyPos();
+        const mark = this._patrolProgress;
+        if (!mark || mark.target !== this.patrolTarget ||
+            (x - mark.x) ** 2 + (y - mark.y) ** 2 > 16) {
+            this._patrolProgress = { x, y, time, target: this.patrolTarget };
+            return false;
+        }
+        return time - mark.time > this.config.patrol.changeDirectionInterval;
     }
 
     chooseNewPatrolTarget(time) {

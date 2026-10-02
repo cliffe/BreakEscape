@@ -4,6 +4,7 @@
 
 import { ASSETS_PATH } from '../config.js';
 import TTSManager from './tts-manager.js';
+import { phoneBarkText } from '../minigames/phone-chat/phone-chat-speaker.js';
 
 export default class NPCBarkSystem {
   constructor(npcManager) {
@@ -285,7 +286,11 @@ export default class NPCBarkSystem {
    */
   async _renderBark(payload = {}) {
     const { npcId, npcName, avatar } = payload;
-    const text = payload.text || payload.message || '';
+    // The popup and its voice carry only the NPC's own words: no "You: …" line (U3) and no
+    // "Name:" prefix naming the NPC, which the popup already shows and TTS would read out
+    const contact = (npcId && this.npcManager?.getNPC?.(npcId)) || { id: npcId, displayName: npcName };
+    const text = phoneBarkText(payload.text || payload.message || '', contact);
+    if (!text) return null;
     const duration = ('duration' in payload) ? payload.duration : 5000;
     const playSound = payload.playSound !== false; // Default true
     

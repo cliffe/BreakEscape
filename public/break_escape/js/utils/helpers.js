@@ -20,14 +20,42 @@ export function introduceScenario() {
     
     // Show mission brief via notes minigame if available, otherwise fallback to alert
     if (window.showMissionBrief) {
-        // Delay slightly to ensure the game is fully loaded
-        setTimeout(() => {
-            window.showMissionBrief();
-        }, 500);
+        // Delay slightly to ensure the game is fully loaded, then wait for the
+        // opening cutscene and anything else on screen (title screen, briefing):
+        // starting a minigame ends the current one, and a briefing ended that way
+        // never replays because its guard global is set when it starts.
+        showBriefWhenClear(() => window.showMissionBrief());
     } else {
         // Fallback to old alert system
         gameAlert(gameScenario.scenario_brief, 'info', 'Mission Brief', 0);
     }
+}
+
+const BRIEF_FIRST_DELAY_MS = 500;
+const BRIEF_POLL_MS = 500;
+const BRIEF_MAX_WAIT_MS = 10 * 60 * 1000; // the brief is in the notepad anyway
+
+/** Is something on screen, or about to be, that the brief popup would end? */
+export function briefPopupBlocked() {
+    if (window.MinigameFramework?.currentMinigame) return true;
+    return !!window.npcManager?.hasPendingOpeningConversation?.();
+}
+
+/** Run show() once nothing would be displaced by it (polls; gives up after 10 minutes). */
+export function showBriefWhenClear(show, { firstDelay = BRIEF_FIRST_DELAY_MS, poll = BRIEF_POLL_MS, maxWait = BRIEF_MAX_WAIT_MS } = {}) {
+    const started = Date.now();
+    const attempt = () => {
+        if (briefPopupBlocked()) {
+            if (Date.now() - started >= maxWait) {
+                console.log('📋 Mission Brief popup skipped: the screen never cleared (it is in the notepad)');
+                return;
+            }
+            setTimeout(attempt, poll);
+            return;
+        }
+        show();
+    };
+    setTimeout(attempt, firstDelay);
 }
 
 // Import crypto workstation functions 

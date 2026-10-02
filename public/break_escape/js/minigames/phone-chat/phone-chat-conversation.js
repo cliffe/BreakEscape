@@ -7,6 +7,8 @@
  * @module phone-chat-conversation
  */
 
+import { phoneStepLines } from './phone-chat-speaker.js';
+
 export default class PhoneChatConversation {
     /**
      * Create a PhoneChatConversation instance
@@ -646,8 +648,7 @@ export default class PhoneChatConversation {
         const tags = [];
         fresh.forEach(step => {
             tags.push(...step.tags);
-            step.text.split('\n').map(line => line.trim()).filter(Boolean)
-                .forEach(line => messages.push(line));
+            messages.push(...phoneStepLines(step.text, step.tags));
         });
         if (tags.length > 0) this.processTags(tags);
 
@@ -706,9 +707,7 @@ export default class PhoneChatConversation {
         const allTags = [];
         for (let guard = 0; guard < 500; guard++) {
             const result = tempConversation.continue();
-            if (result.text && result.text.trim()) {
-                allMessages.push(...result.text.trim().split('\n').filter(line => line.trim()));
-            }
+            allMessages.push(...phoneStepLines(result.text, result.tags));
             if (result.tags && result.tags.length > 0) allTags.push(...result.tags);
             if (result.hasEnded || (result.choices && result.choices.length > 0) || !result.canContinue) break;
         }

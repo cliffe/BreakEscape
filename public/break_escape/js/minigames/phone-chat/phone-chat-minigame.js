@@ -13,6 +13,7 @@ import PhoneChatConversation from './phone-chat-conversation.js';
 import PhoneChatHistory from './phone-chat-history.js';
 import InkEngine from '../../systems/ink/ink-engine.js';
 import { processGameActionTags } from '../helpers/chat-helpers.js';
+import { classifyPhoneLine, displayPhoneLine, phoneStepLines } from './phone-chat-speaker.js';
 
 export class PhoneChatMinigame extends MinigameScene {
     /**
@@ -355,23 +356,11 @@ export class PhoneChatMinigame extends MinigameScene {
         }
         const targetKnot = explicitStartKnot || npc.currentKnot || 'start';
         
-        // If navigating to a new knot explicitly (e.g., from timed message),
-        // clear the non-timed history to avoid showing old messages from previous visits to this knot
-        if (explicitStartKnot && history.length > 0) {
-            console.log(`🧹 Explicit knot navigation detected - clearing old conversation messages (keeping timed/bark notifications)`);
-            console.log('📝 History before filtering:', history.map(m => ({ text: m.text.substring(0, 40), timed: m.timed, isBark: m.isBark })));
-            // Keep only timed messages and barks (notifications), remove old Ink dialogue
-            // Note: metadata is spread directly onto message object, not nested
-            const filteredHistory = history.filter(msg => msg.isBark || msg.timed);
-            console.log('📝 History after filtering:', filteredHistory.map(m => ({ text: m.text.substring(0, 40), timed: m.timed, isBark: m.isBark })));
-            
-            // Update NPCManager's conversation history directly. (Keyed by npcId: this
-            // minigame has no this.npcId, so this used to file the copy under undefined, E16.)
-            this.npcManager.conversationHistory.set(npcId, filteredHistory);
-            
-            // Update what we'll display
-            history.splice(0, history.length, ...filteredHistory);
-        }
+        // An explicit knot (an event-driven call, a text naming its knot) adds to the
+        // thread; it doesn't wipe it. This used to drop every line that wasn't a timed
+        // text or bark, so the hub greeting and every earlier exchange vanished once a
+        // scripted call landed (m03 pass-4 playtest). The thread is a log: what the
+        // player has seen stays, and the call's lines are appended after it.
         
         // Filter out bark-only and timed messages to check if there's real conversation history
         // (timed messages are just notifications, not actual Ink dialogue)
@@ -581,11 +570,8 @@ export class PhoneChatMinigame extends MinigameScene {
                 accumulatedTags.push(...result.tags);
             }
 
-            // Collect text
-            if (result.text && result.text.trim()) {
-                const lines = result.text.trim().split('\n').filter(line => line.trim());
-                accumulatedMessages.push(...lines);
-            }
+            // Collect text (a line tagged #speaker:player comes back as "You: …")
+            accumulatedMessages.push(...phoneStepLines(result.text, result.tags));
 
             // Stop conditions:
             // 1. Story has ended
@@ -671,14 +657,7 @@ export class PhoneChatMinigame extends MinigameScene {
         for (let i = 0; i < accumulatedMessages.length; i++) {
             const message = accumulatedMessages[i];
             if (!message.trim()) continue;
-            this.ui.showTypingIndicator();
-            this.ui.scrollToBottom();
-            await delay(TYPING_DELAY_MS);
-            this.ui.hideTypingIndicator();
-            await this.ui.addMessage('npc', message.trim());
-            if (!this.isConversationActive) return;
-            // Typed into the open thread, so already read (else the badge sticks after closing)
-            this.history.addMessage('npc', message.trim(), { read: true });
+            if (!(await this._showStoryLine(message, TYPING_DELAY_MS))) return;
             this._pendingNpcMessages.shift();
             if (i < accumulatedMessages.length - 1) await delay(INTER_MESSAGE_MS);
         }
@@ -697,6 +676,34 @@ export class PhoneChatMinigame extends MinigameScene {
         this.saveStoryState();
     }
     
+    /**
+     * Type one story line into the open thread and record it. A line written as the
+     * player's ("You: …", or tagged #speaker:player) goes in as a player bubble with the
+     * prefix stripped, with no "typing…" from the NPC (U3); phone texts are not voiced.
+     * @param {string} raw - the line as the ink printed it
+     * @param {number} typingDelayMs
+     * @returns {Promise<boolean>} false if the conversation was closed meanwhile
+     */
+    async _showStoryLine(raw, typingDelayMs) {
+        // A thread closed (or swapped for another contact) during the await is no longer
+        // this typeout's: its untyped lines were flushed to the right history on close
+        const run = this._typeoutRun;
+        const stillOurs = () => this.isConversationActive && run === this._typeoutRun;
+        const line = classifyPhoneLine('npc', raw.trim());
+        if (line.type === 'npc') {
+            this.ui.showTypingIndicator();
+            this.ui.scrollToBottom();
+            await new Promise(resolve => setTimeout(resolve, typingDelayMs));
+            this.ui.hideTypingIndicator();
+            if (!stillOurs()) return false;
+        }
+        await this.ui.addMessage(line.type, line.text);
+        if (!stillOurs()) return false;
+        // Typed into the open thread, so already read (else the badge sticks after closing)
+        this.history.addMessage(line.type, line.text, { read: true });
+        return true;
+    }
+
     /**
      * Handle player choice selection
      * 
@@ -748,10 +755,7 @@ export class PhoneChatMinigame extends MinigameScene {
         if (firstResult.tags && firstResult.tags.length > 0) {
             accumulatedTags.push(...firstResult.tags);
         }
-        if (firstResult.text && firstResult.text.trim()) {
-            const lines = firstResult.text.trim().split('\n').filter(line => line.trim());
-            accumulatedMessages.push(...lines);
-        }
+        accumulatedMessages.push(...phoneStepLines(firstResult.text, firstResult.tags));
 
         // Keep reading lines until we get choices or the story ends
         while (lastResult.canContinue && (!lastResult.choices || lastResult.choices.length === 0)) {
@@ -770,11 +774,8 @@ export class PhoneChatMinigame extends MinigameScene {
                 accumulatedTags.push(...result.tags);
             }
 
-            // Collect text
-            if (result.text && result.text.trim()) {
-                const lines = result.text.trim().split('\n').filter(line => line.trim());
-                accumulatedMessages.push(...lines);
-            }
+            // Collect text (a line tagged #speaker:player comes back as "You: …")
+            accumulatedMessages.push(...phoneStepLines(result.text, result.tags));
 
             // Stop if story ended
             if (result.hasEnded) {
@@ -800,19 +801,18 @@ export class PhoneChatMinigame extends MinigameScene {
             console.log('⚠️ No tags to process after choice');
         }
 
-        // Display accumulated NPC messages one at a time with typing indicator
+        // Display accumulated NPC messages one at a time with typing indicator. As in
+        // _presentOutput, lines not yet typed are kept in _pendingNpcMessages, so closing
+        // the phone mid-typeout puts them in the thread rather than losing them.
+        this._pendingNpcMessages = accumulatedMessages.filter(m => m.trim()).map(m => m.trim());
         for (let i = 0; i < accumulatedMessages.length; i++) {
             const message = accumulatedMessages[i];
             if (!message.trim()) continue;
-            this.ui.showTypingIndicator();
-            this.ui.scrollToBottom();
-            await delay(TYPING_DELAY_MS);
-            this.ui.hideTypingIndicator();
-            await this.ui.addMessage('npc', message.trim());
-            if (!this.isConversationActive) return;
-            this.history.addMessage('npc', message.trim(), { read: true });
+            if (!(await this._showStoryLine(message, TYPING_DELAY_MS))) return;
+            this._pendingNpcMessages.shift();
             if (i < accumulatedMessages.length - 1) await delay(INTER_MESSAGE_MS);
         }
+        this._pendingNpcMessages = [];
 
         // Check if the story output contains the exit_conversation tag
         const shouldExit = accumulatedTags.some(tag => tag.includes('exit_conversation'));
@@ -879,6 +879,7 @@ export class PhoneChatMinigame extends MinigameScene {
      * return text, because the Planted Network Device pickup opens his phone twice in 500 ms).
      */
     _flushPendingMessages() {
+        this._typeoutRun = (this._typeoutRun || 0) + 1;   // any typeout still running stops
         const pending = this._pendingNpcMessages;
         this._pendingNpcMessages = [];
         if (!pending || pending.length === 0 || !this.currentNPCId) return;
@@ -1014,11 +1015,14 @@ export class PhoneChatMinigame extends MinigameScene {
         let content = `CONVERSATION WITH ${npcName.toUpperCase()}\n`;
         content += `${'='.repeat(30)}\n\n`;
         
-        messages.forEach(message => {
+        messages.forEach(original => {
+            const message = { ...original, ...displayPhoneLine(original.type, original.text, npc) };
             if (message.type === 'npc') {
                 content += `${npcName}: ${message.text}\n\n`;
             } else if (message.type === 'player') {
                 content += `You: ${message.text}\n\n`;
+            } else if (message.type === 'narrator') {
+                content += `[${message.text}]\n\n`;
             } else if (message.type === 'choice') {
                 content += `> ${message.text}\n\n`;
             }

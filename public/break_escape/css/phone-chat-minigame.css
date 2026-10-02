@@ -376,6 +376,20 @@
     font-weight: bold;
 }
 
+.message-narration {
+    align-self: center;
+    max-width: 85%;
+    text-align: center;
+    font-family: 'GNF', monospace;
+    font-size: 14px;
+    font-style: italic;
+    line-height: 1.4;
+    color: rgba(0, 0, 0, 0.68);
+    padding: 2px 6px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
 .message-time {
     font-size: 10px;
     color: rgba(0, 0, 0, 0.5);
@@ -649,6 +663,12 @@
 .phone-terminal-theme .message-bubble.player .message-text::before {
     content: '$ ';
     opacity: 0.5;
+}
+
+.phone-terminal-theme .message-narration {
+    align-self: stretch;
+    color: #5f8f6a;
+    font-size: 16px;
 }
 
 .phone-terminal-theme .message-time {

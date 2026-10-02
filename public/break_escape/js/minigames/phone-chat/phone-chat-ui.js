@@ -10,6 +10,7 @@
 import { ASSETS_PATH } from '../../config.js';
 import TTSManager from '../../systems/tts-manager.js';
 import MusicController from '../../music/music-controller.js';
+import { displayPhoneLine } from './phone-chat-speaker.js';
 
 export default class PhoneChatUI {
     /**
@@ -409,7 +410,12 @@ export default class PhoneChatUI {
      */
     createContactItem(npc) {
         const history = this.npcManager.getConversationHistory(npc.id);
-        const lastMessage = history.length > 0 ? history[history.length - 1] : null;
+        // The preview is the last line that isn't narration ("Narrator: …" is no one's text)
+        const isNarration = msg => displayPhoneLine(msg.type, msg.text, npc).type === 'narrator';
+        let lastMessage = null;
+        for (let i = history.length - 1; i >= 0; i--) {
+            if (!isNarration(history[i])) { lastMessage = history[i]; break; }
+        }
         const unreadCount = history.filter(msg => !msg.read && msg.type === 'npc').length;
         
         const contactItem = document.createElement('div');
@@ -422,9 +428,11 @@ export default class PhoneChatUI {
         
         if (lastMessage) {
             const maxLength = 40;
-            lastMessagePreview = lastMessage.text.length > maxLength
-                ? lastMessage.text.substring(0, maxLength) + '...'
-                : lastMessage.text;
+            const line = displayPhoneLine(lastMessage.type, lastMessage.text, npc);
+            const previewText = line.type === 'player' ? `You: ${line.text}` : line.text;
+            lastMessagePreview = previewText.length > maxLength
+                ? previewText.substring(0, maxLength) + '...'
+                : previewText;
             lastMessageTime = this.formatTimestamp(lastMessage.timestamp);
         }
         
@@ -550,11 +558,28 @@ export default class PhoneChatUI {
             return Promise.resolve();
         }
 
+        // A "You: …" line is the player's bubble, prefix stripped (U3); the contact's own
+        // "Name:" prefix is dropped from its lines (also before any voice: transcript)
+        const contact = this.currentNPCId ? this.npcManager?.getNPC(this.currentNPCId) : null;
+        ({ type, text } = displayPhoneLine(type, text.trim(), contact));
         const trimmedText = text.trim();
-        const isVoiceMessage = trimmedText.toLowerCase().startsWith('voice:');
+        // Only the NPC's lines are voice messages: a player line is never voiced in their voice
+        const isVoiceMessage = type === 'npc' && trimmedText.toLowerCase().startsWith('voice:');
 
         if (this.isTerminalTheme && type === 'npc' && !isVoiceMessage) {
             return this._typewriterMessage(trimmedText, scrollToBottom);
+        }
+
+        if (type === 'narrator') {
+            // Narration: centred, italic, muted; no bubble, tail, avatar, time or typeout
+            const narration = document.createElement('div');
+            narration.className = 'message-narration';
+            narration.textContent = trimmedText;
+            this.elements.messagesContainer.appendChild(narration);
+            if (scrollToBottom) {
+                this.scrollToBottom();
+            }
+            return Promise.resolve();
         }
 
         const messageBubble = document.createElement('div');
