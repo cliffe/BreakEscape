@@ -42,6 +42,7 @@ User decisions for this pass (2026-10-02):
 - **m04 combat:** damage cut (Cipher 4, Relay 5, Static 4, Voltage 12); a steady player survives all three fights (100→30) without healing, a slower one wouldn't. A heal item and a room leash need the engine (backlog).
 - **Engine fixes done (uncommitted):** catches use the right room for containers and only the watching NPC reacts (`lockpick-catch.js`, `npc-manager.js`); keys and other inventory items apply `onPickup` (`inventory.js` `applyPickupAction`); the Mission Brief waits for the opening briefing (`helpers.js`); the tutorial decline is saved in the game's globals (`engine_tutorial_declined`); a scripted phone call no longer wipes the thread (`phone-chat-minigame.js`); waypoint patrols aren't cut short by the re-target timer (`npc-behavior.js`). Node 161/162 (the one failure is the tagdiff-vs-HEAD test, expected until the mission ink is committed), Rails 474/0, reopencheck 0; browser-checked in m02, m03, m04, m07.
 - **Phone narration (engine, small):** `Narrator:` lines in phone chats showed as the contact's bubble with a literal prefix (m02, m05, m07 inks). Taken: render them as narration in phone chat, as person-chat already does (finishes the U3 work).
+- **m05: no influence feedback tags** (orchestrator decision). In a whodunnit a "+ Influence" popup could hint at who's telling the truth.
 - **Person-chat reopen (engine, small):** a conversation reopened in the same session showed a blank box with only buttons (m03, m06, m08). Taken: when reopening prints nothing, re-show the NPC's last line; does nothing where the ink already prints a re-entry line. This is the "Person-chat resume" backlog item, done because it recurred in three missions.
 - **m08 fixes done.** The player clones Netherton's card (he refuses to hand it over; EM4100, clone rule followed) and lifts Nightshade's print off the USB stick (first print on a carried item; unproven, playtest step 8; fallback: the locker). "I'll need access." says "Not yet" and names unseen suspects until all three interviews are done; the badge printer stays the early route. New required task `get_suite_code`. Canon: Nightshade has fifteen years' service and taught the player's intake; Netherton has run field operations for five years. ~44 spoken lines.
 - **m07 fixes done.** Debrief now waits for "Bring me in." (8-min fallback); Threat Desk Summary in start kit; `elena_met`; the Architect's "I merely publish the schedule" as a signed line on the decode (no TTS cost); Tesseract plant: the Architect echoes a line HaX teaches ("Let it hurt afterwards, not during"), and HaX recognises it as from "somebody who taught a lot of us" (no name). Canon updated in the_architect.md, the HaX file and the voice bible. ~13 new spoken lines, 7 changed.
@@ -56,6 +57,9 @@ User decision 2026-10-02: commit each mission as it completes.
 - a6ba802c m07
 - e7cfc940 m04
 - 715a4462 m06
+- 82c45519 tooling (tagdiff, dialoguelint, validator recurring-bug checks, inkcheck)
+- 3d95bfc9 m03
+- 8770ace6 docs and skills (validate-scenario, scenario-design-review, playtest-scenario; npc-dialog-review left uncommitted because it holds the user's own edits)
 
 ## Items for the user
 
@@ -73,16 +77,17 @@ User decision 2026-10-02: commit each mission as it completes.
 - **P9. SecGen m05 description names Torres as the insider** (`SecGen scenarios/break_escape/safetynet/m05_insider_trading.xml:12`). A spoiler for the new whodunnit if Hacktivity shows the description to players. Proposal: reword to "an insider at the lab" (one-line SecGen edit).
 - **P10. Reload respawns the player in the start room** (engine + server; M). `window.currentRoom` is never assigned, so the room isn't synced, and `sync_state` returns 403 if the room isn't unlocked (`games_controller.rb:639-649`). A proper fix needs a non-fatal room check on the server and a restore-into-room path on the client. Not done; in the backlog.
 - **P11. Torres (m05) and Cipher (m08, the red herring) share `male_nerd_v2`.** Every other existing male sheet clashes worse in m05. Options: a bespoke Torres (PixelLab, one character), or recast Cipher in m08. Left as is for now.
+- **P12. npc-dialog-review skill:** your uncommitted §2a-ter says `#speaker:` keys resolve to NPCs "by prefix"; the engine doesn't (`determineSpeaker`, person-chat-minigame.js ~679-715, ignores two-part tags other than player/npc). The pass-4 §2i documents the real behaviour. Please reconcile, then commit that skill.
 - **P2. m03 subnet / ".50" host** may not match how SecGen builds the VM (from reading the SecGen file; no VM build). The fixer makes the text build-agnostic where it can; a real Hacktivity build would settle it.
 
 ## Mission status
 
 | Mission | Design | Dialogue | Status |
 |---|---|---|---|
-| m02 | 2 rounds; confirmation running | not started | |
-| m03 | 2 rounds, confirmed | writer + script edit done; dialogue playtest running | |
+| m02 | 3 rounds, confirmed | writer, script edit, playtest round; pre-commit check 6/6 | **done, committed 4f7b8763** |
+| m03 | 2 rounds, confirmed | writer, script edit, 2 playtest rounds; final 8/9 + fixes | **done, committed 3d95bfc9** |
 | m04 | 2 rounds, confirmed | writer, script edit, playtest round; final confirmation 7/7 | **done, committed e7cfc940** |
-| m05 | 3 rounds; confirmation running | not started | |
+| m05 | 3 rounds, confirmed | writer, script edit, playtest round; pre-commit check 6/6 | **done, committed a5556cd7** |
 | m06 | 2 rounds, confirmed | writer, script edit, playtest round; final confirmation 6/7 + re-entry fix | **done, committed 715a4462** |
 | m07 | 3 rounds, confirmed | writer, script edit, 2 playtest rounds; final confirmation 16/16 | **done, committed a6ba802c** |
-| m08 | 2 rounds, confirmed | writer done; script-edit round running | |
+| m08 | 2 rounds, confirmed | writer, script edit, playtest round; final confirmation 8/9 (dashes in item text → engine) | **done, committed f3cf165f** |

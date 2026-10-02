@@ -7,7 +7,8 @@ Each entry: a short title, where it came from, the idea in two or three sentence
 ## Minigames
 
 - **Distinct reference cards on easy** (m04 playtests, twice; S). On easy the two reference cards look near-identical, so the compare step can't be done by eye; the m04 final run picked Vance's card by a 50/50 guess. Worth doing soon.
-- **Toasts shouldn't cover minigame overlays** (m04 playtest; S). A HaX toast sat over the reader overlay's hint line and High-contrast checkbox.
+- **Recovery console: the Close button overlaps the banner at 1280x800** (dash check; S).
+- **Toasts shouldn't cover minigame overlays or the person-chat speaker name** (m04 and m02 playtests; S). HaX toasts sat over the reader overlay's hint and over the speaker caption in person-chat.
 - **Hide reference-card names until a match** (m04 review; S). At medium difficulty and up, the dusting compare step would be a real identification.
 - **Show the EM4100 vs MIFARE difference in the cloner** (m08 fixer; S). Make it visible that EM4100 has no crypto and clones instantly, while MIFARE needs a key attack.
 - **Dusting and "Search Room" for carried items** (m08 fixer; S–M). A clean way to dust something in the inventory.
@@ -22,6 +23,8 @@ Each entry: a short title, where it came from, the idea in two or three sentence
 - **A "VM launched" event** (m05 fixer; S). Tasks like "Get into the research portal" could complete on real use instead of on flag 1.
 - **`object_unlock_failed` event** (m06 re-review; S). The engine emits nothing when a PIN or password is wrong, so a handler can't react to repeated wrong guesses.
 - **Combat tuning for missions** (m04 playtest; S–M). A heal item or slow regen missions can place; a room leash so a chasing NPC gives up at her own door; pass `maxHP` and `attackCooldown` through from a scenario's hostile config (`parseConfig` drops them today). Fights in sequence are currently hard to survive.
+- **Ink visit counts don't survive a reload** (m02 pre-commit check; S–M). After a reload Val replays her full Reeves speech because knot visit counts and local VARs aren't restored (only synced globals are). Missions work round it with synced globals.
+- **Standing NPCs can be pushed and don't return** (m05 pre-commit check; S). The player's path pushed Halloran 35–60 px off her spot and she stayed there; standing NPCs should be immovable or walk back.
 - **Non-combatant NPCs** (m02 fixer; S). A `nonCombatant` flag so bed-bound patients and similar can't be punched.
 - **Console source tiles hidden until available** (m02 fixer; S). The Ghost tile shows greyed before the offer.
 - **Auto-advance paced by line length when there's no audio** (m08 dialogue playtest; S). Without TTS every line holds ~5 s whatever its length; short replies drag in long hubs. With audio, pacing follows the speech.
@@ -45,6 +48,8 @@ Each entry: a short title, where it came from, the idea in two or three sentence
 - **A character file for Nightshade** in `04_characters/` (style guide; S). He has only a paragraph in `insider_threat_initiative.md`, yet he runs through m02–m08.
 
 - **m05: Mission Brief notes reopen after a reload** (U3 browser check; S). Seen once on game 1361; may be intended. Check whether the brief should only auto-open on a new game.
+
+- **A short Ben Ashworth scene in m05** (m05 writer; S–M). Ben is a named red herring with no lines; a brief scene would make the suspect list two people deep.
 
 ## Art and audio
 

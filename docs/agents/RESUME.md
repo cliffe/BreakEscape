@@ -19,15 +19,16 @@ Updated 2026-10-02. Brief: `docs/agents/PASS4_BRIEF.md`. Log: `scenarios/PASS4_E
 - Waiting on user: P1 (Nightshade foreshadowing), P3 (m05 whodunnit), P4/P5 (lab sheets push/SSH example), P6 (Tesseract).
 
 ## Status (latest)
+- ALL SEVEN MISSIONS (m02–m08) DONE AND COMMITTED (m02 4f7b8763). Remaining: audio generation for m02–m08 (cost; ask the user), P-items in the log for the user, pushing lab sheets/SecGen (user said not yet).
 - User APPROVED the m07 dialogue approach for all missions (2026-10-02). Writer brief: docs/agents/PASS4_DIALOGUE_WRITER_PROMPT.md (MISSION/MSHORT/EXTRA).
 - m07: DONE, committed a6ba802c. USER: commit each mission as it completes. Engine committed 44e3c383, bible 9256ab10. Still uncommitted: tooling (tagdiff, dialoguelint, validator, inkcheck, missions.json — the recurring-checks agent is editing), docs (AGENTS.md, brief, log, backlog, README_ink_best_practices), test/js/ink-tagdiff (fix its 'unchanged at HEAD' test first).
 - m06: DONE, committed 715a4462.
-- m03: final confirmation running → commit.
+- m03: DONE, committed 3d95bfc9.
 - m04: DONE, committed e7cfc940.
-- m02: round 3 DONE (Raval offers the Bed 4 save; press terminal; val_met; naming reason for all names). Confirmation C1–C5 WAITS for the engine agent (person-chat reopen + static NPC reach + double unlock call). Then dialogue pass. m05: round 3 DONE; confirmation (Run F + detective timeline) running. Then m05 dialogue pass.
+- m02: round 3 DONE (Raval offers the Bed 4 save; press terminal; val_met; naming reason for all names). DESIGN DONE (round-3 confirmation 6/7). Dialogue writer running. Then script edit → playtest → commit. m05: DONE, committed a5556cd7.
 - Engine agent DONE (was: lockpick-catch room (containers), catch scoped to the watching NPC's room, keys apply onPickup, brief popup vs opening cutscene race, tutorial decline persistence, phone greeting loss; investigating reload respawn/door entity.
 
-- USER REQUEST (2026-10-02): recurring bugs → validator + dialoguelint checks, README_scenario_design/README_ink_best_practices sections, and skills (validate-scenario, scenario-design-review, npc-dialog-review, playtest-scenario; additive edits — the user has uncommitted skill edits). Opus agent running. Afterwards route true-positive hits in finished missions to writers.
+- DONE: recurring-bug checks committed 82c45519 / 8770ace6. Sonnet agent fixing new-check hits in m04/m06/m07 (then a follow-up commit). OLD NOTE: recurring bugs → validator + dialoguelint checks, README_scenario_design/README_ink_best_practices sections, and skills (validate-scenario, scenario-design-review, npc-dialog-review, playtest-scenario; additive edits — the user has uncommitted skill edits). Opus agent running. Afterwards route true-positive hits in finished missions to writers.
 
 ## Engine suspects collected from playtests (for one engine agent later)
 - CONFIRMED: addKeyToInventory (inventory.js ~671-680) never applies onPickup; onPickup.setVariable only read at interactions.js:1377,1455, inventory.js:271, npc-game-bridge.js:30. m07 works round it with an item_picked_up:key mapping.
