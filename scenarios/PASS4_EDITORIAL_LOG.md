@@ -63,6 +63,8 @@ User decision 2026-10-02: commit each mission as it completes.
 
 ## Items for the user
 
+**User answers, 2026-10-02 (end of pass):** P8 deleted (84e02028); P9 SecGen description made neutral (committed in SecGen, not pushed); P11 deferred — new sprites and assets are a later step; P12 skill line corrected to match the engine and the skill committed (98c34c92).
+
 **User answers, 2026-10-02:** P1 keep the mole hints as subtle foreshadowing; P3 make m05 a real whodunnit (sent to the m05 fixer); P6 keep the Tesseract lead and pay it off in m07, updating the bible (sent to the m07 fixer); P5 make the SSH sheet example neutral (Sonnet agent; not committed); P4 don't push HacktivityLabSheets or SecGen yet.
 
 - **P1. m03: Nightshade's "one day it'll be our badge somebody clones"** (`m03_opening_briefing.ink:175`). Reads as a hint at the m08 mole; m03's own notes say "no m08 hint". A quiet early hint is good thriller craft, so this is a canon call. Left as it is until you decide.
