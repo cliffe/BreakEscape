@@ -512,7 +512,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           { "text": "Ms Okafor (Bed 2): Stable — prescribed rate set after the library was restored",   "style": "entry", "condition": "!globalVars.patient_bed2_deceased && globalVars.pump_dose_correct && !globalVars.drug_library_override" },
           { "text": "Ms Okafor (Bed 2): Infusion not renewed during response",                           "style": "entry", "condition": "!globalVars.patient_bed2_deceased && !globalVars.pump_dose_correct && !globalVars.pump_dose_error" },
           { "text": "Ms Okafor (Bed 2): Wrong rate went in; the alarm was raised in time and naloxone given", "style": "entry", "condition": "!globalVars.patient_bed2_deceased && globalVars.pump_dose_error && globalVars.bed2_alarm_raised" },
-          { "text": "Ms Okafor (Bed 2): Wrong rate confirmed at the pump; naloxone given",                "style": "entry", "condition": "!globalVars.patient_bed2_deceased && globalVars.pump_dose_error && !globalVars.bed2_alarm_raised" },
+          { "text": "Ms Okafor (Bed 2): Wrong rate went in; left over-sedated, and the alarm was never raised", "style": "entry", "condition": "!globalVars.patient_bed2_deceased && globalVars.pump_dose_error && !globalVars.bed2_alarm_raised" },
           { "text": "Ms Okafor (Bed 2): Deceased — morphine overdose; the tampered library accepted the wrong rate", "style": "entry", "condition": "globalVars.patient_bed2_deceased" },
           { "text": "Mr Ahmed (Bed 4): One-to-one care until outreach arrived",                          "style": "entry", "condition": "globalVars.bed4_escalated && !globalVars.sarah_given_soon_estimate && !globalVars.patient_bed4_deceased" },
           { "text": "Mr Ahmed (Bed 4): Sarah was told 'soon'; escalated late, then one-to-one care until outreach arrived", "style": "entry", "condition": "globalVars.bed4_escalated && globalVars.sarah_given_soon_estimate && !globalVars.patient_bed4_deceased" },
@@ -1601,7 +1601,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "onceOnly": true,
               "completeTask": "access_siem",
               "setGlobal": { "ravi_siem_briefed": true },
-              "bark": "Right, those are the critical alerts. That cross-zone RDP is how they reached the clinical VLAN.",
+              "bark": "Right, those are the critical alerts. That cross-zone RDP is how they got across to the clinical side.",
               "barkDelay": 0
             },
             {
@@ -1622,7 +1622,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "eventPattern": "global_variable_changed:network_isolated",
               "condition": "value === true && globalVars.network_isolation_authorised === true",
               "onceOnly": true,
-              "bark": "We're cut. Come and see me when you've a minute.",
+              "bark": "We're cut. I'm in the office if you need me.",
               "barkDelay": 1500
             },
             {
@@ -2017,9 +2017,17 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
             },
             {
               "eventPattern": "global_variable_changed:network_isolated",
-              "condition": "value === true && globalVars.network_isolation_authorised === true",
+<%# Round R3 (D3): the bark depends on whether the library has already been restored. %>
+              "condition": "value === true && globalVars.network_isolation_authorised === true && !globalVars.drug_library_restored",
               "onceOnly": true,
               "bark": "We're isolated. Talk to me before anyone touches the drug library.",
+              "barkDelay": 2500
+            },
+            {
+              "eventPattern": "global_variable_changed:network_isolated",
+              "condition": "value === true && globalVars.network_isolation_authorised === true && globalVars.drug_library_restored",
+              "onceOnly": true,
+              "bark": "We're isolated, and the library's already checked. Come and see me.",
               "barkDelay": 2500
             },
             {
@@ -2104,7 +2112,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "eventPattern": "global_variable_changed:network_isolated",
               "condition": "value === true",
               "onceOnly": true,
-              "bark": "We're isolated. Come and see me when you can.",
+              "bark": "Isolated. Good. I'll want you up here next.",
               "barkDelay": 500
             },
             {

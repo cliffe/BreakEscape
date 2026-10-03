@@ -165,30 +165,45 @@ Mrs Kowalski: Somebody's been at the computer that does the medicines? From outs
 // BED 2 STATE WITNESSES (targetKnot on Bed 2 state changes)
 // ===========================================
 
+// Round R3 (D2): these knots are set by event mappings with no conversation,
+// so they can play on a late first talk. Each checks the current state first,
+// and the death and rescue lines play once (seen_* survive a reload).
 === state_sedated ===
-~ seen_concern = true
-{bed2_alarm_raised:
+{
+- patient_bed2_deceased:
+    -> state_deceased
+- bed2_alarm_raised:
     -> bed2_saved
 }
+~ seen_concern = true
 Mrs Kowalski: I'm not sure she's all right. She was trying to call out, but she can't wake up properly. Is that normal?
 -> concern_choices
 
 === state_critical ===
-~ seen_concern = true
-~ seen_critical = true
-{bed2_alarm_raised:
+{
+- patient_bed2_deceased:
+    -> state_deceased
+- bed2_alarm_raised:
     -> bed2_saved
 }
+~ seen_concern = true
+~ seen_critical = true
 Mrs Kowalski: Please, someone look at her. She's not responding. I've been pressing the bell and nobody's coming!
 -> concern_choices
 
 === state_deceased ===
+{seen_dead:
+    -> hub
+}
 ~ seen_dead = true
 Mrs Kowalski: She stopped breathing. I kept pressing the bell. I kept pressing it.
 ~ hub_quiet = true
 -> hub
 
 === bed2_saved ===
+{seen_saved:
+    -> hub
+}
 ~ seen_saved = true
 Mrs Kowalski: They got to her. The nurse came running with something in a syringe, and she's breathing again.
 ~ hub_quiet = true

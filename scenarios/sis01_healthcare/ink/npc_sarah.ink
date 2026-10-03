@@ -27,6 +27,7 @@ VAR pump_dose_error = false
 VAR bed2_alarm_raised = false
 VAR bed2_seen_unwell = false
 VAR sarah_pump_warned = false
+VAR sarah_at_bed2 = false
 
 // Local tracking vars for this NPC
 VAR sarah_briefed = false
@@ -43,6 +44,7 @@ VAR asked_tamper_change = false
 VAR asked_tamper_drugs = false
 VAR hub_quiet = false
 VAR asked_candour = false
+VAR told_rate = false
 
 // ===========================================
 // TIMED OPENING CUTSCENE (called by timedConversation)
@@ -257,8 +259,12 @@ Sarah Mitchell: I'm reporting it as a patient safety incident. Somebody has to r
 - network_isolated and not isolation_discussed:
     -> post_isolation
 }
-{hub_quiet:
+// Round R3 (D5): at Ms Okafor's bedside after answering the Bed 2 alarm.
+{
+- hub_quiet:
     ~ hub_quiet = false
+- sarah_at_bed2 and not patient_bed2_deceased:
+    Sarah Mitchell: {&I'm not leaving her. What is it?|She's coming round. Go on.}
 - else:
     Sarah Mitchell: {&What've you got?|Quickly, then.|Go on.}
 }
@@ -272,12 +278,31 @@ Sarah Mitchell: I'm reporting it as a patient safety incident. Somebody has to r
     }
     Sarah Mitchell: When she's safe, you're telling me exactly what went into that pump.
     -> hub
+// Round R3 (SAR3-1, decision E3): the player owns the misread rate. Two barriers
+// failed together: a misread decimal, and a library changed to let it through.
++ {pump_dose_error and bed2_alarm_raised and not patient_bed2_deceased and not told_rate} [About Ms Okafor's pump. I read her chart as twenty.]
+    ~ told_rate = true
+    Sarah Mitchell: Twenty. Her chart says two point nought. Did the pump say anything?
+    ++ [Nothing. It just took it.]
+        {drug_library_compromised:
+            Sarah Mitchell: That's what they changed the library for. One slip, and nothing in the pump to catch it.
+        - else:
+            Sarah Mitchell: Our range is half to four. It should've stopped you dead. Get David Osei to look at that library.
+        }
+    ++ [It asked me to check it against the chart. I said yes.]
+        Sarah Mitchell: Then the pump did its job and we didn't. A warning's only any good if somebody reads it.
+    -- Sarah Mitchell: Everyone misreads a chart once. Next time, read it twice, out loud, with someone watching.
+    -> hub
 + {drug_library_override and not sarah_pump_warned} [Bed 2's pump wanted twenty, not two. I kept her at two and rang pharmacy.]
     -> pump_override_report
 + {sarah_given_soon_estimate and not bed4_escalated and not patient_bed4_deceased} [About Mr Ahmed. Plan for hours, not minutes.]
     ~ bed4_escalated = true
     #set_global:bed4_escalated:true
-    Sarah Mitchell: Right. Amy goes to him now. I wish I'd known that sooner.
+    {bed2_alarm_raised and not patient_bed2_deceased:
+        Sarah Mitchell: Right. The crash team's got Ms Okafor, so Amy goes to him now. I wish I'd known that sooner.
+    - else:
+        Sarah Mitchell: Right. Amy goes to him now. I wish I'd known that sooner.
+    }
     -> hub
 + {not bed4_raised and not bed4_escalated and not patient_bed4_deceased} [About Mr Ahmed in Bed 4.]
     -> bed4_concern
@@ -307,11 +332,19 @@ Sarah Mitchell: I'm reporting it as a patient safety incident. Somebody has to r
     Sarah Mitchell: If someone's been in that server, I don't want to think about it.
     -> hub
 + {not network_isolated and not bed4_escalated} [What should I do first?]
-    Sarah Mitchell: Look at Bed 4's monitor, then come back to me. The paper drug charts are in my desk drawer.
-    Sarah Mitchell: After that, Ravi's in the IT office. Your pass opens the door.
+    {not bed4_raised:
+        Sarah Mitchell: Look at Bed 4's monitor, then come back to me. The paper drug charts are in my desk drawer.
+        Sarah Mitchell: After that, Ravi's in the IT office. Your pass opens the door.
+    - else:
+        Sarah Mitchell: Ravi's in the IT office. Your pass opens the door. And keep half an eye on Bed 4 for me.
+    }
     -> hub
 + [I'll come back when I know more.]
-    Sarah Mitchell: Please be quick. Every minute without monitoring, I'm guessing.
+    {sarah_at_bed2 and not patient_bed2_deceased:
+        Sarah Mitchell: Off you go. I'm staying with her.
+    - else:
+        Sarah Mitchell: Please be quick. Every minute without monitoring, I'm guessing.
+    }
     ~ hub_quiet = true
     #exit_conversation
     -> hub

@@ -12,6 +12,7 @@ VAR drug_library_restored = false
 VAR pump_dose_correct = false
 VAR pump_dose_error = false
 VAR patient_bed2_deceased = false
+VAR bed2_alarm_raised = false
 
 // Local tracking vars for this NPC
 VAR pharmacist_arrived = false
@@ -35,10 +36,19 @@ VAR asked_normal = false
 // Round 3: met after the library is already restored, so skip the "until it's verified" lines.
 {drug_library_restored:
     Hamza Iqbal: Hamza Iqbal, on-call pharmacist. Helen sent me up about the drug library.
+    // Round R3 (PHA3-3): Ms Okafor first, if her pump went wrong.
+    {
+    - patient_bed2_deceased:
+        Hamza Iqbal: I've heard about Ms Okafor. Her pump's quarantined, and her chart's with me for the review.
+    - pump_dose_error:
+        Hamza Iqbal: I've been through Ms Okafor's pump log against her chart, too. Nothing goes back on that pump until I've seen her.
+    }
     -> pump_safety_protocols
 }
-Hamza Iqbal: Hamza Iqbal, on-call pharmacist. Helen's sent me up. The drug library's been changed?
-Hamza Iqbal: Then nothing new goes on any pump until it's verified. Anything already running stays on its current rate.
+// Round R3 (PHA3-1, PHA3-2): he says what Helen told him, and under a raised
+// minimum the running infusions are suspect too, so each is checked.
+Hamza Iqbal: Hamza Iqbal, on-call pharmacist. Helen sent me up. She says someone's changed the drug library.
+Hamza Iqbal: Then nothing new goes on any pump until it's verified. Anything already running, I check against its chart, bed by bed.
 -> arrival_choices
 
 === arrival_choices ===
@@ -55,7 +65,11 @@ Hamza Iqbal: Then nothing new goes on any pump until it's verified. Anything alr
     - pump_dose_correct:
         Hamza Iqbal: She's on two, from her chart, and I've checked it. That pump stays put until the library's verified.
     - pump_dose_error:
-        Hamza Iqbal: I'm checking what went into her pump now. Whatever it was, it wasn't what her chart says.
+        {bed2_alarm_raised:
+            Hamza Iqbal: I'm going through her pump log against her chart now. Sarah says it was running at twenty.
+        - else:
+            Hamza Iqbal: I'm going through her pump log against her chart now.
+        }
     - else:
         Hamza Iqbal: Her infusion's finished and she needs her analgesia. Paper chart, two people check the rate, every digit read aloud.
         Hamza Iqbal: If the pump disagrees with the chart, the chart wins. Stop, and ring me.
@@ -94,6 +108,8 @@ Hamza Iqbal: Pumps can go back into use, with a second nurse checking every new 
     -> protocol_choices
 + [Thank you.]
     Hamza Iqbal: Thank you for taking it seriously.
+    ~ hub_quiet = true
+    #exit_conversation
     -> hub
 
 
@@ -114,7 +130,7 @@ Hamza Iqbal: Pumps can go back into use, with a second nurse checking every new 
     Hamza Iqbal: If you set her pump and it disagrees with the chart, call me.
     -> hub
 + {resumption_confirmed} [How are the checks going?]
-    Hamza Iqbal: Every new rate double-checked and written down. Audit will have a full record.
+    Hamza Iqbal: Every new rate double-checked and written down. If anyone asks later, it's all on paper.
     -> hub
 + [I'll let you get on.]
     Hamza Iqbal: Call me if a pump disagrees with a chart.

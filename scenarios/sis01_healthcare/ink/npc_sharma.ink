@@ -86,7 +86,7 @@ Priya S.: Patients first.
 - bed4_escalated:
     Priya S.: Mr Ahmed had someone with him until outreach came. That came from an honest answer about when his monitor would be back.
 - else:
-    Priya S.: Mr Ahmed was never escalated. He's still alive, and that's luck, not a plan.
+    Priya S.: Mr Ahmed was never escalated. He's still alive, and that was luck.
 }
 {
 - patient_bed2_deceased:
@@ -112,7 +112,7 @@ Priya S.: One question on that pump. Suppose it tells you the prescribed dose is
 * [Clear the warning and carry on. Pumps nag all the time.]
     Priya S.: That habit is what they turned against you. A warning everyone clears has stopped being a warning.
 * [Keep the prescribed rate, stop, and query pharmacy.]
-    Priya S.: Yes. When the device and the prescription disagree, trust the prescription and find out why.
+    Priya S.: Yes. When the device and the prescription disagree, trust the prescription. They were betting on someone clearing one more warning without reading it.
 - -> safety_claims
 
 
@@ -121,7 +121,7 @@ Priya S.: One question on that pump. Suppose it tells you the prescribed dose is
 // ===========================================
 
 === safety_claims ===
-Priya S.: Now the safety case. A claim is only as good as its "provided that".
+Priya S.: Now the safety case.
 {safety_claim_hc001_assessed:
     -> hc001_owner
 }
@@ -167,11 +167,13 @@ Priya S.: HC-001. Was it valid at eight o'clock on Monday morning, before anyone
 Priya S.: HC-003 says library changes are authorised, controlled and audited before they reach a pump. Did that control fail, or did the attacker beat it?
 * [The attacker beat it. Nothing would have stopped that.]
     Priya S.: Something would have. A change at quarter to seven on a Monday evening, outside any change window, with no pharmacist's sign-off.
-    Priya S.: A random fault doesn't pick the one drug that kills, or the hour the pharmacy's gone home. This one did.
     Priya S.: The audit log recorded it. Nobody was reading the log.
 * [It failed. An unauthorised change went through and nobody noticed.]
     Priya S.: Right. The control existed on paper. The audit log had the change in it, and nobody read it.
 -
+// Round R3 (PRI3-1, L1): the Q14 and Q2 points play after the gather, whatever the answer.
+Priya S.: A random fault doesn't pick the one drug that kills, or the hour the pharmacy's gone home. This one did.
+Priya S.: Your internal audit asked for a medical device risk register six months ago. The drug library would have been on it, with someone named to watch who changes it.
 {
 - drug_library_compromised && drug_library_restored:
     Priya S.: You found it and restored it from a verified copy. Call that recovery. It doesn't mean the claim held.
@@ -191,7 +193,7 @@ Priya S.: HC-003 says library changes are authorised, controlled and audited bef
 - network_isolation_authorised:
     Priya S.: You isolated with both sign-offs, Ravi's and David's. That's HC-007 doing its job.
 - else:
-    Priya S.: You isolated without both sign-offs. The outcome was right. The process is the control, and it was skipped.
+    Priya S.: You isolated without both sign-offs. It came out right. But the sign-off was the safety control, and it got skipped.
 }
 Priya S.: HC-007 also promised a rehearsal every year. The last one was nineteen months ago. Today was the first test since.
 Priya S.: So: who should decide on isolation, and why?
@@ -227,7 +229,7 @@ Priya S.: So: who should decide on isolation, and why?
     Priya S.: That's Article 33 done properly, and I gather you argued for it. Good.
 - ico_notified:
     Priya S.: The ICO heard after the isolation. It was inside the seventy-two hours, so it stands. But the law says without undue delay.
-    Priya S.: Waiting for containment was the wrong reasoning. A report can say what you're about to do, and the rest can follow.
+    Priya S.: Helen waited until she could say "contained". Article 33 doesn't ask for that. You could have sent what you knew, and what you were about to do, and followed up.
 - else:
     Priya S.: The ICO hasn't been told yet. You're inside the window, so Helen sends it straight after this meeting.
 }
@@ -265,17 +267,17 @@ Priya S.: NHS England had your NIS report on Monday night. That one's statutory 
 - backup_recovery_source == "nas_encrypted":
     Priya S.: You restored from a source the attacker had already reached. It was never going to give you a clean system.
 - backup_recovery_source == "tape_wiped":
-    Priya S.: Tape would have come back clean, in three to five days. The cloud copy was the faster clean option.
+    Priya S.: Tape will come back clean, but not for three to five days. The cloud copy was clean too, and faster.
 - not backup_restore_initiated:
     Priya S.: No restore was started. Those eighteen hours haven't begun yet.
 }
 {
 - ransom_advice == "dont_pay":
-    Priya S.: You told Helen not to pay. That's government policy for the NHS, and it's right.
+    Priya S.: You told Helen not to pay. That's government policy for the NHS, and it's right. A key wouldn't have got Sarah's monitors back this morning anyway.
 - ransom_advice == "pay":
     Priya S.: You told Helen to consider paying. It wouldn't have been faster, it funds the next attack, and they keep the records either way.
 - ransom_advice == "board":
-    Priya S.: You left the ransom to the Board, with the costs in front of them. Fair. The answer was always the restore.
+    Priya S.: You left the ransom to the Board, with the costs in front of them. Fair. Paying wouldn't have got a single monitor back faster. The answer was always the restore.
 }
 -> root_cause
 
@@ -309,13 +311,13 @@ Priya S.: None of that is exotic. MFA on every remote login is in your DSPT. So 
 Priya S.: Your Board will read all of this as risk, so let's put it that way.
 Priya S.: The contractor's MFA exemption, the vendor's VPN, Ward 7's old segment. What did they have in common?
 * [Each was a risk someone accepted.]
-    Priya S.: Yes. Accepting a risk is a decision, with an owner and a review date. Here the review dates passed, and nobody looked again.
+    Priya S.: Yes. Each one had a name against it and a date to look at it again. The dates came and went.
 * [Each was a control the Trust didn't know was missing.]
     Priya S.: They knew. Each one was written down somewhere. That's what makes it worse.
 * [Each was unlikely on its own.]
     Priya S.: Unlikely, perhaps. But likelihood times impact, with patients on the other side, gave a number nobody would sign today.
 -
-Priya S.: Someone called Ward 7's exceptions "as low as reasonably practicable". That means you've done all that's reasonable. A project stalled for a year isn't that.
+Priya S.: Ward 7's exceptions were written up as "as low as reasonably practicable". They weren't. Finishing the VLAN move was reasonable, and it sat stalled for a year.
 {sarah_given_soon_estimate:
     Priya S.: Your "soon" to Sarah was a risk decision too. It was taken for Mr Ahmed, without the facts to back it.
 }
@@ -326,7 +328,7 @@ Priya S.: Someone called Ward 7's exceptions "as low as reasonably practicable".
 - pump_console_advice == "hold":
     Priya S.: You backed David on the pump console. Slower, but every mistake on paper was one somebody could see.
 - pump_console_advice == "console_back":
-    Priya S.: You backed Helen on the pump console. Defensible on paper risk. But restoring the server doesn't check the library, and that console would have kept pushing it out.
+    Priya S.: You backed Helen on the pump console. Paper's a risk too, so that's defensible. But the restore doesn't check the library, and that console would have kept pushing it out.
 - pump_console_advice == "view_only":
     Priya S.: You offered the exec a console with library pushes switched off. Less risk, and someone has to prove it works first. That's the kind of option they need.
 }
@@ -346,19 +348,18 @@ Priya S.: Someone called Ward 7's exceptions "as low as reasonably practicable".
 === closing ===
 Priya S.: One more thing, and it's the one I'd like you to take away.
 Priya S.: Almost everything that failed today was known before Monday. The segmentation gap, the vendor VPN, the overdue rehearsal.
-Priya S.: People knew, and the hospital kept running, because nothing had gone wrong yet. That's normalisation of deviance.
+Priya S.: People knew, and the hospital kept running, because nothing had gone wrong yet. Every quiet month made the gaps look safer. There's a name for that: normalisation of deviance.
 * [What do you do about that?]
-    Priya S.: Make the risk visible, regularly, to people who can act on it. A register nobody reads is just a list.
-    Priya S.: A safety case is only worth something if somebody checks it against the hospital.
+    Priya S.: Put the accepted risks in front of the Board every quarter, with a name against each. And check the safety case against the hospital every time the network changes.
 * [Was this preventable?]
-    Priya S.: Most of it. The controls were understood and written down. What was missing was the will to act before an incident.
+    Priya S.: Most of it. Every one of those gaps was written down. Nobody made fixing them more urgent than everything else.
 * [What changes after today?]
-    Priya S.: The recommendations will come. Whether they're carried out is a leadership question.
+    Priya S.: You'll get a list of recommendations. Whether anything changes is up to your Board, and whether they're still asking in six months.
     Priya S.: Every trust that's been through this says "never again". Some of them mean it.
 - -> debrief_complete
 
 === debrief_complete ===
-Priya S.: Thank you. The review goes to your Board within four weeks.
+Priya S.: Thank you. My notes go to Helen this week, for the Trust's review.
 {
 - patient_bed4_deceased && patient_bed2_deceased:
     Priya S.: Two families will want to know why. Some of the answers are about things this Trust knew last year.

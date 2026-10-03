@@ -10,6 +10,7 @@ VAR siem_escalated = false
 VAR vpn_anomaly_identified = false
 VAR network_isolated = false
 VAR network_isolation_authorised = false
+VAR backup_restore_initiated = false
 
 VAR ravi_trust = 0
 VAR ravi_met = false
@@ -42,10 +43,20 @@ VAR asked_across = false
 - network_isolated and network_isolation_authorised and not post_iso_done:
     -> post_isolation
 - network_isolated:
-    Ravi Anand: We're isolated. The restore's next, and Helen has the backup console.
+    // Round R3 (RAV3-1): a late talk after the restore has started.
+    {backup_restore_initiated:
+        Ravi Anand: We're isolated, and the restore's running. Now we find out how far they got.
+    - else:
+        Ravi Anand: We're isolated. The restore's next, and Helen has the backup console.
+    }
     -> hub
 - siem_escalated and vpn_anomaly_identified and not gave_itsec_code:
     #complete_task:brief_ravi
+    // Round R3 (RAV3-6): both consoles done before the player ever spoke to him.
+    {not ravi_met:
+        ~ ravi_met = true
+        Ravi Anand: You're the response team? You've been through the SIEM and the VPN log already. Good.
+    }
     -> give_itsec_code
 - ravi_met:
     -> hub
@@ -152,9 +163,13 @@ Ravi Anand: And there's a VPN login I don't like. The log terminal's over there.
 Ravi Anand: We're cut. Nothing more gets from the enterprise side to the clinical side.
 Ravi Anand: It won't bring Sarah's station back. That machine's encrypted. It just stops it getting worse.
 Ravi Anand: And anything already pushed out to the pumps stays on them. Cutting the link doesn't undo a change.
-Ravi Anand: And don't let anyone tell you segmentation saved us. Ward 7 was never on the new VLAN.
+Ravi Anand: Don't let anyone tell you segmentation saved us, either. Ward 7 was never on the new VLAN.
 + [What's next?]
-    Ravi Anand: The restore. Helen has the backup console in the incident room.
+    {backup_restore_initiated:
+        Ravi Anand: The restore's running. After that, how they got in, so they can't do it twice.
+    - else:
+        Ravi Anand: The restore. Helen has the backup console in the incident room.
+    }
     -> hub
 + [How did they get across in the first place?]
     ~ asked_across = true
@@ -191,12 +206,12 @@ Ravi Anand: And don't let anyone tell you segmentation saved us. Ward 7 was neve
     -> hub
 + {siem_escalated and not asked_missed} [Did any of this show up before last night?]
     ~ asked_missed = true
-    Ravi Anand: Yesterday. That PowerShell alert on FINWKS-047 first fired at quarter to nine in the morning. It went in the low-severity queue.
+    Ravi Anand: Yesterday. That PowerShell alert on finance workstation forty-seven first fired at quarter to nine in the morning. It went in the low-severity queue.
     Ravi Anand: Six weeks of migration noise. We'd stopped reading the queue properly. I'd stopped.
     -> hub
 + {vpn_anomaly_identified and not asked_mfa_exemption} [Why didn't contractor accounts need MFA?]
     ~ asked_mfa_exemption = true
-    Ravi Anand: Because we accepted it. NetSol said MFA broke their tools. It went on the register as low likelihood, medium impact, and I was the owner.
+    Ravi Anand: Because we accepted it. NetSol said MFA broke their tools. We put it on the register. Low likelihood, medium impact, my name as owner.
     Ravi Anand: Review every six months. Nobody did. Including me.
     -> hub
 + {not topic_siem and not siem_escalated} [What am I looking for on the SIEM?]
@@ -208,7 +223,7 @@ Ravi Anand: And don't let anyone tell you segmentation saved us. Ward 7 was neve
 + {not topic_isolation} [What does isolating actually do?]
     ~ topic_isolation = true
     Ravi Anand: We cut the links between the enterprise network and the clinical side. That map on the wall.
-    Ravi Anand: It stops the spread, and stops them pushing anything new. It also kills the pump console, and every ward loses the EHR copy the vendor hosts.
+    Ravi Anand: It stops the spread, and stops them pushing anything new. It also takes out the pump console, and every other ward loses the EHR. The vendor's copy sits outside.
     Ravi Anand: That's why David signs too. He's the one who knows what the wards lose.
     -> hub
 + [I'll leave you to it.]

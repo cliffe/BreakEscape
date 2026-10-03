@@ -12,8 +12,26 @@ VAR pump_dose_correct = false
 VAR bed2_alarm_raised = false
 VAR bed2_seen_unwell = false
 VAR bed4_escalated = false
+VAR sarah_at_bed2 = false
 
+// Local: lines that mustn't repeat after a reload (round R3, D2)
+VAR seen_rescued = false
+VAR seen_dead = false
+
+// Round R3 (D2): after a reload the first talk starts at this default knot,
+// whatever has happened since. Work out the state from the current globals,
+// most advanced first, before printing anything.
 === state_stable ===
+{
+- patient_bed2_deceased:
+    -> state_deceased
+- bed2_alarm_raised:
+    -> rescued
+- patient_bed2_state == "critical":
+    -> state_critical
+- patient_bed2_state == "sedated":
+    -> state_sedated
+}
 {pump_dose_correct:
     Narrator: Ms Okafor is comfortable. The pump at the foot of her bed is running at the prescribed rate.
 - else:
@@ -22,31 +40,50 @@ VAR bed4_escalated = false
 -> hub.choices
 
 === state_sedated ===
-~ bed2_seen_unwell = true
-{bed2_alarm_raised:
+{
+- patient_bed2_deceased:
+    -> state_deceased
+- bed2_alarm_raised:
     -> rescued
 }
+~ bed2_seen_unwell = true
 Narrator: Ms Okafor is hard to rouse. Her breathing is slow and shallow. The pump is running at the rate it was given.
 -> hub.choices
 
 === state_critical ===
-~ bed2_seen_unwell = true
-{bed2_alarm_raised:
+{
+- patient_bed2_deceased:
+    -> state_deceased
+- bed2_alarm_raised:
     -> rescued
 }
+~ bed2_seen_unwell = true
 Narrator: Ms Okafor isn't responding and her breathing has almost stopped. She needs naloxone and the crash team now.
 -> hub.choices
 
-// Amy is at Bed 4 once Mr Ahmed is escalated, so Sarah goes to Bed 2 herself.
+// Whoever answered the alarm: Sarah if Amy was already at Bed 4 (sarah_at_bed2);
+// Amy otherwise, unless a late "hours" estimate sent her on to Bed 4, which
+// leaves Ms Okafor with the crash team (round R3, SAR3-3).
 === rescued ===
-{bed4_escalated:
+{seen_rescued:
+    -> hub
+}
+~ seen_rescued = true
+{
+- sarah_at_bed2:
     Narrator: Sarah is at Ms Okafor's side with an oxygen mask. The naloxone is in, and her breathing is picking up.
+- bed4_escalated:
+    Narrator: The crash team are at Ms Okafor's side with an oxygen mask. The naloxone is in, and her breathing is picking up.
 - else:
     Narrator: Amy is at Ms Okafor's side with an oxygen mask. The naloxone is in, and her breathing is picking up.
 }
 -> hub.choices
 
 === state_deceased ===
+{seen_dead:
+    -> hub
+}
+~ seen_dead = true
 Narrator: Ms Okafor is not breathing. The pump is still running at the rate it was given.
 -> hub.choices
 

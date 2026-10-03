@@ -225,8 +225,12 @@ Helen Carver: The status report's in the console. Every hour the wards spend on 
 #set_global:safety_claim_hc007_assessed:true
 Helen Carver: HC-007 says our plan tells us when to isolate clinical systems, and that we rehearse it every year.
 Helen Carver: The last rehearsal was nineteen months ago. So this morning is the rehearsal.
-{network_isolated:
-    Helen Carver: What we could still keep was the joint decision. Ravi's sign-off and David's, both, before anyone cut the link.
+// Round R3 (HEL3-1): on the bypass route the joint decision was not kept, and she says so.
+{
+- network_isolated and network_isolation_authorised:
+    Helen Carver: We did keep one part of it. Ravi and David both signed before the link was cut.
+- network_isolated:
+    Helen Carver: And we didn't even keep the joint sign-off. The link was cut before both of them had signed.
 - else:
     Helen Carver: What we can still keep is the joint decision. Ravi's sign-off and David's, both, before anyone cuts the link.
 }
@@ -240,7 +244,7 @@ Helen Carver: The last rehearsal was nineteen months ago. So this morning is the
 + {not asked_unavailable} [What if one of them isn't available?]
     ~ asked_unavailable = true
     Helen Carver: Then I can authorise an executive override, written down as a deviation.
-    Helen Carver: Skipping it with no record is how incidents become inquests.
+    Helen Carver: Skip it with nothing written down, and someone ends up explaining that at an inquest.
     -> hc007_choices
 + [Understood.]
     -> hub
@@ -340,7 +344,7 @@ Helen Carver: We still haven't asked the NCSC for help directly. Do you want me 
 
 === post_drug_tamper ===
 ~ tamper_told = true
-Helen Carver: I've sent the on-call pharmacist down to Ward 7.
+Helen Carver: I've sent Hamza Iqbal, our on-call pharmacist, down to Ward 7.
 // Round 3: a late talk checks what has happened since the tamper was found.
 {
 - drug_library_restored:
@@ -380,7 +384,7 @@ Helen Carver: David will tell you to wait. He answers for clinical safety, I ans
 {hub_quiet:
     ~ hub_quiet = false
 - else:
-    Helen Carver: {&What else?|I've got a minute.|Quickly.}
+    Helen Carver: {&What else?|I've got a minute.|Briefly, please.}
 }
 + {network_isolated and not backup_initiated and not asked_next} [We're isolated. What's next?]
     ~ asked_next = true

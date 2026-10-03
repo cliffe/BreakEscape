@@ -43,12 +43,13 @@ VAR death_seen = false
 - else:
     Amy Clarke: {&Quick, I'm mid-round.|Yeah?|Make it quick.}
 }
-+ {not bed4_mentioned and not bed4_escalated} [How's the patient in Bed 4?]
+// Round R3 (D5): not while she's staying with Ms Okafor after the Bed 2 alarm.
++ {not bed4_mentioned and not bed4_escalated and not bed2_alarm_raised} [How's the patient in Bed 4?]
     ~ bed4_mentioned = true
     Amy Clarke: He's not right. Obs at half six were borderline, and now he's drowsy and his monitor won't shut up.
     Amy Clarke: Without the central station I can't see the trend. If he needs more than my round, Sarah has to call it.
     -> hub
-+ {not bed4_escalated} [Can't you just stay with him?]
++ {not bed4_escalated and not bed2_alarm_raised} [Can't you just stay with him?]
     Amy Clarke: Not without Sarah's say-so. If I leave five patients and one of them goes off, that's on me.
     Amy Clarke: If she says go, I go.
     -> hub
@@ -93,7 +94,11 @@ VAR death_seen = false
 // AT BED 4 (after escalation)
 // ===========================================
 
+// Round R3 (D2): event knots can play on a late first talk; check state first.
 === at_bed4 ===
+{patient_bed4_deceased:
+    -> hub
+}
 Amy Clarke: I'm staying with him. Outreach are on their way up.
 ~ hub_quiet = true
 -> hub
@@ -104,6 +109,9 @@ Amy Clarke: I'm staying with him. Outreach are on their way up.
 // ===========================================
 
 === bed4_death ===
+{death_seen:
+    -> hub
+}
 ~ death_seen = true
 Amy Clarke: I can't stop. Speak to Sarah.
 ~ hub_quiet = true

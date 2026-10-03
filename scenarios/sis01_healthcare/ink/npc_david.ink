@@ -57,7 +57,7 @@ VAR asked_vendor = false
 }
 ~ david_met = true
 David Osei: David Osei. Head of clinical engineering, and the Trust's clinical safety officer. My job is to stop cyber incidents turning into clinical ones.
-David Osei: Our safety case is a list of claims. Every one starts "provided that", and if the "provided" stops being true, so does the claim.
+David Osei: Our safety case is a list of claims, and every one has a "provided that" in it. If that stops being true, so does the claim.
 Narrator: David taps the safety case extract on the table.
 {network_isolated or drug_library_compromised:
     -> hub
@@ -259,9 +259,9 @@ David Osei: Here's my clinical sign-off. Take it to the network map with Ravi's,
 + {not asked_pumps} [Can nurses still use the pumps?]
     ~ asked_pumps = true
     {drug_library_restored:
-        David Osei: Yes, now the library's verified. A second nurse checks every new rate, and Hamza's spot-checking.
+        David Osei: Yes, now the library's verified. A second nurse checks every new rate, and Hamza from pharmacy is spot-checking.
     - else:
-        David Osei: Not for anything new until the library's verified. Anything already running stays on its current rate.
+        David Osei: Not for anything new until the library's verified. Anything already running gets checked against its chart.
     }
     -> hc003_questions
 + {drug_library_compromised and not drug_library_restored and helen_tamper_view_heard and not asked_helen_view} [Helen says every hour on paper is a risk too.]
@@ -364,10 +364,10 @@ David Osei: Now the drug library. If anyone's touched it, HC-003 is the claim th
 + {not topic_dual_auth} [How does the dual sign-off work?]
     ~ topic_dual_auth = true
     David Osei: Anything big enough to touch patients needs two signatures. Ravi's for IT security, mine for clinical safety. Neither of us can do it alone.
-    David Osei: That's HC-007. Decisions that affect patients are made jointly. You confirm both at the network map.
+    David Osei: That's HC-007 in the safety case. If Ravi and I haven't both signed, nobody cuts anything. You confirm both at the network map.
     -> hub
 + [I'll come back.]
-    David Osei: I'll be here.
+    David Osei: Fine. I'm not going anywhere.
     ~ hub_quiet = true
     #exit_conversation
     -> hub
