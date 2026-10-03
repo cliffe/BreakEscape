@@ -1139,9 +1139,11 @@ module BreakEscape
     # tasks hidden. Derived on read rather than written, so games saved before
     # this change are fixed too. Mirrors objectives-manager.js:
     #  - aimCompleted / aimsCompleted met -> active (checkAimCompletion)
-    #  - one of its tasks completed -> active, but only if the aim has no
-    #    unlockCondition or that condition is met (revealAimForCompletedTask;
-    #    an aim whose condition is unmet stays hidden when a task finishes early)
+    #  - one of its tasks completed, made progress or was unlocked -> active,
+    #    even if the unlockCondition is unmet, so the player sees progress
+    #    (revealAimForTask). Marked revealedEarly when the condition is unmet,
+    #    so the client still runs unlockAim's first-task step once it is met.
+    #    A story gate (globalVariable condition, unmet) keeps the aim hidden.
     def objectives_state_for_client
       state = (player_state['objectivesState'] || {}).deep_dup
       return state unless scenario_data['objectives'].is_a?(Array)
@@ -1155,15 +1157,38 @@ module BreakEscape
         next if aims.dig(aim_id, 'status').present?
 
         cond = aim['unlockCondition']
+        cond_met = unlock_condition_met?(cond, aims)
         opened_by_aims = cond.is_a?(Hash) && (cond['aimCompleted'].present? || cond['aimsCompleted'].is_a?(Array)) &&
-                         unlock_condition_met?(cond, aims)
-        revealed_by_task = Array(aim['tasks']).any? { |t| tasks.dig(t['taskId'], 'status') == 'completed' } &&
-                           unlock_condition_met?(cond, aims)
+                         cond_met
+        revealed_by_task = Array(aim['tasks']).any? { |t| task_moved?(t, tasks[t['taskId']]) } &&
+                           !story_gated?(cond, aims)
 
-        aims[aim_id] = { 'status' => 'active' } if opened_by_aims || revealed_by_task
+        if opened_by_aims || (revealed_by_task && cond_met)
+          aims[aim_id] = { 'status' => 'active' }
+        elsif revealed_by_task
+          aims[aim_id] = { 'status' => 'active', 'revealedEarly' => true }
+        end
       end
 
       state
+    end
+
+    # Has the player done anything towards this task? Completed it, made
+    # partial progress (collect_items / submit_flags), or had it unlocked by
+    # an ink tag or onComplete while it was authored locked.
+    def task_moved?(task, saved)
+      return false unless saved.is_a?(Hash)
+
+      saved['status'] == 'completed' ||
+        saved['progress'].to_i.positive? ||
+        Array(saved['submittedFlags']).any? ||
+        (task['status'] == 'locked' && saved['status'] == 'active')
+    end
+
+    # Same answer as ObjectivesManager#isStoryGated: an unmet globalVariable
+    # condition holds the aim back until the player has worked something out.
+    def story_gated?(cond, aims)
+      cond.is_a?(Hash) && cond['globalVariable'].present? && !unlock_condition_met?(cond, aims)
     end
 
     # Same answers as ObjectivesManager#isUnlockConditionMet: no condition, or

@@ -67,14 +67,53 @@ module BreakEscape
       assert_equal 'active', scenario_json(game).dig('objectivesState', 'aims', 'hidden', 'status')
     end
 
-    test 'a task done early does not reveal an aim whose unlockCondition is unmet' do
+    test 'a task done early reveals its aim although the aimCompleted condition is unmet' do
       game = create_game(tasks: { 'second_task' => 'completed' })
 
-      assert_nil scenario_json(game).dig('objectivesState', 'aims', 'second'),
-                 'Matches revealAimForCompletedTask: the aim stays hidden until first completes'
+      aim = scenario_json(game).dig('objectivesState', 'aims', 'second')
+      assert_equal 'active', aim['status'],
+                   'Matches revealAimForTask: the player sees the aim they are making progress on'
+      assert_equal true, aim['revealedEarly'], 'The client still runs unlockAim once first completes'
     end
 
-    test 'a task done under a globalVariable condition reveals the aim only when the global is set' do
+    test 'an aim revealed by a task once its condition is met is not marked early' do
+      game = create_game(aims: { 'first' => 'completed' }, tasks: { 'second_task' => 'completed' })
+
+      aim = scenario_json(game).dig('objectivesState', 'aims', 'second')
+      assert_equal 'active', aim['status']
+      assert_nil aim['revealedEarly']
+    end
+
+    test 'aimsCompleted gives way to a task done early too' do
+      game = create_game(aims: { 'first' => 'completed' }, tasks: { 'both_task' => 'completed' })
+
+      assert_equal 'active', scenario_json(game).dig('objectivesState', 'aims', 'both', 'status')
+    end
+
+    test 'partial progress on a task reveals its aim' do
+      game = create_game
+      game.player_state['objectivesState']['tasks']['second_task'] = { 'progress' => 1 }
+      game.save!
+
+      assert_equal 'active', scenario_json(game).dig('objectivesState', 'aims', 'second', 'status')
+    end
+
+    test 'a task unlocked by ink reveals its aim; an authored-active task with no record does not' do
+      unlocked = create_game(tasks: { 'locked_task' => 'active' })
+      assert_equal 'active', scenario_json(unlocked).dig('objectivesState', 'aims', 'hidden', 'status')
+
+      untouched = create_game(tasks: { 'second_task' => 'active' })
+      assert_nil scenario_json(untouched).dig('objectivesState', 'aims', 'second'),
+                 'An active status on a task authored active is not progress'
+    end
+
+    test 'a stored aim status is never overridden by the derivation' do
+      game = create_game(aims: { 'second' => 'completed' }, tasks: { 'second_task' => 'completed' })
+
+      assert_equal 'completed', scenario_json(game).dig('objectivesState', 'aims', 'second', 'status')
+    end
+
+    test 'a story gate (globalVariable) keeps the aim hidden through early progress until the global is set' do
       unset = create_game(tasks: { 'gated_task' => 'completed' })
       assert_nil scenario_json(unset).dig('objectivesState', 'aims', 'gated')
 

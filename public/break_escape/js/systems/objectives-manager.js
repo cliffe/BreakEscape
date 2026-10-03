@@ -94,6 +94,9 @@ export class ObjectivesManager {
       if (this.aimIndex[aimId]) {
         this.aimIndex[aimId].status = state.status;
         this.aimIndex[aimId].completedAt = state.completedAt;
+        // Shown because one of its tasks moved before its unlockCondition was met
+        // (derived by the server, see Game#objectives_state_for_client)
+        this.aimIndex[aimId].revealedEarly = !!state.revealedEarly;
       }
     });
     
@@ -385,6 +388,8 @@ export class ObjectivesManager {
       if (task.currentCount >= task.targetCount) {
         this.completeTask(task.taskId);
       } else {
+        // Partial progress counts as progress: show the aim it belongs to
+        this.revealAimForTask(task);
         // Sync progress to server
         this.syncTaskProgress(task.taskId, task.currentCount);
         this.notifyListeners();
@@ -424,8 +429,8 @@ export class ObjectivesManager {
       this.showTaskCompleteNotification(task);
       this.processTaskCompletion(task);   // handles onComplete.unlockTask / unlockAim
 
-      // Auto-reveal locked parent aim (unless it has an unmet unlockCondition)
-      this.revealAimForCompletedTask(task);
+      // Show the parent aim if it is still locked (see revealAimForTask)
+      this.revealAimForTask(task);
 
       this.checkAimCompletion(task.aimId);
 
@@ -441,6 +446,7 @@ export class ObjectivesManager {
       const task = this.taskIndex[taskId];
       if (!task || task.status !== 'active') return;
       task.currentCount = (task.currentCount || 0) + 1;
+      this.revealAimForTask(task);
       console.log(`📋 Flag task progress updated: ${task.title} (${task.currentCount}/${task.targetCount})`);
     });
 
@@ -594,8 +600,8 @@ export class ObjectivesManager {
     this.processTaskCompletion(task);
 
     // If the parent aim is locked, make it visible so the completed task shows up
-    // (unless it has an unmet unlockCondition: then it stays hidden, see helper)
-    this.revealAimForCompletedTask(task);
+    // (story-gated aims excepted, see revealAimForTask)
+    this.revealAimForTask(task);
 
     // Check aim completion
     this.checkAimCompletion(task.aimId);
@@ -638,21 +644,40 @@ export class ObjectivesManager {
   }
 
   /**
-   * A task finished while its aim may still be locked. Aims with an unlockCondition
-   * stay hidden until that condition is met (the completed task is already recorded,
-   * so it shows as done when the aim is later unlocked). Aims with no unlockCondition
-   * keep the old behaviour: they are revealed by the completion.
+   * Is this aim held back by a story gate? A globalVariable unlockCondition
+   * keeps an aim hidden until the player has worked something out (m05's
+   * "Find Out Why" opens on torres_suspected, so the list never names the
+   * suspect early). aimCompleted / aimsCompleted conditions only order the
+   * aims, and give way to visible progress (see revealAimForTask).
+   * Mirrors Game#story_gated? on the server.
    */
-  revealAimForCompletedTask(task) {
-    const parentAim = this.aimIndex[task.aimId];
-    if (!parentAim || parentAim.status !== 'locked') return;
-    if (parentAim.unlockCondition && !this.isUnlockConditionMet(parentAim)) {
-      console.log(`🔒 Task done early; aim stays hidden until unlocked: ${parentAim.title}`);
-      return;
+  isStoryGated(aim) {
+    const cond = aim && aim.unlockCondition;
+    if (!cond || !cond.globalVariable) return false;
+    return !this.isUnlockConditionMet(aim);
+  }
+
+  /**
+   * A task in a locked aim completed, made progress or was unlocked: show the
+   * aim, so the player sees the progress they are making, even though its
+   * unlockCondition may not be met yet (an optional-looking earlier task left
+   * undone kept every later aim hidden in sis01 game 1529). Its locked tasks
+   * stay hidden. Story-gated aims stay hidden; the task is recorded and shows
+   * once the aim is unlocked. Mirrors Game#objectives_state_for_client.
+   */
+  revealAimForTask(task) {
+    const parentAim = task && this.aimIndex[task.aimId];
+    if (!parentAim || parentAim.status !== 'locked') return false;
+    if (this.isStoryGated(parentAim)) {
+      console.log(`🔒 Task moved early; story-gated aim stays hidden until unlocked: ${parentAim.title}`);
+      return false;
     }
     parentAim.status = 'active';
-    console.log(`🔓 Aim auto-revealed by task completion: ${parentAim.title}`);
+    // unlockAim still has work to do when the condition is met (first task)
+    parentAim.revealedEarly = true;
+    console.log(`🔓 Aim revealed by task progress: ${parentAim.title}`);
     this.showAimUnlockedNotification(parentAim);
+    return true;
   }
 
   /**
@@ -694,6 +719,7 @@ export class ObjectivesManager {
     task.status = 'active';
     console.log(`🔓 Task unlocked: ${task.title}`);
     this.persistUnlock('task', taskId);
+    this.revealAimForTask(task);
     
     this.showTaskUnlockedNotification(task);
     this.notifyListeners();
@@ -705,9 +731,14 @@ export class ObjectivesManager {
    */
   unlockAim(aimId) {
     const aim = this.aimIndex[aimId];
-    if (!aim || aim.status !== 'locked') return;
+    if (!aim) return;
+    // An aim already on show because a task moved early still gets its proper
+    // unlock (first task, server record), without a second "New Objective"
+    const shownEarly = aim.status === 'active' && aim.revealedEarly;
+    if (aim.status !== 'locked' && !shownEarly) return;
     
     aim.status = 'active';
+    aim.revealedEarly = false;
     this.persistUnlock('aim', aimId);
     
     // Also activate first task
@@ -718,7 +749,7 @@ export class ObjectivesManager {
     }
     
     console.log(`🔓 Aim unlocked: ${aim.title}`);
-    this.showAimUnlockedNotification(aim);
+    if (!shownEarly) this.showAimUnlockedNotification(aim);
     this.notifyListeners();
 
     // Tasks may have been completed while the aim was hidden
@@ -751,8 +782,9 @@ export class ObjectivesManager {
     const aim = this.aimIndex[aimId];
     if (!aim) return;
 
-    // Hidden aim with an unmet unlockCondition: defer completion until it is unlocked
-    if (aim.status === 'locked' && aim.unlockCondition && !this.isUnlockConditionMet(aim)) return;
+    // Story-gated aim still hidden: defer completion until it is unlocked
+    // (any other locked aim was revealed by its task before this runs)
+    if (aim.status === 'locked' && this.isStoryGated(aim)) return;
     
     const allComplete = aim.tasks.every(task => task.optional || task.status === 'completed');
     
