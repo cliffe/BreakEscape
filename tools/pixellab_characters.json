@@ -1,4 +1,13 @@
 {
+  "amy_clarke": {
+    "character_id": "32c736ae-0ffa-48eb-b493-3fd0d71c19d0",
+    "name": "Make portrait for Amy Clarke\nA white British woman...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-03"
+  },
   "bernie_nwosu": {
     "character_id": "923f3e6c-10c0-4f2e-afe9-4d65cbc9c55e",
     "name": "A Black British woman of Nigerian heritage in her ...",
@@ -7,6 +16,15 @@
       "height": 60
     },
     "imported": "2026-09-26"
+  },
+  "david_osei": {
+    "character_id": "ca153084-c850-42c8-85fc-8ec685ec6bdb",
+    "name": "Make portrait for Hospital Clinical Engineer\nA Bla...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-02"
   },
   "female_blowse_v2": {
     "character_id": "df960bf2-20c6-4600-b725-44846cb0337f",
@@ -99,6 +117,15 @@
     },
     "imported": "2026-09-29"
   },
+  "fiona_hartley": {
+    "character_id": "21604761-bfe3-464c-b091-1deeb4842758",
+    "name": "Make portrait for Dr Fiona Hartley\nA white Scottis...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-03"
+  },
   "gary_whitlock": {
     "character_id": "2b2d5800-1695-4dcd-bdc4-593bc34e4b43",
     "name": "Gary Whitlock A white British man in his late thir...",
@@ -116,6 +143,24 @@
       "height": 60
     },
     "imported": "2026-09-26"
+  },
+  "hamza_iqbal": {
+    "character_id": "2298578f-deaa-49d9-b40a-d7f8b4e31886",
+    "name": "Make portrait for Hamza Iqbal\nA British Pakistani ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-03"
+  },
+  "helen_carver": {
+    "character_id": "588ca268-fa48-4c24-84a8-54772f85dc83",
+    "name": "Make portrait for Helen Carver\nA white British wom...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-03"
   },
   "male_hacker_hood_down_v2": {
     "character_id": "fa5a8818-00da-475c-87fb-4b21d84e39b2",
@@ -190,6 +235,24 @@
     },
     "imported": "2026-09-30"
   },
+  "priya_s": {
+    "character_id": "eb263472-5d6d-43c9-9aa3-bf613f2983b3",
+    "name": "Make portrait for Priya S.\nA British Indian woman ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-02"
+  },
+  "ravi_anand": {
+    "character_id": "3b22a014-0abc-4519-9484-2364693cd02b",
+    "name": "Make portrait for Ravi Anand\nA British Indian man ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-02"
+  },
   "sarah_kim": {
     "character_id": "1792c7b7-4189-4a22-857e-4a0a738bd83d",
     "name": "An East Asian (Korean) woman in her forties, the C...",
@@ -198,5 +261,14 @@
       "height": 60
     },
     "imported": "2026-09-26"
+  },
+  "sarah_mitchell": {
+    "character_id": "7bb85b6b-36bb-41be-a1f1-2974b37ffd15",
+    "name": "Make portrait for Sarah Mitchell\nA Black British w...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-03"
   }
 }

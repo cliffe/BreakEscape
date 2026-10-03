@@ -53,9 +53,8 @@
 # NOT YET BUILT — optional VM paths (minigame alternatives are implemented and used by default)
 #   VM: northgate_pump_mgmt   — drug library integrity (MG-09 VM path); files listed in TODO[VM] comments
 #   VM: northgate_vpn_logs    — VPN log analysis (MG-06 VM path); files listed in TODO[VM] comments
-#   SPRITES: clinical staff   — nurses use female_nurse1/female_nurse1; David Osei uses male_office_worker; Dr Hartley uses female_scientist; NCSC investigator (TODO[SPRITE])
-#   SPRITES: ward room type   — room_hospital_ward tile map exists; verify NPC positions render
-#                               correctly in room (all positions are first-pass estimates)
+#   SPRITES: done (2026-10-03) — every NPC has its own walk sprite or bed sprite, talk portrait
+#                               and lip-sync sheet; see CAST_DESIGN.md
 #
 # IMPLEMENTED (previously listed as TODO)
 #   MG-09 drug_library_terminal — DrugLibraryIntegrityMinigame: 5-step SHA-256 scan → diff → verify →
@@ -638,9 +637,9 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "npcType": "person",
           "observations": "Sarah Mitchell, Charge Nurse — she's waving you over.",
           "position": { "x": 16, "y": 4 },
-          "spriteSheet": "female_nurse1_v2",
-          "spriteTalk": "assets/characters/female_nurse1_talk.png",
-          "spriteVisemes": "assets/characters/female_nurse1_visemes.png",
+          "spriteSheet": "sarah_mitchell",
+          "spriteTalk": "assets/characters/sarah_mitchell_talk.png",
+          "spriteVisemes": "assets/characters/sarah_mitchell_visemes.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/sis01_healthcare/ink/npc_sarah.json",
 <%# INK: scenarios/sis01_healthcare/ink/npc_sarah.ink — compiled ✓
@@ -779,9 +778,9 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "npcType": "person",
           "observations": "Amy Clarke, staff nurse, on her rounds. She hasn't noticed you yet.",
           "position": { "x": 4, "y": 4.5 },
-          "spriteSheet": "female_nurse2_v2",
-          "spriteTalk": "assets/characters/female_nurse2_talk.png",
-          "spriteVisemes": "assets/characters/female_nurse2_visemes.png",
+          "spriteSheet": "amy_clarke",
+          "spriteTalk": "assets/characters/amy_clarke_talk.png",
+          "spriteVisemes": "assets/characters/amy_clarke_visemes.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/sis01_healthcare/ink/npc_patrol_nurse.json",
 <%# INK: scenarios/sis01_healthcare/ink/npc_patrol_nurse.ink — compiled ✓
@@ -891,7 +890,9 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "displayName": "Mr T. Ahmed",
           "npcType": "person",
           "position": { "x": 3.088, "y": 6.646 },
-          "spriteSheet": "bed4",
+          "spriteSheet": "bed_mr_ahmed",
+          "spriteTalk": "assets/characters/mr_ahmed_talk.png",
+          "spriteVisemes": "assets/characters/mr_ahmed_visemes.png",
           "spriteConfig": { "idleFrame": 0 },
           "storyPath": "scenarios/sis01_healthcare/ink/npc_bed4_patient.json",
           "currentKnot": "state_resting_unmonitored",
@@ -962,7 +963,9 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "displayName": "Ms A. Okafor",
           "npcType": "person",
           "position": { "x": 8.078, "y": 3 },
-          "spriteSheet": "bed2",
+          "spriteSheet": "bed_ms_okafor",
+          "spriteTalk": "assets/characters/ms_okafor_talk.png",
+          "spriteVisemes": "assets/characters/ms_okafor_visemes.png",
           "spriteConfig": { "idleFrame": 0 },
           "storyPath": "scenarios/sis01_healthcare/ink/npc_bed2_patient.json",
           "currentKnot": "state_stable",
@@ -1042,7 +1045,9 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "displayName": "Mrs Kowalski",
           "npcType": "person",
           "position": { "x": 7.708, "y": 6.583 },
-          "spriteSheet": "bed5",
+          "spriteSheet": "bed_mrs_kowalski",
+          "spriteTalk": "assets/characters/mrs_kowalski_talk.png",
+          "spriteVisemes": "assets/characters/mrs_kowalski_visemes.png",
           "spriteConfig": { "idleFrame": 0 },
           "storyPath": "scenarios/sis01_healthcare/ink/npc_bed5_patient.json",
           "currentKnot": "stable_witness",
@@ -1110,9 +1115,9 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "displayName": "Hamza Iqbal",
           "npcType": "person",
           "position": { "x": 10, "y": 4.5 },
-          "spriteSheet": "male_scientist_v2",
-          "spriteTalk": "assets/characters/male_scientist_talk.png",
-          "spriteVisemes": "assets/characters/male_scientist_visemes.png",
+          "spriteSheet": "hamza_iqbal",
+          "spriteTalk": "assets/characters/hamza_iqbal_talk.png",
+          "spriteVisemes": "assets/characters/hamza_iqbal_visemes.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/sis01_healthcare/ink/npc_pharmacist.json",
           "currentKnot": "start",
@@ -1484,9 +1489,9 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "npcType": "person",
           "observations": "Ravi Anand, IT Security — he looks exhausted.",
           "position": { "x": 4.0, "y": 6.0 },
-          "spriteSheet": "gary_whitlock",
-          "spriteTalk": "assets/characters/gary_whitlock_talk.png",
-          "spriteVisemes": "assets/characters/gary_whitlock_visemes.png",
+          "spriteSheet": "ravi_anand",
+          "spriteTalk": "assets/characters/ravi_anand_talk.png",
+          "spriteVisemes": "assets/characters/ravi_anand_visemes.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/sis01_healthcare/ink/npc_ravi.json",
 <%# INK: scenarios/sis01_healthcare/ink/npc_ravi.ink — compiled ✓
@@ -1889,9 +1894,9 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "displayName": "David Osei",
           "npcType": "person",
           "position": { "x": 2.6, "y": 3.0 },
-          "spriteSheet": "male_office_worker_v2",
-          "spriteTalk": "assets/characters/male_office_worker_talk.png",
-          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "spriteSheet": "david_osei",
+          "spriteTalk": "assets/characters/david_osei_talk.png",
+          "spriteVisemes": "assets/characters/david_osei_visemes.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/sis01_healthcare/ink/npc_david.json",
 <%# INK: scenarios/sis01_healthcare/ink/npc_david.ink — compiled ✓
@@ -1975,9 +1980,9 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "displayName": "Helen Carver",
           "npcType": "person",
           "position": { "x": 7.6, "y": 2.8 },
-          "spriteSheet": "female_office_worker_v2",
-          "spriteTalk": "assets/characters/female_office_worker_talk.png",
-          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "spriteSheet": "helen_carver",
+          "spriteTalk": "assets/characters/helen_carver_talk.png",
+          "spriteVisemes": "assets/characters/helen_carver_visemes.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/sis01_healthcare/ink/npc_helen.json",
 <%# INK: scenarios/sis01_healthcare/ink/npc_helen.ink — compiled ✓
@@ -2058,9 +2063,9 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "displayName": "Dr Fiona Hartley",
           "npcType": "person",
           "position": { "x": 8.3, "y": 6.8 },
-          "spriteSheet": "female_scientist_v2",
-          "spriteTalk": "assets/characters/female_scientist_talk.png",
-          "spriteVisemes": "assets/characters/female_scientist_visemes.png",
+          "spriteSheet": "fiona_hartley",
+          "spriteTalk": "assets/characters/fiona_hartley_talk.png",
+          "spriteVisemes": "assets/characters/fiona_hartley_visemes.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/sis01_healthcare/ink/npc_hartley.json",
 <%# INK: scenarios/sis01_healthcare/ink/npc_hartley.ink — compiled ✓
@@ -2102,12 +2107,9 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "npcType": "person",
           "observations": "Priya S., NCSC. She's waiting for your debrief.",
           "position": { "x": 2.6, "y": 6.8 },
-          "spriteSheet": "female_spy_v2",
-<%# TODO[SPRITE]: female_spy is used as a professional investigator stand-in.
-    Commission a government investigator sprite: smart dark suit, NCSC lanyard, neutral expression.
-    This NPC appears only in the final debrief phase; visual authority matters here. %>
-          "spriteTalk": "assets/characters/female_spy_talk.png",
-          "spriteVisemes": "assets/characters/female_spy_visemes.png",
+          "spriteSheet": "priya_s",
+          "spriteTalk": "assets/characters/priya_s_talk.png",
+          "spriteVisemes": "assets/characters/priya_s_visemes.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/sis01_healthcare/ink/npc_sharma.json",
           "restartOnRetalk": false,

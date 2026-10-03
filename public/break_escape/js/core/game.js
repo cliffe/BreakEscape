@@ -502,6 +502,9 @@ export function preload() {
     this.load.spritesheet('bed_mr_pryce', 'objects/bed_mr_pryce.png', { frameWidth: 35, frameHeight: 72 }); // bed4 repainted as m02's Mr Pryce: olive skin, ventilator mask (PixelLab edit)
     this.load.spritesheet('bed5', 'objects/bed5.png', { frameWidth: 38, frameHeight: 72 });
     this.load.spritesheet('bed_ms_chen', 'objects/bed_ms_chen.png', { frameWidth: 38, frameHeight: 72 }); // bed5 repainted as m02's Ms Chen (PixelLab edit)
+    this.load.spritesheet('bed_mr_ahmed', 'objects/bed_mr_ahmed.png', { frameWidth: 35, frameHeight: 72 }); // bed4 repainted as sis01's Mr Ahmed: light-brown skin, white beard, nasal cannula (hand-painted)
+    this.load.spritesheet('bed_ms_okafor', 'objects/bed_ms_okafor.png', { frameWidth: 36, frameHeight: 72 }); // bed2 repainted as sis01's Ms Okafor: dark skin, satin bonnet, IV tape (hand-painted)
+    this.load.spritesheet('bed_mrs_kowalski', 'objects/bed_mrs_kowalski.png', { frameWidth: 38, frameHeight: 72 }); // bed5 repainted as sis01's Mrs Kowalski: white hair, glasses, cardigan, gold cross (hand-painted)
     this.load.spritesheet('bed6', 'objects/bed6.png', { frameWidth: 46, frameHeight: 76 });
     this.load.image('curtain-divider', 'objects/curtain-divider.png');
     this.load.image('chart', 'objects/chart.png');
@@ -818,6 +821,30 @@ export function preload() {
     this.load.atlas('male_nerd_v2',
         `characters/male_nerd_v2.png?v=${ASSETS_VERSION}`,
         `characters/male_nerd_v2.json?v=${ASSETS_VERSION}`);
+    this.load.atlas('ravi_anand',
+        `characters/ravi_anand.png?v=${ASSETS_VERSION}`,
+        `characters/ravi_anand.json?v=${ASSETS_VERSION}`);
+    this.load.atlas('david_osei',
+        `characters/david_osei.png?v=${ASSETS_VERSION}`,
+        `characters/david_osei.json?v=${ASSETS_VERSION}`);
+    this.load.atlas('priya_s',
+        `characters/priya_s.png?v=${ASSETS_VERSION}`,
+        `characters/priya_s.json?v=${ASSETS_VERSION}`);
+    this.load.atlas('helen_carver',
+        `characters/helen_carver.png?v=${ASSETS_VERSION}`,
+        `characters/helen_carver.json?v=${ASSETS_VERSION}`);
+    this.load.atlas('fiona_hartley',
+        `characters/fiona_hartley.png?v=${ASSETS_VERSION}`,
+        `characters/fiona_hartley.json?v=${ASSETS_VERSION}`);
+    this.load.atlas('sarah_mitchell',
+        `characters/sarah_mitchell.png?v=${ASSETS_VERSION}`,
+        `characters/sarah_mitchell.json?v=${ASSETS_VERSION}`);
+    this.load.atlas('amy_clarke',
+        `characters/amy_clarke.png?v=${ASSETS_VERSION}`,
+        `characters/amy_clarke.json?v=${ASSETS_VERSION}`);
+    this.load.atlas('hamza_iqbal',
+        `characters/hamza_iqbal.png?v=${ASSETS_VERSION}`,
+        `characters/hamza_iqbal.json?v=${ASSETS_VERSION}`);
 
     // Animated plant textures are loaded above
     
