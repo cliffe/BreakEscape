@@ -748,9 +748,17 @@ ${c.warning ? `<div class="dli-modal-warning">${displayDashes(c.warning)}</div>`
 
     // ── Tab 4: Fleet Report ───────────────────────────────────────────────────
 
+    // A pump's last-programmed time: the game time the player set it (the global the
+    // scenario names in programmedAtGlobal), else the fixed time in the scenario data.
+    _pumpLastActive(p) {
+        const g = window.gameState?.globalVariables || {};
+        const programmed = p.programmedAtGlobal ? g[p.programmedAtGlobal] : '';
+        return programmed ? `${programmed} today` : p.lastActive;
+    }
+
     _renderFleetTab(panel) {
         const fr = this._fleet || { affectedPumps: [] };
-        const pumps = fr.affectedPumps || [];
+        const pumps = (fr.affectedPumps || []).map(p => ({ ...p, lastActive: this._pumpLastActive(p), _programmedNow: !!(p.programmedAtGlobal && window.gameState?.globalVariables?.[p.programmedAtGlobal]) }));
         const t = this._tampered;
 
         const pumpRows = pumps.map(p => {
@@ -775,7 +783,9 @@ ${c.warning ? `<div class="dli-modal-warning">${displayDashes(c.warning)}</div>`
         panel.innerHTML = `
 <div class="dli-fleet-title">FLEET IMPACT ANALYSIS</div>
 <div class="dli-fleet-subtitle">
-  ${this._phase === 'restored' ? 'Pumps that loaded the TAMPERED library version, now restored' : 'Pumps loaded with TAMPERED library version'} (${displayDashes(t.drug)} ${this._changesText('current')})
+  ${this._phase === 'restored'
+      ? `Pumps that loaded the tampered library (${displayDashes(t.drug)} ${this._changesText('current')}). All now restored to the verified values (${this._changesText('backup')}).`
+      : `Pumps loaded with TAMPERED library version (${displayDashes(t.drug)} ${this._changesText('current')})`}
 </div>
 <table class="dli-fleet-table">
   <thead>
@@ -790,7 +800,9 @@ ${c.warning ? `<div class="dli-modal-warning">${displayDashes(c.warning)}</div>`
 </table>
 ${activePump ? `
 <p style="margin-top:10px;font-size:11px;color:#ccaa00">
-  <strong>${activePump.serial}</strong> was last programmed at ${activePump.lastActive} this morning.
+  ${activePump._programmedNow
+      ? `<strong>${activePump.serial}</strong> was programmed at the bedside at ${activePump.lastActive.replace(/ today$/, '')} this morning.`
+      : `<strong>${activePump.serial}</strong> has been running the same infusion since ${activePump.lastActive}. Its next rate is set under this library.`}
 </p>
 <button class="dli-view-log-btn" id="dli-view-log-btn">[ VIEW ${activePump.serial} ACTIVITY LOG ]</button>
 <div id="dli-activity-log-wrap"></div>` : ''}
@@ -813,6 +825,13 @@ ${activePump ? `
         const t   = this._tampered;
 
         const drugName = g[apg.linkedDrugGlobal] || 'MORPHINE SULPHATE';
+        // sis01 blind playtest D7: the real time the rate went in, and which library it met.
+        // A correct rate with no "below minimum" challenge (no override) can only have gone
+        // in under the restored library.
+        const logTs = pump._programmedNow
+            ? `${fr.logDate || '2025-11-05'} ${String(pump.lastActive).replace(/ today$/, '')}`
+            : pump.lastActive;
+        const underVerified = !!(pump._programmedNow && g[apg.linkedDoseCorrectGlobal] && !g.drug_library_override);
 
         let outcomeLine = '';
         const ot = fr.outcomeText || {};
@@ -842,10 +861,13 @@ ${activePump ? `
             logWrap.innerHTML = `
 <div class="dli-activity-log">
   <div class="dli-activity-log-title">Pump Event Log &mdash; ${pump.serial}</div>
-  <div class="dli-log-row"><span class="dli-log-ts">${fr.logDate || '2025-11-05'} ${pump.lastActive}</span> &nbsp;<span class="dli-log-event">NEW RATE PROGRAMMED</span></div>
+  <div class="dli-log-row"><span class="dli-log-ts">${logTs}</span> &nbsp;<span class="dli-log-event">${pump._programmedNow ? 'NEW RATE PROGRAMMED' : 'RATE LAST PROGRAMMED'}</span></div>
   <div class="dli-log-row"><span class="dli-log-field">Drug:</span> <span class="dli-log-val">${drugName}</span></div>
-  <div class="dli-log-row"><span class="dli-log-field">Library version:</span> <span class="dli-log-tampered">${t.modifiedAt} (tampered)</span></div>
-  <div class="dli-log-row"><span class="dli-log-field">Limits enforced during programming:</span> <span class="dli-log-tampered">${this._changesText('current', true)}</span></div>
+  ${underVerified
+      ? `<div class="dli-log-row"><span class="dli-log-field">Library version:</span> <span class="dli-log-correct">verified (restored)</span></div>
+  <div class="dli-log-row"><span class="dli-log-field">Limits enforced during programming:</span> <span class="dli-log-correct">${this._changesText('backup', true)}</span></div>`
+      : `<div class="dli-log-row"><span class="dli-log-field">Library version:</span> <span class="dli-log-tampered">${t.modifiedAt} (tampered)</span></div>
+  <div class="dli-log-row"><span class="dli-log-field">Limits enforced during programming:</span> <span class="dli-log-tampered">${this._changesText('current', true)}</span></div>`}
   <div class="dli-log-row"><span class="dli-log-field">Limits (correct values):</span> <span class="dli-log-correct">${this._changesText('backup', true)}</span></div>
   ${outcomeLine}
 </div>`;

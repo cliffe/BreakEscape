@@ -299,7 +299,52 @@
     );
 }
 
+/* ── Rule lines: look clickable (sis01 blind playtest S2) ───────────────────── */
+
+.nsm-svg .nsm-rule-line {
+    transition: opacity 0.15s, stroke-width 0.15s;
+}
+
+.nsm-svg .nsm-rule-line.nsm-rule-hover {
+    opacity: 1 !important;
+    stroke-width: 4px;
+    filter: drop-shadow(0 0 3px #ff7700);
+}
+
+.nsm-svg .nsm-rule-line.nsm-rule-unreviewed:not(.nsm-rule-hover) {
+    animation: nsm-rule-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes nsm-rule-pulse {
+    0%, 100% { opacity: 0.45; }
+    50%      { opacity: 1; }
+}
+
 /* ── SEVER button ───────────────────────────────────────────────────────────── */
+
+.nsm-sever-group {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.nsm-sever-hint {
+    font-family: 'GNF', monospace;
+    font-size: 18px;
+    line-height: 1.15;
+    color: #9aa0b8;
+    max-width: 420px;
+}
+
+.nsm-sever-hint:empty {
+    display: none;
+}
+
+.nsm-sever-hint.nsm-sever-hint-locked {
+    color: #ffb070;
+}
 
 .nsm-sever-btn {
     font-family: 'Press Start 2P', monospace;

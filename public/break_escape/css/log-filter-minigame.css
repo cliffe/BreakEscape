@@ -617,6 +617,16 @@
     color: #ccccee;
 }
 
+.lf-threat-no-match {
+    color: #66cc88;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    margin-top: 6px;
+    border: 1px solid #2a6a44;
+    padding: 3px 6px;
+    background: #001a0c;
+}
+
 .lf-threat-known-bad {
     color: #ff4444;
     font-weight: bold;

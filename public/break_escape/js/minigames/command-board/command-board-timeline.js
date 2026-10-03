@@ -41,8 +41,8 @@ export const DEFAULT_PRESEED = [
 export function normalizeBackupRecoverySource(value) {
     const raw = String(value || '').toUpperCase();
     if (raw === 'CLOUD_VENDOR') return 'CLOUD';
-    if (raw === 'NAS_ENCRYPTED') return 'NAS';
-    if (raw === 'TAPE_WIPED') return 'TAPE';
+    if (raw === 'NAS_ENCRYPTED' || raw === 'NAS_SNAPSHOT') return 'NAS';
+    if (raw === 'TAPE_WIPED' || raw === 'TAPE_LIBRARY') return 'TAPE';
     return raw;
 }
 
@@ -79,7 +79,10 @@ export const BUILTIN_TIMELINE = [
         id: 'backup_recovery_local',
         watch: ['backup_recovery_source'],
         when: (g) => ['NAS', 'TAPE'].includes(normalizeBackupRecoverySource(g.backup_recovery_source)),
-        text: (g) => `RECOVERY ATTEMPTED FROM ${normalizeBackupRecoverySource(g.backup_recovery_source)} - WARNING: Source may be compromised`,
+        // sis01 blind playtest: the NAS and tape are real options now, each with a cost
+        text: (g) => (normalizeBackupRecoverySource(g.backup_recovery_source) === 'NAS'
+            ? 'NAS RESTORE INITIATED - Sunday snapshot, scanned for known indicators only. ETA 5 hours; Monday\'s records to be re-entered from paper.'
+            : 'TAPE RESTORE INITIATED - Catalogue rebuild 3-5 days; nothing after Friday night is recoverable.'),
         type: 'decision'
     },
     {
@@ -163,9 +166,11 @@ export const BUILTIN_TIMELINE = [
         type: 'response'
     },
     {
+        // sis01 blind playtest D4: logged only when the triage ended with a critical alert
+        // not escalated, not when one was dismissed and then undone.
         id: 'siem_missed_alerts',
         watch: ['siem_missed_alerts'],
-        when: (g) => g.siem_missed_alerts === true,
+        when: (g) => g.siem_missed_alerts === true && g.siem_escalated !== true,
         text: 'CRITICAL ALERTS MISSED - delayed escalation',
         type: 'security'
     },
@@ -418,7 +423,7 @@ export function computeBuiltinStatuses(globals) {
 
     const ehr = (() => {
         if (globals.backup_reinfected === true) return { key: 'REINFECTED', label: 'REINFECTED' };
-        if (normalizedBackup === 'CLOUD') return { key: 'RESTORING', label: 'RESTORING' };
+        if (['CLOUD', 'NAS', 'TAPE'].includes(normalizedBackup)) return { key: 'RESTORING', label: 'RESTORING' };
         if (normalizedEhr === 'OFFLINE') return { key: 'OFFLINE', label: 'OFFLINE' };
         if (normalizedEhr === 'ONLINE') return { key: 'OPERATIONAL', label: 'OPERATIONAL' };
         return { key: 'UNKNOWN', label: 'UNKNOWN' };
@@ -445,8 +450,8 @@ export function computeBuiltinStatuses(globals) {
     const backups = (() => {
         if (globals.backup_reinfected === true) return { key: 'REINFECTED', label: 'REINFECTED' };
         if (normalizedBackup === 'CLOUD') return { key: 'RESTORING', label: 'CLOUD' };
-        if (normalizedBackup === 'NAS') return { key: 'COMPROMISED', label: 'NAS RISK' };
-        if (normalizedBackup === 'TAPE') return { key: 'OFFLINE', label: 'TAPE WIPED' };
+        if (normalizedBackup === 'NAS') return { key: 'RESTORING', label: 'NAS' };
+        if (normalizedBackup === 'TAPE') return { key: 'RESTORING', label: 'TAPE' };
         return { key: 'UNKNOWN', label: 'UNKNOWN' };
     })();
 

@@ -20,6 +20,14 @@ import { displayDashes } from '../../utils/display-dashes.js';
  *   defaultConsequences[] — [ { section, items[] } ] shown when no rule is toggled
  *   severConsequences[] — [ { severity, text } ] shown after sever
  *   modalConsequences[] — strings for the clinical-consequences bullet list in the confirm modal
+ *
+ * Optional params:
+ *   severLockedHint    — shown beside SEVER while it is locked (why, and how to unlock it)
+ *   severReadyHint     — shown once the risk paths have been reviewed
+ *
+ * Each rule's dashed line, its ! marker and its label all open that rule, and the
+ * line brightens on hover; unreviewed lines pulse until the first one is opened
+ * (sis01 blind playtest S2: players could not tell the lines were clickable).
  */
 export class NetworkSegmentationMapMinigame extends MinigameScene {
     constructor(container, params) {
@@ -72,9 +80,12 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
                             <span class="nsm-legend-line nsm-legend-orange nsm-legend-dashed"></span>LEGACY EXCEPTION RULES
                         </span>
                     </div>
-                    <button type="button" class="nsm-sever-btn" id="nsm-sever-btn" disabled>
-                        ${displayDashes(severLabel)}
-                    </button>
+                    <div class="nsm-sever-group">
+                        <div class="nsm-sever-hint" id="nsm-sever-hint"></div>
+                        <button type="button" class="nsm-sever-btn" id="nsm-sever-btn" disabled>
+                            ${displayDashes(severLabel)}
+                        </button>
+                    </div>
                 </div>
             </div>
             <div class="nsm-modal-overlay" id="nsm-modal-overlay">
@@ -93,6 +104,26 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
         `;
 
         this._updateConsequencePanel();
+        this._updateSeverHint();
+    }
+
+    /** Say why SEVER is locked and how to unlock it, or that it is ready. */
+    _updateSeverHint() {
+        const hintEl = this.container.querySelector('#nsm-sever-hint');
+        const btn = this.container.querySelector('#nsm-sever-btn');
+        if (!hintEl) return;
+        let text = '';
+        if (this.severed) {
+            text = '';
+        } else if (!this.rulesReviewedSet) {
+            text = this.params.severLockedHint
+                || 'SEVER is locked until you review the risk paths: click an orange dashed line or its ! marker.';
+        } else {
+            text = this.params.severReadyHint || '';
+        }
+        hintEl.textContent = displayDashes(text);
+        hintEl.classList.toggle('nsm-sever-hint-locked', !this.severed && !this.rulesReviewedSet);
+        if (btn) btn.title = text;
     }
 
     _buildZonesHTML() {
@@ -256,6 +287,7 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
             btn.classList.add('nsm-sever-btn-done');
         }
 
+        this._updateSeverHint();
         if (window.playUISound) window.playUISound('confirm');
 
         setTimeout(() => this.complete(true), 2000);
@@ -283,6 +315,7 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
             if (btn && !this.severed) {
                 btn.disabled = false;
             }
+            this._updateSeverHint();
         }
 
         this.ruleStates[ruleId] = !this.ruleStates[ruleId];
@@ -331,7 +364,7 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
                     <span class="nsm-warn-text">${ruleCount} legacy exception rule${ruleCount !== 1 ? 's' : ''}</span>
                     currently bridge enterprise and clinical zones.
                     <br/><br/>
-                    Review the highlighted risk paths before deciding whether to isolate the link.
+                    Click each orange dashed line on the map (or its ! marker) to see what it carries and what cutting it would cost. SEVER unlocks once you have opened one.
                 </div>
             `;
         }
@@ -443,11 +476,14 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
                 const active = this.ruleStates[rule.id];
 
                 const ruleLine = this._svgLine(svg, ns, from.right, rY, to.left, rY, '#ff7700', 2, '8 5', active ? 1 : 0.45);
+                this._markRuleLine(ruleLine, active);
                 this._wireRuleToggle(ruleLine, rule.id, rule.title);
                 const ruleHit = this._svgLine(svg, ns, from.right, rY, to.left, rY, '#ffffff', 16, null, 0);
-                this._wireRuleToggle(ruleHit, rule.id, rule.title);
-                this._svgWarning(svg, ns, midX, rY);
-                this._svgRuleLabel(svg, ns, midX, rY + 16, rule.label, 13);
+                this._wireRuleToggle(ruleHit, rule.id, rule.title, ruleLine);
+                const warn = this._svgWarning(svg, ns, midX, rY);
+                this._wireRuleToggle(warn, rule.id, rule.title, ruleLine);
+                const lbl = this._svgRuleLabel(svg, ns, midX, rY + 16, rule.label, 13);
+                this._wireRuleToggle(lbl, rule.id, rule.title, ruleLine);
                 if (active) {
                     this._drawAttackPath(svg, ns, from.right, rY, to.left, rY);
                 }
@@ -466,11 +502,14 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
                 const d = `M ${from.midX} ${from.top} Q ${midX} ${legacyArcPeakY} ${to.midX} ${to.top}`;
 
                 const rulePath = this._svgPath(svg, ns, d, '#ff7700', 2, '8 5', active ? 1 : 0.45);
+                this._markRuleLine(rulePath, active);
                 this._wireRuleToggle(rulePath, rule.id, rule.title);
                 const ruleHit = this._svgPath(svg, ns, d, '#ffffff', 18, null, 0);
-                this._wireRuleToggle(ruleHit, rule.id, rule.title);
-                this._svgWarning(svg, ns, midX, legacyWarnY);
-                this._svgRuleLabel(svg, ns, midX, legacyWarnY + 22, rule.label);
+                this._wireRuleToggle(ruleHit, rule.id, rule.title, rulePath);
+                const warn = this._svgWarning(svg, ns, midX, legacyWarnY);
+                this._wireRuleToggle(warn, rule.id, rule.title, rulePath);
+                const lbl = this._svgRuleLabel(svg, ns, midX, legacyWarnY + 22, rule.label);
+                this._wireRuleToggle(lbl, rule.id, rule.title, rulePath);
                 if (active) {
                     this._drawAttackPathCurve(svg, ns, d);
                 }
@@ -565,16 +604,34 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
         return el;
     }
 
-    _wireRuleToggle(el, ruleId, label) {
+    /** Visible rule line: class for CSS hover/pulse. Unreviewed lines pulse until the first is opened. */
+    _markRuleLine(el, active) {
+        if (!el) return;
+        el.classList.add('nsm-rule-line');
+        if (!this.rulesReviewedSet && !active && !this.severed) el.classList.add('nsm-rule-unreviewed');
+    }
+
+    /**
+     * Make a rule's line, hit area, ! marker or label open the rule. `visibleLine` is the
+     * dashed line to brighten while the pointer is over the element.
+     */
+    _wireRuleToggle(el, ruleId, label, visibleLine = null) {
         if (!el || this.severed) return;
-        el.style.pointerEvents = 'stroke';
+        const isShape = el.tagName === 'line' || el.tagName === 'path';
+        el.style.pointerEvents = isShape ? 'stroke' : 'all';
         el.style.cursor = 'pointer';
         el.setAttribute('aria-label', `${label} toggle`);
+        el.setAttribute('role', 'button');
         this.addEventListener(el, 'click', (event) => {
             event.preventDefault();
             event.stopPropagation();
             this._toggleRule(ruleId);
         });
+        const line = visibleLine || (isShape ? el : null);
+        if (line) {
+            this.addEventListener(el, 'mouseenter', () => line.classList.add('nsm-rule-hover'));
+            this.addEventListener(el, 'mouseleave', () => line.classList.remove('nsm-rule-hover'));
+        }
     }
 
     _drawAttackPathCurve(svg, ns, d) {
@@ -618,6 +675,7 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
         t.setAttribute('pointer-events', 'none');
         t.textContent = displayDashes(text);
         svg.appendChild(t);
+        return t;
     }
 
     _svgPadlock(svg, ns, x, y, color) {
@@ -674,6 +732,7 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
 
         g.setAttribute('pointer-events', 'none');
         svg.appendChild(g);
+        return g;
     }
 }
 

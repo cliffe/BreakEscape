@@ -253,6 +253,10 @@ export class SiemDashboardMinigame extends MinigameScene {
         this._tickerId = null;
         this._eventSubs = [];
         this._scheduledAlertTimeouts = [];
+        // New alerts are held back while the pointer is over the alert list, so rows
+        // don't shift under the cursor (sis01 blind playtest D4), then added on leave.
+        this._pointerOverList = false;
+        this._heldAlerts = [];
 
         this.alertsListEl = null;
         this.queueListEl = null;
@@ -403,6 +407,14 @@ export class SiemDashboardMinigame extends MinigameScene {
 
         this.panelEl = this.gameContainer.querySelector('#siem-panel');
         this.alertsListEl = this.gameContainer.querySelector('#siem-alert-list');
+        if (this.alertsListEl) {
+            this.alertsListEl.addEventListener('mouseenter', () => { this._pointerOverList = true; });
+            this.alertsListEl.addEventListener('mouseleave', () => {
+                this._pointerOverList = false;
+                const held = this._heldAlerts.splice(0);
+                held.forEach((payload) => this.handleInjectedAlert(payload));
+            });
+        }
         this.queueListEl = this.gameContainer.querySelector('#siem-queue-list');
         this.queueCountEl = this.gameContainer.querySelector('#siem-queue-count');
         this.pendingCountEl = this.gameContainer.querySelector('#siem-pending-count');
@@ -687,25 +699,11 @@ export class SiemDashboardMinigame extends MinigameScene {
         if (alert.status === 'escalated') return; // Can't change escalated status
         if (alert.status !== 'pending' && newStatus !== 'pending') return; // Can only go back to pending
 
-        const wasCritical = alert.critical;
-        const wasStatusDismissed = alert.status === 'dismissed';
         alert.status = newStatus;
 
-        // If a critical alert is dismissed, mark that alerts were missed
-        if (wasCritical && newStatus === 'dismissed') {
-            this.setScenarioGlobal('siem_missed_alerts', true);
-        }
-
-        // If an alert is undone, check if we should clear the missed_alerts flag
-        // (only if no critical alerts remain dismissed)
-        if (wasCritical && wasStatusDismissed && newStatus === 'pending') {
-            const anyCriticalDismissed = this.alerts
-                .filter((entry) => entry.critical)
-                .some((entry) => entry.status === 'dismissed');
-            if (!anyCriticalDismissed) {
-                this.setScenarioGlobal('siem_missed_alerts', false);
-            }
-        }
+        // siem_missed_alerts is the triage outcome, set once in finalizeOutcome. It used
+        // to be set the moment a critical alert was dismissed, so a dismissal the player
+        // undid still put "CRITICAL ALERTS MISSED" on sis01's command board (blind playtest D4).
 
         this.renderAll();
         this.persistState();
@@ -743,6 +741,10 @@ export class SiemDashboardMinigame extends MinigameScene {
 
     handleInjectedAlert(payload = {}) {
         if (this.finished) return;
+        if (this._pointerOverList) {
+            this._heldAlerts.push(payload);
+            return;
+        }
 
         const severity = normalizeSeverity(payload.severity);
         const stepSec = Number(payload.stepSec) > 0 ? Number(payload.stepSec) : 1;

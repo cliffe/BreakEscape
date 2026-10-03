@@ -9,8 +9,13 @@
  *
  * Expected scenarioData fields:
  *   title, logType, logEntries[], anomaly, threatIntel, accountHistory,
- *   flagActionLabel, flagConfirmTitle, flagConfirmBody,
+ *   flagActionLabel, flagConfirmTitle, flagConfirmBody, flagRejectedBody (optional),
  *   additionalTabs[], requireAllTabs, completionActions[], progressActions[]
+ *
+ * Lookups follow the SELECTED row. threatIntel / accountHistory may each be one
+ * object or an array; a record is used when its `ip` / `account` matches the row.
+ * A row with no record gets a "no match" result built from the log itself.
+ * Only the real anomaly row can be flagged successfully; other rows get feedback.
  */
 
 import { MinigameScene } from '../framework/base-minigame.js';
@@ -163,6 +168,7 @@ export class LogFilterMinigame extends MinigameScene {
         this._flagActionLabel  = sd.flagActionLabel  || 'FLAG SESSION';
         this._flagConfirmTitle = sd.flagConfirmTitle || 'CONFIRM SESSION FLAG';
         this._flagConfirmBody  = sd.flagConfirmBody  || '';
+        this._flagRejectedBody = sd.flagRejectedBody || '';   // optional text shown when a non-anomalous row is flagged
         this._additionalTabs   = sd.additionalTabs   || [];
         this._requireAllTabs   = sd.requireAllTabs   || false;
         this._completionActions = sd.completionActions || [];
@@ -729,6 +735,7 @@ export class LogFilterMinigame extends MinigameScene {
 
     _selectEntry(entry) {
         this._selectedEntry = entry;
+        if (this._dom.body) this._closeOverlay();
         this._overlayMode = null;
 
         // Re-render log table selection highlights
@@ -751,6 +758,9 @@ export class LogFilterMinigame extends MinigameScene {
     _renderSessionDetail(pane) {
         const entry = this._selectedEntry;
         if (!entry) return;
+
+        // Only one Session Detail card at a time: a new render replaces the old one.
+        pane.querySelectorAll('.lf-session-detail').forEach(el => el.remove());
 
         const panel = this._el('div', 'lf-session-detail');
         this._dom.sessionDetail = panel;
@@ -783,7 +793,9 @@ export class LogFilterMinigame extends MinigameScene {
         ipBtn.textContent = '[LOOK UP IP]';
         ipBtn.addEventListener('click', () => {
             this._openOverlay('threat_intel');
-            this._fireTriggerActions('threat_intel_opened');
+            // Progress only counts when the lookup hit the configured threat-intel record
+            // for the anomaly, not when the player looked up some other row.
+            if (this._intelMatchesAnomaly(entry)) this._fireTriggerActions('threat_intel_opened');
         });
         actions.appendChild(ipBtn);
 
@@ -792,26 +804,27 @@ export class LogFilterMinigame extends MinigameScene {
         accBtn.textContent = '[INVESTIGATE ACCOUNT]';
         accBtn.addEventListener('click', () => {
             this._openOverlay('account_history');
-            this._fireTriggerActions('account_history_opened');
+            if (this._accountMatchesAnomaly(entry)) this._fireTriggerActions('account_history_opened');
         });
         actions.appendChild(accBtn);
 
-        // [FLAG SESSION] — only on anomaly entry
-        if (anomalyEntry) {
-            if (this._sessionFlagged) {
-                const flagged = this._el('div', 'lf-session-flagged-banner');
-                flagged.textContent = '✓ SESSION FLAGGED';
-                actions.appendChild(flagged);
+        // [FLAG SESSION] — available on every row. Flagging the anomaly follows the
+        // confirm path; flagging any other row gives "not this one" feedback.
+        if (anomalyEntry && this._sessionFlagged) {
+            const flagged = this._el('div', 'lf-session-flagged-banner');
+            flagged.textContent = '✓ SESSION FLAGGED';
+            actions.appendChild(flagged);
 
-                if (this._requireAllTabs && !this._allAddlTabsVisited()) {
-                    this._renderTab2Prompt(panel);
-                }
-            } else {
-                const flagBtn = this._el('button', 'lf-detail-btn lf-detail-btn-flag');
-                flagBtn.textContent = displayDashes(`[${this._flagActionLabel}]`);
-                flagBtn.addEventListener('click', () => this._openOverlay('flag_confirm'));
-                actions.appendChild(flagBtn);
+            if (this._requireAllTabs && !this._allAddlTabsVisited()) {
+                this._renderTab2Prompt(panel);
             }
+        } else {
+            const flagBtn = this._el('button', 'lf-detail-btn lf-detail-btn-flag');
+            flagBtn.textContent = displayDashes(`[${this._flagActionLabel}]`);
+            flagBtn.addEventListener('click', () => {
+                this._openOverlay(anomalyEntry ? 'flag_confirm' : 'flag_rejected');
+            });
+            actions.appendChild(flagBtn);
         }
 
         pane.appendChild(panel);
@@ -835,10 +848,73 @@ export class LogFilterMinigame extends MinigameScene {
         panel.appendChild(prompt);
     }
 
+    _entryIp(entry) {
+        return String(entry?.ip || entry?.sourceIp || '');
+    }
+
+    _entryAccount(entry) {
+        return String(entry?.account || entry?.user || '');
+    }
+
+    _anomalyAccount() {
+        return String(this._anomaly?.account || this._anomaly?.user || '');
+    }
+
+    /** The anomalous session itself: the anomaly's account on the anomaly's IP (when it names one). */
     _isAnomalyEntry(entry) {
-        if (!this._anomaly) return false;
-        const acc = entry.account || entry.user || '';
-        return acc === this._anomaly.account;
+        if (!this._anomaly || !entry) return false;
+        const account = this._anomalyAccount();
+        if (!account || this._entryAccount(entry) !== account) return false;
+        const anomalyIp = String(this._anomaly.ip || this._anomaly.sourceIp || '');
+        return !anomalyIp || this._entryIp(entry) === anomalyIp;
+    }
+
+    static _asList(v) {
+        if (Array.isArray(v)) return v.filter(Boolean);
+        return v ? [v] : [];
+    }
+
+    /** Threat-intel record for the selected row's IP, or null. `threatIntel` may be one object or an array. */
+    _lookupThreatIntel(entry) {
+        const ip = this._entryIp(entry);
+        for (const ti of LogFilterMinigame._asList(this._threatIntel)) {
+            if (ti.ip ? ti.ip === ip : this._isAnomalyEntry(entry)) return ti;
+        }
+        return null;
+    }
+
+    /** Account profile for the selected row's account, or null. `accountHistory` may be one object or an array. */
+    _lookupAccountHistory(entry) {
+        const acc = this._entryAccount(entry);
+        for (const ah of LogFilterMinigame._asList(this._accountHistory)) {
+            if (ah.account ? ah.account === acc : this._isAnomalyEntry(entry)) return ah;
+        }
+        return null;
+    }
+
+    _intelMatchesAnomaly(entry) {
+        const ti = this._lookupThreatIntel(entry);
+        if (!ti || !this._anomaly) return false;
+        const anomalyIp = String(this._anomaly.ip || this._anomaly.sourceIp || '');
+        return ti.ip ? ti.ip === anomalyIp : this._isAnomalyEntry(entry);
+    }
+
+    _accountMatchesAnomaly(entry) {
+        const ah = this._lookupAccountHistory(entry);
+        if (!ah || !this._anomaly) return false;
+        return (ah.account || this._anomalyAccount()) === this._anomalyAccount();
+    }
+
+    /** Summary of an account built from the log itself, for rows with no profile configured. */
+    _summariseAccount(entry) {
+        const acc = this._entryAccount(entry);
+        const rows = this._logEntries.filter(e => this._entryAccount(e) === acc);
+        const ips = [...new Set(rows.map(e => this._entryIp(e)).filter(Boolean))];
+        const countries = [...new Set(rows.map(e => e.country).filter(Boolean))];
+        const noMfa = rows.filter(e => e.mfa && String(e.mfa).toUpperCase() === 'NO').length;
+        const hasMfa = rows.some(e => e.mfa);
+        const times = rows.map(e => e.timestamp).filter(Boolean).sort();
+        return { account: acc, count: rows.length, ips, countries, noMfa, hasMfa, last: times[times.length - 1] || '' };
     }
 
     // ── Overlays ───────────────────────────────────────────────────────────
@@ -869,6 +945,7 @@ export class LogFilterMinigame extends MinigameScene {
             case 'threat_intel':    this._renderThreatIntelOverlay(panel); break;
             case 'account_history': this._renderAccountHistoryOverlay(panel); break;
             case 'flag_confirm':    this._renderFlagConfirmOverlay(panel); break;
+            case 'flag_rejected':   this._renderFlagRejectedOverlay(panel); break;
             case 'audit_detail':    this._renderAuditDetailOverlay(panel); break;
         }
     }
@@ -888,36 +965,58 @@ export class LogFilterMinigame extends MinigameScene {
         return body;
     }
 
-    _renderThreatIntelOverlay(panel) {
-        if (!this._threatIntel) return;
-        const body = this._overlayHeader(panel, 'THREAT INTELLIGENCE — IP LOOKUP');
-        const ti = this._threatIntel;
+    _addGridRows(grid, rows, labelCls, valueCls) {
+        for (const [lbl, val] of rows) {
+            const l = this._el('div', labelCls); l.textContent = lbl;
+            const v = this._el('div', valueCls); v.textContent = displayDashes(val);
+            grid.appendChild(l); grid.appendChild(v);
+        }
+    }
 
+    _renderThreatIntelOverlay(panel) {
+        const entry = this._selectedEntry;
+        const ti = entry ? this._lookupThreatIntel(entry) : null;
+        const body = this._overlayHeader(panel, 'THREAT INTELLIGENCE — IP LOOKUP');
         const grid = this._el('div', 'lf-threat-grid');
-        const rows = [
-            ['IP:', ti.ip],
+
+        if (!ti) {
+            // No intel for this row's IP: report what the log says and that nothing matched.
+            const rows = [
+                ['IP:', this._entryIp(entry) || '—'],
+                ['Result:', 'No match in threat-intelligence feeds']
+            ];
+            if (entry?.country) rows.push(['Country:', entry.country]);
+            this._addGridRows(grid, rows, 'lf-threat-label', 'lf-threat-value');
+            body.appendChild(grid);
+            const clean = this._el('div', 'lf-threat-no-match');
+            clean.textContent = '✓ No known-bad record for this IP';
+            body.appendChild(clean);
+            return;
+        }
+
+        this._addGridRows(grid, [
+            ['IP:', ti.ip || this._entryIp(entry)],
             ['ASN:', ti.asn],
             ['Type:', ti.type],
             ['Location:', ti.location],
             ['Last flagged:', ti.lastFlagged]
-        ];
-        for (const [lbl, val] of rows) {
-            const l = this._el('div', 'lf-threat-label'); l.textContent = lbl;
-            const v = this._el('div', 'lf-threat-value'); v.textContent = displayDashes(val);
-            grid.appendChild(l); grid.appendChild(v);
-        }
+        ], 'lf-threat-label', 'lf-threat-value');
         body.appendChild(grid);
 
         if (ti.knownBad) {
             const badge = this._el('div', 'lf-threat-known-bad');
-            badge.textContent = '⚠ KNOWN BAD: YES — Tor Exit Node';
+            badge.textContent = displayDashes(`⚠ KNOWN BAD: YES${ti.type ? ` — ${ti.type}` : ''}`);
             body.appendChild(badge);
         }
     }
 
     _renderAccountHistoryOverlay(panel) {
-        if (!this._accountHistory) return;
-        const ah = this._accountHistory;
+        const entry = this._selectedEntry;
+        const ah = entry ? this._lookupAccountHistory(entry) : null;
+        if (!ah) {
+            this._renderAccountSummaryOverlay(panel, entry);
+            return;
+        }
         const body = this._overlayHeader(panel, `ACCOUNT INVESTIGATION — ${ah.account}`);
 
         const divider1 = this._el('hr', 'lf-overlay-divider');
@@ -970,6 +1069,47 @@ export class LogFilterMinigame extends MinigameScene {
             badge.textContent = displayDashes(`⚠ ${ah.anomalyBadge}`);
             body.appendChild(badge);
         }
+    }
+
+    /** Account view for a row with no configured profile: facts drawn from the log itself. */
+    _renderAccountSummaryOverlay(panel, entry) {
+        const sum = this._summariseAccount(entry || {});
+        const body = this._overlayHeader(panel, `ACCOUNT INVESTIGATION — ${sum.account || 'UNKNOWN'}`);
+        body.appendChild(this._el('hr', 'lf-overlay-divider'));
+
+        const rows = [
+            ['Account status:', 'No profile flags on record'],
+            ['Sessions in this log:', String(sum.count)]
+        ];
+        if (sum.countries.length) rows.push(['Source countries:', sum.countries.join(', ')]);
+        if (sum.ips.length) rows.push(['Source IPs:', sum.ips.join(', ')]);
+        if (sum.hasMfa) {
+            rows.push(['MFA:', sum.noMfa === 0 ? 'Used on every session'
+                : `Not used on ${sum.noMfa} of ${sum.count} session${sum.count !== 1 ? 's' : ''}`]);
+        }
+        if (sum.last) rows.push(['Last session:', sum.last]);
+        const grid = this._el('div', 'lf-account-grid');
+        this._addGridRows(grid, rows, 'lf-account-label', 'lf-account-value');
+        body.appendChild(grid);
+    }
+
+    _renderFlagRejectedOverlay(panel) {
+        const body = this._overlayHeader(panel, 'NOT THIS ONE');
+        const entry = this._selectedEntry || {};
+        const who = this._entryAccount(entry) || 'this account';
+        const ip = this._entryIp(entry);
+
+        const text = this._el('div', 'lf-flag-confirm-body');
+        text.textContent = displayDashes(this._flagRejectedBody
+            || `The session for ${who}${ip ? ` from ${ip}` : ''} does not match the pattern you are looking for. Nothing has been escalated. Check the IP lookup and account history, then try another row.`);
+        body.appendChild(text);
+
+        const actions = this._el('div', 'lf-flag-confirm-actions');
+        const ok = this._el('button', 'lf-flag-cancel-btn');
+        ok.textContent = '[BACK TO LOG]';
+        ok.addEventListener('click', () => this._closeOverlay());
+        actions.appendChild(ok);
+        body.appendChild(actions);
     }
 
     _renderFlagConfirmOverlay(panel) {

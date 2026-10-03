@@ -1,4 +1,27 @@
 import { displayDashes } from '../utils/display-dashes.js';
+
+/**
+ * The HUD text for a timer's time left. By default "mm:ss" of real time. A timer
+ * with "countdownHours": N (opt-in) stands for an N-hour window in the story, so
+ * its whole delay is shown as N hours and the text is "<hours> h left", rounded up
+ * (sis01's ICO deadline: 45 minutes of play for the 63 hours left of 72).
+ * @param {Object} timer - timer config (delayMs, optional countdownHours)
+ * @param {number} remainingMs - real time left
+ * @returns {string}
+ */
+export function formatTimerCountdown(timer, remainingMs) {
+  const remaining = Math.max(0, remainingMs);
+  const scaleHours = Number(timer?.countdownHours);
+  const delayMs = Number(timer?.delayMs);
+  if (scaleHours > 0 && delayMs > 0) {
+    const hoursLeft = Math.ceil((remaining / delayMs) * scaleHours);
+    return `${hoursLeft} h left`;
+  }
+  const remainingSec = Math.ceil(remaining / 1000);
+  const minutes = Math.floor(remainingSec / 60);
+  const seconds = remainingSec % 60;
+  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
 /**
  * ScenarioTimerUI - Countdown timer HUD widget for scenario events
  * 
@@ -289,10 +312,8 @@ class ScenarioTimerUI {
     const remainingMs = nextTimer.delayMs - elapsedMs;
     const remainingSec = Math.max(0, Math.ceil(remainingMs / 1000));
     
-    // Format as mm:ss
-    const minutes = Math.floor(remainingSec / 60);
-    const seconds = remainingSec % 60;
-    const timeStr = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    // "mm:ss", or "<n> h left" for a timer with countdownHours
+    const timeStr = formatTimerCountdown(nextTimer, remainingMs);
     
     // Update label and clock
     this.labelElement.textContent = displayDashes(nextTimer.label || 'Incoming Event');

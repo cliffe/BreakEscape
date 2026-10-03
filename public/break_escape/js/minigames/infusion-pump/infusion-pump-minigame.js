@@ -1,6 +1,7 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import MusicController from '../../music/music-controller.js';
 import { wirePhaserGameSoundToBreakEscape } from '../../music/phaser-audio-bus.js';
+import { currentClockText } from '../../systems/game-clock.js';
 
 // Canvas dimensions for the Phaser scene
 const W = 820;  // canvas width
@@ -506,9 +507,18 @@ export class InfusionPumpMinigame extends MinigameScene {
 
     // ── Accept paths ──────────────────────────────────────────────────────────
 
+    // The in-game time the rate went in, for the fleet report (sis01 blind playtest D7).
+    // Only when the scenario names a global for it.
+    _recordProgrammedTime() {
+        if (this.sd.programmed_at_global) {
+            this.setGlobalAndNotify(this.sd.programmed_at_global, currentClockText(false));
+        }
+    }
+
     _acceptCorrect() {
         this.confirmed = true;
         this._stopCursor();
+        this._recordProgrammedTime();
         this.setGlobalAndNotify('pump_dose_correct', true);
 
         if (this._displayText) {
@@ -524,6 +534,7 @@ export class InfusionPumpMinigame extends MinigameScene {
         // No warning shown — the missing guardrail IS the safety teaching moment
         this.confirmed = true;
         this._stopCursor();
+        this._recordProgrammedTime();
         this.setGlobalAndNotify('pump_dose_error', true);
 
         if (this._displayText) {
@@ -567,29 +578,32 @@ export class InfusionPumpMinigame extends MinigameScene {
             align: 'center', wordWrap: { width: mw - 40 }
         }).setOrigin(0.5).setDepth(102);
         const marTxt   = scene.add.text(mx, my + 18, `Paper MAR prescription: ${this.rateDisplay}`, {
-            fontFamily: 'monospace', fontSize: '11px', color: '#00ff88'
+            fontFamily: 'monospace', fontSize: '11px', color: '#dddddd'
         }).setOrigin(0.5).setDepth(102);
         const promptTxt = scene.add.text(mx, my + 40, this.sd.conflict_prompt || 'Trust the paper record and override the device?', {
             fontFamily: 'monospace', fontSize: '10px', color: '#aaaaaa',
             align: 'center', wordWrap: { width: mw - 40 }
         }).setOrigin(0.5).setDepth(102);
 
-        const confirmBtn = scene.add.rectangle(mx, my + 88, mw - 40, 38, 0x1a3a1a)
-            .setStrokeStyle(2, 0x00c853).setInteractive({ useHandCursor: true }).setDepth(102)
+        // Both answers look the same (sis01 blind playtest decision): the colour
+        // must not say which one is right.
+        const BTN_FILL = 0x1c2430, BTN_HOVER = 0x2c3848, BTN_EDGE = 0x8fa3b8, BTN_TEXT = '#dde6f0';
+        const confirmBtn = scene.add.rectangle(mx, my + 88, mw - 40, 38, BTN_FILL)
+            .setStrokeStyle(2, BTN_EDGE).setInteractive({ useHandCursor: true }).setDepth(102)
             .on('pointerdown', () => this._confirmLibraryOverride())
-            .on('pointerover',  () => confirmBtn.setFillStyle(0x2a5a2a))
-            .on('pointerout',   () => confirmBtn.setFillStyle(0x1a3a1a));
+            .on('pointerover',  () => confirmBtn.setFillStyle(BTN_HOVER))
+            .on('pointerout',   () => confirmBtn.setFillStyle(BTN_FILL));
         const confirmTxt = scene.add.text(mx, my + 88, this.sd.hold_label || 'CONFIRM OVERRIDE \u2014 USE PAPER MAR', {
-            fontFamily: "'Press Start 2P', monospace", fontSize: '8px', color: '#00ff88'
+            fontFamily: "'Press Start 2P', monospace", fontSize: '8px', color: BTN_TEXT
         }).setOrigin(0.5).setDepth(103);
 
-        const cancelBtn = scene.add.rectangle(mx, my + 138, mw - 40, 38, 0x3a1a00)
-            .setStrokeStyle(2, 0xff8800).setInteractive({ useHandCursor: true }).setDepth(102)
+        const cancelBtn = scene.add.rectangle(mx, my + 138, mw - 40, 38, BTN_FILL)
+            .setStrokeStyle(2, BTN_EDGE).setInteractive({ useHandCursor: true }).setDepth(102)
             .on('pointerdown', () => this._dismissModal())
-            .on('pointerover',  () => cancelBtn.setFillStyle(0x5a2a00))
-            .on('pointerout',   () => cancelBtn.setFillStyle(0x3a1a00));
+            .on('pointerover',  () => cancelBtn.setFillStyle(BTN_HOVER))
+            .on('pointerout',   () => cancelBtn.setFillStyle(BTN_FILL));
         const cancelTxt = scene.add.text(mx, my + 138, this.sd.reenter_label || 'CANCEL \u2014 RE-ENTER', {
-            fontFamily: "'Press Start 2P', monospace", fontSize: '8px', color: '#ff8800'
+            fontFamily: "'Press Start 2P', monospace", fontSize: '8px', color: BTN_TEXT
         }).setOrigin(0.5).setDepth(103);
 
         this._modalObjects = [overlay, box, titleTxt, drugTxt, libTxt, entryTxt, marTxt,
@@ -699,6 +713,7 @@ export class InfusionPumpMinigame extends MinigameScene {
         this.confirmed = true;
         this._stopCursor();
         this._destroyModal();
+        this._recordProgrammedTime();
         this.setGlobalAndNotify('pump_dose_error', true);
         if (this._displayText) {
             this._displayText.setText(`RATE SET \u2014 ${this.currentInput} mg/hr`).setColor('#00ff88');
