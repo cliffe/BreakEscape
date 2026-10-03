@@ -823,7 +823,7 @@ boardroom_pin = "0417"
               "onceOnly": true,
               "sendTimedMessage": { "delay": 4500, "message": "Read what they left on Kim's screen. Not a demand, a note about Gary's emails. Ghost wants more than money tonight. Remember that when you decide what goes public." }
             },
-<% %w[reception_lobby hospital_ward it_department server_room emergency_equipment_storage dr_kim_office conference_room security_office office_corridor staff_room ward_hall ward_vestibule ward_approach].each do |r| %>
+<% %w[reception_lobby hospital_ward it_department server_room emergency_equipment_storage dr_kim_office security_office office_corridor staff_room ward_hall ward_vestibule ward_approach].each do |r| %>
             {
               "_comment": "Backstop: hear_debrief completes on the debrief's last line. If the page reloads mid-debrief, debrief_played is already set and the debrief won't replay, so the next room entry completes the task and the mission can conclude.",
               "eventPattern": "room_entered:<%= r %>",
@@ -832,6 +832,13 @@ boardroom_pin = "0417"
               "completeTask": "hear_debrief"
             },
 <% end %>
+            {
+              "_comment": "Nudge after a reload (it respawns the player in reception_lobby) or any exit while the Boardroom relay scene is still pending: the ambush plays when the player is back in conference_room.",
+              "eventPattern": "room_entered:reception_lobby",
+              "condition": "globalVars.awaiting_ambush === true && !globalVars.mission_complete && !globalVars.insider_confronted",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2500, "message": "You left the Boardroom relay mid-send. Go back and make sure it went out." }
+            },
             {
               "eventPattern": "room_entered:hospital_ward",
               "onceOnly": true,
@@ -1318,12 +1325,21 @@ boardroom_pin = "0417"
               "disableClose": true
             }<% %w[reception_lobby hospital_ward it_department server_room emergency_equipment_storage dr_kim_office conference_room security_office office_corridor staff_room ward_hall ward_vestibule ward_approach].each do |r| %>,
             {
-              "_comment": "Backstop for the Reeves ambush (pass 4). The press terminal defers mission_complete to the ambush when the insider was never named; if a reload lands between the two, or the ambush never opened, the next room entry ends the mission so it can't stall.",
+              "_comment": "Backstop for the Reeves ambush (pass 4). The press terminal defers mission_complete to the ambush when the insider was never named; if a reload lands between the two, or the ambush never opened, the next room entry ends the mission so it can't stall. It waits while the ambush is still pending (insider_confronted false): the player gets it on returning to the conference room, and a reload respawn in reception_lobby must not skip it. Once the ambush has started and been interrupted (insider_confronted true) the backstop ends the mission as before.",
               "eventPattern": "room_entered:<%= r %>",
-              "condition": "globalVars.awaiting_ambush === true && !globalVars.mission_complete",
+              "condition": "globalVars.awaiting_ambush === true && !globalVars.mission_complete && globalVars.insider_confronted === true",
               "onceOnly": true,
               "setGlobal": { "insider_asset_escaped": true, "mission_complete": true }
-            }<% end %>
+            }<% end %><%# Where the player is, for the ambush mapping on Reeves: conditions cannot read the current room, so track it. Every room entry other than the conference room clears it (a reload respawn counts as an entry). %>
+<% %w[reception_lobby hospital_ward it_department server_room emergency_equipment_storage dr_kim_office security_office office_corridor staff_room ward_hall ward_vestibule ward_approach].each do |r| %>,
+            {
+              "eventPattern": "room_entered:<%= r %>",
+              "setGlobal": { "in_conference_room": false }
+            }<% end %>,
+            {
+              "eventPattern": "room_entered:conference_room",
+              "setGlobal": { "in_conference_room": true }
+            }
           ]
         }
       ],
@@ -1532,12 +1548,16 @@ boardroom_pin = "0417"
     Cosmetic urgency, NOT an auto-save — one nurse for 47 beds cannot be everywhere, which
     is exactly why the player has to act. Guarded so a knocked-out nurse never reacts.
     Pass 4: Raval has her own KO global (raval_ko); sharing Doyle's silenced Doyle and
-    made the debrief blame the wrong nurse. %>
+    made the debrief blame the wrong nurse.
+    fireOnlyWhenLoaded: if the ward has not loaded when Bed 4 deteriorates, a missed run
+    only costs this bark and her dash to the bed. Her ink and Mr Pryce's read the state
+    themselves, so nothing lasting depends on it and there is no relay. %>
           "eventMappings": [
             {
               "eventPattern": "global_variable_changed:patient_bed4_state",
               "condition": "value === 'distressed' && !globalVars.raval_ko",
               "onceOnly": true,
+              "fireOnlyWhenLoaded": true,
               "bark": "Bed 4 -- I'm going. Out the way.",
               "barkDelay": 200,
               "patrolOverride": { "targetTile": { "x": 4, "y": 8 }, "speed": 150, "stopOnArrival": true }
@@ -2753,7 +2773,7 @@ boardroom_pin = "0417"
           "eventMappings": [
             {
               "eventPattern": "global_variable_changed:awaiting_ambush",
-              "condition": "value === true && !globalVars.insider_identified && !globalVars.insider_confronted",
+              "condition": "value === true && globalVars.in_conference_room === true && !globalVars.insider_identified && !globalVars.insider_confronted",
               "onceOnly": true,
               "conversationMode": "person-chat",
               "background": "assets/backgrounds/hospital1.png",
@@ -2770,6 +2790,21 @@ boardroom_pin = "0417"
               "eventPattern": "global_variable_changed:insider_asset_escaped",
               "condition": "value === true",
               "onceOnly": true,
+              "setVisible": false
+            },
+            {
+              "_comment": "Catch-up for the three mappings above, which only exist once this room has loaded. awaiting_ambush and insider_asset_escaped are saved globals, so reading them on room entry covers an event that fired before the player ever came here (the terminal sits in this room, so that is rare). The ambush plays here, on arrival, with Reeves already standing by the terminal. The first mapping above stays for when the room is loaded and the player is standing in it (in_conference_room, kept by closing_debrief_trigger); if the room is loaded but the player is next door, this entry plays it on arrival. The ambush ink sets insider_confronted as it starts, so the two entries cannot both play it.",
+              "eventPattern": "room_entered:conference_room",
+              "condition": "globalVars.awaiting_ambush === true && !globalVars.mission_complete && !globalVars.insider_identified && !globalVars.insider_confronted",
+              "onceOnly": true,
+              "conversationMode": "person-chat",
+              "background": "assets/backgrounds/hospital1.png",
+              "targetKnot": "press_terminal_ambush",
+              "disableClose": true
+            },
+            {
+              "eventPattern": "room_entered:conference_room",
+              "condition": "globalVars.insider_asset_escaped === true",
               "setVisible": false
             }
           ]
@@ -3293,6 +3328,7 @@ boardroom_pin = "0417"
     instead of the Ransomware Incorporated note. See sis01 for the reference pattern. %>
     "ransomware_deployed": true,
     "agent_0x99_contacted": false,
+    "in_conference_room": false,
     "dr_kim_met": false,
 
     "paid_ransom": false,
