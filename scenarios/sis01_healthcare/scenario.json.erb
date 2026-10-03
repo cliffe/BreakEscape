@@ -1165,18 +1165,6 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
     barkDelay 1200ms gives the player a moment to see the pharmacist appear before the bark.
     ENG-01 RESOLVED: setVisible event action replaces the two-NPC workaround.
     TEST: Verify pharmacist appears at (10,4.5) and begins patrol when pharmacist_on_ward fires. %>
-            },
-            {
-              "eventPattern": "game_loaded",
-              "condition": "globalVars.pharmacist_on_ward === true",
-              "setVisible": true
-<%# N2 workaround: after a reload initiallyHidden is reapplied and the onceOnly reveal above is
-    not replayed. Ward 7 is the start room, so its NPCs are registered before game_loaded. %>
-            },
-            {
-              "eventPattern": "room_entered:ward_7",
-              "condition": "globalVars.pharmacist_on_ward === true",
-              "setVisible": true
             }
           ]
         }
@@ -2199,8 +2187,8 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "eventPattern": "room_entered:major_incident_room",
               "condition": "globalVars.debrief_started === true",
               "setVisible": true
-<%# N2 workaround: initiallyHidden is reapplied on reload and the onceOnly reveal is not
-    replayed, so re-reveal her every time the player enters the room once the debrief is due. %>
+<%# Catch-up for an unloaded room: debrief_started can be set while this room hasn't loaded,
+    so the reveal above never ran. Reloads are handled by the engine (saved npcVisibility). %>
             }
           ]
         }
