@@ -2,14 +2,14 @@
 
 # sis01_healthcare — Scenario Graph Reference
 
-Tuesday, 07:30. You have been called in to help manage a Major Incident at Northgate General Hospital NHS Trust. Ransomware deployed at 22:15 Monday night has encrypted workstations across the enterprise network — and reached part of the clinical zone. Ward 7 central monitoring has been offline since 22:30. The IT team has been awake all night. You are not here to investigate how it happened. You are here to manage what it means right now.
+Tuesday, 07:30. You have been called in to help manage a Major Incident at Northgate General Hospital NHS Trust. Ransomware deployed at 22:15 on Monday night has encrypted workstations across the enterprise network and reached part of the clinical zone. Ward 7's central monitoring has been dark since 22:30, and the IT team has been up all night. Your job is to manage the incident: keep patients safe, find out how the attackers got in, contain it, and make sure the Trust meets its reporting duties.
 
 ## Scenario Statistics
 
 | Metric | Value |
 |---|---|
 | Story aims | 5 |
-| Total tasks | 17 (3 optional) |
+| Total tasks | 18 (4 optional) |
 | VM flag challenges | 0 |
 | Physical locks | 7 |
 | AND-gate convergences | 2 |

@@ -109,30 +109,29 @@ David Osei: HC-007 says decisions that affect patients are made by IT and clinic
 ~ topic_safety_case = true
 David Osei: HC-001. Claim: an enterprise compromise can't reach clinical devices, provided there are no dual-homed workstations and no exception rules.
 David Osei: Argument: the firewall keeps the zones apart. Evidence: the segmentation project, and a documented list of legacy rules.
-{network_rules_reviewed:
-    David Osei: You've seen the network map. Does that claim hold?
-- else:
-    David Osei: The network map in Ravi's office shows what we've really got. Does that claim hold?
-}
-+ [Yes. The firewall's in and the rules are documented.]
+// Blind playtest: the two "No" answers were near-duplicates and the prompt pointed at
+// one of them. Now one "doesn't hold" answer (its reason depends on whether the player
+// has seen the map) sits beside two plausible wrong ones, each with a reason.
+David Osei: So, as of this morning, does that claim hold?
++ [It holds. The firewall's in, and every exception is on a documented list.]
     ~ hc001_verdict = "holds"
     David Osei: The claim says no exception rules at all. We've got a documented list of them, and that project stopped at seventy per cent.
     -> hc001_verdict_given
-+ {network_rules_reviewed} [No. The map shows dual-homed workstations on Ward 5 and a legacy flat segment.]
-    ~ hc001_verdict = "invalid"
-    ~ david_trust += 10
-    #influence_increased
-    David Osei: That's it. You checked the claim against the network, which is more than we did. Those conditions haven't been true for eighteen months.
-    -> hc001_verdict_given
-+ [No. A documented exception is still an exception. The condition was never met.]
-    ~ hc001_verdict = "invalid"
-    ~ david_trust += 5
-    #influence_increased
-    David Osei: That's it. The claim was conditional, and the conditions haven't been true for eighteen months.
-    -> hc001_verdict_given
-+ [It held until the attackers found the exceptions.]
++ [It held until Monday. The attackers found the gaps in it.]
     ~ hc001_verdict = "held_until_attack"
-    David Osei: Close, but no. It never held. Those exception rules were there long before the attackers were.
+    David Osei: No. It never held. Those exception rules were there long before the attackers were.
+    -> hc001_verdict_given
++ [It doesn't hold. {network_rules_reviewed:The map shows dual-homed PCs and a flat legacy segment.|Its "provided that" isn't true: there are exception rules.}]
+    ~ hc001_verdict = "invalid"
+    {network_rules_reviewed:
+        ~ david_trust += 10
+        #influence_increased
+        David Osei: That's it. You checked the claim against the network, which is more than we did. Those conditions haven't been true for eighteen months.
+    - else:
+        ~ david_trust += 5
+        #influence_increased
+        David Osei: That's it. The claim was conditional, and the conditions haven't been true for eighteen months.
+    }
     -> hc001_verdict_given
 
 === hc001_verdict_given ===
@@ -220,7 +219,7 @@ David Osei: Good. You've thought about what it costs them. I'll sign.
 #give_item:notes
 #set_global:clinical_eng_authorised:true
 #complete_task:david_safety_case
-David Osei: Here's my clinical sign-off. Take it to the network map with Ravi's, and confirm both there.
+David Osei: Here's my clinical sign-off. It's in your notes. Take it to the network map with Ravi's, and confirm both there.
 -> hub
 
 
@@ -247,7 +246,7 @@ David Osei: Here's my clinical sign-off. Take it to the network map with Ravi's,
         David Osei: Helen will want the pump console back today. She won't get my signature until this library's verified.
     }
     David Osei: Look at what they changed, then ask what it would make a nurse do by mistake.
-    David Osei: Confirm the right values from two sources, then restore from the signed copy.
+    David Osei: Confirm the right values from two sources, then restore from the signed copy. The manufacturer's binder is on this table.
 - else:
     David Osei: HC-003 says every drug library change is authorised and checked before it reaches a pump.
     David Osei: The pump fleet console on that laptop checks the live library against the signed copy. If the hashes differ, find out which line changed.

@@ -102,12 +102,15 @@ Sarah Mitchell: Whatever you decide up there lands down here.
 Sarah Mitchell: They're stretched across the hospital. Until they come, someone should be with him, and that means taking Amy off the round.
 -> bed4_options
 
+// Blind playtest (lab sheet Q7/Q11): the estimate is the escalation decision, and
+// Sarah now says so before the player answers, so it reads as its own decision.
 === bed4_options ===
+Sarah Mitchell: If it's hours, I escalate him, and Amy sits with him till outreach come. If it's minutes, she stays on the round.
 Sarah Mitchell: So when does that central station come back? Minutes, or hours?
 + [Hours at least. Plan as if it's not coming back today.]
     ~ bed4_escalated = true
     #set_global:bed4_escalated:true
-    Sarah Mitchell: Then Amy sits with him until outreach arrive.
+    Sarah Mitchell: Then I'm escalating him. Amy sits with him until outreach arrive.
     Sarah Mitchell: That leaves me on my own with the other five. If anything else changes here, I want to hear it from you first.
     -> hub
 + [Could be soon. They're working on it now.]
@@ -119,7 +122,7 @@ Sarah Mitchell: So when does that central station come back? Minutes, or hours?
     ~ bed4_escalated = true
     #set_global:bed4_escalated:true
     Sarah Mitchell: Then I'll treat "don't know" as "hours". Thank you for not guessing.
-    Sarah Mitchell: Amy's going on one-to-one with him until outreach arrive.
+    Sarah Mitchell: I'm escalating him. Amy's going on one-to-one until outreach arrive.
     -> hub
 
 
@@ -294,7 +297,7 @@ Sarah Mitchell: I'm reporting it as a patient safety incident. Somebody has to r
     -- Sarah Mitchell: Everyone misreads a chart once. Next time, read it twice, out loud, with someone watching.
     ~ hub_quiet = true
     -> hub
-+ {drug_library_override and not sarah_pump_warned} [Bed 2's pump wanted twenty, not two. I kept her at two and rang pharmacy.]
++ {drug_library_override and not sarah_pump_warned} [The pump called two below its minimum of twenty. I kept two and rang pharmacy.]
     -> pump_override_report
 + {sarah_given_soon_estimate and not bed4_escalated and not patient_bed4_deceased} [About Mr Ahmed. Plan for hours, not minutes.]
     ~ bed4_escalated = true
@@ -332,13 +335,24 @@ Sarah Mitchell: I'm reporting it as a patient safety incident. Somebody has to r
     Sarah Mitchell: The pumps run on their own network, but their drug library comes from a central server.
     Sarah Mitchell: If someone's been in that server, I don't want to think about it.
     -> hub
-+ {not network_isolated and not bed4_escalated} [What should I do first?]
-    {not bed4_raised:
+// Blind playtest: this option used to vanish once Bed 4 was escalated. It now
+// stays, and the answer follows where the player has got to.
++ {not network_isolated} [What should I do first?]
+    {
+    - not bed4_raised and not bed4_escalated and not patient_bed4_deceased:
         Sarah Mitchell: Look at Bed 4's monitor, then come back to me. The paper drug charts are in my desk drawer.
         Sarah Mitchell: After that, Ravi's in the IT office. Your pass opens the door.
-    - else:
+    - not bed4_escalated and not patient_bed4_deceased:
         Sarah Mitchell: Ravi's in the IT office. Your pass opens the door. And keep half an eye on Bed 4 for me.
+    - else:
+        Sarah Mitchell: Ravi's in the IT office, and the incident room's through the back of his. Your pass opens the door.
     }
+    {not pump_dose_correct and not pump_dose_error and not patient_bed2_deceased:
+        Sarah Mitchell: And Ms Okafor's bag runs out at quarter to eight. Her chart's in my drawer.
+    }
+    -> hub
++ {network_isolated} [What's left to do?]
+    Sarah Mitchell: Up there? Ask Helen. Down here, we're on paper and managing. Tell me before anything else changes.
     -> hub
 + [I'll come back when I know more.]
     {sarah_at_bed2 and not patient_bed2_deceased:

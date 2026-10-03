@@ -38,14 +38,24 @@ VAR ransom_advice = ""
 VAR vpn_anomaly_identified = false
 VAR pump_console_advice = ""
 VAR safety_claim_hc003_assessed = false
+VAR debrief_complete = false
 
 VAR sharma_met = false
 
 // ===========================================
 // ENTRY POINT
+// Blind playtest D1: Priya no longer uses restartOnRetalk:false. Every re-talk
+// (in session, or after a reload restores only her ink variables) restarts
+// here, so "Give me a few minutes" can always be followed by the debrief.
+// Once debrief_complete is set the closing scene never replays.
 // ===========================================
 
 === start ===
+{debrief_complete:
+    Priya S.: {&We're done. My notes go to Helen this week.|That's everything from me. Thank you.}
+    #exit_conversation
+    -> END
+}
 {sharma_met:
     Priya S.: {&Ready now?|When you are.}
 - else:
@@ -88,6 +98,8 @@ Priya S.: Patients first.
 - else:
     Priya S.: Mr Ahmed was never escalated. He's still alive, and that was luck.
 }
+// Blind playtest (lab sheet Q11): why escalating him belonged to the incident response.
+Priya S.: His monitor went dark because of the attack. So when it would come back was an incident question, and the honest answer had to come from your team.
 {
 - patient_bed2_deceased:
     Priya S.: Ms Okafor died of a morphine overdose. The tampered library accepted the wrong rate without a warning, and nobody raised the alarm in time.
@@ -255,29 +267,50 @@ Priya S.: NHS England had your NIS report on Monday night. That one's statutory 
 // ===========================================
 
 === recovery ===
+// Blind playtest (decision: arguable backup choice, lab sheet Q9). Each source is a
+// trade between recovery time and confidence that the copy is clean.
 {
-- backup_reinfected && backup_recovery_source == "nas_encrypted":
-    Priya S.: You restored from the NAS the attacker had already encrypted, and the ransomware came back with it. Days more on paper for every ward.
 - backup_reinfected:
     Priya S.: You restored before the attacker was out, and they encrypted the restore. Days more on paper for every ward.
+- backup_recovery_source == "nas_snapshot":
+    Priya S.: The NAS, from Sunday's snapshot after Ravi's scan. Five hours instead of eighteen, and a day of records keyed back in from paper.
+    Priya S.: The scan only finds what you already knew to look for. If he left something else, it's back inside. That's a trade you can defend, if it's written down.
 - backup_recovery_source == "cloud_vendor" && network_isolated:
-    Priya S.: Cloud restore, after isolation. Slow, and right. Eighteen hours on paper is a risk you chose with your eyes open.
+    Priya S.: Cloud restore, after isolation. Slow, and clean. Eighteen hours on paper is a risk you chose with your eyes open.
 - backup_recovery_source == "cloud_vendor":
     Priya S.: Cloud restore, started before the isolation. If the attacker reaches it, you start again. That was a gamble.
-- backup_recovery_source == "nas_encrypted":
-    Priya S.: You restored from a source the attacker had already reached. It was never going to give you a clean system.
-- backup_recovery_source == "tape_wiped":
-    Priya S.: Tape will come back clean, but not for three to five days. The cloud copy was clean too, and faster.
+- backup_recovery_source == "tape_library":
+    Priya S.: Tape will come back clean, but not for three to five days, and only up to Friday night. That's the most certain way back, and the slowest.
 - not backup_restore_initiated:
-    Priya S.: No restore was started. Those eighteen hours haven't begun yet.
+    Priya S.: No restore was started. Whichever source you pick, the recovery clock starts from now.
 }
+{backup_restore_initiated:
+    -> recovery_trade
+}
+-> ransom_review
+
+=== recovery_trade ===
+Priya S.: When you chose a source, what were you trading?
+* [How fast we'd be back, against how sure we were it was clean.]
+    Priya S.: Yes. The NAS was quick, and only as clean as Ravi's scan. The cloud was clean and slow. Tape was clean and days away.
+* [How much data we'd lose, against how long it would take.]
+    Priya S.: That matters too: Monday's records, or Friday's. But today the bigger question was whether the copy was clean.
+* [Nothing much. Only one source was really usable.]
+    Priya S.: Every one was usable, at a price. Call two of them "no good" and nobody notices a choice was made.
+- -> ransom_review
+
+=== ransom_review ===
 {
 - ransom_advice == "dont_pay":
     Priya S.: You told Helen not to pay. That's government policy for the NHS, and it's right. A key wouldn't have got Sarah's monitors back this morning anyway.
 - ransom_advice == "pay":
-    Priya S.: You told Helen to consider paying. It wouldn't have been faster, it funds the next attack, and they keep the records either way.
+    Priya S.: You told Helen to keep paying open as a fallback. It wouldn't have been faster, it funds the next attack, and they keep the records either way.
 - ransom_advice == "board":
     Priya S.: You left the ransom to the Board, with the costs in front of them. Fair. Paying wouldn't have got a single monitor back faster. The answer was always the restore.
+}
+// Blind playtest (lab sheet Q5): paying as likelihood and impact.
+{ransom_advice != "":
+    Priya S.: Put it as risk. Paying might raise the odds of getting a key. It does nothing to the harm on Ward 7 this morning, because decrypting takes days either way.
 }
 -> root_cause
 
@@ -323,6 +356,8 @@ Priya S.: Ward 7's exceptions were written up as "as low as reasonably practicab
 }
 {helen_tamper_view_heard and safety_claim_hc003_assessed:
     Priya S.: Helen and David disagreed about the pump console. Two owners, two real risks, both said out loud. That part worked.
+    // Blind playtest (lab sheet Q4): how that trade-off goes to the Board.
+    Priya S.: For the Board, it's one test for both. What would it cost to make each risk smaller, and is that cost out of all proportion? That's ALARP.
 }
 {
 - pump_console_advice == "hold":
@@ -332,9 +367,17 @@ Priya S.: Ward 7's exceptions were written up as "as low as reasonably practicab
 - pump_console_advice == "view_only":
     Priya S.: You offered the exec a console with library pushes switched off. Less risk, and someone has to prove it works first. That's the kind of option they need.
 }
+// Blind playtest: "your residual risk" no longer assumes one was named.
 {network_isolated:
     Priya S.: Today you made the same kind of call. Isolation swapped one risk for another.
-    Priya S.: What's left over is your residual risk. Fine, if you can name it and say who owns it.
+    {
+    - isolation_compensating_controls:
+        Priya S.: The printouts and the phone checks cut it down. What was left, Dr Hartley put her name to. That's residual risk handled properly.
+    - isolation_risk_accepted:
+        Priya S.: David wrote the gap down and put his name to it. That's residual risk with an owner, which is the minimum.
+    - else:
+        Priya S.: What was left over, nobody named, and nobody owned. That's the part to fix next time.
+    }
 - else:
     Priya S.: Leaving the network connected was a risk decision too. Nobody wrote down who owned it, or what it might cost.
 }
@@ -356,9 +399,9 @@ Priya S.: People knew, and the hospital kept running, because nothing had gone w
 * [What changes after today?]
     Priya S.: You'll get a list of recommendations. Whether anything changes is up to your Board, and whether they're still asking in six months.
     Priya S.: Every trust that's been through this says "never again". Some of them mean it.
-- -> debrief_complete
+- -> debrief_end
 
-=== debrief_complete ===
+=== debrief_end ===
 Priya S.: Thank you. My notes go to Helen this week, for the Trust's review.
 {
 - patient_bed4_deceased && patient_bed2_deceased:

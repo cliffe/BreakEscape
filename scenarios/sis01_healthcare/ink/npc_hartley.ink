@@ -246,7 +246,13 @@ Dr Fiona Hartley: I would. They've seen this group before, and they'll warn othe
 + {not ncsc_notified and not topic_ncsc} [Should we bring in the NCSC?]
     -> ncsc_advisory
 + [I'll let you get on.]
-    {ico_notified:
+    // Blind playtest D6: after the deadline she no longer says the clock is still running.
+    {
+    - ico_deadline_missed and not ico_notified:
+        Dr Fiona Hartley: The deadline's gone. Make sure Helen sends it today, with the reasons for the delay.
+    - ico_deadline_missed:
+        Dr Fiona Hartley: It went late. Now we explain why, in writing.
+    - ico_notified:
         Dr Fiona Hartley: The ICO has its first report. Keep the updates coming.
     - else:
         Dr Fiona Hartley: The ICO clock is running. Don't let it run out.

@@ -12,6 +12,8 @@ VAR network_isolated = false
 VAR network_isolation_authorised = false
 VAR backup_restore_initiated = false
 VAR drug_library_restored = false
+VAR nas_scan_requested = false
+VAR nas_integrity_checked = false
 
 VAR ravi_trust = 0
 VAR ravi_met = false
@@ -26,6 +28,7 @@ VAR gave_itsec_code = false
 VAR bypassed_reported = false
 VAR post_iso_done = false
 VAR asked_across = false
+VAR asked_nas = false
 
 // Global reads: siem_escalated, vpn_anomaly_identified, network_isolated
 // Global writes: itsec_authorised
@@ -145,12 +148,17 @@ Ravi Anand: And there's a VPN login I don't like. The log terminal's over there.
 - not vpn_anomaly_identified:
     Ravi Anand: We still don't know how they got in. Check the VPN log first.
 - else:
+    // Blind playtest S3/S7: brief_ravi used to complete only in start, which a re-talk
+    // never reaches (it resumes in hub), so "Investigate the Attack" never ticked and
+    // nothing pointed the player at David. Complete it here, where the briefing happens.
+    #complete_task:brief_ravi
     Ravi Anand: SIEM and VPN, both done. That's enough for me.
     ~ gave_itsec_code = true
     #give_item:notes
     #set_global:itsec_authorised:true
     #complete_task:ravi_signoff
-    Ravi Anand: Here's the change form, signed. Take it to the network map with David's, and confirm both there.
+    Ravi Anand: Here's the change form, signed. It's in your notes.
+    Ravi Anand: Now David Osei. He's in the incident room, through that door. Get his sign-off, then confirm both at the network map.
 }
 -> hub
 
@@ -171,15 +179,47 @@ Ravi Anand: It won't bring Sarah's station back. That machine's encrypted. It ju
 }
 Ravi Anand: Don't let anyone tell you segmentation saved us, either. Ward 7 was never on the new VLAN.
 + [What's next?]
-    {backup_restore_initiated:
-        Ravi Anand: The restore's running. After that, how they got in, so they can't do it twice.
-    - else:
-        Ravi Anand: The restore. Helen has the backup console in the incident room.
-    }
-    -> hub
+    -> whats_next
 + [How did they get across in the first place?]
     ~ asked_across = true
     Ravi Anand: A stolen contractor password on the VPN, then our exception rules. The firewall let them through because we told it to.
+    -> hub
+
+
+// Blind playtest S3: "What's next?" was lost if the player picked the other
+// post-isolation question first. It now lives in its own knot, offered from hub too.
+=== whats_next ===
+{backup_restore_initiated:
+    Ravi Anand: The restore's running. After that, how they got in, so they can't do it twice.
+- else:
+    Ravi Anand: The restore. Helen has the backup console in the incident room.
+    {not nas_integrity_checked:
+        Ravi Anand: If you're thinking of our NAS, ask me first. I'd want to scan it.
+    }
+}
+-> hub
+
+
+// ===========================================
+// THE NAS SNAPSHOTS (blind playtest: arguable backup choice)
+// The NAS is the fast way back, but the attacker had domain admin while the
+// last snapshots were taken. Ravi's scan makes Sunday's snapshot usable on the
+// backup console (nas_integrity_checked, via a timer); it checks only for what
+// they already know about.
+// ===========================================
+
+=== nas_question ===
+~ asked_nas = true
+Ravi Anand: Monday's snapshots, no. He had domain admin from mid-afternoon, and his backdoor's in every one of those.
+Ravi Anand: Sunday night's might be clean. I can scan it for everything we've pulled off the SIEM. It takes a few minutes.
+Ravi Anand: It only finds what we know about, mind. And Monday's records are gone with it. The wards would key a day back in from paper.
++ [Scan it.]
+    ~ nas_scan_requested = true
+    #set_global:nas_scan_requested:true
+    Ravi Anand: On it. I'll shout when it's done.
+    -> hub
++ [Not yet.]
+    Ravi Anand: Fine. Without the scan I won't sign the NAS off for a restore.
     -> hub
 
 
@@ -205,6 +245,15 @@ Ravi Anand: Don't let anyone tell you segmentation saved us, either. Ward 7 was 
     ~ siem_followup = true
     Ravi Anand: Then you've seen how they got across. Now I need to know how they got in at all.
     Ravi Anand: Have a look at that VPN log.
+    -> hub
++ {post_iso_done} [What's next?]
+    -> whats_next
++ {not asked_nas and not backup_restore_initiated} [Can we trust the NAS backups?]
+    -> nas_question
++ {asked_nas and not nas_scan_requested and not backup_restore_initiated} [Scan the NAS snapshot after all.]
+    ~ nas_scan_requested = true
+    #set_global:nas_scan_requested:true
+    Ravi Anand: Right. A few minutes.
     -> hub
 + {post_iso_done and not asked_across} [How did they get across in the first place?]
     ~ asked_across = true

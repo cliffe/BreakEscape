@@ -45,6 +45,7 @@ VAR iso_told = false
 VAR tamper_told = false
 VAR asked_next = false
 VAR ico_pressed = false
+VAR deadline_owned = false
 
 // Global reads: network_isolated, backup_restore_initiated, backup_recovery_source,
 //   ico_deadline_missed, ico_guidance_read, hartley_backs_early_ico
@@ -62,8 +63,11 @@ VAR ico_pressed = false
 ~ helen_met = true
 Helen Carver: Helen Carver, CIO. I'm running the Trust's response and the reporting.
 Helen Carver: NHS England had our NIS incident report at eleven last night. That one's statutory, and it's done.
-{ico_notified:
+{
+- ico_notified:
     Helen Carver: The ICO has our first report. Their clock started at twenty to eleven on Monday night, when this reached the on-call manager.
+- ico_deadline_missed:
+    -> ico_advisory
 - else:
     Helen Carver: The ICO is next. Our clock started at twenty to eleven on Monday night, when this reached the on-call manager. Seventy-two hours.
 }
@@ -103,7 +107,10 @@ Helen Carver: NHS England had our NIS incident report at eleven last night. That
     -> hub
 }
 {ico_deadline_missed:
-    Helen Carver: We've missed it. I'm sending it now, late, with the reasons in writing.
+    // Blind playtest: Helen was too relaxed about a missed deadline.
+    ~ deadline_owned = true
+    Helen Carver: The seventy-two hours are gone, and the ICO still hasn't heard from us. That's on me.
+    Helen Carver: I waited for "contained", and it cost us the deadline. It goes now, late, with the reasons in writing.
     ~ ico_notified = true
     #set_global:ico_notified:true
     #complete_task:helen_ico_advisory
@@ -124,13 +131,15 @@ Helen Carver: Not until the network's isolated. I won't tell the ICO it's contai
     -> hub
 
 === ico_argument ===
-+ {not ico_argued} [Article 33 doesn't wait for containment. We report what we know now.]
+// Blind playtest: this option used to quote Article 33 in its own text, which gave the
+// answer away. The law now comes from the IG briefing or Dr Hartley.
++ {not ico_argued} [I think they should hear from us now, with what we've got.]
     ~ ico_argued = true
     Helen Carver: And say what? "We don't know what was taken"? I'd rather send one report that's right.
     -> ico_argument
 + {ico_argued and ico_guidance_read} [The IG briefing says we report what we've got now, and the rest in phases.]
     -> helen_persuaded
-+ {ico_argued and hartley_backs_early_ico} [Dr Hartley says notify now. It's her call to advise on.]
++ {ico_argued and hartley_backs_early_ico} [Dr Hartley thinks we should notify now. She's the Caldicott Guardian.]
     -> helen_persuaded
 // Round R3c: once only, so the argument can't loop on the same reply.
 + {ico_argued and not ico_guidance_read and not hartley_backs_early_ico and not ico_pressed} [I'm sure the law allows a provisional report.]
@@ -196,7 +205,7 @@ Helen Carver: NHS England's cyber team will pass our report on to the NCSC. Aski
 
 === backup_advisory ===
 ~ topic_backup = true
-Helen Carver: Three ways back for the EHR. Our NAS, the tape library, or the vendor's cloud copy.
+Helen Carver: Three ways back. Our NAS is quickest, if Ravi can vouch for it. The vendor's cloud copy is clean, but slow. Tape is clean and takes days.
 Helen Carver: The status report's in the console. Every hour the wards spend on paper is a clinical risk too. Pick the one you can defend.
 -> backup_choices
 
@@ -265,11 +274,13 @@ Helen Carver: The note says don't call the police. We did, on Monday night. What
     ~ ransom_advice = "dont_pay"
     #set_global:ransom_advice:dont_pay
     Helen Carver: That's the government's line for the NHS, and mine. So the restore is our only way back, and we live with its timings.
-* [Consider it. Patients are at risk now, and the restore takes most of a day.]
+// Blind playtest: "Consider it" read as bait. It is now a real argument (a fallback
+// if the restore fails); ransom_advice keeps the value "pay".
+* [Keep paying open as a fallback, in case the restore fails.]
     ~ ransom_advice = "pay"
     #set_global:ransom_advice:pay
-    Helen Carver: Paying buys a promise from a criminal, and maybe a key. Even a key that works takes days to decrypt everything. It wouldn't get Sarah's monitors back this morning.
-    Helen Carver: The Board won't pay, and I won't ask them to. Our way back is the restore.
+    Helen Carver: A fallback that funds the next attack, and buys a promise from a criminal. Even a key that works takes days to decrypt everything.
+    Helen Carver: If the restore fails, we restore again. The Board won't pay, and I won't ask them to.
 * [That's the Board's call. I'd tell them what each option costs.]
     ~ ransom_advice = "board"
     #set_global:ransom_advice:board
@@ -309,10 +320,12 @@ Helen Carver: We're isolated. That's the containment I wanted before going to th
     Helen Carver: Cloud restore's running. Eighteen hours, so the wards are on paper till the early hours. I'll tell the Board.
 - backup_recovery_source == "cloud_vendor":
     Helen Carver: It's running, but the attacker may still be in the network. If they reach the restore, we start again.
-- backup_recovery_source == "nas_encrypted":
-    Helen Carver: The NAS was encrypted with everything else. That restore was never going to work. I need your reasoning for the review.
-- backup_recovery_source == "tape_wiped":
-    Helen Carver: The tape catalogue's been wiped. The tapes will come back clean, but it's three to five days before we know what's on them.
+- backup_recovery_source == "nas_snapshot" && network_isolated:
+    Helen Carver: The NAS, from Sunday's snapshot. Five hours, not eighteen. The wards key Monday back in from paper, and I'll tell the Board what Ravi's scan can't promise.
+- backup_recovery_source == "nas_snapshot":
+    Helen Carver: The NAS, before we're isolated? If the attacker's still in, he gets it back as fast as we do.
+- backup_recovery_source == "tape_library":
+    Helen Carver: Tape. Clean, but it's three to five days to rebuild the catalogue, and we lose everything since Friday night.
 - else:
     Helen Carver: A restore's started. I need the source confirmed for the record.
 }
@@ -377,6 +390,8 @@ Helen Carver: David will tell you to wait. He answers for clinical safety, I ans
 {
 - not helen_met:
     -> start
+- ico_deadline_missed and not ico_notified and not deadline_owned:
+    -> ico_advisory
 - drug_library_compromised and not tamper_told:
     -> post_drug_tamper
 - network_isolated and not iso_told:
@@ -409,7 +424,10 @@ Helen Carver: David will tell you to wait. He answers for clinical safety, I ans
 + {not ncsc_notified and not topic_ncsc} [Should we bring in the NCSC?]
     -> ncsc_advisory
 + [I'll get back to it.]
-    {not ico_notified:
+    {
+    - ico_deadline_missed:
+        Helen Carver: I'll be writing to the ICO about the delay. Keep me posted.
+    - not ico_notified:
         Helen Carver: The ICO clock's on the tablet. Don't let it run out.
     - else:
         Helen Carver: Thank you. Keep me posted.
