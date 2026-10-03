@@ -63,6 +63,13 @@ module BreakEscape
       assert @game.remove_item_from_room!('break_room', 'entropy_launch_device')
       room = @game.filtered_room_data('break_room')
       assert_nil room['objects'].find { |o| o['id'] == 'entropy_launch_device' }
+
+      # A readable note is removed again when it's read into the notebook: the repeat succeeds
+      assert @game.remove_item_from_room!('break_room', 'entropy_launch_device')
+      assert_equal 1, @game.player_state['room_states']['break_room']['objects_removed'].count('entropy_launch_device')
+
+      # An item that was never in the room still fails
+      refute @game.remove_item_from_room!('break_room', 'no_such_item')
     end
 
     test "should unlock room" do

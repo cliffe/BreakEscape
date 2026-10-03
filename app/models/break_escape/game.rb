@@ -364,6 +364,11 @@ module BreakEscape
       player_state['room_states'] ||= {}
       player_state['room_states'][room_id] ||= { 'objects_added' => [], 'objects_removed' => [], 'object_states' => {}, 'npc_states' => {} }
 
+      # Already removed: succeed without writing. A readable takeable note is removed
+      # twice (on pickup and when read into the notebook), so the second request is a
+      # normal repeat, not an error.
+      return true if player_state['room_states'][room_id]['objects_removed'].include?(item_id)
+
       # Check if item exists in room (scenario or added)
       item_exists = item_in_room?(room_id, item_id)
       unless item_exists
