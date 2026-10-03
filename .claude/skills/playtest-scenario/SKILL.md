@@ -1,6 +1,6 @@
 ---
 name: playtest-scenario
-description: Plays a Break Escape scenario end to end in a real browser via the window.__test bridge, driving movement, interactions, dialogue and minigames with synthetic input, and reports pass/fail per walkthrough step. Trigger when the user asks to "playtest", "play through", "test the scenario in the browser", "drive the game", "run the walkthrough", "check the critical path actually works", or wants to watch an automated player attempt a mission.
+description: Plays a Break Escape scenario end to end in a real browser via the window.__test bridge, driving movement, interactions, dialogue and minigames with synthetic input, and reports pass/fail per walkthrough step. Trigger when the user asks to "playtest", "play through", "test the scenario in the browser", "drive the game", "run the walkthrough", "check the critical path actually works", or wants to watch an automated player attempt a mission. Also trigger when the user asks to "iterate on the playtests", "keep playtesting and fixing", "improve the mission from playtest findings", "run a blind playtest", or "playtest until it's clean": see "The improvement loop" below.
 ---
 
 # Break Escape playtest-scenario skill
@@ -59,6 +59,22 @@ Both are useful; say which one the run is.
 - **Blind run (for puzzles and deductions).** Use one when the question is "can a player work this out?": a whodunnit, a money trail, a code hidden in documents. The tester must not read anything that names the answer before solving: not the walkthrough, the solution guide, the erb, the ink, the design review, *nor a playtest script that lists the answer* (m05 and m06 testers were not blind because the script named the culprit or the slot). The orchestrator writes a blind script that gives the route and the reload point but not the solution. Report when the tester first suspected what, which clue moved them, which hints they used, how long it took, and whether it was fun.
 
 Don't run every puzzle blind every time: one blind run after a puzzle changes is enough, and regression runs cover it afterwards.
+
+**Blind runs find what scripted runs can't.** sis01 (October 2026) passed four scripted confirmation runs, then its first blind run found a blocker (the debrief unreachable after a reload), a control nobody could discover (the network map's Sever button, unlocked only by clicking unmarked lines), an orphan task, and choices whose answer was given away by colour or wording. Run one before calling a mission finished, not only after a puzzle changes. How to run one:
+
+- **What the tester may read:** this skill, AGENTS.md "Housekeeping", and only what a player gets: the lab sheet's getting-started part and reflection questions, the information pack, the mission brief on screen. Nothing in the scenario folder, no reviews or earlier reports, and no reading game state or JS to find answers. If the harness can't drive a control, a DOM click on a *visible* control is fine, said so; inspecting the DOM to discover a hidden mechanic is not. Time how long the tester was stuck first, because that is the finding.
+- **Two personas, a fresh game each.** "Do your best", with a page reload at a risky moment (after meeting a character who gates the ending is a good one). Then "struggling player": rushed, trusts devices over paperwork, takes the quickest-looking option, skips side checks, lets deadlines pass (moving a timer from the console is fine, marked "exercised, not earned"). The second persona reaches the failure branches and shows whether the debrief explains mistakes fairly.
+- **Report**, in addition to the evidence below:
+  - a timeline with what the tester thought the goal was at each point;
+  - every "didn't know what to do" moment: where, for how long, what they tried, and what unstuck them;
+  - each real decision: whether it felt arguable or obvious from wording or colour, and whether its consequence showed later;
+  - what they learned, in their own words, and which lab-sheet questions play answered;
+  - the five best and five worst lines;
+  - scores of 1–5 for fun, pacing, clarity of goals, openness of decisions and teaching;
+  - the severity table (Step 5).
+- Subagents may be refused a Write: tell the tester to put the whole report in its final message if that happens, and save it to the scratchpad yourself for the fixer.
+
+**Flags never block a blind or regression run, but their in-game prerequisites still have to be earned.** Use the `session` policy (Step 4): the tester submits `<flag:N>` from the seeded flags when they reach a flag station, and marks the row "flag supplied". The flag value is outside the game; what the game controls is everything before it. In m01 the player must find Derek's "My Passwords" list before the SSH flags can be done at all, so the tester must find that list first. Submitting the flag without it tests nothing. In a blind run, record how the tester found each prerequisite, and how long it took. A missing or undiscoverable prerequisite is a real finding, not a flag problem.
 
 **Flags are the case where earning may be impossible.** Standalone has no VMs, so a `<flag:N>` value cannot be earned by any route; mark those rows "no" and say the mission's solvability is unproven past that point. Where VMs do exist and the run is about solvability, use the `pause` policy and let a human do the VM work — that is the only way that row becomes a "yes".
 
@@ -494,6 +510,31 @@ The report opens with four things, in this order, before the step results:
 4. **The earned-secrets table**, in the format given above.
 
 Rows marked "no" are the boundary of what the run proves; state plainly that the steps downstream of them were exercised but not tested. Step results cite the session log.
+
+After the step results, give **every finding a severity**. List the findings in a table, then give the counts on one line ("0 blockers, 3 majors, 9 minors"). The orchestrator compares those counts across rounds to decide whether to keep iterating:
+
+| Severity    | Meaning                                                                                                                                                                                |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **blocker** | The player cannot finish, or loses the ending: a soft-lock, a crash, an unreachable debrief or credits, a required task that can never complete                                        |
+| **major**   | Wrong outcome, misleading teaching, or a player stuck for minutes with no in-game way out: a contradiction with what happened, a choice whose answer is given away, a stale scene, an undiscoverable control |
+| **minor**   | Wording, a line that reads as written rather than spoken, cosmetic layout, small inconsistencies                                                                                         |
+
+| #  | Severity | Finding                                    | Repro (log lines)          |
+| -- | -------- | ------------------------------------------ | -------------------------- |
+| D1 | blocker  | Debrief ends at once after a mid-run reload | game 1521, lines 2335–2936 |
+
+## The improvement loop (iterating on playtest findings)
+
+Use this when the user asks for iterative improvement from playtests ("keep playtesting and fixing", "run a blind playtest", "playtest until it's clean"). This is the orchestrator's procedure. The tester still follows the rest of this skill, and the tester never fixes anything.
+
+1. **Regression playtest** (Sonnet) from the scenario's playtest script, reporting with the severity table.
+2. **Fix round.** One fixer (Opus) takes the findings. Batch the design decisions for the user first, as checkbox questions with the recommended option first: colour cues, which options should be arguable, how a timer reads, and so on. The fixer runs the static checks (ink compile, tagdiff, validator, dialoguelint, loopcheck) and writes a short confirmation list into the playtest script.
+3. **Confirmation playtest** of exactly what changed, plus a quick regression: credits roll, reload, the main minigames. Commit when it's clean.
+4. **Repeat 2–3 while blockers or majors keep appearing.** Watch the counts. sis01 went from 6/37/24 to 0/6/78, 0/8/40 and then a handful of minors. When a round finds no blockers, a few majors that are edge cases, and minors that are mostly taste, more scripted or text-review rounds have stopped paying.
+5. **Then a blind playtest** (Sonnet, two personas, see "Blind runs"), which finds what the scripted runs can't. Fix its findings with the same loop, confirm, and run a **second blind playtest** with a fresh tester to check the fixes from a player's side.
+6. **Done** when a blind run finds no blockers and no "stuck for minutes" moments. Then hear it: generate a sample of audio, have the user listen, fix what sounds wrong, then do the full audio run.
+
+Keep each round's report in the scratchpad, and record each round's decisions at the top of a review or fixes file in the scenario folder, so the next fixer has them.
 
 ```markdown
 ## The m01 baseline
