@@ -201,6 +201,7 @@ These layouts demonstrate the flexibility of the new grid system for creating en
 | `startItemsInInventory` | Array of items the player starts with (e.g., a phone, lockpick, workstation). |
 | `flags` | Map of VM flag arrays by VM name. Populated via ERB helper `vm_flags_json('vm_name')`. |
 | `show_scenario_brief` | When to show the brief: `"on_start"`, `"on_resume"`, or omit. |
+| `disableAttacks` | `true` turns off player attacks: no punching, no Interact/Jab/Cross toggle in the HUD (Q does nothing), and no combat step in the tutorial. NPCs can't be knocked out, so the validator skips its KO-resilience check. Used by the SIS serious games. |
 | `music` | Dynamic music event system. See Music System section. |
 
 ### Available Room Types

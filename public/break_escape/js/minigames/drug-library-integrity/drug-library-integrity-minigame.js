@@ -51,6 +51,13 @@ export class DrugLibraryIntegrityMinigame extends MinigameScene {
         const sd = params.sprite?.scenarioData?.minigameData || {};
         this._lib      = sd.drugLibrary      || DEFAULT_LIBRARY;
         this._tampered = sd.tamperedEntry    || { drug: 'MORPHINE', field: 'DOSE_MAX', tamperedValue: 40, correctValue: 4, modifiedAt: '2025-11-03 02:47', backupDate: '2025-11-01 09:12' };
+        // A tamper may change more than one field of the row (e.g. a raised DOSE_MIN
+        // needs DOSE_MAX raised with it). tamperedEntry.changes lists them; without it
+        // the single field/tamperedValue/correctValue triple is used, as before.
+        const t0 = this._tampered;
+        this._changes = (Array.isArray(t0.changes) && t0.changes.length)
+            ? t0.changes
+            : [{ field: t0.field, tamperedValue: t0.tamperedValue, correctValue: t0.correctValue }];
         this._sources  = sd.verificationSources || [];
         this._fleet    = sd.fleetReport      || null;
         this._data     = sd;
@@ -83,11 +90,13 @@ export class DrugLibraryIntegrityMinigame extends MinigameScene {
 
         if (g.drug_library_restored) {
             this._phase = 'restored';
+            this._applyRestoredValues();
             this._tabsEnabled = new Set(['integrity', 'diff', 'verify', 'fleet']);
             if (g.mar_charts_drug_referenced)        this._sourcesConsulted.add('paper_mar_charts');
             if (g.manufacturer_datasheet_referenced) this._sourcesConsulted.add('manufacturer_datasheet');
             this._compromisedFired = true;
             this._updateAllTabStates();
+            this._refreshStatusBar('restored');
             this._switchTab('fleet');
         } else if (g.drug_library_compromised) {
             this._phase = 'failed';
@@ -96,6 +105,7 @@ export class DrugLibraryIntegrityMinigame extends MinigameScene {
             if (g.manufacturer_datasheet_referenced) this._sourcesConsulted.add('manufacturer_datasheet');
             this._compromisedFired = true;
             this._updateAllTabStates();
+            this._refreshStatusBar('failed');
             this._switchTab('verify');
         } else {
             this._switchTab('integrity');
@@ -229,8 +239,8 @@ export class DrugLibraryIntegrityMinigame extends MinigameScene {
   </thead>
   <tbody>${rows}</tbody>
 </table>
-${alreadyFailed ? this._buildResultBanner() : ''}
-${alreadyFailed ? this._buildHashDetail(alreadyRestored) : ''}
+${alreadyRestored ? this._buildRestoredBanner() : alreadyFailed ? this._buildResultBanner() : ''}
+${alreadyFailed && !alreadyRestored ? this._buildHashDetail(false) : ''}
 ${!alreadyFailed ? `<button class="dli-run-btn" id="dli-run-btn">[ RUN INTEGRITY VERIFICATION ]</button>` : ''}`;
 
         if (!alreadyFailed) {
@@ -242,6 +252,17 @@ ${!alreadyFailed ? `<button class="dli-run-btn" id="dli-run-btn">[ RUN INTEGRITY
 
         // Status bar
         this._refreshStatusBar(alreadyRestored ? 'restored' : alreadyFailed ? 'failed' : 'idle');
+    }
+
+    // After a restore the check passes again; the earlier change stays in the record.
+    _buildRestoredBanner() {
+        const total = this._lib.length;
+        return `
+<div class="dli-result-banner dli-result-banner-restored" id="dli-result-banner" style="border-color:#33cc66;background:#0d2a16">
+  <div class="dli-result-banner-title" style="color:#33cc66">&#x2713; Integrity Check Complete</div>
+  <p>${total} entries verified: <strong style="color:#33cc66">PASS</strong></p>
+  <p>${displayDashes(this._tampered.drug)} restored from ${this._data.backupFile || 'drug_library.bak'}. The change made ${this._tampered.modifiedAt} (${this._changesText('current')}) is kept in the audit record.</p>
+</div>`;
     }
 
     _buildResultBanner() {
@@ -452,7 +473,7 @@ ${!alreadyFailed ? `<button class="dli-run-btn" id="dli-run-btn">[ RUN INTEGRITY
   <div class="dli-diff-panel">
     <div class="dli-diff-panel-header">
       <div class="dli-diff-panel-file">${this._data.libraryFile || 'drug_library.csv'}</div>
-      <div class="dli-diff-panel-meta">Modified: <span class="dli-modified-at">${t.modifiedAt}</span></div>
+      <div class="dli-diff-panel-meta">${this._phase === 'restored' ? `Restored from backup &nbsp;<span class="dli-verified-ok">&#x2713; HASH MATCH</span>` : `Modified: <span class="dli-modified-at">${t.modifiedAt}</span>`}</div>
     </div>
     <table class="dli-diff-table"><tbody>${leftRows}</tbody></table>
   </div>
@@ -465,30 +486,40 @@ ${!alreadyFailed ? `<button class="dli-run-btn" id="dli-run-btn">[ RUN INTEGRITY
   </div>
 </div>
 <div class="dli-diff-summary">
-  <div class="dli-diff-summary-title">1 difference found:</div>
-  Row: <strong>${displayDashes(t.drug)}</strong> &nbsp;|&nbsp; Field: <strong>${t.field}</strong>
-  &nbsp;|&nbsp; Current: <strong style="color:#cc3333">${t.tamperedValue}</strong>
-  &nbsp;|&nbsp; Backup: <strong style="color:#33cc66">${t.correctValue}</strong>
+  ${this._phase === 'restored'
+    ? `<div class="dli-diff-summary-title">0 differences: the live library matches the backup.</div>
+  Restored from backup. Earlier change (${t.modifiedAt}): ${displayDashes(t.drug)} ${this._changesText('current')}, kept in the audit record.`
+    : `<div class="dli-diff-summary-title">${this._changes.length} difference${this._changes.length === 1 ? '' : 's'} found:</div>
+  ${this._changes.map(c => `Row: <strong>${displayDashes(t.drug)}</strong> &nbsp;|&nbsp; Field: <strong>${c.field}</strong>
+  &nbsp;|&nbsp; Current: <strong style="color:#cc3333">${c.tamperedValue}</strong>
+  &nbsp;|&nbsp; Backup: <strong style="color:#33cc66">${c.correctValue}</strong>`).join('<br>')}`}
 </div>`;
     }
 
     _buildDiffRow(drug, i, side) {
         const isTampered = (i === this._tamperedIdx);
         if (isTampered) {
-            const val  = side === 'current' ? this._tampered.tamperedValue : this._tampered.correctValue;
             const cls  = side === 'current' ? 'dli-diff-val-tampered' : 'dli-diff-val-correct';
             const rowCls = side === 'current' ? 'dli-diff-row-current' : 'dli-diff-row-backup';
+            const cell = (field, rowValue) => {
+                const c = this._changes.find(ch => ch.field === field);
+                if (!c) return `${rowValue}`;
+                if (this._phase === 'restored') return `${c.correctValue}`;
+                const v = side === 'current' ? c.tamperedValue : c.correctValue;
+                return `<span class="dli-diff-value-large ${cls}">${v}</span>`;
+            };
             return `<tr class="${rowCls}">
   <td><strong>${displayDashes(drug.name)}</strong></td>
   <td>${drug.concMgPerMl}</td>
-  <td>${drug.doseMin}</td>
-  <td><span class="dli-diff-value-large ${cls}">${val}</span></td>
+  <td>${cell('DOSE_MIN', drug.doseMin)}</td>
+  <td>${cell('DOSE_MAX', drug.doseMax)}</td>
   <td>${drug.unit}</td>
+  <td>${cell('RATE_MAX', drug.rateMaxMlHr)}</td>
 </tr>`;
         }
         return `<tr class="dli-diff-unchanged">
   <td>${displayDashes(drug.name)}</td><td>${drug.concMgPerMl}</td>
-  <td>${drug.doseMin}</td><td>${drug.doseMax}</td><td>${drug.unit}</td>
+  <td>${drug.doseMin}</td><td>${drug.doseMax}</td><td>${drug.unit}</td><td>${drug.rateMaxMlHr}</td>
 </tr>`;
     }
 
@@ -512,10 +543,10 @@ ${!alreadyFailed ? `<button class="dli-run-btn" id="dli-run-btn">[ RUN INTEGRITY
         else if (allConsulted) restoreClass += ' dli-restore-btn-active';
 
         const restoreLabel = restored
-            ? `\u2713 LIBRARY RESTORED \u2014 DOSE_MAX: ${t.correctValue} ${this._getUnit(t)}`
+            ? `\u2713 LIBRARY RESTORED \u2014 ${this._changesText('backup', true)}`
             : allConsulted
-                ? `[ RESTORE FROM BACKUP \u2014 DOSE_MAX: ${t.correctValue} ${this._getUnit(t)} \u2713 confirmed by 3 sources ]`
-                : `[ RESTORE FROM BACKUP \u2014 DOSE_MAX: ${t.correctValue} ${this._getUnit(t)} ]`;
+                ? `[ RESTORE FROM BACKUP \u2014 ${this._changesText('backup', true)} \u2713 confirmed by backup + ${sources.length} sources ]`
+                : `[ RESTORE FROM BACKUP \u2014 ${this._changesText('backup', true)} ]`;
 
         const restoreHint = restored
             ? `<div class="dli-restore-hint" style="color:#33cc66">\u2713 Library restored successfully.</div>`
@@ -524,10 +555,10 @@ ${!alreadyFailed ? `<button class="dli-run-btn" id="dli-run-btn">[ RUN INTEGRITY
                 : `<div class="dli-restore-hint">Verify correct value from independent sources before restoring.</div>`;
 
         panel.innerHTML = `
-<div class="dli-verify-title">VERIFY CORRECT VALUE &mdash; ${displayDashes(t.drug)} ${t.field}</div>
+<div class="dli-verify-title">VERIFY CORRECT VALUE${this._changes.length === 1 ? '' : 'S'} &mdash; ${displayDashes(t.drug)} ${this._changes.map(c => c.field).join(' / ')}</div>
 <div class="dli-verify-values">
-  <span class="dli-verify-backup-val">&#x25B6; Backup shows: <strong>${t.correctValue} ${this._getUnit(t)}</strong></span>
-  <span class="dli-verify-tampered-val">&#x2717; Current (tampered): <strong>${t.tamperedValue} ${this._getUnit(t)}</strong></span>
+  <span class="dli-verify-backup-val">&#x25B6; Backup shows: <strong>${this._changesText('backup', true)}</strong></span>
+  <span class="dli-verify-tampered-val">&#x2717; Current (tampered): <strong>${this._changesText('current', true)}</strong></span>
 </div>
 <div class="dli-verify-instruction">
   Before restoring, confirm the correct value from two independent sources:
@@ -589,6 +620,24 @@ ${restoreHint}`;
         return entry ? entry.unit : 'mg/hr';
     }
 
+    // "DOSE_MIN: 0.5, DOSE_MAX: 4" for the backup side, or the tampered side.
+    _changesText(side, withUnit = false) {
+        return this._changes
+            .map(c => {
+                const unit = withUnit ? ` ${c.unit || this._getUnit(this._tampered)}` : '';
+                return `${c.field}: ${side === 'current' ? c.tamperedValue : c.correctValue}${unit}`;
+            })
+            .join(', ');
+    }
+
+    // After a restore the library row shows the verified values again.
+    _applyRestoredValues() {
+        const row = this._lib[this._tamperedIdx];
+        if (!row) return;
+        const key = { DOSE_MIN: 'doseMin', DOSE_MAX: 'doseMax', RATE_MAX: 'rateMaxMlHr' };
+        this._changes.forEach(c => { if (key[c.field]) row[key[c.field]] = c.correctValue; });
+    }
+
     // ── Source modal ──────────────────────────────────────────────────────────
 
     _openSourceModal(source) {
@@ -599,11 +648,17 @@ ${restoreHint}`;
             bodyHtml = `
 <div class="dli-modal-row"><span class="dli-modal-key">Title:</span><span class="dli-modal-val">${displayDashes(c.title || 'MEDICATION ADMINISTRATION RECORD \u2014 WARD 7')}</span></div>
 <div class="dli-modal-row"><span class="dli-modal-key">Drug:</span><span class="dli-modal-val">${displayDashes(c.drug || 'Morphine Sulphate (IV)')}</span></div>
-<div class="dli-modal-row"><span class="dli-modal-key">Prescribed:</span><span class="dli-modal-val">Patient D. [anonymised] &mdash; Bed 2</span></div>
-<div class="dli-modal-row"><span class="dli-modal-key">Dose:</span><span class="dli-modal-val">2 mg/hr standard; <span class="dli-modal-val-green">max ${c.value || 4} ${c.unit || 'mg/hr'}</span></span></div>
+<div class="dli-modal-row"><span class="dli-modal-key">Prescribed:</span><span class="dli-modal-val">${displayDashes(c.patient || 'Patient D. [anonymised] \u2014 Bed 2')}</span></div>
+<div class="dli-modal-row"><span class="dli-modal-key">Dose:</span><span class="dli-modal-val">${c.dose ? `<span class="dli-modal-val-green">${displayDashes(c.dose)}</span>` : `2 mg/hr standard; <span class="dli-modal-val-green">max ${c.value || 4} ${c.unit || 'mg/hr'}</span>`}</span></div>
 <div class="dli-modal-row"><span class="dli-modal-key">Note:</span><span class="dli-modal-val">${displayDashes(c.note || '')}</span></div>
 <div class="dli-modal-row"><span class="dli-modal-key">Prescriber:</span><span class="dli-modal-val">${displayDashes(c.prescriber || 'Dr. K. Mahmoud')} (signed)</span></div>
 <div class="dli-modal-row"><span class="dli-modal-key">Pharmacy:</span><span class="dli-modal-val">Verified &mdash; ${displayDashes(c.verified || 'J. Chen (23 Oct 2025)')}</span></div>`;
+        } else if (Array.isArray(c.rows)) {
+            // Scenario-supplied rows: [{ key, value, tone: 'amber'|'green'|undefined }]
+            const toneCls = (tone) => tone === 'amber' ? 'dli-modal-val-amber' : tone === 'green' ? 'dli-modal-val-green' : 'dli-modal-val';
+            bodyHtml = c.rows.map(r =>
+                `<div class="dli-modal-row"><span class="dli-modal-key">${displayDashes(r.key)}:</span><span class="${toneCls(r.tone)}">${displayDashes(r.value)}</span></div>`
+            ).join('\n') + (c.warning ? `\n<div class="dli-modal-warning">${displayDashes(c.warning)}</div>` : '');
         } else {
             bodyHtml = `
 <div class="dli-modal-row"><span class="dli-modal-key">Title:</span><span class="dli-modal-val">${displayDashes(c.title || 'ALARIS GP \u2014 DRUG LIBRARY CONFIGURATION GUIDE')}</span></div>
@@ -667,7 +722,7 @@ ${c.warning ? `<div class="dli-modal-warning">${displayDashes(c.warning)}</div>`
         if (restoreBtn) {
             restoreBtn.disabled = true;
             restoreBtn.className = 'dli-restore-btn dli-restore-btn-done';
-            restoreBtn.textContent = `\u2713 LIBRARY RESTORED \u2014 DOSE_MAX: ${this._tampered.correctValue} ${this._getUnit(this._tampered)}`;
+            restoreBtn.textContent = `\u2713 LIBRARY RESTORED \u2014 ${this._changesText('backup', true)}`;
         }
 
         // Fire completion globals
@@ -677,6 +732,7 @@ ${c.warning ? `<div class="dli-modal-warning">${displayDashes(c.warning)}</div>`
         ]);
 
         this._phase = 'restored';
+        this._applyRestoredValues();
 
         // Refresh status bar on integrity tab if we switch back
         this._refreshStatusBar('restored');
@@ -719,7 +775,7 @@ ${c.warning ? `<div class="dli-modal-warning">${displayDashes(c.warning)}</div>`
         panel.innerHTML = `
 <div class="dli-fleet-title">FLEET IMPACT ANALYSIS</div>
 <div class="dli-fleet-subtitle">
-  Pumps loaded with TAMPERED library version (${displayDashes(t.drug)} ${t.field}: ${t.tamperedValue})
+  ${this._phase === 'restored' ? 'Pumps that loaded the TAMPERED library version, now restored' : 'Pumps loaded with TAMPERED library version'} (${displayDashes(t.drug)} ${this._changesText('current')})
 </div>
 <table class="dli-fleet-table">
   <thead>
@@ -739,9 +795,11 @@ ${activePump ? `
 <button class="dli-view-log-btn" id="dli-view-log-btn">[ VIEW ${activePump.serial} ACTIVITY LOG ]</button>
 <div id="dli-activity-log-wrap"></div>` : ''}
 <div class="dli-fleet-closing">
-  <p>This pump was operating under a compromised drug library for at least 37 hours.</p>
+  ${Array.isArray(fr.closingLines)
+      ? fr.closingLines.map((l, i) => i === fr.closingLines.length - 1 ? `<p><strong>${displayDashes(l)}</strong></p>` : `<p>${displayDashes(l)}</p>`).join('\n  ')
+      : `<p>This pump was operating under a compromised drug library for at least 37 hours.</p>
   <p>The modification predates the ransomware deployment by 37 hours.</p>
-  <p><strong>This was not an opportunistic side-effect of the ransomware.</strong></p>
+  <p><strong>This was not an opportunistic side-effect of the ransomware.</strong></p>`}
 </div>`;
 
         const logBtn = panel.querySelector('#dli-view-log-btn');
@@ -757,17 +815,18 @@ ${activePump ? `
         const drugName = g[apg.linkedDrugGlobal] || 'MORPHINE SULPHATE';
 
         let outcomeLine = '';
+        const ot = fr.outcomeText || {};
         if (g[apg.linkedDoseCorrectGlobal]) {
             outcomeLine = `<div class="dli-outcome-safe">
   <strong>Patient outcome: stable.</strong><br>
-  Dose entered was within safe range. Note: the drug library safety limit was not the protective factor &mdash;
-  the pump did not alarm because of the library guardrail, the dose happened to be correct.
+  ${ot.safe ? displayDashes(ot.safe) : `Dose entered was within safe range. Note: the drug library safety limit was not the protective factor &mdash;
+  the pump did not alarm because of the library guardrail, the dose happened to be correct.`}
 </div>`;
         } else if (g[apg.linkedDoseErrorGlobal]) {
             outcomeLine = `<div class="dli-outcome-risk">
   <strong>Patient outcome: at risk.</strong><br>
-  Dose entered exceeded correct safe limit (${t.correctValue} mg/hr). Pump did NOT alarm &mdash;
-  tampered library prevented the hard-stop from triggering.
+  ${ot.risk ? displayDashes(ot.risk) : `Dose entered exceeded correct safe limit (${t.correctValue} mg/hr). Pump did NOT alarm &mdash;
+  tampered library prevented the hard-stop from triggering.`}
 </div>`;
         } else {
             outcomeLine = `<div class="dli-outcome-unknown">
@@ -783,11 +842,11 @@ ${activePump ? `
             logWrap.innerHTML = `
 <div class="dli-activity-log">
   <div class="dli-activity-log-title">Pump Event Log &mdash; ${pump.serial}</div>
-  <div class="dli-log-row"><span class="dli-log-ts">2025-11-05 ${pump.lastActive}</span> &nbsp;<span class="dli-log-event">NEW RATE PROGRAMMED</span></div>
+  <div class="dli-log-row"><span class="dli-log-ts">${fr.logDate || '2025-11-05'} ${pump.lastActive}</span> &nbsp;<span class="dli-log-event">NEW RATE PROGRAMMED</span></div>
   <div class="dli-log-row"><span class="dli-log-field">Drug:</span> <span class="dli-log-val">${drugName}</span></div>
   <div class="dli-log-row"><span class="dli-log-field">Library version:</span> <span class="dli-log-tampered">${t.modifiedAt} (tampered)</span></div>
-  <div class="dli-log-row"><span class="dli-log-field">DOSE_MAX enforced during programming:</span> <span class="dli-log-tampered">${t.tamperedValue} mg/hr</span></div>
-  <div class="dli-log-row"><span class="dli-log-field">DOSE_MAX (correct value):</span> <span class="dli-log-correct">${t.correctValue} mg/hr</span></div>
+  <div class="dli-log-row"><span class="dli-log-field">Limits enforced during programming:</span> <span class="dli-log-tampered">${this._changesText('current', true)}</span></div>
+  <div class="dli-log-row"><span class="dli-log-field">Limits (correct values):</span> <span class="dli-log-correct">${this._changesText('backup', true)}</span></div>
   ${outcomeLine}
 </div>`;
         }

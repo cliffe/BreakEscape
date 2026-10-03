@@ -34,6 +34,10 @@
       "type": "string",
       "description": "When to show the scenario brief (e.g. 'on_resume')"
     },
+    "disableAttacks": {
+      "type": "boolean",
+      "description": "When true the player cannot attack: no punching, no interact/attack mode toggle, and no combat tutorial step. For non-combat scenarios such as the SIS serious games."
+    },
     "flags": {
       "type": "object",
       "description": "Top-level VM flag data, keyed by VM name. Use ERB helper vm_flags_json() to populate.",

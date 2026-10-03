@@ -42,7 +42,8 @@
   },
 
   "infusion_pump": {
-    "required": ["drug_name", "correct_dose"]
+    "required": ["drug_name", "correct_dose"],
+    "optional": ["rate_display", "patient", "ward_bed", "consultant", "prescriber", "duration", "allergies", "library_min", "library_max", "restored_min", "restored_max", "library_ok_global", "conflict_title", "conflict_prompt", "hold_label", "reenter_label", "pharmacy_mismatch_text", "pharmacy_hold_text"]
   },
 
   "drug_library_terminal": {

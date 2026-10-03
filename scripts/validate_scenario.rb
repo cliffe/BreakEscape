@@ -246,7 +246,7 @@ def check_unknown_fields(json_data)
   # Known top-level fields
   known_top_level = %w[
     scenario_id scenario_name scenario_brief endGoal version startRoom startPosition
-    show_scenario_brief flags music startItemsInInventory globalVariables
+    show_scenario_brief disableAttacks flags music startItemsInInventory globalVariables
     player objectives rooms npcs phoneNPCs narrator timers _comment mutuallyExclusiveGlobals
   ]
 
@@ -1003,6 +1003,7 @@ def check_objectives_wiring(json_data, base_dir)
   # eventMapping fallback (keyed to its KO global) for the second one.
   # Reference: m01_first_contact gives every conversation-gated task a
   # taskOnKO (e.g. dr_sarah_kim→meet_dr_kim, derek_lawson→confront_derek).
+  # Skipped when the scenario sets "disableAttacks": true.
   # ─────────────────────────────────────────────────────────────
   begin
     # Tasks completed via any eventMapping (phones, handlers, objects, rooms) — KO-safe.
@@ -1159,7 +1160,7 @@ def check_objectives_wiring(json_data, base_dir)
     end
   rescue => e
     # Non-fatal — KO-resilience analysis is best-effort.
-  end
+  end unless json_data['disableAttacks'] == true # no attacks, so no NPC can be knocked out
 
   # ─────────────────────────────────────────────────────────────
   # CHECK 5  onceOnly handlers sharing (npc/object, eventPattern)

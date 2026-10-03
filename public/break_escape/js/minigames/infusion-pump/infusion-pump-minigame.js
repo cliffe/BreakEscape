@@ -39,6 +39,15 @@ export class InfusionPumpMinigame extends MinigameScene {
         const sd = params.lockable?.scenarioData?.minigameData || {};
         this.drugName    = sd.drug_name    || 'MORPHINE SULPHATE';
         this.correctDose = sd.correct_dose || '10';
+        // Prescription panel and tampered-library behaviour come from scenario data;
+        // each default is the value this minigame used before they were configurable.
+        this.sd          = sd;
+        this.rateDisplay = sd.rate_display || '10.0 mg/hr';
+        this.libraryMin  = sd.library_min  != null ? Number(sd.library_min) : 25;
+        this.libraryMax  = sd.library_max  != null ? Number(sd.library_max) : null;
+        // Optional limits of the correct (restored) library, enforced once library_ok_global is true.
+        this.restoredMin = sd.restored_min != null ? Number(sd.restored_min) : null;
+        this.restoredMax = sd.restored_max != null ? Number(sd.restored_max) : null;
 
         this.currentInput  = '';
         this.confirmed     = false;
@@ -172,9 +181,9 @@ export class InfusionPumpMinigame extends MinigameScene {
 
         // Patient info fields
         const fields1 = [
-            ['PATIENT',    'CHEN, MARY (DOB: 14/03/1962)', 63],
-            ['WARD',       'Ward 7, Bed 2',                79],
-            ['CONSULTANT', 'Dr. J. Patel',                 95],
+            ['PATIENT',    this.sd.patient    || 'CHEN, MARY (DOB: 14/03/1962)', 63],
+            ['WARD',       this.sd.ward_bed   || 'Ward 7, Bed 2',                79],
+            ['CONSULTANT', this.sd.consultant || 'Dr. J. Patel',                 95],
         ];
         fields1.forEach(([lbl, val, y]) => {
             scene.add.text(x0, y, lbl, labelStyle);
@@ -198,7 +207,7 @@ export class InfusionPumpMinigame extends MinigameScene {
         scene.add.text(x0, 134, 'RATE', labelStyle);
 
         // VT323 with letterSpacing: -2 makes the "." tiny — the ambiguity mechanic
-        scene.add.text(x1, 134, '10.0 mg/hr', {
+        scene.add.text(x1, 134, this.rateDisplay, {
             fontFamily: 'VT323',
             fontSize: '36px',
             color: '#1a1a1a',
@@ -210,7 +219,7 @@ export class InfusionPumpMinigame extends MinigameScene {
         // Remaining fields
         const fields2 = [
             ['ROUTE',    'Intravenous',  198],
-            ['DURATION', '4 hours',      214],
+            ['DURATION', this.sd.duration || '4 hours', 214],
         ];
         fields2.forEach(([lbl, val, y]) => {
             scene.add.text(x0, y, lbl, labelStyle);
@@ -221,13 +230,18 @@ export class InfusionPumpMinigame extends MinigameScene {
 
         // Signature fields
         scene.add.text(x0, 236, 'PRESCRIBER', labelStyle);
-        scene.add.text(x1, 236, 'Dr. J. Patel', { ...valueStyle, fontStyle: 'italic' });
+        scene.add.text(x1, 236, this.sd.prescriber || 'Dr. J. Patel', { ...valueStyle, fontStyle: 'italic' });
 
         scene.add.text(x0, 252, 'PHARMACY', labelStyle);
         scene.add.text(x1, 252, 'Checked \u2713', valueStyle);
 
         scene.add.text(x0, 268, 'NURSE', labelStyle);
         scene.add.text(x1, 268, '________________', { ...mono, fontSize: '9px', color: '#aaaaaa' });
+
+        if (this.sd.allergies) {
+            scene.add.text(x0, 288, 'ALLERGIES', labelStyle);
+            scene.add.text(x1, 288, this.sd.allergies, { ...valueStyle, color: '#b00020', fontStyle: 'bold' });
+        }
     }
 
     // ── Pump device (right panel) ─────────────────────────────────────────────
@@ -280,24 +294,35 @@ export class InfusionPumpMinigame extends MinigameScene {
         dg.lineStyle(1, 0x1a5a1a);
         dg.lineBetween(SCR_X + 4, SCR_Y + 60, SCR_X + SCR_W - 4, SCR_Y + 60);
 
-        const libraryCompromised = !!window.gameState?.globalVariables?.drug_library_compromised;
+        const libraryCompromised = this._libraryTampered();
 
-        if (libraryCompromised) {
+        if (libraryCompromised && this.sd.library_ok_global) {
+            scene.add.text(sx, SCR_Y + 63,
+                `LIBRARY RANGE: ${this.libraryMin}${this.libraryMax != null ? ' \u2013 ' + this.libraryMax : ''} mg/hr`, {
+                fontFamily: 'VT323', fontSize: '13px', color: '#00e060'
+            });
+            scene.add.text(sx, SCR_Y + 78, 'ENTER NEW RATE (mg/hr):', screenText);
+        } else if (libraryCompromised) {
             scene.add.text(sx, SCR_Y + 63, '\u26A0 DRUG LIB MIN: 25 mg/hr  [LIBRARY OVERRIDE]', {
                 fontFamily: 'VT323', fontSize: '13px', color: '#ff8800'
             });
             scene.add.text(sx, SCR_Y + 78, 'ENTER OVERRIDE RATE (mg/hr):', {
                 ...screenText, color: '#ff8800'
             });
+        } else if (this.restoredMin != null && this.restoredMax != null) {
+            scene.add.text(sx, SCR_Y + 63, `LIBRARY RANGE: ${this.restoredMin} \u2013 ${this.restoredMax} mg/hr`, {
+                fontFamily: 'VT323', fontSize: '13px', color: '#00e060'
+            });
+            scene.add.text(sx, SCR_Y + 78, 'ENTER NEW RATE (mg/hr):', screenText);
         } else {
             scene.add.text(sx, SCR_Y + 68, 'ENTER NEW RATE (mg/hr):', screenText);
         }
 
         // Display row — larger text showing current input + cursor
-        this._displayText = scene.add.text(sx, libraryCompromised ? SCR_Y + 104 : SCR_Y + 96, '_', {
+        this._displayText = scene.add.text(sx, (libraryCompromised || (this.restoredMin != null && this.restoredMax != null)) ? SCR_Y + 104 : SCR_Y + 96, '_', {
             fontFamily: 'VT323',
             fontSize: '32px',
-            color: libraryCompromised ? '#ff8800' : '#00ff88',
+            color: (libraryCompromised && !this.sd.library_ok_global) ? '#ff8800' : '#00ff88',
             letterSpacing: 1
         });
     }
@@ -386,6 +411,12 @@ export class InfusionPumpMinigame extends MinigameScene {
 
     _updateDisplay() {
         if (!this._displayText) return;
+        // A flashed screen message stays up for its full time unless the user types.
+        if (this._flashUntil) {
+            if (Date.now() < this._flashUntil && !this.currentInput) return;
+            this._flashUntil = 0;
+            if (this._displayBaseColour) this._displayText.setColor(this._displayBaseColour);
+        }
         const cursor = this._showCursor ? '_' : ' ';
         this._displayText.setText((this.currentInput || '') + cursor);
     }
@@ -420,13 +451,30 @@ export class InfusionPumpMinigame extends MinigameScene {
         const entered  = parseFloat(this.currentInput);
         const correct  = parseFloat(this.correctDose);
         const isCorrect = (entered === correct);
-        const libraryCompromised = !!window.gameState?.globalVariables?.drug_library_compromised;
+        const libraryCompromised = this._libraryTampered();
 
-        if (isCorrect && libraryCompromised) {
+        if (libraryCompromised && this.sd.library_ok_global) {
+            // Tampered library loaded on the pump (configured scenarios): it judges
+            // every entry by the attacker's limits.
+            if (entered < this.libraryMin) {
+                this._showLibraryConflictModal(this.currentInput);
+            } else if (this.libraryMax != null && entered > this.libraryMax) {
+                this._flashScreenMessage(`ABOVE MAX ${this.libraryMax} \u2014 RE-ENTER`);
+            } else if (isCorrect) {
+                this._acceptCorrect();
+            } else {
+                // Inside the attacker's range: accepted without any alert.
+                this._acceptWrongSilent();
+            }
+        } else if (isCorrect && libraryCompromised) {
             // Library disputes the correct dose — player must confirm the override
             this._showLibraryConflictModal(this.currentInput);
         } else if (isCorrect) {
             this._acceptCorrect();
+        } else if (!libraryCompromised && this.restoredMin != null && this.restoredMax != null
+                   && (entered < this.restoredMin || entered > this.restoredMax)) {
+            // Verified library: an entry outside its range is stopped at the pump.
+            this._flashScreenMessage(`OUTSIDE ${this.restoredMin}\u2013${this.restoredMax} \u2014 RE-ENTER`);
         } else if (libraryCompromised) {
             // Drug library compromised — guardrail absent, pump silently accepts wrong dose
             this._acceptWrongSilent();
@@ -434,6 +482,26 @@ export class InfusionPumpMinigame extends MinigameScene {
             // Normal path — show double-check modal
             this._showDoubleCheckModal(this.currentInput);
         }
+    }
+
+    // Is the pump running on the tampered library? Scenarios that set
+    // library_ok_global treat the library as tampered until that global is true
+    // (it was loaded before anyone knew); otherwise the old rule applies.
+    _libraryTampered() {
+        const g = window.gameState?.globalVariables || {};
+        if (this.sd.library_ok_global) return !g[this.sd.library_ok_global];
+        return !!g.drug_library_compromised;
+    }
+
+    _flashScreenMessage(text) {
+        this.currentInput = '';
+        if (!this._displayText) return;
+        if (!this._flashUntil) this._displayBaseColour = this._displayText.style?.color || '#00ff88';
+        this._flashUntil = Date.now() + 1800;
+        this._displayText.setText(text).setColor('#ff4444');
+        setTimeout(() => {
+            if (!this.confirmed && this._displayText) this._updateDisplay();
+        }, 1850);
     }
 
     // ── Accept paths ──────────────────────────────────────────────────────────
@@ -482,7 +550,7 @@ export class InfusionPumpMinigame extends MinigameScene {
         const overlay  = scene.add.rectangle(mx, my, W, H, 0x000000, 0.78).setDepth(100);
         const box      = scene.add.rectangle(mx, my, mw, mh, 0x1a0d00)
             .setStrokeStyle(2, 0xff8800).setDepth(101);
-        const titleTxt = scene.add.text(mx, my - mh / 2 + 18, 'DRUG LIBRARY RANGE CONFLICT', {
+        const titleTxt = scene.add.text(mx, my - mh / 2 + 18, this.sd.conflict_title || 'DRUG LIBRARY RANGE CONFLICT', {
             fontFamily: "'Press Start 2P', monospace",
             fontSize: '8px', color: '#ff8800',
             align: 'center', wordWrap: { width: mw - 32 }
@@ -490,7 +558,7 @@ export class InfusionPumpMinigame extends MinigameScene {
         const drugTxt  = scene.add.text(mx, my - 80, this.drugName, {
             fontFamily: "'Press Start 2P', monospace", fontSize: '8px', color: '#cccccc'
         }).setOrigin(0.5).setDepth(102);
-        const libTxt   = scene.add.text(mx, my - 46, 'LIBRARY MIN: 25 mg/hr', {
+        const libTxt   = scene.add.text(mx, my - 46, `LIBRARY MIN: ${this.libraryMin} mg/hr`, {
             fontFamily: 'VT323', fontSize: '28px', color: '#ff8800'
         }).setOrigin(0.5).setDepth(102);
         const entryTxt = scene.add.text(mx, my - 10,
@@ -498,10 +566,10 @@ export class InfusionPumpMinigame extends MinigameScene {
             fontFamily: 'monospace', fontSize: '10px', color: '#ffcc88',
             align: 'center', wordWrap: { width: mw - 40 }
         }).setOrigin(0.5).setDepth(102);
-        const marTxt   = scene.add.text(mx, my + 18, 'Paper MAR prescription: 10 mg/hr', {
+        const marTxt   = scene.add.text(mx, my + 18, `Paper MAR prescription: ${this.rateDisplay}`, {
             fontFamily: 'monospace', fontSize: '11px', color: '#00ff88'
         }).setOrigin(0.5).setDepth(102);
-        const promptTxt = scene.add.text(mx, my + 40, 'Trust the paper record and override the device?', {
+        const promptTxt = scene.add.text(mx, my + 40, this.sd.conflict_prompt || 'Trust the paper record and override the device?', {
             fontFamily: 'monospace', fontSize: '10px', color: '#aaaaaa',
             align: 'center', wordWrap: { width: mw - 40 }
         }).setOrigin(0.5).setDepth(102);
@@ -511,7 +579,7 @@ export class InfusionPumpMinigame extends MinigameScene {
             .on('pointerdown', () => this._confirmLibraryOverride())
             .on('pointerover',  () => confirmBtn.setFillStyle(0x2a5a2a))
             .on('pointerout',   () => confirmBtn.setFillStyle(0x1a3a1a));
-        const confirmTxt = scene.add.text(mx, my + 88, 'CONFIRM OVERRIDE \u2014 USE PAPER MAR', {
+        const confirmTxt = scene.add.text(mx, my + 88, this.sd.hold_label || 'CONFIRM OVERRIDE \u2014 USE PAPER MAR', {
             fontFamily: "'Press Start 2P', monospace", fontSize: '8px', color: '#00ff88'
         }).setOrigin(0.5).setDepth(103);
 
@@ -520,7 +588,7 @@ export class InfusionPumpMinigame extends MinigameScene {
             .on('pointerdown', () => this._dismissModal())
             .on('pointerover',  () => cancelBtn.setFillStyle(0x5a2a00))
             .on('pointerout',   () => cancelBtn.setFillStyle(0x3a1a00));
-        const cancelTxt = scene.add.text(mx, my + 138, 'CANCEL \u2014 RE-ENTER', {
+        const cancelTxt = scene.add.text(mx, my + 138, this.sd.reenter_label || 'CANCEL \u2014 RE-ENTER', {
             fontFamily: "'Press Start 2P', monospace", fontSize: '8px', color: '#ff8800'
         }).setOrigin(0.5).setDepth(103);
 
@@ -529,11 +597,24 @@ export class InfusionPumpMinigame extends MinigameScene {
     }
 
     _confirmLibraryOverride() {
+        // Configured scenarios: "hold and query pharmacy". Pharmacy compares the
+        // entry with the prescription, so only the prescribed rate goes ahead.
+        if (this.sd.library_ok_global) {
+            const entered = parseFloat(this.currentInput);
+            if (entered !== parseFloat(this.correctDose)) {
+                this._dismissModal();
+                this._flashScreenMessage(this.sd.pharmacy_mismatch_text || 'NOT THE PRESCRIBED RATE');
+                return;
+            }
+        }
         this.confirmed = true;
         this._stopCursor();
         this._destroyModal();
         this.setGlobalAndNotify('drug_library_override', true);
         this._acceptCorrect();
+        if (this.sd.pharmacy_hold_text && this._displayText) {
+            this._displayText.setText(this.sd.pharmacy_hold_text).setColor('#00ff88');
+        }
     }
 
     // ── Double-check modal ────────────────────────────────────────────────────

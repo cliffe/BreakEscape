@@ -178,6 +178,11 @@ async function concludeMission() {
     const gameId = window.breakEscapeConfig?.gameId;
     if (!gameId) return { concluded: true, missing: [] };
 
+    // Save first: the server checks concludeRequires against stored state, and a
+    // global set moments ago (sis01's debrief_complete) only reaches it with the
+    // 30 s sync. Without this the server refuses an ending the player has earned.
+    await window.stateSync?.sync?.();
+
     let response;
     try {
         response = await fetch(`/break_escape/games/${gameId}/conclude`, {

@@ -70,7 +70,7 @@ const EVENT_DEFINITIONS = [
         id: 'drug_library_verified',
         event: 'global_variable_changed:drug_library_verified',
         shouldAppend: (globals) => globals.drug_library_verified === true,
-        text: 'DRUG LIBRARY TAMPERED - Morphine dose max altered. Pump verification required.',
+        text: 'DRUG LIBRARY TAMPERED - Morphine dose limits altered. Pump verification required.',
         type: 'security'
     },
     {

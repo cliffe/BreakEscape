@@ -238,6 +238,11 @@ export class TutorialManager {
             }
         }
 
+        // Scenarios with attacks disabled have no combat to teach (see attacksDisabled() in player-combat.js)
+        if (window.gameScenario?.disableAttacks === true) {
+            this.steps = this.steps.filter(step => step.title !== 'Combat Mode');
+        }
+
         // Collapse objectives panel on mobile so it doesn't obscure the tutorial
         if (this.isMobile && window.objectivesPanel && !window.objectivesPanel.isCollapsed) {
             window.objectivesPanel.toggleCollapse();

@@ -6,6 +6,15 @@
 import { COMBAT_CONFIG } from '../config/combat-config.js';
 import { applyKnockback } from '../utils/knockback.js';
 
+/**
+ * True when the scenario turns player attacks off (top-level
+ * "disableAttacks": true, e.g. the SIS serious games). The player stays in
+ * interact mode: no punching, no mode toggle, no combat tutorial step.
+ */
+export function attacksDisabled() {
+  return window.gameScenario?.disableAttacks === true;
+}
+
 export class PlayerCombat {
   constructor(scene) {
     this.scene = scene;
@@ -24,6 +33,9 @@ export class PlayerCombat {
     if (!COMBAT_CONFIG.interactionModes[mode]) {
       console.error(`Invalid interaction mode: ${mode}`);
       return;
+    }
+    if (mode !== 'interact' && attacksDisabled()) {
+      mode = 'interact';
     }
     this.currentMode = mode;
     console.log(`🥊 Interaction mode set to: ${mode}`);
@@ -50,6 +62,10 @@ export class PlayerCombat {
    * @returns {boolean}
    */
   canPunch() {
+    if (attacksDisabled()) {
+      return false;
+    }
+
     const modeConfig = this.getCurrentModeConfig();
     
     // Can't punch in interact mode
@@ -69,6 +85,10 @@ export class PlayerCombat {
    * Damage applies to ALL NPCs in punch range and facing direction
    */
   punch() {
+    if (attacksDisabled()) {
+      return false;
+    }
+
     if (this.isPunching) {
       console.log('🥊 Punch blocked - already punching');
       return false;

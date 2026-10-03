@@ -6,6 +6,7 @@
 
 import { COMBAT_CONFIG } from '../config/combat-config.js';
 import { setHudLabel, clearHudLabel } from './info-label.js';
+import { attacksDisabled } from '../systems/player-combat.js';
 
 export class PlayerHUD {
   constructor(scene) {
@@ -96,6 +97,9 @@ export class PlayerHUD {
     this.modeLabel.textContent = 'INTERACT';
     this.modeToggleButton.appendChild(this.modeLabel);
     hudContainer.appendChild(this.modeToggleButton);
+    if (attacksDisabled()) {
+      this.modeToggleButton.style.display = 'none';
+    }
 
     // Set up avatar button
     this.setupAvatarButton();
@@ -390,6 +394,7 @@ export class PlayerHUD {
    */
   cycleMode() {
     if (this.isAnimating) return; // Prevent rapid clicking
+    if (attacksDisabled()) return; // Scenario has no combat: stay in interact mode
 
     const oldMode = this.getCurrentMode();
     
