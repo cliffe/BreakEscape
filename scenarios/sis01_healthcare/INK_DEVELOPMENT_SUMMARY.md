@@ -1,5 +1,7 @@
 # INK Story Development — Northgate Hospital Healthcare Scenario
 
+> **Stale in parts (2026-10-02).** The dialogue and design fix pass changed knots, globals and names: the staff nurse is now Amy Clarke (id `patrol_nurse`), the NCSC investigator is Priya S. (surname withheld; id `dr_sharma`), the drug library tamper is a raised morphine minimum (0.5 → 20 mg/hr, prescription 2.0 mg/hr), Bed 2 is Ms A. Okafor throughout, and the ICO task is required (NCSC optional). See `DIALOGUE_REVIEW.md` ("Decisions" and section 7) and `PASS_PLAYTEST.md`.
+
 ## Summary
 
 Successfully developed and deployed complete narrative layer for the `scenarios/sis01_healthcare` (Northgate General Hospital: Code Black) scenario. All 9 NPCs now have fully-implemented INK dialogue trees with context-aware branching, global variable integration, and task completion hooks.
@@ -20,7 +22,7 @@ Successfully developed and deployed complete narrative layer for the `scenarios/
 | David Osei | `npc_david.ink` | Clinical Safety Engineer | ✅ Finalized | 215 | 8 | CLAIM-HC-001 & HC-003 assessment; dual-auth clinical PIN; drug library verification |
 | Helen Carver | `npc_helen.ink` | Information Governance | ✅ Finalized | 223 | 8 | ICO 72-hour notification advisory; backup recovery guidance; CLAIM-HC-007 explanation |
 | Dr Fiona Hartley | `npc_hartley.ink` | Clinical Director | ✅ Finalized | 225 | 9 | Patient data accountability; legal disclosure obligations; Major Incident declaration |
-| Dr Priya Sharma | `npc_sharma.ink` | NCSC Investigator | ✅ Finalized | 293 | 10 | Post-incident debrief; safety case review; root cause synthesis; closing learning |
+| Priya S. | `npc_sharma.ink` | NCSC Investigator | ✅ Finalized | 293 | 10 | Post-incident debrief; safety case review; root cause synthesis; closing learning |
 | **On-Call Pharmacist** | `npc_pharmacist.ink` | **NEW** ✅ Created | 218 | 7 | Drug library verification protocols; pump suspension decision-making; manual dosing oversight; resumption verification |
 | **Mrs Kowalski** | `npc_chair_patient.ink` | **NEW** ✅ Created | 223 | 8 | Patient advocacy perspective; pump safety concern escalation; observational monitoring insights; human continuity |
 

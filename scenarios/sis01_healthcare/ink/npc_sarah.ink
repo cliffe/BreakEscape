@@ -1,293 +1,300 @@
 // ===========================================
-// NPC: Sarah Mitchell (Charge Nurse)
+// NPC: Sarah Mitchell (Charge Nurse, Ward 7)
 // Scenario: Northgate Hospital
-// Role: Initial briefer; escalation gatekeeper for Bed 4 patient
+// Role: opening briefing; the Bed 4 decision (an honest estimate from IT decides
+//       whether Amy leaves the round until outreach arrive); reacts to isolation,
+//       the drug library tamper, the Bed 2 pump and Mr Ahmed's death.
+// Event reactions are barks + a pending check at the top of `hub` (a re-talk
+// resumes at `hub`, so `start` only runs on a first conversation).
 // ===========================================
 
 // Global variables managed by scenario - declared locally here and updated by game engine
 VAR briefing_played = false
 VAR bed4_escalated = false
 VAR bed4_monitor_viewed = false
+VAR sarah_given_soon_estimate = false
+VAR patient_bed4_deceased = false
+VAR patient_bed2_deceased = false
 VAR network_isolated = false
+VAR network_isolation_authorised = false
+VAR isolation_compensating_controls = false
+VAR isolation_risk_accepted = false
 VAR drug_library_compromised = false
-VAR drug_library_restored = false
+VAR drug_library_override = false
+VAR pump_dose_correct = false
+VAR pump_dose_error = false
+VAR bed2_alarm_raised = false
+VAR bed2_seen_unwell = false
+VAR sarah_pump_warned = false
 
 // Local tracking vars for this NPC
-VAR influence = 0
 VAR sarah_briefed = false
 VAR bed4_raised = false
+VAR isolation_discussed = false
+VAR tamper_told = false
+VAR death_told = false
+VAR okafor_death_told = false
+VAR asked_bed2 = false
 VAR topic_ransomware = false
 VAR topic_network = false
 VAR topic_pumps = false
-VAR drug_library_override = false
-VAR sarah_pump_warned = false
+VAR asked_tamper_change = false
+VAR asked_tamper_drugs = false
+VAR hub_quiet = false
 
 // ===========================================
 // TIMED OPENING CUTSCENE (called by timedConversation)
 // ===========================================
 
 === arrival_briefing ===
-
-Sarah Mitchell: You're the incident response team? Good. I'm Sarah Mitchell, charge nurse, Ward 7.
-
-Sarah Mitchell: You've been called in by the Trust's IT security manager — Ravi Anand. He's down the hall. Your job is to manage the response: contain the attack, restore what you can, and keep this ward safe while you do it.
-
-Sarah Mitchell: I need you to understand what we're dealing with before you go anywhere near that IT office.
-
-Sarah Mitchell: Last night at 22:15, ransomware hit the hospital network. By 22:30, our central monitoring station was down.
-
-Sarah Mitchell: Normally I'd have all six patients' vitals on that screen right behind me — I can see it without leaving this desk. Heart rates, oxygen sats, BP traces, all live. Since 22:30 it's been a ransom note on a black screen.
-
-Sarah Mitchell: We're running on paper. Manual obs every fifteen minutes. Two nurses, six patients, no automated alarms.
-
-Sarah Mitchell: One of those patients is Mr Ahmed in Bed 4. Cardiac post-op, day two. He needs continuous monitoring. He doesn't have it.
-
-Sarah Mitchell: You have three things to do. Get into the IT office and work with Ravi on containment. Come back to me about Bed 4 — that's a clinical decision, not an IT one. And whatever you do out there, don't lose sight of what's happening in here.
-
-Sarah Mitchell: Ravi left an access card at the desk for you — he's authorised your site access. The IT office is locked. Here.
-
-#give_item:keycard
-
-Sarah Mitchell: But before you go up there — please check the monitoring station and look in on Bed 4. It will take five minutes, and I need you to understand what's at stake before you disappear into that IT office.
-
+Sarah Mitchell: You're the incident response team? Sarah Mitchell, charge nurse. Ravi Anand in IT security sent for you.
+Sarah Mitchell: Since half ten last night that screen behind me has shown a ransom note instead of six patients' vitals.
+Sarah Mitchell: So we're on paper. Two nurses, six patients, and the only alarms are at the bedsides.
+Sarah Mitchell: Mr Ahmed in Bed 4 is two days after heart surgery. He should be on continuous monitoring. He isn't.
 ~ sarah_briefed = true
-
+#give_item:keycard
+Sarah Mitchell: Ravi left you this pass for the IT office. Before you go up, look at Bed 4's monitor and come back to me.
+Sarah Mitchell: Whatever you decide up there lands down here.
+~ hub_quiet = true
 #complete_task:talk_to_sarah
 #exit_conversation
 -> hub
 
 
 // ===========================================
-// DEFAULT ENTRY POINT (player walks up to Sarah)
+// DEFAULT ENTRY POINT (first conversation only)
 // ===========================================
 
 === start ===
-
 #complete_task:talk_to_sarah
-{not briefing_played and not sarah_briefed:
-    Sarah Mitchell: You're the response team? Ravi said you were coming. I'm Sarah Mitchell — charge nurse.
-    Sarah Mitchell: The monitoring station is down, we have a high-risk patient in Bed 4, and I need you briefed before you disappear into that IT office.
-    Sarah Mitchell: Ravi left an access card at the desk for you — he's authorised your site access. Take it, but please check the ward first.
-    #give_item:keycard
+{
+- not briefing_played and not sarah_briefed:
+    Sarah Mitchell: You're the response team? Sarah Mitchell, charge nurse. Ravi said you were coming.
     ~ sarah_briefed = true
-    -> briefing_hub
-}
-
-{bed4_raised:
+    #give_item:keycard
+    Sarah Mitchell: He left you this pass for the IT office. Before you go up, look at Bed 4's monitor and come back to me.
+    ~ hub_quiet = true
     -> hub
-}
-
-{bed4_monitor_viewed and not bed4_raised:
-    Sarah Mitchell: You've seen the Bed 4 monitor. Those readings are serious — I need to redirect the rounds nurse right now.
+- not bed4_raised and not bed4_escalated and not patient_bed4_deceased and not network_isolated and not drug_library_compromised:
     -> bed4_concern
-}
-
-{not bed4_monitor_viewed and not bed4_raised:
-    Sarah Mitchell: I need you to look at the situation with Bed 4.
-    Sarah Mitchell: Mr Ahmed has been unsettled for the last hour. Without the monitor I can't verify his sats.
-    -> bed4_concern
+- else:
+    -> hub
 }
 
 
 // ===========================================
-// BED 4 CONCERN
+// BED 4: the estimate decision
+// Outreach is called whatever happens; the estimate decides whether Amy
+// comes off the round to sit with him until they arrive.
 // ===========================================
 
 === bed4_concern ===
 ~ bed4_raised = true
-
-Sarah Mitchell: Mr Ahmed in Bed 4 — post-op cardiac, day two.
-
-Sarah Mitchell: Under normal conditions he'd be on continuous monitoring.
-
-Sarah Mitchell: With the station down I have no O2 sat, no BP trace. Just spot checks.
-
-* [What are his current observations?]
-    Sarah Mitchell: Last manual set fifteen minutes ago — sats 94%, slightly low but not critical yet.
-    Sarah Mitchell: Trend concerns me though. He's had two periods of agitation. Could be pain, could be hypoxia.
-    -> bed4_options
-
-* [How long has this been going on?]
-    Sarah Mitchell: Since the attack hit. Just under an hour without continuous monitoring.
-    Sarah Mitchell: Every minute counts with post-op cardiac. This needs escalating.
-    -> bed4_options
-
-* [I'll get to him after IT is sorted]
-    Sarah Mitchell: There may not be time for "after." This patient is at risk right now.
-    ~ influence -= 1
-    #influence_decreased
-    -> bed4_options
-
+{bed4_monitor_viewed:
+    Sarah Mitchell: You've seen his monitor. Low sats, low pressure, slow heart, and he's drowsy. I've bleeped outreach.
+- else:
+    Sarah Mitchell: Mr Ahmed's six-thirty obs were borderline, and his monitor's been alarming since. I've bleeped outreach.
+}
+Sarah Mitchell: They're stretched across the hospital. Until they come, someone should be with him, and that means taking Amy off the round.
+-> bed4_options
 
 === bed4_options ===
-
-Sarah Mitchell: I'm going to redirect the rounds nurse to Bed 4 for a continuous watch — that's my call. But it means the other beds drop to reduced checks. I need you to know that before you go into that IT office.
-
-* [Understood — do what you need to do]
+Sarah Mitchell: So when does that central station come back? Minutes, or hours?
++ [Hours at least. Plan as if it's not coming back today.]
+    ~ bed4_escalated = true
     #set_global:bed4_escalated:true
-    Sarah Mitchell: Good. She's going to Bed 4 now.
+    Sarah Mitchell: Then Amy sits with him until outreach arrive.
+    Sarah Mitchell: That leaves me on my own with the other five. If anything else changes here, I want to hear it from you first.
     -> hub
-
-* [Why can't you go yourself?]
-    Sarah Mitchell: I'm managing incident documentation, fielding calls from the on-call team, and coordinating with the site manager.
-    Sarah Mitchell: Normally I'd have Mr Ahmed's vitals on the screen right behind me — I wouldn't need to leave this desk. Right now this station is my command post, and I have to stay on it.
-    Sarah Mitchell: The rounds nurse is the right person. I just need you to confirm the decision so I can redirect her.
-    -> bed4_options
-
-* [I'll look into it later]
-    Sarah Mitchell: I hope "later" isn't too late.
-    ~ influence -= 1
-    #influence_decreased
++ [Could be soon. They're working on it now.]
+    ~ sarah_given_soon_estimate = true
+    #set_global:sarah_given_soon_estimate:true
+    Sarah Mitchell: Then Amy stays on the round and I'll watch him from here. Come straight back if that changes.
     -> hub
-
-
-=== escalate_bed4 ===
-
-Sarah Mitchell: You escalated. Good call.
-
-{bed4_escalated:
-    Sarah Mitchell: The rounds nurse is with Mr Ahmed now. We caught it early.
-    Sarah Mitchell: This is exactly why monitoring continuity matters — cyber incident or not.
++ [I honestly don't know yet.]
+    ~ bed4_escalated = true
+    #set_global:bed4_escalated:true
+    Sarah Mitchell: Then I'll treat "don't know" as "hours". Thank you for not guessing.
+    Sarah Mitchell: Amy's going on one-to-one with him until outreach arrive.
     -> hub
-}
-
--> hub
 
 
 // ===========================================
-// POST-ISOLATION REACTION
+// POST-ISOLATION (pending check in hub once network_isolated)
 // ===========================================
 
 === post_isolation ===
-
-Sarah Mitchell: Network's isolated? Does that mean the monitoring station might come back?
-
-Sarah Mitchell: Even a partial recovery would help. My team are exhausted running manual checks.
-
-* [We're working on restoration]
-    Sarah Mitchell: Thank you. Please hurry — we can't sustain this workload indefinitely.
+~ isolation_discussed = true
+Sarah Mitchell: So the link's cut. We were already on paper. Now every ward is, and the pump console's gone too.
+Sarah Mitchell: Every pump gets set by hand at the bedside. Pharmacy needs to be at every drug round, not just mine.
++ [Was it the right call?]
+    {
+    - isolation_compensating_controls:
+        Sarah Mitchell: Yes. Pharmacy were on the way before the link went. Somebody thought about the wards first.
+    - isolation_risk_accepted:
+        Sarah Mitchell: Probably. David says it's written down as an accepted risk. I'm the one living with it.
+    - network_isolation_authorised:
+        Sarah Mitchell: Probably. David signed it, so someone weighed it up. I'd still rather have been asked.
+    - else:
+        Sarah Mitchell: Probably. But nobody asked the wards before it happened. Next time, ask.
+    }
     -> hub
-
-* [It may take a while yet]
-    Sarah Mitchell: Understood. I'll keep the manual rounds going. Just keep us in the loop.
++ [It'll be worth it.]
+    Sarah Mitchell: I hope so. I'm the one explaining it to my nurses.
     -> hub
 
 
 // ===========================================
-// POST DRUG TAMPER DISCOVERY
+// DRUG LIBRARY TAMPER (pending check in hub once drug_library_compromised)
+// The player sets Bed 2's pump (decision 2): Sarah is the second check and
+// the rule is "if the pump argues with the chart, stop and ring pharmacy".
 // ===========================================
 
 === post_drug_tamper ===
+~ tamper_told = true
+#complete_task:warn_sarah
+{patient_bed2_deceased:
+    Sarah Mitchell: The drug library's been changed? Then that's what let that rate go into Ms Okafor without a murmur.
+    Sarah Mitchell: Nothing new goes on a pump here until pharmacy clears it. Not one.
+- else:
+    Sarah Mitchell: The drug library's been changed? Then nothing new goes on a pump here until pharmacy clears it.
+}
+{
+- patient_bed2_deceased:
+    Sarah Mitchell: Her pump stays exactly as it is. The MHRA will want it.
+- pump_dose_correct:
+    Sarah Mitchell: Ms Okafor's already on two, from her chart. Nobody touches that pump until pharmacy's been.
+- pump_dose_error:
+    Sarah Mitchell: And pharmacy checks whatever went into Bed 2 this morning.
+- else:
+    Sarah Mitchell: Except Ms Okafor. Her morphine's due, and she can't wait hours for a verified library.
+    Sarah Mitchell: I've got no one free. You set it from the paper chart, and read every digit back to me before it runs.
+    Sarah Mitchell: If that pump argues with the chart, you don't argue back. You stop and ring pharmacy.
+}
+-> tamper_choices
 
-Sarah Mitchell: The drug library was tampered with? #complete_task:warn_sarah
-
-Sarah Mitchell: I need to suspend all pump-administered medication until that library is verified.
-
-Sarah Mitchell: This is a clinical safety incident. I'm alerting the on-call pharmacist right now.
-
-Sarah Mitchell: Mrs Davies in Bay 2 is on a morphine infusion. If that pump has loaded the compromised library, the dose limits are wrong right now. Go and check it — the paper MAR is on the nursing station.
-
-* [What medications are at risk?]
-    Sarah Mitchell: Any drug administered via the Alaris pumps — morphine, heparin, insulin.
-    Sarah Mitchell: If the dose limits were changed, a nurse could administer a fatal overdose without a warning.
-    -> hub
-
-* [The correct library is being restored]
-    Sarah Mitchell: That's a relief. But I want written confirmation before any pump is restarted.
-    Sarah Mitchell: Patient safety has to come first, even if that means delays.
-    -> hub
-
-
-// ===========================================
-// REPEATABLE HUB
-// ===========================================
-
-=== briefing_hub ===
-
-Sarah Mitchell: We've had no monitoring for nearly an hour. IT security are in the office down the hall.
-
-Sarah Mitchell: Ravi Anand — he's the one who called in the cyber incident. Talk to him first.
-
--> hub
-
-=== hub ===
-
-+ {drug_library_override and not sarah_pump_warned} [The pump in Bay 2 rejected my dose entry]
-    -> pump_override_report
-
-+ {bed4_monitor_viewed and not bed4_raised} [I've checked Bed 4 — the monitor alarm is serious]
-    Sarah Mitchell: You've seen the Bed 4 monitor. Those readings are serious — I need to redirect the rounds nurse right now.
-    -> bed4_concern
-
-+ {not topic_ransomware} [What exactly happened to the monitoring station?]
-    ~ topic_ransomware = true
-    Sarah Mitchell: Someone's locked our workstation with ransomware. Demanding over a million pounds.
-    Sarah Mitchell: The screen says seventy-two hours. But we can't run a cardiac ward blind for seventy-two minutes.
-    -> hub
-
-+ {not topic_network} [Is this affecting anything else?]
-    ~ topic_network = true
-    Sarah Mitchell: The ward printer is also down. Some of the bedside tablets can't reach the EPR.
-    Sarah Mitchell: It's spreading, or maybe it was always bigger than just this room.
-    -> hub
-
-+ {not topic_pumps} [What about the infusion pumps?]
-    ~ topic_pumps = true
-    Sarah Mitchell: The smart pumps are standalone — they run on their own network segment.
-    Sarah Mitchell: But their drug library is pulled from the central server. If that's compromised...
-    Sarah Mitchell: I don't want to think about it.
-    -> hub
-
-+ {not network_isolated and not bed4_escalated} [What should I do first?]
-    Sarah Mitchell: Check the central monitoring station — it's the black screen behind me. Then look in on Bed 4, Mr Ahmed. Come back and tell me what you find.
-    Sarah Mitchell: After that, Ravi is up in the IT office. Use the access card to get through the door.
-    -> hub
-
-+ [Leave conversation]
-    Sarah Mitchell: Please be quick. Every minute without monitoring is a minute I'm flying blind.
-    #exit_conversation
+=== tamper_choices ===
++ {not asked_tamper_change} [They raised the morphine minimum to twenty.]
+    ~ asked_tamper_change = true
+    {
+    - patient_bed2_deceased or pump_dose_error:
+        Sarah Mitchell: Twenty. Ten times her chart, and the pump would take it without a word.
+    - else:
+        Sarah Mitchell: Twenty? Her chart says two. Then the pump will tell us the right dose is too low.
+    }
+    -> tamper_choices
++ {not asked_tamper_drugs} [Which medicines are affected?]
+    ~ asked_tamper_drugs = true
+    Sarah Mitchell: Anything on a pump with that library. On this ward this morning, that's her morphine.
+    -> tamper_choices
++ [I'll get on.]
+    {not pump_dose_correct and not pump_dose_error and not patient_bed2_deceased:
+        Sarah Mitchell: The paper charts are in my desk drawer. Read hers twice.
+    - else:
+        Sarah Mitchell: Go on, then.
+    }
     -> hub
 
 
 // ===========================================
-// BED 4 ESCALATION RESPONSE
-// ===========================================
-
-=== post_escalation ===
-
-Sarah Mitchell: Good. The rounds nurse is with him now. If you find out what's happening with the systems, please come back to me.
-
-#exit_conversation
--> hub
-
-
-// ===========================================
-// PUMP LIBRARY OVERRIDE REPORT
+// BED 2 PUMP REPORT (hub option once the player kept the prescribed rate)
 // ===========================================
 
 === pump_override_report ===
-
-Sarah Mitchell: What did it show you?
-
-* [I entered 10 mg/hr — the correct dose from the paper MAR — and the pump flagged it as below its minimum range]
-    Sarah Mitchell: What minimum?
-    ** [It said the drug library minimum was 25 milligrams per hour for morphine]
-        Sarah Mitchell: Twenty-five? That's not a therapeutic minimum — that's a lethal starting dose.
-        Sarah Mitchell: So the library wasn't just raising the ceiling. It was making the correct dose look wrong. A nurse following that warning would give a patient two and a half times what's prescribed.
-        Sarah Mitchell: And the pump wouldn't fire a single alert.
-        Sarah Mitchell: I'm halting all pump-administered medication right now. Nobody uses a pump on this ward until the pharmacist confirms the library has been restored from a verified backup.
-        ~ sarah_pump_warned = true
-        #set_global:sarah_pump_warned:true
-        -> hub
-
-
-// ===========================================
-// MAJOR INCIDENT RESPONSE
-// ===========================================
-
-=== major_incident_line ===
-
-Sarah Mitchell: This is now a patient safety emergency. I'm declaring a major incident. The ICO notification team needs to be briefed immediately.
-
-#exit_conversation
+~ sarah_pump_warned = true
+#set_global:sarah_pump_warned:true
+Sarah Mitchell: Twenty. That's ten times her prescription, and the chart even warns about that decimal point.
+{drug_library_compromised:
+    Sarah Mitchell: Somebody built that to catch a tired nurse clearing a warning. You did right to stop.
+    Sarah Mitchell: Nothing else goes on a pump here until pharmacy clears the library.
+- else:
+    Sarah Mitchell: You did right to stop. A pump doesn't get morphine that wrong by itself.
+    Sarah Mitchell: Tell David Osei in the incident room. Someone needs to check that library.
+}
 -> hub
+
+
+// ===========================================
+// MR AHMED'S DEATH (pending check in hub once patient_bed4_deceased)
+// ===========================================
+
+=== bed2_death ===
+~ okafor_death_told = true
+Sarah Mitchell: Ms Okafor's gone. The crash team couldn't bring her back.
+Sarah Mitchell: Her pump was running at many times what her chart says.
+Sarah Mitchell: I'm reporting it, and nobody touches that pump. It stays exactly as it is.
+-> hub
+
+=== bed4_death ===
+~ death_told = true
+Sarah Mitchell: Mr Ahmed arrested. We put out the crash call, but the team couldn't get him back.
+Sarah Mitchell: His alarm had been sounding at the bedside. Nobody at this desk could see it.
+Sarah Mitchell: I'm reporting it as a patient safety incident. Somebody has to ring his daughter.
+-> hub
+
+
+// ===========================================
+// REPEATABLE HUB (re-talks resume here)
+// ===========================================
+
+=== hub ===
+{
+- patient_bed2_deceased and not okafor_death_told:
+    -> bed2_death
+- patient_bed4_deceased and not death_told:
+    -> bed4_death
+- drug_library_compromised and not tamper_told:
+    -> post_drug_tamper
+- network_isolated and not isolation_discussed:
+    -> post_isolation
+}
+{hub_quiet:
+    ~ hub_quiet = false
+- else:
+    Sarah Mitchell: {&Go on.|What is it?|Quickly, then.}
+}
++ {pump_dose_error and bed2_seen_unwell and not bed2_alarm_raised and not patient_bed2_deceased} [Ms Okafor's barely breathing. She needs help now.]
+    ~ bed2_alarm_raised = true
+    #set_global:bed2_alarm_raised:true
+    Sarah Mitchell: Amy! Bed 2, now, and bring the naloxone. Put out the crash call.
+    Sarah Mitchell: Tell me what went into that pump. Every digit.
+    -> hub
++ {drug_library_override and not sarah_pump_warned} [Bed 2's pump wanted twenty, not two. I kept her at two and rang pharmacy.]
+    -> pump_override_report
++ {sarah_given_soon_estimate and not bed4_escalated and not patient_bed4_deceased} [About Mr Ahmed. Plan for hours, not minutes.]
+    ~ bed4_escalated = true
+    #set_global:bed4_escalated:true
+    Sarah Mitchell: Right. Amy goes to him now. I wish I'd known that sooner.
+    -> hub
++ {not bed4_raised and not bed4_escalated and not patient_bed4_deceased} [About Mr Ahmed in Bed 4.]
+    -> bed4_concern
++ {not drug_library_compromised and not pump_dose_correct and not pump_dose_error and not asked_bed2} [What about Bed 2's infusion?]
+    ~ asked_bed2 = true
+    Sarah Mitchell: Ms Okafor's morphine is due at quarter to eight, and I've got no one free.
+    Sarah Mitchell: Set it from her paper chart and read every digit back to me before it runs.
+    Sarah Mitchell: If that pump argues with the chart, don't argue back. Stop and ring pharmacy.
+    -> hub
++ {not topic_ransomware} [What happened to the monitoring station?]
+    ~ topic_ransomware = true
+    Sarah Mitchell: Ransomware. The screen wants one point two million pounds.
+    Sarah Mitchell: It counts down in hours. On a heart ward we can't run blind for minutes.
+    -> hub
++ {not topic_network} [Is anything else affected?]
+    ~ topic_network = true
+    Sarah Mitchell: The ward PC can't reach the EHR, so drug charts and allergies are on paper. The printer's gone too.
+    Sarah Mitchell: It's spreading, or it was always bigger than this room.
+    -> hub
++ {not topic_pumps} [What about the infusion pumps?]
+    ~ topic_pumps = true
+    Sarah Mitchell: The pumps run on their own network, but their drug library comes from a central server.
+    Sarah Mitchell: If someone's been in that server, I don't want to think about it.
+    -> hub
++ {not network_isolated and not bed4_escalated} [What should I do first?]
+    Sarah Mitchell: Look at Bed 4's monitor, then come back to me. The paper drug charts are in my desk drawer.
+    Sarah Mitchell: After that, Ravi's in the IT office. Your pass opens the door.
+    -> hub
++ [I'll come back when I know more.]
+    Sarah Mitchell: Please be quick. Every minute without monitoring, I'm guessing.
+    ~ hub_quiet = true
+    #exit_conversation
+    -> hub

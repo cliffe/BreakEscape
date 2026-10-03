@@ -1,251 +1,188 @@
 // ===========================================
-// NPC: Dr Priya S. (NCSC Investigator)
+// NPC: Priya S. (NCSC incident management; surname withheld, as NCSC officers do)
 // Scenario: Northgate Hospital
-// Role: Post-incident debrief; safety case review; closing learning synthesis
-// Triggered: when debrief_started = true
-// CyBOK links: All three claims; incident learning; SIS framework; organisational resilience
+// Role: post-incident debrief. State-driven verdicts, plus one question per
+//       section that the player answers and Sharma confirms or corrects.
+// Triggered: when debrief_started = true (or straight away if the ICO deadline is missed)
+// CyBOK links: safety case claim-argument-evidence; PSIRF; UK GDPR Art. 33/34;
+//              NIS; MHRA; normalisation of deviance
 // ===========================================
 
 // Global variables managed by scenario - declared locally here and updated by game engine
 VAR bed4_escalated = false
-VAR drug_tamper_found = false
+VAR patient_bed4_deceased = false
+VAR sarah_given_soon_estimate = false
+VAR drug_library_compromised = false
 VAR drug_library_restored = false
+VAR drug_library_override = false
+VAR pump_dose_correct = false
+VAR pump_dose_error = false
 VAR patient_bed2_deceased = false
 VAR network_isolated = false
 VAR network_isolation_authorised = false
+VAR isolation_compensating_controls = false
+VAR isolation_risk_accepted = false
+VAR bed2_alarm_raised = false
+VAR helen_tamper_view_heard = false
+VAR safety_claim_hc001_assessed = false
+VAR hc001_verdict = ""
 VAR ico_notified = false
-VAR hc001_claim_assessed = false
-VAR hc003_claim_assessed = false
-VAR hc007_claim_assessed = false
+VAR ico_notified_early = false
 VAR ico_deadline_missed = false
+VAR ncsc_notified = false
+VAR patient_disclosure = ""
+VAR backup_restore_initiated = false
+VAR backup_recovery_source = ""
+VAR backup_reinfected = false
+VAR ransom_advice = ""
 VAR vpn_anomaly_identified = false
 
-VAR influence = 0
+VAR sharma_met = false
 
 // ===========================================
-// ENTRY POINT — Debrief opens
+// ENTRY POINT
 // ===========================================
 
 === start ===
-
-Priya S.: I'm Priya S. — NCSC Healthcare Resilience team. Is there anything you still need to wrap up before we begin?
-
-* [No — I'm ready]
-    #complete_task:attend_debrief
-    Priya S.: Good. Let's sit down.
+{sharma_met:
+    Priya S.: {&Ready now?|When you are.}
+- else:
+    ~ sharma_met = true
+    Priya S.: I'm Priya S., NCSC incident management. Are you ready to go through it, or is there something to finish first?
+}
++ [I'm ready.]
     -> main_debrief
-
-* [Give me a few minutes]
-    Priya S.: Of course. Come back when you're ready.
++ [Give me a few minutes.]
+    Priya S.: Take them. I'll be here.
     #exit_conversation
     -> start
 
 
 === main_debrief ===
-
-Priya S.: I've been through the draft SIRI report Helen Carver was compiling — that gives me the incident timeline and the decision log.
-Priya S.: I need your account of what happened. I'm not here to assign blame, but what we learn here shapes guidance for every NHS Trust in England.
-Priya S.: Let's start with patient outcomes.
+#complete_task:attend_debrief
+Priya S.: I've read Helen's draft for the patient safety incident review, and the decision log.
+Priya S.: I'm not here to blame anyone. What we learn here goes into guidance for every trust in England.
+Priya S.: Patients first.
 -> patient_outcomes
 
 
 // ===========================================
-// PATIENT OUTCOMES
+// PATIENTS
 // ===========================================
 
 === patient_outcomes ===
-
-Priya S.: Were any patients harmed?
-
-* {patient_bed2_deceased} [One patient didn't survive. Ms Okafor — Bed 2.]
-    Priya S.: I needed to hear you say it directly. Let's go through the full picture.
-
-* {patient_bed2_deceased} [The drug library failure cost a life. Ms Okafor, Bed 2.]
-    Priya S.: Yes. Walk me through everything.
-
-* {not patient_bed2_deceased} [No patients were harmed.]
-    Priya S.: Walk me through how you managed that.
-
-* {not patient_bed2_deceased} [No deaths — though there were patients at risk.]
-    Priya S.: Tell me about each one.
-
--
-
-{bed4_escalated:
-    Priya S.: Bed 4 was escalated early. That's the right call — monitoring the unmonitored.
-    Priya S.: Mr Ahmed was reviewed promptly. No adverse outcome.
+{
+- patient_bed4_deceased:
+    Priya S.: Mr Ahmed went into an arrhythmia on a ward where nobody at the desk could see his monitor. He died.
+    {sarah_given_soon_estimate:
+        Priya S.: Sarah asked when her monitors would be back and was told "soon". The ward planned around an estimate nobody had checked.
+    - else:
+        Priya S.: He needed escalating early. That was the decision on the table at half seven.
+    }
+- bed4_escalated and sarah_given_soon_estimate:
+    Priya S.: Mr Ahmed got someone at his bedside in the end. The first answer Sarah had was "soon", and that cost him time.
+- bed4_escalated:
+    Priya S.: Mr Ahmed had someone with him until outreach came. That came from an honest answer about when his monitor would be back.
+- else:
+    Priya S.: Mr Ahmed was never escalated. He's still alive, and that's luck, not a plan.
 }
-{not bed4_escalated:
-    Priya S.: Bed 4 wasn't escalated during the incident window.
-    Priya S.: Mr Ahmed experienced an extended period without monitoring. He was fortunate.
-    Priya S.: That near-miss needs to be in the SIRI report.
-    ~ influence -= 1
-    #influence_decreased
+{
+- patient_bed2_deceased:
+    Priya S.: Ms Okafor died of a morphine overdose. The tampered library let the wrong rate through without a murmur, and nobody raised the alarm in time.
+    Priya S.: It goes to the MHRA as a device report as well as our review. Her family are owed the truth under the duty of candour.
+- pump_dose_error and bed2_alarm_raised:
+    Priya S.: Ms Okafor got the wrong rate, and nothing in the pump stopped it. Someone raised the alarm in time, and she had naloxone.
+    Priya S.: That was the last check left. It worked because someone was looking.
+- pump_dose_error:
+    Priya S.: Ms Okafor got the wrong rate. The pump asked if it matched the chart, and someone said yes.
+    Priya S.: She needed naloxone. A check you click through isn't a check.
+- drug_library_override:
+    Priya S.: Ms Okafor's pump said her prescribed dose was below its minimum. You kept the prescribed rate and went to pharmacy.
+    Priya S.: It was the decision that kept her alive.
+- pump_dose_correct:
+    Priya S.: Ms Okafor's infusion went up after the library was restored, at the prescribed rate. Good.
+- else:
+    Priya S.: Ms Okafor's infusion was never renewed. Nobody overdosed her, but she went hours without her pain relief.
 }
-
-{drug_library_restored:
-    Priya S.: Drug library was identified as tampered and restored before any compromised doses were administered.
-    Priya S.: That's CLAIM-HC-003 working — eventually.
-}
-{drug_tamper_found and not drug_library_restored:
-    Priya S.: The drug library tamper was found but not restored during the incident.
-    Priya S.: If pumps were still running from a tampered library, we have a serious patient safety event beyond what you've described.
-    ~ influence -= 1
-    #influence_decreased
-}
-{not drug_tamper_found:
-    Priya S.: The drug library anomaly wasn't detected during the incident.
-    Priya S.: That's a significant gap. A morphine DOSE_MAX of 40mg instead of 4mg is potentially lethal.
-    ~ influence -= 1
-    #influence_decreased
-}
-
-{patient_bed2_deceased:
-    Priya S.: Ms Okafor — Bed 2 — did not survive.
-    Priya S.: A compromised drug library removed the pump's dosing guardrail. An incorrect entry was then accepted without any warning.
-    Priya S.: That is a double failure: a clinical error compounded by a safety system that had already been neutralised by the attackers.
-    Priya S.: This will go to NHS England as a serious incident. It will also be in the SIRI report under a separate heading.
-    Priya S.: CLAIM-HC-003 did not hold. The safety case said the library protected patients. It didn't — because nobody verified it under attack conditions before the pump was used.
-    ~ influence -= 2
-    #influence_decreased
-}
-{not patient_bed2_deceased:
-    Priya S.: Ms Okafor — Bed 2 — is stable. But she was inside the risk envelope the entire time the drug library was compromised.
-    Priya S.: The fact that she wasn't administered a lethal dose is partly circumstance. That needs to be in the SIRI report.
-}
-
--> safety_claims
+Priya S.: One question on that pump. Suppose it tells you the prescribed dose is below its minimum. What should the person at the pump do?
+* [Raise the rate to the pump's minimum. The library is there to protect her.]
+    Priya S.: That's exactly what the attacker counted on. The library had been changed. The prescription hadn't.
+* [Clear the warning and carry on. Pumps nag all the time.]
+    Priya S.: That habit is what they turned against you. A warning everyone clears has stopped being a warning.
+* [Keep the prescribed rate, stop, and query pharmacy.]
+    Priya S.: Yes. When the device and the prescription disagree, trust the prescription and find out why.
+- -> safety_claims
 
 
 // ===========================================
-// SAFETY CLAIMS REVIEW
+// SAFETY CASE: claim, argument, evidence
 // ===========================================
 
 === safety_claims ===
-
-Priya S.: Let's go through the safety case claims. Three were active during this incident.
-
-Priya S.: CLAIM-HC-001: Network segmentation. Was it assessed before the isolation decision?
-
-* {hc001_claim_assessed} [Yes — David Osei reviewed it and flagged the VPN perimeter gap.]
-    Priya S.: Good. That's honest safety case management — acknowledging where the claim didn't hold.
-
-* {hc001_claim_assessed} [David assessed it. The claim had a gap — we documented it before signing off.]
-    Priya S.: Correct. Acknowledging a known deviation is exactly what the process is for.
-
-* {not hc001_claim_assessed} [It wasn't assessed. We isolated without going through the claim.]
-    Priya S.: The outcome was correct, but the process wasn't. Safety cases exist precisely for this.
-    ~ influence -= 1
-    #influence_decreased
-
-* {not hc001_claim_assessed} [We prioritised speed. The formal claim review didn't happen.]
-    Priya S.: That's the wrong trade-off. The safety case is fastest to apply when you already know it — not when it's an afterthought under pressure.
-    ~ influence -= 1
-    #influence_decreased
-
+Priya S.: Now the safety case. A claim is only as good as its "provided that".
+Priya S.: HC-001. Was it valid at eight o'clock on Monday morning, before anyone got in?
+* [Yes. The attack broke it.]
+    Priya S.: That's what most people say. Read its conditions: no dual-homed workstations, no exception rules. Both had been there for eighteen months.
+* [No. Its own conditions weren't met, so it never held.]
+    Priya S.: Yes. Ward 7 was never on the new VLAN. Nobody had checked the claim against the hospital since it was written.
 -
-
-Priya S.: Was the network isolated, and under what authority?
-
-* {not network_isolated} [The network wasn't isolated during the incident.]
-    -> network_never_isolated
-
-* {not network_isolated} [We didn't complete the network isolation step.]
-    -> network_never_isolated
-
-* {network_isolated and network_isolation_authorised} [Yes — full isolation, with joint sign-off from Ravi and David.]
-    Priya S.: That's CLAIM-HC-007 working as designed — integrated IT and clinical authorisation. Well done.
-    -> dual_auth_bypass_end
-
-* {network_isolated and network_isolation_authorised} [Isolated with dual sign-off from both IT and clinical leads.]
-    Priya S.: Good. That's the correct process — a difficult decision, made the right way.
-    -> dual_auth_bypass_end
-
-* {network_isolated and not network_isolation_authorised} [The network was isolated, but without the full dual sign-off.]
-    -> dual_auth_issue
-
-* {network_isolated and not network_isolation_authorised} [I made the call to isolate — the dual sign-off process wasn't completed.]
-    -> dual_auth_issue
-
-= network_never_isolated
-Priya S.: The attacker's access remained open throughout. Every system on that network was at risk for the entire incident window.
-Priya S.: That's a fundamental containment failure. It needs to be the first item in the SIRI report.
-~ influence -= 2
-#influence_decreased
--> dual_auth_bypass_end
-
-= dual_auth_issue
-Priya S.: I need to address that directly.
-Priya S.: The network was isolated without confirmed sign-off from both Ravi Anand and David Osei. There's no joint authorisation record for that decision.
-Priya S.: CLAIM-HC-007 requires integrated IT and clinical decision-making for interventions that affect patient safety. That process was not followed.
-
-    * [It achieved the same outcome.]
-        Priya S.: Did it? The outcome was correct. The process was not.
-        Priya S.: The dual sign-off requirement exists because network isolation is a clinical safety decision as much as a technical one. It can take systems offline that patients depend on.
-        Priya S.: One person making that call unilaterally — even the right call — is a governance failure.
-        ~ influence -= 1
-        #influence_decreased
-        -> dual_auth_bypass_end
-
-    * [I didn't know the proper process.]
-        Priya S.: That's an honest answer, and it's a training gap.
-        Priya S.: The network terminal should prompt for both authorisation forms before executing isolation. If responders aren't familiar with that step, the Trust has a procedural readiness problem.
-        ~ influence -= 1
-        #influence_decreased
-        -> dual_auth_bypass_end
-
-    * [There wasn't time for the full process.]
-        Priya S.: I understand the pressure. Getting both sign-offs takes minutes, not hours.
-        Priya S.: If the situation felt too urgent for a two-person authorisation, that's worth examining in the SIRI report — because that pressure is exactly when governance shortcuts become habitual.
-        ~ influence -= 1
-        #influence_decreased
-        -> dual_auth_bypass_end
-
-= dual_auth_bypass_end
-
-Priya S.: CLAIM-HC-003: Drug library integrity. Was it assessed?
-
-* {hc003_claim_assessed} [Yes — David reviewed it with us. We checked the library state against the claim.]
-    Priya S.: Good. The correct response — check the claim, verify the library.
-
-* {hc003_claim_assessed} [We assessed HC003 with David. The claim's status was confirmed against what was found.]
-    Priya S.: Good. That's the process working as intended.
-
-* {not hc003_claim_assessed} [It wasn't reviewed. That was a gap.]
-    Priya S.: A safety claim directly affecting patient lives went unchecked.
-    Priya S.: If a nurse had administered morphine from that tampered library, we'd be having a very different conversation.
-    ~ influence -= 1
-    #influence_decreased
-
-* {not hc003_claim_assessed} [We didn't get to the HC003 review during the incident.]
-    Priya S.: A safety claim directly affecting patient lives went unchecked.
-    Priya S.: If a nurse had administered morphine from that tampered library, we'd be having a very different conversation.
-    ~ influence -= 1
-    #influence_decreased
-
+{
+- safety_claim_hc001_assessed && hc001_verdict == "invalid":
+    Priya S.: David tells me you reached that on the day. Good.
+- safety_claim_hc001_assessed && hc001_verdict == "holds":
+    Priya S.: On the day you told David it held. Most people do, until they read the conditions.
+- safety_claim_hc001_assessed && hc001_verdict == "held_until_attack":
+    Priya S.: On the day you said it held until the attack. The exceptions were older than the attack.
+- safety_claim_hc001_assessed:
+    Priya S.: David went through it with you on the day.
+- network_isolated:
+    Priya S.: Nobody looked at it before the isolation decision. That's a governance finding for the review.
+- else:
+    Priya S.: Nobody looked at it during the incident. That's a governance finding for the review.
+}
+Priya S.: HC-003 says library changes are authorised, controlled and audited before they reach a pump. Did that control fail, or did the attacker beat it?
+* [The attacker beat it. Nothing would have stopped that.]
+    Priya S.: Something would have. A change at quarter to seven on a Monday evening, outside any change window, with no pharmacist's sign-off.
+    Priya S.: The audit log recorded it. Nobody was reading the log.
+* [It failed. An unauthorised change went through and nobody noticed.]
+    Priya S.: Yes. The control existed on paper. The audit log had the change in it, and nobody read it.
 -
+{
+- drug_library_compromised && drug_library_restored:
+    Priya S.: You found it and restored it from a verified copy. Call that recovery. It doesn't mean the claim held.
+- drug_library_compromised:
+    Priya S.: You found the change, but the library wasn't restored. Every pump that loaded it is still suspect.
+- else:
+    Priya S.: Nobody checked the library during the incident. Every pump that loaded it still pushes morphine upwards.
+}
+-> isolation_review
 
-Priya S.: CLAIM-HC-007: Incident response RTO. Was it met?
 
-* {hc007_claim_assessed} [Assessed with Helen. The RTO was tight but the escalation decision was documented.]
-    Priya S.: Good. The RTO was tight, but the process was followed.
-
-* {hc007_claim_assessed} [Helen reviewed the RTO requirements with us during the incident.]
-    Priya S.: Good. The process was followed, even under pressure.
-
-* {not hc007_claim_assessed} [It wasn't formally reviewed. We recovered, but without a framework.]
-    Priya S.: Lucky this time. Not a robust position.
-    ~ influence -= 1
-    #influence_decreased
-
-* {not hc007_claim_assessed} [The HC007 review didn't happen. We improvised the response.]
-    Priya S.: Recovery without a framework is a near-miss at the operational level.
-    Priya S.: The outcome was correct, but under different circumstances improvisation fails.
-    ~ influence -= 1
-    #influence_decreased
-
+=== isolation_review ===
+{
+- not network_isolated:
+    Priya S.: The network was never isolated. The attacker's route stayed open the whole time. That's the first containment finding.
+    -> regulatory
+- network_isolation_authorised:
+    Priya S.: You isolated with both sign-offs, Ravi's and David's. That's HC-007 doing its job.
+- else:
+    Priya S.: You isolated without both sign-offs. The outcome was right. The process is the control, and it was skipped.
+}
+Priya S.: HC-007 also promised a rehearsal every year. The last was nineteen months ago. This morning was the rehearsal.
+Priya S.: So: who should decide on isolation, and why?
+* [IT security. It's a security call; clinical sign-off is a formality.]
+    Priya S.: It takes the vendor's EHR copy off every ward. That makes it a clinical decision too. Neither side sees the whole cost alone.
+* [IT security and clinical engineering together. Each sees a cost the other misses.]
+    Priya S.: Yes. Ravi sees the attacker. David sees what the wards lose. HC-007 exists so neither decides alone.
 -
-
+{
+- isolation_compensating_controls:
+    Priya S.: And pharmacy was on the wards before the link went. Most teams forget that part.
+- isolation_risk_accepted:
+    Priya S.: You cut it with no pharmacy cover and wrote the risk down, with an owner. Honest, and the wards were still exposed.
+- else:
+    Priya S.: Nobody arranged pharmacy cover before the link went. For a while, no ward could check an allergy on screen.
+}
 -> regulatory
 
 
@@ -254,44 +191,66 @@ Priya S.: CLAIM-HC-007: Incident response RTO. Was it met?
 // ===========================================
 
 === regulatory ===
+{
+- ico_deadline_missed:
+    Priya S.: The ICO report missed the seventy-two hours. The ICO will look at the delay as well as the breach.
+    Priya S.: Helen will have to explain it in writing. "We were waiting until it was contained" won't help her.
+- ico_notified_early:
+    Priya S.: Helen notified the ICO before the isolation, with what you knew and what you were about to do.
+    Priya S.: That's Article 33 done properly, and I gather you argued for it. Good.
+- ico_notified:
+    Priya S.: The ICO heard after the isolation. It was inside the seventy-two hours, so it stands. But the law says without undue delay.
+    Priya S.: Waiting for containment was the wrong reasoning. A report can say what you're about to do, and the rest can follow.
+- else:
+    Priya S.: The ICO hasn't been told yet. You're inside the window, so Helen sends it straight after this meeting.
+}
+Priya S.: NHS England had your NIS report on Monday night. That one's statutory too, and it was on time.
+{ncsc_notified:
+    Priya S.: And you asked us in directly. I've been following your incident since you called.
+- else:
+    Priya S.: Nobody asked the NCSC directly; NHS England brought us in. Next time, ask. It costs you nothing.
+}
+{
+- patient_disclosure == "now":
+    Priya S.: Dr Hartley is writing to patients now, not after forensics. With a note threatening to publish, that's right.
+- patient_disclosure == "wait":
+    Priya S.: Patients won't hear until forensics is done. If the records turn up on a leak site first, they'll hear it from a journalist.
+- patient_disclosure == "only_if_leaked":
+    Priya S.: Telling patients only if the data appears online gets Article 34 backwards. It asks about the risk to them.
+}
+-> recovery
 
-Priya S.: Regulatory compliance. ICO notification — was it made within the 72-hour window?
 
-* {ico_notified} [Yes — Helen Carver filed with the ICO within the window.]
-    Priya S.: Good. Any breach of this scale affecting special category health data requires prompt disclosure. You met the obligation.
+// ===========================================
+// RECOVERY AND THE RANSOM
+// ===========================================
 
-* {ico_notified} [Notification was sent. Helen managed the ICO filing.]
-    Priya S.: Good. Prompt disclosure is both a legal requirement and the right thing to do.
-
-* {ico_deadline_missed} [No. The 72-hour window passed without notification.]
-    Priya S.: The ICO will look at this — not just the breach, but the failure to report it.
-    Priya S.: Expect a follow-up assessment from the ICO's healthcare team.
-    ~ influence -= 1
-    #influence_decreased
-
-* {ico_deadline_missed} [We missed the deadline. The notification wasn't filed in time.]
-    Priya S.: The ICO will scrutinise that. Failure to report compounds the original breach.
-    Priya S.: Expect a formal follow-up from the ICO's healthcare team.
-    ~ influence -= 1
-    #influence_decreased
-
-* {not ico_notified and not ico_deadline_missed} [Not yet — but we're still inside the 72-hour window.]
-    Priya S.: Then it needs to happen before this debrief ends. Don't let it slide.
-
-* {not ico_notified and not ico_deadline_missed} [Helen's preparing the notification. It hasn't been filed yet, but we're within the deadline.]
-    Priya S.: Make sure it goes today.
-
--
-
-Priya S.: You'll also need to update your DSPT submission — this incident is a mandatory disclosure item. It affects your assurance rating.
-
-* [Understood.]
-    -> root_cause
-
-* [What does that mean for the Trust in practice?]
-    Priya S.: Your Trust's data security assurance is publicly reported. A serious incident affects that rating.
-    Priya S.: It also feeds into your cyber insurance renewal and any NHS England performance review.
-    -> root_cause
+=== recovery ===
+{
+- backup_reinfected && backup_recovery_source == "nas_encrypted":
+    Priya S.: You restored from the NAS the attacker had already encrypted, and the ransomware came back with it. Days more on paper for every ward.
+- backup_reinfected:
+    Priya S.: You restored before the attacker was out, and they encrypted the restore. Days more on paper for every ward.
+- backup_recovery_source == "cloud_vendor" && network_isolated:
+    Priya S.: Cloud restore, after isolation. Slow, and right. Eighteen hours on paper is a risk you chose with your eyes open.
+- backup_recovery_source == "cloud_vendor":
+    Priya S.: Cloud restore, started before the isolation. If the attacker reaches it, you start again. That was a gamble.
+- backup_recovery_source == "nas_encrypted":
+    Priya S.: You restored from a source the attacker had already reached. It was never going to give you a clean system.
+- backup_recovery_source == "tape_wiped":
+    Priya S.: Tape would have come back clean, in three to five days. The cloud copy was the faster clean option.
+- not backup_restore_initiated:
+    Priya S.: No restore was started. Those eighteen hours haven't begun yet.
+}
+{
+- ransom_advice == "dont_pay":
+    Priya S.: You told Helen not to pay. That's NHS policy, and it's right. Paying buys a promise from a criminal.
+- ransom_advice == "pay":
+    Priya S.: You told Helen paying might be faster. It funds the next attack, and they keep the records either way.
+- ransom_advice == "board":
+    Priya S.: You left the ransom to the Board. Fair, but they wanted your view. The answer was always the restore.
+}
+-> root_cause
 
 
 // ===========================================
@@ -299,77 +258,74 @@ Priya S.: You'll also need to update your DSPT submission — this incident is a
 // ===========================================
 
 === root_cause ===
-
-Priya S.: Root cause analysis. What was the initial access vector?
-
-* {vpn_anomaly_identified} [VPN credential compromise — a contractor account, m.blake, no MFA.]
-    Priya S.: Textbook initial access. Stale account plus absent MFA equals open door.
-
-* {vpn_anomaly_identified} [A stale contractor account. m.blake — no multi-factor authentication enforced.]
-    Priya S.: Yes. That's a textbook finding: leavers not deprovisioned, MFA not enforced.
-
-* {not vpn_anomaly_identified} [The initial access vector wasn't confirmed during the incident.]
-    Priya S.: Without that, we can't close the gap. The attacker may still have a valid path back in.
-    ~ influence -= 1
-    #influence_decreased
-
-* {not vpn_anomaly_identified} [We focused on containment. Initial access wasn't pinned down.]
-    Priya S.: That's an understandable triage decision — but it leaves the door open.
-    Priya S.: The access path needs to be confirmed before you can declare the threat fully contained.
-    ~ influence -= 1
-    #influence_decreased
-
+Priya S.: Last question from me. How did they get in?
+* [A leaver's account that nobody had disabled.]
+    Priya S.: The account was live. Marcus Blake still works for NetSol. Someone stole his password; he wasn't the one using it.
+* [An unpatched VPN.]
+    Priya S.: Nothing points at that. The VPN let them in because it never asked for a second factor.
+* [Phishing on a finance PC, and a stolen contractor password with no MFA.]
+    Priya S.: Both. Two ways in on the same Monday morning.
 -
-
-Priya S.: Contributing factors: unpatched VPN endpoint, no MFA enforcement, leavers not deprovisioned. These aren't exotic vulnerabilities — they're standard hygiene failures.
-
-* [What should we have had in place?]
-    Priya S.: MFA on all remote access. Account deprovisioning SLA — 24 hours maximum.
-    Priya S.: Privileged access review every 90 days. These are Cyber Essentials baseline requirements.
-    -> closing
-
-* [Is this common across NHS Trusts?]
-    Priya S.: More common than I'd like. Resource constraints, legacy systems, competing priorities.
-    Priya S.: That's why the NCSC publishes sector-specific guidance. It doesn't require a large budget.
-    -> closing
+{not vpn_anomaly_identified:
+    Priya S.: Nobody checked the VPN log during the incident. Until the password is changed, they can walk back in the same way.
+}
+Priya S.: And a third door nobody had used yet: the pump vendor's VPN, straight into the clinical zone, with MFA "deferred".
+Priya S.: None of that is exotic. MFA on every remote login is in your DSPT. So is reviewing who still has access.
+-> risk_review
 
 
 // ===========================================
-// CLOSING — Learning synthesis
+// RISK: the decisions behind the failures
+// ===========================================
+
+=== risk_review ===
+Priya S.: Your Board will read all of this as risk, so let's put it that way.
+Priya S.: The contractor's MFA exemption, the vendor's VPN, Ward 7's old segment. What did they have in common?
+* [Each was a risk someone accepted, and nobody reviewed.]
+    Priya S.: Yes. Accepting a risk is a decision, with an owner and a review date. Here the dates passed and the owners moved on.
+* [Each was a technical failure.]
+    Priya S.: Those controls were never put in. Each was an accepted risk that came due.
+* [Bad luck. Each one was unlikely.]
+    Priya S.: Unlikely, perhaps. But likelihood times impact, with patients on the other side, gave a number nobody would sign today.
+-
+{sarah_given_soon_estimate:
+    Priya S.: Your "soon" to Sarah was a risk decision too. You took it for Mr Ahmed without the facts.
+}
+{helen_tamper_view_heard:
+    Priya S.: Helen and David disagreed this morning. Two owners, two real risks, both said out loud. That part worked.
+}
+Priya S.: Today you made the same kind of call. Isolation swapped one risk for another. Fine, if you can name what's left and who owns it.
+-> closing
+
+
+// ===========================================
+// CLOSING: normalisation of deviance
 // ===========================================
 
 === closing ===
-
-Priya S.: One final question. And I want you to think about it seriously.
-
-Priya S.: The safety case claims existed before this attack. The VPN gap was a known risk.
-
-Priya S.: Someone — maybe many people — knew the system wasn't fully safe, and operations continued anyway.
-
-Priya S.: That's not unusual. It's called "normalisation of deviance." Risk becomes normal because nothing has gone wrong yet.
-
+Priya S.: One more thing, and it's the one I'd like you to take away.
+Priya S.: Everything that failed today was known before Monday. The segmentation gap, the vendor VPN, the overdue rehearsal.
+Priya S.: People knew, and the hospital kept running, because nothing had gone wrong yet. That's normalisation of deviance.
 * [What do you do about that?]
-    Priya S.: You make the risk visible. Regularly. To people with authority to act on it.
-    Priya S.: Not in a risk register that nobody reads — in front of the board, in front of the clinicians.
-    Priya S.: Safety cases only work if they're living documents, not compliance artefacts.
-    -> debrief_complete
-
+    Priya S.: Make the risk visible, regularly, to people who can act on it. A register nobody reads is just a list.
+    Priya S.: A safety case is only worth something if somebody checks it against the hospital.
 * [Was this preventable?]
-    Priya S.: Almost entirely. The technical controls were understood. The process controls were documented.
-    Priya S.: The gap was organisational — the will to act before an incident, not after.
-    -> debrief_complete
-
+    Priya S.: Most of it. The controls were understood and written down. What was missing was the will to act before an incident.
 * [What changes after today?]
-    Priya S.: That depends on you. The recommendations will come. Whether they're implemented is a leadership question.
-    Priya S.: Every Trust that's been through this says "never again." Some mean it.
-    -> debrief_complete
+    Priya S.: The recommendations will come. Whether they're carried out is a leadership question.
+    Priya S.: Every trust that's been through this says "never again". Some of them mean it.
+- -> debrief_complete
 
 === debrief_complete ===
-
-Priya S.: Thank you for your candour today. The review report will be with your board within four weeks.
-
-Priya S.: The patients were fortunate. Let's make sure the next Trust doesn't have to rely on fortune.
-
+Priya S.: Thank you. The review goes to your Board within four weeks.
+{
+- patient_bed4_deceased && patient_bed2_deceased:
+    Priya S.: Two families will want to know why. Some of the answers are about things this Trust knew last year.
+- patient_bed4_deceased || patient_bed2_deceased:
+    Priya S.: A family will want to know why. Some of the answers are about things this Trust knew last year.
+- else:
+    Priya S.: Nobody died today. Some of that was your decisions and some of it was luck. The review will say which.
+}
 #set_global:debrief_complete:true
 #exit_conversation
 -> END

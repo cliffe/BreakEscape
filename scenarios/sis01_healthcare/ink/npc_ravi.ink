@@ -1,69 +1,69 @@
 // ===========================================
-// NPC: Ravi Anand (IT Security Lead)
+// NPC: Ravi Anand (Information Security Manager)
 // Scenario: Northgate Hospital
-// Role: SIEM context; VPN anomaly briefing; issues IT security authorisation sign-off for network isolation
+// Role: SIEM and VPN context (poses the question, does not give the answer);
+//       IT security sign-off for network isolation; the missed alerts
 // ===========================================
 
 // Global variables managed by scenario - declared locally here and updated by game engine
 VAR siem_escalated = false
 VAR vpn_anomaly_identified = false
 VAR network_isolated = false
+VAR network_isolation_authorised = false
 
 VAR ravi_trust = 0
+VAR ravi_met = false
+VAR hub_quiet = false
 VAR topic_siem = false
 VAR topic_vpn = false
 VAR topic_isolation = false
+VAR siem_followup = false
+VAR asked_missed = false
+VAR asked_mfa_exemption = false
 VAR gave_itsec_code = false
 VAR bypassed_reported = false
+VAR post_iso_done = false
+VAR asked_across = false
 
 // Global reads: siem_escalated, vpn_anomaly_identified, network_isolated
 // Global writes: itsec_authorised
 
 // ===========================================
-// FIRST ENCOUNTER
+// ENTRY
 // ===========================================
 
 === start ===
 #complete_task:meet_ravi
 #unlock_task:access_siem
 #unlock_task:vpn_anomaly
-
-{network_isolated:
-    {not gave_itsec_code and not bypassed_reported:
-        -> bypassed_isolation
-    }
-    Ravi Anand: Network's isolated. Recovery is underway — talk to Helen Carver about the backup restoration.
+{
+- network_isolated and not gave_itsec_code and not bypassed_reported:
+    -> bypassed_isolation
+- network_isolated and network_isolation_authorised and not post_iso_done:
+    -> post_isolation
+- network_isolated:
+    Ravi Anand: We're isolated. The restore's next, and Helen has the backup console.
     -> hub
-}
-
-{siem_escalated and vpn_anomaly_identified:
-    Ravi Anand: Both confirmed. Let's get you that code. #complete_task:brief_ravi
+- siem_escalated and vpn_anomaly_identified and not gave_itsec_code:
+    #complete_task:brief_ravi
+    Ravi Anand: Both done. Right, I'll sign the change form.
     -> give_itsec_code
-}
-
-{siem_escalated:
-    Ravi Anand: Good — you've triaged the SIEM. That confirms the lateral movement path.
-    Ravi Anand: Still need the initial access vector. Check the VPN log terminal.
+- ravi_met:
     -> hub
 }
-
-Ravi Anand: Finally. I've been waiting for someone with authority to act on this.
-
-Ravi Anand: We're thirty minutes into a live ransomware incident and I still don't have sign-off to isolate.
-
-Ravi Anand: The SIEM console is through there — I need you to review the alert stream first.
-
-* [Tell me what you know]
+~ ravi_met = true
+Ravi Anand: You're the response team. Good. I've been waiting for someone who can make a call.
+Ravi Anand: We're nine hours into this and I still don't have sign-off to isolate.
+Ravi Anand: The SIEM's on my laptop. It's the only clean machine in here.
+* [Tell me what you know.]
     -> siem_briefing
-
-* [What's blocking the isolation?]
-    Ravi Anand: Hospital protocol. Major interventions need dual sign-off — IT security and clinical lead.
-    Ravi Anand: David Osei is the clinical safety engineer. You'll need him too.
+* [What's stopping you isolating?]
+    Ravi Anand: Our procedure. Anything that big needs two sign-offs: mine for IT security, and David Osei's for clinical safety.
+    Ravi Anand: David's in the incident room, through there.
     -> siem_briefing
-
-* [Let's just isolate now]
-    Ravi Anand: I can't authorise that alone. And if I isolate the wrong segment, I take down patient systems.
-    Ravi Anand: Please — look at the SIEM data first. Then we decide together.
+* [Let's just isolate now.]
+    Ravi Anand: I can't sign that alone. Cut the wrong link and we take down systems the wards are still using.
+    Ravi Anand: Look at the SIEM first. Then we decide together.
     -> siem_briefing
 
 
@@ -73,136 +73,92 @@ Ravi Anand: The SIEM console is through there — I need you to review the alert
 
 === bypassed_isolation ===
 ~ bypassed_reported = true
-
-Ravi Anand: The network's isolated. I've been trying to reach you.
-
-Ravi Anand: You severed the enterprise link before I'd signed off on it. That's not how this works.
-
-Ravi Anand: Any network intervention at this threshold requires both IT security and clinical sign-off. It's in the incident response procedure.
-
-* [I had to act fast — the attack was spreading]
-    Ravi Anand: I understand the pressure. But I was right there. Five minutes.
-    Ravi Anand: If we'd isolated the wrong segment without proper triage, we could have taken Sarah's ward down permanently. That's why the sign-off matters.
+Ravi Anand: The network's isolated. I've been trying to find you.
+Ravi Anand: You cut the enterprise link before I'd signed anything. That's not how this works.
+Ravi Anand: Anything that size needs IT security and clinical sign-off. It's in the incident response procedure.
+* [I had to act fast. It was spreading.]
+    Ravi Anand: I understand the pressure. But I was right here. Five minutes.
+    Ravi Anand: Cut the wrong link without triage and we could cut off systems Sarah is still using. That's why the sign-off matters.
+    ~ ravi_trust -= 5
+    #influence_decreased
     Ravi Anand: This goes in the incident report.
+    -> hub
+* [I didn't know I needed your sign-off.]
+    Ravi Anand: Then that's a training gap, and the map should have stopped you.
     ~ ravi_trust -= 5
     #influence_decreased
+    Ravi Anand: I'm noting it for the review. Not a blame thing. A process thing.
     -> hub
-
-* [I didn't know I needed your sign-off first]
-    Ravi Anand: That's a training gap. The procedure is in the incident response plan — the network terminal should require authorisation before it commits.
-    Ravi Anand: I'm noting it for the post-incident review. Not a blame thing — a process thing.
-    ~ ravi_trust -= 5
-    #influence_decreased
-    -> hub
-
-* [The outcome was the same either way]
-    Ravi Anand: The outcome was the same this time.
-    Ravi Anand: Next time someone makes that call unilaterally, the outcome might not be. This is how clinical governance failures happen — one shortcut, then another.
+* [It came out the same either way.]
+    Ravi Anand: This time.
     ~ ravi_trust -= 10
     #influence_decreased
+    Ravi Anand: Next time someone makes that call alone, it might not. That's how governance failures start: one shortcut, then another.
     -> hub
 
 
 // ===========================================
-// SIEM BRIEFING
+// SIEM AND VPN (the question, not the answer)
 // ===========================================
 
 === siem_briefing ===
-
 ~ topic_siem = true
-
-Ravi Anand: The SIEM is picking up lateral movement — same source IP hitting multiple internal hosts.
-
-Ravi Anand: There's also an authentication anomaly in the VPN logs I flagged thirty minutes ago.
-
-Ravi Anand: Review the SIEM console, escalate the criticals. And check the VPN log terminal — something in there explains the initial access.
-
-+ [What am I looking for on the SIEM?]
-    Ravi Anand: Look for the lateral movement alerts — anything tagged RANSOMWARE-PREP or EXFIL.
-    Ravi Anand: Four criticals in the last hour. Escalate all of them.
-    -> hub
-
-+ [What's the VPN anomaly?]
+Ravi Anand: Most of what's on there is migration noise. VLAN moves, backup jobs, printers. That's how we missed it yesterday morning.
+Ravi Anand: You're looking for anything that only makes sense if someone is moving through the network on purpose.
+Ravi Anand: And there's a VPN login I don't like. The log terminal's over there.
++ [What's wrong with the VPN login?]
     -> vpn_briefing
-
-+ [I'll get on it]
++ [I'll start on the SIEM.]
     -> hub
-
-
-// ===========================================
-// VPN ANOMALY BRIEFING
-// ===========================================
 
 === vpn_briefing ===
-
 ~ topic_vpn = true
-
-Ravi Anand: There's a login in the VPN authentication log that doesn't add up. Time window matches the incident.
-
-Ravi Anand: No MFA challenge was triggered. That's a policy violation — and likely your initial access vector.
-
 {vpn_anomaly_identified:
-    Ravi Anand: You've already found it. That entry is your initial access evidence — keep it for the safety case.
+    Ravi Anand: You've found it. That's evidence for the review. Contractor access without MFA was supposed to be closed off.
 - else:
-    Ravi Anand: Use the VPN terminal to filter the logs. Find the entry that shouldn't be there.
+    Ravi Anand: Someone logged in on the VPN yesterday morning. Find out who, from where, and how they got past MFA.
 }
-
 -> hub
 
 
 // ===========================================
-// GIVE IT SECURITY SIGN-OFF
+// IT SECURITY SIGN-OFF
 // ===========================================
 
 === give_itsec_code ===
-
-{not gave_itsec_code:
-    {siem_escalated and vpn_anomaly_identified:
-        Ravi Anand: SIEM and VPN — both confirmed. That's the full picture.
-        Ravi Anand: I've filled out the IT network change authorisation form — signed and dated.
-        Ravi Anand: Take it to the network terminal with David's sign-off. The terminal checks both are confirmed before it'll let you execute isolation. #give_item:notes #set_global:itsec_authorised:true #complete_task:ravi_signoff
-        ~ gave_itsec_code = true
-        -> hub
-    }
-    {not siem_escalated:
-        Ravi Anand: I'm not signing off until we've properly triaged the SIEM.
-        Ravi Anand: Review the console and escalate the criticals first.
-        -> hub
-    }
-    {not vpn_anomaly_identified:
-        Ravi Anand: We still haven't confirmed the initial access vector.
-        Ravi Anand: Check the VPN log terminal — filter the authentication logs and find the anomalous entry.
-        -> hub
-    }
+{
+- gave_itsec_code:
+    Ravi Anand: You've got my form. Get David's, then confirm both at the network map.
+- not siem_escalated:
+    Ravi Anand: I'm not signing until the SIEM's been properly triaged.
+- not vpn_anomaly_identified:
+    Ravi Anand: We still don't know how they got in. Check the VPN log first.
+- else:
+    Ravi Anand: SIEM and VPN, both done. That's enough for me.
+    ~ gave_itsec_code = true
+    #give_item:notes
+    #set_global:itsec_authorised:true
+    #complete_task:ravi_signoff
+    Ravi Anand: Here's the change form, signed. Take it to the network map with David's, and confirm both there.
 }
-
-{gave_itsec_code:
-    Ravi Anand: You have my authorisation form. Get David's sign-off and confirm at the network terminal.
-    -> hub
-}
+-> hub
 
 
 // ===========================================
-// POST-ISOLATION
+// POST-ISOLATION (person-chat on authorised isolation)
 // ===========================================
 
 === post_isolation ===
-
-Ravi Anand: We're isolated. Lateral movement should stop now.
-
-Ravi Anand: Monitoring segment is on its own VLAN — Sarah's ward should start recovering.
-
-{network_isolated:
-    Ravi Anand: This is what CLAIM-HC-001 was designed to prevent. Network segmentation working as intended.
-    Ravi Anand: Pity it took a live incident to prove the value.
-}
-
-* [What's next?]
-    Ravi Anand: Backup restoration. Talk to Helen Carver — she holds the ICO obligations and the backup procedures.
+~ post_iso_done = true
+Ravi Anand: We're cut. Nothing more gets from the enterprise side to the clinical side.
+Ravi Anand: It won't bring Sarah's station back. That machine's encrypted. It just stops it getting worse.
+Ravi Anand: And don't let anyone tell you segmentation saved us. Ward 7 was never on the new VLAN.
++ [What's next?]
+    Ravi Anand: The restore. Helen has the backup console in the incident room.
     -> hub
-
-* [How did they get past segmentation?]
-    Ravi Anand: The VPN contractor account bypassed it. That's the gap we need to close after recovery.
++ [How did they get across in the first place?]
+    ~ asked_across = true
+    Ravi Anand: A stolen contractor password on the VPN, then our exception rules. The firewall let them through because we told it to.
     -> hub
 
 
@@ -211,40 +167,53 @@ Ravi Anand: Monitoring segment is on its own VLAN — Sarah's ward should start 
 // ===========================================
 
 === hub ===
-
-+ {not topic_siem and not siem_escalated} [Tell me about the SIEM alerts]
+{
+- network_isolated and not gave_itsec_code and not bypassed_reported:
+    -> bypassed_isolation
+- network_isolated and network_isolation_authorised and not post_iso_done:
+    -> post_isolation
+}
+{hub_quiet:
+    ~ hub_quiet = false
+- else:
+    Ravi Anand: {&What do you need?|Go on.|Yeah?}
+}
++ {siem_escalated and vpn_anomaly_identified and not gave_itsec_code} [I need your sign-off.]
+    -> give_itsec_code
++ {siem_escalated and not vpn_anomaly_identified and not siem_followup} [I've escalated the SIEM alerts. What next?]
+    ~ siem_followup = true
+    Ravi Anand: That cross-zone RDP is how they reached the clinical side. Now I need to know how they got in at all.
+    Ravi Anand: Have a look at that VPN log.
+    -> hub
++ {post_iso_done and not asked_across} [How did they get across in the first place?]
+    ~ asked_across = true
+    Ravi Anand: A stolen contractor password on the VPN, then our exception rules. The firewall let them through because we told it to.
+    -> hub
++ {siem_escalated and not asked_missed} [Did any of this show up before last night?]
+    ~ asked_missed = true
+    Ravi Anand: Yesterday morning. That PowerShell alert on FINWKS-047 first fired at quarter to nine on Monday. It went in the low-severity queue.
+    Ravi Anand: Six weeks of migration noise. We'd stopped reading the queue properly. I'd stopped.
+    -> hub
++ {vpn_anomaly_identified and not asked_mfa_exemption} [Why didn't contractor accounts need MFA?]
+    ~ asked_mfa_exemption = true
+    Ravi Anand: Because we accepted that risk. NetSol said MFA broke their tools, and it went on the register as low likelihood.
+    Ravi Anand: Nobody looked at it again. Accepting a risk means someone keeps watching it. Ours had stopped.
+    -> hub
++ {not topic_siem and not siem_escalated} [What am I looking for on the SIEM?]
     -> siem_briefing
-
-+ {siem_escalated and not vpn_anomaly_identified} [I've escalated the SIEM alerts — what's next?]
-    ~ topic_siem = true
-    Ravi Anand: Those four alerts confirm the kill chain — the cross-zone RDP is how they reached the clinical VLAN.
-    Ravi Anand: Now I need the initial access vector. Check the VPN log terminal — filter the authentication logs and look for something that shouldn't be there.
-    ~ topic_vpn = true
-    -> hub
-
-+ {not topic_vpn and not siem_escalated} [The VPN anomaly]
++ {not vpn_anomaly_identified and not topic_vpn} [What's wrong with the VPN login?]
     -> vpn_briefing
-
-+ {topic_vpn and not vpn_anomaly_identified} [The VPN anomaly — remind me what I'm doing]
++ {not vpn_anomaly_identified and topic_vpn} [Remind me about the VPN login.]
     -> vpn_briefing
-
-+ {vpn_anomaly_identified and not gave_itsec_code} [VPN anomaly confirmed — what now?]
-    Ravi Anand: Good work. Get my sign-off and David Osei's, then confirm at the network terminal.
-    -> give_itsec_code
-
-+ {not topic_isolation} [What does network isolation actually do?]
++ {not topic_isolation} [What does isolating actually do?]
     ~ topic_isolation = true
-    Ravi Anand: We disconnect the ransomware-affected segment from clinical systems and internet.
-    Narrator: Ravi points toward the network diagram on the wall.
-    Ravi Anand: Look at the network architecture. Enterprise segment is compromised. We sever the connections to Clinical and Legacy.
-    Ravi Anand: Stops the spread. Stops the attacker sending a new payload. Buys us time for recovery.
-    Ravi Anand: But it also takes down anything running on that segment — which is why we need clinical sign-off from David before we commit.
+    Ravi Anand: We cut the links between the enterprise network and the clinical side.
+    Narrator: Ravi nods at the network map on the wall.
+    Ravi Anand: It stops the spread and stops them pushing anything new. It also cuts the fleet console and the wards' view of the vendor's EHR copy.
+    Ravi Anand: That's why David signs too. He's the one who knows what the wards lose.
     -> hub
-
-+ {siem_escalated and vpn_anomaly_identified and not gave_itsec_code} [I need your authorisation sign-off]
-    -> give_itsec_code
-
-+ [Leave conversation]
-    Ravi Anand: Keep moving. Clock is ticking.
++ [I'll leave you to it.]
+    Ravi Anand: Go on. I'll be here.
+    ~ hub_quiet = true
     #exit_conversation
     -> hub

@@ -1,26 +1,66 @@
 // ==================================================
-// NPC: Bed 2 Patient (Ms A. Okafor, post-surgical)
+// NPC: Bed 2 Patient (Ms A. Okafor, post-surgical, IV morphine)
 // Scenario: Northgate Hospital Ward 7
-// Role: Patient state display (infusion pump consequence)
+// Role: patient state display (infusion pump consequence)
+// Re-entry lands on knot `hub`, which re-shows a short state line.
 // ==================================================
 
+// Global variables managed by scenario - declared locally here and updated by game engine
+VAR patient_bed2_state = "stable"
+VAR patient_bed2_deceased = false
+VAR pump_dose_correct = false
+VAR bed2_alarm_raised = false
+VAR bed2_seen_unwell = false
+
 === state_stable ===
-Narrator: Ms Okafor is resting quietly. A morphine infusion runs via the pump on the pole beside her bed. The pump display shows a steady flow rate and stable vitals on the bedside screen.
--> hub
+{pump_dose_correct:
+    Narrator: Ms Okafor is comfortable. The pump at the foot of her bed is running at the prescribed rate.
+- else:
+    Narrator: Ms Okafor is dozing. Her morphine has run out, and the pump at the foot of the bed is waiting for a new rate.
+}
+-> hub.choices
 
 === state_sedated ===
-Narrator: Ms Okafor is slumped to one side, unresponsive to ambient ward sounds. Her breathing is shallow and slow. The pump indicator is glowing amber — the rate is higher than prescribed.
--> hub
+~ bed2_seen_unwell = true
+{bed2_alarm_raised:
+    Narrator: Amy is at Ms Okafor's side with an oxygen mask. The naloxone is in, and her breathing is picking up.
+    -> hub.choices
+}
+Narrator: Ms Okafor is hard to rouse. Her breathing is slow and shallow. The pump is running at the rate it was given.
+-> hub.choices
 
 === state_critical ===
-Narrator: Ms Okafor is critically unresponsive. Her breathing has become irregular and dangerously slow. The pump accepted the erroneous rate without flagging the dangerous increase.
--> hub
+~ bed2_seen_unwell = true
+{bed2_alarm_raised:
+    Narrator: Amy is at Ms Okafor's side with an oxygen mask. The naloxone is in, and her breathing is picking up.
+    -> hub.choices
+}
+Narrator: Ms Okafor isn't responding and her breathing has almost stopped. She needs naloxone and the crash team now.
+-> hub.choices
 
 === state_deceased ===
-Narrator: Ms Okafor is still. Her breathing has stopped. The pump display shows a dose rate no living patient could survive — accepted without alarm by a library that no longer knew what was safe.
--> hub
+Narrator: Ms Okafor is not breathing. The pump is still running at the rate it was given.
+-> hub.choices
 
 === hub ===
-+ [Step back]
+{
+- patient_bed2_deceased:
+    Narrator: Ms Okafor is not breathing.
+- bed2_alarm_raised:
+    Narrator: Ms Okafor is breathing again. Amy hasn't left her side.
+- patient_bed2_state == "critical":
+    ~ bed2_seen_unwell = true
+    Narrator: Ms Okafor isn't responding.
+- patient_bed2_state == "sedated":
+    ~ bed2_seen_unwell = true
+    Narrator: Ms Okafor is hard to rouse. Her breathing is slow.
+- pump_dose_correct:
+    Narrator: Ms Okafor is comfortable.
+- else:
+    Narrator: Ms Okafor is dozing. Her pump is still waiting for a new rate.
+}
+-> choices
+= choices
++ [Step back.]
     #exit_conversation
     -> hub

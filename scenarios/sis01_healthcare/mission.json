@@ -5,7 +5,7 @@
   "secgen_scenario": "northgate_hospital",
   "collection": "cybok_sis",
   "branching": true,
-  "branches": ["bed4_escalated_early", "bed4_missed", "drug_tamper_caught", "drug_tamper_missed", "ico_notified_on_time", "ico_deadline_missed"],
+  "branches": ["bed4_escalated_early", "bed4_missed", "drug_tamper_caught", "drug_tamper_missed", "ico_notified_early", "ico_notified_after_isolation", "ico_deadline_missed"],
   "estimated_duration_minutes": 75,
   "cybok": [
     {
@@ -77,7 +77,9 @@
         "special category health data",
         "data controller obligations",
         "DSPT",
-        "NHS data security"
+        "NHS data security",
+        "NIS incident reporting",
+        "duty of candour"
       ]
     },
     {
@@ -90,7 +92,8 @@
         "safety culture",
         "normalisation of deviance",
         "information governance",
-        "major incident command"
+        "major incident command",
+        "PSIRF"
       ]
     },
     {
@@ -99,8 +102,8 @@
       "keywords": [
         "MFA enforcement",
         "VPN access control",
-        "stale account management",
-        "leaver deprovisioning",
+        "contractor access review",
+        "credential theft",
         "contractor credential abuse"
       ]
     },
@@ -123,8 +126,8 @@
   "lore_reveals": [
     "DarkVault ransomware group's healthcare targeting methodology",
     "The tension between security incident response and clinical governance",
-    "How a stale contractor VPN account with no MFA becomes a patient safety risk",
+    "How a contractor's stolen VPN password, on a VPN with no MFA, becomes a patient safety risk",
     "Why safety cases must be living documents, not compliance artefacts"
   ],
-  "facilitator_notes": "Designed for 4–6 players split across IT security and clinical roles. Facilitator should brief players on their role before starting. IT-track players focus on SIEM, VPN logs, and network isolation. Clinical-track players focus on Bed 4, drug library, and patient safety decisions. The Bed 4 consequence (patient enters CRITICAL at 22-minute mark if not escalated) is the primary time pressure. Facilitator verbally delivers placeholder PINs if custom minigames are not yet deployed."
+  "facilitator_notes": "Designed for 4–6 players split across IT security and clinical roles. Facilitator should brief players on their role before starting. IT-track players focus on SIEM, VPN logs, and network isolation. Clinical-track players focus on Bed 4, the drug library, and patient safety decisions. Bed 4 is the main time pressure: if Sarah is not told to plan for hours, Mr Ahmed deteriorates at 8 and 15 minutes and dies at 22. The ICO clock (45 minutes) is the other. Good places to pause for group discussion: Sarah's question about when the monitors come back; David's question on whether CLAIM-HC-001 holds and what the wards lose from isolation; Dr Hartley's isolation and patient-disclosure decisions; Helen's ICO timing (she wants containment first; Article 33 does not); and the Bed 2 pump when it calls the prescribed dose too low."
 }

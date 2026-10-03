@@ -6,7 +6,7 @@
 # ========================================================================
 #
 # SCENARIO PREMISE
-#   Day 2, Wednesday 07:30. Players arrive as incident responders.
+#   Tuesday 07:30, about nine hours in. Players arrive as incident responders.
 #   DarkVault ransomware hit Northgate General Hospital NHS Trust at 22:15
 #   Monday night. The enterprise network and part of the clinical zone are
 #   encrypted. Ward 7 central monitoring is offline. Patient safety is at
@@ -47,7 +47,7 @@
 #   debrief_started      trigger           — verify_drug_library task onComplete
 #   ico_deadline_missed  timer             — 45-min ICO deadline timer
 #   patrol interrupts    engine support    — patrolOverride + goToAndStay (ENG-02 resolved)
-#   setVisible           engine support    — Dr Sharma + pharmacist (ENG-01 resolved)
+#   setVisible           engine support    — Priya S. + pharmacist (ENG-01 resolved)
 #
 #
 # NOT YET BUILT — optional VM paths (minigame alternatives are implemented and used by default)
@@ -85,23 +85,23 @@
 #   pump_dose_error           — infusion_pump minigame (MG-08) ✓
 #   [WIRED via compiled Ink]
 #   briefing_played           — npc_sarah.ink:arrival_briefing (setGlobalOnStart) ✓
-#   bed4_escalated            — npc_sarah.ink:escalate_bed4 ✓
+#   bed4_escalated            — npc_sarah.ink:bed4_options ("hours" / "don't know") ✓
 #   safety_claim_hc001_assessed — npc_david.ink:safety_case_hc001 ✓
 #   safety_claim_hc003_assessed — npc_david.ink:safety_case_hc003 ✓
 #   safety_claim_hc007_assessed — npc_helen.ink:safety_case_hc007 ✓
-#   ico_notified              — npc_helen.ink:ico_advisory ✓
+#   ico_notified              — npc_helen.ink (helen_persuaded early, or after isolation) ✓
 #   ncsc_notified             — NOT in npc_hartley.ink source; moved to NOT YET WIRED below
 #   debrief_complete          — npc_sharma.ink:closing ✓
 #   [WIRED via scenario timers / eventMappings]
 #   patient_bed4_state        — timers escalate → distressed → critical → deceased ✓
 #   patient_bed2_state        — pump_dose_error eventMapping → sedated; bed2_double_jeopardy timer → critical ✓
-#   patient_bed2_deceased     — bed2_double_jeopardy timer (startOnGlobal:pump_dose_error, 2s, cond:drug_library_compromised) ✓
+#   patient_bed2_deceased     — bed2_double_jeopardy timer (startOnGlobal:pump_dose_error, 2s, cond:!drug_library_restored) ✓
 #   debrief_started           — verify_drug_library task onComplete ✓
 #   ico_deadline_missed       — 45-min timer if ico_notified still false ✓
 #   [NOT YET WIRED — genuine gaps]
 #   isolation_aborted         — no setter; needs MG-11 cancel/timeout branch
 #   [RESOLVED — previously listed as NOT YET WIRED]
-#   ncsc_notified             — set via npc_hartley.ink ncsc_advisory knot and major_incident declaration ✓
+#   ncsc_notified             — set via npc_helen.ink (ncsc_advisory, post_backup) ✓
 #   drug_library_restored     — set via DrugLibraryIntegrityMinigame restore confirm (MG-09) ✓
 #
 # DUPLICATE VARIABLE — RESOLVED
@@ -128,8 +128,9 @@ clinical_pin = rand(1000..9999).to_s while clinical_pin == itsec_pin
 backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder lock
 %>
 {
-  "scenario_brief": "Day 2, 07:30. You have been called in to help manage a Major Incident at Northgate General Hospital NHS Trust. Ransomware deployed at 22:15 Monday night has encrypted workstations across the enterprise network — and reached part of the clinical zone. Ward 7 central monitoring has been offline since 22:30. The IT team has been awake all night. You are not here to investigate how it happened. You are here to manage what it means right now.",
+  "scenario_brief": "Tuesday, 07:30. You have been called in to help manage a Major Incident at Northgate General Hospital NHS Trust. Ransomware deployed at 22:15 Monday night has encrypted workstations across the enterprise network — and reached part of the clinical zone. Ward 7 central monitoring has been offline since 22:30. The IT team has been awake all night. You are not here to investigate how it happened. You are here to manage what it means right now.",
   "show_scenario_brief": "on_resume",
+  "disableAttacks": true,
 
   "startRoom": "ward_7",
   "startPosition": { "x": 17, "y": 6 },
@@ -160,6 +161,13 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
     "itsec_authorised": false,
     "clinical_eng_authorised": false,
     "safety_claim_hc001_assessed": false,
+    "hc001_verdict": "",
+    "isolation_compensating_controls": false,
+    "isolation_risk_accepted": false,
+    "helen_tamper_view_heard": false,
+    "bed2_alarm_raised": false,
+    "bed2_seen_unwell": false,
+    "debrief_forced": false,
     "network_isolation_authorised": false,
     "isolation_aborted": false,
     "network_isolated": false,
@@ -171,7 +179,6 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
     "backup_reinfected": false,
 
     "drug_library_compromised": false,
-    "drug_tamper_found": false,
     "drug_library_verified": false,
     "drug_library_restored": false,
     "manufacturer_datasheet_available": false,
@@ -191,12 +198,21 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
     ico_notification_sent was a duplicate of this variable and has been removed.
     Use ico_notified everywhere; ico_deadline_missed fires from the 45-min timer if still false. %>
     "ico_deadline_missed": false,
+    "ico_notified_early": false,
+<%# ico_notified_early — the player argued Helen out of "contain first, then notify" (Art. 33:
+    72 h from awareness, measures taken or proposed, phased reporting) and she notified before
+    isolation. Evidence for the argument: ico_guidance_read (IG briefing in the incident room)
+    or hartley_backs_early_ico (Dr Hartley). helen_ico_view_heard gates Hartley's choice. %>
+    "ico_guidance_read": false,
+    "hartley_backs_early_ico": false,
+    "helen_ico_view_heard": false,
+    "patient_disclosure": "",
+    "ransom_advice": "",
+    "sarah_given_soon_estimate": false,
 
     "patrol_nurse_at_bed4": false,
     "pharmacist_on_ward": false,
 
-    "major_incident": false,
-    "major_incident_declared_time": 0,
     "ward_monitoring_timeout_started": false,
 
     "debrief_started": false,
@@ -312,7 +328,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
     {
       "aimId": "authorise_isolation",
       "title": "Authorise Network Isolation",
-      "description": "Obtain both authorisation codes and activate the network isolation panel.",
+      "description": "Get both signed change forms and confirm the isolation at the network map.",
       "status": "locked",
       "order": 2,
       "unlockCondition": { "aimCompleted": "investigate_attack" },
@@ -335,7 +351,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
         },
         {
           "taskId": "authorise_isolation_panel",
-          "title": "Authorise network isolation at the dual-auth panel",
+          "title": "Confirm the isolation at the network map",
           "type": "manual",
           "status": "active"
 <%# status: active — Ravi eventMapping on network_isolated calls completeTask directly (no #unlock_task exists). %>
@@ -346,7 +362,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
     {
       "aimId": "restore_operations",
       "title": "Restore Safe Clinical Operations",
-      "description": "Initiate recovery, verify the drug library, notify the NCSC, and advise on the ICO notification.",
+      "description": "Start the recovery, verify the drug library, and get the ICO notified within 72 hours. Asking the NCSC for help is optional.",
       "status": "locked",
       "order": 3,
       "unlockCondition": { "aimCompleted": "authorise_isolation" },
@@ -366,29 +382,30 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
 <%# status: locked — correctly unlocked by #unlock_task:verify_drug_library in npc_david.ink:safety_case_hc003.
     IMPLEMENTED: DrugLibraryIntegrityMinigame (MG-09) completes this task.
     drug_library_verified=true fires via minigame restore confirm → David Osei eventMapping
-    below fires completeTask. debrief_started is set by Dr Sharma's eventMappings when BOTH
+    below fires completeTask. debrief_started is set by Priya S.'s eventMappings when BOTH
     drug_library_verified=true AND backup_restore_initiated=true. %>
         },
         {
           "taskId": "notify_ncsc",
-          "title": "Notify the NCSC (instruct Helen Carver)",
-          "type": "npc_conversation",
-          "targetNPC": "helen_carver",
-          "status": "active"
-<%# status: active — Helen eventMapping on ncsc_notified calls completeTask directly (no #unlock_task exists). %>
-        },
-        {
-          "taskId": "helen_ico_advisory",
-          "title": "Advise Helen Carver on ICO notification",
+          "title": "Advise Helen Carver on asking the NCSC for help",
           "type": "npc_conversation",
           "targetNPC": "helen_carver",
           "status": "active",
           "optional": true
-<%# status: active — Helen Ink calls #complete_task:helen_ico_advisory directly (no #unlock_task exists). %>
+<%# status: active — Helen eventMapping on ncsc_notified calls completeTask directly (no #unlock_task exists). %>
+        },
+        {
+          "taskId": "helen_ico_advisory",
+          "title": "Get the ICO notified within 72 hours (Helen Carver)",
+          "type": "npc_conversation",
+          "targetNPC": "helen_carver",
+          "status": "active"
+<%# Required (decision 3). Completed by #complete_task:helen_ico_advisory when Helen sends the
+    report: early (player argued Art. 33), after isolation, or late after the deadline. %>
         },
         {
           "taskId": "pump_dose_check",
-          "title": "Administer correct dose at Bed 2 (return to Ward 7)",
+          "title": "Set Bed 2's morphine infusion from the paper chart",
           "type": "manual",
           "status": "active",
           "optional": true
@@ -396,7 +413,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
         },
         {
           "taskId": "warn_sarah",
-          "title": "Warn Sarah: don't trust the pump's drug library warnings",
+          "title": "Tell Sarah the drug library was tampered with",
           "type": "npc_conversation",
           "targetNPC": "sarah_mitchell",
           "status": "active",
@@ -409,6 +426,8 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
     {
       "aimId": "ncsc_debrief",
       "title": "NCSC Debrief",
+      "missionConclusion": true,
+      "concludeRequires": { "globals": ["debrief_complete"] },
       "description": "Priya S. from the NCSC is waiting in the Major Incident Room. Speak to her when you are ready.",
       "status": "locked",
       "order": 4,
@@ -420,7 +439,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "type": "npc_conversation",
           "targetNPC": "dr_sharma",
           "status": "active"
-<%# status: active — npc_conversation auto-completes on talking to Dr Sharma (no #unlock_task exists). %>
+<%# status: active — npc_conversation auto-completes on talking to Priya S. (no #unlock_task exists). %>
         }
       ]
     }
@@ -462,33 +481,42 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
         "disableClose": true,
         "fade": true,
         "credits": [
-          { "text": "INCIDENT CONTAINED",               "style": "title",          "condition": "!globalVars.patient_bed4_deceased && !globalVars.patient_bed2_deceased" },
-          { "text": "INCIDENT CONTAINED — WITH LOSSES", "style": "title",          "condition": "globalVars.patient_bed4_deceased || globalVars.patient_bed2_deceased" },
+          { "text": "INCIDENT CONTAINED",                   "style": "title", "condition": "globalVars.network_isolated && !globalVars.patient_bed4_deceased && !globalVars.patient_bed2_deceased" },
+          { "text": "INCIDENT CONTAINED — WITH LOSSES",     "style": "title", "condition": "globalVars.network_isolated && (globalVars.patient_bed4_deceased || globalVars.patient_bed2_deceased)" },
+          { "text": "INCIDENT NOT CONTAINED",               "style": "title", "condition": "!globalVars.network_isolated && !globalVars.patient_bed4_deceased && !globalVars.patient_bed2_deceased" },
+          { "text": "INCIDENT NOT CONTAINED — WITH LOSSES", "style": "title", "condition": "!globalVars.network_isolated && (globalVars.patient_bed4_deceased || globalVars.patient_bed2_deceased)" },
           { "text": "NORTHGATE GENERAL HOSPITAL — RANSOMWARE RESPONSE", "style": "subtitle" },
 
           { "text": "── CLINICAL OUTCOMES ──", "style": "section-header" },
-          { "text": "Mrs Davies (Bed 2): Stable — correct dose administered despite tampered library",    "style": "entry", "condition": "!globalVars.patient_bed2_deceased && globalVars.pump_dose_correct" },
-          { "text": "Mrs Davies (Bed 2): Stable — pump not accessed during response",                    "style": "entry", "condition": "!globalVars.patient_bed2_deceased && !globalVars.pump_dose_correct && !globalVars.pump_dose_error" },
-          { "text": "Mrs Davies (Bed 2): Critical event — morphine overdose from tampered drug library", "style": "entry", "condition": "globalVars.patient_bed2_deceased" },
-          { "text": "Patient (Bed 4): Deterioration escalated — emergency response initiated in time",   "style": "entry", "condition": "globalVars.bed4_escalated && !globalVars.patient_bed4_deceased" },
-          { "text": "Patient (Bed 4): Deceased — deterioration not escalated before critical threshold", "style": "entry", "condition": "globalVars.patient_bed4_deceased" },
+          { "text": "Ms Okafor (Bed 2): Stable — prescribed rate kept when the pump called it too low; pharmacy checked", "style": "entry", "condition": "!globalVars.patient_bed2_deceased && globalVars.drug_library_override" },
+          { "text": "Ms Okafor (Bed 2): Stable — prescribed rate set after the library was restored",   "style": "entry", "condition": "!globalVars.patient_bed2_deceased && globalVars.pump_dose_correct && !globalVars.drug_library_override" },
+          { "text": "Ms Okafor (Bed 2): Infusion not renewed during response",                           "style": "entry", "condition": "!globalVars.patient_bed2_deceased && !globalVars.pump_dose_correct && !globalVars.pump_dose_error" },
+          { "text": "Ms Okafor (Bed 2): Wrong rate went in; the alarm was raised in time and naloxone given", "style": "entry", "condition": "!globalVars.patient_bed2_deceased && globalVars.pump_dose_error && globalVars.bed2_alarm_raised" },
+          { "text": "Ms Okafor (Bed 2): Wrong rate confirmed at the pump; naloxone given",                "style": "entry", "condition": "!globalVars.patient_bed2_deceased && globalVars.pump_dose_error && !globalVars.bed2_alarm_raised" },
+          { "text": "Ms Okafor (Bed 2): Deceased — morphine overdose; the tampered library accepted the wrong rate", "style": "entry", "condition": "globalVars.patient_bed2_deceased" },
+          { "text": "Mr Ahmed (Bed 4): One-to-one care until outreach arrived",                          "style": "entry", "condition": "globalVars.bed4_escalated && !globalVars.patient_bed4_deceased" },
+          { "text": "Mr Ahmed (Bed 4): Not escalated; survived the response window",                   "style": "entry", "condition": "!globalVars.bed4_escalated && !globalVars.patient_bed4_deceased" },
+          { "text": "Mr Ahmed (Bed 4): Deceased — deterioration not escalated before cardiac arrest",   "style": "entry", "condition": "globalVars.patient_bed4_deceased" },
           { "text": "Drug library: Restored — pump safety guardrails operational",                       "style": "entry", "condition": "globalVars.drug_library_restored" },
-          { "text": "Drug library: Compromised — tampered DOSE_MAX not corrected during response",       "style": "entry", "condition": "globalVars.drug_library_compromised && !globalVars.drug_library_restored" },
+          { "text": "Drug library: Compromised — raised morphine minimum not corrected during response", "style": "entry", "condition": "globalVars.drug_library_compromised && !globalVars.drug_library_restored" },
           { "text": "Drug library: Tampering not discovered during response",                            "style": "entry", "condition": "!globalVars.drug_library_compromised" },
 
           { "text": "── NETWORK RESPONSE ──", "style": "section-header" },
           { "text": "Network isolation: Authorised — dual sign-off confirmed before isolation",          "style": "entry", "condition": "globalVars.network_isolated && globalVars.network_isolation_authorised" },
+          { "text": "Isolation cost: pharmacy on every drug round before the link was cut",              "style": "entry", "condition": "globalVars.network_isolated && globalVars.isolation_compensating_controls" },
+          { "text": "Isolation cost: no pharmacy cover; risk accepted with a named owner",               "style": "entry", "condition": "globalVars.network_isolated && !globalVars.isolation_compensating_controls && globalVars.isolation_risk_accepted" },
           { "text": "Network isolation: Bypassed — isolated without dual sign-off (CLAIM-HC-007 violated)", "style": "entry", "condition": "globalVars.network_isolated && !globalVars.network_isolation_authorised" },
           { "text": "Network isolation: Not completed during response",                                  "style": "entry", "condition": "!globalVars.network_isolated" },
           { "text": "SIEM investigation: Alert timeline reviewed — attack vector identified",            "style": "entry", "condition": "globalVars.siem_escalated" },
           { "text": "SIEM investigation: Alerts not reviewed — attack vector unconfirmed",              "style": "entry", "condition": "!globalVars.siem_escalated" },
-          { "text": "VPN anomaly: Impossible travel vector identified and documented",                   "style": "entry", "condition": "globalVars.vpn_anomaly_identified" },
+          { "text": "VPN anomaly: m.blake's stolen credentials identified",                   "style": "entry", "condition": "globalVars.vpn_anomaly_identified" },
           { "text": "VPN anomaly: Not identified — initial access vector unknown",                      "style": "entry", "condition": "!globalVars.vpn_anomaly_identified" },
 
           { "text": "── GOVERNANCE ──", "style": "section-header" },
-          { "text": "CLAIM-HC-001: Reviewed — safety case implications of isolation considered",         "style": "entry", "condition": "globalVars.safety_claim_hc001_assessed" },
+          { "text": "CLAIM-HC-001: Judged not supported — its own conditions were never met",            "style": "entry", "condition": "globalVars.safety_claim_hc001_assessed && globalVars.hc001_verdict === 'invalid'" },
+          { "text": "CLAIM-HC-001: Reviewed with Clinical Engineering before isolation",                "style": "entry", "condition": "globalVars.safety_claim_hc001_assessed && globalVars.hc001_verdict !== 'invalid'" },
           { "text": "CLAIM-HC-001: Not reviewed during response",                                        "style": "entry", "condition": "!globalVars.safety_claim_hc001_assessed" },
-          { "text": "CLAIM-HC-003: Reviewed — drug library verification protocols considered",           "style": "entry", "condition": "globalVars.safety_claim_hc003_assessed" },
+          { "text": "CLAIM-HC-003: Reviewed — library change control failed; tamper found at the pump end", "style": "entry", "condition": "globalVars.safety_claim_hc003_assessed" },
           { "text": "CLAIM-HC-003: Not reviewed during response",                                        "style": "entry", "condition": "!globalVars.safety_claim_hc003_assessed" },
           { "text": "CLAIM-HC-007: Honoured — integrated IT and clinical sign-off confirmed",            "style": "entry", "condition": "globalVars.network_isolation_authorised" },
           { "text": "CLAIM-HC-007: Violated — network isolated without integrated governance",           "style": "entry", "condition": "globalVars.network_isolated && !globalVars.network_isolation_authorised" },
@@ -496,9 +524,13 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
 
           { "text": "── RECOVERY ──", "style": "section-header" },
           { "text": "Backup restoration: Initiated — systems recovering from clean backup",              "style": "entry", "condition": "globalVars.backup_restore_initiated && !globalVars.backup_reinfected" },
-          { "text": "Backup restoration: Reinfected — restore ran while network was still exposed",      "style": "entry", "condition": "globalVars.backup_reinfected" },
+          { "text": "Backup restoration: Reinfected — restored from the encrypted NAS",                   "style": "entry", "condition": "globalVars.backup_reinfected && globalVars.backup_recovery_source === 'nas_encrypted'" },
+          { "text": "Backup restoration: Reinfected — restore ran while network was still exposed",      "style": "entry", "condition": "globalVars.backup_reinfected && globalVars.backup_recovery_source !== 'nas_encrypted'" },
           { "text": "Backup restoration: Not initiated during response",                                 "style": "entry", "condition": "!globalVars.backup_restore_initiated" },
-          { "text": "ICO notification: Submitted within 72-hour window",                                 "style": "entry", "condition": "globalVars.ico_notified && !globalVars.ico_deadline_missed" },
+          { "text": "ICO notification: Submitted early, before containment (Article 33 applied correctly)", "style": "entry", "condition": "globalVars.ico_notified_early" },
+          { "text": "ICO notification: Submitted after isolation, inside the 72-hour window",             "style": "entry", "condition": "globalVars.ico_notified && !globalVars.ico_notified_early && !globalVars.ico_deadline_missed" },
+          { "text": "NIS incident report: Made to NHS England on Monday night",                          "style": "entry" },
+          { "text": "NCSC: Support requested directly",                                                  "style": "entry", "condition": "globalVars.ncsc_notified" },
           { "text": "ICO notification: Deadline missed — regulatory consequences pending",               "style": "entry", "condition": "globalVars.ico_deadline_missed" },
           { "text": "ICO notification: Not submitted during response",                                   "style": "entry", "condition": "!globalVars.ico_notified && !globalVars.ico_deadline_missed" }
         ]
@@ -533,8 +565,8 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
       "id": "bed4_deterioration_3",
       "label": "Critical Event",
       "delayMs": 1320000,
-      "condition": "!globalVars.bed4_escalated && !globalVars.major_incident",
-      "setGlobal": { "major_incident": true, "patient_bed4_deceased": true },
+      "condition": "!globalVars.bed4_escalated && !globalVars.patient_bed4_deceased",
+      "setGlobal": { "patient_bed4_deceased": true, "patient_bed4_state": "deceased" },
       "showCountdown": true,
       "onceOnly": true
     },
@@ -552,18 +584,29 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
       "onceOnly": true
     },
     {
-      "id": "bed2_double_jeopardy",
+      "id": "bed2_respiratory_arrest",
       "label": "Patient Critical Event",
-      "delayMs": 2000,
+      "delayMs": 90000,
       "startOnGlobal": "pump_dose_error",
-<%# Double-jeopardy path: fires 2 s after pump_dose_error if drug_library_compromised is also true.
-    The drug library removes the pump's dose guardrail; the erroneous entry is accepted silently.
-    Combined failure → patient_bed2_state escalates to critical and patient_bed2_deceased fires.
-    In normal play, drug_library_compromised is discovered (MG-09) before the pump is used (MG-08),
-    so the condition will already be true when pump_dose_error fires.
-    The 2-second delay staggers the escalation slightly after the initial sedated transition. %>
-      "condition": "globalVars.drug_library_compromised",
-      "setGlobal": { "patient_bed2_state": "critical", "patient_bed2_deceased": true },
+<%# M-8 (2026-10-02): a 20 mg/hr morphine overdose takes minutes, not seconds. 90 s after a wrong
+    rate goes in under the tampered library, Ms Okafor stops breathing properly (critical); 180 s after,
+    she dies. Raising the alarm (Mrs Kowalski's "I'll get the nurse now", or telling Sarah) sets
+    bed2_alarm_raised, which cancels both timers: naloxone, and she survives. After the library is
+    restored a wrong rate has to pass the double-check modal and only sedates. %>
+      "condition": "!globalVars.drug_library_restored && !globalVars.bed2_alarm_raised",
+      "cancelOnGlobal": "bed2_alarm_raised",
+      "setGlobal": { "patient_bed2_state": "critical" },
+      "showCountdown": false,
+      "onceOnly": true
+    },
+    {
+      "id": "bed2_double_jeopardy",
+      "label": "Patient Death",
+      "delayMs": 180000,
+      "startOnGlobal": "pump_dose_error",
+      "condition": "!globalVars.drug_library_restored && !globalVars.bed2_alarm_raised",
+      "cancelOnGlobal": "bed2_alarm_raised",
+      "setGlobal": { "patient_bed2_state": "deceased", "patient_bed2_deceased": true },
       "showCountdown": false,
       "onceOnly": true
     }
@@ -601,14 +644,15 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/sis01_healthcare/ink/npc_sarah.json",
 <%# INK: scenarios/sis01_healthcare/ink/npc_sarah.ink — compiled ✓
-    Knots: arrival_briefing, start, bed4_concern, bed4_options, escalate_bed4,
-           post_isolation, post_drug_tamper, briefing_hub, hub, post_escalation, major_incident_line
-    KEY: escalate_bed4 sets Ink var bed4_escalated=true → engine picks up as globalVariable.
-    TEST: Verify escalate_bed4 choice triggers patrolOverride on patrol_nurse. %>
+    Knots: arrival_briefing, start, bed4_concern, bed4_options, post_isolation,
+           post_drug_tamper, tamper_choices, pump_override_report, bed4_death, hub
+    KEY: bed4_options asks the player for an honest estimate. "Hours" or "don't know" sets
+    bed4_escalated (outreach + Amy on one-to-one); "could be soon" sets sarah_given_soon_estimate
+    and the deterioration timers run on. start routes to post_isolation once network_isolated. %>
           "currentKnot": "start",
           "voice": {
             "name": "Kore",
-            "style": "Calm NHS charge nurse, tired but professional. Speak with a consistent Yorkshire accent throughout — do not shift to any other accent.",
+            "style": "Black British charge nurse in her mid-40s, calm, tired but professional. Speak with a consistent Leeds, West Yorkshire accent throughout — do not shift to any other accent.",
             "language": "en-GB"
           },
           "taskOnKO": "talk_to_sarah",
@@ -648,39 +692,58 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "eventPattern": "global_variable_changed:network_isolated",
               "condition": "value === true",
               "onceOnly": true,
-              "bark": "Something just changed on the network — come and update me when you can.",
+              "bark": "The pump console's just dropped off. Come and tell me what's happened.",
               "barkDelay": 2000
             },
             {
               "eventPattern": "global_variable_changed:drug_library_compromised",
-              "condition": "value === true",
+              "condition": "value === true && !globalVars.pump_dose_correct && !globalVars.pump_dose_error",
               "onceOnly": true,
-              "conversationMode": "person-chat",
-              "targetKnot": "post_drug_tamper",
-              "background": "assets/backgrounds/hospital1.png"
+              "bark": "Come down when you can. Ms Okafor's morphine is due, and I need to know about that library.",
+              "barkDelay": 3000
             },
             {
-              "eventPattern": "global_variable_changed:bed4_escalated",
-              "condition": "value === true",
+              "eventPattern": "global_variable_changed:drug_library_compromised",
+              "condition": "value === true && globalVars.pump_dose_correct",
               "onceOnly": true,
-              "conversationMode": "person-chat",
-              "targetKnot": "post_escalation",
-              "background": "assets/backgrounds/hospital1.png"
-<%# IMPLEMENTED[Phase 1]: Sarah reacts to bed4 escalation.
-    Ink knot npc_sarah.ink:post_escalation() fires when player escalates Bed 4.
-    TEST: Verify knot fires, Sarah reports second nurse is attending Bed 4. %>
+              "bark": "The drug library's been changed? Come down and tell me when you can.",
+              "barkDelay": 3000
             },
             {
-              "eventPattern": "global_variable_changed:major_incident",
+              "eventPattern": "global_variable_changed:drug_library_compromised",
+              "condition": "value === true && globalVars.pump_dose_error && !globalVars.pump_dose_correct",
+              "onceOnly": true,
+              "bark": "The drug library's been changed? Then I need to know what went into Bed 2.",
+              "barkDelay": 3000
+            },
+            {
+              "eventPattern": "global_variable_changed:patient_bed2_deceased",
               "condition": "value === true",
               "onceOnly": true,
-              "conversationMode": "person-chat",
-              "targetKnot": "major_incident_line",
-              "background": "assets/backgrounds/hospital1.png"
-<%# IMPLEMENTED[Phase 2]: Sarah reacts to major incident declaration.
-    Ink knot npc_sarah.ink:major_incident_line() prepared in Phase 1.
-    Person-chat mode delivers alert with appropriate urgency.
-    TEST: Verify Sarah acknowledges emergency status, alerts ICU coordinator. %>
+              "bark": "Crash call, Bed 2! Amy, now!",
+              "barkDelay": 1500
+            },
+            {
+              "eventPattern": "global_variable_changed:ico_deadline_missed",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": { "sharma_visible": true, "debrief_started": true },
+              "bark": "The ICO deadline's gone. They want you in the incident room, now.",
+              "barkDelay": 2000
+<%# N6: Ward 7 is the start room, so its NPCs' mappings are always registered. Priya S.'s own
+    mapping on this event only exists once the incident room has loaded, so the forced debrief
+    used to fail if the player had never been there. This relay sets the globals; Priya S.'s
+    room_entered mappings reveal her and open the debrief when the player arrives. %>
+            },
+            {
+              "eventPattern": "global_variable_changed:patient_bed4_deceased",
+              "condition": "value === true",
+              "onceOnly": true,
+              "bark": "Mr Ahmed's arrested. Come and find me when you can.",
+              "barkDelay": 2500
+<%# Mr Ahmed dies (Bed 4 timer). Sarah: crash call, patient safety incident, his family.
+    The Trust's Major Incident was already declared at 22:38 on Monday; nobody re-declares it.
+    (The old post_escalation mapping was removed: Sarah escalates inside her own conversation.) %>
             },
             {
               "eventPattern": "global_variable_changed:briefing_played",
@@ -701,19 +764,20 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "eventPattern": "global_variable_changed:drug_library_override",
               "condition": "value === true",
               "onceOnly": true,
-              "bark": "You overrode the pump? Come and tell me exactly what it was showing.",
+              "bark": "Bed 2's pump argued with the chart? Come and tell me what it said.",
               "barkDelay": 2000
-<%# Pulls player back to Sarah after they override the tampered drug library warning at the pump.
-    The post_drug_tamper knot in npc_sarah.ink completes warn_sarah via #complete_task at knot start. %>
+<%# drug_library_override is set when the player keeps the prescribed rate at the pump's
+    "below minimum" challenge and queries pharmacy (MG-08 hold path). Sarah's hub then offers
+    pump_override_report. The name is historical: nothing in the dialogue endorses overriding. %>
             }
           ]
         },
 
         {
           "id": "patrol_nurse",
-          "displayName": "Staff Nurse",
+          "displayName": "Amy Clarke",
           "npcType": "person",
-          "observations": "A nurse on her rounds — she hasn't noticed you yet.",
+          "observations": "Amy Clarke, staff nurse, on her rounds. She hasn't noticed you yet.",
           "position": { "x": 4, "y": 4.5 },
           "spriteSheet": "female_nurse2_v2",
           "spriteTalk": "assets/characters/female_nurse2_talk.png",
@@ -721,13 +785,12 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/sis01_healthcare/ink/npc_patrol_nurse.json",
 <%# INK: scenarios/sis01_healthcare/ink/npc_patrol_nurse.ink — compiled ✓
-    Knots: patrol_idle, hub, rushing_bed4, post_drug, at_bed4, major_incident_line
-    NOTE: duplicate rushing_bed4 knot was present and has been removed; recompiled clean.
-    TEST: Verify brief single-line responses; no branching choices expected. %>
+    Knots: patrol_idle, hub, post_drug, at_bed4, bed4_death
+    Voice moved from Aoede to Despina (2026-10-02) so she no longer shares a voice with Mrs Kowalski. %>
           "currentKnot": "patrol_idle",
           "voice": {
-            "name": "Aoede",
-            "style": "Busy NHS nurse, brief and focused. Speak with a consistent Yorkshire accent throughout — do not shift to any other accent.",
+            "name": "Despina",
+            "style": "Busy NHS staff nurse in her late twenties, brisk and focused. Speak with a consistent Sheffield, South Yorkshire accent throughout — do not shift to any other accent.",
             "language": "en-GB"
           },
           "behavior": {
@@ -809,11 +872,11 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
 <%# Speed + dwell override makes manual checks visibly more urgent. %>
             },
             {
-              "eventPattern": "global_variable_changed:major_incident",
+              "eventPattern": "global_variable_changed:patient_bed4_deceased",
               "condition": "value === true",
               "onceOnly": true,
-              "targetKnot": "major_incident_line",
-              "bark": "Major incident — all hands.",
+              "targetKnot": "bed4_death",
+              "bark": "Crash call, Bed 4!",
               "barkDelay": 800,
               "setPatrolSpeed": 150,
               "setDwellMultiplier": 0.3
@@ -834,7 +897,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "currentKnot": "state_resting_unmonitored",
           "voice": {
             "name": "Charon",
-            "style": "Weak, unwell, elderly cardiac patient. Speak with a consistent Yorkshire accent throughout — do not shift to any other accent. Use a slow, laboured delivery.",
+            "style": "Weak, unwell British Pakistani man of about seventy, two days after heart surgery. Speak with a consistent Bradford, with Punjabi undertones, accent throughout — do not shift to any other accent. Use a slow, laboured delivery.",
             "language": "en-GB"
           },
           "behavior": {
@@ -858,7 +921,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "bark": "Hello? Is anyone there? My machine is beeping.",
               "barkDelay": 0
 <%# Patient barks on distress transition — draws player attention to Bed 4 alarm.
-    Ink knots: state_resting_unmonitored, state_distressed, state_critical, state_attended.
+    Ink knots: state_resting_unmonitored, state_distressed, state_critical, state_deceased, state_attended.
     TEST: Verify bark appears and observations reflect patient condition. %>
             },
             {
@@ -887,8 +950,8 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "eventPattern": "global_variable_changed:patient_bed4_deceased",
               "condition": "value === true",
               "onceOnly": true,
-              "targetKnot": "state_critical"
-<%# Timer fires major_incident=true and patient_bed4_deceased=true simultaneously (see timers).
+              "targetKnot": "state_deceased"
+<%# Timer fires patient_bed4_deceased=true and patient_bed4_state="deceased" together (see timers).
     Deterioration timers in scenario.timers handle the escalation chain — no setGlobal needed here. %>
             }
           ]
@@ -905,7 +968,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "currentKnot": "state_stable",
           "voice": {
             "name": "Leda",
-            "style": "Drowsy, post-surgical patient. Speak with standard northern English; do not use a strong regional accent. Use a slow, groggy delivery.",
+            "style": "Drowsy Nigerian-British woman in her mid-40s after surgery. Speak with a consistent Leeds, with a light Nigerian heritage, accent throughout — do not shift to any other accent. Use a slow, groggy delivery.",
             "language": "en-GB"
           },
           "behavior": {
@@ -919,19 +982,19 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
             {
               "eventPattern": "global_variable_changed:pump_dose_correct",
               "condition": "value === true",
-              "onceOnly": true
-<%# pump_dose_correct no longer completes pump_dose_check — patient outcome is tracked but the task
-    requires the player to recognise and override the tampered drug library warning (Phase 4).
-    Task completion is wired to drug_library_override below. %>
+              "onceOnly": true,
+              "completeTask": "pump_dose_check"
+<%# pump_dose_correct: the prescribed rate went in — either kept at the tampered library's
+    "below minimum" challenge with pharmacy checking (drug_library_override also set), or entered
+    after the library was restored. Either completes pump_dose_check. %>
             },
             {
               "eventPattern": "global_variable_changed:drug_library_override",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "pump_dose_check"
-<%# pump_dose_check completes only when the player overrides the tampered library warning and enters
-    the correct dose despite the device flagging it as below range. This ensures the task is not
-    completable in Phase 1 before drug_library_compromised is discovered. %>
+<%# drug_library_override: the player kept the prescribed rate and queried pharmacy when the
+    tampered library called it "below minimum". Kept as a second completion route. %>
             },
             {
               "eventPattern": "global_variable_changed:pump_dose_error",
@@ -985,7 +1048,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "currentKnot": "stable_witness",
           "voice": {
             "name": "Aoede",
-            "style": "Elderly bed-bound patient, anxious but trying to stay calm. Speak with a northern English accent with a slight Polish lilt — do not shift to any other accent.",
+            "style": "Polish-born woman in her early eighties, bed-bound, alert, anxious but trying to stay calm. Speak with a consistent northern English with a Polish lilt accent throughout — do not shift to any other accent.",
             "language": "en-GB"
           },
           "behavior": {
@@ -1001,7 +1064,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "condition": "value === true",
               "onceOnly": true,
               "targetKnot": "pump_concern",
-              "bark": "Could you get someone? The patient in that bed — I don't think she looks right.",
+              "bark": "Could you get someone? The lady in Bed 2 — I don't think she looks right.",
               "barkDelay": 0
 <%# Witness bark draws player attention to Bed 2 dose error consequence.
     No spriteTalk defined for this NPC — bark is the correct format (no cutscene).
@@ -1044,7 +1107,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
     Patrol activates on reveal: nursing station → Bed 2 → Bed 4 → loop. %>
         {
           "id": "pharmacist_npc",
-          "displayName": "On-Call Pharmacist",
+          "displayName": "Hamza Iqbal",
           "npcType": "person",
           "position": { "x": 10, "y": 4.5 },
           "spriteSheet": "male_scientist_v2",
@@ -1054,8 +1117,8 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "storyPath": "scenarios/sis01_healthcare/ink/npc_pharmacist.json",
           "currentKnot": "start",
           "voice": {
-            "name": "Charon",
-            "style": "Clinical pharmacist, professional and brisk. Speak with a consistent northern English accent throughout — do not shift to any other accent.",
+            "name": "Enceladus",
+            "style": "British Pakistani clinical pharmacist in his early thirties, professional and brisk. Speak with a consistent Bradford, West Yorkshire accent throughout — do not shift to any other accent.",
             "language": "en-GB"
           },
           "behavior": {
@@ -1094,6 +1157,18 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
     barkDelay 1200ms gives the player a moment to see the pharmacist appear before the bark.
     ENG-01 RESOLVED: setVisible event action replaces the two-NPC workaround.
     TEST: Verify pharmacist appears at (10,4.5) and begins patrol when pharmacist_on_ward fires. %>
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.pharmacist_on_ward === true",
+              "setVisible": true
+<%# N2 workaround: after a reload initiallyHidden is reapplied and the onceOnly reveal above is
+    not replayed. Ward 7 is the start room, so its NPCs are registered before game_loaded. %>
+            },
+            {
+              "eventPattern": "room_entered:ward_7",
+              "condition": "globalVars.pharmacist_on_ward === true",
+              "setVisible": true
             }
           ]
         }
@@ -1116,7 +1191,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
   Scope decision (April 2026): this object is intentionally observational in the playable window.
   It does NOT transition back to live ward telemetry during the scenario.
   Recovery tasks represent containment + restore initiation, not full workstation rebuild/eradication. %>
-          "observations": "The monitoring screen that should show patient vitals for all six beds. Instead it displays a ransom note on a black background. Red text. Skull icon. A countdown timer. £1.2 million. 71 hours remaining. The bedside alarm from Bed 4 is audible.",
+          "observations": "The monitoring screen that should show patient vitals for all six beds. Instead it displays a ransom note on a black background. Red text. Skull icon. A countdown timer. £1.2 million. 62 hours remaining. The bedside alarm from Bed 4 is audible.",
           "observationVariants": [
             {
               "condition": "globalVars.debrief_started",
@@ -1127,8 +1202,8 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "value": "The central monitoring station is still unusable. The ransom note remains on screen, but the network isolation decision has at least contained further spread. Bedside monitoring is still local-only."
             },
             {
-              "condition": "globalVars.major_incident",
-              "value": "The central monitoring station is still showing the DarkVault ransom note. What should be a ward-wide safety view is unavailable during a declared major incident, leaving staff to rely on direct bedside checks and audible alarms."
+              "condition": "globalVars.patient_bed4_deceased",
+              "value": "The central monitoring station is still showing the DarkVault ransom note. Bed 4's alarm never reached this screen."
             }
           ],
           "onRead": { "setVariable": { "monitoring_station_viewed": true } },
@@ -1137,9 +1212,9 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
             "organisation": "Northgate General Hospital NHS Trust",
             "encryptedSystems": "6 patient monitoring workstations | Ward 7 nursing station | EHR prescribing terminals | 3 ward file servers",
             "ransomAmount": "£1,200,000",
-            "ransomBitcoin": "1.2 BITCOIN",
+            "ransomBitcoin": "16 BITCOIN",
             "walletAddress": "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
-            "timerHours": 71,
+            "timerHours": 62,
             "groupName": "DarkVault Ransomware Group",
             "supportPortal": "darkv4ult7xkrp2c.onion"
           }
@@ -1159,19 +1234,41 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "puzzle_graph_role": "lock",
           "puzzle_graph_aim": "restore_operations",
 <%# IMPLEMENTED: infusion_pump minigame (MG-08) — Phaser.js pixel-art pump with prescription panel.
-    - drug_name and correct_dose read from scenarioData.
+    - drug_name, correct_dose and the prescription panel read from minigameData.
     - paper_charts_collected=true required; shows "PAPER MAR CHARTS REQUIRED" screen then complete(false) if false.
-    - Correct entry (10): pump_dose_correct=true → complete(true).
-    - Wrong + double-check confirm: pump_dose_error=true.
-    - drug_library_compromised=true: silent wrong acceptance, pump_dose_error=true (no modal).
+    - TAMPER STORY (decision 1, 2026-10-02): the attacker RAISED the morphine minimum (0.5 → 20 mg/hr,
+      max 4 → 40 so the row still loads). library_ok_global: the pump runs the tampered library until
+      drug_library_restored is true (it was pushed Mon 18:47, before anyone knew).
+      While tampered: the prescribed 2.0 mg/hr is "below minimum" → conflict modal. KEEP PRESCRIBED RATE —
+      QUERY PHARMACY sets drug_library_override + pump_dose_correct (pharmacy checks the entry against the
+      MAR). An entry inside 20–40 (e.g. reading "2.0" as 20) is accepted silently → pump_dose_error.
+    - Library restored: correct entry → pump_dose_correct; wrong + double-check confirm → pump_dose_error.
     - pump_dose_error eventMapping → patient_bed2_state="sedated".
     - Double-jeopardy: if drug_library_compromised=true at pump_dose_error, bed2_double_jeopardy timer fires
       2 s later → patient_bed2_state="critical", patient_bed2_deceased=true → state_deceased knots on both patients.
-    TEST: collect MAR charts first; enter 100 (misread decimal) — double-check modal shows large red dose.
-    TEST double-jeopardy: set drug_library_compromised=true before using pump; verify state_deceased fires 2 s after error. %>
+    TEST: collect MAR charts first; enter 2 → conflict modal (library min 20); KEEP PRESCRIBED RATE → stable.
+    TEST: enter 20 (misread decimal) before the library is restored → accepted silently → state_deceased 2 s later. %>
           "minigameData": {
             "drug_name": "MORPHINE SULPHATE",
-            "correct_dose": "10"
+            "correct_dose": "2",
+            "rate_display": "2.0 mg/hr",
+            "patient": "OKAFOR, A. (DOB: 19/07/1984)",
+            "ward_bed": "Ward 7, Bed 2",
+            "consultant": "Dr F. Hartley",
+            "prescriber": "Dr A. Hassan",
+            "duration": "Continuous",
+            "allergies": "PENICILLIN (SEVERE)",
+            "library_min": 20,
+            "library_max": 40,
+            "restored_min": 0.5,
+            "restored_max": 4,
+            "library_ok_global": "drug_library_restored",
+            "conflict_title": "DOSE BELOW LIBRARY MINIMUM",
+            "conflict_prompt": "The pump and the paper prescription disagree.",
+            "hold_label": "KEEP PRESCRIBED RATE \u2014 QUERY PHARMACY",
+            "reenter_label": "RE-ENTER RATE",
+            "pharmacy_mismatch_text": "NOT THE PRESCRIBED RATE",
+            "pharmacy_hold_text": "PHARMACY CHECKED \u2014 2.0 mg/hr"
           },
           "postitNote": "Collect paper MAR charts before using this terminal",
           "showPostit": true,
@@ -1186,7 +1283,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "readable": true,
           "important": true,
           "collection_group": "mar_charts",
-          "text": "NORTHGATE GENERAL HOSPITAL NHS TRUST\nWard 7 — Medication Administration Record (PAPER BACKUP)\nDate: Tuesday\n\nBED 2 — Patient: Mrs J. Davies\nDrug: MORPHINE SULPHATE\nPrescribed rate: 10 mg/hr IV infusion\nRoute: IV\nPrescriber: Dr A. Hassan\n\nNOTE: Verify decimal point against prescription before pump entry.\nPrescribed dose is 10 mg/hr — NOT 100 mg/hr.",
+          "text": "NORTHGATE GENERAL HOSPITAL NHS TRUST\nWard 7 — Medication Administration Record (PAPER BACKUP)\nDate: Tuesday\n\nBED 2 — Patient: Ms A. Okafor   DOB 19/07/1984\nALLERGIES: PENICILLIN (SEVERE)\n\nDrug: MORPHINE SULPHATE 1 mg/mL\nPrescribed rate: 2.0 mg/hr IV infusion, continuous\nPrescriber: Dr A. Hassan\nPharmacy check: J. Chen, Mon 16:10\nNext bag due: approx. 07:45 Tue\nWard range 0.5–4 mg/hr. Specialist review above 4 mg/hr.\n\nNOTE: Check the decimal point before pump entry.\nPrescribed rate is 2.0 mg/hr — NOT 20 mg/hr.",
           "observations": "A stack of Medication Administration Record charts from the desk drawer labelled MAR CHARTS — PAPER BACKUP. Handwritten entries. The decimal points are small.",
           "onRead": { "setVariable": { "paper_charts_collected": true } },
           "puzzle_graph_role": "item",
@@ -1201,13 +1298,13 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "name": "Nursing Handover Notes",
           "takeable": false,
           "readable": true,
-          "text": "WARD 7 HANDOVER — Night to Day Shift\nWritten approx. 07:15\n\nCentral monitoring system down since approx. 22:30 last night.\nIT called immediately — no ETA on restore.\n\nBED 4 (Mr T. Ahmed, cardiac post-op, day 2):\n  Last obs at 23:10 — routine. Alarm active since ~05:00.\n  Note: bedside alarm is the ONLY alert we have. No remote notification.\n\nBED 2 (Ms A. Okafor, post-surgical, IV morphine):\n  Infusion due renewal approx. 07:45.\n  Paper MAR chart in drawer — USE THIS to confirm dose.\n  EHR unavailable; do NOT guess the dose.\n\nBEDS 1, 3, 5, 6: Checked at 06:30 — all stable.\n\nPharmacy not yet on ward. Two nurses on shift.",
+          "text": "WARD 7 HANDOVER — Night to Day Shift\nWritten approx. 07:15\n\nCentral monitoring system down since approx. 22:30 last night.\nIT called immediately — no ETA on restore.\n\nBED 4 (Mr T. Ahmed, cardiac post-op, day 2):\n  Obs hourly overnight. 06:30 set borderline — sats 93%, BP 96/58.\n  Bedside alarm sounding on and off since ~06:45.\n  Note: bedside alarm is the ONLY alert we have. No remote notification.\n\nBED 2 (Ms A. Okafor, post-surgical, IV morphine):\n  Infusion due renewal approx. 07:45.\n  Paper MAR chart in drawer — USE THIS to confirm the rate.\n  EHR unavailable; do NOT guess the dose. Penicillin allergy (on chart).\n\nBEDS 1, 3, 5, 6: Checked at 06:30 — all stable.\n\nPharmacy not yet on ward. Two nurses on shift.",
           "observations": "Handover notes at the nursing station, written quickly."
         },
 
-<%# Nursing station desk phone — voicemail from IT Security confirming the ransomware
-    incident and directing staff to paper fallback. Left at 22:47 (9 minutes after Major
-    Incident declared at 22:38). Provides narrative context for why systems are down. %>
+<%# Nursing station desk phone — voicemail from Ravi Anand (IT Security) confirming the ransomware
+    incident and directing staff to paper fallback. Left at 22:47 (9 minutes after the Major
+    Incident was declared at 22:38). Uses Ravi's voice so the cast has one "Priya" (Priya S., NCSC). %>
         {
           "type": "phone",
           "id": "ward_desk_phone",
@@ -1215,14 +1312,14 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "phoneId": "ward_desk_phone",
           "takeable": false,
           "readable": true,
-          "voice": "Hi, this message is for Ward 7 nursing staff. It's Priya from IT Security — calling at about ten forty-seven Monday evening. I need to let you know — we've just declared a Major Incident. The monitoring systems going down on your ward were not a technical fault. We've confirmed a ransomware infection across the hospital network. Multiple clinical systems are affected — central monitoring, EHR prescribing terminals, ward file servers. Please do not attempt to reconnect any devices to the network. Switch fully to paper fallback procedures for everything until further notice. The Cyber Incident Response Team has been activated and we're working on it now. I'll update you as soon as I have more information. If you need to reach me directly, call the IT Security desk on extension 4499. Thank you — and I'm sorry for the disruption.",
+          "voice": "This is for Ward 7. It's Ravi Anand in IT Security, about quarter to eleven on Monday night. A Major Incident has been declared. Your monitors going down isn't a fault. It's ransomware, across the hospital network. Central monitoring, the EHR terminals and the ward file servers are all affected. Please don't plug anything back into the network. Go to paper for everything until you hear otherwise. If you need me, it's extension 4499. I'm sorry. I'll update you when I can.",
           "ttsVoice": {
-            "name": "Kore",
-            "style": "Calm but clearly stressed NHS IT professional. Speak with a consistent British accent. Measured, professional tone — trying to keep it together while delivering bad news urgently.",
+            "name": "Puck",
+            "style": "British Indian IT security manager in his mid-thirties, exhausted after a night shift, matter-of-fact. Speak with a consistent Leeds, with a light British Indian lilt, accent throughout — do not shift to any other accent.",
             "language": "en-GB"
           },
-          "avatar": "assets/characters/female_scientist_headshot.png",
-          "sender": "Priya Singh (IT Security)",
+          "avatar": "assets/characters/gary_whitlock_headshot.png",
+          "sender": "Ravi Anand (IT Security)",
           "timestamp": "Yesterday, 10:47 PM",
           "observations": "The ward desk phone. The message light is blinking — one unheard voicemail."
         },
@@ -1259,15 +1356,15 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
                 ],
                 "medications": [
                   {
-                    "drug": "Morphine Sulphate",
-                    "dose": "10 mg",
-                    "frequency": "PRN (max 4-hrly)",
+                    "drug": "Morphine Sulphate 1 mg/mL",
+                    "dose": "2 mg/hr",
+                    "frequency": "Continuous IV infusion",
                     "route": "IV",
                     "interactionWarning": "Manual pharmacy check required — EHR unavailable"
                   }
                 ],
                 "prescriptions": [
-                  { "drug": "Morphine Sulphate", "currentDose": 10, "safeMin": 5, "safeMax": 15, "unit": "mg" }
+                  { "drug": "Morphine Sulphate", "currentDose": 2, "safeMin": 0.5, "safeMax": 4, "unit": "mg/hr" }
                 ]
               },
               {
@@ -1302,7 +1399,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "takeable": false,
           "locked": false,
           "readable": true,
-          "text": "ALARM — CARDIAC IRREGULAR RHYTHM\n\nHR: 47 bpm [LOW — threshold 50]\nSpO2: 91% [BORDERLINE]\nBP: 88/52 mmHg [LOW]\n\nCENTRAL STATION: OFFLINE\nLocal alarm: ACTIVE\nRemote notification: UNAVAILABLE\n\nLast attended: 23:10",
+          "text": "ALARM — CARDIAC IRREGULAR RHYTHM\n\nHR: 47 bpm [LOW — threshold 50]\nSpO2: 91% [BORDERLINE]\nBP: 88/52 mmHg [LOW]\n\nCENTRAL STATION: OFFLINE\nLocal alarm: ACTIVE\nRemote notification: UNAVAILABLE\n\nLast obs: 06:30",
           "textVariants": [
             {
               "condition": "globalVars.patient_bed4_deceased",
@@ -1352,7 +1449,11 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
         { "type": "vitals-monitor", "id": "bed6_vitals", "name": "Bed 6 — Bedside Monitor", "takeable": false, "readable": true, "text": "VITALS — BED 6\n\nHR: 80 bpm [NORMAL]\nSpO2: 96%\nBP: 135/85 mmHg\n\nSTATUS: STABLE\nCENTRAL STATION: OFFLINE" },
         { "type": "vitals-monitor", "id": "bed1_vitals", "name": "Bed 1 — Bedside Monitor", "takeable": false, "readable": true, "text": "VITALS — BED 1\n\nHR: 76 bpm [NORMAL]\nSpO2: 97%\nBP: 124/78 mmHg\n\nSTATUS: STABLE\nCENTRAL STATION: OFFLINE" },
         { "type": "vitals-monitor", "id": "bed2_vitals", "name": "Bed 2 — Bedside Monitor", "takeable": false, "readable": true, "text": "VITALS — BED 2\n\nHR: 64 bpm [NORMAL]\nSpO2: 98%\nBP: 116/74 mmHg\n\nSTATUS: STABLE\nCENTRAL STATION: OFFLINE" },
-        { "type": "vitals-monitor", "id": "bed3_monitor", "name": "Bed 3 — Bedside Monitor", "takeable": false, "readable": true, "text": "VITALS — BED 3\n\nHR: 72 bpm [NORMAL]\nSpO2: 98%\nBP: 118/76 mmHg\n\nSTATUS: STABLE\nCENTRAL STATION: OFFLINE" }
+        { "type": "vitals-monitor", "id": "bed3_monitor", "name": "Bed 3 — Bedside Monitor", "takeable": false, "readable": true, "text": "VITALS — BED 3\n\nHR: 72 bpm [NORMAL]\nSpO2: 98%\nBP: 118/76 mmHg\n\nSTATUS: STABLE\nCENTRAL STATION: OFFLINE" },
+<%# Room dressing (sis01 only): flavour objects claiming conditional sprites on room_hospital_ward,
+    so the cardiac ward reads differently from m02's critical-care ward. No puzzle role. %>
+        { "type": "aed_cabinet", "id": "ward7_aed", "name": "Defibrillator (AED)", "takeable": false, "observations": "A green wall cabinet holding the ward's defibrillator, seal intact. The daily check tag was signed by the night staff." },
+        { "type": "monitor_stand", "id": "ward7_ecg_machine", "name": "12-Lead ECG Machine", "takeable": false, "observations": "The ward's ECG machine on its wheeled stand, a fresh roll of paper loaded and the leads coiled ready." }
 
       ]
     },
@@ -1382,15 +1483,16 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "displayName": "Ravi Anand",
           "npcType": "person",
           "observations": "Ravi Anand, IT Security — he looks exhausted.",
-          "position": { "x": 6.3, "y": 5.8 },
+          "position": { "x": 4.0, "y": 6.0 },
           "spriteSheet": "gary_whitlock",
           "spriteTalk": "assets/characters/gary_whitlock_talk.png",
           "spriteVisemes": "assets/characters/gary_whitlock_visemes.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/sis01_healthcare/ink/npc_ravi.json",
 <%# INK: scenarios/sis01_healthcare/ink/npc_ravi.ink — compiled ✓
-    Knots: start, siem_briefing, vpn_briefing, give_itsec_code, post_isolation, hub
-    KEY: give_itsec_code gates on siem_escalated AND vpn_anomaly_identified; gives itsec_pin to player.
+    Knots: start, bypassed_isolation, siem_briefing, vpn_briefing, give_itsec_code, post_isolation, hub
+    Ravi poses the SIEM/VPN questions without giving the answers (no alert count, no tags, no MFA spoiler).
+    KEY: give_itsec_code gates on siem_escalated AND vpn_anomaly_identified; gives the signed form.
     NOTE: itsec_authorised is now set by the dual_auth minigame on correct PIN entry — Ravi's Ink
     no longer needs to set it. The PIN value in dialogue should match scenarioData.itsec_pin on the
     dual_auth_panel object (both sourced from @random_pin via ERB variable itsec_pin).
@@ -1398,8 +1500,8 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
     TEST: Verify give_itsec_code is unreachable until SIEM + VPN tasks done. %>
           "currentKnot": "start",
           "voice": {
-            "name": "Charon",
-            "style": "Exhausted IT security manager, matter-of-fact. Speak with a consistent Yorkshire accent throughout — do not shift to any other accent.",
+            "name": "Puck",
+            "style": "British Indian IT security manager in his mid-thirties, exhausted after a night shift, matter-of-fact. Speak with a consistent Leeds, with a light British Indian lilt, accent throughout — do not shift to any other accent.",
             "language": "en-GB"
           },
           "taskOnKO": "brief_ravi",
@@ -1414,7 +1516,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "takeable": true,
               "important": true,
               "readable": true,
-              "text": "NORTHGATE GENERAL HOSPITAL NHS TRUST\nIT NETWORK CHANGE AUTHORISATION FORM\n\nChange Reference: INC-2025-1103-001\nChange Type: Emergency Network Isolation — Enterprise Zone\nRisk Classification: HIGH CLINICAL IMPACT\n\nDescription of change:\nSever the enterprise-to-clinical zone network link to contain an active ransomware incident.\nThis will take the EHR, fleet management console, and enterprise email offline.\n\nIT Security Risk Assessment:\nLateral movement confirmed via SIEM. VPN credential compromise (no MFA) identified as initial\naccess vector. Isolation is the appropriate containment action.\n\nAuthorised by: Ravi Anand, IT Security Manager\nSignature: R. Anand\nDate/Time: [SESSION TIMESTAMP]\n\nNOTE: Clinical Engineering co-authorisation also required before execution.",
+              "text": "NORTHGATE GENERAL HOSPITAL NHS TRUST\nIT NETWORK CHANGE AUTHORISATION FORM\n\nChange Reference: INC-2025-1103-001\nChange Type: Emergency Network Isolation — Enterprise Zone\nRisk Classification: HIGH CLINICAL IMPACT\n\nDescription of change:\nSever the enterprise-to-clinical zone network link to contain an active ransomware incident.\nThis will take the wards' read-only view of the vendor EHR copy, the fleet management console and enterprise email offline.\n\nIT Security Risk Assessment:\nLateral movement confirmed via SIEM. VPN credential compromise (no MFA) identified as initial\naccess vector. Isolation is the appropriate containment action.\n\nAuthorised by: Ravi Anand, IT Security Manager\nSignature: R. Anand\nDate/Time: [SESSION TIMESTAMP]\n\nNOTE: Clinical Engineering co-authorisation also required before execution.",
               "observations": "A signed IT network change authorisation form from Ravi Anand. Counter-signature from Clinical Engineering required.",
               "puzzle_graph_unlocks": "network_map_screen",
               "puzzle_graph_and_with": "Clinical Safety Sign-Off — Network Isolation",
@@ -1438,7 +1540,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "condition": "value === true",
               "onceOnly": true,
               "setGlobal": { "ravi_vpn_briefed": true },
-              "bark": "That's it. m.blake. No MFA. That account should never have been active.",
+              "bark": "m.blake. That's NetSol's engineer, and he was in London half an hour before. Someone's got his password.",
               "barkDelay": 0
             },
             {
@@ -1451,9 +1553,8 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "eventPattern": "global_variable_changed:network_isolated",
               "condition": "value === true && globalVars.network_isolation_authorised === true",
               "onceOnly": true,
-              "conversationMode": "person-chat",
-              "targetKnot": "post_isolation",
-              "background": "assets/backgrounds/hospital1.png"
+              "bark": "We're cut. Come and see me when you've a minute.",
+              "barkDelay": 1500
             },
             {
 <%# Bypass path: player used NSM SEVER without going through the dual-auth panel.
@@ -1462,7 +1563,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "eventPattern": "global_variable_changed:network_isolated",
               "condition": "value === true && !globalVars.network_isolation_authorised",
               "onceOnly": true,
-              "bark": "The network's gone down — but I never gave my authorisation. That decision needed both IT and clinical sign-offs.",
+              "bark": "The network's gone down, and I never signed for it. That needed IT and clinical sign-off.",
               "barkDelay": 0
             }
           ]
@@ -1742,7 +1843,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
             "organisation": "Northgate General Hospital NHS Trust",
             "encryptedSystems": "312 workstations | 4 file servers | EHR database",
             "ransomAmount": "£1,200,000",
-            "timerHours": 71,
+            "timerHours": 62,
             "groupName": "DarkVault Ransomware Group",
             "supportPortal": "darkv4ult7xkrp2c.onion"
           }
@@ -1753,7 +1854,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "name": "VPN Log Printout",
           "takeable": false,
           "readable": true,
-          "text": "VPN AUTHENTICATION LOG — EXTRACT\nPrinted: Tue 2025-11-04 23:45\n\n[...48 entries...]\n\n2025-11-04 08:47 USER=j.hargreaves IP=82.44.xxx.xxx COUNTRY=UK     MFA=YES RESULT=ACCEPT\n2025-11-04 08:51 USER=m.chen       IP=82.19.xxx.xxx COUNTRY=UK     MFA=YES RESULT=ACCEPT\n2025-11-04 08:52 USER=m.blake    IP=185.220.101.x COUNTRY=Romania MFA=NO  RESULT=ACCEPT  ← CIRCLED IN RED\n2025-11-04 08:54 USER=d.walsh      IP=82.44.xxx.xxx COUNTRY=UK     MFA=YES RESULT=ACCEPT\n\n[...]\n\nHandwritten note beside the circled line: \"Contractor account — no MFA configured. How??\"\nSecond note: \"Check contractor_accounts.txt on the terminal\"",
+          "text": "VPN AUTHENTICATION LOG — EXTRACT\nPrinted: Tue 2025-11-04 03:45\n\n[...48 entries...]\n\n2025-11-03 08:47 USER=j.hargreaves IP=82.44.xxx.xxx COUNTRY=UK     MFA=YES RESULT=ACCEPT\n2025-11-03 08:51 USER=m.chen       IP=82.19.xxx.xxx COUNTRY=UK     MFA=YES RESULT=ACCEPT\n2025-11-03 08:52 USER=m.blake    IP=185.220.101.x COUNTRY=Romania MFA=NO  RESULT=ACCEPT  ← CIRCLED IN RED\n2025-11-03 08:54 USER=d.walsh      IP=82.44.xxx.xxx COUNTRY=UK     MFA=YES RESULT=ACCEPT\n\n[...]\n\nHandwritten note beside the circled line: \"Contractor account — no MFA configured. How??\"\nSecond note: \"Check m.blake's account history on the terminal\"",
           "observations": "A printout of VPN authentication logs. Someone has been through it with a red pen. One entry is circled."
         },
 
@@ -1762,9 +1863,12 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "name": "Incident Timeline (Draft)",
           "takeable": false,
           "readable": true,
-          "text": "NORTHGATE TRUST — INCIDENT TIMELINE (WORKING DRAFT)\nRavi Anand, IT Security Manager\n\nMon 2025-11-03\n  08:47 — Finance officer opens phishing email; macros enabled on FINWKS-047\n  08:52 — VPN login from Romania: USER=m.blake, no MFA. ACCEPTED.\n  08:52-14:00 — Lateral movement via stolen m.blake credentials\n  ~15:00 — Domain admin obtained (exact time TBC from AD logs)\n  20:00 onwards — Staging and validation of ransomware payload\n\nMon 22:15 — Ransomware deployed. 312 workstations. 4 servers. EHR.\nMon 22:30 — Ward 7 nursing station encrypted. Central monitoring goes dark.\nMon 22:38 — MAJOR INCIDENT DECLARED.\n\nTue 2025-11-04 07:30 — INCIDENT RESPONDERS ON SITE.\n\n[SIEM NOTE: Multiple alerts fired Monday morning. Low severity queue. Not escalated.]",
+          "text": "NORTHGATE TRUST — INCIDENT TIMELINE (WORKING DRAFT)\nRavi Anand, IT Security Manager\n\nMon 2025-11-03\n  08:47 — Finance officer opens phishing email; macros enabled on FINWKS-047\n  08:52 — VPN login from Romania: USER=m.blake, no MFA. ACCEPTED.\n  08:52-14:00 — Lateral movement via stolen m.blake credentials\n  ~15:00 — Domain admin obtained (exact time TBC from AD logs)\n  20:00 onwards — Staging and validation of ransomware payload\n\nMon 22:15 — Ransomware deployed. 312 workstations. 4 servers. EHR.\nMon 22:30 — Ward 7 nursing station encrypted. Central monitoring goes dark.\nMon 22:38 — MAJOR INCIDENT DECLARED.\nMon 23:05 — NIS incident report to NHS England (H. Carver).\n\nTue 2025-11-04 07:30 — INCIDENT RESPONDERS ON SITE.\n\n[SIEM NOTE: Multiple alerts fired Monday morning. Low severity queue. Not escalated.]",
           "observations": "Ravi's draft incident timeline, written on a notepad during the night. Red ink, slightly smudged."
-        }
+        },
+<%# Room dressing (sis01 only): conditional sprites on room_hospital_office_it. No puzzle role. %>
+        { "type": "dirty_mugs", "id": "itsec_cold_coffee", "name": "Cold Coffee", "takeable": false, "observations": "Three mugs of cold coffee on the workbench. Nobody on the IT security team has been home tonight." },
+        { "type": "bag", "id": "itsec_overnight_bag", "name": "Overnight Bag", "takeable": false, "observations": "Ravi's rucksack, half unpacked: a phone charger, a toothbrush and a clean shirt still folded. He came ready to stay." }
 
       ]
     },
@@ -1784,23 +1888,26 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "id": "david_osei",
           "displayName": "David Osei",
           "npcType": "person",
-          "position": { "x": 6, "y": 3 },
+          "position": { "x": 2.6, "y": 3.0 },
           "spriteSheet": "male_office_worker_v2",
           "spriteTalk": "assets/characters/male_office_worker_talk.png",
           "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/sis01_healthcare/ink/npc_david.json",
 <%# INK: scenarios/sis01_healthcare/ink/npc_david.ink — compiled ✓
-    Knots: start, safety_case_hc001, give_clinical_code, safety_case_hc003, post_isolation, hub
-    KEY: give_clinical_code gives clinical_pin to player; gates on network_rules_reviewed.
-    Sets safety_claim_hc001_assessed and safety_claim_hc003_assessed via Ink setVariable.
+    Knots: start, bypassed_isolation, safety_case_hc001, hc001_verdict_given, hc001_questions,
+           give_clinical_code, isolation_cost, clinical_signoff, safety_case_hc003, hc003_questions,
+           post_isolation, hub
+    KEY: safety_case_hc001 is the claim-argument-evidence judgement (sets hc001_verdict).
+    give_clinical_code needs HC-001 judged, the SIEM triaged and isolation_cost answered (what the
+    wards lose); the sign-off also sets isolation_compensating_controls if Hartley hadn't.
     NOTE: clinical_eng_authorised is now set by dual_auth minigame — David's Ink no longer sets it.
     The PIN value in dialogue must match scenarioData.clinical_pin on dual_auth_panel (both from ERB
     variable clinical_pin). %>
           "currentKnot": "start",
           "voice": {
-            "name": "Charon",
-            "style": "Methodical clinical engineer, serious and deliberate. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+            "name": "Iapetus",
+            "style": "Ghanaian-British head of clinical engineering in his mid-fifties, methodical, serious and deliberate. Speak with a consistent London-raised, settled in Leeds, with a slight Ghanaian lilt, accent throughout — do not shift to any other accent.",
             "language": "en-GB"
           },
           "taskOnKO": "david_safety_case",
@@ -1814,7 +1921,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "takeable": true,
               "important": true,
               "readable": true,
-              "text": "NORTHGATE GENERAL HOSPITAL NHS TRUST\nCLINICAL SAFETY SIGN-OFF — NETWORK ISOLATION\n\nChange Reference: INC-2025-1103-001\nChange Type: Emergency Network Isolation — Enterprise Zone\n\nClinical Safety Review:\nSafety case claims assessed prior to authorisation:\n  CLAIM-HC-001 (Network Segmentation) — reviewed; partial failure at VPN perimeter noted.\n  Isolation remains the correct containment action. Clinical risk of inaction exceeds risk of isolation.\n\nClinical Engineering Assessment:\nThe proposed isolation will take the EHR and fleet management console offline. Ward teams have\nbeen advised to revert to paper-based prescribing and manual monitoring until systems recover.\nThe clinical risk of proceeding is accepted.\n\nAuthorised by: David Osei, Clinical Safety Engineer\nSignature: D. Osei\nDate/Time: [SESSION TIMESTAMP]\n\nNOTE: IT Security co-authorisation also required before execution.",
+              "text": "NORTHGATE GENERAL HOSPITAL NHS TRUST\nCLINICAL SAFETY SIGN-OFF — NETWORK ISOLATION\n\nChange Reference: INC-2025-1103-001\nChange Type: Emergency Network Isolation — Enterprise Zone\n\nClinical Safety Review:\nSafety case claims assessed prior to authorisation:\n  CLAIM-HC-001 (Network Segmentation) — reviewed; NOT SUPPORTED. Its conditions (no dual-homed\n  workstations, no exception rules) are not met. Isolation is the only separation available.\n\nClinical Engineering Assessment:\nIsolation takes the vendor EHR copy off every ward (no on-screen drug history or interaction checks)\nand the pump fleet console offline (all pumps programmed at the bedside from paper charts).\nCompensating control or accepted risk: as recorded in the decision log.\nThe clinical risk of proceeding is accepted.\n\nAuthorised by: David Osei, Clinical Safety Engineer\nSignature: D. Osei\nDate/Time: [SESSION TIMESTAMP]\n\nNOTE: IT Security co-authorisation also required before execution.",
               "observations": "A signed clinical safety sign-off from David Osei. Documents the safety case review and clinical authorisation for network isolation.",
               "puzzle_graph_role": "item",
               "puzzle_graph_and_with": "IT Network Change Authorisation Form",
@@ -1834,17 +1941,15 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "eventPattern": "global_variable_changed:drug_library_compromised",
               "condition": "value === true",
               "onceOnly": true,
-              "conversationMode": "person-chat",
-              "targetKnot": "safety_case_hc003",
-              "background": "assets/backgrounds/hospital1.png"
+              "bark": "That's the library. Talk to me before anything else goes on a pump.",
+              "barkDelay": 1000
             },
             {
               "eventPattern": "global_variable_changed:network_isolated",
               "condition": "value === true && globalVars.network_isolation_authorised === true",
               "onceOnly": true,
-              "conversationMode": "person-chat",
-              "targetKnot": "post_isolation",
-              "background": "assets/backgrounds/hospital1.png"
+              "bark": "We're isolated. Talk to me before anyone touches the drug library.",
+              "barkDelay": 2500
             },
             {
 <%# Bypass path: player used NSM SEVER without dual-auth. David never signed off.
@@ -1852,8 +1957,15 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "eventPattern": "global_variable_changed:network_isolated",
               "condition": "value === true && !globalVars.network_isolation_authorised",
               "onceOnly": true,
-              "bark": "Hold on — the network's just been severed and I haven't authorised anything. Clinical Engineering needs to sign off before you make that call. Where's the dual-auth process?",
+              "bark": "Hold on. The network's been cut and I haven't signed anything. Where was the clinical sign-off?",
               "barkDelay": 0
+            },
+            {
+              "eventPattern": "global_variable_changed:patient_bed2_deceased",
+              "condition": "value === true",
+              "onceOnly": true,
+              "bark": "Ms Okafor? That's HC-003. It was the promise that this couldn't happen.",
+              "barkDelay": 1500
             }
           ]
         },
@@ -1862,25 +1974,28 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "id": "helen_carver",
           "displayName": "Helen Carver",
           "npcType": "person",
-          "position": { "x": 7.8, "y": 3 },
+          "position": { "x": 7.6, "y": 2.8 },
           "spriteSheet": "female_office_worker_v2",
           "spriteTalk": "assets/characters/female_office_worker_talk.png",
           "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/sis01_healthcare/ink/npc_helen.json",
 <%# INK: scenarios/sis01_healthcare/ink/npc_helen.ink — compiled ✓
-    Knots: start, backup_advisory, safety_case_hc007, ico_advisory, post_isolation,
-           post_backup, hub, post_drug_tamper
-    KEY: ico_advisory sets ico_notified=true on player choice → stops ico_deadline timer.
-    Sets safety_claim_hc007_assessed via Ink setVariable.
-    TEST: Verify ico_advisory choice propagates ico_notified before the 45-min timer fires. %>
+    Knots: start, ico_advisory, ico_send_choice, ico_argument, helen_persuaded,
+           ico_send_after_isolation, ncsc_advisory, ncsc_choices, backup_advisory, backup_choices,
+           safety_case_hc007, hc007_choices, ransom_talk, post_isolation, post_backup,
+           post_backup_ncsc, post_drug_tamper, hub
+    KEY (decision 4): Helen wants containment before notifying the ICO — her misconception, not
+    the law. Before isolation the player can argue (Art. 33) with ico_guidance_read (IG briefing
+    in this room) or hartley_backs_early_ico; she then notifies early (ico_notified_early).
+    Otherwise she notifies after isolation (post_isolation offers it). ico_deadline still applies. %>
           "currentKnot": "start",
           "voice": {
             "name": "Aoede",
-            "style": "NHS CIO, decisive and under pressure. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent. Clipped and authoritative.",
+            "style": "NHS chief information officer in her mid-fifties, decisive and under pressure, clipped and authoritative. Speak with a consistent well-spoken North Yorkshire (Harrogate) accent throughout — do not shift to any other accent.",
             "language": "en-GB"
           },
-          "taskOnKO": "notify_ncsc",
+          "taskOnKO": "helen_ico_advisory",
           "puzzle_graph_actions": [
             { "id": "notify_ncsc", "label": "Notify NCSC", "unlocks_aim": "restore_operations" },
             { "id": "helen_ico_advisory", "label": "ICO notification advisory", "unlocks_aim": "restore_operations" }
@@ -1891,7 +2006,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "notify_ncsc",
-              "bark": "NCSC notified — reference logged. Priya S. will be coordinating from their side. She'll join us once recovery operations are complete.",
+              "bark": "The NCSC have our reference. Priya S. is picking it up, and she'll join us once we're recovering.",
               "barkDelay": 500
             },
             {
@@ -1899,9 +2014,8 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "condition": "value === true",
               "onceOnly": true,
               "setGlobal": { "pharmacist_on_ward": true },
-              "conversationMode": "person-chat",
-              "targetKnot": "post_drug_tamper",
-              "background": "assets/backgrounds/hospital1.png"
+              "bark": "David will tell you to wait. Come and hear my side too.",
+              "barkDelay": 4000
 <%# IMPLEMENTED[Phase 1]: Helen dispatches pharmacist when drug library tamper detected.
     Ink knot npc_helen.ink:post_drug_tamper() fires; sets pharmacist_on_ward=true.
     Pharmacist appears in ward_7 at (3,2) via setVisible action.
@@ -1912,17 +2026,29 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "initiate_backup",
-              "conversationMode": "person-chat",
-              "targetKnot": "post_backup",
-              "background": "assets/backgrounds/hospital1.png"
+              "bark": "Restore's started. Come and sign the record for me.",
+              "barkDelay": 1000
             },
             {
               "eventPattern": "global_variable_changed:network_isolated",
               "condition": "value === true",
               "onceOnly": true,
-              "conversationMode": "person-chat",
-              "targetKnot": "post_isolation",
-              "background": "assets/backgrounds/hospital1.png"
+              "bark": "We're isolated. Come and see me when you can.",
+              "barkDelay": 500
+            },
+            {
+              "eventPattern": "global_variable_changed:patient_bed4_deceased",
+              "condition": "value === true",
+              "onceOnly": true,
+              "bark": "Bed 4? I have to tell the Board. And his family.",
+              "barkDelay": 2500
+            },
+            {
+              "eventPattern": "global_variable_changed:patient_bed2_deceased",
+              "condition": "value === true",
+              "onceOnly": true,
+              "bark": "Bed 2's pump? Then it's a device death as well. I'll tell the Board.",
+              "barkDelay": 2500
             }
           ]
         },
@@ -1938,34 +2064,34 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/sis01_healthcare/ink/npc_hartley.json",
 <%# INK: scenarios/sis01_healthcare/ink/npc_hartley.ink — compiled ✓
-    Knots: start, patient_data, disclosure_law, topic_major_incident_talk, post_ico,
-           deadline_missed, hub
-    Reads ico_notified and ico_deadline_missed to branch between approval and grave consequence. %>
+    Knots: start, patient_data, disclosure_law, disclosure_choices, ico_timing,
+           isolation_concern, isolation_choices, patient_disclosure_talk, candour, post_ico,
+           deadline_missed, ncsc_advisory, hub
+    Decisions: isolation vs EHR allergy checks (isolation_compensating_controls) and when to
+    tell patients (patient_disclosure). ico_timing sets hartley_backs_early_ico for Helen. %>
           "currentKnot": "start",
           "voice": {
             "name": "Kore",
-            "style": "NHS Caldicott Guardian, cautious, precise, slightly formal. Speak with a consistent Scottish accent throughout — do not shift to any other accent.",
+            "style": "Consultant and Caldicott Guardian in her late fifties, cautious, precise, slightly formal. Speak with a consistent Edinburgh, Scottish accent throughout — do not shift to any other accent.",
             "language": "en-GB"
           },
           "puzzle_graph_actions": [
-            { "id": "notify_ncsc", "label": "NCSC notification (Hartley)", "unlocks_aim": "restore_operations" }
+            { "id": "helen_ico_advisory", "label": "Backs early ICO notification (Hartley)", "unlocks_aim": "restore_operations" }
           ],
           "eventMappings": [
             {
               "eventPattern": "global_variable_changed:ico_notified",
               "condition": "value === true",
               "onceOnly": true,
-              "conversationMode": "person-chat",
-              "targetKnot": "post_ico",
-              "background": "assets/backgrounds/hospital1.png"
+              "bark": "Helen tells me the ICO report has gone.",
+              "barkDelay": 3000
             },
             {
               "eventPattern": "global_variable_changed:ico_deadline_missed",
               "condition": "value === true",
               "onceOnly": true,
-              "conversationMode": "person-chat",
-              "targetKnot": "deadline_missed",
-              "background": "assets/backgrounds/hospital1.png"
+              "bark": "The ICO deadline has gone. We need to talk.",
+              "barkDelay": 3000
             }
           ]
         },
@@ -1974,7 +2100,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "id": "dr_sharma",
           "displayName": "Priya S.",
           "npcType": "person",
-          "observations": "Dr Priya Sharma, NCSC — she's awaiting your debrief.",
+          "observations": "Priya S., NCSC. She's waiting for your debrief.",
           "position": { "x": 2.6, "y": 6.8 },
           "spriteSheet": "female_spy_v2",
 <%# TODO[SPRITE]: female_spy is used as a professional investigator stand-in.
@@ -1986,17 +2112,19 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "storyPath": "scenarios/sis01_healthcare/ink/npc_sharma.json",
           "restartOnRetalk": false,
 <%# INK: scenarios/sis01_healthcare/ink/npc_sharma.ink — compiled ✓
-    Knots: start, patient_outcomes, safety_claims, regulatory, root_cause, closing,
-           debrief_complete, hub; sub-label dual_auth_bypass_end (within safety_claims)
+    Knots: start, main_debrief, patient_outcomes, safety_claims, isolation_review, regulatory,
+           recovery, root_cause, closing, debrief_complete
     Hidden until debrief_started=true (setVisible fires from eventMapping).
     KEY: closing knot sets debrief_complete=true → ends scenario.
-    Reads patient_bed4/bed2_deceased, all safety_claim_*_assessed, ico_notified/deadline_missed,
-    network_isolated, backup_reinfected to branch consequence dialogue. %>
+    Reads patient_bed4/bed2_deceased, sarah_given_soon_estimate, pump outcome globals, all
+    safety_claim_*_assessed and hc001_verdict, isolation_compensating_controls, ico_notified /
+    ico_notified_early / ico_deadline_missed, ncsc_notified, patient_disclosure, backup source and
+    backup_reinfected, ransom_advice, vpn_anomaly_identified. One question per section. %>
           "currentKnot": "start",
           "disableClose": true,
           "voice": {
             "name": "Leda",
-            "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+            "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
             "language": "en-GB"
           },
           "taskOnKO": "attend_debrief",
@@ -2029,7 +2157,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "onceOnly": true,
               "setVisible": true,
               "setGlobal": { "sharma_visible": true },
-              "bark": "Priya S., NCSC. I've been briefed on the incident. Finish what you need to — then come and find me when you're ready.",
+              "bark": "I'm from the NCSC, and I've been briefed. Finish what you need to, then come and find me.",
               "barkDelay": 1500
 <%# Sharma arrives as a non-blocking bark so the player retains autonomy to complete
     remaining tasks (NCSC notification via Helen, etc.) before starting the debrief.
@@ -2041,7 +2169,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "condition": "value === true",
               "onceOnly": true,
               "setVisible": true,
-              "setGlobal": { "sharma_visible": true, "debrief_started": true },
+              "setGlobal": { "sharma_visible": true, "debrief_started": true, "debrief_forced": true },
               "conversationMode": "person-chat",
               "targetKnot": "start",
               "background": "assets/backgrounds/hospital1.png",
@@ -2049,6 +2177,25 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
 <%# ICO deadline expired — Sharma can no longer wait. The debrief starts immediately
     regardless of whether backup or drug library tasks are complete. The debrief dialogue
     already handles incomplete states with appropriate consequence lines. %>
+            },
+            {
+              "eventPattern": "room_entered:major_incident_room",
+              "condition": "globalVars.ico_deadline_missed === true && !globalVars.debrief_forced && !globalVars.debrief_complete",
+              "onceOnly": true,
+              "setVisible": true,
+              "setGlobal": { "sharma_visible": true, "debrief_started": true, "debrief_forced": true },
+              "conversationMode": "person-chat",
+              "targetKnot": "start",
+              "background": "assets/backgrounds/hospital1.png",
+              "disableClose": true
+<%# N6: the deadline passed while this room was not loaded (Sarah's relay set the globals). %>
+            },
+            {
+              "eventPattern": "room_entered:major_incident_room",
+              "condition": "globalVars.debrief_started === true",
+              "setVisible": true
+<%# N2 workaround: initiallyHidden is reapplied on reload and the onceOnly reveal is not
+    replayed, so re-reveal her every time the player enters the room once the debrief is due. %>
             }
           ]
         }
@@ -2151,7 +2298,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "takeable": false,
               "readable": true,
               "observations": "A printed backup status report tucked inside the console. Three sources are listed — NAS, tape library, and vendor cloud — each with an integrity verdict, restore timeline, and reinfection risk rating.",
-              "text": "BACKUP STATUS — Tue 07:30\n\nNAS APPLIANCE: ENCRYPTED. Catalogue destroyed. Not recoverable without decryption key.\n\nTAPE LIBRARY: CATALOGUE WIPED. Tapes physically intact but unindexed. Recovery: 3-5 days minimum.\n\nVENDOR CLOUD BACKUP (EHR only): AVAILABLE.\n  Restore time estimate: 18 hours.\n  Data currency: last snapshot Mon 20:00 (7 hrs before incident).\n  Risk: restoring to an un-isolated network may reintroduce the attacker.\n\n⚠ Recommendation: Isolate the network before initiating cloud restore."
+              "text": "BACKUP STATUS — Tue 07:30\n\nNAS APPLIANCE: ENCRYPTED. Catalogue destroyed. Not recoverable without decryption key.\n\nTAPE LIBRARY: CATALOGUE WIPED. Tapes physically intact but unindexed. Recovery: 3-5 days minimum.\n\nVENDOR CLOUD BACKUP (EHR only): AVAILABLE.\n  Read-only view available to wards over the enterprise link.\n  Restore time estimate: 18 hours.\n  Data currency: last snapshot Mon 20:00 (2 hrs 15 min before the ransomware ran).\n  Risk: restoring to an un-isolated network may reintroduce the attacker.\n\n⚠ Recommendation: Isolate the network before initiating cloud restore."
             }
           ]
         },
@@ -2173,17 +2320,22 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "observations": "A terminal running the pump fleet management console. The drug library integrity status is shown on screen: LIBRARY INTEGRITY STATUS: NOT VERIFIED.",
           "minigameData": {
             "consoleTitle":    "NORTHGATE TRUST — PUMP FLEET MANAGEMENT CONSOLE",
-            "consoleSubtitle": "BD Alaris Fleet Manager v4.2 | northgate-fleet-01",
+            "consoleSubtitle": "InfusionGuard Fleet Manager v4.2 | northgate-fleet-01",
             "libraryFile":     "drug_library.csv",
             "backupFile":      "drug_library.bak",
             "hashFile":        "drug_library.sha256",
 
             "tamperedEntry": {
               "drug":          "MORPHINE",
-              "field":         "DOSE_MAX",
-              "tamperedValue": 40,
-              "correctValue":  4,
-              "modifiedAt":    "2025-11-03 02:47",
+              "field":         "DOSE_MIN",
+              "tamperedValue": 20,
+              "correctValue":  0.5,
+              "changes": [
+                { "field": "DOSE_MIN", "tamperedValue": 20, "correctValue": 0.5 },
+                { "field": "DOSE_MAX", "tamperedValue": 40, "correctValue": 4 },
+                { "field": "RATE_MAX", "tamperedValue": 40, "correctValue": 4, "unit": "mL/hr" }
+              ],
+              "modifiedAt":    "2025-11-03 18:47",
               "backupDate":    "2025-11-01 09:12"
             },
 
@@ -2193,7 +2345,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               { "name": "HEPARIN",              "concMgPerMl": 1000,  "doseMin": 1000,  "doseMax": 24000, "unit": "units",     "rateMaxMlHr": 24  },
               { "name": "NORADRENALINE",        "concMgPerMl": 0.08,  "doseMin": 0.01,  "doseMax": 0.3,   "unit": "mcg/kg/m",  "rateMaxMlHr": 40  },
               { "name": "FUROSEMIDE",           "concMgPerMl": 10,    "doseMin": 20,    "doseMax": 80,    "unit": "mg",        "rateMaxMlHr": 10  },
-              { "name": "MORPHINE",             "concMgPerMl": 1,     "doseMin": 0.5,   "doseMax": 40,    "unit": "mg/hr",     "rateMaxMlHr": 40  },
+              { "name": "MORPHINE",             "concMgPerMl": 1,     "doseMin": 20,    "doseMax": 40,    "unit": "mg/hr",     "rateMaxMlHr": 40  },
               { "name": "METRONIDAZOLE",        "concMgPerMl": 5,     "doseMin": 500,   "doseMax": 1500,  "unit": "mg",        "rateMaxMlHr": 100 },
               { "name": "INSULIN (ACTRAPID)",   "concMgPerMl": 100,   "doseMin": 0.5,   "doseMax": 50,    "unit": "units/hr",  "rateMaxMlHr": 50  },
               { "name": "VANCOMYCIN",           "concMgPerMl": 5,     "doseMin": 500,   "doseMax": 2000,  "unit": "mg",        "rateMaxMlHr": 120 },
@@ -2222,13 +2374,15 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
                 "onConsulted":    "onMARChartsReferenced",
                 "content": {
                   "title":      "MEDICATION ADMINISTRATION RECORD — WARD 7",
-                  "drug":       "Morphine Sulphate (IV)",
-                  "field":      "DOSE_MAX",
-                  "value":      4,
+                  "drug":       "Morphine Sulphate 1 mg/mL (IV)",
+                  "patient":    "Ms A. Okafor — Bed 2",
+                  "dose":       "2.0 mg/hr, continuous",
+                  "field":      "DOSE_MIN",
+                  "value":      0.5,
                   "unit":       "mg/hr",
-                  "note":       "max 4 mg/hr — specialist review required above 4 mg/hr",
-                  "prescriber": "Dr. K. Mahmoud",
-                  "verified":   "J. Chen (23 Oct 2025)"
+                  "note":       "Ward range 0.5–4 mg/hr. Specialist review above 4 mg/hr.",
+                  "prescriber": "Dr A. Hassan",
+                  "verified":   "J. Chen (Mon 3 Nov 2025)"
                 }
               },
               {
@@ -2238,13 +2392,17 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
                 "lockedMessage":  "Manufacturer safety documentation not yet available — speak to David Osei (Clinical Engineering) or find the binder on the shelf.",
                 "onConsulted":    "onManufacturerReferenced",
                 "content": {
-                  "title":   "ALARIS GP — DRUG LIBRARY CONFIGURATION GUIDE",
+                  "title":   "INFUSIONGUARD GP — DRUG LIBRARY CONFIGURATION GUIDE",
                   "drug":    "Morphine Sulphate / Diamorphine",
-                  "field":   "DOSE_MAX",
-                  "value":   4.0,
-                  "unit":    "mg/hr",
-                  "note":    "DO NOT EXCEED without specialist pharmacist override",
-                  "warning": "Library values are safety limits enforced at the hardware level. Configuring DOSE_MAX above clinical guidelines removes the hard-stop protection."
+                  "rows": [
+                    { "key": "Title",         "value": "INFUSIONGUARD GP — DRUG LIBRARY CONFIGURATION GUIDE" },
+                    { "key": "Drug",          "value": "Morphine Sulphate / Diamorphine" },
+                    { "key": "Concentration", "value": "1 mg/mL (standard)" },
+                    { "key": "DOSE_MIN",      "value": "0.5 mg/hr", "tone": "green" },
+                    { "key": "DOSE_MAX",      "value": "4.0 mg/hr — specialist pharmacist review above this", "tone": "amber" },
+                    { "key": "Rate max",      "value": "4.0 mL/hr" }
+                  ],
+                  "warning": "Library limits are enforced at the pump. Any change must be authorised by a clinical pharmacist and recorded in the fleet audit log."
                 }
               }
             ],
@@ -2256,6 +2414,16 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
                 { "serial": "PUMP-W5B3-002", "ward": "Ward 5", "bed": "Bed 3", "lastActive": "18:44 yesterday", "activeToday": false },
                 { "serial": "PUMP-W3B1-007", "ward": "Ward 3", "bed": "Bed 1", "lastActive": "11:22 yesterday", "activeToday": false }
               ],
+              "logDate": "2025-11-04",
+              "closingLines": [
+                "This library version was pushed to the pump fleet at 18:47 on Monday, three and a half hours before the ransomware ran.",
+                "No pharmacist approved it. The fleet audit log recorded the change.",
+                "This was not an opportunistic side-effect of the ransomware."
+              ],
+              "outcomeText": {
+                "safe": "Rate set at the prescribed 2.0 mg/hr. Under this library the pump challenges that rate as below its minimum; it holds only when staff trust the prescription.",
+                "risk": "The rate entered sat inside the tampered 20–40 mg/hr range, so the pump accepted it without an alert. The correct ward range is 0.5–4 mg/hr."
+              },
               "activePumpGlobals": {
                 "serial":                   "PUMP-W7B2-001",
                 "linkedDrugGlobal":         "pump_drug_name",
@@ -2288,11 +2456,11 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
     Replaces the old drug_library_flag_station (VM mode flag submission no longer required). %>
           "type": "notes",
           "id": "pump_manufacturer_binder",
-          "name": "ALARIS GP — Manufacturer Safety Documentation",
+          "name": "InfusionGuard GP — Manufacturer Safety Documentation",
           "takeable": false,
           "readable": true,
-          "text": "ALARIS GP — DRUG LIBRARY CONFIGURATION GUIDE\nBD Medical — Pump Fleet Management Reference\n\nMORPHINE SULPHATE / DIAMORPHINE\n\nConcentration:  1 mg/mL (standard)\nDose range:     0.5 – 4.0 mg/hr  (standard ward)\nDOSE_MAX:       4.0 mg/hr  ← DO NOT EXCEED without specialist pharmacist override\nRate max:       4.0 mL/hr\n\nWARNING: Library values are safety limits enforced at the hardware level.\nConfiguring DOSE_MAX above clinical guidelines removes the hard-stop protection.\nAny modification to drug library parameters must be authorised by a clinical pharmacist\nand documented in the fleet management audit log.",
-          "observations": "A ring-binder labelled PUMP MANUFACTURER — SAFETY DOCUMENTATION (Alaris GP Fleet Manager). Clinical safety reference for drug library configuration.",
+          "text": "INFUSIONGUARD GP — DRUG LIBRARY CONFIGURATION GUIDE\nPump Fleet Management Reference\n\nMORPHINE SULPHATE / DIAMORPHINE\n\nConcentration:  1 mg/mL (standard)\nDOSE_MIN:       0.5 mg/hr\nDOSE_MAX:       4.0 mg/hr  ← specialist pharmacist review above this\nRate max:       4.0 mL/hr\n\nAn entry outside DOSE_MIN–DOSE_MAX raises a dose-range alert at the pump.\nThe pump trusts its library: it judges every entry against these values.\n\nAny change to drug library parameters must be authorised by a clinical pharmacist\nand recorded in the fleet management audit log.",
+          "observations": "A ring-binder labelled PUMP MANUFACTURER — SAFETY DOCUMENTATION (InfusionGuard GP Fleet Manager). Clinical safety reference for drug library configuration.",
           "onRead": { "setVariable": { "manufacturer_datasheet_available": true } }
         },
 
@@ -2346,7 +2514,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "position": { "x": 6, "y": 4 },
           "takeable": false,
           "readable": true,
-          "text": "YOUR FILES HAVE BEEN ENCRYPTED\n\nNorthgate General Hospital NHS Trust\n312 workstations | 4 file servers | EHR database\n\nRecovery price: 1.2 BITCOIN (£1,200,000 GBP)\nWallet address: bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh\n\nDO NOT attempt recovery — encrypted files will be destroyed\nDO NOT contact law enforcement — price will double\n\nTime remaining: 71:xx:xx\n\nDarkVault Ransomware Group\nSupport: darkv4ult7xkrp2c.onion",
+          "text": "YOUR FILES HAVE BEEN ENCRYPTED\n\nNorthgate General Hospital NHS Trust\n312 workstations | 4 file servers | EHR database\n\nRecovery price: 16 BITCOIN (approx. £1,200,000)\nWallet address: bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh\n\nDO NOT attempt recovery — encrypted files will be destroyed\nDO NOT contact law enforcement — price will double\n\nTime remaining: 62:xx:xx\n\nDarkVault Ransomware Group\nSupport: darkv4ult7xkrp2c.onion",
           "observations": "A printed copy of the ransom note, left on the conference table. Across the top, someone has written WE ARE NOT PAYING in red marker."
         },
 
@@ -2356,7 +2524,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "takeable": false,
           "readable": true,
           "minigameData": { "timerRef": "ico_deadline" },
-          "text": "ICO NOTIFICATION — GDPR ARTICLE 33\n\n⏱  DEADLINE COUNTDOWN: see top-right corner of screen\n\nTrust awareness used for this exercise: Mon 22:38\n72-hour deadline: Thu 22:38\nCompressed training timer: 45 minutes of game time\n\nObligation: Notify the ICO within 72 hours of becoming aware of a personal data breach.\nLate notification must be justified in writing. Maximum fine: £17.5 million.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nNOTIFICATION CHECKLIST:\n  [ ] Consult Caldicott Guardian (Dr Hartley — she is in this room)\n  [ ] Assess whether data was exfiltrated or encrypted in place\n  [ ] Confirm notification scope and incident facts with Helen Carver (CIO)\n  [ ] Submit to ICO: ico.org.uk/make-a-report\n\nNCSC: Early notification is strongly recommended for attacks affecting clinical systems.\nNHS England / sector reporting may also apply under the Major Incident process.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nKey assessment questions (GDPR Art. 33):\n  1. Were personal data exfiltrated, or encrypted in place only?\n  2. Does the breach pose risk to individuals' rights and freedoms?\n  3. Have containment steps been taken?\n\nNote: Encryption-in-place may still constitute a reportable breach\nif personal data was accessible during the attacker's presence window.",
+          "text": "ICO NOTIFICATION — UK GDPR ARTICLE 33\n\n⏱  DEADLINE COUNTDOWN: see top-right corner of screen\n\nTrust awareness used for this exercise: Mon 22:38\n72-hour deadline: Thu 22:38\nCompressed training timer: 45 minutes of game time\n\nObligation: notify the ICO without undue delay, and within 72 hours of becoming aware of a personal data breach. A late report must give the reasons for the delay.\nFailure to notify: up to £8.7 million or 2% of turnover. For public bodies the ICO usually issues a published reprimand.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nNOTIFICATION CHECKLIST:\n  [ ] Consult the Caldicott Guardian (Dr Hartley — she is in this room)\n  [ ] Assess whether data was taken, or encrypted in place only\n  [ ] Agree scope and facts with Helen Carver (CIO)\n  [ ] Submit to the ICO: ico.org.uk/make-a-report\n\nNHS England: statutory NIS incident report — made Mon 23:05 (H. Carver).\nNCSC: voluntary; recommended for attacks affecting clinical systems.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nThe report covers (Art. 33(3)):\n  1. What happened, and whose data\n  2. Likely consequences for those people\n  3. Measures taken or proposed to deal with it\n\nNote: Encryption-in-place may still be a reportable breach\nif personal data was accessible while the attacker was inside.",
           "observations": "A tablet pinned to the conference table showing the ICO notification checklist. A countdown timer in the corner shows time remaining against the 72-hour window — also visible in the top-right HUD."
 <%# TODO[MINIGAME]: Replace this tablet with MG-16 Disclosure & Regulatory Notification Console
     (HTML/CSS). MG-16 would embed a live countdown, editable notification templates, and a
@@ -2369,10 +2537,24 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
 
         {
           "type": "notes",
+          "id": "ig_breach_briefing",
+          "name": "IG Briefing — Reporting a Personal Data Breach",
+          "position": "as-type:tablet",
+          "takeable": false,
+          "readable": true,
+          "text": "NORTHGATE TRUST — INFORMATION GOVERNANCE BRIEFING\nReporting a personal data breach (UK GDPR Article 33)\n\n1. Tell the ICO without undue delay, and within 72 hours of becoming aware of the breach. Art. 33(1)\n2. Say what happened, whose data, the likely consequences, and the measures taken OR PROPOSED. Art. 33(3)\n3. If we don't know everything yet, report what we know and send the rest in phases. Art. 33(4)\n4. A late report must say why it is late.\n\nThe report describes containment. It does not wait for it.\n\nDr F. Hartley, Caldicott Guardian, with the Data Protection Officer",
+          "observations": "A second tablet on the table, open at a one-page information governance briefing from Dr Hartley. Article 33 is highlighted.",
+          "onRead": { "setVariable": { "ico_guidance_read": true } }
+<%# Decision 4 evidence: reading this sets ico_guidance_read, which unlocks the Article 33
+    argument choice in Helen's ico_argument knot. Dr Hartley's ico_timing is the other route. %>
+        },
+
+        {
+          "type": "notes",
           "name": "Safety Case Extract (CLAIM-HC-001, HC-003, HC-007)",
           "takeable": false,
           "readable": true,
-          "text": "NORTHGATE TRUST — SAFETY CASE EXTRACT\nSelected Claims — Network & Device Security\n\n--- CLAIM-HC-001 ---\nNetwork segmentation maintains separation between the enterprise and clinical zones\nsuch that compromise of the enterprise zone cannot propagate to safety-critical devices.\nEvidence: VLAN segmentation project (70% complete). Legacy exception rules documented.\n\n--- CLAIM-HC-003 ---\nDrug library change control ensures that dose limits loaded into the infusion pump fleet\nare authorised, version-controlled, and audited before deployment.\nEvidence: Change control procedure v2.1. Annual library audit record.\n\n--- CLAIM-HC-007 ---\nThe integrated incident response plan provides clear guidance on when to isolate clinical\nsystems, and the isolation procedure is rehearsed at least annually so that response\ntime does not itself create a patient safety risk.\nEvidence: IRP v3.0. Last tabletop exercise: March 2024 (19 months ago).\n\n[THIS DOCUMENT IS DAVID OSEI'S COPY — DOG-EARED]",
+          "text": "NORTHGATE TRUST — SAFETY CASE EXTRACT\nSelected claims: network and device security\nEach claim gives the CLAIM (what we say is safe), the ARGUMENT (why we believe it) and the EVIDENCE.\n\n--- CLAIM-HC-001 ---\nClaim: Provided there are no dual-homed workstations and no legacy exception rules, a compromise of the enterprise zone cannot propagate to safety-critical clinical devices.\nArgument: The next-generation firewall separates the enterprise and clinical zones; only listed data flows cross it.\nEvidence: VLAN segmentation project (70% complete). Legacy exception rules documented.\n\n--- CLAIM-HC-003 ---\nClaim: Dose limits loaded into the infusion pump fleet are authorised by a pharmacist, version-controlled and audited before deployment.\nArgument: Every library change goes through change control and is hash-checked against a signed copy.\nEvidence: Change control procedure v2.1. Annual library audit record.\n\n--- CLAIM-HC-007 ---\nClaim: Incident response decisions that affect clinical safety are made jointly by IT security and clinical engineering, and the isolation procedure is rehearsed at least annually.\nArgument: The incident response plan requires dual sign-off before isolation; rehearsal stops response time becoming a hazard.\nEvidence: IRP v3.0. Last tabletop exercise: March 2024 (19 months ago).\n\n[THIS DOCUMENT IS DAVID OSEI'S COPY — DOG-EARED]",
           "observations": "A printed extract from the hospital's safety case, left on the table by David Osei. The pages are dog-eared and annotated."
         },
 
@@ -2381,7 +2563,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "name": "Vendor Remote Access Exception Register",
           "takeable": false,
           "readable": true,
-          "text": "CLINICAL ENGINEERING — EXCEPTION REGISTER\nVendor Remote Access to Clinical Zone\n\nVendor: BD Medical / Alaris Fleet Support\nConnection: Persistent VPN termination inside clinical network\nPurpose: Remote troubleshooting and fleet configuration support\nApproved window: TEMPORARY 24/7 exception pending gateway redesign\nMFA status: Deferred — supplier migration outstanding\nLocal owner: Clinical Engineering\nSecurity review status: OVERDUE (last review 7 months ago)\n\nOpen risk:\n  A compromised vendor credential would bypass the enterprise perimeter and land\n  directly inside the clinical device zone.\n\nAction from internal audit:\n  Replace persistent VPN with time-limited brokered access and monitored approval workflow.",
+          "text": "CLINICAL ENGINEERING — EXCEPTION REGISTER\nVendor Remote Access to Clinical Zone\n\nVendor: InfusionGuard Fleet Support\nConnection: Persistent VPN termination inside clinical network\nPurpose: Remote troubleshooting and fleet configuration support\nApproved window: TEMPORARY 24/7 exception pending gateway redesign\nMFA status: Deferred — supplier migration outstanding\nLocal owner: Clinical Engineering\nSecurity review status: OVERDUE (last review 7 months ago)\n\nOpen risk:\n  A compromised vendor credential would bypass the enterprise perimeter and land\n  directly inside the clinical device zone.\n\nAction from internal audit:\n  Replace persistent VPN with time-limited brokered access and monitored approval workflow.",
           "observations": "A printed exception register for vendor access into the clinical zone. Several lines have been highlighted in orange marker."
         },
 
@@ -2392,7 +2574,12 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "readable": true,
           "text": "INTERNAL AUDIT FOLLOW-UP — MEDICAL DEVICE CYBER RISK\n\nOutstanding actions from prior review:\n\n1. Joint IT Security / Clinical Engineering governance board not yet established\n   Status: OPEN\n   Risk: cross-domain cyber risks fall between reporting lines\n\n2. Medical device cyber risk register not yet created\n   Status: OPEN\n   Risk: segmentation exceptions and vendor-access weaknesses tracked informally only\n\n3. Backup architecture for safety-critical systems still reliant on network-reachable infrastructure\n   Status: PARTIAL\n   Note: vendor cloud copy exists, but local NAS and tape control remain reachable from production\n   Recommendation: add immutable or air-gapped recovery path for EHR and device-management data\n\n4. Joint cyber / clinical tabletop exercise overdue\n   Last exercise: Mar 2024\n\nAudit conclusion:\n  Governance and recovery improvements remain incomplete despite prior acceptance of the risk.",
           "observations": "An internal audit follow-up note summarising unresolved governance and backup issues. Someone has written STILL OPEN? across the top in red pen."
-        }
+        },
+<%# Room dressing (sis01 only): conditional sprites on room_hospital_meeting, so the major
+    incident room reads differently from m02's conference room. No puzzle role. %>
+        { "type": "radio_charger", "id": "mir_radios", "name": "Radios on Charge", "takeable": false, "observations": "A rack of handheld radios on charge, each labelled with an incident role: GOLD, SILVER, LOGGIST, COMMS, ESTATES, IT." },
+        { "type": "coffee_station", "id": "mir_coffee", "name": "Coffee Machine", "takeable": false, "observations": "Sent up from the canteen when the major incident was declared. The jug is nearly empty again." },
+        { "type": "clipboard_chart", "id": "mir_incident_log", "name": "Major Incident Log", "takeable": false, "observations": "The loggist's clipboard. Every decision since the major incident was declared is written down with a time and a name." }
 
       ]
     }

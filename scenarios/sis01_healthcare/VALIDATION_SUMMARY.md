@@ -1,5 +1,7 @@
 # Healthcare Scenario Validation Summary
 
+> **Stale in parts (2026-10-02).** The dialogue and design fix pass changed knots, globals and names: the staff nurse is now Amy Clarke (id `patrol_nurse`), the NCSC investigator is Priya S. (surname withheld; id `dr_sharma`), the drug library tamper is a raised morphine minimum (0.5 → 20 mg/hr, prescription 2.0 mg/hr), Bed 2 is Ms A. Okafor throughout, and the ICO task is required (NCSC optional). See `DIALOGUE_REVIEW.md` ("Decisions" and section 7) and `PASS_PLAYTEST.md`.
+
 **Status**: ✅ PASSING (Validated 2026-04-03)
 
 ## Schema Updates Required
@@ -44,7 +46,7 @@
 - `ink/npc_david.ink` — Clinical Engineer David Osei
 - `ink/npc_helen.ink` — NHS CIO Helen Carver
 - `ink/npc_hartley.ink` — Caldicott Guardian Dr Fiona Hartley
-- `ink/npc_sharma.ink` — NCSC Investigator Dr Priya Sharma
+- `ink/npc_sharma.ink` — NCSC Investigator Priya S.
 - `ink/npc_patrol_nurse.ink` — Patrol Nurse (context-sensitive lines)
 
 ### Hacktivity VMs Required (2 VMs)

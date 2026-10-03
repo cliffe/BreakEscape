@@ -1,10 +1,14 @@
-# SIS01 Healthcare: Information Pack
-
-This information pack contains comprehensive background information about the Northgate General Hospital scenario, including system architecture, regulatory frameworks, requirements, and incident details.
-
 ---
-
-## File: ./assurance_cases/assurance_case_overview\.md
+title: "SIS01 Healthcare: Information Pack — Northgate General Hospital"
+author: ["Z. Cliffe Schreuders", "Oleg Illiashenko"]
+license: "CC BY-SA 4.0"
+description: |
+  The authoritative technical source behind the SIS01 Healthcare scenario: hospital network architecture, InfusionGuard medical device systems, GSN/CAE assurance cases, CLAIM-HC safety claims with traceable requirement IDs, regulatory frameworks (UK GDPR, the NIS Regulations, MHRA, NHS DSPT, IEC 62304), and the Northgate incident storyline with attack chain.
+categories: ["security_informed_safety"]
+tags: ["security-informed-safety", "healthcare", "medical-devices", "incident-response", "safety-case", "gsn", "network-segmentation", "risk-management", "uk-gdpr", "break-escape", "information-pack"]
+type: ["information-pack"]
+source: "https://github.com/cliffe/BreakEscape/blob/main/scenarios/sis01_healthcare/information_pack.md"
+---
 
 # Security-Informed Safety Assurance Case — Northgate General Hospital
 
@@ -107,7 +111,7 @@ The assurance case operates within two explicit contextual elements:
 
 **Ctx1 (Scope)** bounds the argument to the Northgate General Hospital clinical ICT environment as documented in the system architecture. This means the case addresses the specific systems, network topology, and device fleet described — not a generic hospital environment.
 
-**Ctx2 (Threat Assumption)** specifies the threat actors considered: financially motivated ransomware groups (the DarkVault profile), supply-chain compromise via medical device vendor access, and negligent insiders (the Craig Ellison profile). The assurance case does not claim to address all possible threat actors — notably, it does not specifically argue against a determined nation-state actor with zero-day capabilities, though several of the controls (segmentation, firmware integrity, alarm auditing) would provide defence in depth.
+**Ctx2 (Threat Assumption)** specifies the threat actors considered: financially motivated ransomware groups (the DarkVault profile), supply-chain compromise via medical device vendor access, and negligent insiders (the Marcus Blake profile). The assurance case does not claim to address all possible threat actors — notably, it does not specifically argue against a determined nation-state actor with zero-day capabilities, though several of the controls (segmentation, firmware integrity, alarm auditing) would provide defence in depth.
 
 ### Evidence Nodes
 
@@ -143,9 +147,6 @@ This assurance case is a teaching artefact, not a production safety case. A real
 - Integration with the Trust's broader clinical risk management framework
 
 The assurance case also does not address the human factors dimension — the impact of cyber incidents on clinical staff workload, stress, and decision-making quality, all of which affect patient safety during a crisis.
-
-## File: ./assurance_cases/cae_evidence_catalogue.md
-
 # Evidence Catalogue — Northgate General Hospital Security-Informed Safety Case
 
 This catalogue lists every evidence node referenced in the detailed CAE case ([detailed_cae_case.md](detailed_cae_case.md)). Evidence nodes are numbered sequentially (E1–E25) and grouped by the claim they primarily support. Some evidence nodes support multiple claims.
@@ -400,7 +401,7 @@ This catalogue lists every evidence node referenced in the detailed CAE case ([d
 - **Confidence**: Medium — exercises demonstrate capability and identify process gaps, but tabletop exercises are inherently less realistic than live exercises (participants have time to think, reference documents, and discuss options — conditions not available during a genuine crisis). Staff turnover means that some decision-makers participating in a real incident may not have attended a recent exercise.
 - **Dependencies**: Effective exercises require participation from senior decision-makers (CIO, clinical engineering manager, clinical lead). Scheduling constraints at a busy hospital mean that full attendance at every exercise is not always achieved.
 - **Traceability**: REQ-HC-SEC-022, REQ-HC-SAF-009, REQ-HC-SAF-010
-- **Scenario Relevance**: The Scenario 01 decision point at Day 2 (whether to sever the enterprise-clinical network link) is the primary scenario used in these exercises. The exercise process is designed to prevent a repeat of the ad hoc decision-making described in the Northgate incident narrative (Day 2 afternoon).
+- **Scenario Relevance**: The Scenario 01 decision point on Tuesday (whether to sever the enterprise-clinical network link) is the primary scenario used in these exercises. The exercise process is designed to prevent a repeat of the ad hoc decision-making described in the Northgate incident narrative (Tuesday morning).
 
 ---
 
@@ -414,7 +415,7 @@ This catalogue lists every evidence node referenced in the detailed CAE case ([d
 - **Confidence**: Medium — the plan is comprehensive, well-structured, and reflects input from all relevant stakeholders. Its real-world effectiveness has not been tested in a live incident (the Northgate scenario occurred before this plan existed, and the plan represents the post-incident remediation). The closest analogue to live testing is the biannual tabletop exercise (E16).
 - **Dependencies**: Plan effectiveness depends on (a) decision-makers being aware of the plan and knowing where to find it (printed copies maintained in the incident response pack, independent of electronic systems), (b) decision-makers following the plan under crisis conditions rather than reverting to ad hoc decision-making, and (c) the plan being current (reflecting the actual system architecture, not an outdated version).
 - **Traceability**: REQ-HC-SEC-022, REQ-HC-SAF-009, REQ-HC-SAF-010
-- **Scenario Relevance**: This plan is the direct remediation for the Northgate incident (Day 2 afternoon), where the decision to sever the enterprise-clinical network link was made without a structured framework for evaluating clinical safety consequences.
+- **Scenario Relevance**: This plan is the direct remediation for the Northgate incident (Tuesday morning), where the decision to sever the enterprise-clinical network link was made without a structured framework for evaluating clinical safety consequences.
 
 ---
 
@@ -503,9 +504,6 @@ This catalogue lists every evidence node referenced in the detailed CAE case ([d
 - **Dependencies**: Requires the approved asset register and RBAC policy to be current and accurate.
 - **Traceability**: REQ-HC-SEC-016, REQ-HC-SEC-004
 - **Scenario Relevance**: Addresses the access control environment in which Scenario 02 operates. The move from shared credentials to individual named accounts and the restriction of the service account to application-only use are direct remediations for the Scenario 02 attack vector (Step 4 — harvesting the shared service account credential).
-
-## File: ./assurance_cases/detailed_cae_case.md
-
 # Detailed Security-Informed Safety Case — Northgate General Hospital (CAE)
 
 ---
@@ -522,7 +520,7 @@ The threat actors considered in this assurance case are:
 
 - **DarkVault** — a financially motivated ransomware-as-a-service group operating a double-extortion model. DarkVault affiliates target healthcare organisations because of their low tolerance for downtime. Their attack tooling includes custom loaders, commodity RATs, and a proprietary ransomware encryptor. Their lateral movement techniques are indiscriminate — any reachable host is a target for encryption.
 - **Supply-chain compromise via medical device vendor access** — the infusion pump manufacturer maintains a persistent VPN connection to the clinical zone for firmware updates and remote troubleshooting. Compromise of the vendor's credentials provides direct network access to the clinical device zone, bypassing the enterprise perimeter entirely.
-- **Negligent insider (Craig Ellison)** — a contract network engineer whose poor credential hygiene (password reuse, sharing VPN credentials) directly contributed to the attack surface that DarkVault exploited.
+- **Negligent insider (Marcus Blake)** — a contract network engineer whose poor credential hygiene (password reuse, sharing VPN credentials) directly contributed to the attack surface that DarkVault exploited.
 
 ### CAE Framework
 
@@ -702,8 +700,7 @@ The argument does not claim absolute protection against all firmware attacks. A 
 
 **D2: Zero-day vulnerability in firmware verification implementation**. A flaw in the device's signature verification code could allow a crafted firmware image to pass verification despite not carrying a valid signature. **Status**: Partially mitigated. Network segmentation (CLAIM-HC-001) limits the attacker's ability to reach the device; firmware version register (E19) provides a secondary detection mechanism. Accepted as contributing to residual risk R1.
 
-#### Mermaid Diagram
-
+#### Argument Diagram
 ```mermaid
 graph TD
     C2["<b>CLAIM-HC-002</b><br/>Firmware integrity prevents<br/>device manipulation"]
@@ -736,7 +733,7 @@ graph TD
 
 #### Claim Rationale
 
-CLAIM-HC-003 addresses the most safety-critical data element on a networked infusion pump: the drug library. The drug library defines maximum and minimum dose rates, concentrations, and hard dosing limits for each medication. It is the automated equivalent of a pharmacist standing at the bedside verifying every dose. In Scenario 02 (Step 5), the attacker modifies drug library entries — increasing the morphine maximum rate from 4 mg/hr to 40 mg/hr, altering heparin concentration, and removing a chemotherapy hard limit. In Step 10, this modification directly causes a ten-fold morphine overdose. If CLAIM-HC-003 were false, any attacker with access to the fleet management console could silently remove the guardrails that protect patients from dosing errors.
+CLAIM-HC-003 addresses the most safety-critical data element on a networked infusion pump: the drug library. The drug library defines maximum and minimum dose rates, concentrations, and hard dosing limits for each medication. It is the automated equivalent of a pharmacist standing at the bedside verifying every dose. In Scenario 02 (Step 5), the attacker modifies drug library entries — raising the morphine minimum rate from 0.5 mg/hr to 20 mg/hr (and the maximum from 4 to 40 mg/hr so the entry still loads), altering heparin concentration, and removing a chemotherapy hard limit. In Step 10, the pump challenges a correctly prescribed 2.0 mg/hr as "below minimum", and the nurse's correction becomes a ten-fold morphine overdose. If CLAIM-HC-003 were false, any attacker with access to the fleet management console could do worse than remove the guardrails that protect patients from dosing errors: they could turn those guardrails into prompts for the error.
 
 #### Argument
 
@@ -774,8 +771,7 @@ The argument acknowledges a critical gap: in Scenario 02, the attacker modifies 
 
 **D4: Fleet management console unavailable (Scenario 01)**. If the console is encrypted by ransomware, both the audit trail (E1) and the automated comparison (E2) are unavailable. Pumps continue operating on their locally stored library, which is safe if it has not been previously corrupted — but new prescriptions requiring dose adjustments must be programmed manually, reintroducing transcription error risk. **Status**: Mitigated by clinical fallback procedures (CLAIM-HC-010) and dual authorisation for manual dose entry (REQ-HC-SAF-014).
 
-#### Mermaid Diagram
-
+#### Argument Diagram
 ```mermaid
 graph TD
     C3["<b>CLAIM-HC-003</b><br/>Drug library change control<br/>preserves dose safety"]
@@ -840,8 +836,7 @@ The compensating control argument addresses the scenario where the central stati
 
 **D6: Attacker modifies the clinical governance baseline profile**. If the attacker alters both the device thresholds and the reference profile used for comparison, the audit would report no deviations. **Status**: Partially mitigated. The Clinical Governance Committee maintains an independent paper record of approved alarm profiles. Cross-referencing the electronic baseline against the paper record during quarterly governance review would detect this tampering, but with a significant delay.
 
-#### Mermaid Diagram
-
+#### Argument Diagram
 ```mermaid
 graph TD
     C4["<b>CLAIM-HC-004</b><br/>Alarm configuration auditing<br/>maintains monitoring effectiveness"]
@@ -906,8 +901,7 @@ The compensating control argument acknowledges a critical limitation: the curren
 
 **D8: Undocumented device command interfaces**. Medical devices may have debugging interfaces, maintenance modes, or vendor-specific command channels that bypass the documented authentication mechanisms. **Status**: Partially mitigated. Supply chain security assessment (REQ-HC-SEC-027) includes pre-deployment assessment of device command interfaces, but cannot guarantee completeness for proprietary firmware.
 
-#### Mermaid Diagram
-
+#### Argument Diagram
 ```mermaid
 graph TD
     C9["<b>CLAIM-HC-009</b><br/>Device authentication prevents<br/>unauthorised command execution"]
@@ -982,8 +976,7 @@ The operational continuity argument demonstrates that restoration from these imm
 
 **D10: Off-site backup authentication compromise**. If an attacker compromises the credentials for the off-site immutable storage (which are on a separate IAM domain), they could potentially delete or corrupt the off-site copies. **Status**: Mitigated. The off-site storage uses MFA, is on a separate identity domain, and WORM policies prevent deletion within the retention period even by the storage administrator.
 
-#### Mermaid Diagram
-
+#### Argument Diagram
 ```mermaid
 graph TD
     C6["<b>CLAIM-HC-006</b><br/>Immutable backups enable<br/>safety-preserving recovery"]
@@ -1052,8 +1045,7 @@ The argument acknowledges that content-level image manipulation (altering pixel 
 
 **D12: PACS system compromise enabling integrity control bypass**. If the attacker gains administrative access to the PACS server, they may be able to disable the integrity verification mechanism or modify images while the mechanism is suspended. **Status**: Partially mitigated by network segmentation (CLAIM-HC-001) and clinical zone monitoring (REQ-HC-SEC-019). The PACS administrator account uses separate credentials from the domain, reducing the attack surface.
 
-#### Mermaid Diagram
-
+#### Argument Diagram
 ```mermaid
 graph TD
     C8["<b>CLAIM-HC-008</b><br/>PACS integrity controls<br/>prevent diagnostic error"]
@@ -1113,8 +1105,7 @@ Third, the procedures include a defined process for recognising and correcting e
 
 **D14: Fallback procedures themselves introduce safety errors**. Paper-based prescribing reintroduces transcription errors, removes electronic allergy checking, and creates handwriting legibility issues. The fallback is safer than no procedure at all, but materially less safe than electronic prescribing. **Status**: Partially mitigated by double-check requirements (REQ-HC-SAF-014) and additional pharmacy staffing during incidents. Accepted as an inherent limitation of manual clinical processes.
 
-#### Mermaid Diagram
-
+#### Argument Diagram
 ```mermaid
 graph TD
     C10["<b>CLAIM-HC-010</b><br/>Clinical fallback procedures<br/>maintain safe care during outage"]
@@ -1187,8 +1178,7 @@ The defence-in-depth layer addresses the scenario where a novel application-laye
 
 **D16: Configuration drift re-introduces exception rules**. Over time, operational pressures may lead to the re-introduction of firewall exception rules (as happened in the original Northgate scenario, where legacy rules were maintained for workflow continuity). **Status**: Mitigated. Continuous firewall change monitoring (E12) generates alerts for any rule modification. Quarterly audit with dual verification ensures any drift is detected and remediated within the audit cycle. Joint IT/Clinical Engineering governance committee (REQ-HC-SEC-024) provides organisational oversight of cross-zone access requests.
 
-#### Mermaid Diagram
-
+#### Argument Diagram
 ```mermaid
 graph TD
     C1["<b>CLAIM-HC-001</b><br/>Network segmentation<br/>protects device integrity"]
@@ -1253,8 +1243,7 @@ The argument for CLAIM-HC-005 applies three layers of control. First, vendor rem
 
 **D18: Vendor uses maintenance window for unsanctioned access**. The vendor, acting within a legitimate session, could access devices or perform actions beyond the scope of the maintenance work order. **Status**: Partially mitigated. Session monitoring compares accessed devices against the work order scope. Vendor contract terms (REQ-HC-SEC-026) impose obligations and audit rights. However, fine-grained action-level monitoring is limited by the granularity of device-level logging.
 
-#### Mermaid Diagram
-
+#### Argument Diagram
 ```mermaid
 graph TD
     C5["<b>CLAIM-HC-005</b><br/>Vendor access controls prevent<br/>supply-chain attack path"]
@@ -1283,7 +1272,7 @@ graph TD
 
 #### Claim Rationale
 
-CLAIM-HC-007 addresses a second-order hazard: the risk that incident *response* actions themselves create patient safety hazards. In Scenario 01 (Day 2 afternoon), the Trust's emergency response team debates whether to sever the enterprise-to-clinical network link. Severing the connection protects clinical devices from further compromise — but also disconnects clinicians from the EHR and prevents the infusion pump fleet management system from receiving commands, forcing all programming to manual operation. The decision to sever at 14:30 was taken without a pre-planned framework for evaluating clinical safety consequences of IT containment actions. If CLAIM-HC-007 were false, every containment decision would be an ad hoc improvisation under crisis pressure, increasing the probability that a well-intentioned IT security action inadvertently harms patients.
+CLAIM-HC-007 addresses a second-order hazard: the risk that incident *response* actions themselves create patient safety hazards. In Scenario 01 (Tuesday morning), the Trust's emergency response team debates whether to sever the enterprise-to-clinical network link. Severing the connection protects clinical devices from further compromise — but also disconnects clinicians from the EHR and prevents the infusion pump fleet management system from receiving commands, forcing all programming to manual operation. The decision to sever was taken without a pre-planned framework for evaluating clinical safety consequences of IT containment actions. If CLAIM-HC-007 were false, every containment decision would be an ad hoc improvisation under crisis pressure, increasing the probability that a well-intentioned IT security action inadvertently harms patients.
 
 #### Argument
 
@@ -1319,8 +1308,7 @@ Evidence E16 documents the results of joint IT/Clinical Engineering tabletop exe
 
 **D20: Novel containment scenario not covered by decision trees**. The pre-defined decision trees cover common scenarios but cannot anticipate every possible containment combination. A novel attack vector or unexpected system dependency could create a containment decision with clinical consequences not addressed in the plan. **Status**: Partially mitigated. The escalation matrix provides a fallback to the clinical governance committee for scenarios outside the decision trees. Post-incident review (E17e) captures novel scenarios for incorporation into future plan revisions.
 
-#### Mermaid Diagram
-
+#### Argument Diagram
 ```mermaid
 graph TD
     C7["<b>CLAIM-HC-007</b><br/>Integrated incident response<br/>prevents containment-induced<br/>safety hazards"]
@@ -1387,8 +1375,7 @@ This creates two mutually exclusive strategies for any given vulnerability discl
 
 **Residual risk**: The known vulnerability is exploited by an attacker during the deferral window despite the compensating network controls. This is identified as Residual Risk R5.
 
-### Mermaid Diagram
-
+### Argument Diagram
 ```mermaid
 graph TD
     GP["<b>G-Patch: Patching Sub-Goal</b><br/>Safety-certified device firmware<br/>vulnerabilities are managed without<br/>introducing unacceptable safety<br/>or security risk"]
@@ -1527,7 +1514,7 @@ To raise overall confidence from Medium to Medium-High, the following improvemen
 
 This assurance case addresses cyber-originated safety hazards as defined by two specific attack scenarios. It does not address:
 
-- **Insider threat from clinical staff** with legitimate system access who deliberately manipulate device configurations or clinical data. The threat model considers negligent insiders (Craig Ellison) and external attackers, but a malicious clinician with legitimate access to the infusion pump management console could bypass many of the controls argued in this case.
+- **Insider threat from clinical staff** with legitimate system access who deliberately manipulate device configurations or clinical data. The threat model considers negligent insiders (Marcus Blake) and external attackers, but a malicious clinician with legitimate access to the infusion pump management console could bypass many of the controls argued in this case.
 - **Physical security breaches** that provide direct physical access to medical devices. An attacker with physical access to an infusion pump could modify its configuration directly, bypassing all network-level controls.
 - **Cyber attacks not covered by the threat model** — particularly attacks from determined nation-state actors with zero-day capabilities and patient-harm intent. The assurance case argues against financially motivated and opportunistic attackers; it does not claim resilience against a targeted, patient-specific attack.
 - **Safety hazards from equipment failure** unrelated to cyber compromise (mechanical failure, power supply issues, electromagnetic interference).
@@ -1571,9 +1558,6 @@ This healthcare safety case connects to the other two case studies in the CyBOK 
 4. **The alarm threshold auditing (CLAIM-HC-004) runs daily. Could an attacker execute a time-bounded attack — modifying thresholds after the morning audit, exploiting the window, and restoring the original thresholds before the next day's audit?** What additional controls would detect this?
 5. **The clinical fallback procedures (CLAIM-HC-010) achieve 78% staff drill participation. Is this acceptable?** What participation rate would be required to claim "all clinical staff are competent in fallback procedures"? What are the practical barriers to 100% participation in a 24/7 hospital environment?
 6. **The assurance case treats the three sub-goals as semi-independent, but the Northgate incident demonstrates compounding effects — simultaneous failure of monitoring, prescribing, and clinical records is worse than any individual failure. Does the CAE structure adequately represent this compound risk?** How would it need to be modified to explicitly address multi-system failure scenarios?
-
-## File: ./regulatory_frameworks/overview\.md
-
 # Regulatory Framework Overview — Healthcare
 
 Applicable regulations, safety standards, and security standards for Northgate General Hospital.
@@ -1604,7 +1588,27 @@ The Network and Information Systems Regulations 2018 (the UK's implementation of
 - Take appropriate measures to prevent and minimise the impact of incidents on essential services (Regulation 10)
 - Report incidents that have a significant impact on the continuity of essential services to the competent authority (NHS England for the health sector) without undue delay (Regulation 11)
 
-The Northgate ransomware incident, which resulted in the diversion of emergency admissions and patient safety events, would clearly meet the NIS incident reporting threshold. Penalties for non-compliance with the NIS Regulations can reach up to £17 million, though enforcement to date has focused on improvement notices rather than financial penalties.
+The Northgate ransomware incident, which resulted in the diversion of emergency admissions and patient safety events, would clearly meet the NIS incident reporting threshold. Penalties for non-compliance with the NIS Regulations can reach up to £17 million, though enforcement to date has focused on improvement notices rather than financial penalties. In practice an NHS trust reports a significant cyber incident through the DSPT incident reporting tool, which reaches NHS England's cyber security operations team; Northgate's CIO made this report at 23:05 on the Monday, 27 minutes after the Major Incident was declared.
+
+### UK GDPR: Notifying the ICO and Patients
+
+Northgate is the data controller for its patients' records. Under UK GDPR Article 33 it must notify the Information Commissioner's Office (ICO) of a personal data breach without undue delay and within 72 hours of becoming aware of it, unless the breach is unlikely to result in a risk to individuals. Health records are special category data, so that exception rarely applies. Three points are often misunderstood under pressure:
+
+- The 72 hours run from **awareness**, not from containment or from a full forensic picture. At Northgate, awareness is 22:38 on Monday, so the deadline is 22:38 on Thursday.
+- The notification describes the measures **taken or proposed** to address the breach (Article 33(3)(d)). "We are isolating the network within the hour" is a valid answer. Containment is something the report describes; it is not a condition for sending it.
+- Information can be provided **in phases** (Article 33(4)). A provisional report with an honest scope ("we cannot rule out that records were taken") followed by updates is the expected pattern. A late report must give reasons for the delay.
+
+Article 34 requires the Trust to tell affected individuals directly when a breach is likely to result in a **high** risk to them. The threshold is the same for every organisation; health records simply meet it more easily. A ransom note threatening publication is strong evidence of that risk.
+
+Failing to notify falls in the lower tier of UK GDPR penalties (Article 83(4)): up to £8.7 million or 2% of annual worldwide turnover, whichever is higher. The higher tier (£17.5 million or 4%) is for breaches of the core principles and data subjects' rights. For public bodies the ICO's stated approach favours reprimands, which it publishes, over fines.
+
+### Duty of Candour, PSIRF and the MHRA
+
+When a patient is harmed, NHS trusts have a statutory duty of candour (Regulation 20 of the Health and Social Care Act 2008 (Regulated Activities) Regulations 2014): tell the patient or family what happened, in person, apologise, and follow up in writing. Patient safety incidents in England are now investigated under the Patient Safety Incident Response Framework (PSIRF), which replaced the Serious Incident Framework in 2022–23 and emphasises system learning over individual blame. A death or serious injury involving a medical device, such as an infusion pump running a tampered drug library, is also reportable to the MHRA.
+
+### The NCSC
+
+Reporting to the National Cyber Security Centre is voluntary. NHS England's cyber team will usually bring the NCSC in for a significant incident, and a trust can also ask directly. The NCSC offers incident management support and shares indicators with other organisations; it does not take over the response. Its officers do not give their surnames: the incident manager at Northgate is known as Priya S.
 
 ---
 
@@ -1650,9 +1654,6 @@ IEC 62443's concept of zones and conduits provides a formal framework for the ne
 NIST Special Publication 800-82 provides guidance on securing industrial control systems, including SCADA, distributed control systems, and other control system configurations. While its primary audience is industrial environments, its principles are applicable to medical device networks that function as cyber-physical systems.
 
 NIST SP 800-82's six-step risk management process (identify assets, identify vulnerabilities, identify threats, determine impacts, set probability, implement controls) provides a structured approach to assessing the cyber-safety risk at Northgate. The standard also emphasises the importance of separating IT and OT networks, validating patch applicability before deployment to control systems, and maintaining manual overrides as a safety fallback — all principles that are directly applicable to the healthcare scenario.
-
-## File: ./regulatory_frameworks/standards_mapping.md
-
 # Standards Mapping — Healthcare
 
 Mapping between regulatory requirements, applicable standards, and their security and safety implications for the Northgate General Hospital scenario.
@@ -1676,9 +1677,6 @@ Mapping between regulatory requirements, applicable standards, and their securit
 | Medical device networks must implement integrity controls to detect and prevent unauthorised modifications                                   | IEC 62443-3-3 SR 3.4 (Software and information integrity); MHRA Guidance                          | Drives requirements for application whitelisting, configuration change detection, and firmware signature verification on the clinical device network | Protects the integrity of safety-critical device parameters (dose limits, alarm thresholds, firmware) against manipulation by an attacker within the clinical zone             |
 | Risk assessment for IACS must consider the consequences of security events on the physical process                                           | NIST SP 800-82 Section 3; ISO 14971                                                               | Requires that cybersecurity risk assessment explicitly evaluates the impact of cyber events on patient care processes and safety outcomes            | Bridges the gap between purely technical security risk assessment and clinical safety risk assessment, enabling the security-informed safety approach                          |
 | Healthcare organisations must comply with UK data protection law regarding patient data security                                             | UK GDPR / Data Protection Act 2018; ICO guidance                                                  | Drives encryption, access control, and breach notification requirements for patient personal data                                                    | While primarily a data protection obligation, the integrity controls required for GDPR compliance also support the accuracy of clinical data used in safety-critical decisions |
-
-## File: ./requirements/claims.md
-
 # Security-Informed Safety Claims — Northgate General Hospital
 
 These claims form the bridge between the cybersecurity requirements and the functional safety requirements. Each claim takes the form: "If security control X is maintained, then safety property Y holds."
@@ -1706,9 +1704,6 @@ These claims form the bridge between the cybersecurity requirements and the func
 **CLAIM-HC-009: Device Authentication Prevents Unauthorised Command Execution** Claim: Provided that medical devices authenticate the source of configuration commands and reject commands from unauthenticated sources (REQ-HC-SEC-016), the risk of an attacker sending unauthorised commands to infusion pumps, patient monitors, or ventilators from a compromised workstation is reduced to a tolerable level (REQ-HC-SAF-001, REQ-HC-SAF-004). Evidence required: Device authentication testing (commands from unauthorised sources rejected); clinical workstation access control verification; device management application access audit.
 
 **CLAIM-HC-010: Clinical Fallback Procedures Maintain Safe Care During Outage** Claim: Provided that documented clinical fallback procedures are maintained, regularly tested, and accessible at the point of care (REQ-HC-SEC-023, REQ-HC-SAF-008), clinicians can deliver safe care during any cyber-induced system outage, with defined process for recognising and correcting errors introduced during the manual phase (REQ-HC-SAF-010). Evidence required: Fallback procedure documentation in all clinical areas; biannual fallback procedure drill results; post-drill assessment confirming staff competence in paper-based clinical processes.
-
-## File: ./requirements/cybersecurity_requirements.md
-
 # Cybersecurity Requirements — Northgate General Hospital
 
 ---
@@ -1804,9 +1799,6 @@ These claims form the bridge between the cybersecurity requirements and the func
 ### Vulnerability Management
 
 **REQ-HC-SEC-030: Clinical Zone Vulnerability Scanning** Description: The clinical device network shall be included in the Trust's vulnerability scanning programme, with scans conducted at least quarterly using techniques validated not to disrupt medical device operation. Rationale: The clinical workstation exploited in Scenario 02 ran an unpatched operating system with known vulnerabilities. Regular vulnerability scanning of the clinical zone would have identified this exposure. Standard reference: IEC 62443-3-3 SR 3.3; NCSC Vulnerability Management guidance.
-
-## File: ./requirements/safety_requirements.md
-
 # Functional Safety Requirements — Northgate General Hospital
 
 Derived from the scenario hazard analysis. These requirements define the safety behaviours that clinical systems must maintain regardless of the state of the cyber environment.
@@ -1850,9 +1842,6 @@ Derived from the scenario hazard analysis. These requirements define the safety 
 **REQ-HC-SAF-013: Post-Incident Device Integrity Verification** Description: Following any cyber incident that may have affected the clinical device network, all networked medical devices shall undergo firmware and configuration verification against manufacturer baselines before being returned to clinical use. Rationale: After the Northgate ransomware event, uncertainty persisted about whether infusion pump firmware had been tampered with. Systematic post-incident verification provides assurance that devices are safe to use.
 
 **REQ-HC-SAF-014: Dual Authorisation for Safety-Critical Overrides** Description: Any action that overrides a safety control on a medical device (e.g., bypassing a dose limit, disabling an alarm, modifying a safety interlock) shall require dual authorisation from two independently authenticated clinicians. Rationale: Safety overrides are sometimes clinically necessary, but they reduce the margin of safety. Dual authorisation ensures that safety barriers are not reduced by a single compromised account or a single clinician error.
-
-## File: ./storylines/attack_scenarios/scenario_01_ransomware_to_device_impact.md
-
 # Scenario 01: Ransomware Propagation Leading to Clinical Device Availability Loss
 
 Healthcare Attack Scenario — Northgate General Hospital
@@ -1885,7 +1874,7 @@ The following configuration and environmental conditions make this attack possib
 | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **1. Spear-phishing delivery**                 | Attacker sends a targeted email impersonating a medical supplies vendor, containing a link to a malicious document-signing portal.                                                                                                                                                                                | Finance workstation (Sarah Kelworth's PC)                                               | Email gateway: URL reputation check could flag the redirect chain. SPF/DKIM/DMARC validation of sender domain.                                                                                                   |
 | **2. Macro execution and initial payload**     | Victim opens Word document and enables macros. A PowerShell downloader retrieves a fileless first-stage loader from a DarkVault C2 server, injected into a legitimate process. Persistence established via a disguised scheduled task.                                                                            | Finance workstation — process memory, Task Scheduler                                    | EDR: PowerShell execution with encoded commands flagged as suspicious (alert generated but classified low-severity). AMSI logging of script content.                                                             |
-| **3. VPN credential abuse**                    | Attacker authenticates to the Trust's SSL VPN using contractor credentials (Craig Ellison) harvested from a dark web credential dump. Session originates from a Romanian residential IP.                                                                                                                          | SSL VPN gateway                                                                         | VPN logs: login from unusual geographic location. Impossible travel detection (if credential monitoring is in place). Absence of MFA is the enabling gap.                                                        |
+| **3. VPN credential abuse**                    | Attacker authenticates to the Trust's SSL VPN using contractor credentials (Marcus Blake) harvested from a dark web credential dump. Session originates from a Tor exit node (geolocated to Romania), during working hours.                                                                                                                          | SSL VPN gateway                                                                         | VPN logs: login from unusual geographic location. Impossible travel detection (if credential monitoring is in place). Absence of MFA is the enabling gap.                                                        |
 | **4. Internal reconnaissance**                 | From the VPN session, attacker deploys a network scanning tool. Maps Active Directory structure, identifies domain controllers, file servers, EHR application server, PACS, and dual-homed clinical workstations.                                                                                                 | Enterprise network — Active Directory, network infrastructure                           | SIEM: port scanning activity, LDAP enumeration queries. IDS: signatures for common scanning tools (e.g., Nmap SYN scan patterns).                                                                                |
 | **5. Credential harvesting**                   | On the compromised finance workstation, attacker executes an in-memory credential dumping tool. Extracts cached domain admin credentials from a recent troubleshooting session.                                                                                                                                   | Finance workstation — LSASS process memory                                              | EDR: access to LSASS process. Windows Event Log 4624/4672: privileged logon events. Credential Guard (if enabled) would prevent extraction.                                                                      |
 | **6. Lateral movement and domain persistence** | Using domain admin credentials, attacker deploys a backdoor via a malicious Group Policy Object (GPO) pushed to all domain-joined workstations on next policy refresh. Establishes persistence on two domain controllers.                                                                                         | Domain controllers, all domain-joined workstations                                      | SIEM: new GPO creation event. Windows Event Log: GPO modification (Event ID 5136). Change control: unscheduled GPO deployment.                                                                                   |
@@ -1895,7 +1884,7 @@ The following configuration and environmental conditions make this attack possib
 | **10. Clinical workstation encryption**        | Ransomware propagates to dual-homed clinical workstations via the same GPO/SMB mechanism. The infusion pump fleet management console and the Ward 7 patient monitoring central station are encrypted.                                                                                                             | Infusion pump management console, patient monitoring central station, PACS workstations | Clinical staff: management console becomes unresponsive. Central station displays ransom note instead of patient data. Medical device alerts: loss of connectivity to management server.                         |
 | **11. Loss of clinical monitoring capability** | Patient monitoring central station on Ward 7 goes offline. Bedside monitors continue functioning independently, but aggregated alarming at the nursing station is lost. During the night shift, two critical alarms are missed over a 90-minute window.                                                           | Ward 7 patient monitoring system (central station)                                      | **No technical detection** — this is a safety consequence, not a technical event. Detection relies on clinical staff recognising the absence of central alarming. Clinical escalation protocols (if exercised).  |
 | **12. Medication dosing error**                | With the infusion pump fleet management console unavailable, a dose adjustment for a post-operative patient must be manually transcribed from a paper prescription. A ten-fold transcription error occurs. The error is partially administered before being caught by a second nurse during bedside verification. | Infusion pump (Ward 5), prescribing workflow                                            | Bedside double-check protocol (partial detection — caught the error late). Barcode medication administration (unavailable — depends on EHR which is down).                                                       |
-| **13. Network isolation decision**             | Trust emergency response team decides to sever the remaining enterprise-to-clinical network links at 14:30 Wednesday. All electronic clinical record access in affected wards is lost. Paper-based fallback procedures initiated.                                                                                 | Enterprise/clinical network boundary, all cross-zone data flows                         | N/A — this is a response action, not an attack step.                                                                                                                                                             |
+| **13. Network isolation decision**             | Trust emergency response team decides to sever the remaining enterprise-to-clinical network links on Tuesday morning. All electronic clinical record access in affected wards is lost. Paper-based fallback procedures initiated.                                                                                 | Enterprise/clinical network boundary, all cross-zone data flows                         | N/A — this is a response action, not an attack step.                                                                                                                                                             |
 
 ---
 
@@ -1925,7 +1914,7 @@ Critically, the safety consequences are compounded by the loss of the EHR system
 
 ### Network-Level IoCs
 
-1. **Unusual VPN session**: Authentication from a Romanian residential IP address to the Trust's SSL VPN gateway, using contractor credentials, outside normal working hours.
+1. **Unusual VPN session**: Authentication from a Tor exit node (geolocated to Romania) to the Trust's SSL VPN gateway, using contractor credentials, during working hours and thirty minutes after the same account logged in from London.
 2. **Internal port scanning**: Sequential SYN packets across large IP ranges from a single internal host (the compromised finance workstation), consistent with automated network discovery.
 3. **High-volume SMB writes**: Anomalous volume of SMB write operations originating from domain controllers and propagating across the enterprise zone during the encryption phase (22:15–23:00).
 4. **Cross-zone traffic anomaly**: New RDP and SMB sessions traversing the enterprise-to-clinical firewall exception rules from previously unseen source IPs.
@@ -1969,9 +1958,6 @@ Critically, the safety consequences are compounded by the loss of the EHR system
 | Encryption of infusion pump fleet management console                | Inhibit Response Function | Denial of Service | T0814 |
 | Encryption of patient monitoring central station                    | Impair Process Control    | Denial of View    | T0815 |
 | Loss of PACS availability                                           | Inhibit Response Function | Data Destruction  | T0809 |
-
-## File: ./storylines/attack_scenarios/scenario_02_device_integrity_compromise.md
-
 # Scenario 02: Device Integrity Compromise — Manipulation of Networked Clinical Devices
 
 Healthcare Attack Scenario — Northgate General Hospital
@@ -2006,12 +1992,12 @@ The following configuration and environmental conditions make this attack possib
 | **2. Clinical network reconnaissance**                        | From the vendor VPN session, attacker scans the clinical VLAN to map connected devices. Identifies 480 infusion pumps, 320 patient monitors, 60 ventilators, PACS servers, and clinical workstations. Enumerates device firmware versions and identifies unpatched devices.                                                                                                                                                                                                                     | Clinical VLAN — all connected devices                                                | IDS (if deployed on clinical VLAN): network scan signatures. Device management console: unexpected device enumeration queries.                                                                                                                        |
 | **3. Clinical workstation compromise**                        | Attacker exploits a known vulnerability in an unpatched clinical workstation (running an outdated operating system required for compatibility with the infusion pump management software). Gains local administrator access.                                                                                                                                                                                                                                                                    | Clinical workstation (infusion pump management console)                              | Vulnerability scanner (if run against clinical zone): known CVE present. Host-based IDS: exploitation artefacts. Event logs: new local administrator session.                                                                                         |
 | **4. Credential harvesting on clinical zone**                 | Attacker extracts cached credentials from the clinical workstation, including the service account used by the infusion pump fleet management application to communicate with individual pumps.                                                                                                                                                                                                                                                                                                  | Clinical workstation — credential store                                              | EDR (if deployed): credential access events. Application logs: service account used from unexpected context.                                                                                                                                          |
-| **5. Infusion pump configuration manipulation**               | Using the harvested service account credentials, attacker connects to infusion pump management interfaces and modifies drug library entries for three commonly used medications. Specifically: the maximum dose rate for morphine is increased from 4 mg/hr to 40 mg/hr, the concentration entry for heparin is altered, and the hard dose limit for a chemotherapy agent is removed. Changes are pushed as a "drug library update."                                                            | Infusion pump fleet — drug library configuration                                     | Pharmacy verification: drug library change outside scheduled update cycle. Pump management console audit log: configuration changes not initiated by authorised staff. **Critical gap**: These logs exist but are not actively monitored.             |
+| **5. Infusion pump configuration manipulation**               | Using the harvested service account credentials, attacker connects to infusion pump management interfaces and modifies drug library entries for three commonly used medications. Specifically: the minimum dose rate for morphine is raised from 0.5 mg/hr to 20 mg/hr (with the maximum lifted from 4 to 40 mg/hr so the entry still loads), the concentration entry for heparin is altered, and the hard dose limit for a chemotherapy agent is removed. Changes are pushed as a "drug library update."                                                            | Infusion pump fleet — drug library configuration                                     | Pharmacy verification: drug library change outside scheduled update cycle. Pump management console audit log: configuration changes not initiated by authorised staff. **Critical gap**: These logs exist but are not actively monitored.             |
 | **6. Patient monitor alarm threshold modification**           | Attacker accesses the patient monitoring central station and modifies default alarm thresholds for several monitored parameters. Heart rate alarm upper limit is raised from 130 bpm to 200 bpm; SpO2 low alarm is lowered from 90% to 75%. Changes are applied to the ward-level default profile, affecting all newly connected patients.                                                                                                                                                      | Patient monitoring central station — alarm configuration                             | Central station audit trail: threshold changes outside clinical governance process. Nursing staff: awareness that alarm defaults have changed (requires proactive checking).                                                                          |
 | **7. PACS image manipulation**                                | Attacker accesses the PACS archive server (which stores DICOM images over unencrypted connections). Modifies metadata on several stored CT images — altering patient identifiers on two scans so that Patient A's imaging is associated with Patient B's clinical record, and vice versa. Additionally, subtly modifies a chest X-ray image to obscure a small pulmonary nodule.                                                                                                                | PACS archive server — DICOM image store                                              | DICOM audit trail: image modification events (if logging is enabled). Radiology workflow: patient identity mismatch detected during reporting (requires manual cross-checking). Image hash verification: absent at Northgate.                         |
 | **8. Persistence via firmware backdoor**                      | Attacker pushes a modified firmware image to a subset of ten infusion pumps via the fleet management console. The modified firmware includes a backdoor that allows remote command execution and persists across device reboots. The firmware update mechanism does not verify code signatures.                                                                                                                                                                                                 | Ten infusion pumps — firmware                                                        | Firmware version audit: version mismatch between updated and non-updated pumps. Device behaviour: no immediately observable change (backdoor is dormant). Manufacturer checksum comparison: would detect modification but is not routinely performed. |
 | **9. Cover tracks**                                           | Attacker clears relevant log entries on the clinical workstation and modifies the fleet management console's audit log to remove evidence of the unauthorised drug library update. Leaves the vendor VPN session idle to maintain access for future operations.                                                                                                                                                                                                                                 | Clinical workstation logs, fleet management audit log, vendor VPN session            | Log integrity monitoring (absent): would detect log truncation. SIEM correlation: gap in expected log sequence from clinical workstation.                                                                                                             |
-| **10. Safety consequences manifest — medication error**       | A nurse programmes an infusion pump with morphine for a post-surgical patient. The drug library, normally displaying a maximum rate of 4 mg/hr with a hard limit, now permits 40 mg/hr. Under time pressure, the nurse enters "40" instead of "4.0" (a common keystroke error). The pump's guardrail, which would normally reject this dose, accepts it. The patient receives a ten-fold morphine overdose before the error is detected through clinical observation of respiratory depression. | Infusion pump (Ward 3) — drug delivery                                               | Smart pump guardrail: **bypassed** by the attacker's drug library modification. Clinical observation: respiratory depression detected, naloxone administered.                                                                                         |
+| **10. Safety consequences manifest — medication error**       | A nurse programmes an infusion pump for a post-surgical patient prescribed morphine at 2.0 mg/hr. Judging the entry against the tampered library, the pump flags 2.0 mg/hr as below its minimum. Under time pressure, and used to clearing pump warnings, the nurse reads the chart's small decimal point as "20" and enters 20 mg/hr, which the pump now accepts without an alert. The patient receives a ten-fold morphine overdose before the error is detected through clinical observation of respiratory depression. | Infusion pump (Ward 7) — drug delivery                                               | Smart pump guardrail: **turned against staff** by the raised minimum. The safe response is to trust the prescription, stop, and query pharmacy, not to change the dose to satisfy the pump. Clinical observation: respiratory depression detected, naloxone administered.                                                                                         |
 | **11. Safety consequences manifest — missed diagnosis**       | A radiologist reports a chest X-ray as showing no abnormality. The image had been subtly modified to obscure a pulmonary nodule. The finding is only discovered three months later on a follow-up scan, by which time the lesion has grown. Separately, a patient undergoes a procedure based on imaging belonging to a different patient due to the PACS metadata swap. The error is caught when the surgeon notes anatomical inconsistencies during the procedure.                            | Radiology workflow — diagnostic accuracy; Surgical workflow — patient identification | Radiology peer review: may identify the missed finding retrospectively. Surgical safety checklist: anatomical inconsistency detected (near-miss).                                                                                                     |
 | **12. Safety consequences manifest — delayed alarm response** | A patient on Ward 7 develops hypoxia (SpO2 drops to 82%). The alarm threshold has been lowered to 75%, so no alarm sounds until the patient's condition deteriorates further. A nurse performing routine observations identifies the patient's distress and initiates emergency intervention, but the response is delayed by approximately twelve minutes compared to normal alarm-triggered response.                                                                                          | Patient monitoring system (Ward 7) — alarm function                                  | Clinical observation: staff detect patient distress visually. Post-incident alarm audit: threshold comparison against clinical governance standard.                                                                                                   |
 
@@ -2024,6 +2010,8 @@ This scenario demonstrates the **integrity-to-safety pathway** — the most insi
 ### Drug Library Manipulation
 
 Infusion pumps with configurable drug libraries implement a critical safety function: dose range checking. The drug library acts as an automated pharmacist, rejecting doses outside clinically safe ranges. When this library is corrupted, the safety barrier is silently removed. The pump accepts dangerous doses without alerting the clinician. This recreates a well-documented failure mode from pre-smart-pump era — keystroke and transcription errors in manual pump programming — but does so in a context where clinicians believe they are protected by the smart pump's guardrails.
+
+A corrupted library can do worse than remove the barrier. A raised minimum makes the pump challenge correct doses and invite a higher one, so the clinician's habit of clearing or "correcting" pump alerts becomes the way the overdose is delivered. The attack is designed to induce human error. The safe response is to trust the prescription over the device, stop, and query pharmacy; overriding the alert as routine is the habit the attacker relies on.
 
 ### Alarm Threshold Manipulation
 
@@ -2084,9 +2072,6 @@ The most significant safety consequence of an integrity attack may be the erosio
 | Manipulate PACS DICOM images and metadata       | Impair Process Control | Manipulate I/O Image                | T0835 |
 | Abuse vendor remote access for persistent entry | Lateral Movement       | Remote Services                     | T0886 |
 | Modify fleet management audit logs              | Evasion                | Modify Alarm Settings               | T0838 |
-
-## File: ./storylines/northgate_incident.md
-
 # The Northgate Incident
 
 A Security-Informed Safety Storyline — Northgate General Hospital
@@ -2095,7 +2080,7 @@ A Security-Informed Safety Storyline — Northgate General Hospital
 
 ## 1. Scenario Overview
 
-In late autumn 2025, Northgate General Hospital — a mid-sized NHS Trust serving a population of approximately 350,000 — suffered a compound cyber attack that began as a financially motivated ransomware intrusion and escalated into a direct threat to patient safety. An organised crime ransomware group gained initial access through a spear-phishing email targeting the hospital's finance department. Over three days the attackers moved laterally through the enterprise IT network, encrypted core administrative systems, and — critically — crossed an incompletely segmented network boundary into the clinical device zone. The result was not merely operational disruption: infusion pump management consoles became unreachable, patient monitoring dashboards displayed stale data without alerting clinicians, and the Picture Archiving and Communication System (PACS) serving the radiology department went offline during a night shift. Two patients suffered medication dosing errors before clinical staff recognised the extent of the compromise. The incident forced a Major Incident declaration, partial diversion of emergency admissions to neighbouring trusts, and a two-week recovery programme.
+In late autumn 2025, Northgate General Hospital — a mid-sized NHS Trust serving a population of approximately 350,000 — suffered a compound cyber attack that began as a financially motivated ransomware intrusion and escalated into a direct threat to patient safety. An organised crime ransomware group gained initial access through a spear-phishing email targeting the hospital's finance department. Within a single Monday the attackers moved laterally through the enterprise IT network, encrypted core administrative systems, and — critically — crossed an incompletely segmented network boundary into the clinical device zone. The result was not merely operational disruption: infusion pump management consoles became unreachable, patient monitoring dashboards displayed stale data without alerting clinicians, and the Picture Archiving and Communication System (PACS) serving the radiology department went offline during a night shift. Two patients were put at risk before clinical staff recognised the extent of the compromise: one by a cardiac alarm nobody at the nursing station could see, and one by an infusion pump whose drug library had been altered to push staff towards a ten-fold morphine dose. The incident forced a Major Incident declaration, partial diversion of emergency admissions to neighbouring trusts, and a two-week recovery programme.
 
 ---
 
@@ -2131,7 +2116,7 @@ PharmaLeaks is a loosely organised hacktivist group that campaigns against pharm
 
 ### Tertiary: Insider — Disgruntled IT Contractor
 
-**Craig Ellison** is a contract network engineer brought in to support the segmentation project. Frustrated by repeated scope changes and a contract dispute, Ellison has been careless with credentials — using the same administrative password across multiple systems and sharing VPN credentials with a colleague at a previous employer. Ellison is not a malicious insider in the traditional sense, but his poor security hygiene directly contributed to the attack surface that DarkVault exploited. His shared VPN credentials were harvested from a credential dump on a dark web forum, providing the attackers with an authenticated entry point.
+**Marcus Blake** (NetSol Ltd, VPN account m.blake) is a contract network engineer brought in to support the segmentation project. His contract is live and his account is active. Frustrated by repeated scope changes and a contract dispute, Blake has been careless with credentials — using the same administrative password across multiple systems and sharing VPN credentials with a colleague at a previous employer. Blake is not a malicious insider in the traditional sense, but his poor security hygiene directly contributed to the attack surface that DarkVault exploited. His shared VPN credentials were harvested from a credential dump on a dark web forum, providing the attackers with an authenticated entry point.
 
 ---
 
@@ -2143,7 +2128,7 @@ At 08:47 on a Monday morning, a finance officer in Northgate's Accounts Payable 
 
 The macro executes a PowerShell downloader that retrieves a first-stage payload from a DarkVault command-and-control (C2) server. The payload — a fileless loader injected into a legitimate Windows process — establishes persistence via a scheduled task disguised as a software update check. The initial compromise goes undetected; the endpoint detection and response (EDR) agent on Kelworth's workstation flags the PowerShell execution as "suspicious" but the alert is classified as low-severity and queued for review.
 
-Simultaneously, on the same morning, DarkVault affiliates authenticate to the Trust's SSL VPN gateway using credentials belonging to contractor Craig Ellison, harvested three weeks earlier from a credential dump. The VPN session originates from a residential IP address in Romania. The VPN logs record the connection, but no anomaly detection rule triggers — the VPN does not enforce multi-factor authentication for contractor accounts, and geographic restrictions were removed six months earlier to accommodate remote working.
+Five minutes later, at 08:52, DarkVault affiliates authenticate to the Trust's SSL VPN gateway as m.blake, the live account of NetSol contractor Marcus Blake, using credentials harvested three weeks earlier from a credential dump. Blake himself had logged in from London at 08:22; the attackers' session comes from a Tor exit node in Bucharest, 2,100 km away, thirty minutes later. The VPN logs record the connection, but no anomaly detection rule triggers — the VPN does not enforce multi-factor authentication for contractor accounts, and geographic restrictions were removed six months earlier to accommodate remote working.
 
 ### Day 0 (Monday afternoon) — Reconnaissance and Credential Harvesting
 
@@ -2151,55 +2136,59 @@ By early afternoon the attackers have two footholds: Kelworth's workstation on t
 
 On Kelworth's workstation, the attacker executes an in-memory credential harvesting tool, extracting cached domain credentials including those of a domain administrator who had recently logged in to troubleshoot a printer issue. With domain admin credentials in hand, the attacker begins querying Active Directory for service accounts, group memberships, and network share mappings.
 
-### Day 1 (Tuesday) — Lateral Movement and Staging
+### Day 0 (Monday afternoon and evening) — Lateral Movement and Staging
 
-Overnight, DarkVault deploys additional tooling across the enterprise network. They establish persistence on two domain controllers using a malicious Group Policy Object (GPO) that pushes a backdoor to all domain-joined workstations during the next policy refresh cycle. They identify the on-site backup infrastructure — a network-attached storage appliance and a tape library controller — and begin encrypting backup catalogues.
+Through the afternoon, DarkVault deploys additional tooling across the enterprise network. They establish persistence on two domain controllers using a malicious Group Policy Object (GPO) that pushes a backdoor to all domain-joined workstations during the next policy refresh cycle. They identify the on-site backup infrastructure — a network-attached storage appliance and a tape library controller — and begin encrypting backup catalogues.
 
-During Tuesday morning, the attackers discover the dual-homed clinical workstations — machines with network interfaces on both the enterprise VLAN and the clinical device VLAN. These workstations run the infusion pump fleet management application and the patient monitor central station software. The attackers use a compromised domain admin account to access one of these workstations remotely. They are now inside the clinical zone.
+By mid-afternoon, the attackers discover the dual-homed clinical workstations — machines with network interfaces on both the enterprise VLAN and the clinical device VLAN. These workstations run the infusion pump fleet management application and the patient monitor central station software. The attackers use a compromised domain admin account to access one of these workstations remotely. They are now inside the clinical zone.
 
-The Security Information and Event Management (SIEM) system generates several alerts related to unusual SMB traffic volumes and failed authentication attempts against the backup infrastructure. Ravi Anand's team reviews the alerts mid-morning but attributes the SMB anomalies to the ongoing network migration project. The failed backup authentications are logged as a support ticket for the infrastructure team.
+At 18:47 they use the fleet management application to push a drug library update that no pharmacist has approved. It raises the morphine minimum from 0.5 mg/hr to 20 mg/hr, with the maximum lifted from 4 to 40 mg/hr so the entry still loads. From now on every pump that loads the library will call a correctly prescribed ward dose "below minimum" and invite a higher one. The fleet audit log records the change. Nobody is reading it.
 
-### Day 1 (Tuesday evening) — Ransomware Deployment on Enterprise Systems
+The Security Information and Event Management (SIEM) system generates several alerts related to unusual SMB traffic volumes and failed authentication attempts against the backup infrastructure. The alerts land in the low-severity queue; after six weeks of migration noise, Ravi Anand's team attributes the SMB anomalies to the ongoing network migration project. The failed backup authentications are logged as a support ticket for the infrastructure team.
 
-At 22:15, outside normal working hours, DarkVault triggers its ransomware payload across the enterprise zone. The attack propagates via the malicious GPO and direct SMB connections. Within forty minutes, three hundred and twelve enterprise workstations, four file servers, and the email server are encrypted. The EHR application server's database files are encrypted, rendering the clinical record system inaccessible. The on-site backup NAS is encrypted; the tape library controller is wiped.
+### Day 0 (Monday night) — Ransomware Deployment on Enterprise Systems
 
-The ransom note demands £1.2 million in cryptocurrency within seventy-two hours, with a threat to publish exfiltrated patient records on DarkVault's leak site. The Trust's on-call IT manager receives automated monitoring alerts at 22:38 and escalates to the CIO.
+At 22:15 on Monday, outside normal working hours, DarkVault triggers its ransomware payload across the enterprise zone. The attack propagates via the malicious GPO and direct SMB connections. Within forty minutes, three hundred and twelve enterprise workstations, four file servers, and the email server are encrypted. The EHR application server's database files are encrypted, rendering the clinical record system inaccessible. The on-site backup NAS is encrypted; the tape library controller is wiped.
 
-### Day 2 (Wednesday) — Clinical Impact Emerges
+The ransom note demands £1.2 million in cryptocurrency within seventy-two hours, with a threat to publish exfiltrated patient records on DarkVault's leak site. The Trust's on-call IT manager receives automated monitoring alerts at 22:38 and escalates to the CIO. A Major Incident is declared at 22:38, and Helen Carver makes the statutory NIS incident report to NHS England at 23:05. The Trust treats 22:38 as the moment it became aware of a personal data breach: the 72-hour ICO clock starts then.
 
-By 06:00, the full scale of the enterprise compromise is apparent. Helen Carver declares a Major Incident and convenes the Trust's emergency response team. The immediate focus is on restoring the EHR system, which clinicians rely on for medication prescribing, allergy checking, and clinical notes.
+### Day 1 (Tuesday) — Clinical Impact Emerges
+
+By 06:00, the full scale of the enterprise compromise is apparent. Helen Carver convenes the Trust's emergency response team, and at 07:30 external incident responders arrive on Ward 7. The immediate focus is on restoring the EHR system, which clinicians rely on for medication prescribing, allergy checking, and clinical notes.
 
 However, the clinical device zone has also been affected. The dual-homed workstations used for infusion pump fleet management are encrypted, meaning that clinicians cannot access the central dosing management console. The pumps themselves continue operating on their last programmed settings, but any new prescriptions or dose adjustments must be entered manually at the bedside — a labour-intensive process that introduces the risk of transcription error. More critically, the patient monitoring central station on Ward 7 (one of the floors still on the legacy flat network) has been encrypted. Bedside monitors continue to function independently, but the central station — which aggregates alarms and provides the nursing station with a consolidated view of all patients — is offline. Alarms are only audible at the individual bedside, and with reduced staffing levels on the night shift, two critical alarms are missed over a ninety-minute window.
 
-**Patient Safety Event 1**: A 72-year-old patient recovering from cardiac surgery experiences a sustained arrhythmia. The bedside monitor alarms, but the alarm is not heard at the nursing station because the central station is down. The arrhythmia is detected seventeen minutes later when a nurse conducts a routine bedside check. The patient requires emergency intervention.
+**Patient Safety Event 1**: Mr Ahmed, a 74-year-old patient two days after cardiac surgery, experiences a sustained arrhythmia. The bedside monitor alarms, but the alarm is not heard at the nursing station because the central station is down. The arrhythmia is detected seventeen minutes later when a nurse conducts a routine bedside check. The patient requires emergency intervention.
 
-**Patient Safety Event 2**: An infusion pump delivering post-operative analgesia to a patient on Ward 5 reaches the end of its programmed volume. Under normal conditions, a dose adjustment would be entered via the fleet management console following the electronic prescription. With the console unavailable, the ward pharmacist hand-writes a new prescription, but a transcription error results in a ten-fold dosing discrepancy. The error is caught by a second nurse during bedside verification, but only after the incorrect dose has been partially administered. The patient experiences respiratory depression requiring naloxone administration.
+**Patient Safety Event 2**: At about 07:45, Ms Okafor's post-operative morphine infusion on Ward 7 reaches the end of its bag. Her paper chart prescribes 2.0 mg/hr. The pump, running the tampered library, calls 2.0 mg/hr below its minimum of 20. The chart's small decimal point makes "20" look plausible, and staff are used to clearing pump warnings. If the rate is raised to satisfy the pump, she receives ten times her prescribed dose and stops breathing. The safe response is to trust the prescription, stop, and query pharmacy.
 
-### Day 2 (Wednesday afternoon) — Crisis Response and Difficult Decisions
+### Day 1 (Tuesday morning) — Crisis Response and Difficult Decisions
 
 The Trust's emergency response team faces a critical decision: **should the remaining network links between the enterprise and clinical zones be severed immediately?**
 
 Severing the connection would protect clinical devices from further compromise — but it would also disconnect the EHR from those clinical workstations that bridged both networks, eliminating clinicians' last remaining electronic access to patient records and prescriptions in the affected wards. It would also prevent the infusion pump fleet management system from receiving any commands, forcing all pump programming to manual bedside operation for potentially several days.
 
-David Osei, the Clinical Engineering Manager, argues for immediate disconnection, citing the patient safety events. Ravi Anand supports this position. Dr Fiona Hartley, the Caldicott Guardian, raises concerns about the loss of clinical information access — without the EHR, there is no reliable way to verify patient allergies or current medications, creating a different category of safety risk. Helen Carver must balance both positions under intense time pressure.
+David Osei, the Clinical Engineering Manager, argues for immediate disconnection, citing the patient safety events. Ravi Anand supports this position. Dr Fiona Hartley, the Caldicott Guardian, raises concerns about the loss of clinical information access — without the EHR, there is no reliable way to verify patient allergies or current medications, creating a different category of safety risk. Helen Carver must balance both positions under intense time pressure. Helen also wants the network contained, and the scope known, before she notifies the ICO. It is a common instinct and a mistake: Article 33 runs from awareness, the report can describe measures proposed, and detail can follow in phases.
 
-The decision is made to sever the connection at 14:30 on Wednesday, with a compensating control: paper-based medication charts are retrieved from archive storage and distributed to all wards, and additional pharmacy staff are redeployed to provide manual medication verification.
+The decision to sever the connection is taken on Tuesday morning, on joint sign-off from IT security (Ravi Anand) and clinical engineering (David Osei), with a compensating control: paper-based medication charts are distributed to all wards, and pharmacy staff are redeployed to every drug round. The residual risk (prescribing without electronic allergy checks) is accepted, with an owner, for the duration of the restore.
 
-### Days 3–7 — Recovery
+### Days 2–7 — Recovery
 
-NCSC (National Cyber Security Centre) incident responders arrive on Wednesday evening. A parallel forensic investigation and recovery operation begins. Clean builds of domain controllers are deployed from offline media. The EHR vendor provides a recovery image from their hosted backup (the on-site backups being compromised). The clinical device network is rebuilt as a fully isolated zone — the segmentation project, previously seventy percent complete, is accelerated to one hundred percent as a condition of reconnection. Infusion pump firmware is verified against manufacturer checksums before devices are returned to service.
+NHS England's cyber team, alerted by the NIS report, brings in the National Cyber Security Centre. Priya S., an NCSC incident manager (NCSC officers do not give their surnames), supports the response and leads the debrief; the NCSC does not take over. A parallel forensic investigation and recovery operation begins. The drug library is restored from its signed copy after the correct morphine limits are confirmed against the paper chart and the manufacturer's InfusionGuard configuration guide. Clean builds of domain controllers are deployed from offline media. The EHR vendor provides a recovery image from their hosted backup (the on-site backups being compromised). The clinical device network is rebuilt as a fully isolated zone — the segmentation project, previously seventy percent complete, is accelerated to one hundred percent as a condition of reconnection. Infusion pump firmware is verified against manufacturer checksums before devices are returned to service.
 
 Full enterprise IT services are restored by Day 7. The clinical device network is reconnected through the new, properly segmented architecture on Day 10. The Trust does not pay the ransom.
 
 ### Days 8–14 — Post-Incident Review
 
-An external review identifies the following root causes:
+The Trust runs its review under PSIRF, the NHS Patient Safety Incident Response Framework, alongside the NCSC's technical findings. It identifies the following root causes:
 
-1. Lack of multi-factor authentication on the VPN gateway
+1. Lack of multi-factor authentication on the VPN gateway for contractor accounts
 2. Incomplete network segmentation leaving dual-homed workstations as crossing points
 3. Inadequate monitoring — SIEM alerts were dismissed as migration-related noise
 4. Compromised backup infrastructure — no immutable or air-gapped backup copy existed
 5. No formal governance structure linking IT security and clinical engineering
+6. Drug library change control existed on paper, but nobody monitored the fleet audit log
+7. Risks accepted and never reviewed: the contractor MFA exemption, the vendor's persistent VPN into the clinical zone, and the unmigrated Ward 7 segment. Each had an owner, and each came due
 
 ---
 
@@ -2207,15 +2196,13 @@ An external review identifies the following root causes:
 
 The following moments in the Northgate Incident present meaningful choices for learners acting as incident responders or safety engineers:
 
-1. **Alert Triage (Day 1, Tuesday morning)**: The SIEM flags unusual SMB traffic. Do you escalate immediately and begin containment, or attribute it to the known migration project and continue monitoring? *Trade-off*: aggressive containment may disrupt the migration and create clinical downtime; delayed response allows the attacker more time.
-2. **Network Isolation Decision (Day 2, Wednesday afternoon)**: Do you sever the enterprise-to-clinical network link immediately? *Trade-off*: isolation protects medical devices from further compromise but removes clinicians' electronic access to patient records, introducing a different safety risk (medication errors from loss of allergy/drug interaction checking).
-3. **Backup Integrity Assessment (Day 2)**: On-site backups are encrypted. Do you attempt to restore from the potentially compromised tape library, or wait for the EHR vendor's hosted recovery image (estimated 18-hour delay)? *Trade-off*: faster restoration may reintroduce malware; waiting extends the period of manual clinical operations.
+1. **Alert Triage (Monday morning)**: The SIEM flags unusual SMB traffic. Do you escalate immediately and begin containment, or attribute it to the known migration project and continue monitoring? *Trade-off*: aggressive containment may disrupt the migration and create clinical downtime; delayed response allows the attacker more time.
+2. **Network Isolation Decision (Tuesday morning)**: Do you sever the enterprise-to-clinical network link immediately? *Trade-off*: isolation protects medical devices from further compromise but removes clinicians' electronic access to patient records, introducing a different safety risk (medication errors from loss of allergy/drug interaction checking).
+3. **Backup Integrity Assessment (Tuesday)**: On-site backups are encrypted. Do you attempt to restore from the potentially compromised tape library, or wait for the EHR vendor's hosted recovery image (estimated 18-hour delay)? *Trade-off*: faster restoration may reintroduce malware; waiting extends the period of manual clinical operations.
 4. **Infusion Pump Verification (Day 3)**: Clinical Engineering must decide whether to continue using infusion pumps that were on the compromised network segment, or take them out of service for firmware verification. *Trade-off*: removing pumps from service creates immediate clinical risk (fewer pumps available); leaving them in service carries integrity risk (firmware may have been tampered with, however unlikely).
-5. **Ransom Payment Deliberation (Day 2-3)**: The Trust Board must decide whether to pay the £1.2M ransom. *Trade-off*: payment might accelerate data recovery but funds criminal activity, provides no guarantee of decryption, and may violate NHS policy and UK counter-terrorism guidance.
-6. **Disclosure Timing (Day 2 onwards)**: When and how should the Trust disclose the incident to patients, the ICO, NHS England, and the media? *Trade-off*: early disclosure supports transparency and regulatory compliance but may cause panic; delayed disclosure allows time for clearer messaging but risks regulatory sanction and loss of public trust.
-
-## File: ./system_architecture/network_architecture.md
-
+5. **Ransom Payment Deliberation (Tuesday)**: The Trust Board must decide whether to pay the £1.2M ransom. *Trade-off*: payment might accelerate data recovery but funds criminal activity, provides no guarantee of decryption, and may violate NHS policy and UK counter-terrorism guidance.
+6. **Disclosure Timing (from Monday night)**: When and how should the Trust disclose the incident to patients, the ICO, NHS England, and the media? *Trade-off*: early disclosure supports transparency and regulatory compliance but may cause panic; delayed disclosure allows time for clearer messaging but risks regulatory sanction and loss of public trust. Note that the ICO deadline does not wait for containment (see the Regulatory Framework Overview).
+7. **The Pump That Disagrees (Tuesday, 07:45)**: The pump calls the prescribed dose too low. Do you change the rate until the pump is satisfied, or trust the prescription, stop, and query pharmacy? *Trade-off*: stopping delays the patient's pain relief; trusting the device delivers the attacker's dose.
 # Network Architecture — Northgate General Hospital
 
 ---
@@ -2326,9 +2313,6 @@ The architecture has three properties that are directly relevant to the security
 1. **Medical device dependence on enterprise services**: Infusion pumps and patient monitors ultimately depend on data originating in the enterprise zone (prescriptions, patient demographics). A loss of the enterprise zone therefore cascades to clinical device functionality.
 2. **The IT/OT boundary is porous**: The internal firewall is the intended trust boundary between IT and clinical OT systems, but the dual-homed workstations and legacy flat segments undermine it. An attacker who reaches the clinical zone inherits the weak authentication and unencrypted protocol environment of legacy medical devices.
 3. **Vendor remote access bypasses segmentation**: The infusion pump manufacturer's persistent VPN connection terminates directly in the clinical zone, providing an alternative entry point that bypasses the enterprise perimeter entirely. If the vendor's own credentials are compromised, the clinical zone is directly exposed.
-
-## File: ./system_architecture/subsystem_descriptions.md
-
 # Subsystem Descriptions — Northgate General Hospital
 
 ---
@@ -2357,7 +2341,7 @@ The PACS manages the storage, retrieval, and distribution of diagnostic medical 
 
 ### Infusion Pumps (Fleet of 480)
 
-Smart infusion pumps deliver intravenous medications, fluids, and nutrition to patients at precisely controlled rates. The fleet is managed centrally through a fleet management console that distributes drug libraries (containing dose limits and concentration parameters), receives device status and error data, and enables remote firmware updates. Individual pumps connect wirelessly to the clinical VLAN.
+The Trust's fleet is the InfusionGuard GP (a fictional model, managed through InfusionGuard Fleet Manager). Smart infusion pumps deliver intravenous medications, fluids, and nutrition to patients at precisely controlled rates. The fleet is managed centrally through a fleet management console that distributes drug libraries (containing dose limits and concentration parameters), receives device status and error data, and enables remote firmware updates. Individual pumps connect wirelessly to the clinical VLAN.
 
 **Patient safety relevance**: Infusion pumps are the final link in the medication administration chain. The drug library's dose range checking function is a critical safety barrier — it prevents clinicians from inadvertently programming a dose outside clinically safe limits. If the drug library is corrupted or the fleet management console is unavailable, this safety function is degraded or lost entirely.
 
@@ -2398,9 +2382,6 @@ The enterprise IT environment comprises Active Directory domain services (authen
 **Patient safety relevance**: Enterprise IT systems do not directly deliver patient care, but they are foundational dependencies. Active Directory provides authentication for users across both enterprise and clinical workstations. Email is the primary communication channel for clinicians during normal operations and carries clinical communications (referrals, discharge summaries). The backup infrastructure is the safety net for data recovery following any incident.
 
 **Key security vulnerabilities**: Active Directory is the highest-value target in the enterprise zone — domain admin compromise provides access to every domain-joined system, including the dual-homed clinical workstations. The backup infrastructure at Northgate was network-accessible from the enterprise zone without air-gapping or immutability controls, meaning that a ransomware attack that compromised the enterprise zone could also destroy the backup estate. The SIEM's coverage of the clinical zone was partial — medical device logs were not ingested, creating a monitoring blind spot.
-
-## File: ./system_architecture/system_overview\.md
-
 # System Overview — Northgate General Hospital
 
 ---
@@ -2443,9 +2424,6 @@ At the time of the incident, several security gaps were known but unresolved:
 4. On-site backup infrastructure was network-accessible from the enterprise zone without air-gapping.
 5. Medical device communication protocols lacked encryption and mutual authentication.
 6. No formal governance structure linked the IT Security team with Clinical Engineering for managing cyber risks to medical devices.
-
-## File: ./theoretical_background/background.md
-
 # Theoretical Background: Cybersecurity and Patient Safety in Healthcare
 
 A Primer for Security-Informed Safety

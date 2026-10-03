@@ -57,8 +57,8 @@
       "optional": false
     },
     {
-      "id": "npc_on_call_pharmacist",
-      "label": "On-Call Pharmacist",
+      "id": "npc_hamza_iqbal",
+      "label": "Hamza Iqbal",
       "kind": "key",
       "optional": false
     },
@@ -249,11 +249,11 @@
     },
     {
       "from": "ward_7",
-      "to": "npc_on_call_pharmacist",
+      "to": "npc_hamza_iqbal",
       "soft": false
     },
     {
-      "from": "npc_on_call_pharmacist",
+      "from": "npc_hamza_iqbal",
       "to": "action_warn_sarah",
       "soft": false
     },
@@ -344,7 +344,7 @@
     },
     {
       "from": "npc_dr_fiona_hartley",
-      "to": "action_notify_ncsc",
+      "to": "action_helen_ico_advisory",
       "soft": false
     },
     {

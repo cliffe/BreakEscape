@@ -1,18 +1,20 @@
 // ===========================================
-// NPC: Patrol Nurse (Staff Nurse, unnamed)
+// NPC: Amy Clarke (Staff Nurse, Ward 7)  — id patrol_nurse
 // Scenario: Northgate Hospital
-// Role: Background colour; Bed 4 escalation reinforcement; drug safety reaction
-// Note: Patrol behaviour drives this NPC. Dialogue is brief — she is always busy.
+// Role: background colour; Bed 4 reinforcement (she can't leave the round
+//       without the charge nurse); drug safety reaction
+// Note: patrol behaviour drives this NPC. Dialogue is brief — she is always busy.
 // ===========================================
 
 // Global variables managed by scenario - declared locally here and updated by game engine
 VAR bed4_escalated = false
-VAR bed4_monitor_viewed = false
 VAR drug_library_compromised = false
+VAR patient_bed4_deceased = false
 
-VAR patrol_acknowledged = false
 VAR bed4_mentioned = false
 VAR drug_warning_given = false
+VAR hub_quiet = false
+VAR death_seen = false
 
 // ===========================================
 // DEFAULT (patrol loop, player interrupts)
@@ -22,42 +24,42 @@ VAR drug_warning_given = false
 -> hub
 
 === hub ===
-
-+ {not bed4_mentioned and not bed4_monitor_viewed} [How is the patient in Bed 4?]
+{
+- patient_bed4_deceased and not death_seen:
+    -> bed4_death
+- drug_library_compromised and not drug_warning_given:
+    -> post_drug
+}
+{
+- hub_quiet:
+    ~ hub_quiet = false
+- bed4_escalated and not patient_bed4_deceased:
+    Amy Clarke: {&I'm with Mr Ahmed. Quickly.|Outreach aren't here yet. What is it?}
+- else:
+    Amy Clarke: {&Quick, I'm mid-round.|Yes?|Go on.}
+}
++ {not bed4_mentioned and not bed4_escalated} [How's the patient in Bed 4?]
     ~ bed4_mentioned = true
-    Staff Nurse: Mr Ahmed? I've been past twice already. Each time his spot check was borderline — concerning, but nothing I could call critical on a single reading.
-    Staff Nurse: Without the central station I can't see the trend. That's what worries me.
-    {not bed4_escalated:
-        Staff Nurse: If you think it needs escalating, talk to Sarah at the nursing station. She has to authorise me leaving the full round.
-    }
-    {bed4_escalated:
-        Staff Nurse: Sarah redirected me — I'm doing a continuous watch on him now. Good thing someone flagged it.
-    }
+    Amy Clarke: Mr Ahmed? His six-thirty obs were borderline. Now his monitor's alarming and he's drowsy.
+    Amy Clarke: Without the central station I can't see the trend. If he needs more than my round, Sarah has to call it.
     -> hub
-
-+ {not bed4_mentioned and bed4_monitor_viewed} [Bed 4 is alarming — the monitor's showing critical vitals]
-    ~ bed4_mentioned = true
-    Staff Nurse: I know. I've been past twice and his spot checks are borderline each time.
-    Staff Nurse: Without the central station I can't see the trend — just a snapshot every round. That's not enough for a post-op cardiac patient.
-    {not bed4_escalated:
-        Staff Nurse: Talk to Sarah. She has to authorise me leaving my rounds — it takes thirty seconds.
-    }
-    {bed4_escalated:
-        Staff Nurse: Sarah's already redirected me — I'm staying with him now.
-    }
++ {not bed4_escalated} [Can't you just stay with him?]
+    Amy Clarke: I can't leave the full round unless the charge nurse says so.
+    Amy Clarke: If I leave five patients and something goes wrong, that's on me. Ask Sarah. If she says go, I go.
     -> hub
-
-+ {not bed4_escalated} [Can you just go and stay with him?]
-    Staff Nurse: I can't divert from the full round without the charge nurse saying so. That's not me being difficult — if I abandon the other five patients and something goes wrong, that's on me.
-    Staff Nurse: Speak to Sarah. If she authorises it, I go. It takes thirty seconds.
-    -> hub
-
 + [Anything I should know?]
-    Staff Nurse: Just... get the monitors back online. Please.
+    {
+    - patient_bed4_deceased:
+        Amy Clarke: Mr Ahmed's gone. I need to get on.
+    - drug_library_compromised:
+        Amy Clarke: Don't go near a pump without the paper chart in your hand.
+    - else:
+        Amy Clarke: Just get the monitors back. Please.
+    }
     -> hub
-
-+ [Leave her to her rounds]
-    Staff Nurse: Back to it then.
++ [I'll let you get on.]
+    Amy Clarke: Back to it, then.
+    ~ hub_quiet = true
     #exit_conversation
     -> hub
 
@@ -67,51 +69,34 @@ VAR drug_warning_given = false
 // ===========================================
 
 === post_drug ===
-
 {not drug_warning_given:
     ~ drug_warning_given = true
-    Staff Nurse: Charge nurse has suspended pump medication pending library verification.
-    Staff Nurse: We're going to manual dosing. More paperwork, but it's safe.
-    * [Is that manageable?]
-        Staff Nurse: It has to be. Patient safety first.
-        -> hub
-    * [Good call by Sarah]
-        Staff Nurse: She always puts patients first. That's why she's charge nurse.
-        -> hub
+    Amy Clarke: Sarah's stopped anything new going on a pump until pharmacy clears the library.
+    Amy Clarke: Everything's by hand and double-checked. Slower, but I know what's going in.
+- else:
+    Amy Clarke: Pumps are still on hold. We're waiting on pharmacy.
 }
-
-{drug_warning_given:
-    Staff Nurse: Pumps are still suspended. Waiting on library confirmation.
-    -> hub
-}
-
-
-// ===========================================
-// BED 4 ESCALATION RESPONSE
-// ===========================================
-
-=== rushing_bed4 ===
-
-Staff Nurse: I'm going to him now — stay out of the way.
-
-#exit_conversation
+~ hub_quiet = true
 -> hub
 
+
+// ===========================================
+// AT BED 4 (after escalation)
+// ===========================================
 
 === at_bed4 ===
-
-Staff Nurse: I'm here with him. Something's very wrong. What's happening with your investigation?
-
+Amy Clarke: I'm staying with him. Outreach are on their way up.
+~ hub_quiet = true
 -> hub
 
 
 // ===========================================
-// MAJOR INCIDENT RESPONSE
+// MR AHMED'S DEATH
 // ===========================================
 
-=== major_incident_line ===
-
-Staff Nurse: I can't stop right now — speak to the ward sister.
-
+=== bed4_death ===
+~ death_seen = true
+Amy Clarke: I can't stop. Speak to Sarah.
+~ hub_quiet = true
 #exit_conversation
 -> hub

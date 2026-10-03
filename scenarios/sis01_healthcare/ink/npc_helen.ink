@@ -1,301 +1,335 @@
 // ===========================================
 // NPC: Helen Carver (Chief Information Officer)
 // Scenario: Northgate Hospital
-// Role: trust-level incident coordination; ICO notification ownership; NCSC liaison; backup recovery advisory; CLAIM-HC-007
-// CyBOK links: CLAIM-HC-007 (incident response plan), GDPR/DPA obligations, regulatory coordination
+// Role: runs the Trust's response and external reporting; ICO decision (with her
+//       containment-first misconception, which the player can argue down);
+//       optional NCSC request; backup advice; ransom question; CLAIM-HC-007
+// CyBOK links: UK GDPR Art. 33, NIS Regulations, PSIRF, CLAIM-HC-007, RPO/RTO
 // ===========================================
 
 // Global variables managed by scenario - declared locally here and updated by game engine
 VAR network_isolated = false
 VAR backup_restore_initiated = false
 VAR backup_recovery_source = ""
+VAR ico_notified = false
+VAR ico_notified_early = false
+VAR ico_deadline_missed = false
+VAR ico_guidance_read = false
+VAR hartley_backs_early_ico = false
+VAR helen_ico_view_heard = false
+VAR ncsc_notified = false
+VAR ransom_advice = ""
+VAR network_isolation_authorised = false
+VAR drug_library_compromised = false
+VAR helen_tamper_view_heard = false
 
 VAR helen_trust = 0
-VAR topic_ico = false
+VAR helen_met = false
+VAR hub_quiet = false
+VAR ico_argued = false
 VAR topic_ncsc = false
+VAR ncsc_asked_what = false
 VAR topic_backup = false
-VAR topic_ir_plan = false
-VAR ico_notified = false
-VAR ncsc_notified = false
+VAR asked_reinfection = false
+VAR asked_rpo = false
+VAR asked_appetite = false
+VAR asked_exception = false
 VAR hc007_assessed = false
+VAR asked_dual = false
+VAR asked_unavailable = false
+VAR ransom_discussed = false
 VAR backup_initiated = false
+VAR iso_told = false
+VAR tamper_told = false
+VAR asked_next = false
 
-// Global reads: network_isolated, backup_restore_initiated, backup_recovery_source
-// Global writes: ico_notified, ncsc_notified, safety_claim_hc007_assessed
+// Global reads: network_isolated, backup_restore_initiated, backup_recovery_source,
+//   ico_deadline_missed, ico_guidance_read, hartley_backs_early_ico
+// Global writes: ico_notified, ico_notified_early, ncsc_notified, helen_ico_view_heard,
+//   ransom_advice, safety_claim_hc007_assessed
 
 // ===========================================
 // FIRST ENCOUNTER
 // ===========================================
 
 === start ===
-#complete_task:helen_ico_advisory
-
-Helen Carver: Helen Carver — Chief Information Officer. I'm coordinating the Trust response and the external reporting. Two legal and regulatory clocks are running and I need you to understand both before you do anything else.
-
-Helen Carver: First: UK GDPR. We have 72 hours from the point of awareness to notify the ICO of a personal data breach. For this incident, we are treating Trust awareness as 22:38 on Monday night, when the ransomware escalation reached the on-call IT manager and came to my office. That leaves us just under 39 hours.
-
-Helen Carver: Second: ransomware affecting NHS clinical operations is exactly the kind of incident we should notify the NCSC about early. That's not the same legal clock as the ICO, but for an incident with patient-safety implications it is the right course and it strengthens the Trust's response.
-
-Helen Carver: I can draft both notifications. I just need your authorisation to send them.
-
-* [Instruct me — what do you need from me?]
-    Helen Carver: For the ICO: confirmation that we've taken reasonable steps to contain the breach — network isolation counts.
-    Helen Carver: For the NCSC: just the go-ahead. They want early notification on NHS ransomware. I have a standing contact there.
+{helen_met:
     -> hub
-
-* [Both at once — do you need anything from me first?]
-    -> dual_notification_check
-
-* [Tell me more about the ICO deadline]
-    Helen Carver: 72 hours from awareness. If we can't determine the scope, we notify anyway with a provisional statement.
-    Helen Carver: Concealment or delay — that's where the serious fines come from. Good-faith early notification is always better.
-    -> hub
-
-
-// ===========================================
-// DUAL NOTIFICATION (player instructs Helen to handle both)
-// ===========================================
-
-=== dual_notification_check ===
-
-{network_isolated:
-    Helen Carver: Network is isolated — that gives me the containment confirmation I need for the ICO.
-    Helen Carver: And I'll notify the NCSC simultaneously. They'll want to know we acted promptly.
-
-    * [Go ahead — notify both]
-        Helen Carver: Done. ICO notification sent — provisional scope, containment confirmed.
-        Helen Carver: NCSC reference logged. Their incident team will follow up with Priya S. directly.
-        ~ ico_notified = true
-        ~ ncsc_notified = true
-        ~ topic_ico = true
-        ~ topic_ncsc = true
-        #set_global:ico_notified:true
-        #set_global:ncsc_notified:true
-        #complete_task:helen_ico_advisory
-        -> hub
-
-    * [Not yet — I need to understand the scope first]
-        Helen Carver: Don't wait too long. The clock doesn't care about scope.
-        -> hub
 }
-
-{not network_isolated:
-    Helen Carver: I can notify the NCSC now — that doesn't require containment.
-    Helen Carver: But for the ICO I need to be able to say the breach is contained. Isolate the network first, then come back.
-
-    * [Notify the NCSC now, ICO later]
-        Helen Carver: Agreed. NCSC reference logged. I'll flag the ongoing exposure in the notification.
-        ~ ncsc_notified = true
-        ~ topic_ncsc = true
-        #set_global:ncsc_notified:true
-        -> hub
-
-    * [I'll come back when the network is isolated]
-        Helen Carver: Don't forget. Thirty-nine hours disappears quickly in an incident like this.
-        -> hub
+~ helen_met = true
+Helen Carver: Helen Carver, CIO. I'm running the Trust's response and the reporting.
+Helen Carver: NHS England had our NIS incident report at eleven last night. That one's statutory, and it's done.
+Helen Carver: The ICO is next. Our clock started at 22:38 on Monday, when this reached the on-call manager. Seventy-two hours.
+{not network_isolated and not ico_notified:
+    #set_global:helen_ico_view_heard:true
+    Helen Carver: I'll notify them once we've contained this and know what was taken. One report, and an accurate one.
 }
-
-
-// ===========================================
-// BACKUP ADVISORY
-// ===========================================
-
-=== backup_advisory ===
-~ topic_backup = true
-
-Helen Carver: The backup console in the major incident room holds our last clean state — eighteen hours ago.
-
-Helen Carver: Three restore options. Two are compromised — the NAS is encrypted and the tape catalogue was wiped.
-
-Helen Carver: That leaves the vendor cloud backup. 18-hour window. Document what you choose and why. The ICO will ask.
-
-* [What about reinfection risk?]
-    Helen Carver: Exactly the right question. Do not start a restore while the attacker is still in the network.
-    Helen Carver: Isolate first. Restore second. In that order.
++ [What do you need from me?]
+    {network_isolated:
+        Helen Carver: Your read on what the attacker reached and what we restore from. The backup console's by the command board.
+    - else:
+        Helen Carver: Your read on what the attacker reached, and a network I can call contained. Ravi's office first, then David here.
+    }
     -> hub
-
-* [Understood — I'll initiate the restore]
-    Helen Carver: Good. Come back to me when it's confirmed. I'll need to log it for the SIRI.
++ {not network_isolated and not ico_notified} [Shouldn't the ICO hear from us before it's contained?]
+    -> ico_advisory
++ [I'll come back when I know more.]
+    Helen Carver: Do. The deadline's on the tablet by the window.
+    ~ hub_quiet = true
+    #exit_conversation
     -> hub
 
 
 // ===========================================
-// CLAIM-HC-007
-// ===========================================
-
-=== safety_case_hc007 ===
-~ topic_ir_plan = true
-~ hc007_assessed = true
-
-Helen Carver: CLAIM-HC-007: "Incident response decisions that impact clinical safety are made through integrated IT and clinical decision-making."
-
-Narrator: Helen points to the Trust Safety Case document.
-Helen Carver: This claim is about governance. It says that critical decisions like network isolation require both IT security and clinical sign-off.
-
-Helen Carver: You confirm both sign-offs at the network terminal — it checks both are in hand before committing the isolation.
-
-Helen Carver: That's one of the few promises in the safety case we can actually keep right now.
-
-* [So dual sign-off is a safety control?]
-    Helen Carver: Exactly. It prevents one function — IT or clinical — from making a decision that affects patient safety unilaterally.
-    Helen Carver: Take it to the network terminal with David's sign-off. The terminal checks both are confirmed before you execute isolation.
-    #set_global:safety_claim_hc007_assessed:true
-    -> hub
-
-* [What if one of them is unavailable?]
-    Helen Carver: Then isolation cannot proceed through normal channels. In an extreme emergency, there's an executive override — but it must be documented as a formal deviation.
-    Helen Carver: Bypassing governance without documentation is how safety incidents become inquests.
-    #set_global:safety_claim_hc007_assessed:true
-    -> hub
-
-* [What happens after isolation?]
-    Helen Carver: We document that the isolation decision was made through integrated governance. That goes in the post-incident report.
-    Helen Carver: And we recover systems within the defined window. That's the RTO commitment in the same claim.
-    #set_global:safety_claim_hc007_assessed:true
-    -> hub
-
-
-// ===========================================
-// ICO ADVISORY (standalone path)
+// ICO NOTIFICATION
+// Helen's position: contain first, then notify. That is her misconception,
+// not the law. The player can argue it down with the IG briefing on the
+// table (ico_guidance_read) or with Dr Hartley's backing.
 // ===========================================
 
 === ico_advisory ===
-~ topic_ico = true
-
-Helen Carver: The ICO notification template is on my terminal. I need two things from you.
-
-Helen Carver: One: confirmation of what data was potentially accessed. Patient records? Staff records? Both?
-
-Helen Carver: Two: your sign-off as the incident lead that we've taken reasonable steps to contain the breach.
-
-* {network_isolated} [Network is isolated — instruct Helen to notify]
-    Helen Carver: Good. That's "reasonable steps." I'll document the isolation time and method.
-    Helen Carver: Sending now — provisional scope. We can supplement once forensics are complete.
+{ico_notified:
+    Helen Carver: The ICO has our first report. Updates go as forensics comes in.
+    -> hub
+}
+{ico_deadline_missed:
+    Helen Carver: We've missed it. I'm sending it now, late, with the reasons in writing.
     ~ ico_notified = true
     #set_global:ico_notified:true
     #complete_task:helen_ico_advisory
     -> hub
+}
+{network_isolated:
+    Helen Carver: We're contained. We still don't know what was taken, so we'll say that. I can send it now.
+    -> ico_send_choice
+}
+Helen Carver: Not until the network's isolated. I won't tell the ICO it's contained when it isn't.
+-> ico_argument
 
-* {not network_isolated} [Network isn't isolated yet]
-    Helen Carver: Then we can't say the breach is contained. The notification will need to reflect ongoing risk.
-    Helen Carver: Isolate the network, then come back and I'll send it.
-    ~ helen_trust -= 1
-    #influence_decreased
+=== ico_send_choice ===
++ [Send it. Say what we know and what we've done.]
+    -> ico_send_after_isolation
++ [Give me a minute first.]
+    Helen Carver: The clock doesn't stop while you think.
     -> hub
 
-* [What if we get the scope wrong?]
-    Helen Carver: Better to over-report than under-report. The ICO treats good-faith notification favourably.
-    Helen Carver: Concealment or delay — that's where the serious fines come from.
+=== ico_argument ===
++ {not ico_argued} [Article 33 doesn't wait for containment. We report what we know now.]
+    ~ ico_argued = true
+    Helen Carver: And say what? "We don't know what was taken"? I'd rather send one report that's right.
+    -> ico_argument
++ {ico_argued and ico_guidance_read} [The IG briefing says: report measures proposed, and send the rest in phases.]
+    -> helen_persuaded
++ {ico_argued and hartley_backs_early_ico} [Dr Hartley says notify now. It's her call to advise on.]
+    -> helen_persuaded
++ {ico_argued and not ico_guidance_read and not hartley_backs_early_ico} [I'm sure the law allows a provisional report.]
+    Helen Carver: "Sure" won't move me. Show me where it says so, or ask Fiona Hartley. She'll know.
+    -> ico_argument
++ [You're right. Contain it first, then notify.]
+    Helen Carver: Good. Isolate the network, then come back and I'll send it.
     -> hub
++ [Leave the ICO for now.]
+    Helen Carver: The clock's still running.
+    -> hub
+
+=== helen_persuaded ===
+Helen Carver: Fine. I'd rather be early and incomplete than late and tidy.
+Helen Carver: Provisional report: what happened, whose records, and that we're isolating within the hour. I've logged the time.
+~ ico_notified = true
+~ ico_notified_early = true
+~ helen_trust += 10
+#influence_increased
+#set_global:ico_notified:true
+#set_global:ico_notified_early:true
+#complete_task:helen_ico_advisory
+Helen Carver: Updates follow as forensics comes in. That's how it's meant to work, isn't it?
+-> hub
+
+=== ico_send_after_isolation ===
+Helen Carver: Sending. What happened, whose records, and that we've isolated. I've logged the time.
+~ ico_notified = true
+#set_global:ico_notified:true
+#complete_task:helen_ico_advisory
+-> hub
 
 
 // ===========================================
-// NCSC ADVISORY (standalone path)
+// NCSC (optional, recommended)
 // ===========================================
 
 === ncsc_advisory ===
 ~ topic_ncsc = true
+Helen Carver: NHS England's cyber team will pass our report on to the NCSC. Asking them directly gets us someone today.
+-> ncsc_choices
 
-Helen Carver: NCSC notification is not the same kind of statutory deadline as the ICO, but for NHS ransomware affecting clinical systems it is strongly indicated and operationally important.
-
-Helen Carver: Unlike the ICO, we don't need to wait for containment. They want early notification precisely so they can support the response.
-
-Helen Carver: I have a standing contact at the NCSC — I can log this immediately. The reference number goes into the SIRI.
-
-* [Instruct Helen to notify NCSC now]
-    Helen Carver: Done. Reference logged. Their incident team will be in touch — Priya S. is likely already coordinating from their end.
+=== ncsc_choices ===
++ {not ncsc_notified} [Ask them now. They can help.]
+    Helen Carver: Done. I've given them our reference and the ransom note.
     ~ ncsc_notified = true
     #set_global:ncsc_notified:true
+    #complete_task:notify_ncsc
     -> hub
-
-* [What will the NCSC do once notified?]
-    Helen Carver: They'll assign a case officer and may send technical support. Typically they review the attack vector and check for indicators affecting other NHS trusts.
-    Helen Carver: Priya S.'s visit is part of that — NCSC and NHS England coordinate on major incidents.
-    -> hub
-
-* [Not yet — I'll come back]
-    Helen Carver: Don't leave it too long. Early notification reflects well on the Trust.
++ {not ncsc_asked_what} [What would the NCSC actually do?]
+    ~ ncsc_asked_what = true
+    Helen Carver: Work out how they got in, check whether other trusts are being hit the same way, and advise. They don't take over.
+    -> ncsc_choices
++ [Not now.]
+    Helen Carver: Your call to advise. Mine to make.
     -> hub
 
 
 // ===========================================
-// POST-ISOLATION
+// BACKUP ADVICE (the decision is the player's; no source is ruled out here)
+// ===========================================
+
+=== backup_advisory ===
+~ topic_backup = true
+Helen Carver: Three ways back for the EHR. Our NAS, the tape library, or the vendor's cloud copy.
+Helen Carver: The status report is in the console. Eighteen hours more on paper is a clinical risk too. Pick the one you can defend.
+-> backup_choices
+
+=== backup_choices ===
++ {not asked_reinfection} [What about reinfection?]
+    ~ asked_reinfection = true
+    Helen Carver: Good question. Where's the attacker now? If the answer is "still in the network", you know what to do first.
+    -> backup_choices
++ {not asked_rpo} [How much do we lose, and how long does it take?]
+    ~ asked_rpo = true
+    Helen Carver: Two different questions. How much we lose is the recovery point. How long it takes is the recovery time.
+    Helen Carver: The report gives both for each source. Don't let anyone blur them.
+    -> backup_choices
++ {not asked_appetite} [How much risk will the Board accept here?]
+    ~ asked_appetite = true
+    Helen Carver: For patient harm, close to zero. For disruption and cost, much higher. Paper is disruption that can turn into harm.
+    -> backup_choices
++ [I'll look at the console.]
+    Helen Carver: Write down what you choose and why. The ICO and the review will both ask.
+    -> hub
+
+
+// ===========================================
+// CLAIM-HC-007 (integrated incident response)
+// ===========================================
+
+=== safety_case_hc007 ===
+~ hc007_assessed = true
+#set_global:safety_claim_hc007_assessed:true
+Helen Carver: HC-007 says our plan tells us when to isolate clinical systems, and that we rehearse it every year.
+Helen Carver: The last rehearsal was nineteen months ago. So this morning is the rehearsal.
+Helen Carver: What we can still keep is the joint decision. Ravi's sign-off and David's, both, before anyone cuts the link.
+-> hc007_choices
+
+=== hc007_choices ===
++ {not asked_dual} [So the dual sign-off is a safety control?]
+    ~ asked_dual = true
+    Helen Carver: Yes. It stops either side making a call that hurts patients without the other seeing the cost.
+    -> hc007_choices
++ {not asked_unavailable} [What if one of them isn't available?]
+    ~ asked_unavailable = true
+    Helen Carver: Then I can authorise an executive override, written down as a deviation.
+    Helen Carver: Skipping it with no record is how incidents become inquests.
+    -> hc007_choices
++ [Understood.]
+    -> hub
+
+
+// ===========================================
+// THE RANSOM (new decision: what the player advises the Board)
+// ===========================================
+
+=== ransom_talk ===
+~ ransom_discussed = true
+Helen Carver: One point two million. The Board meets at nine, and they'll ask what the response team thinks.
+Helen Carver: The note says don't call the police. We did, on Monday night. What do I tell the Board?
+* [Don't pay. It funds the next attack and guarantees nothing.]
+    ~ ransom_advice = "dont_pay"
+    #set_global:ransom_advice:dont_pay
+    Helen Carver: That's NHS policy, and mine. So the restore is our only way back, and we live with its timings.
+* [Pay, if it's the fastest way to get the monitors back.]
+    ~ ransom_advice = "pay"
+    #set_global:ransom_advice:pay
+    Helen Carver: Paying buys a promise from a criminal and maybe a key that works. They'd still have the records.
+    Helen Carver: The Board won't pay, and I won't ask them to. Our way back is the restore.
+* [That's the Board's decision, not mine.]
+    ~ ransom_advice = "board"
+    #set_global:ransom_advice:board
+    Helen Carver: It is. But "no view" doesn't help them much. For the record, we're not paying.
+- -> hub
+
+
+// ===========================================
+// POST-ISOLATION (person-chat on network_isolated)
 // ===========================================
 
 === post_isolation ===
-
-{not ico_notified:
-    Helen Carver: Network isolated — that's the containment step I needed for the ICO notification.
-    Helen Carver: Come back to me and we'll send it. We're within the window but we shouldn't delay.
-}
+~ iso_told = true
 {ico_notified:
-    Helen Carver: ICO has been notified. We're on record as having acted promptly.
-    Helen Carver: Now it's backup restoration and the post-incident report.
-}
-
-Helen Carver: Three things still need to happen. One — initiate the backup restore from the console here in the major incident room. Two — verify the drug library is clean at Ward 7. Three — notify the NCSC if you haven't already.
-
-Helen Carver: Once those are done, Priya S. from the NCSC will be ready to debrief.
-
-* [What do we do now?]
-    Helen Carver: Backup restoration, then scope assessment.
-    Helen Carver: I'll start drafting the SIRI in parallel.
+    Helen Carver: We're isolated. The ICO already has our first report, so I'll send an update saying so.
+    Helen Carver: Next is the restore. The backup console's by the command board.
     -> hub
+}
+Helen Carver: We're isolated. That's the containment I wanted before going to the ICO.
+Helen Carver: Next is the restore. The backup console's by the command board. But first, the ICO.
+-> ico_send_choice
 
 
 // ===========================================
-// POST-BACKUP RESTORATION
+// POST-BACKUP (person-chat on backup_restore_initiated)
 // ===========================================
 
 === post_backup ===
 ~ backup_initiated = true
-
-{backup_recovery_source == "cloud_vendor" && network_isolated:
-    Helen Carver: Vendor cloud restore is initiated. Eighteen-hour window — systems won't be back until tonight.
-    Helen Carver: Manual prescribing and monitoring continue until then. I'll keep the board updated.
+~ asked_next = true
+{
+- backup_recovery_source == "cloud_vendor" && network_isolated:
+    Helen Carver: Cloud restore's running. Eighteen hours, so the wards stay on paper until tonight. I'll tell the Board.
+- backup_recovery_source == "cloud_vendor":
+    Helen Carver: It's running, but the attacker may still be in the network. If they reach the restore, we start again.
+- backup_recovery_source == "nas_encrypted":
+    Helen Carver: The NAS was the encrypted source. That restore was never going to work. I need your reasoning for the review.
+- backup_recovery_source == "tape_wiped":
+    Helen Carver: The tape catalogue was wiped. We can't vouch for anything that comes back. That goes in the review.
+- else:
+    Helen Carver: A restore's started. I need the source confirmed for the record.
 }
-{backup_recovery_source == "cloud_vendor" && not network_isolated:
-    Helen Carver: Restore is running — but the attacker may still have access to the network.
-    Helen Carver: If they reach the recovering systems, we'll be reinfected. That means starting again and extending manual operations for days.
-}
-{backup_recovery_source == "nas_encrypted":
-    Helen Carver: The NAS was the encrypted source. That restore was always going to fail.
-    Helen Carver: This decision will be scrutinised in the SIRI. I need you to document why it was made.
-}
-{backup_recovery_source == "tape_wiped":
-    Helen Carver: The tape catalogue was wiped. Chain of custody on what was recovered cannot be guaranteed.
-    Helen Carver: I'll note it in the SIRI as a recovery governance failure.
-}
-{backup_recovery_source == "":
-    Helen Carver: Backup initiated. I need the restoration source confirmed for the record.
-}
-
-Helen Carver: I need you to sign off the restoration record. Type, method, timestamp, authorising individual.
-
-Helen Carver: This goes into the SIRI — Serious Incident Requiring Investigation — report.
-
-* [Consider it done]
+Helen Carver: Sign the restore record for me. Source, method, time, and who authorised it.
++ [Done. What review?]
+    Helen Carver: Our patient safety incident review. Under PSIRF, NHS England's framework, it's about learning, not finding someone to blame.
+    -> post_backup_ncsc
++ [Done.]
     Helen Carver: Thank you.
-    {not ncsc_notified:
-        Helen Carver: One more thing — we still haven't notified the NCSC. Do you want me to do that now?
-        ** [Yes — instruct Helen to notify NCSC]
-            Helen Carver: Done. Reference logged. Priya S. will be coordinating from the NCSC side.
-            ~ ncsc_notified = true
-            #set_global:ncsc_notified:true
-            -> hub
-        ** [I'll handle that separately]
-            Helen Carver: Don't forget. It should go in before the debrief.
-            -> hub
-    }
-    {ncsc_notified:
-        Helen Carver: Priya S. from the NCSC will want this documentation for her debrief.
-        -> hub
-    }
+    -> post_backup_ncsc
 
-* [What's a SIRI?]
-    Helen Carver: It's the NHS framework for investigating serious incidents. This qualifies on multiple grounds.
-    Helen Carver: Ransomware on a cardiac ward with patient safety implications — that's a SIRI.
+=== post_backup_ncsc ===
+{ncsc_notified:
+    Helen Carver: Priya S. at the NCSC will want this record for her debrief.
     -> hub
+}
+Helen Carver: We still haven't asked the NCSC for help directly. Do you want me to?
++ [Yes, ask them now.]
+    Helen Carver: Done. They've got our reference.
+    ~ ncsc_notified = true
+    #set_global:ncsc_notified:true
+    #complete_task:notify_ncsc
+    -> hub
++ [No, NHS England can bring them in.]
+    Helen Carver: They will. It'll just take longer.
+    -> hub
+
+
+// ===========================================
+// DRUG LIBRARY TAMPER (person-chat on drug_library_compromised)
+// ===========================================
+
+=== post_drug_tamper ===
+~ tamper_told = true
+~ helen_tamper_view_heard = true
+#set_global:helen_tamper_view_heard:true
+Helen Carver: I've sent the on-call pharmacist down to Ward 7.
+Helen Carver: If pumps loaded that library, this is a patient safety incident as well as a cyber one.
+Helen Carver: And I want that fleet console back the minute the restore's done. Every hour on paper carries its own risk.
+Helen Carver: David will tell you to wait. He answers for clinical safety, I answer for getting the Trust running. Hear us both.
+-> hub
 
 
 // ===========================================
@@ -303,49 +337,46 @@ Helen Carver: This goes into the SIRI — Serious Incident Requiring Investigati
 // ===========================================
 
 === hub ===
-
-+ {not topic_backup} [Tell me about the backup process]
-    -> backup_advisory
-
-+ {not hc007_assessed} [Tell me about CLAIM-HC-007]
-    -> safety_case_hc007
-
-+ {not topic_ico or not ico_notified} [ICO notification]
-    -> ico_advisory
-
-+ {not topic_ncsc or not ncsc_notified} [NCSC notification]
-    -> ncsc_advisory
-
-+ {network_isolated and not backup_initiated} [Systems are isolated — what's next?]
-    Helen Carver: Restore from backup. The console is in the major incident room — the PC next to the command board.
-    Helen Carver: Choose a restore method carefully and document what you choose. The ICO will ask.
+{
+- not helen_met:
+    -> start
+- drug_library_compromised and not tamper_told:
+    -> post_drug_tamper
+- network_isolated and not iso_told:
+    -> post_isolation
+- backup_restore_initiated and not backup_initiated:
+    -> post_backup
+}
+{hub_quiet:
+    ~ hub_quiet = false
+- else:
+    Helen Carver: {&What else?|Go on.|I've got a minute.}
+}
++ {network_isolated and not backup_initiated and not asked_next} [We're isolated. What's next?]
+    ~ asked_next = true
+    Helen Carver: The restore. The backup console's by the command board. Choose carefully and write down why.
     -> hub
-
-+ [Leave conversation]
-    {not ico_notified and not ncsc_notified:
-        Helen Carver: Don't forget — ICO clock is running, and NCSC needs to hear from us too.
++ {not ico_notified} [Where are we with the ICO?]
+    -> ico_advisory
++ {not topic_backup} [How do we get the EHR back?]
+    -> backup_advisory
++ {not hc007_assessed} [What does the safety case say about isolating?]
+    -> safety_case_hc007
++ {not ransom_discussed} [Is the Board thinking of paying?]
+    -> ransom_talk
++ {not asked_exception} [Who owns the vendor's VPN exception?]
+    ~ asked_exception = true
+    Helen Carver: Clinical Engineering, on paper. It went on as a temporary exception, with a review due seven months ago.
+    Helen Carver: Nobody reviewed it. An accepted risk stays accepted long after the reasons for accepting it have gone.
+    -> hub
++ {not ncsc_notified and not topic_ncsc} [Should we bring in the NCSC?]
+    -> ncsc_advisory
++ [I'll get back to it.]
+    {not ico_notified:
+        Helen Carver: The ICO clock's on the tablet. Don't let it run out.
+    - else:
+        Helen Carver: Thank you. Keep me posted.
     }
-    {ico_notified and not ncsc_notified:
-        Helen Carver: ICO is done. Still need the NCSC notification before the debrief.
-    }
-    {not ico_notified and ncsc_notified:
-        Helen Carver: NCSC is logged. Don't forget the ICO clock.
-    }
-    {ico_notified and ncsc_notified:
-        Helen Carver: Good work. Keep the documentation tight.
-    }
+    ~ hub_quiet = true
     #exit_conversation
     -> hub
-
-
-// ===========================================
-// DRUG LIBRARY TAMPER DETECTED
-// ===========================================
-
-=== post_drug_tamper ===
-
-Helen Carver: I've dispatched the on-call pharmacist to the ward. Tell them to verify every pump's configuration against the clinical baseline.
-Helen Carver: If that library was modified, we catch it now or we could have a serious incident on our hands.
-
-#exit_conversation
--> hub

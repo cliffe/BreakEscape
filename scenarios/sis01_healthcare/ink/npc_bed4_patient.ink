@@ -1,34 +1,53 @@
 // ==================================================
-// NPC: Bed 4 Patient (Mr T. Ahmed, cardiac post-op)
+// NPC: Bed 4 Patient (Mr T. Ahmed, two days after cardiac surgery)
 // Scenario: Northgate Hospital Ward 7
-// Role: Patient state display (alarm context, deterioration sequence)
+// Role: patient state display (alarm context, deterioration sequence)
+// Re-entry lands on knot `hub`, which re-shows a short state line; the state
+// knots print their full narration and go straight to the choices.
 // ==================================================
 
 // Global variables managed by scenario - declared locally here and updated by game engine
 VAR bed4_escalated = false
+VAR patient_bed4_state = "resting_unmonitored"
+VAR patient_bed4_deceased = false
 
 === state_resting_unmonitored ===
 #set_global:bed4_monitor_viewed:true
-Narrator: The monitor above Bed 4 is alarming. Mr Ahmed is lying still, eyes closed, breathing irregularly. He doesn't respond when you approach. The bedside alarm has been active for some time — there's no-one at the nursing station to hear it.
--> hub
+Narrator: Bed 4's monitor is alarming, a low two-tone at the bedside. Mr Ahmed is drowsy and clammy. From the desk, the alarm is lost under the ward noise.
+-> hub.choices
 
 === state_distressed ===
 #set_global:bed4_monitor_viewed:true
-Narrator: Mr Ahmed shifts restlessly in the bed, pressing the call bell repeatedly. His vital signs on the bedside screen are deteriorating. The alarm tone has changed — higher, more urgent.
--> hub
+Narrator: Mr Ahmed is restless and pressing his call bell. The numbers on his monitor are falling, and the alarm has gone higher and faster.
+-> hub.choices
 
 === state_critical ===
 #set_global:bed4_monitor_viewed:true
-Narrator: Mr Ahmed is motionless. The bedside monitor shows a flat-line alarm pattern. Nobody at the nursing station can see this — the central station is offline. The alarm is steady and insistent.
--> hub
+Narrator: Mr Ahmed's lips are dusky and his breathing is shallow. The monitor shows a slow, irregular rhythm. Someone needs to put out the crash call now.
+-> hub.choices
+
+=== state_deceased ===
+Narrator: The curtains round Bed 4 are drawn. The crash team couldn't get Mr Ahmed back.
+-> hub.choices
 
 === state_attended ===
 -> hub
 
 === hub ===
-{ bed4_escalated:
-    Narrator: The Staff Nurse is standing at Mr Ahmed's bedside, attending to him. She gives you a brief, worried glance but stays focused on the patient.
+{
+- patient_bed4_deceased:
+    Narrator: The curtains round Bed 4 are drawn.
+- bed4_escalated:
+    Narrator: Amy is at Mr Ahmed's bedside. She glances up at you, then back to him.
+- patient_bed4_state == "critical":
+    Narrator: Mr Ahmed's lips are dusky. The alarm hasn't stopped.
+- patient_bed4_state == "distressed":
+    Narrator: Mr Ahmed is restless. The alarm is faster now.
+- else:
+    Narrator: Bed 4's alarm is still sounding. Mr Ahmed hasn't moved.
 }
-+ [Step back]
+-> choices
+= choices
++ [Step back.]
     #exit_conversation
     -> hub

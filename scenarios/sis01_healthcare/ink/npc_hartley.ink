@@ -1,198 +1,218 @@
 // ===========================================
-// NPC: Dr Fiona Hartley (Caldicott Guardian)
+// NPC: Dr Fiona Hartley (Consultant anaesthetist; Caldicott Guardian)
 // Scenario: Northgate Hospital
-// Role: patient data accountability; disclosure law; board/governance advice
-// CyBOK links: Legal/regulatory context; data controller obligations
-// Priority: Medium — available once debrief_started is false; central if ICO deadline is missed
+// Role: patient information: what was lost, who must be told and when.
+//       Decisions: isolation versus EHR allergy checks; when to tell patients.
+//       Can back the player against Helen's "contain first, then notify".
+// CyBOK links: UK GDPR Art. 33/34, duty of candour, NIS, data controller duties
 // ===========================================
 
 // Global variables managed by scenario - declared locally here and updated by game engine
 VAR ico_notified = false
-VAR restore_operations = false
+VAR ico_notified_early = false
 VAR ico_deadline_missed = false
 VAR ncsc_notified = false
+VAR network_isolated = false
+VAR helen_ico_view_heard = false
+VAR hartley_backs_early_ico = false
+VAR isolation_compensating_controls = false
+VAR isolation_risk_accepted = false
+VAR patient_disclosure = ""
+VAR patient_bed2_deceased = false
+VAR patient_bed4_deceased = false
+VAR pump_dose_error = false
 
 VAR hartley_trust = 0
+VAR hartley_met = false
+VAR hub_quiet = false
 VAR topic_patient_data = false
 VAR topic_disclosure = false
-VAR topic_major_incident = false
+VAR asked_fine = false
+VAR asked_others = false
+VAR topic_isolation = false
+VAR asked_partial_cut = false
 VAR topic_ncsc = false
-VAR deadline_warned = false
+VAR candour_discussed = false
 VAR ico_ack_given = false
+VAR deadline_warned = false
 
-// Global reads: ico_notified, restore_operations, ico_deadline_missed, ncsc_notified
-// Global writes: major_incident_declared
+// Global writes: hartley_backs_early_ico, isolation_compensating_controls, patient_disclosure
 
 // ===========================================
 // FIRST ENCOUNTER
 // ===========================================
 
 === start ===
-
-Dr Fiona Hartley: Fiona Hartley — Caldicott Guardian. I need to understand the patient data exposure before I brief the board.
-
-Dr Fiona Hartley: We are the data controller. Whatever happened to that data is our liability.
-
-* [What data is at risk?]
-    -> patient_data
-
-* [The ICO has already been notified]
-    {ico_notified:
-        Dr Fiona Hartley: Good. That's the right call. What was the assessed scope?
-        ~ hartley_trust += 10
-        #influence_increased
-        -> hub
-    }
-    {not ico_notified:
-        Dr Fiona Hartley: Has it? I haven't seen anything from Helen.
-        Dr Fiona Hartley: If that notification hasn't gone, we need to fix that now.
-        -> hub
-    }
-
-* [We should declare a Major Incident]
-    -> topic_major_incident_talk
-
-
-// ===========================================
-// PATIENT DATA
-// ===========================================
-
-=== patient_data ===
-~ topic_patient_data = true
-
-Dr Fiona Hartley: We hold records for 40,000 registered patients. That includes diagnoses, medications, next-of-kin.
-
-Dr Fiona Hartley: The ransomware encrypted files — but did it exfiltrate them first?
-
-Dr Fiona Hartley: That's the question the ICO will ask. "Was data taken, or merely locked?"
-
-* [We don't know yet]
-    Dr Fiona Hartley: Then we notify as a precaution and update the ICO when forensics complete.
-    Dr Fiona Hartley: The worst outcome is knowing data was taken and failing to disclose. That's a six-figure fine.
-    ~ hartley_trust += 5
-    #influence_increased
+{hartley_met:
     -> hub
-
-* [The network logs should tell us]
-    Dr Fiona Hartley: Correct. Large outbound transfers in the hours before the ransom screen appeared.
-    Dr Fiona Hartley: Check the SIEM for outbound data volume. If there's a spike — we assume exfiltration.
-    -> hub
-
-* [We should assume the worst]
-    Dr Fiona Hartley: That's the prudent legal position. Assume exfiltration, disclose promptly, update as facts emerge.
-    ~ hartley_trust += 10
-    #influence_increased
-    -> hub
-
-
-// ===========================================
-// DISCLOSURE LAW
-// ===========================================
-
-=== disclosure_law ===
-~ topic_disclosure = true
-
-Dr Fiona Hartley: UK GDPR Article 33. 72-hour notification to the supervisory authority — that's the ICO.
-
-Dr Fiona Hartley: Article 34 if there's a high risk to individuals — direct notification to affected patients.
-
-Dr Fiona Hartley: We're a healthcare organisation. The threshold for "high risk" is lower than for, say, a retailer.
-
-* [Do we need to contact patients directly?]
-    Dr Fiona Hartley: Almost certainly — once we've assessed scope.
-    Dr Fiona Hartley: Clinical records are special category data. Any breach involving them likely triggers Article 34.
-    -> hub
-
-* [What are the penalties for missing the deadline?]
-    Dr Fiona Hartley: Up to £17.5 million or four percent of global turnover under UK GDPR.
-    Dr Fiona Hartley: For an NHS Trust, the reputational damage is arguably worse than the fine.
-    -> hub
-
-* [Helen is handling the notification]
-    Dr Fiona Hartley: Good. Make sure she has everything she needs. I'll advise on patient-data scope and whether Article 34 patient notification is likely.
-    -> hub
-
-
-// ===========================================
-// MAJOR INCIDENT DISCUSSION
-// ===========================================
-
-=== topic_major_incident_talk ===
-~ topic_major_incident = true
-
-Dr Fiona Hartley: Major Incident declaration. That's not a decision I take lightly.
-
-Dr Fiona Hartley: It triggers the NHS England reporting chain, media protocols, executive escalation.
-
-* [We've exceeded the monitoring RTO]
-    {restore_operations:
-        Dr Fiona Hartley: Systems are recovering — I'd say we're at the boundary.
-        Dr Fiona Hartley: If monitoring is back within the hour, we can document near-miss rather than full Major Incident.
-        -> hub
-    }
-    {not restore_operations:
-        Dr Fiona Hartley: Then I have no choice.
-        Dr Fiona Hartley: Major Incident declared. The command board in the Incident Room becomes the operational hub.
-        Dr Fiona Hartley: Tell Helen to notify the NCSC as well — ransomware affecting clinical systems needs early national-level support.
-        #set_global:major_incident_declared:true
-        -> hub
-    }
-
-* [Not yet — we're close to recovery]
-    Dr Fiona Hartley: I'll hold for thirty minutes. If monitoring isn't restored by then, I'm declaring.
-    Dr Fiona Hartley: Document this conversation. Time-stamped decision points matter.
-    -> hub
-
-
-// ===========================================
-// POST-ICO NOTIFICATION
-// ===========================================
-
-=== post_ico ===
-~ ico_ack_given = true
-
-{ico_notified:
-    Dr Fiona Hartley: Helen told me the ICO notification has gone. Good.
-    Dr Fiona Hartley: We're on record as having acted within the window. That counts for a great deal.
-    ~ hartley_trust += 15
-    #influence_increased
 }
-{not ico_notified:
-    Dr Fiona Hartley: The notification still hasn't gone?
-    Dr Fiona Hartley: Every hour we delay now increases our exposure. Please get Helen to send it.
-    ~ hartley_trust -= 5
-    #influence_decreased
-}
-
+~ hartley_met = true
+~ hub_quiet = true
+Dr Fiona Hartley: Fiona Hartley. Consultant anaesthetist, and the Trust's Caldicott Guardian.
+Dr Fiona Hartley: Patient information is my responsibility. Who sees it, who it's shared with, and who's told when it's lost.
 -> hub
 
 
 // ===========================================
-// ICO DEADLINE MISSED
+// PATIENT DATA: taken, or only locked?
 // ===========================================
+
+=== patient_data ===
+~ topic_patient_data = true
+Dr Fiona Hartley: We hold records for over half a million patients. Diagnoses, medicines, next of kin.
+Dr Fiona Hartley: The ICO will ask whether it was taken, or only locked.
++ [We don't know yet.]
+    Dr Fiona Hartley: Then we can't prove it wasn't taken, and the ransom note says it was. We report it as possible theft.
+    -> hub
++ [The network logs should tell us.]
+    Dr Fiona Hartley: In time. Forensics may take weeks, and the ICO deadline won't wait for it.
+    Dr Fiona Hartley: So we report possible theft now, and if forensics clears it, we say so later.
+    -> hub
++ [We should assume the worst.]
+    ~ hartley_trust += 5
+    #influence_increased
+    Dr Fiona Hartley: That's the safe position. Assume it was taken, report promptly, and update as the facts come in.
+    -> hub
+
+
+// ===========================================
+// THE LAW
+// ===========================================
+
+=== disclosure_law ===
+~ topic_disclosure = true
+Dr Fiona Hartley: Article 33. We tell the ICO within seventy-two hours of becoming aware. Not of knowing everything.
+Dr Fiona Hartley: Article 34 is the patients. If a breach is likely to put them at high risk, we tell them directly. Health records usually meet that bar.
+-> disclosure_choices
+
+=== disclosure_choices ===
++ {not asked_fine} [What if we miss the ICO deadline?]
+    ~ asked_fine = true
+    Dr Fiona Hartley: For a late notification, up to eight point seven million pounds, or two per cent of turnover.
+    Dr Fiona Hartley: For a public body the ICO is more likely to issue a reprimand, and publish it. That's what the Board fears.
+    -> disclosure_choices
++ {not asked_others} [Who else has to hear?]
+    ~ asked_others = true
+    Dr Fiona Hartley: NHS England, under the NIS rules. Helen reported to them last night. The NCSC is voluntary, but worth it.
+    -> disclosure_choices
++ [That's clear.]
+    -> hub
+
+
+// ===========================================
+// HELEN'S ICO TIMING (backs the player's argument)
+// ===========================================
+
+=== ico_timing ===
+~ hartley_backs_early_ico = true
+#set_global:hartley_backs_early_ico:true
+Dr Fiona Hartley: Then she's being careful in the wrong place. The seventy-two hours run from awareness, contained or not.
+~ hartley_trust += 5
+#influence_increased
+Dr Fiona Hartley: The report can say what we're about to do, and the rest can follow in phases. Tell her I said so, and the DPO will say the same.
+-> hub
+
+
+// ===========================================
+// ISOLATION VERSUS EHR ACCESS (new decision)
+// ===========================================
+
+=== isolation_concern ===
+~ topic_isolation = true
+Dr Fiona Hartley: Ward 7 lost the EHR last night. Every other ward can still read the vendor's cloud copy: allergies, drug charts.
+Dr Fiona Hartley: Cut the link and they lose it too. Ms Okafor's wristband says penicillin. It won't tell you what she's had today.
+-> isolation_choices
+
+=== isolation_choices ===
++ [Then we put pharmacy on every drug round before we isolate.]
+    ~ isolation_compensating_controls = true
+    #set_global:isolation_compensating_controls:true
+    ~ hartley_trust += 10
+    #influence_increased
+    Dr Fiona Hartley: Then I'll support it. Pharmacy is the compensating control, and what's left is a risk I can live with.
+    Dr Fiona Hartley: I'll ask Helen to redeploy them now.
+    -> hub
++ [The attacker's still in. We isolate now and catch up.]
+    ~ isolation_risk_accepted = true
+    #set_global:isolation_risk_accepted:true
+    Dr Fiona Hartley: That may be right. Then it's a risk you're accepting, not one you've removed. Write it down, and say who owns it.
+    -> hub
++ {not asked_partial_cut} [Can we leave the clinical link up and cut the rest?]
+    ~ asked_partial_cut = true
+    Dr Fiona Hartley: Ask Ravi, but I suspect the link the attacker used is the one the wards use. That's rather the problem.
+    -> isolation_choices
+
+
+// ===========================================
+// TELLING PATIENTS (new decision)
+// ===========================================
+
+=== patient_disclosure_talk ===
+Dr Fiona Hartley: There's one decision I have to recommend to the Board, and I'd like your view. When do we tell patients?
+Dr Fiona Hartley: The note threatens to publish records. Forensics won't know what was taken for weeks.
+* [Now. Write to them and say what we know.]
+    ~ patient_disclosure = "now"
+    #set_global:patient_disclosure:now
+    Dr Fiona Hartley: I agree. It's Article 34, and it's honest. If the records leak, they'll have heard it from us first.
+* [When forensics confirms what was taken.]
+    ~ patient_disclosure = "wait"
+    #set_global:patient_disclosure:wait
+    Dr Fiona Hartley: That's tidier for us. If the records turn up online first, they'll hear it from a journalist.
+* [Only if the records appear online.]
+    ~ patient_disclosure = "only_if_leaked"
+    #set_global:patient_disclosure:only_if_leaked
+    Dr Fiona Hartley: That puts our embarrassment ahead of their risk. Article 34 asks about the risk to them.
+- {patient_bed2_deceased or patient_bed4_deceased or pump_dose_error:
+    Dr Fiona Hartley: And anyone harmed today is owed more than a letter. The duty of candour means we tell the family in person.
+}
+-> hub
+
+
+// ===========================================
+// HARM: duty of candour
+// ===========================================
+
+=== candour ===
+~ candour_discussed = true
+Dr Fiona Hartley: The truth, in person, as soon as we can. That's the duty of candour. We say what happened, and we say sorry.
+{patient_bed2_deceased:
+    Dr Fiona Hartley: And Ms Okafor's pump goes to the MHRA. A device that harmed a patient is reportable.
+}
+-> hub
+
+
+// ===========================================
+// EVENT KNOTS
+// ===========================================
+
+=== post_ico ===
+~ ico_ack_given = true
+{
+- ico_deadline_missed:
+    Dr Fiona Hartley: Helen's sent it, late. Now the reasons for the delay matter as much as the report.
+- ico_notified_early:
+    Dr Fiona Hartley: Helen's sent the ICO report before the isolation. Good.
+- else:
+    Dr Fiona Hartley: Helen tells me the ICO report has gone. Good. We're inside the window.
+}
+-> hub
 
 === deadline_missed ===
 ~ deadline_warned = true
-
-Dr Fiona Hartley: The 72-hour window has passed and we haven't notified the ICO.
-
-Dr Fiona Hartley: I have to self-report the delay. That will be noted in any investigation.
-
-Dr Fiona Hartley: This is exactly the kind of governance failure that ends careers and costs organisations millions.
-
-* [We can still notify late]
-    Dr Fiona Hartley: We can — and we must. Late notification with a clear reason is better than no notification.
-    Dr Fiona Hartley: Document everything: what delayed us, what we were doing instead, who made the call.
-    ~ hartley_trust -= 5
-    #influence_decreased
+Dr Fiona Hartley: The seventy-two hours have passed, and the ICO hasn't heard from us.
+Dr Fiona Hartley: We'll have to explain the delay in the notification. The ICO will look at that as hard as at the breach.
++ [We can still notify late.]
+    Dr Fiona Hartley: We can, and we must. Write down what delayed us and who decided.
+    -> hub
++ [I didn't know about the deadline.]
+    Dr Fiona Hartley: The tablet by the window has been counting down all morning. Information governance isn't optional in an incident.
     -> hub
 
-* [I didn't know about the deadline]
-    Dr Fiona Hartley: Helen Carver told you at the start. The clock was running from minute one.
-    Dr Fiona Hartley: This is why information governance isn't optional in a cyber incident.
-    ~ hartley_trust -= 5
-    #influence_decreased
-    -> hub
+=== ncsc_advisory ===
+~ topic_ncsc = true
+Dr Fiona Hartley: I think so. NHS England was the statutory report, and Helen made it. The NCSC is voluntary.
+Dr Fiona Hartley: But they've seen this group before, and they warn other trusts. Ask Helen to request their help.
+-> hub
 
 
 // ===========================================
@@ -200,74 +220,37 @@ Dr Fiona Hartley: This is exactly the kind of governance failure that ends caree
 // ===========================================
 
 === hub ===
-
+{
+- ico_deadline_missed and not deadline_warned:
+    -> deadline_missed
+- ico_notified and not ico_ack_given:
+    -> post_ico
+}
+{hub_quiet:
+    ~ hub_quiet = false
+- else:
+    Dr Fiona Hartley: {&Yes?|What can I help with?|Go on.}
+}
++ {(patient_bed2_deceased or patient_bed4_deceased) and not candour_discussed} [What do we owe the family?]
+    -> candour
++ {helen_ico_view_heard and not ico_notified and not hartley_backs_early_ico} [Helen wants this contained before she tells the ICO.]
+    -> ico_timing
++ {not network_isolated and not topic_isolation} [What worries you about isolating the network?]
+    -> isolation_concern
++ {patient_disclosure == ""} [When do we tell patients?]
+    -> patient_disclosure_talk
 + {not topic_patient_data} [What data are we responsible for?]
     -> patient_data
-
-+ {not topic_disclosure} [What are our legal obligations?]
++ {not topic_disclosure} [What do we have to tell the ICO, and when?]
     -> disclosure_law
-
-+ {not topic_major_incident} [Should we declare a Major Incident?]
-    -> topic_major_incident_talk
-
-+ {ico_notified and not ico_ack_given} [The ICO notification has been sent]
-    -> post_ico
-
-+ {ico_deadline_missed and not deadline_warned} [About the ICO deadline...]
-    -> deadline_missed
-
-+ {not ncsc_notified and not topic_ncsc} [Should we notify the NCSC?]
++ {not ncsc_notified and not topic_ncsc} [Should we bring in the NCSC?]
     -> ncsc_advisory
-
-+ {ncsc_notified and not topic_ncsc} [We have notified the NCSC]
-    ~ topic_ncsc = true
-    Dr Fiona Hartley: Good. Helen can keep them updated as the facts firm up.
-    Dr Fiona Hartley: Early engagement matters when clinical systems have been affected.
-    ~ hartley_trust += 5
-    #influence_increased
-    -> hub
-
-+ [Leave conversation]
-    {not ico_notified:
-        Dr Fiona Hartley: The ICO clock is running. Don't let it expire.
-    }
++ [I'll let you get on.]
     {ico_notified:
-        Dr Fiona Hartley: We're compliant. Focus on restoration.
+        Dr Fiona Hartley: The ICO has its first report. Keep the updates coming.
+    - else:
+        Dr Fiona Hartley: The ICO clock is running. Don't let it run out.
     }
+    ~ hub_quiet = true
     #exit_conversation
-    -> hub
-
-
-// ===========================================
-// NCSC NOTIFICATION
-// ===========================================
-
-=== ncsc_advisory ===
-~ topic_ncsc = true
-
-Dr Fiona Hartley: Yes — we should. Ransomware against an NHS Trust is a nationally significant incident.
-
-Dr Fiona Hartley: The NCSC's 24/7 incident response line handles this. They won't take over, but they can offer technical support.
-
-* [We'll notify them now]
-    Dr Fiona Hartley: Good. Ask Helen to log the contact now and document the time. They may request network logs and the ransom note.
-    ~ hartley_trust += 10
-    #influence_increased
-    -> hub
-
-* [Is it mandatory?]
-    Dr Fiona Hartley: Not legally — but NHS England guidance strongly recommends it for attacks affecting clinical systems.
-    Dr Fiona Hartley: Given Ward 7 monitoring was affected, we're well above the threshold.
-    * * [We'll notify them]
-        Dr Fiona Hartley: Good. Helen should make the contact and log the time. I'll support the briefing on patient-data implications.
-        ~ hartley_trust += 5
-        #influence_increased
-        -> hub
-    * * [Not yet]
-        Dr Fiona Hartley: I'd advise against delay. The NCSC can help — this is exactly what they exist for.
-        -> hub
-
-* [The NCSC won't be able to help us now]
-    Dr Fiona Hartley: They might surprise you. They've handled this type of attack before.
-    Dr Fiona Hartley: At minimum, notifying them protects the Trust if this goes to inquiry.
     -> hub

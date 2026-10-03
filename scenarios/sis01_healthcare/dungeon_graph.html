@@ -69,7 +69,7 @@
 </head>
 <body>
   <h1>sis01_healthcare — dependency graph</h1>
-  <p class="sub">Day 2, 07:30. You have been called in to help manage a Major Incident at Northgate General Hospital NHS Trust. Ransomware deployed at 22:15 Monday night has…</p>
+  <p class="sub">Tuesday, 07:30. You have been called in to help manage a Major Incident at Northgate General Hospital NHS Trust. Ransomware deployed at 22:15 Monday night has…</p>
   <div class="tab-bar">
     <button class="tab-btn active" data-tab="puzzle"     onclick="showTab('puzzle',this)">Puzzle Graph</button>
     <button class="tab-btn"        data-tab="story"      onclick="showTab('story',this)">Story Aims</button>
@@ -180,7 +180,7 @@
   npc_sarah_mitchell{"Sarah Mitchell"}
   northgate_it_security_visitor_access_card{"Northgate IT Security — Visitor Access Card"}
   action_talk_to_sarah>"Receive incident briefing"]
-  npc_on_call_pharmacist{"On-Call Pharmacist"}
+  npc_hamza_iqbal{"Hamza Iqbal"}
   action_warn_sarah>"Drug library advisory (pharmacist)"]
   siem_console_ravi_s_laptop["SIEM Console — Ravi's Laptop"]
   vpn_authentication_log_terminal["VPN Authentication Log Terminal"]
@@ -214,8 +214,8 @@
   npc_sarah_mitchell --> northgate_it_security_visitor_access_card
   northgate_it_security_visitor_access_card --> door_it_security_office
   npc_sarah_mitchell --> action_talk_to_sarah
-  ward_7 --> npc_on_call_pharmacist
-  npc_on_call_pharmacist --> action_warn_sarah
+  ward_7 --> npc_hamza_iqbal
+  npc_hamza_iqbal --> action_warn_sarah
   it_security_office --> siem_console_ravi_s_laptop
   it_security_office --> vpn_authentication_log_terminal
   it_security_office --> lock_network_map_screen
@@ -233,7 +233,7 @@
   npc_helen_carver --> action_notify_ncsc
   npc_helen_carver --> action_helen_ico_advisory
   major_incident_room --> npc_dr_fiona_hartley
-  npc_dr_fiona_hartley --> action_notify_ncsc
+  npc_dr_fiona_hartley --> action_helen_ico_advisory
   major_incident_room --> npc_priya_s
   npc_priya_s --> action_attend_debrief
   clinical_safety_sign_off_network_isolation -.-> andgate1
@@ -247,7 +247,7 @@
   class door_it_security_office,lock_ward_monitoring_station,lock_bed2_pump_terminal,lock_network_map_screen,lock_infected_workstation_it_office,lock_backup_console,lock_drug_library_checker lock
   class it_security_office,ward_7,major_incident_room room
   class mar_charts_paper_backup,it_network_change_authorisation_form,clinical_safety_sign_off_network_isolation item
-  class npc_sarah_mitchell,northgate_it_security_visitor_access_card,npc_on_call_pharmacist,npc_ravi_anand,npc_david_osei,npc_helen_carver,npc_dr_fiona_hartley,npc_priya_s key
+  class npc_sarah_mitchell,northgate_it_security_visitor_access_card,npc_hamza_iqbal,npc_ravi_anand,npc_david_osei,npc_helen_carver,npc_dr_fiona_hartley,npc_priya_s key
   class action_talk_to_sarah,action_warn_sarah,action_brief_ravi,action_ravi_signoff,action_david_safety_case,action_notify_ncsc,action_helen_ico_advisory,action_attend_debrief action
   class siem_console_ravi_s_laptop,vpn_authentication_log_terminal vm
   class andgate1,andgate2 gate
@@ -313,7 +313,7 @@
   npc_sarah_mitchell{"Sarah Mitchell"}
   northgate_it_security_visitor_access_card{"Northgate IT Security — Visitor Access Card"}
   action_talk_to_sarah>"Receive incident briefing"]
-  npc_on_call_pharmacist{"On-Call Pharmacist"}
+  npc_hamza_iqbal{"Hamza Iqbal"}
   action_warn_sarah>"Drug library advisory (pharmacist)"]
   siem_console_ravi_s_laptop["SIEM Console — Ravi's Laptop"]
   vpn_authentication_log_terminal["VPN Authentication Log Terminal"]
@@ -352,8 +352,8 @@
   npc_sarah_mitchell --> northgate_it_security_visitor_access_card
   northgate_it_security_visitor_access_card --> door_it_security_office
   npc_sarah_mitchell --> action_talk_to_sarah
-  ward_7 --> npc_on_call_pharmacist
-  npc_on_call_pharmacist --> action_warn_sarah
+  ward_7 --> npc_hamza_iqbal
+  npc_hamza_iqbal --> action_warn_sarah
   it_security_office --> siem_console_ravi_s_laptop
   it_security_office --> vpn_authentication_log_terminal
   it_security_office --> lock_network_map_screen
@@ -371,7 +371,7 @@
   npc_helen_carver --> action_notify_ncsc
   npc_helen_carver --> action_helen_ico_advisory
   major_incident_room --> npc_dr_fiona_hartley
-  npc_dr_fiona_hartley --> action_notify_ncsc
+  npc_dr_fiona_hartley --> action_helen_ico_advisory
   major_incident_room --> npc_priya_s
   npc_priya_s --> action_attend_debrief
   clinical_safety_sign_off_network_isolation -.-> andgate1
@@ -401,7 +401,7 @@
   class door_it_security_office,lock_ward_monitoring_station,lock_bed2_pump_terminal,lock_network_map_screen,lock_infected_workstation_it_office,lock_backup_console,lock_drug_library_checker lock
   class it_security_office,ward_7,major_incident_room room
   class mar_charts_paper_backup,it_network_change_authorisation_form,clinical_safety_sign_off_network_isolation item
-  class npc_sarah_mitchell,northgate_it_security_visitor_access_card,npc_on_call_pharmacist,npc_ravi_anand,npc_david_osei,npc_helen_carver,npc_dr_fiona_hartley,npc_priya_s key
+  class npc_sarah_mitchell,northgate_it_security_visitor_access_card,npc_hamza_iqbal,npc_ravi_anand,npc_david_osei,npc_helen_carver,npc_dr_fiona_hartley,npc_priya_s key
   class action_talk_to_sarah,action_warn_sarah,action_brief_ravi,action_ravi_signoff,action_david_safety_case,action_notify_ncsc,action_helen_ico_advisory,action_attend_debrief action
   class siem_console_ravi_s_laptop,vpn_authentication_log_terminal vm
   class andgate1,andgate2 gate
@@ -475,36 +475,44 @@
   rc_bed1_vitals_10{"Bed 1 — Bedside Monitor"}
   rc_bed2_vitals_11{"Bed 2 — Bedside Monitor"}
   rc_bed3_monitor_12{"Bed 3 — Bedside Monitor"}
-  rc_npc_sarah_mitchell_13("Sarah Mitchell")
-  rc_obj14_14{"Northgate IT Security — Visitor Access Card"}
-  rc_npc_staff_nurse_15("Staff Nurse")
-  rc_npc_mr_t_ahmed_16("Mr T. Ahmed")
-  rc_npc_ms_a_okafor_17("Ms A. Okafor")
-  rc_npc_mrs_kowalski_18("Mrs Kowalski")
-  rc_npc_on_call_pharmacist_19("On-Call Pharmacist")
-  rc_siem_console_20{"SIEM Console — Ravi's Laptop"}
-  rc_vpn_terminal_21{"VPN Authentication Log Terminal"}
-  rc_network_map_screen_22{"Network Architecture Map"}
-  rc_obj23_23{"Infected Workstation (IT Office)"}
-  rc_obj24_24{"VPN Log Printout"}
-  rc_obj25_25{"Incident Timeline (Draft)"}
-  rc_npc_ravi_anand_26("Ravi Anand")
-  rc_obj27_27{"IT Network Change Authorisation Form"}
-  rc_command_board_28{"Major Incident Command Board"}
-  rc_backup_console_29[["Backup Recovery Console"]]
-  rc_obj30_30{"Backup Status Report"}
-  rc_drug_library_checker_31{"Drug Library Integrity Terminal"}
-  rc_pump_manufacturer_binder_32{"ALARIS GP — Manufacturer Safety Documentation"}
-  rc_obj33_33{"Printed Ransom Note"}
-  rc_obj34_34{"ICO Notification Deadline"}
-  rc_obj35_35{"Safety Case Extract (CLAIM-HC-001, HC-003, HC-007)"}
-  rc_obj36_36{"Vendor Remote Access Exception Register"}
-  rc_obj37_37{"Internal Audit Follow-Up — Backup and Governance Gaps"}
-  rc_npc_david_osei_38("David Osei")
-  rc_obj39_39{"Clinical Safety Sign-Off — Network Isolation"}
-  rc_npc_helen_carver_40("Helen Carver")
-  rc_npc_dr_fiona_hartley_41("Dr Fiona Hartley")
-  rc_npc_priya_s_42("Priya S.")
+  rc_ward7_aed_13{"Defibrillator (AED)"}
+  rc_ward7_ecg_machine_14{"12-Lead ECG Machine"}
+  rc_npc_sarah_mitchell_15("Sarah Mitchell")
+  rc_obj16_16{"Northgate IT Security — Visitor Access Card"}
+  rc_npc_amy_clarke_17("Amy Clarke")
+  rc_npc_mr_t_ahmed_18("Mr T. Ahmed")
+  rc_npc_ms_a_okafor_19("Ms A. Okafor")
+  rc_npc_mrs_kowalski_20("Mrs Kowalski")
+  rc_npc_hamza_iqbal_21("Hamza Iqbal")
+  rc_siem_console_22{"SIEM Console — Ravi's Laptop"}
+  rc_vpn_terminal_23{"VPN Authentication Log Terminal"}
+  rc_network_map_screen_24{"Network Architecture Map"}
+  rc_obj25_25{"Infected Workstation (IT Office)"}
+  rc_obj26_26{"VPN Log Printout"}
+  rc_obj27_27{"Incident Timeline (Draft)"}
+  rc_itsec_cold_coffee_28{"Cold Coffee"}
+  rc_itsec_overnight_bag_29{"Overnight Bag"}
+  rc_npc_ravi_anand_30("Ravi Anand")
+  rc_obj31_31{"IT Network Change Authorisation Form"}
+  rc_command_board_32{"Major Incident Command Board"}
+  rc_backup_console_33[["Backup Recovery Console"]]
+  rc_obj34_34{"Backup Status Report"}
+  rc_drug_library_checker_35{"Drug Library Integrity Terminal"}
+  rc_pump_manufacturer_binder_36{"InfusionGuard GP — Manufacturer Safety Documentation"}
+  rc_obj37_37{"Printed Ransom Note"}
+  rc_obj38_38{"ICO Notification Deadline"}
+  rc_ig_breach_briefing_39{"IG Briefing — Reporting a Personal Data Breach"}
+  rc_obj40_40{"Safety Case Extract (CLAIM-HC-001, HC-003, HC-007)"}
+  rc_obj41_41{"Vendor Remote Access Exception Register"}
+  rc_obj42_42{"Internal Audit Follow-Up — Backup and Governance Gaps"}
+  rc_mir_radios_43{"Radios on Charge"}
+  rc_mir_coffee_44{"Coffee Machine"}
+  rc_mir_incident_log_45{"Major Incident Log"}
+  rc_npc_david_osei_46("David Osei")
+  rc_obj47_47{"Clinical Safety Sign-Off — Network Isolation"}
+  rc_npc_helen_carver_48("Helen Carver")
+  rc_npc_dr_fiona_hartley_49("Dr Fiona Hartley")
+  rc_npc_priya_s_50("Priya S.")
 
   ward_7 --> it_security_office
   it_security_office --> major_incident_room
@@ -520,42 +528,50 @@
   ward_7 --> rc_bed1_vitals_10
   ward_7 --> rc_bed2_vitals_11
   ward_7 --> rc_bed3_monitor_12
-  ward_7 --> rc_npc_sarah_mitchell_13
-  rc_npc_sarah_mitchell_13 --> rc_obj14_14
-  ward_7 --> rc_npc_staff_nurse_15
-  ward_7 --> rc_npc_mr_t_ahmed_16
-  ward_7 --> rc_npc_ms_a_okafor_17
-  ward_7 --> rc_npc_mrs_kowalski_18
-  ward_7 --> rc_npc_on_call_pharmacist_19
-  it_security_office --> rc_siem_console_20
-  it_security_office --> rc_vpn_terminal_21
-  it_security_office --> rc_network_map_screen_22
-  it_security_office --> rc_obj23_23
-  it_security_office --> rc_obj24_24
+  ward_7 --> rc_ward7_aed_13
+  ward_7 --> rc_ward7_ecg_machine_14
+  ward_7 --> rc_npc_sarah_mitchell_15
+  rc_npc_sarah_mitchell_15 --> rc_obj16_16
+  ward_7 --> rc_npc_amy_clarke_17
+  ward_7 --> rc_npc_mr_t_ahmed_18
+  ward_7 --> rc_npc_ms_a_okafor_19
+  ward_7 --> rc_npc_mrs_kowalski_20
+  ward_7 --> rc_npc_hamza_iqbal_21
+  it_security_office --> rc_siem_console_22
+  it_security_office --> rc_vpn_terminal_23
+  it_security_office --> rc_network_map_screen_24
   it_security_office --> rc_obj25_25
-  it_security_office --> rc_npc_ravi_anand_26
-  rc_npc_ravi_anand_26 --> rc_obj27_27
-  major_incident_room --> rc_command_board_28
-  major_incident_room --> rc_backup_console_29
-  rc_backup_console_29 --> rc_obj30_30
-  major_incident_room --> rc_drug_library_checker_31
-  major_incident_room --> rc_pump_manufacturer_binder_32
-  major_incident_room --> rc_obj33_33
-  major_incident_room --> rc_obj34_34
-  major_incident_room --> rc_obj35_35
-  major_incident_room --> rc_obj36_36
+  it_security_office --> rc_obj26_26
+  it_security_office --> rc_obj27_27
+  it_security_office --> rc_itsec_cold_coffee_28
+  it_security_office --> rc_itsec_overnight_bag_29
+  it_security_office --> rc_npc_ravi_anand_30
+  rc_npc_ravi_anand_30 --> rc_obj31_31
+  major_incident_room --> rc_command_board_32
+  major_incident_room --> rc_backup_console_33
+  rc_backup_console_33 --> rc_obj34_34
+  major_incident_room --> rc_drug_library_checker_35
+  major_incident_room --> rc_pump_manufacturer_binder_36
   major_incident_room --> rc_obj37_37
-  major_incident_room --> rc_npc_david_osei_38
-  rc_npc_david_osei_38 --> rc_obj39_39
-  major_incident_room --> rc_npc_helen_carver_40
-  major_incident_room --> rc_npc_dr_fiona_hartley_41
-  major_incident_room --> rc_npc_priya_s_42
+  major_incident_room --> rc_obj38_38
+  major_incident_room --> rc_ig_breach_briefing_39
+  major_incident_room --> rc_obj40_40
+  major_incident_room --> rc_obj41_41
+  major_incident_room --> rc_obj42_42
+  major_incident_room --> rc_mir_radios_43
+  major_incident_room --> rc_mir_coffee_44
+  major_incident_room --> rc_mir_incident_log_45
+  major_incident_room --> rc_npc_david_osei_46
+  rc_npc_david_osei_46 --> rc_obj47_47
+  major_incident_room --> rc_npc_helen_carver_48
+  major_incident_room --> rc_npc_dr_fiona_hartley_49
+  major_incident_room --> rc_npc_priya_s_50
 
   class ward_7,major_incident_room room
   class it_security_office lock
-  class rc_ward_monitoring_station_1,rc_bed2_pump_terminal_2,rc_mar_charts_stack_3,rc_obj4_4,rc_ward_desk_phone_5,rc_ehr_terminal_6,rc_bed4_monitor_7,rc_bed5_vitals_8,rc_bed6_vitals_9,rc_bed1_vitals_10,rc_bed2_vitals_11,rc_bed3_monitor_12,rc_obj14_14,rc_siem_console_20,rc_vpn_terminal_21,rc_network_map_screen_22,rc_obj23_23,rc_obj24_24,rc_obj25_25,rc_obj27_27,rc_command_board_28,rc_obj30_30,rc_drug_library_checker_31,rc_pump_manufacturer_binder_32,rc_obj33_33,rc_obj34_34,rc_obj35_35,rc_obj36_36,rc_obj37_37,rc_obj39_39 item
-  class rc_npc_sarah_mitchell_13,rc_npc_staff_nurse_15,rc_npc_mr_t_ahmed_16,rc_npc_ms_a_okafor_17,rc_npc_mrs_kowalski_18,rc_npc_on_call_pharmacist_19,rc_npc_ravi_anand_26,rc_npc_david_osei_38,rc_npc_helen_carver_40,rc_npc_dr_fiona_hartley_41,rc_npc_priya_s_42 npc
-  class rc_backup_console_29 container
+  class rc_ward_monitoring_station_1,rc_bed2_pump_terminal_2,rc_mar_charts_stack_3,rc_obj4_4,rc_ward_desk_phone_5,rc_ehr_terminal_6,rc_bed4_monitor_7,rc_bed5_vitals_8,rc_bed6_vitals_9,rc_bed1_vitals_10,rc_bed2_vitals_11,rc_bed3_monitor_12,rc_ward7_aed_13,rc_ward7_ecg_machine_14,rc_obj16_16,rc_siem_console_22,rc_vpn_terminal_23,rc_network_map_screen_24,rc_obj25_25,rc_obj26_26,rc_obj27_27,rc_itsec_cold_coffee_28,rc_itsec_overnight_bag_29,rc_obj31_31,rc_command_board_32,rc_obj34_34,rc_drug_library_checker_35,rc_pump_manufacturer_binder_36,rc_obj37_37,rc_obj38_38,rc_ig_breach_briefing_39,rc_obj40_40,rc_obj41_41,rc_obj42_42,rc_mir_radios_43,rc_mir_coffee_44,rc_mir_incident_log_45,rc_obj47_47 item
+  class rc_npc_sarah_mitchell_15,rc_npc_amy_clarke_17,rc_npc_mr_t_ahmed_18,rc_npc_ms_a_okafor_19,rc_npc_mrs_kowalski_20,rc_npc_hamza_iqbal_21,rc_npc_ravi_anand_30,rc_npc_david_osei_46,rc_npc_helen_carver_48,rc_npc_dr_fiona_hartley_49,rc_npc_priya_s_50 npc
+  class rc_backup_console_33 container
   class node_start start`
     };
     const rendered = {};

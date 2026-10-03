@@ -1,4 +1,6 @@
 # TESTING WALKTHROUGH — sis01_healthcare
+
+> **Stale in parts (2026-10-02).** The dialogue and design fix pass changed knots, globals and names: the staff nurse is now Amy Clarke (id `patrol_nurse`), the NCSC investigator is Priya S. (surname withheld; id `dr_sharma`), the drug library tamper is a raised morphine minimum (0.5 → 20 mg/hr, prescription 2.0 mg/hr), Bed 2 is Ms A. Okafor throughout, and the ICO task is required (NCSC optional). See `DIALOGUE_REVIEW.md` ("Decisions" and section 7) and `PASS_PLAYTEST.md`.
 ## Northgate Hospital: Security-Informed Safety Scenario
 
 **Last updated:** April 2026  
@@ -51,7 +53,7 @@ completes the task; the playtest reaches them by playing, not by setting them.
 | 4 | `verify_drug_library` | `drug_library_verified=true` → David eventMapping → `completeTask`; also triggers Sharma `debrief_started=true` |
 | 4 | `helen_ico_advisory` | `ico_notified=true` → Helen eventMapping → `completeTask` |
 | 4 | `pump_dose_check` | `pump_dose_correct=true` → bed2_patient eventMapping → `completeTask` |
-| 5 | `attend_debrief` | `debrief_complete=true` → Dr Sharma eventMapping → `completeTask` |
+| 5 | `attend_debrief` | `debrief_complete=true` → Priya S. eventMapping → `completeTask` |
 
 ### Things that were previously bypassed
 
@@ -296,13 +298,13 @@ _`access_siem` and `vpn_anomaly` can be completed in either order after this bri
   - [ ] `drug_library_verified` → `true`; `drug_library_restored` → `true`
   - [ ] `verify_drug_library` task completes
   - [ ] `debrief_started` → `true` (fires when BOTH `drug_library_verified` AND `backup_restore_initiated` are true)
-- [ ] Dr Sharma reveal (when `debrief_started=true`):
+- [ ] Priya S. reveal (when `debrief_started=true`):
   - [ ] Sharma becomes visible in room (setVisible: true)
   - [ ] Person-chat opens automatically → `start` knot
   - [ ] Music → victory ("Ghost in the Wire")
   - [ ] Credits: INCIDENT CONTAINED or INCIDENT CONTAINED — WITH LOSSES (based on patient death vars)
 
-### Interact: Dr Sharma (x:6,y:7) — debrief
+### Interact: Priya S. (x:6,y:7) — debrief
 - [ ] Five-topic structured debrief: patient_outcomes → safety_claims → regulatory → root_cause → closing
 - [ ] `patient_outcomes`: reads board entries aloud; asks what made outcomes possible
   - [ ] **If `patient_bed2_deceased=true`:** Sharma directly names Ms Okafor; calls out the double failure (compromised library + wrong entry = no guardrail); names it as a serious incident (`influence -= 2`)
@@ -364,9 +366,9 @@ After a complete test run, verify all expected global variables:
 | `bed4_escalated` | Sarah Mitchell Ink | `true` |
 | `patrol_nurse_at_bed4` | Patrol nurse eventMapping | `true` |
 | `patient_bed4_state` | Timer chain or nurse arrival | `"attended"` or `"critical"` |
-| `debrief_started` | Dr Sharma eventMapping (both `drug_library_verified` AND `backup_restore_initiated` true) | `true` |
-| `sharma_visible` | Dr Sharma eventMapping | `true` |
-| `debrief_complete` | Dr Sharma Ink closing knot | `true` |
+| `debrief_started` | Priya S. eventMapping (both `drug_library_verified` AND `backup_restore_initiated` true) | `true` |
+| `sharma_visible` | Priya S. eventMapping | `true` |
+| `debrief_complete` | Priya S. Ink closing knot | `true` |
 | `pump_dose_correct` | infusion_pump minigame (MG-08) | `true` (correct path) |
 | `pump_dose_error` | infusion_pump minigame (MG-08) | `true` (wrong dose confirmed) |
 | `patient_bed2_state` | pump_dose_error eventMapping | `"sedated"` (normal error); `"critical"` (double-jeopardy) |

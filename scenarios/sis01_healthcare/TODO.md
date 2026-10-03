@@ -1,4 +1,6 @@
 # TODO — sis01_healthcare: Northgate Hospital
+
+> **Stale in parts (2026-10-02).** The dialogue and design fix pass changed knots, globals and names: the staff nurse is now Amy Clarke (id `patrol_nurse`), the NCSC investigator is Priya S. (surname withheld; id `dr_sharma`), the drug library tamper is a raised morphine minimum (0.5 → 20 mg/hr, prescription 2.0 mg/hr), Bed 2 is Ms A. Okafor throughout, and the ICO task is required (NCSC optional). See `DIALOGUE_REVIEW.md` ("Decisions" and section 7) and `PASS_PLAYTEST.md`.
 ## Remaining work to reach a complete, playable scenario
 
 **Last reviewed:** April 2026
