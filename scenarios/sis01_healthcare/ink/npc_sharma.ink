@@ -41,6 +41,7 @@ VAR safety_claim_hc003_assessed = false
 VAR debrief_complete = false
 
 VAR sharma_met = false
+VAR closing_asked = 0
 
 // ===========================================
 // ENTRY POINT
@@ -74,7 +75,7 @@ VAR sharma_met = false
 #complete_task:attend_debrief
 Priya S.: I've read Helen's draft for the patient safety incident review, and the decision log.
 Priya S.: I'm not here to blame anyone. What we learn here goes back out to other trusts.
-Priya S.: Patients first.
+Priya S.: Let's start with the patients.
 -> patient_outcomes
 
 
@@ -94,7 +95,7 @@ Priya S.: Patients first.
 - bed4_escalated and sarah_given_soon_estimate:
     Priya S.: Mr Ahmed got someone at his bedside in the end. The first answer Sarah had was "soon", and that cost him time.
 - bed4_escalated:
-    Priya S.: Mr Ahmed had someone with him until outreach came. That came from an honest answer about when his monitor would be back.
+    Priya S.: Mr Ahmed had a nurse sitting with him till outreach got there. That's because Sarah got a straight answer about her monitors.
 - else:
     Priya S.: Mr Ahmed was never escalated. He's still alive, and that was luck.
 }
@@ -392,6 +393,12 @@ Priya S.: Ward 7's exceptions were written up as "as low as reasonably practicab
 Priya S.: One more thing, and it's the one I'd like you to take away.
 Priya S.: Almost everything that failed today was known before Monday. The segmentation gap, the vendor VPN, the overdue rehearsal.
 Priya S.: People knew, and the hospital kept running, because nothing had gone wrong yet. Every quiet month, the gaps looked a bit safer. Safety people call that normalisation of deviance.
+-> closing_questions
+
+// Blind 2: one pick used to end the debrief, so "Was this preventable?" and "What changes
+// after today?" could be missed. Each question stays on offer until asked; "That's all"
+// appears once one has been asked. At most three short answers more than before.
+=== closing_questions ===
 * [What do you do about that?]
     Priya S.: Put the accepted risks in front of the Board every quarter, with a name against each. And check the safety case against the hospital every time the network changes.
 * [Was this preventable?]
@@ -399,7 +406,13 @@ Priya S.: People knew, and the hospital kept running, because nothing had gone w
 * [What changes after today?]
     Priya S.: You'll get a list of recommendations. Whether anything changes is up to your Board, and whether they're still asking in six months.
     Priya S.: Every trust that's been through this says "never again". Some of them mean it.
-- -> debrief_end
++ {closing_asked > 0} [That's everything, thanks.]
+    -> debrief_end
+- ~ closing_asked += 1
+{closing_asked >= 3:
+    -> debrief_end
+}
+-> closing_questions
 
 === debrief_end ===
 Priya S.: Thank you. My notes go to Helen this week, for the Trust's review.

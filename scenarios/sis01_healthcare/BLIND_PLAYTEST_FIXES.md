@@ -72,3 +72,39 @@ Fix (scenario and ink only): `restartOnRetalk: false` removed; `npc_sharma.ink` 
 ### Spoken lines
 
 48 new or changed voiced lines (one is a two-variant greeting), 21 old texts no longer used. List: session scratchpad `sis01-blind-fixer/SPOKEN_LINES.md`.
+
+# Blind 2 (2026-10-04)
+
+Source: the second blind playtest, runs 1 and 2 (game 1529; session scratchpad `sis01-blind2/`). Coordinator notes folded in: revealing an aim when any of its tasks completes is being fixed in the engine's objectives code by another agent, so sis01 adds no panel workarounds for that; and at every stage there must be a visible next task.
+
+## Outcome
+
+| # | Finding | Severity | Outcome |
+|---|---|---|---|
+| 1 | Objectives panel stuck on "Assess Ward 7" when the station is skipped; later aims never shown | Major | Fixed (data). "Check the ward monitoring station" is optional, so the ward aim completes on Sarah and the MAR charts. Each aim's unlock checked: two relays on Sarah open the restore aim on isolation (also covers a SEVER without sign-off) and the debrief aim when Priya arrives (also covers an ICO report still to go). `brief_ravi` was locked with nothing to unlock it, so "Investigate the Attack" could show every visible task ticked and no next step; it now appears once the SIEM and VPN are both done (Ravi's mappings). `verify_drug_library` was locked until David's HC-003 talk; it is active when the restore aim opens. Browser check, game 1538: every stage showed a next task. |
+| 2 | Debrief: one closing pick ends it, so "Was this preventable?" and "What changes after today?" can be missed | Major | Fixed. The three closing questions are a small loop: each stays on offer until asked, "[That's everything, thanks.]" appears after the first, and asking all three ends it. At most two extra answers. Browser check: all three reached. |
+| 3 | Mission Brief only shown after a reload | Major | Fixed (data). `show_scenario_brief` is `"on_start"`. The engine already holds the brief until the opening cutscene has played and closed (`helpers.js` `showBriefWhenClear`, `npcManager.hasPendingOpeningConversation`), which is the overlap "on_resume" was guarding against. Chosen over folding the brief into Sarah's opening because the brief's job list (patients, how they got in, containment, reporting duties) is not something a charge nurse would say, and it stays in the Notepad. Browser check: Sarah's opening ran to its last line, then the brief opened. The validator's "set on_resume" warning predates the engine wait and is now a false positive. |
+| 4 | Command board "EHR SYSTEM: OPERATIONAL" | Minor | Fixed (data). New global `ehr_status: "offline"`, read by the board's built-in rows and the EHR terminal (which already defaulted to offline). The board shows OFFLINE, then RESTORING once a source is chosen. Screenshot checked. |
+| 5 | David's "Good. You've thought about what it costs them." after wrong guesses | Minor | Fixed. After a wrong answer (`told_to_look`): "That's the one. It took a second look, but now you know what they're giving up. I'll sign." |
+| 6 | Credits: generic SIEM line | Minor | Fixed. With the VPN found: "SIEM investigation: Critical alerts escalated; traced back to the contractor VPN account m.blake, logged in from a Tor exit node". Without: "…the spread was seen, but not how they got in". The VPN line now gives different detail (London, then Bucharest thirty minutes later, no MFA) so the two don't repeat. |
+| 7 | Backup console: NAS still "INTEGRITY UNVERIFIED" after the scan; tape "CATALOGUE WIPED" reads as damaged | Minor | Fixed. Engine (shared console, opt-in): a source's `whenAvailable` fields replace its own once its `needs` / `requiresGlobal` are met; m02 declares none, so it is unchanged. Node test `test/js/backup-recovery-when-available.test.mjs`. sis01's NAS card then reads "SCANNED - NO KNOWN INDICATORS" with its Integrity bullet updated. Tape reads "CLEAN - SLOW" (green) and its banner says why it is slow; the status report agrees. Screenshot checked. |
+| 8 | Sarah's urgent greetings after the crisis | Minor | Fixed. After isolation her greeting is one of "What've you got?", "Go on.", "How's it looking up there?", and her goodbye "Right. We'll manage on paper down here." instead of "Please be quick…". |
+| 9 | Stiff player line about the pump | Minor | Fixed: "[Her pump flagged 2.0 as too low, wanted twenty. I kept two and called pharmacy.]" ("twenty" kept because Sarah replies "Twenty. That's ten times her prescription"; 15 words, the lint cap). |
+| 10 | Priya's "Patients first." and the Mr Ahmed line | Minor | Fixed: "Let's start with the patients." / "Mr Ahmed had a nurse sitting with him till outreach got there. That's because Sarah got a straight answer about her monitors." |
+| 11 | Hamza: "[That's a lot of manual work.]" | Minor | Fixed: "[That's a lot to ask of a ward that's a nurse down.]"; his reply "It is. The alternative is one keystroke and a dead patient." is unchanged. |
+| 12 | Ravi's "A few minutes." for a ~90 s scan | Minor | Left, as asked. |
+| — | `moveTo` wedging near Bed 2; title screen ignoring synthetic Enter | Note | Not fixed (map pathing, already logged; harness). |
+
+## Checks
+
+- Ink compile: 11 files, 0 failures (the existing END warning on Priya's start/debrief_end only).
+- tagdiff vs HEAD: 21 structural differences, all intended. David: the `told_to_look` condition in `clinical_signoff`. Sarah: two `network_isolated` cases (greeting, goodbye). Priya: `VAR closing_asked`, knot `closing_questions`, its three `*` choices plus the gated `+` exit, and the diverts between them.
+- Validator: 0 errors. Four new warnings, all intended: two Ravi handler pairs (the bark and the `brief_ravi` unlock fire together), Sarah's `network_isolated` pair (bark and relay), and the "on_resume" advice above.
+- dialoguelint: the pump option fixed to 15 words; the only remaining finding is Ravi's existing "Not a blame thing. A process thing."
+- loopcheck and inkcheck over every knot in the earlier state matrix plus four new states (post-isolation Sarah, a finished debrief, a half-asked closing, David after a wrong guess): 864 knot/state runs, each through loopcheck and inkcheck, all clean (no runtime errors, runaways or failing paths).
+- `node --test test/js/`: 249 pass, 0 fail on the second full run (the first had two failures that passed alone: a timing test and a runner IPC error).
+- Browser, keyless :3001, game 1538: brief after Sarah's opening; ward aim without the station; `brief_ravi` shown after SIEM and VPN; restore aim on isolation without David; debrief aim on Priya's arrival; NAS card after the scan; board EHR OFFLINE; full debrief with all three closing questions and the credits. SIEM, VPN and isolation were set by console in places ("exercised, not earned"). Server state after the run kept the relay-opened restore aim active, so it survives a reload.
+
+## Spoken lines
+
+5 new voiced texts, 2 retired (list: session scratchpad `sis01-blind2-fixer/SPOKEN_LINES.md`). Sarah's new greeting cycle reuses two cached texts, so only "How's it looking up there?" in it needs voicing.

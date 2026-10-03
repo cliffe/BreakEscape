@@ -214,7 +214,12 @@ David Osei: One more thing before I sign. What do the wards lose when we pull th
     -> hub
 
 === clinical_signoff ===
-David Osei: Good. You've thought about what it costs them. I'll sign.
+// Blind 2: the praise used to play even after wrong guesses and a trip to the map.
+{told_to_look:
+    David Osei: That's the one. It took a second look, but now you know what they're giving up. I'll sign.
+- else:
+    David Osei: Good. You've thought about what it costs them. I'll sign.
+}
 ~ gave_clinical_code = true
 #give_item:notes
 #set_global:clinical_eng_authorised:true

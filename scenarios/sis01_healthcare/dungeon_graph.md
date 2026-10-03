@@ -9,7 +9,7 @@ Tuesday, 07:30. You have been called in to help manage a Major Incident at North
 | Metric | Value |
 |---|---|
 | Story aims | 5 |
-| Total tasks | 18 (4 optional) |
+| Total tasks | 18 (5 optional) |
 | VM flag challenges | 0 |
 | Physical locks | 7 |
 | AND-gate convergences | 2 |

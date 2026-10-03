@@ -270,7 +270,7 @@ _`access_siem` and `vpn_anomaly` can be completed in either order after this bri
   - [ ] Player choice to defer → timer continues; `ico_deadline_missed` fires at 45 min
 
 ### Interact: Backup Console (x:4,y:5) — backup_recovery
-- [ ] Three source tiles: NAS (ENCRYPTED ✗), Tape (CATALOGUE WIPED ✗), Cloud (AVAILABLE ✓)
+- [ ] Three source tiles: NAS (INTEGRITY UNVERIFIED until Ravi's scan, then SCANNED - NO KNOWN INDICATORS), Vendor Cloud (CLEAN, 18 h), Tape (CLEAN - SLOW, 3-5 days)
 - [ ] Selecting each tile updates consequence panel
 - [ ] Confirm button disabled until selection made
 - [ ] Confirming Cloud:

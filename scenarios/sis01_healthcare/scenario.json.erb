@@ -128,7 +128,11 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
 %>
 {
   "scenario_brief": "Tuesday, 07:30. You have been called in to help manage a Major Incident at Northgate General Hospital NHS Trust. Ransomware deployed at 22:15 on Monday night has encrypted workstations across the enterprise network and reached part of the clinical zone. Ward 7's central monitoring has been dark since 22:30, and the IT team has been up all night. Your job is to manage the incident: keep patients safe, find out how the attackers got in, contain it, and make sure the Trust meets its reporting duties.",
-  "show_scenario_brief": "on_resume",
+  "show_scenario_brief": "on_start",
+<%# Blind 2: was "on_resume", so a first-time player never saw the brief (only Sarah's opening).
+    "on_start" shows it on every start; the engine holds the popup until the opening cutscene has
+    played and closed (helpers.js showBriefWhenClear / npcManager.hasPendingOpeningConversation),
+    so it appears straight after Sarah's briefing instead of cutting it off. %>
   "disableAttacks": true,
 <%# In-game clock (engine, 2026-10-03): the command board and SIEM show Tuesday 07:30 plus
     elapsed game time instead of the real wall clock. %>
@@ -141,6 +145,10 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
     "briefing_played": false,
 
     "ward_monitor_status": "offline",
+    "ehr_status": "offline",
+<%# Blind 2: the command board inferred "EHR SYSTEM: OPERATIONAL" until isolation, though Ward 7
+    has been off the EHR all night. The board and the EHR terminal both read ehr_status; the
+    board shows RESTORING once a backup source is chosen. %>
     "bed4_alarm_active": true,
     "patient_bed4_state": "resting_unmonitored",
     "patient_bed2_state": "stable",
@@ -280,7 +288,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
     {
       "aimId": "assess_ward",
       "title": "Assess Ward 7",
-      "description": "Speak to the charge nurse, check the monitoring station, and collect the paper medication charts.",
+      "description": "Speak to the charge nurse and collect the paper medication charts. The monitoring station shows what the ward has lost.",
       "status": "active",
       "order": 0,
       "tasks": [
@@ -295,7 +303,11 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "taskId": "check_monitoring_station",
           "title": "Check the ward monitoring station",
           "type": "manual",
-          "status": "active"
+          "status": "active",
+          "optional": true
+<%# Blind 2 (objectives stall): optional, so "Assess Ward 7" completes on talking to Sarah and
+    collecting the charts. A player who never opened the station kept the aim open all game, and
+    with it every later aim hidden. See also Sarah's relay mappings (isolation, debrief). %>
         },
         {
           "taskId": "bed4_estimate",
@@ -416,9 +428,12 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
         },
         {
           "taskId": "verify_drug_library",
-          "title": "Verify drug library integrity",
+          "title": "Verify drug library integrity (Major Incident Room)",
           "type": "manual",
-          "status": "locked"
+          "status": "active"
+<%# Blind 2 (no next task): was locked until David's HC-003 talk, so a player who started the
+    restore and the ICO report without seeing David had no visible task left in this aim.
+    David's #unlock_task:verify_drug_library is now a no-op. %>
 <%# status: locked — correctly unlocked by #unlock_task:verify_drug_library in npc_david.ink:safety_case_hc003.
     IMPLEMENTED: DrugLibraryIntegrityMinigame (MG-09) completes this task.
     drug_library_verified=true fires via minigame restore confirm → David Osei eventMapping
@@ -548,9 +563,10 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           { "text": "Isolation cost: no printouts or pharmacy cover; risk accepted with a named owner", "style": "entry", "condition": "globalVars.network_isolated && !globalVars.isolation_compensating_controls && globalVars.isolation_risk_accepted" },
           { "text": "Network isolation: Bypassed — isolated without dual sign-off (CLAIM-HC-007 violated)", "style": "entry", "condition": "globalVars.network_isolated && !globalVars.network_isolation_authorised" },
           { "text": "Network isolation: Not completed during response",                                  "style": "entry", "condition": "!globalVars.network_isolated" },
-          { "text": "SIEM investigation: Alert timeline reviewed — attack vector identified",            "style": "entry", "condition": "globalVars.siem_escalated" },
+          { "text": "SIEM investigation: Critical alerts escalated; traced back to the contractor VPN account m.blake, logged in from a Tor exit node", "style": "entry", "condition": "globalVars.siem_escalated && globalVars.vpn_anomaly_identified" },
+          { "text": "SIEM investigation: Critical alerts escalated; the spread was seen, but not how they got in", "style": "entry", "condition": "globalVars.siem_escalated && !globalVars.vpn_anomaly_identified" },
           { "text": "SIEM investigation: Alerts not reviewed — attack vector unconfirmed",              "style": "entry", "condition": "!globalVars.siem_escalated" },
-          { "text": "VPN anomaly: m.blake's stolen credentials identified",                   "style": "entry", "condition": "globalVars.vpn_anomaly_identified" },
+          { "text": "VPN anomaly: m.blake's stolen login flagged — London, then Bucharest thirty minutes later, with no MFA", "style": "entry", "condition": "globalVars.vpn_anomaly_identified" },
           { "text": "VPN anomaly: Not identified — initial access vector unknown",                      "style": "entry", "condition": "!globalVars.vpn_anomaly_identified" },
 
           { "text": "── GOVERNANCE ──", "style": "section-header" },
@@ -769,6 +785,35 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "check_monitoring_station"
+            },
+<%# Blind 2 (objectives stall, run 2): each aim opened only when the aim before it was complete,
+    so a skipped task early on hid every later aim. Revealing an aim when one of its tasks completes
+    is engine behaviour (objectives-manager). These two relays cover the stages where no task of
+    the next aim completes: the isolation opens the restore aim (and the isolation aim, after a
+    SEVER without sign-off), and Priya's arrival opens the debrief aim even if the ICO report is
+    still to go. The aimCompleted conditions stay, so the usual order still works; unlockAim does
+    nothing to an open aim and is saved. Sarah's room is the start room, so these always listen. %>
+            {
+              "eventPattern": "global_variable_changed:network_isolated",
+              "condition": "value === true",
+              "onceOnly": true,
+              "unlockAim": ["authorise_isolation", "restore_operations"]
+            },
+            {
+              "eventPattern": "global_variable_changed:debrief_started",
+              "condition": "value === true",
+              "onceOnly": true,
+              "unlockAim": ["restore_operations", "ncsc_debrief"]
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.network_isolated === true",
+              "unlockAim": ["authorise_isolation", "restore_operations"]
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.debrief_started === true",
+              "unlockAim": ["restore_operations", "ncsc_debrief"]
             },
             {
               "eventPattern": "global_variable_changed:network_isolated",
@@ -1657,6 +1702,21 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "bark": "Right, those are the critical alerts. That cross-zone RDP is how they got across to the clinical side.",
               "barkDelay": 0
             },
+<%# Blind 2 (no next task): brief_ravi was locked and nothing unlocked it, so once the SIEM and
+    VPN were done "Investigate the Attack" showed every visible task ticked and no next step.
+    It now appears when both are done, whichever comes second. %>
+            {
+              "eventPattern": "global_variable_changed:siem_escalated",
+              "condition": "value === true && globalVars.vpn_anomaly_identified === true",
+              "onceOnly": true,
+              "unlockTask": "brief_ravi"
+            },
+            {
+              "eventPattern": "global_variable_changed:vpn_anomaly_identified",
+              "condition": "value === true && globalVars.siem_escalated === true",
+              "onceOnly": true,
+              "unlockTask": "brief_ravi"
+            },
             {
               "eventPattern": "global_variable_changed:nas_integrity_checked",
               "condition": "value === true",
@@ -2406,6 +2466,19 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
                   "Data lost: Monday's EHR entries. Wards re-key a day of records from paper.",
                   "Reinfection risk: high if the network is not isolated first."
                 ],
+<%# Blind 2: the card kept saying INTEGRITY UNVERIFIED after a clean scan. whenAvailable
+    (backup-recovery console, opt-in) replaces these fields once the nas_scan slot is loaded. %>
+                "whenAvailable": {
+                  "status": "SCANNED - NO KNOWN INDICATORS",
+                  "bannerText": "FASTEST - AS CLEAN AS THE SCAN CAN SHOW",
+                  "bullets": [
+                    "Restore time: about 5 hours.",
+                    "Restore point: Sunday 21:00. Monday's snapshots were taken while the attacker held domain admin, so they are not offered.",
+                    "Integrity: Ravi's scan found none of the indicators known so far. Anything not yet found would come back with the restore.",
+                    "Data lost: Monday's EHR entries. Wards re-key a day of records from paper.",
+                    "Reinfection risk: high if the network is not isolated first."
+                  ]
+                },
                 "outcomeHeader": "RESTORE INITIATED - NAS SNAPSHOT (SUNDAY 21:00)",
                 "outcomeStatus": "NAS SNAPSHOT - ETA: ABOUT 5 HOURS",
                 "outcomeBullets": [
@@ -2440,12 +2513,12 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
                 "compromised": false,
                 "etaHours": 96,
                 "name": "Tape Library",
-                "status": "CATALOGUE WIPED",
+                "status": "CLEAN - SLOW",
                 "etaLabel": "ETA: 3-5 DAYS",
                 "marker": "!",
-                "statusTone": "warning",
+                "statusTone": "success",
                 "bannerTone": "warning",
-                "bannerText": "CLEAN BUT SLOW - TAPES MUST BE RE-INDEXED BY HAND",
+                "bannerText": "CLEAN BUT SLOW - CATALOGUE WIPED, SO EVERY TAPE IS READ BACK BY HAND",
                 "icon": "[TAPE]",
                 "bullets": [
                   "Restore time: three to five days. The attacker wiped the catalogue, so every tape is read back by hand.",
@@ -2475,7 +2548,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "takeable": false,
               "readable": true,
               "observations": "A printed backup status report tucked inside the console. Three sources are listed (NAS, vendor cloud and tape library), each with a restore time, a restore point and how far it can be trusted.",
-              "text": "BACKUP STATUS — Tue 07:30\n\nNAS APPLIANCE (on site): ONLINE. Snapshots nightly at 21:00.\n  Restore time: about 5 hours.\n  The attacker held domain admin from about 15:00 Monday, and the NAS was reachable from production. Monday's snapshot will contain whatever he planted.\n  Sunday's snapshot predates the VPN login, but the NAS admin account was in his hands. Integrity: NOT VERIFIED. Scan before use (R. Anand).\n  Data lost if restored from Sunday: all of Monday's EHR entries.\n\nVENDOR CLOUD BACKUP (EHR only): AVAILABLE.\n  Immutable copy; separate vendor credentials, not reachable from our domain.\n  Restore time estimate: 18 hours.\n  Data currency: last snapshot Mon 20:00 (2 hrs 15 min before the ransomware ran).\n\nTAPE LIBRARY: CATALOGUE WIPED. Tapes physically intact (offline) but unindexed.\n  Recovery: 3-5 days minimum. Last full backup: Friday 23:00.\n\nAll sources: restoring to an un-isolated network may reintroduce the attacker.\n\n⚠ Recommendation: Isolate the network before initiating any restore."
+              "text": "BACKUP STATUS — Tue 07:30\n\nNAS APPLIANCE (on site): ONLINE. Snapshots nightly at 21:00.\n  Restore time: about 5 hours.\n  The attacker held domain admin from about 15:00 Monday, and the NAS was reachable from production. Monday's snapshot will contain whatever he planted.\n  Sunday's snapshot predates the VPN login, but the NAS admin account was in his hands. Integrity: NOT VERIFIED. Scan before use (R. Anand).\n  Data lost if restored from Sunday: all of Monday's EHR entries.\n\nVENDOR CLOUD BACKUP (EHR only): AVAILABLE.\n  Immutable copy; separate vendor credentials, not reachable from our domain.\n  Restore time estimate: 18 hours.\n  Data currency: last snapshot Mon 20:00 (2 hrs 15 min before the ransomware ran).\n\nTAPE LIBRARY: DATA CLEAN. The tapes were offline and are intact.\n  The attacker wiped the catalogue, so every tape must be read back by hand.\n  Recovery: 3-5 days minimum. Last full backup: Friday 23:00.\n\nAll sources: restoring to an un-isolated network may reintroduce the attacker.\n\n⚠ Recommendation: Isolate the network before initiating any restore."
             }
           ]
         },

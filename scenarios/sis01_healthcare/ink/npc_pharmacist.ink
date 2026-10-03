@@ -98,7 +98,7 @@ Hamza Iqbal: Pumps can go back into use, with a second nurse checking every new 
 -> protocol_choices
 
 === protocol_choices ===
-+ {not asked_manual} [That's a lot of manual work.]
++ {not asked_manual} [That's a lot to ask of a ward that's a nurse down.]
     ~ asked_manual = true
     Hamza Iqbal: It is. The alternative is one keystroke and a dead patient.
     -> protocol_choices

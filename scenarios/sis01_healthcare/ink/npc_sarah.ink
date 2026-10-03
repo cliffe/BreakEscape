@@ -268,6 +268,9 @@ Sarah Mitchell: I'm reporting it as a patient safety incident. Somebody has to r
     ~ hub_quiet = false
 - sarah_at_bed2 and not patient_bed2_deceased:
     Sarah Mitchell: {&I'm not leaving her. What is it?|She's coming round. Go on.}
+// Blind 2: the urgent greetings and the exit line no longer play once the link is cut.
+- network_isolated:
+    Sarah Mitchell: {&What've you got?|Go on.|How's it looking up there?}
 - else:
     Sarah Mitchell: {&What've you got?|Quickly, then.|Go on.}
 }
@@ -297,7 +300,7 @@ Sarah Mitchell: I'm reporting it as a patient safety incident. Somebody has to r
     -- Sarah Mitchell: Everyone misreads a chart once. Next time, read it twice, out loud, with someone watching.
     ~ hub_quiet = true
     -> hub
-+ {drug_library_override and not sarah_pump_warned} [The pump called two below its minimum of twenty. I kept two and rang pharmacy.]
++ {drug_library_override and not sarah_pump_warned} [Her pump flagged 2.0 as too low, wanted twenty. I kept two and called pharmacy.]
     -> pump_override_report
 + {sarah_given_soon_estimate and not bed4_escalated and not patient_bed4_deceased} [About Mr Ahmed. Plan for hours, not minutes.]
     ~ bed4_escalated = true
@@ -355,8 +358,11 @@ Sarah Mitchell: I'm reporting it as a patient safety incident. Somebody has to r
     Sarah Mitchell: Up there? Ask Helen. Down here, we're on paper and managing. Tell me before anything else changes.
     -> hub
 + [I'll come back when I know more.]
-    {sarah_at_bed2 and not patient_bed2_deceased:
+    {
+    - sarah_at_bed2 and not patient_bed2_deceased:
         Sarah Mitchell: Off you go. I'm staying with her.
+    - network_isolated:
+        Sarah Mitchell: Right. We'll manage on paper down here.
     - else:
         Sarah Mitchell: Please be quick. Every minute without monitoring, I'm guessing.
     }
