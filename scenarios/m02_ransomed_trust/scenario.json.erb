@@ -1808,7 +1808,11 @@ boardroom_pin = "0417"
             }
           ],
           "observationDisplay": "gameDisplay"
-        }
+        },
+<%# Room dressing (m02 only): flavour objects claiming conditional sprites on room_hospital_ward,
+    so this critical-care ward reads differently from sis01's cardiac ward. No puzzle role. %>
+        { "type": "pigeonholes", "id": "ward_paper_obs_rack", "name": "Paper Obs Charts", "takeable": false, "observations": "A wall rack of paper observation charts, one slot per bed. With the central monitoring down, every set of obs on this ward is written by hand." },
+        { "type": "bp_monitor", "id": "ward_manual_bp_cuff", "name": "Manual BP Cuff", "takeable": false, "observations": "An old aneroid blood pressure cuff, dug out of a drawer. It doesn't need the network." }
       ]
     },
 
@@ -2059,7 +2063,10 @@ boardroom_pin = "0417"
           "observations": "A compact wireless bridge — not hospital equipment. Someone attached this to the LAN before the attack. A text interface is blinking on the screen.",
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "ghost_planted_physical_foothold_six_weeks_before_attack"
-        }
+        },
+<%# Room dressing (m02 only): conditional sprites on room_hospital_office_it. No puzzle role. %>
+        { "type": "kettle", "id": "it_department_kettle", "name": "Department Kettle", "takeable": false, "observations": "A limescaled kettle on the workbench, next to a tea-fund jar with 40p in it." },
+        { "type": "wet_floor_sign", "id": "it_department_wet_floor_sign", "name": "Wet Floor Sign", "takeable": false, "observations": "Under a brown-stained ceiling tile. The drip is slow and steady, and the Estates ticket for it is older than the sign." }
       ]
     },
 
@@ -2837,7 +2844,11 @@ boardroom_pin = "0417"
             { "from": "vmfl_submit_ghost_log_flag", "to": "lock_press_terminal" },
             { "from": "lock_hospital_recovery_console", "to": "lock_press_terminal" }
           ]
-        }
+        },
+<%# Room dressing (m02 only): conditional sprites on room_hospital_meeting, so this ordinary
+    conference room reads differently from sis01's major incident room. No puzzle role. %>
+        { "type": "coat_stand", "id": "conference_coat_stand", "name": "Coat Stand", "takeable": false, "observations": "A coat stand by the wall, with one dark overcoat on it." },
+        { "type": "water_cooler", "id": "conference_water_cooler", "name": "Water Cooler", "takeable": false, "observations": "Half full. The paper cups ran out some time ago." }
       ]
     },
 

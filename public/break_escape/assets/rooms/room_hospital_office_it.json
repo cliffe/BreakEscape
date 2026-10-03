@@ -598,7 +598,32 @@
    "draworder": "topdown",
    "id": 7,
    "name": "conditional_items",
-   "objects": [],
+   "objects": [
+    {
+     "gid": 287,
+     "height": 24,
+     "id": 87,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 26,
+     "x": 262,
+     "y": 220
+    },
+    {
+     "gid": 819,
+     "height": 29,
+     "id": 88,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 21,
+     "x": 264,
+     "y": 222
+    }
+   ],
    "opacity": 1,
    "type": "objectgroup",
    "visible": true,
@@ -609,7 +634,32 @@
    "draworder": "topdown",
    "id": 11,
    "name": "conditional_table_items",
-   "objects": [],
+   "objects": [
+    {
+     "gid": 847,
+     "height": 14,
+     "id": 85,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 15,
+     "x": 228.0,
+     "y": 126.0
+    },
+    {
+     "gid": 834,
+     "height": 18,
+     "id": 86,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 15,
+     "x": 226.0,
+     "y": 126.0
+    }
+   ],
    "opacity": 1,
    "type": "objectgroup",
    "visible": true,
@@ -725,7 +775,7 @@
   }
  ],
  "nextlayerid": 14,
- "nextobjectid": 85,
+ "nextobjectid": 89,
  "orientation": "orthogonal",
  "renderorder": "right-down",
  "tiledversion": "1.11.2",
