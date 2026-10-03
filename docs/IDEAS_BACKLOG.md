@@ -6,10 +6,10 @@ Each entry: a short title, where it came from, the idea in two or three sentence
 
 ## Minigames
 
-- **Distinct reference cards on easy** (m04 playtests, twice; S). On easy the two reference cards look near-identical, so the compare step can't be done by eye; the m04 final run picked Vance's card by a 50/50 guess. Worth doing soon.
+- **Fingerprint: Distinct reference cards on easy** (m04 playtests, twice; S). On easy the two reference cards look near-identical, so the compare step can't be done by eye; the m04 final run picked Vance's card by a 50/50 guess. Worth doing soon.
 - **Recovery console: the Close button overlaps the banner at 1280x800** (dash check; S).
 - **Toasts shouldn't cover minigame overlays or the person-chat speaker name** (m04 and m02 playtests; S). HaX toasts sat over the reader overlay's hint and over the speaker caption in person-chat.
-- **Hide reference-card names until a match** (m04 review; S). At medium difficulty and up, the dusting compare step would be a real identification.
+- **Fingerprint: Hide reference-card names until a match** (m04 review; S). At medium difficulty and up, the dusting compare step would be a real identification.
 - **Show the EM4100 vs MIFARE difference in the cloner** (m08 fixer; S). Make it visible that EM4100 has no crypto and clones instantly, while MIFARE needs a key attack.
 - **Dusting and "Search Room" for carried items** (m08 fixer; S–M). A clean way to dust something in the inventory.
 
@@ -73,3 +73,9 @@ Each entry: a short title, where it came from, the idea in two or three sentence
 - **A fingerprint field guide** in HacktivityLabSheets (m04 review; S).
 
 - **Dialogue lint** (style guide; S–M). A validator check or script that flags spoken lines over 30 words, timed texts over 30 words, `You:` lines straight after a choice, and the AI-tell search list from the style guide. Being built for the dialogue pass.
+
+## Room tooling and props (from the sis01/m02 room differentiation, 2026-10-02)
+- **Bug: `scripts/room_gen/room_edit.py add` can corrupt room_hospital_ward.** Adding a sprite missing from the ward's old embedded `objects` tileset refreshed that tileset with a newer id layout and silently remapped existing gids (beds became ehr-terminal/siem_dashboard, curtains became chairs) and overran the next tileset's firstgid. The agent restored the ward from HEAD and used hospital-extras sprites only. Fix the refresh (append new tiles, never renumber) or migrate the ward to the current tileset; until then the ward can't take `crash_cart1`.
+- Art wanted (none generated): a ward-usable crash trolley, a clearer ECG cart, a ventilator and an ECMO machine for m02's ward, a camp bed / evidence bags for sis01's IT office, a sandwich platter, a major-incident action-card board and a Trust site map for sis01's incident room.
+- m02 (existing issue): clicking the Bed 4 ventilator panel opens Mr Pryce's chat; they're ~20px apart.
+- Engine: a reload restarts scenario timers (sis01 ICO clock reset from 21:35 to 45:00; also seen in m07). The command board and SIEM show the real wall clock rather than scenario time.

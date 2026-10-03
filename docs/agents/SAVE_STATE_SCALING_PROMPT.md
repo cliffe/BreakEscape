@@ -11,6 +11,7 @@ With hundreds to ~1,000 players at once, is the save traffic a risk to the Hackt
 ## What happens now (verified 2026-10-03)
 
 The client sends a full snapshot every 30 seconds and on `pagehide` (`public/break_escape/js/state-sync.js`, `StateSync`, `buildPayload`), whether or not anything changed. The snapshot holds:
+
 - all globals
 - notes
 - NPC ink variables
@@ -32,14 +33,15 @@ The server endpoint is `GamesController#sync_state` (`app/controllers/break_esca
 Sizes measured in the dev Postgres database (the latest games per mission, max values):
 
 | Mission | scenario_data | player_state |
-|---|---|---|
-| m02 | 147 KB | 62 KB |
-| m05 | 74 KB | 51 KB |
-| sis01 | 80 KB | 23 KB |
-| m08 | 93 KB | 22 KB |
-| others | 60–90 KB | 4–11 KB |
+| ------- | ------------- | ------------ |
+| m02     | 147 KB        | 62 KB        |
+| m05     | 74 KB         | 51 KB        |
+| sis01   | 80 KB         | 23 KB        |
+| m08     | 93 KB         | 22 KB        |
+| others  | 60–90 KB      | 4–11 KB      |
 
 A rough estimate for 1,000 concurrent players: about 33 syncs a second, which is about 67 jsonb UPDATEs a second (10–60 KB each, plus GIN maintenance) and about 67 reads a second of roughly 200 KB rows. That is several GB of WAL an hour. Expect:
+
 - table and TOAST bloat that autovacuum has to keep up with;
 - backup and replica growth;
 - about 3 or more app-server threads busy just on saves.
@@ -55,12 +57,14 @@ Bursts are a separate risk. When a class starts, every game is created at once (
 5. **A load-test script** that simulates N players syncing (and a class-start burst), runnable against staging, to replace the estimates with numbers.
 
 The user has decided:
+
 - **Keep the 30-second snapshot model for now.** Don't redesign to save-on-change.
 - **The global "change log" goes.** It has been removed and replaced by command-board-owned entries (commit `c0c76a80`).
 
 ## Recent engine work in the same area (committed)
 
 Commit `c0c76a80` (2026-10-03) added the following:
+
 - `scenarioClock` (elapsed time and timer state) and `npcVisibility` to the sync, with `Game#merge_scenario_clock!` and `Game#merge_npc_visibility!`.
 - A `commandBoardLog`, saved only by scenarios that have a command board, with `merge_command_board_log!`.
 

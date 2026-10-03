@@ -29,14 +29,14 @@ Save `currentKnot` (and `lastEnteredKnot`) for person NPCs and apply them on reg
 
 Which NPCs this touches (rendered scenarios, person NPCs with knot-setting mappings):
 
-| Mission | NPCs | Kind of mapping | Effect of the change |
-|---|---|---|---|
-| sis01 | `bed2_patient`, `bed4_patient`, `bed5_patient`, `patrol_nurse` | `targetKnot` with no conversation (bark or silent) | Changes the first post-reload talk |
-| sis01 | `pharmacist_npc` (`start`), `dr_sharma` (event conversation, `restartOnRetalk: false`) | knot equals the default, or played at once | None |
-| m01 | Derek (`fight_outcome`), debrief | event conversations | None (consumed when played) |
-| m02 | `security_guard_patrol` (Val) | `cover_burned` sets `cover_challenge` with a bark, no conversation | Changes the first post-reload talk |
-| m02 | Gary, ambush supervisor, debrief; Val's other knots | event conversations | None |
-| m03, m04, m05, m06, m07, m08, sis02 | every knot mapping | event conversations | None |
+| Mission                             | NPCs                                                                                   | Kind of mapping                                                    | Effect of the change               |
+| ----------------------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ---------------------------------- |
+| sis01                               | `bed2_patient`, `bed4_patient`, `bed5_patient`, `patrol_nurse`                         | `targetKnot` with no conversation (bark or silent)                 | Changes the first post-reload talk |
+| sis01                               | `pharmacist_npc` (`start`), `dr_sharma` (event conversation, `restartOnRetalk: false`) | knot equals the default, or played at once                         | None                               |
+| m01                                 | Derek (`fight_outcome`), debrief                                                       | event conversations                                                | None (consumed when played)        |
+| m02                                 | `security_guard_patrol` (Val)                                                          | `cover_burned` sets `cover_challenge` with a bark, no conversation | Changes the first post-reload talk |
+| m02                                 | Gary, ambush supervisor, debrief; Val's other knots                                    | event conversations                                                | None                               |
+| m03, m04, m05, m06, m07, m08, sis02 | every knot mapping                                                                     | event conversations                                                | None                               |
 
 Sarah, Helen and David have no knot-setting mappings; their reload behaviour is the same either way.
 
@@ -46,13 +46,13 @@ So the change does nothing for the campaign except Val, and in sis01 it changes 
 
 Simulated with the real ink (`scratchpad/engine-knot/sim.cjs`): the first post-reload line today vs with the saved knot.
 
-| Case | Today (default knot) | With the saved knot |
-|---|---|---|
-| sis01 Bed 2, rescued | "dozing… pump keeps bleeping" (**wrong**, D2) | "Amy is at Ms Okafor's side… breathing is picking up" (right) |
-| sis01 Bed 4, distress then escalation | "monitor is alarming… lost under the ward noise" (**wrong**) | "restless and pressing his call bell… alarm has gone higher" (**also wrong**: Amy is already there) |
-| sis01 Bed 5, rescue already seen | "Have you got a minute?" (right) | "They got to her…" again (**repeat**) |
-| sis01 Bed 5, death already seen | "Have you got a minute?" (right) | "She stopped breathing. I kept pressing the bell." again (**repeat**) |
-| m02 Val, burned, then Bernie restores cover | "Control rang back. Bernie… That'll do me." (right) | "Stay where you are." and the challenge choices, including "the hard way" (**wrong, and can turn her hostile**) |
+| Case                                        | Today (default knot)                                         | With the saved knot                                                                                             |
+| ------------------------------------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| sis01 Bed 2, rescued                        | "dozing… pump keeps bleeping" (**wrong**, D2)                | "Amy is at Ms Okafor's side… breathing is picking up" (right)                                                   |
+| sis01 Bed 4, distress then escalation       | "monitor is alarming… lost under the ward noise" (**wrong**) | "restless and pressing his call bell… alarm has gone higher" (**also wrong**: Amy is already there)             |
+| sis01 Bed 5, rescue already seen            | "Have you got a minute?" (right)                             | "They got to her…" again (**repeat**)                                                                           |
+| sis01 Bed 5, death already seen             | "Have you got a minute?" (right)                             | "She stopped breathing. I kept pressing the bell." again (**repeat**)                                           |
+| m02 Val, burned, then Bernie restores cover | "Control rang back. Bernie… That'll do me." (right)          | "Stay where you are." and the challenge choices, including "the hard way" (**wrong, and can turn her hostile**) |
 
 Three reasons, all structural:
 
