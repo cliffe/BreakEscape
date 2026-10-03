@@ -21,6 +21,7 @@ VAR isolation_compensating_controls = false
 VAR isolation_risk_accepted = false
 VAR drug_library_compromised = false
 VAR drug_library_override = false
+VAR drug_library_restored = false
 VAR pump_dose_correct = false
 VAR pump_dose_error = false
 VAR bed2_alarm_raised = false
@@ -41,6 +42,7 @@ VAR topic_pumps = false
 VAR asked_tamper_change = false
 VAR asked_tamper_drugs = false
 VAR hub_quiet = false
+VAR asked_candour = false
 
 // ===========================================
 // TIMED OPENING CUTSCENE (called by timedConversation)
@@ -48,7 +50,7 @@ VAR hub_quiet = false
 
 === arrival_briefing ===
 Sarah Mitchell: You're the incident response team? Sarah Mitchell, charge nurse. Ravi Anand in IT security sent for you.
-Sarah Mitchell: Since half ten last night that screen behind me has shown a ransom note instead of six patients' vitals.
+Sarah Mitchell: That screen behind me's been showing a ransom note since half ten last night. It should be showing six patients' hearts.
 Sarah Mitchell: So we're on paper. Two nurses, six patients, and the only alarms are at the bedsides.
 Sarah Mitchell: Mr Ahmed in Bed 4 is two days after heart surgery. He should be on continuous monitoring. He isn't.
 ~ sarah_briefed = true
@@ -125,12 +127,12 @@ Sarah Mitchell: So when does that central station come back? Minutes, or hours?
 
 === post_isolation ===
 ~ isolation_discussed = true
-Sarah Mitchell: So the link's cut. We were already on paper. Now every ward is, and the pump console's gone too.
-Sarah Mitchell: Every pump gets set by hand at the bedside. Pharmacy needs to be at every drug round, not just mine.
+Sarah Mitchell: So the link's cut. Helen's people are calling that contained. From down here, every ward's just joined us on paper.
+Sarah Mitchell: And the pumps have lost their console. Anything new on my ward, I want pharmacy on the phone before it goes up.
 + [Was it the right call?]
     {
     - isolation_compensating_controls:
-        Sarah Mitchell: Yes. Pharmacy were on the way before the link went. Somebody thought about the wards first.
+        Sarah Mitchell: Yes. The wards had their printouts before the link went. Somebody thought about them first.
     - isolation_risk_accepted:
         Sarah Mitchell: Probably. David says it's written down as an accepted risk. I'm the one living with it.
     - network_isolation_authorised:
@@ -153,21 +155,26 @@ Sarah Mitchell: Every pump gets set by hand at the bedside. Pharmacy needs to be
 === post_drug_tamper ===
 ~ tamper_told = true
 #complete_task:warn_sarah
-{patient_bed2_deceased:
+{
+- patient_bed2_deceased:
     Sarah Mitchell: The drug library's been changed? Then that's what let that rate go into Ms Okafor without a murmur.
     Sarah Mitchell: Nothing new goes on a pump here until pharmacy clears it. Not one.
+- drug_library_restored:
+    Sarah Mitchell: So the drug library was changed, and it's been put right. Pharmacy still checks anything new on this ward today.
 - else:
     Sarah Mitchell: The drug library's been changed? Then nothing new goes on a pump here until pharmacy clears it.
 }
 {
 - patient_bed2_deceased:
-    Sarah Mitchell: Her pump stays exactly as it is. The MHRA will want it.
+    Sarah Mitchell: Her pump's quarantined. It gets reported to the MHRA.
 - pump_dose_correct:
     Sarah Mitchell: Ms Okafor's already on two, from her chart. Nobody touches that pump until pharmacy's been.
 - pump_dose_error:
     Sarah Mitchell: And pharmacy checks whatever went into Bed 2 this morning.
+- drug_library_restored:
+    Sarah Mitchell: Ms Okafor still needs her new bag. Set it from her paper chart, and read every digit back to me before it runs.
 - else:
-    Sarah Mitchell: Except Ms Okafor. Her morphine's due, and she can't wait hours for a verified library.
+    Sarah Mitchell: Except Ms Okafor. She needs a new bag, and she can't wait hours for a verified library.
     Sarah Mitchell: I've got no one free. You set it from the paper chart, and read every digit back to me before it runs.
     Sarah Mitchell: If that pump argues with the chart, you don't argue back. You stop and ring pharmacy.
 }
@@ -179,6 +186,8 @@ Sarah Mitchell: Every pump gets set by hand at the bedside. Pharmacy needs to be
     {
     - patient_bed2_deceased or pump_dose_error:
         Sarah Mitchell: Twenty. Ten times her chart, and the pump would take it without a word.
+    - drug_library_restored:
+        Sarah Mitchell: Twenty? Her chart says two. So the pump would have called the right dose too low.
     - else:
         Sarah Mitchell: Twenty? Her chart says two. Then the pump will tell us the right dose is too low.
     }
@@ -221,8 +230,8 @@ Sarah Mitchell: Twenty. That's ten times her prescription, and the chart even wa
 === bed2_death ===
 ~ okafor_death_told = true
 Sarah Mitchell: Ms Okafor's gone. The crash team couldn't bring her back.
-Sarah Mitchell: Her pump was running at many times what her chart says.
-Sarah Mitchell: I'm reporting it, and nobody touches that pump. It stays exactly as it is.
+Sarah Mitchell: Her pump was running at twenty. Her chart says two.
+Sarah Mitchell: I'm reporting it. Nobody touches that pump.
 -> hub
 
 === bed4_death ===
@@ -251,13 +260,17 @@ Sarah Mitchell: I'm reporting it as a patient safety incident. Somebody has to r
 {hub_quiet:
     ~ hub_quiet = false
 - else:
-    Sarah Mitchell: {&Go on.|What is it?|Quickly, then.}
+    Sarah Mitchell: {&What've you got?|Quickly, then.|Go on.}
 }
 + {pump_dose_error and bed2_seen_unwell and not bed2_alarm_raised and not patient_bed2_deceased} [Ms Okafor's barely breathing. She needs help now.]
     ~ bed2_alarm_raised = true
     #set_global:bed2_alarm_raised:true
-    Sarah Mitchell: Amy! Bed 2, now, and bring the naloxone. Put out the crash call.
-    Sarah Mitchell: Tell me what went into that pump. Every digit.
+    {bed4_escalated:
+        Sarah Mitchell: I'm going to her. Put out the crash call, and get me the naloxone.
+    - else:
+        Sarah Mitchell: Amy! Bed 2, now, and bring the naloxone. Put out the crash call.
+    }
+    Sarah Mitchell: When she's safe, you're telling me exactly what went into that pump.
     -> hub
 + {drug_library_override and not sarah_pump_warned} [Bed 2's pump wanted twenty, not two. I kept her at two and rang pharmacy.]
     -> pump_override_report
@@ -270,9 +283,13 @@ Sarah Mitchell: I'm reporting it as a patient safety incident. Somebody has to r
     -> bed4_concern
 + {not drug_library_compromised and not pump_dose_correct and not pump_dose_error and not asked_bed2} [What about Bed 2's infusion?]
     ~ asked_bed2 = true
-    Sarah Mitchell: Ms Okafor's morphine is due at quarter to eight, and I've got no one free.
+    Sarah Mitchell: Ms Okafor's morphine bag runs out at quarter to eight, and I've got no one free.
     Sarah Mitchell: Set it from her paper chart and read every digit back to me before it runs.
     Sarah Mitchell: If that pump argues with the chart, don't argue back. Stop and ring pharmacy.
+    -> hub
++ {death_told and not asked_candour} [Who tells Mr Ahmed's daughter?]
+    ~ asked_candour = true
+    Sarah Mitchell: His consultant. In person if she can get here, and she gets the whole truth.
     -> hub
 + {not topic_ransomware} [What happened to the monitoring station?]
     ~ topic_ransomware = true

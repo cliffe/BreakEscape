@@ -2170,7 +2170,7 @@ Severing the connection would protect clinical devices from further compromise �
 
 David Osei, the Clinical Engineering Manager, argues for immediate disconnection, citing the patient safety events. Ravi Anand supports this position. Dr Fiona Hartley, the Caldicott Guardian, raises concerns about the loss of clinical information access — without the EHR, there is no reliable way to verify patient allergies or current medications, creating a different category of safety risk. Helen Carver must balance both positions under intense time pressure. Helen also wants the network contained, and the scope known, before she notifies the ICO. It is a common instinct and a mistake: Article 33 runs from awareness, the report can describe measures proposed, and detail can follow in phases.
 
-The decision to sever the connection is taken on Tuesday morning, on joint sign-off from IT security (Ravi Anand) and clinical engineering (David Osei), with a compensating control: paper-based medication charts are distributed to all wards, and pharmacy staff are redeployed to every drug round. The residual risk (prescribing without electronic allergy checks) is accepted, with an owner, for the duration of the restore.
+The decision to sever the connection is taken on Tuesday morning, on joint sign-off from IT security (Ravi Anand) and clinical engineering (David Osei), with a compensating control: before the link is cut, each ward prints its patients' allergy and current-medication lists, and pharmacy checks new prescriptions by phone. The residual risk (prescribing without electronic allergy checks) is accepted, with an owner, for the duration of the restore.
 
 ### Days 2–7 — Recovery
 

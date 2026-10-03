@@ -10,6 +10,9 @@
 VAR bed4_escalated = false
 VAR drug_library_compromised = false
 VAR patient_bed4_deceased = false
+VAR drug_library_restored = false
+VAR bed2_alarm_raised = false
+VAR patient_bed2_deceased = false
 
 VAR bed4_mentioned = false
 VAR drug_warning_given = false
@@ -35,17 +38,19 @@ VAR death_seen = false
     ~ hub_quiet = false
 - bed4_escalated and not patient_bed4_deceased:
     Amy Clarke: {&I'm with Mr Ahmed. Quickly.|Outreach aren't here yet. What is it?}
+- bed2_alarm_raised and not patient_bed2_deceased:
+    Amy Clarke: {&I'm staying with Ms Okafor. Quickly.|She's breathing better. What is it?}
 - else:
-    Amy Clarke: {&Quick, I'm mid-round.|Yes?|Go on.}
+    Amy Clarke: {&Quick, I'm mid-round.|Yeah?|Make it quick.}
 }
 + {not bed4_mentioned and not bed4_escalated} [How's the patient in Bed 4?]
     ~ bed4_mentioned = true
-    Amy Clarke: Mr Ahmed? His six-thirty obs were borderline. Now his monitor's alarming and he's drowsy.
+    Amy Clarke: He's not right. Obs at half six were borderline, and now he's drowsy and his monitor won't shut up.
     Amy Clarke: Without the central station I can't see the trend. If he needs more than my round, Sarah has to call it.
     -> hub
 + {not bed4_escalated} [Can't you just stay with him?]
-    Amy Clarke: I can't leave the full round unless the charge nurse says so.
-    Amy Clarke: If I leave five patients and something goes wrong, that's on me. Ask Sarah. If she says go, I go.
+    Amy Clarke: Not without Sarah's say-so. If I leave five patients and one of them goes off, that's on me.
+    Amy Clarke: If she says go, I go.
     -> hub
 + [Anything I should know?]
     {
@@ -71,8 +76,12 @@ VAR death_seen = false
 === post_drug ===
 {not drug_warning_given:
     ~ drug_warning_given = true
-    Amy Clarke: Sarah's stopped anything new going on a pump until pharmacy clears the library.
-    Amy Clarke: Everything's by hand and double-checked. Slower, but I know what's going in.
+    {drug_library_restored:
+        Amy Clarke: The pump library's back, but Sarah still wants a second nurse on every new rate.
+    - else:
+        Amy Clarke: Sarah's stopped anything new going on a pump until pharmacy clears the library.
+        Amy Clarke: Everything's by hand and double-checked. Slower, but I know what's going in.
+    }
 - else:
     Amy Clarke: Pumps are still on hold. We're waiting on pharmacy.
 }

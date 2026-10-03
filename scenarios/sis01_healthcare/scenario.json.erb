@@ -165,8 +165,17 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
     "safety_claim_hc001_assessed": false,
     "hc001_verdict": "",
     "isolation_compensating_controls": false,
+<%# isolation_compensating_controls (round 2, D2): set by Hartley when the player arranges the
+    downtime control before the cut: every ward prints its allergy and drug lists, and pharmacy
+    checks new prescriptions by phone. isolation_risk_accepted is the other route (David signs the
+    gap off as an accepted risk). Read by Sarah, David, Priya S. and the credits. %>
     "isolation_risk_accepted": false,
     "helen_tamper_view_heard": false,
+    "pump_console_advice": "",
+<%# pump_console_advice (round 2, D5): what the player advised the executive on call about the
+    pump console, in David's hc003_questions: "hold" (keep pumps off it until the library is
+    verified), "console_back" (Helen's view: back after the restore) or "view_only" (back for
+    monitoring with library pushes off). Read by Priya S.'s risk_review and the credits. %>
     "bed2_alarm_raised": false,
     "bed2_seen_unwell": false,
     "debrief_forced": false,
@@ -213,6 +222,12 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
     "sarah_given_soon_estimate": false,
 
     "patrol_nurse_at_bed4": false,
+    "patrol_nurse_at_bed2": false,
+    "sarah_at_bed2": false,
+<%# Round 3 (AMY-2 follow-up): whoever answers the Bed 2 alarm walks there and stays (Amy if she's
+    still on the round, Sarah if Amy is with Mr Ahmed). These two globals and patrol_nurse_at_bed4
+    let game_loaded mappings put the nurses back after a reload, because the engine does not save
+    patrolOverride / goToAndStay positions (logged in DIALOGUE_REVIEW_R2.md section 8). %>
     "pharmacist_on_ward": false,
 
     "ward_monitoring_timeout_started": false,
@@ -242,9 +257,12 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
   "narrator": {
     "id": "narrator",
     "skipTextValidation": true,
+<%# D3 (round 2, 2026-10-03): the Narrator moved off Charon, which is Mr Ahmed's voice in the
+    same room, to Schedar. Helen moved off Aoede (Mrs Kowalski) to Pulcherrima; Hartley off Kore
+    (Sarah) to Gacrux. %>
     "voice": {
-      "name": "Charon",
-      "style": "Calm, clinical narrator; measured pace",
+      "name": "Schedar",
+      "style": "Calm, clinical narrator with a neutral southern English accent; measured, even pace. Keep the same accent throughout.",
       "language": "en-GB"
     }
   },
@@ -496,7 +514,8 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           { "text": "Ms Okafor (Bed 2): Wrong rate went in; the alarm was raised in time and naloxone given", "style": "entry", "condition": "!globalVars.patient_bed2_deceased && globalVars.pump_dose_error && globalVars.bed2_alarm_raised" },
           { "text": "Ms Okafor (Bed 2): Wrong rate confirmed at the pump; naloxone given",                "style": "entry", "condition": "!globalVars.patient_bed2_deceased && globalVars.pump_dose_error && !globalVars.bed2_alarm_raised" },
           { "text": "Ms Okafor (Bed 2): Deceased — morphine overdose; the tampered library accepted the wrong rate", "style": "entry", "condition": "globalVars.patient_bed2_deceased" },
-          { "text": "Mr Ahmed (Bed 4): One-to-one care until outreach arrived",                          "style": "entry", "condition": "globalVars.bed4_escalated && !globalVars.patient_bed4_deceased" },
+          { "text": "Mr Ahmed (Bed 4): One-to-one care until outreach arrived",                          "style": "entry", "condition": "globalVars.bed4_escalated && !globalVars.sarah_given_soon_estimate && !globalVars.patient_bed4_deceased" },
+          { "text": "Mr Ahmed (Bed 4): Sarah was told 'soon'; escalated late, then one-to-one care until outreach arrived", "style": "entry", "condition": "globalVars.bed4_escalated && globalVars.sarah_given_soon_estimate && !globalVars.patient_bed4_deceased" },
           { "text": "Mr Ahmed (Bed 4): Not escalated; survived the response window",                   "style": "entry", "condition": "!globalVars.bed4_escalated && !globalVars.patient_bed4_deceased" },
           { "text": "Mr Ahmed (Bed 4): Deceased — deterioration not escalated before cardiac arrest",   "style": "entry", "condition": "globalVars.patient_bed4_deceased" },
           { "text": "Drug library: Restored — pump safety guardrails operational",                       "style": "entry", "condition": "globalVars.drug_library_restored" },
@@ -505,8 +524,8 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
 
           { "text": "── NETWORK RESPONSE ──", "style": "section-header" },
           { "text": "Network isolation: Authorised — dual sign-off confirmed before isolation",          "style": "entry", "condition": "globalVars.network_isolated && globalVars.network_isolation_authorised" },
-          { "text": "Isolation cost: pharmacy on every drug round before the link was cut",              "style": "entry", "condition": "globalVars.network_isolated && globalVars.isolation_compensating_controls" },
-          { "text": "Isolation cost: no pharmacy cover; risk accepted with a named owner",               "style": "entry", "condition": "globalVars.network_isolated && !globalVars.isolation_compensating_controls && globalVars.isolation_risk_accepted" },
+          { "text": "Isolation cost: allergy and drug printouts on every ward, and pharmacy checks by phone, before the link was cut", "style": "entry", "condition": "globalVars.network_isolated && globalVars.isolation_compensating_controls" },
+          { "text": "Isolation cost: no printouts or pharmacy cover; risk accepted with a named owner", "style": "entry", "condition": "globalVars.network_isolated && !globalVars.isolation_compensating_controls && globalVars.isolation_risk_accepted" },
           { "text": "Network isolation: Bypassed — isolated without dual sign-off (CLAIM-HC-007 violated)", "style": "entry", "condition": "globalVars.network_isolated && !globalVars.network_isolation_authorised" },
           { "text": "Network isolation: Not completed during response",                                  "style": "entry", "condition": "!globalVars.network_isolated" },
           { "text": "SIEM investigation: Alert timeline reviewed — attack vector identified",            "style": "entry", "condition": "globalVars.siem_escalated" },
@@ -516,16 +535,30 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
 
           { "text": "── GOVERNANCE ──", "style": "section-header" },
           { "text": "CLAIM-HC-001: Judged not supported — its own conditions were never met",            "style": "entry", "condition": "globalVars.safety_claim_hc001_assessed && globalVars.hc001_verdict === 'invalid'" },
-          { "text": "CLAIM-HC-001: Reviewed with Clinical Engineering before isolation",                "style": "entry", "condition": "globalVars.safety_claim_hc001_assessed && globalVars.hc001_verdict !== 'invalid'" },
+          { "text": "CLAIM-HC-001: Judged to hold — its conditions (no exception rules, no dual-homed PCs) were already false", "style": "entry", "condition": "globalVars.safety_claim_hc001_assessed && globalVars.hc001_verdict === 'holds'" },
+          { "text": "CLAIM-HC-001: Judged to hold until the attack — the exceptions were older than the attack", "style": "entry", "condition": "globalVars.safety_claim_hc001_assessed && globalVars.hc001_verdict === 'held_until_attack'" },
+          { "text": "CLAIM-HC-001: Reviewed with Clinical Engineering before isolation",                "style": "entry", "condition": "globalVars.safety_claim_hc001_assessed && globalVars.hc001_verdict !== 'invalid' && globalVars.hc001_verdict !== 'holds' && globalVars.hc001_verdict !== 'held_until_attack'" },
           { "text": "CLAIM-HC-001: Not reviewed during response",                                        "style": "entry", "condition": "!globalVars.safety_claim_hc001_assessed" },
-          { "text": "CLAIM-HC-003: Reviewed — library change control failed; tamper found at the pump end", "style": "entry", "condition": "globalVars.safety_claim_hc003_assessed" },
+          { "text": "CLAIM-HC-003: Change control failed — an unauthorised library change reached the pumps", "style": "entry", "condition": "globalVars.safety_claim_hc003_assessed" },
           { "text": "CLAIM-HC-003: Not reviewed during response",                                        "style": "entry", "condition": "!globalVars.safety_claim_hc003_assessed" },
-          { "text": "CLAIM-HC-007: Honoured — integrated IT and clinical sign-off confirmed",            "style": "entry", "condition": "globalVars.network_isolation_authorised" },
-          { "text": "CLAIM-HC-007: Violated — network isolated without integrated governance",           "style": "entry", "condition": "globalVars.network_isolated && !globalVars.network_isolation_authorised" },
+          { "text": "CLAIM-HC-007: Joint sign-off honoured; the annual rehearsal had lapsed (19 months)", "style": "entry", "condition": "globalVars.network_isolation_authorised" },
+          { "text": "CLAIM-HC-007: Joint sign-off skipped; the annual rehearsal had lapsed (19 months)", "style": "entry", "condition": "globalVars.network_isolated && !globalVars.network_isolation_authorised" },
           { "text": "CLAIM-HC-007: Not engaged — network isolation not completed",                      "style": "entry", "condition": "!globalVars.network_isolated" },
+          { "text": "Pump console: advised keeping pumps off it until the library was verified",       "style": "entry", "condition": "globalVars.pump_console_advice === 'hold'" },
+          { "text": "Pump console: advised giving it back once the restore was clean",                 "style": "entry", "condition": "globalVars.pump_console_advice === 'console_back'" },
+          { "text": "Pump console: advised bringing it back to monitor only, library pushes off",      "style": "entry", "condition": "globalVars.pump_console_advice === 'view_only'" },
+          { "text": "Patients (Article 34): told now, before forensics",                                "style": "entry", "condition": "globalVars.patient_disclosure === 'now'" },
+          { "text": "Patients (Article 34): told only after forensics",                                "style": "entry", "condition": "globalVars.patient_disclosure === 'wait'" },
+          { "text": "Patients (Article 34): told only if the records leak",                            "style": "entry", "condition": "globalVars.patient_disclosure === 'only_if_leaked'" },
+          { "text": "Ransom: advised not to pay",                                                      "style": "entry", "condition": "globalVars.ransom_advice === 'dont_pay'" },
+          { "text": "Ransom: advised considering payment",                                             "style": "entry", "condition": "globalVars.ransom_advice === 'pay'" },
+          { "text": "Ransom: left to the Board, with the costs of each option",                        "style": "entry", "condition": "globalVars.ransom_advice === 'board'" },
 
           { "text": "── RECOVERY ──", "style": "section-header" },
-          { "text": "Backup restoration: Initiated — systems recovering from clean backup",              "style": "entry", "condition": "globalVars.backup_restore_initiated && !globalVars.backup_reinfected" },
+          { "text": "Backup restoration: Vendor cloud copy — clean, about 18 hours on paper",          "style": "entry", "condition": "globalVars.backup_restore_initiated && !globalVars.backup_reinfected && globalVars.backup_recovery_source === 'cloud_vendor'" },
+          { "text": "Backup restoration: Tape — clean, but three to five days before the catalogue is rebuilt", "style": "entry", "condition": "globalVars.backup_restore_initiated && !globalVars.backup_reinfected && globalVars.backup_recovery_source === 'tape_wiped'" },
+          { "text": "Backup restoration: Local NAS — already encrypted, not a clean source",            "style": "entry", "condition": "globalVars.backup_restore_initiated && !globalVars.backup_reinfected && globalVars.backup_recovery_source === 'nas_encrypted'" },
+          { "text": "Backup restoration: Initiated — source not recorded",                              "style": "entry", "condition": "globalVars.backup_restore_initiated && !globalVars.backup_reinfected && globalVars.backup_recovery_source !== 'cloud_vendor' && globalVars.backup_recovery_source !== 'tape_wiped' && globalVars.backup_recovery_source !== 'nas_encrypted'" },
           { "text": "Backup restoration: Reinfected — restored from the encrypted NAS",                   "style": "entry", "condition": "globalVars.backup_reinfected && globalVars.backup_recovery_source === 'nas_encrypted'" },
           { "text": "Backup restoration: Reinfected — restore ran while network was still exposed",      "style": "entry", "condition": "globalVars.backup_reinfected && globalVars.backup_recovery_source !== 'nas_encrypted'" },
           { "text": "Backup restoration: Not initiated during response",                                 "style": "entry", "condition": "!globalVars.backup_restore_initiated" },
@@ -685,6 +718,19 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           },
           "eventMappings": [
             {
+<%# Round 3: Sarah answers the Bed 2 alarm herself when Amy is at Bed 4, and stays at the bedside. %>
+              "eventPattern": "global_variable_changed:bed2_alarm_raised",
+              "condition": "value === true && globalVars.bed4_escalated && !globalVars.patient_bed2_deceased",
+              "onceOnly": true,
+              "setGlobal": { "sarah_at_bed2": true },
+              "patrolOverride": { "targetTile": { "x": 8, "y": 4 }, "speed": 150, "stopOnArrival": true }
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.sarah_at_bed2 === true",
+              "patrolOverride": { "targetTile": { "x": 8, "y": 4 }, "speed": 200, "stopOnArrival": true }
+            },
+            {
               "eventPattern": "global_variable_changed:monitoring_station_viewed",
               "condition": "value === true",
               "onceOnly": true,
@@ -701,7 +747,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "eventPattern": "global_variable_changed:drug_library_compromised",
               "condition": "value === true && !globalVars.pump_dose_correct && !globalVars.pump_dose_error",
               "onceOnly": true,
-              "bark": "Come down when you can. Ms Okafor's morphine is due, and I need to know about that library.",
+              "bark": "Come down when you can. Ms Okafor needs a new bag, and I need to know about that library.",
               "barkDelay": 3000
             },
             {
@@ -720,9 +766,17 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
             },
             {
               "eventPattern": "global_variable_changed:patient_bed2_deceased",
-              "condition": "value === true",
+              "condition": "value === true && !globalVars.bed4_escalated",
               "onceOnly": true,
               "bark": "Crash call, Bed 2! Amy, now!",
+              "barkDelay": 1500
+            },
+            {
+<%# AMY-2 (round 2): Amy stays at Bed 4 once Mr Ahmed is escalated, so Sarah doesn't call her. %>
+              "eventPattern": "global_variable_changed:patient_bed2_deceased",
+              "condition": "value === true && globalVars.bed4_escalated",
+              "onceOnly": true,
+              "bark": "Crash call, Bed 2! I'm going!",
               "barkDelay": 1500
             },
             {
@@ -757,7 +811,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "eventPattern": "global_variable_changed:bed4_monitor_viewed",
               "condition": "value === true",
               "onceOnly": true,
-              "bark": "That alarm from Bed 4 — come and talk to me about it.",
+              "bark": "That alarm from Bed 4. Come and talk to me about it.",
               "barkDelay": 3000
 <%# Pulls player back to Sarah after they've seen the Bed 4 monitor.
     Sarah then offers the escalation path directly in her start knot (bed4_monitor_viewed gate). %>
@@ -855,10 +909,29 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
     TEST: Verify bark appears, nurse moves at 150px/s, stops beside bed 4 patient. %>
             },
             {
+<%# Round 3: Amy answers the Bed 2 alarm while she's still on the round, and stays with Ms Okafor. %>
+              "eventPattern": "global_variable_changed:bed2_alarm_raised",
+              "condition": "value === true && !globalVars.bed4_escalated && !globalVars.patient_bed2_deceased",
+              "onceOnly": true,
+              "setGlobal": { "patrol_nurse_at_bed2": true },
+              "patrolOverride": { "targetTile": { "x": 8, "y": 4 }, "speed": 150, "stopOnArrival": true }
+            },
+            {
+<%# Reload: patrolOverride positions are not saved by the engine, so re-issue them. %>
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.patrol_nurse_at_bed4 === true",
+              "patrolOverride": { "targetTile": { "x": 4, "y": 8 }, "speed": 200, "stopOnArrival": true }
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.patrol_nurse_at_bed2 === true && globalVars.patrol_nurse_at_bed4 !== true",
+              "patrolOverride": { "targetTile": { "x": 8, "y": 4 }, "speed": 200, "stopOnArrival": true }
+            },
+            {
               "eventPattern": "global_variable_changed:patient_bed4_state",
               "condition": "value === 'distressed'",
               "onceOnly": true,
-              "bark": "Bed 4 alarm's been running too long. Someone needs to speak to the charge nurse."
+              "bark": "That Bed 4 alarm's been going too long. Has anyone told Sarah?"
 <%# Fires at 8-min mark if bed4_escalated is still false.
     Nurse is visibly aware but cannot self-escalate — directs player to Sarah.
     Does not constitute formal escalation; patrolOverride only fires on bed4_escalated. %>
@@ -1072,7 +1145,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "condition": "value === true",
               "onceOnly": true,
               "targetKnot": "pump_concern",
-              "bark": "Could you get someone? The lady in Bed 2 — I don't think she looks right.",
+              "bark": "Could you get someone? The lady in Bed 2. I don't think she looks right.",
               "barkDelay": 0
 <%# Witness bark draws player attention to Bed 2 dose error consequence.
     No spriteTalk defined for this NPC — bark is the correct format (no cutscene).
@@ -1083,7 +1156,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "condition": "value === 'sedated'",
               "onceOnly": true,
               "targetKnot": "sedated_witness",
-              "bark": "She's not waking up — this isn't right.",
+              "bark": "She's not waking up. This isn't right.",
               "barkDelay": 4000
 <%# barkDelay staggers witness reaction after the dose_error bark to avoid overlap. %>
             },
@@ -1159,7 +1232,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "onceOnly": true,
               "setVisible": true,
               "targetKnot": "start",
-              "bark": "I've been called to verify medication doses manually.",
+              "bark": "Right. Where's Bed 2's chart?",
               "barkDelay": 1200
 <%# setVisible reveals NPC; patrol activates immediately.
     barkDelay 1200ms gives the player a moment to see the pharmacist appear before the bark.
@@ -1528,7 +1601,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "onceOnly": true,
               "completeTask": "access_siem",
               "setGlobal": { "ravi_siem_briefed": true },
-              "bark": "Right — those are the critical alerts. That cross-zone RDP is how they reached the clinical VLAN.",
+              "bark": "Right, those are the critical alerts. That cross-zone RDP is how they reached the clinical VLAN.",
               "barkDelay": 0
             },
             {
@@ -1536,7 +1609,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "condition": "value === true",
               "onceOnly": true,
               "setGlobal": { "ravi_vpn_briefed": true },
-              "bark": "m.blake. That's NetSol's engineer, and he was in London half an hour before. Someone's got his password.",
+              "bark": "Marcus Blake. NetSol's engineer. He was in London half an hour before. Someone's got his password.",
               "barkDelay": 0
             },
             {
@@ -1782,16 +1855,16 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
                 "fromSlot": "enterprise",
                 "toSlot": "clinical",
                 "consequences": [
-                  { "severity": "high",     "text": "Infusion pump fleet console reverts to bedside manual entry" },
+                  { "severity": "high",     "text": "Pump fleet console offline — no central view of the pumps" },
                   { "severity": "high",     "text": "Drug library updates unavailable" },
-                  { "severity": "med",      "text": "All dose programming becomes manual operation risk" },
+                  { "severity": "med",      "text": "Pumps keep whatever library they already have" },
                   { "severity": "positive", "isAttackPath": true, "text": "Compromised admin workstation → permitted firewall rule → fleet management console" }
                 ]
               }
             ],
             "modalConsequences": [
               "EHR offline → paper-based prescribing",
-              "Fleet console offline → manual bedside pump entry",
+              "Pump console offline → no central view or library updates",
               "Backup access blocked → recovery delayed"
             ],
             "defaultConsequences": [
@@ -1799,7 +1872,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
                 "section": "IF SEVER IS CONFIRMED:",
                 "items": [
                   { "severity": "high", "text": "EHR access lost on affected wards — prescribing reverts to paper" },
-                  { "severity": "high", "text": "Fleet management console offline — manual bedside dose entry required" },
+                  { "severity": "high", "text": "Pump fleet console offline — no central view or library updates; rates set at the bedside from paper charts" },
                   { "severity": "med",  "text": "Clinical workstation remote management unavailable" }
                 ]
               },
@@ -1893,7 +1966,9 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
 <%# INK: scenarios/sis01_healthcare/ink/npc_david.ink — compiled ✓
     Knots: start, bypassed_isolation, safety_case_hc001, hc001_verdict_given, hc001_questions,
            give_clinical_code, isolation_cost, clinical_signoff, safety_case_hc003, hc003_questions,
-           post_isolation, hub
+           console_advice, post_isolation, hub
+    Round 2 (D5): console_advice is the player's advice to the exec on Helen's and David's
+    pump console trade-off; it sets pump_console_advice (read by Priya S. and the credits).
     KEY: safety_case_hc001 is the claim-argument-evidence judgement (sets hc001_verdict).
     give_clinical_code needs HC-001 judged, the SIEM triaged and isolation_cost answered (what the
     wards lose); the sign-off also sets isolation_compensating_controls if Hartley hadn't.
@@ -1917,7 +1992,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "takeable": true,
               "important": true,
               "readable": true,
-              "text": "NORTHGATE GENERAL HOSPITAL NHS TRUST\nCLINICAL SAFETY SIGN-OFF — NETWORK ISOLATION\n\nChange Reference: INC-2025-1103-001\nChange Type: Emergency Network Isolation — Enterprise Zone\n\nClinical Safety Review:\nSafety case claims assessed prior to authorisation:\n  CLAIM-HC-001 (Network Segmentation) — reviewed; NOT SUPPORTED. Its conditions (no dual-homed\n  workstations, no exception rules) are not met. Isolation is the only separation available.\n\nClinical Engineering Assessment:\nIsolation takes the vendor EHR copy off every ward (no on-screen drug history or interaction checks)\nand the pump fleet console offline (all pumps programmed at the bedside from paper charts).\nCompensating control or accepted risk: as recorded in the decision log.\nThe clinical risk of proceeding is accepted.\n\nAuthorised by: David Osei, Clinical Safety Engineer\nSignature: D. Osei\nDate/Time: [SESSION TIMESTAMP]\n\nNOTE: IT Security co-authorisation also required before execution.",
+              "text": "NORTHGATE GENERAL HOSPITAL NHS TRUST\nCLINICAL SAFETY SIGN-OFF — NETWORK ISOLATION\n\nChange Reference: INC-2025-1103-001\nChange Type: Emergency Network Isolation — Enterprise Zone\n\nClinical Safety Review:\nSafety case claims assessed prior to authorisation:\n  CLAIM-HC-001 (Network Segmentation) — reviewed; NOT SUPPORTED. Its conditions (no dual-homed\n  workstations, no exception rules) are not met. Isolation is the only separation available.\n\nClinical Engineering Assessment:\nIsolation takes the vendor EHR copy off every ward (no on-screen drug history or interaction checks)\nand the pump fleet console offline (no central view of the pumps and no library updates; every pump set at the bedside from paper charts).\nCompensating control or accepted risk: as recorded in the decision log.\nThe clinical risk of proceeding is accepted.\n\nAuthorised by: David Osei, Head of Clinical Engineering and Clinical Safety Officer\nSignature: D. Osei\nDate/Time: [SESSION TIMESTAMP]\n\nNOTE: IT Security co-authorisation also required before execution.",
               "observations": "A signed clinical safety sign-off from David Osei. Documents the safety case review and clinical authorisation for network isolation.",
               "puzzle_graph_role": "item",
               "puzzle_graph_and_with": "IT Network Change Authorisation Form",
@@ -1960,7 +2035,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "eventPattern": "global_variable_changed:patient_bed2_deceased",
               "condition": "value === true",
               "onceOnly": true,
-              "bark": "Ms Okafor? That's HC-003. It was the promise that this couldn't happen.",
+              "bark": "Ms Okafor's dead? That's exactly what the library was meant to stop.",
               "barkDelay": 1500
             }
           ]
@@ -1987,7 +2062,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
     Otherwise she notifies after isolation (post_isolation offers it). ico_deadline still applies. %>
           "currentKnot": "start",
           "voice": {
-            "name": "Aoede",
+            "name": "Pulcherrima",
             "style": "NHS chief information officer in her mid-fifties, decisive and under pressure, clipped and authoritative. Speak with a consistent well-spoken North Yorkshire (Harrogate) accent throughout — do not shift to any other accent.",
             "language": "en-GB"
           },
@@ -2002,7 +2077,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "notify_ncsc",
-              "bark": "The NCSC have our reference. Priya S. is picking it up, and she'll join us once we're recovering.",
+              "bark": "The NCSC have our reference. Priya's picking it up, and she'll join us once we're recovering.",
               "barkDelay": 500
             },
             {
@@ -2036,14 +2111,14 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "eventPattern": "global_variable_changed:patient_bed4_deceased",
               "condition": "value === true",
               "onceOnly": true,
-              "bark": "Bed 4? I have to tell the Board. And his family.",
+              "bark": "Mr Ahmed? I'll have to tell the Board.",
               "barkDelay": 2500
             },
             {
               "eventPattern": "global_variable_changed:patient_bed2_deceased",
               "condition": "value === true",
               "onceOnly": true,
-              "bark": "Bed 2's pump? Then it's a device death as well. I'll tell the Board.",
+              "bark": "Ms Okafor? Through the pump? God. I'll have to tell the Board.",
               "barkDelay": 2500
             }
           ]
@@ -2067,7 +2142,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
     tell patients (patient_disclosure). ico_timing sets hartley_backs_early_ico for Helen. %>
           "currentKnot": "start",
           "voice": {
-            "name": "Kore",
+            "name": "Gacrux",
             "style": "Consultant and Caldicott Guardian in her late fifties, cautious, precise, slightly formal. Speak with a consistent Edinburgh, Scottish accent throughout — do not shift to any other accent.",
             "language": "en-GB"
           },

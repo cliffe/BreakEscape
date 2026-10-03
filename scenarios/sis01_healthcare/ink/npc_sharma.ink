@@ -36,6 +36,8 @@ VAR backup_recovery_source = ""
 VAR backup_reinfected = false
 VAR ransom_advice = ""
 VAR vpn_anomaly_identified = false
+VAR pump_console_advice = ""
+VAR safety_claim_hc003_assessed = false
 
 VAR sharma_met = false
 
@@ -48,7 +50,7 @@ VAR sharma_met = false
     Priya S.: {&Ready now?|When you are.}
 - else:
     ~ sharma_met = true
-    Priya S.: I'm Priya S., NCSC incident management. Are you ready to go through it, or is there something to finish first?
+    Priya S.: I'm Priya, from the NCSC's incident management team. Are you ready to go through it, or is there something to finish first?
 }
 + [I'm ready.]
     -> main_debrief
@@ -61,7 +63,7 @@ VAR sharma_met = false
 === main_debrief ===
 #complete_task:attend_debrief
 Priya S.: I've read Helen's draft for the patient safety incident review, and the decision log.
-Priya S.: I'm not here to blame anyone. What we learn here goes into guidance for every trust in England.
+Priya S.: I'm not here to blame anyone. What we learn here goes back out to other trusts.
 Priya S.: Patients first.
 -> patient_outcomes
 
@@ -88,8 +90,8 @@ Priya S.: Patients first.
 }
 {
 - patient_bed2_deceased:
-    Priya S.: Ms Okafor died of a morphine overdose. The tampered library let the wrong rate through without a murmur, and nobody raised the alarm in time.
-    Priya S.: It goes to the MHRA as a device report as well as our review. Her family are owed the truth under the duty of candour.
+    Priya S.: Ms Okafor died of a morphine overdose. The tampered library accepted the wrong rate without a warning, and nobody raised the alarm in time.
+    Priya S.: It goes to the MHRA as a device report as well as the Trust's review. Her family are owed the truth under the duty of candour.
 - pump_dose_error and bed2_alarm_raised:
     Priya S.: Ms Okafor got the wrong rate, and nothing in the pump stopped it. Someone raised the alarm in time, and she had naloxone.
     Priya S.: That was the last check left. It worked because someone was looking.
@@ -120,32 +122,55 @@ Priya S.: One question on that pump. Suppose it tells you the prescribed dose is
 
 === safety_claims ===
 Priya S.: Now the safety case. A claim is only as good as its "provided that".
+{safety_claim_hc001_assessed:
+    -> hc001_owner
+}
+-> hc001_valid
+
+// Round 2 (PRI-5): a player who judged HC-001 with David gets a different
+// question about the same claim (who checks it, and how often).
+=== hc001_owner ===
+{
+- hc001_verdict == "invalid":
+    Priya S.: HC-001. On the day, you told David it never held. Good.
+- hc001_verdict == "holds":
+    Priya S.: HC-001. On the day you told David it held. Most people do, until they read the conditions.
+- hc001_verdict == "held_until_attack":
+    Priya S.: HC-001. On the day you said it held until the attack. The exceptions were older than the attack.
+- else:
+    Priya S.: HC-001. David went through it with you on the day.
+}
+Priya S.: Whose job was it to check that claim against the network, and how often?
+* [Clinical engineering, once a year.]
+    Priya S.: Better than never. But it should be checked whenever the network changes. The VLAN project changed it every month.
+* [Whoever changes the network, every time they change it.]
+    Priya S.: Yes. A claim with "provided that" in it needs someone watching the "provided".
+- -> hc003_review
+
+=== hc001_valid ===
 Priya S.: HC-001. Was it valid at eight o'clock on Monday morning, before anyone got in?
-* [Yes. The attack broke it.]
+* [Yes. The firewall was in. The attack broke it.]
     Priya S.: That's what most people say. Read its conditions: no dual-homed workstations, no exception rules. Both had been there for eighteen months.
-* [No. Its own conditions weren't met, so it never held.]
+* [It held until the attackers found the exception rules.]
+    Priya S.: Those rules were there long before the attackers were. A claim whose "provided" is already false never held.
+* [No. The dual-homed PCs and the exception rules were already there.]
     Priya S.: Yes. Ward 7 was never on the new VLAN. Nobody had checked the claim against the hospital since it was written.
 -
-{
-- safety_claim_hc001_assessed && hc001_verdict == "invalid":
-    Priya S.: David tells me you reached that on the day. Good.
-- safety_claim_hc001_assessed && hc001_verdict == "holds":
-    Priya S.: On the day you told David it held. Most people do, until they read the conditions.
-- safety_claim_hc001_assessed && hc001_verdict == "held_until_attack":
-    Priya S.: On the day you said it held until the attack. The exceptions were older than the attack.
-- safety_claim_hc001_assessed:
-    Priya S.: David went through it with you on the day.
-- network_isolated:
+{network_isolated:
     Priya S.: Nobody looked at it before the isolation decision. That's a governance finding for the review.
 - else:
     Priya S.: Nobody looked at it during the incident. That's a governance finding for the review.
 }
+-> hc003_review
+
+=== hc003_review ===
 Priya S.: HC-003 says library changes are authorised, controlled and audited before they reach a pump. Did that control fail, or did the attacker beat it?
 * [The attacker beat it. Nothing would have stopped that.]
     Priya S.: Something would have. A change at quarter to seven on a Monday evening, outside any change window, with no pharmacist's sign-off.
+    Priya S.: A random fault doesn't pick the one drug that kills, or the hour the pharmacy's gone home. This one did.
     Priya S.: The audit log recorded it. Nobody was reading the log.
 * [It failed. An unauthorised change went through and nobody noticed.]
-    Priya S.: Yes. The control existed on paper. The audit log had the change in it, and nobody read it.
+    Priya S.: Right. The control existed on paper. The audit log had the change in it, and nobody read it.
 -
 {
 - drug_library_compromised && drug_library_restored:
@@ -168,20 +193,22 @@ Priya S.: HC-003 says library changes are authorised, controlled and audited bef
 - else:
     Priya S.: You isolated without both sign-offs. The outcome was right. The process is the control, and it was skipped.
 }
-Priya S.: HC-007 also promised a rehearsal every year. The last was nineteen months ago. This morning was the rehearsal.
+Priya S.: HC-007 also promised a rehearsal every year. The last one was nineteen months ago. Today was the first test since.
 Priya S.: So: who should decide on isolation, and why?
-* [IT security. It's a security call; clinical sign-off is a formality.]
+* [IT security. They're the ones who can see the attacker.]
     Priya S.: It takes the vendor's EHR copy off every ward. That makes it a clinical decision too. Neither side sees the whole cost alone.
+* [The executive on call. They own the Trust's risk.]
+    Priya S.: When the two disagree, yes. But the exec needs both views in front of them, and HC-007 is how they get them.
 * [IT security and clinical engineering together. Each sees a cost the other misses.]
-    Priya S.: Yes. Ravi sees the attacker. David sees what the wards lose. HC-007 exists so neither decides alone.
+    Priya S.: That's it. Ravi sees the attacker. David sees what the wards lose. HC-007 exists so neither decides alone.
 -
 {
 - isolation_compensating_controls:
-    Priya S.: And pharmacy was on the wards before the link went. Most teams forget that part.
+    Priya S.: And the wards had their printouts before the link went. Most teams forget that part.
 - isolation_risk_accepted:
-    Priya S.: You cut it with no pharmacy cover and wrote the risk down, with an owner. Honest, and the wards were still exposed.
+    Priya S.: You cut it with no printouts and no pharmacy cover, and wrote the risk down, with an owner. Honest, but the wards were still exposed.
 - else:
-    Priya S.: Nobody arranged pharmacy cover before the link went. For a while, no ward could check an allergy on screen.
+    Priya S.: Nobody got the printouts out before the link went. For a while, no ward could check an allergy except from memory.
 }
 -> regulatory
 
@@ -216,7 +243,7 @@ Priya S.: NHS England had your NIS report on Monday night. That one's statutory 
 - patient_disclosure == "wait":
     Priya S.: Patients won't hear until forensics is done. If the records turn up on a leak site first, they'll hear it from a journalist.
 - patient_disclosure == "only_if_leaked":
-    Priya S.: Telling patients only if the data appears online gets Article 34 backwards. It asks about the risk to them.
+    Priya S.: Telling patients only if the data turns up online gets Article 34 backwards. It's about their risk. Our embarrassment doesn't come into it.
 }
 -> recovery
 
@@ -244,11 +271,11 @@ Priya S.: NHS England had your NIS report on Monday night. That one's statutory 
 }
 {
 - ransom_advice == "dont_pay":
-    Priya S.: You told Helen not to pay. That's NHS policy, and it's right. Paying buys a promise from a criminal.
+    Priya S.: You told Helen not to pay. That's government policy for the NHS, and it's right.
 - ransom_advice == "pay":
-    Priya S.: You told Helen paying might be faster. It funds the next attack, and they keep the records either way.
+    Priya S.: You told Helen to consider paying. It wouldn't have been faster, it funds the next attack, and they keep the records either way.
 - ransom_advice == "board":
-    Priya S.: You left the ransom to the Board. Fair, but they wanted your view. The answer was always the restore.
+    Priya S.: You left the ransom to the Board, with the costs in front of them. Fair. The answer was always the restore.
 }
 -> root_cause
 
@@ -258,12 +285,12 @@ Priya S.: NHS England had your NIS report on Monday night. That one's statutory 
 // ===========================================
 
 === root_cause ===
-Priya S.: Last question from me. How did they get in?
-* [A leaver's account that nobody had disabled.]
-    Priya S.: The account was live. Marcus Blake still works for NetSol. Someone stole his password; he wasn't the one using it.
-* [An unpatched VPN.]
-    Priya S.: Nothing points at that. The VPN let them in because it never asked for a second factor.
-* [Phishing on a finance PC, and a stolen contractor password with no MFA.]
+Priya S.: Now, how did they get in?
+* [Phishing on a finance PC. That's where the first alert fired.]
+    Priya S.: That's one. The other was a stolen NetSol password on the VPN, the same morning, with no second factor.
+* [A stolen NetSol password on the VPN, with no MFA.]
+    Priya S.: That's one. The other was a phishing email on a finance PC, the same morning.
+* [Both: the phishing email and the stolen VPN password.]
     Priya S.: Both. Two ways in on the same Monday morning.
 -
 {not vpn_anomaly_identified:
@@ -281,20 +308,34 @@ Priya S.: None of that is exotic. MFA on every remote login is in your DSPT. So 
 === risk_review ===
 Priya S.: Your Board will read all of this as risk, so let's put it that way.
 Priya S.: The contractor's MFA exemption, the vendor's VPN, Ward 7's old segment. What did they have in common?
-* [Each was a risk someone accepted, and nobody reviewed.]
-    Priya S.: Yes. Accepting a risk is a decision, with an owner and a review date. Here the dates passed and the owners moved on.
-* [Each was a technical failure.]
-    Priya S.: Those controls were never put in. Each was an accepted risk that came due.
-* [Bad luck. Each one was unlikely.]
+* [Each was a risk someone accepted.]
+    Priya S.: Yes. Accepting a risk is a decision, with an owner and a review date. Here the review dates passed, and nobody looked again.
+* [Each was a control the Trust didn't know was missing.]
+    Priya S.: They knew. Each one was written down somewhere. That's what makes it worse.
+* [Each was unlikely on its own.]
     Priya S.: Unlikely, perhaps. But likelihood times impact, with patients on the other side, gave a number nobody would sign today.
 -
+Priya S.: Someone called Ward 7's exceptions "as low as reasonably practicable". That means you've done all that's reasonable. A project stalled for a year isn't that.
 {sarah_given_soon_estimate:
-    Priya S.: Your "soon" to Sarah was a risk decision too. You took it for Mr Ahmed without the facts.
+    Priya S.: Your "soon" to Sarah was a risk decision too. It was taken for Mr Ahmed, without the facts to back it.
 }
-{helen_tamper_view_heard:
-    Priya S.: Helen and David disagreed this morning. Two owners, two real risks, both said out loud. That part worked.
+{helen_tamper_view_heard and safety_claim_hc003_assessed:
+    Priya S.: Helen and David disagreed about the pump console. Two owners, two real risks, both said out loud. That part worked.
 }
-Priya S.: Today you made the same kind of call. Isolation swapped one risk for another. Fine, if you can name what's left and who owns it.
+{
+- pump_console_advice == "hold":
+    Priya S.: You backed David on the pump console. Slower, but every mistake on paper was one somebody could see.
+- pump_console_advice == "console_back":
+    Priya S.: You backed Helen on the pump console. Defensible on paper risk. But restoring the server doesn't check the library, and that console would have kept pushing it out.
+- pump_console_advice == "view_only":
+    Priya S.: You offered the exec a console with library pushes switched off. Less risk, and someone has to prove it works first. That's the kind of option they need.
+}
+{network_isolated:
+    Priya S.: Today you made the same kind of call. Isolation swapped one risk for another.
+    Priya S.: What's left over is your residual risk. Fine, if you can name it and say who owns it.
+- else:
+    Priya S.: Leaving the network connected was a risk decision too. Nobody wrote down who owned it, or what it might cost.
+}
 -> closing
 
 
@@ -304,7 +345,7 @@ Priya S.: Today you made the same kind of call. Isolation swapped one risk for a
 
 === closing ===
 Priya S.: One more thing, and it's the one I'd like you to take away.
-Priya S.: Everything that failed today was known before Monday. The segmentation gap, the vendor VPN, the overdue rehearsal.
+Priya S.: Almost everything that failed today was known before Monday. The segmentation gap, the vendor VPN, the overdue rehearsal.
 Priya S.: People knew, and the hospital kept running, because nothing had gone wrong yet. That's normalisation of deviance.
 * [What do you do about that?]
     Priya S.: Make the risk visible, regularly, to people who can act on it. A register nobody reads is just a list.

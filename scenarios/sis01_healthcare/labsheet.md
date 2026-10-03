@@ -164,7 +164,7 @@ Nothing that failed at Northgate was new. Each failure had been known about, and
 
 > Question: Q9. Restoring from backup before the network was isolated risked reinfection. How did you choose a backup source, and what did you trade off between recovery time and confidence the backup was clean?
 
-> Question: Q10. Helen wanted containment before telling the ICO. Under UK GDPR Article 33, when did the Trust's 72 hours start, what could the first notification say while the investigation was still running, and who else had to be told (NHS England under the NIS Regulations, NCSC, patients under the duty of candour)?
+> Question: Q10. Helen wanted containment before telling the ICO. Under UK GDPR Article 33, when did the Trust's 72 hours start, what could the first notification say while the investigation was still running, and who else had to be told (NHS England under the NIS Regulations, the NCSC, patients under Article 34, and anyone harmed by their care under the duty of candour)?
 
 > Question: Q11. Mr Ahmed in Bed 4 was deteriorating while nobody was watching his monitor. Why is escalating a clinical concern part of a cyber incident response, and whose job was it?
 
@@ -190,7 +190,7 @@ The hazard chain at Northgate was: **cyber attack → loss of a safety function 
 
 > Question: Q15. Isolating the network was a security action that created a safety hazard (lost allergy checks). Which claim was meant to catch that kind of hazard, and did the Trust's process honour it in your run?
 
-> Question: Q16. IT security, clinical engineering and nursing each used words like "safe", "incident" and "restored" differently. Find one moment in the game where that caused, or nearly caused, a wrong decision.
+> Question: Q16. IT security, clinical engineering and nursing each used words like "safe", "contained", "incident" and "restored" differently. Find one moment in the game where that caused, or nearly caused, a wrong decision.
 
 > Question: Q17. Where did defence in depth work, and where did it fail? Was the segmentation between the IT network and the medical device network doing the job the safety case said it did?
 

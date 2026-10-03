@@ -11,6 +11,7 @@ VAR drug_library_compromised = false
 VAR drug_library_restored = false
 VAR pump_dose_correct = false
 VAR pump_dose_error = false
+VAR patient_bed2_deceased = false
 
 // Local tracking vars for this NPC
 VAR pharmacist_arrived = false
@@ -31,6 +32,11 @@ VAR asked_normal = false
     -> hub
 }
 ~ pharmacist_arrived = true
+// Round 3: met after the library is already restored, so skip the "until it's verified" lines.
+{drug_library_restored:
+    Hamza Iqbal: Hamza Iqbal, on-call pharmacist. Helen sent me up about the drug library.
+    -> pump_safety_protocols
+}
 Hamza Iqbal: Hamza Iqbal, on-call pharmacist. Helen's sent me up. The drug library's been changed?
 Hamza Iqbal: Then nothing new goes on any pump until it's verified. Anything already running stays on its current rate.
 -> arrival_choices
@@ -39,23 +45,25 @@ Hamza Iqbal: Then nothing new goes on any pump until it's verified. Anything alr
 + {drug_library_compromised and not told_change} [They raised the morphine minimum from half a milligram to twenty an hour.]
     ~ told_change = true
     Hamza Iqbal: Twenty? The ward range is half to four. So the pump calls every correct dose too low, and offers to fix it.
-    Hamza Iqbal: That's aimed at a tired nurse who clears every warning.
+    Hamza Iqbal: Whoever did that knows how wards work. You see a warning forty times a shift, you stop reading it.
     -> arrival_choices
 + {not asked_bed2} [What about Ms Okafor in Bed 2?]
     ~ asked_bed2 = true
     {
+    - patient_bed2_deceased:
+        Hamza Iqbal: I've heard. Her pump's quarantined, and I'm going through her chart for the review.
     - pump_dose_correct:
-        Hamza Iqbal: She's on two, from her chart, and I've checked it. That pump stays as it is until the library's verified.
+        Hamza Iqbal: She's on two, from her chart, and I've checked it. That pump stays put until the library's verified.
     - pump_dose_error:
         Hamza Iqbal: I'm checking what went into her pump now. Whatever it was, it wasn't what her chart says.
     - else:
         Hamza Iqbal: Her infusion's finished and she needs her analgesia. Paper chart, two people check the rate, every digit read aloud.
-        Hamza Iqbal: If the pump argues with the chart, we don't argue back. We stop, and you call me to check it.
+        Hamza Iqbal: If the pump disagrees with the chart, the chart wins. Stop, and ring me.
     }
     -> arrival_choices
 + {not asked_override} [So if the pump flags it, we just override?]
     ~ asked_override = true
-    Hamza Iqbal: No. Clearing warnings out of habit is exactly what this attack relies on.
+    Hamza Iqbal: No. They're counting on you doing exactly that.
     Hamza Iqbal: Keep the prescribed rate. Don't change the number to please the pump. Get a pharmacist to check before it runs.
     -> arrival_choices
 + [I'll let you get on.]
@@ -71,7 +79,7 @@ Hamza Iqbal: Then nothing new goes on any pump until it's verified. Anything alr
 
 === pump_safety_protocols ===
 ~ resumption_confirmed = true
-Hamza Iqbal: The library's back. I've checked its hash against the signed copy, and the morphine limits against the maker's sheet.
+Hamza Iqbal: The library's back, and it matches the signed copy. I've been through the morphine limits myself. Half to four, as it should be.
 Hamza Iqbal: Pumps can go back into use, with a second nurse checking every new rate at the bedside and me spot-checking.
 -> protocol_choices
 
@@ -82,7 +90,7 @@ Hamza Iqbal: Pumps can go back into use, with a second nurse checking every new 
     -> protocol_choices
 + {not asked_normal} [When can we go back to normal?]
     ~ asked_normal = true
-    Hamza Iqbal: When the fleet console is back on a properly separated network and checked. A day or two. Not faster.
+    Hamza Iqbal: When the pump console's back on its own network and I've checked it. IT will call it restored before I call it safe.
     -> protocol_choices
 + [Thank you.]
     Hamza Iqbal: Thank you for taking it seriously.
@@ -97,7 +105,7 @@ Hamza Iqbal: Pumps can go back into use, with a second nurse checking every new 
 {hub_quiet:
     ~ hub_quiet = false
 - else:
-    Hamza Iqbal: {&Yes?|What do you need?|Go on.}
+    Hamza Iqbal: {&You alright?|What do you need?|Yeah, go ahead.}
 }
 + {drug_library_restored and not resumption_confirmed} [Can the pumps go back into use?]
     -> pump_safety_protocols

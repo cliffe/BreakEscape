@@ -50,11 +50,11 @@ Mrs Kowalski: You're the one from IT?
 Mrs Kowalski: You all look like you've been up all night with this.
 Mrs Kowalski: The nurses are doing their best. Don't blame them if things slip.
 + [How are you feeling?]
-    Mrs Kowalski: I had my hip done on Monday. They'd no beds on ortho, so I've ended up on the heart ward.
-    Mrs Kowalski: My daughter would be asking all the questions you should be asking. She's not here yet, so I'm stuck doing it.
+    Mrs Kowalski: Sore. I had my hip done on Monday, and they'd no beds on ortho, so here I am with the heart patients.
+    Mrs Kowalski: My daughter's coming at visiting. She'll have questions for all of you, believe me.
     -> hub
 + [I won't. They're doing well.]
-    Mrs Kowalski: The ward was chaos when I woke up. Clipboards everywhere. But Sarah didn't panic. That matters.
+    Mrs Kowalski: It was chaos when I woke up. Clipboards everywhere. But Sarah kept her head. You notice that, lying here.
     -> hub
 
 
@@ -73,7 +73,7 @@ Mrs Kowalski: Now it's a nurse with a clipboard every hour. If something happens
     Mrs Kowalski: Not me. That poor man in Bed 4. His machine's been beeping since before I woke up.
     -> hub
 + [We're working on it.]
-    Mrs Kowalski: I hope so. I don't want to be the reason you all have a bad day at work.
+    Mrs Kowalski: I hope so. That screen was a comfort, you know. Somebody always watching.
     -> hub
 
 
@@ -113,7 +113,7 @@ Mrs Kowalski: Could you get someone? I don't like making a fuss, but I don't lik
 === drug_safety_concern ===
 ~ drug_asked = true
 Mrs Kowalski: The pharmacist was round. He says they're doing the drips by hand until the computer's checked.
-Mrs Kowalski: Somebody hacked the medicines? That's a lot to take in from a hospital bed.
+Mrs Kowalski: Somebody's been at the computer that does the medicines? From outside? That's a lot to take in from a hospital bed.
 + [By hand is safer right now.]
     Mrs Kowalski: I suppose a person can see what they're doing. A machine just does what it's told.
     -> hub
@@ -140,11 +140,11 @@ Mrs Kowalski: Somebody hacked the medicines? That's a lot to take in from a hosp
 {hub_quiet:
     ~ hub_quiet = false
 - else:
-    Mrs Kowalski: {&Have you got a minute?|Still here, love.|Go on.}
+    Mrs Kowalski: {&Have you got a minute?|Still here, love.|Is that you again?}
 }
 + {not bed2_asked and not pump_dose_error and not pump_dose_correct} [Have you noticed anything on the ward?]
     ~ bed2_asked = true
-    Mrs Kowalski: That lady in Bed 2. Her drip's run out and the pump keeps bleeping for a new rate.
+    Mrs Kowalski: That lady in Bed 2. Her drip's nearly empty, and that machine keeps bleeping and nobody's come.
     Mrs Kowalski: Somebody ought to see to her. Her pain will be back soon.
     -> hub
 + {not monitoring_addressed} [How are you managing without the monitors?]

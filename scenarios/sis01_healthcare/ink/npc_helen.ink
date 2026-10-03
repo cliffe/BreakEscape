@@ -22,6 +22,8 @@ VAR ransom_advice = ""
 VAR network_isolation_authorised = false
 VAR drug_library_compromised = false
 VAR helen_tamper_view_heard = false
+VAR drug_library_restored = false
+VAR patient_bed2_deceased = false
 
 VAR helen_trust = 0
 VAR helen_met = false
@@ -59,13 +61,20 @@ VAR asked_next = false
 ~ helen_met = true
 Helen Carver: Helen Carver, CIO. I'm running the Trust's response and the reporting.
 Helen Carver: NHS England had our NIS incident report at eleven last night. That one's statutory, and it's done.
-Helen Carver: The ICO is next. Our clock started at 22:38 on Monday, when this reached the on-call manager. Seventy-two hours.
+{ico_notified:
+    Helen Carver: The ICO has our first report. Their clock started at twenty to eleven on Monday night, when this reached the on-call manager.
+- else:
+    Helen Carver: The ICO is next. Our clock started at twenty to eleven on Monday night, when this reached the on-call manager. Seventy-two hours.
+}
 {not network_isolated and not ico_notified:
     #set_global:helen_ico_view_heard:true
     Helen Carver: I'll notify them once we've contained this and know what was taken. One report, and an accurate one.
 }
 + [What do you need from me?]
-    {network_isolated:
+    {
+    - backup_restore_initiated:
+        Helen Carver: Your read on the drug library, and anything the review should hear from you. The restore's under way.
+    - network_isolated:
         Helen Carver: Your read on what the attacker reached and what we restore from. The backup console's by the command board.
     - else:
         Helen Carver: Your read on what the attacker reached, and a network I can call contained. Ravi's office first, then David here.
@@ -118,7 +127,7 @@ Helen Carver: Not until the network's isolated. I won't tell the ICO it's contai
     ~ ico_argued = true
     Helen Carver: And say what? "We don't know what was taken"? I'd rather send one report that's right.
     -> ico_argument
-+ {ico_argued and ico_guidance_read} [The IG briefing says: report measures proposed, and send the rest in phases.]
++ {ico_argued and ico_guidance_read} [The IG briefing says we report what we've got now, and the rest in phases.]
     -> helen_persuaded
 + {ico_argued and hartley_backs_early_ico} [Dr Hartley says notify now. It's her call to advise on.]
     -> helen_persuaded
@@ -185,17 +194,17 @@ Helen Carver: NHS England's cyber team will pass our report on to the NCSC. Aski
 === backup_advisory ===
 ~ topic_backup = true
 Helen Carver: Three ways back for the EHR. Our NAS, the tape library, or the vendor's cloud copy.
-Helen Carver: The status report is in the console. Eighteen hours more on paper is a clinical risk too. Pick the one you can defend.
+Helen Carver: The status report's in the console. Every hour the wards spend on paper is a clinical risk too. Pick the one you can defend.
 -> backup_choices
 
 === backup_choices ===
 + {not asked_reinfection} [What about reinfection?]
     ~ asked_reinfection = true
-    Helen Carver: Good question. Where's the attacker now? If the answer is "still in the network", you know what to do first.
+    Helen Carver: Where's the attacker now? If they're still inside, anything you restore just gets hit again.
     -> backup_choices
 + {not asked_rpo} [How much do we lose, and how long does it take?]
     ~ asked_rpo = true
-    Helen Carver: Two different questions. How much we lose is the recovery point. How long it takes is the recovery time.
+    Helen Carver: Two different questions. How much we lose is the RPO. How long it takes is the RTO.
     Helen Carver: The report gives both for each source. Don't let anyone blur them.
     -> backup_choices
 + {not asked_appetite} [How much risk will the Board accept here?]
@@ -216,7 +225,11 @@ Helen Carver: The status report is in the console. Eighteen hours more on paper 
 #set_global:safety_claim_hc007_assessed:true
 Helen Carver: HC-007 says our plan tells us when to isolate clinical systems, and that we rehearse it every year.
 Helen Carver: The last rehearsal was nineteen months ago. So this morning is the rehearsal.
-Helen Carver: What we can still keep is the joint decision. Ravi's sign-off and David's, both, before anyone cuts the link.
+{network_isolated:
+    Helen Carver: What we could still keep was the joint decision. Ravi's sign-off and David's, both, before anyone cut the link.
+- else:
+    Helen Carver: What we can still keep is the joint decision. Ravi's sign-off and David's, both, before anyone cuts the link.
+}
 -> hc007_choices
 
 === hc007_choices ===
@@ -241,19 +254,19 @@ Helen Carver: What we can still keep is the joint decision. Ravi's sign-off and 
 ~ ransom_discussed = true
 Helen Carver: One point two million. The Board meets at nine, and they'll ask what the response team thinks.
 Helen Carver: The note says don't call the police. We did, on Monday night. What do I tell the Board?
-* [Don't pay. It funds the next attack and guarantees nothing.]
+* [Don't pay. We can restore, and paying funds the next one.]
     ~ ransom_advice = "dont_pay"
     #set_global:ransom_advice:dont_pay
-    Helen Carver: That's NHS policy, and mine. So the restore is our only way back, and we live with its timings.
-* [Pay, if it's the fastest way to get the monitors back.]
+    Helen Carver: That's the government's line for the NHS, and mine. So the restore is our only way back, and we live with its timings.
+* [Consider it. Patients are at risk now, and the restore takes most of a day.]
     ~ ransom_advice = "pay"
     #set_global:ransom_advice:pay
-    Helen Carver: Paying buys a promise from a criminal and maybe a key that works. They'd still have the records.
+    Helen Carver: Paying buys a promise from a criminal, and maybe a key. Even a key that works takes days to decrypt everything. It wouldn't get Sarah's monitors back this morning.
     Helen Carver: The Board won't pay, and I won't ask them to. Our way back is the restore.
-* [That's the Board's decision, not mine.]
+* [That's the Board's call. I'd tell them what each option costs.]
     ~ ransom_advice = "board"
     #set_global:ransom_advice:board
-    Helen Carver: It is. But "no view" doesn't help them much. For the record, we're not paying.
+    Helen Carver: Then come to the Board at nine and do that. For the record, we're not paying.
 - -> hub
 
 
@@ -263,13 +276,17 @@ Helen Carver: The note says don't call the police. We did, on Monday night. What
 
 === post_isolation ===
 ~ iso_told = true
-{ico_notified:
+{
+- ico_notified:
     Helen Carver: We're isolated. The ICO already has our first report, so I'll send an update saying so.
-    Helen Carver: Next is the restore. The backup console's by the command board.
+    {not backup_restore_initiated:
+        Helen Carver: Next is the restore. The backup console's by the command board.
+    }
     -> hub
+- ico_deadline_missed:
+    -> ico_advisory
 }
-Helen Carver: We're isolated. That's the containment I wanted before going to the ICO.
-Helen Carver: Next is the restore. The backup console's by the command board. But first, the ICO.
+Helen Carver: We're isolated. That's the containment I wanted before going to the ICO. I can send it now.
 -> ico_send_choice
 
 
@@ -282,19 +299,19 @@ Helen Carver: Next is the restore. The backup console's by the command board. Bu
 ~ asked_next = true
 {
 - backup_recovery_source == "cloud_vendor" && network_isolated:
-    Helen Carver: Cloud restore's running. Eighteen hours, so the wards stay on paper until tonight. I'll tell the Board.
+    Helen Carver: Cloud restore's running. Eighteen hours, so the wards are on paper till the early hours. I'll tell the Board.
 - backup_recovery_source == "cloud_vendor":
     Helen Carver: It's running, but the attacker may still be in the network. If they reach the restore, we start again.
 - backup_recovery_source == "nas_encrypted":
-    Helen Carver: The NAS was the encrypted source. That restore was never going to work. I need your reasoning for the review.
+    Helen Carver: The NAS was encrypted with everything else. That restore was never going to work. I need your reasoning for the review.
 - backup_recovery_source == "tape_wiped":
-    Helen Carver: The tape catalogue was wiped. We can't vouch for anything that comes back. That goes in the review.
+    Helen Carver: The tape catalogue's been wiped. The tapes will come back clean, but it's three to five days before we know what's on them.
 - else:
     Helen Carver: A restore's started. I need the source confirmed for the record.
 }
 Helen Carver: Sign the restore record for me. Source, method, time, and who authorised it.
-+ [Done. What review?]
-    Helen Carver: Our patient safety incident review. Under PSIRF, NHS England's framework, it's about learning, not finding someone to blame.
++ [Done. Where does the record go?]
+    Helen Carver: Into the patient safety review. We run those under PSIRF now. The point is to learn from it, and nobody's hung out to dry.
     -> post_backup_ncsc
 + [Done.]
     Helen Carver: Thank you.
@@ -302,7 +319,7 @@ Helen Carver: Sign the restore record for me. Source, method, time, and who auth
 
 === post_backup_ncsc ===
 {ncsc_notified:
-    Helen Carver: Priya S. at the NCSC will want this record for her debrief.
+    Helen Carver: Priya at the NCSC will want this record for her debrief.
     -> hub
 }
 Helen Carver: We still haven't asked the NCSC for help directly. Do you want me to?
@@ -323,11 +340,24 @@ Helen Carver: We still haven't asked the NCSC for help directly. Do you want me 
 
 === post_drug_tamper ===
 ~ tamper_told = true
+Helen Carver: I've sent the on-call pharmacist down to Ward 7.
+// Round 3: a late talk checks what has happened since the tamper was found.
+{
+- drug_library_restored:
+    Helen Carver: And I gather the library's back from the signed copy. Good. The pump console can come back once David's satisfied.
+    -> hub
+- patient_bed2_deceased:
+    Helen Carver: Ms Okafor's death makes this a patient safety incident as well as a cyber one. Her pump's evidence now.
+- else:
+    Helen Carver: If pumps loaded that library, this is a patient safety incident as well as a cyber one.
+}
 ~ helen_tamper_view_heard = true
 #set_global:helen_tamper_view_heard:true
-Helen Carver: I've sent the on-call pharmacist down to Ward 7.
-Helen Carver: If pumps loaded that library, this is a patient safety incident as well as a cyber one.
-Helen Carver: And I want that fleet console back the minute the restore's done. Every hour on paper carries its own risk.
+{backup_restore_initiated:
+    Helen Carver: The restore's running, and I want that pump console back the minute it's done. Every hour on paper carries its own risk.
+- else:
+    Helen Carver: And I want that pump console back the minute the restore's done. Every hour on paper carries its own risk.
+}
 Helen Carver: David will tell you to wait. He answers for clinical safety, I answer for getting the Trust running. Hear us both.
 -> hub
 
@@ -350,7 +380,7 @@ Helen Carver: David will tell you to wait. He answers for clinical safety, I ans
 {hub_quiet:
     ~ hub_quiet = false
 - else:
-    Helen Carver: {&What else?|Go on.|I've got a minute.}
+    Helen Carver: {&What else?|I've got a minute.|Quickly.}
 }
 + {network_isolated and not backup_initiated and not asked_next} [We're isolated. What's next?]
     ~ asked_next = true
@@ -358,7 +388,7 @@ Helen Carver: David will tell you to wait. He answers for clinical safety, I ans
     -> hub
 + {not ico_notified} [Where are we with the ICO?]
     -> ico_advisory
-+ {not topic_backup} [How do we get the EHR back?]
++ {not topic_backup and not backup_restore_initiated} [How do we get the EHR back?]
     -> backup_advisory
 + {not hc007_assessed} [What does the safety case say about isolating?]
     -> safety_case_hc007
@@ -366,8 +396,8 @@ Helen Carver: David will tell you to wait. He answers for clinical safety, I ans
     -> ransom_talk
 + {not asked_exception} [Who owns the vendor's VPN exception?]
     ~ asked_exception = true
-    Helen Carver: Clinical Engineering, on paper. It went on as a temporary exception, with a review due seven months ago.
-    Helen Carver: Nobody reviewed it. An accepted risk stays accepted long after the reasons for accepting it have gone.
+    Helen Carver: Clinical Engineering, on paper. It went on as a temporary exception, and the last review was seven months ago.
+    Helen Carver: Nobody's looked at it since. It just sat there, accepted, while everything round it changed.
     -> hub
 + {not ncsc_notified and not topic_ncsc} [Should we bring in the NCSC?]
     -> ncsc_advisory

@@ -49,7 +49,7 @@ VAR deadline_warned = false
 ~ hartley_met = true
 ~ hub_quiet = true
 Dr Fiona Hartley: Fiona Hartley. Consultant anaesthetist, and the Trust's Caldicott Guardian.
-Dr Fiona Hartley: Patient information is my responsibility. Who sees it, who it's shared with, and who's told when it's lost.
+Dr Fiona Hartley: I speak for patients' confidentiality. When their records are at risk, I want to know who's telling them, and when.
 -> hub
 
 
@@ -120,17 +120,18 @@ Dr Fiona Hartley: The report can say what we're about to do, and the rest can fo
 === isolation_concern ===
 ~ topic_isolation = true
 Dr Fiona Hartley: Ward 7 lost the EHR last night. Every other ward can still read the vendor's cloud copy: allergies, drug charts.
-Dr Fiona Hartley: Cut the link and they lose it too. Ms Okafor's wristband says penicillin. It won't tell you what she's had today.
+Dr Fiona Hartley: Cut the link and they lose it too. A wristband says penicillin. It won't tell you what the patient's had today.
 -> isolation_choices
 
 === isolation_choices ===
-+ [Then we put pharmacy on every drug round before we isolate.]
++ [Then every ward prints its allergy and drug lists first, and pharmacy checks by phone.]
     ~ isolation_compensating_controls = true
     #set_global:isolation_compensating_controls:true
     ~ hartley_trust += 10
     #influence_increased
-    Dr Fiona Hartley: Then I'll support it. Pharmacy is the compensating control, and what's left is a risk I can live with.
-    Dr Fiona Hartley: I'll ask Helen to redeploy them now.
+    Dr Fiona Hartley: Then I'll support it. The printouts and pharmacy cover most of it. What's left, I can live with, and it goes on the log with my name.
+    Dr Fiona Hartley: It isn't free. The print run takes the best part of an hour, and pharmacy will have to hold discharges to staff the phones.
+    Dr Fiona Hartley: I'll get Helen to send the print order out now.
     -> hub
 + [The attacker's still in. We isolate now and catch up.]
     ~ isolation_risk_accepted = true
@@ -163,7 +164,7 @@ Dr Fiona Hartley: The note threatens to publish records. Forensics won't know wh
     #set_global:patient_disclosure:only_if_leaked
     Dr Fiona Hartley: That puts our embarrassment ahead of their risk. Article 34 asks about the risk to them.
 - {patient_bed2_deceased or patient_bed4_deceased or pump_dose_error:
-    Dr Fiona Hartley: And anyone harmed today is owed more than a letter. The duty of candour means we tell the family in person.
+    Dr Fiona Hartley: And anyone harmed today is owed more than a letter. Duty of candour: we tell them, or their family, in person.
 }
 -> hub
 
@@ -176,7 +177,7 @@ Dr Fiona Hartley: The note threatens to publish records. Forensics won't know wh
 ~ candour_discussed = true
 Dr Fiona Hartley: The truth, in person, as soon as we can. That's the duty of candour. We say what happened, and we say sorry.
 {patient_bed2_deceased:
-    Dr Fiona Hartley: And Ms Okafor's pump goes to the MHRA. A device that harmed a patient is reportable.
+    Dr Fiona Hartley: And Ms Okafor's pump is quarantined and reported to the MHRA. A device involved in a death always is.
 }
 -> hub
 
@@ -205,13 +206,12 @@ Dr Fiona Hartley: We'll have to explain the delay in the notification. The ICO w
     Dr Fiona Hartley: We can, and we must. Write down what delayed us and who decided.
     -> hub
 + [I didn't know about the deadline.]
-    Dr Fiona Hartley: The tablet by the window has been counting down all morning. Information governance isn't optional in an incident.
+    Dr Fiona Hartley: The tablet by the window has been counting down all morning. Next time, look at it.
     -> hub
 
 === ncsc_advisory ===
 ~ topic_ncsc = true
-Dr Fiona Hartley: I think so. NHS England was the statutory report, and Helen made it. The NCSC is voluntary.
-Dr Fiona Hartley: But they've seen this group before, and they warn other trusts. Ask Helen to request their help.
+Dr Fiona Hartley: I would. They've seen this group before, and they'll warn other trusts. Ask Helen.
 -> hub
 
 
@@ -229,9 +229,9 @@ Dr Fiona Hartley: But they've seen this group before, and they warn other trusts
 {hub_quiet:
     ~ hub_quiet = false
 - else:
-    Dr Fiona Hartley: {&Yes?|What can I help with?|Go on.}
+    Dr Fiona Hartley: {&What can I help with?|You've a question?|Yes, go ahead.}
 }
-+ {(patient_bed2_deceased or patient_bed4_deceased) and not candour_discussed} [What do we owe the family?]
++ {(patient_bed2_deceased or patient_bed4_deceased or pump_dose_error) and not candour_discussed} [What do we owe anyone who was harmed today?]
     -> candour
 + {helen_ico_view_heard and not ico_notified and not hartley_backs_early_ico} [Helen wants this contained before she tells the ICO.]
     -> ico_timing

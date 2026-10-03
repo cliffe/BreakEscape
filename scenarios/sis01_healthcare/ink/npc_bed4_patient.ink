@@ -23,7 +23,7 @@ Narrator: Mr Ahmed is restless and pressing his call bell. The numbers on his mo
 
 === state_critical ===
 #set_global:bed4_monitor_viewed:true
-Narrator: Mr Ahmed's lips are dusky and his breathing is shallow. The monitor shows a slow, irregular rhythm. Someone needs to put out the crash call now.
+Narrator: Mr Ahmed's lips are dusky and his breathing is shallow. The monitor shows a slow, irregular rhythm.
 -> hub.choices
 
 === state_deceased ===
