@@ -100,7 +100,7 @@ export class BackupRecoveryMinigame extends MinigameScene {
         this.gameContainer.className += ' backup-recovery-game-container';
         this.headerElement.style.display = 'none';
 
-        this.sources = this.resolveSources();
+        this.sources = this.resolveSources().map((source) => this.applyWhenAvailable(source));
         const persistedSourceId = window.gameState?.globalVariables?.backup_recovery_source || null;
         const hasValidPersistedSource = !!persistedSourceId
             && this.sources.some((source) => source.id === persistedSourceId);
@@ -230,6 +230,25 @@ export class BackupRecoveryMinigame extends MinigameScene {
 
     isSourceAvailable(source) {
         return this.getUnmetRequirement(source) === null;
+    }
+
+    /**
+     * Opt-in (sis01 blind playtest 2): a source may declare `whenAvailable`, card and
+     * panel fields (status, statusTone, marker, bannerText, bullets...) that replace
+     * its own once its `needs` / `requiresGlobal` are met, so a card stops saying
+     * "unverified" after the check that verifies it. Read when the console opens.
+     * Sources without `whenAvailable` are returned unchanged.
+     */
+    applyWhenAvailable(source) {
+        if (!source || !source.whenAvailable || typeof source.whenAvailable !== 'object') {
+            return source;
+        }
+        const { whenAvailable, ...base } = source;
+        if (!this.isSourceAvailable(base)) {
+            return base;
+        }
+        const { id, needs, requiresGlobal, ...overrides } = whenAvailable;
+        return { ...base, ...overrides };
     }
 
     getSelectedSource() {
