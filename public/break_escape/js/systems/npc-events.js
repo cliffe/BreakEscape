@@ -48,11 +48,12 @@ export default class NPCEventDispatcher {
     const exact = this.listeners.get(eventType) || [];
     for (const fn of exact) try { fn(data); } catch (e) { console.error(e); }
 
-    // wildcard-style listeners where eventType is a prefix (e.g. 'npc:')
+    // wildcard-style listeners where eventType is a prefix (e.g. 'npc:'); they also
+    // get the event name, since the payload doesn't always say which event it was
     for (const [key, arr] of this.listeners.entries()) {
       if (key.endsWith('*')) {
         const prefix = key.slice(0, -1);
-        if (eventType.startsWith(prefix)) for (const fn of arr) try { fn(data); } catch (e) { console.error(e); }
+        if (eventType.startsWith(prefix)) for (const fn of arr) try { fn(data, eventType); } catch (e) { console.error(e); }
       }
     }
   }

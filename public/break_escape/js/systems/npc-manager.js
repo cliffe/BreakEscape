@@ -129,6 +129,7 @@ export default class NPCManager {
     this._restoredTimedPending = new Map(); // id -> { triggerTime } for NPC-level texts not yet re-registered
     this._restoredTimedDelivered = new Set(); // ids of NPC-level texts delivered before a reload
     this._phoneStateSent = new Map(); // npcId -> JSON last confirmed saved (markPhoneStateSynced)
+    this._npcVisibility = new Map(); // npcId -> bool, set by setVisible; saved and applied on register (N2)
     
     // OPTIMIZATION: Cache InkEngine instances and fetched stories
     this.inkEngineCache = new Map(); // { npcId: inkEngine }
@@ -217,6 +218,12 @@ export default class NPCManager {
       for (const field of NPCManager.CONVERSATION_RUNTIME_FIELDS) {
         if (existingEntry[field] !== undefined) entry[field] = existingEntry[field];
       }
+    }
+
+    // Visibility set by setVisible (this session, or saved before a reload) wins over
+    // the room data's isVisible and behavior.initiallyHidden (N2)
+    if (this._npcVisibility.has(realId)) {
+      entry.isVisible = this._npcVisibility.get(realId);
     }
 
     this.npcs.set(realId, entry);
@@ -1195,6 +1202,39 @@ export default class NPCManager {
       this.triggeredEvents.set(key, existing);
     }
     console.log(`📋 Restored ${Object.keys(saved).length} fired onceOnly/maxTriggers handler(s)`);
+  }
+
+  /**
+   * Record an NPC's visibility as set by setVisible (npc-behavior.js setNPCVisible),
+   * so it is saved (exportNpcVisibility) and applied when the NPC registers again.
+   */
+  recordNpcVisibility(npcId, visible) {
+    if (!npcId) return;
+    this._npcVisibility.set(npcId, !!visible);
+    const entry = this.npcs.get(npcId);
+    if (entry) entry.isVisible = !!visible;
+  }
+
+  /** { npcId: bool } for the server (state-sync.js). */
+  exportNpcVisibility() {
+    return Object.fromEntries(this._npcVisibility);
+  }
+
+  /**
+   * Restore saved visibility on load (game.js), before the NPCs register. NPCs
+   * registered already get it now; their sprites read entry.isVisible when created.
+   * @param {Object} saved - { npcId: bool }
+   */
+  restoreNpcVisibility(saved) {
+    if (!saved || typeof saved !== 'object') return;
+    for (const [npcId, visible] of Object.entries(saved)) {
+      if (typeof visible !== 'boolean') continue;
+      if (this._npcVisibility.has(npcId)) continue;   // this session's change wins
+      this._npcVisibility.set(npcId, visible);
+      const entry = this.npcs.get(npcId);
+      if (entry) entry.isVisible = visible;
+    }
+    console.log(`👁️ Restored visibility for ${Object.keys(saved).length} NPC(s)`);
   }
 
   // Check if an event has been triggered for an NPC

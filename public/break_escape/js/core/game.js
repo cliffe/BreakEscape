@@ -31,6 +31,8 @@ import { TILE_SIZE, SPRITE_PADDING_BOTTOM_ATLAS, SPRITE_PADDING_BOTTOM_LEGACY, D
 import { initScenarioMusicEvents } from '../music/scenario-music-events.js';
 import { ScenarioTimerUI } from '../ui/scenario-timer.js';  // [Phase 5] Countdown timer HUD widget
 import { ScenarioTimerDispatcher } from '../ui/scenario-timer-dispatcher.js';  // [Phase 5] Timer event dispatcher
+import { GameClock } from '../systems/game-clock.js';  // Elapsed game time (resumes after a reload) and the in-game clock
+import { CommandBoardRecorder } from '../minigames/command-board/command-board-timeline.js';  // Board entries stamped as they happen
 import { ASSETS_VERSION } from '../config.js';
 
 // Global variables that will be set by main.js
@@ -1005,6 +1007,38 @@ export async function create() {
         window.npcManager?.restoreTimedMessages?.(gameScenario.savedTimedMessages);
     }
 
+    // NPCs revealed or hidden by setVisible (eventMappings) before a reload. Applied when
+    // each NPC registers, over behavior.initiallyHidden, since a onceOnly reveal doesn't
+    // replay (N2).
+    if (gameScenario.savedNpcVisibility) {
+        window.npcManager?.restoreNpcVisibility?.(gameScenario.savedNpcVisibility);
+    }
+
+    // Game time: resumes from the elapsed time saved at the last sync, so scenario timers
+    // don't restart on a reload (D14). Also the optional in-game clock (scenario.gameClock).
+    window.gameClock = new GameClock({
+        config: gameScenario.gameClock || null,
+        saved: gameScenario.savedScenarioClock || null
+    });
+
+    // Scenarios with a command board (the server sends its config as commandBoard): record
+    // its entries from game start, each stamped with the game time it happened, even while
+    // the board is closed or its room isn't loaded. Anything true now but not yet recorded
+    // (a save from before this, or a change after the last sync) is stamped now.
+    window.commandBoardRecorder?.detach?.();
+    window.commandBoardRecorder = null;
+    if (gameScenario.commandBoard) {
+        const clock = window.gameClock;
+        window.commandBoardRecorder = new CommandBoardRecorder({
+            config: gameScenario.commandBoard,
+            saved: gameScenario.savedCommandBoardLog || [],
+            initialGlobals: gameScenario.globalVariables || {},
+            now: () => clock.elapsedMs()
+        });
+        window.commandBoardRecorder.reconcile(window.gameState.globalVariables);
+        window.commandBoardRecorder.attach(window.eventDispatcher, () => window.gameState.globalVariables);
+    }
+
     // Phone threads (texts, read state, story position). Applied to each contact as
     // it registers, which for phone NPCs is the starting room's NPC load below (E9).
     if (gameScenario.savedPhoneState) {
@@ -1526,7 +1560,13 @@ export async function create() {
 
     // [Phase 5] Initialize scenario timer dispatcher (fires timers and dispatches events)
     if (gameScenario?.timers && gameScenario.timers.length > 0) {
-        window.scenarioTimerDispatcher = new ScenarioTimerDispatcher(gameScenario);
+        // Resumes from its own saved elapsed time (normally the game clock's); a new game
+        // starts with the game clock
+        const savedTimers = gameScenario.savedScenarioClock?.timers || null;
+        window.scenarioTimerDispatcher = new ScenarioTimerDispatcher(gameScenario, {
+            startTime: Number.isFinite(savedTimers?.elapsedMs) ? undefined : window.gameClock?.startTime,
+            saved: savedTimers
+        });
         console.log(`⏱️ Scenario timer dispatcher initialized`);
     }
 

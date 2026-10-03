@@ -311,6 +311,24 @@ module BreakEscape
           filtered['savedTimedMessages'] = @game.player_state['timedMessages']
         end
 
+        # Game clock and scenario timers, so a reload resumes them (D14).
+        if @game.player_state['scenarioClock'].present?
+          filtered['savedScenarioClock'] = @game.player_state['scenarioClock']
+        end
+
+        # Command board: its config (rooms are stripped above) so the client records its
+        # entries from game start, and the entries recorded so far ([{ id, t }]).
+        board_config = @game.command_board_config
+        unless board_config.nil?
+          filtered['commandBoard'] = board_config
+          filtered['savedCommandBoardLog'] = @game.player_state['commandBoardLog'] if @game.player_state['commandBoardLog'].present?
+        end
+
+        # NPCs shown or hidden by setVisible, so a reveal survives a reload (N2).
+        if @game.player_state['npcVisibility'].present?
+          filtered['savedNpcVisibility'] = @game.player_state['npcVisibility']
+        end
+
         # Phone threads (texts, read state, story position) per phone contact.
         if @game.player_state['phoneState'].present?
           filtered['savedPhoneState'] = @game.player_state['phoneState']
@@ -671,6 +689,18 @@ module BreakEscape
 
       if params[:phoneState].respond_to?(:to_unsafe_h)
         @game.merge_phone_state!(params[:phoneState].to_unsafe_h)
+      end
+
+      if params[:scenarioClock].respond_to?(:to_unsafe_h)
+        @game.merge_scenario_clock!(params[:scenarioClock].to_unsafe_h)
+      end
+
+      if params[:npcVisibility].respond_to?(:to_unsafe_h)
+        @game.merge_npc_visibility!(params[:npcVisibility].to_unsafe_h)
+      end
+
+      if params[:commandBoardLog].is_a?(Array)
+        @game.merge_command_board_log!(params[:commandBoardLog].map { |e| e.respond_to?(:to_unsafe_h) ? e.to_unsafe_h : e })
       end
 
       # Persist notes (including player observations).
@@ -1891,9 +1921,10 @@ module BreakEscape
     end
 
     def npc_state_params
-      # Only allow KO status and HP changes (validated further in model)
+      # Only allow KO status, HP and visibility changes (validated further in model).
+      # isVisible was sent by setNPCVisible but dropped here, so the update was rejected.
       params.require(:data).require(:stateChanges).permit(
-        :isKO, :currentHP
+        :isKO, :currentHP, :isVisible
       ).to_h
     end
 

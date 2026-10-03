@@ -1,5 +1,6 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
+import { currentClockText } from '../../systems/game-clock.js';
 
 const STATE_KEY = 'mg01_siem_state';
 
@@ -16,13 +17,6 @@ function normalizeSeverity(severity) {
     if (value === 'HIGH') return 'HIGH';
     if (value === 'MEDIUM' || value === 'MED') return 'MED';
     return 'LOW';
-}
-
-function formatClock(date) {
-    const hh = String(date.getHours()).padStart(2, '0');
-    const mm = String(date.getMinutes()).padStart(2, '0');
-    const ss = String(date.getSeconds()).padStart(2, '0');
-    return `${hh}:${mm}:${ss}`;
 }
 
 function formatTimer(totalSeconds) {
@@ -676,7 +670,8 @@ export class SiemDashboardMinigame extends MinigameScene {
 
     updateHeaderClock() {
         if (this.systemClockEl) {
-            this.systemClockEl.textContent = formatClock(new Date());
+            // In-game time when the scenario sets one (scenario.gameClock), else the wall clock (D8)
+            this.systemClockEl.textContent = currentClockText(true);
         }
     }
 

@@ -246,7 +246,7 @@ def check_unknown_fields(json_data)
   # Known top-level fields
   known_top_level = %w[
     scenario_id scenario_name scenario_brief endGoal version startRoom startPosition
-    show_scenario_brief disableAttacks flags music startItemsInInventory globalVariables
+    show_scenario_brief disableAttacks gameClock flags music startItemsInInventory globalVariables
     player objectives rooms npcs phoneNPCs narrator timers _comment mutuallyExclusiveGlobals
   ]
 
@@ -279,7 +279,7 @@ def check_unknown_fields(json_data)
 
   # Known eventMapping fields
   known_event_mapping_fields = %w[
-    eventPattern condition onceOnly maxTriggers cooldown
+    eventPattern condition onceOnly maxTriggers cooldown fireOnlyWhenLoaded
     bark message barkDelay
     targetKnot conversationMode background disableClose
     patrolOverride setPatrolSpeed setDwellMultiplier setVisible
@@ -2956,6 +2956,228 @@ def recurring_norm_words(text)
   text.to_s.downcase.gsub(/<%.*?%>/, ' ').gsub(/\*[^*]*\*/, ' ').scan(/[a-z0-9']+/)
 end
 
+# ─────────────────────────────────────────────────────────────
+# NPC eventMappings that can miss their event (sis01 Priya S., ico_deadline_missed)
+#
+# NPCs register room by room as the player gets there (npc-lazy-loader.js loadNPCsForRoom ->
+# npc-manager.js registerNPC -> _setupEventMappings), and the start room loads first. A mapping on
+# an NPC in any other room only listens once that room has loaded, so a global change, pickup,
+# KO or objective completion that happens earlier passes unheard. Phone NPCs are not special:
+# they register with the room that lists them (conventionally the start room), so the same
+# rule applies to one placed elsewhere. Only mappings with a lasting effect (anything beyond
+# bark/barkDelay and the trigger fields) are judged: a missed bark harms nobody. A mapping opts out with "fireOnlyWhenLoaded": true.
+# Events tied to a place (door_*, object_interacted, lockpick_used_in_view, minigame_*,
+# fingerprint_*, card_cloned, attack/hostile events) are not judged: they depend on where the
+# player is, which the validator can't tell.
+# ─────────────────────────────────────────────────────────────
+def check_unheard_room_triggers(json_data, repo_root)
+  issues = []
+  rooms = json_data['rooms'].is_a?(Hash) ? json_data['rooms'] : {}
+  start_room = json_data['startRoom']
+  return issues unless start_room && rooms[start_room]
+
+  npc_room = {}
+  npc_person = {}
+  rooms.each do |rid, room|
+    Array(room['npcs']).each do |n|
+      next unless n.is_a?(Hash)
+      npc_room[n['id']] = rid
+      npc_person[n['id']] = true if n['npcType'] == 'person'
+    end
+  end
+
+  # item type -> rooms that hold one (objects, their contents, NPC itemsHeld). Start inventory
+  # counts as the start room.
+  type_rooms = Hash.new { |h, k| h[k] = Set.new }
+  collect = lambda do |rid, list|
+    Array(list).each do |o|
+      next unless o.is_a?(Hash)
+      type_rooms[o['type']] << rid if o['type']
+      type_rooms[o['id']] << rid if o['id']
+      collect.call(rid, o['contents'])
+    end
+  end
+  rooms.each do |rid, room|
+    collect.call(rid, room['objects'])
+    Array(room['npcs']).each { |n| collect.call(rid, n['itemsHeld']) if n.is_a?(Hash) }
+  end
+  collect.call(start_room, json_data['startItemsInInventory'])
+
+  globals = (json_data['globalVariables'] || {}).keys.to_set
+  tasks_by_id = {}
+  Array(json_data['objectives']).each { |a| Array(a['tasks']).each { |t| tasks_by_id[t['taskId']] = t if t.is_a?(Hash) } }
+
+  # Where each global gets set. A global only ever set by a person NPC's ink in the listener's own
+  # room (or a note in it) can't change before the player is there, so it needs no relay. Anything
+  # else (mapping setGlobal, timers, phone NPCs, engine-set, no setter found) is :any.
+  setters = Hash.new { |h, k| h[k] = Set.new }
+  rooms.each do |rid, room|
+    Array(room['npcs']).each do |n|
+      next unless n.is_a?(Hash) && n['storyPath'].is_a?(String)
+      ink = File.join(repo_root, n['storyPath'].sub(/\.json\z/, '.ink'))
+      next unless File.exist?(ink)
+      code = File.readlines(ink).reject { |l| l.strip.start_with?('//') }.join
+      where = n['npcType'] == 'phone' ? :any : rid
+      code.scan(/#\s*set_global:(\w+)/).flatten.each { |g| setters[g] << where }
+      code.scan(/~\s*(\w+)\s*(?:=|\+\+|--|\+=|-=)/).flatten.each { |g| setters[g] << where }
+    end
+  end
+  walk_setters = lambda do |node, room_id|
+    case node
+    when Hash
+      node.each do |k, v|
+        if k == 'setVariable' && v.is_a?(Hash)
+          v.each_key { |g| setters[g] << (room_id || :any) } # a note's onRead/onPickup: happens where the note is
+        elsif k == 'setGlobal' && v.is_a?(Hash)
+          # A mapping's setGlobal happens where its trigger does: entering a room, or a KO or
+          # conversation with a person NPC. Any other trigger (timer, global change) is :any.
+          pe = node['eventPattern'].to_s
+          pev, parg = pe.split(':', 2)
+          at = case pev
+               when 'room_entered' then parg if rooms.key?(parg)
+               when 'npc_ko', 'conversation_closed' then npc_room[parg] if npc_person[parg]
+               end
+          v.each_key { |g| setters[g] << (at || :any) }
+        elsif k == 'globalVarOnKO' && v.is_a?(String)
+          setters[v] << (node['npcType'] == 'person' && room_id ? room_id : :any)
+        elsif k == 'setGlobalOnStart' && v.is_a?(String)
+          setters[v] << :any
+        end
+        walk_setters.call(v, room_id)
+      end
+    when Array
+      node.each { |v| walk_setters.call(v, room_id) }
+    end
+  end
+  rooms.each { |rid, room| walk_setters.call(room, rid) }
+  # A minigame object names the global it sets in its own config ("key": "x", "setGlobal": ...),
+  # and it can only be used where it stands. Fields that only read a global don't count.
+  reads_only = /skipIf|requires?|condition|waitFor|unlock|visible|hide|show|only/i
+  # Globals an object type's minigame sets from engine code, with no name in the object's config.
+  # backup-recovery-minigame.js: setGlobalAndNotify on confirm.
+  minigame_sets = { 'backup_recovery' => %w[backup_recovery_source recovery_eta_hours backup_restore_initiated] }
+  scan_object = lambda do |node, rid|
+    case node
+    when Hash
+      (minigame_sets[node['type']] || []).each { |g| setters[g] << rid }
+      node.each do |k, v|
+        next if k == 'eventMappings' || k =~ reads_only
+        setters[v] << rid if v.is_a?(String) && globals.include?(v)
+        scan_object.call(v, rid)
+      end
+    when Array
+      node.each { |v| scan_object.call(v, rid) }
+    end
+  end
+  rooms.each { |rid, room| scan_object.call(room['objects'], rid) }
+  walk_setters.call(json_data.reject { |k, _| k == 'rooms' }, nil)
+
+  # Relays: mappings on start-room NPCs (always loaded) that set globals, by event pattern
+  relays = Hash.new { |h, k| h[k] = Set.new }
+  Array(rooms[start_room]['npcs']).each do |n|
+    next unless n.is_a?(Hash)
+    Array(n['eventMappings']).each do |m|
+      next unless m.is_a?(Hash) && m['setGlobal'].is_a?(Hash)
+      relays[m['eventPattern']].merge(m['setGlobal'].keys)
+    end
+  end
+
+  adjacency = Hash.new { |h, k| h[k] = Set.new }
+  rooms.each do |r, room|
+    (room['connections'] || {}).each_value do |v|
+      Array(v).each { |o| (adjacency[r] << o; adjacency[o] << r) if o.is_a?(String) }
+    end
+  end
+  reach_cache = {}
+  reachable_without = lambda do |blocked| # rooms reachable from the start room without entering `blocked`
+    reach_cache[blocked] ||= begin
+      seen = Set[start_room]
+      queue = [start_room]
+      until queue.empty?
+        cur = queue.shift
+        adjacency[cur].each { |o| next if o == blocked || seen.include?(o); seen << o; queue << o }
+      end
+      seen
+    end
+  end
+  presentation_only_fields = %w[eventPattern condition onceOnly maxTriggers cooldown fireOnlyWhenLoaded bark message barkDelay _comment]
+
+  rooms.each do |rid, room|
+    next if rid == start_room
+    Array(room['npcs']).each_with_index do |npc, ni|
+      next unless npc.is_a?(Hash)
+      # What this NPC's own room-entry mappings read (a relay sets one of these globals)
+      entry_reads = Array(npc['eventMappings'])
+                    .select { |m| m.is_a?(Hash) && m['eventPattern'].to_s == "room_entered:#{rid}" }
+                    .map { |m| m['condition'].to_s }.join(' ')
+      Array(npc['eventMappings']).each_with_index do |m, mi|
+        next unless m.is_a?(Hash) && m['eventPattern'].is_a?(String)
+        next if m['fireOnlyWhenLoaded'] == true
+        # A bark (or any presentation-only mapping) missed in another room is harmless: nobody was
+        # there to hear it. Warn only if the mapping changes state the player meets later.
+        next if (m.keys - presentation_only_fields).empty?
+        pat = m['eventPattern']
+        ev, arg = pat.split(':', 2)
+        reason = nil
+        case ev
+        when 'global_variable_changed'
+          # Fine if only this room can set it, or if the NPC's own room_entered mapping reads the
+          # same global (a catch-up for a player who arrives after the change)
+          # Also fine if the mapping's own condition needs a global that only this room can set
+          # (the player has been here already, so the NPC is registered).
+          needs_local = m['condition'].to_s.scan(/(?<!!)globalVars\.(\w+)/).flatten.any? { |g| g != arg && setters[g] == Set[rid] }
+          unless setters[arg] == Set[rid] || needs_local || entry_reads =~ /\b#{Regexp.escape(arg.to_s)}\b/
+            reason = "global '#{arg}' can change before the player has been in '#{rid}'"
+          end
+        when 'room_entered'
+          # Fine if every route from the start room to '#{arg}' passes through this NPC's room
+          if arg && arg != rid && rooms.key?(arg) && reachable_without.call(rid).include?(arg)
+            reason = "the player can enter '#{arg}' before '#{rid}' has loaded"
+          end
+        when 'item_picked_up'
+          if arg == '*'
+            reason = "an item can be picked up before the player reaches '#{rid}'"
+          elsif arg && (type_rooms[arg].empty? || type_rooms[arg].any? { |r| r != rid })
+            reason = "item '#{arg}' can be picked up elsewhere before the player reaches '#{rid}'"
+          end
+        when 'npc_ko'
+          reason = "'#{arg}' can be knocked out before the player reaches '#{rid}'" if arg && npc_room[arg] != rid
+        when 'objective_task_completed'
+          # Fine if the task can only be done in this room: talking to an NPC here, or
+          # collecting items that only exist here.
+          task = tasks_by_id[arg]
+          local = task && ((task['type'] == 'npc_conversation' && npc_room[task['targetNPC']] == rid) ||
+                           (task['type'] == 'collect_items' && Array(task['targetItemIds']).any? &&
+                            Array(task['targetItemIds']).all? { |i| type_rooms[i] == Set[rid] }))
+          reason = "the objective can complete before the player reaches '#{rid}'" unless local
+        when 'objective_aim_completed'
+          reason = "the objective can complete before the player reaches '#{rid}'"
+        when 'game_loaded'
+          reason = "'game_loaded' fires before '#{rid}' has loaded"
+        else
+          reason = "a timer event can fire before the player reaches '#{rid}'" if ev =~ /\Atimer/ || ev =~ /_timer\z/
+        end
+        next unless reason
+        # A start-room relay that sets a global this NPC's room-entry mappings read is the fix
+        next if relays[pat].any? { |g| entry_reads =~ /\b#{Regexp.escape(g)}\b/ }
+        mpath = "rooms/#{rid}/npcs[#{ni}]/eventMappings[#{mi}]"
+        who = npc['npcType'] == 'phone' ? "#{npc['id']}, phone NPC" : npc['id'].to_s
+        issues << "⚠️ WARNING: '#{mpath}' (#{who}) listens for '#{pat}', but the NPC is in '#{rid}', " \
+                  "not the start room ('#{start_room}'), so the mapping only exists once '#{rid}' has loaded and #{reason}. " \
+                  "An event that fires earlier passes unheard (sis01: Priya S.'s ico_deadline_missed mapping never ran if the " \
+                  "player hadn't visited the incident room). Relay it: add a mapping for '#{pat}' on an NPC in the start room " \
+                  "that sets a global, and have this NPC's room_entered:#{rid} mapping read that global (sis01's Sarah relay). " \
+                  "If missing the event is fine (the effect only matters when the player is there), add " \
+                  "\"fireOnlyWhenLoaded\": true to the mapping."
+      end
+    end
+  end
+  issues
+rescue => e
+  warn "check_unheard_room_triggers skipped: #{e.message}"
+  []
+end
+
 def check_recurring_bugs(json_data, repo_root)
   issues = []
   rooms = json_data['rooms'].is_a?(Hash) ? json_data['rooms'] : {}
@@ -4073,6 +4295,7 @@ def main
     common_issues += check_lock_credentials(json_data)
     common_issues += check_engine_limits(json_data)
     common_issues += check_recurring_bugs(json_data, repo_root)
+    common_issues += check_unheard_room_triggers(json_data, repo_root)
     common_issues += check_tooling_pass4c(json_data, repo_root)
 
     # Check for recommended fields

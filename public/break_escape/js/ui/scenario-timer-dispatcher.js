@@ -6,8 +6,12 @@ import { applyActions } from '../systems/apply-actions.js';
  * Tracks elapsed game time and fires scenario timers when their delay is reached.
  * When a timer fires, executes its setGlobal action and notifies the UI widget.
  * 
+ * Timers count game time, which resumes after a reload: the dispatcher takes its
+ * start from the GameClock (systems/game-clock.js) and the fired/cancelled/started
+ * state saved at the last sync (exportState, sent by state-sync.js).
+ *
  * USAGE:
- *   window.scenarioTimerDispatcher = new ScenarioTimerDispatcher(scenario);
+ *   window.scenarioTimerDispatcher = new ScenarioTimerDispatcher(scenario, { startTime, saved });
  *   scenarioTimerDispatcher.update(elapsedMs);  // call from game update loop
  * 
  * @class ScenarioTimerDispatcher
@@ -17,11 +21,17 @@ class ScenarioTimerDispatcher {
    * @constructor
    * @param {Object} scenario - Scenario JSON object with timers[] section
    */
-  constructor(scenario) {
+  constructor(scenario, opts = {}) {
     this.scenario = scenario;
     this.timers = scenario.timers || [];
     this.firedTimers = new Set();  // Track which timers have already fired
-    this.startTime = Date.now();
+    const now = Date.now();
+    // Game-time start. After a reload this is "now minus the elapsed time saved at the
+    // last sync" (opts.startTime from the GameClock, or opts.saved.elapsedMs), so the
+    // timers resume where they were instead of restarting from zero (D14).
+    const savedElapsed = Number(opts.saved?.elapsedMs);
+    this.startTime = Number.isFinite(opts.startTime) ? opts.startTime
+      : now - (Number.isFinite(savedElapsed) && savedElapsed > 0 ? savedElapsed : 0);
 
     // ENG-02: per-timer start times for startOnGlobal timers.
     // null = dormant (waiting for startOnGlobal to fire); number = epoch ms when started.
@@ -31,9 +41,28 @@ class ScenarioTimerDispatcher {
     // ENG-02: event subscriptions for cleanup in destroy()
     this._eventSubs = [];
 
+    // Saved at the last sync (exportState): timers already fired or cancelled, and how
+    // long each started startOnGlobal timer had been running.
+    const saved = opts.saved && typeof opts.saved === 'object' ? opts.saved : null;
+    const savedFired = new Set(Array.isArray(saved?.fired) ? saved.fired : []);
+    const savedCancelled = new Set(Array.isArray(saved?.cancelled) ? saved.cancelled : []);
+    const savedStarted = (saved?.started && typeof saved.started === 'object') ? saved.started : {};
+
     for (const timer of this.timers) {
+      if (savedFired.has(timer.id)) {
+        this.firedTimers.add(timer.id);
+        window.scenarioTimerUI?.markFired(timer.id);
+        continue;
+      }
+      if (savedCancelled.has(timer.id)) {
+        this._cancelledTimers.add(timer.id);
+        window.scenarioTimerUI?.markFired(timer.id);
+        continue;
+      }
+
       // Reload/late init: don't restart a timer that has already been cancelled
       // or has already done its job (all its setGlobal keys already hold the target value).
+      // (Kept for games saved before timer state was synced.)
       const globalsNow = window.gameState?.globalVariables || {};
       if (timer.cancelOnGlobal && globalsNow[timer.cancelOnGlobal]) {
         this._cancelTimer(timer, 'cancelOnGlobal already set at init');
@@ -50,9 +79,16 @@ class ScenarioTimerDispatcher {
       }
 
       if (timer.startOnGlobal) {
-        // Check if the variable is already true at init (e.g. game reloaded mid-session)
+        // Check if the variable is already true at init (e.g. game reloaded mid-session).
+        // Resume from the saved running time when there is one; otherwise (an older save,
+        // or the trigger fired after the last sync) start counting now.
         const alreadySet = !!window.gameState?.globalVariables?.[timer.startOnGlobal];
-        this._timerStartTimes.set(timer.id, alreadySet ? Date.now() : null);
+        const ranMs = Number(savedStarted[timer.id]);
+        let startedAt = null;
+        if (alreadySet) {
+          startedAt = Number.isFinite(ranMs) && ranMs >= 0 ? now - ranMs : now;
+        }
+        this._timerStartTimes.set(timer.id, startedAt);
 
         if (!alreadySet) {
           const eventName = `global_variable_changed:${timer.startOnGlobal}`;
@@ -82,6 +118,42 @@ class ScenarioTimerDispatcher {
     }
 
     console.log(`⏱️ ScenarioTimerDispatcher initialized with ${this.timers.length} timer(s)`);
+  }
+
+  /**
+   * Epoch ms a timer counts from: the game start, or (startOnGlobal) the moment its
+   * trigger fired; null while a startOnGlobal timer is dormant. The HUD widget reads
+   * this so its countdown is always the one the dispatcher fires on.
+   */
+  getTimerStartTime(timer) {
+    if (timer?.startOnGlobal) {
+      const startedAt = this._timerStartTimes.get(timer.id);
+      return (startedAt === null || startedAt === undefined) ? null : startedAt;
+    }
+    return this.startTime;
+  }
+
+  /** True once a timer has fired (or was skipped by its condition) or was cancelled. */
+  isDone(timerId) {
+    return this.firedTimers.has(timerId) || this._cancelledTimers.has(timerId);
+  }
+
+  /**
+   * Timer state for the server (state-sync.js, as scenarioClock.timers), so a reload
+   * resumes the timers: elapsed game time, fired and cancelled ids, and how long each
+   * started startOnGlobal timer has been running.
+   */
+  exportState(now = Date.now()) {
+    const started = {};
+    for (const [id, startedAt] of this._timerStartTimes) {
+      if (typeof startedAt === 'number' && !this.isDone(id)) started[id] = Math.max(0, now - startedAt);
+    }
+    return {
+      elapsedMs: Math.max(0, now - this.startTime),
+      fired: Array.from(this.firedTimers),
+      cancelled: Array.from(this._cancelledTimers),
+      started
+    };
   }
 
   /**
@@ -138,11 +210,13 @@ class ScenarioTimerDispatcher {
         if (!conditionResult) {
           console.log(`ℹ️ Timer condition failed for ${timer.id}, skipping execution`);
           this.firedTimers.add(timer.id);  // Still mark as fired (condition block)
+          window.scenarioTimerUI?.markFired(timer.id);
           return;
         }
       } catch (error) {
         console.warn(`⚠️ Failed to evaluate condition for timer ${timer.id}: ${error.message}`);
         this.firedTimers.add(timer.id);
+        window.scenarioTimerUI?.markFired(timer.id);
         return;
       }
     }

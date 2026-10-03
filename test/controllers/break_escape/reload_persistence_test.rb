@@ -358,6 +358,96 @@ module BreakEscape
       assert_equal ['npc:hax:0', 'npc:hax:1'], saved['delivered']
     end
 
+    # =========================================================================
+    # Game clock and scenario timers (D14), NPC visibility (N2)
+    # =========================================================================
+
+    test 'the game clock and timer state sync, only move forward, and come back on load' do
+      game = create_game
+
+      put sync_state_game_url(game), params: { scenarioClock: {
+        elapsedMs: 1_404_000,
+        timers: { elapsedMs: 1_404_000, fired: ['bed4_1'], cancelled: [], started: { 'bed2' => 60_000 } }
+      } }, as: :json
+      assert_response :success
+
+      # A delayed older sync (from before the timer fired) can't wind anything back
+      put sync_state_game_url(game), params: { scenarioClock: {
+        elapsedMs: 1_000_000,
+        timers: { fired: [], cancelled: ['ico'], started: { 'bed2' => 10_000 } }
+      } }, as: :json
+      assert_response :success
+
+      clock = scenario_json(game)['savedScenarioClock']
+      assert_equal 1_404_000, clock['elapsedMs']
+      assert_equal 1_404_000, clock['timers']['elapsedMs']
+      assert_nil clock['changeLog']
+      assert_equal %w[bed4_1], clock['timers']['fired']
+      assert_equal %w[ico], clock['timers']['cancelled']
+      assert_equal({ 'bed2' => 60_000 }, clock['timers']['started'])
+    end
+
+    test 'a timer that has fired drops its running time; bad clock entries are dropped' do
+      game = create_game
+      put sync_state_game_url(game), params: { scenarioClock: {
+        elapsedMs: 5000, timers: { fired: [], started: { 'bed2' => 4000 } }
+      } }, as: :json
+      put sync_state_game_url(game), params: { scenarioClock: {
+        elapsedMs: 'lots',
+        changeLog: [{ k: 'ignored', v: 1, t: 5 }],
+        timers: { fired: ['bed2', 42], started: { 'x' => -5 } }
+      } }, as: :json
+      assert_response :success
+
+      clock = game.reload.player_state['scenarioClock']
+      assert_equal 5000, clock['elapsedMs']
+      assert_nil clock['changeLog'], 'there is no general change log any more'
+      assert_equal %w[bed2], clock['timers']['fired']
+      assert_equal({}, clock['timers']['started'])
+    end
+
+    test 'command board log: earliest stamp wins, settled entries kept, sent only with a board' do
+      game = create_game
+      put sync_state_game_url(game), params: { commandBoardLog: [{ id: 'ncsc_notified', t: 42_000 }, { id: 'pump_dose_error_caught', t: -1 }] }, as: :json
+      put sync_state_game_url(game), params: { commandBoardLog: [{ id: 'ncsc_notified', t: 99_000 }, { id: 'bad', t: 'x' }, { id: 'siem', t: 50_000 }] }, as: :json
+      assert_response :success
+
+      assert_equal [{ 'id' => 'pump_dose_error_caught', 't' => -1 }, { 'id' => 'ncsc_notified', 't' => 42_000 }, { 'id' => 'siem', 't' => 50_000 }],
+                   game.reload.player_state['commandBoardLog']
+      json = scenario_json(game)
+      assert_nil json['commandBoard'], 'no board in this scenario'
+      assert_nil json['savedCommandBoardLog']
+
+      game.scenario_data['rooms']['lobby']['objects'] = [{ 'type' => 'command_board', 'id' => 'command_board' }]
+      game.save!
+      json = scenario_json(game)
+      assert_equal({}, json['commandBoard'])
+      assert_equal 3, json['savedCommandBoardLog'].length
+    end
+
+    test 'NPC visibility syncs, the latest value wins, and it comes back on load' do
+      game = create_game
+      put sync_state_game_url(game), params: { npcVisibility: { 'hamza' => true, 'priya' => false } }, as: :json
+      put sync_state_game_url(game), params: { npcVisibility: { 'priya' => true, 'bad' => 'yes' } }, as: :json
+      assert_response :success
+
+      assert_equal({ 'hamza' => true, 'priya' => true }, scenario_json(game)['savedNpcVisibility'])
+    end
+
+    test 'update_npc_state accepts isVisible (it used to be dropped and the update refused)' do
+      game = create_game
+      game.scenario_data['rooms']['lobby']['npcs'] = [{ 'id' => 'hamza', 'npcType' => 'person' }]
+      game.save!
+
+      post update_room_game_url(game), params: {
+        roomId: 'lobby', actionType: 'update_npc_state',
+        data: { npcId: 'hamza', stateChanges: { isVisible: true } }
+      }, as: :json
+
+      assert_response :success
+      assert_equal true, game.reload.player_state.dig('room_states', 'lobby', 'npc_states', 'hamza', 'isVisible')
+    end
+
     private
 
     def scenario_json(game)

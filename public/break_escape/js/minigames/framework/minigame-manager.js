@@ -101,6 +101,8 @@ export const MinigameFramework = {
         // Create and start the minigame
         const MinigameClass = this.registeredScenes[sceneType];
         this.currentMinigame = new MinigameClass(container, params);
+        this.currentMinigame._sceneType = sceneType;
+        this._updateBarkLayer();
         this.currentMinigame.init();
         this.currentMinigame.start();
         
@@ -108,6 +110,23 @@ export const MinigameFramework = {
         return this.currentMinigame;
     },
     
+    /**
+     * True while a minigame that barks would cover is open. Barks are then held and
+     * played when it closes (npc-barks.js), and any already showing drop behind it:
+     * they sat on top and hid minigame panels (D5). Phone chat keeps barks on top,
+     * since a bark there is a notification for another thread.
+     */
+    holdsBarks() {
+        const m = this.currentMinigame;
+        if (!m || m._ending) return false;
+        return m._sceneType !== 'phone-chat';
+    },
+
+    _updateBarkLayer() {
+        if (typeof document === 'undefined' || !document.body) return;
+        document.body.classList.toggle('minigame-holds-barks', this.holdsBarks());
+    },
+
     endMinigame(success, result) {
         console.log('endMinigame called with success:', success, 'result:', result);
         if (this.currentMinigame && this.currentMinigame._ending) {
@@ -174,6 +193,11 @@ export const MinigameFramework = {
             // DOM is an orphan (it would sit over the canvas swallowing clicks).
             if (!this.currentMinigame) {
                 document.querySelectorAll('.minigame-container:not([data-external])').forEach(el => el.remove());
+            }
+            // Barks held back while the minigame was open play now (D5)
+            this._updateBarkLayer();
+            if (!this.currentMinigame) {
+                window.barkSystem?.drainDeferredBarks?.();
             }
             console.log(`Ended minigame with success: ${success}`);
         } else {

@@ -20,6 +20,7 @@ import { processGameActionTags, determineSpeaker as determineSpeakerFromTags } f
 import npcConversationStateManager from '../../systems/npc-conversation-state.js';
 import TTSManager from '../../systems/tts-manager.js';
 import { rememberNpcLine, getRememberedNpcLine, reopenContextLine } from './person-chat-reopen.js';
+import { startEventConversation } from './person-chat-event-start.js';
 
 // Configuration constants for dialogue auto-advance timing
 const DIALOGUE_AUTO_ADVANCE_DELAY = 5000; // Default delay in milliseconds for new dialogue text (5 seconds)
@@ -461,11 +462,18 @@ export class PersonChatMinigame extends MinigameScene {
                 return;
             }
             
-            // If a startKnot was provided (event-triggered conversation), jump directly to it
-            // This skips state restoration and goes straight to the event response
+            // If a startKnot was provided (event-triggered conversation or video call), restore
+            // the NPC's saved story state first (ink-local VARs, visit counts, once-only choice
+            // history), then go to the event's knot. Jumping in a fresh story reset them (D2).
             if (this.startKnot) {
-                console.log(`⚡ Event-triggered conversation: jumping directly to knot: ${this.startKnot}`);
-                this.conversation.goToKnot(this.startKnot);
+                console.log(`⚡ Event-triggered conversation: restoring saved state, then knot: ${this.startKnot}`);
+                startEventConversation({
+                    npcId: this.npcId,
+                    story: this.inkEngine.story,
+                    conversation: this.conversation,
+                    startKnot: this.startKnot,
+                    stateManager: npcConversationStateManager
+                });
             } else {
                 // Otherwise, restore previous conversation state if it exists
                 const stateRestored = npcConversationStateManager.restoreNPCState(

@@ -158,6 +158,9 @@
 }
 
 .cb-entry-tile {
+    /* Don't let the scrolling list squash a tile to min-height: three-line
+       entries were clipped into the next card (D10) */
+    flex-shrink: 0;
     display: grid;
     grid-template-columns: 4px minmax(0, 1fr) auto;
     gap: 8px;

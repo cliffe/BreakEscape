@@ -38,6 +38,10 @@
       "type": "boolean",
       "description": "When true the player cannot attack: no punching, no interact/attack mode toggle, and no combat tutorial step. For non-combat scenarios such as the SIS serious games."
     },
+    "gameClock": {
+      "type": ["object", "string"],
+      "description": "Optional in-game clock: { \"start\": \"Tue 07:30\" } (or just the string). Clock displays (command board, SIEM) then show this start time plus elapsed game time instead of the real wall clock. Elapsed game time resumes after a reload."
+    },
     "flags": {
       "type": "object",
       "description": "Top-level VM flag data, keyed by VM name. Use ERB helper vm_flags_json() to populate.",
@@ -617,6 +621,10 @@
         "onceOnly": { "type": "boolean" },
         "maxTriggers": { "type": "integer" },
         "cooldown": { "type": "integer" },
+        "fireOnlyWhenLoaded": {
+          "type": "boolean",
+          "description": "Validator opt-out, no effect in the game. An NPC outside the start room only listens once its room has loaded, so a global change, pickup, KO or objective event that fires earlier passes unheard, and the validator warns. Set true when missing the event is acceptable (a reaction that only matters if the player is in the room)."
+        },
         "bark": {
           "type": "string",
           "description": "Text to bark above the NPC with a speech bubble (and TTS if NPC has voice)"

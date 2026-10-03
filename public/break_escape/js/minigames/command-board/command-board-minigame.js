@@ -1,220 +1,21 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 
+import {
+    DEFAULT_TITLE,
+    DEFAULT_SUBTITLE,
+    DEFAULT_PRESEED,
+    CommandBoardRecorder,
+    buildEntries,
+    sortEntries,
+    computeStatusRows
+} from './command-board-timeline.js';
+import { currentClockText } from '../../systems/game-clock.js';
+
 const STATE_KEY = 'mg12_command_board_state';
 
-const PRESEED_ENTRIES = [
-    {
-        timestamp: 'Mon 22:38',
-        text: 'MAJOR INCIDENT DECLARED - Enterprise IT systems encrypted.',
-        type: 'security',
-        source: 'preseed',
-        eventKey: 'preseed:major_incident_declared'
-    }
-];
-
-const STATUS_ROW_KEYS = {
-    EHR: 'ehr',
-    MONITORING: 'monitoring',
-    FLEET: 'fleet',
-    BACKUPS: 'backups',
-    NETWORK: 'network',
-    RANSOMWARE: 'ransomware'
-};
-
-const STATUS_CONFIG = [
-    { key: STATUS_ROW_KEYS.EHR, label: 'EHR SYSTEM' },
-    { key: STATUS_ROW_KEYS.MONITORING, label: 'WARD 7 MONITORING' },
-    { key: STATUS_ROW_KEYS.FLEET, label: 'FLEET CONSOLE' },
-    { key: STATUS_ROW_KEYS.BACKUPS, label: 'BACKUPS' },
-    { key: STATUS_ROW_KEYS.NETWORK, label: 'NETWORK' },
-    { key: STATUS_ROW_KEYS.RANSOMWARE, label: 'RANSOMWARE' }
-];
-
-const EVENT_DEFINITIONS = [
-    {
-        id: 'network_isolated_authorised',
-        event: 'global_variable_changed:network_isolated',
-        shouldAppend: (globals) => globals.network_isolated === true && globals.network_isolation_authorised === true,
-        text: 'NETWORK ISOLATED (AUTHORISED) - Dual sign-off confirmed. Clinical zone severed from enterprise; ward central monitoring remains offline.',
-        type: 'response'
-    },
-    {
-        id: 'network_isolated_bypassed',
-        event: 'global_variable_changed:network_isolated',
-        shouldAppend: (globals) => globals.network_isolated === true && globals.network_isolation_authorised !== true,
-        text: 'NETWORK ISOLATED (BYPASSED) - Isolation executed without dual sign-off; governance breach recorded. Ward central monitoring remains offline.',
-        type: 'response'
-    },
-    {
-        id: 'backup_recovery_cloud',
-        event: 'global_variable_changed:backup_recovery_source',
-        shouldAppend: (globals) => normalizeBackupRecoverySource(globals.backup_recovery_source) === 'CLOUD',
-        text: 'CLOUD RESTORE INITIATED - EHR recovery ETA 18 hours; ward monitoring remains on bedside/manual observation in this response window.',
-        type: 'response'
-    },
-    {
-        id: 'backup_recovery_local',
-        event: 'global_variable_changed:backup_recovery_source',
-        shouldAppend: (globals) => {
-            const value = normalizeBackupRecoverySource(globals.backup_recovery_source);
-            return value === 'NAS' || value === 'TAPE';
-        },
-        text: (globals) => {
-            const value = normalizeBackupRecoverySource(globals.backup_recovery_source);
-            return `RECOVERY ATTEMPTED FROM ${value} - WARNING: Source may be compromised`;
-        },
-        type: 'decision'
-    },
-    {
-        id: 'drug_library_verified',
-        event: 'global_variable_changed:drug_library_verified',
-        shouldAppend: (globals) => globals.drug_library_verified === true,
-        text: 'DRUG LIBRARY TAMPERED - Morphine dose limits altered. Pump verification required.',
-        type: 'security'
-    },
-    {
-        id: 'patient_bed4_critical',
-        event: 'global_variable_changed:patient_bed4_state',
-        shouldAppend: (globals) => String(globals.patient_bed4_state || '').toUpperCase() === 'CRITICAL',
-        text: 'PATIENT DETERIORATION - Ward 7 Bed 4. Cardiac arrhythmia. Central monitoring unavailable; bedside alarm escalation required.',
-        type: 'critical'
-    },
-    {
-        id: 'patient_bed4_deceased',
-        event: 'global_variable_changed:patient_bed4_state',
-        shouldAppend: (globals) => String(globals.patient_bed4_state || '').toUpperCase() === 'DECEASED',
-        text: 'PATIENT DEATH - Ward 7 Bed 4. Cardiac arrhythmia. No central monitoring response. Clinical team response delayed 22 minutes.',
-        type: 'critical'
-    },
-    {
-        id: 'patient_bed2_critical',
-        event: 'global_variable_changed:patient_bed2_state',
-        shouldAppend: (globals) => String(globals.patient_bed2_state || '').toUpperCase() === 'CRITICAL'
-            && globals.drug_library_compromised === true,
-        text: 'PATIENT DETERIORATION - Ward 7 Bed 2. Opioid toxicity suspected. Smart pump guardrails failed.',
-        type: 'critical'
-    },
-    {
-        id: 'patient_bed2_deceased',
-        event: 'global_variable_changed:patient_bed2_state',
-        shouldAppend: (globals) => String(globals.patient_bed2_state || '').toUpperCase() === 'DECEASED',
-        text: 'PATIENT DEATH - Ward 7 Bed 2. Morphine overdose. Smart pump guardrails disabled by drug library tampering. Dose error unchallenged.',
-        type: 'critical'
-    },
-    {
-        id: 'ico_notified',
-        event: 'global_variable_changed:ico_notified',
-        shouldAppend: (globals) => globals.ico_notified === true,
-        text: 'ICO NOTIFIED - 72hr statutory notification submitted',
-        type: 'decision'
-    },
-    {
-        id: 'ico_deadline_missed',
-        event: 'global_variable_changed:ico_deadline_missed',
-        shouldAppend: (globals) => globals.ico_deadline_missed === true,
-        text: 'ICO NOTIFICATION DEADLINE MISSED - 72-hour GDPR window expired.',
-        type: 'critical'
-    },
-    {
-        id: 'backup_reinfected',
-        event: 'global_variable_changed:backup_reinfected',
-        shouldAppend: (globals) => globals.backup_reinfected === true,
-        text: 'EHR RESTORE FAILED - Ransomware reactivated from backup. Second rebuild required. Clinical operations extended by 5 days.',
-        type: 'critical'
-    },
-    {
-        id: 'siem_escalated',
-        event: 'global_variable_changed:siem_escalated',
-        shouldAppend: (globals) => globals.siem_escalated === true,
-        text: 'SIEM ALERTS ESCALATED - Critical indicators identified',
-        type: 'response'
-    },
-    {
-        id: 'siem_missed_alerts',
-        event: 'global_variable_changed:siem_missed_alerts',
-        shouldAppend: (globals) => globals.siem_missed_alerts === true,
-        text: 'CRITICAL ALERTS MISSED - delayed escalation',
-        type: 'security'
-    },
-    {
-        id: 'ncsc_notified',
-        event: 'global_variable_changed:ncsc_notified',
-        shouldAppend: (globals) => globals.ncsc_notified === true,
-        text: 'NCSC NOTIFIED - incident support request submitted',
-        type: 'decision'
-    },
-    {
-        id: 'vpn_anomaly_identified',
-        event: 'global_variable_changed:vpn_anomaly_identified',
-        shouldAppend: (globals) => globals.vpn_anomaly_identified === true,
-        text: 'VPN ANOMALY CONFIRMED - Contractor credentials used from Romanian IP, no MFA',
-        type: 'security'
-    },
-    {
-        id: 'safety_claim_hc001_assessed',
-        event: 'global_variable_changed:safety_claim_hc001_assessed',
-        shouldAppend: (globals) => globals.safety_claim_hc001_assessed === true,
-        text: 'SAFETY CLAIM ASSESSED - CLAIM-HC-001 (Network Segmentation) INVALIDATED. Dual-homed workstations and legacy flat segments breach the claim conditions.',
-        type: 'decision'
-    },
-    {
-        id: 'safety_claim_hc003_assessed',
-        event: 'global_variable_changed:safety_claim_hc003_assessed',
-        shouldAppend: (globals) => globals.safety_claim_hc003_assessed === true,
-        text: 'SAFETY CLAIM ASSESSED - CLAIM-HC-003 (Drug Library Integrity) INVALIDATED. Library tampered; change control bypassed; pharmacy approval not obtained.',
-        type: 'decision'
-    },
-    {
-        id: 'safety_claim_hc007_assessed',
-        event: 'global_variable_changed:safety_claim_hc007_assessed',
-        shouldAppend: (globals) => globals.safety_claim_hc007_assessed === true,
-        text: 'SAFETY CLAIM ASSESSED - CLAIM-HC-007 (Integrated Incident Response). Dual-authorisation process engaged. Clinical impact assessed before isolation.',
-        type: 'decision'
-    },
-    {
-        id: 'patient_bed4_attended',
-        event: 'global_variable_changed:patient_bed4_state',
-        shouldAppend: (globals) => String(globals.patient_bed4_state || '').toUpperCase() === 'ATTENDED',
-        text: 'BED 4 PATIENT ESCALATED - Clinical team responding',
-        type: 'response',
-        optional: true
-    },
-    {
-        id: 'paper_charts_collected',
-        event: 'global_variable_changed:paper_charts_collected',
-        shouldAppend: (globals) => globals.paper_charts_collected === true,
-        text: 'PAPER MAR CHARTS RETRIEVED',
-        type: 'response',
-        optional: true
-    },
-    {
-        id: 'pump_dose_correct',
-        event: 'global_variable_changed:pump_dose_correct',
-        shouldAppend: (globals) => globals.pump_dose_correct === true,
-        text: 'BEDSIDE PUMP PROGRAMMED - Dose verified correct',
-        type: 'clinical',
-        optional: true
-    },
-    {
-        id: 'pump_dose_error_caught',
-        event: 'global_variable_changed:pump_dose_error',
-        shouldAppend: (globals) => globals.pump_dose_error === true && globals.drug_library_compromised !== true,
-        text: 'BEDSIDE PUMP PROGRAMMED - Double-check error caught',
-        type: 'clinical',
-        optional: true
-    }
-];
-
-function normalizeBackupRecoverySource(value) {
-    const raw = String(value || '').toUpperCase();
-    if (raw === 'CLOUD_VENDOR') return 'CLOUD';
-    if (raw === 'NAS_ENCRYPTED') return 'NAS';
-    if (raw === 'TAPE_WIPED') return 'TAPE';
-    return raw;
-}
-
-function formatDisplayTimestamp(date = new Date()) {
+// Wall-clock stamp, used only when there is no game clock (tests, old pages)
+function formatWallTimestamp(date = new Date()) {
     const day = date.toLocaleDateString('en-GB', { weekday: 'short' });
     const hh = String(date.getHours()).padStart(2, '0');
     const mm = String(date.getMinutes()).padStart(2, '0');
@@ -235,6 +36,12 @@ export class CommandBoardMinigame extends MinigameScene {
         };
 
         super(container, mergedParams);
+
+        // Scenario config on the command_board object (scenarioData.commandBoard);
+        // without one the board shows its built-in (sis01) entries and status rows
+        const scenarioData = params.lockable?.scenarioData || {};
+        this.boardConfig = (scenarioData.commandBoard && typeof scenarioData.commandBoard === 'object')
+            ? scenarioData.commandBoard : {};
 
         this.entries = [];
         this.manualEntryCount = 0;
@@ -279,9 +86,10 @@ export class CommandBoardMinigame extends MinigameScene {
         this.renderStatusPanel(false);
         this.updateStatusDots();
 
+        // Every few seconds, so an in-game clock keeps pace with game time
         this._clockInterval = setInterval(() => {
             this.updateHeaderClock();
-        }, 60000);
+        }, 5000);
     }
 
     complete(success) {
@@ -335,18 +143,16 @@ export class CommandBoardMinigame extends MinigameScene {
     subscribeScenarioEvents() {
         if (!window.eventDispatcher) return;
 
-        const uniqueEvents = Array.from(new Set(EVENT_DEFINITIONS.map((definition) => definition.event)));
-
-        uniqueEvents.forEach((eventName) => {
-            const handler = () => {
-                this.evaluateAndAppendAllEvents();
-                this.renderStatusPanel(true);
-                this.updateStatusDots();
-            };
-
-            window.eventDispatcher.on(eventName, handler);
-            this._eventSubs.push({ event: eventName, handler });
-        });
+        // Any global can matter (scenario timelines watch their own), so listen to all;
+        // the game clock, attached earlier, has already logged the change
+        const eventName = 'global_variable_changed:*';
+        const handler = () => {
+            this.evaluateAndAppendAllEvents();
+            this.renderStatusPanel(true);
+            this.updateStatusDots();
+        };
+        window.eventDispatcher.on(eventName, handler);
+        this._eventSubs.push({ event: eventName, handler });
     }
 
     unsubscribeScenarioEvents() {
@@ -359,76 +165,74 @@ export class CommandBoardMinigame extends MinigameScene {
     getGlobals() {
         if (!window.gameState) window.gameState = {};
         if (!window.gameState.globalVariables) window.gameState.globalVariables = {};
-
-        const globals = window.gameState.globalVariables;
-
-        if (!globals.ward_monitor_status && globals.central_station_ward7_status) {
-            globals.ward_monitor_status = globals.central_station_ward7_status;
-        }
-
-        const normalizedBackup = normalizeBackupRecoverySource(globals.backup_recovery_source);
-        if (normalizedBackup) {
-            globals.backup_recovery_source = normalizedBackup;
-        } else if (globals.backup_restore_initiated === true) {
-            globals.backup_recovery_source = 'CLOUD';
-        }
-
-        if (!globals.ico_notified && globals.ico_notification_sent === true) {
-            globals.ico_notified = true;
-        }
-
-        return globals;
+        // Read-only: this used to rewrite backup_recovery_source ("nas_encrypted" -> "NAS")
+        // and set ico_notified, which broke ink and credits conditions on those values
+        return window.gameState.globalVariables;
     }
 
+    _stamp(atMs) {
+        const clock = window.gameClock;
+        return clock?.formatStamp ? clock.formatStamp(atMs) : formatWallTimestamp(new Date());
+    }
+
+    /**
+     * The recorder that has been stamping entries since game start (core/game.js). A
+     * page without one (a test harness) gets a local one, stamped when the board opens.
+     */
+    recorder() {
+        if (window.commandBoardRecorder) return window.commandBoardRecorder;
+        if (!this._localRecorder) {
+            const clock = window.gameClock;
+            this._localRecorder = new CommandBoardRecorder({
+                config: this.boardConfig,
+                initialGlobals: window.gameScenario?.globalVariables || {},
+                now: () => (clock?.elapsedMs ? clock.elapsedMs() : 0)
+            });
+        }
+        return this._localRecorder;
+    }
+
+    /**
+     * Rebuild the entries from the recorder: each auto entry carries the game time it
+     * happened, and they sort by time (D8, D10). Pulse the header for a new critical one.
+     */
     evaluateAndAppendAllEvents() {
         const globals = this.getGlobals();
+        const recorder = this.recorder();
+        recorder.reconcile(globals);   // anything set without an event
 
-        EVENT_DEFINITIONS.forEach((definition) => {
-            if (!definition.shouldAppend(globals)) {
-                return;
-            }
+        const manual = this.entries.filter(e => e.source === 'manual');
+        const before = new Set(this.entries.map(e => e.eventKey));
+        this.entries = buildEntries(manual, recorder.entries(globals), (t) => this._stamp(t), this.preseedEntries());
+        const added = this.entries.filter(e => !before.has(e.eventKey));
 
-            this.appendAutoEntry(definition, globals);
-        });
-    }
-
-    appendAutoEntry(definition, globals) {
-        const eventKey = `event:${definition.id}`;
-        if (this.hasEventKey(eventKey)) {
-            return;
-        }
-
-        const entryText = typeof definition.text === 'function'
-            ? definition.text(globals)
-            : definition.text;
-
-        this.entries.unshift({
-            timestamp: formatDisplayTimestamp(new Date()),
-            text: entryText,
-            type: definition.type,
-            source: 'auto',
-            eventKey
-        });
-
-        this.renderTimeline();
+        this.renderTimeline(added.map(e => e.eventKey));
         this.persistState();
 
-        if (isCriticalType(definition.type)) {
+        if (before.size > 0 && added.some(e => isCriticalType(e.type))) {
             this.pulseHeaderCritical();
         }
     }
 
+    preseedEntries() {
+        return Array.isArray(this.boardConfig.preseed) ? this.boardConfig.preseed : DEFAULT_PRESEED;
+    }
+
     appendManualEntry(text) {
+        const clock = window.gameClock;
+        const atMs = clock?.elapsedMs ? clock.elapsedMs() : Date.now();
         this.entries.unshift({
-            timestamp: formatDisplayTimestamp(new Date()),
+            timestamp: this._stamp(atMs),
             text,
             type: 'decision',
             source: 'manual',
-            eventKey: `manual:${Date.now()}:${Math.random().toString(16).slice(2, 8)}`
+            eventKey: `manual:${Date.now()}:${Math.random().toString(16).slice(2, 8)}`,
+            atMs
         });
+        this.entries = sortEntries(this.entries);
 
         this.manualEntryCount += 1;
-        this.renderTimeline();
+        this.renderTimeline([this.entries[0]?.eventKey]);
         this.persistState();
     }
 
@@ -461,8 +265,8 @@ export class CommandBoardMinigame extends MinigameScene {
             <div class="cb-panel" id="cb-panel">
                 <div class="cb-header" id="cb-header">
                     <div class="cb-header-title-wrap">
-                        <div class="cb-header-title">NORTHGATE GENERAL HOSPITAL - MAJOR INCIDENT RESPONSE</div>
-                        <div class="cb-header-subtitle">LIVE INCIDENT BOARD</div>
+                        <div class="cb-header-title"></div>
+                        <div class="cb-header-subtitle"></div>
                     </div>
                     <div class="cb-header-right">
                         <div class="cb-status-dots" id="cb-status-dots">
@@ -498,16 +302,22 @@ export class CommandBoardMinigame extends MinigameScene {
         this.clockEl = this.gameContainer.querySelector('#cb-clock');
         this.dotContainerEl = this.gameContainer.querySelector('#cb-status-dots');
         this.headerEl = this.gameContainer.querySelector('#cb-header');
+
+        const titleEl = this.gameContainer.querySelector('.cb-header-title');
+        const subtitleEl = this.gameContainer.querySelector('.cb-header-subtitle');
+        if (titleEl) titleEl.textContent = displayDashes(String(this.boardConfig.title || DEFAULT_TITLE));
+        if (subtitleEl) subtitleEl.textContent = displayDashes(String(this.boardConfig.subtitle || DEFAULT_SUBTITLE));
     }
 
-    renderTimeline() {
+    renderTimeline(newKeys = []) {
         if (!this.timelineListEl) return;
+        const fresh = new Set(newKeys);
 
         this.timelineListEl.innerHTML = '';
 
         this.entries.forEach((entry, index) => {
             const tile = document.createElement('article');
-            tile.className = `cb-entry-tile ${index === 0 ? 'slide-in' : ''}`;
+            tile.className = `cb-entry-tile ${fresh.has(entry.eventKey) ? 'slide-in' : ''}`;
 
             const typeClass = `type-${String(entry.type || 'response').toLowerCase()}`;
             if (isCriticalType(entry.type)) {
@@ -555,99 +365,38 @@ export class CommandBoardMinigame extends MinigameScene {
     renderStatusPanel(animateChanges) {
         if (!this.statusListEl) return;
 
-        const globals = this.getGlobals();
-        const statuses = this.computeStatuses(globals);
+        const rows = computeStatusRows(this.boardConfig, this.getGlobals());
 
         this.statusListEl.innerHTML = '';
 
-        STATUS_CONFIG.forEach((rowConfig) => {
-            const rowStatus = statuses[rowConfig.key];
+        rows.forEach((rowConfig) => {
+            const rowStatus = rowConfig.status;
             const row = document.createElement('div');
             row.className = 'cb-status-row';
 
-            const badgeClass = `state-${rowStatus.key.toLowerCase()}`;
+            const labelEl = document.createElement('span');
+            labelEl.className = 'cb-status-label';
+            labelEl.textContent = rowConfig.label;
+            const badge = document.createElement('span');
+            badge.className = `cb-status-badge state-${rowStatus.key.toLowerCase()}`;
+            badge.textContent = rowStatus.label;
+            row.appendChild(labelEl);
+            row.appendChild(badge);
 
-            row.innerHTML = `
-                <span class="cb-status-label">${rowConfig.label}</span>
-                <span class="cb-status-badge ${badgeClass}">${rowStatus.label}</span>
-            `;
-
-            const oldKey = this.statusStateCache.get(rowConfig.key);
+            const oldKey = this.statusStateCache.get(rowConfig.label);
             if (animateChanges && oldKey && oldKey !== rowStatus.key) {
-                const badge = row.querySelector('.cb-status-badge');
-                badge?.classList.add('flash');
+                badge.classList.add('flash');
             }
 
-            this.statusStateCache.set(rowConfig.key, rowStatus.key);
+            this.statusStateCache.set(rowConfig.label, rowStatus.key);
             this.statusListEl.appendChild(row);
         });
     }
 
-    computeStatuses(globals) {
-        const inferredEhr = globals.network_isolated === true ? 'OFFLINE' : 'ONLINE';
-        const inferredFleet = globals.network_isolated === true ? 'OFFLINE' : 'ONLINE';
-        const inferredMonitoring = globals.ransomware_deployed === true ? 'OFFLINE' : 'UNKNOWN';
-
-        const normalizedEhr = String(globals.ehr_status || inferredEhr).toUpperCase();
-        const normalizedMonitoring = String(globals.ward_monitor_status || inferredMonitoring).toUpperCase();
-        const normalizedFleet = String(globals.fleet_console_status || inferredFleet).toUpperCase();
-        const normalizedBackup = normalizeBackupRecoverySource(globals.backup_recovery_source);
-
-        const ehr = (() => {
-            if (globals.backup_reinfected === true) return { key: 'REINFECTED', label: 'REINFECTED' };
-            if (normalizedBackup === 'CLOUD') return { key: 'RESTORING', label: 'RESTORING' };
-            if (normalizedEhr === 'OFFLINE') return { key: 'OFFLINE', label: 'OFFLINE' };
-            if (normalizedEhr === 'ONLINE') return { key: 'OPERATIONAL', label: 'OPERATIONAL' };
-            return { key: 'UNKNOWN', label: 'UNKNOWN' };
-        })();
-
-        const monitoring = (() => {
-            if (normalizedMonitoring === 'OFFLINE') return { key: 'OFFLINE', label: 'OFFLINE' };
-            if (normalizedMonitoring === 'STALE') return { key: 'DEGRADED', label: 'DEGRADED' };
-            if (normalizedMonitoring === 'ONLINE') return { key: 'OPERATIONAL', label: 'OPERATIONAL' };
-            return { key: 'UNKNOWN', label: 'UNKNOWN' };
-        })();
-
-        const fleet = (() => {
-            if (globals.drug_library_compromised === true) return { key: 'COMPROMISED', label: 'COMPROMISED' };
-            if (normalizedFleet === 'OFFLINE') return { key: 'OFFLINE', label: 'OFFLINE' };
-            if (normalizedFleet === 'ONLINE') return { key: 'OPERATIONAL', label: 'OPERATIONAL' };
-            return { key: 'UNKNOWN', label: 'UNKNOWN' };
-        })();
-
-        const backups = (() => {
-            if (globals.backup_reinfected === true) return { key: 'REINFECTED', label: 'REINFECTED' };
-            if (normalizedBackup === 'CLOUD') return { key: 'RESTORING', label: 'CLOUD' };
-            if (normalizedBackup === 'NAS') return { key: 'COMPROMISED', label: 'NAS RISK' };
-            if (normalizedBackup === 'TAPE') return { key: 'OFFLINE', label: 'TAPE WIPED' };
-            if (globals.backup_restore_initiated === true) return { key: 'RESTORING', label: 'RESTORING' };
-            return { key: 'UNKNOWN', label: 'UNKNOWN' };
-        })();
-
-        const network = globals.network_isolated === true
-            ? { key: 'ISOLATED', label: 'ISOLATED' }
-            : { key: 'CONNECTED', label: 'CONNECTED' };
-
-        const ransomware = globals.ransomware_deployed === true
-            ? { key: 'ACTIVE', label: 'ACTIVE' }
-            : { key: 'CLEAN', label: 'CLEAN' };
-
-        return {
-            [STATUS_ROW_KEYS.EHR]: ehr,
-            [STATUS_ROW_KEYS.MONITORING]: monitoring,
-            [STATUS_ROW_KEYS.FLEET]: fleet,
-            [STATUS_ROW_KEYS.BACKUPS]: backups,
-            [STATUS_ROW_KEYS.NETWORK]: network,
-            [STATUS_ROW_KEYS.RANSOMWARE]: ransomware
-        };
-    }
-
     updateHeaderClock() {
         if (!this.clockEl) return;
-        const now = new Date();
-        const hh = String(now.getHours()).padStart(2, '0');
-        const mm = String(now.getMinutes()).padStart(2, '0');
-        this.clockEl.textContent = `${hh}:${mm}`;
+        // In-game time when the scenario sets one (scenario.gameClock), else the wall clock
+        this.clockEl.textContent = currentClockText(false);
     }
 
     updateStatusDots() {
@@ -690,9 +439,11 @@ export class CommandBoardMinigame extends MinigameScene {
     }
 
     persistState() {
+        // Only the player's own entries: auto entries live in the recorder, saved as
+        // { id, t } (commandBoardLog), and the preseed comes from the config
         const globals = this.getGlobals();
         globals[STATE_KEY] = {
-            entries: this.entries,
+            entries: this.entries.filter(e => e.source === 'manual'),
             manualEntryCount: this.manualEntryCount
         };
     }
@@ -701,13 +452,10 @@ export class CommandBoardMinigame extends MinigameScene {
         const globals = this.getGlobals();
         const persisted = globals[STATE_KEY];
 
-        if (persisted && Array.isArray(persisted.entries) && persisted.entries.length > 0) {
-            this.entries = persisted.entries;
-            this.manualEntryCount = Number(persisted.manualEntryCount || 0);
-            return;
-        }
-
-        this.entries = PRESEED_ENTRIES.map((entry) => ({ ...entry }));
-        this.manualEntryCount = 0;
+        // Manual entries come from here; an older save's auto entries (wall-clock stamps)
+        // are dropped, since the recorder has them (reconciled at load)
+        const manual = Array.isArray(persisted?.entries) ? persisted.entries.filter(e => e?.source === 'manual') : [];
+        this.manualEntryCount = Number(persisted?.manualEntryCount || 0);
+        this.entries = buildEntries(manual, this.recorder().entries(globals), (t) => this._stamp(t), this.preseedEntries());
     }
 }

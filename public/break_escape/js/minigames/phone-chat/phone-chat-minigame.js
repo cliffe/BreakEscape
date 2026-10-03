@@ -419,6 +419,19 @@ export class PhoneChatMinigame extends MinigameScene {
         // A saved state that no longer loads (the ink changed since it was saved)
         // falls through to a fresh start at the NPC's knot.
         let restored = false;
+        // An explicit knot (event call, a text naming its knot) still starts from the saved
+        // story, so ink-local VARs and visit counts (once-only choices) carry over; it then
+        // jumps to the knot below. A fresh story reset them (D2).
+        let restoredForKnot = false;
+        if (explicitStartKnot && npc.storyState) {
+            restoredForKnot = this.conversation.restoreState(npc.storyState);
+            if (restoredForKnot) {
+                // The saved state holds the globals as they were; bring them up to date
+                window.npcConversationStateManager?.syncGlobalVariablesToStory(this.conversation.engine?.story);
+            } else {
+                console.warn(`⚠️ Saved story state for ${npcId} could not be restored before knot ${explicitStartKnot}`);
+            }
+        }
         if (hasConversationHistory && npc.storyState && !explicitStartKnot) {
             restored = this.conversation.restoreState(npc.storyState);
             if (!restored) {
@@ -480,7 +493,7 @@ export class PhoneChatMinigame extends MinigameScene {
         } else {
             // Navigate to starting knot (either first time, or explicit navigation request)
             if (explicitStartKnot) {
-                console.log(`📱 Explicit navigation to knot: ${explicitStartKnot} (overriding saved state)`);
+                console.log(`📱 Explicit navigation to knot: ${explicitStartKnot}${restoredForKnot ? ' (from the saved story state)' : ''}`);
                 this.conversation.goToKnot(targetKnot);
             } else {
                 console.log(`📱 Navigating to knot: ${targetKnot}`);

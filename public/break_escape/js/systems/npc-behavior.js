@@ -155,6 +155,9 @@ export class NPCBehaviorManager {
         if (npcData) {
             npcData.isVisible = visible;
         }
+        // Saved with the state sync and re-applied when the NPC registers after a reload,
+        // whether or not its sprite exists yet; a onceOnly reveal doesn't replay (N2)
+        window.npcManager?.recordNpcVisibility?.(npcId, visible);
 
         const behavior = this.behaviors.get(npcId);
         const sprite = behavior?.sprite;

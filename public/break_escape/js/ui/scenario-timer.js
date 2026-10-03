@@ -67,6 +67,12 @@ class ScenarioTimerUI {
    * @returns {number|null} start time in ms, or null if the timer is dormant
    */
   _getTimerStartTime(timer) {
+    // The dispatcher owns the real timing (it resumes after a reload); follow it so the
+    // countdown shown is the one that fires. The widget's own times are a fallback.
+    const dispatcher = window.scenarioTimerDispatcher;
+    if (dispatcher?.getTimerStartTime && dispatcher.timers?.includes(timer)) {
+      return dispatcher.getTimerStartTime(timer);
+    }
     if (timer.startOnGlobal) {
       const startedAt = this._timerStartTimes.get(timer.id);
       return (startedAt === null || startedAt === undefined) ? null : startedAt;
@@ -141,8 +147,9 @@ class ScenarioTimerUI {
    */
   _getNextPendingTimer() {
     for (const timer of this.timers) {
-      // Skip if already fired
-      if (this.firedTimers.has(timer.id)) {
+      // Skip if already fired or cancelled (here, or in the dispatcher: after a reload
+      // it restores the timers that fired before it, which this widget never saw)
+      if (this.firedTimers.has(timer.id) || window.scenarioTimerDispatcher?.isDone?.(timer.id)) {
         continue;
       }
       

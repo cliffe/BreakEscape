@@ -13,6 +13,12 @@
   max-width: 300px;
 }
 
+/* While a minigame is open, new barks wait (npc-barks.js) and any already showing
+   sit behind it rather than over its panels (D5). Minigames are z-index 1500. */
+body.minigame-holds-barks #npc-bark-container {
+  z-index: 1400 !important;
+}
+
 /* Individual bark notification styled like phone message */
 .npc-bark {
   background: #5fcf69; /* Phone screen green */

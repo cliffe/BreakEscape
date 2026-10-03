@@ -1256,6 +1256,110 @@ module BreakEscape
       player_state['triggeredEvents'] = merged
     end
 
+    MAX_SCENARIO_CLOCK_ELAPSED_MS = 7.days.in_milliseconds
+    MAX_SCENARIO_TIMERS = 200
+    MAX_CLOCK_KEY_LENGTH = 200
+
+    # Merge the client's game clock: elapsed game time and the scenario timers' state
+    # (fired / cancelled ids, and how long each started startOnGlobal timer has run).
+    # Without it a reload restarted every timer from zero, so a deadline could be reset
+    # by reloading (D14). Elapsed time and run times only grow and fired / cancelled ids
+    # are kept, so a delayed older sync can't wind the clock back. Does not save!; the
+    # caller does.
+    def merge_scenario_clock!(incoming)
+      return unless incoming.is_a?(Hash)
+
+      saved = (player_state['scenarioClock'] || {}).deep_dup
+
+      elapsed = incoming['elapsedMs']
+      if elapsed.is_a?(Numeric) && elapsed >= 0
+        saved['elapsedMs'] = [saved['elapsedMs'].to_i, elapsed.to_i.clamp(0, MAX_SCENARIO_CLOCK_ELAPSED_MS)].max
+      end
+
+      timers = incoming['timers']
+      if timers.is_a?(Hash)
+        saved_timers = saved['timers'].is_a?(Hash) ? saved['timers'] : {}
+        ids = ->(list) { Array(list).select { |id| id.is_a?(String) && id.length <= MAX_CLOCK_KEY_LENGTH } }
+        fired = (ids.call(saved_timers['fired']) | ids.call(timers['fired'])).first(MAX_SCENARIO_TIMERS)
+        cancelled = (ids.call(saved_timers['cancelled']) | ids.call(timers['cancelled'])).first(MAX_SCENARIO_TIMERS)
+        started = (saved_timers['started'].is_a?(Hash) ? saved_timers['started'] : {}).dup
+        if timers['started'].is_a?(Hash)
+          timers['started'].each do |id, ran|
+            next unless id.is_a?(String) && id.length <= MAX_CLOCK_KEY_LENGTH && ran.is_a?(Numeric) && ran >= 0
+
+            started[id] = [started[id].to_i, ran.to_i.clamp(0, MAX_SCENARIO_CLOCK_ELAPSED_MS)].max
+          end
+        end
+        done = fired | cancelled
+        started = started.reject { |id, _| done.include?(id) }.first(MAX_SCENARIO_TIMERS).to_h
+        timers_elapsed = saved_timers['elapsedMs'].to_i
+        if timers['elapsedMs'].is_a?(Numeric) && timers['elapsedMs'] >= 0
+          timers_elapsed = [timers_elapsed, timers['elapsedMs'].to_i.clamp(0, MAX_SCENARIO_CLOCK_ELAPSED_MS)].max
+        end
+        saved['timers'] = { 'elapsedMs' => timers_elapsed, 'fired' => fired, 'cancelled' => cancelled, 'started' => started }
+      end
+
+      player_state['scenarioClock'] = saved
+    end
+
+    MAX_COMMAND_BOARD_ENTRIES = 200
+
+    # Merge the command board's recorded entries ([{ id, t }]: which entry, and the game
+    # time it happened). The earliest time for an id wins, so a reload keeps the stamp.
+    # Does not save!; the caller does.
+    def merge_command_board_log!(incoming)
+      return unless incoming.is_a?(Array)
+
+      merged = {}
+      (Array(player_state['commandBoardLog']) + incoming).each do |e|
+        next unless e.is_a?(Hash) && e['id'].is_a?(String) && e['id'].length <= MAX_CLOCK_KEY_LENGTH
+        # t = -1: an entry judged and settled as not happening (never shown)
+        next unless e['t'].is_a?(Numeric) && e['t'] >= -1
+
+        t = e['t'].to_i.clamp(-1, MAX_SCENARIO_CLOCK_ELAPSED_MS)
+        merged[e['id']] = merged.key?(e['id']) ? [merged[e['id']], t].min : t
+      end
+      return if merged.size > MAX_COMMAND_BOARD_ENTRIES
+
+      player_state['commandBoardLog'] = merged.map { |id, t| { 'id' => id, 't' => t } }.sort_by { |e| e['t'] }
+    end
+
+    # The command board object's commandBoard config ({} when it has none), or nil
+    # when the scenario has no command board. Sent with the bootstrap scenario (rooms
+    # are stripped there) so the client can record board entries from game start.
+    def command_board_config
+      (scenario_data['rooms'] || {}).each_value do |room|
+        Array(room['objects']).each do |obj|
+          next unless obj.is_a?(Hash) && obj['type'] == 'command_board'
+
+          config = obj['commandBoard'] || obj.dig('scenarioData', 'commandBoard')
+          return config.is_a?(Hash) ? config : {}
+        end
+      end
+      nil
+    end
+
+    MAX_NPC_VISIBILITY = 500
+
+    # Merge NPC visibility set by setVisible ({ npcId => true/false }). The room-state
+    # path (update_npc_state) only works once the NPC's room is unlocked, and a onceOnly
+    # reveal doesn't replay on a reload, so revealed NPCs vanished (N2). Latest wins.
+    # Does not save!; the caller does.
+    def merge_npc_visibility!(incoming)
+      return unless incoming.is_a?(Hash)
+
+      merged = (player_state['npcVisibility'] || {}).dup
+      incoming.each do |npc_id, visible|
+        next unless npc_id.is_a?(String) && npc_id.length <= 100
+        next unless visible == true || visible == false
+
+        merged[npc_id] = visible
+      end
+      return if merged.size > MAX_NPC_VISIBILITY
+
+      player_state['npcVisibility'] = merged
+    end
+
     MAX_NPC_INK_VARIABLES_BYTES = 128.kilobytes
 
     # Merge NPC-local ink variables (the ones that aren't scenario globals)

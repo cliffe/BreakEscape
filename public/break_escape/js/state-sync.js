@@ -61,7 +61,30 @@ export class StateSync {
     // flush sends only contacts changed since the last confirmed sync.
     const phoneState = window.npcManager?.exportPhoneState?.({ onlyChanged });
 
+    // Elapsed game time and the scenario timers' state, so a reload resumes the clock and
+    // timers instead of restarting them (D14)
+    const scenarioClock = window.gameClock?.exportState?.();
+    if (scenarioClock) {
+      const timers = window.scenarioTimerDispatcher?.exportState?.();
+      if (timers) scenarioClock.timers = timers;
+    }
+
+    // NPCs shown or hidden by setVisible, so a reveal survives a reload (N2)
+    const npcVisibility = window.npcManager?.exportNpcVisibility?.();
+
+    // Command board entries ({ id, t }), only in scenarios with a board
+    const commandBoardLog = window.commandBoardRecorder?.exportLog?.();
+
     const payload = { currentRoom, globalVariables, notes };
+    if (scenarioClock) {
+      payload.scenarioClock = scenarioClock;
+    }
+    if (npcVisibility && Object.keys(npcVisibility).length > 0) {
+      payload.npcVisibility = npcVisibility;
+    }
+    if (commandBoardLog && commandBoardLog.length > 0) {
+      payload.commandBoardLog = commandBoardLog;
+    }
     // Lifted fingerprints, plain fields only, so they survive a reload.
     const biometricSamples = (window.gameState?.biometricSamples || []).map(s => ({
       id: s.id, type: s.type, owner: s.owner, ownerId: s.ownerId, ownerName: s.ownerName,
@@ -111,10 +134,10 @@ export class StateSync {
       if (body.length > KEEPALIVE_BODY_LIMIT) {
         // Keep the reload-critical parts: globals, fired one-shot handlers, the timed
         // texts they scheduled, and the phone threads changed since the last sync
-        const { globalVariables, triggeredEvents, timedMessages, phoneState } = payload;
-        body = JSON.stringify({ globalVariables, triggeredEvents, timedMessages, phoneState });
+        const { globalVariables, triggeredEvents, timedMessages, phoneState, scenarioClock, npcVisibility, commandBoardLog } = payload;
+        body = JSON.stringify({ globalVariables, triggeredEvents, timedMessages, phoneState, scenarioClock, npcVisibility, commandBoardLog });
         if (body.length > KEEPALIVE_BODY_LIMIT) {
-          body = JSON.stringify({ globalVariables, triggeredEvents, timedMessages });
+          body = JSON.stringify({ globalVariables, triggeredEvents, timedMessages, scenarioClock, npcVisibility, commandBoardLog });
           if (body.length > KEEPALIVE_BODY_LIMIT) return;
         }
       }

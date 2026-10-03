@@ -140,8 +140,10 @@ export default class NPCBarkSystem {
   showBark(payload = {}) {
     if (!this.container) this.init();
 
-    if (window.currentConversationMinigameType === 'person-chat') {
-      console.log('💬 person-chat active — deferring bark:', payload.text || payload.message);
+    // While a person-chat or another full-screen minigame is open, hold the bark and
+    // play it when that closes; on top of a minigame it covered the panel (D5)
+    if (this._shouldDefer()) {
+      console.log('💬 conversation/minigame open — deferring bark:', payload.text || payload.message);
       this.deferredBarkQueue.push(payload);
       return null;
     }
@@ -157,13 +159,20 @@ export default class NPCBarkSystem {
    * Play deferred barks one at a time now that a person-chat has closed.
    * Each bark finishes (including TTS audio) before the next begins.
    */
+  _shouldDefer() {
+    if (window.currentConversationMinigameType === 'person-chat') return true;
+    return !!window.MinigameFramework?.holdsBarks?.();
+  }
+
   async drainDeferredBarks() {
     if (this.isDrainingDeferred || this.deferredBarkQueue.length === 0) return;
+    if (this._shouldDefer()) return;   // another minigame opened; drained when it closes
     this.isDrainingDeferred = true;
 
     console.log(`📣 Draining ${this.deferredBarkQueue.length} deferred bark(s)`);
 
     while (this.deferredBarkQueue.length > 0) {
+      if (this._shouldDefer()) break;   // a minigame opened mid-drain; the rest wait for it
       const payload = this.deferredBarkQueue.shift();
       const ttsPromise = await this._renderBark(payload);
       // Wait for TTS to finish (or a short minimum) before showing the next deferred bark
