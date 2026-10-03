@@ -44,6 +44,7 @@ VAR backup_initiated = false
 VAR iso_told = false
 VAR tamper_told = false
 VAR asked_next = false
+VAR ico_pressed = false
 
 // Global reads: network_isolated, backup_restore_initiated, backup_recovery_source,
 //   ico_deadline_missed, ico_guidance_read, hartley_backs_early_ico
@@ -131,7 +132,9 @@ Helen Carver: Not until the network's isolated. I won't tell the ICO it's contai
     -> helen_persuaded
 + {ico_argued and hartley_backs_early_ico} [Dr Hartley says notify now. It's her call to advise on.]
     -> helen_persuaded
-+ {ico_argued and not ico_guidance_read and not hartley_backs_early_ico} [I'm sure the law allows a provisional report.]
+// Round R3c: once only, so the argument can't loop on the same reply.
++ {ico_argued and not ico_guidance_read and not hartley_backs_early_ico and not ico_pressed} [I'm sure the law allows a provisional report.]
+    ~ ico_pressed = true
     Helen Carver: "Sure" won't move me. Show me where it says so, or ask Fiona Hartley. She'll know.
     -> ico_argument
 + [You're right. Contain it first, then notify.]
@@ -230,7 +233,7 @@ Helen Carver: The last rehearsal was nineteen months ago. So this morning is the
 - network_isolated and network_isolation_authorised:
     Helen Carver: We did keep one part of it. Ravi and David both signed before the link was cut.
 - network_isolated:
-    Helen Carver: And we didn't even keep the joint sign-off. The link was cut before both of them had signed.
+    Helen Carver: You cut the link before Ravi and David had both signed. That was the one part we could still have kept.
 - else:
     Helen Carver: What we can still keep is the joint decision. Ravi's sign-off and David's, both, before anyone cuts the link.
 }

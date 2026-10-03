@@ -287,11 +287,12 @@ Sarah Mitchell: I'm reporting it as a patient safety incident. Somebody has to r
         {drug_library_compromised:
             Sarah Mitchell: That's what they changed the library for. One slip, and nothing in the pump to catch it.
         - else:
-            Sarah Mitchell: Our range is half to four. It should've stopped you dead. Get David Osei to look at that library.
+            Sarah Mitchell: Our range is half to four. That pump should never have taken twenty. Get David Osei to look at that library.
         }
     ++ [It asked me to check it against the chart. I said yes.]
         Sarah Mitchell: Then the pump did its job and we didn't. A warning's only any good if somebody reads it.
     -- Sarah Mitchell: Everyone misreads a chart once. Next time, read it twice, out loud, with someone watching.
+    ~ hub_quiet = true
     -> hub
 + {drug_library_override and not sarah_pump_warned} [Bed 2's pump wanted twenty, not two. I kept her at two and rang pharmacy.]
     -> pump_override_report

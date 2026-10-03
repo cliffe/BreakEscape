@@ -11,6 +11,7 @@ VAR vpn_anomaly_identified = false
 VAR network_isolated = false
 VAR network_isolation_authorised = false
 VAR backup_restore_initiated = false
+VAR drug_library_restored = false
 
 VAR ravi_trust = 0
 VAR ravi_met = false
@@ -162,7 +163,12 @@ Ravi Anand: And there's a VPN login I don't like. The log terminal's over there.
 ~ post_iso_done = true
 Ravi Anand: We're cut. Nothing more gets from the enterprise side to the clinical side.
 Ravi Anand: It won't bring Sarah's station back. That machine's encrypted. It just stops it getting worse.
-Ravi Anand: And anything already pushed out to the pumps stays on them. Cutting the link doesn't undo a change.
+// Round R3c: once the library's restored, the pumps already have the clean copy.
+{drug_library_restored:
+    Ravi Anand: The pumps have the verified library now, at least. Cutting the link wouldn't have undone a bad one.
+- else:
+    Ravi Anand: And anything already pushed out to the pumps stays on them. Cutting the link doesn't undo a change.
+}
 Ravi Anand: Don't let anyone tell you segmentation saved us, either. Ward 7 was never on the new VLAN.
 + [What's next?]
     {backup_restore_initiated:

@@ -138,7 +138,7 @@ David Osei: Argument: the firewall keeps the zones apart. Evidence: the segmenta
 === hc001_verdict_given ===
 ~ hc001_assessed = true
 #set_global:safety_claim_hc001_assessed:true
-David Osei: Ward 7 never moved to the new VLAN. We signed off an argument that didn't describe the hospital we were running.
+David Osei: Ward 7 never moved to the new VLAN. We signed that claim off for a hospital we didn't actually have.
 -> hc001_questions
 
 === hc001_questions ===

@@ -44,12 +44,12 @@ VAR death_seen = false
     Amy Clarke: {&Quick, I'm mid-round.|Yeah?|Make it quick.}
 }
 // Round R3 (D5): not while she's staying with Ms Okafor after the Bed 2 alarm.
-+ {not bed4_mentioned and not bed4_escalated and not bed2_alarm_raised} [How's the patient in Bed 4?]
++ {not bed4_mentioned and not bed4_escalated and not bed2_alarm_raised and not patient_bed4_deceased} [How's the patient in Bed 4?]
     ~ bed4_mentioned = true
     Amy Clarke: He's not right. Obs at half six were borderline, and now he's drowsy and his monitor won't shut up.
     Amy Clarke: Without the central station I can't see the trend. If he needs more than my round, Sarah has to call it.
     -> hub
-+ {not bed4_escalated and not bed2_alarm_raised} [Can't you just stay with him?]
++ {not bed4_escalated and not bed2_alarm_raised and not patient_bed4_deceased} [Can't you just stay with him?]
     Amy Clarke: Not without Sarah's say-so. If I leave five patients and one of them goes off, that's on me.
     Amy Clarke: If she says go, I go.
     -> hub

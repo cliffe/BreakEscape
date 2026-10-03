@@ -477,3 +477,26 @@ Nothing was skipped. `labsheet.md` and `information_pack.md` needed no change (n
 - loopcheck and inkcheck over 32 entry points × 14 global states (448 pairs; the nine round-3 states plus Sarah at Bed 2 after a rescue, the late-"hours" route, a bypass isolation with everything else done late, a post-restore pump error, and SIEM plus VPN done before meeting Ravi): no runtime errors, no failing or runaway paths. Helen's walk caps on states and Priya's on paths, as in earlier rounds.
 - D2: a first-line trace (inkjs, globals set as after a reload, saved `seen_*` set or not) for each case in the analysis's table: Bed 2 after a rescue (seen: "breathing again"; not seen: the rescue narration naming who's there), after a death; Bed 4 after distress then escalation ("Amy is at Mr Ahmed's bedside", no distress text) and after his death (full line once, then the short one); Bed 5 after a rescue or death already seen (greeting, no repeat); Amy after the death. All right. loopcheck and inkcheck over the four changed files' 25 entry knots × 19 states (the 14 above plus five reload states with `seen_*` set): 475 pairs, no runtime errors.
 - A browser check is still to do: `PASS_PLAYTEST.md`, "Round R3b confirmation".
+
+## 8. Round R3c: leftovers from the R3b playtest (2026-10-03)
+
+The R3b browser run passed all nine steps (`sis01-playtest-r3b/report.md` in the session scratch folder). These are its leftovers, fixed after the round-3 commit (42ce4128). Spoken-line delta against that commit: 7 new or rewritten, 6 gone (`sis01-fixer-r3/spoken_lines_r3c.md`).
+
+| # | Item | Outcome |
+|---|---|---|
+| 1 | Amy keeps her Bed 4 options after Mr Ahmed's death | Fixed: both need `not patient_bed4_deceased`. |
+| 2 | Helen's ICO argument loops on "I'm sure the law allows a provisional report." | Fixed: the option is once-only (new local `ico_pressed`). Her reply already sends the player to the IG briefing or Dr Hartley, whose options then appear. |
+| 3 | Ravi's "anything already pushed out to the pumps stays on them" after the restore | Fixed: when `drug_library_restored`, "The pumps have the verified library now, at least. Cutting the link wouldn't have undone a bad one." |
+| 4a | Mrs Kowalski re-plays "You're the one from IT?" after a reload | Cause: if her first talk opened on an event knot (`pump_concern`, `state_sedated`, …), it never passed through `start`, so `player_approached` stayed false and a reload's default knot re-ran her introduction. Fixed: `hub` and `concern_choices` set `player_approached`. |
+| 4b | Sarah's "Quickly, then." straight after the pump confession | Fixed: that exchange sets `hub_quiet` before returning to the hub. |
+| 4c | Priya's "Yes." to a player who said "No." (HC-001, not assessed with David) | Fixed: "Right. Ward 7 was never on the new VLAN…". |
+| 5 | Five worst lines | Sarah: "That pump should never have taken twenty." Priya: "Yes. If a claim depends on how the network's built, whoever changes the network has to check it." Priya: "Every quiet month, the gaps looked a bit safer. Safety people call that normalisation of deviance." David: "We signed that claim off for a hospital we didn't actually have." Helen (bypass): "You cut the link before Ravi and David had both signed. That was the one part we could still have kept." |
+
+**Noted, not fixed:**
+
+- **Player wedging near Bed 5 and Bed 2.** In the R3b run the player stuck at about (230,202) south of Bed 5, at (385,88) east of Bed 2 with Sarah parked at (283,102), and at (219,165). Moving elsewhere first freed it. It is map pathing on `room_hospital_ward` (bed, pump and curtain collision bodies), made worse by a nurse standing in the aisle at the end of a scripted walk. It belongs to a room-dressing pass, as noted in `DIALOGUE_REVIEW_R2.md` section 8.
+- **Amy's "Crash call, Bed 4!" about six minutes after Sarah's bark.** Not intended. The scenario gives Amy `barkDelay` 800 ms and Sarah 2500 ms (`scenario.json.erb`, both on `patient_bed4_deceased`), so Amy should speak first. The delay and the reversed order come from the engine holding barks while a minigame is open (`npc-barks.js:143-152`, the backup console was open). That needs an engine decision about whether held barks keep their order and expire. No scenario change.
+
+Structure (tagdiff against HEAD 42ce4128): 14 differences, all intended. Bed 5: two `player_approached` assignments. Helen: VAR `ico_pressed`, its assignment, and the changed choice condition. Amy: two choice conditions. Ravi: VAR `drug_library_restored` and its branch. Sarah: `hub_quiet = true` after the confession.
+
+Checks: all 11 ink files compile with no warnings. Validator (ink included): 0 errors. dialoguelint: only the kept Ravi line. loopcheck and inkcheck: the 32 entry points × 20 states (the 14 earlier states, the five reload states, and an ICO-argument state).

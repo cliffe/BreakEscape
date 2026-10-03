@@ -94,6 +94,7 @@ Mrs Kowalski: Could you get someone? I don't like making a fuss, but I don't lik
 -> concern_choices
 
 === concern_choices ===
+~ player_approached = true
 ~ bed2_seen_unwell = true
 + [I'll get the nurse now.]
     ~ bed2_alarm_raised = true
@@ -127,6 +128,9 @@ Mrs Kowalski: Somebody's been at the computer that does the medicines? From outs
 // ===========================================
 
 === hub ===
+// Round R3c: a first talk that opened on an event knot never passed through
+// start, so mark her as met here, or a reload re-plays her introduction.
+~ player_approached = true
 {
 - patient_bed2_deceased and not seen_dead:
     -> state_deceased

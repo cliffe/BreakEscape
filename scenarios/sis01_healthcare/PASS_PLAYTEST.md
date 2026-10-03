@@ -93,3 +93,12 @@ Keyless :3001. Background: `DIALOGUE_REVIEW_R3.md` (decisions at the top, sectio
    - After Bed 4 went distressed and you then escalated ("Hours"): Bed 4 says "Amy is at Mr Ahmed's bedside…", with no "restless and pressing his call bell".
    - After Mr Ahmed's death, seen at the bed before the reload: "The curtains round Bed 4 are drawn." only. Amy: no second "I can't stop. Speak to Sarah."
    - After Mrs Kowalski has told you about the rescue ("They got to her…") or the death ("She stopped breathing…"): her first line after the reload is a greeting, not that scene again.
+
+## Round R3c confirmation (2026-10-03), about 8 minutes
+
+Keyless :3001. Background: `DIALOGUE_REVIEW_R3.md` section 8. Quote what you see.
+
+1. **Amy after Mr Ahmed's death.** Don't escalate Bed 4. Let him die (22 min, or exercise the timer). Talk to Amy twice, and again after a reload: neither "[How's the patient in Bed 4?]" nor "[Can't you just stay with him?]" is offered.
+2. **Helen's ICO argument.** Before isolating, without reading the IG briefing or seeing Hartley: "[Shouldn't the ICO hear from us…]" → Article 33 → "[I'm sure the law allows a provisional report.]" → "\"Sure\" won't move me…". That option is **not** offered again.
+3. **Mrs Kowalski after a reload.** Enter 20 at Bed 2 and talk to Mrs Kowalski for the first time only after her pump bark ("That lady in Bed 2…"). Raise the alarm, talk again, then reload. Her first line after the reload is a greeting ("Have you got a minute?" or similar), not "You're the one from IT?".
+4. **Sarah, Ravi and Priya.** Before running the checker scan, do Sarah's pump confession (R3b step 1) and pick "[Nothing. It just took it.]": "Our range is half to four. That pump should never have taken twenty…", and no "Quickly, then." after her closing line. Then restore the library and isolate with both sign-offs: Ravi's isolation scene says "The pumps have the verified library now, at least…". In the debrief, without having judged HC-001 with David, answer "[No. The dual-homed PCs…]" → "Right. Ward 7 was never on the new VLAN…". Closing: "Safety people call that normalisation of deviance."

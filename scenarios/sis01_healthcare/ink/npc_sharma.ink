@@ -144,7 +144,7 @@ Priya S.: Whose job was it to check that claim against the network, and how ofte
 * [Clinical engineering, once a year.]
     Priya S.: Better than never. But it should be checked whenever the network changes. The VLAN project changed it every month.
 * [Whoever changes the network, every time they change it.]
-    Priya S.: Yes. A claim with "provided that" in it needs someone watching the "provided".
+    Priya S.: Yes. If a claim depends on how the network's built, whoever changes the network has to check it.
 - -> hc003_review
 
 === hc001_valid ===
@@ -154,7 +154,7 @@ Priya S.: HC-001. Was it valid at eight o'clock on Monday morning, before anyone
 * [It held until the attackers found the exception rules.]
     Priya S.: Those rules were there long before the attackers were. A claim whose "provided" is already false never held.
 * [No. The dual-homed PCs and the exception rules were already there.]
-    Priya S.: Yes. Ward 7 was never on the new VLAN. Nobody had checked the claim against the hospital since it was written.
+    Priya S.: Right. Ward 7 was never on the new VLAN. Nobody had checked the claim against the hospital since it was written.
 -
 {network_isolated:
     Priya S.: Nobody looked at it before the isolation decision. That's a governance finding for the review.
@@ -348,7 +348,7 @@ Priya S.: Ward 7's exceptions were written up as "as low as reasonably practicab
 === closing ===
 Priya S.: One more thing, and it's the one I'd like you to take away.
 Priya S.: Almost everything that failed today was known before Monday. The segmentation gap, the vendor VPN, the overdue rehearsal.
-Priya S.: People knew, and the hospital kept running, because nothing had gone wrong yet. Every quiet month made the gaps look safer. There's a name for that: normalisation of deviance.
+Priya S.: People knew, and the hospital kept running, because nothing had gone wrong yet. Every quiet month, the gaps looked a bit safer. Safety people call that normalisation of deviance.
 * [What do you do about that?]
     Priya S.: Put the accepted risks in front of the Board every quarter, with a name against each. And check the safety case against the hospital every time the network changes.
 * [Was this preventable?]
