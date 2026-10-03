@@ -691,8 +691,10 @@ class NPCBehavior {
 
         // Priority 2: Patrol
         if (this.config.patrol.enabled) {
-            // Check if player is in interaction range - if so, face player instead (configurable)
-            if (this.config.patrol.pauseForPlayer && distanceSq < this.config.facePlayerDistanceSq && this.config.facePlayer) {
+            // Check if player is in interaction range - if so, face player instead (configurable).
+            // A scripted goToAndStay move (patrolOverride) never pauses: a nurse answering
+            // an alarm must reach the bed even when the player is standing beside it.
+            if (this.config.patrol.pauseForPlayer && !this._stopOnArrival && distanceSq < this.config.facePlayerDistanceSq && this.config.facePlayer) {
                 return 'face_player';
             }
             return 'patrol';
