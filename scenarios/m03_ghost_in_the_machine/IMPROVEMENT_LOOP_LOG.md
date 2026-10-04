@@ -292,6 +292,10 @@ Recommended voiced changes: 37 rewrites, 32 cuts, 7 optional (lean set 24).
 
 Decision: take the full set. Reason: m03 has no audio generated yet (no `tts_cache/m03_*` in the repo), so a rewritten voiced line replaces nothing that was paid for; every m03 line is voiced fresh when its audio is generated.
 
+### Round 1 fix (writer: the same Opus fixer, resumed)
+
+Commit acbe10e (WIP). All 42 findings acted on (P4-37 justified: Victoria's 18-word offer and her one "not X but Y"). Edit notes in `DIALOGUE_EDIT_NOTES.md` ("Pass 5"). Voiced: 51 changed, 33 cut, 0 added (full list under "Spoken lines changed"). tagdiff vs snapshot: Danny, receptionist, phone, night transition structurally unchanged; briefing (learn topic, dead writes, `mission_priority`), Victoria (stance overwrite), guard (influence tag) and debrief (dead blocks, fate re-reads) changes all intended. dialoguelint 0 errors, 4 justified warnings. Orchestrator check: grepped sample lines; no new dashes in any .ink.
+
 ## SecGen
 
 m03 XML missing on SecGen master. Proposed file: `SECGEN_PROPOSED_m03_ghost_in_the_machine.xml` (D1). No SecGen edits made.
@@ -335,6 +339,78 @@ Round 2 (replacing round-1 wording where noted):
 Voiced (new): debrief `danny_ko_after_choice`: "Danny Foster. You talked to him, and then somebody left him out cold in his own office." / "We picked him up this morning. Whatever he'd decided, he'll be explaining it from a hospital bed first." Voiced debrief roster line unchanged in wording, now gated so it effectively never plays.
 
 Text only: Victoria's choice "[Phase 2. Critical Mass. The grid. You're already sourcing the targets.]" → "[I've been through your office, Sable. Your desk. Your files.]"; HaX phone lines (`hint_rfid`, `hint_encoding`, recap, PC call, directive call, catalogue call; three new recap branches); four call teasers; door text; night receptionist-KO text; "Card's saved" text; two catalogue credits reworded; two new KO credits.
+
+### Phase 4 round 1 (voiced; m03 has no audio yet, so these replace nothing paid for)
+
+Totals: 51 changed, 33 cut, 0 added.
+
+Victoria (14 changed, 9 cut):
+- "Every system tends towards disorder. That's thermodynamics - entropy is inevitable." → "Every system tends towards disorder. Entropy, if you like."
+- "The question isn't whether systems will fail. It's who benefits from that knowledge." → "Systems fail. What matters is who knows first."
+- "Zero Day's mission is simple: recognise that vulnerability knowledge has inherent value." → "Zero Day is simple. A vulnerability is worth something to somebody."
+- "We discover, we price according to demand, we connect buyers with opportunities." → "We find it, we price it, and we find the somebody."
+- "Precisely. Supply and demand. Transparent economics." → "Precisely."
+- "Real Zero Day research requires understanding market dynamics, pricing models, buyer relationships." → "The lab teaches the craft. The money is in knowing who'll pay, and how much."
+- "Interesting question. Most people don't even acknowledge there is a line to discuss." → "Interesting question."
+- "That's refreshing. Most people lead with moral indignation." → "That's refreshing."
+- "Security research is as much economics as it is code. Most researchers don't grasp that." → "Security research is as much economics as it is code."
+- "My pleasure. It's rare to meet someone who actually wants to understand rather than judge." → "My pleasure."
+- "The line is intent. We don't create exploits TO hurt people. We discover vulnerabilities that already exist." → "The line is intent. We don't build exploits to hurt anyone. We find holes that are already there."
+- "*a beat* So you've been through my office. Then you understand how far past me this runs. And how little arresting me changes it." → "*a beat* Then you understand how far past me this runs. And how little arresting me changes it."
+- "*considering* Not immunity. At least you're honest…" and "*amused* In exchange for what? …": stage cue removed, words unchanged.
+- Cut: "We provide liquidity to the vulnerability market."; "A gun manufacturer isn't responsible for every shooting."; "We live in a world where vulnerabilities exist whether we like it or not."; "Do you hold pharmaceutical companies responsible when someone overdoses on painkillers?"; "Do you blame car manufacturers for drunk driving fatalities?"; "The truth is, I sleep fine at night because I believe in information freedom."; "Vulnerabilities are facts about reality. Suppressing facts doesn't make anyone safer."; "Let me guess - you want to ask about the "morality" of selling exploits."; narrator "You have the logs. That is the case."
+
+Narrator in Victoria's scene (2 changed): "She settles the bag on her shoulder. The coat, the bag -- she has been ready to leave since before you crossed the threshold." → "She settles the bag on her shoulder."; "She's past you and gone before the lift doors settle. The evidence stays. So does she, somewhere out beyond it." → "She's past you and gone before the lift doors settle."
+
+Receptionist (11 changed, 3 cut):
+- "Good afternoon! You must be {player_name()}." → "Afternoon! {player_name()}, is it?"
+- "Hi again! How's your visit going?" → "Back again? How's it going in there?"
+- "Of course! We're a Cyber Security research and penetration-testing firm." → "Oh, we break into places. For money. Companies pay us to find the holes before somebody nasty does."
+- "Well, you're in the right place! Ms. Sterling is brilliant." → "You've come to the right place, then. She doesn't see just anyone, mind."
+- "That's exciting! Everyone here is very passionate about security." → "Oh, lovely. Don't let her scare you. She's like that with everyone."
+- "Of course! Up the hallway, first door on the left." → "Go on, then. Up the hallway, first door on the left."
+- "{&What else can I help with?|Anything else?|Ask away.}" → "{&Anything else, love?|Anything else?|Go on.}"
+- "Have a great visit!" → "Go on through. She hates being kept waiting."
+- "Ms. Sterling is amazing. She's a DEFCON speaker, published researcher, the whole package." → "Oh, she's brilliant. Speaks at all the big conferences, writes the papers, the lot."
+- "Absolutely. Cyber Security is her passion." → "Oh, completely. Lives for it, she does."
+- "Usually just Ms. Sterling if she's working late. And we have a night security guard - makes rounds to keep the place safe." → "Just Ms. Sterling, if she's working late. And the night guard. Does his rounds, drinks a lot of tea."
+- Cut: "And welcome to WhiteHat Security!"; "Absolutely! Ms. Sterling is very proud of everything we've built since then."; "Sure! It's a pretty straightforward layout."
+
+Guard (9 changed, 1 cut):
+- "You've still got your hour. Use it, then you're gone." → "We had a deal. Get on with it."
+- "Knock off? Not till six tomorrow morning. Double shift -- afternoon on the desk here, then the night rounds." → "Knock off? Not till six tomorrow morning. Double shift. Afternoons in here, then the night rounds."
+- "*nods* Alright. But be quick about it…": cue removed.
+- "Wrong answer. You're trespassing. Leave now or I'm calling the police." → "Wrong answer."
+- "*flatly* I'm not ringing the boss at this hour on your say-so. You need to leave. Now." → "*flatly* I'm not ringing the boss at this hour on your say-so."
+- "*scoffs* No favours. Leave or I'm calling the police." → "*scoffs* No favours."
+- "One hour. You finish whatever you're doing and you're gone. I never saw you." → "You finish whatever you're doing and you're gone. I never saw you."
+- "Ms. Sterling's office, mostly. Some storage. Conference room for high-level meetings." → "Ms. Sterling's office, north side. The consultants are across from her."
+- "Between you and me, she's a bit intense. Very particular about security protocols." → "Between you and me, I keep out of her way. Everyone does."
+- Cut: "One hour. After that, you're trespassing and I'm doing my job."
+- Narrator: "The guard looks up from his desk." → "The guard stops his round and looks you over."
+
+Danny (1 changed): "*defeated* Then I'll cooperate. For what it's worth. Just -- in whatever you write…" → "Then I'll cooperate. For what it's worth. Just... in whatever you write, say I didn't know at the start. Please."
+
+Briefing (3 changed, 10 cut):
+- Narrator: "A SAFETYNET briefing room. Director Netherton stands by the screen, Agent HaX has the file open in front of her, and a man in a lab coat sits half-buried in a laptop he clearly built himself." → "A SAFETYNET briefing room. Netherton by the screen, HaX with the file open, and a man in a lab coat half-buried in a laptop he built himself."
+- Nightshade: "Evening. Whatever they've built…" → "Morning. Whatever they've built…"
+- HaX: "Two stages. Reception first -- her staff badge opens the conference area. Weak defaults, so it cracks in seconds. Lean in near her desk to read it." → "Two stages. Reception first. Her staff badge opens the conference area. Weak defaults, so it cracks in seconds. Talk to her and lean in by her lanyard."
+- Cut: HaX "They charge more to attack hospitals…"; the three `topic_learn` lines; the three `final_instructions` reaction lines; "One rule that always holds…"; "Stay focused. Don't let the stakes crowd your head." (dead); Nightshade "One day it'll be our badge somebody clones. Remember how easy it was."
+
+Debrief, HaX (10 changed, 10 cut):
+- "The guard stopped you and you lied your way on. He never caught you at a lock…" → "The guard stopped you once. He never caught you at a lock, but he'll remember your face."
+- "The network first. You stripped their training lab and submitted the full set -- recon, FTP, pricing, and the distcc logs." → "The network first. All four flags, and the distcc logs are the case."
+- "That last one is the case. The ProFTPD backdoor, sold to Ghost…" → "The ProFTPD backdoor, sold to Ghost, invoice ZDS-2024-0847, St. Catherine's on the target line, Sable's sign-off on the approval."
+- "Victoria Sterling. Sable. Cover-CEO of the front and Zero Day's operational lead. She answered to 0day and the Architect, not the other way round." → "Victoria Sterling. Sable."
+- "I agree. I also want you clear-eyed about it. She's a believer, not a mercenary. Turning someone who thinks they're right is the hardest asset to hold." → "I agree. Just stay clear-eyed. Someone who thinks they're right is the hardest asset to hold."
+- "Her lawyers are already reaching for "information freedom" and "market forces". It won't hold. The healthcare premium proves she knew exactly what she was pricing." → "...It won't hold."
+- "A trade, and you made it. Evidence secured, intelligence gone." → "A trade, and you made it."
+- "…We take it to Command today." → "…Command's had it since first thing."
+- "Phase 2 targets are being hardened. The cells that leaned on Zero Day's supply are scrambling. And the Architect has one fewer supplier." → "The cells that leaned on Zero Day's supply are scrambling, and the Architect has one fewer supplier."
+- "Phase 2 targets are being hardened, quietly. The cells that lean on Zero Day's supply still think it's safe. And the Architect has one fewer supplier." → "The cells that buy from Zero Day still think it's safe. So does the Architect."
+- Cut: "You walked in there knowing what it was. You came out with the paper that proves it."; narrator "Agent HaX's expression hardens."; the encoding lesson ("And they treated encoding as if it were a lock..."); "The drive in her desk, you left for the search team."; "We got the result. The execution was rough in places…" (dead); "Sterling's been charged."; "Sterling's reporting to us."; "Sterling's under guard."; "Sterling's gone to ground."; "{player_name()}. You put an arms dealer's books on the record last night."
+
+Text only (round 1): receptionist, Victoria (5) and guard ("air con") choice labels; Danny's choice trimmed; HaX phone lines (bribe status, flags progress, keyed office, directive line, confrontation hint); timed texts ("Price list's in. ROT13, filed as confidential."; "Want a say in what happens to Danny? His office first." x2).
 
 ## Open items
 
