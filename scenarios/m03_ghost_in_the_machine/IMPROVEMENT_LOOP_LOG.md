@@ -216,6 +216,12 @@ CyBOK: RFID, social engineering, ethics and pricing exercised on the required pa
 
 Engine items from this round, for approval: E-A CyberChef decode event; E-B NPC hostility kept across reload; E-C graph generator draws globalVariable gates; E-D "player in sight" event so a guard can challenge on sight.
 
+### Round 1 fix (fixer, resumed)
+
+All ruled items in (commit 90437d6, WIP). Engine finding confirmed by the fixer: person-chat runs a batch's tags before its lines (`person-chat-minigame.js` ~1005), so P3-1 was real; `victoria_choice_made` now comes from a mapping on `conversation_closed:victoria_sterling`, with reload backstops on the always-loaded night_transition NPC. Four HaX calls are now texts that open the call when clicked. Safe catalogue keeps buyers and adds Critical Mass reserved stock; the VM price list (proposed XML flag 3) has no buyers. Danny KO after his choice gets its own debrief knot (2 new voiced lines) and credit; guard KO credit added; `game_loaded` clears `guard_attacking` (mitigation for E-B); brief `once`; "EXPLOITATION" dropped. Static checks clean. Needs browser: Victoria's final lines, the backstop, the four call texts, the reloaded-guard hint.
+
+Round 2 runs two ways at once: a fresh Opus static re-review and a Sonnet browser probe of P3-1 and P3-3.
+
 ## SecGen
 
 m03 XML missing on SecGen master. Proposed file: `SECGEN_PROPOSED_m03_ghost_in_the_machine.xml` (D1). No SecGen edits made.
@@ -253,6 +259,12 @@ Round 2 (replacing round-1 wording where noted):
 - HaX `directive_right` (guesser variant added): "That's it, after a couple of goes. We take it to Command tonight." (the original "Two layers, and you peeled both..." plays on a first-try answer)
 - HaX recon guide: "...nmap the subnet, read the versions, then pick your target. The scan flag comes off a clean sweep." → "...nmap the subnet and read the versions. The scan flag's in what the services say when you connect."
 - HaX day progress: "Day one still. Reception's badge first, then Sterling's card in the meeting." → "Day one still. Get through the conference reader to reach Sterling. Stuck on the reader? Ask me how to clone a card."
+
+### Phase 3
+
+Voiced (new): debrief `danny_ko_after_choice`: "Danny Foster. You talked to him, and then somebody left him out cold in his own office." / "We picked him up this morning. Whatever he'd decided, he'll be explaining it from a hospital bed first." Voiced debrief roster line unchanged in wording, now gated so it effectively never plays.
+
+Text only: Victoria's choice "[Phase 2. Critical Mass. The grid. You're already sourcing the targets.]" → "[I've been through your office, Sable. Your desk. Your files.]"; HaX phone lines (`hint_rfid`, `hint_encoding`, recap, PC call, directive call, catalogue call; three new recap branches); four call teasers; door text; night receptionist-KO text; "Card's saved" text; two catalogue credits reworded; two new KO credits.
 
 ## Open items
 
