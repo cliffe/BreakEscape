@@ -123,3 +123,26 @@ File: `scenario.json.erb`.
 3. `walkthrough-scenario` — re-trace critical path incl. KO-of-Victoria and KO-of-receptionist (Phases 1, 6).
 4. `npc-dialog-review` — prefixes render; hub is progress-gated; choices carry consequence; Victoria reads as stance-taking (Phases 3, 4).
 5. `scenario-design-review` — final structure/solvability + canon cross-read (Phases 4, 5).
+
+## Pass 5 alignment (2026-10-04)
+
+Round-1 review `m03-align-r1-review/REVIEW.md`, findings P1-1..P1-21, with orchestrator decisions. One line per finding; implemented this pass.
+
+- P1-1 (canon, option a): reframe the Zero Day link as an invoice/paper trail traced by analysts, not "Ghost's logs named Zero Day" (m02's Ghost log named the insider badge). Fix briefing:80, phone revelation:303, debrief:101; worded to hold for both m02 branches.
+- P1-2 (option a): Victoria delivers the "Ghost bought what he claimed to have built" reveal at the confrontation (one added spoken line).
+- P1-3: say the healthcare premium is built into the $25k, not "on top" (briefing:96), consistent with the catalogue.
+- P1-4: briefing "Whether anyone died" -> "How many died"; Victoria's obituary line reworded to hold for a single death; stale ERB "two or six" comment updated.
+- P1-5: add a short debrief callback on Ghost (still at large) and Zero Day as the supply chain.
+- P1-6/P1-7 (option a): gate act-2 aims (breach/office/paper trail) on the night turn (reuse `clone_call_done`), unlocked live by an `unlockAim` mapping; move Danny's task into act 2 as optional; gate "Settle Accounts" on `night_confrontation_ready` (story gate, so reveal-on-progress can't show it early), unlocked by the flag mappings; add `danny_fate === ''` variants to the all-flags texts.
+- P1-8: retask `find_operational_logs` to completing on reading the printed transaction log (onRead), removing the duplicate tick and adding a visible beat.
+- P1-9 (option a): hide Perfect Stealth until earned (story gate on a never-set global; `#unlock_aim` + complete in the debrief only for earners).
+- P1-10: rename the two lore-leaking task titles to action-oriented forms.
+- P1-11/P1-12/P1-18: rebuild the HaX hub on m02's pattern — progress-gated hint choices that retire when spent, one `field_guides` choice, a gated hint for every stuck point, and a visible task/toast after each P1-18 beat (aims unlocking at night, the log read, the moral-choices unlock, the keycard toast, a directive-decoded toast).
+- P1-13: no change (already gated and backed by required flags).
+- P1-14: add credits lines for the Phase 2 directive (read by the agent / recovered by the search team).
+- P1-15: covered by P1-18 visible beats.
+- P1-16: day->night music cue on `conversation_closed:night_transition`; move spy-action from `victoria_choice_made` to `night_confrontation_ready`; play the debrief under `end`.
+- P1-17: no change (playtest phase).
+- P1-19: SecGen XML absent; report as a user item, no SecGen files written. SecGen already has the distcc exec module, so no new module.
+- P1-20: add top-level `"flags"` block with `vm_flags_json` keyed on `ghost_in_machine_vm_network` (safe standalone: no vm_context -> fallback literals, additive to the flag-station path).
+- P1-21: make the three day/debrief-backstop mapping pairs disjoint via `debrief_played !== true` so those warnings go; justify the four intended-co-fire victoria_ko handlers; give the night-transition cutscene a background; fix the blank re-entry in night_transition. dialoguelint choice-length/stage-cue/"not X but Y" left for Phase 4.

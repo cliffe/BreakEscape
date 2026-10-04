@@ -56,6 +56,9 @@ Agent HaX: {player_name()}. Sit down before you fall down. You've earned it.
 // Perfect Stealth needs all three: never detected, actually went past him into
 // Sterling's office, and didn't simply knock him out (P6).
 { guard_detection_count == 0 and exec_office_entered and not guard_knocked_out and not guard_told_safetynet and not guard_bribed and not guard_challenged:
+    // P1-9: Perfect Stealth is hidden all night (story-gated on perfect_stealth_earned,
+    // which is never set). Reveal and complete it here, only for a player who earned it.
+    #unlock_aim:perfect_stealth
     #complete_task:zero_detection
     Agent HaX: First thing I checked: the guard never once saw you. That's a rare night's work.
 }
@@ -98,7 +101,7 @@ Agent HaX: Let's go through it.
 #speaker:agent_0x99
 Agent HaX: The network first. You stripped their training lab and submitted the full set -- recon, FTP, pricing, and the distcc logs.
 Agent HaX: That last one is the case. The ProFTPD backdoor, sold to Ghost, invoice ZDS-2024-0847, St. Catherine's on the target line, Sable's sign-off on the approval.
-Agent HaX: At the hospital we had the buyer's word for where the exploit came from. Now we have the seller's own books saying it back.
+Agent HaX: At the hospital we had the invoice -- the buyer's end of the sale. Now we have the seller's own books saying it back.
 { called_it_murder:
     Agent HaX: You called it murder with an invoice. Now we have the invoice.
 }
@@ -386,6 +389,9 @@ Agent HaX: Their records sat on the one box they knew was broken: a distcc daemo
 - else:
     Agent HaX: Phase 2 targets are being hardened, quietly. The cells that lean on Zero Day's supply still think it's safe. And the Architect has one fewer supplier.
 }
+// P1-5: Ghost is still at large after St. Catherine's (m02 canon); tie Zero Day to
+// the supply chain Nightshade flagged.
+Agent HaX: Ghost's still out there -- the operator who ran that ward. But tonight you put the hand that armed them on paper. That's the supply chain Nightshade kept warning us about.
 * [What's my next assignment?]
     Agent HaX: Rest first. Then we see where ENTROPY surfaces. Take one cell down and it shows you the next.
     -> closing

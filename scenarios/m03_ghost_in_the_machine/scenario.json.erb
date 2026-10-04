@@ -28,8 +28,13 @@ end
 #   sale     - invoice ZDS-2024-0847 to Ghost (Ransomware Incorporated);
 #              exploit $25,000 within a $55,000 package (incl. 214-hospital recon)
 #   attack   - Friday 15 November 2024, 02:47; ransom GBP 150,000 in Bitcoin
-#   deaths   - m02 ends with two or six dead depending on the player's recovery
-#              choice, so nothing in m03 states a count
+#   deaths   - m02 always ends with at least one dead (1, 2, 5 or 6, by the
+#              player's recovery choice), so m03 never states a count and its
+#              lines hold for a single death as well as many
+#   zdlink   - m02's link to Zero Day is the boardroom-safe invoice (or, if the
+#              player never found it, analysts tracing it "after you left").
+#              m02's Ghost log named an insider badge, NOT the seller, so m03
+#              never says "Ghost's logs named Zero Day"
 # m03 is set in early December 2024, "last month" from St. Catherine's.
 #
 # SAFE CHAIN (pass 2, reworded pass 3): the catalogue safe no longer shares the
@@ -60,6 +65,16 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
   "scenario_brief": "Somebody sold Ghost the way into St. Catherine's. The trail leads to WhiteHat Security, a respectable pentest firm with Zero Day Syndicate's exploit market running out of its back rooms. Walk in as a recruit, clone your way past the card readers, and come back after hours for their training network and the paper trail. Then decide what happens to the people who made that night possible.",
 
   "show_scenario_brief": "on_resume",
+
+  <%# P1-20: top-level flags block (m01/m02 pattern; game.rb:2229 primary source).
+      Standalone has no vm_context, so vm_flags_json falls back to these literals,
+      mapped flag_1..flag_4 -- additive to the flag-station's own flags array, which
+      still drives submission. Keyed on the SecGen system name. Safe before the
+      SecGen scenario exists; in Hacktivity mode the real per-build flags replace
+      these. %>
+  "flags": {
+    "ghost_in_machine_vm_network": <%= vm_flags_json('ghost_in_machine_vm_network', ['flag{network_scan_complete}', 'flag{ftp_intel_gathered}', 'flag{pricing_intel_decoded}', 'flag{distcc_legacy_compromised}']) %>
+  },
 
   "narrator": {
     "id": "narrator",
@@ -102,9 +117,23 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
         "fade": true
       },
       {
-        "trigger": "global_variable_changed:victoria_choice_made",
+        "_comment": "P1-16: the day-to-night turn gets its own cue. The night_transition cutscene closes and the CutScene tracks carry the after-hours infiltration, distinct from the day's noir.",
+        "trigger": "conversation_closed:night_transition",
+        "playlist": "cutscene",
+        "fade": true
+      },
+      {
+        "_comment": "P1-16: action music on the confrontation beat (set when all four flags are in), not on the debrief. Was keyed on victoria_choice_made, which is also what opens the debrief, so action played under a calm scene.",
+        "trigger": "global_variable_changed:night_confrontation_ready",
         "condition": "value === true",
         "playlist": "spy-action",
+        "fade": true
+      },
+      {
+        "_comment": "P1-16: the debrief plays under a settled end cue. victoria_choice_made opens the debrief; the credits/victory cue follows on conversation_closed:closing_debrief.",
+        "trigger": "global_variable_changed:victoria_choice_made",
+        "condition": "value === true",
+        "playlist": "end",
         "fade": true
       },
       {
@@ -125,6 +154,9 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           { "text": "ZERO DAY CATALOGUE: IN SAFETYNET HANDS — vendors quietly warned", "style": "entry", "condition": "(globalVars.catalogue_seen === true || globalVars.lore_catalogue_found === true) && globalVars.victoria_fate === 'recruited'" },
           { "text": "ZERO DAY CATALOGUE: NOT RECOVERED — what else they hold is still unknown", "style": "warning", "condition": "globalVars.catalogue_seen !== true && globalVars.lore_catalogue_found !== true && globalVars.victoria_fate !== 'arrested'" },
           { "text": "ZERO DAY CATALOGUE: SEIZED WITH THE MARKETPLACE — but not in our hands", "style": "warning", "condition": "globalVars.catalogue_seen !== true && globalVars.lore_catalogue_found !== true && globalVars.victoria_fate === 'arrested'" },
+          { "text": "PHASE 2 DIRECTIVE: DECODED BY THE AGENT — grid and hospitals, winter, Critical Mass to execute", "style": "entry", "condition": "globalVars.directive_decoded === true" },
+          { "text": "PHASE 2 DIRECTIVE: RECOVERED BY THE AGENT — read off the drive by our people", "style": "entry", "condition": "globalVars.directive_decoded !== true && (globalVars.usb_seen === true || globalVars.lore_directive_found === true)" },
+          { "text": "PHASE 2 DIRECTIVE: PULLED BY THE SEARCH TEAM — found in Sterling's desk after you left", "style": "entry", "condition": "globalVars.directive_decoded !== true && globalVars.usb_seen !== true && globalVars.lore_directive_found !== true" },
           { "text": "" },
           { "text": "── DECISIONS ──", "style": "section-header" },
           { "text": "VICTORIA STERLING: TURNED — a cold asset now, not a convert", "style": "entry", "condition": "globalVars.victoria_fate === 'recruited'" },
@@ -184,7 +216,13 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
       "description": "After hours, emulate Victoria's keycard at the server room door, get onto the training network, and pull the evidence that ties Zero Day to St. Catherine's.",
       "status": "locked",
       "order": 1,
-      "unlockCondition": { "aimCompleted": "act1_gain_access" },
+      <%# P1-6: act 2 opens on the night turn, not the instant act 1 completes in
+          the afternoon. clone_call_done is set when the night_transition cutscene
+          closes (the first moment the player is back after dark). A globalVariable
+          gate is story-gated, so engine 657f6158 can't reveal it on day-time task
+          progress; the agent_0x99 mapping on global_variable_changed:clone_call_done
+          unlocks it live. %>
+      "unlockCondition": { "globalVariable": "clone_call_done", "equals": true },
       "tasks": [
         {
           "taskId": "submit_network_scan_flag",
@@ -231,11 +269,21 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "status": "active"
         },
         {
+          "_comment": "P1-8: completes on READING the printed transaction log (its onRead sets transaction_log_read), not on the distcc flag submission -- which removes the duplicate tick and gives the reveal its own visible beat.",
           "taskId": "find_operational_logs",
-          "title": "Recover Zero Day's operational transaction logs",
-          "description": "Exploit distcc to recover the operational transaction logs that name GHOST and St. Catherine's",
+          "title": "Read the recovered transaction log",
+          "description": "The drop-site prints Zero Day's transaction log when the distcc flag lands. Read it -- it names GHOST and St. Catherine's",
           "type": "custom",
           "status": "active"
+        },
+        {
+          "_comment": "P1-7: Danny's fate moves into act 2 as an optional task, so settling him at night doesn't reveal the gated 'Settle Accounts' aim early.",
+          "taskId": "danny_choice_made",
+          "title": "Decide Danny Foster's fate",
+          "description": "Decide whether to protect Danny Foster from the collateral damage of the sweep",
+          "type": "custom",
+          "status": "active",
+          "optional": true
         }
       ]
     },
@@ -245,7 +293,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
       "description": "Sterling's private office holds the client roster and the paper trail. Get through the door and crack her machine.",
       "status": "locked",
       "order": 2,
-      "unlockCondition": { "aimCompleted": "act1_gain_access" },
+      "unlockCondition": { "globalVariable": "clone_call_done", "equals": true },
       "tasks": [
         {
           "taskId": "access_victoria_computer",
@@ -270,7 +318,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
       "description": "Sterling's people keep records of themselves. Find what they wrote down.",
       "status": "locked",
       "order": 3,
-      "unlockCondition": { "aimCompleted": "act1_gain_access" },
+      "unlockCondition": { "globalVariable": "clone_call_done", "equals": true },
       "tasks": [
         {
           "taskId": "lore_fragment_1",
@@ -297,8 +345,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
         },
         {
           "taskId": "lore_fragment_3",
-          "title": "The Architect's Directive",
-          "description": "Read the drive hidden in Sterling's desk",
+          "title": "Search Sterling's desk",
+          "description": "Go through the drawers of Sterling's desk and read what she hid there",
           "type": "custom",
           "status": "active"
         }
@@ -310,7 +358,11 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
       "description": "Get into Sterling's office without the guard ever knowing you were there: never stopped, never caught, no deals, no knockouts",
       "status": "locked",
       "order": 4,
-      "unlockCondition": { "aimCompleted": "act1_gain_access" },
+      <%# P1-9: hidden until earned. perfect_stealth_earned is never set during
+          play, so the aim stays story-gated and invisible; the closing debrief
+          force-reveals it with #unlock_aim and completes zero_detection only for
+          a player who was never detected. A caught player never sees it. %>
+      "unlockCondition": { "globalVariable": "perfect_stealth_earned", "equals": true },
       "tasks": [
         {
           "taskId": "zero_detection",
@@ -329,7 +381,12 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
       "status": "locked",
       "order": 5,
       "missionConclusion": true,
-      "unlockCondition": { "aimCompleted": "act2_breach_server_room" },
+      <%# P1-7: "Settle Accounts" stays hidden until all four flags are in. A
+          globalVariable gate is story-gated, so settling Danny (now an act-2 task)
+          can't reveal this aim early via engine 657f6158. night_confrontation_ready
+          is set by the flag mappings when the fourth flag lands; those mappings also
+          unlockAim this aim so it opens live. %>
+      "unlockCondition": { "globalVariable": "night_confrontation_ready", "equals": true },
       <%# Ending gate: the mandatory flag nodes from the dungeon graph -- the
           technical work this mission is not allowed to skip. Story tasks are
           not listed: they cost score if unfinished, they never withhold the
@@ -343,15 +400,9 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
         ]
       },
       "conclusionScreen": { "type": "bond_visualiser" },
+      <%# P1-7: danny_choice_made moved to act2_breach_server_room (optional). This
+          aim now holds only the confrontation and the debrief. %>
       "tasks": [
-        {
-          "taskId": "danny_choice_made",
-          "title": "Decide Danny Foster's fate",
-          "description": "Decide whether to protect Danny Foster from the collateral damage of the sweep",
-          "type": "custom",
-          "status": "active",
-          "optional": true
-        },
         {
           "taskId": "victoria_choice_made",
           "title": "Confront Victoria and decide her fate",
@@ -643,14 +694,16 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           ],
           "eventMappings": [
             {
-              "_comment": "Pass 4 round 2: delay 0 so the warning lands as the player walks in, before they reach the guard or the door. exec_wing_entered lets the debrief tell 'never went near him' from 'went near him and never got caught'.",
+              "_comment": "Pass 4 round 2: delay 0 so the warning lands as the player walks in, before they reach the guard or the door. exec_wing_entered lets the debrief tell 'never went near him' from 'went near him and never got caught'. P1-21: condition makes this disjoint from the hear_debrief backstop on the same pattern.",
               "eventPattern": "room_entered:executive_wing_hallway",
+              "condition": "globalVars.debrief_played !== true",
               "onceOnly": true,
               "setGlobal": { "lockpicking_guide_offered": true, "exec_wing_entered": true },
               "sendTimedMessage": { "delay": 0, "message": "Sterling's office is keyed, not carded -- that's your pick kit. A guard works this corridor; pick only when his back's turned, or you're made. Lockpicking guide if you want it." }
             },
             {
               "eventPattern": "room_entered:server_room",
+              "condition": "globalVars.debrief_played !== true",
               "onceOnly": true,
               "setGlobal": { "netexploit_guide_offered": true },
               "sendTimedMessage": { "delay": 2500, "message": "You're at their VM terminal. Recon first, then the services, then the legacy distcc box -- that's where their records are. Submit everything at the drop-site terminal. Guides on request." }
@@ -684,6 +737,27 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "onceOnly": true
             },
             {
+              "_comment": "P1-6: the night turn opens act 2. clone_call_done is set when the night_transition cutscene closes; this unlocks the three act-2 aims live (m05 torres pattern). The server derives the same unlock on reload from the globalVariable unlockConditions.",
+              "eventPattern": "global_variable_changed:clone_call_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "unlockAim": ["act2_breach_server_room", "search_executive_office", "collect_lore"]
+            },
+            {
+              "_comment": "P1-8/P1-18: reading the printed transaction log completes find_operational_logs (its own visible beat). onRead on the drop-site log item sets transaction_log_read.",
+              "eventPattern": "global_variable_changed:transaction_log_read",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "find_operational_logs"
+            },
+            {
+              "_comment": "P1-18: a visible toast when the player decodes the Architect's directive (directive_decoded is set by the phone decode check).",
+              "eventPattern": "global_variable_changed:directive_decoded",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "Directive decoded. Both layers off, and it's gone to Command. Phase 2 has a shape now." }
+            },
+            {
               "_comment": "Pass 4: the post-clone phone call is replaced by the night_transition cutscene (reception_lobby), which plays on the first hallway entry after the clone. HaX's instruction follows as a text the player can reread.",
               "eventPattern": "conversation_closed:night_transition",
               "onceOnly": true,
@@ -692,7 +766,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
             {
               "eventPattern": "item_picked_up:workstation",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1200, "message": "That's their CyberChef workstation. Anything that looks like gibberish on paper, paste it in. Encoding isn't encryption -- if it doesn't read after one pass, try another." }
+              "setGlobal": { "cyberchef_guide_offered": true },
+              "sendTimedMessage": { "delay": 1200, "message": "That's their CyberChef workstation. Paste anything that looks like gibberish -- encoding isn't encryption. Still scrambled after one pass? It's layered; decode again. CyberChef guide on request." }
             },
             <%# Pass 3e: the PC call used to open on the unlock task, which fires as the
                 password screen succeeds, so the phone replaced the PC's file list and the
@@ -767,7 +842,6 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "eventPattern": "objective_task_completed:submit_distcc_flag",
               "targetKnot": "m2_revelation_call",
               "conversationMode": "phone-chat",
-              "completeTask": "find_operational_logs",
               "setGlobal": { "flag_distcc_submitted": true },
               "onceOnly": true
             },
@@ -780,32 +854,42 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "eventPattern": "global_variable_changed:flag_scan_submitted",
               "condition": "value === true && globalVars.flag_ftp_submitted === true && globalVars.flag_http_submitted === true && globalVars.flag_distcc_submitted === true && globalVars.night_confrontation_ready !== true",
               "onceOnly": true,
-              "setGlobal": { "night_confrontation_ready": true }
+              "setGlobal": { "night_confrontation_ready": true },
+              "unlockAim": "moral_choices"
             },
             {
               "eventPattern": "global_variable_changed:flag_ftp_submitted",
               "condition": "value === true && globalVars.flag_scan_submitted === true && globalVars.flag_http_submitted === true && globalVars.flag_distcc_submitted === true && globalVars.night_confrontation_ready !== true",
               "onceOnly": true,
-              "setGlobal": { "night_confrontation_ready": true }
+              "setGlobal": { "night_confrontation_ready": true },
+              "unlockAim": "moral_choices"
             },
             {
               "eventPattern": "global_variable_changed:flag_http_submitted",
               "condition": "value === true && globalVars.flag_scan_submitted === true && globalVars.flag_ftp_submitted === true && globalVars.flag_distcc_submitted === true && globalVars.night_confrontation_ready !== true",
               "onceOnly": true,
-              "setGlobal": { "night_confrontation_ready": true }
+              "setGlobal": { "night_confrontation_ready": true },
+              "unlockAim": "moral_choices"
             },
             {
               "eventPattern": "global_variable_changed:flag_distcc_submitted",
               "condition": "value === true && globalVars.flag_scan_submitted === true && globalVars.flag_ftp_submitted === true && globalVars.flag_http_submitted === true && globalVars.night_confrontation_ready !== true",
               "onceOnly": true,
-              "setGlobal": { "night_confrontation_ready": true }
+              "setGlobal": { "night_confrontation_ready": true },
+              "unlockAim": "moral_choices"
             },
             {
-              "_comment": "Pass 4 round 2: only once the distcc revelation call has played to its end (revelation_heard, set by a tag on its last knot). If distcc is the last flag, the revelation_heard mapping below sends this instead, after the call.",
+              "_comment": "Pass 4 round 2: only once the distcc revelation call has played to its end (revelation_heard, set by a tag on its last knot). If distcc is the last flag, the revelation_heard mapping below sends this instead, after the call. P1-7: danny_fate variants -- the Danny prompt only when his fate is still open.",
               "eventPattern": "global_variable_changed:night_confrontation_ready",
-              "condition": "value === true && globalVars.victoria_ko !== true && globalVars.revelation_heard === true",
+              "condition": "value === true && globalVars.victoria_ko !== true && globalVars.revelation_heard === true && globalVars.danny_fate === ''",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 4000, "message": "Everything's off their network. Sterling's waiting in the conference room. Want a say in Danny Foster's fate? His office is in the executive wing -- go there first, then her." }
+            },
+            {
+              "eventPattern": "global_variable_changed:night_confrontation_ready",
+              "condition": "value === true && globalVars.victoria_ko !== true && globalVars.revelation_heard === true && globalVars.danny_fate !== ''",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 4000, "message": "Everything's off their network. Sterling's waiting in the conference room. She's your last move." }
             },
             <%# Victoria KO. Keyed on npc_ko:<id>. In pass 2 globalVarOnKO did not emit a
                 change event, so handlers on global_variable_changed:victoria_ko never
@@ -844,28 +928,47 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "setGlobal": { "victoria_choice_made": true }
             },
             {
-              "_comment": "Day-KO path. Settling her fate the instant the last flag lands would fire the debrief on top of the revelation call and the drop-site. Instead HaX sends the player back to her, and the fate settles on entering the conference room.",
+              "_comment": "Day-KO path. Settling her fate the instant the last flag lands would fire the debrief on top of the revelation call and the drop-site. Instead HaX sends the player back to her, and the fate settles on entering the conference room. P1-7: danny_fate variants.",
               "eventPattern": "global_variable_changed:night_confrontation_ready",
-              "condition": "value === true && globalVars.victoria_ko === true && globalVars.victoria_choice_made !== true && globalVars.revelation_heard === true",
+              "condition": "value === true && globalVars.victoria_ko === true && globalVars.victoria_choice_made !== true && globalVars.revelation_heard === true && globalVars.danny_fate === ''",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 6000, "message": "Everything's off their network. Sterling's still in the conference room where you left her. Want a say in Danny's end? His office first." }
             },
             {
-              "_comment": "Pass 4 round 2: distcc was the last flag, so night_confrontation_ready was set while the revelation call was still playing. Send the all-flags message once the call has ended. The texts here and in the two night_confrontation_ready mappings above are copies: edit each pair together (dialogue stage, finding 8: both are over the 30-word cap).",
+              "eventPattern": "global_variable_changed:night_confrontation_ready",
+              "condition": "value === true && globalVars.victoria_ko === true && globalVars.victoria_choice_made !== true && globalVars.revelation_heard === true && globalVars.danny_fate !== ''",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 6000, "message": "Everything's off their network. Sterling's still in the conference room where you left her. Go and settle it." }
+            },
+            {
+              "_comment": "Pass 4 round 2: distcc was the last flag, so night_confrontation_ready was set while the revelation call was still playing. Send the all-flags message once the call has ended. P1-7: danny_fate variants here too; keep each pair in step with the night_confrontation_ready copies above.",
               "eventPattern": "global_variable_changed:revelation_heard",
-              "condition": "value === true && globalVars.night_confrontation_ready === true && globalVars.victoria_ko !== true",
+              "condition": "value === true && globalVars.night_confrontation_ready === true && globalVars.victoria_ko !== true && globalVars.danny_fate === ''",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 2000, "message": "Everything's off their network. Sterling's waiting in the conference room. Want a say in Danny Foster's fate? His office is in the executive wing -- go there first, then her." }
             },
             {
               "eventPattern": "global_variable_changed:revelation_heard",
-              "condition": "value === true && globalVars.night_confrontation_ready === true && globalVars.victoria_ko === true && globalVars.victoria_choice_made !== true",
+              "condition": "value === true && globalVars.night_confrontation_ready === true && globalVars.victoria_ko !== true && globalVars.danny_fate !== ''",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2000, "message": "Everything's off their network. Sterling's waiting in the conference room. She's your last move." }
+            },
+            {
+              "eventPattern": "global_variable_changed:revelation_heard",
+              "condition": "value === true && globalVars.night_confrontation_ready === true && globalVars.victoria_ko === true && globalVars.victoria_choice_made !== true && globalVars.danny_fate === ''",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 2000, "message": "Everything's off their network. Sterling's still in the conference room where you left her. Want a say in Danny's end? His office first." }
             },
             {
+              "eventPattern": "global_variable_changed:revelation_heard",
+              "condition": "value === true && globalVars.night_confrontation_ready === true && globalVars.victoria_ko === true && globalVars.victoria_choice_made !== true && globalVars.danny_fate !== ''",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2000, "message": "Everything's off their network. Sterling's still in the conference room where you left her. Go and settle it." }
+            },
+            {
+              "_comment": "P1-21: debrief_played guard makes this disjoint from the hear_debrief backstop on the same room_entered pattern.",
               "eventPattern": "room_entered:conference_room_01",
-              "condition": "globalVars.victoria_ko === true && globalVars.night_confrontation_ready === true && globalVars.victoria_choice_made !== true",
+              "condition": "globalVars.victoria_ko === true && globalVars.night_confrontation_ready === true && globalVars.victoria_choice_made !== true && globalVars.debrief_played !== true",
               "onceOnly": true,
               "completeTask": "victoria_choice_made",
               "setGlobal": { "victoria_choice_made": true }
@@ -978,7 +1081,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "condition": "globalVars.mission_phase === 'act2_infiltration' && globalVars.clone_call_done !== true",
               "onceOnly": true,
               "conversationMode": "person-chat",
-              "targetKnot": "start"
+              "targetKnot": "start",
+              "background": "assets/backgrounds/background1.png"
             },
             {
               "_comment": "Pass 4 round 2: clone_call_done is set when the scene closes, not when it opens, so a reload mid-scene replays it (the onceOnly trigger is also only persisted on close). Person-chat runs a batch's tags at its start, so an ink tag on the last line would not wait.",
@@ -1189,7 +1293,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "takeable": true,
               "readable": true,
               "text": "<%= json_escape(operational_log_content) %>",
-              "observations": "Printed by the drop-site from what you pulled off the distcc box. The sale to Ghost, with Sable's approval on it."
+              "observations": "Printed by the drop-site from what you pulled off the distcc box. The sale to Ghost, with Sable's approval on it.",
+              "onRead": { "setVariable": { "transaction_log_read": true } }
             }
           ]
         }
@@ -1493,6 +1598,9 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     "called_it_murder": false,
     "directive_decoded": false,
     "revelation_heard": false,
-    "exec_wing_entered": false
+    "exec_wing_entered": false,
+    "cyberchef_guide_offered": false,
+    "transaction_log_read": false,
+    "perfect_stealth_earned": false
   }
 }

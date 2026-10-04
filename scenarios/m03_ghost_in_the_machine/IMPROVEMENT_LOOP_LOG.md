@@ -58,13 +58,33 @@ Review copied to `m03-align-r1-review/REVIEW.md` in scratch. Counts: 1 blocker, 
 
 Decisions: night staging option (a); all canon fixes now, worded for every m02 ending; Perfect Stealth hidden until earned; Ghost's "own build" callback through Victoria. Reason: each is mission-local and reversible, and matches m02.
 
+### Round 1 fix (Opus fixer)
+
+Plan appended to `ALIGNMENT_PLAN.md` ("Pass 5 alignment"). Outcomes: P1-1 to P1-12, P1-14, P1-16, P1-18, P1-20 fixed; P1-15 covered by P1-18; P1-21 fixed except the four `npc_ko:victoria_sterling` handlers, which are meant to fire together (justified in an ERB comment); P1-13 no change; P1-17 deferred; P1-19 open (D1). Act-2 aims are story-gated on `clone_call_done` and unlocked live by a mapping; "Settle Accounts" gated on `night_confrontation_ready`; Perfect Stealth hidden until the debrief's `#unlock_aim`; HaX hub rebuilt on m02's pattern with five gated hints. Static checks: ink compiles, validator schema pass with 1 justified warning, reopencheck 0 problems, door alignment OK, inkcheck/loopcheck clean. Browser: not yet (playtest phase).
+
+Orchestrator check: grepped the briefing, revelation, Victoria and debrief lines and the unlock gates; all present. Correction made by the orchestrator: Victoria's new line called Ghost "he"; m02 uses "they" throughout, so the line now uses "they".
+
 ## SecGen
 
 (see per-phase sections)
 
 ## Spoken lines changed (old → new)
 
-(running list; filled per phase)
+### Phase 1
+
+Changed:
+- HaX (briefing): "Ghost's logs say so. That's the buyer's word. Tonight we get the seller's." → "An invoice did. It surfaced at St. Catherine's with Zero Day's name on the sale -- the paper the buyer left behind. Tonight we get the seller's own ledger."
+- HaX (briefing): "...Whether anyone died came down to a recovery call." → "...How many died came down to a recovery call."
+- HaX (briefing): "...Twenty-five thousand on the invoice, with a healthcare premium on top." → "...Twenty-five thousand on the invoice, healthcare premium already built into the price."
+- HaX (phone, revelation): "Ghost's logs named Zero Day. Now their own ledger says it back -- timestamped, Sable's approval on it. A case with a name." → "At the hospital we had the invoice -- the buyer's end. Now their own ledger says it back. A case with a name."
+- Victoria: "I read every obituary. I can recite them in order. It changed nothing I believe." → "I read what that ward cost, down to the number. It changed nothing I believe."
+- HaX (debrief): "At the hospital we had the buyer's word for where the exploit came from. Now we have the seller's own books saying it back." → "At the hospital we had the invoice -- the buyer's end of the sale. Now we have the seller's own books saying it back."
+
+Added:
+- Victoria: "Your Ghost liked to tell people they wrote that exploit themselves. They didn't. They bought it from me, twenty-five thousand, hospital premium and all."
+- HaX (debrief): "Ghost's still out there -- the operator who ran that ward. But tonight you put the hand that armed them on paper. That's the supply chain Nightshade kept warning us about."
+- HaX (phone): five new hint knots (hint_sterling_night, hint_danny, hint_guard, hint_safe, hint_clone), 3–4 lines each.
+- Narrator (night transition re-entry): "The hallway's still on its night lights. Off to the east, the guard goes round again."
 
 ## Open items
 

@@ -77,7 +77,7 @@ Agent HaX: The ransomware ran on a ProFTPD backdoor. That exploit didn't come fr
     #set_global:knows_m2_connection:true
     ~ handler_trust = handler_trust + 5
     # influence_increased
-    Agent HaX: Ghost's logs say so. That's the buyer's word. Tonight we get the seller's.
+    Agent HaX: An invoice did. It surfaced at St. Catherine's with Zero Day's name on the sale -- the paper the buyer left behind. Tonight we get the seller's own ledger.
     -> mission_stakes
 * [The exploit at St. Catherine's traces back here?]
     ~ knows_m2_connection = true
@@ -85,7 +85,7 @@ Agent HaX: The ransomware ran on a ProFTPD backdoor. That exploit didn't come fr
     Agent HaX: Ghost pulled the trigger. Someone handed them the gun. That's what we go and find.
     -> mission_stakes
 * [Walk me through St. Catherine's again.]
-    Agent HaX: A ward of patients on life support, encrypted in the night. Whether anyone died came down to a recovery call.
+    Agent HaX: A ward of patients on life support, encrypted in the night. How many died came down to a recovery call.
     Agent HaX: That's the buyer, Ghost. Zero Day sold the exploit and invoiced for it.
     ~ knows_m2_connection = true
     #set_global:knows_m2_connection:true
@@ -93,7 +93,7 @@ Agent HaX: The ransomware ran on a ProFTPD backdoor. That exploit didn't come fr
 
 === mission_stakes ===
 #speaker:agent_0x99
-Agent HaX: They sold it as a product. Twenty-five thousand on the invoice, with a healthcare premium on top.
+Agent HaX: They sold it as a product. Twenty-five thousand on the invoice, healthcare premium already built into the price.
 { knows_m2_connection:
     Agent HaX: They charge more to attack hospitals. Because hospitals can't defend themselves, and they pay fast to make it stop.
 }
