@@ -150,6 +150,22 @@ Counts: 0 blockers, 4 majors, 9 minors. No unambiguous factual bugs found (CVE c
 
 Plan appended to `PUZZLE_CHAINS_PLAN.md` ("Pass 5 puzzle chains"). No ink changed, so no spoken lines. P2-1 fixed (transaction log itemised as m02's invoice: ProFTPD $25,000, recon of 214 hospitals $15,000, target selection $10,000, deployment guide $5,000, total $55,000 after the 15% affiliate discount; the premium is a margin note and stays in the catalogue as list-price logic, so the Phase 1 spoken lines hold). P2-2 light version: the opening message no longer pre-arms the cloner; HaX introduces it on the first `door_unlock_attempt` at the conference room (the engine opens the cloner minigame rather than a hard refusal when the cloner is held, so a true "fail, then grant" needs engine work). P2-3, P2-5, P2-6, P2-8, P2-10 fixed. P2-4 left: the schema allows only the array form of `flagRewards`, which is index-paired with the flags, so the three dead `emit_event` rewards can't be dropped without moving the distcc reward (engine/schema item E-2). P2-7 marked deferred by the fixer without a ruling; sent to round 2 to judge. Credits keep their existing em-dash house format (25 lines already use it). Static checks clean; commit 5a95140 (WIP).
 
+### Round 2 review (fresh Opus; rerun after a container restart lost the first attempt)
+
+Verdict: implementable, converging. Round 1: P2-1, 5, 6, 8, 10 closed; P2-2 works but few players will meet the door before cloning (P2-16); P2-3 partly closed (P2-17); P2-4 worse than logged: each dead `emit_event` shows "Rewards Unlocked / Event triggered" at the flag station; P2-7 judged a puzzle issue (guessing earns the decode credit and debrief line). New: 0 blockers, 1 major, 4 minors.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| P2-4 | minor | Dead rewards visible as "Event triggered" | via P2-15 |
+| P2-7 | minor | Directive quiz guessable; guess earns the "decoded" credit and line | to fixer (`directive_guessed`; credit and line for a first-try answer only) |
+| P2-14 | major (SecGen draft) | Round 1's draft XML generated flag 1 twice (shifting flags) and put it where the runbook says nothing matters | fixed in the round 2 draft: flag 1 generated once into the FTP banner and a web-index comment; flag 3 price list and flag 4 log copied from the game text |
+| P2-15 | minor | Replace `emit_event` rewards with `set_global` (schema allows it; no reward panel) | to fixer, option B (fresh unread keys, zero risk). E-2 no longer needed for m03 |
+| P2-16 | minor | Cloner named before the player meets the reader; "Reception first." and "not your visitor pass" wrong | to fixer: reword (A) and offer the receptionist's clone choice only after the door attempt or asking HaX (B) |
+| P2-17 | minor | Recon guide line still says the scan flag comes off a clean sweep | to fixer |
+| P2-18 | minor | Log lacks m02's "Target" line; TOTAL line wraps | to fixer; XML to re-sync |
+
+Correction to the spoken-lines list: the engine voices a phone line only when it starts with `voice:` (`phone-chat-ui.js` ~568) and HaX's phone ink has none, so the Phase 1 phone lines (revelation call, hints) are on-screen text and cost no TTS. Person-chat lines (briefing, Victoria, debrief, night transition) are voiced.
+
 ## SecGen
 
 (see per-phase sections)
@@ -185,4 +201,4 @@ Round 2 (replacing round-1 wording where noted):
 
 - E-1 (engine, optional, for approval): on reload the server doesn't re-derive aims whose `unlockCondition` is a globalVariable; it relies on the recorded unlock. Works for m03 today; a derived check would make story gates robust if a recorded unlock were ever lost.
 - D1 SecGen m03 XML (user).
-- E-2 (engine/schema, for approval): `scenario-schema.json` forbids the hash form of `flagRewards` that `games_controller.rb` prefers, so m03 keeps three dead `emit_event` rewards to preserve index pairing.
+- E-2 (superseded for m03 by P2-15; still a schema inconsistency) (engine/schema, for approval): `scenario-schema.json` forbids the hash form of `flagRewards` that `games_controller.rb` prefers, so m03 keeps three dead `emit_event` rewards to preserve index pairing.
