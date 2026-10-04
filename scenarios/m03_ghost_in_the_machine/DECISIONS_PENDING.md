@@ -9,4 +9,4 @@ Format per AGENTS.md "Asking the user for input". Recommended option first. If u
 - (a) **Recommended.** Write the XML to match the game (flag order scan, FTP, web price list ROT13, distcc transaction log; system name `ghost_in_machine_vm_network`). The loop drafts it as text in the log; you approve, then it is added to SecGen in a separate step.
 - (b) Ship m03 standalone only for now.
 
-Status: open. The game side carries on; the draft XML is produced in Phase 2.
+Status: open. Draft ready: `SECGEN_PROPOSED_m03_ghost_in_the_machine.xml` in this folder (four flags, existing modules only, validates against SecGen's `scenario_schema.xsd`; not built). Its header lists the caveats to confirm on a real build: flag order, and that an anonymous FTP login shows the banner carrying flag 1. If approved, it is copied to SecGen as `scenarios/break_escape/safetynet/m03_ghost_in_the_machine.xml` in a separate step.
