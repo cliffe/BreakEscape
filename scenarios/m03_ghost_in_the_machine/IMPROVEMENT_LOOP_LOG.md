@@ -124,6 +124,28 @@ Open from Phase 1: P1-19 (D1, SecGen, user); P1-17 (exec-wing cover, playtests);
 
 Tooling item (optional, for approval): a validator check for a scenario global sharing its name with an unrelated ink VAR (would have caught P1-38).
 
+## Phase 2: puzzle chains
+
+### Round 1 review (fresh Opus, read-only)
+
+Counts: 0 blockers, 4 majors, 9 minors. No unambiguous factual bugs found (CVE claims right: the ProFTPD 1.3.3c source backdoor has no CVE; distcc CVE-2004-2687 on port 3632). Good already: three boss-key locks (server room, wall safe, office PC) with two cross-building hunts; the wall-safe decode chain is the strongest puzzle; Victoria's fate is required; `concludeRequires` lists only the four flags; all four VM flags are required and carry act 2. Draft SecGen XML written (scratch `m03-puzzle-r1-review/m03_ghost_in_the_machine.xml`; all four modules exist in SecGen).
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| P2-1 | major | Catalogue and transaction log re-itemise invoice ZDS-2024-0847 and contradict m02's invoice (premium vs discount, missing lines) | to fixer: align non-spoken lore to m02; premium stays as Zero Day's list-price logic so spoken lines hold |
+| P2-2 | major | RFID cloner (m03's new kit) is in the start bag and used at the first carded door; no wall felt first | orchestrator decision: mission-local light fix (fail a carded door, then HaX introduces the cloner). Reason: the arc wants the absence felt; reversible |
+| P2-3 | major | Flag 1 "network scan" has no source on a real VM (nmap emits no flag) | to fixer: banner/index placement as in the draft XML; task and hints say read the banners |
+| P2-4 | major | Three `emit_event` flagRewards nobody listens to | to fixer |
+| P2-5 | minor | "distcc holds the case" has six sources | to fixer (trim to two or three) |
+| P2-6 | minor | Office-PC password handed over (format plus worked example; year in five places) | to fixer (small deduction) |
+| P2-7 | minor | Phase-2 directive quiz free to brute-force | to fixer |
+| P2-8 | minor | ERB comment calls the draft MIME; it is plain Base64 | to fixer |
+| P2-9 | minor | `[NOTE]` tag in a text file | to fixer (reviewer judged it diegetic; fixer to confirm) |
+| P2-10 | minor | Perfect Stealth lost via `guard_challenged` without a detection | to fixer |
+| P2-11 | minor | Main hallway empty, the only day-night pacing beat | to fixer |
+| P2-12 | minor | Briefing's "PIN cracker left with Nightshade" assumes an optional m02 pickup | no change: holds as rationing fiction (orchestrator agrees) |
+| P2-13 | minor | `player_approach` overwrite (same as N-1) | deferred to Phase 4 with N-1 |
+
 ## SecGen
 
 (see per-phase sections)
