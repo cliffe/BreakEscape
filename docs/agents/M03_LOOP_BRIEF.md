@@ -16,6 +16,7 @@ A SAFETYNET campaign mission: a fun game with dialogue that plays like a well-wr
 
 - Kit is cumulative: lockpick from m01, the RFID cloner is introduced in m03, the PIN cracker is rationed.
 - Spoken-line changes cost money (TTS cache keyed on text + voice). Every agent that changes a spoken line lists it, old → new, in its report. Narration and stage cues aren't spoken unless voiced; say which.
+- No printed variables in voiced lines (user rule, 2026-10-04): a person-chat line that interpolates `{player_name()}`, a count or any other variable can't be cached by TTS. Write it without the variable (an address like "Agent" or no name at all), or move the variable into text the engine doesn't voice. Inline alternatives and conditionals that choose between fixed strings are fine.
 - UK English, plain writing, no AI filler, no em or en dashes in new text. "cyber security" is two words.
 - Don't edit other missions, `.claude/skills/*`, engine code (`public/break_escape/js/**`, `app/**`, `lib/**`) or SecGen unless the orchestrator's prompt says so. Engine needs go back to the orchestrator as a separate item.
 - Don't commit, stash, reset or `git checkout -- <file>`. Compare with `git show HEAD:<path>`.
