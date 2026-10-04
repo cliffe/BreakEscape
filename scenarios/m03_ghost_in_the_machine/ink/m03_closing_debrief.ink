@@ -160,8 +160,8 @@ Agent HaX: Whether she stays turned is anyone's guess. Today, it's a win with it
 
 === victoria_arrested ===
 #speaker:agent_0x99
-Agent HaX: Victoria Sterling is in custody. The CPS are looking at conspiracy, supplying articles for use in fraud and computer misuse, and her part in the deaths at St. Catherine's.
-Agent HaX: Her lawyers are already reaching for "information freedom" and "market forces". It won't hold.
+Agent HaX: In custody. The CPS are looking at conspiracy, supplying articles for use in fraud and computer misuse, and her part in the deaths at St. Catherine's.
+Agent HaX: Her lawyers are already calling it "market-driven research". It won't hold.
 * [She put a premium on hospitals that can't defend themselves. Premeditation in a spreadsheet.]
     Agent HaX: That's the line that closes it.
     -> victoria_arrested_path
@@ -333,7 +333,9 @@ Agent HaX: Their records sat on the one box they knew was broken: a distcc daemo
     Agent HaX: And you brought the whole paper trail out -- the history, the catalogue, the directive.
     Agent HaX: We've got their case and their plan now, in their own words.
 }
-{ not (lore_history_found and (catalogue_seen or lore_catalogue_found) and (usb_seen or lore_directive_found)):
+// Pass 5 (P4-48): only when the history or the catalogue is missing; a drive-only miss is
+// covered in phase_2_discussion, and this block no longer names the drive.
+{ not lore_history_found or not (catalogue_seen or lore_catalogue_found):
     Agent HaX: You left some of the paper behind.
     { not lore_history_found:
         Agent HaX: Their own history of the firm is still in Sterling's filing cabinet.
@@ -361,7 +363,7 @@ Agent HaX: Their records sat on the one box they knew was broken: a distcc daemo
     Agent HaX: You did the technical work and still saw the people in it. Keep doing both.
 }
 { (handler_trust >= 50) && (handler_trust < 70):
-    Agent HaX: Clean enough. Get some rest; we'll need you soon.
+    Agent HaX: Clean enough. We'll need you soon.
 }
 -> aftermath
 
@@ -373,7 +375,7 @@ Agent HaX: Their records sat on the one box they knew was broken: a distcc daemo
     Agent HaX: Here's where it stands. Zero Day doesn't know it's been read.
 }
 { victoria_fate != "recruited":
-    Agent HaX: The cells that leaned on Zero Day's supply are scrambling, and the Architect has one fewer supplier.
+    Agent HaX: The cells that bought from them are scrambling. The Architect will have to shop elsewhere.
 - else:
     Agent HaX: The cells that buy from Zero Day still think it's safe. So does the Architect.
 }
@@ -392,7 +394,7 @@ Agent HaX: Ghost's still out there. But last night you put the people who armed 
 
 === closing ===
 #speaker:agent_0x99
-Agent HaX: We'll brief the next one when you're ready.
+Agent HaX: Go home, {player_name()}. We'll brief the next one when you're ready.
 // The conclusion aim's last task completes HERE, so bond_visualiser and the
 // credits come after the debrief, not over it.
 #complete_task:hear_debrief

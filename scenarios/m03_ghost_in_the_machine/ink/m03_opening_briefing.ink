@@ -2,10 +2,10 @@ EXTERNAL player_name()
 
 // Pass 5 (P4-23): the stance of record is mission_approach's pick (and last_advice's
 // "aggressive"); earlier briefing writes were always overwritten, so they're gone.
-// player_approach and knows_m2_connection are declared in the scenario's
-// globalVariables, so assigning them here writes through to game state, where the
-// phone hub, Danny's confrontation and the debrief read them back. No EXTERNAL
-// getters -- the engine binds only six, and an unbound one throws at runtime.
+// player_approach and knows_m2_connection are scenario globals, so assigning them here
+// writes through to game state. The debrief reads player_approach; knows_m2_connection
+// is read only below. No EXTERNAL getters: the engine binds only six, and an unbound
+// one throws at runtime.
 VAR player_approach = ""
 VAR knows_m2_connection = false
 VAR handler_trust = 50
@@ -154,10 +154,11 @@ Agent HaX: On our side of the record she runs the front and answers to 0day and 
 #speaker:agent_0x99
 // Pass 5 (P2-16): asking about cloning opens the receptionist's clone choice.
 #set_global:cloner_explained:true
-Agent HaX: Two stages. Reception first. Her staff badge opens the conference area. Weak defaults, so it cracks in seconds. Talk to her and lean in by her lanyard.
+Agent HaX: Two stages. Reception first. The receptionist's badge opens the conference area. Weak defaults, so it cracks in seconds. Talk to her and lean in by her lanyard.
 Agent HaX: Then Sterling's executive card in the meeting. Custom keys, so it's Darkside -- about half a minute.
 Agent HaX: Your moment's at the whiteboard. Stand close and keep her talking while it reads.
 Agent 0x47 'Nightshade': Capture and replay. Her card broadcasts, we copy it, we wear it. Same trick they use on us.
+Agent 0x47 'Nightshade': One day it'll be our badge somebody clones. Remember how easy it was.
 Agent 0x47 'Nightshade': Last time, a card meant getting it off somebody. This time you just stand next to it.
 Agent HaX: Picks for anything keyed, the cloner for anything carded. No PIN cracker this time. Nightshade still has ours in pieces from St. Catherine's.
 * [What if she notices?]
@@ -217,7 +218,7 @@ Agent HaX: Your call. I trust your read.
 === final_instructions ===
 #speaker:agent_0x99
 { knows_m2_connection:
-    Agent HaX: And {player_name()} -- whatever the count turns out to be at St. Catherine's, people died on the back of what Zero Day sold.
+    Agent HaX: {player_name()}. Whatever the count turns out to be at St. Catherine's, people died on the back of what Zero Day sold.
 }
 * [I'll get the evidence. Zero Day goes down.]
     ~ handler_trust = handler_trust + 10
