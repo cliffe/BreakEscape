@@ -327,6 +327,10 @@ P4-1..P4-64: 63 closed, 1 justified (P4-37). Every character "ship". Every cut l
 
 All static. The dialogue playtest is part of Phase 5 (receptionist first and return visits, guard bribe and police routes, briefing hub, debrief on each ending).
 
+## User rule (2026-10-04): no printed variables in voiced lines
+
+A voiced line that prints `{player_name()}` or a count can't be cached by TTS. Recorded in `AGENTS.md` (standing rules) and the loop brief. m03 has 11 such voiced lines (10 `{player_name()}`, one `{guard_detection_count}`); they go to the fixer with the Phase 5 round 1 findings. Outside m03 (open item for the user): m02 has 7 and m04 has 4 `{player_name()}` uses in person-chat ink (other missions' phone text and choice labels can keep variables).
+
 ## Phase 5: playtests
 
 Script: `PASS5_PLAYTEST.md` (two regression runs and 18 carried browser checks C1-C18); `TESTING_WALKTHROUGH.md` updated to pass 5. All runs headless on :3001. Testers' Writes to the scratchpad were refused in this round, so the orchestrator saved their reports from their final messages.
@@ -479,5 +483,6 @@ Restored 1 (Nightshade, above). Changed 19, cut 3, added 0.
 
 - E-1 (engine, optional, for approval): on reload the server doesn't re-derive aims whose `unlockCondition` is a globalVariable; it relies on the recorded unlock. Works for m03 today; a derived check would make story gates robust if a recorded unlock were ever lost.
 - D1 SecGen m03 XML (user).
+- Other missions with printed variables in voiced lines: m02 (7), m04 (4). Not changed here (other missions; m02 has cached audio). Offered as a follow-up, plus a dialoguelint check for it.
 - E-A..E-D (Phase 3 round 1) and E-E flag station silent drop: engine items for approval.
 - E-2 (superseded for m03 by P2-15; still a schema inconsistency) (engine/schema, for approval): `scenario-schema.json` forbids the hash form of `flagRewards` that `games_controller.rb` prefers, so m03 keeps three dead `emit_event` rewards to preserve index pairing.
