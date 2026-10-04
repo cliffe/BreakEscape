@@ -278,6 +278,20 @@ Orchestrator check: grepped the guard ink (no `guard_attacking`), the task title
 
 Browser-tested in this phase: P3-1 (recruit ending, reload backstop), P3-3 (station stays open, text opens the call). Static only: everything else. Carried to Phase 5: the hub replays and a lingering toast; the arrest and escape endings; guard after player KO and reload; reload between Victoria's fate and her chat closing; plus P2-20's list.
 
+## Phase 4: dialogue
+
+Ink snapshot of 3726cf4 (Phase 3 close) kept in scratch `m03-dialogue-snapshot/` for `tagdiff --old`.
+
+### Round 1 review (fresh Opus, read-only)
+
+Counts: 0 blockers, 9 majors, 33 minors (P4-1..P4-42). Per character: ship Danny and HaX's phone ink (small text fixes); light revise briefing, guard, narrator; revise receptionist, Victoria's afternoon interview, debrief. Already good: Danny's scene, Victoria's night confrontation, the guard's best dry lines, the debrief opening, the night transition, HaX's hub.
+
+Top items: Victoria's afternoon makes the same two arguments five times with four stock analogies and spends her night payoff early (P4-1); her mission-statement lines read as AI-written (P4-3); the receptionist talks like an American brochure though cast as a Cardiff local, and her greeting repeats Victoria's (P4-8); the hospital premium has seven voices and "encoding isn't encryption" is taught seven times, including a course-outline briefing topic (P4-4/5/6); the debrief has three "now we have the proof" lines in a row, re-reads fates just heard, and on the recruited branch says the Architect "has one fewer supplier" while Zero Day still supplies (P4-24/29/7). Structure: dead `handler_trust` lines, unread `mission_priority` and five globals, a missing influence tag, a repeated and self-contradicting police threat, an unenforced bribe "hour", stale geography in the guard's lines, the briefing's "lean in near her desk", "Evening." at a morning briefing, a night choice answering an unasked question. Deferred items: N-1 partly closed (P4-23 remains); P3-23 → P4-9; choice length (trim Danny :77, justify Victoria :493); keep Victoria's one "not X but Y"; cut four stage cues.
+
+Recommended voiced changes: 37 rewrites, 32 cuts, 7 optional (lean set 24).
+
+Decision: take the full set. Reason: m03 has no audio generated yet (no `tts_cache/m03_*` in the repo), so a rewritten voiced line replaces nothing that was paid for; every m03 line is voiced fresh when its audio is generated.
+
 ## SecGen
 
 m03 XML missing on SecGen master. Proposed file: `SECGEN_PROPOSED_m03_ghost_in_the_machine.xml` (D1). No SecGen edits made.
