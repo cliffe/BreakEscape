@@ -40,6 +40,10 @@ export BUNDLE_FORCE_RUBY_PLATFORM=true LANG=C.UTF-8
 - Node tests: `node --test test/js/*.test.*`. Baseline here: 300 pass, 1 fail (`engine-fixes-pass4.test.mjs` cannot set `globalThis.navigator` under Node 22; pre-existing and environmental).
 - Rails: `bin/rails test` (baseline 491 runs, 0 failures, 1 skip).
 
+### After a container restart
+
+Postgres and the :3001 server stop. Restart them (orchestrator's job): `service postgresql start`, then from the repo root `env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true nohup bin/rails server -b 127.0.0.1 -p 3001 -P tmp/pids/server-3001.pid > tmp/keyless-3001.log 2>&1 &` with the exports above. Gems, Playwright and the Chromium trust store survive.
+
 ### Browser playtests (work here, headless)
 
 - The keyless server is already running on **:3001**. Don't run `start-keyless-server.sh` (it misreads the port check in this container and truncates the server log) and never touch :3000.
