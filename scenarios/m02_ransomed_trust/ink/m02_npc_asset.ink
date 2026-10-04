@@ -54,7 +54,15 @@ VAR read_handover_board = false
 {insider_identified:
     -> confrontation
 }
+// Round 2 (CF-H): the introduction plays once.
+{cover_friendly:
+    -> cover_return
+}
 -> cover_friendly
+
+=== cover_return ===
+Graham Reeves: Still here. What can I do for you?
+-> cover_hub
 
 // ===========================================
 // COVER -- before identification

@@ -126,3 +126,72 @@ New: Reeves ×2 (drill deflection); Val ×7 (accusation, incl. "Me." which the b
 | CF-J | note | After reload the title prompt needs a click; Space/Enter ignored (engine E2) |
 
 Minors carried into the post-blind fix round.
+
+## Round 2
+
+Inputs: blind struggling-player run (game 1552, `m02-loop/blind-struggle/REPORT.md`; 0 blockers, 2 majors) and the round 1 confirmation minors CF-A to CF-H. The "do your best" blind run died on a Bash block and is rerun after this round.
+
+| # | Sev. | Finding | Class | Fix |
+|---|---|---|---|---|
+| BS1 | major | After Gary's card nothing on screen says the server room is through Val's Security Office | mission | The burn mapping now unlocks "Somebody Pulled Your Booking" itself (it could stay hidden behind the IT aim's other tasks); task "Reach the server room, through Val's Security Office"; the 11 s burn text names "Her Security Office, west end of the main corridor"; a HaX toast 18 s after the card is picked up says where its door is (skipped once past Val); "Remind me where we are" says the same while the card is held |
+| BS2 | major | Boardroom keypad: blind guesses burn attempts; the code is only in Kim's diary | mission | Snag list item 20: "CTO keeps the code in her desk diary"; Ward Board: "(KEYPAD -- ask the CTO)"; HaX's press-terminal advice and the tier-4 nudge mention Kim's code. Attempts: the 3 are per keypad session (`pin-minigame.js` builds a fresh attempt list each open; nothing is stored server-side), so at 0 the keypad closes with "PIN Rejected" and the next interaction gives 3 more. It can't block the ending. The "3 attempts" framing is engine UI, left as it is |
+| BS-O5 | minor | "OPTIMAL -- BOTH KEY SETS" gives the answer away | mission | Combined tile: "4 HOURS -- BOTH KEY SETS", warning tone, banner "BOTH KEY SETS: FOUR-HOUR RESTORE, NOTHING PAID" |
+| BS-O3 | minor | Clicking a lanyard in the inventory shows nothing | mission (engine cause) | The engine shows no observation for takeable, non-readable items in the inventory (`interactions.js`, observation only when `!takeable`). The three lanyards are now readable in place (`readDisplay: gameDisplay`, not added to notes) with a short card text. Needs a browser check that world pickup still works |
+| BS-P3 | — | HaX line looked cut off | no-fix | The source line is whole (`m02_phone_agent0x99.ink:259`); harness truncation |
+| BS-x | minor | HaX message timestamps all the same | engine | Left (same as R17) |
+| BS-y | minor | The insider was learned from Reeves's ambush confession | mission | The ambush stays the fallback. New on-screen nudge 30 s after the restore decision, if flag 4 is in and nobody's named: "Before the press terminal: whoever carries SC-4471 is still in the building. Read the boardroom post log and name them first." |
+| CF-A | minor | Ghost tile's price shows before any offer and reads the same after acceptance | mission | Tile bullets before acceptance: "Only if Ghost offers them -- and Ghost will want something for them."; `whenAvailable` (deal accepted) swaps in "You gave Ghost your word: tonight's evidence goes public." |
+| CF-B | minor | "COVER RE-ESTABLISHED: … without incident" next to the attack credit | mission | Two route-true credits ("Val Okonkwo checked you out and opened her office" / "On paper -- you let yourself past Val anyway"), neither shown if Val was attacked or KO'd |
+| CF-C | minor | Val's re-talk after a fight ignores it | mission | `after_fight`: one line and "[Walk away.]" |
+| CF-D | minor | Hostile NPC starts a windup after the player's KO | engine | `npc-attack-guard.js` (`playerCanBeAttacked`); `npc-combat.js` checks it before a windup and before one lands (hides the telegraph). Node test `npc-attack-guard.test.mjs` |
+| CF-E | minor | Debrief quotes the manifesto/invoice when neither was found | mission | `q_entropy_link` and `mission_3_setup` lines gated on `lore_ghosts_manifesto_found` / `lore_zds_invoice_found`, with variants |
+| CF-F | minor | "Lockpicking Failed" / "Pick Failed" toasts after a damage close | engine | `player-damage-interrupt.js` records the close (`minigameClosedByDamage()`); the two lockpick failure toasts (`minigame-starters.js`, `unlock-system.js`) are skipped right after one. Node tests added to `player-damage-interrupt.test.mjs` |
+| CF-G | minor | "Remind me" gives the stale Gary tip with the card in hand | mission | New `keycard_held` branch first; see BS1 |
+| CF-H | minor | Reeves's introduction replays on every re-talk | mission | `cover_return`: "Still here. What can I do for you?" then his hub |
+
+### Files changed
+
+- m02: `scenario.json.erb`; inks + JSON `m02_phone_agent0x99`, `m02_npc_security_guard`, `m02_closing_debrief`, `m02_npc_asset`; this log; `scripts/ink_runtime_check/missions.json` (m02 block: `keycard_held`).
+- Engine (separate commit): `public/break_escape/js/systems/player-damage-interrupt.js`, `minigame-starters.js`, `unlock-system.js`, `npc-combat.js`, new `npc-attack-guard.js`; tests `test/js/player-damage-interrupt.test.mjs` (2 added), new `test/js/npc-attack-guard.test.mjs` (4).
+
+### Checks
+
+| Check | Result |
+|---|---|
+| Ink compile | 15 compiled, 0 failed |
+| tagdiff vs HEAD (95665799) | 22 structural differences in 4 files, all this round (debrief 4, Reeves 4, Val 9, HaX 5) |
+| Validator | 0 INVALID; warnings the same set as round 1 (indices shifted); doors OK; graph regenerated |
+| dialoguelint | unchanged, 0 errors |
+| Rendered JSON assertions | round 1's 40 pass; round 2 checks (no OPTIMAL, diary pointers, task title, keycard mapping, credits, Ghost tile `whenAvailable`, readable lanyards) pass |
+| inkcheck + loopcheck | 58 states × 2, 0 failures |
+| reopencheck | 0 problems |
+| Node suite | 271/271 |
+| Rails | 491 runs, 0 failures, 0 errors, 1 skip |
+| Browser | none this round: the confirmation run should check the keycard toast and the aim showing, lanyard pickup and inventory click, the Ghost tile before and after the deal, Val after a fight, Reeves's re-talk, and CF-D/CF-F with a hostile Val |
+
+### Spoken lines (old → new)
+
+Changed: none.
+
+New (4):
+- Val (`after_fight`): "You've got a nerve, coming back to me. It's all in my log."
+- Reeves (`cover_return`): "Still here. What can I do for you?"
+- HaX (debrief, no manifesto): "Ghost will have done the same sums. Different cell, different weapon, identical arithmetic."
+- HaX (debrief, no invoice): "Zero Day Syndicate. Our analysts traced Ghost's exploit back to them after you left. They picked St. Catherine's out of 214 hospitals."
+
+Running total for the loop: 11 changed, 19 new.
+
+### Round 2 confirmation fixes (F1–F4)
+
+| # | Class | Fix |
+|---|---|---|
+| F1 | m02 | `general_advice`: the burned-and-not-past-Val branch adds "Her Security Office is at the west end of the main corridor. The server-room door is inside it." when the card is held; the `keycard_held` branch moves ahead of `doors_nudge`, so it is no longer shadowed |
+| F4 | m02 | The BS-y nudge is gated on `!inspected_asset_post`; a second mapping for a player who has read the post log: "…You've read their post's log. Name them first." |
+| F2 | engine | `minigameClosedByDamage()` guard on the key-selection "Wrong Key", the PIN "Failed to enter correct PIN." and the password "Failed to enter correct password." toasts (`minigame-starters.js`); the no-framework fallbacks are untouched. Container minigames show no failure toast. Test added to `player-damage-interrupt.test.mjs` |
+| F3 | engine | `pin-minigame.js`: `handleEnter` ignores Enter while a check is pending (`checkPending`, cleared in `finally`), and digits/backspace are ignored meanwhile, so the auto-submit plus a manual Enter costs one attempt. New `test/js/pin-minigame-enter.test.mjs` (2 tests) |
+
+Files: m02 `scenario.json.erb`, `m02_phone_agent0x99.ink`/`.json`. Engine: `minigame-starters.js`, `pin-minigame.js`, `test/js/player-damage-interrupt.test.mjs`, new `test/js/pin-minigame-enter.test.mjs`.
+
+Checks: ink compile 15/0 failed; validator 0 INVALID; dialoguelint unchanged; tagdiff vs HEAD 23 differences (one more than round 2, from the reordered branch's condition); HaX inkcheck/loopcheck 16 states, 0 failures; reopencheck 0; node 274/274; Rails 491 runs, 0 failures, 1 skip.
+
+Spoken lines: none (HaX phone and timed texts only).

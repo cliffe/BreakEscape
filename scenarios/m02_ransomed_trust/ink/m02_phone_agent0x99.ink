@@ -69,6 +69,9 @@ VAR ghost_keys_used = false
 VAR read_handover_board = false
 VAR read_night_rota = false
 VAR reeves_known = false
+// Round 2 (BS1/CF-G): the server-room card is in hand.
+VAR keycard_held = false
+VAR found_boardroom_code = false
 
 // Local
 VAR cover_advice_given = false
@@ -882,7 +885,7 @@ That's the last decision of this mission.
 - tier == 3:
     {doors_asks > 1:Both carry badge numbers. Read them and find 4471.|SC-4471. Security keeps a rota, and every post keeps a log.}
 - tier == 4:
-    {doors_asks > 1:Every post keeps a log. The boardroom is a post too.|The rota accounts for Val and her number. It isn't 4471.}
+    {doors_asks > 1:Every post keeps a log. The boardroom is a post too. Kim has the keypad code.|The rota accounts for Val and her number. It isn't 4471.}
 - else:
     {doors_asks > 1:Same badge. Who stands the boardroom post all night?|Put Ghost's badge number next to the boardroom post log.}
 }
@@ -897,10 +900,18 @@ That's the last decision of this mission.
 }
 {cover_burned and not reached_security_office and not cover_restored:
     One thing at a time. Get past Val and through her office to the server room. Everything else can wait.
+    // Round 2 confirmation (F1): say where, once the card's in hand.
+    {keycard_held: Her Security Office is at the west end of the main corridor. The server-room door is inside it.}
     -> support_hub
 }
 {cover_burned and not reached_security_office and cover_restored and not val_opened_office:
     Bernie's word is on the log. Val will have heard. Ask her to open her office.
+    -> support_hub
+}
+// Round 2 (BS1/CF-G, F1): with the card in hand, say where the door is. Ahead of the
+// insider nudge, so it isn't shadowed.
+{keycard_held and not scanning_guide_offered and not flag_ssh_submitted:
+    Server room's through Val's Security Office, west end of the main corridor. Gary's card opens the door at the back.
     -> support_hub
 }
 {cover_burned and not insider_identified and not mission_complete:
@@ -943,6 +954,7 @@ That's the last decision of this mission.
 }
 {ransom_decision_made:
     Conference room. Press terminal. That's the last step.
+    {not found_boardroom_code: Keypad code's in Kim's desk diary, if you didn't ask her.}
     -> support_hub
 }
 You know what you're doing. Go.

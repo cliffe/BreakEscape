@@ -65,6 +65,8 @@ VAR insider_badge_id_found = false
 VAR read_night_rota = false
 VAR reached_security_office = false
 VAR val_accused = false
+VAR attacked_guard = false
+VAR guard_knocked_out = false
 
 // Local: whether the challenge is the first time she has ever spoken to the player.
 VAR challenge_is_first_meeting = false
@@ -74,6 +76,10 @@ VAR challenge_is_first_meeting = false
 // ===========================================
 
 === start ===
+// Round 2 (CF-C): after a fight she's done talking.
+{attacked_guard and not guard_knocked_out:
+    -> after_fight
+}
 {cover_burned and not cover_restored:
     -> cover_challenge
 }
@@ -609,6 +615,13 @@ Val Okonkwo: I'll not be dramatic. But when they ask afterwards who knew, and th
     ~ hub_quiet = true
     #exit_conversation
     -> hub
+
+// Round 2 (CF-C): re-talk after the player went for her.
+=== after_fight ===
+Val Okonkwo: You've got a nerve, coming back to me. It's all in my log.
++ [Walk away.]
+    #exit_conversation
+    -> after_fight
 
 // ===========================================
 // ACCUSING VAL (playtest loop round 1, A10 red herring)

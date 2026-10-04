@@ -204,7 +204,12 @@ Agent HaX: Yes. ENTROPY. The same network that ran Social Fabric out of Viral Dy
 
 Agent HaX: Derek Lawson kept casualty projections. A spreadsheet of how many Operation Shatter would kill, approved before he pulled the trigger.
 
-Agent HaX: Ghost kept mortality calculations. Different cell, different weapon, identical arithmetic.
+// Round 2 (CF-E): only quote the manifesto if the player found it.
+{lore_ghosts_manifesto_found:
+    Agent HaX: Ghost kept mortality calculations. Different cell, different weapon, identical arithmetic.
+- else:
+    Agent HaX: Ghost will have done the same sums. Different cell, different weapon, identical arithmetic.
+}
 
 Agent HaX: Somebody taught both of them to do the sums and sleep at night. That's a method.
 
@@ -928,7 +933,12 @@ Agent HaX: You made it anyway, at four in the morning, with half the facts and f
 === mission_3_setup ===
 #speaker:agent_0x99
 
-Agent HaX: Zero Day Syndicate. They sold Ghost the ProFTPD exploit. They scanned 214 hospitals and recommended St. Catherine's specifically.
+// Round 2 (CF-E): the invoice is how the player would know this.
+{lore_zds_invoice_found:
+    Agent HaX: Zero Day Syndicate. They sold Ghost the ProFTPD exploit. They scanned 214 hospitals and recommended St. Catherine's specifically.
+- else:
+    Agent HaX: Zero Day Syndicate. Our analysts traced Ghost's exploit back to them after you left. They picked St. Catherine's out of 214 hospitals.
+}
 
 Agent HaX: Shut down their exploit marketplace and ENTROPY loses its technical supply chain across all cells.
 

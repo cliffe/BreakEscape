@@ -190,7 +190,8 @@ boardroom_pin = "0417"
           { "text": "GARY WHITLOCK: Fired quietly — career over in healthcare IT",          "style": "entry", "condition": "!globalVars.gary_protected && !globalVars.exposed_hospital" },
           { "text": "GARY WHITLOCK: Sacked, then rehired when his warnings went public", "style": "entry", "condition": "!globalVars.gary_protected && globalVars.exposed_hospital" },
           { "text": "COVER BURNED: Booking pulled from the visitor system mid-operation", "style": "warning", "condition": "globalVars.cover_burned && !globalVars.cover_restored" },
-          { "text": "COVER RE-ESTABLISHED: Access regained without incident",           "style": "entry", "condition": "globalVars.cover_restored && !globalVars.guard_knocked_out" },
+          { "text": "COVER RE-ESTABLISHED: Val Okonkwo checked you out and opened her office", "style": "entry", "condition": "globalVars.cover_restored && globalVars.val_opened_office && !globalVars.guard_knocked_out && !globalVars.attacked_guard" },
+          { "text": "COVER RE-ESTABLISHED: On paper -- you let yourself past Val anyway", "style": "entry", "condition": "globalVars.cover_restored && !globalVars.val_opened_office && !globalVars.guard_knocked_out && !globalVars.attacked_guard" },
           { "text": "BERNIE NWOSU: Vouched for the agent when the paperwork vanished",  "style": "entry", "condition": "globalVars.bernie_vouched" },
           { "text": "SECURITY OFFICER V. OKONKWO: Neutralised on shift",                "style": "warning", "condition": "globalVars.guard_knocked_out" },
           { "text": "SECURITY OFFICER V. OKONKWO: Caught the agent picking a lock — logged it", "style": "warning", "condition": "globalVars.val_caught_picking && !globalVars.guard_knocked_out" },
@@ -331,7 +332,7 @@ boardroom_pin = "0417"
         },
         {
           "taskId": "access_server_room",
-          "title": "Reach the server room",
+          "title": "Reach the server room, through Val's Security Office",
           "type": "enter_room",
           "targetRoom": "server_room",
           "status": "active"
@@ -854,6 +855,27 @@ boardroom_pin = "0417"
               "setGlobal": { "player_was_ko": true }
             },
             {
+              "_comment": "Playtest loop round 2 (BS1): after the card, say on screen where the server-room door is. IT has no way through.",
+              "eventPattern": "item_picked_up:keycard",
+              "onceOnly": true,
+              "setGlobal": { "keycard_held": true },
+              "sendTimedMessage": { "delay": 18000, "skipIfGlobal": "reached_security_office", "message": "That card opens the server room. Its door is inside Val's Security Office, at the west end of the main corridor. IT has no way through." }
+            },
+            {
+              "_comment": "Playtest loop round 2 (BS-y): a last on-screen nudge before the press terminal, so Reeves's own confession stays the fallback.",
+              "eventPattern": "global_variable_changed:ransom_decision_made",
+              "condition": "value === true && globalVars.insider_badge_id_found === true && !globalVars.insider_identified && !globalVars.inspected_asset_post",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 30000, "message": "Before the press terminal: whoever carries SC-4471 is still in the building. Read the boardroom post log and name them first." }
+            },
+            {
+              "_comment": "Round 2 confirmation (F4): the post log's already read, so don't send the player back to it.",
+              "eventPattern": "global_variable_changed:ransom_decision_made",
+              "condition": "value === true && globalVars.insider_badge_id_found === true && !globalVars.insider_identified && globalVars.inspected_asset_post === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 30000, "message": "Before the press terminal: whoever carries SC-4471 is still in the building. You've read their post's log. Name them first." }
+            },
+            {
               "_comment": "Playtest loop round 1 (B11): retires Kim's 'get into IT' escape hatch once the IT door is open.",
               "eventPattern": "objective_task_completed:open_it_department",
               "onceOnly": true,
@@ -870,12 +892,13 @@ boardroom_pin = "0417"
               "onceOnly": true,
               "setGlobal": { "cover_burned": true },
               "completeTask": "cover_burned_notified",
+              "unlockAim": "cover_compromised",
               "sendTimedMessage": { "delay": 4000, "message": "Stop. Two minutes ago someone rang the security desk from an internal extension and said no consultant was booked tonight. Your name's off their system. Your booking's gone." }
             },
             {
               "eventPattern": "objective_task_completed:talk_to_gary",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 11000, "skipIfGlobal": "cover_restored", "message": "Someone inside watched you reach IT. Val can disprove your cover now, and her office is your only way to the server room. Get a lanyard, or a vouch." }
+              "sendTimedMessage": { "delay": 11000, "skipIfGlobal": "cover_restored", "message": "Val can disprove your cover now. Her Security Office, west end of the main corridor, is the only way to the server room. Get a lanyard or a vouch." }
             },
 <%# Gary's own spare carries a distinct id so it is a distinct object; taking it off him
     (theft, or off the floor after a KO) counts exactly as the staff-room spare does.
@@ -1480,7 +1503,7 @@ boardroom_pin = "0417"
               "type": "id_badge",
               "name": "Bank Staff Lanyard",
               "takeable": true,
-              "id": "bank_staff_lanyard",
+              "id": "bank_staff_lanyard", "readable": true, "readDisplay": "gameDisplay", "addToNotes": false, "text": "ST. CATHERINE'S -- AGENCY NURSING\n\nGreen ribbon. No name, no photo.",
               "observations": "A spare agency-nurse lanyard from the ward office drawer. Not your name, not your face -- but it is real hospital issue, and at three in the morning that is most of the battle.",
               "puzzle_graph_role": "key",
               "puzzle_graph_unlocks": "security_office",
@@ -1908,7 +1931,7 @@ boardroom_pin = "0417"
               "type": "id_badge",
               "name": "Spare Contractor Lanyard",
               "takeable": true,
-              "id": "gary_contractor_lanyard",
+              "id": "gary_contractor_lanyard", "readable": true, "readDisplay": "gameDisplay", "addToNotes": false, "text": "ST. CATHERINE'S -- CONTRACTOR\n\nName: ________\nIssued by: IT\n\n(Blank. From Gary's drawer.)",
               "observations": "A blank contractor lanyard from Gary's drawer -- the sort IT issue to hardware engineers. Real hospital stock, no name on it. He will not hand it to somebody he has no reason to trust.",
               "puzzle_graph_role": "key",
               "puzzle_graph_unlocks": "security_office",
@@ -2306,12 +2329,12 @@ boardroom_pin = "0417"
                   "ENTROPY is paid nothing, and the keys they meant to sell back to you did the work.",
                   "This is the outcome the board deferred £85,000 to avoid needing."
                 ],
-                "status": "OPTIMAL -- BOTH KEY SETS",
+                "status": "4 HOURS -- BOTH KEY SETS",
                 "etaLabel": "4 hours",
-                "marker": "OK",
-                "statusTone": "safe",
-                "bannerTone": "safe",
-                "bannerText": "RECOMMENDED: FASTEST INDEPENDENT RECOVERY",
+                "marker": "~",
+                "statusTone": "warning",
+                "bannerTone": "warning",
+                "bannerText": "BOTH KEY SETS: FOUR-HOUR RESTORE, NOTHING PAID",
                 "icon": "[+]",
                 "bullets": [
                   "Recovery time: 4 hours -- both key types accelerate decryption significantly.",
@@ -2349,9 +2372,17 @@ boardroom_pin = "0417"
                   "Recovery time: under an hour -- Ghost's own decryption keys, ward monitoring restored first.",
                   "Patient risk: Lowest of any route -- one patient may not last until monitoring returns.",
                   "Cost: £0 -- but the keys are Ghost's. Whatever they unlock, Ghost can reach again: the attacker keeps a foothold in this network.",
-                  "The price: your word to Ghost that tonight's evidence goes public.",
+                  "Only if Ghost offers them -- and Ghost will want something for them.",
                   "Prerequisite: the verified restore manifest, and Ghost's offer, accepted."
-                ]
+                ],
+                "whenAvailable": {
+                  "bullets": [
+                    "Recovery time: under an hour -- Ghost's own decryption keys, ward monitoring restored first.",
+                    "Patient risk: Lowest of any route -- one patient may not last until monitoring returns.",
+                    "Cost: £0 -- but the keys are Ghost's. Whatever they unlock, Ghost can reach again: the attacker keeps a foothold in this network.",
+                    "You gave Ghost your word: tonight's evidence goes public."
+                  ]
+                }
               }
             ]
           }
@@ -3122,7 +3153,7 @@ boardroom_pin = "0417"
           "position": "as-type:directory_sign",
           "takeable": false,
           "readable": true,
-          "text": "ST. CATHERINE'S -- CORRIDOR DIRECTORY\n\nNight Handover Room .......... north off this corridor\nBoardroom .................... through Handover, west (KEYPAD)\nExecutive / CTO .............. through Handover, north\nIT Systems ................... through Handover, east (OVERRIDE KEY)\nSecurity Office .............. west end of this corridor\nServer Room .................. through Security Office (RESTRICTED)\nWard 3 (Critical Care) ....... down the ward link, south\nEmergency Equipment Store .... far end of Ward 3\nReception .................... through Ward 3, ward approach\n\nHandwritten underneath, in biro: \"ALL READERS DOWN -- overrides at reception, sign them out, DO NOT PROP DOORS.\"",
+          "text": "ST. CATHERINE'S -- CORRIDOR DIRECTORY\n\nNight Handover Room .......... north off this corridor\nBoardroom .................... through Handover, west (KEYPAD -- ask the CTO)\nExecutive / CTO .............. through Handover, north\nIT Systems ................... through Handover, east (OVERRIDE KEY)\nSecurity Office .............. west end of this corridor\nServer Room .................. through Security Office (RESTRICTED)\nWard 3 (Critical Care) ....... down the ward link, south\nEmergency Equipment Store .... far end of Ward 3\nReception .................... through Ward 3, ward approach\n\nHandwritten underneath, in biro: \"ALL READERS DOWN -- overrides at reception, sign them out, DO NOT PROP DOORS.\"",
           "observations": "The corridor directory. Somebody has added the state of the access control system underneath in biro.",
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "map_orientation_and_confirmation_that_overrides_live_at_reception"
@@ -3166,7 +3197,7 @@ boardroom_pin = "0417"
           "name": "Estates Audit Snag List",
           "takeable": false,
           "readable": true,
-          "text": "ESTATES -- INTERNAL AUDIT, OUTSTANDING SNAGS\nPinned for staff awareness. Do not remove.\n\n  17  Lift 2 -- intermittent. Contractor booked.\n  18  Ward 3 side door -- closer too fast.\n  19  Emergency equipment store, keypad safe --\n      STILL SET TO THE HOSPITAL FOUNDING YEAR.\n      Raised at the last three audits. Flag again.\n  20  Boardroom keypad -- shared with too many people.\n  21  Fire drill log -- Friday's drill not countersigned\n      by the ward. Security override. Chase Security.\n\nSigned off: nobody. Circulated: nobody.",
+          "text": "ESTATES -- INTERNAL AUDIT, OUTSTANDING SNAGS\nPinned for staff awareness. Do not remove.\n\n  17  Lift 2 -- intermittent. Contractor booked.\n  18  Ward 3 side door -- closer too fast.\n  19  Emergency equipment store, keypad safe --\n      STILL SET TO THE HOSPITAL FOUNDING YEAR.\n      Raised at the last three audits. Flag again.\n  20  Boardroom keypad -- shared with too many people.\n      CTO keeps the code in her desk diary. Change it.\n  21  Fire drill log -- Friday's drill not countersigned\n      by the ward. Security override. Chase Security.\n\nSigned off: nobody. Circulated: nobody.",
           "observations": "An audit snag list pinned to the staff noticeboard, where the people who have to live with the snags can read them. Item 19 has been underlined by somebody who has clearly given up.",
           "onRead": { "setVariable": { "found_safe_pin_clue": true } },
           "puzzle_graph_role": "clue",
@@ -3196,7 +3227,7 @@ boardroom_pin = "0417"
         },
         {
           "type": "id_badge",
-          "id": "contractor_lanyard",
+          "id": "contractor_lanyard", "readable": true, "readDisplay": "gameDisplay", "addToNotes": false, "text": "ST. CATHERINE'S -- CONTRACTOR\n\nName: ________\nIssued by: IT\n\n(Blank. Still in its wrapper.)",
           "name": "Wrapped Contractor Lanyard",
           "takeable": true,
           "observations": "A blank contractor lanyard in its wrapper, left on the side with somebody's reading glasses. IT issue, real hospital stock, no name on it. Somebody meant to take this back downstairs and didn't.",
@@ -3455,6 +3486,7 @@ boardroom_pin = "0417"
     "ghost_affiliate_heard": false,
     "it_door_open": false,
     "player_was_ko": false,
+    "keycard_held": false,
     "val_challenged": false,
     "val_argument_heard": false,
     "inspected_asset_post": false,
