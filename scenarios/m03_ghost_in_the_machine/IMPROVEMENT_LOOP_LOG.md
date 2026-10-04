@@ -296,6 +296,19 @@ Decision: take the full set. Reason: m03 has no audio generated yet (no `tts_cac
 
 Commit acbe10e (WIP). All 42 findings acted on (P4-37 justified: Victoria's 18-word offer and her one "not X but Y"). Edit notes in `DIALOGUE_EDIT_NOTES.md` ("Pass 5"). Voiced: 51 changed, 33 cut, 0 added (full list under "Spoken lines changed"). tagdiff vs snapshot: Danny, receptionist, phone, night transition structurally unchanged; briefing (learn topic, dead writes, `mission_priority`), Victoria (stance overwrite), guard (influence tag) and debrief (dead blocks, fate re-reads) changes all intended. dialoguelint 0 errors, 4 justified warnings. Orchestrator check: grepped sample lines; no new dashes in any .ink.
 
+### Round 2 review (fresh Opus script editor)
+
+Verdict: revise (short). Round 1: 35 closed, 1 justified, 3 partly (P4-8, 15, 39), 3 made worse (P4-19, 28, 42). New: 1 blocker, 2 majors, 19 minors (6 optional). Ship: Danny, guard, HaX phone, narrator and night transition. Revise (mostly light): briefing, receptionist, Victoria, debrief. Read-through: the receptionist is a convincing Cardiff voice without caricature; Victoria's afternoon isn't thin after the cuts ("We find it, we price it, and we find the somebody." is the pass's best new line); her night scene is still the mission's best; the debrief paces better.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| P4-43 | blocker | Round 1 cut Nightshade's "One day it'll be our badge somebody clones. Remember how easy it was."; m08 pays it off (m08 erb:744-749) | to writer: restore verbatim |
+| P4-44 | major | First Victoria choice became a question; her reply still opens "Exactly." | to writer |
+| P4-45 | major | Receptionist's "Back again? How's it going in there?" plays before most players have been in | to writer ("Back again? Forgotten something?") |
+| P4-46..P4-64 | minor | Stale "hates being kept waiting" after the meeting; "Sable" then "Victoria Sterling is in custody"; vague "some of the paper"; a choice repeating her own line; unnamed "third option"; "refreshing"/"Good" stutter; "Just Ms. Sterling" vs Danny's evenings; brochure line; "Intense, is she?" echo; "the consultants"; "supply" three times; three "And" openers; stale comment; optional polish | to writer |
+
+Process note: the round-1 reviewer recommended a cut without knowing a later mission quotes the line. Lesson for reviewers: grep later missions before cutting a line that sounds like a set-up.
+
 ## SecGen
 
 m03 XML missing on SecGen master. Proposed file: `SECGEN_PROPOSED_m03_ghost_in_the_machine.xml` (D1). No SecGen edits made.
