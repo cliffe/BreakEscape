@@ -414,7 +414,13 @@
       "night_explored": false,
       "guard_attacking": false,
       "clone_read_dropped": false,
-      "sterling_on_call_seen": false
+      "sterling_on_call_seen": false,
+      "conference_reader_tried": false,
+      "cloner_explained": false,
+      "directive_guessed": false,
+      "vm_flag1_reward": false,
+      "vm_flag2_reward": false,
+      "vm_flag3_reward": false
     },
     "npcs": [
       {

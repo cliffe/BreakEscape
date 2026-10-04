@@ -28,6 +28,8 @@ VAR guard_told_safetynet = false
 VAR guard_bribed = false
 VAR called_it_murder = false
 VAR directive_decoded = false
+// Pass 5 (P2-7): a guessed decode doesn't earn the "you read it yourself" line.
+VAR directive_guessed = false
 VAR reception_badge_cloned = false
 VAR victoria_card_cloned = false
 VAR draft_seen = false
@@ -213,7 +215,7 @@ Agent HaX: Now the part that kept me up. Phase 2.
 // m04 treats it as known. Finding it still earns the recruit option, the credits
 // line and the "whole paper trail" line; decoding it yourself earns the first line.
 { usb_seen or lore_directive_found:
-    { directive_decoded:
+    { directive_decoded and not directive_guessed:
         Agent HaX: You brought out the drive from her desk, and you read what was under both layers yourself. The Architect's directive.
     - else:
         Agent HaX: You brought out the drive from her desk. Base64 over ROT13; our people had both layers off in ten minutes. Underneath, the Architect's directive.

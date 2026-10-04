@@ -10,6 +10,10 @@ VAR clone_reception_badge_done = false
 // Pass 3c: synced scenario global, set by the card_cloned mapping only when the
 // badge is actually saved in the cloner. Until then the clone option stays offered.
 VAR reception_badge_cloned = false
+// Pass 5 (P2-16): synced. The clone choice opens only once the player has met the
+// conference reader or been told about the cloner (lock before key).
+VAR conference_reader_tried = false
+VAR cloner_explained = false
 // Synced from globalVars: after Victoria's card is cloned the building is closing.
 VAR mission_phase = ""
 // Playtest round: set by every exit so the hub's re-entry line shows on a reopen,
@@ -141,7 +145,7 @@ Receptionist: Is this your first time working with a Cyber Security firm?
     -> ask_company_history
 + {mission_phase != "act2_infiltration" && receptionist_influence >= 15} [How's the building laid out?]
     -> ask_building_layout
-+ {mission_phase != "act2_infiltration" && badge_received && not reception_badge_cloned} [Lean in to read the building directory.]
++ {mission_phase != "act2_infiltration" && badge_received && not reception_badge_cloned && (conference_reader_tried or cloner_explained)} [Lean in to read the building directory.]
     -> clone_badge_opportunity
 + {mission_phase != "act2_infiltration"} [Thanks. I'll head through.]
     Receptionist: Have a great visit!

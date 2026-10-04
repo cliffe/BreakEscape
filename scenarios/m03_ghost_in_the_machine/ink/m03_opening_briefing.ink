@@ -164,6 +164,8 @@ Agent HaX: On our side of the record she runs the front and answers to 0day and 
 
 === topic_clone ===
 #speaker:agent_0x99
+// Pass 5 (P2-16): asking about cloning opens the receptionist's clone choice.
+#set_global:cloner_explained:true
 Agent HaX: Two stages. Reception first -- her staff badge opens the conference area. Weak defaults, so it cracks in seconds. Lean in near her desk to read it.
 Agent HaX: Then Sterling's executive card in the meeting. Custom keys, so it's Darkside -- about half a minute.
 Agent HaX: Your moment's at the whiteboard. Stand close and keep her talking while it reads.

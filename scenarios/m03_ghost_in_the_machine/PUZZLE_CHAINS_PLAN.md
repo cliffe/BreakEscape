@@ -1020,3 +1020,13 @@ Design items:
 - P2-10: Perfect Stealth credit wording tightened to "never seen, never stopped, no deals" to match the `guard_challenged` gate. Dep: none.
 
 Deferred / no change (ruled): P2-7 (quiz brute-force) and P2-13 (`player_approach`) to the dialogue phase; P2-9 (diegetic `[NOTE]`, not a bug); P2-11 (empty hub carries the act break, fine); P2-12 (PIN cracker rationing correct, no change); P2-2 full version and the capability-arc note for m04 are the user's.
+
+### Round 2 (2026-10-04)
+
+Review `m03-puzzle-r2-review/REVIEW.md` (P2-14..P2-18), rulings applied:
+- P2-4/P2-15 (option B): the three dead `emit_event` flagRewards are now `set_global` rewards on write-only keys `vm_flag1_reward`..`vm_flag3_reward` (no panel, no reader); index pairing kept, distcc `give_item` still at index 3. The schema item E-2 is no longer needed for m03.
+- P2-7: a wrong directive answer sets `directive_guessed`; the "decoded by the agent" credit and the debrief's "you read it yourself" line need a first-try right answer; a guesser gets "recovered by the agent, decoded at HQ" and the HQ debrief line. The optional task still completes.
+- P2-16 (A and B): the aim, task and opening text no longer name the cloner before the reader; the door text drops "not your visitor pass". The receptionist's clone choice now needs `conference_reader_tried` (the door) or `cloner_explained` (briefing topic, HaX's clone hint or the RFID guide). A player who does neither is pointed at the reader by the task and by HaX's "Where do I stand?".
+- P2-17: recon guide text now says the scan flag is in what the services say when you connect.
+- P2-18: the log's invoice block gains a Target line and the discount moves to its own line. Draft XML flag 4 must be re-synced to the new `operational_log_content`.
+- P2-14: fixed in the reviewer's round-2 draft XML; user item with SecGen D1.
