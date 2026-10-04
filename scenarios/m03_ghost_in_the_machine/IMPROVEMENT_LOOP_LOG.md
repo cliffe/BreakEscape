@@ -170,9 +170,32 @@ Correction to the spoken-lines list: the engine voices a phone line only when it
 
 All ruled items in (commit 5ea9d78, WIP): `set_global` rewards on write-only keys `vm_flag1..3_reward` (index pairing kept); `directive_guessed` set on a wrong answer, so the "decoded by the agent" credit and debrief line need a first-try answer (debrief and credits agree; the optional task still completes); cloner no longer named before the reader (aim, task title "Get through the conference room's card reader", opening text, door text reworded); receptionist's clone choice needs `conference_reader_tried` (door mapping) or `cloner_explained` (briefing tag, HaX hint, RFID guide); recon guide line and HaX's day progress line reworded; transaction log gains the Target line and a separate discount line; post-it reads "Surname plus the year the firm was founded". No voiced line changed (four phone text lines changed, listed below). Static checks clean.
 
+### Round 3 review (fresh Opus, confirmation)
+
+P2-1..P2-18 all closed or ruled; nothing broken by round 2 (door handler sits on the start-room phone contact; the receptionist re-reads globals on reopen; no player left without a next step after reload, a receptionist KO, or never opening the phone). New: 0 blockers, 0 majors, 2 minors. **Verdict: Phase 2 closed.**
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| P2-19 | minor | Task "Get through the conference room's card reader" ticks before the player goes through; aim says "card readers" (plural) | fixed by the orchestrator: "Find a way past the conference room's card reader"; aim "Get past the card reader" (non-spoken; validator clean) |
+| P2-20 | minor | Round-2 browser checks not yet run | carried to Phase 5: door then clone choice (incl. after reload); wrong-then-right directive (credit and debrief line); all four flags with no reward panel for 1-3 |
+
+Note: a game saved before 5ea9d78 might only pass the reader by a receptionist KO in rare cases; dev saves only, no action.
+
+SecGen draft: `SECGEN_PROPOSED_m03_ghost_in_the_machine.xml` (flag 4 log matches `operational_log_content` exactly; four flag generators; validates against SecGen's schema). Linked from D1.
+
+### Phase 2 summary
+
+| Round | Blockers | Majors | Minors |
+|---|---|---|---|
+| 1 | 0 | 4 | 9 |
+| 2 (new) | 0 | 1 | 4 |
+| 3 (new) | 0 | 0 | 2 |
+
+All checks static. Browser checks carried to Phase 5 (P2-20). Capability arc note for the user: m04 should show the fingerprint kit's wall before granting it.
+
 ## SecGen
 
-(see per-phase sections)
+m03 XML missing on SecGen master. Proposed file: `SECGEN_PROPOSED_m03_ghost_in_the_machine.xml` (D1). No SecGen edits made.
 
 ## Spoken lines changed (old → new)
 
