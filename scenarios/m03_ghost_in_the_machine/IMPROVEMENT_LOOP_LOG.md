@@ -222,6 +222,20 @@ All ruled items in (commit 90437d6, WIP). Engine finding confirmed by the fixer:
 
 Round 2 runs two ways at once: a fresh Opus static re-review and a Sonnet browser probe of P3-1 and P3-3.
 
+### Round 2 static review (fresh Opus)
+
+Counts (new): 0 blockers, 1 major, 6 minors. P3-1 holds when traced (handlers registered from the start room; debrief opens 500 ms after her chat closes; can't play twice; backstops need a room entry and `clone_call_done`). Closed: P3-4..9, 11, 12, 13, 15, 16, 18; P3-2 closed in game with leftover wording; P3-3, P3-10 partly closed; P3-14 waits on E-C; P3-17 waits on E-D.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| P3-19 | major | Revelation call opens only from a notification that can expire, be dismissed or be dropped when several pile up; then `revelation_heard` never sets and all six end-of-network texts (where Sterling is) never arrive | to fixer: hub option to replay a missed call (m02 pattern); "Where do I stand?" names the conference room, with a KO variant |
+| P3-20 | minor | After reload the once-only setter of `guard_attacking` is spent; guard ink still treats a peaceful reloaded guard as hostile | to fixer |
+| P3-21 | minor | Gated roster debrief line can never play | to fixer (delete) |
+| P3-22 | minor | Leftover split wording: credit says buyers unknown though the log names Ghost; proposed XML "STAFF ONLY" vs "clients only" and stale line refs; two voiced debrief lines call the catalogue "a price list" | to fixer (credit, XML); voiced lines left as they are (cost) |
+| P3-23 | minor | Victoria's new choice echoes her voiced reply | deferred to Phase 4 |
+| P3-24 | minor | "Knocked out on his rounds" credit also shows for a day-desk KO | to fixer |
+| P3-25 | minor | Reload after her fate is set but before her chat closes: she's visible, and a KO overwrites the fate | to fixer |
+
 ## SecGen
 
 m03 XML missing on SecGen master. Proposed file: `SECGEN_PROPOSED_m03_ghost_in_the_machine.xml` (D1). No SecGen edits made.
