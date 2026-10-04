@@ -1075,6 +1075,14 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "unlockAim": ["search_executive_office", "collect_lore"]
             },
             {
+              "_comment": "P1-39: a player who cleared Sterling's office by day may never re-enter the wing at night. At the night turn, open the office aim for them; its recorded ticks complete it at once (unlockAim re-checks completion). Different holder from HaX's clone_call_done mapping, so no shared pattern.",
+              "eventPattern": "global_variable_changed:clone_call_done",
+              "condition": "value === true && globalVars.exec_office_entered === true",
+              "onceOnly": true,
+              "setGlobal": { "exec_wing_night": true },
+              "unlockAim": "search_executive_office"
+            },
+            {
               "_comment": "P1-30: the first night-time entry to the server room opens the paper trail aim (the safe and the whiteboard are in there).",
               "eventPattern": "room_entered:server_room",
               "condition": "globalVars.clone_call_done === true && globalVars.debrief_played !== true",
@@ -1087,7 +1095,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'night_guard' && data.isHostile === true",
               "onceOnly": true,
-              "setGlobal": { "guard_hostile": true }
+              "setGlobal": { "guard_attacking": true }
             },
             {
               "_comment": "Pass 3, P6: Perfect Stealth needs the player to have got past the guard into Sterling's office. Kept on this always-loaded NPC rather than HaX so it doesn't share a room_entered pattern with HaX's hear_debrief backstop.",
@@ -1652,7 +1660,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     "perfect_stealth_earned": false,
     "exec_wing_night": false,
     "night_explored": false,
-    "guard_hostile": false,
+    "guard_attacking": false,
     "clone_read_dropped": false,
     "sterling_on_call_seen": false
   }
