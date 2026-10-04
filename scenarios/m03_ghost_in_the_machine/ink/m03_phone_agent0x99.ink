@@ -414,6 +414,10 @@ distcc is the one that matters -- that's where the operational logs sit. Submit 
 
 === on_victoria_computer_accessed ===
 #speaker:agent_0x99
+// Pass 5 (P3-27): a lingering toast clicked after a hub replay goes straight to the hub.
+{ pc_call_heard:
+    -> hub
+}
 ~ pc_call_heard = true
 You're into her machine. Good.
 Client roster, transaction records, anything to the Architect.
@@ -425,6 +429,9 @@ Client roster, transaction records, anything to the Architect.
 
 === m2_revelation_call ===
 #speaker:agent_0x99
+{ revelation_heard:
+    -> hub
+}
 {player_name()}, I've got the distcc logs you just submitted.
 There it is. The ProFTPD backdoor, line item on invoice ZDS-2024-0847. Twenty-five thousand, part of a package to Ghost.
 Target line: St. Catherine's Regional. Sable's sign-off on the approval.
@@ -478,6 +485,9 @@ Finish up, then Sterling. And be careful -- reasonable as she sounds, she signed
 
 === on_exploit_catalog_found ===
 #speaker:agent_0x99
+{ catalogue_call_heard:
+    -> hub
+}
 ~ catalogue_call_heard = true
 The internal catalogue. Not the price list off their web host: this one has the buyers.
 The ProFTPD sale names Ghost and St. Catherine's outright. And there's stock held back for Critical Mass. Phase 2 has a shopping list.
