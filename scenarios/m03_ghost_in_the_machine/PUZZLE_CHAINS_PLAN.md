@@ -1002,3 +1002,21 @@ Nothing open for m03. No engine, SecGen or lab-sheet change is needed for anythi
 ---
 
 *Measured against m01_first_contact and m02_ransomed_trust. Reviewed: 3 rounds.*
+
+## Pass 5 puzzle chains (2026-10-04)
+
+Round-1 review `m03-puzzle-r1-review/REVIEW.md` (P2-1..P2-13) with orchestrator rulings. Bug fixes first, then the design items, each in dependency order. Boss-key table and headline numbers: see the review (unchanged by this pass; no layout change, no new locks).
+
+Bug fixes (shippable on their own):
+- P2-4: NOT changed in game. The clean removal is the hash form, but `scenario-schema.json` requires `flagRewards` to be an array (it does not yet allow the engine-preferred hash, `games_controller.rb:1995`), and the array is index-paired with `flags[i]`, so the distcc `give_item` must stay at index 3 and the three dead `emit_event` entries cannot simply be dropped. Re-keying progression onto those events is a Phase-5 change (needs a browser re-test). Left as-is with an explanatory comment. Engine/tooling item: allow the hash form in the schema, then remove the three. Dep: schema change.
+- P2-8: ERB comment "raw MIME with a Base64 body" corrected to "the whole message Base64-encoded, shown as raw source" (the draft is wholly Base64). Dep: none.
+
+Design items:
+- P2-1: transaction log (`operational_log_content`) re-itemised to match m02's player-visible invoice ZDS-2024-0847 (ProFTPD $25k, recon/214 hospitals $15k, target selection $10k, deployment $5k, $55k total, 15% ENTROPY affiliate discount, SABLE/Architect sign-off). The +40% healthcare premium is demoted to a margin note pointing at the catalogue, so the catalogue keeps it as Zero Day's list-pricing logic and the Phase-1 spoken lines stay true. The catalogue (`lore_fragment_2`) is unchanged. Dep: none. XML sync: the draft XML flag4 transaction-log text must be updated to match (listed for the reviewer).
+- P2-2 (light, ruled): the pre-arm "lean in near her lanyard" is removed from the opening message; the player meets the conference reader first, and a `door_unlock_attempt` mapping on `conference_room_01` (before the badge is cloned) has HaX introduce the cloner as the answer. Engine limit recorded: the cloner is always in the start kit, so a true "access denied, then granted the tool" is not possible mission-local; this is the least-cost version. Dep: none.
+- P2-3: scan task description reworded to "read the service banners the scan turns up"; the server-room entry message no longer implies the scan itself emits a flag. Flag numbering kept. Dep: draft XML plants flag1 in the FTP banner + HTTP index (already in the draft).
+- P2-5: distcc-is-the-records guidance thinned. The server-room entry message drops the "that's where their records are" spoiler and the redundant full sequence; the explicit "records on distcc" clue now lives in the briefing (spoken, kept), the runbook, and the on-demand `hint_network`. Dep: none.
+- P2-6: office-PC password made a deduction. The worked example "(e.g. Smith1999)" is dropped from the post-it and the observation; the format stays (good security teaching), the year stays on the plaque and in flavour. Dep: none.
+- P2-10: Perfect Stealth credit wording tightened to "never seen, never stopped, no deals" to match the `guard_challenged` gate. Dep: none.
+
+Deferred / no change (ruled): P2-7 (quiz brute-force) and P2-13 (`player_approach`) to the dialogue phase; P2-9 (diegetic `[NOTE]`, not a bug); P2-11 (empty hub carries the act break, fine); P2-12 (PIN cracker rationing correct, no change); P2-2 full version and the capability-arc note for m04 are the user's.

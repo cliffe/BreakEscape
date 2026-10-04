@@ -40,7 +40,7 @@ end
 # SAFE CHAIN (pass 2, reworded pass 3): the catalogue safe no longer shares the
 # founding year with the password. The server-room whiteboard (the night team's ROT13
 # house style, kept from the day staff) says Sable is mailing the new code from her office; Sterling's
-# unsent draft to the night team is stored as raw MIME with a Base64 body and
+# unsent draft to the night team is the whole message Base64-encoded, shown as raw source, and
 # carries the code.
 #   whiteboard (server room) -> Sterling's PC (exec office) -> draft -> wall safe
 catalogue_safe_code = "5829"
@@ -58,7 +58,7 @@ lore_fragment_2 = "Q4 2024 EXPLOIT CATALOGUE (internal)\n\nPremium tier:\n- ProF
 
 lore_fragment_3_encoded = architect_directive_double
 
-operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training network)\n\n[2024-10-21 14:32] ProFTPD 1.3.3c source backdoor\n  Buyer: GHOST (Ransomware Incorporated), verified\n  Invoice: ZDS-2024-0847 -- package $55,000 incl. 214-hospital recon\n  Premium: healthcare +40%\n  Approved: SABLE\n  Status: DELIVERED\n\n[2024-11-15 02:47] Deployment confirmed\n  Target: St. Catherine's Regional Medical Centre\n  Ransom demand: GBP 150,000 (BTC)\n\n[NOTE] Architect sign-off on file. Phase 2 sourcing continues."
+operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training network)\n\n[2024-10-21 14:32] Invoice ZDS-2024-0847 to GHOST (Ransomware Incorporated), verified\n  ProFTPD 1.3.3c source backdoor      $25,000\n  Reconnaissance (214 hospitals)      $15,000\n  Target Selection Consultation       $10,000\n  Deployment Guide                     $5,000\n  TOTAL                               $55,000  (15% ENTROPY affiliate discount applied)\n  Approved: SABLE / Architect sign-off on file\n  Status: DELIVERED\n  (Healthcare list pricing carries a built-in premium; see catalogue.)\n\n[2024-11-15 02:47] Deployment confirmed\n  Target: St. Catherine's Regional Medical Centre\n  Ransom demand: GBP 150,000 (BTC)\n\n[NOTE] Phase 2 sourcing continues."
 
 %>
 {
@@ -176,7 +176,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           { "text": "DANNY FOSTER: TAKEN DOWN IN HIS OWN OFFICE", "style": "warning", "condition": "globalVars.danny_fate === 'ko'" },
           { "text": "DANNY FOSTER: NEVER FOUND — his name is still in the recon files", "style": "warning", "condition": "!globalVars.danny_fate" },
           { "text": "WHITEHAT RECEPTION: KNOCKED OUT AT HER OWN DESK", "style": "warning", "condition": "globalVars.receptionist_ko === true" },
-          { "text": "PERFECT STEALTH — never detected by security", "style": "entry", "condition": "globalVars.guard_detection_count === 0 && globalVars.exec_office_entered === true && globalVars.guard_knocked_out !== true && globalVars.guard_told_safetynet !== true && globalVars.guard_bribed !== true && globalVars.guard_challenged !== true" },
+          { "text": "PERFECT STEALTH — never seen, never stopped, no deals", "style": "entry", "condition": "globalVars.guard_detection_count === 0 && globalVars.exec_office_entered === true && globalVars.guard_knocked_out !== true && globalVars.guard_told_safetynet !== true && globalVars.guard_bribed !== true && globalVars.guard_challenged !== true" },
           { "text": "" },
           { "text": "THE ARCHITECT: identity still unknown. Phase 2 looms.", "style": "warning" },
           { "text": "ENTROPY: Still operational. The hunt continues.", "style": "warning" }
@@ -235,7 +235,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
         {
           "taskId": "submit_network_scan_flag",
           "title": "Map the training network and submit the scan flag",
-          "description": "Sweep the training network from the VM terminal and submit what the scan turns up at the drop-site terminal",
+          "description": "Sweep the training network from the VM terminal, read the service banners the scan turns up, and submit the flag at the drop-site terminal",
           "type": "submit_flags",
           "targetFlags": ["flag_station_dropsite:ghost_in_machine_vm_network-flag1"],
           "targetCount": 1,
@@ -711,12 +711,19 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "timedMessages": [
             {
               "delay": 3000,
-              "message": "Reception first. Lean in near her lanyard and let the cloner read her badge. Message me if you get stuck.",
+              "message": "Reception first. Get yourself to Victoria Sterling for the interview. You will have to get past the conference reader to reach her. Message me if you get stuck.",
               "type": "text",
               "waitForEvent": "conversation_closed:briefing_cutscene"
             }
           ],
           "eventMappings": [
+            {
+              "_comment": "P2-2 (light): the player meets the conference reader before the cloner is explained. The cloner is in the start kit, so the engine opens the read/emulate minigame rather than a hard access-denied; a true 'fail then grant the tool' needs engine work (the cloner can't be made unusable mission-local). This reframes the tool as the answer to the wall just met. Fires once, before the badge is cloned.",
+              "eventPattern": "door_unlock_attempt",
+              "condition": "data.connectedRoom === 'conference_room_01' && globalVars.reception_badge_cloned !== true && globalVars.receptionist_ko !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "That reader needs a staff badge, not your visitor pass. The cloner in your kit copies one from arm's length: lean in by the receptionist's lanyard and read hers." }
+            },
             {
               "_comment": "Pass 4 round 2: delay 0 so the warning lands as the player walks in, before they reach the guard or the door. exec_wing_entered lets the debrief tell 'never went near him' from 'went near him and never got caught'. P1-21: condition makes this disjoint from the hear_debrief backstop on the same pattern.",
               "eventPattern": "room_entered:executive_wing_hallway",
@@ -730,7 +737,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "condition": "globalVars.debrief_played !== true",
               "onceOnly": true,
               "setGlobal": { "netexploit_guide_offered": true },
-              "sendTimedMessage": { "delay": 2500, "message": "You're at their VM terminal. Recon first, then the services, then the legacy distcc box -- that's where their records are. Submit everything at the drop-site terminal. Guides on request." }
+              "sendTimedMessage": { "delay": 2500, "message": "You're at their VM terminal. Scan first, then work the services. Submit each flag at the drop-site terminal. Guides on request." }
             },
             <%# Pass 3c: a clone counts only when the card is actually saved in the
                 cloner. card_cloned is emitted on Save (rfid-minigame.js handleSaveCard)
@@ -1335,6 +1342,14 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "flags": <%= flags_for_vm('ghost_in_machine_vm_network', ['flag{network_scan_complete}', 'flag{ftp_intel_gathered}', 'flag{pricing_intel_decoded}', 'flag{distcc_legacy_compromised}']) %>,
           <%# rewards[i] pairs with flags[i]. The distcc flag pays out the transaction
               log as a document the player carries (m02 71e8852e pattern). %>
+          <%# P2-4: flagRewards[i] is index-paired with flags[i], and the schema
+              requires an array (it does not yet allow the engine-preferred hash form,
+              games_controller.rb:1995), so the distcc give_item has to stay at index 3
+              and the array cannot be shortened. The three scan/FTP/pricing emit_events
+              have no consumer (progression keys on objective_task_completed:submit_*_flag);
+              a clean removal needs the schema to allow the hash form, and a re-key onto
+              these events touches live progression (a Phase-5 change). Left as the array;
+              see the plan's P2-4 note. %>
           "flagRewards": [
             { "type": "emit_event", "event_name": "m03_scan_flag_submitted", "description": "Network map recorded" },
             { "type": "emit_event", "event_name": "m03_ftp_flag_submitted", "description": "FTP intelligence recorded" },
@@ -1468,10 +1483,10 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "locked": true,
           "lockType": "password",
           "requires": "Sterling2010",
-          "postitNote": "IT reset: Surname + year founded (e.g. Smith1999). Change it!",
+          "postitNote": "IT reset: surname plus the year the firm was founded. Change it!",
           "showPostit": true,
           "difficulty": "medium",
-          "observations": "Victoria Sterling's executive computer, password protected. A helpdesk slip is stuck to the monitor: your password was reset to the house default, surname plus the year we were founded (e.g. Smith1999). Please change it at next login. It doesn't look as if she did.",
+          "observations": "Victoria Sterling's executive computer, password protected. A helpdesk slip is stuck to the monitor: your password was reset to the house default, surname plus the year we were founded. Please change it at next login. It doesn't look as if she did.",
           "contents": [
             {
               "type": "text_file",
