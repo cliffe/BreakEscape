@@ -342,7 +342,10 @@ Script: `PASS5_PLAYTEST.md` (two regression runs and 18 carried browser checks C
 | A, day regression | 5005 | All day steps pass: reader refusal before the clone choice, reload at the refusal (no brief replay, state held), return greeting, both clones earned, night turn shows only the server-room aim. C6, C15 pass; C17 partial | 0 / 0 / 7 |
 | B, night regression | 5003 | Partial: stopped when the permission layer refused a phone click at the drive step. Flags, no reward panel for 1-3 (C8), station stays open (C11), hub replay of the distcc call (C12, half), reload after flag 4, whiteboard, office and PC pass | 0 / 0 / 5 |
 | Struggling player | 5004 | Roughest route (receptionist and Victoria KO'd, texts ignored, flags supplied with the VM unopened) still reaches the debrief and credits; KO lines fair | 0 / 2 / 5 |
-| B2, night endgame | (running) | Drive and decode task, wall safe, Danny, guard, Victoria arrest, reload before the debrief, debrief and full credits | |
+| B2, night endgame | 5006 | Partial: stopped when a shell decode was refused. Plaque year then Sterling2010 earned; guard catch, cover story, retry and timed pass; Danny protect route; Perfect Stealth hidden after a catch | 0 / 0 / 5 |
+| B3, finale | 5007 | PIN and quiz answer supplied (exercised). Wall safe, quiz wrong-then-right (C7), arrest ending with all her final lines (C9), debrief and full credits agree, guesser gets "decoded at HQ" (C2 not-earned case, C18 pass). C10/C14 reload window not caught | 0 / 0 / 3 |
+
+Merged list with rulings: scratch `m03-pt-r1-merged.md` (R1-1..R1-21). Raised by the orchestrator: R1-20 major, the guard's patrol reaches Sterling's office door and the door is always in his sight, so all three night testers were caught on the first pick and Perfect Stealth is close to unearnable.
 
 Orchestrator rulings so far: struggling S1 (flags accepted without the VM) withdrawn: standalone runs supply flags by design and the real check is the VM itself (D1); S2 (Victoria KO'd in the afternoon skips her choice) is the designed KO route, but the empty objectives panel after it (S3, also A4 after a normal clone) is real.
 
