@@ -128,11 +128,13 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
 %>
 {
   "scenario_brief": "Tuesday, 07:30. You have been called in to help manage a Major Incident at Northgate General Hospital NHS Trust. Ransomware deployed at 22:15 on Monday night has encrypted workstations across the enterprise network and reached part of the clinical zone. Ward 7's central monitoring has been dark since 22:30, and the IT team has been up all night. Your job is to manage the incident: keep patients safe, find out how the attackers got in, contain it, and make sure the Trust meets its reporting duties.",
-  "show_scenario_brief": "on_start",
+  "show_scenario_brief": "once",
 <%# Blind 2: was "on_resume", so a first-time player never saw the brief (only Sarah's opening).
-    "on_start" shows it on every start; the engine holds the popup until the opening cutscene has
-    played and closed (helpers.js showBriefWhenClear / npcManager.hasPendingOpeningConversation),
-    so it appears straight after Sarah's briefing instead of cutting it off. %>
+    The engine holds the popup until the opening cutscene has played and closed (helpers.js
+    showBriefWhenClear / npcManager.hasPendingOpeningConversation), so it appears straight after
+    Sarah's briefing instead of cutting it off.
+    Tidy round (F3): "on_start" reopened it on every reload. "once" (engine, utils/scenario-brief.js)
+    shows it on the first start and records it in the save; it stays in the Notepad. %>
   "disableAttacks": true,
 <%# In-game clock (engine, 2026-10-03): the command board and SIEM show Tuesday 07:30 plus
     elapsed game time instead of the real wall clock. %>
@@ -327,6 +329,19 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "targetCount": 1,
           "showProgress": true,
           "status": "active"
+        },
+        {
+          "taskId": "pump_dose_check",
+          "title": "Set Bed 2's morphine infusion from the paper chart",
+          "type": "manual",
+          "status": "active",
+          "optional": true
+<%# Completed via the infusion pump minigame (MG-08), Bed 2's eventMappings on pump_dose_correct /
+    drug_library_override. Tidy round (F1): moved here from "Restore Safe Clinical Operations". Her
+    bag is due at 07:45, so it is ward work from the start; in the restore aim, setting the pump
+    first revealed that aim early, with tasks naming Helen and the incident room and the drug
+    library tamper. Optional, so a player who never sets it (or sets it wrong) still completes
+    this aim on Sarah and the charts. %>
         }
       ]
     },
@@ -459,21 +474,15 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
     report: early (player argued Art. 33), after isolation, or late after the deadline. %>
         },
         {
-          "taskId": "pump_dose_check",
-          "title": "Set Bed 2's morphine infusion from the paper chart",
-          "type": "manual",
-          "status": "active",
-          "optional": true
-<%# status: active — completed via infusion pump minigame (MG-08); no #unlock_task exists. %>
-        },
-        {
           "taskId": "warn_sarah",
           "title": "Tell Sarah the drug library was tampered with",
           "type": "npc_conversation",
           "targetNPC": "sarah_mitchell",
-          "status": "active",
+          "status": "locked",
           "optional": true
-<%# status: active — npc_conversation auto-completes on player talking to Sarah (no #unlock_task exists). %>
+<%# Completed by #complete_task:warn_sarah in npc_sarah.ink post_drug_tamper. Tidy round (F1): locked
+    until the tamper is found (Sarah's unlockTask mapping on drug_library_compromised), because its
+    title gave the tamper away whenever the aim opened first. %>
         }
       ]
     },
@@ -576,7 +585,9 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           { "text": "CLAIM-HC-001: Reviewed with Clinical Engineering before isolation",                "style": "entry", "condition": "globalVars.safety_claim_hc001_assessed && globalVars.hc001_verdict !== 'invalid' && globalVars.hc001_verdict !== 'holds' && globalVars.hc001_verdict !== 'held_until_attack'" },
           { "text": "CLAIM-HC-001: Not reviewed during response",                                        "style": "entry", "condition": "!globalVars.safety_claim_hc001_assessed" },
           { "text": "CLAIM-HC-003: Change control failed — an unauthorised library change reached the pumps", "style": "entry", "condition": "globalVars.safety_claim_hc003_assessed" },
-          { "text": "CLAIM-HC-003: Not reviewed during response",                                        "style": "entry", "condition": "!globalVars.safety_claim_hc003_assessed" },
+          { "text": "CLAIM-HC-003: Library checked and restored from a verified copy; the claim itself was not reviewed with Clinical Engineering", "style": "entry", "condition": "!globalVars.safety_claim_hc003_assessed && globalVars.drug_library_restored" },
+          { "text": "CLAIM-HC-003: Tampered library found but not restored; the claim was not reviewed with Clinical Engineering", "style": "entry", "condition": "!globalVars.safety_claim_hc003_assessed && globalVars.drug_library_compromised && !globalVars.drug_library_restored" },
+          { "text": "CLAIM-HC-003: Not reviewed during response",                                        "style": "entry", "condition": "!globalVars.safety_claim_hc003_assessed && !globalVars.drug_library_compromised && !globalVars.drug_library_restored" },
           { "text": "CLAIM-HC-007: Joint sign-off honoured; the annual rehearsal had lapsed (19 months)", "style": "entry", "condition": "globalVars.network_isolation_authorised" },
           { "text": "CLAIM-HC-007: Joint sign-off skipped; the annual rehearsal had lapsed (19 months)", "style": "entry", "condition": "globalVars.network_isolated && !globalVars.network_isolation_authorised" },
           { "text": "CLAIM-HC-007: Not engaged — network isolation not completed",                      "style": "entry", "condition": "!globalVars.network_isolated" },
@@ -814,6 +825,29 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "eventPattern": "game_loaded",
               "condition": "globalVars.debrief_started === true",
               "unlockAim": ["restore_operations", "ncsc_debrief"]
+            },
+<%# Tidy round (F2): a SEVER without both signed forms closes off whichever sign-off is still open.
+    skipTask (engine) shows it as skipped, not done: it doesn't count towards tasks_completed or the
+    score, and "Authorise Network Isolation" completes with the gap. A completed sign-off is left
+    alone. The game_loaded twin covers a reload before the skip reached the server. %>
+            {
+              "eventPattern": "global_variable_changed:network_isolated",
+              "condition": "value === true && !globalVars.network_isolation_authorised",
+              "onceOnly": true,
+              "skipTask": ["ravi_signoff", "david_safety_case"]
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.network_isolated === true && !globalVars.network_isolation_authorised",
+              "skipTask": ["ravi_signoff", "david_safety_case"]
+            },
+<%# Tidy round (F1): "Tell Sarah the drug library was tampered with" stays hidden until the tamper
+    is found. unlockTask is saved, so no game_loaded twin is needed. %>
+            {
+              "eventPattern": "global_variable_changed:drug_library_compromised",
+              "condition": "value === true",
+              "onceOnly": true,
+              "unlockTask": "warn_sarah"
             },
             {
               "eventPattern": "global_variable_changed:network_isolated",
@@ -1392,7 +1426,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "name": "Bed 2 — Infusion Pump Terminal",
           "takeable": false,
           "puzzle_graph_role": "lock",
-          "puzzle_graph_aim": "restore_operations",
+          "puzzle_graph_aim": "assess_ward",
 <%# IMPLEMENTED: infusion_pump minigame (MG-08) — Phaser.js pixel-art pump with prescription panel.
     - drug_name, correct_dose and the prescription panel read from minigameData.
     - paper_charts_collected=true required; shows "PAPER MAR CHARTS REQUIRED" screen then complete(false) if false.
