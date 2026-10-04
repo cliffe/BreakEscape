@@ -412,7 +412,7 @@
       "perfect_stealth_earned": false,
       "exec_wing_night": false,
       "night_explored": false,
-      "guard_hostile": false,
+      "guard_attacking": false,
       "clone_read_dropped": false,
       "sterling_on_call_seen": false
     },

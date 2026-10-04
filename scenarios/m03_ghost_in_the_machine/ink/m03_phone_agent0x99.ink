@@ -38,7 +38,7 @@ VAR exec_wing_entered = false
 VAR clone_read_dropped = false
 VAR sterling_on_call_seen = false
 VAR guard_knocked_out = false
-VAR guard_hostile = false
+VAR guard_attacking = false
 VAR exec_office_entered = false
 
 // ---- Field-guide exposure flags (offered synced; given tracked locally) ----
@@ -92,9 +92,9 @@ VAR hint_guard_hostile_given = false
     -> hint_sterling_night
 + {clone_call_done and not night_confrontation_ready and danny_fate == "" and not hint_danny_given} [Is there anyone else in the building tonight?]
     -> hint_danny
-+ {guard_hostile and not guard_knocked_out and not hint_guard_hostile_given} [The guard's coming for me. What do I do?]
++ {guard_attacking and not guard_knocked_out and not hint_guard_hostile_given} [The guard's coming for me. What do I do?]
     -> hint_guard_hostile
-+ {clone_call_done and (guard_detection_count > 0 or guard_challenged) and not guard_hostile and not guard_knocked_out and not guard_told_safetynet and not guard_bribed and not hint_guard_given} [The guard keeps catching me. How do I get past him?]
++ {(guard_detection_count > 0 or guard_challenged) and not guard_attacking and not guard_knocked_out and not guard_told_safetynet and not guard_bribed and not hint_guard_given} [The guard keeps catching me. How do I get past him?]
     -> hint_guard
 + {clone_call_done and whiteboard_seen and not catalogue_seen and not hint_safe_given} [I can't get the server room wall safe open.]
     -> hint_safe
@@ -106,7 +106,7 @@ VAR hint_guard_hostile_given = false
     -> hint_rfid
 + {exec_wing_entered and not exec_office_entered and not hint_lockpicking_given} [How do I get past the locked doors?]
     -> hint_lockpicking
-+ {clone_call_done and not (draft_seen or roster_seen) and not hint_password_given} [How do I get into Sterling's computer?]
++ {exec_office_entered and not (draft_seen or roster_seen) and not hint_password_given} [How do I get into Sterling's computer?]
     -> hint_password
 + {(cyberchef_guide_offered or netexploit_guide_offered) and not directive_decoded and not hint_encoding_given} [How do I read what I've found?]
     -> hint_encoding
@@ -229,7 +229,9 @@ Whether he answers for that or gets a way out is partly your call. See him befor
 ~ hint_guard_given = true
 Never work a lock in his sightline. Watch his loop, wait for his back to turn, then pick.
 If he's already looking, break off. Step out to the main hallway or into Danny's office until he's moved on.
-You can talk your way past him, or pay him, but then he knows your face. Clean is better.
+{ clone_call_done:
+    You can talk your way past him, or pay him, but then he knows your face. Clean is better.
+}
 + [Understood]
     -> hub
 
