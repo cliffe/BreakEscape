@@ -39,6 +39,8 @@ VAR cover_probed = false
 VAR asked_guarding = false
 VAR asked_plainclothes = false
 VAR asked_badge = false
+VAR asked_drill_doors = false
+VAR read_handover_board = false
 
 === start ===
 // Before the confronted check: the ambush sets insider_confronted as it starts, so
@@ -59,6 +61,7 @@ VAR asked_badge = false
 // ===========================================
 
 === cover_friendly ===
+#set_global:reeves_known:true
 Narrator: He stands beside the comms relay, hands loosely clasped, like a man who has stood in exactly that spot for a very long time and doesn't mind.
 
 Graham Reeves: Evening. You'll be the consultant Dr Kim brought in.
@@ -79,13 +82,22 @@ Graham Reeves: Anything you want to send from that terminal comes through me fir
 
 // Round 2 (re-review M1): accusing him needs the duty sheet that ties the badge to
 // this post. Without it the player can only probe, and he deflects.
-+ {insider_badge_id_found and inspected_asset_post and not insider_identified} [You're badge SC-4471.]
+// Playtest loop round 1 (A10): the number comes only from Ghost's log (flag 4), and the
+// post log must be read too; cover_burned keeps him from being taken before his call.
++ {cover_burned and insider_badge_id_found and inspected_asset_post and not insider_identified} [Ghost's log names badge SC-4471. That's this post's badge.]
     -> name_him
+
+// Round 1 (A10): feeds the red herring. He points at Val, and he lies.
++ {read_handover_board and not asked_drill_doors and not insider_identified} [Friday's drill ran on a security override. Whose?]
+    ~ asked_drill_doors = true
+    Graham Reeves: Doors are Officer Okonkwo's department. Corridor, keys, the fire panel.
+    Graham Reeves: I watch a telephone. I couldn't open a door in this building if I tried.
+    -> cover_hub
 
 + {insider_badge_id_found and not inspected_asset_post and not asked_badge} [What badge number do you carry on this post?]
     ~ asked_badge = true
     Graham Reeves: The one security issued me, same as everybody's. Why do you ask?
-    Graham Reeves: If it's a records question, the post has a log. I'm sure it's somewhere.
+    Graham Reeves: If it's badge numbers you're after, Officer Okonkwo keeps the rota. She's very thorough.
     -> cover_hub
 
 + [Nothing for now.]

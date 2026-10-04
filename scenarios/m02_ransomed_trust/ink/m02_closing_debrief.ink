@@ -46,6 +46,9 @@ VAR pin_cracker_found = false
 VAR asked_about_cracker = false
 VAR guard_knocked_out = false
 VAR attacked_guard = false
+// Playtest loop round 1 (B3/B4): set by HaX's player_ko mapping and Ghost's act2_reveal.
+VAR player_was_ko = false
+VAR ghost_affiliate_heard = false
 VAR val_caught_picking = false
 
 // Friendly-NPC knockouts -- set by globalVarOnKO. The debrief must own these
@@ -232,8 +235,9 @@ Agent HaX: We don't have a name. We have a philosophy, a signature, and now two 
 === mission_summary ===
 #speaker:agent_0x99
 
-{flag_ghost_log_submitted:
-    Agent HaX: You found Ghost's operational log. The mortality calculations.
+// Round 1 (VM alignment): the projections are in the manifesto, not the flag-4 log.
+{lore_ghosts_manifesto_found:
+    Agent HaX: You found Ghost's manifesto. The mortality calculations.
     Agent HaX: Pre-planned. Spreadsheet-precise. They knew what the statistics meant before the operation started and ran it anyway.
 }
 
@@ -595,7 +599,12 @@ Agent HaX: Remember that when you think about Ghost's ideology. They're not wron
 === ghost_status ===
 #speaker:agent_0x99
 
-Agent HaX: Ghost's gone. Clean exit. No trace, no leads.
+// Round 1 (B6): Ghost's keys leave Ghost in the network.
+{ghost_keys_used:
+    Agent HaX: Ghost's gone. No trace on the person. The keys are another matter.
+- else:
+    Agent HaX: Ghost's gone. Clean exit. No trace, no leads.
+}
 
 Agent HaX: Ransomware Incorporated is still operational.
 
@@ -679,7 +688,7 @@ Agent HaX: Underpaid, ignored, radicalised by the same negligence he helped puni
 
 Agent HaX: You identified Ghost's inside asset -- Graham Reeves, night security supervisor, badge SC-4471. You didn't get to close it out yourself, but your identification was enough.
 
-Agent HaX: SAFETYNET moved on the intel and picked him up before he could disappear. His access logs and handler contacts are ours now. A thread into the cell.
+Agent HaX: SAFETYNET moved on your identification and picked Reeves up before he could disappear. His access logs and handler contacts are ours now. A thread into the cell.
 
 -> entropy_coordination_reveal
 
@@ -687,7 +696,12 @@ Agent HaX: SAFETYNET moved on the intel and picked him up before he could disapp
 #speaker:agent_0x99
 #set_global:insider_asset_escaped:true
 
-Agent HaX: There's one more thing you should know. Ghost told you the truth -- there was an affiliate inside the building. Graham Reeves, the night security supervisor.
+// Round 1 (B4): only claim Ghost said it if the player heard it.
+{ghost_affiliate_heard:
+    Agent HaX: There's one more thing you should know. Ghost told you the truth -- there was an affiliate inside the building. Graham Reeves, the night security supervisor.
+- else:
+    Agent HaX: There's one more thing you should know. There was an affiliate inside the building. Graham Reeves, the night security supervisor.
+}
 
 {insider_ambushed:
     Agent HaX: He was standing at that terminal the whole time. {exposed_hospital:When you transmitted|When you closed the terminal}, he told you who he was and walked out.
@@ -728,7 +742,11 @@ Agent HaX: Next time we go into one of these, we look harder for the person hold
 === entropy_coordination_reveal ===
 #speaker:agent_0x99
 
-Agent HaX: Ghost's logs confirmed what we suspected -- Zero Day Syndicate sourced the ProFTPD exploit. Crypto Anarchists handle payment processing across all cells.
+// Round 1 (VM alignment): the ZDS link comes from the boardroom-safe invoice.
+{lore_zds_invoice_found:
+    Agent HaX: That invoice from the boardroom safe confirmed it -- Zero Day Syndicate sourced the ProFTPD exploit.
+}
+Agent HaX: Crypto Anarchists handle payment processing across all cells.
 
 {lore_cryptosecure_found:
     Agent HaX: The CryptoSecure intelligence you recovered -- that's their financial front. We're building a picture of the network.
@@ -789,6 +807,15 @@ Agent HaX: One last section, and then I'll let you go. The people.
     Agent HaX: The closest thing you had to an ally in that building, and you put her on the floor.
     Agent HaX: I'm not going to lecture you. You've read the file. I just want it said out loud once.
 - else:
+    // Round 1 (B3): a fight with Val that didn't end with her on the floor.
+    {attacked_guard and player_was_ko:
+        Agent HaX: Val Okonkwo. You went for her in her own corridor, and she put you on the floor.
+        Agent HaX: She'd spent eight weeks logging Graham Reeves. Then she had to log you.
+    }
+    {attacked_guard and not player_was_ko:
+        Agent HaX: Val Okonkwo. You went for her in her own corridor, and she logged every second of it.
+        Agent HaX: She'd spent eight weeks logging Graham Reeves. Then she had to log you.
+    }
     {val_caught_picking:
         Agent HaX: Val Okonkwo's incident log has you in it, crouched at her office door with a pick set.
         Agent HaX: Time, description, what you said. It's the most accurate document anybody produced that night.
@@ -832,7 +859,7 @@ Agent HaX: One last section, and then I'll let you go. The people.
 Agent HaX: Here's what I'll say, {player_name()}.
 
 {player_cold:
-    Agent HaX: You named Derek the moment I raised it. Cold. Focused. That's useful in this work, but hear the next part anyway.
+    Agent HaX: You named Derek the moment I raised it. Cold. Focused. Useful, in this work.
 }
 {player_shaken:
     Agent HaX: You couldn't say the Architect's name out loud when you came in. Good. The day this stops costing you something is the day I start worrying about you.
@@ -861,7 +888,7 @@ Agent HaX: Here's what I'll say, {player_name()}.
     Agent HaX: Ghost built that choice so that it couldn't be got right. That was the craft in it, more than the exploit.
 }
 
-Agent HaX: You made it anyway, at four in the morning, with half the facts and a corridor full of people watching you do it.
+Agent HaX: You made it anyway, at four in the morning, with half the facts and forty-seven people depending on it.
 
 * [I made the best decision I could with what I had.]
     Agent HaX: You acted. That counts.

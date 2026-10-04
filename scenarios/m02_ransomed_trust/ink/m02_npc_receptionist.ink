@@ -423,7 +423,7 @@ Bernie Nwosu: He stands himself by the boardroom and the comms relay and doesn't
 Bernie Nwosu: Everybody signs this book. Contractors, engineers, the lot. He never has. Says he's "posted", like that's an answer.
 
 + [What's his name?]
-    Bernie Nwosu: Reeves. Graham, I think. Says it like you should already know it.
+    Bernie Nwosu: Couldn't tell you. He's never signed, so he's never had to say.
     ~ hub_quiet = true
     -> hub
 

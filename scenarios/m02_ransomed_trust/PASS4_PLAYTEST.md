@@ -32,7 +32,7 @@ This script covers the parts changed in the pass 4 design work (see `DESIGN_REVI
    - Click the Recovery Console once you have the manifest. Expected: the console closes and Ghost's video call opens with "Before you touch that console -- look up."; `ghost_offer_made` is set.
    - Accept. Reopen the console. Expected: a fourth tile, "Ghost's Keys (Free, On Ghost's Terms)", is selectable.
    - Don't confirm yet. Check that HaX's hub shows "I have Ghost's decryption keys -- does that change things?".
-6. **Name the insider.** Submit flag 4. Expected: HaX gives the badge and says to find the duty sheet, with no name.
+6. *(Superseded by the playtest-loop round 1 rework, 2026-10-04: see `PLAYTEST_LOOP_LOG.md` and `TESTING_WALKTHROUGH.md` step 36.)* **Name the insider.** Submit flag 4. Expected: HaX gives the badge and says to find the duty sheet, with no name.
    - Read the boardroom Night Security Post Log (PIN 0417). Expected: HaX confirms the post and still gives no name.
    - In HaX's hub choose "I know whose badge SC-4471 is.", pick Val first, then Reeves.
    - Expected: pushback for Val; for Reeves, `insider_identified` is set, `unmask_identify` completes and HaX confirms the phone-call link.
@@ -91,7 +91,7 @@ R3. **Repeats are shorter.** In a second game (no Bernie trust, no lanyard), get
    - If you never spoke to Val before the challenge, her line is "Whoever you are -- start talking."
 R4. **Vouched, then reload.** Have Bernie vouch from her desk (hub option), reload the page, then talk to Val. Expected: she opens the office ("Control rang back. Bernie Nwosu's put her own name against you"), not her first meeting. HaX texts "Bernie's put her name against yours… ask her to open her office."
 R5. **HaX hub.** Open the phone at flag 2. Expected: the story items sit at the top, followed by "Remind me where we are." and a single "Send me a field guide." button that opens the guide list. There are no more than about 10 buttons.
-R6. **Naming needs a reason.** Submit flag 4, then *before* reading the post log:
+R6. *(Superseded, round 1 rework.)* **Naming needs a reason.** Submit flag 4, then *before* reading the post log:
    - Reeves offers only "What badge number do you carry on this post?", and he deflects.
    - HaX's names come in the order Val, Gary, Graham Reeves, Dr Kim. Picking Reeves asks for the reason, and the duty-sheet reason is missing.
    - Read the post log. Expected: the duty-sheet reason appears, wrong reasons get pushback, and the right one completes "Name badge SC-4471's holder, with your reason…".

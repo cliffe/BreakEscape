@@ -58,6 +58,13 @@ VAR val_argument_heard = false
 // Round 3: the local warned_player is not carried into an event-opened conversation
 // (playtest 1409), so the meeting itself is recorded in a global too.
 VAR val_met = false
+// Playtest loop round 1 (A10): Val as the red herring. She can be accused once the
+// handover board's "security override" has been read and the player is past her door.
+VAR read_handover_board = false
+VAR insider_badge_id_found = false
+VAR read_night_rota = false
+VAR reached_security_office = false
+VAR val_accused = false
 
 // Local: whether the challenge is the first time she has ever spoken to the player.
 VAR challenge_is_first_meeting = false
@@ -181,7 +188,7 @@ Val Okonkwo: Reception's paper log's been amended, and there's nothing on the sy
 + [Somebody phoned that in to keep me out of that room. Who benefits?]
     -> the_argument
 
-+ [Then we're doing this the hard way.] #color:red
++ [Then we're doing this the hard way. (Fight her.)] #color:red
     ~ influence -= 40
     # influence_decreased
     Val Okonkwo: *hand going to her radio* Don't.
@@ -376,7 +383,7 @@ Val Okonkwo: What in God's name have you got in your hands?
     Val Okonkwo: Worst lie I've heard this shift, and a man told me at midnight he was his own next of kin.
     -> after_catch
 
-* [Turn round and walk away.] #color:red
+* [Turn round and walk away. (She'll fight you.)] #color:red
     ~ influence -= 40
     # influence_decreased
     Val Okonkwo: Not a chance.
@@ -426,7 +433,7 @@ Val Okonkwo: I'm going to ask you once more, properly, and then I'm going to sto
     ~ hub_quiet = true
     -> hub
 
-* [I don't answer to hospital security.]
+* [I don't answer to hospital security. (She'll fight you.)]
     ~ influence -= 20
     # influence_decreased
     Val Okonkwo: You do tonight, sunshine.
@@ -450,7 +457,11 @@ Val Okonkwo: I'm going to ask you once more, properly, and then I'm going to sto
     {cover_burned and cover_restored and not val_opened_office:
         -> open_after_vouch
     }
-    Val Okonkwo: {cleared_after_burn: Still with us, then.|{&Alright.|You again. Go on.|What's up?}}
+    {val_accused:
+        Val Okonkwo: Mm.
+    - else:
+        Val Okonkwo: {cleared_after_burn: Still with us, then.|{&Alright.|You again. Go on.|What's up?}}
+    }
 }
 + {not talked_about_attack} [What have you actually been told about all this?]
     -> discuss_attack
@@ -463,6 +474,9 @@ Val Okonkwo: I'm going to ask you once more, properly, and then I'm going to sto
 
 + {talked_about_reeves and insider_identified} [Graham Reeves is ENTROPY's man inside. You were right.]
     -> reeves_vindicated
+
++ {cover_burned and read_handover_board and not insider_identified and not val_accused and not accuse_val and (val_opened_office or reached_security_office)} [That drill ran on a security override. You're security. Was it you?]
+    -> accuse_val
 
 + {cover_burned and cover_restored and not val_opened_office} [Val, I need the server room.]
     -> open_after_vouch
@@ -511,6 +525,7 @@ Val Okonkwo: Been right for six months, which round here is basically a discipli
 
 === discuss_reeves ===
 ~ talked_about_reeves = true
+#set_global:reeves_known:true
 
 {discuss_reeves > 1:
     Val Okonkwo: Reeves. Same as I told you. Not on my rota, never signs Bernie's book, and I've been told twice to drop it.
@@ -536,7 +551,7 @@ Val Okonkwo: I've raised it twice. Twice I've been told it's "crisis protocol" b
     Val Okonkwo: *stops dead* There was. A fire drill nobody had scheduled.
     Val Okonkwo: Six weeks ago, half two in the morning. Everybody goes the same way in a drill. Out.
     Val Okonkwo: Two men in high-vis, "facilities", went the other way. Up the north corridor, towards the comms relay and the server room.
-    Val Okonkwo: I told myself facilities knew their own job. He smiled at me and said he'd sorted it.
+    Val Okonkwo: Panel said fire, so I unlocked the north doors myself. Somebody rang down and said facilities had it in hand.
     #set_global:insider_evidence_partial:true
     Val Okonkwo: Six weeks that's itched at me. Two men walking the wrong way through a fire.
     -> reeves_questions
@@ -568,6 +583,9 @@ Narrator: She tears the used pages out and folds them into your hand.
 -> hub
 
 === reeves_vindicated ===
+{val_accused:
+    Val Okonkwo: And an hour ago you had me down for it.
+}
 Val Okonkwo: Eight weeks.
 
 Val Okonkwo: Eight weeks I've had that man in my notebook. Twice I was told to leave it. And now you're telling me he let them in.
@@ -591,6 +609,41 @@ Val Okonkwo: I'll not be dramatic. But when they ask afterwards who knew, and th
     ~ hub_quiet = true
     #exit_conversation
     -> hub
+
+// ===========================================
+// ACCUSING VAL (playtest loop round 1, A10 red herring)
+// The soft answers come back to the hub; the push costs her goodwill and counts as a
+// wrong accusation, like Kim's and Gary's. No #hostile: a fight would be out of scale.
+// ===========================================
+
+=== accuse_val ===
+Val Okonkwo: Me.
+Val Okonkwo: Eight weeks I've been writing down a man nobody'll let me question. You've had me for five minutes.
+
++ {read_night_rota and insider_badge_id_found} [Your rota number isn't the one in Ghost's log.]
+    Val Okonkwo: No. It isn't. Nice to know somebody reads my rota.
+    ~ hub_quiet = true
+    -> hub
+
++ [You're right. I had to ask.]
+    Val Okonkwo: You did. Now go and ask the right one.
+    ~ hub_quiet = true
+    -> hub
+
+* {asked_about_drill} [You opened those doors yourself. You told me.]
+    -> accuse_val_push
+
+* {not asked_about_drill} [You had the keys and the shift. Who else?]
+    -> accuse_val_push
+
+=== accuse_val_push ===
+Val Okonkwo: I opened them because the panel said fire. That's the job.
+Val Okonkwo: Put that in your report. Then find somebody else to talk to.
+#set_global:accused_wrong_suspect:true
+#set_global:val_accused:true
+~ hub_quiet = true
+#exit_conversation
+-> hub
 
 // ===========================================
 // SERVER ROOM ACCESS EVENT

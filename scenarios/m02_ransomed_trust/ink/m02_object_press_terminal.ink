@@ -45,6 +45,8 @@ VAR insider_identified = false
 VAR insider_confronted = false
 VAR night_security_supervisor_ko = false
 VAR awaiting_ambush = false
+// Playtest loop round 1 (B13)
+VAR ghost_deal_accepted = false
 
 === start ===
 #speaker:computer
@@ -215,6 +217,11 @@ The board liability email, budget decisions, and Gary Whitlock's warning archive
 St. Catherine's reputation protected. Board members retain their positions.
 
 Gary Whitlock's situation remains an internal matter.
+
+// Playtest loop round 1 (B13): the promise to Ghost is on the line here.
+{ghost_deal_accepted:
+    You told Ghost this would go out. Keeping it internal breaks that promise.
+}
 
 The sector-wide vulnerability profile does not become public knowledge.
 

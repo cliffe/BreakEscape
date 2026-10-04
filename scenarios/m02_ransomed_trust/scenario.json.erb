@@ -28,8 +28,9 @@
 #           booking. The consultant line stops working. Freedom of movement
 #           must be re-earned -- and WHO made that call is the intrigue.
 #   ACT III The backup server. VM exploitation is on the critical path: the
-#           database flag exposes the fire-drill window, Ghost's log names the
-#           badge, and the press relay refuses to authenticate without both.
+#           backdoor flag (Ghost's deployment log) reveals an override badge
+#           held the drill doors, Ghost's log (flag 4) names the badge, and the
+#           press relay refuses to authenticate without the full flag set.
 #   ACT IV  Four decisions that all pay back in the debrief.
 #
 # NEW MECHANICS (over m01):
@@ -97,7 +98,7 @@ gary_warning_email = "From: Gary Whitlock (IT Systems)\nTo: Dr. Sarah Kim (CTO)\
 
 board_reply_email = "From: Dr. Sarah Kim (CTO)\nTo: Gary Whitlock (IT Systems)\nDate: 21 May\nSubject: RE: URGENT -- ProFTPD backdoor on backup server\n\nGary,\n\nNoted, and I do understand. The board reviewed it on Tuesday. The position is that the imaging replacement takes precedence this cycle and infrastructure security is deferred to FY25.\n\nI would ask you not to escalate this again outside the department. It does not help either of us.\n\nSarah"
 
-recovery_instructions_encoded = rot13("SITE NOTE -- RECOVERY POSTURE. THEIR ESCROW COPY IS OFFLINE AND I CANNOT REACH IT. OFFLINE SET ALONE = 12 HOURS. OFFLINE SET PLUS MY KEY MATERIAL = 4. THEY WILL NOT WORK THAT OUT IN TIME, SO THEY WILL PAY.")
+recovery_instructions_encoded = rot13("SITE NOTE -- RECOVERY POSTURE. THEIR ESCROW COPY IS OFFLINE AND I CANNOT REACH IT. OFFLINE SET ALONE = 12 HOURS. OFFLINE SET PLUS MY KEY MATERIAL (CACHE, THIS RACK) = 4 HOURS. THEY WILL NOT WORK THAT OUT IN TIME, SO THEY WILL PAY.")
 
 # Board room door code -- also written in Dr. Kim's desk diary and spoken by Kim.
 boardroom_pin = "0417"
@@ -105,7 +106,7 @@ boardroom_pin = "0417"
 {
   "scenario_brief": "St. Catherine's Regional went dark at 02:47. Every clinical system is encrypted, forty-seven patients are running on backup generators, and the board votes on paying ENTROPY's ransom in four hours. You are in as an emergency security consultant -- which buys you a paper badge and nothing else, because the ransomware took the access control server too. Nobody in this building can grant you access. You will have to earn every door.",
 
-  "show_scenario_brief": "on_resume",
+  "show_scenario_brief": "once",
 
   "flags": {
     "hospital_backup_server": <%= vm_flags_json('hospital_backup_server', ['flag{ssh_access_granted}', 'flag{proftpd_backdoor_exploited}', 'flag{database_backup_located}', 'flag{ghost_operational_log}']) %>
@@ -176,7 +177,8 @@ boardroom_pin = "0417"
           { "text": "" },
           { "text": "── DECISION ──",                                      "style": "section-header" },
           { "text": "RANSOM PAID: £150,000 to Ransomware Incorporated — ENTROPY funded",   "style": "entry", "condition": "globalVars.paid_ransom" },
-          { "text": "RANSOM REFUSED: Offline backup keys used — ENTROPY denied funding",  "style": "entry", "condition": "!globalVars.paid_ransom && !globalVars.ghost_keys_used" },
+          { "text": "RANSOM REFUSED: Offline backup keys used — ENTROPY denied funding",  "style": "entry", "condition": "!globalVars.paid_ransom && !globalVars.ghost_keys_used && !globalVars.ward_recovering" },
+          { "text": "RANSOM REFUSED: Combined restore — escrow keys plus Ghost's own key material, ENTROPY denied funding", "style": "entry", "condition": "!globalVars.paid_ransom && !globalVars.ghost_keys_used && globalVars.ward_recovering" },
           { "text": "GHOST'S KEYS: Wards restored on the attacker's terms — no money paid, the evidence promised in return", "style": "warning", "condition": "globalVars.ghost_keys_used" },
           { "text": "GHOST'S FOOTHOLD: Attacker access survives the restore inside St. Catherine's network", "style": "warning", "condition": "globalVars.ghost_keys_used" },
           { "text": "HOSPITAL EXPOSED: Negligence on public record — Health and Social Care Committee to take evidence", "style": "entry", "condition": "globalVars.exposed_hospital" },
@@ -185,13 +187,14 @@ boardroom_pin = "0417"
           { "text": "── PERSONNEL ──",                                     "style": "section-header" },
           { "text": "OFFLINE BACKUP KEYS RECOVERED — Independent recovery pathway available", "style": "entry", "condition": "globalVars.offline_keys_recovered" },
           { "text": "GARY WHITLOCK: Vindicated — Career protected by agent documentation", "style": "entry", "condition": "globalVars.gary_protected" },
-          { "text": "GARY WHITLOCK: Scapegoated — Position lost, career damaged",          "style": "entry", "condition": "!globalVars.gary_protected && !globalVars.exposed_hospital" },
+          { "text": "GARY WHITLOCK: Fired quietly — career over in healthcare IT",          "style": "entry", "condition": "!globalVars.gary_protected && !globalVars.exposed_hospital" },
           { "text": "GARY WHITLOCK: Sacked, then rehired when his warnings went public", "style": "entry", "condition": "!globalVars.gary_protected && globalVars.exposed_hospital" },
           { "text": "COVER BURNED: Booking pulled from the visitor system mid-operation", "style": "warning", "condition": "globalVars.cover_burned && !globalVars.cover_restored" },
           { "text": "COVER RE-ESTABLISHED: Access regained without incident",           "style": "entry", "condition": "globalVars.cover_restored && !globalVars.guard_knocked_out" },
           { "text": "BERNIE NWOSU: Vouched for the agent when the paperwork vanished",  "style": "entry", "condition": "globalVars.bernie_vouched" },
           { "text": "SECURITY OFFICER V. OKONKWO: Neutralised on shift",                "style": "warning", "condition": "globalVars.guard_knocked_out" },
           { "text": "SECURITY OFFICER V. OKONKWO: Caught the agent picking a lock — logged it", "style": "warning", "condition": "globalVars.val_caught_picking && !globalVars.guard_knocked_out" },
+          { "text": "SECURITY OFFICER V. OKONKWO: Attacked by the agent — logged it", "style": "warning", "condition": "globalVars.attacked_guard && !globalVars.guard_knocked_out" },
           { "text": "BERNIE NWOSU: Assaulted at the reception desk",                    "style": "warning", "condition": "globalVars.receptionist_ko" },
           { "text": "DR SARAH KIM: Assaulted in her own office",                       "style": "warning", "condition": "globalVars.dr_kim_ko" },
           { "text": "GARY WHITLOCK: Assaulted at his desk — keycard taken",            "style": "warning", "condition": "globalVars.gary_ko" },
@@ -405,7 +408,7 @@ boardroom_pin = "0417"
         },
         {
           "taskId": "unmask_db_window",
-          "title": "Use the database backup to expose the insider's access window",
+          "title": "Find out how the insider let ENTROPY in",
           "type": "manual",
           "status": "active"
         }
@@ -414,7 +417,7 @@ boardroom_pin = "0417"
     {
       "aimId": "identify_inside_asset",
       "title": "Put A Name To The Badge",
-      "description": "The backdoor logs point at a single badge inside St. Catherine's. Recover the number ENTROPY recorded, then work out whose post it sits on.",
+      "description": "Ghost's own log names a single badge inside St. Catherine's. Work out who carries it.",
       "status": "locked",
       "order": 5,
       "unlockCondition": { "aimCompleted": "exploit_entropy_backdoor" },
@@ -427,7 +430,7 @@ boardroom_pin = "0417"
         },
         {
           "taskId": "unmask_identify",
-          "title": "Name badge SC-4471's holder, with your reason -- to HaX, or to his face",
+          "title": "Find whose badge SC-4471 is, and name them -- to HaX, or to their face",
           "type": "manual",
           "status": "active"
         }
@@ -845,6 +848,18 @@ boardroom_pin = "0417"
               "sendTimedMessage": { "delay": 1500, "message": "Those are the patients at risk. Real people. Let's get them their systems back." }
             },
             {
+              "_comment": "Playtest loop round 1 (B3): the engine emits player_ko when the player is knocked out (player-health.js). Read by the debrief's Val lines.",
+              "eventPattern": "player_ko",
+              "onceOnly": true,
+              "setGlobal": { "player_was_ko": true }
+            },
+            {
+              "_comment": "Playtest loop round 1 (B11): retires Kim's 'get into IT' escape hatch once the IT door is open.",
+              "eventPattern": "objective_task_completed:open_it_department",
+              "onceOnly": true,
+              "setGlobal": { "it_door_open": true }
+            },
+            {
               "eventPattern": "objective_task_completed:meet_dr_kim",
               "onceOnly": true,
               "setGlobal": { "dr_kim_met": true },
@@ -892,7 +907,7 @@ boardroom_pin = "0417"
               "eventPattern": "global_variable_changed:read_handover_board",
               "condition": "value === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "Friday's 'drill': half two to three, doors on free egress. The estate went dark at 02:47. Somebody held the doors open. Signed N/S Supervisor. Who's that?" }
+              "sendTimedMessage": { "delay": 1500, "message": "Friday's 'drill': doors on free egress, half two to three. The estate went dark at 02:47. Held open on a security override. Whose?" }
             },
             {
               "eventPattern": "global_variable_changed:found_safe_pin_clue",
@@ -924,7 +939,7 @@ boardroom_pin = "0417"
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "obtain_password_hints",
-              "sendTimedMessage": { "delay": 1200, "message": "Shared admin credential on a sticky note. Emma2018, Hospital1987, StCatherines -- one of those gets you an SSH session on the backup box. Try the middle one first." }
+              "sendTimedMessage": { "delay": 1200, "message": "Shared admin credential on a sticky note. Emma2018, Hospital1987, StCatherines -- one of those gets you an SSH session on the backup box, as gary." }
             },
             {
               "eventPattern": "global_variable_changed:cover_restored",
@@ -1003,7 +1018,7 @@ boardroom_pin = "0417"
                   debrief line. Owning the full backdoor chain is the moment the attacker's route
                   into this estate stops being theirs, so it is set here. %>
               "setGlobal": { "flag_ghost_log_submitted": true, "backdoor_fully_exploited": true, "network_isolated": true },
-              "sendTimedMessage": { "delay": 1500, "message": "That's the full backdoor chain, and their staging cache in the rack has just opened. Ghost's key material should be in there. Take it, then the Recovery Console." }
+              "sendTimedMessage": { "delay": 1500, "message": "That's all four. Ghost's log says their key material is staged in the rack, and that cache has just opened. Take it, then the Recovery Console." }
             },
 <%# Flag-reward artefacts. The console reads the inventory for these items; the
     globals only drive HaX's lines, the console's observation text and the Ink. %>
@@ -1012,7 +1027,7 @@ boardroom_pin = "0417"
               "condition": "data.itemId === 'verified_restore_manifest'",
               "onceOnly": true,
               "setGlobal": { "restore_manifest_obtained": true },
-              "sendTimedMessage": { "delay": 6000, "message": "The drop-site's cut you a restore manifest. Every snapshot since Tuesday carries their dropper, which is why the console refused. What's left is which keys you hand it." }
+              "sendTimedMessage": { "delay": 9000, "message": "The drop-site's cut you a restore manifest. Every snapshot since Tuesday carries their dropper, which is why the console refused. What's left is which keys you hand it." }
             },
             {
               "eventPattern": "item_picked_up:text_file",
@@ -1056,8 +1071,16 @@ boardroom_pin = "0417"
                   pattern here). Now fires directly off the flag submission. %>
               "eventPattern": "objective_task_completed:submit_database_flag",
               "onceOnly": true,
+              "sendTimedMessage": { "delay": 2500, "message": "That's their server notice off anonymous FTP. It points at the database backups and a directory Ghost had no business creating. Keep digging." }
+            },
+            {
+              <%# Playtest loop round 1 (11.1): quotes flag_2's VM document (Ghost's
+                  equipment deployment log, SecGen S1). The drill/badge facts live there,
+                  not in flag_3's server notice. %>
+              "eventPattern": "objective_task_completed:submit_proftpd_flag",
+              "onceOnly": true,
               "completeTask": "unmask_db_window",
-              "sendTimedMessage": { "delay": 2500, "message": "The backup logs show it. The device went live during a 'fire drill' six weeks ago, and an internal badge authorised the sweep that installed it." }
+              "sendTimedMessage": { "delay": 2000, "message": "Ghost's deployment log. The inside contact is unpaid, with a grievance. Their override badge ran the drill six weeks ago, and held the doors again on Friday. No number yet." }
             },
             {
               <%# Was chained through global_variable_changed:backdoor_fully_exploited purely to
@@ -1067,33 +1090,12 @@ boardroom_pin = "0417"
               "onceOnly": true,
               "setGlobal": { "insider_badge_id_found": true },
               "completeTask": "unmask_ghost_badge",
-              "sendTimedMessage": { "delay": 6500, "message": "Ghost's log names the badge: SC-4471, with the timestamps that confirmed their window. Find that post's log, then put a name to it." }
+              "sendTimedMessage": { "delay": 9000, "message": "Ghost's log names the badge that held the doors: SC-4471. 'A post, not a payroll,' it says. Find out whose before you name anybody." }
             },
-<%# Pass 4: the player makes the deduction. Reading the boardroom post log with the
-    badge in hand only confirms WHICH POST badge SC-4471 sits on; HaX never says the
-    name. insider_identified (and unmask_identify) come from the player naming him --
-    to HaX from the phone hub, or to his face in the boardroom (m02_npc_asset.ink).
-    Both orderings of badge/post log are wired; only the later global fires. This
-    replaces four naming texts, two of which arrived together on the flag-4 submit.
-    concludeRequires is flags-only, so an unnamed insider costs score, never the ending. %>
-            {
-              "eventPattern": "global_variable_changed:insider_badge_id_found",
-              "condition": "globalVars.inspected_asset_post === true && !globalVars.insider_identified",
-              "onceOnly": true,
-              "sendTimedMessage": { "delay": 4200, "message": "You've read the boardroom post log, and SC-4471 stands the comms watch there. You've met him. Message me the name, or say it to his face." }
-            },
-            {
-              "eventPattern": "global_variable_changed:inspected_asset_post",
-              "condition": "globalVars.insider_badge_id_found === true && !globalVars.insider_identified",
-              "onceOnly": true,
-              "sendTimedMessage": { "delay": 2000, "message": "There it is. SC-4471 is the supervisor on this post, the same badge that signed off that fire drill. Message me the name, or say it to his face." }
-            },
-            {
-              "eventPattern": "global_variable_changed:insider_evidence_partial",
-              "condition": "globalVars.insider_badge_id_found === true && !globalVars.inspected_asset_post && !globalVars.insider_identified",
-              "onceOnly": true,
-              "sendTimedMessage": { "delay": 2000, "message": "That's more on the inside asset, and you've got a badge number off their log. The post that badge sits on keeps a log. Go and read it." }
-            },
+<%# Playtest loop round 1 (A10): the player makes the deduction and HaX confirms
+    nothing. The three texts that fired on the post log / badge / later evidence are
+    gone; HaX's phone hub gives graded nudges on request (doors_nudge) instead.
+    The badge number comes only from Ghost's log (flag 4), by user decision. %>
             {
               "_comment": "Backstop: both naming routes (HaX's hub, Reeves' name_him) complete unmask_identify themselves; this covers any other setter. HaX confirms in her own knot; Reeves confirms it to the player's face.",
               "eventPattern": "global_variable_changed:insider_identified",
@@ -1245,11 +1247,14 @@ boardroom_pin = "0417"
               "onceOnly": true,
               "setGlobal": { "flag_proftpd_submitted": true }
             },
+<%# Playtest loop round 1 (A7/R10/B10): Ghost's flag scenes used to auto-open a phone
+    chat that closed the flag station under the player. Now a bark the player opens
+    when ready (m07 Architect pattern: the bark carries the startKnot). A player who
+    misses the bark can still ask for the scene from the device's mid_mission_contact. %>
             {
               "eventPattern": "objective_task_completed:submit_proftpd_flag",
               "onceOnly": true,
-              "conversationMode": "phone-chat",
-              "targetKnot": "on_proftpd_exploited"
+              "sendTimedMessage": { "delay": 9000, "targetKnot": "on_proftpd_exploited", "message": "Interesting choice of exploit. Pick up when you're done at the drop-site." }
             },
             {
               "eventPattern": "item_picked_up:pin-cracker",
@@ -1260,8 +1265,7 @@ boardroom_pin = "0417"
             {
               "eventPattern": "objective_task_completed:submit_database_flag",
               "onceOnly": true,
-              "conversationMode": "phone-chat",
-              "targetKnot": "on_backup_located"
+              "sendTimedMessage": { "delay": 16000, "targetKnot": "on_backup_located", "message": "Did you notice your network blink just now? Pick up." }
             },
 <%# Pass 4: the offer has to come BEFORE the console choice it is meant to change.
     It used to fire on initiate_backup_recovery, after the source was already locked
@@ -1960,7 +1964,7 @@ boardroom_pin = "0417"
               "name": "Backup Server SSH Notes",
               "takeable": true,
               "readable": true,
-              "text": "BACKUP SERVER -- ACCESS NOTES (Gary)\n\nHost: 172.16.0.3  (ProFTPD 1.3.3c)\nSSH login still uses the old shared admin password -- I KNOW, I keep meaning to rotate it.\n\nReminder to self: the FTP service is the real problem. It's the 1.3.3c backdoor -- the poisoned source release. I flagged this to the board SIX MONTHS ago.\n\nIf you're reading this and you're not me: yes, the password policy here is a disgrace. That's the point.",
+              "text": "BACKUP SERVER -- ACCESS NOTES (Gary)\n\nHost: 172.16.0.3  (ProFTPD 1.3.3c)\nSSH login (account: gary) still uses the old shared admin password -- I KNOW, I keep meaning to rotate it.\n\nReminder to self: the FTP service is the real problem. It's the 1.3.3c backdoor -- the poisoned source release. I flagged this to the board SIX MONTHS ago.\n\nIf you're reading this and you're not me: yes, the password policy here is a disgrace. That's the point.",
               "observations": "Gary's own notes -- confirms the backup server password reuse and the ProFTPD vulnerability",
               "puzzle_graph_role": "clue",
               "puzzle_graph_reveals": "password_reuse_same_weak_credential_across_workstation_and_ssh"
@@ -1999,7 +2003,7 @@ boardroom_pin = "0417"
           "takeable": true,
           "readable": true,
           "text": "Photo of a toddler in a high chair with a birthday cake.\nHandwritten on back: 'Emma - 1st birthday! 17/05/2018'",
-          "observations": "Gary's daughter Emma - first birthday, 2018 (check if relevant to the PIN puzzle)",
+          "observations": "Gary's daughter Emma on her first birthday. Somebody has written the date on the back.",
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "red_herring_emma_birthday_not_the_safe_pin"
         },
@@ -2223,8 +2227,8 @@ boardroom_pin = "0417"
                 "label": "ENTROPY key material",
                 "item": "entropy_key_material",
                 "loadedText": "LOADED -- attacker session keys, wrapped",
-                "missingText": "NOT LOADED -- still on the attacker's hardware",
-                "blockedText": "No attacker key material loaded. Ghost staged it on site, on hardware that is not on any hospital register. The combined restore needs it alongside the escrow set."
+                "missingText": "NOT LOADED -- in ENTROPY's staging cache, in this rack",
+                "blockedText": "No attacker key material loaded. It is in the ENTROPY Staging Cache bolted inside this rack, which opens when Ghost's operational log flag goes in at the drop-site. The combined restore also needs the offline escrow keys from the emergency storage safe."
               }
             ],
             "backupRecoverySources": [
@@ -2252,7 +2256,7 @@ boardroom_pin = "0417"
                 "icon": "[BTC]",
                 "bullets": [
                   "Recovery time: 30 minutes (instant decryption key delivery).",
-                  "Patient risk: Minimal -- systems restored before backup power fails.",
+                  "Patient risk: Low -- but decryption runs host by host, and the frailest may not last.",
                   "Cost: £150,000 to Ransomware Incorporated funds future attacks.",
                   "Intelligence value: Ghost escapes -- no trail, no arrest, no deterrent.",
                   "Prerequisite: a verified restore manifest -- the key decrypts, the manifest stops their dropper coming back with it."
@@ -2292,7 +2296,7 @@ boardroom_pin = "0417"
                 "name": "Combined Recovery (Escrow Keys + ENTROPY Key Material)",
                 "compromised": false,
                 "etaHours": 4,
-                "needs": ["manifest", "escrow", "entropy"],
+                "needs": ["manifest", "entropy", "escrow"],
                 "outcomeTone": "success",
                 "outcomeHeader": "RESTORE INITIATED -- OFFLINE ESCROW PLUS RECOVERED KEY MATERIAL",
                 "outcomeStatus": "CLINICAL SYSTEMS DECRYPTING -- ETA 4 HOURS",
@@ -2343,9 +2347,9 @@ boardroom_pin = "0417"
                 "icon": "[G]",
                 "bullets": [
                   "Recovery time: under an hour -- Ghost's own decryption keys, ward monitoring restored first.",
-                  "Patient risk: Lowest of any route.",
+                  "Patient risk: Lowest of any route -- one patient may not last until monitoring returns.",
                   "Cost: £0 -- but the keys are Ghost's. Whatever they unlock, Ghost can reach again: the attacker keeps a foothold in this network.",
-                  "And the promise you made Ghost: publish the evidence.",
+                  "The price: your word to Ghost that tonight's evidence goes public.",
                   "Prerequisite: the verified restore manifest, and Ghost's offer, accepted."
                 ]
               }
@@ -2396,7 +2400,7 @@ boardroom_pin = "0417"
           "lockType": "key",
           "keyPins": [55, 30, 60, 40],
           "difficulty": "medium",
-          "observations": "A hard-shell case pushed in behind the rack legs, where the cable slack is. Matte black, no hospital asset sticker, no dust on it -- it has been here days, not years. The latch is a cheap four-pin tumbler, and there is no key for it on any hook in this building. If you want inside, you pick it.",
+          "observations": "A hard-shell case pushed in behind the rack legs, where the cable slack is. Matte black, no hospital asset sticker, no dust on it -- it has been here days, not years. The latch is a cheap four-pin tumbler, and no key in this building fits it -- not the override key, not anything on a hook. If you want inside, you pick it.",
           "puzzle_graph_role": "lock",
           "puzzle_graph_aim": "unmask_inside_asset",
           "puzzle_graph_optional": true,
@@ -2647,6 +2651,7 @@ boardroom_pin = "0417"
           "text": "Open on the desk, this week's page.\n\nTue -- Board, 09:00. Boardroom keypad <%= boardroom_pin %> (CHANGE THIS)\nWed -- Estates snag list. Read it this time.\nThu -- G. Whitlock 1:1. Postponed (again).\nFri -- ?\n\nBottom of the page, pressed hard enough to score the paper: \"Should have listened in May.\"",
           "observations": "Her working diary. A keypad code she has been meaning to change for months, a reminder to finally read the Estates snag list, and a line at the bottom she wrote for nobody but herself.",
           "observationDisplay": "gameDisplay",
+          "onRead": { "setVariable": { "found_boardroom_code": true } },
           "puzzle_graph_role": "clue",
           "puzzle_graph_unlocks": ["emergency_storage_safe", "conference_room"],
           "puzzle_graph_optional": true,
@@ -2816,7 +2821,7 @@ boardroom_pin = "0417"
           "name": "Conference Table Budget Papers",
           "takeable": false,
           "readable": true,
-          "text": "BUDGET MEETING MINUTES - MARCH 2024\n\nIT Security Upgrade Proposal:\nGary Whitlock presented £85,000 server security upgrade.\nBoard decision: DEFER to next fiscal year.\n\nRationale: 'Cybersecurity is important, but patient care technology takes priority. The MRI will save lives today.'",
+          "text": "BUDGET MEETING MINUTES - MARCH 2024\n\nIT Security Upgrade Proposal:\nGary Whitlock presented £85,000 server security upgrade.\nBoard decision: DEFER to next fiscal year.\n\nRationale: 'Cyber Security is important, but patient care technology takes priority. The MRI will save lives today.'",
           "observations": "Budget meeting notes showing the decision-making process"
         },
         {
@@ -2827,8 +2832,8 @@ boardroom_pin = "0417"
           "addToNotes": false,
           "takeable": false,
           "readable": true,
-          "text": "FY2024 BUDGET ALLOCATION\n\nIT Security: £85K --> £50K (CUT 40%)\nMRI Equipment: £3.2M (APPROVED)\n\nBoard priorities: Patient care equipment > Infrastructure security",
-          "observations": "Whiteboard showing budget cuts that enabled the ransomware attack"
+          "text": "FY2024 BUDGET ALLOCATION\n\nIT Security upgrade: £85K -- DEFERRED to next year\nMRI Equipment: £3.2M -- APPROVED\n\nBoard priorities: Patient care equipment > Infrastructure security",
+          "observations": "Whiteboard showing the deferral that left the backup server unpatched"
         },
         {
           "type": "notes",
@@ -2856,12 +2861,12 @@ boardroom_pin = "0417"
           "name": "Night Security Post Log",
           "takeable": false,
           "readable": true,
-          "text": "ST. CATHERINE'S -- NIGHT SECURITY POST ASSIGNMENT\n\nPOST: Conference Room / Communications Relay\nDETAIL: Plainclothes, sensitive-comms watch (crisis protocol)\nSUPERVISOR ON POST: badge #SC-4471\nSHIFT: 22:00 -- 06:00\n\nACCESS HISTORY (this badge):\n- Authorised contractor entry, fire drill, six weeks ago (facilities override)\n- Comms relay room, recurring after-hours access\n\nNOTE: Same supervisor authorised the external 'fire safety' contractor sweep. No facilities record of a drill being scheduled that night.",
-          "observations": "The post log for whoever is posted here -- badge #SC-4471, and an odd note about a fire drill six weeks ago that facilities never scheduled",
+          "text": "ST. CATHERINE'S -- NIGHT SECURITY POST ASSIGNMENT\n\nPOST: Conference Room / Communications Relay\nDETAIL: Plainclothes, sensitive-comms watch (crisis protocol)\nSUPERVISOR ON POST: badge #SC-4471\nSHIFT: 22:00 -- 06:00\n\nACCESS HISTORY (this badge):\n- Comms relay room, recurring after-hours access",
+          "observations": "The post log for whoever stands this post. One badge number against it, every night.",
           "onRead": { "setVariable": { "inspected_asset_post": true } },
           "puzzle_graph_role": "clue",
           "puzzle_graph_aim": "identify_inside_asset",
-          "puzzle_graph_reveals": "badge_SC4471_on_this_post_authorised_the_fire_drill_device_planting"
+          "puzzle_graph_reveals": "badge_SC4471_stands_the_boardroom_comms_post"
         },
         {
           "type": "phone",
@@ -2962,12 +2967,12 @@ boardroom_pin = "0417"
           "name": "Night Rota",
           "takeable": false,
           "readable": true,
-          "text": "SECURITY -- NIGHT ROTA, THIS WEEK\n\nMon  V. OKONKWO\nTue  V. OKONKWO\nWed  V. OKONKWO\nThu  V. OKONKWO\nFri  V. OKONKWO / cover TBC\n\nIn biro at the bottom, underlined twice:\n\"Still no G. REEVES on this. Asked Estates 14/06, 02/07, 19/07. Told to leave it.\"",
-          "observations": "The printed rota. One officer covers every night this week -- and somebody has been quietly noting that the man in the boardroom appears on no rota at all.",
-          "onRead": { "setVariable": { "insider_evidence_partial": true } },
+          "text": "SECURITY -- NIGHT ROTA, THIS WEEK\n\n     OFFICER       BADGE\nMon  V. OKONKWO   SC-2208\nTue  V. OKONKWO   SC-2208\nWed  V. OKONKWO   SC-2208\nThu  V. OKONKWO   SC-2208\nFri  V. OKONKWO   SC-2208 / cover TBC\n\nIn biro at the bottom, underlined twice:\n\"Still no G. REEVES on this. Asked Estates 14/06, 02/07, 19/07. Told to leave it.\"",
+          "observations": "The printed rota. One officer, one badge number, every night this week -- and somebody has been quietly noting that the man in the boardroom appears on no rota at all.",
+          "onRead": { "setVariable": { "insider_evidence_partial": true, "read_night_rota": true, "reeves_known": true } },
           "puzzle_graph_role": "clue",
           "puzzle_graph_aim": "unmask_inside_asset",
-          "puzzle_graph_reveals": "reeves_is_on_no_rota_third_independent_entry_into_the_insider_thread"
+          "puzzle_graph_reveals": "val_carries_SC2208_and_reeves_is_on_no_rota"
         },
         {
           "type": "hospital_chair_north",
@@ -3098,10 +3103,10 @@ boardroom_pin = "0417"
               "id": "val_notebook",
               "takeable": true,
               "readable": true,
-              "text": "NIGHT LOG -- V. OKONKWO\n\n22:40  Whitlock (IT) in. Told him to go home. He didn't.\n23:15  Dr Kim in. Looked through me.\n01:02  Ext. consultant expected -- Kim's authorisation, per reception.\n03:20  Reeves on his post again. Sensitive comms, apparently.\n       Not on my rota. Not on ANY rota I've ever been given.\n       Asked Sandra in Estates. She's never heard of him either.\n       Raised it twice. Told twice it's \"crisis protocol\".\n\nNote to self: get that in writing before someone asks me why I let him stand there all night.",
+              "text": "NIGHT LOG -- V. OKONKWO\n\n22:40  Whitlock (IT) in. Told him to go home. He didn't.\n23:15  Dr Kim in. Looked through me.\n01:02  Ext. consultant expected -- Kim's authorisation, per reception.\n03:20  Reeves on his post again. Sensitive comms, apparently.\n       Not on my rota. Not on ANY rota I've ever been given.\n       Asked Sandra in Estates. She's never heard of him either.\n       Raised it twice. Told twice it's \"crisis protocol\".\n       Asked to see his badge for my log. He turned his lanyard round.\n\nNote to self: get that in writing before someone asks me why I let him stand there all night.",
               "observations": "Val's own notebook. She has been quietly logging Graham Reeves for weeks and nobody upstairs wants to hear it.",
               "observationDisplay": "gameDisplay",
-              "onRead": { "setVariable": { "insider_evidence_partial": true } },
+              "onRead": { "setVariable": { "insider_evidence_partial": true, "reeves_known": true } },
               "puzzle_graph_role": "clue",
               "puzzle_graph_aim": "unmask_inside_asset",
               "puzzle_graph_reveals": "val_independently_flagged_reeves_alternative_route_into_the_insider_thread"
@@ -3148,12 +3153,12 @@ boardroom_pin = "0417"
           "position": "as-type:rota_board",
           "takeable": false,
           "readable": true,
-          "text": "WARD 3 / EXEC -- NIGHT HANDOVER, WEEK COMMENCING MON\n\nMon  Quiet. Bed 4 unsettled, see notes.\nTue  Agency x2. Lift 2 still out.\nWed  Estates in re: store room. Didn't come.\nThu  Quiet.\nFri  02:30-03:00 FIRE DRILL, Ward 3 + Exec corridor.\n     Doors on free egress for the duration. Auth: N/S Supervisor.\n     NOBODY told the ward. Second time.\n\nSat  -- (this column left blank)\n\nAcross the bottom, in a different hand and pressed hard:\n\"02:47. Everything went at once. If you are reading this and the screens are still dead, we are on paper. Charts in the trolley, drug round by torch if the lights go. Do not wait for IT.\"",
+          "text": "WARD 3 / EXEC -- NIGHT HANDOVER, WEEK COMMENCING MON\n\nMon  Quiet. Bed 4 unsettled, see notes.\nTue  Agency x2. Lift 2 still out.\nWed  Estates in re: store room. Didn't come.\nThu  Quiet.\nFri  02:30-03:00 FIRE DRILL, Ward 3 + Exec corridor.\n     Doors on free egress for the duration. Auth: SECURITY OVERRIDE.\n     NOBODY told the ward. Second time.\n\nSat  -- (this column left blank)\n\nAcross the bottom, in a different hand and pressed hard:\n\"02:47. Everything went at once. If you are reading this and the screens are still dead, we are on paper. Charts in the trolley, drug round by torch if the lights go. Do not wait for IT.\"",
           "observations": "A wipe-clean weekly grid, half of it rubbed out and rewritten. The bottom two lines are newer than the rest and were written by somebody in a hurry.",
           "onRead": { "setVariable": { "read_handover_board": true, "insider_evidence_partial": true } },
           "puzzle_graph_role": "clue",
           "puzzle_graph_aim": "unmask_inside_asset",
-          "puzzle_graph_reveals": "fire_drill_window_covers_the_0247_attack_and_the_night_security_supervisor_authorised_it"
+          "puzzle_graph_reveals": "fire_drill_window_covers_the_0247_attack_and_ran_on_a_security_override"
         },
         {
           "type": "notes",
@@ -3161,7 +3166,7 @@ boardroom_pin = "0417"
           "name": "Estates Audit Snag List",
           "takeable": false,
           "readable": true,
-          "text": "ESTATES -- INTERNAL AUDIT, OUTSTANDING SNAGS\nPinned for staff awareness. Do not remove.\n\n  17  Lift 2 -- intermittent. Contractor booked.\n  18  Ward 3 side door -- closer too fast.\n  19  Emergency equipment store, keypad safe --\n      STILL SET TO THE HOSPITAL FOUNDING YEAR.\n      Raised at the last three audits. Flag again.\n  20  Boardroom keypad -- shared with too many people.\n  21  Fire drill log -- Friday's drill not countersigned\n      by the ward. Chase N/S Supervisor.\n\nSigned off: nobody. Circulated: nobody.",
+          "text": "ESTATES -- INTERNAL AUDIT, OUTSTANDING SNAGS\nPinned for staff awareness. Do not remove.\n\n  17  Lift 2 -- intermittent. Contractor booked.\n  18  Ward 3 side door -- closer too fast.\n  19  Emergency equipment store, keypad safe --\n      STILL SET TO THE HOSPITAL FOUNDING YEAR.\n      Raised at the last three audits. Flag again.\n  20  Boardroom keypad -- shared with too many people.\n  21  Fire drill log -- Friday's drill not countersigned\n      by the ward. Security override. Chase Security.\n\nSigned off: nobody. Circulated: nobody.",
           "observations": "An audit snag list pinned to the staff noticeboard, where the people who have to live with the snags can read them. Item 19 has been underlined by somebody who has clearly given up.",
           "onRead": { "setVariable": { "found_safe_pin_clue": true } },
           "puzzle_graph_role": "clue",
@@ -3443,6 +3448,15 @@ boardroom_pin = "0417"
     "insider_evidence_partial": false,
     "val_notebook_given": false,
     "insider_badge_id_found": false,
+    "read_night_rota": false,
+    "reeves_known": false,
+    "val_accused": false,
+    "found_boardroom_code": false,
+    "ghost_affiliate_heard": false,
+    "it_door_open": false,
+    "player_was_ko": false,
+    "val_challenged": false,
+    "val_argument_heard": false,
     "inspected_asset_post": false,
     "insider_identified": false,
     "insider_confronted": false,

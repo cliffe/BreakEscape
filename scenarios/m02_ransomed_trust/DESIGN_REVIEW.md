@@ -683,3 +683,7 @@ Same scope: m02 files only. Static checks are rerun below; no browser run yet. T
 | `reopencheck.mjs` | 0 problems |
 | `tagdiff.mjs` | 515 differences in 10 files. New this round: Raval 17 (`bed4_assist` and its VARs), terminal +24 (the choices-only knots), Reeves +4 (merged question), Val +4 (`val_met`), HaX +11 (uniform naming flow, Bed 4 help) |
 | `dialoguelint.mjs` | 0 errors on touched lines |
+
+### Round 4 (playtest loop, 2026-10-04)
+
+The naming flow above (§7 rounds 1–3) was reworked after blind and regression playtests: the deduction now runs handover board (security override) → Ghost's log (SC-4471, flag 4) → night rota (Val SC-2208) → boardroom post log, with Val as a red herring and graded HaX nudges. HaX's flag texts quote the rewritten SecGen documents. Details, checks and the spoken-line list are in `PLAYTEST_LOOP_LOG.md`.
