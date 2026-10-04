@@ -4,6 +4,9 @@
 // saved (or she is knocked out). Synced globals only; no EXTERNAL getters.
 VAR receptionist_ko = false
 VAR victoria_ko = false
+// Pass 5 (P1-21): quiet flag so a reopen of this one-shot scene lands on a
+// re-entry line, not a blank [Continue]. Set after the narration and on exit.
+VAR scene_quiet = false
 
 -> start
 
@@ -20,11 +23,21 @@ VAR victoria_ko = false
 }
 Narrator: Eleven o'clock that night, you're back. The staff entrance takes the receptionist's badge without a murmur.
 Narrator: The main hallway is on its night lights. Somewhere off to the east, a guard's footsteps go round, and round again.
+~ scene_quiet = true
 #exit_conversation
 -> idle
 
 // Resting point (m02 pattern): never DONE, so a reopened story lands on a choice.
+// The quiet flag suppresses the line on the first pass (the narration above has just
+// played) and shows it on a later reopen, so re-entry is never blank.
 === idle ===
+#speaker:narrator
+{ scene_quiet:
+    ~ scene_quiet = false
+- else:
+    Narrator: The hallway's still on its night lights. Off to the east, the guard goes round again.
+}
 + [Continue]
+    ~ scene_quiet = true
     #exit_conversation
     -> idle

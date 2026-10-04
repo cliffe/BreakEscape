@@ -32,10 +32,15 @@ VAR reception_badge_cloned = false
 VAR victoria_card_cloned = false
 VAR draft_seen = false
 VAR clone_call_done = false
+// Pass 5 (P1-11/P1-12): extra synced globals the rebuilt hub gates on.
+// (flag_distcc_submitted and guard_detection_count are declared above.)
+VAR catalogue_seen = false
+VAR exec_wing_entered = false
 
 // ---- Field-guide exposure flags (offered synced; given tracked locally) ----
 VAR lockpicking_guide_offered = false
 VAR netexploit_guide_offered = false
+VAR cyberchef_guide_offered = false
 VAR lockpicking_guide_given = false
 VAR netexploit_guide_given = false
 VAR rfid_guide_given = false
@@ -50,6 +55,12 @@ VAR hint_lockpicking_given = false
 VAR hint_password_given = false
 VAR hint_encoding_given = false
 VAR hint_network_given = false
+// Pass 5 (P1-12): one gated hint per stuck point, retired when spent.
+VAR hint_sterling_night_given = false
+VAR hint_danny_given = false
+VAR hint_guard_given = false
+VAR hint_safe_given = false
+VAR hint_clone_given = false
 
 // Root divert. When a conversation has ended (-> DONE), the engine restores only
 // its variables on the next talk and continues from the root (npc-conversation-
@@ -62,31 +73,61 @@ VAR hint_network_given = false
 {player_name()}. What do you need?
 -> hub
 
+// Pass 5 (P1-11): m02's progress-gated hub. Topics appear only when they're
+// relevant, sit newest-and-most-urgent first, and retire through their own
+// "not ..._given" guards. Guides collapse into one "field guides" choice. The
+// two fixed choices ("Where do I stand?", exit) sit last, so the hub is never
+// empty and a stuck player always has the contextual progress read to fall back on.
 === hub ===
-+ {night_confrontation_ready} [Sterling's still in the building. How do I play this?]
++ {night_confrontation_ready and not hint_confrontation_given} [Sterling's still in the building. How do I play this?]
     -> hint_confrontation
-+ {briefing_played and not rfid_guide_given} [Can you send me the RFID cloning guide?]
-    -> request_rfid_guide
-+ {lockpicking_guide_offered and not lockpicking_guide_given} [Can you send me the lockpicking guide?]
-    -> request_lockpicking_guide
-+ {netexploit_guide_offered and not recon_guide_given} [Can you send me the recon guide?]
-    -> request_recon_guide
-+ {netexploit_guide_offered and not netexploit_guide_given} [Can you send me the distcc guide?]
-    -> request_netexploit_guide
-+ {netexploit_guide_offered and not cyberchef_guide_given} [Can you send me the CyberChef guide?]
-    -> request_cyberchef_guide
-+ {netexploit_guide_offered and not proftpd_guide_given} [Can you send me the ProFTPD guide?]
-    -> request_proftpd_guide
 + {(usb_seen or lore_directive_found) and not directive_decoded} [About the drive from her desk. I've decoded it.]
     -> directive_ask
++ {clone_call_done and not night_confrontation_ready and not hint_sterling_night_given} [Sterling's here tonight but she won't engage. What now?]
+    -> hint_sterling_night
++ {clone_call_done and not night_confrontation_ready and danny_fate == "" and not hint_danny_given} [Is there anyone else in the building tonight?]
+    -> hint_danny
++ {clone_call_done and (guard_detection_count > 0 or guard_challenged) and not guard_told_safetynet and not guard_bribed and not hint_guard_given} [The guard keeps catching me. How do I get past him?]
+    -> hint_guard
++ {clone_call_done and whiteboard_seen and not catalogue_seen and not hint_safe_given} [I can't get the server room wall safe open.]
+    -> hint_safe
++ {reception_badge_cloned and not victoria_card_cloned and not clone_call_done and not hint_clone_given} [I can't get a clean read on Sterling's card. She keeps stepping away.]
+    -> hint_clone
++ {(briefing_played and not rfid_guide_given) or (cyberchef_guide_offered and not cyberchef_guide_given) or (netexploit_guide_offered and not recon_guide_given) or (flag_scan_submitted and not netexploit_guide_given) or (flag_scan_submitted and not proftpd_guide_given) or (lockpicking_guide_offered and not lockpicking_guide_given)} [Send me a field guide.]
+    -> field_guides
++ {briefing_played and not victoria_card_cloned and not clone_call_done and not hint_rfid_given} [How do I clone these keycards?]
+    -> hint_rfid
++ {exec_wing_entered and not hint_lockpicking_given} [How do I get past the locked doors?]
+    -> hint_lockpicking
++ {clone_call_done and not (draft_seen or roster_seen) and not hint_password_given} [How do I get into Sterling's computer?]
+    -> hint_password
++ {(cyberchef_guide_offered or netexploit_guide_offered) and not hint_encoding_given} [How do I read what I've found?]
+    -> hint_encoding
++ {netexploit_guide_offered and not flag_distcc_submitted and not hint_network_given} [Where do I start on their network?]
+    -> hint_network
 + [Where do I stand?]
     -> report_progress
-+ [I'm stuck. Can you help?]
-    -> provide_hint
 + [Nothing right now]
     Copy. Call anytime, {player_name()}.
     #exit_conversation
     -> DONE
+
+// Choices-only: the guides on offer and not yet sent (m02 field_guides pattern).
+=== field_guides ===
++ {briefing_played and not rfid_guide_given} [The RFID cloning guide.]
+    -> request_rfid_guide
++ {cyberchef_guide_offered and not cyberchef_guide_given} [The CyberChef guide.]
+    -> request_cyberchef_guide
++ {netexploit_guide_offered and not recon_guide_given} [The recon and network mapping guide.]
+    -> request_recon_guide
++ {flag_scan_submitted and not proftpd_guide_given} [The ProFTPD exploitation guide.]
+    -> request_proftpd_guide
++ {flag_scan_submitted and not netexploit_guide_given} [The distcc exploitation guide.]
+    -> request_netexploit_guide
++ {lockpicking_guide_offered and not lockpicking_guide_given} [The lockpicking guide.]
+    -> request_lockpicking_guide
++ [Not now.]
+    -> hub
 
 === hint_confrontation ===
 #speaker:agent_0x99
@@ -157,21 +198,49 @@ The legacy distcc daemon on 3632 runs jobs for anyone who asks -- CVE-2004-2687.
 + [Got it]
     -> hub
 
-=== provide_hint ===
+// Pass 5 (P1-12): one gated hint per stuck point, offered in the hub only when
+// the player is actually at that point, and retired once given.
+
+=== hint_sterling_night ===
 #speaker:agent_0x99
-What's giving you trouble?
-// Pass 4 (fix 16): every topic stays on offer, so a player can ask again.
-+ [How do I clone these keycards?]
-    -> hint_rfid
-+ [How do I get past the locked doors?]
-    -> hint_lockpicking
-+ [How do I get into Sterling's computer?]
-    -> hint_password
-+ [How do I read what I've found?]
-    -> hint_encoding
-+ [Where do I start on their network?]
-    -> hint_network
-+ [Never mind.]
+~ hint_sterling_night_given = true
+She's on a call, back to the door, and she won't deal with you until you put something in front of her.
+Finish the network first -- recon, the services, the distcc box. Once the case is made she'll turn round.
++ [Understood]
+    -> hub
+
+=== hint_danny ===
+#speaker:agent_0x99
+~ hint_danny_given = true
+One. Danny Foster, a consultant, in the executive wing -- the south office. He drew the recon that made the hospital job possible.
+Whether he answers for that or gets a way out is partly your call. See him before you settle with Sterling.
++ [Got it]
+    -> hub
+
+=== hint_guard ===
+#speaker:agent_0x99
+~ hint_guard_given = true
+Never work a lock in his sightline. Watch his loop, wait for his back to turn, then pick.
+If he's already looking, break off -- step out to the main hallway or into Danny's office until he's moved on.
+You can talk your way past him, or pay him, but then he knows your face. Clean is better.
++ [Understood]
+    -> hub
+
+=== hint_safe ===
+#speaker:agent_0x99
+~ hint_safe_given = true
+The code isn't on the board. The board says Sable re-coded the safe and mailed the night team the new one.
+So it's on her office machine -- an unsent message saved as raw source. Decode it at the CyberChef workstation; the four digits are in it.
++ [I'll look]
+    -> hub
+
+=== hint_clone ===
+#speaker:agent_0x99
+~ hint_clone_given = true
+Her card's custom keys -- about half a minute to read, and she steps away if she's wary.
+Stand at the whiteboard, keep her talking about the lab, and don't ask the question that makes her suspicious.
+If the read drops, walk the suspicion back first, then drift to the board again.
++ [Got it]
     -> hub
 
 === hint_rfid ===
@@ -300,7 +369,7 @@ Client roster, transaction records, anything to the Architect.
 {player_name()}, I've got the distcc logs you just submitted.
 There it is. The ProFTPD backdoor, line item on invoice ZDS-2024-0847. Twenty-five thousand, part of a package to Ghost.
 Target line: St. Catherine's Regional. Sable's sign-off on the approval.
-Ghost's logs named Zero Day. Now their own ledger says it back -- timestamped, Sable's approval on it. A case with a name.
+At the hospital we had the invoice -- the buyer's end. Now their own ledger says it back. A case with a name.
 -> m2_revelation_choices
 
 // Pass 3c: choices live in text-free knots. When the phone reopens with changed

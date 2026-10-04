@@ -465,6 +465,7 @@ Victoria Sterling: You came back after hours. Recruits don't do that.
     -> the_reckoning
 * [St. Catherine's Hospital. Your ProFTPD exploit. People died on that ward.]
     Victoria Sterling: I sold a vulnerability. What a buyer builds with it is a buyer's problem.
+    Victoria Sterling: Your Ghost liked to tell people they wrote that exploit themselves. They didn't. They bought it from me, twenty-five thousand, hospital premium and all.
     ++ [Forty per cent extra for a hospital. You priced the bodies in.]
         Victoria Sterling: I priced the urgency in. Hospitals pay fast, and they pay quietly. That isn't cruelty. It's arithmetic.
         -> the_reckoning
@@ -476,7 +477,7 @@ Victoria Sterling: You came back after hours. Recruits don't do that.
 #speaker:victoria_sterling
 #display:victoria-neutral
 Victoria Sterling: Let me spare us the scene you're braced for. You want the confession. The tears for the ward.
-Victoria Sterling: I read every obituary. I can recite them in order. It changed nothing I believe.
+Victoria Sterling: I read what that ward cost, down to the number. It changed nothing I believe.
 Victoria Sterling: Vulnerabilities are facts. Someone will always sell the facts. Better a professional who logs the sale than a criminal who doesn't.
 + [That's the story you tell yourself so you can sleep.]
     Victoria Sterling: I sleep perfectly. That's the part people like you can never forgive.
