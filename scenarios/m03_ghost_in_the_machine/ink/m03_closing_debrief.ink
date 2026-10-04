@@ -38,6 +38,8 @@ VAR whiteboard_seen = false
 VAR exec_wing_entered = false
 // Playtest round: set when the guard stops the player at night (m03_npc_guard.ink).
 VAR guard_challenged = false
+// Pass 5 (P3-9): set by globalVarOnKO on Danny.
+VAR danny_ko = false
 
 // Root divert. When a conversation has ended (-> DONE), the engine restores only
 // its variables on the next talk and continues from the root (npc-conversation-
@@ -222,7 +224,9 @@ Agent HaX: Now the part that kept me up. Phase 2.
     }
 - else:
     Agent HaX: You left the drive in her desk. The search team pulled it out this morning, and our people had it read in ten minutes. Base64 over ROT13. The Architect's directive.
-    { roster_seen:
+    // Pass 5 (P3-4): opening the roster isn't reading it (no decode signal, engine E-A). The only
+    // decode proof is directive_decoded, which can't be true in this branch, so the line is retired.
+    { roster_seen and directive_decoded:
         Agent HaX: Her client roster had already pointed you at Critical Mass and the grid. The drive says the rest.
     }
 }
@@ -268,6 +272,11 @@ Agent HaX: Substations get hardened. Hospitals get emergency assessments. We can
 -> danny_discussion
 
 === danny_discussion ===
+// Pass 5 (P3-9): knocked out after his decision. The branch lines below would say he
+// came in on his own, or is still deciding, about a man left unconscious.
+{ danny_ko and danny_fate != "ko" and danny_fate != "":
+    -> danny_ko_after_choice
+}
 #speaker:agent_0x99
 { danny_fate == "protected":
     Agent HaX: Danny Foster. You gave him the way in and he took it -- came to us on his own last night. Cooperating fully.
@@ -306,6 +315,12 @@ Agent HaX: Substations get hardened. Hospitals get emergency assessments. We can
     Agent HaX: You never found the consultant, Danny Foster. His name's still in the recon files, so it'll surface. Where he lands is anyone's guess now.
     -> what_made_it_possible
 }
+
+=== danny_ko_after_choice ===
+#speaker:agent_0x99
+Agent HaX: Danny Foster. You talked to him, and then somebody left him out cold in his own office.
+Agent HaX: We picked him up this morning. Whatever he'd decided, he'll be explaining it from a hospital bed first.
+-> what_made_it_possible
 
 // Pass 4 (fix 7): the defender's view of what let the player in, one line each,
 // only for what the player actually did. The distcc line always applies, since

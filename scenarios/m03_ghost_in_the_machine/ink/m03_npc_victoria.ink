@@ -471,7 +471,7 @@ Victoria Sterling: You came back after hours. Recruits don't do that.
     ++ [Forty per cent extra for a hospital. You priced the bodies in.]
         Victoria Sterling: I priced the urgency in. Hospitals pay fast, and they pay quietly. That isn't cruelty. It's arithmetic.
         -> the_reckoning
-* {usb_seen or lore_directive_found or roster_seen} [Phase 2. Critical Mass. The grid. You're already sourcing the targets.]
+* {usb_seen or lore_directive_found or roster_seen} [I've been through your office, Sable. Your desk. Your files.]
     Victoria Sterling: *a beat* So you've been through my office. Then you understand how far past me this runs. And how little arresting me changes it.
     -> the_reckoning
 
@@ -517,7 +517,6 @@ Victoria Sterling: Understand what this is, {player_name()}. You didn't move me.
 ~ victoria_fate = "recruited"
 #set_global:victoria_recruited:true
 #set_global:victoria_fate:recruited
-#set_global:victoria_choice_made:true
 #complete_task:victoria_choice_made
 ~ idle_quiet = true
 #exit_conversation
@@ -531,7 +530,6 @@ Victoria Sterling: The evidence is real. The name is real. And none of it reache
 ~ victoria_fate = "arrested"
 #set_global:victoria_arrested:true
 #set_global:victoria_fate:arrested
-#set_global:victoria_choice_made:true
 #complete_task:victoria_choice_made
 ~ idle_quiet = true
 #exit_conversation
@@ -546,7 +544,6 @@ Narrator: She's past you and gone before the lift doors settle. The evidence sta
 ~ victoria_fate = "escaped"
 #set_global:victoria_escaped:true
 #set_global:victoria_fate:escaped
-#set_global:victoria_choice_made:true
 #complete_task:victoria_choice_made
 ~ idle_quiet = true
 #exit_conversation

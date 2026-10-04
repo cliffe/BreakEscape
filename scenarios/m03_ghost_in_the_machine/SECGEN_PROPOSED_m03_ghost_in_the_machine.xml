@@ -32,8 +32,11 @@
    - The game's "training network" is modelled here as ONE multi-service target box
      (FTP + web + distcc). A multi-host build is possible but heavier; one box honours
      "map the network" because the scan still finds three services to enumerate.
-   - Price list (flag 3) is lore_fragment_2 verbatim (scenario.json.erb:57) under a
-     CONFIDENTIAL filing line (HaX: "they filed it as confidential", :871).
+   - Price list (flag 3) is the PUBLIC version of lore_fragment_2 (scenario.json.erb:57):
+     same tiers, prices and healthcare-premium note under a CONFIDENTIAL filing line
+     (HaX: "they filed it as confidential"), but no buyer names, no SOLD ledger and no
+     reserved Phase 2 stock (design review P3-2, 2026-10-04). Those stay in the game's
+     wall-safe catalogue, so cracking the safe pays out something the VM doesn't.
    - Transaction log (flag 4) is operational_log_content verbatim (scenario.json.erb:61),
      itemised as m02's invoice ZDS-2024-0847 (m02 scenario.json.erb:2755),
      with the Target line and the discount on its own line (P2-18).
@@ -216,8 +219,8 @@ The operational records are not here. They sit on the legacy distcc box.</value>
     </vulnerability>
 
     <!-- flag 3: pricing intel, ROT13-encoded price list served over HTTP (HTML
-         comments in the index page source). The price list is lore_fragment_2
-         verbatim (scenario.json.erb:57) under a CONFIDENTIAL filing line. -->
+         comments in the index page source). The public price list: lore_fragment_2's
+         tiers and prices without the buyers or reserved stock (P3-2). -->
     <service module_path=".*/http/parameterised_website">
       <input into="strings_to_leak">
         <!-- Plain HTML comment: the web host's banner, carrying the SAME flag1
@@ -238,7 +241,7 @@ The operational records are not here. They sit on the legacy distcc box.</value>
           <input into="strings_to_encode">
             <value>FILED: CONFIDENTIAL - STAFF ONLY
 
-Q4 2024 EXPLOIT CATALOGUE (internal)
+ZERO DAY: Q4 2024 PRICE LIST (clients only)
 
 Premium tier:
 - ProFTPD 1.3.3c source backdoor: $25,000 (healthcare premium +40% applied)
@@ -251,7 +254,7 @@ Standard tier:
 
 Note: healthcare buyers carry a 40% premium. They pay fast and they pay quietly.
 
-SOLD: ProFTPD package to GHOST (Ransomware Incorporated), inv. ZDS-2024-0847. Target: St. Catherine's Regional Medical Centre. Approved: SABLE.</value>
+Buyer details are held internally. Ask your account contact.</value>
             <generator type="flag_generator"/>
           </input>
         </encoder>

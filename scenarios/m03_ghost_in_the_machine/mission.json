@@ -13,7 +13,7 @@
     {
       "ka": "MAT",
       "topic": "Attacks and exploitation",
-      "keywords": ["ProFTPD 1.3.3c source backdoor", "CVE-2004-2687", "distcc exploitation", "Remote code execution", "Zero-day marketplace", "EXPLOITATION"]
+      "keywords": ["ProFTPD 1.3.3c source backdoor", "CVE-2004-2687", "distcc exploitation", "Remote code execution", "Zero-day marketplace"]
     },
     {
       "ka": "AC",

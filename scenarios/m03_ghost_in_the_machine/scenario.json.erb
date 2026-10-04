@@ -54,9 +54,14 @@ architect_directive_double = base64_encode(rot13(architect_directive))
 
 lore_fragment_1 = "ZERO DAY: A BRIEF HISTORY (internal -- not for day staff)\n\nWhiteHat Security Services: founded 2010 by Victoria Sterling. Legitimate pentest firm. Still is, on the ground floor.\n\nThe research division is the other thing. It stopped reporting what it found to vendors and started selling it -- first quietly, then as a marketplace. Cell name: Zero Day Syndicate. Cell lead: 0day (identity held).\n\nSterling runs the front and the sales floor under the sign-off name SABLE. She answers to 0day and, above him, the Architect.\n\nHouse line: 'Every vulnerability we sell proves security was already broken. We just got paid for the honesty.'"
 
-lore_fragment_2 = "Q4 2024 EXPLOIT CATALOGUE (internal)\n\nPremium tier:\n- ProFTPD 1.3.3c source backdoor: $25,000 (healthcare premium +40% applied)\n- Apache Struts2 RCE: $18,000\n- Windows SMBv3 RCE: $45,000\n\nStandard tier:\n- distcc 2.x remote exec (CVE-2004-2687): $3,200 (legacy estates)\n- Assorted SQLi vectors: $800-$2,400\n\nNote: healthcare buyers carry a 40% premium. They pay fast and they pay quietly.\n\nSOLD: ProFTPD package to GHOST (Ransomware Incorporated), inv. ZDS-2024-0847. Target: St. Catherine's Regional Medical Centre. Approved: SABLE."
+lore_fragment_2 = "Q4 2024 EXPLOIT CATALOGUE (internal)\n\nPremium tier:\n- ProFTPD 1.3.3c source backdoor: $25,000 (healthcare premium +40% applied)\n- Apache Struts2 RCE: $18,000\n- Windows SMBv3 RCE: $45,000\n\nStandard tier:\n- distcc 2.x remote exec (CVE-2004-2687): $3,200 (legacy estates)\n- Assorted SQLi vectors: $800-$2,400\n\nNote: healthcare buyers carry a 40% premium. They pay fast and they pay quietly.\n\nSOLD: ProFTPD package to GHOST (Ransomware Incorporated), inv. ZDS-2024-0847. Target: St. Catherine's Regional Medical Centre. Approved: SABLE.\n\nRESERVED, NOT FOR OPEN SALE (Phase 2): building-management and substation-control access packages, held for CRITICAL MASS. Release on the Architect's word."
 
 lore_fragment_3_encoded = architect_directive_double
+
+# P3-2: the VM's flag-3 price list (SecGen only, in SECGEN_PROPOSED_m03_ghost_in_the_machine.xml)
+# is the PUBLIC version of the catalogue: the same tiers, prices and healthcare-premium note,
+# but no buyer names, no SOLD ledger and no reserved stock. Those live only in the wall-safe
+# catalogue above, so cracking the safe pays out something the VM can't give.
 
 operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training network)\n\n[2024-10-21 14:32] Invoice ZDS-2024-0847 to GHOST (Ransomware Incorporated), verified\n  ProFTPD 1.3.3c source backdoor      $25,000\n  Reconnaissance (214 hospitals)      $15,000\n  Target Selection Consultation       $10,000\n  Deployment Guide                     $5,000\n  TOTAL                               $55,000\n  15% ENTROPY affiliate discount applied\n  Target: St. Catherine's Regional Medical Centre (from the 214-site survey)\n  Approved: SABLE / Architect sign-off on file\n  Status: DELIVERED\n  (Healthcare list pricing carries a built-in premium; see catalogue.)\n\n[2024-11-15 02:47] Deployment confirmed\n  Target: St. Catherine's Regional Medical Centre\n  Ransom demand: GBP 150,000 (BTC)\n\n[NOTE] Phase 2 sourcing continues."
 
@@ -64,7 +69,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
 {
   "scenario_brief": "Somebody sold Ghost the way into St. Catherine's. The trail leads to WhiteHat Security, a respectable pentest firm with Zero Day Syndicate's exploit market running out of its back rooms. Walk in as a recruit, clone your way past the card readers, and come back after hours for their training network and the paper trail. Then decide what happens to the people who made that night possible.",
 
-  "show_scenario_brief": "on_resume",
+  "show_scenario_brief": "once",
 
   <%# P1-20: top-level flags block (m01/m02 pattern; game.rb:2229 primary source).
       Standalone has no vm_context, so vm_flags_json falls back to these literals,
@@ -159,8 +164,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           { "text": "ST. CATHERINE'S LINK: PROVEN — ProFTPD exploit traced to GHOST", "style": "entry" },
           { "text": "ZERO DAY CATALOGUE: IN SAFETYNET HANDS — vendors warned, buyers on notice", "style": "entry", "condition": "(globalVars.catalogue_seen === true || globalVars.lore_catalogue_found === true) && globalVars.victoria_fate !== 'recruited'" },
           { "text": "ZERO DAY CATALOGUE: IN SAFETYNET HANDS — vendors quietly warned", "style": "entry", "condition": "(globalVars.catalogue_seen === true || globalVars.lore_catalogue_found === true) && globalVars.victoria_fate === 'recruited'" },
-          { "text": "ZERO DAY CATALOGUE: NOT RECOVERED — what else they hold is still unknown", "style": "warning", "condition": "globalVars.catalogue_seen !== true && globalVars.lore_catalogue_found !== true && globalVars.victoria_fate !== 'arrested'" },
-          { "text": "ZERO DAY CATALOGUE: SEIZED WITH THE MARKETPLACE — but not in our hands", "style": "warning", "condition": "globalVars.catalogue_seen !== true && globalVars.lore_catalogue_found !== true && globalVars.victoria_fate === 'arrested'" },
+          { "text": "ZERO DAY CATALOGUE: NOT RECOVERED — the buyers and the reserved stock are still unknown", "style": "warning", "condition": "globalVars.catalogue_seen !== true && globalVars.lore_catalogue_found !== true && globalVars.victoria_fate !== 'arrested'" },
+          { "text": "ZERO DAY CATALOGUE: SEIZED WITH THE MARKETPLACE — but the buyer list isn't in our hands", "style": "warning", "condition": "globalVars.catalogue_seen !== true && globalVars.lore_catalogue_found !== true && globalVars.victoria_fate === 'arrested'" },
           { "text": "PHASE 2 DIRECTIVE: DECODED BY THE AGENT. Grid and hospitals, this winter", "style": "entry", "condition": "globalVars.directive_decoded === true && globalVars.directive_guessed !== true" },
           { "text": "PHASE 2 DIRECTIVE: RECOVERED BY THE AGENT, decoded at HQ", "style": "entry", "condition": "(globalVars.directive_decoded !== true || globalVars.directive_guessed === true) && (globalVars.usb_seen === true || globalVars.lore_directive_found === true)" },
           { "text": "PHASE 2 DIRECTIVE: LEFT IN STERLING'S DESK, recovered by the search team", "style": "entry", "condition": "globalVars.directive_decoded !== true && globalVars.usb_seen !== true && globalVars.lore_directive_found !== true" },
@@ -170,11 +175,13 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           { "text": "VICTORIA STERLING: ARRESTED — marketplace seized, the name kept from The Architect", "style": "entry", "condition": "globalVars.victoria_fate === 'arrested'" },
           { "text": "VICTORIA STERLING: ESCAPED — the evidence stayed, she didn't", "style": "entry", "condition": "globalVars.victoria_fate === 'escaped'" },
           { "text": "VICTORIA STERLING: NEUTRALISED — taken down on site", "style": "entry", "condition": "globalVars.victoria_fate === 'ko'" },
-          { "text": "DANNY FOSTER: PROTECTED — came in on his own, name kept out of the report", "style": "entry", "condition": "globalVars.danny_fate === 'protected'" },
-          { "text": "DANNY FOSTER: EXPOSED — named in full, charged alongside Zero Day", "style": "entry", "condition": "globalVars.danny_fate === 'exposed'" },
-          { "text": "DANNY FOSTER: LEFT TO CHOOSE — phone off, whereabouts unknown", "style": "warning", "condition": "globalVars.danny_fate === 'left'" },
+          { "text": "DANNY FOSTER: PROTECTED — came in on his own, name kept out of the report", "style": "entry", "condition": "globalVars.danny_fate === 'protected' && globalVars.danny_ko !== true" },
+          { "text": "DANNY FOSTER: EXPOSED — named in full, charged alongside Zero Day", "style": "entry", "condition": "globalVars.danny_fate === 'exposed' && globalVars.danny_ko !== true" },
+          { "text": "DANNY FOSTER: LEFT TO CHOOSE — phone off, whereabouts unknown", "style": "warning", "condition": "globalVars.danny_fate === 'left' && globalVars.danny_ko !== true" },
           { "text": "DANNY FOSTER: TAKEN DOWN IN HIS OWN OFFICE", "style": "warning", "condition": "globalVars.danny_fate === 'ko'" },
+          { "text": "DANNY FOSTER: KNOCKED OUT AFTER YOU'D SPOKEN, picked up in his office", "style": "warning", "condition": "globalVars.danny_ko === true && globalVars.danny_fate !== 'ko' && !!globalVars.danny_fate" },
           { "text": "DANNY FOSTER: NEVER FOUND — his name is still in the recon files", "style": "warning", "condition": "!globalVars.danny_fate" },
+          { "text": "NIGHT GUARD: KNOCKED OUT ON HIS ROUNDS", "style": "warning", "condition": "globalVars.guard_knocked_out === true" },
           { "text": "WHITEHAT RECEPTION: KNOCKED OUT AT HER OWN DESK", "style": "warning", "condition": "globalVars.receptionist_ko === true" },
           { "text": "PERFECT STEALTH — never seen, never stopped, no deals", "style": "entry", "condition": "globalVars.guard_detection_count === 0 && globalVars.exec_office_entered === true && globalVars.guard_knocked_out !== true && globalVars.guard_told_safetynet !== true && globalVars.guard_bribed !== true && globalVars.guard_challenged !== true" },
           { "text": "" },
@@ -587,6 +594,9 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_npc_receptionist.json",
           "currentKnot": "start",
           "globalVarOnKO": "receptionist_ko",
+          "puzzle_graph_actions": [
+            { "id": "clone_reception_badge_talk", "label": "Talk to her and clone her staff badge", "unlocks_aim": "act1_gain_access" }
+          ],
           "taskOnKO": "clone_reception_badge",
           "spriteSheet": "female_office_worker_v2",
           "spriteTalk": "assets/characters/female_office_worker_talk.png",
@@ -723,7 +733,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "condition": "data.connectedRoom === 'conference_room_01' && globalVars.reception_badge_cloned !== true && globalVars.receptionist_ko !== true",
               "onceOnly": true,
               "setGlobal": { "conference_reader_tried": true },
-              "sendTimedMessage": { "delay": 1500, "message": "That reader wants a staff badge. The cloner in your kit copies one from arm's length: lean in by the receptionist's lanyard and read hers." }
+              "sendTimedMessage": { "delay": 1500, "message": "That reader wants a staff badge. The cloner in your kit copies one from arm's length. Talk to the receptionist and lean in by her lanyard." }
             },
             {
               "_comment": "Pass 4 round 2: delay 0 so the warning lands as the player walks in, before they reach the guard or the door. exec_wing_entered lets the debrief tell 'never went near him' from 'went near him and never got caught'. P1-21: condition makes this disjoint from the hear_debrief backstop on the same pattern.",
@@ -760,8 +770,16 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
             },
             {
               "eventPattern": "npc_ko:receptionist_npc",
+              "condition": "globalVars.mission_phase !== 'act2_infiltration'",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 2500, "message": "The receptionist's down. Her staff badge will be on the floor by her if you still need it. And an empty front desk gets noticed. Sterling will notice." }
+            },
+            {
+              "_comment": "P3-15: at night the desk is empty anyway, so no 'Sterling will notice'.",
+              "eventPattern": "npc_ko:receptionist_npc",
+              "condition": "globalVars.mission_phase === 'act2_infiltration'",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2500, "message": "The receptionist's down. She shouldn't even have been here this late. Keep moving." }
             },
             {
               "eventPattern": "objective_task_completed:clone_rfid_card",
@@ -801,7 +819,10 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "setGlobal": { "cyberchef_guide_offered": true },
               "sendTimedMessage": { "delay": 1200, "message": "That's their CyberChef workstation. Paste anything that looks like gibberish. Encoding isn't encryption. Still scrambled after one pass? It's layered, so decode again. CyberChef guide on request." }
             },
-            <%# Pass 3e: the PC call used to open on the unlock task, which fires as the
+            <%# P3-3 (pass 5): every call below is now a text that opens its knot when the
+    player clicks it. A file's onRead fires before its reader opens, so an
+    auto-opened phone chat closed the document the player had just opened.
+    Pass 3e: the PC call used to open on the unlock task, which fires as the
                 password screen succeeds, so the phone replaced the PC's file list and the
                 player had to interact again. It now waits until the player opens one of
                 the PC's files (the draft or the roster, both onRead). pc_call_done keeps
@@ -809,18 +830,16 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
             {
               "eventPattern": "global_variable_changed:draft_seen",
               "condition": "value === true && globalVars.pc_call_done !== true",
-              "targetKnot": "on_victoria_computer_accessed",
-              "conversationMode": "phone-chat",
               "setGlobal": { "pc_call_done": true },
+              "sendTimedMessage": { "delay": 5000, "targetKnot": "on_victoria_computer_accessed", "message": "You're on her machine. Call me when you've had a look." },
               "onceOnly": true
             },
             {
               "_comment": "Keyed on the roster task (completed by the roster_seen mapping) rather than roster_seen itself, so it doesn't share a pattern with that mapping.",
               "eventPattern": "objective_task_completed:decode_client_roster",
               "condition": "globalVars.pc_call_done !== true",
-              "targetKnot": "on_victoria_computer_accessed",
-              "conversationMode": "phone-chat",
               "setGlobal": { "pc_call_done": true },
+              "sendTimedMessage": { "delay": 5000, "targetKnot": "on_victoria_computer_accessed", "message": "You're on her machine. Call me when you've had a look." },
               "onceOnly": true
             },
             {
@@ -837,15 +856,13 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "_comment": "Pass 3c: the catalogue call used to open on objective_task_completed:lore_fragment_2, which fires when the safe unlocks, so the phone covered the PIN result. It now waits until the player reads the catalogue (its onRead sets catalogue_seen), well after the PIN screen has gone.",
               "eventPattern": "global_variable_changed:catalogue_seen",
               "condition": "value === true",
-              "targetKnot": "on_exploit_catalog_found",
-              "conversationMode": "phone-chat",
+              "sendTimedMessage": { "delay": 5000, "targetKnot": "on_exploit_catalog_found", "message": "That's more than a price list. Call me when you've read it." },
               "onceOnly": true
             },
             {
               "eventPattern": "objective_task_completed:lore_fragment_3",
-              "targetKnot": "on_architect_directive_found",
-              "conversationMode": "phone-chat",
               "setGlobal": { "lore_directive_found": true },
+              "sendTimedMessage": { "delay": 5000, "targetKnot": "on_architect_directive_found", "message": "A drive in her desk? Call me." },
               "onceOnly": true
             },
             <%# Pass 4 (fix 22): one line per flag so the VM stretch doesn't go quiet.
@@ -871,10 +888,10 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "sendTimedMessage": { "delay": 2000, "message": "Price list's in. ROT13, and they filed it as confidential. Encoding isn't a lock." }
             },
             {
+              "_comment": "P3-3: a text that opens the revelation call when clicked (m02 A7 pattern), so the drop-site isn't closed under the player. revelation_heard is still set at the end of the call, so the all-flags text still waits for it.",
               "eventPattern": "objective_task_completed:submit_distcc_flag",
-              "targetKnot": "m2_revelation_call",
-              "conversationMode": "phone-chat",
               "setGlobal": { "flag_distcc_submitted": true },
+              "sendTimedMessage": { "delay": 4000, "targetKnot": "m2_revelation_call", "message": "Got the distcc logs. Call me when you're done at the drop-site." },
               "onceOnly": true
             },
             <%# The confrontation opens only when all four flags are in, because the
@@ -1075,6 +1092,26 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "setGlobal": { "guard_grace": false }
             },
             {
+              "_comment": "P3-1: Victoria's fate tags run at the start of her last batch (person-chat processes a batch's tags before showing its lines, person-chat-minigame.js:1005-1009), so setting victoria_choice_made there opened the debrief and hid her over her final speech. Her ink now sets only victoria_fate; this sets victoria_choice_made when her conversation closes (conversation_closed is emitted once at cleanup, :1632-1641).",
+              "eventPattern": "conversation_closed:victoria_sterling",
+              "condition": "globalVars.victoria_fate !== '' && globalVars.victoria_fate !== 'ko' && globalVars.victoria_choice_made !== true",
+              "onceOnly": true,
+              "setGlobal": { "victoria_choice_made": true }
+            },
+            {
+              "_comment": "P3-5: one text after Sterling's card is saved, so the empty objectives panel isn't the only signal. Kept on this NPC so it doesn't share a pattern with HaX's mission_phase mapping.",
+              "eventPattern": "objective_task_completed:clone_rfid_card",
+              "condition": "globalVars.victoria_ko !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2500, "message": "Card's saved. Thank her, walk out with the visitors, and come back after dark." }
+            },
+            {
+              "_comment": "P3-10 (mitigation; engine item E-B): NPC hostility isn't saved, so after a reload the guard patrols peacefully. Clear the synced 'guard is attacking' global on load so HaX doesn't offer the hostile-guard hint for a guard who isn't.",
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.guard_attacking === true",
+              "setGlobal": { "guard_attacking": false }
+            },
+            {
               "_comment": "P1-30: the first night-time entry to the executive wing opens the office aim (and the paper trail, if the server room hasn't already). Kept on this always-loaded NPC so it doesn't share a pattern with HaX's exec-wing guide and hear_debrief backstop. exec_wing_entered can be set by day, so it is not the gate.",
               "eventPattern": "room_entered:executive_wing_hallway",
               "condition": "globalVars.clone_call_done === true && globalVars.debrief_played !== true",
@@ -1153,7 +1190,21 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "eventPattern": "conversation_closed:night_transition",
               "onceOnly": true,
               "setGlobal": { "clone_call_done": true }
-            }
+            }<% %w[reception_lobby main_hallway conference_room_01 server_room executive_wing_hallway executive_office danny_office].each do |r| %>,
+            {
+              "_comment": "P3-1 reload backstop: Victoria's choice is made but the page reloaded before the debrief's first line. Re-emitting victoria_choice_made (setGlobal emits even when unchanged, npc-manager.js:687-697) re-fires closing_debrief's mapping, whose onceOnly is only recorded when the scene closes. clone_call_done keeps it disjoint from this NPC's night-scene mapping.",
+              "eventPattern": "room_entered:<%= r %>",
+              "condition": "globalVars.clone_call_done === true && globalVars.victoria_choice_made === true && globalVars.debrief_played !== true",
+              "onceOnly": true,
+              "setGlobal": { "victoria_choice_made": true }
+            },
+            {
+              "_comment": "P3-1 reload backstop: her fate was set but the page reloaded before her conversation closed, so conversation_closed never fired.",
+              "eventPattern": "room_entered:<%= r %>",
+              "condition": "globalVars.clone_call_done === true && globalVars.victoria_fate !== '' && globalVars.victoria_fate !== 'ko' && globalVars.victoria_choice_made !== true",
+              "onceOnly": true,
+              "setGlobal": { "victoria_choice_made": true }
+            }<% end %>
           ]
         }
       ]
@@ -1206,6 +1257,10 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_npc_victoria.json",
           "currentKnot": "start",
           "globalVarOnKO": "victoria_ko",
+          "puzzle_graph_actions": [
+            { "id": "clone_victoria_card", "label": "Clone her executive card at the whiteboard", "unlocks_aim": "act2_breach_server_room" },
+            { "id": "confront_victoria", "label": "Confront her once all four flags are in", "unlocks_aim": "moral_choices" }
+          ],
           "spriteSheet": "female_blowse_v2",
           "spriteTalk": "assets/characters/female_blowse_talk.png",
           "spriteVisemes": "assets/characters/female_blowse_visemes.png",
@@ -1294,7 +1349,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "takeable": true,
               "readable": true,
               "text": "<%= json_escape(lore_fragment_2) %>",
-              "observations": "Zero Day's price list. The healthcare line names Ghost, St. Catherine's and Sable's sign-off.",
+              "observations": "Zero Day's internal catalogue: prices, buyers, and stock held back. The healthcare sale names Ghost, St. Catherine's and Sable's sign-off.",
               "onRead": { "setVariable": { "catalogue_seen": true } }
             }
           ]
@@ -1340,6 +1395,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "takeable": false,
           "observations": "A SAFETYNET drop-site terminal. Submit the flags you recover from the training network here; each one goes straight to HaX.",
           "acceptsVms": ["ghost_in_machine_vm_network"],
+          "puzzle_graph_aim": "moral_choices",
           "flags": <%= flags_for_vm('ghost_in_machine_vm_network', ['flag{network_scan_complete}', 'flag{ftp_intel_gathered}', 'flag{pricing_intel_decoded}', 'flag{distcc_legacy_compromised}']) %>,
           <%# rewards[i] pairs with flags[i]. The distcc flag pays out the transaction
               log as a document the player carries (m02 71e8852e pattern). %>
@@ -1600,6 +1656,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_danny_choice.json",
           "currentKnot": "start",
           "taskOnKO": "danny_choice_made",
+          "globalVarOnKO": "danny_ko",
           "behavior": { "initiallyHidden": true },
           "eventMappings": [
             {
@@ -1682,6 +1739,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     "directive_guessed": false,
     "vm_flag1_reward": false,
     "vm_flag2_reward": false,
-    "vm_flag3_reward": false
+    "vm_flag3_reward": false,
+    "danny_ko": false
   }
 }

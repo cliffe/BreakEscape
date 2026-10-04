@@ -14,7 +14,7 @@ Somebody sold Ghost the way into St. Catherine's. The trail leads to WhiteHat Se
 | Physical locks | 7 |
 | AND-gate convergences | 3 |
 | Rooms | 7 |
-| Puzzle graph nodes / edges | 36 / 43 |
+| Puzzle graph nodes / edges | 39 / 46 |
 | Story graph nodes / edges | 6 / 0 |
 
 ## Critical Path
@@ -84,8 +84,11 @@ flowchart TD
   lock_victoria_computer["Victoria Computer"]
   npc_receptionist{"Receptionist"}
   staff_access_badge{"Staff Access Badge"}
+  action_clone_reception_badge_talk>"Talk to her and clone her staff badge"]
   npc_victoria_sterling{"Victoria Sterling"}
   executive_keycard{"Executive Keycard"}
+  action_clone_victoria_card>"Clone her executive card at the whiteboard"]
+  action_confront_victoria>"Confront her once all four flags are in"]
   lock_wall_safe_server["Wall Safe<br/>PIN lock"]
   server_room_whiteboard{"Server Room Whiteboard"}
   vm_access_terminal["VM Access Terminal"]
@@ -118,8 +121,11 @@ flowchart TD
   company_founding_plaque -.-> lock_victoria_computer
   reception_lobby --> npc_receptionist
   npc_receptionist --> staff_access_badge
+  npc_receptionist --> action_clone_reception_badge_talk
   conference_room_01 --> npc_victoria_sterling
   npc_victoria_sterling --> executive_keycard
+  npc_victoria_sterling --> action_clone_victoria_card
+  npc_victoria_sterling --> action_confront_victoria
   server_room --> lock_server_filing_cabinet
   server_room --> lock_wall_safe_server
   server_room -.-> server_room_whiteboard
@@ -154,6 +160,7 @@ flowchart TD
   class conference_room_01,server_room,executive_office,reception_lobby,main_hallway,executive_wing_hallway,danny_office room
   class rfid_cloner,lock_pick_kit,company_founding_plaque,server_room_whiteboard,cyberchef_workstation,unsent_email_to_the_night_team_raw_source item
   class npc_receptionist,staff_access_badge,npc_victoria_sterling,executive_keycard key
+  class action_clone_reception_badge_talk,action_clone_victoria_card,action_confront_victoria action
   class vm_access_terminal,vmch_submit_network_scan_flag,vmch_submit_ftp_flag,vmch_submit_http_flag,vmch_submit_distcc_flag vm
   class andgate1,andgate2,andgate3 gate
   class vmfl_submit_network_scan_flag,vmfl_submit_ftp_flag,vmfl_submit_http_flag,vmfl_submit_distcc_flag flag
@@ -236,8 +243,11 @@ flowchart TD
   lock_victoria_computer["Victoria Computer"]
   npc_receptionist{"Receptionist"}
   staff_access_badge{"Staff Access Badge"}
+  action_clone_reception_badge_talk>"Talk to her and clone her staff badge"]
   npc_victoria_sterling{"Victoria Sterling"}
   executive_keycard{"Executive Keycard"}
+  action_clone_victoria_card>"Clone her executive card at the whiteboard"]
+  action_confront_victoria>"Confront her once all four flags are in"]
   lock_wall_safe_server["Wall Safe<br/>PIN lock"]
   server_room_whiteboard{"Server Room Whiteboard"}
   vm_access_terminal["VM Access Terminal"]
@@ -276,8 +286,11 @@ flowchart TD
   company_founding_plaque -.-> lock_victoria_computer
   reception_lobby --> npc_receptionist
   npc_receptionist --> staff_access_badge
+  npc_receptionist --> action_clone_reception_badge_talk
   conference_room_01 --> npc_victoria_sterling
   npc_victoria_sterling --> executive_keycard
+  npc_victoria_sterling --> action_clone_victoria_card
+  npc_victoria_sterling --> action_confront_victoria
   server_room --> lock_server_filing_cabinet
   server_room --> lock_wall_safe_server
   server_room -.-> server_room_whiteboard
@@ -314,11 +327,15 @@ flowchart TD
   lock_victoria_computer -.-> aim_search_executive_office
   lock_exec_filing_cabinet -.-> aim_collect_lore
   lock_wall_safe_server -.-> aim_collect_lore
+  action_clone_reception_badge_talk -.-> aim_act1_gain_access
+  action_clone_victoria_card -.-> aim_act2_breach_server_room
+  action_confront_victoria -.-> aim_moral_choices
 
   class door_conference_room_01,door_server_room,door_executive_office,lock_exec_filing_cabinet,lock_server_filing_cabinet,lock_victoria_computer,lock_wall_safe_server lock
   class conference_room_01,server_room,executive_office,reception_lobby,main_hallway,executive_wing_hallway,danny_office room
   class rfid_cloner,lock_pick_kit,company_founding_plaque,server_room_whiteboard,cyberchef_workstation,unsent_email_to_the_night_team_raw_source item
   class npc_receptionist,staff_access_badge,npc_victoria_sterling,executive_keycard key
+  class action_clone_reception_badge_talk,action_clone_victoria_card,action_confront_victoria action
   class vm_access_terminal,vmch_submit_network_scan_flag,vmch_submit_ftp_flag,vmch_submit_http_flag,vmch_submit_distcc_flag vm
   class andgate1,andgate2,andgate3 gate
   class vmfl_submit_network_scan_flag,vmfl_submit_ftp_flag,vmfl_submit_http_flag,vmfl_submit_distcc_flag flag

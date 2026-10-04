@@ -159,7 +159,7 @@ Security Guard: I'm going to need to verify this.
     ~ guard_influence = guard_influence - 20
     # influence_decreased
     ~ guard_hostile = true
-    ~ guard_detection_count = guard_detection_count + 1
+    // Pass 5 (P3-8): hostile_confrontation counts this detection; counting it here too made one incident two.
     Security Guard: Wrong answer. You're trespassing. Leave now or I'm calling the police.
     -> hostile_confrontation
 
