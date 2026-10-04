@@ -71,6 +71,9 @@ VAR read_night_rota = false
 VAR reeves_known = false
 // Round 2 (BS1/CF-G): the server-room card is in hand.
 VAR keycard_held = false
+// Round 3 (struggle M4)
+VAR attacked_guard = false
+VAR guard_knocked_out = false
 VAR found_boardroom_code = false
 
 // Local
@@ -896,6 +899,11 @@ That's the last decision of this mission.
 
 {slow_path_window_open and not bed4_manually_stabilised and not patient_bed4_deceased:
     Bed 4 is alarming and nobody's coming for him. Patient ward, now -- talk to Mr Pryce and bag him by hand.
+    -> support_hub
+}
+// Round 3 (struggle M4): after a fight Val won't talk; say what's left.
+{attacked_guard and not guard_knocked_out and not reached_security_office:
+    Val won't deal with you now. Pick her office door while she's walking away from it. That's still the way to the server room.
     -> support_hub
 }
 {cover_burned and not reached_security_office and not cover_restored:

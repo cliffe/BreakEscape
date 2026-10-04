@@ -195,3 +195,53 @@ Files: m02 `scenario.json.erb`, `m02_phone_agent0x99.ink`/`.json`. Engine: `mini
 Checks: ink compile 15/0 failed; validator 0 INVALID; dialoguelint unchanged; tagdiff vs HEAD 23 differences (one more than round 2, from the reordered branch's condition); HaX inkcheck/loopcheck 16 states, 0 failures; reopencheck 0; node 274/274; Rails 491 runs, 0 failures, 1 skip.
 
 Spoken lines: none (HaX phone and timed texts only).
+
+## Round 3 (final fix pass)
+
+Inputs: blind struggling persona (game 1557, `m02-loop/blind3-struggle/REPORT-summary.md`) and blind "do your best" persona (game 1558, findings passed on by the orchestrator).
+
+| # | Source | Class | Fix |
+|---|---|---|---|
+| 1 | struggle M4 | m02 | After a fight, walking away from Val's `after_fight` line sends a HaX toast: "Val's done talking to you. Her office door is still the way in: pick it while she's walking away from it." (`conversation_closed:security_guard_patrol`, needs `attacked_guard`, not KO'd, not yet past her). "Remind me where we are" opens with the same advice in that state. Bernie's word no longer works on Val after a fight, so it isn't offered |
+| 2 | struggle M5 | m02 | The burn warning was queued behind Gary's chat with his other texts (barks are deferred while a person-chat is open, `npc-barks.js` `_shouldDefer`). The second burn text ("Val can disprove your cover now…") now fires on entering the handover room instead of 11 s into Gary's chat, and the keycard text is dropped (that line carries the route). So only the warning itself waits behind Gary's conversation |
+| 3 | struggle M8 | m02 | Press terminal: "Evidence package -- transmits as one bundle, all of it or none:" (unvoiced) |
+| 4 | best M5 | m02 | Visitor log: "NIGHT SECURITY SUPERVISOR (plain clothes) -- "posted", declined to sign" (no name). Other documents checked: the rota note names him in Val's hand and her notebook does too; both are Val's, who knows his name, so they stay |
+| 5 | best M6 | m02 | Kim's reply to warning 7 re-dated 12 November (item name too), matching "answered four days later"; the warnings run May–November everywhere else |
+| 6 | best M3 | not m02 | The cut-off chat is not in the scenario: in game 1558 the phone typeout stopped mid-word ("…the hard way re") and stayed there for about 35 s across 5 state reads (session seq 2557–2567) before the chat closed, inside `ghost_philosophy`, which has no exit tag or mapping. That points at the phone-chat typewriter stalling (or headless timer throttling in the harness), not the ink. Left for an engine look |
+| 7 | best M4 | m02 | Kim's escrow question retires once `offline_keys_recovered`; Gary's lanyard request retires once any lanyard is held (`staff_lanyard_obtained`); his "anything reused" question retires once the sticky note is read (`password_hints_found`) |
+| 8 | best B1, struggle M11, CF-J | engine | New `minigames/title-screen/title-screen-input.js`: a click anywhere, Space or Enter continues (once, then detaches). The prompt pulses instead of blinking out and adds "Click, or press Space or Enter". `title-screen-minigame.js`, `css/title-screen.css`. Test `title-screen-input.test.mjs` (6) |
+| 9 | struggle M2, best M7 | engine | `password-minigame.js`: `submitPassword` ignores a second submit while a check is pending (same guard as the PIN fix). Test `password-minigame-submit.test.mjs` (2) |
+| 10 | struggle M1 | engine | Finding: a real player can't reach the inventory under a minigame. The minigame overlay is full-screen at z-index 1500 over the inventory bar's 1000 (`minigames-framework.css:10`, `inventory.css:12`); the tester's DOM `click()` bypassed it. Defence anyway: new `systems/forced-minigame-guard.js`, and both inventory click handlers ignore clicks while a `disableClose` minigame (the debrief, cutscenes) is open. Test `forced-minigame-guard.test.mjs` (5); `engine-fixes-pass4.test.mjs` copies the new module |
+
+### Files changed
+
+- m02: `scenario.json.erb`; inks + JSON `m02_phone_agent0x99`, `m02_npc_sarah_kim`, `m02_npc_gary_whitlock`, `m02_object_press_terminal`; this log.
+- Engine (separate commit): `minigames/title-screen/title-screen-minigame.js`, new `minigames/title-screen/title-screen-input.js`, `css/title-screen.css`, `minigames/password/password-minigame.js`, `systems/inventory.js`, new `systems/forced-minigame-guard.js`; tests: new `title-screen-input.test.mjs`, `password-minigame-submit.test.mjs`, `forced-minigame-guard.test.mjs`, and `engine-fixes-pass4.test.mjs` (copies the guard module).
+
+### Checks
+
+| Check | Result |
+|---|---|
+| Ink compile | 15 compiled, 0 failed |
+| tagdiff vs HEAD (5b7b6b89) | 12 structural differences in 4 files, all this round (Gary 6, Kim 2, HaX 4; terminal prose only) |
+| Validator | 0 INVALID; doors OK; the new `room_entered:staff_room` text is disjoint from the debrief backstop (`!debrief_played`); the recap line was reworded so the toast doesn't repeat it; otherwise the round 2 set |
+| dialoguelint | unchanged, 0 errors |
+| Rendered JSON assertions | 40, 0 failures |
+| inkcheck + loopcheck | 62 states × 2, 0 failures |
+| reopencheck | 0 problems |
+| Node suite | 287/287 (one run showed a timing flake in `engine-fixes-pass3`, clean on rerun) |
+| Rails | 491 runs, 0 failures, 0 errors, 1 skip |
+
+### Spoken lines
+
+None changed, none added (HaX phone and timed texts, documents and terminal text only).
+
+Loop total: 11 changed, 19 new.
+
+### Round 3 browser check (2026-10-04, game 1559, Sonnet, headless :3001)
+
+PASS: title screen continues on Space, Enter or a click (once); password minigame counts one attempt per submit; HaX toast and recap after the Val fight; press-terminal "one bundle" wording; visitor log unnamed; inventory clicks ignored under a forced conversation. Not completed: credits after the debrief. The run skipped the four VM flags, which `concludeRequires` needs by design. Earlier runs with flags reached the credits, and round 3 did not touch conclusion code.
+
+## Loop closed (3 review rounds)
+
+Final blind runs (games 1557, 1558): no blocker in the game's own puzzles, and both scored fun 4, pacing 3, clarity 4, openness 4, teaching 3. The insider deduction plays as a deduction; Ghost's offer is the best scene. Open, outside m02: E2/P10 respawn at reception after a reload (user decision); the phone typewriter freezing mid-line (engine); identical HaX message timestamps (engine); clicking a pick-up item in the inventory shows nothing (engine); harness `enter` at room-edge doors.

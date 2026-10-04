@@ -96,7 +96,7 @@ end
 # Narrative Content Variables
 gary_warning_email = "From: Gary Whitlock (IT Systems)\nTo: Dr. Sarah Kim (CTO)\nCC: Board Secretariat\nDate: 8 November\nSubject: URGENT -- ProFTPD 1.3.3c backdoor on backup server\n\nDr Kim,\n\nSeventh time of asking. The backup server is still running ProFTPD 1.3.3c -- the trojaned source release from 2010. That build carries a backdoor in its own source code, which gives an attacker remote code execution with no credentials at all. A clean version has been available since 2010.\n\nThis box holds every clinical backup we have. If it goes, the wards go with it.\n\nI have costed the remediation at £85,000. That is the whole ask. I am not asking for a project, I am asking for a server that is not fourteen years out of date.\n\nPlease put this in front of the board as CRITICAL and not as an IT wish-list item.\n\nGary"
 
-board_reply_email = "From: Dr. Sarah Kim (CTO)\nTo: Gary Whitlock (IT Systems)\nDate: 21 May\nSubject: RE: URGENT -- ProFTPD backdoor on backup server\n\nGary,\n\nNoted, and I do understand. The board reviewed it on Tuesday. The position is that the imaging replacement takes precedence this cycle and infrastructure security is deferred to FY25.\n\nI would ask you not to escalate this again outside the department. It does not help either of us.\n\nSarah"
+board_reply_email = "From: Dr. Sarah Kim (CTO)\nTo: Gary Whitlock (IT Systems)\nDate: 12 November\nSubject: RE: URGENT -- ProFTPD backdoor on backup server\n\nGary,\n\nNoted, and I do understand. The board reviewed it on Tuesday. The position is that the imaging replacement takes precedence this cycle and infrastructure security is deferred to FY25.\n\nI would ask you not to escalate this again outside the department. It does not help either of us.\n\nSarah"
 
 recovery_instructions_encoded = rot13("SITE NOTE -- RECOVERY POSTURE. THEIR ESCROW COPY IS OFFLINE AND I CANNOT REACH IT. OFFLINE SET ALONE = 12 HOURS. OFFLINE SET PLUS MY KEY MATERIAL (CACHE, THIS RACK) = 4 HOURS. THEY WILL NOT WORK THAT OUT IN TIME, SO THEY WILL PAY.")
 
@@ -858,8 +858,14 @@ boardroom_pin = "0417"
               "_comment": "Playtest loop round 2 (BS1): after the card, say on screen where the server-room door is. IT has no way through.",
               "eventPattern": "item_picked_up:keycard",
               "onceOnly": true,
-              "setGlobal": { "keycard_held": true },
-              "sendTimedMessage": { "delay": 18000, "skipIfGlobal": "reached_security_office", "message": "That card opens the server room. Its door is inside Val's Security Office, at the west end of the main corridor. IT has no way through." }
+              "setGlobal": { "keycard_held": true }
+            },
+            {
+              "_comment": "Round 3 (struggle M4): after a fight Val won't talk, so say on screen what's left. Fires when the player walks away from her after_fight line.",
+              "eventPattern": "conversation_closed:security_guard_patrol",
+              "condition": "globalVars.attacked_guard === true && !globalVars.guard_knocked_out && !globalVars.reached_security_office",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "Val's done talking to you. Her office door is still the way in: pick it while she's walking away from it." }
             },
             {
               "_comment": "Playtest loop round 2 (BS-y): a last on-screen nudge before the press terminal, so Reeves's own confession stays the fallback.",
@@ -896,9 +902,14 @@ boardroom_pin = "0417"
               "sendTimedMessage": { "delay": 4000, "message": "Stop. Two minutes ago someone rang the security desk from an internal extension and said no consultant was booked tonight. Your name's off their system. Your booking's gone." }
             },
             {
-              "eventPattern": "objective_task_completed:talk_to_gary",
+              <%# Round 3 (struggle M5): this used to fire 11 s after Gary, while his chat was
+                  still open, so it queued behind the burn warning with Gary's other texts and
+                  the warning sank. Now it waits until the player leaves IT for the handover room,
+                  and it carries the server-room route the keycard text used to give (BS1). %>
+              "eventPattern": "room_entered:staff_room",
+              "condition": "globalVars.cover_burned === true && !globalVars.cover_restored && !globalVars.reached_security_office && !globalVars.debrief_played",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 11000, "skipIfGlobal": "cover_restored", "message": "Val can disprove your cover now. Her Security Office, west end of the main corridor, is the only way to the server room. Get a lanyard or a vouch." }
+              "sendTimedMessage": { "delay": 1500, "message": "Val can disprove your cover now. Her Security Office, west end of the main corridor, is the only way to the server room. Get a lanyard or a vouch." }
             },
 <%# Gary's own spare carries a distinct id so it is a distinct object; taking it off him
     (theft, or off the floor after a KO) counts exactly as the staff-room spare does.
@@ -1377,7 +1388,7 @@ boardroom_pin = "0417"
           "name": "Reception Desk Visitor Log",
           "takeable": false,
           "readable": true,
-          "text": "ST. CATHERINE'S REGIONAL -- NIGHT VISITOR LOG (PAPER FALLBACK)\n\n22:40  G. WHITLOCK (IT Systems) -- on site, no sign-out\n23:15  DR S. KIM (CTO) -- on site\n01:02  EXTERNAL SECURITY CONSULTANT -- emergency response -- auth: DR S. KIM  [struck through, different pen, no initials]\n       ^ struck through. Different biro. No initials against the amendment.\n03:20  G. REEVES (night security supervisor) -- \"posted\", declined to sign\n\nB.N. note in the margin: \"Who crossed this out? Not me.\"",
+          "text": "ST. CATHERINE'S REGIONAL -- NIGHT VISITOR LOG (PAPER FALLBACK)\n\n22:40  G. WHITLOCK (IT Systems) -- on site, no sign-out\n23:15  DR S. KIM (CTO) -- on site\n01:02  EXTERNAL SECURITY CONSULTANT -- emergency response -- auth: DR S. KIM  [struck through, different pen, no initials]\n       ^ struck through. Different biro. No initials against the amendment.\n03:20  NIGHT SECURITY SUPERVISOR (plain clothes) -- \"posted\", declined to sign\n\nB.N. note in the margin: \"Who crossed this out? Not me.\"",
           "observations": "The paper fallback log. Your booking is on it -- and somebody has scored a line through it in different ink, with no initials against the change.",
           "observationDisplay": "gameDisplay",
           "onRead": { "setVariable": { "noticed_struck_booking": true } },
@@ -2057,7 +2068,7 @@ boardroom_pin = "0417"
             {
               "type": "notes",
               "id": "kim_deferral_reply",
-              "name": "Dr. Kim's Reply -- 21 May",
+              "name": "Dr. Kim's Reply -- 12 November",
               "takeable": true,
               "readable": true,
               "text": <%= board_reply_email.to_json %>,

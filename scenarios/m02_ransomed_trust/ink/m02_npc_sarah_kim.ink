@@ -211,7 +211,7 @@ Dr. Sarah Kim: Gary has one. I don't.
 + {topic_gary and not player_warned_kim} [Gary doesn't carry this alone. I want that on the record.]
     -> protect_gary
 
-+ {not topic_escrow} [There's an offline key escrow in the emergency store. What's on that safe?]
++ {not topic_escrow and not offline_keys_recovered} [There's an offline key escrow in the emergency store. What's on that safe?]
     -> escrow_safe
 
 + {topic_ransom_vote and not advised_on_vote} [You asked what to tell the board. I'll answer properly now.]

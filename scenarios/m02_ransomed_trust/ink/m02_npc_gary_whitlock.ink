@@ -52,6 +52,9 @@ VAR cover_burned = false
 VAR cover_restored = false
 VAR insider_evidence_partial = false
 VAR insider_identified = false
+// Round 3 (best M4): retire the lanyard and sticky-note options once those are in hand.
+VAR staff_lanyard_obtained = false
+VAR password_hints_found = false
 
 // ===========================================
 // ENTRY
@@ -430,7 +433,7 @@ Gary Whitlock: If you can get into it, take the lot. Better your hands than the 
 + {not topic_vulnerability} [Walk me through the vulnerability.]
     -> discuss_vulnerability
 
-+ {not topic_passwords} [Is there anything reused on that backup server I should try?]
++ {not topic_passwords and not password_hints_found} [Is there anything reused on that backup server I should try?]
     -> discuss_passwords
 
 + {not topic_family} [Who's in the photo?]
@@ -439,7 +442,7 @@ Gary Whitlock: If you can get into it, take the lot. Better your hands than the 
 + {board_coverup_email_found and not gary_protected_locally} [There's something in the boardroom you need to see.]
     -> tell_him_about_board
 
-+ {(cover_burned or gave_keycard) and not cover_restored and not gave_lanyard and (not lanyard_refused or gary_influence >= 15)} [Someone's pulled my booking with security. I need something that holds up.]
++ {(cover_burned or gave_keycard) and not cover_restored and not gave_lanyard and not staff_lanyard_obtained and (not lanyard_refused or gary_influence >= 15)} [Someone's pulled my booking with security. I need something that holds up.]
     -> the_lanyard
 
 + {insider_evidence_partial and gave_keycard and not insider_identified} [Someone inside helped ENTROPY in. Was that you?]

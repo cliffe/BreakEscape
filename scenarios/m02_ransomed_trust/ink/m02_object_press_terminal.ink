@@ -70,7 +70,7 @@ HOSPITAL COMMUNICATIONS TERMINAL
 Secure outgoing relay -- St. Catherine's regional press network.
 14 media recipients. 3 national health correspondents. SAFETYNET Evidence Archive.
 
-Available for transmission:
+Evidence package -- transmits as one bundle, all of it or none:
 - Board liability email (cover-up plan, Gary Whitlock scapegoating)
 - FY2024 Budget Report (£85,000 security deferred, £3.2 million MRI approved)
 - Gary Whitlock security advisory archive (May-November 2024, 7 formal warnings)
