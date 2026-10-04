@@ -43,6 +43,7 @@ export { BlockchainExplorerMinigame } from './blockchain-explorer/blockchain-exp
 export { ShreddedDocumentMinigame } from './shredded-document/shredded-document-minigame.js';
 export { CryptexMinigame } from './cryptex/cryptex-minigame.js';
 export { CombinationMinigame } from './combination/combination-minigame.js';
+export { ExamineMinigame } from './examine/examine-minigame.js';
 
 // Initialize the global minigame framework for backward compatibility
 import { MinigameFramework } from './framework/minigame-manager.js';
@@ -132,6 +133,7 @@ import { BlockchainExplorerMinigame } from './blockchain-explorer/blockchain-exp
 import { ShreddedDocumentMinigame } from './shredded-document/shredded-document-minigame.js';
 import { CryptexMinigame } from './cryptex/cryptex-minigame.js';
 import { CombinationMinigame } from './combination/combination-minigame.js';
+import { ExamineMinigame } from './examine/examine-minigame.js';
 
 // Import ransomware display minigame
 import { RansomwareDisplayMinigame } from './ransomware-display/ransomware-display-minigame.js';
@@ -183,6 +185,7 @@ MinigameFramework.registerScene('blockchain-explorer', BlockchainExplorerMinigam
 MinigameFramework.registerScene('shredded-document', ShreddedDocumentMinigame);
 MinigameFramework.registerScene('cryptex', CryptexMinigame);
 MinigameFramework.registerScene('combination', CombinationMinigame);
+MinigameFramework.registerScene('examine', ExamineMinigame);
 
 // Make minigame functions available globally
 window.startNotesMinigame = startNotesMinigame;

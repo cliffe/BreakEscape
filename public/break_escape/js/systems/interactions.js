@@ -12,6 +12,7 @@ import { playUISound, playGameSound } from './ui-sounds.js';
 import { applyActions } from './apply-actions.js';
 import { resolveObjectField } from '../utils/conditional-text.js';
 import { npcReachDistSq } from './npc-reach.js';
+import { shouldExamine, startExamine } from './examine.js';
 
 let gameRef = null;
 
@@ -1596,6 +1597,14 @@ export function handleObjectInteraction(sprite) {
         const body = (resolvedObservations ? `<em>${esc(resolvedObservations)}</em>\n\n` : '') + esc(resolvedText);
         window.gameDisplay(body, esc(data.name || sprite.name));
         return;
+    }
+
+    // Nothing else to do: an inventory item with no action, or a room object that is
+    // only text or observations, opens the examine view (sprite at twice its room size, name, text).
+    // Readable text, observationDisplay "gameDisplay", onInteract, keys and takeable
+    // room objects keep their own handling (examine.js shouldExamine).
+    if (shouldExamine(data, { inInventory: isInventoryItem, resolvedText, resolvedObservations })) {
+        if (startExamine(sprite, { observations: resolvedObservations, text: resolvedText })) return;
     }
 
     // Show observation — use observationDisplay or onInteract.display (deprecated)

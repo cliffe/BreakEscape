@@ -376,7 +376,7 @@ This laptop object will be placed at the next available `pc` slot in the room te
 | `important` | optional | `true` marks item as important in inventory |
 | `isEndGoal` | optional | `true` marks item as the scenario's win condition |
 | `triggerOnInteract` | optional | Array of actions fired on interaction. Overrides default type-based minigame behavior. See "Object Interaction Actions" below. |
-| `observationDisplay` | optional | `"gameDisplay"` for modal observation display, or omit for toast notification |
+| `observationDisplay` | optional | `"gameDisplay"` for a modal observation display. Omit it and a text-only object opens the examine view (see "Observation Display Mode") |
 | `onRead` | optional | `{ "setVariable": { "var_name": true } }` — sets a global variable on read |
 | `onPickup` | optional | `{ "setVariable": { "var_name": true } }` — sets a global variable on pickup |
 | `onInteract` | deprecated | Legacy interaction handler. Use `triggerOnInteract` + `observationDisplay` instead. |
@@ -591,7 +591,7 @@ Control how observation text is displayed using `observationDisplay`:
 
 **Display modes**:
 - `"gameDisplay"` - Full-screen modal dialog requiring player to click "Close" (use for critical information that must be read)
-- Default (omit field) - Auto-dismissing toast notification with 5-second timer (use for routine observations)
+- Default (omit field) - The **examine view** for text-only objects: the sprite at twice its size in the room (a whole-number multiple of its pixels, at least 4x), the name, then `observations` and `text`, closed with Close or Esc. It opens for a room object that is not takeable, locked, readable-with-text or otherwise actionable, and has `observations` or `text`; and for any inventory item whose click does nothing else (keys, phones, notepads, readable items and tools keep their own action). An object with no `observations` or `text` still gets the old toast.
 
 #### Supported Action Types
 
