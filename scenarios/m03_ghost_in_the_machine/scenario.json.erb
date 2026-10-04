@@ -885,7 +885,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "eventPattern": "objective_task_completed:submit_http_flag",
               "onceOnly": true,
               "setGlobal": { "flag_http_submitted": true },
-              "sendTimedMessage": { "delay": 2000, "message": "Price list's in. ROT13, and they filed it as confidential. Encoding isn't a lock." }
+              "sendTimedMessage": { "delay": 2000, "message": "Price list's in. ROT13, filed as confidential." }
             },
             {
               "_comment": "P3-3: a text that opens the revelation call when clicked (m02 A7 pattern), so the drop-site isn't closed under the player. revelation_heard is still set at the end of the call, so the all-flags text still waits for it.",
@@ -981,7 +981,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "eventPattern": "global_variable_changed:night_confrontation_ready",
               "condition": "value === true && globalVars.victoria_ko === true && globalVars.victoria_choice_made !== true && globalVars.revelation_heard === true && globalVars.danny_fate === ''",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 6000, "message": "Everything's off their network. Sterling's still in the conference room where you left her. Want a say in Danny's end? His office first." }
+              "sendTimedMessage": { "delay": 6000, "message": "Everything's off their network. Sterling's still in the conference room where you left her. Want a say in what happens to Danny? His office first." }
             },
             {
               "eventPattern": "global_variable_changed:night_confrontation_ready",
@@ -1006,7 +1006,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "eventPattern": "global_variable_changed:revelation_heard",
               "condition": "value === true && globalVars.night_confrontation_ready === true && globalVars.victoria_ko === true && globalVars.victoria_choice_made !== true && globalVars.danny_fate === ''",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 2000, "message": "Everything's off their network. Sterling's still in the conference room where you left her. Want a say in Danny's end? His office first." }
+              "sendTimedMessage": { "delay": 2000, "message": "Everything's off their network. Sterling's still in the conference room where you left her. Want a say in what happens to Danny? His office first." }
             },
             {
               "eventPattern": "global_variable_changed:revelation_heard",
@@ -1683,15 +1683,10 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     "victoria_influence": 0,
     "victoria_suspicious": 0,
     "victoria_trusts_player": false,
-    "victoria_trust": 50,
     "victoria_choice_made": false,
     "victoria_recruited": false,
     "victoria_arrested": false,
     "victoria_escaped": false,
-    "danny_innocence_confirmed": false,
-    "danny_warned": false,
-    "danny_protected": false,
-    "danny_exposed": false,
     "danny_evidence_seen": false,
     "handler_trust": 50,
     "guard_detection_count": 0,

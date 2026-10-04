@@ -35,14 +35,14 @@ VAR night_greeted = false
 }
 { not badge_received:
     #display:receptionist-professional
-    Receptionist: Good afternoon! You must be {player_name()}.
+    Receptionist: Afternoon! {player_name()}, is it?
     Receptionist: Ms. Sterling mentioned you'd be coming in for a consultation.
     Receptionist: Let me get you checked in.
     -> badge_process
 }
 { badge_received:
     #display:receptionist-friendly
-    Receptionist: Hi again! How's your visit going?
+    Receptionist: Back again? How's it going in there?
     ~ hub_quiet = true
     -> hub
 }
@@ -62,12 +62,11 @@ Receptionist: Ms. Sterling's in the conference room. Straight up the hallway, fi
     Narrator: You sign the visitor log.
     Receptionist: Here's your badge. Please keep it visible while you're in the building.
     Receptionist: The conference room's behind the card reader on the left -- staff badges only. Ms. Sterling's strict about that. She doesn't come out to fetch people.
-    Receptionist: And welcome to WhiteHat Security!
     -> first_impression_choice
-* [Before I meet with Victoria, can you tell me a bit about WhiteHat Security?]
+* [Before I go in, what's WhiteHat like?]
     ~ receptionist_influence = receptionist_influence + 10
     # influence_increased
-    Receptionist: Of course! We're a Cyber Security research and penetration-testing firm.
+    Receptionist: Oh, we break into places. For money. Companies pay us to find the holes before somebody nasty does.
     -> company_overview
 * [I'll just sign and go through, thanks.]
     #give_item:id_badge:visitor_badge
@@ -105,15 +104,15 @@ Receptionist: Is this your first time working with a Cyber Security firm?
 * [I've done freelance pen testing before. Looking to level up.]
     ~ receptionist_influence = receptionist_influence + 10
     # influence_increased
-    Receptionist: Well, you're in the right place! Ms. Sterling is brilliant.
+    Receptionist: You've come to the right place, then. She doesn't see just anyone, mind.
     -> hub
 * [Relatively new. Still learning.]
     ~ receptionist_influence = receptionist_influence + 5
     # influence_increased
-    Receptionist: That's exciting! Everyone here is very passionate about security.
+    Receptionist: Oh, lovely. Don't let her scare you. She's like that with everyone.
     -> hub
 * [I should head to the conference room. Don't want to keep Victoria waiting.]
-    Receptionist: Of course! Up the hallway, first door on the left.
+    Receptionist: Go on, then. Up the hallway, first door on the left.
     ~ hub_quiet = true
     #exit_conversation
     -> hub
@@ -132,7 +131,7 @@ Receptionist: Is this your first time working with a Cyber Security firm?
             Narrator: The receptionist is back at her desk, rummaging in a drawer.
         }
     - else:
-        Receptionist: {&What else can I help with?|Anything else?|Ask away.}
+        Receptionist: {&Anything else, love?|Anything else?|Go on.}
     }
 }
 + {mission_phase == "act2_infiltration"} [You're still here? It's late.]
@@ -148,7 +147,7 @@ Receptionist: Is this your first time working with a Cyber Security firm?
 + {mission_phase != "act2_infiltration" && badge_received && not reception_badge_cloned && (conference_reader_tried or cloner_explained)} [Lean in to read the building directory.]
     -> clone_badge_opportunity
 + {mission_phase != "act2_infiltration"} [Thanks. I'll head through.]
-    Receptionist: Have a great visit!
+    Receptionist: Go on through. She hates being kept waiting.
     ~ hub_quiet = true
     #exit_conversation
     -> hub
@@ -158,16 +157,16 @@ Receptionist: Is this your first time working with a Cyber Security firm?
 ~ topic_victoria = true
 ~ receptionist_influence = receptionist_influence + 5
 # influence_increased
-Receptionist: Ms. Sterling is amazing. She's a DEFCON speaker, published researcher, the whole package.
+Receptionist: Oh, she's brilliant. Speaks at all the big conferences, writes the papers, the lot.
 Receptionist: And she really cares about the work. Sometimes she's here until midnight.
 { receptionist_influence >= 20:
     Receptionist: Between you and me, she can be intense. Very particular about her research.
     Receptionist: But she's fair. If you're good at what you do, she'll respect you.
 }
-* [She sounds very dedicated to the work.]
+* [Intense, is she?]
     ~ receptionist_influence = receptionist_influence + 5
     # influence_increased
-    Receptionist: Absolutely. Cyber Security is her passion.
+    Receptionist: Oh, completely. Lives for it, she does.
     -> hub
 * [Midnight work sessions? That's some serious dedication.]
     Receptionist: Some nights, yeah. The cleaners find her at her desk gone midnight.
@@ -217,7 +216,6 @@ Receptionist: "Security Through Economics" - that's our motto.
     # influence_increased
     -> hub
 * [2010. I'll remember that.]
-    Receptionist: Absolutely! Ms. Sterling is very proud of everything we've built since then.
     ~ receptionist_influence = receptionist_influence + 5
     # influence_increased
     -> hub
@@ -228,12 +226,11 @@ Receptionist: "Security Through Economics" - that's our motto.
 #speaker:receptionist
 ~ receptionist_influence = receptionist_influence + 5
 # influence_increased
-Receptionist: Sure! It's a pretty straightforward layout.
 Receptionist: Reception here, then the main hallway. The conference room's through the card reader, first on the left.
 Receptionist: Server room at the far end of the main hallway -- executive cards only.
 Receptionist: And Ms. Sterling's office is in the executive wing, east off the main hallway.
 * [Is anyone here after business hours?]
-    Receptionist: Usually just Ms. Sterling if she's working late. And we have a night security guard - makes rounds to keep the place safe.
+    Receptionist: Just Ms. Sterling, if she's working late. And the night guard. Does his rounds, drinks a lot of tea.
     ~ receptionist_influence = receptionist_influence + 5
     # influence_increased
     -> hub
@@ -276,7 +273,7 @@ Narrator: She carries on straightening the sign-in sheet.
     Receptionist: Oh! You made me jump. I only came back for my charger.
     Receptionist: Is Ms. Sterling expecting you this late?
 }
-+ [She is. Goodnight.]
++ [Goodnight. Don't stay too late.]
     Receptionist: Night, then. Don't let the guard scare you.
     ~ hub_quiet = true
     #exit_conversation

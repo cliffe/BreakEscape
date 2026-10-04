@@ -74,7 +74,7 @@ Danny Foster: So. What happens now?
 === protect ===
 #speaker:danny_foster
 Danny Foster: *shakily* You'd do that.
-+ [Sterling goes down for her part. You don't have to go down with her -- but you tell them everything.]
++ [Sterling goes down for her part. You don't have to. But you tell them everything.]
     Danny Foster: Everything. Yes. God, yes.
     Narrator: He reaches for his phone with a hand that isn't quite steady, and for the first time all night he looks like a man who might sleep.
     ~ danny_fate = "protected"
@@ -89,7 +89,7 @@ Danny Foster: *shakily* You'd do that.
 #speaker:danny_foster
 Danny Foster: *quietly* You're not wrong. That's the worst of it. You're not wrong.
 + [I'm logging it all -- recon, emails, the raise. Cooperating helps you. Nothing erases it.]
-    Danny Foster: *defeated* Then I'll cooperate. For what it's worth. Just -- in whatever you write, say I didn't know at the start. Please.
+    Danny Foster: Then I'll cooperate. For what it's worth. Just... in whatever you write, say I didn't know at the start. Please.
     Narrator: He doesn't argue. Somewhere in the last few months he stopped believing he'd get to.
     ~ danny_fate = "exposed"
     #set_global:danny_fate:exposed

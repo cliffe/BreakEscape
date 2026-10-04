@@ -178,3 +178,26 @@ HaX stock lines: briefing `:235` → "That's why you're good at this. Call if yo
 **Revise** (light). Every runtime check is clean and the structure is unchanged except for Danny's three deliberate choices, which loop safely and improve the scene. The folds kept the information, and the lint is clear (banned-word 0). Fix M1–M5 before it ships. M1 and M2 are the echoes the pass set out to remove. M3 leaves Danny answering a line nobody said. M4 and M5 show the player quoting words they haven't heard, on paths nearly everyone takes. Take S1–S11 in the same edit; all except the two Victoria one-option choices are one-line swaps. Afterwards, rerun tagdiff against the same snapshot (expect +2 choices in Victoria, logged), dialoguelint, reopencheck, and loopcheck on Victoria's night states (`night_confrontation_ready` with and without `usb_seen`; `receptionist_ko`; `guard_told_safetynet`). No new playtest is needed for prose this size, but read the night confrontation once on screen to check the pace with the two new clicks.
 
 Scratch output: `<scratchpad>/m03-scripted/` (`tagdiff.txt`, `lint.txt`, `reopen.txt`, `loop.txt`, `json/`).
+
+## Pass 5 (2026-10-04)
+
+Writer pass on the round-1 dialogue review (`m03-dialogue-r1-review/REVIEW.md`, P4-1..P4-42), full set taken: m03 has no generated audio yet, so voiced rewrites cost no cached clips. Snapshot of the ink before editing: Phase 3 close, 3726cf4.
+
+What changed and why:
+- **Victoria's afternoon** (P4-1, P4-2, P4-3, P4-10, P4-11, P4-42): one argument per beat. Cut the four stock analogies down to one per run, the slide-deck mission lines, the "most people" tic (kept the best three) and the two lines that spent her night payoff early ("I sleep fine", "Vulnerabilities are facts"). Choice labels are now things a recruit would say.
+- **Victoria at night** (P4-9, P4-12): left alone apart from the echo of the player's choice and three narrator lines that repeated or editorialised.
+- **One owner per moral** (P4-4, P4-5): the hospital premium is Victoria's (HaX's briefing echo and the debrief's restatement cut); "encoding isn't encryption" stays in the field guide, the runbook and HaX's workstation texts, and is cut from the debrief and the price-list text.
+- **Briefing** (P4-6, P4-7, P4-18, P4-19, P4-20): the learning-outcomes topic is gone; the second reaction to the approach choice is gone; the clone directions say "talk to her"; Nightshade says "Morning." and loses his moral; the opening narration fits the cap.
+- **Receptionist** (P4-8, P4-39, P4-32): a warm Cardiff voice instead of a brochure; her greeting no longer duplicates Victoria's; distinct return greeting; the night goodbye answers what was said.
+- **Guard** (P4-13..P4-17): one police threat per route, no contradiction; the bribe no longer promises an hour nothing enforces; geography matches the wing; his view of Sterling is his own; missing influence tag added.
+- **Debrief** (P4-24..P4-31): one "now we have the proof" line instead of three; the aftermath no longer re-reads Victoria's fate; the recruited branch no longer contradicts itself; Command timing matches the phone.
+- **HaX phone** (text only): stale status, UI-speak, a third "rehearsal" line, the bribe "hour", a five-line hint trimmed.
+
+Structure changes (tagdiff vs the snapshot), each deliberate:
+- `m03_opening_briefing.ink`: removed `topic_learn` knot, its hub choice and `asked_learn` (P4-6); the three-line `final_instructions` reaction block (P4-7); the `knows_m2_connection` premium line (P4-4); the dead `handler_trust < 50` branch (P4-21); `mission_priority` and its three writes (P4-22); three dead early `player_approach` writes (P4-23; the stance of record is `mission_approach` and `last_advice`'s "aggressive").
+- `m03_npc_victoria.ink`: removed the cover line's `player_approach = "diplomatic"` overwrite and the now-unused VAR (P4-23).
+- `m03_npc_guard.ink`: added the missing `# influence_increased` tag (P4-17).
+- `m03_closing_debrief.ink`: removed the `knows_m2_connection` block and VAR (P4-24), the encoding block (P4-5), the duplicate drive line (P4-28), the dead `handler_trust < 50` branch (P4-21) and the four aftermath fate lines (P4-29).
+- `scenario.json.erb`: five dead globals removed (`victoria_trust`, `danny_innocence_confirmed`, `danny_warned`, `danny_protected`, `danny_exposed`; P4-22), and from the m03 block of `missions.json`.
+
+Lint after: 0 errors; 4 warnings, each justified. `choice-len` victoria:483 is the confrontation's offer and earns its 18 words. `not-x-but-y` victoria:462 is the villain's one "That isn't cruelty. It's arithmetic." in the night scene. `stage-cue-density` guard (7/85) and Victoria (12/94): the four cues the words already carried are cut (P4-38); the rest steer delivery on lines that would read flat.

@@ -6,7 +6,6 @@ EXTERNAL player_name()
 VAR victoria_fate = ""
 VAR danny_fate = ""
 VAR player_approach = ""
-VAR knows_m2_connection = false
 VAR guard_detection_count = 0
 VAR lore_history_found = false
 VAR lore_catalogue_found = false
@@ -76,7 +75,7 @@ Agent HaX: {player_name()}. Sit down before you fall down. You've earned it.
 }
 // Round 2: only for players who went into his corridor and still kept clear of him.
 { guard_detection_count == 0 and guard_challenged and not guard_knocked_out and not guard_told_safetynet and not guard_bribed:
-    Agent HaX: The guard stopped you and you lied your way on. He never caught you at a lock, but he'll remember your face.
+    Agent HaX: The guard stopped you once. He never caught you at a lock, but he'll remember your face.
 }
 { guard_detection_count == 0 and exec_wing_entered and not exec_office_entered and not guard_knocked_out and not guard_told_safetynet and not guard_bribed and not guard_challenged:
     Agent HaX: The guard never saw you. Then again, you never gave him the chance.
@@ -105,20 +104,17 @@ Agent HaX: Let's go through it.
 
 === mission_impact ===
 #speaker:agent_0x99
-Agent HaX: The network first. You stripped their training lab and submitted the full set -- recon, FTP, pricing, and the distcc logs.
-Agent HaX: That last one is the case. The ProFTPD backdoor, sold to Ghost, invoice ZDS-2024-0847, St. Catherine's on the target line, Sable's sign-off on the approval.
+Agent HaX: The network first. All four flags, and the distcc logs are the case.
+Agent HaX: The ProFTPD backdoor, sold to Ghost, invoice ZDS-2024-0847, St. Catherine's on the target line, Sable's sign-off on the approval.
 Agent HaX: At the hospital we had the buyer's paperwork. Now we have the seller's own books.
 { called_it_murder:
     Agent HaX: You called it murder with an invoice. Now the seller's ledger says it too.
-}
-{ knows_m2_connection:
-    Agent HaX: You walked in there knowing what it was. You came out with the paper that proves it.
 }
 -> victoria_discussion
 
 === victoria_discussion ===
 #speaker:agent_0x99
-Agent HaX: Victoria Sterling. Sable. Cover-CEO of the front and Zero Day's operational lead. She answered to 0day and the Architect, not the other way round.
+Agent HaX: Victoria Sterling. Sable.
 
 { victoria_fate == "recruited":
     -> victoria_recruited
@@ -138,7 +134,7 @@ Agent HaX: Victoria Sterling. Sable. Cover-CEO of the front and Zero Day's opera
 #speaker:agent_0x99
 Agent HaX: And now she's ours. That was a hell of a call -- turning her instead of taking her.
 * [She's worth more as a source than a headline.]
-    Agent HaX: I agree. I also want you clear-eyed about it. She's a believer, not a mercenary. Turning someone who thinks they're right is the hardest asset to hold.
+    Agent HaX: I agree. Just stay clear-eyed. Someone who thinks they're right is the hardest asset to hold.
     -> victoria_recruited_path
 * [Phase 2 puts thousands at risk. Her intelligence gets us in front of it.]
     Agent HaX: If she delivers. If she isn't burned. If the Architect doesn't smell it. A lot of ifs riding on someone who priced a hospital.
@@ -165,7 +161,7 @@ Agent HaX: Whether she stays turned is anyone's guess. Today, it's a win with it
 === victoria_arrested ===
 #speaker:agent_0x99
 Agent HaX: Victoria Sterling is in custody. The CPS are looking at conspiracy, supplying articles for use in fraud and computer misuse, and her part in the deaths at St. Catherine's.
-Agent HaX: Her lawyers are already reaching for "information freedom" and "market forces". It won't hold. The healthcare premium proves she knew exactly what she was pricing.
+Agent HaX: Her lawyers are already reaching for "information freedom" and "market forces". It won't hold.
 * [She put a premium on hospitals that can't defend themselves. Premeditation in a spreadsheet.]
     Agent HaX: That's the line that closes it.
     -> victoria_arrested_path
@@ -194,7 +190,7 @@ Agent HaX: We've got the evidence and the name either way. The Architect loses a
     Agent HaX: Hard to argue. The pricing alone proves intent.
     -> phase_2_discussion
 * [Unconscious, she tells us nothing. We kept the case, lost the network.]
-    Agent HaX: A trade, and you made it. Evidence secured, intelligence gone.
+    Agent HaX: A trade, and you made it.
     -> phase_2_discussion
 
 === victoria_escaped ===
@@ -229,7 +225,6 @@ Agent HaX: Now the part that kept me up. Phase 2.
 
 === directive_substance ===
 #speaker:agent_0x99
-Narrator: Agent HaX's expression hardens.
 Agent HaX: Grid storage. Substation control. Hospitals on generator for when the grid drops out from under them. Zero Day supplies, Critical Mass executes. Winter, within weeks.
 Agent HaX: St. Catherine's was the proof of concept. This is the scale-up.
 * [That's mass-casualty scale. An attack on everyone under the grid.]
@@ -245,7 +240,7 @@ Agent HaX: St. Catherine's was the proof of concept. This is the scale-up.
 === architect_revelation ===
 #speaker:agent_0x99
 Agent HaX: The Architect. One mind coordinating the cells. Zero Day arms them, Critical Mass hits the grid, Ransomware Incorporated hits the wards, and someone times it all.
-Agent HaX: The directive proves they exist and proves they plan at this scale. We take it to Command today.
+Agent HaX: The directive proves they exist and proves they plan at this scale. Command's had it since first thing.
 * [Any lead on who the Architect actually is?]
     { victoria_fate == "recruited" or victoria_fate == "arrested":
         Agent HaX: Not yet. Sterling swears she's never met them -- all encrypted channels. But every operation like this narrows it.
@@ -330,9 +325,6 @@ Agent HaX: For the report, here's what let you in.
     Agent HaX: The CEO's password was the house reset default, printed on a slip on her own monitor. Nobody made her change it.
 }
 Agent HaX: Their records sat on the one box they knew was broken: a distcc daemon exploitable since 2004, left listening because it was useful to them.
-{ whiteboard_seen or draft_seen or roster_seen or usb_seen:
-    Agent HaX: And they treated encoding as if it were a lock. ROT13, Base64, hex: none of it needs a key. It only needs someone to look.
-}
 -> final_assessment
 
 === final_assessment ===
@@ -348,9 +340,6 @@ Agent HaX: Their records sat on the one box they knew was broken: a distcc daemo
     }
     { not (catalogue_seen or lore_catalogue_found):
         Agent HaX: The exploit catalogue is still in the wall safe.
-    }
-    { not (usb_seen or lore_directive_found):
-        Agent HaX: The drive in her desk, you left for the search team.
     }
     Agent HaX: What you brought out is enough to prosecute and enough to warn people. More would have helped. It usually does.
 }
@@ -374,9 +363,6 @@ Agent HaX: Their records sat on the one box they knew was broken: a distcc daemo
 { (handler_trust >= 50) && (handler_trust < 70):
     Agent HaX: Clean enough. Get some rest; we'll need you soon.
 }
-{ handler_trust < 50:
-    Agent HaX: We got the result. The execution was rough in places. Take the time to think about which.
-}
 -> aftermath
 
 === aftermath ===
@@ -386,22 +372,10 @@ Agent HaX: Their records sat on the one box they knew was broken: a distcc daemo
 - else:
     Agent HaX: Here's where it stands. Zero Day doesn't know it's been read.
 }
-{ victoria_fate == "arrested":
-    Agent HaX: Sterling's been charged.
-}
-{ victoria_fate == "recruited":
-    Agent HaX: Sterling's reporting to us.
-}
-{ victoria_fate == "ko":
-    Agent HaX: Sterling's under guard.
-}
-{ victoria_fate == "escaped":
-    Agent HaX: Sterling's gone to ground.
-}
 { victoria_fate != "recruited":
-    Agent HaX: Phase 2 targets are being hardened. The cells that leaned on Zero Day's supply are scrambling. And the Architect has one fewer supplier.
+    Agent HaX: The cells that leaned on Zero Day's supply are scrambling, and the Architect has one fewer supplier.
 - else:
-    Agent HaX: Phase 2 targets are being hardened, quietly. The cells that lean on Zero Day's supply still think it's safe. And the Architect has one fewer supplier.
+    Agent HaX: The cells that buy from Zero Day still think it's safe. So does the Architect.
 }
 // P1-5/P1-24: Ghost is still at large after St. Catherine's (m02 canon). No claim
 // about Nightshade: his supply-chain remark is an optional m02 beat.
@@ -418,7 +392,6 @@ Agent HaX: Ghost's still out there. But last night you put the people who armed 
 
 === closing ===
 #speaker:agent_0x99
-Agent HaX: {player_name()}. You put an arms dealer's books on the record last night.
 Agent HaX: We'll brief the next one when you're ready.
 // The conclusion aim's last task completes HERE, so bond_visualiser and the
 // credits come after the debrief, not over it.

@@ -47,7 +47,7 @@ VAR idle_quiet = false
 }
 { player_warned && bribe_accepted:
     #display:guard-neutral
-    Security Guard: You've still got your hour. Use it, then you're gone.
+    Security Guard: We had a deal. Get on with it.
     ~ idle_quiet = true
     #exit_conversation
     -> guard_idle
@@ -71,7 +71,7 @@ Security Guard: If Ms. Sterling wants you back here, she'll walk you through her
     -> guard_idle
 + [When do you knock off?]
     ~ topic_shift = true
-    Security Guard: Knock off? Not till six tomorrow morning. Double shift -- afternoon on the desk here, then the night rounds.
+    Security Guard: Knock off? Not till six tomorrow morning. Double shift. Afternoons in here, then the night rounds.
     Security Guard: Why?
     ~ idle_quiet = true
     #exit_conversation
@@ -91,7 +91,7 @@ Security Guard: Well? What's your explanation for being here after hours?
     ~ player_has_excuse = true
     Security Guard: *pauses* Ms. Sterling mentioned a potential recruit... alright.
     -> excuse_victoria
-* [Building maintenance, late shift. Checking the HVAC.]
+* [Building maintenance, late shift. Checking the air con.]
     ~ guard_influence = guard_influence + 5
     # influence_increased
     Security Guard: Maintenance? I didn't get a work order notice.
@@ -129,7 +129,7 @@ Security Guard: What files are you supposed to grab?
 * [Training programme enrolment forms. From her office.]
     ~ guard_influence = guard_influence + 10
     # influence_increased
-    Security Guard: *nods* Alright. But be quick about it. And stay in the executive area - don't wander.
+    Security Guard: Alright. But be quick about it. And stay in the executive area - don't wander.
     -> hub
 * [She didn't specify -- said I'd know them when I saw them. Confidential.]
     ~ guard_influence = guard_influence + 5
@@ -160,7 +160,7 @@ Security Guard: I'm going to need to verify this.
     # influence_decreased
     ~ guard_hostile = true
     // Pass 5 (P3-8): hostile_confrontation counts this detection; counting it here too made one incident two.
-    Security Guard: Wrong answer. You're trespassing. Leave now or I'm calling the police.
+    Security Guard: Wrong answer.
     -> hostile_confrontation
 
 === suspicious_path ===
@@ -172,7 +172,7 @@ Security Guard: This doesn't add up. You're not making sense.
     ~ guard_influence = guard_influence - 10
     # influence_decreased
     ~ guard_suspicious = true
-    Security Guard: *flatly* I'm not ringing the boss at this hour on your say-so. You need to leave. Now.
+    Security Guard: *flatly* I'm not ringing the boss at this hour on your say-so.
     -> trespass_warning
 * [I'm with SAFETYNET. This is an active ENTROPY investigation.]
     -> safetynet_reveal
@@ -188,7 +188,7 @@ Security Guard: *sharply* Are you trying to bribe me?
 * [No, no. I just meant -- could you make an exception? A favour?]
     ~ guard_influence = guard_influence - 5
     # influence_decreased
-    Security Guard: *scoffs* No favours. Leave or I'm calling the police.
+    Security Guard: *scoffs* No favours.
     -> trespass_warning
 
 === bribe_response_low ===
@@ -202,7 +202,7 @@ Security Guard: Get out. Now.
 === bribe_response_high ===
 #speaker:npc
 Security Guard: ...Five hundred?
-Security Guard: One hour. You finish whatever you're doing and you're gone. I never saw you.
+Security Guard: You finish whatever you're doing and you're gone. I never saw you.
 Security Guard: And if anyone asks, I was on the other side of the building doing rounds.
 ~ bribe_accepted = true
 #set_global:guard_bribed:true
@@ -210,7 +210,6 @@ Security Guard: And if anyone asks, I was on the other side of the building doin
 # influence_increased
 ~ guard_suspicious = false
 Narrator: You count five hundred into his hand.
-Security Guard: One hour. After that, you're trespassing and I'm doing my job.
 ~ idle_quiet = true
 #exit_conversation
 -> guard_idle
@@ -327,7 +326,7 @@ Security Guard: Server room's at the far end of the main hallway. The executive 
     Security Guard: Server room's usually locked. Executive-level access only.
 }
 * [What's in the executive area?]
-    Security Guard: Ms. Sterling's office, mostly. Some storage. Conference room for high-level meetings.
+    Security Guard: Ms. Sterling's office, north side. The consultants are across from her.
     ~ guard_influence = guard_influence + 5
     # influence_increased
     -> hub
@@ -342,7 +341,7 @@ Security Guard: Server room's at the far end of the main hallway. The executive 
 ~ topic_victoria = true
 Security Guard: Ms. Sterling? She's the boss. Signs my wages, never learnt my name.
 { guard_influence >= 20:
-    Security Guard: Between you and me, she's a bit intense. Very particular about security protocols.
+    Security Guard: Between you and me, I keep out of her way. Everyone does.
     Security Guard: And the people she meets with sometimes... they don't look like normal corporate clients.
 }
 { guard_influence < 20:
@@ -423,6 +422,7 @@ Narrator: The guard reaches for his radio.
 Security Guard: Oi. Away from the door. Now.
 + [Ms. Sterling locked her keys in. She asked me to fetch her forms.]
     ~ guard_influence = guard_influence + 5
+    # influence_increased
     Security Guard: With a pick set. Course she did.
     Security Guard: I'm writing it down. Do that again where I can see it and I'm calling it in.
     ~ idle_quiet = true
@@ -492,7 +492,7 @@ Security Guard: That's three times. I'm done talking.
     ~ idle_quiet = false
 - else:
     { mission_phase != "act2_infiltration":
-        Narrator: The guard looks up from his desk.
+        Narrator: The guard stops his round and looks you over.
     - else:
         { guard_hostile:
             Security Guard: Don't even think about it.
