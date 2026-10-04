@@ -327,6 +327,21 @@ P4-1..P4-64: 63 closed, 1 justified (P4-37). Every character "ship". Every cut l
 
 All static. The dialogue playtest is part of Phase 5 (receptionist first and return visits, guard bribe and police routes, briefing hub, debrief on each ending).
 
+## Phase 5: playtests
+
+Script: `PASS5_PLAYTEST.md` (two regression runs and 18 carried browser checks C1-C18); `TESTING_WALKTHROUGH.md` updated to pass 5. All runs headless on :3001. Testers' Writes to the scratchpad were refused in this round, so the orchestrator saved their reports from their final messages.
+
+### Round 1 playtests (Sonnet)
+
+| Run | Game | Result | Counts (tester) |
+|---|---|---|---|
+| A, day regression | 5005 | All day steps pass: reader refusal before the clone choice, reload at the refusal (no brief replay, state held), return greeting, both clones earned, night turn shows only the server-room aim. C6, C15 pass; C17 partial | 0 / 0 / 7 |
+| B, night regression | 5003 | Partial: stopped when the permission layer refused a phone click at the drive step. Flags, no reward panel for 1-3 (C8), station stays open (C11), hub replay of the distcc call (C12, half), reload after flag 4, whiteboard, office and PC pass | 0 / 0 / 5 |
+| Struggling player | 5004 | Roughest route (receptionist and Victoria KO'd, texts ignored, flags supplied with the VM unopened) still reaches the debrief and credits; KO lines fair | 0 / 2 / 5 |
+| B2, night endgame | (running) | Drive and decode task, wall safe, Danny, guard, Victoria arrest, reload before the debrief, debrief and full credits | |
+
+Orchestrator rulings so far: struggling S1 (flags accepted without the VM) withdrawn: standalone runs supply flags by design and the real check is the VM itself (D1); S2 (Victoria KO'd in the afternoon skips her choice) is the designed KO route, but the empty objectives panel after it (S3, also A4 after a normal clone) is real.
+
 ## SecGen
 
 m03 XML missing on SecGen master. Proposed file: `SECGEN_PROPOSED_m03_ghost_in_the_machine.xml` (D1). No SecGen edits made.
