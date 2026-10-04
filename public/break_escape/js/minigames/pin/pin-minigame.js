@@ -234,7 +234,7 @@ export class PinMinigame extends MinigameScene {
     }
     
     handleNumberInput(number) {
-        if (this.isLocked || this.currentInput.length >= this.pinLength) {
+        if (this.isLocked || this.checkPending || this.currentInput.length >= this.pinLength) {
             return;
         }
 
@@ -249,7 +249,7 @@ export class PinMinigame extends MinigameScene {
     }
     
     handleBackspace() {
-        if (this.isLocked || this.currentInput.length === 0) {
+        if (this.isLocked || this.checkPending || this.currentInput.length === 0) {
             return;
         }
 
@@ -259,10 +259,21 @@ export class PinMinigame extends MinigameScene {
     }
     
     async handleEnter() {
-        if (this.isLocked || this.currentInput.length !== this.pinLength) {
+        // One check at a time: the auto-submit at full length and a manual Enter (or a
+        // fast double Enter) used to start two checks for the same code and burn two
+        // attempts (m02 playtest F3). Input is frozen until the server answers.
+        if (this.isLocked || this.checkPending || this.currentInput.length !== this.pinLength) {
             return;
         }
+        this.checkPending = true;
+        try {
+            await this._checkCurrentInput();
+        } finally {
+            this.checkPending = false;
+        }
+    }
 
+    async _checkCurrentInput() {
         this.attemptCount++;
 
         // SECURITY: ALWAYS use server-side validation for PIN attempts

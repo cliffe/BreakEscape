@@ -17,6 +17,21 @@
  * @param {object} [deps] - overridable for tests
  * @returns {boolean} true if a minigame was closed
  */
+// When the last damage close happened (ms). Read by minigameClosedByDamage() so the
+// minigame's own failure toasts ("Pick Failed" and the like) can stay quiet: the
+// player didn't fail the pick, they were hit (m02 playtest CF-F).
+let lastDamageCloseAt = -Infinity;
+
+/**
+ * True if a minigame was closed by player damage within the last `withinMs`.
+ * onComplete(false) runs synchronously inside the close, so a short window is enough.
+ * @param {number} [withinMs=1500]
+ * @param {number} [now]
+ */
+export function minigameClosedByDamage(withinMs = 1500, now = Date.now()) {
+  return now - lastDamageCloseAt <= withinMs;
+}
+
 export function closeMinigameOnDamage(amount, deps = {}) {
   if (typeof amount !== 'number' || !(amount > 0)) return false;
 
@@ -25,6 +40,9 @@ export function closeMinigameOnDamage(amount, deps = {}) {
   if (!current || current._ending) return false;
 
   const notify = deps.notify ?? (typeof window !== 'undefined' ? window.showNotification : null);
+
+  // Mark before closing: the failure callbacks run inside complete(false).
+  lastDamageCloseAt = typeof deps.now === 'number' ? deps.now : Date.now();
 
   try {
     if (typeof current.complete === 'function') {
@@ -46,4 +64,8 @@ export function closeMinigameOnDamage(amount, deps = {}) {
     console.warn('Damage notice failed:', err);
   }
   return true;
+}
+
+if (typeof window !== 'undefined') {
+  window.minigameClosedByDamage = minigameClosedByDamage;
 }

@@ -224,7 +224,9 @@ export function handleUnlock(lockable, type) {
                         }, 100);
                     } else {
                         console.log('LOCKPICK FAILED');
-                        window.gameAlert('Failed to pick the lock. Try again.', 'error', 'Pick Failed', 3000);
+                        if (!window.minigameClosedByDamage?.()) {
+                            window.gameAlert('Failed to pick the lock. Try again.', 'error', 'Pick Failed', 3000);
+                        }
                     }
                 }, keyPins);  // Pass keyPins to minigame starter
             } else {
