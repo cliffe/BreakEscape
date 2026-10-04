@@ -77,7 +77,7 @@ Agent HaX: The ransomware ran on a ProFTPD backdoor. That exploit didn't come fr
     #set_global:knows_m2_connection:true
     ~ handler_trust = handler_trust + 5
     # influence_increased
-    Agent HaX: An invoice did. It surfaced at St. Catherine's with Zero Day's name on the sale -- the paper the buyer left behind. Tonight we get the seller's own ledger.
+    Agent HaX: They did. An invoice turned up at St. Catherine's with Zero Day's name on the sale, the paper the buyer left behind. Tonight we get the seller's own ledger.
     -> mission_stakes
 * [The exploit at St. Catherine's traces back here?]
     ~ knows_m2_connection = true

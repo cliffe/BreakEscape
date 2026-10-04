@@ -46,7 +46,7 @@ end
 catalogue_safe_code = "5829"
 whiteboard_message_encoded = rot13("NIGHT TEAM: CATALOGUE STAYS IN THE WALL SAFE. SABLE HAS CHANGED THE CODE. SHE IS MAILING THE NEW ONE FROM HER OFFICE - DO NOT WRITE IT ON THIS BOARD.")
 
-client_roster_content = "ZERO DAY -- ACTIVE CLIENT ROSTER (export)\n- GHOST / Ransomware Incorporated: healthcare package, DELIVERED\n- OBSIDIAN: ransomware deployment, Q4 pricing sent\n- VORTEX: credential harvesting\n- CRITICAL MASS: grid storage / BMS access, Phase 2 priority\n- ECLIPSE: industrial espionage"
+client_roster_content = "ZERO DAY: ACTIVE CLIENT ROSTER (export)\n- GHOST / Ransomware Incorporated: healthcare package, DELIVERED. Target selected for client: St. Catherine's, from the 214-site survey\n- OBSIDIAN: ransomware deployment, Q4 pricing sent\n- VORTEX: credential harvesting\n- CRITICAL MASS: grid storage / BMS access, Phase 2 priority\n- ECLIPSE: industrial espionage"
 client_roster_hex = hex_encode(client_roster_content)
 
 architect_directive = "PHASE 2 -- INFRASTRUCTURE.\nZero Day supplies. Critical Mass executes.\nPriority one: grid storage and substation control (BMS, SCADA). Priority two: hospitals on generator when the grid drops.\nThe window opens within weeks. Winter.\nSt. Catherine's was the proof of concept. Either they paid, or they buried people. Both fund us; both teach the next client.\n-- A"
@@ -68,7 +68,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
 
   <%# P1-20: top-level flags block (m01/m02 pattern; game.rb:2229 primary source).
       Standalone has no vm_context, so vm_flags_json falls back to these literals,
-      mapped flag_1..flag_4 -- additive to the flag-station's own flags array, which
+      mapped flag_1..flag_4, additive to the flag-station's own flags array, which
       still drives submission. Keyed on the SecGen system name. Safe before the
       SecGen scenario exists; in Hacktivity mode the real per-build flags replace
       these. %>
@@ -86,6 +86,16 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     }
   },
 
+  <%# P1-31: one condition per night phase, so game_loaded (a reload) and
+      all_hostiles_ko (a hostile put down) return to the phase's own playlist
+      instead of the day's noir. The four are mutually exclusive once the
+      briefing has played. %>
+  <%
+    music_day      = "globalVars.briefing_played === true && globalVars.clone_call_done !== true"
+    music_confront = "globalVars.night_confrontation_ready === true && globalVars.victoria_ko !== true && globalVars.victoria_choice_made !== true"
+    music_night    = "globalVars.clone_call_done === true && globalVars.victoria_choice_made !== true && !(#{music_confront})"
+    music_after    = "globalVars.victoria_choice_made === true"
+  %>
   "music": {
     "events": [
       {
@@ -94,12 +104,10 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
         "playlist": "cutscene",
         "fade": false
       },
-      {
-        "trigger": "game_loaded",
-        "condition": "globalVars.briefing_played === true",
-        "playlist": "noir",
-        "fade": false
-      },
+      { "trigger": "game_loaded", "condition": "<%= music_day %>",      "playlist": "noir",       "fade": false },
+      { "trigger": "game_loaded", "condition": "<%= music_night %>",    "playlist": "cutscene",   "fade": false },
+      { "trigger": "game_loaded", "condition": "<%= music_confront %>", "playlist": "spy-action", "fade": false },
+      { "trigger": "game_loaded", "condition": "<%= music_after %>",    "playlist": "end",        "fade": false },
       {
         "trigger": "conversation_closed:briefing_cutscene",
         "playlist": "noir",
@@ -111,11 +119,10 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
         "playlist": "threat",
         "fade": true
       },
-      {
-        "trigger": "all_hostiles_ko",
-        "playlist": "noir",
-        "fade": true
-      },
+      { "trigger": "all_hostiles_ko", "condition": "<%= music_day %>",      "playlist": "noir",       "fade": true },
+      { "trigger": "all_hostiles_ko", "condition": "<%= music_night %>",    "playlist": "cutscene",   "fade": true },
+      { "trigger": "all_hostiles_ko", "condition": "<%= music_confront %>", "playlist": "spy-action", "fade": true },
+      { "trigger": "all_hostiles_ko", "condition": "<%= music_after %>",    "playlist": "end",        "fade": true },
       {
         "_comment": "P1-16: the day-to-night turn gets its own cue. The night_transition cutscene closes and the CutScene tracks carry the after-hours infiltration, distinct from the day's noir.",
         "trigger": "conversation_closed:night_transition",
@@ -123,9 +130,9 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
         "fade": true
       },
       {
-        "_comment": "P1-16: action music on the confrontation beat (set when all four flags are in), not on the debrief. Was keyed on victoria_choice_made, which is also what opens the debrief, so action played under a calm scene.",
+        "_comment": "P1-16: action music on the confrontation beat (all four flags in), not on the debrief. P1-31: not when Sterling is already knocked out and there is nobody to confront.",
         "trigger": "global_variable_changed:night_confrontation_ready",
-        "condition": "value === true",
+        "condition": "value === true && globalVars.victoria_ko !== true",
         "playlist": "spy-action",
         "fade": true
       },
@@ -154,9 +161,9 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           { "text": "ZERO DAY CATALOGUE: IN SAFETYNET HANDS — vendors quietly warned", "style": "entry", "condition": "(globalVars.catalogue_seen === true || globalVars.lore_catalogue_found === true) && globalVars.victoria_fate === 'recruited'" },
           { "text": "ZERO DAY CATALOGUE: NOT RECOVERED — what else they hold is still unknown", "style": "warning", "condition": "globalVars.catalogue_seen !== true && globalVars.lore_catalogue_found !== true && globalVars.victoria_fate !== 'arrested'" },
           { "text": "ZERO DAY CATALOGUE: SEIZED WITH THE MARKETPLACE — but not in our hands", "style": "warning", "condition": "globalVars.catalogue_seen !== true && globalVars.lore_catalogue_found !== true && globalVars.victoria_fate === 'arrested'" },
-          { "text": "PHASE 2 DIRECTIVE: DECODED BY THE AGENT — grid and hospitals, winter, Critical Mass to execute", "style": "entry", "condition": "globalVars.directive_decoded === true" },
-          { "text": "PHASE 2 DIRECTIVE: RECOVERED BY THE AGENT — read off the drive by our people", "style": "entry", "condition": "globalVars.directive_decoded !== true && (globalVars.usb_seen === true || globalVars.lore_directive_found === true)" },
-          { "text": "PHASE 2 DIRECTIVE: PULLED BY THE SEARCH TEAM — found in Sterling's desk after you left", "style": "entry", "condition": "globalVars.directive_decoded !== true && globalVars.usb_seen !== true && globalVars.lore_directive_found !== true" },
+          { "text": "PHASE 2 DIRECTIVE: DECODED BY THE AGENT. Grid and hospitals, this winter", "style": "entry", "condition": "globalVars.directive_decoded === true" },
+          { "text": "PHASE 2 DIRECTIVE: RECOVERED BY THE AGENT, decoded at HQ", "style": "entry", "condition": "globalVars.directive_decoded !== true && (globalVars.usb_seen === true || globalVars.lore_directive_found === true)" },
+          { "text": "PHASE 2 DIRECTIVE: LEFT IN STERLING'S DESK, recovered by the search team", "style": "entry", "condition": "globalVars.directive_decoded !== true && globalVars.usb_seen !== true && globalVars.lore_directive_found !== true" },
           { "text": "" },
           { "text": "── DECISIONS ──", "style": "section-header" },
           { "text": "VICTORIA STERLING: TURNED — a cold asset now, not a convert", "style": "entry", "condition": "globalVars.victoria_fate === 'recruited'" },
@@ -221,7 +228,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           closes (the first moment the player is back after dark). A globalVariable
           gate is story-gated, so engine 657f6158 can't reveal it on day-time task
           progress; the agent_0x99 mapping on global_variable_changed:clone_call_done
-          unlocks it live. %>
+          unlocks it live, and that unlock is recorded on the server
+          (persistUnlock), which is what a reload relies on. %>
       "unlockCondition": { "globalVariable": "clone_call_done", "equals": true },
       "tasks": [
         {
@@ -269,31 +277,26 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "status": "active"
         },
         {
-          "_comment": "P1-8: completes on READING the printed transaction log (its onRead sets transaction_log_read), not on the distcc flag submission -- which removes the duplicate tick and gives the reveal its own visible beat.",
+          "_comment": "P1-8: completes on READING the printed transaction log (its onRead sets transaction_log_read), not on the distcc flag submission, which removes the duplicate tick and gives the reveal its own visible beat.",
           "taskId": "find_operational_logs",
           "title": "Read the recovered transaction log",
-          "description": "The drop-site prints Zero Day's transaction log when the distcc flag lands. Read it -- it names GHOST and St. Catherine's",
+          "description": "The drop-site prints Zero Day's transaction log when the distcc flag lands. Read it. It names GHOST and St. Catherine's",
           "type": "custom",
           "status": "active"
-        },
-        {
-          "_comment": "P1-7: Danny's fate moves into act 2 as an optional task, so settling him at night doesn't reveal the gated 'Settle Accounts' aim early.",
-          "taskId": "danny_choice_made",
-          "title": "Decide Danny Foster's fate",
-          "description": "Decide whether to protect Danny Foster from the collateral damage of the sweep",
-          "type": "custom",
-          "status": "active",
-          "optional": true
         }
       ]
     },
     {
       "aimId": "search_executive_office",
       "title": "Search Sterling's Office",
-      "description": "Sterling's private office holds the client roster and the paper trail. Get through the door and crack her machine.",
+      "description": "Sterling's private office holds the client roster and the paper trail. Get through the door and crack her machine. The consultant who mapped the hospital works across the corridor.",
       "status": "locked",
       "order": 2,
-      "unlockCondition": { "globalVariable": "clone_call_done", "equals": true },
+      <%# P1-30: opens on the first night-time entry to the executive wing, not with
+          the server room aim, so the night's aims arrive one beat at a time. The
+          closing_debrief NPC's room_entered:executive_wing_hallway mapping sets
+          exec_wing_night and unlockAims it (recorded on the server for reload). %>
+      "unlockCondition": { "globalVariable": "exec_wing_night", "equals": true },
       "tasks": [
         {
           "taskId": "access_victoria_computer",
@@ -309,6 +312,15 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "description": "Find the client roster export on Sterling's computer",
           "type": "custom",
           "status": "active"
+        },
+        {
+          "_comment": "P1-29: Danny's optional task sits with the executive wing he works in (round 1 put it under the server room aim). Settle Accounts is story-gated, so this can't reveal it early.",
+          "taskId": "danny_choice_made",
+          "title": "Decide Danny Foster's fate",
+          "description": "Decide whether to protect Danny Foster from the collateral damage of the sweep",
+          "type": "custom",
+          "status": "active",
+          "optional": true
         }
       ]
     },
@@ -318,20 +330,22 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
       "description": "Sterling's people keep records of themselves. Find what they wrote down.",
       "status": "locked",
       "order": 3,
-      "unlockCondition": { "globalVariable": "clone_call_done", "equals": true },
+      <%# P1-30: opens on the first night-time entry to either the server room or the
+          executive wing (night_explored, set by both closing_debrief mappings). %>
+      "unlockCondition": { "globalVariable": "night_explored", "equals": true },
       "tasks": [
         {
           "taskId": "lore_fragment_1",
-          "title": "Zero Day Origins",
-          "description": "Open the filing cabinet in Sterling's office",
+          "title": "Open Sterling's filing cabinet",
+          "description": "Open the locked filing cabinet in Sterling's office and read what's inside",
           "type": "unlock_object",
           "targetObject": "exec_filing_cabinet",
           "status": "active"
         },
         {
           "taskId": "lore_fragment_2",
-          "title": "Exploit Catalogue",
-          "description": "Open the server room wall safe and find the exploit catalogue",
+          "title": "Open the server room wall safe",
+          "description": "Open the wall safe in the server room and read what's kept in it",
           "type": "unlock_object",
           "targetObject": "wall_safe_server",
           "status": "active"
@@ -349,6 +363,15 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "description": "Go through the drawers of Sterling's desk and read what she hid there",
           "type": "custom",
           "status": "active"
+        },
+        {
+          "_comment": "P1-32: the decode beat gets a tick. Hidden until the drive has been read (the usb_seen mapping unlocks it); completed when directive_decoded is set by the phone decode check. Optional: the search team decodes it otherwise.",
+          "taskId": "decode_directive",
+          "title": "Decode the drive and tell HaX what it says",
+          "description": "Run the drive through the CyberChef workstation until it reads, then call HaX",
+          "type": "custom",
+          "status": "locked",
+          "optional": true
         }
       ]
     },
@@ -358,10 +381,11 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
       "description": "Get into Sterling's office without the guard ever knowing you were there: never stopped, never caught, no deals, no knockouts",
       "status": "locked",
       "order": 4,
-      <%# P1-9: hidden until earned. perfect_stealth_earned is never set during
-          play, so the aim stays story-gated and invisible; the closing debrief
-          force-reveals it with #unlock_aim and completes zero_detection only for
-          a player who was never detected. A caught player never sees it. %>
+      <%# P1-9: hidden until earned. perfect_stealth_earned is set only in the
+          closing debrief, and only for a player who was never detected; until
+          then the aim is story-gated and invisible. The debrief sets the global,
+          reveals the aim with #unlock_aim and completes zero_detection, so the
+          recorded unlock and the gate agree. A caught player never sees it. %>
       "unlockCondition": { "globalVariable": "perfect_stealth_earned", "equals": true },
       "tasks": [
         {
@@ -377,13 +401,13 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     {
       "aimId": "moral_choices",
       "title": "Settle Accounts",
-      "description": "Decide what happens to the people who made St. Catherine's possible.",
+      "description": "Decide what happens to the woman who signed the sale.",
       "status": "locked",
       "order": 5,
       "missionConclusion": true,
       <%# P1-7: "Settle Accounts" stays hidden until all four flags are in. A
-          globalVariable gate is story-gated, so settling Danny (now an act-2 task)
-          can't reveal this aim early via engine 657f6158. night_confrontation_ready
+          globalVariable gate is story-gated, so settling Danny (an optional task
+          in the office aim) can't reveal this aim early via engine 657f6158. night_confrontation_ready
           is set by the flag mappings when the fourth flag lands; those mappings also
           unlockAim this aim so it opens live. %>
       "unlockCondition": { "globalVariable": "night_confrontation_ready", "equals": true },
@@ -400,8 +424,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
         ]
       },
       "conclusionScreen": { "type": "bond_visualiser" },
-      <%# P1-7: danny_choice_made moved to act2_breach_server_room (optional). This
-          aim now holds only the confrontation and the debrief. %>
+      <%# P1-7/P1-29: danny_choice_made lives in search_executive_office (optional).
+          This aim holds only the confrontation and the debrief. %>
       "tasks": [
         {
           "taskId": "victoria_choice_made",
@@ -737,11 +761,11 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "onceOnly": true
             },
             {
-              "_comment": "P1-6: the night turn opens act 2. clone_call_done is set when the night_transition cutscene closes; this unlocks the three act-2 aims live (m05 torres pattern). The server derives the same unlock on reload from the globalVariable unlockConditions.",
+              "_comment": "P1-6: the night turn opens the server room aim (m05 torres pattern). clone_call_done is set when the night_transition cutscene closes. P1-34: the server does not re-derive globalVariable unlocks on reload; a reload relies on the unlock recorded by persistUnlock when this fires. P1-30: the office and paper trail aims open later, on entry (closing_debrief mappings).",
               "eventPattern": "global_variable_changed:clone_call_done",
               "condition": "value === true",
               "onceOnly": true,
-              "unlockAim": ["act2_breach_server_room", "search_executive_office", "collect_lore"]
+              "unlockAim": "act2_breach_server_room"
             },
             {
               "_comment": "P1-8/P1-18: reading the printed transaction log completes find_operational_logs (its own visible beat). onRead on the drop-site log item sets transaction_log_read.",
@@ -751,11 +775,11 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "completeTask": "find_operational_logs"
             },
             {
-              "_comment": "P1-18: a visible toast when the player decodes the Architect's directive (directive_decoded is set by the phone decode check).",
+              "_comment": "P1-18/P1-32: the decode beat ticks a task instead of a text (HaX has just said it on the phone). directive_decoded is set by the phone decode check.",
               "eventPattern": "global_variable_changed:directive_decoded",
               "condition": "value === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "Directive decoded. Both layers off, and it's gone to Command. Phase 2 has a shape now." }
+              "completeTask": "decode_directive"
             },
             {
               "_comment": "Pass 4: the post-clone phone call is replaced by the night_transition cutscene (reception_lobby), which plays on the first hallway entry after the clone. HaX's instruction follows as a text the player can reread.",
@@ -767,7 +791,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "eventPattern": "item_picked_up:workstation",
               "onceOnly": true,
               "setGlobal": { "cyberchef_guide_offered": true },
-              "sendTimedMessage": { "delay": 1200, "message": "That's their CyberChef workstation. Paste anything that looks like gibberish -- encoding isn't encryption. Still scrambled after one pass? It's layered; decode again. CyberChef guide on request." }
+              "sendTimedMessage": { "delay": 1200, "message": "That's their CyberChef workstation. Paste anything that looks like gibberish. Encoding isn't encryption. Still scrambled after one pass? It's layered, so decode again. CyberChef guide on request." }
             },
             <%# Pass 3e: the PC call used to open on the unlock task, which fires as the
                 password screen succeeds, so the phone replaced the PC's file list and the
@@ -1004,7 +1028,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "eventPattern": "global_variable_changed:usb_seen",
               "condition": "value === true",
               "onceOnly": true,
-              "completeTask": "lore_fragment_3"
+              "completeTask": "lore_fragment_3",
+              "unlockTask": "decode_directive"
             }
           ]
         },
@@ -1040,6 +1065,29 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "condition": "globalVars.guard_grace === true",
               "cooldown": 0,
               "setGlobal": { "guard_grace": false }
+            },
+            {
+              "_comment": "P1-30: the first night-time entry to the executive wing opens the office aim (and the paper trail, if the server room hasn't already). Kept on this always-loaded NPC so it doesn't share a pattern with HaX's exec-wing guide and hear_debrief backstop. exec_wing_entered can be set by day, so it is not the gate.",
+              "eventPattern": "room_entered:executive_wing_hallway",
+              "condition": "globalVars.clone_call_done === true && globalVars.debrief_played !== true",
+              "onceOnly": true,
+              "setGlobal": { "exec_wing_night": true, "night_explored": true },
+              "unlockAim": ["search_executive_office", "collect_lore"]
+            },
+            {
+              "_comment": "P1-30: the first night-time entry to the server room opens the paper trail aim (the safe and the whiteboard are in there).",
+              "eventPattern": "room_entered:server_room",
+              "condition": "globalVars.clone_call_done === true && globalVars.debrief_played !== true",
+              "onceOnly": true,
+              "setGlobal": { "night_explored": true },
+              "unlockAim": "collect_lore"
+            },
+            {
+              "_comment": "P1-28: the guard has turned hostile (any route: his ink's #hostile tag or a fight). Synced so HaX's hub can offer the hostile-guard hint.",
+              "eventPattern": "npc_hostile_state_changed",
+              "condition": "data.npcId === 'night_guard' && data.isHostile === true",
+              "onceOnly": true,
+              "setGlobal": { "guard_hostile": true }
             },
             {
               "_comment": "Pass 3, P6: Perfect Stealth needs the player to have got past the guard into Sterling's office. Kept on this always-loaded NPC rather than HaX so it doesn't share a room_entered pattern with HaX's hear_debrief backstop.",
@@ -1601,6 +1649,11 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     "exec_wing_entered": false,
     "cyberchef_guide_offered": false,
     "transaction_log_read": false,
-    "perfect_stealth_earned": false
+    "perfect_stealth_earned": false,
+    "exec_wing_night": false,
+    "night_explored": false,
+    "guard_hostile": false,
+    "clone_read_dropped": false,
+    "sterling_on_call_seen": false
   }
 }

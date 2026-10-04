@@ -406,7 +406,15 @@
       "directive_decoded": false,
       "revelation_heard": false,
       "exec_wing_entered": false,
-      "guard_challenged": false
+      "guard_challenged": false,
+      "cyberchef_guide_offered": false,
+      "transaction_log_read": false,
+      "perfect_stealth_earned": false,
+      "exec_wing_night": false,
+      "night_explored": false,
+      "guard_hostile": false,
+      "clone_read_dropped": false,
+      "sterling_on_call_seen": false
     },
     "npcs": [
       {

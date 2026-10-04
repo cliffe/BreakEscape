@@ -9,7 +9,7 @@ Somebody sold Ghost the way into St. Catherine's. The trail leads to WhiteHat Se
 | Metric | Value |
 |---|---|
 | Story aims | 6 |
-| Total tasks | 18 (2 optional) |
+| Total tasks | 19 (3 optional) |
 | VM flag challenges | 4 |
 | Physical locks | 7 |
 | AND-gate convergences | 3 |
