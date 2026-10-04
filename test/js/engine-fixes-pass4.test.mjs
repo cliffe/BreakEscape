@@ -41,7 +41,9 @@ const inventoryUrl = copy('systems/inventory.js', 'inventory.mjs', [
 stub('notifications-stub.mjs', 'export function gameAlert() {}');
 stub('crypto-stub.mjs', 'export function createCryptoWorkstation() {} export function openCryptoWorkstation() {} export function closeLaptop() {} export function openCryptoWorkstationInNewTab() {}');
 stub('lab-stub.mjs', 'export function createLabWorkstation() {} export function openLabWorkstation() {} export function closeLabWorkstation() {} export function openLabWorkstationInNewTab() {}');
+copy('utils/scenario-brief.js', 'scenario-brief.mjs');
 const helpersUrl = copy('utils/helpers.js', 'helpers.mjs', [
+    ["'./scenario-brief.js'", "'./scenario-brief.mjs'"],
     ["'../systems/notifications.js'", "'./notifications-stub.mjs'"],
     ["'./crypto-workstation.js'", "'./crypto-stub.mjs'"],
     ["'./lab-workstation.js'", "'./lab-stub.mjs'"],

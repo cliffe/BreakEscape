@@ -283,7 +283,7 @@ def check_unknown_fields(json_data)
     bark message barkDelay
     targetKnot conversationMode background disableClose
     patrolOverride setPatrolSpeed setDwellMultiplier setVisible
-    sendTimedMessage setGlobal completeTask unlockTask unlockAim
+    sendTimedMessage setGlobal completeTask skipTask unlockTask unlockAim
     _comment
   ]
 
@@ -2706,8 +2706,10 @@ def check_common_issues(json_data, valid_item_types = nil)
     issues << "✅ GOOD PRACTICE: Scenario uses timedConversation.skipIfGlobal — the opening briefing will not replay when the player resumes the scenario."
   end
 
-  if has_opening_briefing_timed_conversation && json_data['show_scenario_brief'] != 'on_resume'
-    issues << "⚠️ WARNING: Scenario has a start-room opening timedConversation briefing (delay: 0 + waitForEvent: 'game_loaded') but show_scenario_brief is '#{json_data['show_scenario_brief'] || 'missing'}'. Set 'show_scenario_brief': 'on_resume' so the scenario brief does not pop at mission start and overlap/close the opening conversation."
+  # "once" is fine too: the engine holds the popup until the opening cutscene has closed
+  # (helpers.js showBriefWhenClear) and records it, so a reload doesn't reopen it.
+  if has_opening_briefing_timed_conversation && !%w[on_resume once].include?(json_data['show_scenario_brief'])
+    issues << "⚠️ WARNING: Scenario has a start-room opening timedConversation briefing (delay: 0 + waitForEvent: 'game_loaded') but show_scenario_brief is '#{json_data['show_scenario_brief'] || 'missing'}'. Set 'show_scenario_brief': 'on_resume' (brief only on resume) or 'once' (brief once, after the opening, never again) so the scenario brief does not pop up on every load."
   end
 
   if collection_groups_used.any? && (collection_groups_used & target_groups_used).any?
@@ -3034,9 +3036,9 @@ def check_unheard_room_triggers(json_data, repo_root)
           pe = node['eventPattern'].to_s
           pev, parg = pe.split(':', 2)
           at = case pev
-               when 'room_entered' then parg if rooms.key?(parg)
-               when 'npc_ko', 'conversation_closed' then npc_room[parg] if npc_person[parg]
-               end
+          when 'room_entered' then parg if rooms.key?(parg)
+          when 'npc_ko', 'conversation_closed' then npc_room[parg] if npc_person[parg]
+          end
           v.each_key { |g| setters[g] << (at || :any) }
         elsif k == 'globalVarOnKO' && v.is_a?(String)
           setters[v] << (node['npcType'] == 'person' && room_id ? room_id : :any)

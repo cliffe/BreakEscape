@@ -551,6 +551,7 @@ export default class NPCManager {
         sendTimedMessage: mapping.sendTimedMessage,  // Send a timed message when event triggers
         setGlobal: mapping.setGlobal,        // { varName: value } — set global variables directly
         completeTask: mapping.completeTask,  // taskId or [taskId] — complete tasks directly
+        skipTask: mapping.skipTask,          // taskId or [taskId] — mark tasks skipped (can no longer be done)
         unlockTask: mapping.unlockTask,      // taskId or [taskId] — unlock tasks directly
         unlockAim: mapping.unlockAim,        // aimId or [aimId] — unlock aims directly
         emitEvent:     mapping.emitEvent     || null,   // event name to emit when mapping fires
@@ -692,6 +693,20 @@ export default class NPCManager {
           if (window.objectivesManager) {
             await window.objectivesManager.completeTask(taskId);
             console.log(`✅ Event completeTask: ${taskId}`);
+          }
+        }
+      })();
+    }
+
+    // Skip tasks the story has closed off (completed ones are left alone).
+    // Sequenced like completeTask so the server sees one write at a time.
+    if (config.skipTask) {
+      const tasks = Array.isArray(config.skipTask) ? config.skipTask : [config.skipTask];
+      (async () => {
+        for (const taskId of tasks) {
+          if (window.objectivesManager?.skipTask) {
+            await window.objectivesManager.skipTask(taskId);
+            console.log(`⏭️ Event skipTask: ${taskId}`);
           }
         }
       })();

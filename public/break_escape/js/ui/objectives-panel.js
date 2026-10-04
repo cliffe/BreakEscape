@@ -130,18 +130,22 @@ export class ObjectivesPanel {
       aim.tasks.forEach(task => {
         if (task.status === 'locked') return; // Don't show locked tasks
         
-        const taskClass = task.status === 'completed' ? 'task-completed' : 'task-active';
-        const taskIcon = task.status === 'completed' ? '✓' : '○';
-        
+        // Skipped: the story closed it off. Greyed and struck through with a
+        // label, never a tick (it doesn't count as done; see skipTask)
+        const skipped = task.status === 'skipped';
+        const taskClass = task.status === 'completed' ? 'task-completed' : (skipped ? 'task-skipped' : 'task-active');
+        const taskIcon = task.status === 'completed' ? '✓' : (skipped ? '–' : '○');
+
         let progressText = '';
-        if (task.showProgress && (task.type === 'collect_items' || task.type === 'submit_flags') && task.status !== 'completed') {
+        if (task.showProgress && (task.type === 'collect_items' || task.type === 'submit_flags') && task.status !== 'completed' && !skipped) {
           progressText = ` <span class="task-progress">(${task.currentCount || 0}/${task.targetCount})</span>`;
         }
+        const skippedLabel = skipped ? '<span class="task-skipped-label">skipped</span>' : '';
         
         html += `
           <div class="objective-task ${taskClass}" data-task-id="${task.taskId}">
             <span class="task-icon">${taskIcon}</span>
-            <span class="task-title">${this.escapeHtml(task.title)}${progressText}</span>
+            <span class="task-title">${this.escapeHtml(task.title)}${progressText}</span>${skippedLabel}
           </div>
         `;
       });

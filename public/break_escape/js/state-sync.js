@@ -76,6 +76,10 @@ export class StateSync {
     const commandBoardLog = window.commandBoardRecorder?.exportLog?.();
 
     const payload = { currentRoom, globalVariables, notes };
+    // show_scenario_brief "once": the brief popup has been shown in this game
+    if (window.gameState?.scenarioBriefShown) {
+      payload.scenarioBriefShown = true;
+    }
     if (scenarioClock) {
       payload.scenarioClock = scenarioClock;
     }

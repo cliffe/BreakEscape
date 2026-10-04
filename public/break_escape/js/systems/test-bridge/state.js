@@ -421,7 +421,8 @@ function objectivesState() {
     return {
         aims,
         activeTasks: allTasks.filter(t => t.status === 'active' || t.status === 'unlocked').map(t => t.id),
-        completedTasks: allTasks.filter(t => t.status === 'completed').map(t => t.id)
+        completedTasks: allTasks.filter(t => t.status === 'completed').map(t => t.id),
+        skippedTasks: allTasks.filter(t => t.status === 'skipped').map(t => t.id)
     };
 }
 

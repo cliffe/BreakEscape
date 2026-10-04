@@ -1102,6 +1102,41 @@ module BreakEscape
       response
     end
 
+    # Mark a task skipped: the story closed it off, so it can no longer be
+    # done (sis01: a SEVER without sign-offs). A skipped task:
+    #  - never counts in tasks_completed, so the task share of the score is lost;
+    #  - no longer blocks its aim, which completes with a gap (and earns the aim
+    #    share, since the aim's goal was reached another way);
+    #  - never satisfies concludeRequires.tasksCompleted.
+    # A completed task is left alone, and complete_task! can still complete a
+    # skipped one later. Mirrors ObjectivesManager#skipTask.
+    def skip_task!(task_id)
+      initialize_objectives
+
+      task = find_task_in_scenario(task_id)
+      return { success: false, error: 'Task not found' } unless task
+
+      current = player_state.dig('objectivesState', 'tasks', task_id, 'status')
+      return { success: true, taskId: task_id, status: current, message: "Already #{current}" } if %w[completed skipped].include?(current)
+
+      was_concluded_before = mission_concluded_at.nil?
+
+      entry = player_state['objectivesState']['tasks'][task_id] ||= {}
+      entry['status'] = 'skipped'
+      entry['skippedAt'] = Time.current.iso8601
+
+      conclusion_result = check_aim_completion(task['aimId'])
+      recheck_pending_mission_conclusions!
+      self.score = calculate_task_score.round
+
+      save!
+
+      mission_just_concluded = was_concluded_before && mission_concluded_at.present?
+      response = { success: true, taskId: task_id, status: 'skipped', missionConcluded: mission_just_concluded }
+      response[:warning] = 'Complete required objectives first to conclude the mission.' if conclusion_result == false
+      response
+    end
+
     # Update task progress (for collect_items and submit_flags tasks)
     def update_task_progress!(task_id, progress, submitted_flags = nil)
       initialize_objectives
@@ -1789,7 +1824,8 @@ module BreakEscape
       return if player_state.dig('objectivesState', 'aims', aim_id, 'status') == 'completed'
 
       all_complete = aim['tasks'].all? do |task|
-        task['optional'] == true || task_status(task['taskId']) == 'completed'
+        # skipped: closed off by the story (skip_task!); the aim completes with a gap
+        task['optional'] == true || %w[completed skipped].include?(task_status(task['taskId']))
       end
 
       if all_complete

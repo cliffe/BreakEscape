@@ -179,6 +179,25 @@
   color: #4ade80;
 }
 
+/* Skipped: closed off by the story, not done. Grey, struck, labelled */
+.task-skipped {
+  color: #888;
+  opacity: 0.7;
+}
+.task-skipped .task-title {
+  text-decoration: line-through;
+}
+.task-skipped-label {
+  flex-shrink: 0;
+  margin-top: 2px;
+  padding: 0 4px;
+  border: 1px solid #666;
+  color: #aaa;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 .task-title {
   line-height: 1.3;
 }

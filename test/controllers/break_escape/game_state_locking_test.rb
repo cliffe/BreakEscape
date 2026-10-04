@@ -32,6 +32,7 @@ module BreakEscape
       unlock_room!
       unlock_object!
       complete_task!
+      skip_task!
       update_task_progress!
       process_flag_task_completions!
       add_item_to_room!

@@ -1,14 +1,18 @@
 // Helper utility functions for the game
 import { gameAlert } from '../systems/notifications.js';
+import { shouldShowBriefPopup, recordScenarioBriefShown } from './scenario-brief.js';
 
 // Introduce the scenario to the player
 export function introduceScenario() {
     const gameScenario = window.gameScenario;
     if (!gameScenario) return;
 
+    const mode = gameScenario.show_scenario_brief;
+    const popup = shouldShowBriefPopup(gameScenario, window.breakEscapeConfig || {}, window.gameState || {});
+
     // "on_resume" means: skip the notes brief on a fresh start (the NPC briefing
     // cutscene handles it), and only show it when resuming a saved session.
-    if (gameScenario.show_scenario_brief === 'on_resume' && !window.breakEscapeConfig?.hasProgress) {
+    if (mode === 'on_resume' && !popup) {
         console.log('📋 Skipping scenario brief — first play, NPC briefing will handle it');
         return;
     }
@@ -17,6 +21,12 @@ export function introduceScenario() {
     
     // Add scenario brief as a regular note
     window.addNote("Mission Brief", gameScenario.scenario_brief, false);
+
+    // "once": already shown in this game, so it stays in the Notepad only
+    if (!popup) {
+        console.log('📋 Mission Brief already shown in this game; it is in the Notepad');
+        return;
+    }
     
     // Show mission brief via notes minigame if available, otherwise fallback to alert
     if (window.showMissionBrief) {
@@ -24,10 +34,14 @@ export function introduceScenario() {
         // opening cutscene and anything else on screen (title screen, briefing):
         // starting a minigame ends the current one, and a briefing ended that way
         // never replays because its guard global is set when it starts.
-        showBriefWhenClear(() => window.showMissionBrief());
+        showBriefWhenClear(() => {
+            window.showMissionBrief();
+            if (mode === 'once') recordScenarioBriefShown();
+        });
     } else {
         // Fallback to old alert system
         gameAlert(gameScenario.scenario_brief, 'info', 'Mission Brief', 0);
+        if (mode === 'once') recordScenarioBriefShown();
     }
 }
 

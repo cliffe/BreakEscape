@@ -200,7 +200,7 @@ These layouts demonstrate the flexibility of the new grid system for creating en
 | `objectives` | Array of objective `aims`, each containing `tasks`. Drives the objectives HUD. |
 | `startItemsInInventory` | Array of items the player starts with (e.g., a phone, lockpick, workstation). |
 | `flags` | Map of VM flag arrays by VM name. Populated via ERB helper `vm_flags_json('vm_name')`. |
-| `show_scenario_brief` | When to show the brief: `"on_start"`, `"on_resume"`, or omit. |
+| `show_scenario_brief` | When to pop up the brief: `"on_start"` (every load), `"on_resume"` (only when resuming a game with progress), `"once"` (first start only, after any opening cutscene; recorded in the save so a reload doesn't reopen it), or omit (as `"on_start"`). The brief is always in the Notepad. |
 | `disableAttacks` | `true` turns off player attacks: no punching, no Interact/Jab/Cross toggle in the HUD (Q does nothing), and no combat step in the tutorial. NPCs can't be knocked out, so the validator skips its KO-resilience check. Used by the SIS serious games. |
 | `gameClock` | Optional in-game time: `{ "start": "Tue 07:30" }`. The command board and SIEM clocks show the start plus elapsed game time instead of the real wall clock, and board entries are stamped with it. Game time (and every scenario timer) resumes after a reload. |
 | `music` | Dynamic music event system. See Music System section. |

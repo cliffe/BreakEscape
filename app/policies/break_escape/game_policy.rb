@@ -49,6 +49,10 @@ module BreakEscape
       show?
     end
 
+    def skip_task?
+      show?
+    end
+
     def conclude_mission?
       show?
     end
