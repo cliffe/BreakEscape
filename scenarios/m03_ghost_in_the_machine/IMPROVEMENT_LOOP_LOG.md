@@ -193,6 +193,29 @@ SecGen draft: `SECGEN_PROPOSED_m03_ghost_in_the_machine.xml` (flag 4 log matches
 
 All checks static. Browser checks carried to Phase 5 (P2-20). Capability arc note for the user: m04 should show the fingerprint kit's wall before granting it.
 
+## Phase 3: scenario design review
+
+### Round 1 review (fresh Opus, read-only)
+
+Counts: 0 blockers, 3 majors, 15 minors. Solvable on every branch checked (each fate for Victoria and Danny, every guard outcome, each NPC KO, receptionist KO, day office raid); one soft-lock on a reload between Victoria's choice and the debrief (P3-1). All static; P3-1 and P3-3 are read from engine code and need a browser check.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| P3-1 | major | `victoria_choice_made` is set by a tag that runs before her final lines; the debrief opens and cuts them; reload in between strands the mission | to fixer: set on her `conversation_closed`; room-entry backstops |
+| P3-2 | major | Wall-safe catalogue is word for word the flag-3 price list, so the best chain pays out nothing new; "catalogue not recovered" credits contradict HaX | to fixer: split content (price list loses buyers; safe keeps SOLD ledger and Phase 2 stock); proposed XML updated |
+| P3-3 | major | HaX's automatic calls close what the player just opened (catalogue, draft, roster, drive, flag station; m02's A7) | to fixer: m02 text-that-opens-the-call pattern |
+| P3-4 | minor | Opening an encoded file counts as reading it; Victoria's choice and a voiced roster line name undecoded content | to fixer |
+| P3-5 | minor | Nothing says leave after Sterling's card is saved | to fixer (HaX text) |
+| P3-6..P3-10, P3-12, P3-15..P3-17 | minor | Clone hint says "lean in" not "talk to her"; stale "Where do I stand?"; one incident counted as two detections; credits miss Danny/guard/player KO; reloaded guard hostile in ink not engine; decode recipe given three times; HaX receptionist-KO text wrong at night; drive call doesn't say where the laptop is; guard ignores torch beam | to fixer (mission-local parts); engine parts logged |
+| P3-11 | minor | Brief `on_resume` (m02 uses `once`) | to fixer |
+| P3-13 | minor | `mission.json` has a stray "EXPLOITATION" keyword; "Zero-day marketplace" and "Evidence correlation" told, not done | to fixer (drop the keyword); optional voiced n-day line skipped |
+| P3-14 | minor | Dungeon graph draws no globalVariable gates ("0 hops") | engine/tooling item E-C |
+| P3-18 | minor | P2-11 (empty hallway) outcome not logged | logged: no change, the empty hub carries the act break |
+
+CyBOK: RFID, social engineering, ethics and pricing exercised on the required path; network and exploitation keywords exercised but need the VM (D1); Base64/hex/multi-layer decoding, lockpicking, PIN safe and default passwords optional only. Field guides: all six lab sheet links resolve.
+
+Engine items from this round, for approval: E-A CyberChef decode event; E-B NPC hostility kept across reload; E-C graph generator draws globalVariable gates; E-D "player in sight" event so a guard can challenge on sight.
+
 ## SecGen
 
 m03 XML missing on SecGen master. Proposed file: `SECGEN_PROPOSED_m03_ghost_in_the_machine.xml` (D1). No SecGen edits made.
