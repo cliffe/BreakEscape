@@ -100,6 +100,30 @@ P1-1..P1-37: 33 closed, P1-17 deferred (playtests), P1-19 open (D1), P1-33 n/a, 
 | P1-39 | minor | Clearing Sterling's office by day and skipping the wing at night leaves "Search Sterling's Office" never shown | to fixer |
 | P1-40 | minor | `hint_password` shows at the night turn before the office aim exists | to fixer |
 
+### Round 3 fix and round 4 confirmation
+
+Fixer: `guard_hostile` renamed `guard_attacking` (set only by the engine's `npc_hostile_state_changed`); a collision sweep of every new global against every m03 ink VAR found no others; P1-39 mapping on `closing_debrief` (clone_call_done + exec_office_entered); `hint_password` gated on `exec_office_entered`, `hint_guard` shows by day with its talk-or-pay line night-only. No spoken lines changed.
+
+Round 4 (fresh Opus): P1-38, P1-39, P1-40 closed. New: 0 blockers, 0 majors, 2 minors. **Verdict: Phase 1 closed.**
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| N-1 | minor | `player_approach` "aggressive" never set, so a debrief line can't play; briefing's "direct" never read; Victoria overwrites it (pre-existing) | deferred to Phase 4 (dialogue: dead variables) |
+| N-2 | minor | `hint_password`'s wall-safe line can show by day before the server room exists for the player | fixed by the orchestrator: line wrapped in `{whiteboard_seen or clone_call_done:}` (text unchanged, no TTS cost); ink recompiled, validator clean, inkcheck clean |
+
+### Phase 1 summary
+
+| Round | Blockers | Majors | Minors |
+|---|---|---|---|
+| 1 | 1 | 9 | 11 |
+| 2 (new) | 0 | 0 | 15 |
+| 3 (new) | 0 | 1 | 2 |
+| 4 (new) | 0 | 0 | 2 |
+
+Open from Phase 1: P1-19 (D1, SecGen, user); P1-17 (exec-wing cover, playtests); lint items and N-1 (Phase 4); E-1 (engine, optional). Checks: all static. Nothing in this phase was tested in a browser; the playtest phase covers the night aim stagger, the four music phases after reload, the decode task, the hostile-guard hint and Perfect Stealth appearing only at the debrief.
+
+Tooling item (optional, for approval): a validator check for a scenario global sharing its name with an unrelated ink VAR (would have caught P1-38).
+
 ## SecGen
 
 (see per-phase sections)

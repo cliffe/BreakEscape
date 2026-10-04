@@ -285,7 +285,9 @@ Get caught at it and that's a detection you don't get back.
 ~ hint_password_given = true
 People never change the default. That IT slip on her monitor tells you the format.
 The founding year's on the plaque in reception. Put the two together.
-The wall safe's a different code. She mails it to the night team from her office. Check what's sitting on her machine unsent.
+{whiteboard_seen or clone_call_done:
+    The wall safe's a different code. She mails it to the night team from her office. Check what's sitting on her machine unsent.
+}
 + [I'll look]
     -> hub
 
