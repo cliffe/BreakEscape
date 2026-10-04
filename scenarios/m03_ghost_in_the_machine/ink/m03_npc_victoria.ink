@@ -360,6 +360,8 @@ Victoria Sterling: Real Zero Day research requires understanding market dynamics
 === clone_read_dropped ===
 #speaker:victoria_sterling
 ~ read_dropped = true
+// Pass 5 (P1-25): synced so HaX's "she keeps stepping away" hint shows only now.
+#set_global:clone_read_dropped:true
 Victoria Sterling: Let's sit back down. I'd rather see your face than the back of your head.
 Narrator: She walks back to the table. The cloner's read stalls halfway, then drops. Out of range.
 -> hub
@@ -552,6 +554,8 @@ Narrator: She's past you and gone before the lift doors settle. The evidence sta
 
 === night_on_call ===
 #speaker:victoria_sterling
+// Pass 5 (P1-26): synced so HaX's "she won't engage" hint shows only once seen.
+#set_global:sterling_on_call_seen:true
 Victoria Sterling: *low, into her phone, back to the door* No. Not tonight. I said I'd deal with it myself.
 Narrator: She hasn't heard you come in. You ease back out before she turns round.
 ~ idle_quiet = true

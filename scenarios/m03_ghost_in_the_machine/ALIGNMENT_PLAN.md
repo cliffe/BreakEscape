@@ -129,7 +129,7 @@ File: `scenario.json.erb`.
 Round-1 review `m03-align-r1-review/REVIEW.md`, findings P1-1..P1-21, with orchestrator decisions. One line per finding; implemented this pass.
 
 - P1-1 (canon, option a): reframe the Zero Day link as an invoice/paper trail traced by analysts, not "Ghost's logs named Zero Day" (m02's Ghost log named the insider badge). Fix briefing:80, phone revelation:303, debrief:101; worded to hold for both m02 branches.
-- P1-2 (option a): Victoria delivers the "Ghost bought what he claimed to have built" reveal at the confrontation (one added spoken line).
+- P1-2 (option a): Victoria delivers the "Ghost bought what they claimed to have built" reveal at the confrontation (one added spoken line).
 - P1-3: say the healthcare premium is built into the $25k, not "on top" (briefing:96), consistent with the catalogue.
 - P1-4: briefing "Whether anyone died" -> "How many died"; Victoria's obituary line reworded to hold for a single death; stale ERB "two or six" comment updated.
 - P1-5: add a short debrief callback on Ghost (still at large) and Zero Day as the supply chain.
@@ -146,3 +146,7 @@ Round-1 review `m03-align-r1-review/REVIEW.md`, findings P1-1..P1-21, with orche
 - P1-19: SecGen XML absent; report as a user item, no SecGen files written. SecGen already has the distcc exec module, so no new module.
 - P1-20: add top-level `"flags"` block with `vm_flags_json` keyed on `ghost_in_machine_vm_network` (safe standalone: no vm_context -> fallback literals, additive to the flag-station path).
 - P1-21: make the three day/debrief-backstop mapping pairs disjoint via `debrief_played !== true` so those warnings go; justify the four intended-co-fire victoria_ko handlers; give the night-transition cutscene a background; fix the blank re-entry in night_transition. dialoguelint choice-length/stage-cue/"not X but Y" left for Phase 4.
+
+### Round 2 (2026-10-04)
+
+Review `m03-align-r2-review/REVIEW.md`, P1-22..P1-37. Canon lines reworded (no repeated "invoice", the briefing answers its question, "last night" in the debrief, no Nightshade claim); hints gated on their real premise (`clone_read_dropped`, `sterling_on_call_seen`, `guard_hostile`, KO states) and retired on progress; Danny's task moved to the office aim; night aims staggered (server room on the night turn, office on the first night entry to the executive wing, paper trail on the first night entry to either); night-phase music restored on reload and after a fight; decode beat is now an optional task; Perfect Stealth sets its gate global when earned; ERB comments corrected (a reload relies on the recorded unlock); no dashes in new text; new globals added to the m03 block of `scripts/ink_runtime_check/missions.json`.
