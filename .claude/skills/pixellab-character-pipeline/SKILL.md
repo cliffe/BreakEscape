@@ -141,13 +141,13 @@ Fix with the cheapest method that works, and show the user the before/after shee
 ## Stage 6: import into the game
 
 ```bash
-python3 tools/pixellab_pipeline.py import <name|id|url> --key <spriteSheet key> --register
+python3 tools/pixellab_pipeline.py import <name|id|url> --key <spriteSheet key>
 python3 tools/pixellab_pipeline.py import <key> --offline --force     # rebuild after `fix`
 ```
 
 - Downloads the ZIP from the API. Nested state folders and web-UI display names (`walking`, `jab_attack`, `animating` ...) are handled: each folder is matched to its template by comparing its pixels with the API frames. Without this, NPCs with display-name folders never animate.
 - Applies the committed overrides, then converts with `tools/convert_pixellab_to_spritesheet.py`. Frames smaller than 80×80 (Pro characters are 60×60) are placed on 80×80 cells, centred with the feet on row 69, because the engine's collision boxes assume that layout. Strips on a different canvas size (backfills can come back at 76 or 80px) get their own placement, from the median standing pose.
-- `--register` adds `this.load.atlas(...)` under "PixelLab API imports" in `game.js` preload. The NPC then only needs `"spriteSheet": "<key>"`.
+- No registration step: writing `<key>.png` and `<key>.json` to `assets/characters/` and setting `"spriteSheet": "<key>"` on the NPC is enough. The game loads only the atlases a scenario uses, by key (`js/systems/character-textures.js`). `--register` is still accepted but does nothing.
 - Refuses an incomplete character (run `animate` first) unless `--allow-incomplete`. Refuses to overwrite files without `--force`.
 - Records key → character id in `tools/pixellab_characters.json` (committed), so `import <key>` re-imports by key later.
 - **States.** A PixelLab state (web UI, or `POST /create-character-state` with an `edit_description` such as "hands in hoodie pockets") is a separate character in the same group, and the ZIP carries every state as its own folder. `--idle-from <state id>` takes breathing-idle from that state and everything else from the target, e.g. a relaxed pockets idle with hands-out walk and punches (male_hacker_hood_v2, female_hacker_hood_down_v2). Animate the state with `animate <state id> --templates breathing-idle`. The choice is saved in the manifest, and the converted state folder is recorded in `_export/<key>/.state_folder` so `qa` and the converter don't pick a state alphabetically.
