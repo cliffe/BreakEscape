@@ -61,7 +61,7 @@ VAR access_offered = false
 ~ brief_taken = true
 Narrator: An inner office with no windows. Netherton stands facing a wall of amber threat maps, his back to the door. He does not turn round.
 
-Director Magnus Netherton: {player_name}. Nine days ago I sent you to Portland, the one site where a person in the building could change the outcome. That was true.
+Director Magnus Netherton: Agent. Nine days ago I sent you to Portland, the one site where a person in the building could change the outcome. That was true.
 
 Director Magnus Netherton: What I did not tell you, because I did not yet know it, is that ENTROPY had your name before I signed the order.
 

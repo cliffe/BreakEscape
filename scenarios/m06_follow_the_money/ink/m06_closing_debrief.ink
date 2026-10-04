@@ -50,7 +50,7 @@ VAR fca_right = 0
 // all require debrief_played === false).
 #set_variable:debrief_played=true
 
-Agent HaX: {player_name}. That's enough. Come in.
+Agent HaX: That's enough. Come in.
 
 Agent HaX: I want to hear it in person.
 
@@ -67,7 +67,7 @@ Narrator: SAFETYNET headquarters. The handler's office, three floors below stree
 
 #speaker:agent_0x99
 
-Agent HaX: {player_name}. Every ENTROPY cell banks at HashChain, and tonight we got the books.
+Agent HaX: Every ENTROPY cell banks at HashChain, and tonight we got the books.
 
 Agent HaX: We've been chasing cells one at a time. Now we can see who pays them all.
 
@@ -117,7 +117,7 @@ Agent HaX: $12.8 million, split across six cells. Every name's on that page.
 === fund_implications ===
 Agent HaX: Three hundred and fifty to six hundred projected dead across the operations it pays for. The cells' own estimates.
 
-Agent HaX: They wrote that number down, {player_name}, and called it "The Architect's Masterpiece."
+Agent HaX: They wrote that number down and called it "The Architect's Masterpiece."
 
 + [How does anyone sign off on that?]
     -> ideology_discussion
@@ -477,7 +477,7 @@ Agent HaX: Six cells, one fund, one seventy-two-hour clock. Somebody wrote one s
 
 === next_mission_hint ===
 
-Agent HaX: Get some rest, {player_name}. Keep your phone on.
+Agent HaX: Get some rest. Keep your phone on.
 
 // Playtest D2: the conclusion aim's last task completes HERE, so the
 // bond_visualiser and credits come after the debrief, not over it.

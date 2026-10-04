@@ -302,7 +302,7 @@ Satoshi Nakamoto II: Freeze it, and I'm a martyr. Recruitment doubles.
 
 Satoshi Nakamoto II: Watch it, and you spend a year on surveillance while we move house.
 
-Satoshi Nakamoto II: You can't win, {player_name}. You can only choose how you lose.
+Satoshi Nakamoto II: You can't win. You can only choose how you lose.
 
 + {found_architects_fund and found_wallet_keys} [I'll take the martyr. I'm freezing it.]
     -> seize_assets
@@ -489,7 +489,7 @@ Satoshi Nakamoto II: They'll convict me. They'll want an example.
     Satoshi Nakamoto II: And Irina in handcuffs as well. Whatever she said to you at the end, she built all of this with me.
 }
 
-Satoshi Nakamoto II: ENTROPY has no head to cut off, {player_name}. The Architect will adapt.
+Satoshi Nakamoto II: ENTROPY has no head to cut off. The Architect will adapt.
 
 -> final_words
 
@@ -548,7 +548,7 @@ Satoshi Nakamoto II: Call your police, then. I'll wait.
 
 Satoshi Nakamoto II: You closed one exchange. The Architect keeps spares.
 
-Satoshi Nakamoto II: Whatever you chose tonight, {player_name}, you'll find out what it cost. So will I.
+Satoshi Nakamoto II: Whatever you chose tonight, you'll find out what it cost. So will I.
 
 ~ hub_quiet = true
 
@@ -580,7 +580,7 @@ Satoshi Nakamoto II: Whatever you chose tonight, {player_name}, you'll find out 
     -> aftermath
 
 + [We're done here.]
-    Satoshi Nakamoto II: See you at the trial, {player_name}.
+    Satoshi Nakamoto II: See you at the trial.
     ~ hub_quiet = true
     #exit_conversation
     -> aftermath

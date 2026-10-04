@@ -15,7 +15,7 @@ VAR player_name = "Agent 0x00"
 ~ instructor_rapport = 0
 ~ ctf_mastery = 0
 
-Welcome back, {player_name}. What would you like to discuss?
+Welcome back. What would you like to discuss?
 
 -> feeling_blu_hub
 
@@ -27,7 +27,7 @@ Welcome back, {player_name}. What would you like to discuss?
 ~ instructor_rapport = 0
 ~ ctf_mastery = 0
 
-Welcome to the "Feeling Blu" CTF Challenge, {player_name}. I'm your CTF Challenge Coordinator for this comprehensive Capture The Flag challenge.
+Welcome to the "Feeling Blu" CTF Challenge. I'm your CTF Challenge Coordinator for this comprehensive Capture The Flag challenge.
 
 This is your final test - a comprehensive challenge that brings together everything you've learned. You'll exploit a web server, gain access, escalate privileges, and hunt for flags. This simulates a real-world penetration test from start to finish.
 

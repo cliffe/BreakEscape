@@ -19,7 +19,7 @@ VAR player_name = "Agent 0x00"
 === start ===
 ~ instructor_rapport = 0
 
-Welcome back, {player_name}. What would you like to discuss?
+Welcome back. What would you like to discuss?
 
 -> crypto_hub
 
@@ -30,7 +30,7 @@ Welcome back, {player_name}. What would you like to discuss?
 === intro_timed ===
 ~ instructor_rapport = 0
 
-Welcome to Cryptography Fundamentals, {player_name}. I'm your Crypto Instructor for this session.
+Welcome to Cryptography Fundamentals. I'm your Crypto Instructor for this session.
 
 Today we're covering encoding and encryption - two concepts that sound similar but serve very different purposes.
 
@@ -506,7 +506,7 @@ Document what you try: When attempting decryption, track what keys/methods you'v
 
 Remember: encoding is reversible with no secret. Encryption requires keys. Symmetric uses same key for both. Asymmetric uses key pairs.
 
-Now go break some crypto challenges. Good luck, Agent {player_name}.
+Now go break some crypto challenges. Good luck, Agent.
 
 #exit_conversation
 -> END

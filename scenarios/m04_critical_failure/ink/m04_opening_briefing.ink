@@ -37,7 +37,7 @@ Director Magnus Netherton: HaX. Go.
 
 #speaker:agent_0x99
 
-Agent HaX: {player_name()}. A grid battery site, and ENTROPY are inside it.
+Agent HaX: A grid battery site, and ENTROPY are inside it.
 
 Agent HaX: Worse than Ransomware Incorporated. This lot don't want paying.
 
@@ -330,7 +330,7 @@ Agent HaX: Show them the regulator badge. You're a routine audit that came early
 
 Agent HaX: {combat_ready: If it comes to a fight, keep your head.| Stay alert. They're expecting somebody.}
 
-Agent HaX: Good luck, {player_name()}. Find Vance first.
+Agent HaX: Good luck. Find Vance first.
 
 ~ mission_briefed = true
 

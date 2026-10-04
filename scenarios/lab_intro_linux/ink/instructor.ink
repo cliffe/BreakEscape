@@ -52,7 +52,7 @@ VAR has_key = false
 === start ===
 ~ instructor_rapport = 0
 
-Welcome back, {player_name}. What would you like to discuss?
+Welcome back. What would you like to discuss?
 
 -> linux_training_hub
 
@@ -63,7 +63,7 @@ Welcome back, {player_name}. What would you like to discuss?
 === intro_timed ===
 ~ instructor_rapport = 0
 
-Welcome to Linux Fundamentals and Security, {player_name}. I'm your technical instructor for this session.
+Welcome to Linux Fundamentals and Security. I'm your technical instructor for this session.
 
 This lab covers essential Linux command-line skills, remote administration via SSH, and basic penetration testing techniques. All crucial skills for field operations.
 
@@ -1006,7 +1006,7 @@ Good luck, Agent. You've got this.
 ~ instructor_rapport += 10
 # influence_increased
 
-Excellent work, {player_name}! You've successfully completed all the VM lab exercises and captured all the flags. That demonstrates real competence with Linux security fundamentals.
+Excellent work! You've successfully completed all the VM lab exercises and captured all the flags. That demonstrates real competence with Linux security fundamentals.
 
 You've shown you can navigate Linux systems effectively, use SSH for remote access, perform security testing with tools like Hydra, and escalate privileges when needed. These are essential skills for field operations.
 

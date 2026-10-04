@@ -490,7 +490,7 @@ Dr. Irina Volkova: Whatever he keeps on The Architect is in there.
 }
 Dr. Irina Volkova: The pool keys and the wallet map go to your handler tonight, and the name on the account that pays me.
 
-Dr. Irina Volkova: And {player_name}? Thank you for treating this as a choice.
+Dr. Irina Volkova: And thank you for treating this as a choice.
 ~ hub_quiet = true
 #exit_conversation
 -> after_choice
