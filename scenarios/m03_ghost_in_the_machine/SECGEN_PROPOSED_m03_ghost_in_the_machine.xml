@@ -7,7 +7,7 @@
   (read-only SecGen checkout).
 
   System name: ghost_in_machine_vm_network (matches the game's flag/VM keys).
-  Flags, in the game's order (scenario.json.erb:240 targetFlags, :1343 station):
+  Flags, in the game's order (scenario.json.erb: the submit_*_flag tasks' targetFlags and the flag_station_dropsite object):
     flag_1 flag{network_scan_complete}    - - service banners: FTP login banner + web index source
     flag_2 flag{ftp_intel_gathered}       - - ProFTPD 1.3.3c source backdoor -> root
     flag_3 flag{pricing_intel_decoded}    - - ROT13 price list on the web host, decode
@@ -23,9 +23,9 @@
    - flag1: nmap alone emits no flag. It sits in what the services say about
      themselves: the FTP login banner (welcome_msg -> AccessGrantMsg, shown on an
      anonymous login) and an HTML comment in the web host's index page. This matches
-     the task text "read the service banners the scan turns up" (scenario.json.erb:238).
+     the task text "read the service banners the scan turns up" (scenario.json.erb: task submit_network_scan_flag).
      It is NOT in the anonymous FTP folder: the in-game runbook says "nothing that
-     matters lives in the anonymous folder" (scenario.json.erb:1274).
+     matters lives in the anonymous folder" (scenario.json.erb: the Training Lab Runbook).
    - Flag order assumes SecGen generates the system-level scan_flag datastore before
      the module inputs (as m02's system-level account datastore is). Confirm on a
      test build that flags_by_vm comes back in the order above.

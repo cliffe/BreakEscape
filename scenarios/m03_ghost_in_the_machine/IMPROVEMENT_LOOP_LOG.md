@@ -255,6 +255,29 @@ Commit e44d22d (WIP). P3-19: three hub choices replay a missed call (distcc reve
 
 Flag station (classified by the fixer from `flag-station-minigame.js`): real minor engine bug. Enter during an in-flight submission returns silently (`:613`), and the first submission's success clears the input (`:705`), so a flag typed during the round-trip is dropped with no feedback. Engine item E-E for approval: say "Still checking the last flag" and clear the input only if it still holds the submitted value.
 
+### Round 3 review (fresh Opus, confirmation) and closing fix
+
+P3-1..P3-25 closed, ruled or deferred (P3-14 waits on E-C, P3-17 on E-D, P3-23 to Phase 4). Nothing broken by round 2: replays gated and retired, `revelation_heard` set on both paths, the "Sterling's waiting" texts fire once in any flag order, the room-entry hide can't fire early, every KO route still sets a fate. New: 0 blockers, 0 majors, 4 minors. **Verdict: Phase 3 closed**, provided the guard-ink half of P3-20 is reverted.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| P3-26 | minor | The engine never opens a conversation with a hostile NPC, so requiring `guard_attacking` in the guard's ink made his hostile lines dead and gave ordered-out players the friendly hub | fixed: guard ink conditions restored to plain `guard_hostile` (match a7036c5 apart from P3-8); scenario setter change and `game_loaded` clear kept |
+| P3-27 | minor | A lingering toast could replay a call already heard from the hub | fixed: each of the three calls diverts to the hub when already heard |
+| P3-28 | minor | Task says "Confront" for a KO'd Sterling | fixed: "Settle Victoria's fate in the conference room" (text) |
+| P3-29 | minor | Stale line references in the proposed XML header | fixed: references now name what they point to |
+
+Orchestrator check: grepped the guard ink (no `guard_attacking`), the task title and the revelation-call guard. Fixer's checks: validator, dialoguelint, reopencheck (0 problems), inkcheck/loopcheck clean; tagdiff explained.
+
+### Phase 3 summary
+
+| Round | Blockers | Majors | Minors |
+|---|---|---|---|
+| 1 | 0 | 3 | 15 |
+| 2 (static + browser probe, new) | 0 | 1 | 6 (+3 from the probe, overlapping) |
+| 3 (new) | 0 | 0 | 4 |
+
+Browser-tested in this phase: P3-1 (recruit ending, reload backstop), P3-3 (station stays open, text opens the call). Static only: everything else. Carried to Phase 5: the hub replays and a lingering toast; the arrest and escape endings; guard after player KO and reload; reload between Victoria's fate and her chat closing; plus P2-20's list.
+
 ## SecGen
 
 m03 XML missing on SecGen master. Proposed file: `SECGEN_PROPOSED_m03_ghost_in_the_machine.xml` (D1). No SecGen edits made.
