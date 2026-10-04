@@ -36,7 +36,7 @@ GU_W = 160          # 5 tiles
 GU_H = 128          # 4 tiles
 VISUAL_TOP = 2      # top wall rows excluded from stacking height
 
-REPO = '/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape'
+REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def load(scn):
     out = subprocess.run(['ruby', f'{REPO}/scripts/validate_scenario.rb', scn, '--output-json'],

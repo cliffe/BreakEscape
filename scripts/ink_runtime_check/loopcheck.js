@@ -7,7 +7,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const REPO = '/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape';
+const REPO = require('path').resolve(__dirname, '../..');
 const inkjs = require(path.join(REPO, 'public/break_escape/assets/vendor/ink.js'));
 const Story = inkjs.Story || (inkjs.default && inkjs.default.Story);
 
