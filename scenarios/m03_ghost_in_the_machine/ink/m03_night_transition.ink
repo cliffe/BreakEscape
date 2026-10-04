@@ -13,7 +13,9 @@ VAR scene_quiet = false
 === start ===
 #speaker:narrator
 { victoria_ko:
-    Narrator: You close the conference room door on Sterling and walk out with the last of the afternoon's visitors. Nobody goes looking for her before the building shuts.
+    // Pass 5 (R1-2): she is unconscious, so say so.
+    Narrator: Sterling is out cold on the conference room floor. You pull the door shut behind you.
+    Narrator: You walk out with the last of the afternoon's visitors. Nobody goes looking for her before the building shuts.
 - else:
     { receptionist_ko:
         Narrator: Sterling's card is saved in the cloner. You leave by the fire stairs before anyone wonders why the front desk is empty.

@@ -214,3 +214,27 @@ Lint after: 0 errors; 4 warnings, each justified. `choice-len` victoria:483 is t
 ### Pass 5, round 3 touch-up (P4-65..P4-72)
 
 Round 3 closed Phase 4; these are its one-line follow-ups, all taken. Five voiced lines reworded (Victoria ×2, debrief ×4 counting the two "stayed" lines, receptionist, guard; see the loop log for old → new), no cuts beyond Victoria's "Real targets, not textbook ones." tail. Dead ink-local VARs removed after checking none is a scenario global or read anywhere: debrief `whiteboard_seen` (declaration only; the global stays and the phone still reads it), danny `player_choice_made`, guard `player_has_excuse`, receptionist `clone_reception_badge_done`, victoria `topic_free_market`, with their writes. tagdiff shows only those var/assign removals.
+
+## Pass 5 playtest round 1 (2026-10-04)
+
+Voiced lines changed. New user rule: no printed variables in voiced lines (the player's name and the detection count are gone from spoken text; the count uses an inline conditional between two fixed phrasings). Other fixes from the round 1 playtests (R1-2, R1-3, R1-8, R1-21). No audio exists for m03 yet, so nothing needs regenerating.
+
+- briefing:35 `{player_name()}. Zero Day Syndicate.` → `Right. Zero Day Syndicate. You heard of them?`
+- briefing:78 `...Tonight we get the seller's own ledger.` → `...Now we go after the seller's own ledger.` (R1-8)
+- briefing:221 `{player_name()}. Whatever the count...` → `Listen. Whatever the count...`
+- briefing:254 `And {player_name()}? Come back in one piece.` → `And one more thing. Come back in one piece.`
+- receptionist:37 `Afternoon! {player_name()}, is it?` → `Afternoon! You'll be the three o'clock, is it?`
+- victoria:73 `You must be {player_name()}.` → `You must be the candidate.`
+- victoria:422 `And {player_name()}? I think you'd fit in well here.` → `Off the record? I think you'd fit in well here.`
+- victoria:503 `Understand what this is, {player_name()}.` → `Understand what this is.`
+- victoria:550 `We're done, {player_name()}.` → `We're done here.`
+- debrief:56 `{player_name()}. Sit down...` → `There you are. Sit down...`
+- debrief:86 `clocked you {guard_detection_count} times.` → `clocked you {guard_detection_count == 2:twice|more than twice}.`
+- debrief:222 `You left the drive in her desk. The search team pulled it out this morning, and...` → `The search team went through Sterling's desk this morning and found a drive. Our people...` (R1-3)
+- debrief:258 new reply `It is. Next time, bring it out yourself.` for a player who never saw the drive (R1-3)
+- debrief:368 new `It got done. Not cleanly. Some people who never signed up for this will remember last night. We'll still need you soon.` replaces the two trust lines when the receptionist, guard or Danny was knocked out (R1-3)
+- debrief:406 `Go home, {player_name()}.` → `Go home and get some sleep.`
+- night_transition:17-18 KO variant `You close the conference room door on Sterling and walk out...` → `Sterling is out cold on the conference room floor. You pull the door shut behind you.` / `You walk out with the last of the afternoon's visitors. Nobody goes looking...` (R1-2)
+- guard:445 `He isn't going anywhere while you're in front of him. Come back when his back's turned.` → `He'll walk on in a moment. Step back, wait until his back's turned, then try again.` (R1-21)
+
+Text only (not voiced): HaX phone 483 dash removed, 554 new KO-route line; Danny choice label 66 dash removed; receptionist choice 114 added (R1-16). HaX phone lines keep `{player_name()}` (texts, allowed). Stage cues (R1-5): the engine prints them as written in every mission (m02 too; dialoguelint says so), so no change.

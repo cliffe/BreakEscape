@@ -32,7 +32,7 @@ Agent 0x47 'Nightshade': Morning. Whatever they've built, I'll take it apart fro
 
 Director Magnus Netherton: HaX. The floor's yours.
 
-Agent HaX: {player_name()}. Zero Day Syndicate. You heard of them?
+Agent HaX: Right. Zero Day Syndicate. You heard of them?
 * [Remind me what their deal is.]
     -> briefing_main
 * [The exploit marketplace. They find zero-days and sell them on.]
@@ -75,7 +75,7 @@ Agent HaX: The ransomware ran on a ProFTPD backdoor. That exploit didn't come fr
     #set_global:knows_m2_connection:true
     ~ handler_trust = handler_trust + 5
     # influence_increased
-    Agent HaX: They did. An invoice turned up at St. Catherine's with Zero Day's name on the sale, the paper the buyer left behind. Tonight we get the seller's own ledger.
+    Agent HaX: They did. An invoice turned up at St. Catherine's with Zero Day's name on the sale, the paper the buyer left behind. Now we go after the seller's own ledger.
     -> mission_stakes
 * [The exploit at St. Catherine's traces back here?]
     ~ knows_m2_connection = true
@@ -218,7 +218,7 @@ Agent HaX: Your call. I trust your read.
 === final_instructions ===
 #speaker:agent_0x99
 { knows_m2_connection:
-    Agent HaX: {player_name()}. Whatever the count turns out to be at St. Catherine's, people died on the back of what Zero Day sold.
+    Agent HaX: Listen. Whatever the count turns out to be at St. Catherine's, people died on the back of what Zero Day sold.
 }
 * [I'll get the evidence. Zero Day goes down.]
     ~ handler_trust = handler_trust + 10
@@ -251,7 +251,7 @@ Agent HaX: And there's a consultant, Danny Foster. He did the hospital recon. Co
 #speaker:agent_0x99
 Agent HaX: WhiteHat Security, Callaghan Square, Cardiff. I'm on comms the whole time. The drop-site terminal in the server room takes your flags and sends them straight to me.
 { handler_trust >= 70:
-    Agent HaX: And {player_name()}? Come back in one piece.
+    Agent HaX: And one more thing. Come back in one piece.
 }
 { (handler_trust >= 50) && (handler_trust < 70):
     Agent HaX: Good luck.

@@ -168,7 +168,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           { "text": "ZERO DAY CATALOGUE: SEIZED WITH THE MARKETPLACE — but its sales ledger isn't in our hands", "style": "warning", "condition": "globalVars.catalogue_seen !== true && globalVars.lore_catalogue_found !== true && globalVars.victoria_fate === 'arrested'" },
           { "text": "PHASE 2 DIRECTIVE: DECODED BY THE AGENT. Grid and hospitals, this winter", "style": "entry", "condition": "globalVars.directive_decoded === true && globalVars.directive_guessed !== true" },
           { "text": "PHASE 2 DIRECTIVE: RECOVERED BY THE AGENT, decoded at HQ", "style": "entry", "condition": "(globalVars.directive_decoded !== true || globalVars.directive_guessed === true) && (globalVars.usb_seen === true || globalVars.lore_directive_found === true)" },
-          { "text": "PHASE 2 DIRECTIVE: LEFT IN STERLING'S DESK, recovered by the search team", "style": "entry", "condition": "globalVars.directive_decoded !== true && globalVars.usb_seen !== true && globalVars.lore_directive_found !== true" },
+          { "text": "PHASE 2 DIRECTIVE: FOUND IN STERLING'S DESK BY THE SEARCH TEAM", "style": "entry", "condition": "globalVars.directive_decoded !== true && globalVars.usb_seen !== true && globalVars.lore_directive_found !== true" },
           { "text": "" },
           { "text": "── DECISIONS ──", "style": "section-header" },
           { "text": "VICTORIA STERLING: TURNED — a cold asset now, not a convert", "style": "entry", "condition": "globalVars.victoria_fate === 'recruited'" },
@@ -221,6 +221,14 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "description": "Get close enough to copy Victoria's custom-key executive keycard — your route into the server room",
           "type": "custom",
           "status": "active"
+        },
+        {
+          "_comment": "Pass 5 (R1-1): after the card is saved (or Sterling is knocked out) the list used to go empty and players stood still. Unlocked by HaX's objective_task_completed:clone_rfid_card mapping (every route completes that task); completed by HaX's clone_call_done mapping when the night scene closes.",
+          "taskId": "leave_until_dark",
+          "title": "Walk out with the visitors and come back after dark",
+          "description": "Step out of the conference room into the main hallway. You leave with the afternoon's visitors and come back once the building has shut.",
+          "type": "custom",
+          "status": "locked"
         }
       ]
     },
@@ -721,7 +729,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "timedMessages": [
             {
               "delay": 3000,
-              "message": "Sign in at reception first, then get yourself to Victoria Sterling for the interview. There's a card reader between you and her. Message me if you get stuck.",
+              "message": "Your interview's with Victoria Sterling in the conference room, behind a staff card reader. Reception will sign you in. Message me if you get stuck.",
               "type": "text",
               "waitForEvent": "conversation_closed:briefing_cutscene"
             }
@@ -784,6 +792,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
             {
               "eventPattern": "objective_task_completed:clone_rfid_card",
               "setGlobal": { "mission_phase": "act2_infiltration" },
+              "unlockTask": "leave_until_dark",
               "onceOnly": true
             },
             {
@@ -791,7 +800,15 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "eventPattern": "global_variable_changed:clone_call_done",
               "condition": "value === true",
               "onceOnly": true,
+              "completeTask": "leave_until_dark",
               "unlockAim": "act2_breach_server_room"
+            },
+            {
+              "_comment": "P3-5, moved here in pass 5 (R1-1): one text once Sterling's card is saved. It used to sit on the hidden closing_debrief NPC, whose toast would be voiced and, if clicked, open the debrief story in the phone. victoria_card_cloned is set only by the card_cloned mapping, so a KO route doesn't get it (that route has on_victoria_ko_card).",
+              "eventPattern": "global_variable_changed:victoria_card_cloned",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2500, "message": "Card's saved. Thank her, walk out with the visitors, and come back after dark." }
             },
             {
               "_comment": "P1-8/P1-18: reading the printed transaction log completes find_operational_logs (its own visible beat). onRead on the drop-site log item sets transaction_log_read.",
@@ -1099,13 +1116,6 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "setGlobal": { "victoria_choice_made": true }
             },
             {
-              "_comment": "P3-5: one text after Sterling's card is saved, so the empty objectives panel isn't the only signal. Kept on this NPC so it doesn't share a pattern with HaX's mission_phase mapping.",
-              "eventPattern": "objective_task_completed:clone_rfid_card",
-              "condition": "globalVars.victoria_ko !== true",
-              "onceOnly": true,
-              "sendTimedMessage": { "delay": 2500, "message": "Card's saved. Thank her, walk out with the visitors, and come back after dark." }
-            },
-            {
               "_comment": "P3-10 (mitigation; engine item E-B): NPC hostility isn't saved, so after a reload the guard patrols peacefully. Clear the synced 'guard is attacking' global on load so HaX doesn't offer the hostile-guard hint for a guard who isn't.",
               "eventPattern": "game_loaded",
               "condition": "globalVars.guard_attacking === true",
@@ -1366,7 +1376,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "takeable": false,
           "readable": true,
           "text": "<%= whiteboard_message_encoded %>",
-          "observations": "Someone has written a note across the whiteboard. The letters are scrambled but the word lengths and punctuation hold -- each letter swapped for another, not gibberish. The decoding laptop will read it.",
+          "observations": "Someone has written a note across the whiteboard. The letters are scrambled but the word lengths and punctuation hold: each letter swapped for another, not gibberish. The decoding laptop will read it.",
           "onRead": { "setVariable": { "whiteboard_seen": true } },
           "puzzle_graph_role": "clue",
           "puzzle_graph_unlocks": ["wall_safe_server"],
@@ -1381,7 +1391,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "observations": "Zero Day's VM access terminal. From here you reach their training network -- the box they rehearse exploits on before they sell them.",
           "puzzle_graph_role": "vm",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
-          "vm": <%= vm_object('ghost_in_machine_vm_network', {"id":1,"title":"Zero Day Training Network","ip":"192.168.100.0/24","enable_console":true}) %>
+          "vm": <%= vm_object('ghost_in_machine_vm_network', {"id":1,"title":"Zero Day Training Network","ip":"192.168.100.3","enable_console":true}) %>
         },
         {
           "type": "workstation",
@@ -1444,7 +1454,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
       "objects": [],
       "npcs": [
         {
-          "_comment": "Pass 2: moved here from main_hallway (no pickable lock there, so the lockpick LoS check could never fire). Visible all mission; his ink is phase-aware (staff-only by day, closed building at night). Since engine 18237332 a hidden or KO'd NPC no longer sees lockpicking, so knocking him out makes picks free; Perfect Stealth therefore excludes a KO (pass 3, P6). Patrol kept to x 5..8, y 3..4 of the 10x6 hall: clear of the west doorway (y2.5) and the south door (bottom-left), under the north door he watches.",
+          "_comment": "Pass 2: moved here from main_hallway (no pickable lock there, so the lockpick LoS check could never fire). Visible all mission; his ink is phase-aware (staff-only by day, closed building at night). Since engine 18237332 a hidden or KO'd NPC no longer sees lockpicking, so knocking him out makes picks free; Perfect Stealth therefore excludes a KO (pass 3, P6). Patrol kept to x 5..8, y 3..4 of the 10x6 hall: clear of the west doorway (y2.5) and the south door (bottom-left), under the north door he watches. Pass 5 (R1-20): loop now x 3..6, y 3..4 (floor is x 1..8, y 2..4), still clear of both doorways; see the behavior comment.",
           "id": "night_guard",
           "displayName": "Security Guard",
           "npcType": "person",
@@ -1462,7 +1472,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           },
           "globalVarOnKO": "guard_knocked_out",
           "behavior": {
-            "_comment": "Pass 3: hostile tuning set explicitly to m01's mildest guard-type NPC (Sarah: chaseSpeed 100, attackDamage 10, pauseToAttack true). Before this he used the engine defaults (chaseSpeed 145, attackDamage 10, pauseToAttack true, npc-behavior.js:343-347). He also no longer goes hostile on a detection without a choice (m03_npc_guard.ink on_lockpick_detected). Pass 3c: facePlayer and pauseForPlayer default to true with a 96 px radius (npc-behavior.js:318-328), and every point of this loop is within 96 px of the office door, so he stopped and turned to face anyone at the door: no back-turned window existed. Both off; he walks his loop and the cone does the work. Pass 3e: the 140-degree cone put his west-end dwell (facing up, about 63-69 degrees off the door line) on the cone edge, so the same moment sometimes caught and sometimes didn't. The loop now ends with a short step east into the (5,3) dwell, so he dwells facing east, clearly inside a 120-degree cone (about 25 degrees off the door line); every other dwell is clearly outside. Window: seen about 4.9 s (west dwell, then east under the door), safe about 8.1 s (east dwell facing down, the walk west, the step up) of a 13 s loop.",
+            "_comment": "Pass 3: hostile tuning set explicitly to m01's mildest guard-type NPC (Sarah: chaseSpeed 100, attackDamage 10, pauseToAttack true). Before this he used the engine defaults (chaseSpeed 145, attackDamage 10, pauseToAttack true, npc-behavior.js:343-347). He also no longer goes hostile on a detection without a choice (m03_npc_guard.ink on_lockpick_detected). Pass 3c: facePlayer and pauseForPlayer default to true with a 96 px radius (npc-behavior.js:318-328), and every point of this loop is within 96 px of the office door, so he stopped and turned to face anyone at the door: no back-turned window existed. Both off; he walks his loop and the cone does the work. Pass 3e: the 140-degree cone put his west-end dwell (facing up, about 63-69 degrees off the door line) on the cone edge, so the same moment sometimes caught and sometimes didn't. The loop now ends with a short step east into the (5,3) dwell, so he dwells facing east, clearly inside a 120-degree cone (about 25 degrees off the door line); every other dwell is clearly outside. Window: seen about 4.9 s (west dwell, then east under the door), safe about 8.1 s (east dwell facing down, the walk west, the step up) of a 13 s loop. Pass 5 (R1-20): all three night testers were caught on the first pick. The loop ran right under the door, so he was always within 60 px of it and the back-turned moments (a dwell facing down beneath the door, a walk west close by) didn't read as safe. New loop: he walks east to (6,3) and stands looking at the office door for 2 s, then walks west, back to the door, to (3,4) and stands there 5 s, then returns via (5,3) so he always arrives at his post facing east. Measured against the testers' logged pick spot (565,-90) and his logged sprite centres (waypoint row 3 = y -59, row 4 = y -27; x = room 320 + 32*wx + 2): at the post (514,-59) the door is 31 degrees off his facing, clearly inside the 120-degree cone; on the walk west he faces left, down or down-left, 120-165 degrees off; at (3,4), centre (418,-27), he is 160 px from the pick spot (range 150) and facing away. The engine checks LOS once, when the pick starts (lockpick-catch.js, npc-los.js), so a pick started in the window finishes even if he turns round. Window: safe about 7.5 s from the moment he turns his back (walk west about 2.5-3 s, then the 5 s dwell), seen about 4.8 s (the walk back, in range almost at once, then the 2 s post) of a loop of about 12 s. Testers: pick as he turns away from the door.",
             "hostile": {
               "chaseSpeed": 100,
               "attackDamage": 10,
@@ -1473,11 +1483,9 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "enabled": true,
               "pauseForPlayer": false,
               "waypoints": [
-                { "x": 5, "y": 3, "dwellTime": 2500 },
-                { "x": 8, "y": 3 },
-                { "x": 8, "y": 4, "dwellTime": 2500 },
-                { "x": 4, "y": 4 },
-                { "x": 4, "y": 3 }
+                { "x": 6, "y": 3, "dwellTime": 2000 },
+                { "x": 3, "y": 4, "dwellTime": 5000 },
+                { "x": 5, "y": 3 }
               ],
               "speed": 40,
               "loop": true
