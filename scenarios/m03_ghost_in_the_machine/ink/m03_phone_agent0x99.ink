@@ -480,7 +480,7 @@ St. Catherine's gave us the buyer's invoice. This is the seller's own ledger, sa
 // (erb, revelation_heard mappings) waits until the call has played out.
 #set_global:revelation_heard:true
 ~ revelation_heard = true
-Finish up, then Sterling. And be careful -- reasonable as she sounds, she signed that invoice.
+Finish up, then Sterling. And be careful. Reasonable as she sounds, she signed that invoice.
 -> hub
 
 === on_exploit_catalog_found ===
@@ -550,4 +550,6 @@ Well. That's one way to end a job interview.
 If her card's come loose, leave it where it fell -- it's evidence.
 Nightshade lifted its keys from the reader logs and built you a working copy.
 It's in your kit now. It opens what hers opens, which means the server room tonight.
+// Pass 5 (R1-1): say what to do next, not only what's in the kit.
+Walk out with the visitors before anyone finds her. Come back after dark.
 -> hub

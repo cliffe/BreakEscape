@@ -34,7 +34,7 @@ VAR night_greeted = false
 }
 { not badge_received:
     #display:receptionist-professional
-    Receptionist: Afternoon! {player_name()}, is it?
+    Receptionist: Afternoon! You'll be the three o'clock, is it?
     Receptionist: Ms. Sterling mentioned you'd be coming in for a consultation.
     Receptionist: Let me get you checked in.
     -> badge_process
@@ -109,6 +109,10 @@ Receptionist: Is this your first time working with a Cyber Security firm?
     # influence_increased
     Receptionist: Oh, lovely. Don't let her scare you. She's like that with everyone.
     -> hub
+// Pass 5 (R1-16): a player who heard about the cloner in the briefing can lean in
+// on the first visit too, not only after reopening her hub.
+* {cloner_explained and not reception_badge_cloned} [Lean in to read the building directory.]
+    -> clone_badge_opportunity
 * [I should head to the conference room. Don't want to keep Victoria waiting.]
     Receptionist: Go on, then. Up the hallway, first door on the left.
     ~ hub_quiet = true

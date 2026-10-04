@@ -442,7 +442,7 @@ Security Guard: Oi. Away from the door. Now.
 #speaker:npc
 #display:guard-suspicious
 Security Guard: I'm still stood here, you know. Away from the door.
-Narrator: He isn't going anywhere while you're in front of him. Come back when his back's turned.
+Narrator: He'll walk on in a moment. Step back, wait until his back's turned, then try again.
 + [Step away from the door.]
     ~ idle_quiet = true
     #exit_conversation

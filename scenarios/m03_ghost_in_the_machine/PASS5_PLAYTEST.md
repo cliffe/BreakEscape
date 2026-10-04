@@ -18,7 +18,7 @@ Environment and commands are in `docs/agents/M03_LOOP_BRIEF.md` ("Browser playte
 
 New game. Goal: act 1, the night turn, and one risky reload.
 
-1. **Briefing** plays on load. Read a topic or two, pick an approach, deploy. Expect the brief panel once (`show_scenario_brief: once`), HaX's text "Sign in at reception first…".
+1. **Briefing** plays on load. Read a topic or two, pick an approach, deploy. Expect the brief panel once (`show_scenario_brief: once`), HaX's text "Your interview's with Victoria Sterling in the conference room…" (reworded in round 1).
 2. **Reception**: read the plaque (note 2010), talk to the receptionist, sign in (visitor badge). Confirm the clone choice is **not** offered yet.
 3. **Conference reader first**: go to the conference door and try it. Expect HaX's text that it wants a staff badge and the cloner copies one. **Reload here** (the refusal is a risky moment). After reload, confirm the brief does not pop again and the state held.
 4. **Back to reception**: the clone choice "[Lean in to read the building directory.]" is now offered. Clone and **save** the badge → task "Find a way past the conference room's card reader" completes.
@@ -40,7 +40,7 @@ Set these globals: `mission_phase = "act2_infiltration"`, `clone_call_done = tru
 4. **Wall safe** (server room): open with `5829` → catalogue.
 5. **Drive** (office desk): read it; decode the layered text at CyberChef; tell HaX the right answer → decode_directive completes.
 6. **Danny** (executive wing, south): talk to him; pick protect / expose / leave.
-7. **Guard**: for this run, get past him cleanly (time the patrol). Note whether Perfect Stealth is earned at the debrief.
+7. **Guard**: for this run, get past him cleanly (round 1 patrol: start the pick as he turns his back on the door and walks west). Note whether Perfect Stealth is earned at the debrief.
 8. **Victoria** (conference room): confront her; pick **one** ending (say, arrest, since Phase 3's probe only played recruit). **Reload between her choice and the debrief's first line** if you can catch the window; confirm a room entry opens the debrief and she can't be re-KO'd into a different ending.
 9. **Debrief and credits**: confirm the ending, Danny fate and stealth state all read correctly, and the credits roll after the debrief's last line.
 
@@ -82,3 +82,28 @@ A second persona, fresh game, rushed and careless. Do not read this script's ans
 - Lets things sit; reloads at awkward moments.
 
 Record: every moment stuck and for how long, what they tried, what unstuck them; whether the objectives panel ever told them what to do next; whether the debrief and credits still read fairly for a messy run (guard KO'd, someone concussed, paper left behind, Victoria knocked out instead of confronted); and anything that soft-locked or contradicted what they did. Note whether a dropped flag ever had no on-screen feedback.
+
+## Round 1 fixes: confirm
+
+Added after round 1 (fixes on top of HEAD 3d2d990; m03 content last changed at 86675b6). Confirm each in the run named; one line in the report per row.
+
+| Row | Change | How to see it | Expected |
+|---|---|---|---|
+| R1-1 | New task "Walk out with the visitors and come back after dark"; the "Card's saved" text now comes from HaX's phone | Run A step 5: save Victoria's card. Struggling run: knock Victoria out in the afternoon | A "New task" toast and the task on the panel in both cases; on the clone route HaX texts "Card's saved…" (phone beep, not a voice; clicking it opens HaX's thread); on the KO route HaX's handover call ends "Walk out with the visitors before anyone finds her. Come back after dark." The task ticks when the night scene closes, and "Get Inside WhiteHat" completes then |
+| R1-2 | KO-aware night narration | Struggling run: KO Victoria in the afternoon, step into the main hallway | "Sterling is out cold on the conference room floor. You pull the door shut behind you." then "You walk out with the last of the afternoon's visitors…" |
+| R1-3 | Debrief gated on what the player did | Struggling run (receptionist or guard KO'd, drive never opened) | No "Clean enough" and no "You did the technical work and still saw the people in it": instead "It got done. Not cleanly…". Drive line: "The search team went through Sterling's desk this morning and found a drive…". The player choice reads "So that drive is the map to their whole operation." with "It is. Next time, bring it out yourself." Credits: "PHASE 2 DIRECTIVE: FOUND IN STERLING'S DESK BY THE SEARCH TEAM". A run that opened the drive still gets "This is the map…" / "You handed us the shape of the thing." |
+| R1-7 | HaX's first text reworded | Run A step 1 | "Your interview's with Victoria Sterling in the conference room, behind a staff card reader. Reception will sign you in. Message me if you get stuck." Reads true whenever it is opened |
+| R1-8 | Briefing line | Run A step 1, ask "Did Zero Day sell Ghost the way in?" | "…Now we go after the seller's own ledger." (no "Tonight") |
+| R1-10 | No change: the on-screen panel hides locked tasks (objectives-panel.js:131); the harness `openTasks` lists them | Run B: enter the server room before opening the drive | `decode_directive` is **not** on the on-screen panel (check the panel, not `openTasks`); it appears with a toast after the drive is read |
+| R1-11 | Three dashes removed | Run B: whiteboard observation; HaX's all-flags text; Danny's protect choice | "…punctuation hold: each letter…"; "And be careful. Reasonable as she sounds…"; "You were deceived. I'll put that in the report myself." |
+| R1-12 | VM fallback address | Run B: open the VM terminal | "192.168.100.3" (the target host in the proposed SecGen XML), not a /24 subnet |
+| R1-16 | Clone choice in the first chat | Run A variant: in the briefing ask HaX about cloning; at reception sign in and answer her "first time" question | A fourth choice "[Lean in to read the building directory.]" is offered there; without the briefing topic it still waits for the reader (C6) |
+| R1-20 | Guard patrol | Run B step 3: watch him for one loop before picking | He stands below and left of the office door looking at it for about 2 s, walks west with his back to it, stands near the west end for about 5 s, then walks back. Start the pick as he turns away: no catch. Start it while he stands at his post: caught. Report how many tries the first clean pick took |
+| R1-21 | Grace line | Run B: get caught once ("Wrong door"), then try again in his sight | "I'm still stood here, you know…" then "He'll walk on in a moment. Step back, wait until his back's turned, then try again."; he keeps walking; a try once his back is turned goes through |
+| Voice rule | No printed values in voiced lines | Any run | No player name in spoken lines: receptionist "Afternoon! You'll be the three o'clock, is it?"; Victoria "You must be the candidate…"; HaX "Right. Zero Day Syndicate…"; debrief "There you are…" and "Go home and get some sleep…". Caught two or more times: "The guard clocked you twice." / "…more than twice." |
+
+**Reload window (C10, C14), how to reach it.** The debrief starts within a moment of `victoria_choice_made`, so the old window is too short to catch. The reachable window is earlier: after you pick her fate (arrest, recruit or let her go) and **while her final lines are still on screen**, before the last Continue closes the chat. Reload there.
+- Expected after the reload (C10): her fate is kept and the debrief has not played. Talk to her: "We're done here. You made your choice." with only [Leave]. Closing that chat opens the debrief once; the credits follow its last line. Walking around before talking to her plays nothing. (Her fate tag runs as her last batch opens, so it should be saved by then. If she offers the confrontation again instead, record that: the fate was lost in the reload.)
+- C14 in the same state: knock her out instead of talking. The ending stays the fate you picked (the credits say ARRESTED / TURNED / ESCAPED, not NEUTRALISED), and the debrief opens once.
+- If the harness can only reload after the chat has closed, record C10/C14 as not reached and say why.
+

@@ -53,7 +53,7 @@ VAR danny_ko = false
 Narrator: SAFETYNET headquarters. The morning after WhiteHat Security.
 
 #speaker:agent_0x99
-Agent HaX: {player_name()}. Sit down before you fall down. You've earned it.
+Agent HaX: There you are. Sit down before you fall down. You've earned it.
 
 // Perfect Stealth needs all three: never detected, actually went past him into
 // Sterling's office, and didn't simply knock him out (P6).
@@ -83,7 +83,7 @@ Agent HaX: {player_name()}. Sit down before you fall down. You've earned it.
     Agent HaX: Security flagged one run-in with the guard. You recovered, but you left a mark on the log.
 }
 { guard_detection_count > 1:
-    Agent HaX: The guard clocked you {guard_detection_count} times. You got it done. Nobody's going to call it quiet.
+    Agent HaX: The guard clocked you {guard_detection_count == 2:twice|more than twice}. You got it done. Nobody's going to call it quiet.
 }
 { guard_told_safetynet:
     Agent HaX: You told Sterling's own guard who you work for. He rang her.
@@ -218,7 +218,8 @@ Agent HaX: Now the part that kept me up. Phase 2.
         Agent HaX: You brought out the drive from her desk. Base64 over ROT13; our people had both layers off in ten minutes. Underneath, the Architect's directive.
     }
 - else:
-    Agent HaX: You left the drive in her desk. The search team pulled it out this morning, and our people had it read in ten minutes. Base64 over ROT13. The Architect's directive.
+    // Pass 5 (R1-3): neutral, so it reads true for a player who never saw the drive.
+    Agent HaX: The search team went through Sterling's desk this morning and found a drive. Our people had it read in ten minutes. Base64 over ROT13. The Architect's directive.
 }
 -> directive_substance
 
@@ -247,10 +248,14 @@ Agent HaX: The directive proves they exist and proves they plan at this scale. C
         Agent HaX: Not yet. All we have is encrypted channels and a signature. But every operation like this narrows it.
     }
     -> architect_investigation
-* [This is the map to their whole operation.]
+// Pass 5 (R1-3): the player claims the drive only if they found it.
+* {usb_seen or lore_directive_found} [This is the map to their whole operation.]
     ~ handler_trust = handler_trust + 10
     # influence_increased
     Agent HaX: You handed us the shape of the thing.
+    -> architect_investigation
+* {not (usb_seen or lore_directive_found)} [So that drive is the map to their whole operation.]
+    Agent HaX: It is. Next time, bring it out yourself.
     -> architect_investigation
 
 === architect_investigation ===
@@ -358,11 +363,16 @@ Agent HaX: Their records sat on the one box they knew was broken: a distcc daemo
         Agent HaX: And word will reach their buyers that the list is in our hands. Every sale off that shelf just got riskier.
     }
 }
-{ handler_trust >= 70:
-    Agent HaX: You did the technical work and still saw the people in it. Keep doing both.
-}
-{ (handler_trust >= 50) && (handler_trust < 70):
-    Agent HaX: Clean enough. We'll need you soon.
+// Pass 5 (R1-3): no praise for a clean job when bystanders were knocked out.
+{ handler_trust >= 50 and (receptionist_ko or guard_knocked_out or danny_ko or danny_fate == "ko"):
+    Agent HaX: It got done. Not cleanly. Some people who never signed up for this will remember last night. We'll still need you soon.
+- else:
+    { handler_trust >= 70:
+        Agent HaX: You did the technical work and still saw the people in it. Keep doing both.
+    }
+    { (handler_trust >= 50) && (handler_trust < 70):
+        Agent HaX: Clean enough. We'll need you soon.
+    }
 }
 -> aftermath
 
@@ -393,7 +403,7 @@ Agent HaX: Ghost's still out there. But last night you put the people who armed 
 
 === closing ===
 #speaker:agent_0x99
-Agent HaX: Go home, {player_name()}. We'll brief the next one when you're ready.
+Agent HaX: Go home and get some sleep. We'll brief the next one when you're ready.
 // The conclusion aim's last task completes HERE, so bond_visualiser and the
 // credits come after the debrief, not over it.
 #complete_task:hear_debrief

@@ -70,7 +70,7 @@ VAR hub_quiet = false
 { not recruitment_discussed:
     #display:victoria-professional
     Narrator: Victoria Sterling rises as you come in, composed and sure of herself.
-    Victoria Sterling: You must be {player_name()}. Welcome to WhiteHat Security.
+    Victoria Sterling: You must be the candidate. Welcome to WhiteHat Security.
     Victoria Sterling: I'm Victoria Sterling, CEO. Have a seat.
     Narrator: She gestures to the conference table.
     // Pass 4 (fix 2): a knocked-out receptionist doesn't go unnoticed. Feeds the
@@ -419,7 +419,7 @@ Victoria Sterling: I think that covers the basic philosophy. The training progra
 #speaker:victoria_sterling
 Victoria Sterling: Feel free to look around the office if you'd like. Reception area, main hallway. Get a feel for the company culture.
 { victoria_trusts_player:
-    Victoria Sterling: And {player_name()}? I think you'd fit in well here. We need more pragmatists.
+    Victoria Sterling: Off the record? I think you'd fit in well here. We need more pragmatists.
 }
 Victoria Sterling: I have another meeting in a few minutes. But we'll be in touch.
 Narrator: Victoria's phone buzzes. She glances at it.
@@ -500,7 +500,7 @@ Victoria Sterling: Then you already have the what. I'm the when.
 Narrator: She lets the bag slide off her shoulder onto the desk.
 Victoria Sterling: I don't have the Architect's name. Nobody does. But I have the comms protocol, the rails the money moves on, and the Phase 2 window.
 Victoria Sterling: The window opens in weeks. The assets are already moving into position.
-Victoria Sterling: Understand what this is, {player_name()}. You didn't move me. You're simply a better bet than a shallow grave.
+Victoria Sterling: Understand what this is. You didn't move me. You're simply a better bet than a shallow grave.
 ~ victoria_fate = "recruited"
 #set_global:victoria_recruited:true
 #set_global:victoria_fate:recruited
@@ -547,7 +547,7 @@ Narrator: She hasn't heard you come in. You ease back out before she turns round
 
 === after_choice ===
 #speaker:victoria_sterling
-Victoria Sterling: We're done, {player_name()}. You made your choice.
+Victoria Sterling: We're done here. You made your choice.
 + [Leave]
     ~ idle_quiet = true
     #exit_conversation

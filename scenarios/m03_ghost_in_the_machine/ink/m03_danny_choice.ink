@@ -63,7 +63,7 @@ Danny Foster: When I worked it out, I went to her. She told me I was paranoid. T
 Danny Foster: She was buying my silence and I was letting her. The alternative is this.
 Danny Foster: A stranger in my office at night, and me trying to explain I'm not what the map makes me look like.
 Danny Foster: So. What happens now?
-+ [Come in and testify. You were deceived -- I'll put that in the report myself.]
++ [Come in and testify. You were deceived. I'll put that in the report myself.]
     -> protect
 + [You drew the map, took the money, stayed quiet. You'll answer for it.]
     -> expose
