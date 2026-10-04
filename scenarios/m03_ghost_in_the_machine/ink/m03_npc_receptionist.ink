@@ -42,7 +42,7 @@ VAR night_greeted = false
 }
 { badge_received:
     #display:receptionist-friendly
-    Receptionist: Back again? How's it going in there?
+    Receptionist: Back again? Forgotten something?
     ~ hub_quiet = true
     -> hub
 }
@@ -79,8 +79,7 @@ Receptionist: Ms. Sterling's in the conference room. Straight up the hallway, fi
 
 === company_overview ===
 #speaker:receptionist
-Receptionist: WhiteHat Security was founded in 2010 by Victoria Sterling.
-Receptionist: We do penetration testing, security audits and advanced research training.
+Receptionist: Ms. Sterling started it in 2010.
 { receptionist_influence >= 10:
     Receptionist: We also have a research division - Zero Day training programmes. Very cutting-edge stuff.
 }
@@ -147,7 +146,7 @@ Receptionist: Is this your first time working with a Cyber Security firm?
 + {mission_phase != "act2_infiltration" && badge_received && not reception_badge_cloned && (conference_reader_tried or cloner_explained)} [Lean in to read the building directory.]
     -> clone_badge_opportunity
 + {mission_phase != "act2_infiltration"} [Thanks. I'll head through.]
-    Receptionist: Go on through. She hates being kept waiting.
+    Receptionist: Go on, then. Shout if you need anything.
     ~ hub_quiet = true
     #exit_conversation
     -> hub
@@ -163,10 +162,10 @@ Receptionist: And she really cares about the work. Sometimes she's here until mi
     Receptionist: Between you and me, she can be intense. Very particular about her research.
     Receptionist: But she's fair. If you're good at what you do, she'll respect you.
 }
-* [Intense, is she?]
+* [She sounds like hard work.]
     ~ receptionist_influence = receptionist_influence + 5
     # influence_increased
-    Receptionist: Oh, completely. Lives for it, she does.
+    Receptionist: Ha. She can be. Lives for it, she does.
     -> hub
 * [Midnight work sessions? That's some serious dedication.]
     Receptionist: Some nights, yeah. The cleaners find her at her desk gone midnight.
@@ -230,7 +229,7 @@ Receptionist: Reception here, then the main hallway. The conference room's throu
 Receptionist: Server room at the far end of the main hallway -- executive cards only.
 Receptionist: And Ms. Sterling's office is in the executive wing, east off the main hallway.
 * [Is anyone here after business hours?]
-    Receptionist: Just Ms. Sterling, if she's working late. And the night guard. Does his rounds, drinks a lot of tea.
+    Receptionist: Ms. Sterling, if she's working late. Danny, some evenings. And the night guard. Does his rounds, drinks a lot of tea.
     ~ receptionist_influence = receptionist_influence + 5
     # influence_increased
     -> hub

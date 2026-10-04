@@ -201,3 +201,12 @@ Structure changes (tagdiff vs the snapshot), each deliberate:
 - `scenario.json.erb`: five dead globals removed (`victoria_trust`, `danny_innocence_confirmed`, `danny_warned`, `danny_protected`, `danny_exposed`; P4-22), and from the m03 block of `missions.json`.
 
 Lint after: 0 errors; 4 warnings, each justified. `choice-len` victoria:483 is the confrontation's offer and earns its 18 words. `not-x-but-y` victoria:462 is the villain's one "That isn't cruelty. It's arithmetic." in the night scene. `stage-cue-density` guard (7/85) and Victoria (12/94): the four cues the words already carried are cut (P4-38); the rest steer delivery on lines that would read flat.
+
+### Pass 5, round 2 (script editor's notes, P4-43..P4-64)
+
+- **Restored** (not new): Nightshade's "One day it'll be our badge somebody clones. Remember how easy it was." in its old place between his two technique lines (P4-43). m08 quotes it; it is the one double-edged Nightshade line this mission is allowed. Round 1's cut was wrong.
+- Replies now answer the line before them: Victoria's "Neither." for the either/or question (P4-44), "Do you." for "I test every client's story" (P4-58); the receptionist's re-entry and goodbye no longer assume where the player is in the day (P4-45, P4-46).
+- Repeats removed: Victoria's name twice on the arrest branch (P4-47), "That's refreshing." before "Good." (P4-51), the player's label parroting her (P4-49), "supply" three times (P4-56), "rest" twice (P4-59), "Get out. Now." before the warning (P4-60), the receptionist's brochure restatement (P4-53).
+- Facts: the receptionist names Danny as an evening worker (P4-52); the guard knows the wing holds one consultant, Mr Foster (P4-55); the briefing says whose badge opens the conference area (P4-64); the lawyers quote her own phrase (P4-63); the bribe label no longer promises an hour (P4-62).
+- Structure: one condition (P4-48): "You left some of the paper behind." plays only when the history or the catalogue is missing, so it always names something.
+- Receptionist: voice kept as it is; no further dialect.

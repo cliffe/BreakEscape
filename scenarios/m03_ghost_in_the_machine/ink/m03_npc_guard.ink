@@ -183,7 +183,7 @@ Security Guard: This doesn't add up. You're not making sense.
 Security Guard: *sharply* Are you trying to bribe me?
 * [I can make it worth your while. A hundred quid, and you didn't see me.]
     -> bribe_response_low
-* [Five hundred, cash. Give me an hour, then I'm gone.]
+* [Five hundred, cash. I'm in and out.]
     -> bribe_response_high
 * [No, no. I just meant -- could you make an exception? A favour?]
     ~ guard_influence = guard_influence - 5
@@ -194,7 +194,6 @@ Security Guard: *sharply* Are you trying to bribe me?
 === bribe_response_low ===
 #speaker:npc
 Security Guard: A hundred quid? You think I'm risking my job for a hundred quid?
-Security Guard: Get out. Now.
 ~ guard_hostile = true
 ~ guard_detection_count = guard_detection_count + 1
 -> trespass_warning
@@ -303,7 +302,7 @@ Security Guard: Double shift tonight. On till six. Quiet, most nights.
 }
 Security Guard: Rounds every fifteen minutes. Doors, windows, anyone where they shouldn't be. Like you, possibly.
 * [What's your route?]
-    Security Guard: Round the executive wing, mostly. Sterling's office, the consultants' rooms, back down the corridor.
+    Security Guard: Round the executive wing, mostly. Sterling's office, Mr Foster's, back down the corridor.
     Security Guard: Why d'you want to know my route?
     ~ guard_suspicious = true
     -> hub
@@ -326,7 +325,7 @@ Security Guard: Server room's at the far end of the main hallway. The executive 
     Security Guard: Server room's usually locked. Executive-level access only.
 }
 * [What's in the executive area?]
-    Security Guard: Ms. Sterling's office, north side. The consultants are across from her.
+    Security Guard: Ms. Sterling's office, north side. Mr Foster's across from her.
     ~ guard_influence = guard_influence + 5
     # influence_increased
     -> hub

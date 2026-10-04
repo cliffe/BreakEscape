@@ -127,7 +127,7 @@ Victoria Sterling: Meanwhile, those same vulnerabilities get discovered by other
 * [So, responsible disclosure or full disclosure?]
     ~ victoria_influence = victoria_influence + 10
     # influence_increased
-    Victoria Sterling: Exactly. But there's a third option most won't discuss.
+    Victoria Sterling: Neither. There's a third option most won't discuss.
     -> market_efficiency_pitch
 * [Researchers deserve fair pay for what they find.]
     ~ victoria_influence = victoria_influence + 15
@@ -148,7 +148,7 @@ Victoria Sterling: Meanwhile, those same vulnerabilities get discovered by other
 === market_efficiency_pitch ===
 #speaker:victoria_sterling
 Victoria Sterling: Every system tends towards disorder. Entropy, if you like.
-Victoria Sterling: Systems fail. What matters is who knows first.
+Victoria Sterling: Systems fail. What matters is who knows first, and who pays them for knowing.
 ~ topic_free_market = true
 -> hub
 
@@ -244,7 +244,6 @@ Victoria Sterling: Go ahead. I've heard every argument.
 * [I'm not here to judge your business model. Just to understand it.]
     ~ victoria_influence = victoria_influence + 15
     # influence_increased
-    Victoria Sterling: That's refreshing.
     -> ethics_response_pragmatic
 
 === ethics_response_harm ===
@@ -293,7 +292,7 @@ Narrator: The cloner in your pocket starts reading her card. Custom keys: you'll
 { receptionist_ko:
     Victoria Sterling: *coolly* How thoughtful.
 - else:
-    Victoria Sterling: *coolly* Does it. Well. Most people don't bother to walk it back.
+    Victoria Sterling: *coolly* Do you. Well. Most people don't bother to walk it back.
 }
 Narrator: She doesn't warm to you. But she stops watching your hands.
 -> hub
@@ -360,7 +359,7 @@ Narrator: She walks back to the table. The cloner's read stalls halfway, then dr
 #speaker:victoria_sterling
 Victoria Sterling: You're asking good questions. Technical competence is common. Strategic thinking is rare.
 Narrator: Nearly there. Keep her talking.
-* [Knowing the bug is half of it. Knowing who'll pay is the rest.]
+* [Skills are cheap. Knowing where to sell them isn't.]
     ~ victoria_influence = victoria_influence + 10
     # influence_increased
     Victoria Sterling: Exactly. That's why most security researchers stay poor while we thrive.
