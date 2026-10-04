@@ -249,6 +249,12 @@ Counts (new): 0 blockers, 1 major, 6 minors. P3-1 holds when traced (handlers re
 
 Harness note to check: typing flags 1-3 back-to-back once dropped flag 2 silently; resubmitting worked. Sent to the fixer to classify (harness or engine).
 
+### Round 2 fix (fixer, resumed)
+
+Commit e44d22d (WIP). P3-19: three hub choices replay a missed call (distcc revelation, catalogue, PC), each retiring once heard; "Where do I stand?" and the confrontation task name the conference room (KO variant too). P3-20: `guard_attacking` setter no longer onceOnly; the guard's hostile lines need both his ink VAR and the scenario global (behaviour change: a player ordered out without a fight who returns hears "You again. I'm keeping my eye on you." rather than "I told you to leave. I'm calling the police."; sent to round 3 to judge). P3-21 dead roster line deleted. P3-22 credit and proposed XML wording fixed. P3-24 credit "SECURITY GUARD: KNOCKED OUT ON SHIFT". P3-25 KO handler can't overwrite a set fate; Victoria hidden on room entry once her fate is set. No voiced line changed. Static checks clean.
+
+Flag station (classified by the fixer from `flag-station-minigame.js`): real minor engine bug. Enter during an in-flight submission returns silently (`:613`), and the first submission's success clears the input (`:705`), so a flag typed during the round-trip is dropped with no feedback. Engine item E-E for approval: say "Still checking the last flag" and clear the input only if it still holds the submitted value.
+
 ## SecGen
 
 m03 XML missing on SecGen master. Proposed file: `SECGEN_PROPOSED_m03_ghost_in_the_machine.xml` (D1). No SecGen edits made.
@@ -297,4 +303,5 @@ Text only: Victoria's choice "[Phase 2. Critical Mass. The grid. You're already 
 
 - E-1 (engine, optional, for approval): on reload the server doesn't re-derive aims whose `unlockCondition` is a globalVariable; it relies on the recorded unlock. Works for m03 today; a derived check would make story gates robust if a recorded unlock were ever lost.
 - D1 SecGen m03 XML (user).
+- E-A..E-D (Phase 3 round 1) and E-E flag station silent drop: engine items for approval.
 - E-2 (superseded for m03 by P2-15; still a schema inconsistency) (engine/schema, for approval): `scenario-schema.json` forbids the hash form of `flagRewards` that `games_controller.rb` prefers, so m03 keeps three dead `emit_event` rewards to preserve index pairing.
