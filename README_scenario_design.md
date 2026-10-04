@@ -960,6 +960,7 @@ Barks are triggered via event mappings (see below). Each NPC uses its own audio 
 
 - **TTS**: automatically used when the NPC has a `voice` config. No extra field needed.
 - **`barkDelay`**: milliseconds to wait after the event fires before showing the bark (default `0`). Use to stagger responses from multiple NPCs reacting to the same event so they don't all speak simultaneously.
+- **Barks wait behind a minigame** (any except phone chat) and are released when it closes (`bark-release-policy.js`). They come out first in, first out, one every 2.5 s. Before each one shows, the mapping's `condition` is run again against the original event (so a `globalVars.x` term reads the current value), and a text with `skipIfGlobal` checks that global again; a bark that no longer passes is dropped, so write conditions that say when a line has stopped being true ("next is the restore" should require `!globalVars.restore_done`). A bark with no condition is never dropped for being stale. If more than 3 are waiting, the oldest ones beyond the newest 3 are dropped, but only if the same text is in the NPC's phone thread; barks from person NPCs have no such copy and are never dropped by the cap. Drops are logged with `console.debug` ("stale" or "capped").
 
 #### NPC Timed Conversations (opening cutscenes)
 

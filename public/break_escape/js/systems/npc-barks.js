@@ -6,6 +6,7 @@ import { ASSETS_PATH } from '../config.js';
 import TTSManager from './tts-manager.js';
 import { phoneBarkText } from '../minigames/phone-chat/phone-chat-speaker.js';
 import { displayDashes } from '../utils/display-dashes.js';
+import { releaseHeldBarks } from './bark-release-policy.js';
 
 export default class NPCBarkSystem {
   constructor(npcManager) {
@@ -140,11 +141,16 @@ export default class NPCBarkSystem {
   showBark(payload = {}) {
     if (!this.container) this.init();
 
-    // While a person-chat or another full-screen minigame is open, hold the bark and
-    // play it when that closes; on top of a minigame it covered the panel (D5)
-    if (this._shouldDefer()) {
+    // HOLD POLICY (code in bark-release-policy.js; README_scenario_design.md "Bark notifications").
+    // While a person-chat or another full-screen minigame is open, hold the bark (it covered
+    // the panel, D5). On release: first in, first out; each bark's conditions are re-checked
+    // (payload.stillValid) and stale ones dropped; one every ~2.5 s; more than 3 waiting drops
+    // the oldest ones that also sit in a phone thread. Drops are logged with console.debug.
+    // A bark arriving mid-release joins the end of the line, so it can't jump the queue.
+    if (this._shouldDefer() || this.isDrainingDeferred || this.deferredBarkQueue.length > 0) {
       console.log('💬 conversation/minigame open — deferring bark:', payload.text || payload.message);
       this.deferredBarkQueue.push(payload);
+      if (!this._shouldDefer()) this.drainDeferredBarks();
       return null;
     }
 
@@ -155,34 +161,41 @@ export default class NPCBarkSystem {
     return null; // Return null since we're processing async
   }
 
-  /**
-   * Play deferred barks one at a time now that a person-chat has closed.
-   * Each bark finishes (including TTS audio) before the next begins.
-   */
   _shouldDefer() {
     if (window.currentConversationMinigameType === 'person-chat') return true;
     return !!window.MinigameFramework?.holdsBarks?.();
+  }
+
+  /**
+   * Is this bark's text also in a phone thread the player can reopen? Only phone NPCs'
+   * threads are saved and shown; a person NPC's bark has no copy that outlasts the toast.
+   */
+  _hasPersistentCopy(payload) {
+    // main.js builds the bark system before the NPC manager and never links them back,
+    // so fall back to the global manager rather than waking the other this.npcManager paths
+    const manager = this.npcManager || (typeof window !== 'undefined' ? window.npcManager : null);
+    const npc = payload?.npcId && manager?.getNPC?.(payload.npcId);
+    if (!npc || npc.npcType !== 'phone') return false;
+    const text = String(payload.text || payload.message || '').trim();
+    if (!text) return false;
+    const history = manager.getConversationHistory?.(payload.npcId) || [];
+    return history.some(m => m && typeof m.text === 'string' && m.text.trim() === text);
   }
 
   async drainDeferredBarks() {
     if (this.isDrainingDeferred || this.deferredBarkQueue.length === 0) return;
     if (this._shouldDefer()) return;   // another minigame opened; drained when it closes
     this.isDrainingDeferred = true;
-
-    console.log(`📣 Draining ${this.deferredBarkQueue.length} deferred bark(s)`);
-
-    while (this.deferredBarkQueue.length > 0) {
-      if (this._shouldDefer()) break;   // a minigame opened mid-drain; the rest wait for it
-      const payload = this.deferredBarkQueue.shift();
-      const ttsPromise = await this._renderBark(payload);
-      // Wait for TTS to finish (or a short minimum) before showing the next deferred bark
-      await Promise.all([
-        ttsPromise || Promise.resolve(),
-        new Promise(resolve => setTimeout(resolve, 1200))
-      ]);
+    console.log(`📣 Releasing ${this.deferredBarkQueue.length} held bark(s)`);
+    try {
+      await releaseHeldBarks(this.deferredBarkQueue, {
+        shouldHold: () => this._shouldDefer(),
+        render: (payload) => this._renderBark(payload),
+        hasPersistentCopy: (payload) => this._hasPersistentCopy(payload)
+      });
+    } finally {
+      this.isDrainingDeferred = false;
     }
-
-    this.isDrainingDeferred = false;
   }
 
   /**

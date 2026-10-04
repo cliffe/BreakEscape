@@ -620,6 +620,22 @@ export default class NPCManager {
     return result(true);
   }
 
+  /**
+   * A bark held behind a minigame is re-checked when it's released (bark-release-policy.js).
+   * This is the "conditions" part: the mapping's `condition` run again against the event's
+   * own data (so `globalVars.x` reads the current value), or a timed text's skipIfGlobal.
+   * once-only and cooldown are not re-checked: the handler has already fired for this bark.
+   * @returns {Function|undefined} undefined when the bark has no conditions
+   */
+  _barkStillValid(npcId, config, eventData) {
+    const condition = config && config.condition;
+    if (!condition) return undefined;
+    return () => {
+      if (typeof condition === 'function') return !!condition(eventData, this.getNPC(npcId));
+      return !!safeEvaluateCondition(condition, eventData);
+    };
+  }
+
   // Handle when a mapped event fires
   _handleEventMapping(npcId, eventPattern, config, eventData) {
     console.log(`🎯 Event triggered: ${eventPattern} for NPC: ${npcId}`, eventData);
@@ -1064,7 +1080,8 @@ export default class NPCManager {
           inkStoryPath: npc.storyPath,
           startKnot: config.knot || null,   // none: a click reopens the thread (npc-barks.js)
           phoneId: npc.phoneId,
-          useTTS: npc.npcType === 'person' && !!npc.voice
+          useTTS: npc.npcType === 'person' && !!npc.voice,
+          stillValid: this._barkStillValid(npcId, config, eventData)
         });
       };
 
@@ -1079,14 +1096,14 @@ export default class NPCManager {
       console.log(`📖 Loading Ink story from knot: ${config.knot}`);
 
       // Load the Ink story and navigate to the knot
-      this._showBarkFromKnot(npcId, npc, config.knot, eventPattern);
+      this._showBarkFromKnot(npcId, npc, config.knot, eventPattern, this._barkStillValid(npcId, config, eventData));
     }
     
     console.log(`[NPCManager] Event '${eventPattern}' triggered for NPC '${npcId}' → knot '${config.knot}'`);
   }
   
   // Load Ink story, navigate to knot, and show the text as a bark
-  async _showBarkFromKnot(npcId, npc, knotName, eventPattern) {
+  async _showBarkFromKnot(npcId, npc, knotName, eventPattern, stillValid) {
     try {
       // OPTIMIZATION: Fetch story from cache or network
       let storyJson = this.storyCache.get(npc.storyPath);
@@ -1151,7 +1168,8 @@ export default class NPCManager {
           inkStoryPath: npc.storyPath,
           startKnot: knotName,
           phoneId: npc.phoneId,
-          useTTS: npc.npcType === 'person' && !!npc.voice
+          useTTS: npc.npcType === 'person' && !!npc.voice,
+          stillValid
         });
       } else {
         console.warn(`⚠️ No text found in knot: ${knotName}`);
@@ -1539,7 +1557,11 @@ export default class NPCManager {
         inkStoryPath: npc.storyPath,
         startKnot: message.targetKnot || null,   // none: a click reopens the thread (npc-barks.js)
         phoneId: message.phoneId,
-        useTTS: npc.npcType === 'person' && !!npc.voice
+        useTTS: npc.npcType === 'person' && !!npc.voice,
+        // Same guard as at delivery: if the global is set by the time it's released, drop it
+        stillValid: message.skipIfGlobal
+          ? () => !window.gameState?.globalVariables?.[message.skipIfGlobal]
+          : undefined
       });
     }
     
