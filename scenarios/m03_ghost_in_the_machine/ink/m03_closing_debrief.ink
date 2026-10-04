@@ -224,11 +224,6 @@ Agent HaX: Now the part that kept me up. Phase 2.
     }
 - else:
     Agent HaX: You left the drive in her desk. The search team pulled it out this morning, and our people had it read in ten minutes. Base64 over ROT13. The Architect's directive.
-    // Pass 5 (P3-4): opening the roster isn't reading it (no decode signal, engine E-A). The only
-    // decode proof is directive_decoded, which can't be true in this branch, so the line is retired.
-    { roster_seen and directive_decoded:
-        Agent HaX: Her client roster had already pointed you at Critical Mass and the grid. The drive says the rest.
-    }
 }
 -> directive_substance
 
