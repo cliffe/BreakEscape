@@ -1,4 +1,5 @@
 import { MinigameScene } from '../framework/base-minigame.js';
+import { attachContinueHandlers } from './title-screen-input.js';
 
 // Load title screen CSS
 const titleScreenCSS = document.createElement('link');
@@ -29,7 +30,7 @@ export class TitleScreenMinigame extends MinigameScene {
                 <div class="title-screen-title" style="visibility: hidden;">
                     <span class="title-screen-typed-text"></span><span class="title-screen-cursor">█</span>
                 </div>
-                <div class="title-screen-prompt" style="visibility: hidden;">Continue?</div>
+                <div class="title-screen-prompt" style="visibility: hidden;">Continue?<span class="title-screen-prompt-hint">Click, or press Space or Enter</span></div>
             </div>
         `;
 
@@ -56,6 +57,7 @@ export class TitleScreenMinigame extends MinigameScene {
         this._gameLoaded = false;
         this._playerClicked = false;
         this._clickHandler = null;
+        this._detachContinue = null;
     }
 
     start() {
@@ -134,20 +136,19 @@ export class TitleScreenMinigame extends MinigameScene {
         this._typingDone = true;
         promptEl.style.visibility = 'visible';
 
-        this._clickHandler = () => {
+        // A click anywhere, Space or Enter continues (title-screen-input.js).
+        // The handlers detach themselves after the first use.
+        this._detachContinue = attachContinueHandlers(this.container, document, () => {
+            this._detachContinue = null;
             this._playerClicked = true;
             if (this._gameLoaded) {
                 this.complete(true);
             } else {
-                // Remove click listener — no further interaction needed
-                this.container.removeEventListener('click', this._clickHandler);
-                this._clickHandler = null;
-                // Stop blinking and type the loading state
+                // Stop the pulse and type the loading state
                 promptEl.style.animation = 'none';
                 this._typeLoadingPrompt(promptEl);
             }
-        };
-        this.container.addEventListener('click', this._clickHandler);
+        });
     }
 
     _typeLoadingPrompt(promptEl) {
@@ -192,6 +193,10 @@ export class TitleScreenMinigame extends MinigameScene {
         if (this._clickHandler) {
             this.container.removeEventListener('click', this._clickHandler);
             this._clickHandler = null;
+        }
+        if (this._detachContinue) {
+            this._detachContinue();
+            this._detachContinue = null;
         }
         super.cleanup();
     }

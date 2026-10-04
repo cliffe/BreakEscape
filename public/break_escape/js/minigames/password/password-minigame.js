@@ -399,6 +399,19 @@ export class PasswordMinigame extends MinigameScene {
     }
     
     async submitPassword() {
+        // One check at a time: Enter plus a Submit click (or a fast double Enter) used
+        // to count two attempts for one password (m02 playtest M2/M7; same guard as
+        // the PIN minigame's checkPending).
+        if (this.checkPending) return;
+        this.checkPending = true;
+        try {
+            await this._submitPasswordOnce();
+        } finally {
+            this.checkPending = false;
+        }
+    }
+
+    async _submitPasswordOnce() {
         const gameId = window.breakEscapeConfig?.gameId;
         console.log('submitPassword called', {
             isActive: this.gameState.isActive,

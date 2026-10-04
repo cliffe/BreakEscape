@@ -101,6 +101,22 @@
     font-weight: bold;
     letter-spacing: 2px;
     color: #00ff41;
-    animation: titleCursorBlink 1.2s step-end infinite;
+    /* A pulse, not a blink: the prompt never disappears (m02 playtest CF-J/B1). */
+    animation: titlePromptPulse 1.6s ease-in-out infinite;
     cursor: pointer;
+    text-align: center;
+}
+
+.title-screen-prompt-hint {
+    display: block;
+    margin-top: 8px;
+    font-size: 14px;
+    font-weight: normal;
+    letter-spacing: 1px;
+    color: #9fdfae;
+}
+
+@keyframes titlePromptPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.55; }
 }
