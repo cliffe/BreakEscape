@@ -349,6 +349,24 @@ Merged list with rulings: scratch `m03-pt-r1-merged.md` (R1-1..R1-21). Raised by
 
 Orchestrator rulings so far: struggling S1 (flags accepted without the VM) withdrawn: standalone runs supply flags by design and the real check is the VM itself (D1); S2 (Victoria KO'd in the afternoon skips her choice) is the designed KO route, but the empty objectives panel after it (S3, also A4 after a normal clone) is real.
 
+### Round 1 fix (fixer; commit a787228)
+
+| Row | Outcome |
+|---|---|
+| R1-1 | New task "Walk out with the visitors and come back after dark" unlocks with a toast when Victoria's card is saved (every route, incl. the afternoon KO) and completes at the night turn. The old "Card's saved" text sat on a hidden person NPC, so its toast would have been voiced and clicking it would open the debrief story in the phone; moved to HaX |
+| R1-2 | Night narration knows Victoria is unconscious |
+| R1-3 | Debrief: "Not cleanly" line when the receptionist, guard or Danny was KO'd; neutral drive line; "map" choice gated on seeing the drive; credit "FOUND IN STERLING'S DESK BY THE SEARCH TEAM" |
+| R1-5 | No change: the engine prints cues as written, as in m02 |
+| R1-7, R1-8, R1-11, R1-12, R1-16, R1-21 | Fixed (VM address now 192.168.100.3, the target host in the proposed XML; receptionist's first chat offers the clone choice once HaX has explained it) |
+| R1-10 | No change: the on-screen panel hides locked tasks; the harness lists them (engine/harness item E-G) |
+| R1-15 | No change: a pushable chair inside Danny's door blocks the harness pathfinder, not a player |
+| R1-20 | Guard loop re-timed (geometry and LOS unchanged): about 7.5 s unseen per 12 s loop, starting when he turns his back and walks west; HaX's "pick only when his back's turned" hint matches |
+| Voice rule | 11 voiced lines rewritten without variables (e.g. "Afternoon! You'll be the three o'clock, is it?", "You must be the candidate."); the detection count is now "twice / more than twice"; phone text keeps `{player_name()}` |
+
+New engine items: E-F a timed message on a person NPC makes a voiced toast that opens that NPC's story in the phone; E-G the harness `openTasks` lists locked tasks (skill code).
+
+Confirmation runs (Sonnet, three in parallel): day, night (incl. the C10/C14 reload window), KO route.
+
 ## SecGen
 
 m03 XML missing on SecGen master. Proposed file: `SECGEN_PROPOSED_m03_ghost_in_the_machine.xml` (D1). No SecGen edits made.
@@ -482,10 +500,19 @@ Restored 1 (Nightshade, above). Changed 19, cut 3, added 0.
 - Receptionist: "Ha. She can be. Lives for it, she does." → "Ha. You're not wrong. Lives for it, she does."
 - Guard: "...And stay in the executive area - don't wander." → "...And stay in the executive area. Don't wander."
 
+### Phase 5 round 1 (voiced)
+
+- briefing: "{player_name()}. Zero Day Syndicate. You heard of them?" → "Right. Zero Day Syndicate. You heard of them?"; "...Tonight we get the seller's own ledger." → "...Now we go after the seller's own ledger."; "{player_name()}. Whatever the count..." → "Listen. Whatever the count..."; "And {player_name()}? Come back in one piece." → "And one more thing. Come back in one piece."
+- receptionist: "Afternoon! {player_name()}, is it?" → "Afternoon! You'll be the three o'clock, is it?"
+- Victoria: "You must be {player_name()}." → "You must be the candidate."; "And {player_name()}? I think..." → "Off the record? I think..."; "Understand what this is, {player_name()}." → "Understand what this is."; "We're done, {player_name()}." → "We're done here."
+- debrief: "{player_name()}. Sit down..." → "There you are. Sit down..."; "clocked you {guard_detection_count} times" → "clocked you {twice|more than twice}"; "You left the drive in her desk. The search team pulled it out..." → "The search team went through Sterling's desk this morning and found a drive. Our people had it read..."; new "It is. Next time, bring it out yourself."; new "It got done. Not cleanly. Some people who never signed up for this will remember last night. We'll still need you soon."; "Go home, {player_name()}." → "Go home and get some sleep."
+- night transition (KO variant): "Sterling is out cold on the conference room floor. You pull the door shut behind you." / "You walk out with the last of the afternoon's visitors. Nobody goes looking for her before the building shuts."
+- guard: grace line → "He'll walk on in a moment. Step back, wait until his back's turned, then try again." (narration)
+
 ## Open items
 
 - E-1 (engine, optional, for approval): on reload the server doesn't re-derive aims whose `unlockCondition` is a globalVariable; it relies on the recorded unlock. Works for m03 today; a derived check would make story gates robust if a recorded unlock were ever lost.
 - D1 SecGen m03 XML (user).
 - Other missions' voiced-line variables: DONE, commit 94716a0 (user-approved exception): 56 lines in 23 ink files (m02 7, m04 4, m05 5, m06 9, m07 2, m08 4, nine lab instructors 25); tagdiff unchanged; JSON recompiled. m02's 7 lines lose cached clips. Left for the user: m01 (frozen) has 4 voiced hits (closing debrief :59, :120, :724, and `{lore_collected}` at :896); m08 Netherton speaks `{suite_code}` (constant 5386, cacheable as is); sis03 Eleanor speaks `{archive_pin_value}` (6767 today but marked `@random_pin`, so uncacheable if randomised); demo/test/unused library ink not changed. A dialoguelint check for this is still on offer.
-- E-A..E-D (Phase 3 round 1) and E-E flag station silent drop: engine items for approval.
+- E-A..E-D (Phase 3 round 1), E-E flag station silent drop, E-F person-NPC timed message voiced and opening the NPC story, E-G harness lists locked tasks: engine items for approval.
 - E-2 (superseded for m03 by P2-15; still a schema inconsistency) (engine/schema, for approval): `scenario-schema.json` forbids the hash form of `flagRewards` that `games_controller.rb` prefers, so m03 keeps three dead `emit_event` rewards to preserve index pairing.
