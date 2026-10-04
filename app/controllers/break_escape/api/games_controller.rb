@@ -14,7 +14,7 @@ module BreakEscape
         end
 
         if params[:globalVariables]
-          @game.update_global_variables!(params[:globalVariables].to_unsafe_h)
+          @game.merge_global_variables!(params[:globalVariables].to_unsafe_h)
         end
 
         @game.save!

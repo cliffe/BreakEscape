@@ -2,7 +2,7 @@ module BreakEscape
   class GamePolicy < ApplicationPolicy
     def show?
       # Owner or admin/account_manager
-      record.player == user || user&.admin? || user&.account_manager?
+      owner? || user&.admin? || user&.account_manager?
     end
 
     def update?
@@ -82,12 +82,12 @@ module BreakEscape
     end
 
     def vm_panel?
-      (record.player == user || user&.admin? || user&.account_manager?) &&
+      (owner? || user&.admin? || user&.account_manager?) &&
         record.status == 'in_progress'
     end
 
     def vm_set_panel?
-      (record.player == user || user&.admin? || user&.account_manager?) &&
+      (owner? || user&.admin? || user&.account_manager?) &&
         record.status == 'in_progress'
     end
 
@@ -99,6 +99,15 @@ module BreakEscape
           scope.where(player: user)
         end
       end
+    end
+
+    private
+
+    # The same test as record.player == user, on the foreign key, so checking
+    # a request doesn't load the player's row (every sync_state is checked).
+    def owner?
+      user.is_a?(ActiveRecord::Base) &&
+        record.player_type == user.class.polymorphic_name && record.player_id == user.id
     end
   end
 end

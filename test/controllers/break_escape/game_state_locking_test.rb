@@ -27,7 +27,6 @@ module BreakEscape
       save!
       add_inventory_item!
       remove_inventory_item!
-      update_global_variables!
       add_note!
       unlock_room!
       unlock_object!
@@ -67,6 +66,12 @@ module BreakEscape
       end
     end
 
+    # sync_state takes the row lock itself (a narrow `Game.lock.select(...)`
+    # load inside a transaction) so it doesn't read scenario_data.
+    def takes_own_lock?(body)
+      body.match?(/Game\.transaction do\s.*Game\.lock\b/m)
+    end
+
     test 'every action that writes player_state holds the game lock' do
       # Everything after the first private helper is a helper, not an action.
       private_at = source.index(/^    private$/) || source.length
@@ -76,6 +81,7 @@ module BreakEscape
         next if EXEMPT_ACTIONS.include?(name)
         next if source.index(body) > private_at
         next if locked.include?(name)
+        next if takes_own_lock?(body)
 
         written = STATE_WRITERS.select { |w| body.include?("@game.#{w}") }
         written << 'player_state[...] =' if body =~ /@game\.player_state\[[^\]]+\]\s*=/
@@ -89,6 +95,12 @@ module BreakEscape
                    "concurrent write can silently discard theirs (or theirs another's):\n  " \
                    "#{unlocked_writers.join("\n  ")}\n" \
                    "Add them to the `around_action :with_game_lock, only: [...]` list."
+    end
+
+    test 'sync_state takes its own row lock' do
+      body = action_bodies.to_h.fetch('sync_state')
+      assert takes_own_lock?(body), 'sync_state must load the game with Game.lock inside a transaction'
+      refute_includes locked_actions, 'sync_state', 'locking it twice would load scenario_data again'
     end
 
     # Guards the two that were actually found missing, so a future refactor of

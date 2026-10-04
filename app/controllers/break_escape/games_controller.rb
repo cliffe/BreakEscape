@@ -24,7 +24,7 @@ module BreakEscape
       policy.worker_src  :self, :blob
     end
 
-    before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :sync_state, :update_room, :unlock, :inventory, :objectives, :complete_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :conclude_mission]
+    before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :complete_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :conclude_mission]
 
     # Actions that read-modify-write @game.player_state and then save! need a
     # row lock, or two concurrent requests for the same game (e.g. a single
@@ -77,7 +77,7 @@ module BreakEscape
     # room is here for the same reason -- track_npc_encounters appends to
     # encounteredNPCs and saves, and npc_conversation tasks validate against
     # that list, so losing an entry rejects a legitimate completion.
-    around_action :with_game_lock, only: [:container, :sync_state, :update_room, :unlock, :complete_task, :update_task_progress, :unlock_objective, :submit_flag, :reset, :new_session, :inventory, :room]
+    around_action :with_game_lock, only: [:container, :update_room, :unlock, :complete_task, :update_task_progress, :unlock_objective, :submit_flag, :reset, :new_session, :inventory, :room]
 
     # GET /games/new?mission_id=:id
     # Show VM set selection page for VM-required missions
@@ -634,95 +634,51 @@ module BreakEscape
     end
 
     # PUT /games/:id/sync_state
-    # Periodic state sync from client
+    # Periodic state sync from the client (state-sync.js), sending only what
+    # changed since the last sync the server confirmed.
     #
-    # Wrapped in with_game_lock (see around_action above): writes currentRoom,
-    # globalVariables, and notes, each an independent path rather than a
-    # cross-key decision, so it's a candidate to drop the lock if this ever
-    # moves to atomic per-path writes — see the FUTURE IMPROVEMENT note above.
+    # Not on set_game / with_game_lock: those load the whole row twice,
+    # scenario_data (60-150 KB) included, for every sync. This takes the same
+    # row lock with one narrow load (SYNC_STATE_COLUMNS) and saves at most
+    # once, and only when a merge changed something.
     #
-    # NOTE — separate, still-open concern the lock does NOT address: this
-    # writes plain client-supplied snapshot values (e.g. currentRoom = ...),
-    # not idempotent/commutative operations. The lock only guarantees two
-    # concurrent syncs can't corrupt each other's write; it does not guarantee
-    # they apply in the client's intended chronological order. If a delayed or
-    # retried sync_state request reaches the lock *after* a newer one, it will
-    # still fully overwrite the newer value with older data — that requires a
-    # client-supplied sequence number/timestamp to fix, not locking or atomic
-    # writes.
+    # Ordering: each request carries clientTs, which only increases within a
+    # page. A request no newer than the stored lastSyncClientTs is stale (e.g.
+    # the old page's unload flush landing after the new page has synced): only
+    # the merges that can only grow and are safe to repeat are applied, and
+    # the answer is { stale: true } so the client sends the rest again.
+    # Requests without clientTs (clients from before this change) are applied
+    # as before.
     def sync_state
-      authorize @game if defined?(Pundit)
+      stale = false
+      refusal = nil
+      Game.transaction do
+        @game = Game.lock.select(*SYNC_STATE_COLUMNS).find(params[:id])
+        authorize @game if defined?(Pundit)
 
-      # Update allowed fields
-      if params[:currentRoom]
-        # Verify room is accessible
-        if @game.player_state['unlockedRooms'].include?(params[:currentRoom]) ||
-           @game.scenario_data['startRoom'] == params[:currentRoom]
-          @game.player_state['currentRoom'] = params[:currentRoom]
-        else
-          return render json: {
-            success: false,
-            message: "Cannot enter locked room: #{params[:currentRoom]}"
-          }, status: :forbidden
-        end
+        stale = stale_sync_request?
+        refusal = merge_last_write_wins_sections unless stale
+        raise ActiveRecord::Rollback if refusal
+
+        merge_grow_only_sections
+        # validate: false because the validations here are player and mission
+        # presence (twice each: belongs_to is required and validates :player /
+        # :mission repeat it), which load both rows on every save, and the
+        # status inclusion. This update can't change player, mission or status
+        # (mission_id and status aren't even loaded), so none of them can turn
+        # false. Saved only if a merge changed something: jsonb dirty tracking
+        # compares parsed values, so a merge that rebuilds equal data is not a
+        # change.
+        @game.save!(validate: false) if @game.changed?
       end
 
-      if params[:globalVariables]
-        @game.update_global_variables!(params[:globalVariables].to_unsafe_h)
+      if refusal
+        render json: { success: false, message: refusal }, status: :forbidden
+      elsif stale
+        render json: { success: true, stale: true }
+      else
+        render json: { success: true }
       end
-
-      if params[:biometricSamples].is_a?(Array)
-        @game.merge_biometric_samples!(params[:biometricSamples])
-      end
-
-      if params[:npcInkVariables].respond_to?(:to_unsafe_h)
-        @game.merge_npc_ink_variables!(params[:npcInkVariables].to_unsafe_h)
-      end
-
-      if params[:triggeredEvents].respond_to?(:to_unsafe_h)
-        @game.merge_triggered_events!(params[:triggeredEvents].to_unsafe_h)
-      end
-
-      if params[:timedMessages].respond_to?(:to_unsafe_h)
-        @game.replace_timed_messages!(params[:timedMessages].to_unsafe_h)
-      end
-
-      if params[:phoneState].respond_to?(:to_unsafe_h)
-        @game.merge_phone_state!(params[:phoneState].to_unsafe_h)
-      end
-
-      if params[:scenarioClock].respond_to?(:to_unsafe_h)
-        @game.merge_scenario_clock!(params[:scenarioClock].to_unsafe_h)
-      end
-
-      if params[:npcVisibility].respond_to?(:to_unsafe_h)
-        @game.merge_npc_visibility!(params[:npcVisibility].to_unsafe_h)
-      end
-
-      if params[:commandBoardLog].is_a?(Array)
-        @game.merge_command_board_log!(params[:commandBoardLog].map { |e| e.respond_to?(:to_unsafe_h) ? e.to_unsafe_h : e })
-      end
-
-      # Persist notes (including player observations).
-      # Merge by id so edits made mid-session overwrite older snapshots, but
-      # notes not yet in player_state are added fresh.
-      if params[:notes].present?
-        incoming = params[:notes].map(&:to_unsafe_h)
-        existing = @game.player_state['notes'] ||= []
-        incoming.each do |note|
-          idx = existing.index { |n| n['id'].to_s == note['id'].to_s }
-          if idx
-            existing[idx] = note
-          else
-            existing << note
-          end
-        end
-        @game.player_state['notes'] = existing
-      end
-
-      @game.save!
-
-      render json: { success: true }
     end
 
     # POST /games/:id/update_room
@@ -1327,6 +1283,112 @@ module BreakEscape
 
     def set_game
       @game = Game.find(params[:id])
+    end
+
+    # What sync_state reads or writes. scenario_data is left out (it is fetched
+    # only for the rare paths that need it). Reading an attribute not listed
+    # here raises ActiveModel::MissingAttributeError; reload_persistence_test
+    # saves every section on this load to catch that. player_type / player_id
+    # are for the policy, updated_at for the save. The after_commit completion
+    # checks read saved_changes only, and nothing here changes their columns.
+    SYNC_STATE_COLUMNS = %i[id player_type player_id player_state updated_at].freeze
+
+    # A stale clientTs this much older than the stored one is accepted and
+    # resets it. Wall-clock time is enough because a reload happens on one
+    # machine, but a clock set back during a reload would otherwise make every
+    # sync from the new page stale until it passed the old value.
+    SYNC_STALE_RESET_MS = 10.minutes.in_milliseconds
+
+    # True when the request carries a clientTs no newer than the newest one
+    # accepted. Otherwise records it (so every accepted request with clientTs
+    # is a write, which under the change-only client means a request that has
+    # something to save anyway).
+    def stale_sync_request?
+      client_ts = params[:clientTs]
+      return false unless client_ts.is_a?(Numeric)
+
+      client_ts = client_ts.to_i
+      stored = @game.player_state['lastSyncClientTs']
+      return true if stored.is_a?(Numeric) && client_ts <= stored && stored - client_ts <= SYNC_STALE_RESET_MS
+
+      @game.player_state['lastSyncClientTs'] = client_ts
+      false
+    end
+
+    # Sections where the last write wins: a stale request would put older
+    # values over newer ones, so they are skipped for it. npcVisibility and
+    # phoneState are here too: visibility is latest-wins per NPC (it can be
+    # set back to hidden), and a phone entry replaces the saved one whole, so
+    # an older thread would drop newer texts. Returns a refusal message, or nil.
+    def merge_last_write_wins_sections
+      if params[:currentRoom]
+        room = params[:currentRoom]
+        unless Array(@game.player_state['unlockedRooms']).include?(room) ||
+               Game.where(id: @game.id).pick(Arel.sql("scenario_data->>'startRoom'")) == room
+          return "Cannot enter locked room: #{room}"
+        end
+
+        @game.player_state['currentRoom'] = room
+      end
+
+      if params[:globalVariables].respond_to?(:to_unsafe_h)
+        @game.merge_global_variables!(params[:globalVariables].to_unsafe_h)
+      end
+
+      if params[:npcInkVariables].respond_to?(:to_unsafe_h)
+        @game.merge_npc_ink_variables!(params[:npcInkVariables].to_unsafe_h)
+      end
+
+      if params[:timedMessages].respond_to?(:to_unsafe_h)
+        @game.replace_timed_messages!(params[:timedMessages].to_unsafe_h)
+      end
+
+      if params[:phoneState].respond_to?(:to_unsafe_h)
+        @game.merge_phone_state!(params[:phoneState].to_unsafe_h)
+      end
+
+      if params[:npcVisibility].respond_to?(:to_unsafe_h)
+        @game.merge_npc_visibility!(params[:npcVisibility].to_unsafe_h)
+      end
+
+      # Notes merge by id, so an edit overwrites the saved copy and a new note
+      # is added
+      if params[:notes].present?
+        existing = @game.player_state['notes'] ||= []
+        params[:notes].map(&:to_unsafe_h).each do |note|
+          idx = existing.index { |n| n['id'].to_s == note['id'].to_s }
+          if idx
+            existing[idx] = note
+          else
+            existing << note
+          end
+        end
+      end
+      nil
+    end
+
+    # Merges that only grow and are safe to repeat, so a stale request still
+    # applies them: fired-handler counts keep the larger, the clock keeps the
+    # later time and the union of fired / cancelled timers, the command board
+    # keeps each entry's earliest time, and fingerprints keep the better
+    # sample per owner.
+    def merge_grow_only_sections
+      if params[:triggeredEvents].respond_to?(:to_unsafe_h)
+        @game.merge_triggered_events!(params[:triggeredEvents].to_unsafe_h)
+      end
+
+      if params[:scenarioClock].respond_to?(:to_unsafe_h)
+        @game.merge_scenario_clock!(params[:scenarioClock].to_unsafe_h)
+      end
+
+      if params[:commandBoardLog].is_a?(Array)
+        @game.merge_command_board_log!(params[:commandBoardLog].map { |e| e.respond_to?(:to_unsafe_h) ? e.to_unsafe_h : e })
+      end
+
+      if params[:biometricSamples].is_a?(Array)
+        scenario = Game.where(id: @game.id).pick(:scenario_data)
+        @game.merge_biometric_samples!(params[:biometricSamples], scenario: scenario)
+      end
     end
 
     # Serializes all player_state read-modify-write actions for a single game
