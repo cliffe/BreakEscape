@@ -12,7 +12,6 @@ VAR topic_zero_day_philosophy = false
 VAR topic_free_market = false
 VAR topic_ethics = false
 VAR recruitment_discussed = false
-VAR player_approach = ""
 VAR night_confrontation_ready = false
 VAR victoria_fate = ""
 // Synced scenario globals: what the player has opened (pass 3, P1/P3). usb_seen is
@@ -125,7 +124,7 @@ Victoria Sterling: Solid technical skills. But that's not why you're here.
 #speaker:victoria_sterling
 Victoria Sterling: The traditional security model is broken. Researchers find vulnerabilities, report them to vendors, wait months for patches.
 Victoria Sterling: Meanwhile, those same vulnerabilities get discovered by others. Sold on dark markets. Exploited.
-* [The responsible disclosure versus full disclosure debate. Classic dilemma.]
+* [So, responsible disclosure or full disclosure?]
     ~ victoria_influence = victoria_influence + 10
     # influence_increased
     Victoria Sterling: Exactly. But there's a third option most won't discuss.
@@ -148,9 +147,8 @@ Victoria Sterling: Meanwhile, those same vulnerabilities get discovered by other
 
 === market_efficiency_pitch ===
 #speaker:victoria_sterling
-Victoria Sterling: We provide liquidity to the vulnerability market.
-Victoria Sterling: Every system tends towards disorder. That's thermodynamics - entropy is inevitable.
-Victoria Sterling: The question isn't whether systems will fail. It's who benefits from that knowledge.
+Victoria Sterling: Every system tends towards disorder. Entropy, if you like.
+Victoria Sterling: Systems fail. What matters is who knows first.
 ~ topic_free_market = true
 -> hub
 
@@ -193,11 +191,10 @@ Victoria Sterling: The question isn't whether systems will fail. It's who benefi
 === zero_day_philosophy ===
 #speaker:victoria_sterling
 ~ topic_zero_day_philosophy = true
-Victoria Sterling: Zero Day's mission is simple: recognise that vulnerability knowledge has inherent value.
-Victoria Sterling: We discover, we price according to demand, we connect buyers with opportunities.
+Victoria Sterling: Zero Day is simple. A vulnerability is worth something to somebody.
+Victoria Sterling: We find it, we price it, and we find the somebody.
 * [And what do the buyers do with these exploits?]
     Victoria Sterling: That's not our concern. We're security professionals, not moralists.
-    Victoria Sterling: A gun manufacturer isn't responsible for every shooting.
     ~ victoria_influence = victoria_influence + 5
     # influence_increased
     -> moral_rationalization
@@ -211,15 +208,14 @@ Victoria Sterling: We discover, we price according to demand, we connect buyers 
         Narrator: Her smile stays exactly where it was. Her eyes don't. A recruit wouldn't have said that.
     }
     -> moral_rationalization
-* [So you're applying free-market principles to vulnerability research.]
+* [So it's a free market in vulnerabilities.]
     ~ victoria_influence = victoria_influence + 15
     # influence_increased
-    Victoria Sterling: Precisely. Supply and demand. Transparent economics.
+    Victoria Sterling: Precisely.
     -> moral_rationalization
 
 === moral_rationalization ===
 #speaker:victoria_sterling
-Victoria Sterling: We live in a world where vulnerabilities exist whether we like it or not.
 Victoria Sterling: Exploit sales happen with or without us.
 Victoria Sterling: So either the researcher gets paid, or the criminal does. I know which I'd rather fund.
 ~ victoria_influence = victoria_influence + 5
@@ -229,7 +225,6 @@ Victoria Sterling: So either the researcher gets paid, or the criminal does. I k
 === ethics_discussion ===
 #speaker:victoria_sterling
 ~ topic_ethics = true
-Victoria Sterling: Let me guess - you want to ask about the "morality" of selling exploits.
 Victoria Sterling: Go ahead. I've heard every argument.
 * [What about when exploits you sold hurt people? Hospitals, infrastructure?]
     ~ victoria_influence = victoria_influence - 5
@@ -244,19 +239,16 @@ Victoria Sterling: Go ahead. I've heard every argument.
 * [There's a line between research and making weapons. Where do you draw it?]
     ~ victoria_influence = victoria_influence + 5
     # influence_increased
-    Victoria Sterling: Interesting question. Most people don't even acknowledge there is a line to discuss.
+    Victoria Sterling: Interesting question.
     -> ethics_response_nuance
 * [I'm not here to judge your business model. Just to understand it.]
     ~ victoria_influence = victoria_influence + 15
     # influence_increased
-    ~ player_approach = "diplomatic"
-    Victoria Sterling: That's refreshing. Most people lead with moral indignation.
+    Victoria Sterling: That's refreshing.
     -> ethics_response_pragmatic
 
 === ethics_response_harm ===
 #speaker:victoria_sterling
-Victoria Sterling: Do you hold pharmaceutical companies responsible when someone overdoses on painkillers?
-Victoria Sterling: Do you blame car manufacturers for drunk driving fatalities?
 Victoria Sterling: Tools have utility. People choose how to use them.
 ~ victoria_influence = victoria_influence - 5
 # influence_decreased
@@ -264,7 +256,7 @@ Victoria Sterling: Tools have utility. People choose how to use them.
 
 === ethics_response_nuance ===
 #speaker:victoria_sterling
-Victoria Sterling: The line is intent. We don't create exploits TO hurt people. We discover vulnerabilities that already exist.
+Victoria Sterling: The line is intent. We don't build exploits to hurt anyone. We find holes that are already there.
 Victoria Sterling: If someone uses a crowbar to break into a house, you don't blame the crowbar manufacturer.
 ~ victoria_influence = victoria_influence + 10
 # influence_increased
@@ -273,8 +265,6 @@ Victoria Sterling: If someone uses a crowbar to break into a house, you don't bl
 === ethics_response_pragmatic ===
 #speaker:victoria_sterling
 Victoria Sterling: Good. Indignation is cheap, and it pays nobody's rent.
-Victoria Sterling: The truth is, I sleep fine at night because I believe in information freedom.
-Victoria Sterling: Vulnerabilities are facts about reality. Suppressing facts doesn't make anyone safer.
 ~ victoria_influence = victoria_influence + 10
 # influence_increased
 ~ victoria_trusts_player = true
@@ -343,12 +333,12 @@ Narrator: Back at the board. The cloner finds her card again and starts a fresh 
 ~ read_checked = true
 Narrator: Halfway. The cloner is still reading.
 Victoria Sterling: Of course, what students learn in the lab is just the beginning.
-Victoria Sterling: Real Zero Day research requires understanding market dynamics, pricing models, buyer relationships.
+Victoria Sterling: The lab teaches the craft. The money is in knowing who'll pay, and how much.
 * [How do you determine pricing for a zero-day vulnerability?]
     Victoria Sterling: CVSS is the baseline. Then a sector premium based on how well the target can defend itself. Hospitals can't, so hospitals cost more.
     -> clone_check_2
 * [That sounds more complex than pure technical work.]
-    Victoria Sterling: Security research is as much economics as it is code. Most researchers don't grasp that.
+    Victoria Sterling: Security research is as much economics as it is code.
     ~ victoria_influence = victoria_influence + 5
     # influence_increased
     -> clone_check_2
@@ -370,7 +360,7 @@ Narrator: She walks back to the table. The cloner's read stalls halfway, then dr
 #speaker:victoria_sterling
 Victoria Sterling: You're asking good questions. Technical competence is common. Strategic thinking is rare.
 Narrator: Nearly there. Keep her talking.
-* [Technical skills alone aren't enough. You need the whole ecosystem.]
+* [Knowing the bug is half of it. Knowing who'll pay is the rest.]
     ~ victoria_influence = victoria_influence + 10
     # influence_increased
     Victoria Sterling: Exactly. That's why most security researchers stay poor while we thrive.
@@ -419,11 +409,11 @@ Victoria Sterling: I think that covers the basic philosophy. The training progra
     # influence_increased
     Victoria Sterling: Excellent. I'll have my assistant send you the enrolment details.
     -> meeting_end
-* [Let me think it over. This is a significant decision.]
+* [Let me think it over.]
     Victoria Sterling: Of course. Take your time. Reach out when you've decided.
     -> meeting_end
-* [I appreciate you taking the time to explain Zero Day's approach.]
-    Victoria Sterling: My pleasure. It's rare to meet someone who actually wants to understand rather than judge.
+* [Thanks for being straight with me.]
+    Victoria Sterling: My pleasure.
     ~ victoria_influence = victoria_influence + 5
     # influence_increased
     -> meeting_end
@@ -472,7 +462,7 @@ Victoria Sterling: You came back after hours. Recruits don't do that.
         Victoria Sterling: I priced the urgency in. Hospitals pay fast, and they pay quietly. That isn't cruelty. It's arithmetic.
         -> the_reckoning
 * {usb_seen or lore_directive_found or roster_seen} [I've been through your office, Sable. Your desk. Your files.]
-    Victoria Sterling: *a beat* So you've been through my office. Then you understand how far past me this runs. And how little arresting me changes it.
+    Victoria Sterling: *a beat* Then you understand how far past me this runs. And how little arresting me changes it.
     -> the_reckoning
 
 === the_reckoning ===
@@ -483,7 +473,7 @@ Victoria Sterling: I read what that ward cost, down to the number. It changed no
 Victoria Sterling: Vulnerabilities are facts. Someone will always sell the facts. Better a professional who logs the sale than a criminal who doesn't.
 + [That's the story you tell yourself so you can sleep.]
     Victoria Sterling: I sleep perfectly. That's the part people like you can never forgive.
-    Narrator: She settles the bag on her shoulder. The coat, the bag -- she has been ready to leave since before you crossed the threshold.
+    Narrator: She settles the bag on her shoulder.
     Victoria Sterling: To the Architect I'm a line item. Sable, Zero Day, this office -- all of it is rented. All of it replaceable.
     Victoria Sterling: So decide what you actually want from the next thirty seconds. I have a car downstairs, and you have exactly one move.
     -> confrontation_decision
@@ -502,13 +492,13 @@ Victoria Sterling: Vulnerabilities are facts. Someone will always sell the facts
 === recruit_declined ===
 #speaker:victoria_sterling
 ~ recruit_refused = true
-Victoria Sterling: *amused* In exchange for what? You haven't even taken what you'd be asking me to betray.
+Victoria Sterling: In exchange for what? You haven't even taken what you'd be asking me to betray.
 Victoria Sterling: Still one move. Choose it.
 -> confrontation_decision
 
 === confrontation_recruit ===
 #speaker:victoria_sterling
-Victoria Sterling: *considering* Not immunity. At least you're honest. Most of your people lead with a promise they can't keep.
+Victoria Sterling: Not immunity. At least you're honest. Most of your people lead with a promise they can't keep.
 Victoria Sterling: Then you already have the what. I'm the when.
 Narrator: She lets the bag slide off her shoulder onto the desk.
 Victoria Sterling: I don't have the Architect's name. Nobody does. But I have the comms protocol, the rails the money moves on, and the Phase 2 window.
@@ -537,10 +527,9 @@ Victoria Sterling: The evidence is real. The name is real. And none of it reache
 
 === confrontation_escape ===
 #speaker:victoria_sterling
-Narrator: You have the logs. That is the case.
 Victoria Sterling: *unhurried* A professional to the end. I could almost have used you.
 Victoria Sterling: For what little it's worth -- St. Catherine's was a proof of concept. You'll see the rest.
-Narrator: She's past you and gone before the lift doors settle. The evidence stays. So does she, somewhere out beyond it.
+Narrator: She's past you and gone before the lift doors settle.
 ~ victoria_fate = "escaped"
 #set_global:victoria_escaped:true
 #set_global:victoria_fate:escaped

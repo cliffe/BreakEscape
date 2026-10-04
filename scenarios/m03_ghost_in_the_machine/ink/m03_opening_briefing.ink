@@ -1,5 +1,7 @@
 EXTERNAL player_name()
 
+// Pass 5 (P4-23): the stance of record is mission_approach's pick (and last_advice's
+// "aggressive"); earlier briefing writes were always overwritten, so they're gone.
 // player_approach and knows_m2_connection are declared in the scenario's
 // globalVariables, so assigning them here writes through to game state, where the
 // phone hub, Danny's confrontation and the debrief read them back. No EXTERNAL
@@ -7,12 +9,10 @@ EXTERNAL player_name()
 VAR player_approach = ""
 VAR knows_m2_connection = false
 VAR handler_trust = 50
-VAR mission_priority = ""
 VAR asked_about_victoria = false
 VAR asked_clone = false
 VAR asked_network = false
 VAR asked_cover = false
-VAR asked_learn = false
 
 // Root divert. When a conversation has ended (-> DONE), the engine restores only
 // its variables on the next talk and continues from the root (npc-conversation-
@@ -21,14 +21,14 @@ VAR asked_learn = false
 -> start
 
 === start ===
-Narrator: A SAFETYNET briefing room. Director Netherton stands by the screen, Agent HaX has the file open in front of her, and a man in a lab coat sits half-buried in a laptop he clearly built himself.
+Narrator: A SAFETYNET briefing room. Netherton by the screen, HaX with the file open, and a man in a lab coat half-buried in a laptop he built himself.
 
 Director Magnus Netherton: Agent 0x00. This is Operation Cyber Arsenal.
 Director Magnus Netherton: Zero Day Syndicate used to sell exploits to whoever paid. Now they choose the targets first.
 Director Magnus Netherton: That is a line I do not let anyone cross. You are going in.
 Director Magnus Netherton: HaX runs you, Nightshade the technical side. Listen to both.
 
-Agent 0x47 'Nightshade': Evening. Whatever they've built, I'll take it apart from here. You just get me close to it.
+Agent 0x47 'Nightshade': Morning. Whatever they've built, I'll take it apart from here. You just get me close to it.
 
 Director Magnus Netherton: HaX. The floor's yours.
 
@@ -63,8 +63,6 @@ Agent HaX: They don't run the attacks. They arm the cells that do.
     Agent HaX: Healthcare systems. Grid control. The things that hurt people when they fail.
     -> st_catherines_connection
 * [This sounds more serious than the usual cell.]
-    ~ player_approach = "cautious"
-    #set_global:player_approach:cautious
     Agent HaX: It is. They're the reason the others punch above their weight.
     -> st_catherines_connection
 
@@ -94,14 +92,9 @@ Agent HaX: The ransomware ran on a ProFTPD backdoor. That exploit didn't come fr
 === mission_stakes ===
 #speaker:agent_0x99
 Agent HaX: They sold it as a product. Twenty-five thousand on the invoice, healthcare premium already built into the price.
-{ knows_m2_connection:
-    Agent HaX: They charge more to attack hospitals. Because hospitals can't defend themselves, and they pay fast to make it stop.
-}
 * [That's murder with an invoice attached.]
     ~ handler_trust = handler_trust + 10
     # influence_increased
-    ~ player_approach = "cautious"
-    #set_global:player_approach:cautious
     #set_global:called_it_murder:true
     Agent HaX: That's the case we're building. And there's a Phase 2 behind it.
     -> objectives
@@ -135,9 +128,6 @@ Agent HaX: Ask me whatever you need before you go in.
 + {not asked_cover} [What's my cover?]
     ~ asked_cover = true
     -> topic_cover
-+ {not asked_learn} [What will I actually learn from this?]
-    ~ asked_learn = true
-    -> topic_learn
 + [That's everything. Let's talk approach.]
     -> mission_approach
 
@@ -154,8 +144,6 @@ Agent HaX: On our side of the record she runs the front and answers to 0day and 
 * [Any chance she flips?]
     ~ handler_trust = handler_trust + 10
     # influence_increased
-    ~ player_approach = "diplomatic"
-    #set_global:player_approach:diplomatic
     Agent HaX: Maybe. She's a believer, not a mercenary, so it won't be you moving her. But a source inside beats a cell we can't see into.
     Agent HaX: That's a call for when you're stood in front of her. Not now.
     -> briefing_hub
@@ -166,11 +154,10 @@ Agent HaX: On our side of the record she runs the front and answers to 0day and 
 #speaker:agent_0x99
 // Pass 5 (P2-16): asking about cloning opens the receptionist's clone choice.
 #set_global:cloner_explained:true
-Agent HaX: Two stages. Reception first -- her staff badge opens the conference area. Weak defaults, so it cracks in seconds. Lean in near her desk to read it.
+Agent HaX: Two stages. Reception first. Her staff badge opens the conference area. Weak defaults, so it cracks in seconds. Talk to her and lean in by her lanyard.
 Agent HaX: Then Sterling's executive card in the meeting. Custom keys, so it's Darkside -- about half a minute.
 Agent HaX: Your moment's at the whiteboard. Stand close and keep her talking while it reads.
 Agent 0x47 'Nightshade': Capture and replay. Her card broadcasts, we copy it, we wear it. Same trick they use on us.
-Agent 0x47 'Nightshade': One day it'll be our badge somebody clones. Remember how easy it was.
 Agent 0x47 'Nightshade': Last time, a card meant getting it off somebody. This time you just stand next to it.
 Agent HaX: Picks for anything keyed, the cloner for anything carded. No PIN cracker this time. Nightshade still has ours in pieces from St. Catherine's.
 * [What if she notices?]
@@ -204,13 +191,6 @@ Agent HaX: Entry is a conference-room meeting this afternoon. After that the bui
     Agent HaX: Good. Be natural with her -- she reads people for a living.
     -> briefing_hub
 
-=== topic_learn ===
-#speaker:agent_0x99
-Agent HaX: Network recon with nmap. Service enumeration and what a banner gives away for free.
-Agent HaX: Encoding versus encryption -- ROT13, hex, Base64, and layered combinations. None of it is security.
-Agent HaX: And the big one: tying digital evidence to physical intelligence, and the economics that make a marketplace like this run.
--> briefing_hub
-
 === mission_approach ===
 #speaker:agent_0x99
 Agent HaX: Before you go in -- how do you want to play it?
@@ -218,20 +198,17 @@ Agent HaX: Your call. I trust your read.
 + [I'll be thorough. Document everything.]
     ~ player_approach = "cautious"
     #set_global:player_approach:cautious
-    ~ mission_priority = "thoroughness"
     Agent HaX: Smart. Zero Day leaves paper. Find it, connect it.
     Agent HaX: And there's a guard on nights. Stealth counts.
     -> final_instructions
 + [I move fast, grab the objectives, get out.]
     ~ player_approach = "aggressive"
     #set_global:player_approach:aggressive
-    ~ mission_priority = "speed"
     Agent HaX: Less time for things to go wrong. But don't blow past the distcc logs -- that's the case.
     -> final_instructions
 + [I'll stay flexible. Read the situation.]
     ~ player_approach = "diplomatic"
     #set_global:player_approach:diplomatic
-    ~ mission_priority = "stealth"
     ~ handler_trust = handler_trust + 10
     # influence_increased
     Agent HaX: Then watch her, not the room. Call if you need me.
@@ -239,16 +216,6 @@ Agent HaX: Your call. I trust your read.
 
 === final_instructions ===
 #speaker:agent_0x99
-{ player_approach == "cautious":
-    Agent HaX: Careful suits this one. The evidence is there for anyone who reads slowly.
-}
-{ player_approach == "aggressive":
-    Agent HaX: Fine. Just don't leave the logs behind.
-}
-{ player_approach == "diplomatic":
-    Agent HaX: If Sterling's reachable at all, it'll be a moment you feel rather than plan. Watch for it.
-}
-Agent HaX: One rule that always holds: what matters most in a building like this usually sits in the least guarded place.
 { knows_m2_connection:
     Agent HaX: And {player_name()} -- whatever the count turns out to be at St. Catherine's, people died on the back of what Zero Day sold.
 }
@@ -287,9 +254,6 @@ Agent HaX: WhiteHat Security, Callaghan Square, Cardiff. I'm on comms the whole 
 }
 { (handler_trust >= 50) && (handler_trust < 70):
     Agent HaX: Good luck.
-}
-{ handler_trust < 50:
-    Agent HaX: Stay focused. Don't let the stakes crowd your head.
 }
 Agent HaX: Meet Sterling, clone her card, then come back after dark. Go.
 #start_gameplay

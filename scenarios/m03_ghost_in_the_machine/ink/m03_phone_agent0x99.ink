@@ -160,7 +160,7 @@ VAR hint_guard_hostile_given = false
 {player_name()}. You've got the logs. The case stands whether or not she's in cuffs.
 Want the Architect? Offer her a deal, and a cold one. She flips to save herself, not because she's sorry -- don't mistake the two.
 Want her off the board? Arrest her. But she came ready to run, so corner her or she walks.
-And if the evidence is enough for you, let her go and secure it. Your call. None of them are clean.
+And if the evidence is enough for you, let her go and secure it.
 { victoria_fate == "" and not (usb_seen or lore_directive_found):
     If it's the deal you want, bring her something she can't shrug off. The drive in her desk.
 }
@@ -295,7 +295,7 @@ Best moment's at the whiteboard. Keep her talking.
 === hint_lockpicking ===
 #speaker:agent_0x99
 ~ hint_lockpicking_given = true
-You've got the pick kit from the start. Sterling's office and the cabinets are keyed -- approach a locked one and interact.
+You've got the pick kit from the start. Sterling's office and the cabinets are keyed. Pick them.
 It takes time and it exposes you. Work the lock only when the guard's back is turned.
 Get caught at it and that's a detection you don't get back.
 + [Understood]
@@ -369,7 +369,7 @@ distcc is the one that matters -- that's where the operational logs sit. Submit 
     Recon, FTP and pricing are in. Just distcc left -- that's the logs, that's the case.
 - else:
     { flag_scan_submitted or flag_ftp_submitted or flag_http_submitted or flag_distcc_submitted:
-        Flags are coming in. Keep working the services; the distcc box finishes it.
+        Flags are coming in. Keep working the services until all four are in.
     - else:
         Nothing in from their network yet. VM terminal's in the server room. Start with a scan.
     }
@@ -392,7 +392,7 @@ distcc is the one that matters -- that's where the operational logs sit. Submit 
     The guard knows who you are. Assume Sterling does too.
 - else:
     { guard_bribed:
-        The guard's paid for his hour. Don't stretch it.
+        The guard's been paid. Don't push it.
     - else:
         { guard_detection_count > 0:
             The guard's caught you at a lock. Only pick when he's turned away.
@@ -535,7 +535,7 @@ Base64 first, then whatever's under it. Call me when it reads.
 #speaker:agent_0x99
 ~ directive_decoded = true
 #set_global:directive_decoded:true
-...That's the Architect. Zero Day supplies, Critical Mass executes, and St. Catherine's was the rehearsal.
+...That's the Architect. Zero Day supplies, Critical Mass executes.
 { directive_guessed:
     That's it, after a couple of goes. We take it to Command tonight.
 - else:
