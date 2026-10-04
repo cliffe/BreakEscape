@@ -252,10 +252,14 @@ module BreakEscape
       assert_not_includes sprites, 'male_spy'
     end
 
-    test 'every available sprite is preloaded by game.js' do
-      game_js = File.read(Engine.root.join('public/break_escape/js/core/game.js'))
+    # Character atlases are loaded by key (systems/character-textures.js), so a menu
+    # sprite only needs its atlas files in assets/characters.
+    test 'every available sprite has an atlas the game can load by key' do
+      characters = Engine.root.join('public/break_escape/assets/characters')
       PlayerPreference::AVAILABLE_SPRITES.each do |sprite|
-        assert_includes game_js, "load.atlas('#{sprite}'", "game.js does not preload menu sprite '#{sprite}'"
+        %w[png json].each do |ext|
+          assert characters.join("#{sprite}.#{ext}").exist?, "menu sprite '#{sprite}' has no #{sprite}.#{ext}"
+        end
       end
     end
 

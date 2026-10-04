@@ -19,7 +19,7 @@ BreakEscape::Engine.routes.draw do
   resources :games, only: [:new, :show, :create] do
     member do
       # Scenario and NPC data
-      get 'scenario'          # Returns full scenario_data JSON (for compatibility)
+      get 'scenario'          # Returns the bootstrap scenario: rooms stripped to navigation fields, plus characterSprites
       get 'scenario_map'      # Returns minimal layout metadata for navigation
       get 'ink'               # Returns NPC script (JIT compiled)
       post 'tts'              # Generate TTS audio for NPC dialogue

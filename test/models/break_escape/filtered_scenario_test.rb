@@ -316,6 +316,48 @@ module BreakEscape
       assert_equal 'dropsite', station['id']
     end
 
+    test 'characterSprites lists person and both NPC sheets and the player sheet once each' do
+      @scenario_data['player'] = { 'id' => 'player', 'spriteSheet' => 'female_hacker_hood_v2' }
+      @scenario_data['rooms']['start']['npcs'] = [
+        { 'id' => 'guard', 'npcType' => 'person', 'spriteSheet' => 'male_security_guard_v2', 'storyPath' => 'secret.json' },
+        { 'id' => 'guard2', 'npcType' => 'person', 'spriteSheet' => 'male_security_guard_v2' },
+        { 'id' => 'default_sprite', 'npcType' => 'person' },
+        { 'id' => 'handler', 'npcType' => 'phone', 'spriteSheet' => 'female_spy_v2', 'phoneId' => 'player_phone' }
+      ]
+      @scenario_data['rooms']['next_room']['npcs'] = [
+        { 'id' => 'manager', 'npcType' => 'both', 'spriteSheet' => 'female_office_worker_v2' },
+        { 'id' => 'patient', 'npcType' => 'person', 'spriteSheet' => 'bed_ms_chen' },
+        { 'id' => 'player_double', 'npcType' => 'person', 'spriteSheet' => 'female_hacker_hood_v2' }
+      ]
+      game = Game.new(mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user),
+                      scenario_data: @scenario_data)
+      game.save(validate: false)
+
+      filtered = game.filtered_scenario_for_bootstrap
+
+      assert_equal %w[male_security_guard_v2 hacker female_office_worker_v2 bed_ms_chen female_hacker_hood_v2],
+                   filtered['characterSprites']
+      assert_not_includes filtered['characterSprites'], 'female_spy_v2', 'phone NPCs have no world sprite'
+
+      # Only the keys reach the client: rooms still carry no NPC data at all.
+      filtered['rooms'].each do |room_id, room|
+        assert_nil room['npcs'], "room '#{room_id}' leaked NPCs into the bootstrap payload"
+      end
+      json = filtered.to_json
+      %w[guard handler manager secret.json player_phone].each do |npc_detail|
+        assert_no_match(/"#{Regexp.escape(npc_detail)}"/, json, "bootstrap payload leaked '#{npc_detail}'")
+      end
+    end
+
+    test 'characterSprites is empty without sprite NPCs or a player sheet' do
+      game = Game.new(mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user),
+                      scenario_data: @scenario_data)
+      game.save(validate: false)
+
+      # The setup's only NPC has no npcType, so it gets no world sprite.
+      assert_equal [], game.filtered_scenario_for_bootstrap['characterSprites']
+    end
+
     test 'NPC-held flag devices are filtered too' do
       game = game_with_flag_scenario
       room = game.send(:filtered_room_data, 'next_room')

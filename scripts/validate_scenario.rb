@@ -3275,17 +3275,29 @@ def check_recurring_bugs(json_data, repo_root)
   end
 
   # --- 4. sprites: missing files, legacy sheets, missing talk/viseme art (m04 Vance, m05, m06 Satoshi)
+  # Character atlases are loaded by key from assets/characters (js/systems/character-textures.js);
+  # frame-based sheets (legacy hacker, beds) are preloaded with this.load.spritesheet in game.js.
   game_js = File.join(public_dir, 'js/core/game.js')
-  loaded_sheets = File.exist?(game_js) ? File.read(game_js).scan(/this\.load\.(?:atlas|spritesheet)\(\s*'([^']+)'/).flatten.to_set : nil
+  preloaded_sheets = File.exist?(game_js) ? File.read(game_js).scan(/this\.load\.spritesheet\(\s*'([^']+)'/).flatten.to_set : Set.new
+  sheet_loadable = lambda do |key|
+    preloaded_sheets.include?(key) ||
+      %w[png json].all? { |ext| File.exist?(File.join(public_dir, "assets/characters/#{key}.#{ext}")) }
+  end
+  unloadable_sheet = lambda do |key|
+    "neither assets/characters/#{key}.png and #{key}.json nor a this.load.spritesheet('#{key}' entry in game.js exists"
+  end
   legacy_talk = { 'hacker' => 'assets/characters/hacker-talk.png', 'hacker-red' => 'assets/characters/hacker-red-talk.png' }
   asset_exists = ->(rel) { rel.is_a?(String) && File.exist?(File.join(public_dir, rel)) }
   all_npcs.each do |rid, i, npc|
     next if npc['npcType'] == 'phone'
     path = "rooms/#{rid}/npcs[#{i}]"
     sheet = npc['spriteSheet']
-    if sheet && loaded_sheets && !loaded_sheets.include?(sheet)
-      issues << "⚠️ WARNING: '#{path}' (#{npc['id']}) uses spriteSheet '#{sheet}', which game.js never loads " \
-                "(no this.load.atlas/spritesheet for it). The NPC renders as a missing texture. Use a loaded sheet or add it to game.js."
+    if %w[person both].include?(npc['npcType'])
+      world_sheet = sheet || 'hacker'
+      unless sheet_loadable.call(world_sheet)
+        issues << "❌ ERROR: '#{path}' (#{npc['id']}) uses spriteSheet '#{world_sheet}', but #{unloadable_sheet.call(world_sheet)}. " \
+                  "The NPC gets no world sprite. Use an existing sheet, or add the atlas files."
+      end
     end
     %w[spriteTalk spriteVisemes avatar].each do |field|
       val = npc[field]
@@ -3312,6 +3324,12 @@ def check_recurring_bugs(json_data, repo_root)
                   "Add \"spriteVisemes\": \"#{cand}\" so their portrait lip-syncs."
       end
     end
+  end
+
+  player_sheet = json_data['player'].is_a?(Hash) ? json_data['player']['spriteSheet'] : nil
+  if player_sheet.is_a?(String) && !player_sheet.empty? && !sheet_loadable.call(player_sheet)
+    issues << "❌ ERROR: 'player' uses spriteSheet '#{player_sheet}', but #{unloadable_sheet.call(player_sheet)}. " \
+              "In standalone mode (and Rails games with no saved sprite) the player has no texture."
   end
 
   # --- 5. different characters sharing one sprite sheet (m04 guard/operatives, m08 Phantom/Netherton)
