@@ -114,6 +114,7 @@ Everything else goes into the approval log for the user: engine or server change
 - **Renamed NPCs get renamed ids** (globals, ink files, knots, tasks, rooms), with a dated note on stale planning docs. The handler's id stays `agent_0x99`. m01 is left alone because its audio is cached.
 - **Draft playtests run on the keyless server on :3001** (no Gemini key, so no TTS is generated). Use `PLAYTEST_PORT=3001` with `tools/playtest/new-game.rb`, and `tools/playtest/start-keyless-server.sh`. Never stop the user's server on :3000.
 - **Spoken-line changes cost money.** The TTS cache is keyed on text plus voice, so list every spoken line a change touches.
+- **No printed variables in voiced lines** (user, 2026-10-04). A voiced line that prints `{player_name()}`, a count or any other variable gives different text per player and can never be cached. Use fixed wording; choosing between fixed strings with an inline conditional or alternative is fine.
 - **Images are generated one at a time** (or in small batches once a style is approved), with feedback between. PixelLab is preferred (flat subscription), at the target size, never downscaled.
 - **Minigames should be fun and educational, not hard.**
 - UK English, plain writing, no AI-sounding filler. No attribution lines in commits.
