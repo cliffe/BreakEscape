@@ -309,6 +309,10 @@ Verdict: revise (short). Round 1: 35 closed, 1 justified, 3 partly (P4-8, 15, 39
 
 Process note: the round-1 reviewer recommended a cut without knowing a later mission quotes the line. Lesson for reviewers: grep later missions before cutting a line that sounds like a set-up.
 
+### Round 2 fix (writer, resumed)
+
+All items done (commit after acbe10e). P4-43 restored verbatim (orchestrator grepped it). Voiced: 1 restored, 19 changed, 3 cut. One structural change: the P4-48 condition in the debrief. Checks clean; four lint warnings justified.
+
 ## SecGen
 
 m03 XML missing on SecGen master. Proposed file: `SECGEN_PROPOSED_m03_ghost_in_the_machine.xml` (D1). No SecGen edits made.
@@ -408,7 +412,7 @@ Briefing (3 changed, 10 cut):
 - Narrator: "A SAFETYNET briefing room. Director Netherton stands by the screen, Agent HaX has the file open in front of her, and a man in a lab coat sits half-buried in a laptop he clearly built himself." → "A SAFETYNET briefing room. Netherton by the screen, HaX with the file open, and a man in a lab coat half-buried in a laptop he built himself."
 - Nightshade: "Evening. Whatever they've built…" → "Morning. Whatever they've built…"
 - HaX: "Two stages. Reception first -- her staff badge opens the conference area. Weak defaults, so it cracks in seconds. Lean in near her desk to read it." → "Two stages. Reception first. Her staff badge opens the conference area. Weak defaults, so it cracks in seconds. Talk to her and lean in by her lanyard."
-- Cut: HaX "They charge more to attack hospitals…"; the three `topic_learn` lines; the three `final_instructions` reaction lines; "One rule that always holds…"; "Stay focused. Don't let the stakes crowd your head." (dead); Nightshade "One day it'll be our badge somebody clones. Remember how easy it was."
+- Cut: HaX "They charge more to attack hospitals…"; the three `topic_learn` lines; the three `final_instructions` reaction lines; "One rule that always holds…"; "Stay focused. Don't let the stakes crowd your head." (dead); Nightshade "One day it'll be our badge somebody clones. Remember how easy it was." (RESTORED in round 2: m08 pays it off)
 
 Debrief, HaX (10 changed, 10 cut):
 - "The guard stopped you and you lied your way on. He never caught you at a lock…" → "The guard stopped you once. He never caught you at a lock, but he'll remember your face."
@@ -424,6 +428,16 @@ Debrief, HaX (10 changed, 10 cut):
 - Cut: "You walked in there knowing what it was. You came out with the paper that proves it."; narrator "Agent HaX's expression hardens."; the encoding lesson ("And they treated encoding as if it were a lock..."); "The drive in her desk, you left for the search team."; "We got the result. The execution was rough in places…" (dead); "Sterling's been charged."; "Sterling's reporting to us."; "Sterling's under guard."; "Sterling's gone to ground."; "{player_name()}. You put an arms dealer's books on the record last night."
 
 Text only (round 1): receptionist, Victoria (5) and guard ("air con") choice labels; Danny's choice trimmed; HaX phone lines (bribe status, flags progress, keyed office, directive line, confrontation hint); timed texts ("Price list's in. ROT13, filed as confidential."; "Want a say in what happens to Danny? His office first." x2).
+
+### Phase 4 round 2 (voiced)
+
+Restored 1 (Nightshade, above). Changed 19, cut 3, added 0.
+- Victoria: "Exactly. But there's a third option most won't discuss." → "Neither. There's a third option most won't discuss."; "Systems fail. What matters is who knows first." → "Systems fail. What matters is who knows first, and who pays them for knowing."; "*coolly* Does it. Well. Most people don't bother to walk it back." → "*coolly* Do you. Well. Most people don't bother to walk it back."
+- Receptionist: "Back again? How's it going in there?" → "Back again? Forgotten something?"; "Go on through. She hates being kept waiting." → "Go on, then. Shout if you need anything."; "Just Ms. Sterling, if she's working late. And the night guard. Does his rounds, drinks a lot of tea." → "Ms. Sterling, if she's working late. Danny, some evenings. And the night guard. Does his rounds, drinks a lot of tea."; "WhiteHat Security was founded in 2010 by Victoria Sterling." → "Ms. Sterling started it in 2010."; "Oh, completely. Lives for it, she does." → "Ha. She can be. Lives for it, she does."
+- Guard: "Ms. Sterling's office, north side. The consultants are across from her." → "Ms. Sterling's office, north side. Mr Foster's across from her."; "Round the executive wing, mostly. Sterling's office, the consultants' rooms, back down the corridor." → "Round the executive wing, mostly. Sterling's office, Mr Foster's, back down the corridor."
+- Briefing, HaX: "Two stages. Reception first. Her staff badge opens the conference area. …" → "Two stages. Reception first. The receptionist's badge opens the conference area. Weak defaults, so it cracks in seconds. Talk to her and lean in by her lanyard."; "And {player_name()} -- whatever the count turns out to be at St. Catherine's, people died on the back of what Zero Day sold." → "{player_name()}. Whatever the count turns out to be at St. Catherine's, people died on the back of what Zero Day sold."
+- Debrief, HaX: "Victoria Sterling is in custody. The CPS are looking at …" → "In custody. The CPS are looking at conspiracy, supplying articles for use in fraud and computer misuse, and her part in the deaths at St. Catherine's."; "Her lawyers are already reaching for "information freedom" and "market forces". It won't hold." → "Her lawyers are already calling it "market-driven research". It won't hold."; "The cells that leaned on Zero Day's supply are scrambling, and the Architect has one fewer supplier." → "The cells that bought from them are scrambling. The Architect will have to shop elsewhere."; "Clean enough. Get some rest; we'll need you soon." → "Clean enough. We'll need you soon."; "We'll brief the next one when you're ready." → "Go home, {player_name()}. We'll brief the next one when you're ready."
+- Cut: Victoria "That's refreshing."; receptionist "We do penetration testing, security audits and advanced research training."; guard "Get out. Now."
 
 ## Open items
 
