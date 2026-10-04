@@ -26,6 +26,38 @@ So browser playtests run in this session; every report says which checks were st
 - Branch `claude/m03-improvement-loop`, as the task asks (the session default was `claude/practical-planck-fvt3ha`).
 - Game ids in this session's database start at 5001, so flag XMLs written here can't collide with the user's committed game ids.
 
+## Phase 1: mission alignment
+
+### Round 1 review (fresh Opus, read-only)
+
+Review copied to `m03-align-r1-review/REVIEW.md` in scratch. Counts: 1 blocker, 9 major, 11 minor.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| P1-1 | major | "Ghost's logs named Zero Day" contradicts m02 (the invoice and analysts did) | to fixer |
+| P1-2 | major | m02 Ghost claims they wrote their own exploit build; m03 never answers it | to fixer (Victoria says it at the confrontation) |
+| P1-3 | major | Healthcare premium "on top" of $25,000 contradicts m02's invoice and m03's own catalogue | to fixer |
+| P1-4 | minor | "Whether anyone died" contradicts m02 (every ending has a death); obituary line assumes several | to fixer |
+| P1-5 | minor | Missed callbacks (214 hospitals survey, target selection, Ghost at large, supply chain) | to fixer |
+| P1-6 | major | Four aims unlock at once mid-meeting | to fixer (act 2 unlocks at night) |
+| P1-7 | major | Danny's choice reveals "Settle Accounts" early via reveal-on-progress; texts ignore Danny already settled | to fixer |
+| P1-8 | minor | `find_operational_logs` is a duplicate tick | to fixer |
+| P1-9 | minor | Perfect Stealth visible and open after being caught | to fixer (hidden until earned) |
+| P1-10 | minor | Two lore titles name the find | to fixer |
+| P1-11 | major | HaX hub not progress-gated; four guide choices at once | to fixer (m02 pattern) |
+| P1-12 | major | Five stuck points with no hint | to fixer |
+| P1-13 | minor | Debrief/credits gating checked: agree | no change needed |
+| P1-14 | minor | No credit for the directive | to fixer |
+| P1-15 | minor | Day KO of Victoria settles her fate only on re-entry, phone-only | to fixer |
+| P1-16 | minor | No music cue for night or revelation; action track under the debrief | to fixer |
+| P1-17 | minor | Exec wing has little line-of-sight cover | deferred to the playtest phase |
+| P1-18 | major | Five beats land only as phone lines | to fixer |
+| P1-19 | blocker | No SecGen m03 XML, so the flags can't be earned on a real VM | needs the user (D1 in `DECISIONS_PENDING.md`). Review's claim that a distcc module must be written is **withdrawn**: SecGen has `modules/vulnerabilities/unix/misc/distcc_exec` |
+| P1-20 | minor | No top-level `flags` block with `vm_flags_json` | to fixer, if safe standalone |
+| P1-21 | minor | Validator duplicate-mapping warnings, cutscene background, blank re-entry; lint items | to fixer; spoken lint items deferred to Phase 4 |
+
+Decisions: night staging option (a); all canon fixes now, worded for every m02 ending; Perfect Stealth hidden until earned; Ghost's "own build" callback through Victoria. Reason: each is mission-local and reversible, and matches m02.
+
 ## SecGen
 
 (see per-phase sections)
