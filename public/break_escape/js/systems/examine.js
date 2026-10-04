@@ -49,8 +49,8 @@ export function roomDisplayScale(scene) {
 
 const hasText = (s) => typeof s === 'string' && s.trim().length > 0;
 
-// Keys keep their own inventory behaviour (the key ring lists its keys).
-const KEEP_CURRENT = new Set(['key', 'key_ring']);
+// The key ring keeps its own inventory behaviour (it lists its keys). A single key is examined.
+const KEEP_CURRENT = new Set(['key_ring']);
 
 /**
  * Should this interaction open examine instead of the observation notification?

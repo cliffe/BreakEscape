@@ -591,7 +591,7 @@ Control how observation text is displayed using `observationDisplay`:
 
 **Display modes**:
 - `"gameDisplay"` - Full-screen modal dialog requiring player to click "Close" (use for critical information that must be read)
-- Default (omit field) - The **examine view** for text-only objects: the sprite at twice its size in the room (a whole-number multiple of its pixels, at least 4x), the name, then `observations` and `text`, closed with Close or Esc. It opens for a room object that is not takeable, locked, readable-with-text or otherwise actionable, and has `observations` or `text`; and for any inventory item whose click does nothing else (keys, phones, notepads, readable items and tools keep their own action). An object with no `observations` or `text` still gets the old toast.
+- Default (omit field) - The **examine view** for text-only objects: the sprite at twice its size in the room (a whole-number multiple of its pixels, at least 4x), the name, then `observations` and `text`, closed with Close or Esc. It opens for a room object that is not takeable, locked, readable-with-text or otherwise actionable, and has `observations` or `text`; and for any inventory item whose click does nothing else (a single key included; the key ring, phones, notepads, readable items and tools keep their own action). An object with no `observations` or `text` still gets the old toast.
 
 #### Supported Action Types
 

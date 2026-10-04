@@ -1501,6 +1501,12 @@ export function handleObjectInteraction(sprite) {
         }
     }
     
+    // Something already held (a single key keeps takeable: true in its inventory copy)
+    // has nothing to pick up: show it instead of re-running pickup's "Already in inventory".
+    if (data.takeable && isInventoryItem) {
+        if (startExamine(sprite, { observations: resolvedObservations, text: resolvedText })) return;
+    }
+
     if (data.takeable) {
         // Always attempt to add to inventory - addToInventory() handles duplicates
         // and will remove from environment + show notification even if already in inventory

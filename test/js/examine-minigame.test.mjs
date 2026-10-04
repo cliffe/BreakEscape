@@ -197,7 +197,8 @@ test('shouldExamine rules', () => {
     assert.equal(shouldExamine({ takeable: false, text: 'x' }, { resolvedText: 'x' }), true);
     assert.equal(shouldExamine({ takeable: true, observations: 'x' }, { resolvedObservations: 'x' }), false);
     assert.equal(shouldExamine({ takeable: false, onInteract: {} }, { resolvedObservations: 'x' }), false);
-    assert.equal(shouldExamine({ type: 'key' }, { inInventory: true }), false);
+    assert.equal(shouldExamine({ type: 'key' }, { inInventory: true }), true);
+    assert.equal(shouldExamine({ type: 'key_ring' }, { inInventory: true }), false);
     assert.equal(shouldExamine({ readable: true, text: 'x' }, { inInventory: true, resolvedText: 'x' }), false);
     assert.equal(shouldExamine({ type: 'mug' }, { inInventory: true }), true);
 });
@@ -208,4 +209,17 @@ test('a forced (disableClose) minigame is never replaced by examine', () => {
     assert.equal(startExamine({ scenarioData: { name: 'Mug' }, src: '/m.png' }, {}, { framework }), false);
     assert.deepEqual(started, []);
     framework.currentMinigame = null;
+});
+
+test('routing: a single key clicked in the inventory opens examine, not "Already in inventory"', () => {
+    reset();
+    // A held single key keeps takeable: true in its inventory copy, which used to re-run pickup
+    const key = { name: 'key', objectId: 'inventory_office_key', src: '/break_escape/assets/objects/key.png',
+        naturalWidth: 16, naturalHeight: 16,
+        scenarioData: { type: 'key', id: 'office_key', name: 'Office Key', takeable: true, observations: 'A brass key.' } };
+    window.inventory.items.push(key);
+    handleObjectInteraction(key);
+    assert.equal(started[0]?.[0], 'examine');
+    assert.equal(started[0][1].observations, 'A brass key.');
+    assert.equal(calls.some(c => c[0] === 'addToInventory'), false);
 });
