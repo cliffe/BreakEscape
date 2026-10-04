@@ -483,6 +483,6 @@ Restored 1 (Nightshade, above). Changed 19, cut 3, added 0.
 
 - E-1 (engine, optional, for approval): on reload the server doesn't re-derive aims whose `unlockCondition` is a globalVariable; it relies on the recorded unlock. Works for m03 today; a derived check would make story gates robust if a recorded unlock were ever lost.
 - D1 SecGen m03 XML (user).
-- Other missions with printed variables in voiced lines: m02 (7), m04 (4). Not changed here (other missions; m02 has cached audio). Offered as a follow-up, plus a dialoguelint check for it.
+- Other missions with printed variables in voiced lines (m02 7, m04 4, plus any others found): user approved fixing them as an exception (2026-10-04); an Opus agent is rewriting them (m01 frozen: report only). A dialoguelint check for this is still on offer.
 - E-A..E-D (Phase 3 round 1) and E-E flag station silent drop: engine items for approval.
 - E-2 (superseded for m03 by P2-15; still a schema inconsistency) (engine/schema, for approval): `scenario-schema.json` forbids the hash form of `flagRewards` that `games_controller.rb` prefers, so m03 keeps three dead `emit_event` rewards to preserve index pairing.
