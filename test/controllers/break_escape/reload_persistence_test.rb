@@ -691,7 +691,183 @@ module BreakEscape
       assert_nil scenario_json(create_game)['savedNpcHostility']
     end
 
+    # =========================================================================
+    # What a sync costs, and the order syncs apply in (plan A+B)
+    # =========================================================================
+
+    test 'a sync with changes is one UPDATE; one with nothing new is none' do
+      game = create_game
+
+      sql = capture_sql { put sync_state_game_url(game), params: { globalVariables: { 'a' => 1 } }, as: :json }
+      assert_response :success
+      assert_equal 1, sql.count { |s| s.start_with?('UPDATE "break_escape_games"') }, sql.join("\n")
+
+      sql = capture_sql { put sync_state_game_url(game), params: { globalVariables: { 'a' => 1 } }, as: :json }
+      assert_response :success
+      assert_equal 0, sql.count { |s| s.start_with?('UPDATE') }, 'Identical data must not rewrite player_state'
+    end
+
+    test 'a full sync is still one UPDATE' do
+      game = create_game
+      sql = capture_sql do
+        put sync_state_game_url(game), params: {
+          currentRoom: 'lobby', globalVariables: { 'a' => 1 }, notes: [{ id: 'n1', text: 'x' }],
+          triggeredEvents: { 'hax:a:0' => 1 }, npcInkVariables: { 'hax' => { 'met' => true } },
+          npcVisibility: { 'hax' => true }, scenarioClock: { elapsedMs: 1000 },
+          timedMessages: { pending: [], delivered: [] }, commandBoardLog: [{ id: 'x', t: 1 }],
+          phoneState: { 'hax' => { 'history' => [{ 'type' => 'npc', 'text' => 'Hi' }] } }, clientTs: 1000
+        }, as: :json
+      end
+      assert_response :success
+      assert_equal 1, sql.count { |s| s.start_with?('UPDATE') }, sql.join("\n")
+    end
+
+    test 'the save reads neither scenario_data nor the player and mission rows' do
+      game = create_game
+      sql = capture_sql { put sync_state_game_url(game), params: { globalVariables: { 'a' => 1 }, clientTs: 5 }, as: :json }
+      assert_response :success
+
+      game_loads = sql.select { |s| s.start_with?('SELECT') && s.include?('"break_escape_games"') }
+      assert_equal 1, game_loads.size, sql.join("\n")
+      refute_includes game_loads.first, '"break_escape_games".*', 'scenario_data must not be loaded to save'
+      assert_includes game_loads.first, 'FOR UPDATE'
+      assert sql.none? { |s| s.include?('"break_escape_missions"') }, "mission loaded:\n#{sql.join("\n")}"
+      assert sql.none? { |s| s.include?('"break_escape_demo_users"') && s.include?('WHERE "break_escape_demo_users"."id"') },
+             "player loaded:\n#{sql.join("\n")}"
+    end
+
+    test 'every section saves on the narrow load (no MissingAttributeError), and startRoom is fetched on its own' do
+      game = create_game
+      game.scenario_data['rooms']['lobby']['objects'] = [{ 'type' => 'pc', 'fingerprintOwner' => 'Robert Vance' }]
+      game.scenario_data['rooms']['lobby']['npcs'] = [{ 'id' => 'guard', 'npcType' => 'person' }]
+      game.scenario_data['rooms']['vault'] = { 'type' => 'room_office', 'connections' => {}, 'objects' => [] }
+      game.scenario_data['startRoom'] = 'vault'
+      game.save!
+
+      put sync_state_game_url(game), params: {
+        currentRoom: 'vault', globalVariables: { 'a' => 1 }, notes: [{ id: 'n1', text: 'x' }],
+        triggeredEvents: { 'hax:a:0' => 1 }, npcInkVariables: { 'hax' => { 'met' => true } },
+        npcVisibility: { 'hax' => true }, scenarioClock: { elapsedMs: 1000 },
+        timedMessages: { pending: [], delivered: ['npc:hax:1'] }, commandBoardLog: [{ id: 'x', t: 1 }],
+        biometricSamples: [{ id: 's1', owner: 'Robert Vance', quality: 0.8 }, { id: 's2', owner: 'Nobody', quality: 1 }],
+        phoneState: { 'hax' => { 'history' => [{ 'type' => 'npc', 'text' => 'Hi' }] } }, clientTs: 1000,
+        npcHostility: { 'guard' => { hostile: true, ko: true }, 'ghost' => { hostile: true, ko: false } }
+      }, as: :json
+      assert_response :success
+
+      state = game.reload.player_state
+      assert_equal 'vault', state['currentRoom'], 'the start room is allowed although not in unlockedRooms'
+      assert_equal({ 'guard' => { 'hostile' => true, 'ko' => true } }, state['npcHostility'], 'NPC ids still checked against scenario_data')
+      assert_equal ['Robert Vance'], state['biometricSamples'].map { |s| s['owner'] }, 'owners still checked against scenario_data'
+      assert_equal 1000, state['lastSyncClientTs']
+      assert_equal({ 'met' => true }, state.dig('npcInkVariables', 'hax'))
+
+      put sync_state_game_url(game), params: { currentRoom: 'nowhere' }, as: :json
+      assert_response :forbidden
+    end
+
+    test 'a partial sync leaves the sections it does not carry alone' do
+      game = create_game(globals: { 'a' => 1, 'b' => 2 })
+      put sync_state_game_url(game), params: {
+        notes: [{ id: 'n1', text: 'first' }], triggeredEvents: { 'hax:a:0' => 1 },
+        phoneState: { 'hax' => { 'history' => [{ 'type' => 'npc', 'text' => 'Hi' }] } },
+        timedMessages: { pending: [], delivered: ['npc:hax:1'] }
+      }, as: :json
+
+      put sync_state_game_url(game), params: { globalVariables: { 'b' => 3 } }, as: :json
+      put sync_state_game_url(game), params: { notes: [{ id: 'n2', text: 'second' }] }, as: :json
+
+      state = game.reload.player_state
+      assert_equal({ 'a' => 1, 'b' => 3 }, state['globalVariables'])
+      assert_equal %w[n1 n2], state['notes'].map { |n| n['id'] }
+      assert_equal({ 'hax:a:0' => 1 }, state['triggeredEvents'])
+      assert_equal ['Hi'], state.dig('phoneState', 'hax', 'history').map { |m| m['text'] }
+      assert_equal ['npc:hax:1'], state.dig('timedMessages', 'delivered')
+      assert_equal 'lobby', state['currentRoom']
+    end
+
+    test 'a global sent as null is deleted' do
+      game = create_game(globals: { 'siem_state' => '{"x":1}', 'keep' => true })
+      put sync_state_game_url(game), params: { globalVariables: { 'siem_state' => nil } }, as: :json
+      assert_response :success
+      assert_equal({ 'keep' => true }, game.reload.player_state['globalVariables'])
+    end
+
+    test 'a stale clientTs skips last-write-wins sections but applies the grow-only merges' do
+      game = create_game(globals: { 'a' => 'new' })
+      put sync_state_game_url(game), params: {
+        clientTs: 2_000_000, npcVisibility: { 'hax' => true },
+        phoneState: { 'hax' => { 'history' => [{ 'type' => 'npc', 'text' => 'Hi' }, { 'type' => 'npc', 'text' => 'Newer' }] } }
+      }, as: :json
+      assert_response :success
+      assert_nil response.parsed_body['stale']
+
+      put sync_state_game_url(game), params: {
+        clientTs: 1_999_000, currentRoom: 'lobby', globalVariables: { 'a' => 'old' },
+        notes: [{ id: 'n1', text: 'old' }], timedMessages: { pending: [], delivered: ['npc:x:1'] },
+        npcInkVariables: { 'hax' => { 'met' => false } }, npcVisibility: { 'hax' => false },
+        phoneState: { 'hax' => { 'history' => [{ 'type' => 'npc', 'text' => 'Hi' }] } },
+        triggeredEvents: { 'hax:a:0' => 1 }, scenarioClock: { elapsedMs: 5000, timers: { fired: ['t1'] } },
+        commandBoardLog: [{ id: 'x', t: 1 }]
+      }, as: :json
+      assert_response :success
+      assert_equal true, response.parsed_body['stale']
+
+      state = game.reload.player_state
+      assert_equal 'new', state.dig('globalVariables', 'a')
+      assert_empty state['notes']
+      assert_nil state['timedMessages']
+      assert_nil state['npcInkVariables']
+      assert_equal true, state.dig('npcVisibility', 'hax'), 'visibility is latest-wins, so skipped'
+      assert_equal %w[Hi Newer], state.dig('phoneState', 'hax', 'history').map { |m| m['text'] }, 'phone threads are replaced whole, so skipped'
+      assert_equal({ 'hax:a:0' => 1 }, state['triggeredEvents'])
+      assert_equal 5000, state.dig('scenarioClock', 'elapsedMs')
+      assert_equal ['t1'], state.dig('scenarioClock', 'timers', 'fired')
+      assert_equal [{ 'id' => 'x', 't' => 1 }], state['commandBoardLog']
+      assert_equal 2_000_000, state['lastSyncClientTs'], 'a stale request does not move the stored stamp'
+
+      put sync_state_game_url(game), params: { clientTs: 2_000_000, globalVariables: { 'a' => 'same' } }, as: :json
+      assert_equal true, response.parsed_body['stale'], 'an equal stamp is not newer'
+    end
+
+    test 'a clientTs more than 10 minutes older than the stored one is accepted and resets it' do
+      game = create_game(globals: { 'a' => 1 })
+      put sync_state_game_url(game), params: { clientTs: 10_000_000, globalVariables: { 'a' => 2 } }, as: :json
+      older = 10_000_000 - 10.minutes.in_milliseconds - 1
+      put sync_state_game_url(game), params: { clientTs: older, globalVariables: { 'a' => 3 } }, as: :json
+
+      assert_nil response.parsed_body['stale']
+      state = game.reload.player_state
+      assert_equal 3, state.dig('globalVariables', 'a')
+      assert_equal older, state['lastSyncClientTs']
+    end
+
+    test 'a request without clientTs is applied as before' do
+      game = create_game(globals: { 'a' => 1 })
+      put sync_state_game_url(game), params: { clientTs: 5_000, globalVariables: { 'a' => 2 } }, as: :json
+      put sync_state_game_url(game), params: { globalVariables: { 'a' => 3 }, currentRoom: 'lobby' }, as: :json
+
+      assert_nil response.parsed_body['stale']
+      state = game.reload.player_state
+      assert_equal 3, state.dig('globalVariables', 'a')
+      assert_equal 5_000, state['lastSyncClientTs']
+    end
+
     private
+
+    # SQL run inside the block, without schema and transaction noise
+    def capture_sql
+      sql = []
+      sub = ActiveSupport::Notifications.subscribe('sql.active_record') do |*, payload|
+        next if %w[SCHEMA TRANSACTION].include?(payload[:name]) || payload[:sql] =~ /\A\s*(BEGIN|COMMIT|SAVEPOINT|RELEASE|ROLLBACK)/
+
+        sql << payload[:sql]
+      end
+      yield
+      sql
+    ensure
+      ActiveSupport::Notifications.unsubscribe(sub)
+    end
 
     def scenario_json(game)
       get scenario_game_url(game)

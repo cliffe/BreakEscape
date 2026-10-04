@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_05_25_000001) do
+ActiveRecord::Schema[7.0].define(version: 2026_10_04_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -54,10 +54,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_25_000001) do
     t.integer "total_aims", default: 0, null: false
     t.datetime "mission_concluded_at"
     t.index ["mission_id"], name: "index_break_escape_games_on_mission_id"
-    t.index ["player_state"], name: "index_break_escape_games_on_player_state", using: :gin
     t.index ["player_type", "player_id", "mission_id"], name: "index_games_on_player_and_mission_non_unique"
     t.index ["player_type", "player_id"], name: "index_break_escape_games_on_player"
-    t.index ["scenario_data"], name: "index_break_escape_games_on_scenario_data", using: :gin
     t.index ["status"], name: "index_break_escape_games_on_status"
     t.index ["total_aims", "objectives_completed"], name: "index_games_on_aim_progress"
     t.index ["total_tasks", "tasks_completed"], name: "index_games_on_task_progress"

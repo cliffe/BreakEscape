@@ -224,11 +224,18 @@ module BreakEscape
       end
     end
 
-    # Global variables (synced with client)
-    def update_global_variables!(variables)
-      player_state['globalVariables'] ||= {}
-      player_state['globalVariables'].merge!(variables)
-      save!
+    # Merge the client's global variables. A null value deletes the key: the
+    # client sends null for a global that no longer exists (the SIEM minigame
+    # deletes its state key). Does not save!; the caller does.
+    def merge_global_variables!(variables)
+      globals = player_state['globalVariables'] ||= {}
+      variables.each do |key, value|
+        if value.nil?
+          globals.delete(key)
+        else
+          globals[key] = value
+        end
+      end
     end
 
     # Minigame state
@@ -249,7 +256,8 @@ module BreakEscape
     # kept), caps the list at 50, and drops any sample whose owner is not a
     # fingerprintOwner somewhere in scenario_data, so a hand-made request can't
     # invent a print the mission doesn't contain. Does not save!; the caller does.
-    def merge_biometric_samples!(incoming)
+    # sync_state loads the game without scenario_data and passes it in.
+    def merge_biometric_samples!(incoming, scenario: nil)
       return unless incoming.is_a?(Array)
 
       known_owners = []
@@ -262,7 +270,7 @@ module BreakEscape
           node.each { |v| collect.call(v) }
         end
       end
-      collect.call(scenario_data)
+      collect.call(scenario || scenario_data)
 
       merged = Array(player_state['biometricSamples']).select { |s| s.is_a?(Hash) }.map { |s| s.slice(*BIOMETRIC_SAMPLE_KEYS) }
       incoming.each do |raw|
@@ -1605,8 +1613,15 @@ module BreakEscape
     # to a room during play.
     def scenario_npc_ids
       ids = Set.new
-      (scenario_data['rooms'] || {}).each_value do |room|
-        Array(room['npcs']).each { |npc| ids << npc['id'] if npc.is_a?(Hash) && npc['id'].is_a?(String) }
+      if has_attribute?(:scenario_data)
+        (scenario_data['rooms'] || {}).each_value do |room|
+          Array(room['npcs']).each { |npc| ids << npc['id'] if npc.is_a?(Hash) && npc['id'].is_a?(String) }
+        end
+      else
+        # sync_state's narrow load leaves scenario_data out; read just the ids
+        found = self.class.where(id: id).pick(Arel.sql("jsonb_path_query_array(scenario_data, '$.rooms.*.npcs[*].id')"))
+        found = JSON.parse(found) if found.is_a?(String)
+        Array(found).each { |npc_id| ids << npc_id if npc_id.is_a?(String) }
       end
       (player_state['room_states'] || {}).each_value do |state|
         next unless state.is_a?(Hash)

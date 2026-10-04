@@ -3,7 +3,7 @@ module BreakEscape
     def show?
       # Owner, admin, or an account_manager who manages the player (same org when the
       # host has orgs)
-      record.player == user || user&.admin? || managing_account_manager?
+      owner? || user&.admin? || managing_account_manager?
     end
 
     def update?
@@ -85,7 +85,7 @@ module BreakEscape
     # Creates a game for, and abandons the game of, the current player, so only the
     # owner may do it. Staff can view other players' games but not spawn sessions.
     def new_session?
-      user.present? && record.player == user
+      user.present? && owner?
     end
 
     def vm_panel?
@@ -105,6 +105,13 @@ module BreakEscape
       return true unless user.respond_to?(:org_id)
 
       user.org_id.present? && record.player.respond_to?(:org_id) && record.player.org_id == user.org_id
+    end
+
+    # Owner check on the foreign key, so checking a request doesn't load the
+    # player's row (every sync_state is checked)
+    def owner?
+      user.is_a?(ActiveRecord::Base) &&
+        record.player_type == user.class.polymorphic_name && record.player_id == user.id
     end
 
     class Scope < Scope
