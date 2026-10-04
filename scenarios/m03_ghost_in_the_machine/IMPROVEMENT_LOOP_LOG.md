@@ -236,6 +236,19 @@ Counts (new): 0 blockers, 1 major, 6 minors. P3-1 holds when traced (handlers re
 | P3-24 | minor | "Knocked out on his rounds" credit also shows for a day-desk KO | to fixer |
 | P3-25 | minor | Reload after her fate is set but before her chat closes: she's visible, and a KO overwrites the fate | to fixer |
 
+### Round 2 browser probe (Sonnet, games 5001 and 5002, headless; late-game globals set by console, so exercised, not earned)
+
+| Check | Result |
+|---|---|
+| P3-1 recruit ending: Victoria's final lines all show, then the chat closes, then the debrief and credits | PASS (game 5001; arrest and escape endings not played) |
+| P3-1 backstop: reload after the choice, debrief opens once | PASS (game 5002; opened at once on load, once only) |
+| P3-3 flag station stays open after flag 4 | PASS |
+| P3-3 HaX text opens the revelation call | PASS from the toast only; the contact-list entry opens the hub |
+| P3-3 document stays open while a text arrives | PASS (tested on the whiteboard, not a Sterling document) |
+| Pointer to Sterling if the revelation is never opened | PARTIAL: only the generic task; no text (agrees with P3-19) |
+
+Harness note to check: typing flags 1-3 back-to-back once dropped flag 2 silently; resubmitting worked. Sent to the fixer to classify (harness or engine).
+
 ## SecGen
 
 m03 XML missing on SecGen master. Proposed file: `SECGEN_PROPOSED_m03_ghost_in_the_machine.xml` (D1). No SecGen edits made.
