@@ -43,6 +43,12 @@ VAR guard_knocked_out = false
 VAR guard_attacking = false
 // Pass 5 (P3-7): a day KO of Sterling changes the recap.
 VAR victoria_ko = false
+// Pass 5 (P3-19): synced, so the hub can re-offer calls whose text the player missed.
+VAR revelation_heard = false
+VAR pc_call_done = false
+// Local: the catalogue and PC calls have been heard.
+VAR catalogue_call_heard = false
+VAR pc_call_heard = false
 VAR exec_office_entered = false
 
 // ---- Field-guide exposure flags (offered synced; given tracked locally) ----
@@ -88,6 +94,14 @@ VAR hint_guard_hostile_given = false
 // two fixed choices ("Where do I stand?", exit) sit last, so the hub is never
 // empty and a stuck player always has the contextual progress read to fall back on.
 === hub ===
+// Pass 5 (P3-19): the four calls now arrive as texts the player clicks; a missed or
+// dismissed text would lose the call for good, so the hub offers it again (m02 pattern).
++ {flag_distcc_submitted and not revelation_heard} [You wanted to talk about the distcc logs.]
+    -> m2_revelation_call
++ {catalogue_seen and not catalogue_call_heard} [About that catalogue from the safe.]
+    -> on_exploit_catalog_found
++ {pc_call_done and not pc_call_heard} [I'm on Sterling's machine. What am I looking for?]
+    -> on_victoria_computer_accessed
 + {night_confrontation_ready and victoria_fate == "" and not hint_confrontation_given} [Sterling's still in the building. How do I play this?]
     -> hint_confrontation
 + {(usb_seen or lore_directive_found) and not directive_decoded} [About the drive from her desk. I've decoded it.]
@@ -341,6 +355,11 @@ distcc is the one that matters -- that's where the operational logs sit. Submit 
     - else:
         Network's stripped, the case is made, and Danny's dealt with. Sterling's your last move.
     }
+    { victoria_ko:
+        Sterling's still in the conference room where you left her. Go and settle it.
+    - else:
+        Sterling's in the conference room.
+    }
     { victoria_fate == "" and not (usb_seen or lore_directive_found):
         And her desk drawer's still got that drive in it, if you want something to bargain with.
     }
@@ -395,6 +414,7 @@ distcc is the one that matters -- that's where the operational logs sit. Submit 
 
 === on_victoria_computer_accessed ===
 #speaker:agent_0x99
+~ pc_call_heard = true
 You're into her machine. Good.
 Client roster, transaction records, anything to the Architect.
 { whiteboard_seen:
@@ -452,11 +472,13 @@ St. Catherine's gave us the buyer's invoice. This is the seller's own ledger, sa
 // Pass 4 round 2: marks the end of the revelation call, so the all-flags message
 // (erb, revelation_heard mappings) waits until the call has played out.
 #set_global:revelation_heard:true
+~ revelation_heard = true
 Finish up, then Sterling. And be careful -- reasonable as she sounds, she signed that invoice.
 -> hub
 
 === on_exploit_catalog_found ===
 #speaker:agent_0x99
+~ catalogue_call_heard = true
 The internal catalogue. Not the price list off their web host: this one has the buyers.
 The ProFTPD sale names Ghost and St. Catherine's outright. And there's stock held back for Critical Mass. Phase 2 has a shopping list.
 -> hub

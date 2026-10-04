@@ -162,10 +162,10 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           { "text": "ZERO DAY SYNDICATE: EXPOSED", "style": "entry", "condition": "globalVars.victoria_fate !== 'recruited'" },
           { "text": "ZERO DAY SYNDICATE: COMPROMISED — from the inside", "style": "entry", "condition": "globalVars.victoria_fate === 'recruited'" },
           { "text": "ST. CATHERINE'S LINK: PROVEN — ProFTPD exploit traced to GHOST", "style": "entry" },
-          { "text": "ZERO DAY CATALOGUE: IN SAFETYNET HANDS — vendors warned, buyers on notice", "style": "entry", "condition": "(globalVars.catalogue_seen === true || globalVars.lore_catalogue_found === true) && globalVars.victoria_fate !== 'recruited'" },
+          { "text": "ZERO DAY CATALOGUE: IN SAFETYNET HANDS — vendors warned, buyers on notice, Phase 2 stock flagged", "style": "entry", "condition": "(globalVars.catalogue_seen === true || globalVars.lore_catalogue_found === true) && globalVars.victoria_fate !== 'recruited'" },
           { "text": "ZERO DAY CATALOGUE: IN SAFETYNET HANDS — vendors quietly warned", "style": "entry", "condition": "(globalVars.catalogue_seen === true || globalVars.lore_catalogue_found === true) && globalVars.victoria_fate === 'recruited'" },
-          { "text": "ZERO DAY CATALOGUE: NOT RECOVERED — the buyers and the reserved stock are still unknown", "style": "warning", "condition": "globalVars.catalogue_seen !== true && globalVars.lore_catalogue_found !== true && globalVars.victoria_fate !== 'arrested'" },
-          { "text": "ZERO DAY CATALOGUE: SEIZED WITH THE MARKETPLACE — but the buyer list isn't in our hands", "style": "warning", "condition": "globalVars.catalogue_seen !== true && globalVars.lore_catalogue_found !== true && globalVars.victoria_fate === 'arrested'" },
+          { "text": "ZERO DAY CATALOGUE: NOT RECOVERED — the sales ledger and the reserved stock are still in the safe", "style": "warning", "condition": "globalVars.catalogue_seen !== true && globalVars.lore_catalogue_found !== true && globalVars.victoria_fate !== 'arrested'" },
+          { "text": "ZERO DAY CATALOGUE: SEIZED WITH THE MARKETPLACE — but its sales ledger isn't in our hands", "style": "warning", "condition": "globalVars.catalogue_seen !== true && globalVars.lore_catalogue_found !== true && globalVars.victoria_fate === 'arrested'" },
           { "text": "PHASE 2 DIRECTIVE: DECODED BY THE AGENT. Grid and hospitals, this winter", "style": "entry", "condition": "globalVars.directive_decoded === true && globalVars.directive_guessed !== true" },
           { "text": "PHASE 2 DIRECTIVE: RECOVERED BY THE AGENT, decoded at HQ", "style": "entry", "condition": "(globalVars.directive_decoded !== true || globalVars.directive_guessed === true) && (globalVars.usb_seen === true || globalVars.lore_directive_found === true)" },
           { "text": "PHASE 2 DIRECTIVE: LEFT IN STERLING'S DESK, recovered by the search team", "style": "entry", "condition": "globalVars.directive_decoded !== true && globalVars.usb_seen !== true && globalVars.lore_directive_found !== true" },
@@ -181,7 +181,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           { "text": "DANNY FOSTER: TAKEN DOWN IN HIS OWN OFFICE", "style": "warning", "condition": "globalVars.danny_fate === 'ko'" },
           { "text": "DANNY FOSTER: KNOCKED OUT AFTER YOU'D SPOKEN, picked up in his office", "style": "warning", "condition": "globalVars.danny_ko === true && globalVars.danny_fate !== 'ko' && !!globalVars.danny_fate" },
           { "text": "DANNY FOSTER: NEVER FOUND — his name is still in the recon files", "style": "warning", "condition": "!globalVars.danny_fate" },
-          { "text": "NIGHT GUARD: KNOCKED OUT ON HIS ROUNDS", "style": "warning", "condition": "globalVars.guard_knocked_out === true" },
+          { "text": "SECURITY GUARD: KNOCKED OUT ON SHIFT", "style": "warning", "condition": "globalVars.guard_knocked_out === true" },
           { "text": "WHITEHAT RECEPTION: KNOCKED OUT AT HER OWN DESK", "style": "warning", "condition": "globalVars.receptionist_ko === true" },
           { "text": "PERFECT STEALTH — never seen, never stopped, no deals", "style": "entry", "condition": "globalVars.guard_detection_count === 0 && globalVars.exec_office_entered === true && globalVars.guard_knocked_out !== true && globalVars.guard_told_safetynet !== true && globalVars.guard_bribed !== true && globalVars.guard_challenged !== true" },
           { "text": "" },
@@ -436,8 +436,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
       "tasks": [
         {
           "taskId": "victoria_choice_made",
-          "title": "Confront Victoria and decide her fate",
-          "description": "Confront Victoria Sterling and decide her fate",
+          "title": "Confront Victoria in the conference room and decide her fate",
+          "description": "Sterling is still in the conference room. Confront her and decide her fate",
           "type": "custom",
           "status": "active"
         },
@@ -950,7 +950,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
                 debrief can't roll before the evidence exists. %>
             {
               "eventPattern": "npc_ko:victoria_sterling",
-              "condition": "globalVars.victoria_choice_made !== true",
+              "condition": "globalVars.victoria_choice_made !== true && globalVars.victoria_fate === ''",
               "onceOnly": true,
               "completeTask": "meet_victoria",
               "setGlobal": { "victoria_ko": true, "victoria_fate": "ko" }
@@ -1136,10 +1136,10 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "unlockAim": "collect_lore"
             },
             {
-              "_comment": "P1-28: the guard has turned hostile (any route: his ink's #hostile tag or a fight). Synced so HaX's hub can offer the hostile-guard hint.",
+              "_comment": "P1-28: the guard has turned hostile (any route: his ink's #hostile tag or a fight). Synced so HaX's hub can offer the hostile-guard hint. P3-20: not onceOnly, because game_loaded clears it after a reload and he can turn hostile again; setting true twice is harmless.",
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'night_guard' && data.isHostile === true",
-              "onceOnly": true,
+              "cooldown": 0,
               "setGlobal": { "guard_attacking": true }
             },
             {
@@ -1276,6 +1276,12 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "eventPattern": "global_variable_changed:victoria_choice_made",
               "condition": "value === true && globalVars.victoria_fate !== 'ko'",
               "onceOnly": true,
+              "setVisible": false
+            },
+            {
+              "_comment": "P3-25: after a reload her hide above doesn't replay, so a decided Victoria would be standing (and KO-able) again. Re-hide her on entering her room (Danny's room-entry setVisible pattern; not onceOnly, setVisible is idempotent).",
+              "eventPattern": "room_entered:conference_room_01",
+              "condition": "globalVars.victoria_fate !== '' && globalVars.victoria_fate !== 'ko'",
               "setVisible": false
             }
           ],

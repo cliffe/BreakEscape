@@ -37,7 +37,7 @@
      (HaX: "they filed it as confidential"), but no buyer names, no SOLD ledger and no
      reserved Phase 2 stock (design review P3-2, 2026-10-04). Those stay in the game's
      wall-safe catalogue, so cracking the safe pays out something the VM doesn't.
-   - Transaction log (flag 4) is operational_log_content verbatim (scenario.json.erb:61),
+   - Transaction log (flag 4) is operational_log_content verbatim (scenario.json.erb:66),
      itemised as m02's invoice ZDS-2024-0847 (m02 scenario.json.erb:2755),
      with the Target line and the discount on its own line (P2-18).
 -->
@@ -195,7 +195,7 @@ The transaction log itemises invoice ZDS-2024-0847 to GHOST (Ransomware Incorpor
 
 Services on this network:
 - FTP  : ProFTPD 1.3.3c (trojaned 2010 build) - anonymous read
-- HTTP : price list (confidential - staff only)
+- HTTP : price list (confidential - clients only)
 - LEGACY BUILD: distcc on a high port - DO NOT TOUCH after hours
 
 Students: recon first. Everything here answers a scan.
@@ -239,7 +239,7 @@ The operational records are not here. They sit on the legacy distcc box.</value>
         <!-- ROT13 price list: decode for flag3 -->
         <encoder module_path="modules/encoders/string/rot13">
           <input into="strings_to_encode">
-            <value>FILED: CONFIDENTIAL - STAFF ONLY
+            <value>FILED: CONFIDENTIAL - CLIENTS ONLY
 
 ZERO DAY: Q4 2024 PRICE LIST (clients only)
 
@@ -263,7 +263,7 @@ Buyer details are held internally. Ask your account contact.</value>
 
     <!-- flag 4: distcc daemon command execution (CVE-2004-2687, high port 3632).
          The recovered transaction log is operational_log_content verbatim
-         (scenario.json.erb:61), itemised as m02's invoice ZDS-2024-0847. -->
+         (scenario.json.erb:66), itemised as m02's invoice ZDS-2024-0847. -->
     <vulnerability module_path="vulnerabilities/unix/misc/distcc_exec">
       <input into="strings_to_leak">
         <value>ZERO DAY TRANSACTION LOG (recovered from the training network)

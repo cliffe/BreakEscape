@@ -1,5 +1,10 @@
 VAR guard_influence = 0
 VAR guard_hostile = false
+// Pass 5 (P3-20): synced scenario global, true only while the engine has him hostile
+// (set on npc_hostile_state_changed, cleared on game_loaded). Engine hostility isn't saved,
+// so after a reload his own guard_hostile can be true while he patrols peacefully; his
+// hostile lines need both.
+VAR guard_attacking = false
 VAR guard_suspicious = false
 VAR player_warned = false
 VAR player_has_excuse = false
@@ -26,7 +31,7 @@ VAR idle_quiet = false
 
 === start ===
 #speaker:npc
-{ guard_hostile:
+{ guard_hostile and guard_attacking:
     #display:guard-hostile
     Security Guard: I told you to leave. I'm calling the police.
     ~ idle_quiet = true
@@ -52,7 +57,7 @@ VAR idle_quiet = false
     #exit_conversation
     -> guard_idle
 }
-{ (player_warned && not guard_hostile) && not bribe_accepted:
+{ (player_warned && not (guard_hostile and guard_attacking)) && not bribe_accepted:
     #display:guard-suspicious
     Security Guard: You again. I'm keeping my eye on you.
     ~ hub_quiet = true
@@ -494,7 +499,7 @@ Security Guard: That's three times. I'm done talking.
     { mission_phase != "act2_infiltration":
         Narrator: The guard looks up from his desk.
     - else:
-        { guard_hostile:
+        { guard_hostile and guard_attacking:
             Security Guard: Don't even think about it.
         - else:
             Narrator: The guard's torch swings your way again.
@@ -503,9 +508,9 @@ Security Guard: That's three times. I'm done talking.
 }
 + {mission_phase != "act2_infiltration"} [Nod to the guard]
     -> daytime
-+ {mission_phase == "act2_infiltration" and guard_hostile} [Back off]
++ {mission_phase == "act2_infiltration" and guard_hostile and guard_attacking} [Back off]
     ~ idle_quiet = true
     #exit_conversation
     -> guard_idle
-+ {mission_phase == "act2_infiltration" and not guard_hostile} [Talk to the guard]
++ {mission_phase == "act2_infiltration" and not (guard_hostile and guard_attacking)} [Talk to the guard]
     -> start
