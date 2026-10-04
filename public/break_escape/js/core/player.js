@@ -182,8 +182,12 @@ export async function updatePlayerSprite(newSpriteKey) {
     
     // Play appropriate animation
     const animKey = wasMoving ? `walk-${currentDirection}` : `idle-${currentDirection}`;
-    if (player.anims.exists(animKey)) {
-        player.anims.play(animKey, true);
+    // Check the global animation manager: player.anims.exists() only sees animations
+    // local to the sprite, so it was always false and the player froze until they moved.
+    // Play without ignoreIfPlaying: the sprite still holds the removed animation under
+    // the same key, and that one's frames belong to the old texture.
+    if (gameRef.anims.exists(animKey)) {
+        player.anims.play(animKey);
     }
     
     console.log('✅ Player sprite updated successfully to', newSpriteKey);
