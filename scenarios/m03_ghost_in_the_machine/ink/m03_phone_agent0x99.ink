@@ -41,6 +41,8 @@ VAR clone_read_dropped = false
 VAR sterling_on_call_seen = false
 VAR guard_knocked_out = false
 VAR guard_attacking = false
+// Pass 5 (P3-7): a day KO of Sterling changes the recap.
+VAR victoria_ko = false
 VAR exec_office_entered = false
 
 // ---- Field-guide exposure flags (offered synced; given tracked locally) ----
@@ -268,7 +270,7 @@ If the read drops, walk the suspicion back first, then drift to the board again.
 ~ hint_rfid_given = true
 // Pass 5 (P2-16): asking HaX opens the receptionist's clone choice.
 #set_global:cloner_explained:true
-Two stages. Reception first -- lean in near her desk and the cloner reads her badge.
+Two stages. Reception first. Talk to her and lean in by her lanyard, and the cloner reads her badge.
 Weak defaults: read it, crack it, save it. That opens the conference door.
 Then Sterling's executive card in the meeting. Custom keys -- read it, then Darkside, half a minute.
 Best moment's at the whiteboard. Keep her talking.
@@ -301,7 +303,7 @@ The founding year's on the plaque in reception. Put the two together.
 ~ hint_encoding_given = true
 Take the CyberChef workstation in the server room. Paste anything that looks like nonsense.
 ROT13 reads like scrambled English. Base64 is letters, numbers, plus and slash. Hex is pairs of 0-9 and A-F.
-And if it's still scrambled after one pass, it's layered. Decode again. The drive in her desk is Base64 over ROT13 -- two passes.
+And if it's still scrambled after one pass, it's layered. Decode again.
 + [Thanks]
     -> hub
 
@@ -320,6 +322,10 @@ distcc is the one that matters -- that's where the operational logs sit. Submit 
 { not clone_call_done:
     { victoria_card_cloned:
         Sterling's card is saved. Walk out with the visitors and come back after dark.
+        -> report_end
+    }
+    { victoria_ko:
+        Nightshade's copy of her card is in your kit. Walk out and come back after dark.
         -> report_end
     }
     { reception_badge_cloned or receptionist_ko:
@@ -350,10 +356,18 @@ distcc is the one that matters -- that's where the operational logs sit. Submit 
     }
 }
 { (usb_seen or lore_directive_found) and not directive_decoded:
-    That drive's still unread. CyberChef workstation, two passes.
+    That drive's still unread. The CyberChef workstation's in the server room.
 }
 { not (draft_seen or roster_seen or usb_seen):
     Sterling's office is still unread, if you want her paper as well as her servers.
+}
+{ guard_knocked_out:
+    The guard's out cold. The wing's yours, but it's on the record.
+    -> report_end
+}
+{ guard_attacking:
+    The guard's after you. Keep out of his reach.
+    -> report_end
 }
 { guard_told_safetynet:
     The guard knows who you are. Assume Sterling does too.
@@ -384,7 +398,8 @@ distcc is the one that matters -- that's where the operational logs sit. Submit 
 You're into her machine. Good.
 Client roster, transaction records, anything to the Architect.
 { whiteboard_seen:
-    And that board in the server room said she mails the night team from in there. Anything she hasn't sent yet is worth a look.
+    If that board in the server room says what I think, she mails the night team from in there.
+    Anything she hasn't sent yet is worth a look.
 }
 -> hub
 
@@ -442,13 +457,13 @@ Finish up, then Sterling. And be careful -- reasonable as she sounds, she signed
 
 === on_exploit_catalog_found ===
 #speaker:agent_0x99
-The catalogue. Every exploit they sell, with a price and a premium.
-The ProFTPD line names Ghost and St. Catherine's outright. That's the sale, in their own filing.
+The internal catalogue. Not the price list off their web host: this one has the buyers.
+The ProFTPD sale names Ghost and St. Catherine's outright. And there's stock held back for Critical Mass. Phase 2 has a shopping list.
 -> hub
 
 === on_architect_directive_found ===
 #speaker:agent_0x99
-That drive from her desk. Run it through the CyberChef workstation and tell me what it says.
+That drive from her desk. Run it through the CyberChef workstation in the server room{not clone_call_done: tonight} and tell me what it says.
 If it's what I think, it's the Architect talking.
 -> directive_answer_choices
 

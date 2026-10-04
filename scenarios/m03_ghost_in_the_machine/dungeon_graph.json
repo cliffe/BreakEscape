@@ -93,6 +93,12 @@
       "optional": false
     },
     {
+      "id": "action_clone_reception_badge_talk",
+      "label": "Talk to her and clone her staff badge",
+      "kind": "action",
+      "optional": false
+    },
+    {
       "id": "npc_victoria_sterling",
       "label": "Victoria Sterling",
       "kind": "key",
@@ -102,6 +108,18 @@
       "id": "executive_keycard",
       "label": "Executive Keycard",
       "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "action_clone_victoria_card",
+      "label": "Clone her executive card at the whiteboard",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "action_confront_victoria",
+      "label": "Confront her once all four flags are in",
+      "kind": "action",
       "optional": false
     },
     {
@@ -281,6 +299,11 @@
       "soft": false
     },
     {
+      "from": "npc_receptionist",
+      "to": "action_clone_reception_badge_talk",
+      "soft": false
+    },
+    {
       "from": "conference_room_01",
       "to": "npc_victoria_sterling",
       "soft": false
@@ -288,6 +311,16 @@
     {
       "from": "npc_victoria_sterling",
       "to": "executive_keycard",
+      "soft": false
+    },
+    {
+      "from": "npc_victoria_sterling",
+      "to": "action_clone_victoria_card",
+      "soft": false
+    },
+    {
+      "from": "npc_victoria_sterling",
+      "to": "action_confront_victoria",
       "soft": false
     },
     {

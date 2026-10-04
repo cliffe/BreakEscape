@@ -420,7 +420,8 @@
       "directive_guessed": false,
       "vm_flag1_reward": false,
       "vm_flag2_reward": false,
-      "vm_flag3_reward": false
+      "vm_flag3_reward": false,
+      "danny_ko": false
     },
     "npcs": [
       {
