@@ -84,6 +84,12 @@ Counts (new): 0 blockers, 0 majors, 15 minors. Round 1: 13 closed, 6 partly clos
 | P1-36 | minor | `missions.json` lacks three m03 globals; two dead VARs | to fixer |
 | P1-37 | minor | Two hints never retire | to fixer |
 
+### Round 2 fix (same Opus fixer, resumed)
+
+All round-2 items fixed: canon lines reworded (P1-22/23/24); hints gated on the situation existing (new synced globals `clone_read_dropped`, `sterling_on_call_seen`, `guard_hostile`, `guard_knocked_out`, `exec_office_entered`) and retired on progress; new hostile-guard hint; Danny's task moved to the office aim; night aims staggered (server room on the night turn, office on the first night entry to the exec wing, paper trail on the first night entry to either); music in four phases (day noir, night cutscene, confrontation spy-action, after the choice end), each with a `game_loaded` cue so a reload keeps it; new optional task "Decode the drive and tell HaX what it says"; lore titles made spoiler-free; target-selection callback put in Sterling's encoded client roster (not spoken); dead VARs removed; nine m03 globals added to `missions.json`; no dashes in any new text. Static checks: validator 1 justified warning, dialoguelint 0 errors (deferred lint only), reopencheck 0 problems over 439 reopens, inkcheck/loopcheck clean over ten states, tagdiff explained. Commit 48dc4c4 (WIP).
+
+Orchestrator: fixed the hard-coded home path in `inkcheck.js`, `loopcheck.js` and `predict_door_sides.py` (tooling commit), so agents no longer need patched copies.
+
 ## SecGen
 
 (see per-phase sections)
@@ -105,6 +111,15 @@ Added:
 - HaX (debrief): "Ghost's still out there -- the operator who ran that ward. But tonight you put the hand that armed them on paper. That's the supply chain Nightshade kept warning us about."
 - HaX (phone): five new hint knots (hint_sterling_night, hint_danny, hint_guard, hint_safe, hint_clone), 3–4 lines each.
 - Narrator (night transition re-entry): "The hallway's still on its night lights. Off to the east, the guard goes round again."
+
+Round 2 (replacing round-1 wording where noted):
+- HaX (briefing), round-1 line replaced: → "They did. An invoice turned up at St. Catherine's with Zero Day's name on the sale, the paper the buyer left behind. Tonight we get the seller's own ledger."
+- HaX (debrief), round-1 line replaced: → "At the hospital we had the buyer's paperwork. Now we have the seller's own books."
+- HaX (debrief): "You called it murder with an invoice. Now we have the invoice." → "You called it murder with an invoice. Now the seller's ledger says it too."
+- HaX (debrief), round-1 addition replaced: → "Ghost's still out there. But last night you put the people who armed them on paper. That's ENTROPY's supply chain."
+- HaX (phone revelation), round-1 line replaced: → "St. Catherine's gave us the buyer's invoice. This is the seller's own ledger, saying the same thing. A case with a name."
+- HaX hints (new in round 1, reworded to drop dashes): hint_sterling_night "Finish the network first: recon, the services, the distcc box. Once the case is made she'll turn round."; hint_danny "One. Danny Foster, a consultant, in the south office off the executive wing. He drew the recon that made the hospital job possible."; hint_guard "If he's already looking, break off. Step out to the main hallway or into Danny's office until he's moved on."; hint_safe "So it's on her office machine, an unsent message saved as raw source. Decode it at the CyberChef workstation for the four digits."; hint_clone "Her card's custom keys. It takes about half a minute to read, and she steps away when she's wary."
+- Added, HaX hint_guard_hostile: "He's hostile now. Keep moving and stay out of his reach, or stand and fight." / "He goes down if you fight him, but it goes on the record and it ends any claim to a quiet night."
 
 ## Open items
 
