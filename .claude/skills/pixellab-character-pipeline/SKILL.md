@@ -23,6 +23,7 @@ One script, [tools/pixellab_pipeline.py](../../../tools/pixellab_pipeline.py), d
 
 - Check `balance` first. Tell the user the planned spend before any paid command, and get a yes before anything costing about 20 generations or more (`character`, `fix --use ai`, a full inpaint `visemes` set). Every paid command takes `--dry-run`.
 - At every choice point, **Read the contact sheet image yourself**. Show it to the user with your assessment, then wait for their pick unless they said to choose.
+- **Every portrait faces right.** Busts, talk sheets and viseme sheets for NPCs and player alike face the viewer's right (judge by where the face and gaze point, and for a patient in bed not by which side of the pillow the head is on). Person-chat draws the player as stored on the left and mirrors NPCs on the right, so a left-facing file makes the NPC face away. Check this at the bust pick, before any sheet is built from it; flip frame by frame if it's wrong.
 - Never delete PixelLab characters, and never overwrite a game asset silently. `pick` and `import --force` back up whatever they replace.
 - A killed run leaves jobs `submitted`. `collect <name>` finishes them without paying again (for `animate`, just rerun it; it resumes from its in-flight log). Don't rerun a paid stage command to recover.
 
