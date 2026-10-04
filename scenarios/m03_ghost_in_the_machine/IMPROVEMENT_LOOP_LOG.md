@@ -313,6 +313,20 @@ Process note: the round-1 reviewer recommended a cut without knowing a later mis
 
 All items done (commit after acbe10e). P4-43 restored verbatim (orchestrator grepped it). Voiced: 1 restored, 19 changed, 3 cut. One structural change: the P4-48 condition in the debrief. Checks clean; four lint warnings justified.
 
+### Round 3 review (fresh Opus script editor) and touch-up
+
+P4-1..P4-64: 63 closed, 1 justified (P4-37). Every character "ship". Every cut line grepped against m04-m08: nothing else is paid off later. New: 0 blockers, 0 majors, 8 minors (3 recommended, 5 optional). **Verdict: Phase 4 closed.** All 8 taken (no audio cost yet): two repeats in Victoria's lines, two in the debrief, "stayed in" for the history and catalogue, the receptionist's echo, one surviving dash in the guard's line; five unread ink VARs removed (checked not synced or read anywhere). Orchestrator grepped two of the lines; validator schema passes.
+
+### Phase 4 summary
+
+| Round | Blockers | Majors | Minors |
+|---|---|---|---|
+| 1 | 0 | 9 | 33 |
+| 2 (new) | 1 | 2 | 19 |
+| 3 (new) | 0 | 0 | 8 |
+
+All static. The dialogue playtest is part of Phase 5 (receptionist first and return visits, guard bribe and police routes, briefing hub, debrief on each ending).
+
 ## SecGen
 
 m03 XML missing on SecGen master. Proposed file: `SECGEN_PROPOSED_m03_ghost_in_the_machine.xml` (D1). No SecGen edits made.
@@ -438,6 +452,13 @@ Restored 1 (Nightshade, above). Changed 19, cut 3, added 0.
 - Briefing, HaX: "Two stages. Reception first. Her staff badge opens the conference area. …" → "Two stages. Reception first. The receptionist's badge opens the conference area. Weak defaults, so it cracks in seconds. Talk to her and lean in by her lanyard."; "And {player_name()} -- whatever the count turns out to be at St. Catherine's, people died on the back of what Zero Day sold." → "{player_name()}. Whatever the count turns out to be at St. Catherine's, people died on the back of what Zero Day sold."
 - Debrief, HaX: "Victoria Sterling is in custody. The CPS are looking at …" → "In custody. The CPS are looking at conspiracy, supplying articles for use in fraud and computer misuse, and her part in the deaths at St. Catherine's."; "Her lawyers are already reaching for "information freedom" and "market forces". It won't hold." → "Her lawyers are already calling it "market-driven research". It won't hold."; "The cells that leaned on Zero Day's supply are scrambling, and the Architect has one fewer supplier." → "The cells that bought from them are scrambling. The Architect will have to shop elsewhere."; "Clean enough. Get some rest; we'll need you soon." → "Clean enough. We'll need you soon."; "We'll brief the next one when you're ready." → "Go home, {player_name()}. We'll brief the next one when you're ready."
 - Cut: Victoria "That's refreshing."; receptionist "We do penetration testing, security audits and advanced research training."; guard "Get out. Now."
+
+### Phase 4 touch-up (voiced, 8 changed)
+
+- Victoria: "The lab teaches the craft. The money is in knowing who'll pay, and how much." → "The money is in knowing who'll pay, and how much."; "FTP, a web host, some legacy services -- there's a distcc box on there we keep telling the students not to touch. Real targets, not textbook ones." → "FTP, a web host, some legacy services. There's a distcc box on there we keep telling the students not to touch."
+- Debrief, HaX: "They are. And every one of them bought from Zero Day." → "They are. Now we know who sells to them."; "When we know who they are. We're closer than we were. Every operation narrows it, and one day they slip." → "When we know who they are. We're closer than we were, and one day they slip."; "Their own history of the firm is still in Sterling's filing cabinet." → "...stayed in Sterling's filing cabinet."; "The exploit catalogue is still in the wall safe." → "The exploit catalogue stayed in the wall safe."
+- Receptionist: "Ha. She can be. Lives for it, she does." → "Ha. You're not wrong. Lives for it, she does."
+- Guard: "...And stay in the executive area - don't wander." → "...And stay in the executive area. Don't wander."
 
 ## Open items
 

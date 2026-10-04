@@ -2,7 +2,6 @@ VAR guard_influence = 0
 VAR guard_hostile = false
 VAR guard_suspicious = false
 VAR player_warned = false
-VAR player_has_excuse = false
 VAR bribe_offered = false
 VAR bribe_accepted = false
 VAR topic_shift = false
@@ -88,7 +87,6 @@ Security Guard: Well? What's your explanation for being here after hours?
 * [Sterling asked me to grab some files. We met today about the training programme.]
     ~ guard_influence = guard_influence + 10
     # influence_increased
-    ~ player_has_excuse = true
     Security Guard: *pauses* Ms. Sterling mentioned a potential recruit... alright.
     -> excuse_victoria
 * [Building maintenance, late shift. Checking the air con.]
@@ -106,7 +104,6 @@ Security Guard: You got ID? Key card?
 * [Hold up the cloned executive card. This do you?]
     ~ guard_influence = guard_influence + 15
     # influence_increased
-    ~ player_has_excuse = true
     Security Guard: That's... that's an executive-level card. Alright, carry on.
     Security Guard: Just surprised to see someone here this late.
     -> hub
@@ -129,7 +126,7 @@ Security Guard: What files are you supposed to grab?
 * [Training programme enrolment forms. From her office.]
     ~ guard_influence = guard_influence + 10
     # influence_increased
-    Security Guard: Alright. But be quick about it. And stay in the executive area - don't wander.
+    Security Guard: Alright. But be quick about it. And stay in the executive area. Don't wander.
     -> hub
 * [She didn't specify -- said I'd know them when I saw them. Confidential.]
     ~ guard_influence = guard_influence + 5

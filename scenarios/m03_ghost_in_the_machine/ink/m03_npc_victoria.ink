@@ -9,7 +9,6 @@ VAR rfid_clone_complete = false
 // every talk, so a resumed or restored story never re-runs the clone tags (D13).
 VAR victoria_card_cloned = false
 VAR topic_zero_day_philosophy = false
-VAR topic_free_market = false
 VAR topic_ethics = false
 VAR recruitment_discussed = false
 VAR night_confrontation_ready = false
@@ -149,7 +148,6 @@ Victoria Sterling: Meanwhile, those same vulnerabilities get discovered by other
 #speaker:victoria_sterling
 Victoria Sterling: Every system tends towards disorder. Entropy, if you like.
 Victoria Sterling: Systems fail. What matters is who knows first, and who pays them for knowing.
-~ topic_free_market = true
 -> hub
 
 === hub ===
@@ -309,7 +307,7 @@ Narrator: Back at the board. The cloner finds her card again and starts a fresh 
 }
 * {not asked_lab_services} [What kind of services do you run in the lab environment?]
     ~ asked_lab_services = true
-    Victoria Sterling: FTP, a web host, some legacy services -- there's a distcc box on there we keep telling the students not to touch. Real targets, not textbook ones.
+    Victoria Sterling: FTP, a web host, some legacy services. There's a distcc box on there we keep telling the students not to touch.
     -> clone_check_1
 * {not asked_lab_access} [How do students access the training network?]
     ~ asked_lab_access = true
@@ -332,7 +330,7 @@ Narrator: Back at the board. The cloner finds her card again and starts a fresh 
 ~ read_checked = true
 Narrator: Halfway. The cloner is still reading.
 Victoria Sterling: Of course, what students learn in the lab is just the beginning.
-Victoria Sterling: The lab teaches the craft. The money is in knowing who'll pay, and how much.
+Victoria Sterling: The money is in knowing who'll pay, and how much.
 * [How do you determine pricing for a zero-day vulnerability?]
     Victoria Sterling: CVSS is the baseline. Then a sector premium based on how well the target can defend itself. Hospitals can't, so hospitals cost more.
     -> clone_check_2
