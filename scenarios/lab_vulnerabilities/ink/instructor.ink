@@ -14,7 +14,7 @@ VAR player_name = "Agent 0x00"
 ~ instructor_rapport = 0
 ~ exploitation_ethics = 0
 
-Welcome back, {player_name}. What would you like to discuss?
+Welcome back. What would you like to discuss?
 
 -> vulnerability_hub
 
@@ -26,7 +26,7 @@ Welcome back, {player_name}. What would you like to discuss?
 ~ instructor_rapport = 0
 ~ exploitation_ethics = 0
 
-Welcome to Vulnerabilities and Exploitation, {player_name}. I'm your penetration testing instructor for this session.
+Welcome to Vulnerabilities and Exploitation. I'm your penetration testing instructor for this session.
 
 This lab explores one of the most critical threats in cybersecurity: software vulnerabilities. Even systems running only "trusted" software from major vendors can be compromised due to programming mistakes.
 
@@ -766,7 +766,7 @@ Penetration Testing Instructor: In the lab environment, you'll practice both loc
 
     Penetration Testing Instructor: Most importantly: if you get stuck, check "show options" to verify your settings, and make sure your IP addresses are correct.
 
-    Penetration Testing Instructor: Good luck, Agent {player_name}. This is where theory meets practice.
+    Penetration Testing Instructor: Good luck, Agent. This is where theory meets practice.
 
     ~ instructor_rapport += 10
 

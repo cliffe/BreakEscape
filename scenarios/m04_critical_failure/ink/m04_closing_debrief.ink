@@ -66,7 +66,7 @@ EXTERNAL player_name()
 
 // Agent HaX on screen
 
-{player_name()}, report.
+Agent, report.
 
 * {not racks_vented} [Shutdown engaged before the racks went. Banks isolated, hall intact.]
     -> debrief_attack_stopped
@@ -461,7 +461,7 @@ The methods are a separate conversation. You put a facility manager on the floor
 
 ~ mission_debriefed = true
 
-Get some rest, {player_name()}.
+Get some rest.
 
 {voltage_captured:
     Voltage will keep.

@@ -74,7 +74,7 @@ Narrator: A borrowed office at the grid site, an hour after the abort. The secur
 
 Narrator: Netherton sits down in front of the camera with a tablet, in the suit he briefed you in.
 
-Director Magnus Netherton: {player_name}. Sit down. You have earned that much.
+Director Magnus Netherton: Agent. Sit down. You have earned that much.
 
 -> the_win
 
@@ -401,7 +401,7 @@ Agent HaX: Director. One more thing. It isn't in the reporting yet.
 }
 
 = coda_full
-Agent HaX: {player_name} recovered an intercept in the cable vault. From a safetynet.gov address, to the Architect. Four lines.
+Agent HaX: Our agent recovered an intercept in the cable vault. From a safetynet.gov address, to the Architect. Four lines.
 Agent HaX: Four targets, simultaneous. 0x00 to Portland. One team uncommitted. They will have to choose. Window, thirty minutes.
 Narrator: The Director does not move.
 Agent HaX: I've checked the time against our tasking order three times. I didn't believe the first two.

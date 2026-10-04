@@ -164,7 +164,7 @@ Director Magnus Netherton: They spent fifteen years turning one of ours into a w
         Director Magnus Netherton: Seventy-two hours, Agent. Then we find Tomb Gamma.
     }
 }
-Director Magnus Netherton: Go home, {player_name}. Sleep if the building will let you.
+Director Magnus Netherton: Go home. Sleep if the building will let you.
 // PASS 2 (lesson 46): the conclusion aim's last task completes HERE, so the
 // bond visualiser and credits come after the debrief, not over it.
 #set_global:mission_complete:true

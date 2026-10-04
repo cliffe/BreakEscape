@@ -437,7 +437,7 @@ Dr. Sarah Kim: Careful. I'll say it on that call as though I thought of it mysel
     # influence_increased
     Dr. Sarah Kim: You're asking me to stake forty-seven lives on you being quick.
     Dr. Sarah Kim: ...All right. I'll hold them off as long as I can.
-    Dr. Sarah Kim: Do not make me a liar in that room, {player_name()}.
+    Dr. Sarah Kim: Do not make me a liar in that room.
     ~ hub_quiet = true
     -> hub
 

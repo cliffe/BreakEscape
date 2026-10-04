@@ -24,7 +24,7 @@ VAR player_name = "Agent 0x00"
 ~ instructor_rapport = 0
 ~ scanning_ethics = 0
 
-Welcome back, {player_name}. What would you like to discuss?
+Welcome back. What would you like to discuss?
 
 -> scanning_hub
 
@@ -38,7 +38,7 @@ Welcome back, {player_name}. What would you like to discuss?
 
 "Give me six hours to chop down a tree and I will spend the first four sharpening the axe." -- Abraham Lincoln
 
-Welcome to Information Gathering and Network Scanning, {player_name}. I'm your reconnaissance specialist instructor for this session.
+Welcome to Information Gathering and Network Scanning. I'm your reconnaissance specialist instructor for this session.
 
 Scanning is a critical stage for both attackers and security testers. It gives you all the information you need to plan an attack - IP addresses, open ports, service versions, and operating systems. Once you know what software is running and what version it is, you can look up and use known attacks against the target.
 

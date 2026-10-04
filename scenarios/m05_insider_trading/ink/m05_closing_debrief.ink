@@ -172,7 +172,7 @@ Narrator: SAFETYNET headquarters. Thursday morning, nine o'clock.
 Narrator: You sit across from Agent HaX. The mission report is up on the screen.
 
 #speaker:agent_0x99
-Agent HaX: {player_name}. Let's go through it.
+Agent HaX: Let's go through it.
 
 -> mission_outcome_assessment
 
@@ -652,7 +652,7 @@ Agent HaX: Every one of these operations has been paid for by someone. Next, we 
 === final_reflection ===
 #speaker:agent_0x99
 
-Agent HaX: {player_name}, one last thing.
+Agent HaX: One last thing.
 
 Agent HaX: There was never a clean way to handle Torres. How you handled him tells me what kind of agent you are.
 
@@ -681,7 +681,7 @@ Agent HaX: There was never a clean way to handle Torres. How you handled him tel
 Agent HaX: Go home. Take the rest of the day.
 
 {knows_full_stakes:
-    Agent HaX: And {player_name}? The people who'd have waited too long for that ambulance will never know your name. But they're alive.
+    Agent HaX: One more thing. The people who'd have waited too long for that ambulance will never know your name. But they're alive.
 }
 
 // The conclusion task completes HERE, at the end of the debrief, so the

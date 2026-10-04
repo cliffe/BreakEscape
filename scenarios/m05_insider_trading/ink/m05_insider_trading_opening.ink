@@ -188,7 +188,7 @@ Agent HaX: Three. Stop the final upload. The rotation windows are in that last p
 
 Agent HaX: Then you hold them and hand them to the client's security chief. She calls the police.
 
-Agent HaX: We have no badge, {player_name}. What happens to them after that isn't ours to decide.
+Agent HaX: We have no badge. What happens to them after that isn't ours to decide.
 
 {not knows_insider_profile:
     Agent HaX: Bear in mind who ENTROPY picks. People in debt, people with a grievance.
@@ -323,7 +323,7 @@ Agent HaX: Don't decide the insider's story until you've seen all of it.
     Agent HaX: And remember who ENTROPY goes looking for.
 }
 
-Agent HaX: And {player_name}? Good luck.
+Agent HaX: Good luck, Agent.
 
 -> deployment
 

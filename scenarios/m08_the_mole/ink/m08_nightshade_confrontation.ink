@@ -77,7 +77,7 @@ Agent 0x47 'Nightshade': I could have scrubbed every trace years ago. You're won
 // Script edit round (S1, approved): one line for the player before the candle.
 === the_case ===
 + [It's over, Nightshade. Tell me why.]
-    Agent 0x47 'Nightshade': Order is a candle in a hurricane, {player_name}. We stand round it with our hands cupped, night after night, and call it a career.
+    Agent 0x47 'Nightshade': Order is a candle in a hurricane. We stand round it with our hands cupped, night after night, and call it a career.
     Agent 0x47 'Nightshade': ENTROPY only told me what I'd already worked out alone. The storm always wins.
     Agent 0x47 'Nightshade': So I stopped shielding the flame. I helped the wind. God help me, it felt like honesty.
     -> hub
@@ -93,7 +93,7 @@ Agent 0x47 'Nightshade': I could have scrubbed every trace years ago. You're won
 + { not asked_recruit } [When. When did they turn you?]
     ~ asked_recruit = true
     Agent 0x47 'Nightshade': Training. My own, in the barracks you slept in years later. They found me at twenty-three, half-formed and already tired.
-    Agent 0x47 'Nightshade': Not with money, {player_name}. Money buys a coward. They look for the ones who've started to suspect it's all a delaying action.
+    Agent 0x47 'Nightshade': Not with money. Money buys a coward. They look for the ones who've started to suspect it's all a delaying action.
     Agent 0x47 'Nightshade': Then they waited fifteen years. I doubt I was the only tired one they found.
     -> hub
 // PASS 4 (fix 11): the PIN cracker, held back since m03 "on his bench".
