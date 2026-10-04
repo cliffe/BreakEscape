@@ -64,6 +64,26 @@ Plan appended to `ALIGNMENT_PLAN.md` ("Pass 5 alignment"). Outcomes: P1-1 to P1-
 
 Orchestrator check: grepped the briefing, revelation, Victoria and debrief lines and the unlock gates; all present. Correction made by the orchestrator: Victoria's new line called Ghost "he"; m02 uses "they" throughout, so the line now uses "they".
 
+### Round 2 review (fresh Opus, read-only)
+
+Counts (new): 0 blockers, 0 majors, 15 minors. Round 1: 13 closed, 6 partly closed (P1-5, 6, 10, 12, 18, 21: remainders minor), P1-19 open (user), P1-17 deferred. Confirmed in the engine: act-2 aims can't move in the day and the unlock is recorded server-side so it survives reload; "Settle Accounts" can't show before four flags; `#unlock_aim` works from person-chat; music triggers and the `end` playlist exist; debrief and credits agree.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| P1-22/23/24 | minor | Canon-fix lines read badly: "invoice ... invoice"; "An invoice did." doesn't answer the question; "tonight" in a morning-after scene; Nightshade warning only some m02 players heard | to fixer |
+| P1-25/26 | minor | Two hints show before the situation exists | to fixer |
+| P1-27 | minor | Hints ignore a KO'd Victoria or guard | to fixer |
+| P1-28 | minor | No hint for a hostile guard | to fixer |
+| P1-29 | minor | Danny's task sits under "Breach the Server Room" | to fixer (office aim) |
+| P1-30 | minor | Three aims open at once at night | to fixer (stagger if clean) |
+| P1-31 | minor | Night music drops back to day noir after reload or a guard KO | to fixer |
+| P1-32 | minor | Directive-decoded text repeats HaX; decoding has no task | to fixer |
+| P1-33 | n/a | Folded into the P1-10 row by the reviewer | n/a |
+| P1-34 | minor | ERB comment wrongly says the server re-derives globalVariable unlocks on reload | to fixer (comment); engine item E-1 logged |
+| P1-35 | minor | New lines use "--" as a dash; spoken lines not listed by the fixer | to fixer (rule: no dashes in new text) |
+| P1-36 | minor | `missions.json` lacks three m03 globals; two dead VARs | to fixer |
+| P1-37 | minor | Two hints never retire | to fixer |
+
 ## SecGen
 
 (see per-phase sections)
@@ -88,4 +108,5 @@ Added:
 
 ## Open items
 
-(running list)
+- E-1 (engine, optional, for approval): on reload the server doesn't re-derive aims whose `unlockCondition` is a globalVariable; it relies on the recorded unlock. Works for m03 today; a derived check would make story gates robust if a recorded unlock were ever lost.
+- D1 SecGen m03 XML (user).
