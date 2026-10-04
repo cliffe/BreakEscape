@@ -33,6 +33,8 @@ VAR clone_call_done = false
 // Pass 5 (P1-11/P1-12): extra synced globals the rebuilt hub gates on.
 // (flag_distcc_submitted and guard_detection_count are declared above.)
 VAR catalogue_seen = false
+// Pass 5 (P2-7): set by a wrong answer to the directive check.
+VAR directive_guessed = false
 VAR exec_wing_entered = false
 // Round 2 (P1-25..P1-28, P1-37): premises and retire conditions for the hints.
 VAR clone_read_dropped = false
@@ -152,6 +154,7 @@ And if the evidence is enough for you, let her go and secure it. Your call. None
 === request_rfid_guide ===
 #speaker:agent_0x99
 ~ rfid_guide_given = true
+#set_global:cloner_explained:true
 #give_item:lab-workstation:m03_rfid_field_guide
 RFID cloning guide sent.
 Read, crack, emulate. Reception's card is weak defaults -- a dictionary attack is near instant.
@@ -164,7 +167,7 @@ Sterling's is custom keys. Read it, then run Darkside. About half a minute.
 ~ recon_guide_given = true
 #give_item:lab-workstation:m03_recon_field_guide
 Reconnaissance guide sent.
-Map before you touch anything. nmap the subnet, read the versions, then pick your target. The scan flag comes off a clean sweep.
+Map before you touch anything. nmap the subnet and read the versions. The scan flag's in what the services say when you connect.
 + [Got it]
     -> hub
 
@@ -263,6 +266,8 @@ If the read drops, walk the suspicion back first, then drift to the board again.
 === hint_rfid ===
 #speaker:agent_0x99
 ~ hint_rfid_given = true
+// Pass 5 (P2-16): asking HaX opens the receptionist's clone choice.
+#set_global:cloner_explained:true
 Two stages. Reception first -- lean in near her desk and the cloner reads her badge.
 Weak defaults: read it, crack it, save it. That opens the conference door.
 Then Sterling's executive card in the meeting. Custom keys -- read it, then Darkside, half a minute.
@@ -320,7 +325,7 @@ distcc is the one that matters -- that's where the operational logs sit. Submit 
     { reception_badge_cloned or receptionist_ko:
         You've got the staff badge. Conference room next: Sterling's card, at the whiteboard.
     - else:
-        Day one still. Reception's badge first, then Sterling's card in the meeting.
+        Day one still. Get through the conference reader to reach Sterling. Stuck on the reader? Ask me how to clone a card.
     }
     -> report_end
 }
@@ -467,7 +472,11 @@ Go on. What does it say?
 
 === directive_wrong ===
 #speaker:agent_0x99
-That's not what's on there. You're still a layer down. Run it again.
+// Pass 5 (P2-7): a wrong answer marks the decode as a guess. The loop stays, so
+// the optional task can still complete; the credit and debrief line don't.
+~ directive_guessed = true
+#set_global:directive_guessed:true
+That's not what's on there. I'm logging that one as a guess. Run it again.
 -> directive_answer_choices
 
 === directive_later ===
@@ -480,7 +489,11 @@ Base64 first, then whatever's under it. Call me when it reads.
 ~ directive_decoded = true
 #set_global:directive_decoded:true
 ...That's the Architect. Zero Day supplies, Critical Mass executes, and St. Catherine's was the rehearsal.
-Two layers, and you peeled both. We take it to Command tonight.
+{ directive_guessed:
+    That's it, after a couple of goes. We take it to Command tonight.
+- else:
+    Two layers, and you peeled both. We take it to Command tonight.
+}
 -> hub
 
 === on_victoria_ko_card ===
