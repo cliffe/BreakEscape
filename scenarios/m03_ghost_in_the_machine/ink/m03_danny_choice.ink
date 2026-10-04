@@ -4,7 +4,6 @@ EXTERNAL player_name()
 // where the credits and the debrief read it back. No unbound EXTERNAL getters.
 VAR danny_fate = ""
 VAR danny_evidence_seen = false
-VAR player_choice_made = false
 // Final round: a return visit gets its own line, skipped once after an exit.
 VAR rest_quiet = false
 
@@ -79,7 +78,6 @@ Danny Foster: *shakily* You'd do that.
     Narrator: He reaches for his phone with a hand that isn't quite steady, and for the first time all night he looks like a man who might sleep.
     ~ danny_fate = "protected"
     #set_global:danny_fate:protected
-    ~ player_choice_made = true
     #complete_task:danny_choice_made
     ~ rest_quiet = true
     #exit_conversation
@@ -93,7 +91,6 @@ Danny Foster: *quietly* You're not wrong. That's the worst of it. You're not wro
     Narrator: He doesn't argue. Somewhere in the last few months he stopped believing he'd get to.
     ~ danny_fate = "exposed"
     #set_global:danny_fate:exposed
-    ~ player_choice_made = true
     #complete_task:danny_choice_made
     ~ rest_quiet = true
     #exit_conversation
@@ -106,7 +103,6 @@ Danny Foster: That's almost worse. At least a decision made for me isn't mine.
     Narrator: You leave him with the photo, the open folder, and the phone. Whatever he does with the three of them, he does alone.
     ~ danny_fate = "left"
     #set_global:danny_fate:left
-    ~ player_choice_made = true
     #complete_task:danny_choice_made
     ~ rest_quiet = true
     #exit_conversation

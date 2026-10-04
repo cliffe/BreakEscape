@@ -210,3 +210,7 @@ Lint after: 0 errors; 4 warnings, each justified. `choice-len` victoria:483 is t
 - Facts: the receptionist names Danny as an evening worker (P4-52); the guard knows the wing holds one consultant, Mr Foster (P4-55); the briefing says whose badge opens the conference area (P4-64); the lawyers quote her own phrase (P4-63); the bribe label no longer promises an hour (P4-62).
 - Structure: one condition (P4-48): "You left some of the paper behind." plays only when the history or the catalogue is missing, so it always names something.
 - Receptionist: voice kept as it is; no further dialect.
+
+### Pass 5, round 3 touch-up (P4-65..P4-72)
+
+Round 3 closed Phase 4; these are its one-line follow-ups, all taken. Five voiced lines reworded (Victoria ×2, debrief ×4 counting the two "stayed" lines, receptionist, guard; see the loop log for old → new), no cuts beyond Victoria's "Real targets, not textbook ones." tail. Dead ink-local VARs removed after checking none is a scenario global or read anywhere: debrief `whiteboard_seen` (declaration only; the global stays and the phone still reads it), danny `player_choice_made`, guard `player_has_excuse`, receptionist `clone_reception_badge_done`, victoria `topic_free_market`, with their writes. tagdiff shows only those var/assign removals.

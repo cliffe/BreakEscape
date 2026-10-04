@@ -32,7 +32,6 @@ VAR directive_guessed = false
 VAR reception_badge_cloned = false
 VAR victoria_card_cloned = false
 VAR draft_seen = false
-VAR whiteboard_seen = false
 // Pass 4 round 2: set on first entry to the executive wing (HaX's guide mapping).
 VAR exec_wing_entered = false
 // Playtest round: set when the guard stops the player at night (m03_npc_guard.ink).
@@ -338,10 +337,10 @@ Agent HaX: Their records sat on the one box they knew was broken: a distcc daemo
 { not lore_history_found or not (catalogue_seen or lore_catalogue_found):
     Agent HaX: You left some of the paper behind.
     { not lore_history_found:
-        Agent HaX: Their own history of the firm is still in Sterling's filing cabinet.
+        Agent HaX: Their own history of the firm stayed in Sterling's filing cabinet.
     }
     { not (catalogue_seen or lore_catalogue_found):
-        Agent HaX: The exploit catalogue is still in the wall safe.
+        Agent HaX: The exploit catalogue stayed in the wall safe.
     }
     Agent HaX: What you brought out is enough to prosecute and enough to warn people. More would have helped. It usually does.
 }
@@ -386,10 +385,10 @@ Agent HaX: Ghost's still out there. But last night you put the people who armed 
     Agent HaX: Rest first. Then we see where ENTROPY surfaces. Take one cell down and it shows you the next.
     -> closing
 * [When do we go at the Architect directly?]
-    Agent HaX: When we know who they are. We're closer than we were. Every operation narrows it, and one day they slip.
+    Agent HaX: When we know who they are. We're closer than we were, and one day they slip.
     -> closing
 * [Ransomware Incorporated, Critical Mass, the others. They're all still running.]
-    Agent HaX: They are. And every one of them bought from Zero Day.
+    Agent HaX: They are. Now we know who sells to them.
     -> closing
 
 === closing ===

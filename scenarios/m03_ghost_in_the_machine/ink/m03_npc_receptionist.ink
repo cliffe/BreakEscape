@@ -6,7 +6,6 @@ VAR topic_victoria = false
 VAR topic_company_history = false
 VAR topic_danny = false
 VAR pin_hint_given = false
-VAR clone_reception_badge_done = false
 // Pass 3c: synced scenario global, set by the card_cloned mapping only when the
 // badge is actually saved in the cloner. Until then the clone option stays offered.
 VAR reception_badge_cloned = false
@@ -165,7 +164,7 @@ Receptionist: And she really cares about the work. Sometimes she's here until mi
 * [She sounds like hard work.]
     ~ receptionist_influence = receptionist_influence + 5
     # influence_increased
-    Receptionist: Ha. She can be. Lives for it, she does.
+    Receptionist: Ha. You're not wrong. Lives for it, she does.
     -> hub
 * [Midnight work sessions? That's some serious dedication.]
     Receptionist: Some nights, yeah. The cleaners find her at her desk gone midnight.
