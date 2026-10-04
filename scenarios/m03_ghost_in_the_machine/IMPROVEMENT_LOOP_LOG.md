@@ -90,6 +90,16 @@ All round-2 items fixed: canon lines reworded (P1-22/23/24); hints gated on the 
 
 Orchestrator: fixed the hard-coded home path in `inkcheck.js`, `loopcheck.js` and `predict_door_sides.py` (tooling commit), so agents no longer need patched copies.
 
+### Round 3 review (fresh Opus, confirmation)
+
+P1-1..P1-37: 33 closed, P1-17 deferred (playtests), P1-19 open (D1), P1-33 n/a, lint items deferred to Phase 4, P1-28 reopened as P1-38. New: 0 blockers, 1 major, 2 minors. Verdict: another round needed (short).
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| P1-38 | major | Round-2 regression: new scenario global `guard_hostile` collides with the guard ink's VAR of the same name (set on a peaceful telling-off), so HaX says "stand and fight" after a scolding and hides the sightline hint | to fixer (rename, and check every new global for collisions) |
+| P1-39 | minor | Clearing Sterling's office by day and skipping the wing at night leaves "Search Sterling's Office" never shown | to fixer |
+| P1-40 | minor | `hint_password` shows at the night turn before the office aim exists | to fixer |
+
 ## SecGen
 
 (see per-phase sections)
