@@ -566,7 +566,7 @@ require 'base64'
           "id": "priya_chandra",
           "displayName": "Helen Marsh",
           "npcType": "person",
-          "position": { "x": 5, "y": 4 },
+          "position": { "x": 6, "y": 4 },
           // TODO[SPRITE]: helen_marsh — engineer_female sprite; male_nerd used as placeholder
           "spriteSheet": "female_telecom_v2",
           "spriteVisemes": "assets/characters/female_telecom_visemes.png",
@@ -752,7 +752,7 @@ require 'base64'
           "id": "dr_nalini_bashir",
           "displayName": "Priya S.",
           "npcType": "person",
-          "position": { "x": 9, "y": 6 },
+          "position": { "x": 8, "y": 5 },
           // TODO[SPRITE]: dr_nalini_bashir — inspector_female sprite; male_nerd placeholder
           "spriteSheet": "female_spy_v2",
           "spriteTalk": "assets/characters/female_spy_talk.png",
@@ -992,7 +992,9 @@ require 'base64'
           "puzzle_graph_role": "clue",
           "puzzle_graph_aim": "assess_control_room",
           "puzzle_graph_reveals": "NIS Regulations 72-hour notification obligation (competent authority + NCSC coordination); COMAH requirements; Trent Water shared infrastructure contact",
-          "observations": "A wall-mounted holder containing the site's incident response procedure. Albion Energy — Emergency Procedures.",
+          // Moved down the duty desk so it is not one tap with HMI-OPS-01 (top-lefts were 31.8px apart)
+          "position": { "x": 4.75, "y": 2.75 },
+          "observations": "A ring binder on the duty desk holding the site's incident response procedure, labelled Albion Energy Emergency Procedures.",
           "text": "ALBION ENERGY STORAGE — INCIDENT RESPONSE QUICK REFERENCE\n\nNIS REGULATIONS 2018 — NOTIFICATION OBLIGATIONS\nAlbion Energy Storage is an Operator of Essential Services (OES) — Electricity sector.\nA notifiable incident must be reported to the designated competent authority within 72 hours of becoming aware.\nOperational cyber coordination should also be raised with NCSC.\n\nPrimary route (training): Competent Authority / OFGEM OES reporting workflow\nNCSC Incident Coordination: 0300 020 0973\n\nHSE COMAH NOTIFICATION\nBattery Hall thermal runaway or near-miss events are notifiable under COMAH Regulations 2015.\nHSE Contact: hse.comah@hse.gov.uk\n\nMAJOR INCIDENT DECLARATION\nDeclare when: physical safety risk identified, SCADA integrity compromised, SIS setpoints modified.\nRequired authorisers: OT Security Manager + Site General Manager.\nNOTE: General Manager is on annual leave. Contact IT Director as secondary authoriser.\n\nTRENT WATER SERVICES\nShared infrastructure: enterprise file server (FS-ALBION-01) accessed by Trent Water workstations.\nTrent Water OT Security contact: See contact card in rear pocket.",
           "onRead": { "setVariable": { "incident_folder_read": true } }
         },
@@ -1007,7 +1009,7 @@ require 'base64'
           "puzzle_graph_unlocks": "engineering_workshop",
           "puzzle_graph_role": "key",
           "puzzle_graph_note": "Container for Engineering Workshop RFID Key (see contents) — the key itself carries the graph metadata",
-          "observations": "The duty officer's desk. Shift handover notes are visible. A sticky note reads: 'Workshop key — top drawer. Shift uneventful — J.Patel.'",
+          "observations": "The duty officer's desk drawers. Shift handover notes are visible. A sticky note reads: 'Workshop key — top drawer. Shift uneventful — J.Patel.'",
           "contents": [
             {
               "type": "keycard",
@@ -1032,10 +1034,13 @@ require 'base64'
           "takeable": false,
           "readable": true,
           "minigameData": { "timerRef": "nis_deadline" },
+          // On a clipboard on the east wall below the workshop door: Helen and Marcus both say "the form is on the wall"
+          "position": "as-type:clipboard_chart",
+          "readDisplay": "gameDisplay",
           "puzzle_graph_role": "item",
           "puzzle_graph_aim": "ncsc_notification",
           "puzzle_graph_reveals": "NIS Regulations notification — completes the 72-hour reporting obligation",
-          "observations": "A printed A4 form: NIS Regulations 2018 — Operator of Essential Services Incident Notification Form. Blank — requires completion. Call Marcus Webb to authorise submission once filled in.",
+          "observations": "A printed A4 form on a wall clipboard: NIS Regulations 2018 — Operator of Essential Services Incident Notification Form. Blank — requires completion. Call Marcus Webb to authorise submission once filled in.",
           "text": "NIS REGULATIONS 2018 — INCIDENT NOTIFICATION\nOperator of Essential Services — Electricity Sector\n\nOperator: Albion Energy Storage Ltd\nSector: Energy — Electricity (Battery Storage / Grid)\nOES Unique Reference: OES-EN-0471\n\nDate/time incident detected: [TO COMPLETE]\nEstimated date/time of incident: [TO COMPLETE]\n\nNature of incident (describe systems affected, attack vector if known, physical impact):\n[TO COMPLETE]\n\nSafety systems affected? [YES / NO]\nIf yes, describe: [TO COMPLETE]\n\nEmergency response actions taken: [TO COMPLETE]\n\nHave you notified HSE COMAH? [YES / NO — CIRCLE]\nHave you notified other affected OES operators? [YES / NO — CIRCLE]\n\nSubmit to: Competent Authority (OFGEM OES route)\nParallel coordination: NCSC Incident Coordination — 0300 020 0973"
         },
 
@@ -1043,8 +1048,11 @@ require 'base64'
           "type": "alarm_panel",
           "id": "alarm_panel",
           "name": "Facility Alarm Panel",
+          // Moved from the map slot in the NW corner (left of the Battery Hall door), where the
+          // player could get no nearer than 33px and a click never offered it, onto the west wall
+          "position": { "x": 0.40625, "y": 2.1875 },
           "takeable": false,
-          "observations": "A wall-mounted multi-lamp alarm panel above HMI-OPS-01. Seven indicator lamps show the current status of key facility systems. Currently showing mostly green.",
+          "observations": "A wall-mounted multi-lamp alarm panel on the west wall, by the Battery Hall door. Seven indicator lamps show the current status of key facility systems. Currently showing mostly green.",
           "minigameData": {
             "panelTitle": "ALBION ENERGY STORAGE<br>FACILITY ALARM PANEL",
             "footer": "ENG-01 — STATE-REACTIVE LAMP DISPLAY — READ ONLY",
@@ -1111,6 +1119,15 @@ require 'base64'
           "takeable": false,
           "observations": "A large wall-mounted display mirroring the SCADA HMI. All battery halls showing green. Temperature: 28°C. Status: NORMAL.",
           "observationDisplay": "gameDisplay"
+        },
+
+        // Flavour: claims a conditional_items sprite in room_control_1x2gu that only sis02 shows
+        {
+          "type": "fire_extinguisher",
+          "id": "control_room_extinguisher",
+          "name": "CO2 Fire Extinguisher",
+          "takeable": false,
+          "observations": "A CO2 extinguisher for electrical fires, mounted by the workshop door. The inspection tag is in date."
         },
 
         // IMPLEMENTED: MG-06 — Network Architecture Diagram (Purdue Model SVG minigame)
@@ -1335,6 +1352,9 @@ require 'base64'
           "type": "tablet",
           "id": "hydrogen_detector",
           "name": "H₂ Gas Detector Panel",
+          // Gas controller sprite on the back wall right of the racks (sis02-only conditional slot);
+          // the second glass "tablet" slot is then hidden because the rack panel claims the first
+          "position": "as-type:power_panel",
           "takeable": false,
           "readable": true,
           "observations": "A wall-mounted hydrogen gas detection panel near the ventilation outlet. An amber indicator is lit.",
@@ -1368,6 +1388,22 @@ require 'base64'
               "value": "HYDROGEN GAS MONITOR — BATTERY HALL 1\n\nCurrent reading: 0.8% H₂ LEL\nAdvisory threshold: 1.0% H₂ LEL\nEvacuation threshold: 2.0% H₂ LEL\n\nSTATUS: POST-ESD STABILIZING\nAction: Continue monitoring. Maintain ventilation and verify downward trend."
             }
           ]
+        },
+
+        // Flavour: these claim conditional_items sprites in room_battery_hall that only sis02 shows
+        {
+          "type": "suppression_panel",
+          "id": "hall1_suppression_panel",
+          "name": "Fire Suppression Control Panel",
+          "takeable": false,
+          "observations": "The fire suppression control panel for Battery Hall 1, by the door. Status: HEALTHY. The manual release sits behind a break-glass cover."
+        },
+        {
+          "type": "no_smoking_sign",
+          "id": "hall1_safety_sign",
+          "name": "Battery Hall Safety Sign",
+          "takeable": false,
+          "observations": "NO SMOKING OR NAKED FLAMES. Battery hall: authorised personnel only. PPE required beyond this point."
         }
 
       ]
@@ -1645,12 +1681,15 @@ require 'base64'
           "type": "filing_cabinet",
           "id": "engineering_filing_cabinet",
           "name": "Filing Cabinet — ICS Documentation",
+          // Grey lockable steel cabinet in the SE corner (sis02-only conditional slot); the wooden
+          // drawer unit in the SW corner was hard to reach and is the control room's duty desk look
+          "position": "as-type:filing_cabinet_locked",
           "takeable": false,
           "locked": true,
           "lockType": "key",
           "requires": "filing_cabinet_key",
           "keyPins": [35, 55, 45, 25],
-          "observations": "A locked filing cabinet labelled: ICS Documentation — Restricted. A key is visible on the workstation desk.",
+          "observations": "A locked filing cabinet labelled: ICS Documentation — Restricted. A keyring labelled ICS Docs sits on the desk by the electronics benches.",
           "contents": [
             {
               "type": "notes",
@@ -1682,6 +1721,9 @@ require 'base64'
         {
           "type": "key",
           "name": "Filing Cabinet Key",
+          // Keyring on the lower desk (sis02-only conditional_table_items slot) instead of the
+          // large key sprite that stood on the floor by the back wall
+          "position": "as-type:key-ring",
           "takeable": true,
           "opens_lock": "filing_cabinet_key",
           "keyPins": [35, 55, 45, 25],
@@ -1694,19 +1736,24 @@ require 'base64'
         {
           "type": "laptop",
           "name": "Engineering Laptop",
+          // Moved to the lower desk: on the top desk it was one tap with HMI-ENG-02 (25px apart)
+          "position": { "x": 5.375, "y": 5.25 },
           "takeable": false,
           "observations": "An open laptop showing PLC vendor software. A post-it on the bezel: 'PLC-GRID firmware review — scheduled 07:00 — DO NOT INTERRUPT DURING OPERATION.'"
         },
         {
           "type": "notes",
           "name": "IT/OT Boundary Rules Document",
+          // Pinned on the workshop noticeboard (sis02-only conditional slot), read in place
+          "position": "as-type:notice_board",
+          "readDisplay": "gameDisplay",
           "takeable": false,
           "readable": true,
           "puzzle_graph_role": "clue",
           "puzzle_graph_aim": "contact_marcus_investigate",
           "puzzle_graph_optional": true,
           "puzzle_graph_reveals": "IT/OT boundary rules issued 4 years ago, never reviewed — jump server permits bidirectional RDP, historian has Modbus proxy enabled; Marcus flagged for remediation 18 months ago",
-          "observations": "A printed document pinned to the wall. Slightly yellowed with age.",
+          "observations": "A printed document pinned to the workshop noticeboard. Slightly yellowed with age.",
           "text": "IT/OT BOUNDARY RULES — ALBION ENERGY STORAGE\nIssued at commissioning — 4 years ago\n\nAPPROVED CONNECTIONS:\n  Jump server (JS-ALBION-01): Enterprise → SCADA — one-way data pull only.\n  Historian (HIST-01): SCADA → Enterprise — read-only from enterprise side.\n\nSTATUS: These rules have not been reviewed since commissioning.\nACTUAL STATE: Jump server permits bidirectional RDP (commissioning requirement — never reverted).\nActual state: Historian has Modbus proxy enabled (vendor support requirement — never removed).\n\nNOTE: Marcus Webb flagged this for remediation 18 months ago. Not yet actioned."
         },
         {
@@ -1719,7 +1766,7 @@ require 'base64'
           "puzzle_graph_aim": "trent_water_notification",
           "puzzle_graph_optional": true,
           "puzzle_graph_reveals": "Cross-sector IOC evidence: Trent Water workstation account accessed Albion shared server paths associated with suspicious overnight activity.",
-          "observations": "A printed SOC extract clipped to the workshop noticeboard. Red marker circles several overnight file access lines.",
+          "observations": "A printed SOC extract left on the engineering desk. Red marker circles several overnight file access lines.",
           "text": "CASTLETECH SOC — SHARED FILE SERVER ACCESS EXTRACT\nServer: FS-ALBION-01 (shared by Albion Energy + Trent Water Services)\nWindow: 01:32-04:10\n\n02:11  user=tw.ops.jward   host=TW-WS-07   path=/site-admin/contractors/ellison_archive.zip   action=READ\n02:16  user=alb.ops.jpatel host=ALB-OPS-03 path=/site-admin/rotas/shift_handover.docx          action=READ\n02:24  user=tw.ops.jward   host=TW-WS-07   path=/site-admin/ics/network_map_export.vsdx         action=READ\n02:31  user=svc.deploy     host=ALB-SRV-02 path=/site-admin/tmp/print_driver_update.pkg          action=WRITE\n02:44  user=tw.ops.jward   host=TW-WS-07   path=/site-admin/ot-access/js-albion-accounts.csv     action=READ\n03:03  user=tw.ops.jward   host=TW-WS-07   path=/site-admin/ics/sis_baseline_2024.pdf            action=READ\n\nAnalyst note:\n- Access pattern from TW-WS-07 is atypical for normal Trent Water duties.\n- Shared infrastructure may have enabled lateral movement across organisational boundary.\n- Recommend immediate advisory notification to Trent Water OT Security.",
           "onRead": { "setVariable": { "trent_lateral_ioc_viewed": true } }
         }
