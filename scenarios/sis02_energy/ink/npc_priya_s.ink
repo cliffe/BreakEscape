@@ -98,7 +98,7 @@ Priya S.: Nobody's being blamed here. What we learn goes out to other sites like
 
 === the_hall ===
 { facility_evacuated:
-    Priya S.: The gas reached two per cent before anyone pressed the ESD. Helen pressed it on her way out.
+    Priya S.: The gas reached two per cent before anyone pressed the ESD. Helen pressed it from her console as everyone came out.
     Priya S.: Everyone got out, and the fire service had it. Getting out was right. It's what the alarm is for.
 - else:
     {
@@ -150,9 +150,11 @@ Priya S.: Nobody's being blamed here. What we learn goes out to other sites like
 - facility_evacuated:
     // nothing more on evidence: the hall came first and Helen pressed it on the way out
 - evidence_before_esd == "save":
-    Priya S.: You meant to save the registers first, and the ESD went in before anyone did. What they wrote went with the reset. The hall came first.
+    Priya S.: You meant to save the registers first, and the ESD went in before anyone did. Its shutdown routine wrote over them. The hall came first.
 - evidence_before_esd == "press":
-    Priya S.: You pressed it without saving the registers. What they wrote went with the reset. The historian kept the screen values, so forensics will cope.
+    Priya S.: You pressed it without saving the registers. Its shutdown routine wrote over them. The historian kept the screen values, so forensics will cope.
+- esd_activated:
+    Priya S.: The ESD also wiped what they'd written into the battery controller. Ten seconds at the operator screen would have saved a copy.
 }
 Priya S.: When one mistake costs money and the other costs the building, how sure do you need to be?
 * [Sure it's a real hazard. Not sure of the cause.]
@@ -178,7 +180,7 @@ Priya S.: When one mistake costs money and the other costs the building, how sur
 
 === safety_case ===
 { not sis_tamper_confirmed:
-    Priya S.: You didn't confirm the SIS change on the day. Helen's team did afterwards: the trip at eighty-five, the hydrogen alarm at three point eight per cent.
+    Priya S.: You didn't get to the SIS panel this morning. Helen did, afterwards: the trip at eighty-five, the hydrogen alarm at three point eight per cent.
     Priya S.: They changed it through the engineering port, which had been on the SCADA network since commissioning.
 }
 Priya S.: Albion's safety case made a claim: the safety system trips, whatever happens to SCADA.
@@ -233,7 +235,7 @@ Priya S.: The dial claim only half held. The dial was independent, but the claim
 { network_isolated:
     {
     - tom_told_false_authority:
-        Priya S.: You told Tom Marcus had signed it off before he had. Tom rang him to check. That check is what stops a stranger talking a supplier into opening your firewall.
+        Priya S.: You told Tom that Marcus had signed it off before he had. Tom rang him to check. That check stops a stranger talking a supplier into opening your firewall.
     - tom_refused_unverified:
         Priya S.: Tom wouldn't touch your firewall until Marcus confirmed. Annoying on the night. It's exactly what you want from a supplier.
     - else:
@@ -288,9 +290,9 @@ Priya S.: On paper, Albion's deferral fitted the board's risk appetite. It only 
     Priya S.: Marcus wants the safety system air-gapped. Air gaps get bridged, usually by a laptop or a USB stick.
 }
 { patch_decision == "deferral":
-    Priya S.: Your own zone and someone watching is what the control-system security standard asks for. One way in, and only one.
+    Priya S.: Its own zone, one way in, and someone watching it. That's what IEC sixty-two four four three asks for.
 - else:
-    Priya S.: Patched or not, I'd put it in its own zone, with one way in and someone watching it. The control-system security standard, sixty-two four four three, asks for that.
+    Priya S.: Patched or not, I'd put it in its own zone, with one way in and someone watching it. That's what IEC sixty-two four four three asks for.
 }
 Priya S.: And a key on the controller that someone on site has to turn before anything changes. In the Triton attack in 2017, it was left in program.
 -> notifications
@@ -305,7 +307,7 @@ Priya S.: And a key on the controller that someone on site has to turn before an
 - nis_notified and nis_deadline_missed:
     Priya S.: Your NIS notification went in after your own clock ran out. Ofgem will ask why. Waiting for the full picture won't satisfy them.
 - nis_notified and nis_initial_choice == "wait":
-    Priya S.: You held the NIS notification for the full picture, then sent what you knew. The second was right.
+    Priya S.: You held the NIS notification for the full picture, then sent what you knew. Sending it was the right call.
 - nis_notified:
     Priya S.: Your initial NIS notification reached Ofgem in good time, unknowns marked as unknown. That's what they want.
 - nis_deadline_missed:

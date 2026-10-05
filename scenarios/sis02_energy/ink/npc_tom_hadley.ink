@@ -40,7 +40,7 @@ VAR topic_sayso_tried = false
 === start ===
 { not tom_called:
     ~ tom_called = true
-    CastleTech SOC, Tom speaking.
+    Tom, CastleTech SOC.
     { jump_server_confirmed:
         Apart from that shared server file, quiet from our end. What can I do for you?
     - else:
@@ -183,7 +183,7 @@ I'm starting our major incident process on your account. That means a proper loo
 FS-ALBION-01, the file server you share with Trent Water. They're a client of ours too, separately.
 At 02:31 our svc.deploy account wrote a print driver package to it. That account has no business on a Saturday night.
 At 05:52 a Trent Water PC opened it. They run the pumping station on the estate. Small, but it's their pumps.
-It's your incident, so it's your call whether I tell them. Say the word.
+It's your incident, so I need your say-so to tell them. Say the word.
 -> trent_water_action
 
 === trent_water_action ===

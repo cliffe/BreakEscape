@@ -159,7 +159,7 @@ Helen Marsh: Fifty-one on the dial. Twenty-eight on my screen. One of them's lyi
     ~ gauge_verdict = "screen"
     #set_global:gauge_verdict:screen
     Helen Marsh: Dials stick. They don't climb twenty-three degrees by themselves, though.
-    Helen Marsh: Have a look at the historian and see if ours wobble.
+    Helen Marsh: Have a look at the historian. See if my numbers have moved at all.
     -> hub
 + [Neither yet. I want the historian first.]
     ~ gauge_verdict = "historian"
@@ -240,7 +240,7 @@ Helen Marsh: There's a station by the hall door, one on my console and one insid
 === sis_compromise ===
 ~ topic_sis_explained = true
 Helen Marsh: Eighty-five. It was certified at fifty-five. And the hydrogen alarm's at three point eight per cent, not one.
-Helen Marsh: We trip at fifty-five because it's well short of where cells start heating themselves. Eighty-five puts the trip inside that.
+Helen Marsh: We trip at fifty-five, well short of eighty, where cells can start heating themselves. At eighty-five, it trips too late.
 Helen Marsh: So nothing automatic will save that hall now. It's the ESD or nowt.
 -> sis_more
 
@@ -268,7 +268,7 @@ Helen Marsh: So nothing automatic will save that hall now. It's the ESD or nowt.
 #set_global:helen_patch_view_heard:true
 Helen Marsh: Patching meant eight weeks without the automatic trip. Rounds every four hours, gas monitors on our belts, no fast charging.
 Helen Marsh: I'd have been walking those rounds at three in the morning. I'm not sure I'd have said yes either.
-Helen Marsh: Mr Whitworth signed the deferral. What nobody signed was a date to look at it again.
+Helen Marsh: Mr Whitworth signed the deferral. It was due a review last March. Nobody did one.
 + [Why eight weeks?]
     Helen Marsh: Any change to that controller goes through our modification procedure. Impact analysis, retest, sign-off. That's the eight weeks and the hundred and eighty grand.
     -> hub
