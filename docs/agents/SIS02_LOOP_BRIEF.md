@@ -12,7 +12,7 @@ Every subagent on the sis02 "Albion Energy Storage" loop reads this first. The o
 
 A standalone CyBOK Security-Informed Safety serious game for university students, **not** part of the m01–m08 spy campaign: no SAFETYNET, no handler banter, no combat (`"disableAttacks": true`). Students play it, sometimes as 4–6 players split into IT and operational roles, to practise and then reflect on risk management, safety cases (claim, argument, evidence), incident response and the sector's regulation (NIS for operators of essential services, IEC 62443, SCADA/OT, thermal runaway in a 200 MWh lithium-ion battery site in the East Midlands). Judge everything by whether it teaches well and whether the people sound like real control-room engineers, OT vendors, site managers and NCSC officers.
 
-The source of truth for facts is `information_pack.md`; `labsheet.md` sets what students must be able to reflect on. sis03 (`scenarios/sis03_cyber_insurance/`, Meridian Cyber Insurance, T+48 hours) follows on from this incident: keep facts consistent with it, and report any sis03 conflict rather than editing sis03.
+The source of truth for facts is `information_pack.md`; `labsheet.md` sets what students must be able to reflect on. sis03 (`scenarios/sis03_cyber_insurance/`, Meridian Cyber Insurance, Thursday 7 May 2026, about seven weeks later) follows on from this incident: keep facts consistent with it, and report any sis03 conflict rather than editing sis03.
 
 ## Standing rules
 
