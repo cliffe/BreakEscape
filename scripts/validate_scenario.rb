@@ -3692,8 +3692,123 @@ def check_credit_sections(json_data)
   issues
 end
 
+# c. An ink VAR that shares its name with a scenario global. The engine syncs every ink VAR named like a
+#    scenario global both ways (npc-conversation-state.js syncGlobalVariablesToStory and
+#    observeGlobalVariableChanges), so an ink that uses the name as its own local flag writes into the
+#    global and reads other writers' values back. m03 round 2: a new global guard_hostile ("the guard is
+#    attacking", set on npc_hostile_state_changed and read by HaX's hints) collided with the guard ink's own
+#    guard_hostile (set on a peaceful telling-off), so HaX said "stand and fight" after a scolding (P1-38).
+#    Warned when the types disagree, or when the ink assigns the VAR (~ x = ...) while something else
+#    also sets the global (a scenario setGlobal/setVariable/globalVarOnKO, or another ink) and the ink
+#    doesn't say the VAR is the scenario's: a comment in the VAR's declaration block (or on its line)
+#    naming it synced / a global / the scenario's / the engine's, which is the house convention.
+INK_GLOBAL_ACK_RE = /\b(?:sync|synced|syncs|global|globals|globalVars|globalVariables|scenario|engine)\b/i.freeze
+
+def ink_global_value_type(v)
+  case v
+  when true, false then :bool
+  when Numeric then :number
+  when String then :string
+  end
+end
+
+def ink_literal_type(src)
+  s = src.to_s.sub(%r{\s*//.*\z}, '').strip
+  case s
+  when 'true', 'false' then :bool
+  when /\A-?\d+(?:\.\d+)?\z/ then :number
+  when /\A"(?:[^"\\]|\\.)*"\z/ then :string
+  end
+end
+
+def check_ink_global_collisions(json_data, repo_root)
+  issues = []
+  globals = json_data['globalVariables'].is_a?(Hash) ? json_data['globalVariables'] : {}
+  return issues if globals.empty?
+
+  scenario_writers = Hash.new { |h, k| h[k] = [] }  # name => [path]
+  walk = lambda do |node, path|
+    case node
+    when Hash
+      node.each do |k, v|
+        next if k == 'globalVariables'
+        if PASS4C_SET_KEYS_HASH.include?(k) && v.is_a?(Hash)
+          v.each_key { |name| scenario_writers[name] << "#{path}/#{k}" }
+        elsif (k == 'setGlobal' || k == 'globalVarOnKO' || k =~ /\AsetGlobal/) && v.is_a?(String)
+          scenario_writers[v] << "#{path}/#{k}"
+        else
+          walk.call(v, "#{path}/#{k}")
+        end
+      end
+    when Array
+      node.each_with_index { |v, i| walk.call(v, "#{path}[#{i}]") }
+    end
+  end
+  walk.call(json_data, '')
+
+  npcs = Array(json_data['npcs']) + (json_data['rooms'].is_a?(Hash) ? json_data['rooms'].values : []).flat_map { |r| Array(r['npcs']) }
+  queue = npcs.map { |n| n.is_a?(Hash) && n['storyPath'].is_a?(String) ? File.join(repo_root, n['storyPath'].sub(/\.json\z/, '.ink')) : nil }.compact
+  ink_files = []
+  until queue.empty?
+    f = queue.shift
+    next if ink_files.include?(f) || !File.exist?(f)
+    ink_files << f
+    File.readlines(f, encoding: 'UTF-8').each { |l| queue << File.expand_path($1, File.dirname(f)) if l =~ /^\s*INCLUDE\s+(\S+)/ }
+  end
+
+  write_re = ->(name) { /^\s*~\s*#{Regexp.escape(name)}\s*(?:=|\+\+|--|\+=|-=)|#\s*set_(?:global|variable):#{Regexp.escape(name)}\b/ }
+  texts = ink_files.to_h { |f| [f, File.readlines(f, encoding: 'UTF-8')] }
+  texts.each do |f, lines|
+    rel = f.sub("#{repo_root}/", '')
+    lines.each_with_index do |line, i|
+      next unless line =~ /^\s*VAR\s+(\w+)\s*=\s*(.+?)\s*$/
+      name, default = $1, $2
+      next unless globals.key?(name) && !RECURRING_SYNCED_INK_VARS.include?(name)
+
+      gtype = ink_global_value_type(globals[name])
+      assigns = lines.each_with_index.select { |l, _| l =~ /^\s*~\s*#{Regexp.escape(name)}\s*(?:=|\+\+|--|\+=|-=)/ }
+
+      # types: the VAR's default, and each literal it is assigned
+      bad = []
+      dt = ink_literal_type(default)
+      bad << "declared #{default.sub(%r{\s*//.*\z}, '')}" if gtype && dt && dt != gtype
+      assigns.each do |l, li|
+        lt = l =~ /=\s*(.+)$/ ? ink_literal_type($1) : nil
+        bad << "assigned #{l.strip} (line #{li + 1})" if gtype && lt && lt != gtype && l !~ /(?:\+\+|--|\+=|-=)/
+      end
+      unless bad.empty?
+        issues << "⚠️ WARNING: '#{rel}:#{i + 1}': VAR #{name} shares its name with scenario global '#{name}' " \
+                  "(#{globals[name].inspect}) but is #{bad.first(2).join(', ')}. The engine syncs the two, so the types fight. " \
+                  "Rename the ink VAR if it is a different thing, or match the global's type."
+        next
+      end
+
+      next if assigns.empty?
+      ack = line =~ %r{//.*#{INK_GLOBAL_ACK_RE}}
+      k = i - 1
+      while !ack && k >= 0 && lines[k] =~ %r{^\s*(?:VAR\b|//)}
+        ack = true if lines[k] =~ %r{^\s*//.*#{INK_GLOBAL_ACK_RE}}
+        k -= 1
+      end
+      next if ack
+
+      others = scenario_writers[name].first(2)
+      others += texts.reject { |o, _| o == f }.select { |_, ol| ol.any? { |l| l =~ write_re.call(name) } }
+                     .map { |o, _| o.sub("#{repo_root}/", '') }.first(2)
+      next if others.empty?
+      issues << "⚠️ WARNING: '#{rel}:#{i + 1}': VAR #{name} is assigned in this ink (line #{assigns.first(3).map { |_, li| li + 1 }.join(', ')}) " \
+                "and is also scenario global '#{name}', which #{others.join(' and ')} also set#{others.size == 1 ? 's' : ''}. " \
+                "The engine syncs an ink VAR to the global of the same name, so if this ink means its own flag the two " \
+                "overwrite each other (m03 guard_hostile, P1-38). Rename the ink VAR if it is a different thing; if it is " \
+                "the scenario's global, say so in a comment above the VAR (e.g. \"// Synced scenario global\")."
+    end
+  end
+  issues
+end
+
 def check_tooling_pass4c(json_data, repo_root)
-  check_stacked_timed_texts(json_data) + check_globals_never_read(json_data, repo_root) + check_credit_sections(json_data)
+  check_stacked_timed_texts(json_data) + check_globals_never_read(json_data, repo_root) + check_credit_sections(json_data) +
+    check_ink_global_collisions(json_data, repo_root)
 end
 
 # ============================================================================
@@ -3729,7 +3844,8 @@ def print_dialogue_lint(report, repo_root)
   puts "⚠️ WARNING: #{all.size} dialogue lint finding(s)"
   counts = report['counts'] || all.group_by { |_, x| x['rule'] }.transform_values(&:size)
   puts "  Totals by rule: " + counts.sort_by { |_, v| -v }.map { |k, v| "#{k}=#{v}" }.join(' ')
-  all.group_by { |_, x| x['rule'] }.sort_by { |_, v| -v.size }.each do |rule, list|
+  # Rules with error-level hits (hard caps, standing rules such as voiced-variable) list first
+  all.group_by { |_, x| x['rule'] }.sort_by { |_, v| [v.any? { |_, x| x['level'] == 'error' } ? 0 : 1, -v.size] }.each do |rule, list|
     puts "  #{rule} (#{list.size}):"
     list.first(DIALOGUE_LINT_PER_RULE).each do |file, x|
       detail =
