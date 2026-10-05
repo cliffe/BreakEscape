@@ -1,12 +1,17 @@
-# SIS02 Energy: Information Pack
-
-This information pack contains comprehensive background information about the Albion Energy scenario, including system architecture, regulatory frameworks, requirements, and incident details.
-
+---
+title: "SIS02 Energy: Information Pack — Albion Energy"
+author: ["Z. Cliffe Schreuders", "Oleg Illiashenko"]
+license: "CC BY-SA 4.0"
+description: |
+  The authoritative technical source behind the SIS02 Energy scenario: Purdue-model OT/ICS architecture, Safety Instrumented System components and SIL ratings, a GSN assurance case, safety claims with traceable requirement IDs, regulatory frameworks (the NIS Regulations 2018 and the NCSC CAF, IEC 61511, IEC 61508 and IEC 62443, with NERC CIP for comparison), and the Albion incident storyline with attack chain and reference timeline.
+categories: ["security_informed_safety"]
+tags: ["security-informed-safety", "energy", "battery-storage", "ics", "scada", "operational-technology", "safety-instrumented-systems", "incident-response", "risk-management", "safety-case", "gsn", "purdue-model", "iec-62443", "iec-61511", "nis-regulations", "break-escape", "information-pack"]
+type: ["information-pack"]
+source: "https://github.com/cliffe/BreakEscape/blob/main/scenarios/sis02_energy/information_pack.md"
 ---
 
 
 
-## File: ./assurance_cases/assurance_case_overview.md
 
 # Security-Informed Safety Assurance Case — Albion Energy Storage Facility
 
@@ -197,7 +202,6 @@ Two further residual risks (**R4** and **R5**) are specific to the patching cons
 The Albion assurance case ultimately illustrates that security-informed safety is not about achieving perfect security or perfect safety in isolation. It is about understanding where cyber security controls are load-bearing elements in a safety argument, making the dependencies explicit, and managing the inevitable tensions — particularly the patching constraint — through deliberate, documented, risk-informed decisions rather than through neglect or default.
 
 
-## File: ./regulatory_frameworks/overview.md
 
 # Regulatory Framework Overview — Energy Sector
 
@@ -275,7 +279,6 @@ IEC 62443 is a family of standards addressing the security of industrial automat
 The North American Electric Reliability Corporation's Critical Infrastructure Protection (NERC CIP) standards provide a useful comparison point, representing one of the most mature mandatory cyber security compliance frameworks for the energy sector globally. Key standards include CIP-005 (Electronic Security Perimeter — defining network boundary controls for critical cyber assets), CIP-007 (Systems Security Management — covering patch management, access control, and security event monitoring), and CIP-013 (Supply Chain Risk Management). While NERC CIP does not apply to UK operators, it illustrates what a prescriptive, audit-driven approach to ICS security compliance looks like — and provides useful benchmarks for evaluating the adequacy of controls at facilities like Albion.
 
 
-## File: ./regulatory_frameworks/standards_mapping.md
 
 # Standards Mapping — Energy Sector Security-Safety Dependencies
 
@@ -303,7 +306,6 @@ This table maps regulatory requirements applicable to Albion Energy Storage Ltd 
 | 16 | Supply chain risk management | NERC CIP-013-2 (comparative); IEC 62443-2-4 | All ICS components | REQ-EN-SAF-001 (charge cutoff), REQ-EN-SAF-010 (SIS independence) | A supply chain compromise that introduces a backdoor into a safety-certified PLC or SIS component creates a dual failure: the security boundary is breached AND the safety function may be compromised from within. Supply chain integrity is a prerequisite for both security and safety claims |
 
 
-## File: ./requirements/claims.md
 
 # Security-Informed Safety Claims — Albion Energy Storage Facility
 
@@ -366,7 +368,6 @@ Claim: Provided that all safety-critical ICS components are sourced from vetted 
 Evidence required: Vendor security assessment records; firmware hash verification records at delivery; software bill of materials documentation; supply chain risk assessment covering critical component pipeline.
 
 
-## File: ./requirements/cybersecurity_requirements.md
 
 # Cyber Security Requirements — Albion Energy Storage Facility
 
@@ -576,7 +577,6 @@ Rationale: The NIS Regulations 2018 impose specific incident reporting obligatio
 Standard reference: NIS Regulations 2018 Regulation 11; NCSC CAF D.1
 
 
-## File: ./requirements/safety_requirements.md
 
 # Functional Safety Requirements — Albion Energy Storage Facility
 
@@ -661,7 +661,6 @@ A formal safe state shall be defined for the Albion facility: all battery racks 
 Following any SIS activation, any modification to safety-certified components, or any suspected cyber compromise of control or safety systems, the facility shall not return to service until a formal safety assessment has confirmed that all safety functions have been restored to their certified configuration, all control system software has been verified against known-good baselines, and the IT/OT environment has been declared free of compromise.
 
 
-## File: ./storylines/albion_incident.md
 
 # The Albion Incident
 
@@ -856,7 +855,6 @@ The game lets players act differently from the timeline above: they can shut dow
 - What the ESD destroys: the PLC-BMS shutdown routine, triggered by the ESD trip, overwrites the volatile registers that held the falsified values. The historian keeps what the screens showed, but the register image (what the attacker actually wrote into the controller) is gone unless someone captured it before the button was pressed. In the reference timeline nobody did.
 - Alternative ending: with no ESD, hydrogen reaches 1.0% about 25 minutes after the briefing and 2.0% at about 07:13; the hall is evacuated, Helen presses the console ESD on the way out, and Hall 1 is lost to fire with everyone out.
 
-## File: ./storylines/attack_scenarios/scenario_01_it_to_ot_pivot.md
 
 # Scenario 01: IT-to-OT Pivot Leading to SCADA Compromise and Battery Thermal Runaway Risk
 
@@ -974,7 +972,6 @@ In this scenario, the detection and manual shutdown with the hottest cells at ab
 | Denial of safe shutdown (SIS bypass) | Denial of Control | T0813 |
 
 
-## File: ./storylines/attack_scenarios/scenario_02_insider_ics_manipulation.md
 
 # Scenario 02: Insider/Compromised Contractor — Direct ICS Manipulation Leading to Battery Safety Failure
 
@@ -1066,7 +1063,6 @@ The insider scenario produces the same ultimate safety hazard as the external AP
 | SIS rendered ineffective (Step 9) | Denial of Control | T0813 |
 
 
-## File: ./system_architecture/ics_protocols.md
 
 # ICS Protocols — Albion Energy Storage Facility
 
@@ -1158,7 +1154,6 @@ OPC-UA was designed with security as a core feature — unlike Modbus and DNP3, 
 If the OPC-UA connection between the historian and SCADA server uses security mode "None", an attacker who can interpose on the network (e.g., from the dual-homed historian) can intercept or modify data in transit. This could be used to corrupt historian records — removing evidence of an attack or injecting false historical data to disguise anomalous operating patterns. In the Albion scenario, the OPC-UA connection provided the passive reconnaissance pathway through which the attacker identified PLC register addresses and safety thresholds by observing the historian's data queries.
 
 
-## File: ./system_architecture/network_architecture.md
 
 # Network Architecture — Albion Energy Storage Facility
 
@@ -1296,7 +1291,6 @@ However, the SIS safety PLC's engineering port is accessible from the same netwo
 Trent Water Services workstations share the enterprise IT network's office VLAN, with access to the common file server and shared printers. While Trent Water's water pumping SCADA system is logically separate from Albion's SCADA network, the shared IT infrastructure creates a lateral movement pathway. An attacker who compromises the shared file server or printers can potentially reach both Albion and Trent Water IT environments — and from there, both organisations' OT systems if additional boundary weaknesses exist. This cross-organisational, cross-sector dependency was not formally risk-assessed during the site-sharing arrangement.
 
 
-## File: ./system_architecture/subsystem_descriptions.md
 
 # Subsystem Descriptions — Albion Energy Storage Facility
 
@@ -1381,7 +1375,6 @@ Field devices are the physical interface between the digital control systems and
 **Key vulnerabilities in the Albion scenario**: Field sensors feed into PLC input registers that can be overwritten by an attacker with write access to the PLC. The control system has no independent mechanism to validate whether a register value reflects the actual sensor reading or a value injected by an attacker. Local analog instruments (such as the dial gauge at Rack A2) that are independent of the digital system provided the critical detection mechanism in this incident.
 
 
-## File: ./system_architecture/system_overview.md
 
 # System Overview — Albion Energy Storage Facility
 
@@ -1441,7 +1434,6 @@ Albion and Trent Water share: a site building management system (HVAC, fire supp
 - **Dormant accounts**: Accounts belonging to former contractors remain enabled on the jump server and engineering workstations with unchanged default passwords.
 
 
-## File: ./theoretical_background/background.md
 
 # Theoretical Background — Energy Sector Security-Informed Safety
 

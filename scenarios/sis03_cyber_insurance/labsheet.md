@@ -1,11 +1,11 @@
 ---
 title: "SIS03 Cyber Insurance - Meridian Coverage Determination"
-author: ["Dr Chris Lewin", "Break Escape Team"]
+author: ["Z. Cliffe Schreuders", "Oleg Illiashenko"]
 license: "CC BY-SA 4.0"
 overview: |
-  This scenario looks at a cyber-physical incident from the insurer's side. Seven weeks after a cyber attack switched off the safety trips at Albion Energy Storage's grid battery site (SIS02), you are on Meridian Cyber Insurance's claims team, deciding how to respond to Albion's £8.2 million claim. You will trace the forensic chain from a compromised printer to overheated battery cells, judge which of the security warranties Albion gave were breached and whether each breach mattered to the loss, weigh a state-sponsored attribution against the policy's act-of-war exclusion, and face the uncomfortable fact that Meridian renewed the policy knowing the work was late. The scenario shows how insurance works as a safety governance mechanism, and where it stops working.
+  This scenario looks at a cyber-physical incident from the insurer's side. On Thursday 7 May 2026, seven weeks after a cyber attack switched off the safety trips at Albion Energy Storage's grid battery site (SIS02), you are on Meridian Cyber Insurance's claims team, deciding how to respond to Albion's £8.2 million claim. You will trace the forensic chain from a compromised printer to overheated battery cells, judge which of the security warranties Albion gave were breached and whether each breach mattered to the loss, weigh a state-sponsored attribution against the policy's act-of-war exclusion, and face the uncomfortable fact that Meridian renewed the policy knowing the work was late. The scenario shows how insurance works as a safety governance mechanism, and where it stops working.
 description: |
-  Assess a cyber insurance claim for a battery storage site where an attacker disabled the Safety Instrumented System and a hardwired emergency shutdown stopped a thermal runaway. Learn how cyber policies cover physical damage, how security warranties turn technical controls into coverage conditions, why a safety-constrained patch deferral is hard to judge, how evidence is lost when safety comes first, what intelligence attribution can and cannot prove, and how UK bodies divide the work (Ofgem as competent authority under the NIS Regulations, the NCSC as the CSIRT, the FCA and PRA for the insurer). You will make, and defend, a coverage recommendation that has no clean answer.
+  Assess a cyber insurance claim for a battery storage site where an attacker disabled the Safety Instrumented System and a hardwired emergency shutdown stopped the cells short of thermal runaway. Learn how cyber policies cover physical damage, how security warranties turn technical controls into coverage conditions, why a safety-constrained patch deferral is hard to judge, how evidence is lost when safety comes first, what intelligence attribution can and cannot prove, and how UK bodies divide the work (Ofgem and DESNZ jointly as competent authority under the NIS Regulations, the NCSC as the CSIRT, the FCA and PRA for the insurer). You will make, and defend, a coverage recommendation that has no clean answer.
 cybok:
   - ka: "SIS"
     topic: "Language and Concept Alignment"
@@ -114,7 +114,7 @@ By the end you should be able to explain:
 
 ### Getting Started {#getting-started}
 
-1. ==action: Read the Information Pack (`information_pack.md`)== for the policy, the warranty schedule, the insurer's systems, the regulatory frameworks and the response timeline. The SIS02 information pack is the source for what happened at Albion.
+1. ==action: Read the [Information Pack](/HacktivityLabSheets/labs/security_informed_safety/sis03-cyber-insurance-information-pack/)== for the policy, the warranty schedule, the insurer's systems, the regulatory frameworks and the response timeline. The [SIS02 Information Pack](/HacktivityLabSheets/labs/security_informed_safety/sis02-energy-information-pack/) is the source for what happened at Albion.
 2. ==action: Launch **SIS03 Cyber Insurance**== from the BreakEscape scenario selection screen
 3. ==action: Listen to Eleanor's briefing==, then read the policy binder and Albion's incident notification on the desk
 
@@ -190,8 +190,8 @@ Work through these after you have finished. Use your own run: Eleanor's debrief 
 
 ## Additional Resources {#additional-resources}
 
-- The **Information Pack** (`information_pack.md`) for the policy wording, warranty schedule, claims (CLAIM-INS-001 to 009), the response chain and the regulatory frameworks
-- The **SIS02 Information Pack** (`scenarios/sis02_energy/information_pack.md`) for what happened at Albion
+- The [**Information Pack**](/HacktivityLabSheets/labs/security_informed_safety/sis03-cyber-insurance-information-pack/) for the policy wording, warranty schedule, claims (CLAIM-INS-001 to 009), the response chain and the regulatory frameworks
+- The [**SIS02 Information Pack**](/HacktivityLabSheets/labs/security_informed_safety/sis02-energy-information-pack/) for what happened at Albion
 - The **Insurance Act 2015**, Part 3 (warranties and other terms), especially sections 10 and 11
 - The **Lloyd's Market Association** state-backed cyber operation exclusion clauses (LMA5564 to LMA5567)
 - **IEC 61511** on modifying a safety instrumented system, and **IEC 62443** for zones and conduits
