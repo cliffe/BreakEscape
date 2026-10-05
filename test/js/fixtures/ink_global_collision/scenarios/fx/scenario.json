@@ -1,0 +1,16 @@
+{
+  "rooms": {
+    "hall": {
+      "npcs": [
+        { "id": "guard", "storyPath": "scenarios/fx/ink/guard.json" },
+        { "id": "handler", "storyPath": "scenarios/fx/ink/handler.json",
+          "eventMappings": [
+            { "eventPattern": "npc_hostile_state_changed", "setGlobal": { "guard_hostile": true } },
+            { "eventPattern": "room_entered:hall", "setGlobal": { "owned_flag": true } }
+          ] },
+        { "id": "clerk", "storyPath": "scenarios/fx/ink/clerk.json" }
+      ]
+    }
+  },
+  "globalVariables": { "guard_hostile": false, "owned_flag": false, "ink_owned": false, "fate": "", "count": 0, "read_only": false }
+}
