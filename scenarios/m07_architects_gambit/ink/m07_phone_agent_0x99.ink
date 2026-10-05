@@ -7,7 +7,7 @@
 
 // ---- Mission state (synced from globalVariables at call-open) ----
 VAR team_assignment = ""
-VAR team_assigned = false
+VAR team_assigned = false // Synced scenario global: a tactical team has been assigned (starts the clocks); also set by m07_opening_briefing and the assign_tactical_team mapping
 VAR projection_revised = false
 VAR team_redirected = false
 VAR redirect_window_closed = false
@@ -26,7 +26,7 @@ VAR found_tomb_gamma = false
 VAR found_mole_evidence = false
 VAR generator_hall_reached = false
 VAR vault_entered = false
-VAR debrief_requested = false
+VAR debrief_requested = false // Synced scenario global: the player has asked to be brought in; also set by HaX's backstop mappings
 VAR architect_echo_heard = false
 VAR casualty_projection_found = false
 VAR park_ko = false
@@ -296,11 +296,11 @@ Get past the checkpoint to the operations floor. Call me when you hit something 
     -> hub
 
 // PASS 4 (design review fix 1): prints, exits, parks on the hub; owns no
-// choices, so a re-navigation can't land here. The tag is above the lines so
-// an early close still records it. The debrief opens on the next room entry
+// choices, so a re-navigation can't land here. The assignment is above the
+// lines so an early close still records it (the global observer writes it
+// through). The debrief opens on the next room entry
 // or closed screen once all four flags are in (closing_debrief mappings).
 === bring_me_in ===
-#set_global:debrief_requested:true
 ~ debrief_requested = true
 {flag1_submitted and flag2_submitted and flag3_submitted and flag4_submitted:
     Putting you through. He's waiting.

@@ -19,10 +19,10 @@
 //   next is not SAFETYNET's to promise.
 // ===========================================
 
-VAR final_choice = ""  // "turn_double_agent", "arrest", "combat_nonlethal", "combat_lethal", "public_exposure"
+VAR final_choice = "" // Synced scenario global: Torres' fate ("turn_double_agent", "arrest", "combat_nonlethal", "combat_lethal", "public_exposure"); also set by HaX's post-KO call (m05_phone_agent_0x99)
 VAR confront_stance = ""  // "sympathetic" or "hardline"
 VAR torres_turned = false
-VAR torres_arrested = false
+VAR torres_arrested = false // Synced scenario global: Torres is in police custody; also set by HaX's post-KO call (m05_phone_agent_0x99)
 VAR elena_treatment_funded = false
 VAR entropy_program_exposed = false
 VAR fight_quiet = false

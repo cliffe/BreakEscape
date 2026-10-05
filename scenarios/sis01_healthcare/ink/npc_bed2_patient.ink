@@ -10,7 +10,7 @@ VAR patient_bed2_state = "stable"
 VAR patient_bed2_deceased = false
 VAR pump_dose_correct = false
 VAR bed2_alarm_raised = false
-VAR bed2_seen_unwell = false
+VAR bed2_seen_unwell = false // Synced scenario global: the player knows Ms Okafor is unwell; also set by Mrs Kowalski's warning (npc_bed5_patient)
 VAR bed4_escalated = false
 VAR sarah_at_bed2 = false
 

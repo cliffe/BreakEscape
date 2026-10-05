@@ -17,7 +17,7 @@
 
 // Synced from globalVars by engine at call-open
 VAR patient_bed4_state = "stable"
-VAR bed4_manually_stabilised = false
+VAR bed4_manually_stabilised = false // Synced scenario global: Mr Pryce (Bed 4) bagged by hand, which cancels his death timers; also set by helping Nurse Raval (m02_npc_roaming_nurse)
 VAR patient_bed4_deceased = false
 
 VAR spoke_to_player = false

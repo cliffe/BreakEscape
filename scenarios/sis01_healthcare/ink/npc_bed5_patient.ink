@@ -12,8 +12,8 @@ VAR pump_dose_error = false
 VAR pump_dose_correct = false
 VAR patient_bed2_deceased = false
 VAR patient_bed2_state = "stable"
-VAR bed2_alarm_raised = false
-VAR bed2_seen_unwell = false
+VAR bed2_alarm_raised = false // Synced scenario global: help called for Ms Okafor (Bed 2), which cancels her timers; also set by telling Sarah (npc_sarah)
+VAR bed2_seen_unwell = false // Synced scenario global: the player knows Ms Okafor is unwell; also set at her bedside (npc_bed2_patient)
 
 // Local tracking vars for this NPC
 VAR player_approached = false

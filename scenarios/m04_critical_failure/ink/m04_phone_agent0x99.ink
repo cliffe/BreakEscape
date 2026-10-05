@@ -371,7 +371,6 @@ Stay sharp. If anyone comes at you, defend yourself. Call if you need me.
 === event_server_room_entered ===
 #speaker:agent_0x99
 
-~ server_room_reached = true
 ~ server_room_advice_given = true
 ~ handler_confidence += 10
 
@@ -438,7 +437,6 @@ Call when you've got something.
 === event_attack_mechanism_identified ===
 #speaker:agent_0x99
 
-~ attack_mechanism_known = true
 ~ handler_confidence += 20
 
 {player_name()}, your flags are landing. Grid control can see it too.

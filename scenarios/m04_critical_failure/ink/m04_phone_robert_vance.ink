@@ -22,7 +22,7 @@ VAR asked_disabling = false
 // vance_trust_level is deliberately incremented here -- that is real progression
 // and syncs back. vance_is_ally / urgency_stage are read only.
 VAR vance_is_ally = false
-VAR vance_trust_level = 0
+VAR vance_trust_level = 0 // Synced scenario global: Vance's trust (0-100), read by the debrief; also raised face to face (m04_npc_robert_vance)
 VAR urgency_stage = 0
 
 // Engine-owned, synced in from globalVariables. Set true by the

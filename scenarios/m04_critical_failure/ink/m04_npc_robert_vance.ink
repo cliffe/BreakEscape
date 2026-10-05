@@ -7,7 +7,7 @@
 // ===========================================
 
 // Variables for tracking relationship and mission state
-VAR vance_trust_level = 0          // 0-100 trust/cooperation level
+VAR vance_trust_level = 0 // Synced scenario global: Vance's trust/cooperation (0-100), read by the debrief; also raised by phone (m04_phone_robert_vance)
 VAR revealed_mission = false       // Has player revealed SAFETYNET mission?
 VAR vance_is_ally = false          // Full ally status activated
 VAR vance_provided_keycard = false  // global; set ONLY by mappings when the card is really held: card_cloned (PASS 3 clone route) or item_picked_up:keycard (KO drop)

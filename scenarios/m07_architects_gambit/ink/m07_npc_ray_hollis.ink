@@ -16,7 +16,7 @@
 // is the only route where he talks: the vault keypad, and the man on the riser.
 // ===========================================
 
-VAR hollis_resolved = ""
+VAR hollis_resolved = "" // Synced scenario global: how Hollis was dealt with (talked/ko/evaded); also set to evaded by the server_room mapping
 VAR hollis_ko = false
 VAR visitor_log_read = false
 VAR renewal_signoff_read = false

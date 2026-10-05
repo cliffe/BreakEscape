@@ -8,7 +8,7 @@
 
 // Synced from globalVars at call-open (round 3: Bed 4 fallback).
 VAR patient_bed4_state = "stable"
-VAR bed4_manually_stabilised = false
+VAR bed4_manually_stabilised = false // Synced scenario global: Mr Pryce (Bed 4) bagged by hand, which cancels his death timers; also set at his bedside (m02_npc_patient_bed4)
 VAR patient_bed4_deceased = false
 
 === start ===
