@@ -9,19 +9,19 @@
 VAR policy_reviewed = false
 VAR claim_file_reviewed = false
 VAR forensic_chain_verified = false
-VAR evidence_archive_unlocked = false
+VAR evidence_archive_unlocked = false // Synced scenario global: the Evidence Archive is open; also set by the policy/forensic-chain mappings
 VAR warranty_evidence_reviewed = false
 VAR warranty_checklist_complete = false
 VAR underwriting_file_reviewed = false
 VAR loss_quantum_reviewed = false
-VAR attribution_brief_reviewed = false
+VAR attribution_brief_reviewed = false // Synced scenario global: the player has read the NCSC brief; set only by the ncsc_brief_envelope onRead (gated on warranty_evidence_reviewed); read-only here
 VAR coverage_form_reviewed = false
 VAR trent_water_assessed = false
 VAR coverage_decision_made = false
 VAR coverage_decision = "not_yet"
 VAR war_exclusion_invoked = false
 VAR disclosure_position = "not_yet"
-VAR eleanor_debrief_mode = false
+VAR eleanor_debrief_mode = false // Synced scenario global: Eleanor is in debrief mode; also set when coverage_decision_made
 VAR debrief_started = false
 VAR debrief_complete = false
 
@@ -467,8 +467,6 @@ Eleanor Vance: Our external counsel advises against invoking the exclusion.
 #speaker:eleanor
 
 Eleanor Vance: Open the NCSC brief. See what the intelligence assessment says. Then we'll talk about the decision.
-
-~ attribution_brief_reviewed = true
 
 * [I'll read the brief now]
     -> hub
