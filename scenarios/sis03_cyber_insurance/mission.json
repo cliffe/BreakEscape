@@ -1,6 +1,6 @@
 {
   "display_name": "Meridian Cyber Insurance: Coverage Determination",
-  "description": "T+48 hours after the Albion Battery Hall incident. As the Meridian Claims Team, you must verify the forensic causal chain of the £8.2M cyber insurance claim, assess warranty compliance, and navigate the tension between technical forensics and insurance policy coverage — all while pressured to minimise payout.",
+  "description": "May 2026, seven weeks after the Albion Battery Hall incident and two days after Albion filed its claim. As the Meridian Claims Team, you must verify the forensic causal chain of the £8.2M cyber insurance claim, assess warranty compliance, and navigate the tension between technical forensics and insurance policy coverage — all while pressured to minimise payout.",
   "difficulty_level": 4,
   "secgen_scenario": "meridian_insurance",
   "collection": "cybok_sis",
@@ -69,7 +69,7 @@
       "keywords": [
         "Operator of Essential Services duty",
         "corporate negligence liability",
-        "regulatory investigation immunity",
+        "regulatory investigation running alongside a claim",
         "third-party liability exposure",
         "NIS Regulations 2018 compliance as defence"
       ]
@@ -90,7 +90,7 @@
       "topic": "Access Control and Breach Attribution",
       "keywords": [
         "contractor deprovisioning failure",
-        "VPN access abuse",
+        "dormant jump server account abuse",
         "MFA enforcement gaps",
         "lateral movement attribution",
         "compromised credential lifecycle"
@@ -116,9 +116,9 @@
   "lore_reveals": [
     "How APT groups use printer firmware as a beachhead — harder to patch than endpoints and often trusted on engineering networks",
     "The insurance industry's struggle with cyber coverage for critical infrastructure — most policies were written before OT-specific attacks",
-    "How a technical win (incident contained, SIS integrity verified, no patient harm) can become a financial loss when viewed through the insurance lens",
+    "How a technical win (thermal runaway prevented, nobody hurt) can still become a contested financial loss when viewed through the insurance lens",
     "Why compensating controls must be documented, tested, and audited — not just assumed to work because they exist on paper",
     "The downstream impact of deferred maintenance debt: every day a patch is delayed multiplies the forensic liability"
   ],
-  "facilitator_notes": "Designed for 2–4 players split across claims assessment, technical forensics, and policy/compliance roles. Suggested split: 1 player as Claims Manager (leads final recommendation, faces upper management pressure), 1–2 players as Technical Forensic Reviewers (focus on FDP terminal, VM challenge, forensic evidence), 1 player as Policy/Compliance Officer (focus on warranty, coverage exclusions, regulatory duties).\n\nThis scenario is a natural sequel to Case 2 (Albion Battery Hall: Code Red). If played in sequence, the FDP terminal reflects decisions players made in Case 2: did they patch? did they maintain compensating controls? did they notify regulators on time? The forensic evidence evolves based on Case 2 outcomes.\n\nKey decision points to facilitate:\n1. TECHNICAL vs POLICY: Players who focus only on technical attribution may miss the policy question: 'Is this a covered peril?' A thorough forensics report is worthless if the policy excludes it.\n2. DUTY OF CARE DILEMMA: Albion has a regulatory duty as an Operator of Essential Services. Did they fulfil it? If yes, does it affect insurance coverage? If no, does it trigger negligence?\n3. SUBROGATION PATH: If the claim is approved, can Meridian pursue the APT group (impossible) or the printer manufacturer (more realistic)? Let players debate liability assignment.\n\nPhysical props and game board:\n- Meridian claims office: desk with FDP terminal (laptop or phone interface), filing cabinet (PIN-locked), evidence folders\n- Digital forensics challenge: FDP interface shows sanitized disk image; players extract timeline and log fragments\n- Claim form paperwork: printed £8.2M claim summary, coverage schedule, warranty clause excerpts (highlight exclusions)\n- Decision board: three recommendation boxes (APPROVE FULL / APPROVE PARTIAL / REJECT) with evidence slots so players can build their case\n\nTiming: Expect 60 minutes for a thorough run. If players focus only on forensics, 45 minutes. If they debate policy and subrogation, 75 minutes."
+  "facilitator_notes": "Designed for 2–4 players split across claims assessment, technical forensics, and policy/compliance roles. Suggested split: 1 player as Claims Manager (leads final recommendation, faces upper management pressure), 1–2 players as Technical Forensic Reviewers (focus on FDP terminal, VM challenge, forensic evidence), 1 player as Policy/Compliance Officer (focus on warranty, coverage exclusions, regulatory duties).\n\nThis scenario is a natural sequel to Case 2 (Albion Battery Hall: Code Red), set seven weeks later. Nothing carries over from a Case 2 playthrough: the evidence is the same whatever players did there. Facilitators can still ask players who played Case 2 to compare what they saw on the morning with what the forensic record shows.\n\nKey decision points to facilitate:\n1. TECHNICAL vs POLICY: Players who focus only on technical attribution may miss the policy question: 'Is this a covered peril?' A thorough forensics report is worthless if the policy excludes it.\n2. DUTY OF CARE DILEMMA: Albion has duties as an Operator of Essential Services under the NIS Regulations (Ofgem's to judge, not Meridian's). Does meeting or missing them affect insurance coverage? Separately, what does Albion owe its neighbour Trent Water, whose workstation opened a file the attacker planted on the shared server?\n3. SUBROGATION PATH: If the claim is approved, can Meridian pursue the APT group (impossible), CastleTech (whose service account and SOC scope are in the evidence) or the printer vendor's supply chain? Let players debate liability assignment.\n\nPhysical props and game board:\n- Meridian claims office: desk with FDP terminal (laptop or phone interface), filing cabinet (PIN-locked), evidence folders\n- Digital forensics challenge: FDP interface shows the forensic timeline, jump server log, historian data and SIS findings; players trace the causal chain\n- Claim form paperwork: printed £8.2M claim summary, coverage schedule, warranty clause excerpts (highlight exclusions)\n- Decision board: three recommendation boxes (APPROVE FULL / APPROVE PARTIAL / REJECT) with evidence slots so players can build their case\n\nTiming: Expect 60 minutes for a thorough run. If players focus only on forensics, 45 minutes. If they debate policy and subrogation, 75 minutes."
 }
