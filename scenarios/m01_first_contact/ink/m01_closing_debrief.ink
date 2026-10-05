@@ -56,7 +56,7 @@ VAR audit_wrong_answers = 0             // Number of incorrect assessments
 
 #speaker:agent_0x99
 
-Agent HaX: {player_name}. I'm going to assume Derek triggered a failsafe before you reached him.
+Agent HaX: Agent. I'm going to assume Derek triggered a failsafe before you reached him.
 
 Agent HaX: Because the alternative — that you had the launch device in your hands, and chose not to abort — I'm not prepared to consider that yet.
 
@@ -117,7 +117,7 @@ Agent HaX: Are you still fit for the next operation?
 
 #speaker:agent_0x99
 
-Agent HaX: {player_name}. First, I need you to understand what you accomplished today.
+Agent HaX: Well done, Agent. First, I need you to understand what you accomplished today.
 
 Agent HaX: Those casualty projections—42 to 85 people. Populations they'd profiled and hit with tailored lies—and everyone else caught when hoaxes swamped real emergency capacity.
 
@@ -721,7 +721,7 @@ Agent HaX: You offered him a chance to cooperate. Turn informant.
 
 Agent HaX: I heard his answer. "I will never betray ENTROPY."
 
-Agent HaX: Fanatics don't turn, {player_name}. They'd rather go to prison as martyrs.
+Agent HaX: Fanatics don't turn, Agent. They'd rather go to prison as martyrs.
 
 + [I had to try]
     Agent HaX: It was worth asking. His refusal tells us something about ENTROPY's organizational culture.
@@ -893,7 +893,7 @@ Agent HaX: Cell by cell. Operation by operation.
 }
 
 {lore_collected >= 3:
-    Agent HaX: And {lore_collected} intelligence fragments recovered. That's thorough investigative work.
+    Agent HaX: And you recovered several intelligence fragments along the way. That's thorough investigative work.
 }
 {lore_collected == 0:
     Agent HaX: You focused on the primary objectives. Efficient.

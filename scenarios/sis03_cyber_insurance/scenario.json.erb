@@ -48,8 +48,9 @@
 # ERB VARIABLES
 # ==========================================================================
 
-# Can be randomised, but since these are spoken, busts TTS cache
-# Evidence Archive door PIN — delivered by Eleanor on policy_reviewed
+# Evidence Archive door PIN — printed on the access slip Eleanor hands over
+# (itemsHeld, #give_item in npc_eleanor_vance.ink). Never put it in a voiced line
+# or a bark: TTS caches by text, so a spoken PIN can't be randomised.
 archive_pin = 6767 # @random_pin   
 # Underwriting cabinet PIN — embedded in CMS policy notation
 cabinet_pin = 5857 # @random_pin   
@@ -102,9 +103,7 @@ cabinet_pin = 5857 # @random_pin
 
     "eleanor_debrief_mode": false,
     "debrief_started": false,
-    "debrief_complete": false,
-
-    "archive_pin_value": "<%= archive_pin %>"
+    "debrief_complete": false
   },
 
   "startItemsInInventory": [
@@ -408,6 +407,18 @@ cabinet_pin = 5857 # @random_pin
             { "id": "closing_debrief_with_eleanor", "label": "Closing debrief with Eleanor Vance", "unlocks_aim": "closing_debrief" }
           ],
           "behavior": {},
+          // The archive PIN reaches the player only on this slip (never spoken; see ERB header)
+          "itemsHeld": [
+            {
+              "type": "notes",
+              "id": "evidence_archive_access_slip",
+              "name": "Evidence Archive Access Slip",
+              "takeable": true,
+              "readable": true,
+              "text": "MERIDIAN CYBER INSURANCE — CLAIMS\n\nEvidence Archive (north door, Claims Suite)\nAccess code: <%= archive_pin %>\n\nIssued for the Albion Energy Storage claim review.\nE. Vance, Claims Manager",
+              "observations": "Eleanor's handwritten slip with the Evidence Archive door code."
+            }
+          ],
           "timedConversation": {
             "delay": 0,
             "targetKnot": "start",
@@ -441,7 +452,7 @@ cabinet_pin = 5857 # @random_pin
               "onceOnly": true,
               "sendTimedMessage": {
                 "delay": 4000,
-                "message": "Policy and forensic checks complete. Evidence Archive access code: <%= archive_pin %>. North door. The underwriting file cabinet inside is PIN-locked — the reference code is in the CMS policy notes."
+                "message": "Policy and forensic checks complete. Come and collect your Evidence Archive access slip from me. The underwriting cabinet inside is PIN-locked; its reference code is in the CMS policy notes."
               },
               "setGlobal": { "evidence_archive_unlocked": true },
               "unlockAim": "access_evidence_archive"
@@ -468,7 +479,7 @@ cabinet_pin = 5857 # @random_pin
               "onceOnly": true,
               "sendTimedMessage": {
                 "delay": 4000,
-                "message": "Policy and forensic checks complete. Evidence Archive access code: <%= archive_pin %>. North door. The underwriting file cabinet inside is PIN-locked — the reference code is in the CMS policy notes."
+                "message": "Policy and forensic checks complete. Come and collect your Evidence Archive access slip from me. The underwriting cabinet inside is PIN-locked; its reference code is in the CMS policy notes."
               },
               "setGlobal": { "evidence_archive_unlocked": true },
               "unlockAim": "access_evidence_archive"
