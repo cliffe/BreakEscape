@@ -214,9 +214,9 @@
     font-size: 13px;
     pointer-events: none;
     z-index: 100;
-    white-space: pre;
+    white-space: pre-wrap;
     line-height: 1.5;
-    max-width: 320px;
+    max-width: 360px;
 }
 .sh-tooltip-anomaly { color: #f5a623; border-color: #f5a623; }
 .sh-tooltip-injection { color: #ff8888; border-color: #ff4040; }
@@ -307,3 +307,44 @@
     letter-spacing: 0.03em;
 }
 .sh-modal-cancel-btn:hover { background: #223355; color: #aabbdd; }
+
+/* ── Hint line and inspection progress (sis02 playtests: the finding was hard to discover) ── */
+.sh-hint {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 10px;
+    background: #0a1220;
+    border-bottom: 1px solid #334466;
+    color: #aabbdd;
+    font-size: 13px;
+    line-height: 1.4;
+}
+.sh-hint-text { flex: 1; }
+.sh-hint-progress {
+    width: 90px;
+    height: 8px;
+    border: 1px solid #445566;
+    background: #000000;
+    flex-shrink: 0;
+}
+.sh-hint-progress-fill {
+    display: block;
+    height: 100%;
+    width: 0%;
+    background: #f5a623;
+}
+.sh-hint.found { color: #88ee88; border-bottom-color: #44aa44; }
+.sh-hint.found .sh-hint-progress-fill { background: #44aa44; }
+.sh-annotate-note {
+    margin-top: 6px;
+    font-size: 11px;
+    color: #667788;
+    line-height: 1.3;
+}
+.sh-annotate-btn.active { animation: sh-ready-pulse 1.2s ease-in-out 3; }
+@keyframes sh-ready-pulse {
+    0%, 100% { box-shadow: none; }
+    50% { box-shadow: 0 0 8px #44aa44; }
+}

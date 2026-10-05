@@ -1,6 +1,10 @@
 /**
  * bond-visualiser.js — Fullscreen SAFETYNET audio visualiser overlay.
  *
+ * Themed by the scenario's "creditsTheme" (credits-theme.js): "safetynet", the
+ * default campaign debrief, or "cyber", a generic cyber security incident review.
+ * Each theme sets its enabled modes, matrix characters, logo, log lines and text.
+ *
  * Adapted from bond-visualiser.html. Connects to MusicController's shared
  * AudioContext and AnalyserNode instead of loading its own audio.
  *
@@ -19,6 +23,7 @@
 
 import MusicController from './music-controller.js';
 import { displayDashes } from '../utils/display-dashes.js';
+import { resolveCreditsTheme, getCreditsTheme, trackInfoLabel, DEFAULT_CREDITS_THEME } from './credits-theme.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────
 const PIX = 4; // pixel block size for all drawing
@@ -43,6 +48,12 @@ let _disableClose     = false; // hide × and block Esc — for forced/cutscene 
 
 // ── MusicController state ─────────────────────────────────────────────────
 let _mcState   = {};
+
+// ── Theme (credits-theme.js) ──────────────────────────────────────────────
+let _theme        = DEFAULT_CREDITS_THEME;
+let _themeDef     = getCreditsTheme(_theme);
+let _themeApplied = null;  // theme the DOM currently shows
+let _lastCredits  = null;
 
 // ── Per-mode reset state ──────────────────────────────────────────────────
 let _currentMode = 'cybermap';
@@ -87,18 +98,7 @@ const SIEM_COUNTRIES  = ['RU','CN','KP','IR','US','UA','DE','BR','IN','RO','NG',
 
 // ── Log state ─────────────────────────────────────────────────────────────
 let _logScrollPending = false;
-const cryptoMsgs = [
-  ['> SCANNING FREQUENCIES...',''],
-  ['> ENCRYPTION VERIFIED',''],
-  ['> QUANTUM KEY EXCHANGE OK',''],
-  ['> SIGNAL TRACE: NEGATIVE','warn'],
-  ['> THREAT SCAN COMPLETE',''],
-  ['> INTRUDER DETECTED — LAYER 3','alert'],
-  ['> DECOY DEPLOYED','warn'],
-  ['> FIREWALL: NOMINAL',''],
-  ['> DPI BYPASS CONFIRMED',''],
-  ['> CIPHER ROTATION OK',''],
-];
+// Ambient log lines come from the theme (credits-theme.js logMessages)
 let _msgIdx = 0, _lastLogTime = 0;
 let _logTickIv = null;
 
@@ -256,7 +256,7 @@ function _buildOverlay() {
 // MATRIX RAIN
 // ═════════════════════════════════════════════════════════════════════════════
 
-const MATRIX_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*<>{}[]|/\\ENTROPYSAFETYNET';
+// Matrix characters come from the theme (credits-theme.js matrixChars)
 
 function _startMatrixRain() {
     const c = _matrixCv;
@@ -274,7 +274,8 @@ function _startMatrixRain() {
         ctx.fillRect(0, 0, W, H);
         ctx.font = '12px "VT323", monospace';
         drops.forEach((y, i) => {
-            const ch = MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)];
+            const chars = _themeDef.matrixChars;
+            const ch = chars[Math.floor(Math.random() * chars.length)];
             ctx.fillStyle = i % 7 === 0 ? '#FFD700' : '#00FF41';
             ctx.fillText(ch, i * 14, y * 14);
             if (y * 14 > H && Math.random() > 0.975) drops[i] = 0;
@@ -296,6 +297,18 @@ function _drawLogoSprite() {
     const ctx = c.getContext('2d');
     ctx.imageSmoothingEnabled = false;
     const s = 4;
+    ctx.clearRect(0, 0, c.width, c.height);
+    if (_themeDef.logo === 'padlock') {
+        // Padlock: shackle, body, keyhole
+        const shackle = [[3,1],[4,1],[5,1],[6,1],[2,2],[7,2],[2,3],[7,3]];
+        ctx.fillStyle = '#00FFFF';
+        shackle.forEach(([x,y]) => ctx.fillRect(x*s, y*s, s, s));
+        ctx.fillStyle = '#00FF41';
+        for (let y = 4; y <= 8; y++) for (let x = 1; x <= 8; x++) ctx.fillRect(x*s, y*s, s, s);
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(4*s+2, 5*s, s, s); ctx.fillRect(4*s+2, 6*s, s, s);
+        return;
+    }
     // Shield shape pixel art
     const shieldPx = [[3,1],[4,1],[5,1],[6,1],[2,2],[3,2],[4,2],[5,2],[6,2],[7,2],[2,3],[3,3],[4,3],[5,3],[6,3],[7,3],[2,4],[3,4],[4,4],[5,4],[6,4],[7,4],[3,5],[4,5],[5,5],[6,5],[3,6],[4,6],[5,6],[4,7]];
     ctx.fillStyle = '#00FF41';
@@ -580,7 +593,7 @@ function drawCircle(data, W, H, audio) {
     _visCtx.font='900 20px "Press Start 2P",monospace';
     _visCtx.fillStyle=`rgba(255,215,0,${0.4+avg*0.6})`;
     _visCtx.textAlign='center'; _visCtx.textBaseline='middle';
-    _visCtx.fillText('S/N', cx, cy);
+    if (_themeDef.centreLabel) _visCtx.fillText(_themeDef.centreLabel, cx, cy);
     _visCtx.textAlign='left'; _visCtx.textBaseline='alphabetic';
 }
 
@@ -1276,6 +1289,7 @@ function _startCredits(lines) {
             label.style.cssText = `text-align:center;padding:0 10%;transition:opacity 0.4s ease;${baseStyle}`;
             label.textContent   = displayDashes(item.text);
             label.style.opacity = '1';
+            if (_themeDef.logCredits) addLog('> ' + displayDashes(item.text));
             _creditsTimerId = setTimeout(showNext, 3000);
         }, 450); // brief fade-out gap before switching text
     }
@@ -1330,7 +1344,7 @@ function _updateStats(data, audio) {
         const fd = document.getElementById('bv-freq-disp'); if (fd) fd.textContent=freq.toFixed(1).padStart(7,' ');
     }
 
-    if (kickHit && Math.random() > 0.85) {
+    if (_themeDef.rotateOps && kickHit && Math.random() > 0.85) {
         _opIdx = (_opIdx + 1) % OPERATIONS.length;
         const on = document.getElementById('bv-op-name'); if (on) on.textContent=OPERATIONS[_opIdx];
     }
@@ -1355,7 +1369,8 @@ function _startLogTick() {
         if (!_open) return;
         const now = performance.now();
         if (now - _lastLogTime >= 2800) {
-            const [txt, cls] = cryptoMsgs[_msgIdx % cryptoMsgs.length];
+            const msgs = _themeDef.logMessages;
+            const [txt, cls] = msgs[_msgIdx % msgs.length];
             addLog(txt, cls); _msgIdx++; _lastLogTime = now;
         }
     }, 200);
@@ -1366,8 +1381,11 @@ function _startLogTick() {
 // ═════════════════════════════════════════════════════════════════════════════
 
 const ALL_MODES = ['cybermap','wave','siem','bars','circle','matrix','tunnel','plasma','particles','lissajous'];
+const _modes = () => _themeDef.modes || ALL_MODES;
+const _nextMode = () => { const m = _modes(); return m[(m.indexOf(_currentMode) + 1) % m.length]; };
 
 function _setMode(mode) {
+    if (!_modes().includes(mode)) mode = _modes()[0];
     _currentMode = mode;
     // Sync both mode-group button groups
     _overlay?.querySelectorAll('[data-mode]').forEach(b => {
@@ -1404,7 +1422,7 @@ function _setMode(mode) {
 function _startAutoProgress() {
     clearInterval(_autoIv);
     _autoIv = setInterval(() => {
-        _setMode(ALL_MODES[(ALL_MODES.indexOf(_currentMode) + 1) % ALL_MODES.length]);
+        _setMode(_nextMode());
     }, AUTO_INTERVAL);
 }
 
@@ -1416,11 +1434,12 @@ function _updateTrackInfo(state) {
     _mcState = state || {};
     const info = document.getElementById('bv-track-info');
     if (!info) return;
-    if (state?.trackTitle) {
-        info.innerHTML = `<span>INTEL:</span> ${state.trackTitle.toUpperCase()} &nbsp;·&nbsp; ${(state.playlistName || '').toUpperCase()}`;
-    } else {
-        info.innerHTML = '<span>AWAITING SIGNAL</span>';
-    }
+    const { label, detail } = trackInfoLabel(_theme, state);
+    info.innerHTML = '';
+    const span = document.createElement('span');
+    span.textContent = label;
+    info.appendChild(span);
+    if (detail) info.appendChild(document.createTextNode(' ' + detail));
     const pauseBtn = document.getElementById('bv-pause-btn');
     if (pauseBtn) pauseBtn.innerHTML = state?.paused ? '▶ RESUME' : '⏸ PAUSE';
 }
@@ -1443,8 +1462,80 @@ let _open = false;
 let _clockIv = null;
 let _resizeHandler = null;
 
+/**
+ * Pick the theme from the scenario and re-skin the overlay for it. A theme whose
+ * overlay() returns null (safetynet) keeps the overlay exactly as built.
+ */
+function _applyTheme(opts) {
+    if (opts.credits?.length) _lastCredits = opts.credits;
+    _theme    = resolveCreditsTheme(window.gameScenario);
+    _themeDef = getCreditsTheme(_theme);
+    if (!_overlay) return;
+    if (_themeApplied !== _theme) _drawLogoSprite();
+    if (!_themeDef.modes.includes(_currentMode)) _setMode(_themeDef.modes[0]);
+    _overlay.querySelectorAll('[data-mode]').forEach(b => {
+        b.style.display = _themeDef.modes.includes(b.dataset.mode) ? '' : 'none';
+    });
+    const stamp = _overlay.querySelector('.bv-classified');
+    if (stamp) stamp.style.display = _themeDef.stamp ? '' : 'none';
+
+    const t = _themeDef.overlay({
+        missionName: window.breakEscapeConfig?.missionDisplayName || window.gameScenario?.scenario_name,
+        credits:     _lastCredits,
+    });
+    if (t) _applyOverlayText(t);
+    _themeApplied = _theme;
+}
+
+function _applyOverlayText(t) {
+    const q = (sel) => _overlay.querySelector(sel);
+    const setText = (el, v) => { if (el && v !== undefined) el.textContent = v; };
+
+    setText(q('.bv-title-block h1'), t.heading);
+    setText(q('.bv-title-block p'), t.subheading);
+    setText(q('.bv-badge.red'), t.liveBadge);
+    setText(q('.bv-badge.gold'), t.badge);
+    // Status block: OPERTN (rotating operation names) becomes the scene
+    const statusLines = [...(q('.bv-status-block')?.querySelectorAll('.bv-status-line') || [])];
+    if (statusLines[0]) {
+        setText(statusLines[0].querySelector('.label'), t.scene[0]);
+        const op = statusLines[0].querySelector('.val');
+        if (op) { op.removeAttribute('id'); op.textContent = t.scene[1]; }
+    }
+    if (statusLines[1]) {
+        const st = statusLines[1].querySelector('.val');
+        if (st) { st.textContent = t.status; st.classList.remove('bv-blink'); }
+    }
+    const [leftPanel, rightPanel] = [..._overlay.querySelectorAll('.bv-side-panel')];
+    const leftTitles = leftPanel ? [...leftPanel.querySelectorAll('.bv-panel-title')] : [];
+    setText(leftTitles[0], t.leftTitle);
+    setText(leftTitles[1], t.logTitle);
+    if (_themeApplied !== _theme && _logEl) { _logEl.innerHTML = ''; addLog(t.logFirst); }
+
+    if (rightPanel) {
+        // Replace the OPERATIVE DATA block (title, AGENCY, RANK, SECTOR, CLRNC) with the
+        // exercise rows; FREQ, ENCRYPTION and VIS MODE stay.
+        const kids = [...rightPanel.children];
+        const freqIdx = kids.findIndex(k => k.querySelector?.('#bv-freq-disp'));
+        kids.slice(0, Math.max(0, freqIdx)).forEach(k => k.remove());
+        const frag = document.createDocumentFragment();
+        const title = document.createElement('div'); title.className = 'bv-panel-title'; title.textContent = t.rightTitle;
+        frag.appendChild(title);
+        for (const [k, v] of t.rows) {
+            const row = document.createElement('div'); row.className = 'bv-stat-row';
+            const a = document.createElement('span'); a.className = 'sk'; a.textContent = k;
+            const b = document.createElement('span'); b.textContent = v; b.style.textAlign = 'right';
+            row.append(a, b); frag.appendChild(row);
+        }
+        rightPanel.insertBefore(frag, rightPanel.firstChild);
+    }
+    setText(q('.bv-footer > span'), t.footer);
+    setText(q('.bv-ticker-inner'), t.ticker);
+}
+
 function _open_overlay(opts = {}) {
     if (!_overlay) _init();
+    _applyTheme(opts);
 
     if (!_open) {
         // First open — initialise all loops and canvas
@@ -1580,7 +1671,7 @@ function _init() {
     document.addEventListener('keydown', e => {
         if (!_open) return;
         if (e.key === 'Escape' && !_disableClose) BondVisualiser.close();
-        if (e.key === 'v' || e.key === 'V') _setMode(ALL_MODES[(ALL_MODES.indexOf(_currentMode)+1)%ALL_MODES.length]);
+        if (e.key === 'v' || e.key === 'V') _setMode(_nextMode());
     });
 
     // MusicController state changes

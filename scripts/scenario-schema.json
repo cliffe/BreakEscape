@@ -38,6 +38,11 @@
       "type": "boolean",
       "description": "When true the player cannot attack: no punching, no interact/attack mode toggle, and no combat tutorial step. For non-combat scenarios such as the SIS serious games."
     },
+    "creditsTheme": {
+      "type": "string",
+      "enum": ["safetynet", "cyber"],
+      "description": "Theme of the end-of-mission credits visualiser (public/break_escape/js/music/credits-theme.js). 'safetynet' (the default) is the SAFETYNET campaign debrief. 'cyber' is a generic cyber security incident review: the mission name and first subtitle credit line as headings, SIEM and matrix modes but no threat map, agency panel, classified stamp or track title. Each theme sets which visualiser modes are enabled."
+    },
     "gameClock": {
       "type": ["object", "string"],
       "description": "Optional in-game clock: { \"start\": \"Tue 07:30\" } (or just the string). Clock displays (command board, SIEM) then show this start time plus elapsed game time instead of the real wall clock. Elapsed game time resumes after a reload."
