@@ -3682,9 +3682,12 @@ end
 #    guard_hostile (set on a peaceful telling-off), so HaX said "stand and fight" after a scolding (P1-38).
 #    Warned when the types disagree, or when the ink assigns the VAR (~ x = ...) while something else
 #    also sets the global (a scenario setGlobal/setVariable/globalVarOnKO, or another ink) and the ink
-#    doesn't say the VAR is the scenario's: a comment in the VAR's declaration block (or on its line)
-#    naming it synced / a global / the scenario's / the engine's, which is the house convention.
-INK_GLOBAL_ACK_RE = /\b(?:sync|synced|syncs|global|globals|globalVars|globalVariables|scenario|engine)\b/i.freeze
+#    doesn't say the VAR is the scenario's: a comment naming it synced / a global, either trailing the
+#    VAR's own line or in the run of comment lines directly above it (the run stops at the previous VAR,
+#    a blank line or any other non-comment line), which is the house convention. "scenario" and
+#    "engine" alone don't count, and a header above a block of VARs acknowledges only the first: an
+#    unrelated "the engine binds only six" note two VARs up hid m03's handler_trust.
+INK_GLOBAL_ACK_RE = /\b(?:sync|synced|syncs|global|globals|globalVars|globalVariables)\b/i.freeze
 
 def ink_global_value_type(v)
   case v
@@ -3768,7 +3771,7 @@ def check_ink_global_collisions(json_data, repo_root)
       next if assigns.empty?
       ack = line =~ %r{//.*#{INK_GLOBAL_ACK_RE}}
       k = i - 1
-      while !ack && k >= 0 && lines[k] =~ %r{^\s*(?:VAR\b|//)}
+      while !ack && k >= 0 && lines[k] =~ %r{^\s*//}
         ack = true if lines[k] =~ %r{^\s*//.*#{INK_GLOBAL_ACK_RE}}
         k -= 1
       end
@@ -3782,7 +3785,7 @@ def check_ink_global_collisions(json_data, repo_root)
                 "and is also scenario global '#{name}', which #{others.join(' and ')} also set#{others.size == 1 ? 's' : ''}. " \
                 "The engine syncs an ink VAR to the global of the same name, so if this ink means its own flag the two " \
                 "overwrite each other (m03 guard_hostile, P1-38). Rename the ink VAR if it is a different thing; if it is " \
-                "the scenario's global, say so in a comment above the VAR (e.g. \"// Synced scenario global\")."
+                "the scenario's global, say so in a comment on the VAR's line or directly above it (e.g. \"// Synced scenario global\")."
     end
   end
   issues
