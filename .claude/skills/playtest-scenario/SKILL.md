@@ -126,7 +126,7 @@ Each of these cost at least one pass-4 run (reports in `tools/playtest/m0*-pass4
 - **RFID flipper menu items aren't in the `mg` control list.** Click the visible `.flipper-menu-item` through the DOM (an `eval` that finds it by its text) instead of `mg clickControl`.
 - **Never decode in a shell.** Pipes (`base64 -d | tr …`) were refused by the permission layer. Either give the tester the decoded values and log them as "exercised, not earned", or decode with the in-game CyberChef, which can be driven through its iframe URL hash (recipe and input in the `#recipe=…&input=…` fragment).
 - **To reload, `eval` `location.reload()`, then press Enter on the title screen.**
-- **The harness `openTasks` lists locked tasks too.** The on-screen objectives panel hides them, so don't report a task as visible to the player because `openTasks` has it.
+- **`openTasks` matches the on-screen panel** (fixed October 2026): locked tasks are listed separately in `lockedTasks`, and skipped tasks in neither. Older reports that list a task in `openTasks` before it could be seen predate this fix.
 - **A tester's Write to the scratchpad may be refused.** Ask for the whole report in the tester's final message, not only in a file.
 
 ## Token discipline

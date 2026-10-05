@@ -49,6 +49,7 @@ const { chromium } = require('playwright');
 const readline = require('readline');
 const fs = require('fs');
 const path = require('path');
+const { briefTasks } = require('./brief-tasks');
 
 const args = process.argv.slice(2);
 const argv = {};
@@ -187,12 +188,8 @@ function substituteFlags(node, at) {
 
   /** Compact state: everything needed for one decision, without the bulk. */
   async function brief() {
-    return page.evaluate(() => {
+    const { _aims, ...b } = await page.evaluate(() => {
       const s = window.__test.getState();
-      const tasks = s.objectives.aims
-        .filter(a => a.status === 'active')
-        .flatMap(a => a.tasks.filter(t => t.status !== 'completed')
-          .map(t => `${t.id}${t.optional ? ' (opt)' : ''}`));
       return {
         room: s.room,
         player: { x: Math.round(s.player.x), y: Math.round(s.player.y), hp: s.player.hp },
@@ -213,10 +210,14 @@ function substituteFlags(node, at) {
                                      d: e.distance, inRange: e.inRange,
                                      locked: e.state.locked ?? undefined })),
         inventory: s.inventory.map(i => i.name),
-        openTasks: tasks,
+        _aims: s.objectives.aims.map(a => ({ status: a.status,
+          tasks: a.tasks.map(t => ({ id: t.id, status: t.status, optional: t.optional })) })),
         recentGlobals: Object.entries(s.globals).filter(([, v]) => v === true).map(([k]) => k).slice(-12)
       };
     });
+    // openTasks matches the objectives panel (locked tasks hidden); see brief-tasks.js
+    const { recentGlobals, ...rest } = b;
+    return { ...rest, ...briefTasks(_aims), recentGlobals };
   }
 
   /**

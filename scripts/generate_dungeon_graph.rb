@@ -423,13 +423,16 @@ aim_nodes    = {}
 aim_edges    = []
 aim_edge_set = Set.new
 
-(scenario['objectives'] || []).each do |aim|
+(scenario['objectives'] || []).each_with_index do |aim, idx|
   aid = "aim_#{nid(aim['aimId'])}"
+  tasks = aim['tasks'] || []
   aim_nodes[aid] = {
     label:    aim['title'],
     klass:    'aim',
     optional: aim['optional'] == true,
-    order:    aim['order'] || 0
+    order:    aim['order'] || 0,
+    idx:      idx,
+    bonus:    aim['optional'] == true || (tasks.any? && tasks.all? { |t| t['optional'] })
   }
 end
 
@@ -473,6 +476,247 @@ end
     end
   end
 end
+
+# ---------------------------------------------------------------------------
+# Story gates: aims held back by unlockCondition.globalVariable, and aims
+# opened by an NPC eventMapping's unlockAim. Each one is traced back to what
+# sets the global (a task's onComplete.setGlobal, an eventMapping's setGlobal,
+# an ink #set_global tag or `~ g = ...` on a synced VAR, an object's setGlobal)
+# and through that setter's trigger (objective_task_completed:<task>,
+# objective_aim_completed:<aim>, global_variable_changed:<g>, the scene that
+# opens a conversation_closed:<npc>, positive globalVars tests in its
+# condition) until it reaches an aim. The edge runs from that aim to the
+# gated aim, labelled with the global. A setter that reaches no aim (a talk
+# the player starts, a room entry) gets an action node of its own.
+# ---------------------------------------------------------------------------
+module StoryGates
+  module_function
+
+  # [{ npc:, mapping: }] for every NPC eventMapping in the scenario
+  def mappings(scenario)
+    npcs = (scenario['npcs'] || []) + (scenario['rooms'] || {}).values.flat_map { |r| r['npcs'] || [] }
+    npcs.flat_map { |n| (n['eventMappings'] || []).map { |m| { npc: n, mapping: m } } }
+  end
+
+  def npcs_by_id(scenario)
+    ((scenario['npcs'] || []) + (scenario['rooms'] || {}).values.flat_map { |r| r['npcs'] || [] }).to_h { |n| [n['id'], n] }
+  end
+
+  # Globals an ink file sets: #set_global:<g>:<v> tags, and ~ g = <v> on a VAR named like a scenario global
+  def ink_setters(ink_text, globals)
+    set = Set.new
+    ink_text.scan(/#\s*set_global\s*:\s*(\w+)\s*:\s*(\S+)/) { |g, v| set << g unless %w[false 0 ""].include?(v) }
+    ink_text.scan(/^\s*~\s*(\w+)\s*=\s*([^\n]+)/) do |g, v|
+      set << g if globals.key?(g) && v.strip !~ /\A(?:false|0|""|'')\s*(?:\/\/.*)?\z/
+    end
+    set
+  end
+
+  # Globals a condition string needs to be set (positive tests only: === true / === 'x' / === n)
+  def positive_condition_globals(cond)
+    return [] unless cond.is_a?(String)
+    cond.scan(/globalVars\.(\w+)\s*===?\s*(true|'[^']+'|"[^"]+"|[1-9]\d*)/).map(&:first).uniq
+  end
+end
+
+story_gate_setters = Hash.new { |h, k| h[k] = [] }  # global => [setter ref]
+task_aim = {}
+(scenario['objectives'] || []).each do |aim|
+  (aim['tasks'] || []).each do |task|
+    task_aim[task['taskId']] = aim['aimId'] if task['taskId']
+    (task.dig('onComplete', 'setGlobal') || {}).each do |g, v|
+      story_gate_setters[g] << { kind: :aim, aim: aim['aimId'] } if v
+    end
+  end
+end
+all_mappings = StoryGates.mappings(scenario)
+all_mappings.each do |e|
+  (e[:mapping]['setGlobal'] || {}).each do |g, v|
+    story_gate_setters[g] << { kind: :mapping, npc: e[:npc], mapping: e[:mapping] } if v && v != ''
+  end
+end
+npc_index = StoryGates.npcs_by_id(scenario)
+globals   = scenario['globalVariables'] || {}
+ink_dir   = File.join(File.dirname(SCENARIO_FILE), 'ink')
+npc_index.each_value do |npc|
+  next unless npc['storyPath']
+  ink_path = File.join(ink_dir, File.basename(npc['storyPath'].to_s).sub(/\.json\z/, '.ink'))
+  next unless File.exist?(ink_path)
+  StoryGates.ink_setters(File.read(ink_path, encoding: 'UTF-8'), globals).each do |g|
+    story_gate_setters[g] << { kind: :talk, npc: npc }
+  end
+end
+walk_obj_setters = lambda do |objs, room_id|
+  (objs || []).each do |o|
+    found = []
+    scan = lambda do |x|
+      case x
+      when Hash
+        (x['setGlobal'].is_a?(Hash) ? x['setGlobal'] : {}).each { |g, v| found << g if v && v != '' }
+        x.each { |k, v| scan.call(v) unless k == 'contents' }
+      when Array then x.each { |v| scan.call(v) }
+      end
+    end
+    scan.call(o)
+    found.uniq.each { |g| story_gate_setters[g] << { kind: :object, object: o, room: room_id } }
+    walk_obj_setters.call(o['contents'], room_id)
+  end
+end
+rooms.each { |rid, r| walk_obj_setters.call(r['objects'], rid) }
+
+# Resolve a setter, an event pattern or a conversation to the aims it follows.
+# Returns [[aim_ids], [root event labels]].
+story_gate_resolve = nil
+resolve_pattern = lambda do |pattern, condition, npc, depth, seen|
+  aims, roots = [], []
+  kind, arg = pattern.to_s.split(':', 2)
+  return [[], []] if kind == 'game_loaded' # a reload backstop re-applies a gate; it doesn't open it
+  case kind
+  when 'objective_task_completed' then aims << task_aim[arg] if task_aim[arg]
+  when 'objective_aim_completed'  then aims << arg
+  when 'global_variable_changed'
+    (story_gate_setters[arg] || []).each do |s|
+      a, r = story_gate_resolve.call(s, depth + 1, seen)
+      aims.concat(a); roots.concat(r)
+    end
+  when 'conversation_closed'
+    target = npc_index[arg]
+    if target
+      a, r = story_gate_resolve.call({ kind: :talk, npc: target }, depth + 1, seen)
+      aims.concat(a); roots.concat(r)
+    end
+  when 'room_entered'
+    roots << "Enter #{room_label(arg, rooms[arg] || {})}"
+  when '', nil
+    nil
+  else
+    who  = npc_index[arg] && (npc_index[arg]['displayName'] || arg)
+    verb = { 'npc_ko' => 'Knock out', 'item_picked_up' => 'Pick up', 'object_interacted' => 'Use',
+             'card_cloned' => 'Clone card', 'npc_attacked' => 'Attack', 'fingerprint_collected' => 'Lift print',
+             'fingerprint_identified' => 'Identify print', 'door_unlocked' => 'Unlock' }[kind]
+    roots << (verb ? [verb, who || arg.to_s.tr('_', ' ')].join(' ').strip : pattern.to_s.tr('_:', '  ').strip)
+  end
+  StoryGates.positive_condition_globals(condition).each do |g|
+    (story_gate_setters[g] || []).each do |s|
+      a, = story_gate_resolve.call(s, depth + 1, seen)
+      aims.concat(a)
+    end
+  end
+  [aims.compact.uniq, roots.uniq]
+end
+story_gate_resolve = lambda do |setter, depth, seen|
+  key = [setter[:kind], setter[:aim], setter[:npc]&.dig('id'), setter[:mapping]&.object_id, setter[:object]&.object_id]
+  return [[], []] if depth > 6 || seen.include?(key)
+  seen = seen | [key]
+  case setter[:kind]
+  when :aim then [[setter[:aim]], []]
+  when :mapping
+    resolve_pattern.call(setter[:mapping]['eventPattern'], setter[:mapping]['condition'], setter[:npc], depth, seen)
+  when :talk
+    # a scene the engine opens itself (a mapping that starts its conversation) follows that mapping's trigger;
+    # otherwise the player starts it
+    npc = setter[:npc]
+    openers = (npc['eventMappings'] || []).select { |m| m['conversationMode'] || m['targetKnot'] }
+    if openers.empty?
+      [[], ["Talk to #{npc['displayName'] || npc['id']}"]]
+    else
+      aims, roots = [], []
+      openers.each do |m|
+        a, r = resolve_pattern.call(m['eventPattern'], m['condition'], npc, depth, seen)
+        aims.concat(a); roots.concat(r)
+      end
+      [aims.uniq, roots.uniq]
+    end
+  when :object
+    o = setter[:object]
+    [[], ["Use #{o['name'] || o['id']}"]]
+  else [[], []]
+  end
+end
+
+aim_reaches = lambda do |from, to|
+  stack, seen = [from], Set.new
+  until stack.empty?
+    n = stack.pop
+    return true if n == to
+    next if seen.include?(n)
+    seen << n
+    aim_edges.each { |e| stack << e[:to] if e[:from] == n }
+  end
+  false
+end
+add_story_gate_edge = lambda do |from, to, label|
+  return if from == to || !aim_nodes.key?(from) || !aim_nodes.key?(to)
+  existing = aim_edges.find { |e| e[:from] == from && e[:to] == to }
+  if existing
+    existing[:gates] << label if existing[:story_gate]
+    return
+  end
+  return if aim_reaches.call(to, from)  # would close a cycle
+  aim_edges << { from: from, to: to, dashed: true, story_gate: true, gates: [label] }
+  aim_edge_set << "#{from}|#{to}"
+end
+story_gate_count = 0
+story_gate_roots = []  # [root label, aim node, label]: drawn only for aims nothing else leads to
+link_gate = lambda do |aims, roots, to_aid, label|
+  aims.each { |a| add_story_gate_edge.call("aim_#{nid(a)}", to_aid, label) }
+  roots.each { |r| story_gate_roots << [r, to_aid, label] } if aims.empty?
+end
+
+(scenario['objectives'] || []).each do |aim|
+  g = aim.dig('unlockCondition', 'globalVariable')
+  next unless g
+  aid = "aim_#{nid(aim['aimId'])}"
+  story_gate_count += 1
+  aims, roots = [], []
+  (story_gate_setters[g] || []).each do |s|
+    a, r = story_gate_resolve.call(s, 0, [])
+    aims.concat(a); roots.concat(r)
+  end
+  link_gate.call(aims.uniq - [aim['aimId']], roots.uniq, aid, g)
+end
+all_mappings.each do |e|
+  next unless (ua = e[:mapping]['unlockAim'])
+  aims, roots = resolve_pattern.call(e[:mapping]['eventPattern'], e[:mapping]['condition'], e[:npc], 0, [])
+  Array(ua).each do |target|
+    next unless aim_nodes.key?("aim_#{nid(target)}")
+    link_gate.call(aims - [target], roots, "aim_#{nid(target)}", 'unlockAim')
+  end
+end
+
+story_gate_roots.each do |r, to_aid, label|
+  next if aim_edges.any? { |e| e[:to] == to_aid && !e[:root] }
+  rid = "story_#{nid(r)}"
+  aim_nodes[rid] ||= { label: r, klass: 'action', optional: false }
+  add_story_gate_edge.call(rid, to_aid, label)
+  aim_edges.last[:root] = true if aim_edges.last && aim_edges.last[:from] == rid
+end
+
+# Label each story-gate edge with its globals (just "unlockAim" when a mapping opens the aim directly),
+# then drop a story-gate edge u->v when another path already leads from u to v (transitive reduction),
+# so an aim gated on a late global isn't also drawn from every aim before it.
+aim_edges.select { |e| e[:story_gate] }.each do |e|
+  named = e[:gates].uniq - ['unlockAim']
+  e[:label] = named.empty? ? 'unlockAim' : named.join(', ')
+end
+aim_edges.select { |e| e[:story_gate] }.each do |e|
+  others = aim_edges.reject { |x| x.equal?(e) }
+  stack  = others.select { |x| x[:from] == e[:from] }.map { |x| x[:to] }
+  seen   = Set.new
+  redundant = false
+  until stack.empty?
+    n = stack.pop
+    next if seen.include?(n)
+    seen << n
+    if n == e[:to] then redundant = true; break; end
+    others.each { |x| stack << x[:to] if x[:from] == n }
+  end
+  if redundant
+    aim_edges.delete_if { |x| x.equal?(e) }
+    aim_edge_set.delete("#{e[:from]}|#{e[:to]}")
+  end
+end
+aim_edges.each { |e| e.delete(:gates); e.delete(:story_gate); e.delete(:root) }
 
 # ---------------------------------------------------------------------------
 # Integrated graph: puzzle + aims + bridge edges
@@ -581,7 +825,15 @@ def longest_path_in_dag(nodes, edges)
     end
   end
 
-  sink = nodes.key?('aim_close_the_case') ? 'aim_close_the_case' : dist.max_by { |_, v| v }&.first
+  # The sink is the furthest aim (the first one found on a tie); bonus aims (every task optional) and
+  # story-gate action nodes only when nothing else is reachable.
+  sink = if nodes.key?('aim_close_the_case')
+           'aim_close_the_case'
+         else
+           main = dist.keys.select { |id| nodes.dig(id, :klass) != 'action' && !nodes.dig(id, :bonus) }
+           pool = main.any? ? main : dist.keys
+           pool.max_by { |id| dist[id] }
+         end
   path = []
   n    = sink
   while n
