@@ -61,7 +61,6 @@ VAR topic_patch_view = false
     ~ marcus_called = true
     ~ marcus_webb_contacted = true
     #set_global:marcus_webb_contacted:true
-    Webb.
     Helen said you'd be in touch. Whitworth's on leave, so it's me and Helen this morning. What have you got?
     -> first_call
 }
@@ -69,11 +68,11 @@ VAR topic_patch_view = false
 
 === first_call ===
 + { anomaly_detected and not facility_evacuated } [The dial at Rack A2 has hit fifty-one. The HMI says twenty-eight.]
-    Fifty-one. Say that again.
+    Fifty-one? On the dial?
     That dial isn't on any network. If it says fifty-one, something's feeding SCADA a story.
     -> first_call_next
 + { historian_flatline_found and not facility_evacuated } [The historian's been flat at twenty-eight since 23:12.]
-    Dead flat? Nothing real does that. Somebody's writing that value.
+    Seven hours without a flicker? That's no sensor fault. That's someone on our network.
     -> first_call_next
 + { facility_evacuated } [Hall 1's on fire. Helen got everyone out.]
     I've heard from Helen. The hall's the fire service's. Whoever did this is still on our network.
@@ -214,7 +213,7 @@ Locked on the domain when he left. Still alive on the jump server, with its defa
 Then message Tom at CastleTech for the enterprise side. I'll tell him it's coming from me.
 ~ network_isolation_authorised = true
 #set_global:network_isolation_authorised:true
-I'm ringing the NCSC too. They help. They don't regulate.
+I'm ringing the NCSC too. They'll send someone to help.
 -> hub
 
 
@@ -242,7 +241,7 @@ Shut SCADA down and Hall 2 runs on local BMS only. Somebody walks it every hour 
     That stops everything. It also puts someone in Hall 2 every hour. I'll ring the shift in.
     -> hub
 + [Let me think.]
-    Don't think too long.
+    Not too long. Those cells won't wait.
     -> hub
 
 
@@ -253,7 +252,8 @@ Shut SCADA down and Hall 2 runs on local BMS only. Somebody walks it every hour 
 === nis_scene ===
 { not nis_form_read:
     We're a designated OES, so it goes to the competent authority. Ofgem, jointly with DESNZ. The NCSC get told alongside.
-    Without undue delay, seventy-two hours at the outside. The form's on the clipboard by the workshop door. Read it, then message me.
+    Without undue delay, seventy-two hours at the outside, from when we became aware. For us, that's this morning.
+    The form's on the clipboard by the workshop door. Read it, then message me.
     -> hub
 }
 Before I sign it. Do we send what we've got, or wait till we know more?
@@ -309,14 +309,13 @@ And I'll tell NESO. That overcharge put a blip on the local feeder's frequency l
 I have. Twice. Quarterly risk reports. Both times the board noted it and moved on.
 The jump server was meant to be one-way. Two-way RDP for commissioning, never reverted. The historian's Modbus proxy, same story.
 There's meant to be a DMZ between level four and level three. There is one. It just lets RDP through both ways.
-Accepting a risk's fine. It's meant to come back on a date. Ours never did.
 -> boundary_more
 
 === boundary_more ===
 + { not topic_why_not_fixed } [Why wasn't it fixed?]
     ~ topic_why_not_fixed = true
     Cost and downtime. Fixing the jump server means SCADA down for a weekend. Nobody wanted to sign that.
-    A commissioning link nobody closes. A patch that's always next quarter. I've seen it everywhere I've worked.
+    I've seen it at every site I've worked. Nobody gets thanked for closing a link that still works.
     -> boundary_more
 + { not marcus_airgap_view_heard } [What should the safety system's network look like?]
     ~ marcus_airgap_view_heard = true
@@ -375,6 +374,9 @@ A risk accepted with a control that isn't there? That's risk pretence.
 - not nis_notified:
     Contained. Now the notification. Read the form and message me.
 - else:
-    Contained and notified. The NCSC are sending someone. Talk to them when they arrive.
+    Contained and notified. Priya from the NCSC is with you. Go through it with her.
+}
+{ esd_activated and network_isolated and isolation_scope == "watch" and not facility_evacuated:
+    Helen's calling it contained. With the historian still connected, I'd call it watched.
 }
 -> hub
