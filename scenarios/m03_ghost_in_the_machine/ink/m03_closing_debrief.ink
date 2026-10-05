@@ -367,8 +367,12 @@ Agent HaX: Their records sat on the one box they knew was broken: a distcc daemo
 { handler_trust >= 50 and (receptionist_ko or guard_knocked_out or danny_ko or danny_fate == "ko"):
     Agent HaX: It got done. Not cleanly. Some people who never signed up for this will remember last night. We'll still need you soon.
 - else:
-    { handler_trust >= 70:
+    // Pass 5 round 2: "saw the people in it" only for a player who met Danny.
+    { handler_trust >= 70 and danny_fate != "":
         Agent HaX: You did the technical work and still saw the people in it. Keep doing both.
+    }
+    { handler_trust >= 70 and danny_fate == "":
+        Agent HaX: Good work last night. We'll need you soon.
     }
     { (handler_trust >= 50) && (handler_trust < 70):
         Agent HaX: Clean enough. We'll need you soon.

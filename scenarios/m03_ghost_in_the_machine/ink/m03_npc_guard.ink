@@ -441,8 +441,8 @@ Security Guard: Oi. Away from the door. Now.
 === lockpick_still_here ===
 #speaker:npc
 #display:guard-suspicious
-Security Guard: I'm still stood here, you know. Away from the door.
-Narrator: He'll walk on in a moment. Step back, wait until his back's turned, then try again.
+Security Guard: I can still see you, you know. Away from the door.
+Narrator: Step back from the door. Wait until his back's turned, then try again.
 + [Step away from the door.]
     ~ idle_quiet = true
     #exit_conversation

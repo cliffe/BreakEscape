@@ -85,7 +85,8 @@ VAR hint_guard_hostile_given = false
 
 === start ===
 #speaker:agent_0x99
-{player_name()}. What do you need?
+// Pass 5 round 2: a greeting that reads right above or below the first text.
+On the line, {player_name()}.
 -> hub
 
 // Pass 5 (P1-11): m02's progress-gated hub. Topics appear only when they're

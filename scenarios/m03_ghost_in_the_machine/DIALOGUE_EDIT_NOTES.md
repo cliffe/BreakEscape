@@ -238,3 +238,13 @@ Voiced lines changed. New user rule: no printed variables in voiced lines (the p
 - guard:445 `He isn't going anywhere while you're in front of him. Come back when his back's turned.` → `He'll walk on in a moment. Step back, wait until his back's turned, then try again.` (R1-21)
 
 Text only (not voiced): HaX phone 483 dash removed, 554 new KO-route line; Danny choice label 66 dash removed; receptionist choice 114 added (R1-16). HaX phone lines keep `{player_name()}` (texts, allowed). Stage cues (R1-5): the engine prints them as written in every mission (m02 too; dialoguelint says so), so no change.
+
+## Pass 5 playtest round 2 (2026-10-05)
+
+Voiced:
+- guard:444 `I'm still stood here, you know. Away from the door.` → `I can still see you, you know. Away from the door.`
+- guard:445 (narrator) `He'll walk on in a moment. Step back, wait until his back's turned, then try again.` → `Step back from the door. Wait until his back's turned, then try again.`
+- receptionist (clone_badge_debrief, new) `Sorry, I was miles away. Where were we?` (then the hub opens without "Anything else, love?")
+- debrief (final_assessment, new) `Good work last night. We'll need you soon.` for a high-trust player who never met Danny; "saw the people in it" now needs `danny_fate != ""`.
+
+Text only: receptionist clone choice (both places) → `[Lean in by her lanyard and let the cloner read her badge.]`; HaX phone start `{player_name()}. What do you need?` → `On the line, {player_name()}.`
