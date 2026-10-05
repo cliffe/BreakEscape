@@ -525,6 +525,23 @@ module BreakEscape
       assert_equal ['hax'], game.reload.player_state['phoneState'].keys
     end
 
+    test 'a deferred global keeps its preload-time base, only for globals still deferred' do
+      game = create_game
+      put sync_state_game_url(game),
+          params: { phoneState: { 'hax' => { 'history' => [{ 'type' => 'npc', 'text' => 'Intro', 'preloaded' => true }],
+                                             'deferredGlobals' => { 'met_hax' => true, 'hax_mood' => 'calm' },
+                                             'deferredGlobalsBase' => { 'met_hax' => false, 'hax_mood' => nil,
+                                                                        'stray' => 1, 'bad' => { 'x' => 1 } } },
+                                  'solo' => { 'history' => [{ 'type' => 'npc', 'text' => 'Hi' }],
+                                              'deferredGlobalsBase' => { 'orphan' => false } } } },
+          as: :json
+      assert_response :success
+
+      saved = scenario_json(game)['savedPhoneState']
+      assert_equal({ 'met_hax' => false, 'hax_mood' => nil }, saved['hax']['deferredGlobalsBase'])
+      assert_nil saved['solo']['deferredGlobalsBase'], 'no base without deferred globals'
+    end
+
     test 'pending timed texts replace the saved set and come back on load' do
       game = create_game
       put sync_state_game_url(game),

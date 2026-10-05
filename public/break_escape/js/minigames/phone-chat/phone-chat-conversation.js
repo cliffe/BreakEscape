@@ -678,8 +678,10 @@ export default class PhoneChatConversation {
      *
      * A dry run: the global observer is off, and the intro's synced-global writes and
      * game-action tags are kept on the NPC (deferredGlobals / deferredTags) to apply
-     * when the player first opens the thread. Runs the whole opening up to its choices
-     * (or end), adds every line as a preloaded message, and saves the story position.
+     * when the player first opens the thread; a deferred global is applied only if
+     * nothing has set it since (deferredGlobalsBase holds its value at preload).
+     * Runs the whole opening up to its choices (or end), adds every line as a
+     * preloaded message, and saves the story position.
      * Only for a contact with no thread yet. Records the knot it ran in
      * npc.preloadedKnot, so phone-chat can tell an explicit start at that same knot
      * (a pickup mapping's targetKnot) from a new one, and not play it a second time.
@@ -777,21 +779,79 @@ export default class PhoneChatConversation {
 
         // The observer was off, so synced globals the intro assigned (~ x = true) were
         // not written. Keep them, and the tags, for when the player first opens the chat.
+        // Each is kept with the value the global held now (deferredGlobalsBase): if
+        // something else sets it before the chat is opened, the newer value stands.
         const preloadStory = tempConversation.engine?.story;
         const globals = window.gameState?.globalVariables;
+        const stateManager = window.npcConversationStateManager;
         if (preloadStory?.variablesState && globals) {
             const changed = {};
+            const base = {};
             Object.keys(globals).forEach(name => {
+                if (stateManager?.isGlobalVariable && !stateManager.isGlobalVariable(name)) return;
                 if (!preloadStory.variablesState.GlobalVariableExistsWithName(name)) return;
                 const value = preloadStory.variablesState[name];
-                if (value !== globals[name]) changed[name] = value;
+                if (value !== globals[name]) {
+                    changed[name] = value;
+                    base[name] = globals[name] === undefined ? null : globals[name];
+                }
             });
-            if (Object.keys(changed).length > 0) npc.deferredGlobals = changed;
+            if (Object.keys(changed).length > 0) {
+                npc.deferredGlobals = changed;
+                npc.deferredGlobalsBase = base;
+            }
         }
         if (allTags.length > 0) npc.deferredTags = allTags;
 
         console.log(`📝 Preloaded ${allMessages.length} intro message(s) for ${npc.id}`);
         return allMessages.length;
+    }
+
+    /**
+     * Apply a preload's deferred globals when the thread is first opened (the
+     * phone-chat minigame). Each is written only if the global still holds the value
+     * it had at preload (npc.deferredGlobalsBase): a global something else has set
+     * since keeps that newer value. A deferred value the global already holds is not
+     * a change and emits nothing. A deferral saved without a base (before the base
+     * was recorded) is applied as it was. Clears both fields.
+     * @param {Object} npc - the NPC entry
+     * @returns {{ applied: string[], kept: string[] }} names written, names left alone
+     */
+    static applyDeferredGlobals(npc) {
+        const out = { applied: [], kept: [] };
+        const deferred = npc?.deferredGlobals;
+        const base = npc?.deferredGlobalsBase;
+        if (npc) {
+            npc.deferredGlobals = null;
+            npc.deferredGlobalsBase = null;
+        }
+        const globals = (typeof window !== 'undefined') && window.gameState?.globalVariables;
+        if (!deferred || typeof deferred !== 'object' || !globals) return out;
+        const stateManager = window.npcConversationStateManager;
+        const norm = v => (v === undefined ? null : v);
+        for (const [name, value] of Object.entries(deferred)) {
+            if (stateManager?.isGlobalVariable && !stateManager.isGlobalVariable(name)) {
+                out.kept.push(name);
+                continue;
+            }
+            const current = globals[name];
+            const hasBase = !!base && typeof base === 'object' &&
+                Object.prototype.hasOwnProperty.call(base, name);
+            if (hasBase && norm(current) !== norm(base[name])) {
+                console.log(`📱 Deferred ${name} = ${value} from ${npc.id}'s intro not applied: set to ${current} since`);
+                out.kept.push(name);
+                continue;
+            }
+            if (current === value) {
+                out.kept.push(name);
+                continue;
+            }
+            globals[name] = value;
+            stateManager?.broadcastGlobalVariableChange?.(name, value, npc.id);
+            window.eventDispatcher?.emit(`global_variable_changed:${name}`, { name, value, oldValue: current });
+            out.applied.push(name);
+        }
+        return out;
     }
 
     /**

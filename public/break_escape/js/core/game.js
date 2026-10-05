@@ -913,6 +913,12 @@ export async function create() {
         window.gameState.globalVariables = {};
     }
 
+    // The scenario's declared globals are the ones that sync into ink stories
+    // (npc-conversation-state.js isGlobalVariable). Recorded before the saved
+    // globals are merged: a save can hold names the scenario no longer declares,
+    // which stay in gameState but don't sync. Nothing is pruned from the save.
+    window.npcConversationStateManager?.setDeclaredGlobals?.(Object.keys(gameScenario.globalVariables || {}));
+
     // Merge in server-saved global variables (from a resumed session).
     // Saved values take precedence over scenario defaults so that persistent
     // flags (e.g. briefing_played) survive page reloads.

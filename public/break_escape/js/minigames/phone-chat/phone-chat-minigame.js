@@ -461,13 +461,9 @@ export class PhoneChatMinigame extends MinigameScene {
             // player opened the thread. Apply them first: the restored story already
             // holds them, so syncing the older values over it read as a change and
             // re-ran the intro knot, showing its opening a second time (E1, m02 Ghost).
+            // A deferred global is applied only if nothing has set it since the preload.
             if (npc.deferredGlobals) {
-                Object.entries(npc.deferredGlobals).forEach(([name, value]) => {
-                    window.gameState.globalVariables[name] = value;
-                    window.npcConversationStateManager?.broadcastGlobalVariableChange(name, value, npc.id);
-                    window.eventDispatcher?.emit(`global_variable_changed:${name}`, { name, value });
-                });
-                npc.deferredGlobals = null;
+                PhoneChatConversation.applyDeferredGlobals(npc);
             }
 
             // Sync current globals into the restored story. If that changed a global the
@@ -521,6 +517,7 @@ export class PhoneChatMinigame extends MinigameScene {
             // This run plays (and applies the tags and globals of) the knot itself, so anything a
             // preload deferred for it would be a second copy
             npc.deferredGlobals = null;
+            npc.deferredGlobalsBase = null;
             npc.deferredTags = null;
             
             // Continue story to get fresh content and choices

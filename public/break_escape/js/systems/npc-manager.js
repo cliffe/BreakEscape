@@ -105,7 +105,7 @@ export default class NPCManager {
   // Fields the chat minigames write onto an NPC entry at runtime (phone-chat keeps
   // its story position in storyState). Carried over a re-registration, and the
   // phone ones are saved to the server (exportPhoneState).
-  static CONVERSATION_RUNTIME_FIELDS = ['storyState', 'currentKnot', 'lastEnteredKnot', 'preloadedKnot', 'deferredTags', 'deferredGlobals'];
+  static CONVERSATION_RUNTIME_FIELDS = ['storyState', 'currentKnot', 'lastEnteredKnot', 'preloadedKnot', 'deferredTags', 'deferredGlobals', 'deferredGlobalsBase'];
 
   // Limits on what a phone thread saves (exportPhoneState)
   static PHONE_HISTORY_MAX_MESSAGES = 150;
@@ -1801,11 +1801,20 @@ export default class NPCManager {
       entry.deferredTags = npc.deferredTags.filter(t => typeof t === 'string');
     }
     if (npc.deferredGlobals && typeof npc.deferredGlobals === 'object') {
+      const scalar = v => v === null || ['string', 'number', 'boolean'].includes(typeof v);
       const globals = {};
       for (const [k, v] of Object.entries(npc.deferredGlobals)) {
-        if (v === null || ['string', 'number', 'boolean'].includes(typeof v)) globals[k] = v;
+        if (scalar(v)) globals[k] = v;
       }
-      if (Object.keys(globals).length > 0) entry.deferredGlobals = globals;
+      if (Object.keys(globals).length > 0) {
+        entry.deferredGlobals = globals;
+        // Each one's value at preload: applied on first open only if still unchanged
+        const base = {};
+        for (const [k, v] of Object.entries(npc.deferredGlobalsBase || {})) {
+          if (k in globals && scalar(v)) base[k] = v;
+        }
+        if (Object.keys(base).length > 0) entry.deferredGlobalsBase = base;
+      }
     }
     return entry;
   }
@@ -1865,6 +1874,9 @@ export default class NPCManager {
     }
     if (saved.deferredGlobals && typeof saved.deferredGlobals === 'object') {
       npc.deferredGlobals = { ...saved.deferredGlobals };
+      if (saved.deferredGlobalsBase && typeof saved.deferredGlobalsBase === 'object') {
+        npc.deferredGlobalsBase = { ...saved.deferredGlobalsBase };
+      }
     }
 
     if (typeof window !== 'undefined' && window.updatePhoneBadge && npc.phoneId) {

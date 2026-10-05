@@ -159,10 +159,10 @@ test('first open after a preload: deferred globals applied first, so the intro i
 
 test('phone-chat applies deferred globals before the reopen sync', () => {
     const src = readFileSync(join(js, 'minigames/phone-chat/phone-chat-minigame.js'), 'utf8');
-    const apply = src.indexOf('Object.entries(npc.deferredGlobals)');
+    const apply = src.indexOf('PhoneChatConversation.applyDeferredGlobals(npc)');
     const reopen = src.indexOf('this.conversation.reopenWithCurrentGlobals(');
     assert.ok(apply > 0 && apply < reopen);
-    assert.equal(src.split('Object.entries(npc.deferredGlobals)').length, 2, 'applied in one place');
+    assert.equal(src.split('PhoneChatConversation.applyDeferredGlobals(npc)').length, 2, 'applied in one place');
 });
 
 // ---------------------------------------------------------------- E6
