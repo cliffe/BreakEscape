@@ -76,8 +76,10 @@ export class GameClock {
     }
     const total = this.start.seconds + Math.floor(atElapsedMs / 1000);
     const dayOffset = Math.floor(total / 86400);
-    const inDay = total % 86400;
-    const day = this.start.dayIndex === null ? '' : WEEKDAYS[(this.start.dayIndex + dayOffset) % 7];
+    // A time before the game started (a phone thread preloaded "an hour ago") wraps
+    // back into the previous day rather than going negative
+    const inDay = ((total % 86400) + 86400) % 86400;
+    const day = this.start.dayIndex === null ? '' : WEEKDAYS[(((this.start.dayIndex + dayOffset) % 7) + 7) % 7];
     return { day, hours: Math.floor(inDay / 3600), minutes: Math.floor((inDay % 3600) / 60), seconds: inDay % 60 };
   }
 
@@ -107,6 +109,28 @@ export function currentClockText(withSeconds = false) {
   const d = new Date();
   const hm = `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
   return withSeconds ? `${hm}:${pad2(d.getSeconds())}` : hm;
+}
+
+/**
+ * The time shown on a phone message: when it arrived, not when the thread was opened.
+ * With an in-game clock (scenario.gameClock) that is the game time it arrived at
+ * (msg.gameTime, elapsed game ms stamped by NPCManager.addMessage; a message saved
+ * without one is placed by its wall timestamp). Without one it is the wall time it
+ * arrived (msg.timestamp), in the phone's usual "h:mm" form.
+ * @param {{timestamp?: number, gameTime?: number}} msg
+ * @param {GameClock|null} [clock] - defaults to window.gameClock
+ * @param {number} [now] - used when the message has no time at all
+ * @returns {string}
+ */
+export function messageClockText(msg, clock = (typeof window !== 'undefined' ? window.gameClock : null), now = Date.now()) {
+  const timestamp = Number.isFinite(msg?.timestamp) ? msg.timestamp : null;
+  if (clock?.configured) {
+    let at = Number.isFinite(msg?.gameTime) ? msg.gameTime : null;
+    if (at === null) at = timestamp !== null ? timestamp - clock.startTime : clock.elapsedMs(now);
+    return clock.formatClock(at);
+  }
+  const d = new Date(timestamp !== null ? timestamp : now);
+  return `${d.getHours() % 12 || 12}:${pad2(d.getMinutes())}`;
 }
 
 if (typeof window !== 'undefined') {

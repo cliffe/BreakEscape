@@ -1685,7 +1685,7 @@ module BreakEscape
     MAX_PHONE_HISTORY_MESSAGES = 150
     MAX_PHONE_MESSAGE_TEXT = 4000
     MAX_PHONE_STORY_STATE_BYTES = 60.kilobytes
-    PHONE_MESSAGE_KEYS = %w[type text timestamp read isBark timed preloaded].freeze
+    PHONE_MESSAGE_KEYS = %w[type text timestamp gameTime read isBark timed preloaded].freeze
 
     # Merge the client's phone threads, one entry per phone contact, each replacing
     # the saved one: the texts (with read state), the ink story position, and a
@@ -1720,7 +1720,8 @@ module BreakEscape
           case key
           when 'type' then value.length <= 20
           when 'text' then true
-          when 'timestamp' then value.is_a?(Numeric)
+          # gameTime: elapsed game ms when the text arrived (the time its bubble shows)
+          when 'timestamp', 'gameTime' then value.is_a?(Numeric)
           else value == true || value == false
           end
         end.merge('text' => msg['text'][0, MAX_PHONE_MESSAGE_TEXT])

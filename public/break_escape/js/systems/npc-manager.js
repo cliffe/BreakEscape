@@ -111,7 +111,9 @@ export default class NPCManager {
   static PHONE_HISTORY_MAX_MESSAGES = 150;
   static PHONE_MESSAGE_MAX_CHARS = 4000;
   static PHONE_STORY_STATE_MAX_CHARS = 60000;
-  static PHONE_MESSAGE_FIELDS = ['type', 'text', 'timestamp', 'read', 'isBark', 'timed', 'preloaded'];
+  // gameTime: elapsed game ms when the message arrived (window.gameClock), so its
+  // shown time stays put across reopen and reload (messageClockText in game-clock.js)
+  static PHONE_MESSAGE_FIELDS = ['type', 'text', 'timestamp', 'gameTime', 'read', 'isBark', 'timed', 'preloaded'];
 
   constructor(eventDispatcher, barkSystem = null) {
     this.eventDispatcher = eventDispatcher;
@@ -416,10 +418,12 @@ export default class NPCManager {
     if (!this.conversationHistory.has(npcId)) {
       this.conversationHistory.set(npcId, []);
     }
+    const timestamp = Date.now();
     this.conversationHistory.get(npcId).push({
       type,
       text,
-      timestamp: Date.now(),
+      timestamp,
+      ...this._gameTimeAt(timestamp),
       choiceText: null
     });
     this._log('debug', `Added ${type} message to ${npcId} history:`, text);
@@ -439,9 +443,21 @@ export default class NPCManager {
       read: type === 'player' || type === 'narrator', // Player and narration lines are automatically read
       ...metadata
     };
+    // Stamp the game time it arrived at (a backdated timestamp, e.g. a preload, is
+    // backdated in game time too), unless the caller gave one
+    if (!Number.isFinite(message.gameTime)) Object.assign(message, this._gameTimeAt(message.timestamp));
     if (type === 'player' || type === 'narrator') message.read = true;
     this.conversationHistory.get(npcId).push(message);
     this._log('debug', `Added ${type} message to ${npcId}:`, text);
+  }
+
+  /** { gameTime } for a wall-clock time, or {} when there's no game clock yet. */
+  _gameTimeAt(timestamp) {
+    const clock = typeof window !== 'undefined' ? window.gameClock : null;
+    if (!clock || typeof clock.elapsedMs !== 'function') return {};
+    const now = Date.now();
+    const at = Number.isFinite(timestamp) ? timestamp : now;
+    return { gameTime: clock.elapsedMs(now) - (now - at) };
   }
 
   // Get conversation history for an NPC
