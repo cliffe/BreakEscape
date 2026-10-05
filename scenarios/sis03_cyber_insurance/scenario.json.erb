@@ -530,8 +530,10 @@ cabinet_pin = 5857 # @random_pin
               "eventPattern": "global_variable_changed:attribution_brief_reviewed",
               "condition": "value === true",
               "onceOnly": true,
+              "_comment": "Fired by the NCSC brief minigame when the seal is broken (reviewedVar). The envelope's onRead never runs for type ncsc_brief, so ins008_assessed is set here.",
               "completeTask": "read_ncsc_brief",
               "unlockAim": "trent_water_assessment",
+              "setGlobal": { "ins008_assessed": true },
               "sendTimedMessage": {
                 "delay": 5000,
                 "message": "The NCSC brief flags Trent Water's cross-sector exposure. Robert Ngata's contact is in the brief — call him via the claims phone for the NCSC's position on third-party liability scope."
@@ -1124,7 +1126,7 @@ cabinet_pin = 5857 # @random_pin
           "sealedMessage": "You must review all three forensic evidence packets before accessing this brief. Read Exhibits A, B, and C in the Evidence Archive, then return here.",
           "openableReadyMessage": "All three forensic exhibits reviewed. You are authorised to open this brief.",
           "minigameData": {
-            "reviewedVar": "ncsc_brief_reviewed",
+            "reviewedVar": "attribution_brief_reviewed",
             "caseRef": "MC-2023-ALBE-007 &mdash; Albion Energy Storage Ltd",
             "openableStatusBadge": "AUTHORISED &mdash; FORENSIC EVIDENCE REVIEW COMPLETE",
             "briefTitle": "NCSC Technical Attribution Assessment",
