@@ -111,7 +111,7 @@ Receptionist: Is this your first time working with a Cyber Security firm?
     -> hub
 // Pass 5 (R1-16): a player who heard about the cloner in the briefing can lean in
 // on the first visit too, not only after reopening her hub.
-* {cloner_explained and not reception_badge_cloned} [Lean in to read the building directory.]
+* {cloner_explained and not reception_badge_cloned} [Lean in by her lanyard and let the cloner read her badge.]
     -> clone_badge_opportunity
 * [I should head to the conference room. Don't want to keep Victoria waiting.]
     Receptionist: Go on, then. Up the hallway, first door on the left.
@@ -146,7 +146,7 @@ Receptionist: Is this your first time working with a Cyber Security firm?
     -> ask_company_history
 + {mission_phase != "act2_infiltration" && receptionist_influence >= 15} [How's the building laid out?]
     -> ask_building_layout
-+ {mission_phase != "act2_infiltration" && badge_received && not reception_badge_cloned && (conference_reader_tried or cloner_explained)} [Lean in to read the building directory.]
++ {mission_phase != "act2_infiltration" && badge_received && not reception_badge_cloned && (conference_reader_tried or cloner_explained)} [Lean in by her lanyard and let the cloner read her badge.]
     -> clone_badge_opportunity
 + {mission_phase != "act2_infiltration"} [Thanks. I'll head through.]
     Receptionist: Go on, then. Shout if you need anything.
@@ -259,6 +259,10 @@ Narrator: She carries on straightening the sign-in sheet.
 #speaker:receptionist
 { reception_badge_cloned:
     Narrator: The badge is in the cloner.
+    // Pass 5 round 2: a beat before the hub, so "Anything else, love?" doesn't
+    // land straight after the clone.
+    Receptionist: Sorry, I was miles away. Where were we?
+    ~ hub_quiet = true
 - else:
     Narrator: The cloner didn't keep the read. You'll have to lean in again.
 }

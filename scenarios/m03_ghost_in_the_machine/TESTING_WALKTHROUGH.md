@@ -18,7 +18,7 @@
 1. **Reception (game load)** — Opening briefing cutscene (Agent HaX) plays once → `briefing_played` set (`skipIfGlobal`), `#start_gameplay`. Briefing is a question-hub: ask any/all topics, then "let's talk approach" → sets `player_approach` / `handler_trust`.
 2. **Reception — Company Founding Plaque** — Read → note **2010** (the root of the computer password `Sterling2010`; **not** the wall-safe PIN). Building Directory flags conference = RFID access. *Knowledge step; no task.*
 3. **Reception — Receptionist** — Sign in ("Thank you – sign in" / "Just sign quickly") → `#give_item:id_badge:visitor_badge`, `badge_received`.
-4. **Reception — Receptionist hub** — the clone choice **"[Lean in to read the building directory.]"** appears only once `conference_reader_tried` (you tapped the conference reader) or `cloner_explained` (you asked HaX about cloning, took the RFID guide, or heard the briefing clone topic) is set (pass 5, P2-16). It runs `clone_badge_opportunity` → `#clone_keycard:receptionist_badge`. **Save** the read: the `card_cloned` mapping (on the receptionist) sets `reception_badge_cloned` and completes **`clone_reception_badge`**. Closing the flipper before Save leaves the option on her hub for another try.
+4. **Reception — Receptionist hub** — the clone choice **"[Lean in by her lanyard and let the cloner read her badge.]"** appears only once `conference_reader_tried` (you tapped the conference reader) or `cloner_explained` (you asked HaX about cloning, took the RFID guide, or heard the briefing clone topic) is set (pass 5, P2-16). It runs `clone_badge_opportunity` → `#clone_keycard:receptionist_badge`. **Save** the read: the `card_cloned` mapping (on the receptionist) sets `reception_badge_cloned` and completes **`clone_reception_badge`**. Closing the flipper before Save leaves the option on her hub for another try.
    - *Common route*: most players meet the conference reader first (step 5), get the "needs a staff badge, use the cloner" text from HaX, then come back here.
    - *KO fallback*: `taskOnKO: clone_reception_badge`; the receptionist drops a physical **Staff Access Badge** keycard (`card_id: receptionist_badge`) that opens the conference door directly.
 5. **Main Hallway → Conference Room door (west)** — RFID lock (`requires: receptionist_badge`); emulate the cloned/looted badge → door opens.
@@ -120,7 +120,7 @@ Reconciliation is clean: every Puzzle Graph node maps to a walkthrough step (ser
 ## Testing Checklist
 - [ ] Opening briefing plays once; question-hub lets you read every topic; does not replay on resume
 - [ ] Founding plaque shows **2010**; root of `Sterling2010` only; the safe is `5829`
-- [ ] Receptionist hands over visitor badge; the clone choice "[Lean in to read the building directory.]" appears only after tapping the conference reader or asking HaX about cloning, and completes `clone_reception_badge`
+- [ ] Receptionist hands over visitor badge; the clone choice "[Lean in by her lanyard and let the cloner read her badge.]" appears only after tapping the conference reader or asking HaX about cloning, and completes `clone_reception_badge`
 - [ ] Conference door opens with the cloned badge **or** the looted physical keycard
 - [ ] Victoria `meet_victoria` completes on first talk; whiteboard route completes `clone_rfid_card`
 - [ ] Server room opens with the cloned card **or** looted keycard; HaX offers the recon/distcc/CyberChef guides (no guard cutscene here any more; the guard lives in the executive wing)
@@ -158,9 +158,9 @@ Reconciliation is clean: every Puzzle Graph node maps to a walkthrough step (ser
 - [ ] Recruited ending: "ZERO DAY SYNDICATE: COMPROMISED — from the inside"; debrief says "Zero Day doesn't know it's been read"
 - [ ] Never entering Sterling's office: no Perfect Stealth; HaX "you never gave him the chance"
 - [ ] Guard catches a pick: a warning conversation opens ("Oi. Away from the door."); a cover story or "Wrong door" de-escalates; only "Shove past him", standing your ground on a second catch, or a third catch starts a fight. In a fight he chases at 100 and hits for 10
-- [ ] (3b) Caught once, then try again from the same spot: "I'm still stood here, you know…", no second strike. Leave the corridor and come back: the next catch counts
+- [ ] (3b) Caught once, then try again from the same spot: "I can still see you, you know…", no second strike. Leave the corridor and come back: the next catch counts
 - [ ] (pass 5, R1-20) The guard stands at his post at (6,3) looking at the office door for 2 s, then walks west with his back to it and stands at (3,4) for 5 s before coming back. Start the pick as he turns away: about 7.5 s of a 12 s loop is safe (LOS is checked once, when the pick starts). Picking while he stands at his post is caught
-- [ ] (pass 5, R1-21) After a catch and "Wrong door", a second try in his sight plays "I'm still stood here" and the narrator's "He'll walk on in a moment..."; he keeps walking his loop, and a try once his back is turned goes through
+- [ ] (pass 5, R1-21) After a catch and "Wrong door", a second try in his sight plays "I can still see you" and the narrator's "Step back from the door. Wait until his back's turned…" (true at his post or walking away); he keeps walking his loop, and a try once his back is turned goes through
 - [ ] (3b) Wall safe sits high on the west wall, clearly apart from the filing cabinet; each opens its own minigame
 - [ ] (3b) Safe hunt: whiteboard ("…MAILING THE NEW ONE FROM HER OFFICE…") → Sterling's PC → "Unsent email to the night team" → From Base64 → 5829
 - [ ] (3c) Close the flipper before Save on either clone: no task tick; the clone option comes back (receptionist hub / Victoria "Lean back towards the whiteboard"); saving then completes the task
