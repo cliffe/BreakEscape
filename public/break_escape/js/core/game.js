@@ -1180,6 +1180,7 @@ export async function create() {
     if (gameScenario?.savedNpcHostility) {
         window.npcHostileSystem.restoreHostility(gameScenario.savedNpcHostility);
     }
+    window.playerCombat = new PlayerCombat(this);
     window.npcCombat = new NPCCombat(this);
 
     // Initialize feedback systems
@@ -1635,6 +1636,9 @@ export function update() {
     if (window.npcBehaviorManager) {
         window.npcBehaviorManager.update(this.time.now, this.time.delta);
     }
+
+    // NPCs with los.challengeOnSight react when the player walks into their sight
+    sightChallengeWatcher.update(Date.now());
 
     // [Phase 5] Update scenario timers (fire timers and dispatch events)
     if (window.scenarioTimerDispatcher) {
