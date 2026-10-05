@@ -47,9 +47,9 @@ cybok:
 
 **IT/OT Convergence** refers to the increasingly connected relationship between corporate IT networks (where business systems run) and OT networks (where control systems run). Modern industrial facilities often connect engineering workstations, remote access tools, and data analytics systems that bridge IT and OT. While this enables better monitoring and remote maintenance, it also creates attack pathways—an attacker compromising the corporate network can potentially pivot into the OT environment. The challenge is designing this connectivity in ways that allow necessary data flow while maintaining security and safety isolation.
 
-**Incident Response in OT Environments** follows different principles than enterprise IT incident response. In IT, the typical response to a breach is rapid isolation (take systems offline, block network segments). In OT, this same response can have serious consequences: isolating the OT network might disable real-time monitoring, emergency shutdown systems might require network connectivity, and taking SCADA systems offline could disrupt critical operations or trigger safety hazards. An incident responder must coordinate across IT security teams (who want rapid containment) and operations teams (who prioritize uptime and safety), and make decisions where the traditional security response creates operational and safety consequences.
+**Incident Response in OT Environments** follows different principles than enterprise IT incident response. In IT, the typical response to a breach is rapid isolation (take systems offline, block network segments). In OT, this same response can have serious consequences: isolating the OT network might disable real-time monitoring and the automatic control of equipment that is not under attack, and taking SCADA systems offline could disrupt critical operations or create new safety hazards. A hardwired emergency shutdown is designed to need no network at all, which is why it still works when everything digital is compromised. An incident responder must coordinate across IT security teams (who want rapid containment) and operations teams (who prioritize uptime and safety), and make decisions where the traditional security response creates operational and safety consequences.
 
-**Regulatory Frameworks** like IEC 62443 (industrial control system security), NERC CIP (grid security standards), and IEC 61508 (functional safety) provide requirements and standards for OT security. These regulations often conflict with operational realities or create specific compliance obligations that constrain incident response options. Understanding these frameworks is essential for making decisions that satisfy both security and regulatory requirements.
+**Regulatory Frameworks** like the NIS Regulations 2018 (the UK duty to notify the competent authority, for GB electricity Ofgem with DESNZ, of a significant incident), IEC 62443 (industrial control system security), IEC 61508 and IEC 61511 (functional safety), and, for comparison, North America's NERC CIP (grid security standards) provide requirements and standards for OT security. These regulations often conflict with operational realities or create specific compliance obligations that constrain incident response options. Understanding these frameworks is essential for making decisions that satisfy both security and regulatory requirements.
 
 ## What You Will Do
 
@@ -66,8 +66,8 @@ This scenario demonstrates: **Cyber Attack → Loss of Functional Safety → Eme
 1. **Cyber Attack**: Sophisticated intrusion from corporate IT network into operational technology environment
 2. **IT/OT Boundary Crossing**: Attackers pivot through Industrial DMZ to reach SCADA systems and potentially PLCs
 3. **Safety System Targeting**: Critical question - did attackers access the Safety Instrumented System (SIS)?
-4. **Loss of Functional Safety**: If safety trip points, emergency shutdown logic, or protective relays are compromised, the grid loses protective mechanisms
-5. **Emergent Physical Hazard**: Equipment damage, grid instability, cascading failures affecting public infrastructure, potential electrical hazards
+4. **Loss of Functional Safety**: If the SIS trip points are changed, the battery hall loses its automatic protection; only the hardwired emergency shutdown, which no network can reach, is left
+5. **Emergent Physical Hazard**: Cells overheating towards thermal runaway, hydrogen venting into the hall, fire, and a disturbance to the grid frequency
 
 Your investigation traces this chain to determine how far the attack progressed and what safety margins remain.
 
@@ -86,7 +86,7 @@ Your mission is to:
 
 ### How to Play
 
-The game is a top-down 2D exploration scenario. You navigate through a physical environment (SCADA control room, battery hall, engineering workshop) by moving your character with arrow keys or mouse clicks. You interact with NPCs (non-player characters) by talking to them—they are operators, safety engineers, security managers, and external investigators. You'll examine interactive objects like computer terminals, alarm panels, and control systems. Your conversations and investigations will uncover evidence, trigger system status updates, and lead to decision points where you choose how to respond. The scenario is designed to be open-ended; you can pursue investigation paths in any order, but certain actions have consequences.
+The game is a top-down 2D exploration scenario. You navigate through a physical environment (SCADA control room, battery hall, engineering workshop) by moving your character with arrow keys or mouse clicks. You interact with NPCs (non-player characters) by talking to them: Helen Marsh, the SCADA engineer in the control room; Marcus Webb, the OT Security Manager, and Tom Hadley at CastleTech's SOC, both on the site phone; and later Priya S. from the NCSC, who helps with the response and goes through it with you. You'll examine interactive objects like computer terminals, alarm panels, and control systems. Your conversations and investigations will uncover evidence, trigger system status updates, and lead to decision points where you choose how to respond. The scenario is designed to be open-ended; you can pursue investigation paths in any order, but certain actions have consequences.
 
 ### What You're Aiming For
 
@@ -115,7 +115,7 @@ After completing the scenario, reflect on these questions to consolidate your le
 4. What safety hazards could result if the attack had progressed further or remained undetected?
 
 **Incident Response Decisions**
-5. What decisions did you make about network isolation, emergency shutdown, or system restoration? How did each decision affect both security and operational/safety consequences?
+5. What decisions did you make about network isolation and the emergency shutdown? How did each decision affect both security and operational/safety consequences?
 6. How did the competing priorities of different teams (IT security wanting rapid containment, operations wanting to maintain monitoring, safety engineers wanting to preserve SIS independence) influence your response?
 
 **System Architecture and Defense**
@@ -123,7 +123,7 @@ After completing the scenario, reflect on these questions to consolidate your le
 8. How well did the Industrial DMZ (IDMZ) perform its role in separating IT and OT networks?
 
 **Regulatory and Standards Context**
-9. Review the information pack section on IEC 62443 and NERC CIP standards. How would regulatory requirements have constrained your incident response decisions?
+9. Review the information pack sections on the NIS Regulations 2018 and IEC 62443. What did the initial NIS notification need to say, who had to receive it and by when, and how did that interact with your other incident response decisions?
 
 ## Additional Resources
 
