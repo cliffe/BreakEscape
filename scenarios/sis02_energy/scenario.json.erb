@@ -504,7 +504,8 @@ require 'base64'
           { "text": "Dial or screen: you backed the screen", "style": "entry", "condition": "globalVars.gauge_verdict === 'screen'" },
           { "text": "Dial or screen: you wanted the historian first", "style": "entry", "condition": "globalVars.gauge_verdict === 'historian'" },
           { "text": "Dial or screen: you read the dial but never said which you believed", "style": "entry", "condition": "globalVars.anomaly_detected && globalVars.gauge_verdict === ''" },
-          { "text": "The dial at Rack A2 was never read", "style": "entry", "condition": "!globalVars.anomaly_detected" },
+          { "text": "Gas alarm before the dial was read: the hall was rightly left alone", "style": "entry", "condition": "!globalVars.anomaly_detected && !globalVars.esd_before_dial && globalVars.hydrogen_alarm" },
+          { "text": "The dial at Rack A2 was never read", "style": "entry", "condition": "!globalVars.anomaly_detected && !globalVars.esd_before_dial && !globalVars.hydrogen_alarm" },
           { "text": "Shutdown argued on the hazard, before the cause was known", "style": "entry", "condition": "globalVars.shutdown_argument === 'hazard'" },
           { "text": "Shutdown held back for evidence first", "style": "entry", "condition": "globalVars.shutdown_argument === 'evidence'" },
           { "text": "ESD pressed before anyone had read the dial: a precaution that happened to be right", "style": "entry", "condition": "globalVars.esd_before_dial && globalVars.early_esd_activation && !globalVars.hydrogen_alarm" },
@@ -548,7 +549,7 @@ require 'base64'
 
           { "text": "── SAFETY CASE ──", "style": "section-header" },
           { "text": "CLAIM-EN-002 (SIS isolation): judged broken before the attack", "style": "entry", "condition": "globalVars.en002_verdict === 'broken'" },
-          { "text": "CLAIM-EN-002 (SIS isolation): judged to have held. Its condition was already false", "style": "entry", "condition": "globalVars.en002_verdict === 'held'" },
+          { "text": "CLAIM-EN-002 (SIS isolation): you judged it held; its isolation argument had been false since commissioning", "style": "entry", "condition": "globalVars.en002_verdict === 'held'" },
           { "text": "SIS patch, as risk owner: patch, and own eight weeks of manual rounds", "style": "entry", "condition": "globalVars.patch_decision === 'active_management'" },
           { "text": "SIS patch, as risk owner: defer, with controls someone checks", "style": "entry", "condition": "globalVars.patch_decision === 'deferral'" },
 

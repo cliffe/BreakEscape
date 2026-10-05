@@ -20,6 +20,7 @@ VAR historian_flatline_found = false
 VAR jump_server_confirmed = false
 VAR sis_tamper_confirmed = false
 VAR esd_activated = false
+VAR jump_server_isolated = false
 VAR hydrogen_alarm = false
 VAR facility_evacuated = false
 VAR network_isolated = false
@@ -301,6 +302,10 @@ Helen Marsh: At two per cent we evacuate. Nobody goes into that hall now. Fire s
 
 === next_steps ===
 {
+- facility_evacuated and not jump_server_isolated:
+    Helen Marsh: Hall 1's the fire service's now, and everybody's out. Get on to Marcus, and get that jump server cable pulled.
+- facility_evacuated and not network_isolated:
+    Helen Marsh: Hall 1's the fire service's now, and everybody's out. Marcus has the plan for the network. CastleTech hold the enterprise side.
 - facility_evacuated:
     Helen Marsh: Hall 1's the fire service's now. Everybody's out. {priya_s_visible: Priya from the NCSC is here when you're ready.}
 - hydrogen_alarm and not esd_activated:

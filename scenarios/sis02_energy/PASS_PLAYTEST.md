@@ -93,6 +93,21 @@ Checks only what round 3 changed (`SCRIPT_EDITOR_REVIEW.md` "Confirmation review
 - Noticeboard: "flagged this in two quarterly risk reports" (N8).
 - When CastleTech isolate after the ESD, only Helen's safe-state radio speaks about the notification, not a Marcus text as well (N9).
 
+## Run H (round 4): three checks
+
+1. **Marcus's status after the ESD and in a gas alarm.** New game. Don't read the dial, and let the hydrogen alarm fire (exercise the timer if needed and say so). Ask Marcus "[Where are we?]":
+   - Expect "Hall 1's in gas alarm. Door station, now. Never mind the dial."
+   - Press the hall-door station and ask again. Expect "I want to know who's on that jump server. ENG-02, in the workshop."
+   - "Nothing to go on yet. Get Helen's dial read." must **not** appear at either point.
+2. **Credits row for the "held" verdict.** In any game, answer Priya's safety-case question with "[It held. The trip worked; it just had the wrong number in it.]". The credits read "CLAIM-EN-002 (SIS isolation): you judged it held; its isolation argument had been false since commissioning".
+3. **Priya after a gas alarm with the dial never read.** Same game as step 1. In the debrief, check for these lines:
+   - "The gas came up before anyone read the dial. Leaving it was right by then."
+   - On the R1 first answer: "Yes. By the time the gas came up, the alarm was reason enough."
+   - In claims: "There wasn't one, and this morning nobody got to the dial in time to use it."
+   - Credits: "Gas alarm before the dial was read: the hall was rightly left alone".
+
+   These must **not** appear: "Nobody read the dial", "if anyone had read it", or "The dial at Rack A2 was never read".
+
 ## Not in this run (engine, in parallel or reported)
 
 The historian's hard-coded report text and Annotate hint, the credits visualiser theme, phone timestamps, the reload overlay, the NIS form dialog clipping its bottom fields, the SIS compare dialog splitting long row labels, the jump-server log row's missing click affordance, and the console ESD sprite still looking live after another station was pressed.

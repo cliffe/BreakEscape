@@ -76,15 +76,28 @@ VAR topic_patch_view = false
     Dead flat? Nothing real does that. Somebody's writing that value.
     -> first_call_next
 + { facility_evacuated } [Hall 1's on fire. Helen got everyone out.]
-    I've heard. Everyone counted? Good. The hall's the fire service's. Whoever did this is still on our network.
+    I've heard from Helen. The hall's the fire service's. Whoever did this is still on our network.
     -> first_call_next
-+ { not facility_evacuated } [Nothing solid yet. Helen doesn't like the look of the screens.]
++ { jump_server_confirmed and not facility_evacuated } [ENG-02 shows c.ellison on the jump server since 01:47.]
+    -> rdp_session_confirmed
++ { esd_activated and not facility_evacuated and not anomaly_detected and not historian_flatline_found } [We've pressed the ESD on Hall 1 already.]
+    Helen told me. Good, if it needed it. Now I want to know why it needed it.
+    -> first_call_next
++ { not facility_evacuated and not anomaly_detected and not historian_flatline_found and not esd_activated } [Nothing solid yet. Helen doesn't like the look of the screens.]
     Helen's gut has a better record than our monitoring. Get me something I can look at. The dial, the historian, anything.
+    If it comes to the jump server log, the workshop key's in the duty desk drawer.
     -> hub
 
 === first_call_next ===
-Get into the workshop and open the jump server log on ENG-02. The key's in the duty desk drawer.
-And look at the SIS panel while you're there. I want to know if anyone's touched the setpoints.
+{ esd_activated and not facility_evacuated and (anomaly_detected or historian_flatline_found):
+    Helen says Hall 1's already off. Good.
+}
+{ not jump_server_confirmed:
+    Get into the workshop and open the jump server log on ENG-02. The key's in the duty desk drawer.
+}
+{ not sis_tamper_confirmed:
+    And look at the SIS panel while you're there. I want to know if anyone's touched the setpoints.
+}
 -> hub
 
 
@@ -104,7 +117,7 @@ And look at the SIS panel while you're there. I want to know if anyone's touched
     #set_global:network_isolation_authorised:true
     Signed off. Tell Tom to ring me and I'll confirm.
     -> hub
-+ { jump_server_confirmed and isolation_scope == "" } [How far do we cut them off?]
++ { marcus_rdp_briefed and isolation_scope == "" } [How far do we cut them off?]
     -> isolation_scope_scene
 + { historian_flatline_found and not nis_notified } [About the NIS notification.]
     -> nis_scene
@@ -177,12 +190,17 @@ The historian only has what the screen showed. Got ten seconds? Export the BMS r
 
 === rdp_session_confirmed ===
 ~ marcus_rdp_briefed = true
-Ellison? That account's fourteen months dead. Fosse Controls, the lot who commissioned the grid upgrade.
+Ellison? That account's been dormant for fourteen months. Fosse Controls, the lot who commissioned the grid upgrade.
 Locked on the domain when he left. Still alive on the jump server, with its default password, I'd bet.
 { jump_server_threat_intel_viewed:
     And from ALB-SRV-02. That's a print server. Nobody logs in from a print server.
 }
-The historian went flat at 23:12, before he logged in. So there's a second way in. The historian's proxy needs no RDP.
+{ historian_flatline_found:
+    The historian went flat at 23:12, before he logged in. So there's a second way in. The historian's proxy needs no RDP.
+- else:
+    I've had a look at the historian from here. It's been flat since 23:12, before he logged in.
+    So there's a second way in. The historian's proxy needs no RDP.
+}
 { not esd_activated:
     If the ESD's not in, get it in. Don't wait on me.
 }
@@ -336,7 +354,7 @@ A risk accepted with a control that isn't there? That's risk pretence.
     Hall 1's gone, everyone's out, and they're off our network. Now the notification.
 - facility_evacuated:
     Hall 1's gone, but everyone's out and it's reported. The NCSC are with you. Talk to them.
-- not anomaly_detected:
+- not anomaly_detected and not esd_activated and not hydrogen_alarm and not historian_flatline_found:
     Nothing to go on yet. Get Helen's dial read.
 - not esd_activated and shutdown_argument == "evidence" and not jump_server_confirmed:
     Logs first, you said. Be quick about it.
