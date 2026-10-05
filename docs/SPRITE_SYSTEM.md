@@ -110,7 +110,7 @@ All atlas characters support 8-directional animations with the following types:
 
 ### How It Works
 
-1. **Loading**: Atlas characters are loaded in `game.js` using `this.load.atlas()`
+1. **Loading**: Only the atlases a scenario uses are loaded, by key, from `characters/<key>.png` and `<key>.json` (`js/systems/character-textures.js`). The server sends the keys as `characterSprites` in the bootstrap scenario (`Game#filtered_scenario_for_bootstrap`), and `game.js` preload queues them in the same loader pass as the scenario JSON. If a room's NPC uses a key the list missed, `NPCLazyLoader` loads it before the room is built and logs a `was not preloaded` warning. Each atlas costs about 7 MB of texture memory once decoded, which is why they aren't all preloaded.
 2. **Detection**: The system automatically detects whether a sprite is atlas-based or legacy
 3. **Animation Setup**: 
    - Atlas characters use `setupAtlasAnimations()` which reads animation metadata from JSON
@@ -180,10 +180,10 @@ Asset format (produced by `tools/pixellab_pipeline.py`):
 
 ```bash
 python3 tools/pixellab_pipeline.py animate <pixellab.ai character URL>          # fill in the standard six animations
-python3 tools/pixellab_pipeline.py import <URL> --key <spriteSheet key> --register
+python3 tools/pixellab_pipeline.py import <URL> --key <spriteSheet key>
 ```
 
-`import` downloads the character ZIP, renames web-UI animation folders to template ids, reapplies committed frame fixes from `tools/pixellab_overrides/`, pads 60×60 Pro frames to 80×80 (feet on row 69, to match the collision box), writes `<key>.png/.json/_headshot.png`, and adds the `this.load.atlas` line to `game.js`. Then use `"spriteSheet": "<key>"`. See `.claude/skills/pixellab-character-pipeline/SKILL.md` for reviewing and repairing bad frames (`qa`, `fix`).
+`import` downloads the character ZIP, renames web-UI animation folders to template ids, reapplies committed frame fixes from `tools/pixellab_overrides/`, pads 60×60 Pro frames to 80×80 (feet on row 69, to match the collision box), and writes `<key>.png/.json/_headshot.png`. Nothing needs adding to `game.js`: use `"spriteSheet": "<key>"`. See `.claude/skills/pixellab-character-pipeline/SKILL.md` for reviewing and repairing bad frames (`qa`, `fix`).
 
 ### From PixelLab (manual ZIP download)
 
@@ -194,13 +194,7 @@ python3 tools/pixellab_pipeline.py import <URL> --key <spriteSheet key> --regist
        ~/Downloads/characters \
        ./public/break_escape/assets/characters
    ```
-3. Add atlas loading to `public/break_escape/js/core/game.js`:
-   ```javascript
-   this.load.atlas('character_key',
-       'characters/character_name.png',
-       'characters/character_name.json');
-   ```
-4. Use in scenario with `"spriteSheet": "character_key"`
+3. Use in scenario with `"spriteSheet": "character_key"`, where `character_key` is the file name without extension. Nothing needs adding to `game.js`.
 
 ### Custom Sprites
 
@@ -252,8 +246,9 @@ Based on M01 First Contact scenario:
 
 ### Sprite Not Loading
 
-- Check that the atlas key matches exactly in both `game.js` and scenario
+- Check that the scenario's `spriteSheet` matches the file name exactly (`<key>.png` and `<key>.json`); the validator reports a key that doesn't resolve
 - Verify PNG and JSON files exist in `public/break_escape/assets/characters/`
+- A `was not preloaded; loading on demand` warning means the key wasn't in the scenario's `characterSprites` list (for example an NPC added outside `rooms[*].npcs`)
 - Check browser console for texture loading errors
 
 ### Animations Not Playing

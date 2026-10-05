@@ -33,10 +33,10 @@ Typical run (see .claude/skills/pixellab-character-pipeline/SKILL.md for the ful
   pixellab_pipeline.py character nurse_kim --variants 1
   pixellab_pipeline.py pick nurse_kim character c01
   pixellab_pipeline.py animate nurse_kim
-  pixellab_pipeline.py import nurse_kim --register
+  pixellab_pipeline.py import nurse_kim
 
 `animate` and `import` also take any character id or pixellab.ai URL, for characters made
-outside the pipeline:  pixellab_pipeline.py import <url> --key bernie_nwosu --register
+outside the pipeline:  pixellab_pipeline.py import <url> --key bernie_nwosu
 
 Other commands: status, collect (finish jobs a killed run left pending), balance, visemes.
 Every paid command accepts --dry-run, which prints the request without sending it.
@@ -1263,30 +1263,6 @@ def cmd_animate(args):
 # ----------------------------------------------- stage 5: import into the game
 
 IMPORT_MANIFEST = REPO / "tools/pixellab_characters.json"
-GAME_JS = REPO / "public/break_escape/js/core/game.js"
-REGISTER_MARKER = "    // PixelLab API imports (tools/pixellab_pipeline.py import --register)"
-
-
-def register_atlas(key):
-    """Add a this.load.atlas() line for key to game.js preload, once."""
-    src = GAME_JS.read_text()
-    if f"this.load.atlas('{key}'," in src:
-        return False
-    entry = (f"    this.load.atlas('{key}',\n"
-             f"        `characters/{key}.png?v=${{ASSETS_VERSION}}`,\n"
-             f"        `characters/{key}.json?v=${{ASSETS_VERSION}}`);\n")
-    if REGISTER_MARKER not in src:
-        # Start the section after the last hand-written character atlas.
-        anchor = src.rindex("this.load.atlas('male_")
-        end = src.index(";\n", anchor) + 2
-        src = src[:end] + "\n" + REGISTER_MARKER + "\n" + src[end:]
-    start = src.index(REGISTER_MARKER) + len(REGISTER_MARKER) + 1
-    # Append after the last entry already in the section.
-    pos = start
-    while src.startswith("    this.load.atlas(", pos):
-        pos = src.index(";\n", pos) + 2
-    GAME_JS.write_text(src[:pos] + entry + src[pos:])
-    return True
 
 
 def canonicalise_animation_folders(root, character, api):
@@ -1651,9 +1627,7 @@ def convert_and_record(args, key, cid, character, export_dir):
     IMPORT_MANIFEST.write_text(json.dumps(dict(sorted(manifest.items())), indent=2) + "\n")
     print(f"recorded {key} -> {cid} in {IMPORT_MANIFEST.relative_to(REPO)}")
     if args.register:
-        print("registered in game.js" if register_atlas(key) else "already registered in game.js")
-    else:
-        print(f"not registered: add it to game.js preload with --register, or by hand")
+        print("atlases are now loaded on demand by key; no registration needed")
     print(f'scenario: "spriteSheet": "{key}"')
 
 
@@ -1932,7 +1906,8 @@ def main():
     p = sub.add_parser("import", help="stage 5: download the character ZIP and convert it into a game atlas")
     p.add_argument("target", help="run name, character id, or pixellab.ai character URL")
     p.add_argument("--key", help="spriteSheet key / file stem (default: the run name)")
-    p.add_argument("--register", action="store_true", help="add the atlas to game.js preload")
+    p.add_argument("--register", action="store_true",
+                   help="no-op, kept for old commands: atlases are loaded on demand by key")
     p.add_argument("--force", action="store_true", help="replace existing <key> files (backed up first)")
     p.add_argument("--allow-incomplete", action="store_true", help="import even if standard animations are missing")
     p.add_argument("--idle-from", help="another state (id or URL) to take breathing-idle from, e.g. a "

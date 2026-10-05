@@ -12,6 +12,7 @@ import {
     CLICK_INDICATOR_DURATION,
     SPRITE_PADDING_BOTTOM_ATLAS
 } from '../utils/constants.js';
+import { ensureCharacterTexture } from '../systems/character-textures.js';
 
 export let player = null;
 export let targetPoint = null;
@@ -119,28 +120,10 @@ export async function updatePlayerSprite(newSpriteKey) {
     
     console.log('🔄 Updating player sprite from', player.texture.key, 'to', newSpriteKey);
     
-    // Check if the new sprite is already loaded
-    const newTexture = gameRef.textures.get(newSpriteKey);
-    if (!newTexture || newTexture.key === '__MISSING') {
-        console.log('📦 Loading new sprite:', newSpriteKey);
-        
-        // Load the new sprite
-        const assetsPath = window.breakEscapeConfig?.assetsPath || '/break_escape/assets';
-        const atlasPath = `${assetsPath}/characters/${newSpriteKey}.png`;
-        const jsonPath = `${assetsPath}/characters/${newSpriteKey}.json`;
-        
-        try {
-            await new Promise((resolve, reject) => {
-                gameRef.load.atlas(newSpriteKey, atlasPath, jsonPath);
-                gameRef.load.once('complete', resolve);
-                gameRef.load.once('loaderror', reject);
-                gameRef.load.start();
-            });
-            console.log('✅ New sprite loaded:', newSpriteKey);
-        } catch (error) {
-            console.error('❌ Failed to load new sprite:', error);
-            return false;
-        }
+    // Load the atlas if this character isn't in use yet (only the scenario's are preloaded)
+    if (!await ensureCharacterTexture(gameRef, newSpriteKey, { expected: true })) {
+        console.error('❌ Failed to load new sprite:', newSpriteKey);
+        return false;
     }
     
     // Store current state
@@ -199,8 +182,12 @@ export async function updatePlayerSprite(newSpriteKey) {
     
     // Play appropriate animation
     const animKey = wasMoving ? `walk-${currentDirection}` : `idle-${currentDirection}`;
-    if (player.anims.exists(animKey)) {
-        player.anims.play(animKey, true);
+    // Check the global animation manager: player.anims.exists() only sees animations
+    // local to the sprite, so it was always false and the player froze until they moved.
+    // Play without ignoreIfPlaying: the sprite still holds the removed animation under
+    // the same key, and that one's frames belong to the old texture.
+    if (gameRef.anims.exists(animKey)) {
+        player.anims.play(animKey);
     }
     
     console.log('✅ Player sprite updated successfully to', newSpriteKey);
