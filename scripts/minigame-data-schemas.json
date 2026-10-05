@@ -83,8 +83,8 @@
   },
 
   "forensic_data_platform": {
-    "required": ["tabSet"],
-    "optional": ["title", "caseRef", "reviewedVar", "confirmedVar", "confirmGateTab", "confirmLabel", "confirmHint", "confirmReadyHint", "confirmSuccessText"]
+    "required": [],
+    "optional": ["tabs", "tabSet", "title", "caseRef", "reviewedVar", "confirmedVar", "confirmGateTab", "confirmLabel", "confirmHint", "confirmReadyHint", "confirmSuccessText"]
   },
 
   "notes": {

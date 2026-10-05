@@ -112,7 +112,7 @@
   "unlocks": [],
   "campaign_critical": true,
   "narrative_weight": "high",
-  "consequences_persist": true,
+  "consequences_persist": false,
   "lore_reveals": [
     "How APT groups use printer firmware as a beachhead — harder to patch than endpoints and often trusted on engineering networks",
     "The insurance industry's struggle with cyber coverage for critical infrastructure — most policies were written before OT-specific attacks",

@@ -47,7 +47,7 @@ source: "https://github.com/cliffe/BreakEscape/blob/main/scenarios/sis03_cyber_i
 
 **Affirmative cyber cover for physical damage.** A traditional property policy may or may not respond when a cyber attack breaks equipment; Lloyd's has required insurers to say clearly which policies cover cyber loss. Meridian's policy covers it affirmatively: physical damage caused by a cyber event, such as the battery cells damaged at Albion, is inside the insuring clause. That settles whether there is cover in principle. It does not settle how much.
 
-**Security warranties as coverage conditions.** Meridian insured Albion on condition that Albion kept certain controls: IT/OT segmentation (W-07), patch management (W-03), access control (W-09) and oversight of its managed service provider (W-12). A warranty turns a security control into a financial condition. Under the Insurance Act 2015 a breach does not simply void the policy; it matters whether the breach could have contributed to the loss that happened. So every breach comes with a causation question.
+**Security warranties as coverage conditions.** Meridian insured Albion on condition that Albion kept certain controls: IT/OT segmentation (W-07), patch management (W-03), access control (W-09) and oversight of its managed service provider (W-12). A warranty turns a security control into a financial condition. Under the Insurance Act 2015 a breach no longer ends the policy: cover is suspended while the breach is unremedied (section 10), and for a term aimed at a particular kind of loss the insurer cannot rely on the breach if the policyholder shows it could not have increased the risk of the loss that happened (section 11). The Act gives no percentage reduction for a warranty breach; proportionate remedies are for a policyholder who failed to present the risk fairly when the policy was placed. So every breach comes with a causation question, and often a negotiation.
 
 **Patching a certified safety system.** The fix for the weakness in Albion's Safety Instrumented System (SIS) was a firmware update. Changing a SIL 2 safety controller means recertifying it under IEC 61511: eight weeks and £180,000, with the automatic trip out of service and people watching the battery halls instead. Albion deferred the update and promised compensating controls, then never delivered them and never reviewed the decision. Was the deferral reasonable? Was the failure to follow it up?
 
@@ -90,7 +90,7 @@ Each link is also a place where a warranty might have been broken. Your job is t
 
 ### Background and Mission {#background-and-mission}
 
-On the night of Friday 20 to Saturday 21 March 2026, attackers inside Albion Energy Storage's network falsified battery temperatures and switched off the SIS trips on Battery Hall 1. A SCADA engineer read an analog gauge that the attacker could not touch, and the hardwired emergency shutdown was pressed at about 06:34. Nobody was hurt. The site was offline for six weeks for forensic work, network remediation and SIS recertification, and came back on 2 May. Albion has claimed £8.2 million: incident response, business interruption, replacement cells, and a claim from its neighbour, Trent Water, whose workstation opened a file the attacker had left on a shared server.
+On the night of Friday 20 to Saturday 21 March 2026, attackers inside Albion Energy Storage's network falsified battery temperatures and switched off the SIS trips on Battery Hall 1. A SCADA engineer read an analog gauge that the attacker could not touch, and the hardwired emergency shutdown was pressed at about 06:34. Nobody was hurt. The site was offline for six weeks for forensic work, network remediation and SIS recertification, and came back on 2 May. Albion has claimed £8.2 million: incident response and forensics, six weeks of lost revenue, replacement battery modules for the whole of Battery Hall 1 (the largest item), revalidating and recommissioning the hall, and a claim from its neighbour, Trent Water, whose workstation opened a file the attacker had left on a shared server.
 
 Your mission is to:
 - Confirm that the loss falls within the policy's insuring clause, and trace the causal chain from cyber event to physical damage
@@ -174,7 +174,9 @@ Work through these after you have finished. Use your own run: Eleanor's debrief 
 
 > Question: Q13. Robert Ngata wants the forensic indicators shared quickly so the NCSC can warn other operators, but says he cannot compel it. What did you advise on the form, and what does that choice trade off between Albion's legal position and other operators' safety?
 
-> Question: Q14. Albion's hardwired ESD worked; its programmable SIS was defeated. What does that say about the independence argument in Albion's safety case, and should an insurer reward the barrier that held or penalise the one that failed?
+> Question: Q14. Hartley recommends Position A2, a negotiated settlement of about £6.1 million, and his report says it is not a statutory deduction. Using sections 10 and 11 of the Insurance Act 2015, set out Meridian's best argument on W-07 and Albion's best answer, including what Meridian knew at renewal. Why might both sides prefer to settle?
+
+> Question: Q15. Albion's hardwired ESD worked; its programmable SIS was defeated. What does that say about the independence argument in Albion's safety case, and should an insurer reward the barrier that held or penalise the one that failed?
 
 **Exercises**
 

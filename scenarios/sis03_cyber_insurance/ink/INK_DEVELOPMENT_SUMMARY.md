@@ -51,8 +51,8 @@
 - Welcome & Initial Call
 - W-07 Remediation Discussion: vendor delays, extension request history
 - W-03 SIS Patch Discussion: IEC 61511 safety constraint, £180K recertification cost, board-level decision
-- Compensating Controls Discussion: SOC scope expansion, implementation status
-- Business Interruption Discussion: £4.8M revenue claim, contested pre-existing maintenance argument
+- Compensating Controls Discussion: the managed SOC monitoring named in the risk assessment, which never covered OT
+- Business Interruption Discussion: £0.9M (whole site, six weeks), contested pre-existing maintenance argument
 - Shared Infrastructure (Trent Water) Discussion: cross-sector risk, investigation status
 
 **Teaching Integration**:
@@ -74,9 +74,9 @@
 
 **Key Features**:
 - Welcome & Initial Call
-- Incident Response Costs (£1.4M): breakdown and verification
-- Business Interruption (£4.8M): contested calculation, pre-existing maintenance debate, baseline methodology
-- Physical Damage (£1.6M): thermal degradation assessment, replacement quotes
+- Incident Response and Forensics (£1.1M): breakdown and verification; revalidation and recommissioning (£0.8M) separate, with a betterment argument
+- Business Interruption (£0.9M): contested in part, pre-existing maintenance debate, baseline methodology
+- Physical Damage (£5.0M): replacement modules for Racks A1-A4 (Halden Cell Systems withdrew its warranty), requalification contested; Albion's property policy excludes cyber
 - Evidence Gaps: PLC register overwrite by ESD, historian reliability, forensic circularity
 - Trent Water Exposure: provisional £400K investigation cost, lateral movement uncertainty
 

@@ -269,7 +269,7 @@ Eleanor Vance: It will show you what Meridian knew about the IT-to-OT deficiency
 
 Eleanor Vance: We knew. We set a warranty. And we renewed anyway, knowing the deadline was difficult.
 
-Eleanor Vance: That renewal memo is going to be in every court filing if this claim goes to arbitration.
+Eleanor Vance: If this claim goes to arbitration, that renewal memo is the first thing the arbitrators will read.
 
 ~ underwriting_challenge_discussed = true
 
@@ -277,7 +277,7 @@ Eleanor Vance: That renewal memo is going to be in every court filing if this cl
     -> warranty_hub
     
 * [What's our position on Meridian's prior knowledge?]
-    Eleanor Vance: Our position is: we set a warranty precisely to incentivise remediation. Knowledge of a risk is not the same as acceptance of the risk. The Insurance Act is clear on that.
+    Eleanor Vance: Our position is: we set a warranty precisely to incentivise remediation. Knowing about a risk isn't the same as accepting it. Albion's lawyers will call it waiver.
     Eleanor Vance: But the court of reputation is not the Court of Appeal. I'll leave it at that.
     -> warranty_hub
 
@@ -330,11 +330,11 @@ Eleanor Vance: The patch addresses an authentication vulnerability in the SIS en
 
 Eleanor Vance: Here's where it gets genuinely difficult.
 
-Eleanor Vance: The patch requires an eight-week recertification under IEC 61511 — the functional safety standard. Albion documented that applying the patch would necessitate a complete shutdown and revalidation of the safety case.
+Eleanor Vance: The patch requires an eight-week recertification under IEC 61511, the functional safety standard. Albion documented eight weeks without the automatic trip, and a revalidation of the safety function.
 
-Eleanor Vance: Albion deferred the patch but committed to compensating controls: they said they would restrict access to the SIS engineering port via network segmentation and access control — they would tighten the jump server rules and deny any direct access from untrusted network segments.
+Eleanor Vance: Albion deferred the patch and named one compensating control: their managed SOC would watch for an attacker moving towards the safety system.
 
-Eleanor Vance: Those compensating controls were never implemented.
+Eleanor Vance: But the SOC contract excluded OT. That control never existed.
 
 * [So the patch wasn't applied, and the compensating controls failed — clear breach]
     Eleanor Vance: Legally clear. But is it morally clear? Albion faced a genuine safety constraint. They made a documented risk decision. They just didn't follow through on their mitigation commitment.
@@ -433,7 +433,7 @@ Eleanor Vance: This is a contractual failure — Albion failed to ensure their M
 {not attribution_brief_reviewed:
     Eleanor Vance: We have the NCSC Attribution Brief on the table — still sealed. But I should walk you through the act-of-war question before you open it.
     
-    Eleanor Vance: Our policy excludes losses caused by "war, military action, or acts of a hostile state power." The question is: does the Albion incident fall into that category?
+    Eleanor Vance: Our policy excludes war, and state-backed cyber operations in the course of war. The question is: does the Albion incident fall into that category?
     
     + [It's a cyber attack by a state actor — shouldn't it be excluded?]
         -> act_of_war_complexity
@@ -510,7 +510,7 @@ Eleanor Vance: My counsel advised against invocation. But I want to hear your re
 
 Eleanor Vance: I hear you. But I need to lay out the consequences.
 
-Eleanor Vance: If we invoke the exclusion, Albion's solicitor will appeal to Lloyd's and pursue arbitration. The case will turn on whether "act of war" has a legal threshold beyond "state attribution." I think we lose that case.
+Eleanor Vance: If we invoke the exclusion, Albion's solicitors will take us to arbitration. It turns on whether "act of war" needs more than state attribution. I think we lose.
 
 Eleanor Vance: But more than that: think about the precedent. If we set the precedent that critical infrastructure operators become uninsured against nation-state attacks, what happens to the security incentives at those organisations?
 
@@ -650,11 +650,11 @@ Eleanor Vance: That tension — that's what today was about.
 }
 
 {coverage_decision == "A2":
-    Eleanor Vance: Proportional coverage with a deduction for the warranty breaches.
+    Eleanor Vance: A negotiated settlement, below the full claim.
 
-    Eleanor Vance: That's the middle ground. You've applied a financial consequence for the W-07 breach without denying coverage entirely. And you've probably noted that W-03 and W-09 are supporting factors but not primary causal factors.
+    Eleanor Vance: That's the middle ground. The Insurance Act gives us no percentage off for a breach. On W-07 we could argue cover was suspended altogether.
 
-    Eleanor Vance: I think that's the most defensible position. It shows we enforced our conditions while acknowledging Albion's legitimate defences about prior knowledge and the IEC 61511 safety constraint.
+    Eleanor Vance: But Albion could win on waiver after our renewal, or on section eleven. A settlement prices that risk for both sides. I think it's the most defensible position.
 
     Eleanor Vance: Albion may still refer to arbitration. But we have a solid factual foundation.
 
@@ -680,7 +680,8 @@ Eleanor Vance: That tension — that's what today was about.
 
 Eleanor Vance: The warranties are the visible part of how insurance enforces safety.
 
-Eleanor Vance: W-07 required IT-to-OT segmentation. That's not just security jargon — that's IEC 61511 independence. The functional safety standard says: if you have a programmable safety system, you must isolate it from untrusted networks. We put that into our warranty because it's foundational.
+Eleanor Vance: W-07 required IT-to-OT segmentation: zones and conduits, in IEC 62443's terms. It's what keeps an attacker on the office network away from the safety system.
+Eleanor Vance: The safety standard, IEC 61511, separately requires the SIS to be independent of the control system. Both depend on segmentation. That's why it's in our warranty.
 
 Eleanor Vance: W-03 is more subtle. The SIS patch had a genuine safety trade-off. Albion couldn't apply it without weeks of recertification. But they committed to compensating controls. They didn't follow through.
 
@@ -734,13 +735,13 @@ Eleanor Vance: They had three options: (1) refuse to renew, (2) renew with a war
 
 Eleanor Vance: They chose option two. They set a warranty. They renewed. And they accepted the risk that Albion might not remediate in time.
 
-Eleanor Vance: That decision is legal. The Insurance Act is clear: the insurer's knowledge of a risk doesn't waive the contractual remedy if the warranty is breached.
+Eleanor Vance: That decision is legal. Our lawyers say knowing about a risk doesn't waive the warranty. Albion's will say renewing with our eyes open did. Neither side is certain.
 
 Eleanor Vance: But it complicates things. Meridian knew. Meridian made a deliberate choice. Meridian accepted a known risk. And now, when that risk becomes a claim, we're trying to reduce coverage?
 
 Eleanor Vance: That's the final claim in the chain. Insurance doesn't just observe safety-relevant weakness. It prices it, conditions coverage on it, and then has to justify what it does when the weakness later becomes a loss.
 
-Eleanor Vance: That's a legal position. But it's also a reputational position. The court of Lloyd's cares about contracts. But the court of reputation cares about fairness.
+Eleanor Vance: That's a legal position. But it's also a reputational one. An arbitrator reads the contract. The market remembers whether we were fair.
 
 Eleanor Vance: I think your coverage decision should reflect that tension — between what the contract says and what seems fair.
 
