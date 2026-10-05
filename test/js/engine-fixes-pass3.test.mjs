@@ -129,7 +129,7 @@ test('E14: keyless MIFARE read screen offers "Crack keys first" with a persisten
         const card = { card_id: 'c', rfid_protocol: 'MIFARE_Classic_Weak_Defaults', name: 'Badge' };
         ui.showCardDataScreen(card);
         let btns = flat(screen).filter(e => e.tag === 'button');
-        assert.deepEqual(btns.map(b => b.textContent), ['Crack keys first', 'Cancel']);
+        assert.deepEqual(btns.map(b => b.textContent), ['Crack keys first', 'Abandon read']);
         assert.ok(flat(screen).some(e => /dictionary attack/i.test(e.textContent) && /Darkside/.test(e.textContent)));
         btns[0].listeners.click();
         assert.deepEqual(calls, ['attack-menu']);
