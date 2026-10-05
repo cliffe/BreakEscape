@@ -878,6 +878,12 @@ export function handleObjectInteraction(sprite) {
         // Check if this is an inventory item (clicked from inventory)
         const isInventoryItem = sprite.objectId && sprite.objectId.startsWith('inventory_');
         
+        // The cloner is already open (e.g. mid-read from a conversation): starting it
+        // again in unlock mode would end that minigame and lose the read (E-H).
+        if (isInventoryItem && window.MinigameFramework?.isOpen?.('rfid')) {
+            console.log('RFID minigame already open; ignoring cloner click');
+            return;
+        }
         if (isInventoryItem && window.startRFIDMinigame) {
             console.log('Starting RFID minigame from inventory (unlock mode)');
             window.startRFIDMinigame(null, null, {

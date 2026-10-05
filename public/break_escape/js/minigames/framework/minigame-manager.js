@@ -122,6 +122,15 @@ export const MinigameFramework = {
         return m._sceneType !== 'phone-chat';
     },
 
+    /**
+     * True while a minigame of this type is open and not already closing.
+     * @param {string} sceneType - registered scene name, e.g. 'rfid'
+     */
+    isOpen(sceneType) {
+        const m = this.currentMinigame;
+        return !!m && !m._ending && m._sceneType === sceneType;
+    },
+
     _updateBarkLayer() {
         if (typeof document === 'undefined' || !document.body) return;
         document.body.classList.toggle('minigame-holds-barks', this.holdsBarks());
