@@ -253,7 +253,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           gate is story-gated, so engine 657f6158 can't reveal it on day-time task
           progress; the agent_0x99 mapping on global_variable_changed:clone_call_done
           unlocks it live, and that unlock is recorded on the server
-          (persistUnlock), which is what a reload relies on. %>
+          (persistUnlock); since engine e03dd0e the server also opens it on load when
+          the global is already set. %>
       "unlockCondition": { "globalVariable": "clone_call_done", "equals": true },
       "tasks": [
         {
@@ -319,7 +320,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
       <%# P1-30: opens on the first night-time entry to the executive wing, not with
           the server room aim, so the night's aims arrive one beat at a time. The
           closing_debrief NPC's room_entered:executive_wing_hallway mapping sets
-          exec_wing_night and unlockAims it (recorded on the server for reload). %>
+          exec_wing_night and unlockAims it (recorded on the server; a reload also opens it from the saved global). %>
       "unlockCondition": { "globalVariable": "exec_wing_night", "equals": true },
       "tasks": [
         {
@@ -806,7 +807,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "onceOnly": true
             },
             {
-              "_comment": "P1-6: the night turn opens the server room aim (m05 torres pattern). clone_call_done is set when the night_transition cutscene closes. P1-34: the server does not re-derive globalVariable unlocks on reload; a reload relies on the unlock recorded by persistUnlock when this fires. P1-30: the office and paper trail aims open later, on entry (closing_debrief mappings).",
+              "_comment": "P1-6: the night turn opens the server room aim (m05 torres pattern). clone_call_done is set when the night_transition cutscene closes. On reload the aim opens from the saved global (engine e03dd0e) as well as from the unlock persistUnlock records when this fires. P1-30: the office and paper trail aims open later, on entry (closing_debrief mappings).",
               "eventPattern": "global_variable_changed:clone_call_done",
               "condition": "value === true",
               "onceOnly": true,
@@ -1133,12 +1134,6 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "setGlobal": { "victoria_choice_made": true }
             },
             {
-              "_comment": "P3-10 (mitigation; engine item E-B): NPC hostility isn't saved, so after a reload the guard patrols peacefully. Clear the synced 'guard is attacking' global on load so HaX doesn't offer the hostile-guard hint for a guard who isn't.",
-              "eventPattern": "game_loaded",
-              "condition": "globalVars.guard_attacking === true",
-              "setGlobal": { "guard_attacking": false }
-            },
-            {
               "_comment": "P1-30: the first night-time entry to the executive wing opens the office aim (and the paper trail, if the server room hasn't already). Kept on this always-loaded NPC so it doesn't share a pattern with HaX's exec-wing guide and hear_debrief backstop. exec_wing_entered can be set by day, so it is not the gate.",
               "eventPattern": "room_entered:executive_wing_hallway",
               "condition": "globalVars.clone_call_done === true && globalVars.debrief_played !== true",
@@ -1163,7 +1158,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "unlockAim": "collect_lore"
             },
             {
-              "_comment": "P1-28: the guard has turned hostile (any route: his ink's #hostile tag or a fight). Synced so HaX's hub can offer the hostile-guard hint. P3-20: not onceOnly, because game_loaded clears it after a reload and he can turn hostile again; setting true twice is harmless.",
+              "_comment": "P1-28: the guard has turned hostile (any route: his ink's #hostile tag or a fight). Synced so HaX's hub can offer the hostile-guard hint. Not onceOnly: setting it true again (e.g. when his restored hostility is re-announced after a reload, engine e03dd0e) is harmless.",
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'night_guard' && data.isHostile === true",
               "cooldown": 0,
