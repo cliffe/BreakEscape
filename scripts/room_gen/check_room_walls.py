@@ -97,7 +97,7 @@ def main(argv):
         pats = sorted(set(re.findall(r'"type":\s*"(room_[A-Za-z0-9_]+)"', scen.read_text())))
     else:
         pats = [a for a in argv if not a.startswith("--")] or ["*"]
-    maps = sorted(p for p in ROOMS.glob("*.json") if any(fnmatch.fnmatch(p.stem, pat) for pat in pats))
+    maps = sorted(p for p in ROOMS.glob("*.json") if any(fnmatch.fnmatch(p.stem.lower(), pat.lower()) for pat in pats))
     bad = 0
     for p in maps:
         try:

@@ -93,3 +93,6 @@ Each entry: a short title, where it came from, the idea in two or three sentence
 - **Measure on a lab PC's GPU** (S). Headless numbers are software WebGL.
 - **Lighting tour follow-camera** (S). `--player` shots keep the camera on the room centre, so HUD panels can hide objects near the player.
 - **Timer effects after a reload** (S). A timer that fired before a reload is skipped on resume (`ui/scenario-timer-dispatcher.js:71-78`), so its side effects (sis02's red rack tint during the H₂ advisory) don't come back, while state-driven glows do. Replay the timer's visual actions on resume.
+
+## Slot-audit hits in room_IT (found 2026-10-05)
+The slot audit and wall check used to skip type `room_it` (file `room_IT.json`). Now fixed, they show objects that land at random positions in that map: m01 it_room "IT Security Concerns" (notes2); m04 engineering_workshop "BMS Jump Server Terminal" (vm-launcher) and "SAFETYNET Drop-Site Terminal" (flag-station), m04 plant_room "Emergency Shutdown Pushbutton" (emergency-button); lockpick_gauntlet keyed_door_1 two keys. Each needs a sprite slot or a position. Not fixed: other missions.
