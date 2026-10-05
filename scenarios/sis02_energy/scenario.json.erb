@@ -368,6 +368,12 @@ require 'base64'
     {
       "aimId": "post_incident_debrief",
       "title": "10. Post-Incident Debrief",
+      "missionConclusion": true,
+      "concludeRequires": { "globals": ["debrief_complete"] },
+<%# Mission conclusion (2026-10-05). As in sis01: no VM flags, so the only gate is the end of the
+    debrief itself. debrief_complete is set on the last beat of npc_priya_sharma.ink closing_end; the
+    music event on it rolls the credits and POSTs /conclude. Nothing optional (Trent Water, NIS
+    form, SIS tamper, cable pull) is required: the credits report those instead. %>
       "description": "Engage with Priya S. (NCSC). Review the safety claims. Make the SIS patch recommendation.",
       "status": "locked",
       "order": 9,
@@ -478,8 +484,13 @@ require 'base64'
         "fade": true
       },
       {
+<%# Credits roll once (2026-10-05). The #set_global tag emits global_variable_changed every time it
+    runs, even when the value is already true, so a replayed tag would roll the credits and POST
+    /conclude a second time. The ink no longer replays it (npc_priya_sharma.ink start guard), and this
+    condition ignores a re-set of a value that was already true. typeof guards the ink-observer path,
+    whose payload carries no oldValue. %>
         "trigger": "global_variable_changed:debrief_complete",
-        "condition": "value === true",
+        "condition": "value === true && (typeof oldValue === 'undefined' || oldValue !== true)",
         "playlist": "victory",
         "autoStop": true,
         "disableClose": true,

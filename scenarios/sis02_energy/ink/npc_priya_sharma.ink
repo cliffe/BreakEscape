@@ -18,7 +18,7 @@
 //   en002_claim_assessed (set when SIS port vulnerability discussed)
 //   en005_claim_assessed (set when SIS patch dilemma topic engaged)
 //   patch_decision (set by player choice: "active_management" or "deferral")
-//   debrief_complete (set when debrief closing topic completed)
+//   debrief_complete (set once, in closing_end, after the closing summary)
 //
 // NOTE: This NPC reveals via eventMapping when priya_sharma_visible = true.
 //   Player approaches voluntarily (no auto-start on visibility).
@@ -45,6 +45,8 @@ VAR topic_patch_done = false
 VAR topic_nis_reviewed = false
 VAR topic_isolation_governance_done = false
 VAR topic_closing_done = false
+VAR debrief_closed = false
+VAR debrief_quiet = false
 
 
 // ===========================================
@@ -52,6 +54,12 @@ VAR topic_closing_done = false
 // ===========================================
 
 === start ===
+
+// Once the closing has run, it never replays: replaying it re-ran #set_global:debrief_complete,
+// which rolled the credits and POSTed /conclude a second time (2026-10-05).
+{ debrief_closed:
+    -> debrief_over
+}
 
 { nis_deadline_missed and not debrief_started:
     Priya S.: Dr Priya Sharma — NCSC. The 72-hour notification window has now passed. I can't wait any longer — we need to begin the post-incident review now.
@@ -445,7 +453,6 @@ Priya S.: The jump server carried live RDP sessions from the enterprise network 
 === closing_summary ===
 ~ topic_closing_done = true
 #complete_task:talk_to_priya_sharma
-#set_global:debrief_complete:true
 
 Priya S.: Let me summarise what this incident tells us.
 
@@ -457,14 +464,50 @@ Priya S.: The deepest lesson here is what I call normalisation of deviance. The 
 
 Priya S.: A safety case is not a compliance artefact. It is a living document. When the risks documented in that safety case are accepted, the compensating controls must actually exist, must actually work, and must actually be reviewed.
 
+-> closing_questions
+
+
+// Both questions stay on offer until asked (each used to end the conversation, and the second
+// was only reachable by re-talking). "That's everything" ends the debrief at any point.
+=== closing_questions ===
 * [What happens next — from a regulatory standpoint?]
     Priya S.: The NIS investigation will take approximately three months. We'll publish a de-identified version of the findings to support sector-wide learning.
     Priya S.: Albion will be required to submit a remediation plan addressing the SIS independence failure, the IT/OT boundary configuration, and the OT monitoring gap. Marcus Webb's risk assessments were directionally correct — the organisation needs to act on them.
-    #end_conversation
-    -> hub
+    -> closing_questions
 
 * [Any final advice for the team?]
     Priya S.: The SCADA engineer who arrived early for a maintenance window and trusted an old analog thermometer over a sophisticated digital system — she's the reason this didn't become a catastrophe.
     Priya S.: Invest in the people who understand the physical systems as well as the digital ones. They are your last line of defence.
-    #end_conversation
-    -> hub
+    -> closing_questions
+
++ [That's everything. Thank you.]
+    -> closing_end
+
+
+// The debrief's last beat. debrief_complete rolls the credits (music event) and concludes the
+// mission, so it is set here, after Priya's closing lines, not at the top of closing_summary
+// where the credits covered them. Set exactly once: nothing diverts back here once debrief_closed
+// is true (start and debrief_over both exit without replaying the closing).
+=== closing_end ===
+~ debrief_closed = true
+Priya S.: That's everything from me. Thank you.
+#set_global:debrief_complete:true
+~ debrief_quiet = true
+#exit_conversation
+-> debrief_over
+
+
+// Where the story rests after the debrief (m03 receptionist "hub_quiet" pattern). A re-talk resumes
+// here (saved state) or via start's debrief_closed guard (variables-only restore); neither replays
+// the closing, so debrief_complete is never set twice.
+=== debrief_over ===
+{ debrief_quiet:
+    ~ debrief_quiet = false
+- else:
+    Priya S.: That's everything from me. Thank you.
+}
++ [Thanks, Priya.]
+    Priya S.: Look after Helen. Her instincts saved this site today.
+    ~ debrief_quiet = true
+    #exit_conversation
+    -> debrief_over
