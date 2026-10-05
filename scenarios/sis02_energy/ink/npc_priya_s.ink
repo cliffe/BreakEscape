@@ -127,8 +127,10 @@ Priya S.: Nobody's being blamed here. What we learn goes out to other sites like
     Priya S.: You backed the screen over the dial at first. The screen was the one thing an attacker could reach.
 - gauge_verdict == "historian":
     Priya S.: You wanted the historian before you'd back the dial. Fair, as long as it's quick.
-- not anomaly_detected:
-    Priya S.: Nobody read the dial at Rack A2. It said fifty-one from the start.
+// Gas alarm before the dial: leaving it was right (round 4). The early press before the dial is
+// already covered above, so the dial isn't mentioned twice.
+- not anomaly_detected and hydrogen_alarm:
+    Priya S.: The gas came up before anyone read the dial. Leaving it was right by then.
 }
 {
 - shutdown_argument == "hazard" and facility_evacuated:
@@ -155,8 +157,10 @@ Priya S.: Nobody's being blamed here. What we learn goes out to other sites like
 Priya S.: When one mistake costs money and the other costs the building, how sure do you need to be?
 * [Sure it's a real hazard. Not sure of the cause.]
     {
+    - not anomaly_detected and hydrogen_alarm:
+        Priya S.: Yes. By the time the gas came up, the alarm was reason enough.
     - not anomaly_detected:
-        Priya S.: Yes. Here the dial would have been enough, if anyone had read it.
+        Priya S.: Yes. The cause could wait.
     - facility_evacuated:
         Priya S.: Yes. The dial was enough. Nobody acted on it, so the gas made the call instead.
     - else:
@@ -199,7 +203,12 @@ Priya S.: The argument was that it sat on its own network, so nothing on SCADA c
 
 === claims_more ===
 Priya S.: Two more, briefly. The ESD claim held, and the reason is evidence. Helen's team proved it every year with everything digital switched off.
-Priya S.: The dial claim only half held. The dial was independent, but the claim promised an automatic comparison and an alarm. It took a person walking into the hall.
+Priya S.: The dial claim only half held. The dial was independent, but the claim promised an automatic comparison and an alarm.
+{ anomaly_detected:
+    Priya S.: There wasn't one. It took a person walking into the hall.
+- else:
+    Priya S.: There wasn't one, and this morning nobody got to the dial in time to use it.
+}
 -> isolation_review
 
 
@@ -327,7 +336,7 @@ Priya S.: Ofgem's the competent authority, with the energy department. We're tol
 }
 Priya S.: Did Trent Water need telling under NIS?
 * [Yes. Water's an essential service too.]
-    Priya S.: Water can be. Trent Water's a small pumping station, well under the thresholds. Telling them is a duty of care, not a NIS one.
+    Priya S.: Some water companies are. Trent Water runs one small pumping station, well under the thresholds. Telling them is a duty of care, not a NIS one.
 * [No. It was duty of care. They share our systems.]
     Priya S.: Right. They're under the thresholds, so NIS doesn't apply. They share your file server, though, so they need to know.
 -
@@ -349,7 +358,7 @@ Priya S.: Then an old contractor's account, Ellison's. Locked on the domain when
 { jump_server_confirmed:
     Priya S.: You'll have seen it on the engineering workstation. Fourteen months gone, and it still worked.
 }
-Priya S.: Marcus wrote a risk assessment in September 2024 that described this attack almost word for word.
+Priya S.: Marcus's risk assessment from September 2024 named the exact safety-system weakness they used.
 -> closing_summary
 
 
