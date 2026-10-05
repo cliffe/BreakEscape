@@ -893,7 +893,7 @@ Agent HaX: Cell by cell. Operation by operation.
 }
 
 {lore_collected >= 3:
-    Agent HaX: And {lore_collected} intelligence fragments recovered. That's thorough investigative work.
+    Agent HaX: And you recovered several intelligence fragments along the way. That's thorough investigative work.
 }
 {lore_collected == 0:
     Agent HaX: You focused on the primary objectives. Efficient.

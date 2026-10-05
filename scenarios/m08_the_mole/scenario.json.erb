@@ -95,6 +95,9 @@ archives_password = "TrustNoOne"
 # Interrogation suite keypad (PASS 3, P4). One source: the room's requires, the
 # code card in the Director's safe and the synced global suite_code (which
 # Netherton's ink prints) all render this value.
+# Keep it a fixed constant: do not mark it @random_pin or randomise it.
+# Netherton speaks it in voiced ink (m08_director_netherton.ink, {suite_code}),
+# and TTS caches audio by text, so a per-game code would never hit the cache.
 suite_code = "5386"
 
 # Visitor badge printer at reception (second route to the server room). The

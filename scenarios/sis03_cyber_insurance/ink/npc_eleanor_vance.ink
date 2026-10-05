@@ -25,8 +25,8 @@ VAR eleanor_debrief_mode = false
 VAR debrief_started = false
 VAR debrief_complete = false
 
-// Global reads (additional): archive_pin_value
-VAR archive_pin_value = ""
+// The Evidence Archive PIN is never spoken: it is printed on the access slip in Eleanor's
+// itemsHeld (scenario.json.erb), so the code can be randomised without breaking cached TTS.
 
 // Local tracking vars for this NPC
 VAR eleanor_welcomed = false
@@ -168,6 +168,12 @@ Eleanor Vance: When you can answer all three, and connect them to a cyber event 
 === grant_evidence_archive_access ===
 #speaker:eleanor
 
+// Already granted: checked first, so the grant block below can't fall through into it
+{evidence_archive_access_granted:
+    Eleanor Vance: You've got the access slip; the archive code is on it. North door. The cabinet inside is PIN-locked too; its reference code is in the CMS Policy Info section.
+    -> hub
+}
+
 {not evidence_archive_access_granted:
     Eleanor Vance: You've traced the causal chain correctly. That's sufficient to confirm this is a covered cyber event — the policy applies.
     
@@ -175,19 +181,14 @@ Eleanor Vance: When you can answer all three, and connect them to a cyber event 
     
     Eleanor Vance: The Evidence Archive contains the forensic evidence packets and the underwriting file. The underwriting file will show what Meridian knew before the incident occurred — and that's the uncomfortable part.
 
-    Eleanor Vance: The Evidence Archive PIN is {archive_pin_value}. Use it on the north door.
-
     ~ evidence_archive_unlocked = true
     ~ evidence_archive_access_granted = true
+    #give_item:notes:evidence_archive_access_slip
+    Eleanor Vance: I've written the archive code on this access slip. Use it on the north door.
 
     * [Thank you. We'll review the evidence.]
         Eleanor Vance: Thorough is what we need. Not defensive. Just thorough.
         -> hub
-}
-
-{evidence_archive_access_granted:
-    Eleanor Vance: You've got the access code. The Evidence Archive PIN is {archive_pin_value} — north door. The underwriting file cabinet inside is also PIN-locked; the reference code is in the CMS Policy Info section.
-    -> hub
 }
 
 
@@ -759,8 +760,8 @@ Eleanor Vance: I think your coverage decision should reflect that tension — be
     Eleanor Vance: Once you have it, use it on the cabinet in the Evidence Archive.
     -> hub
 
-+ {evidence_archive_unlocked and not warranty_evidence_reviewed} [Remind me of the Evidence Archive access code]
-    Eleanor Vance: The Evidence Archive PIN is {archive_pin_value}. North door.
++ {evidence_archive_access_granted and not warranty_evidence_reviewed} [Remind me of the Evidence Archive access code]
+    Eleanor Vance: It's on the access slip I gave you. North door.
     -> hub
 
 // --- Early-game options ---
