@@ -323,3 +323,162 @@ Counts: **0 blockers, 6 majors, 18 minors**. About 25 voiced lines change or are
 23. m18: noticeboard date and old dashes. (free)
 24. m14: Helen's talk portrait (cast phase); a background for the evacuation cutscene. (free)
 25. Pack: add the pinned facts in section 8 (Fosse, ALB-SRV-02, svc.deploy, SA-2024-09, review date, inside station, register reset, the evacuated ending). (free)
+
+## Confirmation review (round 2)
+
+Fresh read of commit 89ac60d (`git show 89ac60d`, `git diff 9cf6d9e 89ac60d -- scenarios/sis02_energy/ink`) against the round-1 findings above and the Decisions in `DIALOGUE_REVIEW.md`. Review only. Line numbers are as of 89ac60d: `helen:`, `marcus:`, `tom:`, `priya:` are the `.ink` files; bare `:N` is `scenario.json.erb`.
+
+### Verdict
+
+**Revise**, for one cheap major. All six round-1 majors are closed, and so are 16 of the 18 minors (m14 is cast-phase work and is still partly open). The pack takes the pinned facts. The new mechanics work. I checked the engine for each one: `room_entered:<room>` is emitted (`core/rooms.js:2970`); a mapping whose condition fails is not used up (`npc-manager.js:600-633`); `!`, `&&` and `globalVars.` all evaluate; the `text_file` `textVariants` resolve, and `onRead` fires `global_variable_changed` (`interactions.js:1321, 1384-1398`); `startOnGlobal` and `#skip_task` exist. Every new global is both set and read.
+
+What still stops it shipping is **N1**. The game now tells players to stay out of a hall in gas alarm and debriefs them if they go in. But if the dial hasn't been read when the alarm goes off, Helen, Marcus and the objective list all still send the player into the hall to read it. There are also nine minors (six voiced, three free).
+
+New findings: **0 blockers, 1 major, 9 minors**. About 8 voiced lines change (Helen 5, Priya 3). Everything else is free.
+
+### Checks run
+
+From the repo root, with `BUNDLE_FORCE_RUBY_PLATFORM=true LANG=C.UTF-8`.
+
+- `bin/inklecate`: all four `.ink` files compile to scratch with no warnings, and each is byte-identical to the committed `npc_*.json`.
+- `validate_scenario.rb --skip-ink --no-graph`: the schema passes, and door alignment and geometry are OK. The warnings are the known ones: no `conclusionScreen` (ignore, as in round 1), no `background` on the evacuation cutscene and no `spriteTalk` for Helen (both m14), and the all-conditional credits sections (checked by hand below). The round-1 "can pass at the same time" warnings are gone.
+- `dialoguelint.mjs scenarios/sis02_energy/`: **no findings**. The longest lines are Priya 30 words (`priya:275`), Helen 25, Marcus 24, Tom 24 and timed texts 27.
+- `reopencheck.mjs scripts/ink_runtime_check/missions.json`: Marcus 1800 reopens and Tom 1800, **0 problems**. The "held back" notes are the phone thread not repeating itself, as in round 1.
+- `loopcheck.js` and `inkcheck.js` ran on Helen `start`, `arrival_briefing`, `hub`, `evacuation_scene` and `hydrogen_alarm_response`, Marcus `start`, `hub` and `evidence_scene`, Tom `start` and `hub`, and Priya `start`. Each ran in five states:
+  - default;
+  - mid: briefed, dial, historian, jump server, Marcus contacted, hazard argued, isolation requested, form read;
+  - late: every flag including `bms_registers_saved`, `tom_told_false_authority`, `entered_hall_in_gas_alarm`, `esd_pressed_inside_in_alarm` and `nis_initial_choice=wait`;
+  - evacuated;
+  - no-dial: ESD before the dial, isolated, notified.
+
+  That is 55 entry/state pairs × 2 harnesses: **0 runtime errors, 0 empty choice lists, 0 failing paths**.
+- Globals cross-check (`globalVariables` against ink VARs, ink and scenario reads and writes, and engine writers):
+
+  | Global | Set by | Read by |
+  |---|---|---|
+  | `bms_registers_exported` | `onRead` (`:1037`) | Helen's mapping (`:786-791`) |
+  | `bms_registers_saved` | that mapping | Marcus `:153`, Priya `:144`, credits `:517-519`, export variant `:1033`, Marcus text `:938` |
+  | `entered_hall_in_gas_alarm` | `:768-783` | Priya `:120`, credits `:515` |
+  | `esd_pressed_inside_in_alarm` | inside station (`:1499`) | Priya `:118`, credits `:515-516` |
+  | `tom_told_false_authority` | Tom `:147-148` | Priya `:217`, credits `:529-530` |
+
+  `rate_of_change_viewed` and `compare_racks_viewed` are now read by the credits (`:556-557`). Nothing is set and never read. Nothing is read and never set. The local VARs are all in their own files.
+
+### Round-1 findings: status
+
+| Item | Status | Evidence |
+|---|---|---|
+| MJ1 shutdown argued, not acted on | Closed | `priya:134-135`, first branch, `hazard and hydrogen_alarm`. Small wording issue on the evacuation route (N3). |
+| MJ2 wrong evidence | Closed | Marcus `:157-162`: the shutdown routine overwrites the registers, and the historian holds only what the screen showed. A real export object on HMI-OPS-01 (`:1015-1038`) is counted only before the trip (`:786-791`). Priya `:144-151` tells "saved", "meant to" and "pressed" apart. Credits `:517-519`; facilitator note 3; pack Decision 7 and reference facts. One variant text slip (N2). |
+| MJ3 Helen re-gates the ESD on Marcus | Closed | Two radios, disjoint on `esd_activated` (`:651-664`), and neither one waits on Marcus. Small voice slip (N6). |
+| MJ4 evacuation and gas alarm absent from the world | Closed in the rooms; one gap left (N1) | Dial, rack panel, detector and suppression panel have evacuated variants (`:1440-1462`, `:1518-1537`, `:1556`, `:1573`, `:1596`). Helen `:282-285`. Marcus `:328-333` and his text `:931-934`. The entry barks set the flag (`:768-783`). The inside station records a press in alarm (`:1499`), and Priya `:117-122` and the credits debrief it. |
+| MJ5 argument never named | Closed | `priya:171-172` "made a claim … The argument was …", with evidence at `:188` and `:192`. |
+| MJ6 "nobody reviewed it" ×4 | Closed | Said once, in the closing (`priya:349-350`). `:262`, `:265`, `:267` and `:339` each now make a different point. |
+| m1 | Closed | `:644` |
+| m2 | Closed | `helen:114`, `:153`, `:158-159`; "Real sensors wobble" once (`:199`) |
+| m3 | Closed | `priya:77` |
+| m4 | Closed | Helen `:248`, `:252`, `:307`, `:309-311`, radio `:670`; Priya `:168`, `:275`, `:300`. No ENG-02, OPS-01 or DESNZ left in a voiced line. |
+| m5 | Closed | `helen:180`, `:344` |
+| m6 | Closed | `priya:156-158`, and the second answer is now arguable |
+| m7 | Closed | `marcus:93` |
+| m8 | Closed | `:909` |
+| m9 | Closed | `marcus:102` |
+| m10 | Closed | 198.51.100.45 (RFC 5737) in the game (`:1323`, `:1684`, `:1701`) and the pack (`information_pack.md:406, 758, 842, 940`) |
+| m11 | Closed | credits `:556-557` |
+| m12 | Closed | `startOnGlobal: historian_flatline_found` (`:411`) |
+| m13 | Closed | `mission.json:168` false; `docs/IDEAS_BACKLOG.md:90-91` |
+| m14 | Partly | Helen's talk portrait and the cutscene background are still missing (cast phase) |
+| m15 | Closed | `tom:107`, `:156-163` |
+| m16 | Closed | `helen:188` |
+| m17 | Closed | `tom:147-148`, `priya:217-218`, credits; the sticky `isolation_ask` (`tom:127-138`) lets an honest ask follow |
+| m18 | Closed | noticeboard `:1963`; Purdue labels `:1338-1378` |
+| Pack (item 25) | Closed | `information_pack.md:830-870`: Fosse, ALB-SRV-02, svc.deploy, SA-2024-09, review date, three stations, register loss and the alternative ending |
+| E1 (no re-lock action) | Open, engine | Not needed for MJ4 |
+
+### Regression checklist
+
+| Check | Result |
+|---|---|
+| Crashes, "ran out of content" | None (55 × 2 runs). |
+| Fall-through choices | None (lint). `isolation_ask` is sticky, with an exit on every route. |
+| Blank re-entry | Only the designed one silent return after an exit (`helen:101-102`, `priya:70-71`, `:384-385`). |
+| New globals | All set and read (table above). The export only counts before the trip, because of a mapping condition, not a race. |
+| Debrief gated on what the player did | Yes, with three wording slips: N3 (evacuation route repeats itself), N4 (door-station advice after the ESD was already in), N7 ("fifty-one the whole time"). |
+| Credits cover every path | Yes. Priya appears only with `esd_activated`, so every ESD line prints. Each new pair is disjoint and complete: `entered`/`inside`; `saved`, then `save`/`press` excluding the evacuation; `tom_refused`/`false_authority`. Two new dial lines cover "read but no verdict" and "never read". |
+| Two cutscenes on one event | No. `facility_evacuated` has one person-chat cutscene, plus Marcus's 20 s text. |
+| Timed texts stacking or contradicting | Three minors: N9 (Marcus and Helen both say "now the notification" at isolation), N10 (Helen's late-ESD radio says "let's find out who did this" after the jump server is known), N7 (Helen says fifty-one when the dial showed 53 or 46). |
+| Printed variables in voiced lines | None. `helen:303` chooses a fixed string. |
+| Voiced lines over ~30 words | None (max 30, `priya:275`). |
+| TTS acronyms | ESD, SIS, BMS, NIS, NCSC, SCADA, HSE: all read as letters or words. "sixty-two four four three" and "the energy department" are written out. |
+| New em or en dashes | None in player-facing text. The `──` in the credits header is the existing house style, and the `−` at `:1062` is in an ERB comment. |
+
+### Teaching and voice
+
+- **Debrief.** It now reads as a conversation. The spoken section headers are gone ("Hall 1 first.", "Notifications."), and each section opens on its verdict. The moral is said once, at the close. The three "When you isolated them" openers are alternatives, so only one ever plays. "Then thank you, all of you. My notes go to Marcus this week." is a better close than before.
+- **Claim, argument and evidence** are sound. The claim is "trips, whatever happens to SCADA". The argument is "own network, so nothing on SCADA could reach it". The evidence is "a test showing the port couldn't be reached … nobody ran one". The "it held" answer gets a reason, not a mark (`priya:184`). The pack's CLAIM-EN-002 evidence list (`information_pack.md:323`) agrees.
+- **NIS choices.** Both are arguable now. "Hold it … Wrong reports are hard to undo" (`marcus:241`) is a real position. Marcus disagrees in one line and leaves it to the player (`:244-245`). Priya credits sending with the unknowns marked, which is what the regulation asks for. The three state-aware "Right. Initial notification: …" lines (`:259-266`) are good teaching: they show what an initial report actually contains.
+- **Helen.** She is consistently Nottinghamshire: "What else, duck?", "It's the ESD or nowt.", "Be quick, mind.", "the lot booked for the seven o'clock window", "Nor am I. That's the trouble." There is one arch slip (N6).
+- **Priya.** She is sis01's Priya: the same entry, the same verdict-then-question shape and the same plainness. Compare `priya:77` and `:153` with sis01 `npc_sharma.ink:64` and `:294`.
+
+### Pack consistency
+
+Checked against `information_pack.md` (7b91f99): dates and times, Fosse and 14 months, ALB-SRV-02, svc.deploy at 02:31 and TW-WS-07 at 05:52, SA-2024-09 and its March 2025 review, three ESD stations, register loss on the trip, the alternative ending (Helen presses the console station "on the way out", which matches Priya `:101` and the credits), the documentation-range Tor address, two quarterly risk reports, and "seven weeks later" for sis03. All match, except the noticeboard (N8). Note for the orchestrator: `docs/agents/SIS02_LOOP_BRIEF.md` still calls sis03 "T+48 hours". sis03's `mission.json:123` and the facilitator note say seven weeks.
+
+### New findings
+
+**N1 (major, Spoken: yes): after the gas alarm, the game still sends a player who hasn't read the dial into the hall, then debriefs them for going in.** The alarm comes 25 minutes after the briefing (`:429`). A slow group can easily still be reading documents in the control room by then.
+
+- Helen's "What next?" checks `not anomaly_detected` before anything about hydrogen: "Hall 1. Read the dial at Rack A2 and come and tell me what it says." (`helen:304-305`).
+- Her hub still offers "[What am I looking for in the hall?]" (`helen:106-109`).
+- Marcus says "Get Helen's dial read." (`marcus:334-335`).
+- The `conduct_walkdown` tasks stay active (`:186-206`).
+- The dial's alarm variant tells the player "You shouldn't be in here" (`:1447`). The entry bark fires (`:774`), and Priya says "Nothing in there needed you" (`priya:121`).
+
+This is S2's core lesson, contradicted by the scenario's main voice.
+
+Fix:
+- In `next_steps`, straight after the `facility_evacuated` branch, add:
+  - `- hydrogen_alarm and not esd_activated:` "Not the hall, not now. Press the station by the door. The dial can wait."
+  - `- hydrogen_alarm and not anomaly_detected:` "Leave the dial. Nobody goes in that hall till the gas is down."
+- Gate the hub's dial option on `not hydrogen_alarm`.
+- Marcus `current_status` (free): a first branch `- hydrogen_alarm and not esd_activated and not facility_evacuated:` "Hall 1's in gas alarm. Door station, now. Never mind the dial."
+- Add a Helen mapping on `hydrogen_alarm` with `!globalVars.anomaly_detected` that skips `enter_battery_hall` and `check_thermometer` (`skipTask`). Check that skipped tasks still complete `conduct_walkdown`, so that `verify_anomaly` unlocks (`:215`).
+
+**N2 (minor, free): the saved register export says the registers have been reset before anyone has pressed the ESD.** The variant at `:1032-1034` has the condition `globalVars.bms_registers_saved` and reads "The controller has since reset these registers". A player who reads the export and then opens it again before pressing sees that. Fix: `globalVars.bms_registers_saved && globalVars.esd_activated`.
+
+**N3 (minor, Spoken: yes): Priya's MJ1 line repeats itself on the evacuation route.** `priya:101` already says "The gas reached two per cent before anyone pressed the ESD". Then `:135` adds "Then nobody pressed it till the gas came up." Fix: a branch before `:134`:
+
+```ink
+- shutdown_argument == "hazard" and facility_evacuated:
+    Priya S.: You argued to shut down on the hazard. An argument only counts once somebody acts on it.
+```
+
+**N4 (minor, Spoken: yes): door-station advice when the ESD was already in.** The second entry mapping (`:777-783`) sets `entered_hall_in_gas_alarm` after the ESD too, including after the evacuation. Priya's line then ends "…and the door station works from outside" (`priya:121`), which no longer applies. Fix `:121`: "Someone walked into Hall 1 in a gas alarm. Nothing in there was worth that."
+
+**N5 (minor, Spoken: yes): Helen's bark for a burning hall.** "Out of that hall. It's still full of gas." (`:782`) also plays after the evacuation, with the hall alight. Fix: add `&& !globalVars.facility_evacuated` to `:780`, and add a third mapping on `facility_evacuated`: "Out of that hall. It's alight."
+
+**N6 (minor, Spoken: yes): "If that ESD's not in, I'd put it in."** (`:657`). Helen is sitting at the console with a station on it, and the mapping only fires when the ESD isn't in, so the "if" sounds coy. Fix: "Dead flat since twelve minutes past eleven. Somebody's writing it. Get that ESD in, then message Marcus."
+
+**N7 (minor, mostly free): the dial and "fifty-one".** A dial first read in the gas alarm says 53 (`:1447`). One first read after an ESD-before-dial says 46 (`:1451`). Yet Helen's radio (`:644`) and her question (`helen:149`) say fifty-one, and Priya says "It said fifty-one the whole time" (`priya:131`). Fix:
+- free: give the dial a drag pointer. Change `:1451` to "The dial now reads 46°C, falling since the shutdown. Its red drag needle has stuck at 51." Change `:1447` to "The dial reads 51°C and the needle's still creeping. The gas alarm is sounding over the racks. You shouldn't be in here."
+- voiced: `priya:131` → "Nobody read the dial at Rack A2. It said fifty-one from the start."
+
+**N8 (minor, free): the noticeboard dates Marcus's flag to the month the rules were issued.** "Issued for the smart grid upgrade (Fosse Controls), September 2024 … Marcus Webb flagged this for remediation 18 months ago." (`:1963`). The pack says he raised it in two consecutive quarterly risk reports (`information_pack.md:698`), as Marcus does (`marcus:288`). Fix: "NOTE: Marcus Webb flagged this in two quarterly risk reports. Not yet actioned."
+
+**N9 (minor, free): two "now the notification" messages land together.** When CastleTech's isolation completes the safe state, Marcus's text (`:911-928`, 1 s) and Helen's voiced radio (`:729-746`, 5 s) both say it. Fix: add `&& globalVars.esd_activated !== true` to Marcus's three `network_isolated` conditions, so Helen's radio covers it whenever the hall is already safe.
+
+**N10 (minor, Spoken: yes): Helen's late-ESD radio is out of step.** "ESD's in. The A racks are off charge and the fans are on full. Now let's find out who did this." (`:690`) also fires on the common logs-first route, where the player already knows it was the Ellison account. Fix: split it on `jump_server_confirmed`. When it is set: "ESD's in. The A racks are off charge and the fans are on full. Now get them off our network."
+
+### Fix list (round 3)
+
+1. N1: no route sends the player into Hall 1 after the gas alarm (Helen `next_steps` and hub, Marcus status, skip the walkdown tasks). (Spoken: yes, 2 Helen lines)
+2. N3: Priya's evacuation-route shutdown line. (Spoken: yes, 1)
+3. N4: Priya's entered-hall line. (Spoken: yes, 1)
+4. N5: Helen's evacuated-hall bark. (Spoken: yes, 1 new)
+5. N6: Helen's flat-line radio. (Spoken: yes, 1)
+6. N10: Helen's late-ESD radio split. (Spoken: yes, 1 new)
+7. N7: the dial's drag needle (free); `priya:131` (Spoken: yes, 1).
+8. N2: condition on the saved-export variant. (free)
+9. N8: noticeboard note. (free)
+10. N9: gate Marcus's isolation texts on no ESD yet. (free)
+11. m14 (carried): Helen's talk portrait; a background for the evacuation cutscene. (cast phase)
