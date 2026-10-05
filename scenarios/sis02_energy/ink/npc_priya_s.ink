@@ -102,10 +102,10 @@ Priya S.: Nobody's being blamed here. What we learn goes out to other sites like
     Priya S.: Everyone got out, and the fire service had it. Getting out was right. It's what the alarm is for.
 - else:
     {
-    - esd_before_dial and early_esd_activation:
+    - esd_before_dial and early_esd_activation and not hydrogen_alarm:
         Priya S.: The ESD went in before anyone had read the dial. A precaution, and it happened to be right.
         Priya S.: Next time, read the dial first. It takes two minutes.
-    - early_esd_activation:
+    - early_esd_activation and not hydrogen_alarm:
         Priya S.: You shut Hall 1 down on a dial reading, before you knew why. That cost a morning's revenue.
         Priya S.: It was the right trade.
     - hydrogen_alarm:
@@ -118,7 +118,7 @@ Priya S.: Nobody's being blamed here. What we learn goes out to other sites like
 - esd_pressed_inside_in_alarm:
     Priya S.: You pressed the one inside the hall, in a gas alarm. The one by the door does the same job from outside.
 - entered_hall_in_gas_alarm:
-    Priya S.: Someone walked into Hall 1 in a gas alarm. Nothing in there needed you, and the door station works from outside.
+    Priya S.: Someone walked into Hall 1 in a gas alarm. Nothing in there was worth that.
 }
 {
 - gauge_verdict == "dial":
@@ -128,9 +128,11 @@ Priya S.: Nobody's being blamed here. What we learn goes out to other sites like
 - gauge_verdict == "historian":
     Priya S.: You wanted the historian before you'd back the dial. Fair, as long as it's quick.
 - not anomaly_detected:
-    Priya S.: Nobody read the dial at Rack A2. It said fifty-one the whole time.
+    Priya S.: Nobody read the dial at Rack A2. It said fifty-one from the start.
 }
 {
+- shutdown_argument == "hazard" and facility_evacuated:
+    Priya S.: You argued to shut down on the hazard. An argument only counts once somebody acts on it.
 - shutdown_argument == "hazard" and hydrogen_alarm:
     Priya S.: You argued to shut down on the hazard. Then nobody pressed it till the gas came up. An argument only counts once somebody acts on it.
 - shutdown_argument == "hazard":
@@ -152,7 +154,14 @@ Priya S.: Nobody's being blamed here. What we learn goes out to other sites like
 }
 Priya S.: When one mistake costs money and the other costs the building, how sure do you need to be?
 * [Sure it's a real hazard. Not sure of the cause.]
-    Priya S.: Yes. The dial was enough. The cause could wait.
+    {
+    - not anomaly_detected:
+        Priya S.: Yes. Here the dial would have been enough, if anyone had read it.
+    - facility_evacuated:
+        Priya S.: Yes. The dial was enough. Nobody acted on it, so the gas made the call instead.
+    - else:
+        Priya S.: Yes. The dial was enough. The cause could wait.
+    }
 * [Sure it isn't the gauge. One more reading would do it.]
     Priya S.: A second reading's fair, if it takes two minutes. Wait to be certain and you'll be watching it from the car park.
     Priya S.: You don't need to be certain. You need to know which mistake you can live with.
@@ -185,7 +194,7 @@ Priya S.: The argument was that it sat on its own network, so nothing on SCADA c
     -> claims_more
 + { not asked_evidence } [What would the evidence have looked like?]
     ~ asked_evidence = true
-    Priya S.: A test showing the port couldn't be reached from SCADA. Nobody ran one after commissioning.
+    Priya S.: A test showing the port couldn't be reached from SCADA. There hasn't been one since commissioning.
     -> en002_question
 
 === claims_more ===
@@ -207,7 +216,7 @@ Priya S.: The dial claim only half held. The dial was independent, but the claim
 - isolation_scope == "scada":
     Priya S.: To stop them, you shut SCADA down. That stopped everything, and put someone in Hall 2 every hour with a gas monitor.
 - network_isolated:
-    Priya S.: When you isolated them, nobody decided how far to cut. The historian stayed connected by default.
+    Priya S.: When you isolated them, how far to cut was never decided. The historian stayed connected by default.
 }
 { isolation_scope != "":
     Priya S.: Every way of stopping them cost you something. The plan should have said which, before the night.
@@ -215,7 +224,7 @@ Priya S.: The dial claim only half held. The dial was independent, but the claim
 { network_isolated:
     {
     - tom_told_false_authority:
-        Priya S.: You told Tom Marcus had signed it off before he had. Tom rang him. Plenty of suppliers wouldn't.
+        Priya S.: You told Tom Marcus had signed it off before he had. Tom rang him to check. That check is what stops a stranger talking a supplier into opening your firewall.
     - tom_refused_unverified:
         Priya S.: Tom wouldn't touch your firewall until Marcus confirmed. Annoying on the night. It's exactly what you want from a supplier.
     - else:
@@ -318,11 +327,15 @@ Priya S.: Ofgem's the competent authority, with the energy department. We're tol
 }
 Priya S.: Did Trent Water need telling under NIS?
 * [Yes. Water's an essential service too.]
-    Priya S.: Water can be. Trent Water's a small pumping station, well under the thresholds. Telling them was a duty of care.
+    Priya S.: Water can be. Trent Water's a small pumping station, well under the thresholds. Telling them is a duty of care, not a NIS one.
 * [No. It was duty of care. They share our systems.]
-    Priya S.: Right. Under the thresholds, but on the same file server.
+    Priya S.: Right. They're under the thresholds, so NIS doesn't apply. They share your file server, though, so they need to know.
 -
-Priya S.: And Tom needed your say-so to tell them, because he works for both of you.
+{ trent_water_notified:
+    Priya S.: And Tom needed your say-so to tell them, because he works for both of you.
+- else:
+    Priya S.: Tom needs your say-so to tell them, because he works for both of you. I'd give it today.
+}
 -> root_cause
 
 
@@ -332,11 +345,11 @@ Priya S.: And Tom needed your say-so to tell them, because he works for both of 
 
 === root_cause ===
 Priya S.: How they got in. Tampered firmware on your printers gave them a foothold. From there they took CastleTech's management account, and then your domain.
-Priya S.: Then the Ellison account. Locked on the domain when he left, still alive on the jump server, with its default password.
+Priya S.: Then an old contractor's account, Ellison's. Locked on the domain when he left, still alive on the jump server, with its default password.
 { jump_server_confirmed:
     Priya S.: You'll have seen it on the engineering workstation. Fourteen months gone, and it still worked.
 }
-Priya S.: Marcus's risk assessment described this attack, eighteen months ago, almost word for word.
+Priya S.: Marcus wrote a risk assessment in September 2024 that described this attack almost word for word.
 -> closing_summary
 
 

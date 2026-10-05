@@ -68,14 +68,17 @@ VAR topic_patch_view = false
 -> hub
 
 === first_call ===
-+ { anomaly_detected } [The dial at Rack A2 says fifty-one. The HMI says twenty-eight.]
++ { anomaly_detected and not facility_evacuated } [The dial at Rack A2 has hit fifty-one. The HMI says twenty-eight.]
     Fifty-one. Say that again.
     That dial isn't on any network. If it says fifty-one, something's feeding SCADA a story.
     -> first_call_next
-+ { historian_flatline_found } [The historian's been flat at twenty-eight since 23:12.]
++ { historian_flatline_found and not facility_evacuated } [The historian's been flat at twenty-eight since 23:12.]
     Dead flat? Nothing real does that. Somebody's writing that value.
     -> first_call_next
-+ [Nothing solid yet. Helen doesn't like the look of the screens.]
++ { facility_evacuated } [Hall 1's on fire. Helen got everyone out.]
+    I've heard. Everyone counted? Good. The hall's the fire service's. Whoever did this is still on our network.
+    -> first_call_next
++ { not facility_evacuated } [Nothing solid yet. Helen doesn't like the look of the screens.]
     Helen's gut has a better record than our monitoring. Get me something I can look at. The dial, the historian, anything.
     -> hub
 
@@ -241,8 +244,8 @@ Before I sign it. Do we send what we've got, or wait till we know more?
 + [Hold it till we know how far they got. Wrong reports are hard to undo.]
     ~ nis_initial_choice = "wait"
     #set_global:nis_initial_choice:wait
-    I'd rather send what we know now and update it than send a perfect report on Tuesday.
-    Unknowns go in as unknowns. It's your call, though. I won't sign what you don't stand behind.
+    A wrong report's hard to undo, fair. But the clock runs from when we knew, not from when we're sure.
+    It's your call. I won't sign what you don't stand behind.
     ++ [Fine. Send what we know.]
         -> nis_send
     ++ [No. We wait.]
@@ -325,6 +328,8 @@ A risk accepted with a control that isn't there? That's risk pretence.
 
 === current_status ===
 {
+- hydrogen_alarm and not esd_activated and not facility_evacuated:
+    Hall 1's in gas alarm. Door station, now. Never mind the dial.
 - facility_evacuated and not network_isolated:
     Hall 1's gone and everyone's out. Now get them off our network. Cable, then Tom.
 - facility_evacuated and not nis_notified:
