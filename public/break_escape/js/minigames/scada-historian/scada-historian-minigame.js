@@ -53,8 +53,8 @@ export class ScadaHistorianMinigame extends MinigameScene {
         });
 
         this._sd                = sd;
-        this._title             = sd.title    || 'ALBION ENERGY STORAGE — SCADA HISTORIAN';
-        this._subtitle          = sd.subtitle || 'Battery Hall 1 — Temperature (°C)';
+        this._title             = sd.title    || 'ALBION ENERGY STORAGE: SCADA HISTORIAN';
+        this._subtitle          = sd.subtitle || 'Battery Hall 1: Temperature (°C)';
         this._cfg               = parseHistorianConfig(sd);
         this._racksConfig       = this._cfg.racks;
         this._injectionTs       = this._cfg.injectionTs;

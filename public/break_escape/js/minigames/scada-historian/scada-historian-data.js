@@ -197,6 +197,6 @@ export function reportContent(anomaly, cfg, sd = {}, rack = null) {
                 + `Δ = ${fmtSigned(delta)}°C in ${fmtGap(gapMs)} (physically impossible)`],
             ['Interpretation:', `Sensor data falsification via PLC register\ninjection. Injection timestamp: ${fmtClock(firstInjected.ts)}.`],
         ],
-        confirmLabel: `[CONFIRM — MARK AS INJECTION EVENT: ${fmtHM(firstInjected.ts)}]`,
+        confirmLabel: `[CONFIRM: MARK AS INJECTION EVENT AT ${fmtHM(firstInjected.ts)}]`,
     };
 }

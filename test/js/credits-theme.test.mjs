@@ -57,6 +57,8 @@ test('cyber theme uses the mission name and credits setting, with no spy framing
     assert.doesNotMatch(JSON.stringify(o), spy);
     assert.doesNotMatch(def.matrixChars, /SAFETYNET|ENTROPY/);
     assert.doesNotMatch(JSON.stringify(def.logMessages), spy);
+    assert.deepEqual(o.phase, ['PHASE:', 'REVIEW']); // no audio-driven THREAT row under INCIDENT CONTAINED
+    assert.equal(T.CREDITS_THEMES.safetynet.overlay({}), null); // safetynet keeps its THREAT row
     assert.equal(def.stamp, false);
     assert.notEqual(def.logo, 'shield');
     const t = T.trackInfoLabel('cyber', { trackTitle: 'Safetynet in the Smoke', playlistName: 'Victory' });

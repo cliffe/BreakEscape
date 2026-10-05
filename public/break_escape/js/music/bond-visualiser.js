@@ -1506,6 +1506,12 @@ function _applyOverlayText(t) {
         const st = statusLines[1].querySelector('.val');
         if (st) { st.textContent = t.status; st.classList.remove('bv-blink'); }
     }
+    // Third row: THREAT (audio-driven LOW..CRITICAL) becomes a neutral fixed phase when the theme sets one.
+    if (t.phase && statusLines[2]) {
+        setText(statusLines[2].querySelector('.label'), t.phase[0]);
+        const ph = statusLines[2].querySelector('.val');
+        if (ph) { ph.removeAttribute('id'); ph.textContent = t.phase[1]; ph.style.color = 'var(--bv-cyan)'; }
+    }
     const [leftPanel, rightPanel] = [..._overlay.querySelectorAll('.bv-side-panel')];
     const leftTitles = leftPanel ? [...leftPanel.querySelectorAll('.bv-panel-title')] : [];
     setText(leftTitles[0], t.leftTitle);

@@ -51,14 +51,14 @@ export class LogFilterMinigame extends MinigameScene {
             { id: 'mfa',      label: 'MFA =',        type: 'enum',   values: ['YES', 'NO'] },
             { id: 'result',   label: 'RESULT =',     type: 'enum',   values: ['ACCEPT', 'REJECT'] },
             { id: 'user',     label: 'USER =',       type: 'text',   placeholder: 'username or prefix' },
-            { id: 'time',     label: 'TIME =',       type: 'enum',   values: ['00–06', '06–12', '12–18', '18–24'] }
+            { id: 'time',     label: 'TIME =',       type: 'enum',   values: ['00-06', '06-12', '12-18', '18-24'] }
         ],
         ics_rdp: [
             { id: 'status',      label: 'STATUS =',       type: 'enum', values: ['ACTIVE', 'CLOSED', 'FAILED'] },
             { id: 'accessLevel', label: 'ACCESS_LEVEL =', type: 'enum', values: ['ENGINEER', 'CONTRACTOR', 'ADMIN'] },
             { id: 'account',     label: 'ACCOUNT =',      type: 'text', placeholder: 'account name or prefix' },
             { id: 'sourceIp',    label: 'SOURCE_IP =',    type: 'text', placeholder: 'IP prefix (e.g. 185.)' },
-            { id: 'time',        label: 'TIME =',         type: 'enum', values: ['00–06', '06–12', '12–18', '18–24'] }
+            { id: 'time',        label: 'TIME =',         type: 'enum', values: ['00-06', '06-12', '12-18', '18-24'] }
         ]
     };
 
@@ -360,7 +360,7 @@ export class LogFilterMinigame extends MinigameScene {
         // Session detail (rendered below log table inside logPane)
         if (this._sessionFlagged && this._completionFired) {
             const banner = this._el('div', 'lf-complete-banner');
-            banner.textContent = '✓ INVESTIGATION COMPLETE — Jump server session flagged and SIS audit reviewed.';
+            banner.textContent = '✓ INVESTIGATION COMPLETE: Jump server session flagged and SIS audit reviewed.';
             logPane.appendChild(banner);
         } else if (this._selectedEntry) {
             this._renderSessionDetail(logPane);
@@ -580,8 +580,8 @@ export class LogFilterMinigame extends MinigameScene {
     }
 
     _timeRangeToHour(rangeStr) {
-        // "00–06" → awk condition or grep pattern
-        const map = { '00–06': '00|01|02|03|04|05', '06–12': '06|07|08|09|10|11', '12–18': '12|13|14|15|16|17', '18–24': '18|19|20|21|22|23' };
+        // "00-06" → awk condition or grep pattern
+        const map = { '00-06': '00|01|02|03|04|05', '06-12': '06|07|08|09|10|11', '12-18': '12|13|14|15|16|17', '18-24': '18|19|20|21|22|23' };
         if (this._logType === 'ics_rdp') {
             // Return awk hour condition based on col 1 (timestamp)
             const hours = (map[rangeStr] || '').split('|');
@@ -728,7 +728,7 @@ export class LogFilterMinigame extends MinigameScene {
         const hourStr = timestamp.slice(11, 13);
         const hour = parseInt(hourStr, 10);
         if (isNaN(hour)) return true;
-        const ranges = { '00–06': [0, 5], '06–12': [6, 11], '12–18': [12, 17], '18–24': [18, 23] };
+        const ranges = { '00-06': [0, 5], '06-12': [6, 11], '12-18': [12, 17], '18-24': [18, 23] };
         const [lo, hi] = ranges[range] || [0, 23];
         return hour >= lo && hour <= hi;
     }
@@ -776,7 +776,7 @@ export class LogFilterMinigame extends MinigameScene {
             const lbl = this._el('div', 'lf-detail-label');
             lbl.textContent = f.label + ':';
             const val = this._el('div', 'lf-detail-value');
-            val.textContent = displayDashes(entry[f.key] || '—');
+            val.textContent = displayDashes(entry[f.key] || '-');
             grid.appendChild(lbl);
             grid.appendChild(val);
         }
@@ -976,13 +976,13 @@ export class LogFilterMinigame extends MinigameScene {
     _renderThreatIntelOverlay(panel) {
         const entry = this._selectedEntry;
         const ti = entry ? this._lookupThreatIntel(entry) : null;
-        const body = this._overlayHeader(panel, 'THREAT INTELLIGENCE — IP LOOKUP');
+        const body = this._overlayHeader(panel, 'THREAT INTELLIGENCE: IP LOOKUP');
         const grid = this._el('div', 'lf-threat-grid');
 
         if (!ti) {
             // No intel for this row's IP: report what the log says and that nothing matched.
             const rows = [
-                ['IP:', this._entryIp(entry) || '—'],
+                ['IP:', this._entryIp(entry) || '-'],
                 ['Result:', 'No match in threat-intelligence feeds']
             ];
             if (entry?.country) rows.push(['Country:', entry.country]);
@@ -1005,7 +1005,7 @@ export class LogFilterMinigame extends MinigameScene {
 
         if (ti.knownBad) {
             const badge = this._el('div', 'lf-threat-known-bad');
-            badge.textContent = displayDashes(`⚠ KNOWN BAD: YES${ti.type ? ` — ${ti.type}` : ''}`);
+            badge.textContent = displayDashes(`⚠ KNOWN BAD: YES${ti.type ? `: ${ti.type}` : ''}`);
             body.appendChild(badge);
         }
     }
@@ -1017,7 +1017,7 @@ export class LogFilterMinigame extends MinigameScene {
             this._renderAccountSummaryOverlay(panel, entry);
             return;
         }
-        const body = this._overlayHeader(panel, `ACCOUNT INVESTIGATION — ${ah.account}`);
+        const body = this._overlayHeader(panel, `ACCOUNT INVESTIGATION: ${ah.account}`);
 
         const divider1 = this._el('hr', 'lf-overlay-divider');
         body.appendChild(divider1);
@@ -1074,7 +1074,7 @@ export class LogFilterMinigame extends MinigameScene {
     /** Account view for a row with no configured profile: facts drawn from the log itself. */
     _renderAccountSummaryOverlay(panel, entry) {
         const sum = this._summariseAccount(entry || {});
-        const body = this._overlayHeader(panel, `ACCOUNT INVESTIGATION — ${sum.account || 'UNKNOWN'}`);
+        const body = this._overlayHeader(panel, `ACCOUNT INVESTIGATION: ${sum.account || 'UNKNOWN'}`);
         body.appendChild(this._el('hr', 'lf-overlay-divider'));
 
         const rows = [
@@ -1126,7 +1126,7 @@ export class LogFilterMinigame extends MinigameScene {
         cancel.addEventListener('click', () => this._closeOverlay());
 
         const confirm = this._el('button', 'lf-flag-confirm-btn');
-        confirm.textContent = '[CONFIRM — FLAG ACTIVE SESSION]';
+        confirm.textContent = '[CONFIRM: FLAG ACTIVE SESSION]';
         confirm.addEventListener('click', () => this._onFlagConfirmed());
 
         actions.appendChild(cancel);
@@ -1233,14 +1233,14 @@ export class LogFilterMinigame extends MinigameScene {
                 const td = document.createElement('td');
                 if (f.key === 'operator') {
                     td.classList.add('lf-audit-operator');
-                    td.textContent = entry[f.key] || '—';
+                    td.textContent = entry[f.key] || '-';
                     if (isAnomalyEntry && entry.command === 'WRITE_CONFIG') {
                         const chev = this._el('span', 'lf-audit-chevron');
                         chev.textContent = ' ►';
                         td.appendChild(chev);
                     }
                 } else {
-                    td.textContent = entry[f.key] || '—';
+                    td.textContent = entry[f.key] || '-';
                 }
                 tr.appendChild(td);
             }
@@ -1263,20 +1263,20 @@ export class LogFilterMinigame extends MinigameScene {
         const entry = this._selectedAuditEntry;
         if (!entry) return;
 
-        const body = this._overlayHeader(panel, `COMMAND DETAIL — ${entry.timestamp}`);
+        const body = this._overlayHeader(panel, `COMMAND DETAIL: ${entry.timestamp}`);
 
         const grid = this._el('div', 'lf-audit-detail-grid');
         const rows = [
             ['Operator:', entry.operator],
             ['Command:', entry.command],
             ['Parameter:', entry.parameter],
-            ['Old value:', entry.oldValue || '—'],
-            ['New value:', entry.newValue || '—'],
+            ['Old value:', entry.oldValue || '-'],
+            ['New value:', entry.newValue || '-'],
             ['Result:', entry.result],
-            ['Session:', entry.sessionRef || '—']
+            ['Session:', entry.sessionRef || '-']
         ];
         for (const [lbl, val] of rows) {
-            if (!val || val === '—') continue;
+            if (!val || val === '-') continue;
             const l = this._el('div', 'lf-audit-detail-label'); l.textContent = lbl;
             const v = this._el('div', 'lf-audit-detail-value'); v.textContent = displayDashes(val);
             grid.appendChild(l); grid.appendChild(v);
@@ -1312,7 +1312,7 @@ export class LogFilterMinigame extends MinigameScene {
             const existing = this._dom.logPane.querySelectorAll('.lf-complete-banner, .lf-session-detail');
             existing.forEach(el => el.remove());
             const banner = this._el('div', 'lf-complete-banner');
-            banner.textContent = '✓ INVESTIGATION COMPLETE — Session flagged. SIS audit reviewed.';
+            banner.textContent = '✓ INVESTIGATION COMPLETE: Session flagged. SIS audit reviewed.';
             this._dom.logPane.appendChild(banner);
         }
 
