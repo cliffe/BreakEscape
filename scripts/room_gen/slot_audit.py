@@ -74,6 +74,9 @@ def slots_for(room_type):
     """{base type: [(layer, image, obj), ...]} in rooms.js search order, or None if no map."""
     path = ROOMS / f"{room_type}.json"
     if not path.exists():
+        # game.js registers some keys in lower case for mixed-case files (room_it -> room_IT.json)
+        path = next((p for p in ROOMS.glob("*.json") if p.stem.lower() == room_type.lower()), None)
+    if path is None or not path.exists():
         return None
     m = json.loads(path.read_text())
     gids = {}

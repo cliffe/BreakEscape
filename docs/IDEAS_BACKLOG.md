@@ -83,3 +83,6 @@ Each entry: a short title, where it came from, the idea in two or three sentence
 - Art wanted (none generated): a ward-usable crash trolley, a clearer ECG cart, a ventilator and an ECMO machine for m02's ward, a camp bed / evidence bags for sis01's IT office, a sandwich platter, a major-incident action-card board and a Trust site map for sis01's incident room.
 - m02 (existing issue): clicking the Bed 4 ventilator panel opens Mr Pryce's chat; they're ~20px apart.
 - Engine: a reload restarts scenario timers (sis01 ICO clock reset from 21:35 to 45:00; also seen in m07). The command board and SIEM show the real wall clock rather than scenario time.
+
+## Slot-audit hits in room_IT (found 2026-10-05)
+The slot audit and wall check used to skip type `room_it` (file `room_IT.json`). Now fixed, they show objects that land at random positions in that map: m01 it_room "IT Security Concerns" (notes2); m04 engineering_workshop "BMS Jump Server Terminal" (vm-launcher) and "SAFETYNET Drop-Site Terminal" (flag-station), m04 plant_room "Emergency Shutdown Pushbutton" (emergency-button); lockpick_gauntlet keyed_door_1 two keys. Each needs a sprite slot or a position. Not fixed: other missions.
