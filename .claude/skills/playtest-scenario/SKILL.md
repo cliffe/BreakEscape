@@ -121,6 +121,12 @@ Each of these cost at least one pass-4 run (reports in `tools/playtest/m0*-pass4
 - **`enter` may need a second call, or a pointer move first.** Under load a door can need repeated `enter`; after a door is unlocked and its sprite has gone, `enter` can fail with `no-known-doorway` until a `room` call lists it, and walking through with `moveTo` + `walk` works.
 - **`mg choose` is unreliable on long hubs and number-only choices.** A regex on a choice whose text is just a number ("5093.") reads as a list number and fails with `choice-no-match`; on long menus pick with `{"cmd":"mg","action":"clickText","args":["<exact choice text>"]}` instead.
 - **Interaction range is 32 px (24 px for some objects).** `interact` from 36 px reports `no-effect-confirmed`. Walk closer, and if a spot can't be reached from the side you approach, report it: that is a layout finding for the scenario (m02 Bed 4, m06 rack sheet and Satoshi, m08 locker).
+- **In a cloud or headless container, always pass `--headless true`.** There's no X server, so the headed default never starts.
+- **RFID flipper menu items aren't in the `mg` control list.** Click the visible `.flipper-menu-item` through the DOM (an `eval` that finds it by its text) instead of `mg clickControl`.
+- **Never decode in a shell.** Pipes (`base64 -d | tr …`) were refused by the permission layer. Either give the tester the decoded values and log them as "exercised, not earned", or decode with the in-game CyberChef, which can be driven through its iframe URL hash (recipe and input in the `#recipe=…&input=…` fragment).
+- **To reload, `eval` `location.reload()`, then press Enter on the title screen.**
+- **The harness `openTasks` lists locked tasks too.** The on-screen objectives panel hides them, so don't report a task as visible to the player because `openTasks` has it.
+- **A tester's Write to the scratchpad may be refused.** Ask for the whole report in the tester's final message, not only in a file.
 
 ## Token discipline
 

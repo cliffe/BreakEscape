@@ -225,4 +225,6 @@ Short, one line per item, grouped:
 - Places to reward curiosity or add a continuity callback.
 - Exit-conversation trims, list-to-sentence conversions.
 
+Before recommending that a line be cut, grep the later missions for the line or its idea (`grep -rn -i "<key phrase>" scenarios/*/ink/`). A line that looks loose may be a setup: m03's review nearly cut Nightshade's "One day it'll be our badge somebody clones", which m08 pays off.
+
 Keep it concise; don't repeat detail already given in the review sections above.
