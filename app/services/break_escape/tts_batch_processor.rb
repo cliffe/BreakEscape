@@ -348,6 +348,10 @@ module BreakEscape
       mp3_path = @tts_service.cache_path(cache_key, scenario_name)
 
       if File.exist?(mp3_path)
+        # Backfill provenance for audio cached before sidecars existed
+        unless File.exist?(@tts_service.sidecar_path(mp3_path))
+          @tts_service.write_sidecar(mp3_path, text, voice_name, style_prompt, language_code, scenario_name, source: "batch")
+        end
         @stats[:cache_hits] += 1
         @consecutive_failures = 0  # Reset on cache hit
         log_verbose "      ✓ Cached: #{text.truncate(60)}"
@@ -564,8 +568,7 @@ module BreakEscape
     end
 
     def compute_cache_key(text, voice_name, style_prompt, language_code)
-      normalized = text.to_s.downcase.gsub(/[^\w\s]/, "").strip.gsub(/\s+/, " ")
-      Digest::MD5.hexdigest("#{normalized}|#{voice_name}|#{style_prompt}|#{language_code}")
+      TtsService.cache_key(text, voice_name, style_prompt, language_code)
     end
 
     def print_summary

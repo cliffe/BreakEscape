@@ -463,17 +463,11 @@ module BreakEscape
     # ─── Successful TTS via cache hit (no real API call) ─────────────────────
 
     test "tts serves mp3 audio for intercom object when audio is cached" do
-      cache_dir = Rails.root.join("tmp", "tts_cache")
-      FileUtils.mkdir_p(cache_dir)
-
       # Compute the exact cache key TtsService will look up
       voice_name   = "Aoede"
       normalized   = VOICE_TEXT.downcase.gsub(/[^\w\s]/, "").strip.gsub(/\s+/, " ")
       cache_key    = Digest::MD5.hexdigest("#{normalized}|#{voice_name}||")
-      mp3_path     = cache_dir.join("#{cache_key}.mp3")
-
-      # Write a minimal fake MP3 (non-empty so send_file is satisfied)
-      File.binwrite(mp3_path, "\xFF\xFB\x90\x00" + ("\x00" * 128))
+      fake = write_fake_cached_mp3(cache_key)
 
       with_env("GEMINI_API_KEY" => "dummy_key_for_test") do
         post tts_game_url(@game), params: {
@@ -485,7 +479,7 @@ module BreakEscape
       assert_response :success
       assert_equal "audio/mpeg", response.media_type
     ensure
-      File.delete(mp3_path) if mp3_path && File.exist?(mp3_path)
+      remove_fake_cached_mp3(fake)
     end
 
     # ─── Ink NPC — successful TTS via cache hit ───────────────────────────────
@@ -510,12 +504,9 @@ module BreakEscape
       @game.save!
 
       # Pre-populate TTS cache for this request
-      cache_dir  = Rails.root.join("tmp", "tts_cache")
-      FileUtils.mkdir_p(cache_dir)
       normalized = npc_text.downcase.gsub(/[^\w\s]/, "").strip.gsub(/\s+/, " ")
       cache_key  = Digest::MD5.hexdigest("#{normalized}|Kore||")
-      mp3_path   = cache_dir.join("#{cache_key}.mp3")
-      File.binwrite(mp3_path, "\xFF\xFB\x90\x00" + ("\x00" * 128))
+      fake = write_fake_cached_mp3(cache_key)
 
       with_env("GEMINI_API_KEY" => "dummy_key_for_test") do
         post tts_game_url(@game), params: {
@@ -528,10 +519,34 @@ module BreakEscape
       assert_equal "audio/mpeg", response.media_type
     ensure
       FileUtils.rm_rf(tmp_dir) if tmp_dir
-      File.delete(mp3_path) if mp3_path && File.exist?(mp3_path)
+      remove_fake_cached_mp3(fake)
     end
 
     private
+
+    # Put a fake MP3 where TtsService looks for this game's audio
+    # (CACHE_DIR/<mission name>/<key>.mp3). Files already there (e.g. real cached
+    # audio) are left alone afterwards; only what the test created is removed,
+    # including the provenance sidecar a cache hit writes.
+    def write_fake_cached_mp3(cache_key)
+      mp3_path = TtsService::CACHE_DIR.join(@mission.name, "#{cache_key}.mp3")
+      sidecar  = mp3_path.sub_ext(".json")
+      fake = { mp3: mp3_path, sidecar: sidecar, created_mp3: !File.exist?(mp3_path),
+               created_sidecar: !File.exist?(sidecar), created_dir: !Dir.exist?(mp3_path.dirname) }
+      if fake[:created_mp3]
+        FileUtils.mkdir_p(mp3_path.dirname)
+        File.binwrite(mp3_path, "\xFF\xFB\x90\x00" + ("\x00" * 128))
+      end
+      fake
+    end
+
+    def remove_fake_cached_mp3(fake)
+      return unless fake
+      File.delete(fake[:mp3]) if fake[:created_mp3] && File.exist?(fake[:mp3])
+      File.delete(fake[:sidecar]) if fake[:created_sidecar] && File.exist?(fake[:sidecar])
+      dir = fake[:mp3].dirname
+      Dir.rmdir(dir) if fake[:created_dir] && Dir.exist?(dir) && Dir.empty?(dir)
+    end
 
     def json_body
       JSON.parse(response.body)

@@ -42,6 +42,55 @@ namespace :break_escape do
       exit exit_code
     end
 
+    desc <<~DESC
+      Find cached TTS audio that no longer matches any line of dialogue. Dry run by default.
+
+      Builds every line each scenario can still voice (ink source with every inline
+      alternative/conditional expanded, compiled ink, a runtime ink walk with node,
+      and every string in scenario.json.erb: barks, timed messages, voice objects),
+      crosses them with every voice in the scenario, and lists cache files whose key
+      matches none. Files with a sidecar (<key>.json, written since sidecars were
+      added) are judged on their exact text.
+
+        bin/rails app:break_escape:tts:prune_cache                     # dry run, all scenarios
+        bin/rails app:break_escape:tts:prune_cache[sis02_energy]       # dry run, one scenario
+        APPLY=1  bin/rails app:break_escape:tts:prune_cache[sis02_energy]   # move orphans to tmp/tts_pruned/<date>/
+        DELETE=1 bin/rails app:break_escape:tts:prune_cache[sis02_energy]   # delete orphans permanently
+
+      Options (env vars):
+        APPLY=1         move orphans (and their sidecars) to tmp/tts_pruned/<date>/<scenario>/, with a manifest.json
+        DELETE=1        delete orphans permanently instead of moving them
+        UNKNOWN=a,b     also prune these cache directories that match no scenario ("(flat)" = legacy root files)
+        CERTAIN_ONLY=1  prune only orphans whose sidecar names their text
+        VERBOSE=1       list matched and kept files too
+        NO_WALK=1       skip the node runtime ink walk (static scan only)
+        WALK_TIME=8     seconds per ink file for the runtime walk
+      Wrapper: scripts/tts_prune_cache.sh [scenario] [--apply|--delete] [--unknown a,b] ...
+      From the host app, drop the app: prefix (rake break_escape:tts:prune_cache).
+    DESC
+    task :prune_cache, [:scenario] => :environment do |_task, args|
+      truthy = ->(v) { %w[1 true yes].include?(v.to_s.downcase) }
+      scenario = args[:scenario].presence || ENV['SCENARIO'].presence
+      mode = if truthy.(ENV['DELETE']) then :delete
+             elsif truthy.(ENV['APPLY']) then :trash
+             else :dry_run
+             end
+      unknown = ENV['UNKNOWN'].to_s.split(',').map(&:strip).reject(&:empty?)
+
+      pruner = BreakEscape::TtsCachePruner.new(
+        runtime_walk: !truthy.(ENV['NO_WALK']),
+        walk_time: (ENV['WALK_TIME'].presence || 8).to_i
+      )
+      begin
+        report = pruner.run(scenario: scenario, mode: mode, unknown: unknown,
+                            certain_only: truthy.(ENV['CERTAIN_ONLY']))
+      rescue ArgumentError => e
+        abort "ERROR: #{e.message}"
+      end
+      BreakEscape::TtsCachePruner.print_report(report, verbose: truthy.(ENV['VERBOSE']))
+      exit(report.errors.any? ? 1 : 0)
+    end
+
     desc "Clear TTS audio cache"
     task clear_cache: :environment do
       cache_dir = BreakEscape::TtsService::CACHE_DIR
