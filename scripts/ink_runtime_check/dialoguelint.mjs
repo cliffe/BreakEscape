@@ -7,7 +7,9 @@
 // A mission dir is linted as: every ink/*.ink in it, plus the timed texts in its scenario.json.erb.
 // Face-to-face lines cap at 30 words, phone lines at 25 (channel is read from the npcType of the
 // NPC whose storyPath points at the file; files no NPC uses count as face-to-face).
-// Findings have a level: "error" (over a hard cap), "check" (needs a human look), "warn" (style tell).
+// Findings have a level: "error" (over a hard cap, or a standing rule broken), "check" (needs a human
+// look), "warn" (style tell). Hits excused by an allowlist (VOICED_VARIABLE_ALLOW) go to each file's
+// `allowed` list with their reason, not to `findings`.
 // Exit code is always 0; this is an editor's aid, not a gate.
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
@@ -117,7 +119,7 @@ export function cleanInkText(raw) {
 const NONVERBAL = /^\[?\s*(?:say nothing|stay silent|silence|nod|shrug|wait|stand|walk|leave|stare|look|hold|keep|let|don'?t|do nothing|hand|give|take|put|step|turn|smile|sigh|pause|say nowt)/i;
 
 // ---------- ink parser ----------
-export function lintInk(text, { channel = 'person', names = [] } = {}) {
+export function lintInk(text, { channel = 'person', names = [], file = '' } = {}) {
   const cap = channel === 'phone' ? CAPS.phone : CAPS.person;
   const lines = text.split(/\r?\n/);
   const findings = [];
@@ -188,7 +190,10 @@ export function lintInk(text, { channel = 'person', names = [] } = {}) {
     }
   }
   findings.push(...structureFindings(text, { channel, names }));
-  return { findings, lengths, stats: stats(lengths) };
+  const vv = voicedVariableFindings(text, { channel, file });
+  findings.push(...vv.filter(f => f.level !== 'allowed'));
+  const allowed = vv.filter(f => f.level === 'allowed');
+  return { findings, allowed, lengths, stats: stats(lengths) };
 }
 
 // ---------- structural rules (pass-4 recurring bugs) ----------
@@ -553,6 +558,106 @@ export function structureFindings(text, { channel = 'person', names = [] } = {})
   return F;
 }
 
+// ---------- voiced-variable (AGENTS.md standing rule, user 2026-10-04) ----------
+// A voiced line that prints a variable or a function's value ({player_name()}, {count}) gives
+// different text per player, so its TTS (cached on text + voice) can never be cached.
+// Voiced lines: every person-chat text line except the player's own ("You:"/"Player:" or
+// #speaker:player; choices are the player's too), and phone lines that start "voice:".
+// Inline alternatives and conditionals that choose between fixed strings ({&a|b}, {c: a|b}) are
+// fine; anything printed inside one of their branches is still checked.
+// Allowed exceptions, keyed by ink file basename and the printed expression, with the reason:
+export const VOICED_VARIABLE_ALLOW = [
+  { file: 'm08_director_netherton.ink', expr: 'suite_code',
+    reason: 'user-approved (2026-10-05): the suite code is per-game and must be heard; accepted as uncached' },
+];
+
+// Split s at top-level occurrences of `sep` (outside braces, parentheses and quotes).
+function splitTop(s, sep) {
+  const parts = [];
+  let d = 0, q = false, cur = '';
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (c === '\\') { cur += c + (s[i + 1] ?? ''); i++; continue; }
+    if (c === '"') q = !q;
+    else if (!q && (c === '{' || c === '(')) d++;
+    else if (!q && (c === '}' || c === ')')) d--;
+    if (!q && d === 0 && c === sep) { parts.push(cur); cur = ''; continue; }
+    cur += c;
+  }
+  parts.push(cur);
+  return parts;
+}
+
+// Printed expressions in one line of ink text: each {expr} that isn't an alternative or a
+// conditional, recursing into the branches of the ones that are. An unclosed "{cond:" opener
+// (a multi-line conditional) is skipped up to its colon.
+export function printedExpressions(text, consts = new Set()) {
+  const out = [];
+  const scan = s => {
+    for (let i = 0; i < s.length; i++) {
+      const c = s[i];
+      if (c === '\\') { i++; continue; }
+      if (c !== '{') continue;
+      let d = 0, q = false, end = -1;
+      for (let j = i; j < s.length; j++) {
+        const x = s[j];
+        if (x === '\\') { j++; continue; }
+        if (x === '"') q = !q;
+        else if (!q && x === '{') d++;
+        else if (!q && x === '}' && --d === 0) { end = j; break; }
+      }
+      if (end < 0) { const k = splitTop(s.slice(i + 1), ':'); if (k.length > 1) i += k[0].length + 1; continue; }
+      inner(s.slice(i + 1, end));
+      i = end;
+    }
+  };
+  const inner = body => {
+    const t = body.trim();
+    if (!t) return;
+    if (/^[&~!]/.test(t)) { splitTop(t.slice(1), '|').forEach(scan); return; }   // cycle / shuffle / once-only
+    const colon = splitTop(t, ':');
+    if (colon.length > 1) { splitTop(colon.slice(1).join(':'), '|').forEach(scan); return; } // conditional
+    const alts = splitTop(t, '|');
+    if (alts.length > 1) { alts.forEach(scan); return; }                         // sequence
+    if (/^"(?:[^"\\]|\\.)*"$/.test(t)) return;                                   // a string literal
+    if (/^\w+$/.test(t) && consts.has(t)) return;                                 // a CONST is fixed text
+    if (!/[A-Za-z_]/.test(t)) return;                                             // a bare number
+    out.push(t);
+  };
+  scan(text);
+  return out;
+}
+
+export function voicedVariableFindings(text, { channel = 'person', file = '' } = {}) {
+  const F = [];
+  const consts = new Set([...text.matchAll(/^\s*CONST\s+(\w+)/gm)].map(m => m[1]));
+  const allow = VOICED_VARIABLE_ALLOW.filter(a => a.file === basename(file || ''));
+  for (const L of parseInkLines(text)) {
+    if (!['text', 'open', 'close', 'gather', 'branch'].includes(L.kind)) continue;
+    let s = L.t.replace(/(^|\s)\/\/.*$/, '$1');
+    s = s.replace(/\s+#[A-Za-z_].*$/, '');                                          // trailing tags
+    if (/#\s*speaker\s*:\s*player\b/i.test(L.t)) continue;
+    s = s.replace(/^-\s*(?:\(\w+\)\s*)?/, '').replace(/^\}\s*/, '');                  // gather / block close
+    if (L.kind === 'branch' || /^(?:else\s*)?:/.test(s)) s = s.replace(/^[^:]*:/, ''); // "- cond:" branch head
+    s = s.trim();
+    const sm = s.match(/^((?:Narrator|[A-Z][\w.'’()]*(?: [\w.'’()]+){0,3})):\s+(.*)$/);
+    const speaker = sm ? sm[1] : null;
+    let body = sm ? sm[2] : s;
+    if (speaker && /^(?:You|Player)$/i.test(speaker)) continue;
+    if (channel === 'phone') {
+      if (!/^voice:/i.test(body)) continue;
+      body = body.replace(/^voice:\s*/i, '');
+    }
+    for (const expr of printedExpressions(body, consts)) {
+      const name = (expr.match(/^[\w.]+/) || [''])[0];
+      const ok = allow.find(a => a.expr === expr || a.expr === name);
+      F.push({ level: ok ? 'allowed' : 'error', rule: 'voiced-variable', line: L.n, match: `{${expr}}`, text: cleanInkText(L.t),
+        note: ok ? `allowed: ${ok.reason}` : `prints {${expr}} in a voiced line, so the TTS can't be cached (AGENTS.md: no printed variables in voiced lines); use fixed wording, or choose between fixed strings with {cond: a|b}` });
+    }
+  }
+  return F;
+}
+
 export function stats(arr) {
   if (!arr.length) return { lines: 0, median: 0, p90: 0, max: 0 };
   const a = [...arr].sort((x, y) => x - y);
@@ -671,7 +776,7 @@ export function lintTargets(args) {
   }
   for (const f of files) {
     const channel = channels[basename(f).replace(/\.ink$/, '.json')] || 'person';
-    const r = lintInk(readFileSync(f, 'utf8'), { channel, names: names[basename(f).replace(/\.ink$/, '.json')] || [] });
+    const r = lintInk(readFileSync(f, 'utf8'), { channel, names: names[basename(f).replace(/\.ink$/, '.json')] || [], file: f });
     report.files.push({ file: f, channel, known: (basename(f).replace(/\.ink$/, '.json')) in channels, ...r });
   }
   return report;
@@ -689,6 +794,7 @@ function printHuman(report) {
     const s = x.stats;
     console.log(`\n${rel(x.file)}  [${x.channel}${x.known ? '' : ', unmapped'}]  lines=${s.lines} median=${s.median} p90=${s.p90} max=${s.max}`);
     for (const f of x.findings) console.log('  ' + fmt(f));
+    for (const f of x.allowed || []) console.log('  ' + fmt(f));
   }
   for (const x of report.texts) {
     const s = x.stats;
