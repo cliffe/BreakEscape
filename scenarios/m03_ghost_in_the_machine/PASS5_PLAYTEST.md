@@ -105,3 +105,19 @@ Added after round 1 (fixes on top of HEAD 3d2d990; m03 content last changed at 8
 **Reload window (C10, C14), as observed in the round 1 confirmation runs.** The debrief starts within a moment of `victoria_choice_made`, so the window to use is earlier: after you pick her fate and **while her final lines are still on screen**, before the last Continue closes the chat. Reload there.
 - C10, expected: her fate survives the reload (her fate tag runs as her last batch opens, and it reaches the saved globals even though the local state doesn't show it yet). The debrief opens once, on the **first room entry** after the reload, without talking to her again; the credits follow its last line. Record if it opens twice, never, or with a different ending.
 - C14 (re-KO into a different ending): **not reachable** in play. The debrief opens on that first room entry, before there is a chance to knock her out, so there is no moment to test. Record it as not reachable; nothing to run.
+
+## Blind fixes: targeted browser check (one 10-15 minute run)
+
+New game. Console-set state only where noted; mark it "exercised, not earned".
+
+| # | Change | Where to see it | Expected |
+|---|---|---|---|
+| B-2 | Reader pointer task | Skip the briefing topics; sign in; try the conference reader | Toast and panel task "Copy the receptionist's staff badge with your cloner", plus HaX's text; it ticks once her badge is saved |
+| B-1 | Whiteboard reachable from any branch | In Victoria's first chat pick the blunt or accusing options, then "Thank you. I've taken enough of your time." ("not the right fit"); talk to her again | Panel task reads "Clone Victoria's keycard at her whiteboard"; her hub (first chat and after the rebuff) offers "[Is that your training lab on the whiteboard?]"; with low influence she answers "The training lab. Since you're so interested." and the read starts |
+| B-4 | No change (engine) | When the cloner buzzes ("Card read. Now run Darkside on it."), press Continue once | The flipper opens at once over the chat; finish Darkside and Save inside it. Do not click the cloner in the inventory while it is open (that restarts it and loses the read) |
+| B-3 | Sterling's room named | Console: `night_confrontation_ready = true`, `clone_call_done = true`; open HaX | Hub choice "[Sterling's still in the conference room. How do I play this?]"; the answer starts "…You've got the logs, and she's still in the conference room." The panel task reads "Settle Victoria's fate in the conference room" |
+| B-11 | "Sable" only once heard | Same console state, briefing Victoria topic not heard, log unread: confront her | First choice reads "[SAFETYNET. And I've read your approvals.]" with "Then you've read more than most of my staff…"; after hearing the briefing's Victoria topic (or reading the transaction log) it reads "…Sable." |
+| B-9 | Flag 3 text | Submit `<flag:3>` | "Price list's in. Read the healthcare tier and you'll see why we're here." |
+| B-5, B-6, B-7, B-8 | Debrief and credits | Finish without the drive, cabinet or safe (handler trust middling) | "The drive wasn't the only paper you left behind." after the search-team drive line; "It's done. Get some rest. We'll need you soon." instead of "Clean enough". On a clean-stealth run the credit reads "PERFECT STEALTH: past the night guard unseen, with no excuses and no bribes"; a recruited run with the catalogue reads "…folded into routine advisories over the coming months", matching HaX |
+| B-10, B-12 | No change | Server-room filing cabinet; Danny's PC second file | Note only: can you reach the cabinet from its front (the blind tester got in range from one side)? After taking one file from Danny's PC, is the second still listed? Report what you see |
+

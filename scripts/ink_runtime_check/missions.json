@@ -404,6 +404,7 @@
       "guard_challenged": false,
       "cyberchef_guide_offered": false,
       "transaction_log_read": false,
+      "sable_named": false,
       "perfect_stealth_earned": false,
       "exec_wing_night": false,
       "night_explored": false,

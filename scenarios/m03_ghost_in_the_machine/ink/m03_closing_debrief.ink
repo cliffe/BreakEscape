@@ -340,7 +340,12 @@ Agent HaX: Their records sat on the one box they knew was broken: a distcc daemo
 // Pass 5 (P4-48): only when the history or the catalogue is missing; a drive-only miss is
 // covered in phase_2_discussion, and this block no longer names the drive.
 { not lore_history_found or not (catalogue_seen or lore_catalogue_found):
-    Agent HaX: You left some of the paper behind.
+    // Pass 5 blind (B-5): reads on from the search team's drive line.
+    { usb_seen or lore_directive_found:
+        Agent HaX: You left some of the paper behind.
+    - else:
+        Agent HaX: The drive wasn't the only paper you left behind.
+    }
     { not lore_history_found:
         Agent HaX: Their own history of the firm stayed in Sterling's filing cabinet.
     }
@@ -374,8 +379,12 @@ Agent HaX: Their records sat on the one box they knew was broken: a distcc daemo
     { handler_trust >= 70 and danny_fate == "":
         Agent HaX: Good work last night. We'll need you soon.
     }
-    { (handler_trust >= 50) && (handler_trust < 70):
+    // Pass 5 blind (B-6): "Clean enough" only when the paper trail came out too.
+    { (handler_trust >= 50) && (handler_trust < 70) && lore_history_found && (catalogue_seen or lore_catalogue_found):
         Agent HaX: Clean enough. We'll need you soon.
+    }
+    { (handler_trust >= 50) && (handler_trust < 70) && not (lore_history_found && (catalogue_seen or lore_catalogue_found)):
+        Agent HaX: It's done. Get some rest. We'll need you soon.
     }
 }
 -> aftermath

@@ -134,6 +134,8 @@ Agent HaX: Ask me whatever you need before you go in.
 === topic_victoria ===
 #speaker:agent_0x99
 Agent HaX: Victoria Sterling. Founded WhiteHat in 2010, former conference speaker, respected researcher on the record.
+// Pass 5 blind (B-11): the player has now heard the name.
+#set_global:sable_named:true
 Agent HaX: On our side of the record she runs the front and answers to 0day and the Architect. Her sign-off name is Sable.
 * [So she runs the whole cell?]
     Agent HaX: No. She runs the shop floor. 0day leads the cell, the Architect coordinates the network.

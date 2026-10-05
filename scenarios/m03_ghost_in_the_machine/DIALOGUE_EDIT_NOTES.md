@@ -248,3 +248,12 @@ Voiced:
 - debrief (final_assessment, new) `Good work last night. We'll need you soon.` for a high-trust player who never met Danny; "saw the people in it" now needs `danny_fate != ""`.
 
 Text only: receptionist clone choice (both places) → `[Lean in by her lanyard and let the cloner read her badge.]`; HaX phone start `{player_name()}. What do you need?` → `On the line, {player_name()}.`
+
+## Pass 5 blind fixes (2026-10-05)
+
+Voiced:
+- debrief:347 (new) `The drive wasn't the only paper you left behind.` when the drive was also missed; otherwise `You left some of the paper behind.` as before (B-5)
+- debrief:387 (new) `It's done. Get some rest. We'll need you soon.` replaces "Clean enough" when the history or the catalogue stayed behind (B-6)
+- victoria:463 (new) `Then you've read more than most of my staff. You really have been thorough.` for a player who never heard the name Sable (B-11)
+
+Text only: Victoria choice labels 459/462/471 (Sable gated on `sable_named`, `transaction_log_read` or `revelation_heard`); HaX hub label 106 and phone 161 name the conference room (B-3); flag-3 text, credits (B-7, B-8), the clone task title and the new reader task (B-1, B-2).

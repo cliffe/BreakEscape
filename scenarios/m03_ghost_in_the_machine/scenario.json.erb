@@ -163,7 +163,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           { "text": "ZERO DAY SYNDICATE: COMPROMISED — from the inside", "style": "entry", "condition": "globalVars.victoria_fate === 'recruited'" },
           { "text": "ST. CATHERINE'S LINK: PROVEN — ProFTPD exploit traced to GHOST", "style": "entry" },
           { "text": "ZERO DAY CATALOGUE: IN SAFETYNET HANDS — vendors warned, buyers on notice, Phase 2 stock flagged", "style": "entry", "condition": "(globalVars.catalogue_seen === true || globalVars.lore_catalogue_found === true) && globalVars.victoria_fate !== 'recruited'" },
-          { "text": "ZERO DAY CATALOGUE: IN SAFETYNET HANDS — vendors quietly warned", "style": "entry", "condition": "(globalVars.catalogue_seen === true || globalVars.lore_catalogue_found === true) && globalVars.victoria_fate === 'recruited'" },
+          { "text": "ZERO DAY CATALOGUE: IN SAFETYNET HANDS, folded into routine advisories over the coming months", "style": "entry", "condition": "(globalVars.catalogue_seen === true || globalVars.lore_catalogue_found === true) && globalVars.victoria_fate === 'recruited'" },
           { "text": "ZERO DAY CATALOGUE: NOT RECOVERED — the sales ledger and the reserved stock are still in the safe", "style": "warning", "condition": "globalVars.catalogue_seen !== true && globalVars.lore_catalogue_found !== true && globalVars.victoria_fate !== 'arrested'" },
           { "text": "ZERO DAY CATALOGUE: SEIZED WITH THE MARKETPLACE — but its sales ledger isn't in our hands", "style": "warning", "condition": "globalVars.catalogue_seen !== true && globalVars.lore_catalogue_found !== true && globalVars.victoria_fate === 'arrested'" },
           { "text": "PHASE 2 DIRECTIVE: DECODED BY THE AGENT. Grid and hospitals, this winter", "style": "entry", "condition": "globalVars.directive_decoded === true && globalVars.directive_guessed !== true" },
@@ -183,7 +183,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           { "text": "DANNY FOSTER: NEVER FOUND — his name is still in the recon files", "style": "warning", "condition": "!globalVars.danny_fate" },
           { "text": "SECURITY GUARD: KNOCKED OUT ON SHIFT", "style": "warning", "condition": "globalVars.guard_knocked_out === true" },
           { "text": "WHITEHAT RECEPTION: KNOCKED OUT AT HER OWN DESK", "style": "warning", "condition": "globalVars.receptionist_ko === true" },
-          { "text": "PERFECT STEALTH — never seen, never stopped, no deals", "style": "entry", "condition": "globalVars.guard_detection_count === 0 && globalVars.exec_office_entered === true && globalVars.guard_knocked_out !== true && globalVars.guard_told_safetynet !== true && globalVars.guard_bribed !== true && globalVars.guard_challenged !== true" },
+          { "text": "PERFECT STEALTH: past the night guard unseen, with no excuses and no bribes", "style": "entry", "condition": "globalVars.guard_detection_count === 0 && globalVars.exec_office_entered === true && globalVars.guard_knocked_out !== true && globalVars.guard_told_safetynet !== true && globalVars.guard_bribed !== true && globalVars.guard_challenged !== true" },
           { "text": "" },
           { "text": "THE ARCHITECT: identity still unknown. Phase 2 looms.", "style": "warning" },
           { "text": "ENTROPY: Still operational. The hunt continues.", "style": "warning" }
@@ -208,6 +208,15 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "status": "active"
         },
         {
+          "_comment": "Pass 5 blind (B-2): the reader refusal needs an on-screen cue, not only a phone text. HaX's door_unlock_attempt mapping on the conference reader unlocks this (toast and panel); closing_debrief completes it when clone_reception_badge completes (clone or KO). Optional, so a player who never tries the reader first never sees it.",
+          "taskId": "copy_staff_badge",
+          "title": "Copy the receptionist's staff badge with your cloner",
+          "description": "The reader wants a staff badge. The receptionist wears one on her lanyard. Talk to her and lean in.",
+          "type": "custom",
+          "status": "locked",
+          "optional": true
+        },
+        {
           "taskId": "meet_victoria",
           "title": "Meet Victoria Sterling",
           "description": "Make contact with Victoria Sterling in the conference room",
@@ -217,8 +226,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
         },
         {
           "taskId": "clone_rfid_card",
-          "title": "Clone Victoria's executive keycard",
-          "description": "Get close enough to copy Victoria's custom-key executive keycard — your route into the server room",
+          "title": "Clone Victoria's keycard at her whiteboard",
+          "description": "Ask Victoria about the training lab on her whiteboard and keep her talking while the cloner reads her custom-key executive keycard. It's your route into the server room.",
           "type": "custom",
           "status": "active"
         },
@@ -741,6 +750,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "condition": "data.connectedRoom === 'conference_room_01' && globalVars.reception_badge_cloned !== true && globalVars.receptionist_ko !== true",
               "onceOnly": true,
               "setGlobal": { "conference_reader_tried": true },
+              "unlockTask": "copy_staff_badge",
               "sendTimedMessage": { "delay": 1500, "message": "That reader wants a staff badge. The cloner in your kit copies one from arm's length. Talk to the receptionist and lean in by her lanyard." }
             },
             {
@@ -902,7 +912,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "eventPattern": "objective_task_completed:submit_http_flag",
               "onceOnly": true,
               "setGlobal": { "flag_http_submitted": true },
-              "sendTimedMessage": { "delay": 2000, "message": "Price list's in. ROT13, filed as confidential." }
+              "sendTimedMessage": { "delay": 2000, "message": "Price list's in. Read the healthcare tier and you'll see why we're here." }
             },
             {
               "_comment": "P3-3: a text that opens the revelation call when clicked (m02 A7 pattern), so the drop-site isn't closed under the player. revelation_heard is still set at the end of the call, so the all-flags text still waits for it.",
@@ -1095,6 +1105,13 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
             "language": "en-GB"
           },
           "eventMappings": [
+            {
+              "_comment": "Pass 5 blind (B-2): ticks the reader pointer task once the staff badge is had (clone or receptionist KO). Only if the pointer was shown, so a locked task never completes out of nowhere.",
+              "eventPattern": "objective_task_completed:clone_reception_badge",
+              "condition": "globalVars.conference_reader_tried === true",
+              "onceOnly": true,
+              "completeTask": "copy_staff_badge"
+            },
             {
               "_comment": "Pass 3b: leaving the executive-wing corridor ends the guard's grace, so the next catch is a new strike.",
               "eventPattern": "room_entered:main_hallway",
@@ -1737,6 +1754,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     "exec_wing_entered": false,
     "cyberchef_guide_offered": false,
     "transaction_log_read": false,
+    "sable_named": false,
     "perfect_stealth_earned": false,
     "exec_wing_night": false,
     "night_explored": false,
