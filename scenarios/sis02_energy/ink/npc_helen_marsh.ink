@@ -103,14 +103,16 @@ Helen Marsh: I'm staying on this desk while that screen's telling us fairy stori
 - else:
     Helen Marsh: {&What else, duck?|Anything else?|Right. What else?}
 }
-+ { not anomaly_detected and not topic_dial_asked } [What am I looking for in the hall?]
+// N1: never send anyone into the hall once it's in gas alarm.
++ { not anomaly_detected and not topic_dial_asked and not hydrogen_alarm } [What am I looking for in the hall?]
     ~ topic_dial_asked = true
     Helen Marsh: The dial gauge at Rack A2. It's old, it's mechanical, and nothing on any network can touch it.
     Helen Marsh: On a charge like last night's, that rack sits about thirty. Tell me what it says. Touch nothing else.
     -> hub
-+ { anomaly_detected and gauge_verdict == "" } [That dial in the hall. Which do we believe?]
+// M3: once the hall has burned, nobody asks about the dial as if it were live.
++ { anomaly_detected and gauge_verdict == "" and not facility_evacuated } [That dial in the hall. Which do we believe?]
     -> gauge_decision
-+ { anomaly_detected and gauge_verdict != "" and not historian_flatline_found } [About that dial again.]
++ { anomaly_detected and gauge_verdict != "" and not historian_flatline_found and not facility_evacuated } [About that dial again.]
     Helen Marsh: You've told me what you think. Now let's see the historian.
     -> hub
 + { anomaly_detected and not esd_activated and shutdown_argument == "" } [Should we shut Hall 1 down now?]
@@ -301,7 +303,11 @@ Helen Marsh: At two per cent we evacuate. Nobody goes into that hall now. Fire s
 {
 - facility_evacuated:
     Helen Marsh: Hall 1's the fire service's now. Everybody's out. {priya_s_visible: Priya from the NCSC is here when you're ready.}
-- not anomaly_detected:
+- hydrogen_alarm and not esd_activated:
+    Helen Marsh: Not the hall, not now. Press the station by the door. The dial can wait.
+- hydrogen_alarm and not anomaly_detected and not historian_flatline_found:
+    Helen Marsh: Leave the dial. Nobody goes in that hall till the gas is down. Get on the historian instead.
+- not anomaly_detected and not hydrogen_alarm:
     Helen Marsh: Hall 1. Read the dial at Rack A2 and come and tell me what it says.
 - not historian_flatline_found:
     Helen Marsh: The historian, on the operator screen. If that dial's right, my screen's been lying a while. Find out how long.
@@ -326,7 +332,7 @@ Helen Marsh: At two per cent we evacuate. Nobody goes into that hall now. Fire s
 }
 // The nudge only once the player has the evidence or has said to shut down (not straight
 // after Helen granted "five minutes" for the historian).
-{ anomaly_detected and not esd_activated and not facility_evacuated:
+{ anomaly_detected and not esd_activated and not facility_evacuated and not hydrogen_alarm:
     { historian_flatline_found or shutdown_argument == "hazard":
         Helen Marsh: And that ESD still isn't in. You know where the stations are.
     }

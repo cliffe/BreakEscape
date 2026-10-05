@@ -507,8 +507,8 @@ require 'base64'
           { "text": "The dial at Rack A2 was never read", "style": "entry", "condition": "!globalVars.anomaly_detected" },
           { "text": "Shutdown argued on the hazard, before the cause was known", "style": "entry", "condition": "globalVars.shutdown_argument === 'hazard'" },
           { "text": "Shutdown held back for evidence first", "style": "entry", "condition": "globalVars.shutdown_argument === 'evidence'" },
-          { "text": "ESD pressed before anyone had read the dial: a precaution that happened to be right", "style": "entry", "condition": "globalVars.esd_before_dial && globalVars.early_esd_activation" },
-          { "text": "ESD pressed on the dial reading, before the historian was checked", "style": "entry", "condition": "globalVars.early_esd_activation && !globalVars.esd_before_dial" },
+          { "text": "ESD pressed before anyone had read the dial: a precaution that happened to be right", "style": "entry", "condition": "globalVars.esd_before_dial && globalVars.early_esd_activation && !globalVars.hydrogen_alarm" },
+          { "text": "ESD pressed on the dial reading, before the historian was checked", "style": "entry", "condition": "globalVars.early_esd_activation && !globalVars.esd_before_dial && !globalVars.hydrogen_alarm" },
           { "text": "ESD pressed before the hydrogen alarm: Racks A1 to A4 off charge and cooling", "style": "entry", "condition": "globalVars.esd_activated && !globalVars.hydrogen_alarm" },
           { "text": "ESD pressed after the hydrogen alarm (1.0% by volume): Hall 1 saved, margin spent", "style": "entry", "condition": "globalVars.esd_activated && globalVars.hydrogen_alarm && !globalVars.facility_evacuated" },
           { "text": "Hydrogen reached 2.0% by volume: everyone out, Helen pressed the ESD on the way, Hall 1 lost to fire, fire service attending", "style": "entry", "condition": "globalVars.facility_evacuated" },
@@ -654,7 +654,7 @@ require 'base64'
               "eventPattern": "global_variable_changed:historian_flatline_found",
               "condition": "value === true && globalVars.esd_activated !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 2500, "message": "Dead flat since twelve minutes past eleven. Somebody's writing it. If that ESD's not in, I'd put it in. Then message Marcus." }
+              "sendTimedMessage": { "delay": 2500, "message": "Dead flat since twelve minutes past eleven. Somebody's writing it. Get that ESD in, then message Marcus." }
             },
             {
               "eventPattern": "global_variable_changed:historian_flatline_found",
@@ -673,21 +673,35 @@ require 'base64'
               // ESD pressed on the dial, before the historian (HEL-5): "good call" only when the press
               // followed evidence. A press before anyone read the dial gets a wry line instead.
               "eventPattern": "global_variable_changed:esd_activated",
-              "condition": "value === true && globalVars.early_esd_activation === true && globalVars.esd_before_dial !== true && globalVars.facility_evacuated !== true",
+              "condition": "value === true && globalVars.early_esd_activation === true && globalVars.esd_before_dial !== true && globalVars.hydrogen_alarm !== true && globalVars.facility_evacuated !== true",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 2000, "message": "ESD's in. Good call. We'll find out why later." }
             },
             {
               "eventPattern": "global_variable_changed:esd_activated",
-              "condition": "value === true && globalVars.esd_before_dial === true && globalVars.early_esd_activation === true && globalVars.facility_evacuated !== true",
+              "condition": "value === true && globalVars.esd_before_dial === true && globalVars.early_esd_activation === true && globalVars.hydrogen_alarm !== true && globalVars.facility_evacuated !== true",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 2000, "message": "ESD's in, and nobody's read the dial yet. Well. Go and see if we needed it." }
             },
             {
+              // Later ESD (N10, m3): the radio follows what is known. Inside-station press in a gas
+              // alarm gets no praise; once the network is already isolated the safe-state radio speaks.
               "eventPattern": "global_variable_changed:esd_activated",
-              "condition": "value === true && globalVars.early_esd_activation !== true && globalVars.facility_evacuated !== true",
+              "condition": "value === true && globalVars.early_esd_activation !== true && globalVars.facility_evacuated !== true && globalVars.esd_pressed_inside_in_alarm !== true && globalVars.network_isolated !== true && globalVars.jump_server_confirmed !== true",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 2000, "message": "ESD's in. The A racks are off charge and the fans are on full. Now let's find out who did this." }
+            },
+            {
+              "eventPattern": "global_variable_changed:esd_activated",
+              "condition": "value === true && globalVars.early_esd_activation !== true && globalVars.facility_evacuated !== true && globalVars.esd_pressed_inside_in_alarm !== true && globalVars.network_isolated !== true && globalVars.jump_server_confirmed === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2000, "message": "ESD's in. The A racks are off charge and the fans are on full. Now get them off our network." }
+            },
+            {
+              "eventPattern": "global_variable_changed:esd_activated",
+              "condition": "value === true && globalVars.esd_pressed_inside_in_alarm === true && globalVars.hydrogen_alarm === true && globalVars.facility_evacuated !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2500, "message": "ESD's in. Now come out of that hall, and use the door station next time." }
             },
             {
               // Hydrogen at 1.0% by volume (S1, S2): stay out, use a station outside, fire service called.
@@ -767,8 +781,10 @@ require 'base64'
             {
               // MJ4: nobody goes into a hall in gas alarm. The start room is always loaded, so Helen
               // hears it wherever the player is.
+              // m4: the hall's bottom edge overlaps the workshop's north wall, so standing at the SIS
+              // panel or noticeboard can register as Hall 1. Only an entry from the control room counts.
               "eventPattern": "room_entered:battery_hall_1",
-              "condition": "globalVars.hydrogen_alarm && !globalVars.esd_activated",
+              "condition": "globalVars.hydrogen_alarm && !globalVars.esd_activated && !globalVars.facility_evacuated && data.previousRoom !== 'engineering_workshop'",
               "onceOnly": true,
               "setGlobal": { "entered_hall_in_gas_alarm": true },
               "bark": "Out of that hall. Now. Use the station by the door.",
@@ -776,11 +792,28 @@ require 'base64'
             },
             {
               "eventPattern": "room_entered:battery_hall_1",
-              "condition": "globalVars.hydrogen_alarm && globalVars.esd_activated",
+              "condition": "globalVars.hydrogen_alarm && globalVars.esd_activated && !globalVars.facility_evacuated && data.previousRoom !== 'engineering_workshop'",
               "onceOnly": true,
               "setGlobal": { "entered_hall_in_gas_alarm": true },
               "bark": "Out of that hall. It's still full of gas.",
               "barkDelay": 0
+            },
+            {
+              "eventPattern": "room_entered:battery_hall_1",
+              "condition": "globalVars.facility_evacuated && data.previousRoom !== 'engineering_workshop'",
+              "onceOnly": true,
+              "setGlobal": { "entered_hall_in_gas_alarm": true },
+              "bark": "Out of that hall. It's alight.",
+              "barkDelay": 0
+            },
+            {
+              // N1: the gas alarm went off before anyone read the dial. Nobody is sent into the hall:
+              // the walkdown tasks are skipped and the aims the dial would have opened open now.
+              "eventPattern": "global_variable_changed:hydrogen_alarm",
+              "condition": "value === true && globalVars.anomaly_detected !== true",
+              "onceOnly": true,
+              "skipTask": ["enter_battery_hall", "check_thermometer"],
+              "unlockAim": ["verify_anomaly", "initiate_esd"]
             },
             {
               // R2 (MJ2): reading the register export counts only before the ESD trip, whose
@@ -910,19 +943,19 @@ require 'base64'
             },
             {
               "eventPattern": "global_variable_changed:network_isolated",
-              "condition": "value === true && globalVars.nis_notified !== true && globalVars.nis_form_read !== true",
+              "condition": "value === true && globalVars.esd_activated !== true && globalVars.nis_notified !== true && globalVars.nis_form_read !== true",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 1000, "message": "CastleTech have the enterprise side shut. Now the notification. The form's on the clipboard by the workshop door. Read it and message me." }
             },
             {
               "eventPattern": "global_variable_changed:network_isolated",
-              "condition": "value === true && globalVars.nis_notified !== true && globalVars.nis_form_read === true && globalVars.nis_initial_choice !== 'wait'",
+              "condition": "value === true && globalVars.esd_activated !== true && globalVars.nis_notified !== true && globalVars.nis_form_read === true && globalVars.nis_initial_choice !== 'wait'",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 1000, "message": "CastleTech have the enterprise side shut. Now the notification. Message me when you're ready to send." }
             },
             {
               "eventPattern": "global_variable_changed:network_isolated",
-              "condition": "value === true && globalVars.nis_notified !== true && globalVars.nis_form_read === true && globalVars.nis_initial_choice === 'wait'",
+              "condition": "value === true && globalVars.esd_activated !== true && globalVars.nis_notified !== true && globalVars.nis_form_read === true && globalVars.nis_initial_choice === 'wait'",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 1000, "message": "CastleTech have the enterprise side shut. You're still holding the notification. Say when." }
             },
@@ -1030,7 +1063,7 @@ require 'base64'
                   "value": "PLC-BMS HOLDING REGISTER EXPORT\nBattery Hall 1, Racks A1 to A4.\n\nController state: SHUTDOWN (ESD trip).\nThe shutdown routine has written safe-state values over the holding registers: charge command 0%, temperature and state of charge read fresh from the rack sensors.\n\nNothing written before the trip is left in the controller. The historian still holds the values the screens showed."
                 },
                 {
-                  "condition": "globalVars.bms_registers_saved",
+                  "condition": "globalVars.bms_registers_saved && globalVars.esd_activated",
                   "value": "PLC-BMS HOLDING REGISTER EXPORT (saved before the ESD trip)\nBattery Hall 1, Racks A1 to A4.\n\nREGISTER  NAME                   VALUE\n40101-40104  CELL_TEMP_MAX A1-A4  28.0 C (all four)\n40111-40114  SOC A1-A4            72 % (all four)\n40201     CHARGE_RATE_CMD        95 % of rated\n40202     CHARGE_CUTOFF_SOC      90 %\n\nThe controller has since reset these registers. This saved copy is the only record of what was written into them."
                 }
               ],
@@ -1214,6 +1247,9 @@ require 'base64'
           }
         },
 
+<%# M1 (round 3): conditionalActions run in order, so the last entry clears early_esd_activation
+    and esd_before_dial when the gas alarm has already gone off: a press after hydrogen_alarm is
+    never "early" or "on the dial reading" (debrief, credits, Helen's radio). %>
 <%# ESD stations (decision 3). Two in the control room, on sis02-only conditional slots: one on the
     west wall by the Battery Hall 1 door (outside the hall), one on the operator console. Neither is
     gated: esd_stations_live is always true. early_esd_activation and esd_before_dial record when
@@ -1238,7 +1274,8 @@ require 'base64'
             "confirmedText": "ISOLATED - COOLING ACTIVE",
             "conditionalActions": [
               { "ifGlobalFalse": "historian_flatline_found", "actions": [{ "type": "set_global", "key": "early_esd_activation", "value": true }] },
-              { "ifGlobalFalse": "anomaly_detected", "actions": [{ "type": "set_global", "key": "esd_before_dial", "value": true }] }
+              { "ifGlobalFalse": "anomaly_detected", "actions": [{ "type": "set_global", "key": "esd_before_dial", "value": true }] },
+              { "ifGlobalTrue": "hydrogen_alarm", "actions": [{ "type": "set_global", "key": "early_esd_activation", "value": false }, { "type": "set_global", "key": "esd_before_dial", "value": false }] }
             ],
             "completionActions": [
               { "type": "set_global",   "key": "esd_activated",    "value": true },
@@ -1266,7 +1303,8 @@ require 'base64'
             "confirmedText": "ISOLATED - COOLING ACTIVE",
             "conditionalActions": [
               { "ifGlobalFalse": "historian_flatline_found", "actions": [{ "type": "set_global", "key": "early_esd_activation", "value": true }] },
-              { "ifGlobalFalse": "anomaly_detected", "actions": [{ "type": "set_global", "key": "esd_before_dial", "value": true }] }
+              { "ifGlobalFalse": "anomaly_detected", "actions": [{ "type": "set_global", "key": "esd_before_dial", "value": true }] },
+              { "ifGlobalTrue": "hydrogen_alarm", "actions": [{ "type": "set_global", "key": "early_esd_activation", "value": false }, { "type": "set_global", "key": "esd_before_dial", "value": false }] }
             ],
             "completionActions": [
               { "type": "set_global",   "key": "esd_activated",    "value": true },
@@ -1444,11 +1482,11 @@ require 'base64'
             },
             {
               "condition": "globalVars.hydrogen_alarm && !globalVars.esd_activated",
-              "value": "The dial reads: 53°C\n\nThe gas alarm is sounding over the racks. You shouldn't be in here."
+              "value": "The dial reads 51°C and the needle's still creeping. The gas alarm is sounding over the racks. You shouldn't be in here."
             },
             {
               "condition": "globalVars.esd_activated",
-              "value": "The dial now reads: 46°C\n\nThe local analogue gauge for Rack A2. The needle is falling slowly since the shutdown."
+              "value": "The dial now reads 46°C, falling since the shutdown. Its red drag needle has stuck at 51, the peak."
             },
             {
               "condition": "globalVars.anomaly_detected",
@@ -1498,7 +1536,8 @@ require 'base64'
             "conditionalActions": [
               { "ifGlobalTrue": "hydrogen_alarm", "actions": [{ "type": "set_global", "key": "esd_pressed_inside_in_alarm", "value": true }] },
               { "ifGlobalFalse": "historian_flatline_found", "actions": [{ "type": "set_global", "key": "early_esd_activation", "value": true }] },
-              { "ifGlobalFalse": "anomaly_detected", "actions": [{ "type": "set_global", "key": "esd_before_dial", "value": true }] }
+              { "ifGlobalFalse": "anomaly_detected", "actions": [{ "type": "set_global", "key": "esd_before_dial", "value": true }] },
+              { "ifGlobalTrue": "hydrogen_alarm", "actions": [{ "type": "set_global", "key": "early_esd_activation", "value": false }, { "type": "set_global", "key": "esd_before_dial", "value": false }] }
             ],
             "completionActions": [
               { "type": "set_global",   "key": "esd_activated",    "value": true },
@@ -1536,7 +1575,9 @@ require 'base64'
             }
           ],
           "text": "BATTERY RACK STATUS: HALL 1 (DIGITAL DISPLAY)\n\nRack A1: 28.0°C | SoC: 72% | Status: NORMAL | Charge: 0.5C\nRack A2: 28.0°C | SoC: 72% | Status: NORMAL | Charge: 0.5C\nRack A3: 28.0°C | SoC: 72% | Status: NORMAL | Charge: 0.5C\nRack A4: 28.0°C | SoC: 72% | Status: NORMAL | Charge: 0.5C\n\nAll values within certified operating parameters.\nAll alarm setpoints: SATISFIED\n\n[These panels show the same BMS register values that SCADA reads.]",
-          "observationDisplay": "gameDisplay"
+          "observationDisplay": "gameDisplay",
+          "readDisplay": "gameDisplay",
+          "addToNotes": false
         },
 
         // Runtime detector readout variants keyed to hydrogen state globals.
@@ -1551,6 +1592,8 @@ require 'base64'
           "readable": true,
           "observations": "A wall-mounted hydrogen gas detection panel near the ventilation outlet. Readings are per cent hydrogen by volume in air.",
           "observationDisplay": "gameDisplay",
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
           "observationVariants": [
             {
               "condition": "globalVars.facility_evacuated",
@@ -1960,7 +2003,7 @@ require 'base64'
           "puzzle_graph_optional": true,
           "puzzle_graph_reveals": "IT/OT boundary rules issued for the grid upgrade, never reviewed; jump server permits bidirectional RDP, historian has Modbus proxy enabled; Marcus flagged for remediation 18 months ago",
           "observations": "A printed document pinned to the workshop noticeboard. Slightly yellowed with age.",
-          "text": "IT/OT BOUNDARY RULES: ALBION ENERGY STORAGE\nIssued for the smart grid upgrade (Fosse Controls), September 2024\n\nAPPROVED CONNECTIONS:\n  Jump server (JS-ALBION-01): Enterprise → SCADA, one-way data pull only.\n  Historian (HIST-01): SCADA → Enterprise, read-only from the enterprise side.\n\nSTATUS: These rules have not been reviewed since they were issued.\nACTUAL STATE: Jump server permits bidirectional RDP (needed for commissioning, never reverted).\nACTUAL STATE: Historian has its Modbus proxy enabled (vendor support requirement, never removed).\n\nNOTE: Marcus Webb flagged this for remediation 18 months ago. Not yet actioned."
+          "text": "IT/OT BOUNDARY RULES: ALBION ENERGY STORAGE\nIssued for the smart grid upgrade (Fosse Controls), September 2024\n\nAPPROVED CONNECTIONS:\n  Jump server (JS-ALBION-01): Enterprise → SCADA, one-way data pull only.\n  Historian (HIST-01): SCADA → Enterprise, read-only from the enterprise side.\n\nSTATUS: These rules have not been reviewed since they were issued.\nACTUAL STATE: Jump server permits bidirectional RDP (needed for commissioning, never reverted).\nACTUAL STATE: Historian has its Modbus proxy enabled (vendor support requirement, never removed).\n\nNOTE: Marcus Webb flagged this in two quarterly risk reports. Not yet actioned."
         },
         {
           "type": "notes",
