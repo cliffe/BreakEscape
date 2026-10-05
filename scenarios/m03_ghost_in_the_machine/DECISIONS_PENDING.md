@@ -13,7 +13,7 @@ Status: open. Draft ready: `SECGEN_PROPOSED_m03_ghost_in_the_machine.xml` in thi
 
 ## User decisions, 2026-10-05
 
-- **D1 SecGen:** add the proposed XML to SecGen after a review-secgen-scenario pass. Status: in progress.
+- **D1 SecGen:** add the proposed XML to SecGen after a review-secgen-scenario pass. Status: DONE, SecGen commit 53447e9b on branch claude/practical-planck-fvt3ha (pushed, not merged). Review found it sound; only the header was tidied. To confirm on a real build: flag order scan, FTP, web, distcc; the FTP banner showing flag 1 on anonymous login.
 - **Engine, approved (each separate, with node tests, Rails suite and a browser regression):** E-E flag station drop; E-H cloner click during an open read; flipper Cancel discards the read; dictionary attack 15/16; E-1 re-derive story-gated aims on reload; E-B keep NPC hostility across reload; E-D guards react to the player in their torch beam, **as a per-NPC behaviour attribute so scenarios opt in**; phone timestamps per message.
 - **Engine, not approved:** lobby respawn on reload, tutorial prompt over the brief, E-A CyberChef decode event, E-F person-NPC timed message.
 - **Tooling, approved:** voiced-variable lint in dialoguelint; E-C dungeon graph draws globalVariable gates; E-G harness lists only unlocked tasks; validator warning for a scenario global sharing a name with an unrelated ink VAR.

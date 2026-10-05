@@ -1,57 +1,15 @@
 <?xml version="1.0"?>
 
-<!--
-  DRAFT ONLY (phase 2 round 3 re-sync, 2026-10-04). Written to match the m03 game at
-  commit 5ea9d78 (flag 4 log re-synced after P2-18; flags 1-3 re-checked, unchanged). Not committed to SecGen (no m03 XML exists on SecGen master as of
-  2026-10-04). Template: scenarios/break_escape/safetynet/m02_ransomed_trust.xml
-  (read-only SecGen checkout).
-
-  System name: ghost_in_machine_vm_network (matches the game's flag/VM keys).
-  Flags, in the game's order (scenario.json.erb: the submit_*_flag tasks' targetFlags and the flag_station_dropsite object):
-    flag_1 flag{network_scan_complete}    - - service banners: FTP login banner + web index source
-    flag_2 flag{ftp_intel_gathered}       - - ProFTPD 1.3.3c source backdoor -> root
-    flag_3 flag{pricing_intel_decoded}    - - ROT13 price list on the web host, decode
-    flag_4 flag{distcc_legacy_compromised}- - distcc_exec (CVE-2004-2687, 3632) -> logs
-
-  Exactly FOUR flag generators. The round-1 draft had five (flag1 generated twice:
-  once in the FTP anonymous pre-leak, once in the web index), which would have given
-  the station five flags and shifted flagRewards[3] (the transaction log) onto the
-  wrong flag. flag1 is now generated once, into the scan_flag datastore, and the same
-  value is shown in both banners.
-
-  CAVEATs (for the user):
-   - flag1: nmap alone emits no flag. It sits in what the services say about
-     themselves: the FTP login banner (welcome_msg -> AccessGrantMsg, shown on an
-     anonymous login) and an HTML comment in the web host's index page. This matches
-     the task text "read the service banners the scan turns up" (scenario.json.erb: task submit_network_scan_flag).
-     It is NOT in the anonymous FTP folder: the in-game runbook says "nothing that
-     matters lives in the anonymous folder" (scenario.json.erb: the Training Lab Runbook).
-   - Flag order assumes SecGen generates the system-level scan_flag datastore before
-     the module inputs (as m02's system-level account datastore is). Confirm on a
-     test build that flags_by_vm comes back in the order above.
-   - The game's "training network" is modelled here as ONE multi-service target box
-     (FTP + web + distcc). A multi-host build is possible but heavier; one box honours
-     "map the network" because the scan still finds three services to enumerate.
-   - Price list (flag 3) is the PUBLIC version of lore_fragment_2 (scenario.json.erb:57):
-     same tiers, prices and healthcare-premium note under a CONFIDENTIAL filing line
-     (HaX: "they filed it as confidential"), but no buyer names, no SOLD ledger and no
-     reserved Phase 2 stock (design review P3-2, 2026-10-04). Those stay in the game's
-     wall-safe catalogue, so cracking the safe pays out something the VM doesn't.
-   - Transaction log (flag 4) is operational_log_content verbatim (scenario.json.erb:66),
-     itemised as m02's invoice ZDS-2024-0847 (m02 scenario.json.erb:2755),
-     with the Target line and the discount on its own line (P2-18).
--->
-
 <scenario xmlns="http://www.github/cliffe/SecGen/scenario"
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://www.github/cliffe/SecGen/scenario">
 
-  <name>Mission 3: Ghost in the Machine - Zero Day Training Network</name>
+  <name>Break Escape SAFETYNET: Mission 3 — Ghost in the Machine</name>
   <author>Z. Cliffe Schreuders</author>
   <description>
-# Mission 3: Ghost in the Machine
+# Break Escape SAFETYNET Mission 3: Ghost in the Machine
 
-Zero Day Syndicate sold Ghost the way into St. Catherine's. The trail leads to WhiteHat Security, a respectable pentest firm with Zero Day's exploit market running out of its back rooms. This is their isolated training network - the box they rehearse exploits on before they sell them.
+Virtual machines for the Break Escape SAFETYNET mission 3 narrative experience. Zero Day Syndicate sold Ghost the way into St. Catherine's. The trail leads to WhiteHat Security, a respectable pentest firm with Zero Day's exploit market running out of its back rooms. This is their isolated training network - the box they rehearse exploits on before they sell them.
 
 ## Your Objectives
 
@@ -150,7 +108,7 @@ The transaction log itemises invoice ZDS-2024-0847 to GHOST (Ransomware Incorpor
 
     <!-- flag 1: network scan. Generated ONCE here (first flag on this system) and
          shown in two service banners below: the FTP login banner and the web
-         index source. One generator, so the station still gets exactly four flags. -->
+         index source. One generator, so the station gets exactly four flags. -->
     <input into_datastore="scan_flag">
       <generator type="flag_generator"/>
     </input>
@@ -167,10 +125,11 @@ The transaction log itemises invoice ZDS-2024-0847 to GHOST (Ransomware Incorpor
     <utility module_path=".*/handy_cli_tools"/>
 
     <!-- flag 2: FTP intelligence, via the ProFTPD 1.3.3c source backdoor -> root.
-         welcome_msg (AccessGrantMsg, shown on an anonymous login) carries flag1.
-         The anonymous pre-leak file carries the service list only (no flag), in
-         line with the runbook's "nothing that matters lives in the anonymous folder".
-         The post-exploit root leak carries flag2 + the FTP intel string. -->
+         welcome_msg (rendered as AccessGrantMsg, shown on an anonymous login)
+         carries flag 1. The anonymous pre-leak file carries the service list only
+         (no flag), in line with the runbook's "nothing that matters lives in the
+         anonymous folder". The post-exploit root leak carries flag 2 + the FTP
+         intel string, landing in /root (readable only after the backdoor RCE). -->
     <vulnerability module_path="vulnerabilities/unix/ftp/proftpd_133c_backdoor">
       <input into="port">
         <value>21</value>
@@ -202,7 +161,7 @@ Students: recon first. Everything here answers a scan.
 Nothing that matters lives in the anonymous folder.</value>
       </input>
       <input into="strings_to_leak">
-        <!-- Post-exploit (root): FTP intel string + flag2 -->
+        <!-- Post-exploit (root): FTP intel string + flag 2 -->
         <value>ZERO DAY SYNDICATE - FTP BOX NOTES (root only)
 =============================================
 
@@ -219,11 +178,12 @@ The operational records are not here. They sit on the legacy distcc box.</value>
     </vulnerability>
 
     <!-- flag 3: pricing intel, ROT13-encoded price list served over HTTP (HTML
-         comments in the index page source). The public price list: lore_fragment_2's
-         tiers and prices without the buyers or reserved stock (P3-2). -->
+         comments in the index page source). This is the PUBLIC price list: the
+         catalogue's tiers and prices without the buyers or reserved Phase 2 stock
+         (those stay in the game's wall-safe catalogue). -->
     <service module_path=".*/http/parameterised_website">
       <input into="strings_to_leak">
-        <!-- Plain HTML comment: the web host's banner, carrying the SAME flag1
+        <!-- Plain HTML comment: the web host's banner, carrying the SAME flag 1
              value as the FTP login banner (datastore, not a second generator). -->
         <encoder module_path="modules/encoders/selector/concatenate">
           <input into="delim">
@@ -236,7 +196,7 @@ The operational records are not here. They sit on the legacy distcc box.</value>
           </input>
         </encoder>
 
-        <!-- ROT13 price list: decode for flag3 -->
+        <!-- ROT13 price list: decode for flag 3 -->
         <encoder module_path="modules/encoders/string/rot13">
           <input into="strings_to_encode">
             <value>FILED: CONFIDENTIAL - CLIENTS ONLY
@@ -262,8 +222,9 @@ Buyer details are held internally. Ask your account contact.</value>
     </service>
 
     <!-- flag 4: distcc daemon command execution (CVE-2004-2687, high port 3632).
-         The recovered transaction log is operational_log_content verbatim
-         (scenario.json.erb:66), itemised as m02's invoice ZDS-2024-0847. -->
+         The recovered transaction log is the game's operational_log_content
+         verbatim, itemised as m02's invoice ZDS-2024-0847. Leaked to the distccd
+         user's home (readable only after the distcc RCE). -->
     <vulnerability module_path="vulnerabilities/unix/misc/distcc_exec">
       <input into="strings_to_leak">
         <value>ZERO DAY TRANSACTION LOG (recovered from the training network)
