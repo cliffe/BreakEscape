@@ -52,7 +52,11 @@
             "enabled": true,
             "range": 125,
             "angle": 120,
-            "visualize": true
+            "visualize": true,
+            "challengeOnSight": {
+              "cooldown": 15000,
+              "_comment": "Opt-in sight challenge (npc-sight-challenge.js): emits player_spotted:patrol_with_face when the player walks into her cone"
+            }
           },
           "eventMappings": [
             {
@@ -60,9 +64,15 @@
               "targetKnot": "on_lockpick_used",
               "conversationMode": "person-chat",
               "cooldown": 0
+            },
+            {
+              "eventPattern": "player_spotted:patrol_with_face",
+              "targetKnot": "start",
+              "conversationMode": "person-chat",
+              "cooldown": 0
             }
           ],
-          "_comment": "Patrols normally, but stops to face player when within 3 tiles. Can see player within 250px at 120° FOV"
+          "_comment": "Patrols normally, but stops to face player when within 3 tiles. Can see player within 250px at 120° FOV. Challenges the player on sight (los.challengeOnSight)."
         },
         {
           "id": "security_guard",

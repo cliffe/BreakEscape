@@ -272,6 +272,12 @@ def check_unknown_fields(json_data)
     observations disableClose los rfidCard _comment
   ]
 
+  # Known NPC los fields, and those of the opt-in los.challengeOnSight
+  known_los_fields = %w[enabled range angle visualize challengeOnSight _comment]
+  known_sight_challenge_fields = %w[enabled cooldown event rooms requireGlobal skipIfGlobal _comment]
+  sight_challenges = []   # { path:, event: } checked against every eventMapping below
+  mapping_patterns = []
+
   # Known NPC behavior fields
   known_behavior_fields = %w[
     initiallyHidden immovable hostile facePlayer patrol staticSprite collisionBox _comment
@@ -406,10 +412,34 @@ def check_unknown_fields(json_data)
           end
         end
 
+        # Check los fields, and the opt-in challengeOnSight inside it (npc-sight-challenge.js)
+        if npc['los'].is_a?(Hash)
+          npc['los'].each_key do |key|
+            unless known_los_fields.include?(key)
+              warnings << "⚠️ WARNING: '#{npc_path}/los' has unknown field '#{key}' — this field will be ignored by the game engine."
+            end
+          end
+          challenge = npc['los']['challengeOnSight']
+          challenge = {} if challenge == true
+          if challenge.is_a?(Hash) && challenge['enabled'] != false
+            challenge.each_key do |key|
+              unless known_sight_challenge_fields.include?(key)
+                warnings << "⚠️ WARNING: '#{npc_path}/los/challengeOnSight' has unknown field '#{key}' — this field will be ignored by the game engine."
+              end
+            end
+            if npc['npcType'] != 'person'
+              warnings << "⚠️ WARNING: '#{npc_path}/los/challengeOnSight' is on a #{npc['npcType'] || 'non-person'} NPC — only person NPCs in the player's room can spot the player, so it never fires."
+            end
+            event = challenge['event'].is_a?(String) && !challenge['event'].empty? ? challenge['event'] : "player_spotted:#{npc['id']}"
+            sight_challenges << { path: npc_path, event: event }
+          end
+        end
+
         # Check eventMapping fields
         npc['eventMappings']&.each_with_index do |mapping, midx|
           next unless mapping.is_a?(Hash)
           mapping_path = "#{npc_path}/eventMappings[#{midx}]"
+          mapping_patterns << mapping['eventPattern'] if mapping['eventPattern'].is_a?(String)
           mapping.each_key do |key|
             unless known_event_mapping_fields.include?(key)
               warnings << "⚠️ WARNING: '#{mapping_path}' has unknown field '#{key}' — this field will be ignored by the game engine."
@@ -417,6 +447,24 @@ def check_unknown_fields(json_data)
           end
         end
       end
+    end
+  end
+
+  # A challengeOnSight event that no eventMapping listens to does nothing
+  # (phone contacts listen too: scenario-level npcs / phoneNPCs)
+  [json_data['npcs'], json_data['phoneNPCs']].each do |list|
+    next unless list.is_a?(Array)
+    list.each do |npc|
+      next unless npc.is_a?(Hash) && npc['eventMappings'].is_a?(Array)
+      npc['eventMappings'].each { |m| mapping_patterns << m['eventPattern'] if m.is_a?(Hash) && m['eventPattern'].is_a?(String) }
+    end
+  end
+  sight_challenges.each do |c|
+    heard = mapping_patterns.any? do |p|
+      p == c[:event] || (p.end_with?('*') && c[:event].start_with?(p.chomp('*')))
+    end
+    unless heard
+      warnings << "⚠️ WARNING: '#{c[:path]}/los/challengeOnSight' emits '#{c[:event]}' but no NPC eventMapping listens for it, so spotting the player does nothing."
     end
   end
 

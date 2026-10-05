@@ -529,7 +529,32 @@
             "enabled": { "type": "boolean", "description": "Activates LOS processing for this NPC" },
             "range": { "type": "number", "description": "Detection radius in pixels" },
             "angle": { "type": "number", "description": "Field-of-view width in degrees" },
-            "visualize": { "type": "boolean", "description": "Draw the detection cone on screen" }
+            "visualize": { "type": "boolean", "description": "Draw the detection cone on screen" },
+            "challengeOnSight": {
+              "description": "Opt-in (default off). When the player is in this NPC's room and inside his cone, emit an event (default player_spotted:<npcId>) once per sighting, at most once per cooldown. Map the event in eventMappings to a person-chat knot, setGlobal, bark or emitEvent. true = all defaults. See README_scenario_design.md, 'Guards who challenge on sight'.",
+              "oneOf": [
+                { "type": "boolean" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "enabled": { "type": "boolean", "description": "Default true; false turns the challenge off" },
+                    "cooldown": { "type": "number", "minimum": 0, "description": "Milliseconds before this NPC can challenge again (default 10000)" },
+                    "event": { "type": "string", "description": "Event name to emit (default player_spotted:<npcId>)" },
+                    "rooms": { "type": "array", "items": { "type": "string" }, "description": "Only while the player is in one of these rooms (the NPC must be in the player's room as well)" },
+                    "requireGlobal": {
+                      "description": "Only while this global is truthy (string), or while every listed global equals its value (object)",
+                      "oneOf": [ { "type": "string" }, { "type": "object" } ]
+                    },
+                    "skipIfGlobal": {
+                      "description": "Never while this global (or any of these globals) is truthy",
+                      "oneOf": [ { "type": "string" }, { "type": "array", "items": { "type": "string" } } ]
+                    },
+                    "_comment": { "type": "string" }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            }
           },
           "additionalProperties": false
         },

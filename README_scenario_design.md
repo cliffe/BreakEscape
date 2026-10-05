@@ -50,6 +50,7 @@ The validator performs three phases:
    - **NPC knockout resilience** — required tasks whose only completion path is a KO-vulnerable conversation (a `#complete_task` ink tag on a person NPC) with no `taskOnKO` or `eventMapping` fallback
    - NPC `timedConversation` using `knot` instead of `targetKnot`
    - Phone NPC pitfalls (`targetKnot` in eventMappings, `conversationMode` on phone NPCs, etc.)
+   - NPC `los` fields, including `los.challengeOnSight` (unknown fields, a challenge on a non-person NPC, or a `player_spotted` event no `eventMapping` listens for)
    - **Voice FX** (`voice.fx`) — unknown preset names, unrecognised custom-FX keys, and out-of-range values (e.g. `ringMod.mix` outside 0–1)
    - Task `targetNPC`, `targetRoom`, `targetObject` cross-references
    - `collection_group` on items without a matching task `targetGroup`, and vice-versa
@@ -1014,6 +1015,7 @@ Common event patterns:
 - `"object_interacted"` — fires when object interacted with (`condition: "data.objectType === 'vm-launcher'"`)
 - `"conversation_closed:npc_id"` — fires when a conversation closes
 - `"attack_aborted"` / `"attack_launched"` — fires from launch-device
+- `"player_spotted:npc_id"` — fires when an NPC with `los.challengeOnSight` sees the player (see [Guards who challenge on sight](#guards-who-challenge-on-sight-loschallengeonsight))
 
 Event mapping actions (can be combined):
 
@@ -1034,6 +1036,42 @@ Event mapping actions (can be combined):
 | `unlockTask: "task_id"` | Unlock a locked task |
 | `unlockAim: "aim_id"` | Unlock a locked objective aim |
 | `onceOnly: true` | Ensure mapping only fires once |
+
+#### Guards who challenge on sight (`los.challengeOnSight`)
+
+A person NPC's `los` block sets his line of sight: `range` (pixels, default 200), `angle` (cone width in degrees, default 120, facing the way he walks or looks) and `visualize` (draw the cone). By default the cone is only used to decide whether he sees a lock being picked (`lockpick_used_in_view`). Add `challengeOnSight` and he also reacts when the player simply walks into his sight. It is off unless you add it, so no existing mission changes.
+
+```json
+"los": {
+  "enabled": true, "range": 150, "angle": 120,
+  "challengeOnSight": {
+    "cooldown": 20000,
+    "rooms": ["reception"],
+    "skipIfGlobal": "visitor_badge_shown"
+  }
+},
+"eventMappings": [
+  {
+    "eventPattern": "player_spotted:night_guard",
+    "conversationMode": "person-chat",
+    "targetKnot": "challenge_visitor",
+    "cooldown": 0
+  }
+]
+```
+
+| Field | Default | Description |
+|-------|---------|-------------|
+| `enabled` | `true` | `false` turns a configured challenge off. `"challengeOnSight": true` is the same as `{}` (all defaults). |
+| `cooldown` | `10000` | Milliseconds before he can challenge again. |
+| `event` | `"player_spotted:<npcId>"` | Name of the event to emit. |
+| `rooms` | any | Only while the player is in one of these rooms. He must be in the player's room in any case, because the cone ignores walls. |
+| `requireGlobal` | none | Only while this global is truthy (`"alarm_raised"`), or while every global listed matches its value (`{ "alarm_level": 2 }`). |
+| `skipIfGlobal` | none | Never while this global (or any in a list) is truthy, e.g. once the player has shown a badge. |
+
+How it fires: while the player is in his room and inside his cone, and the conditions hold, the event is emitted once, with `{ npcId, roomId, playerPosition, timestamp }`. It doesn't fire again until the player has left his sight and come back, and the cooldown has passed. Nothing is checked while a conversation or minigame is open, so the challenge conversation itself doesn't retrigger it. KO'd and hidden NPCs see nothing. With `"enabled": false` on the `los` block itself he sees his whole room. The cooldown and sighting state are per session; a reload starts them fresh, so use `onceOnly` on the mapping (saved across reloads) for a challenge that must happen only once.
+
+The event does nothing by itself: map it in `eventMappings`, on the guard (a `person-chat` knot, a `bark`) or on any other NPC (a handler text, `setGlobal`, `completeTask`). The mapping's own `cooldown`, `condition`, `onceOnly` and `maxTriggers` apply as usual; give a person-chat mapping `"cooldown": 0` so the guard's cooldown is the one that counts. The validator warns about unknown `los` and `challengeOnSight` fields, a challenge on a non-person NPC, and a challenge event that no mapping listens for.
 
 ### Phone NPCs (`npcType: "phone"`)
 
