@@ -8,12 +8,21 @@
  *   normalBase, noisePeriodMinutes, noiseAmplitude → organic pre-injection trace
  *   injectionTimestamp, injectedValue              → perfect flat post-injection trace
  *
- * Completion: player hovers post-injection point (3s) → ANNOTATE FINDING unlocks
- *             → modal confirm → completionActions fired → complete(true)
+ * Completion: player hovers a falsified point for 3 s (a progress bar shows under
+ *             the chart), hovers the injection-start point, or clicks any falsified
+ *             point → ANNOTATE FINDING unlocks → modal confirm → completionActions
+ *             fired → complete(true)
+ *
+ * Times, values, deltas and durations in the tooltip, banner and report all come
+ * from scada-historian-data.js, which reads minigameData and the drawn points.
  */
 
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
+import {
+    TIME_RANGES, DEFAULT_HINT, parseHistorianConfig, buildRackTrend, findAnomaly,
+    tooltipText, compareBannerText, reportContent, fmtClock,
+} from './scada-historian-data.js';
 
 // Rack colour palette: A1 bright amber, A2 gold, A3 yellow, A4 pale amber
 const RACK_COLOURS = ['#f5a623', '#d4a017', '#e8d44d', '#f0c87a'];
@@ -28,8 +37,8 @@ const INJECT_LINE_COLOUR = '#ff4040';
 const Y_MIN = 24;
 const Y_MAX = 42;
 
-// Time range options in hours
-const TIME_RANGES = [1, 3, 6, 12, 24];
+// How long a falsified point must be inspected before the finding unlocks
+const INSPECT_MS = 3000;
 
 export class ScadaHistorianMinigame extends MinigameScene {
 
@@ -46,22 +55,18 @@ export class ScadaHistorianMinigame extends MinigameScene {
         this._sd                = sd;
         this._title             = sd.title    || 'ALBION ENERGY STORAGE — SCADA HISTORIAN';
         this._subtitle          = sd.subtitle || 'Battery Hall 1 — Temperature (°C)';
-        this._racksConfig       = sd.racks    || [];
-        this._injectionTs       = sd.injectionTimestamp  ? new Date(sd.injectionTimestamp).getTime()  : 0;
-        this._injectedValue     = sd.injectedValue       ?? 28.0;
-        this._lastRealTs        = sd.lastRealTimestamp   ? new Date(sd.lastRealTimestamp).getTime()   : 0;
-        this._lastRealValue     = sd.lastRealValue       ?? 36.2;
-        this._trendStartTs      = sd.thermalTrendStartTime ? new Date(sd.thermalTrendStartTime).getTime() : 0;
-        this._trendRate         = sd.thermalTrendRate    ?? 0.18;
-        this._histStartTs       = sd.historianStartTime  ? new Date(sd.historianStartTime).getTime()  : 0;
-        this._histEndTs         = sd.historianEndTime    ? new Date(sd.historianEndTime).getTime()    : 0;
-        this._sampleMs          = (sd.sampleIntervalMinutes || 1) * 60000;
-        this._defaultRangeHours = sd.defaultTimeRangeHours || 6;
+        this._cfg               = parseHistorianConfig(sd);
+        this._racksConfig       = this._cfg.racks;
+        this._injectionTs       = this._cfg.injectionTs;
+        this._histEndTs         = this._cfg.histEndTs;
+        this._defaultRangeHours = this._cfg.defaultRangeHours;
+        this._hintText          = sd.hintText || DEFAULT_HINT;
         this._completionActions = sd.completionActions   || [];
         this._progressActions   = sd.progressActions     || [];
 
         // UI state
-        this._selectedRacks   = new Set(['A1']);
+        this._selectedRacks   = new Set([this._racksConfig[0].id]);
+        this._focusRackId     = this._racksConfig[0].id; // rack the tooltip and report describe
         this._compareMode     = false;
         this._dzDtActive      = false;
         this._timeRangeHours  = this._defaultRangeHours;
@@ -69,6 +74,7 @@ export class ScadaHistorianMinigame extends MinigameScene {
         this._completionFired = false;
         this._progressFired   = new Set();
         this._hoverTimer      = null;
+        this._leaveTimer      = null;
         this._trendData       = new Map(); // rackId → [{ts, value, dzdt, isInjected, isTransition}]
 
         // DOM refs set in start()
@@ -78,6 +84,9 @@ export class ScadaHistorianMinigame extends MinigameScene {
         this._annotateBtn = null;
         this._bannerEl   = null;
         this._infoBanner = null;
+        this._hintEl     = null;
+        this._hintText2  = null;
+        this._progressEl = null;
     }
 
     // ── Lifecycle ──────────────────────────────────────────────────────────
@@ -92,7 +101,7 @@ export class ScadaHistorianMinigame extends MinigameScene {
     }
 
     cleanup() {
-        if (this._hoverTimer) { clearTimeout(this._hoverTimer); this._hoverTimer = null; }
+        this._cancelInspect();
         super.cleanup();
     }
 
@@ -100,41 +109,13 @@ export class ScadaHistorianMinigame extends MinigameScene {
 
     _buildTrendData() {
         for (const rack of this._racksConfig) {
-            const points = [];
-            let prevValue = null;
-            let t = this._histStartTs;
-            const intervalMin = this._sampleMs / 60000;
-
-            while (t <= this._histEndTs) {
-                const isInjected   = t >= this._injectionTs;
-                const isTransition = !isInjected && t >= this._lastRealTs && t < this._injectionTs + this._sampleMs;
-                let value;
-
-                if (isInjected) {
-                    value = this._injectedValue;
-                } else {
-                    // Base value: start from normalBase, add thermal trend if past trendStartTs
-                    value = rack.normalBase;
-                    if (this._trendStartTs > 0 && t >= this._trendStartTs) {
-                        const minutesIntoTrend = (t - this._trendStartTs) / 60000;
-                        value += minutesIntoTrend * this._trendRate;
-                    }
-                    // Organic noise: two sin waves with different periods create realistic variance
-                    const amp = rack.noiseAmplitude || 0.3;
-                    const period = (rack.noisePeriodMinutes || 4) * 60000;
-                    // Use rack id as a phase offset seed for uniqueness
-                    const phaseOffset = rack.id ? rack.id.charCodeAt(0) + rack.id.charCodeAt(1) : 0;
-                    value += amp * Math.sin((t / period) * 2 * Math.PI + phaseOffset)
-                           + (amp * 0.4) * Math.sin((t / (period * 0.7)) * 2 * Math.PI + phaseOffset * 1.3);
-                }
-
-                const dzdt = prevValue !== null ? (value - prevValue) / intervalMin : 0;
-                points.push({ ts: t, value: +value.toFixed(1), dzdt: +dzdt.toFixed(3), isInjected, isTransition });
-                prevValue = value;
-                t += this._sampleMs;
-            }
-            this._trendData.set(rack.id, points);
+            this._trendData.set(rack.id, buildRackTrend(rack, this._cfg));
         }
+    }
+
+    _anomalyFor(rackId) {
+        const points = this._trendData.get(rackId);
+        return points ? findAnomaly(points, this._cfg) : null;
     }
 
     // ── Layout ─────────────────────────────────────────────────────────────
@@ -202,6 +183,9 @@ export class ScadaHistorianMinigame extends MinigameScene {
         });
         this._openedAt = Date.now();
         left.appendChild(this._annotateBtn);
+        this._annotateNote = this._el('div', 'sh-annotate-note');
+        this._annotateNote.textContent = 'Inspect the chart to find something to annotate.';
+        left.appendChild(this._annotateNote);
         body.appendChild(left);
 
         // Right panel
@@ -246,6 +230,18 @@ export class ScadaHistorianMinigame extends MinigameScene {
 
         // Charts area
         const charts = this._el('div', 'sh-charts');
+
+        // Hint line at the top of the chart (the framework's Close button covers the bottom),
+        // with a progress bar while a falsified point is inspected
+        this._hintEl = this._el('div', 'sh-hint');
+        this._hintText2 = this._el('span', 'sh-hint-text');
+        this._hintText2.textContent = displayDashes(this._hintText);
+        const bar = this._el('span', 'sh-hint-progress');
+        this._progressEl = this._el('span', 'sh-hint-progress-fill');
+        bar.appendChild(this._progressEl);
+        this._hintEl.appendChild(this._hintText2);
+        this._hintEl.appendChild(bar);
+        charts.appendChild(this._hintEl);
 
         // Info banner (hidden until dZ/dt first enabled)
         this._infoBanner = this._el('div', 'sh-info-banner');
@@ -436,22 +432,27 @@ export class ScadaHistorianMinigame extends MinigameScene {
         const primaryPoints = primaryRack ? this._trendData.get(primaryRack) : null;
         if (primaryPoints) {
             const visible = primaryPoints.filter(p => p.ts >= startTs && p.ts <= endTs);
+            let startHit = null;
             visible.forEach((p, i) => {
                 const x = PAD.left + ((p.ts - startTs) / tsRange) * plotW;
-                const y = PAD.top  + plotH - ((p.value - Y_MIN) / (Y_MAX - Y_MIN)) * plotH;
                 const hit = this._svgEl('rect');
                 const hitW = i + 1 < visible.length
                     ? (PAD.left + ((visible[i+1].ts - startTs) / tsRange) * plotW) - x
                     : 8;
-                hit.setAttribute('x', x - 2); hit.setAttribute('y', PAD.top);
-                hit.setAttribute('width', Math.max(hitW, 4));
+                // The injection-start point sits a second after the last real one, so give
+                // it a wider target, drawn last (on top), centred on the injection line.
+                const w = p.isInjectionStart ? 6 : Math.max(hitW, 4);
+                hit.setAttribute('x', p.isInjectionStart ? x - 3 : x - 2); hit.setAttribute('y', PAD.top);
+                hit.setAttribute('width', w);
                 hit.setAttribute('height', plotH);
                 hit.setAttribute('fill', 'transparent');
                 hit.style.cursor = 'crosshair';
-                hit.addEventListener('mouseenter', (e) => this._onPointHover(e, p, x, y, chartArea));
+                hit.addEventListener('mouseenter', (e) => this._onPointHover(e, p, primaryRack, chartArea));
                 hit.addEventListener('mouseleave', () => this._onPointLeave());
-                hitsG.appendChild(hit);
+                hit.addEventListener('click', (e) => this._onPointSelect(e, p, primaryRack, chartArea));
+                if (p.isInjectionStart) startHit = hit; else hitsG.appendChild(hit);
             });
+            if (startHit) hitsG.appendChild(startHit);
         }
         svg.appendChild(hitsG);
 
@@ -554,38 +555,13 @@ export class ScadaHistorianMinigame extends MinigameScene {
 
     // ── Hover / tooltip ────────────────────────────────────────────────────
 
-    _onPointHover(e, point, x, y, chartArea) {
+    _showTooltip(e, point, rackId, chartArea) {
         if (!this._tooltip) return;
-        const rect = chartArea.getBoundingClientRect();
-        const svgRect = (this._chartSvg || chartArea).getBoundingClientRect();
-
-        const timeStr = this._fmtFullTime(new Date(point.ts));
-        let tipClass = 'sh-tooltip';
-        let text = '';
-
-        if (point.isInjected) {
-            if (point.ts === this._injectionTs) {
-                tipClass = 'sh-tooltip sh-tooltip-injection';
-                text = `${timeStr} \u2190 INJECTION START\nTemperature: ${point.value}\u00b0C\ndZ/dt: ${point.dzdt.toFixed(3)} \u00b0C/min\n\nDISCONTINUITY: Temperature changed \u22128.1\u00b0C in 1 second.\nThis is the first falsified data point.\nConsistent with Modbus register overwrite via Write\nMultiple Registers (FC16).`;
-                // Immediately unlock annotate on transition hover
-                if (!this._annotateUnlocked) this._unlockAnnotate();
-            } else {
-                tipClass = 'sh-tooltip sh-tooltip-anomaly';
-                text = `${timeStr}\nTemperature: ${point.value}\u00b0C\ndZ/dt: ${point.dzdt.toFixed(3)} \u00b0C/min\n\n\u25b2 ANOMALY: This reading has zero variance.\n  Previous reading: ${this._lastRealValue}\u00b0C at ${this._fmtFullTime(new Date(this._lastRealTs))}\n  \u0394 = ${(point.value - this._lastRealValue).toFixed(1)}\u00b0C in 54 seconds \u2014 physically impossible cooling rate.\n  Last natural reading: ${this._fmtFullTime(new Date(this._lastRealTs))}`;
-                if (!this._annotateUnlocked) {
-                    // 3-second hover threshold
-                    if (!this._hoverTimer) {
-                        this._hoverTimer = setTimeout(() => {
-                            this._unlockAnnotate();
-                        }, 3000);
-                    }
-                }
-            }
-        } else {
-            text = `${timeStr}\nTemperature: ${point.value}\u00b0C\ndZ/dt: ${point.dzdt.toFixed(3)} \u00b0C/min`;
-        }
-
-        this._tooltip.className = tipClass;
+        this._focusRackId = rackId;
+        const { kind, text } = tooltipText(point, this._anomalyFor(rackId));
+        this._tooltip.className = kind === 'injection' ? 'sh-tooltip sh-tooltip-injection'
+                                : kind === 'anomaly'   ? 'sh-tooltip sh-tooltip-anomaly'
+                                : 'sh-tooltip';
         this._tooltip.textContent = text;
         this._tooltip.style.display = 'block';
 
@@ -601,23 +577,78 @@ export class ScadaHistorianMinigame extends MinigameScene {
         const top = (mouseY + tooltipH + 10 > containerRect.height)
             ? mouseY - tooltipH - 10
             : mouseY + 10;
-        this._tooltip.style.left = left + 'px';
-        this._tooltip.style.top  = top  + 'px';
+        this._tooltip.style.left = Math.max(0, left) + 'px';
+        this._tooltip.style.top  = Math.max(0, top)  + 'px';
+    }
+
+    _onPointHover(e, point, rackId, chartArea) {
+        this._showTooltip(e, point, rackId, chartArea);
+        if (this._annotateUnlocked) return;
+        if (!point.isInjected) { this._cancelInspect(); return; }
+        if (point.isInjectionStart) { this._unlockAnnotate(); return; }
+        // Moving along the flat line keeps the same inspection going
+        if (this._leaveTimer) { clearTimeout(this._leaveTimer); this._leaveTimer = null; }
+        if (!this._hoverTimer) {
+            this._hoverTimer = setTimeout(() => { this._hoverTimer = null; this._unlockAnnotate(); }, INSPECT_MS);
+            this._setProgress(true);
+        }
     }
 
     _onPointLeave() {
         if (this._tooltip) this._tooltip.style.display = 'none';
-        if (this._hoverTimer && !this._annotateUnlocked) {
-            clearTimeout(this._hoverTimer);
-            this._hoverTimer = null;
+        if (this._hoverTimer && !this._leaveTimer) {
+            // A short grace so stepping to the next point doesn't restart the count
+            this._leaveTimer = setTimeout(() => this._cancelInspect(), 300);
         }
     }
 
-    _unlockAnnotate() {
+    /** Click (or tap) a point: an alternative to hovering for three seconds. */
+    _onPointSelect(e, point, rackId, chartArea) {
+        this._showTooltip(e, point, rackId, chartArea);
+        if (point.isInjected) {
+            this._unlockAnnotate(true);
+        } else if (!this._annotateUnlocked && this._hintText2) {
+            this._hintText2.textContent = `${fmtClock(point.ts)}: ${point.value.toFixed(1)}\u00b0C. `
+                + 'Still moving like a real sensor reading. Keep looking.';
+        }
+    }
+
+    _cancelInspect() {
+        if (this._hoverTimer) { clearTimeout(this._hoverTimer); this._hoverTimer = null; }
+        if (this._leaveTimer) { clearTimeout(this._leaveTimer); this._leaveTimer = null; }
+        this._setProgress(false);
+    }
+
+    _setProgress(running) {
+        const fill = this._progressEl;
+        if (!fill) return;
+        if (running) {
+            fill.style.transition = 'none';
+            fill.style.width = '0%';
+            void fill.offsetWidth; // restart the transition
+            fill.style.transition = `width ${INSPECT_MS}ms linear`;
+            fill.style.width = '100%';
+            if (this._hintText2) this._hintText2.textContent = 'Inspecting this reading...';
+        } else if (!this._annotateUnlocked) {
+            fill.style.transition = 'none';
+            fill.style.width = '0%';
+            if (this._hintText2 && this._hintText2.textContent === 'Inspecting this reading...') {
+                this._hintText2.textContent = displayDashes(this._hintText);
+            }
+        }
+    }
+
+    _unlockAnnotate(force = false) {
         if (this._annotateUnlocked) return;
         // Guard: ignore spurious hover events fired during initial render (<1s after open)
-        if (this._openedAt && Date.now() - this._openedAt < 1000) return;
+        if (!force && this._openedAt && Date.now() - this._openedAt < 1000) return;
         this._annotateUnlocked = true;
+        if (this._hoverTimer) { clearTimeout(this._hoverTimer); this._hoverTimer = null; }
+        if (this._leaveTimer) { clearTimeout(this._leaveTimer); this._leaveTimer = null; }
+        if (this._progressEl) { this._progressEl.style.transition = 'none'; this._progressEl.style.width = '100%'; }
+        if (this._hintEl) this._hintEl.classList.add('found');
+        if (this._hintText2) this._hintText2.textContent = 'Finding ready: press [ANNOTATE FINDING] on the left.';
+        if (this._annotateNote) this._annotateNote.textContent = 'Ready to annotate.';
         if (this._annotateBtn) {
             this._annotateBtn.disabled = false;
             this._annotateBtn.style.pointerEvents = '';
@@ -691,13 +722,14 @@ export class ScadaHistorianMinigame extends MinigameScene {
 
     _showCompareBanner() {
         if (!this._bannerEl) return;
-        this._bannerEl.innerHTML =
-            '<span class="sh-banner-warn">\u26a0 SYSTEMATIC INJECTION DETECTED</span>\n' +
-            '  All four racks report identical values from 23:12:07.\n' +
-            '  Probability of natural coincidence: negligible.\n' +
-            '  Consistent with automated Modbus register injection across all PLC-BMS inputs.';
+        this._bannerEl.innerHTML = '';
+        const warn = this._el('span', 'sh-banner-warn');
+        warn.textContent = '\u26a0 SYSTEMATIC INJECTION DETECTED';
+        this._bannerEl.appendChild(warn);
+        this._bannerEl.appendChild(document.createTextNode('\n  ' +
+            compareBannerText(this._anomalyFor(this._focusRackId), this._racksConfig.length)));
         this._bannerEl.style.display = 'block';
-        this._unlockAnnotate();
+        this._unlockAnnotate(true);
     }
 
     // ── Annotate modal ─────────────────────────────────────────────────────
@@ -712,23 +744,19 @@ export class ScadaHistorianMinigame extends MinigameScene {
         title.textContent = 'HISTORIAN ANOMALY REPORT';
         modal.appendChild(title);
 
-        const rows = [
-            ['Variable:',    'Cell Temperature \u2014 Battery Hall 1, Racks A1\u2013A4'],
-            ['Time window:', '2025-01-15 23:12:07 \u2014 present (7h 17m)'],
-            ['Finding:',     'Zero-variance flat-line reading at 28.0\u00b0C\nLast natural reading: 36.2\u00b0C at 23:12:06\n\u0394 = \u22128.1\u00b0C instantaneous (physically impossible)'],
-            ['Interpretation:', 'Sensor data falsification via PLC register\ninjection. Injection timestamp: 23:12:07.'],
-        ];
+        const rack = this._racksConfig.find(r => r.id === this._focusRackId) || this._racksConfig[0];
+        const { rows, confirmLabel } = reportContent(this._anomalyFor(rack.id), this._cfg, this._sd, rack);
         for (const [k, v] of rows) {
             const row = this._el('div', 'sh-modal-row');
             const key = this._el('div', 'sh-modal-key'); key.textContent = k;
-            const val = this._el('div', 'sh-modal-val'); val.style.whiteSpace = 'pre-wrap'; val.textContent = v;
+            const val = this._el('div', 'sh-modal-val'); val.style.whiteSpace = 'pre-wrap'; val.textContent = displayDashes(v);
             row.appendChild(key); row.appendChild(val);
             modal.appendChild(row);
         }
 
         const buttons = this._el('div', 'sh-modal-buttons');
         const confirmBtn = this._el('button', 'sh-modal-confirm-btn');
-        confirmBtn.textContent = '[CONFIRM \u2014 MARK AS INJECTION EVENT: 23:12]';
+        confirmBtn.textContent = confirmLabel;
         confirmBtn.addEventListener('click', () => { overlay.remove(); this._onComplete(); });
         const cancelBtn = this._el('button', 'sh-modal-cancel-btn');
         cancelBtn.textContent = '[CANCEL]';
@@ -816,14 +844,5 @@ export class ScadaHistorianMinigame extends MinigameScene {
     _fmtTime(date) {
         return date.getHours().toString().padStart(2, '0') + ':'
              + date.getMinutes().toString().padStart(2, '0');
-    }
-
-    _fmtFullTime(date) {
-        return date.getFullYear() + '-'
-             + (date.getMonth() + 1).toString().padStart(2, '0') + '-'
-             + date.getDate().toString().padStart(2, '0') + ' '
-             + date.getHours().toString().padStart(2, '0') + ':'
-             + date.getMinutes().toString().padStart(2, '0') + ':'
-             + date.getSeconds().toString().padStart(2, '0');
     }
 }

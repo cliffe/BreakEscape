@@ -18,7 +18,7 @@
 
   "scada_historian": {
     "required": ["racks"],
-    "optional": ["minigameId", "title", "subtitle", "injectionTimestamp", "injectedValue", "lastRealTimestamp", "lastRealValue", "thermalTrendStartTime", "thermalTrendRate", "historianStartTime", "historianEndTime", "sampleIntervalMinutes", "defaultTimeRangeHours", "completionActions", "progressActions"]
+    "optional": ["minigameId", "title", "subtitle", "injectionTimestamp", "injectedValue", "lastRealTimestamp", "lastRealValue", "thermalTrendStartTime", "thermalTrendRate", "historianStartTime", "historianEndTime", "sampleIntervalMinutes", "defaultTimeRangeHours", "reportVariable", "hintText", "completionActions", "progressActions"]
   },
 
   "log_filter_terminal": {

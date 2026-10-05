@@ -246,7 +246,7 @@ def check_unknown_fields(json_data)
   # Known top-level fields
   known_top_level = %w[
     scenario_id scenario_name scenario_brief endGoal version startRoom startPosition
-    show_scenario_brief disableAttacks gameClock flags music startItemsInInventory globalVariables
+    show_scenario_brief disableAttacks creditsTheme gameClock flags music startItemsInInventory globalVariables
     player objectives rooms npcs phoneNPCs narrator timers _comment mutuallyExclusiveGlobals
   ]
 
