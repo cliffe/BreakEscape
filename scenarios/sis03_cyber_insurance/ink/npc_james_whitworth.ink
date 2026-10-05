@@ -68,7 +68,7 @@ James Whitworth: I know you're reviewing the coverage. I'm prepared to walk you 
 
 James Whitworth: The historian migration and jump server reconfiguration were on the work plan. We had vendors scheduled. We had budget allocated.
 
-James Whitworth: But the historian migration hit vendor delays — the hardware we needed wasn't available. And the jump server reconfiguration required coordination with our operations team. We were also managing the National Grid ESO ancillary services upgrade simultaneously. Resource constraints are real.
+James Whitworth: But the historian migration hit vendor delays — the hardware we needed wasn't available. And the jump server reconfiguration required coordination with our operations team. We were also managing the NESO ancillary services upgrade simultaneously. Resource constraints are real.
 
 * [Did you file an extension request?]
     James Whitworth: We did — four months before the incident. We documented the constraint, requested a six-month extension, and proposed a phased remediation approach.
@@ -99,7 +99,7 @@ James Whitworth: The SIS patch is a different question. And I want to be direct 
 
 James Whitworth: The patch requires eight weeks offline and £180,000 in recertification under IEC 61511. That's not arbitrary — that's functional safety regulation. We have to validate that the safety case still holds after we modify the SIS.
 
-James Whitworth: We couldn't justify taking eight weeks offline during peak summer demand season. National Grid ESO depends on our frequency response capability. We documented the risk. We accepted it with a compensating control commitment.
+James Whitworth: We couldn't justify taking eight weeks offline during peak summer demand season. NESO depends on our frequency response capability. We documented the risk. We accepted it with a compensating control commitment.
 
 * [Tell me about those compensating controls]
     -> compensating_controls_discussion
@@ -161,13 +161,13 @@ James Whitworth: The incident cascaded the recertification timeline into emergen
     -> hub
     
 * [How confident are you in the £4.8M figure?]
-    James Whitworth: That number comes from Simon Hartley's independent loss adjuster. We provided him with our National Grid ESO contract terms and revenue baseline. He calculated the lost ancillary services revenue during the outage.
+    James Whitworth: That number comes from Simon Hartley's independent loss adjuster. We provided him with our NESO contract terms and revenue baseline. He calculated the lost ancillary services revenue during the outage.
     James Whitworth: I'm confident in the calculation. The question is whether all six weeks are attributable to the incident, or whether part of it is pre-existing maintenance.
     -> hub
     
 * [What about the regulatory penalties?]
     {loss_quantum_reviewed:
-        James Whitworth: Ofgem hasn't imposed penalties yet. They're investigating. But we notified them within the 72-hour NIS window. We cooperated fully. I don't think we're exposure to significant regulatory penalties given our responsive posture.
+        James Whitworth: Ofgem hasn't imposed penalties yet. They're investigating. We made our NIS notification and we've cooperated fully. I don't think we're exposed to significant regulatory penalties given our responsive posture.
         -> hub
     }
     

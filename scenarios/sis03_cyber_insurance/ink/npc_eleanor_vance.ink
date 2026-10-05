@@ -235,7 +235,7 @@ Eleanor Vance: You've reviewed the forensic evidence. Let me hear your reasoning
 #speaker:eleanor
 ~ w07_discussed = true
 
-Eleanor Vance: Warranty W-07 required full IT-to-OT network segmentation by December thirty-first, 2024. No dual-homed systems. No bidirectional jump servers. Firewall-enforced isolation.
+Eleanor Vance: Warranty W-07 required full IT-to-OT network segmentation by December thirty-first, 2025. No dual-homed systems. No bidirectional jump servers. Firewall-enforced isolation.
 
 Eleanor Vance: At the time of the incident, Albion still had a dual-homed historian server — a direct data path between IT and OT zones. They also had a bidirectional jump server that permitted RDP sessions in both directions.
 
@@ -323,7 +323,7 @@ Eleanor Vance: That renewal memo is going to be in every court filing if this cl
 #speaker:eleanor
 ~ w03_discussed = true
 
-Eleanor Vance: W-03 required application of a critical SIS firmware patch to the safety-critical PLC by the same deadline: December thirty-first, 2024.
+Eleanor Vance: W-03 required application of a critical SIS firmware patch to the safety-critical PLC by the same deadline: December thirty-first, 2025.
 
 Eleanor Vance: The patch addresses an authentication vulnerability in the SIS engineering port. Without it, external commands can reach the SIS without cryptographic verification.
 
@@ -374,7 +374,7 @@ Eleanor Vance: So do we reduce coverage for this warranty? That's your call. I'd
 
 Eleanor Vance: W-09 required deprovisioning of dormant contractor accounts on the jump server and implementation of multi-factor authentication on all administrative access.
 
-Eleanor Vance: Forensic evidence shows the attacker used the c.ellison account — a contractor account that should have been deprovisioned years ago — to establish the RDP session that gave them SCADA access.
+Eleanor Vance: The evidence shows the attacker used the c.ellison account — a contractor account that should have gone over a year ago — to establish the RDP session that gave them SCADA access.
 
 Eleanor Vance: This is the clearest operational security failure.
 
@@ -702,7 +702,7 @@ Eleanor Vance: I understand the reasoning. GREYMANTLE attribution is credible. S
 
 Eleanor Vance: But I want you to think about this from Albion's perspective.
 
-Eleanor Vance: Albion is an Operator of Essential Services. They invest in cyber security. They maintain defensive capabilities. They implement mitigations like the hardwired ESD that prevented thermal runaway yesterday.
+Eleanor Vance: Albion is an Operator of Essential Services. They invest in cyber security. They maintain defensive capabilities. They implement mitigations like the hardwired ESD that prevented thermal runaway on Saturday.
 
 Eleanor Vance: Now they face a state-sponsored attack. They act. They prevent catastrophe. And the insurance denies coverage because a nation-state was involved.
 
@@ -723,7 +723,7 @@ Eleanor Vance: That's not a legal argument. That's a policy argument. But policy
 
 Eleanor Vance: That renewal memo.
 
-Eleanor Vance: November 2024. Our underwriting team reviewed Albion's quarterly security reports. They saw the IT-to-OT segmentation work in progress. Deadline looming. Work not completed.
+Eleanor Vance: November 2025. Our underwriting team reviewed Albion's quarterly security reports. They saw the IT-to-OT segmentation work in progress. Deadline looming. Work not completed.
 
 Eleanor Vance: They had three options: (1) refuse to renew, (2) renew with a warranty and a premium increase, or (3) renew without warranty.
 
