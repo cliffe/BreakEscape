@@ -1,19 +1,21 @@
 {
   "display_name": "Albion Battery Hall: Code Red",
-  "description": "An overnight APT attack has falsified sensor data and silently disabled safety protections at a 200 MWh battery storage facility. Players arrive to find a normal-looking SCADA display hiding an imminent thermal runaway. They must detect the anomaly using analog instrumentation, initiate an emergency shutdown that cannot be hacked, and navigate the tension between network containment and continued safety-critical control.",
+  "description": "Saturday morning at a 200 MWh battery storage site on the Trent. Overnight, an attacker falsified sensor data and quietly raised the safety system's trip points. Players arrive to find a normal-looking SCADA display hiding a battery hall heading for thermal runaway. They must trust an old dial over a perfect screen, decide when to press a hardwired emergency shutdown, choose how far to cut the attacker off, and decide what to tell the regulator and a neighbour, then talk it through with the NCSC.",
   "difficulty_level": 4,
   "secgen_scenario": "albion_battery_hall",
   "collection": "cybok_sis",
   "branching": true,
   "branches": [
-    "esd_early_before_network_isolated",
-    "esd_late_hydrogen_advisory_triggered",
+    "esd_on_the_dial_before_the_historian",
+    "esd_after_the_hydrogen_alarm",
+    "hall_1_evacuated_and_lost",
     "network_isolated_before_esd",
+    "isolation_scope_historian_watch_or_scada",
     "sis_tamper_discovered",
     "patch_active_management",
     "patch_deferral",
-    "ncsc_notified_on_time",
-    "trent_water_notified"
+    "nis_initial_notification_sent_or_held",
+    "trent_water_warned_or_verified_first"
   ],
   "estimated_duration_minutes": 70,
   "cybok": [
@@ -52,7 +54,8 @@
       "keywords": [
         "SIS firmware patching",
         "recertification cost",
-        "IEC 61511 clause 4.2.14",
+        "IEC 61511-1 modification procedure (clause 17)",
+        "IEC 61511-1 clause 8.2.4 SIS security risk assessment",
         "patch deferral risk",
         "compensating controls",
         "safety case maintenance",
@@ -138,7 +141,7 @@
         "deprovisioning failure",
         "contractor account lifecycle",
         "RDP session detection",
-        "authentication bypass — SIS",
+        "unauthenticated SIS engineering protocol",
         "OT access control",
         "privileged account management"
       ]
@@ -148,13 +151,13 @@
       "topic": "Cyber and Privacy Law",
       "keywords": [
         "NIS Regulations 2018",
-        "Operator of Essential Services",
-        "72-hour notification obligation",
-        "COMAH Regulations 2015",
-        "HSE COMAH notification",
-        "cross-sector OES coordination",
-        "regulatory investigation",
-        "de-identified incident reporting"
+        "Operator of Essential Services (designated, reg 8(3))",
+        "competent authority: DESNZ and Ofgem jointly",
+        "initial notification without undue delay, within 72 hours",
+        "NCSC as CSIRT: support, not regulation",
+        "HSE and fire and rescue after a dangerous occurrence",
+        "NESO and grid frequency events",
+        "duty of care to a non-OES neighbour"
       ]
     }
   ],
@@ -165,9 +168,9 @@
   "consequences_persist": true,
   "lore_reveals": [
     "The GREYMANTLE APT used a printer firmware supply chain compromise as initial access — a technique that bypasses most endpoint monitoring",
-    "Battery Hall 1 temperatures reached 51°C with the SIS configured to allow 85°C — the margin between 'alarming reading' and 'thermal runaway' was eliminated overnight",
+    "Battery Hall 1 reached 51°C with the SIS trip moved from 55°C to 85°C and the hydrogen alarm from 1.0% to 3.8% by volume: the safety margin was removed overnight",
     "The compensating control accepted in lieu of the SIS patch (OT monitoring) was never actually implemented — the risk register approved a control that did not exist",
-    "The analog thermometer that detected the attack was the only sensor in the facility that could not be falsified — because it was not connected to any network"
+    "The local dial gauge at Rack A2 that exposed the attack was the one reading the attacker could not reach, because it was on no network at all"
   ],
-  "facilitator_notes": "Designed for 3–5 players split across engineering and security roles. Suggested split: 1–2 players as SCADA Engineers (focus on Battery Hall walkdown, ESD, SIS investigation) and 1–2 players as IT/OT Security (focus on historian analysis, access log investigation, network isolation). One player can act as Incident Commander (coordinates between tracks, makes the network isolation decision, handles NIS competent-authority notification and NCSC coordination).\n\nKey decision points to prompt discussion:\n1. THE THERMOMETER MOMENT: When players read the analog thermometer showing 51°C vs. SCADA 28°C — resist the urge to tell them what to do. Let them work out the discrepancy. The best learning happens when players briefly doubt the thermometer.\n2. ESD vs. ISOLATION TIMING: Marcus Webb's guidance is ESD first, then isolation. Players who reverse this order should encounter the consequence in Marcus's dialogue. Facilitate discussion: 'Why does the order matter?'\n3. PATCH DECISION: The Priya S. debrief patch choice should be a genuine discussion. Neither answer is automatically wrong — deferral with genuinely effective compensating controls is defensible. The key learning is that Albion's compensating controls were not effective.\n\nPhysical prop setup:\n- Analog thermometer dial: pre-set to 51°C, mounted on wall near battery rack prop. DO NOT label it — players should discover and read it.\n- ESD pushbutton: large red mushroom-head in yellow housing. Connect to game server via GPIO relay.\n- Alarm panel: custom multi-lamp panel with individually controllable LEDs. State driven by game server.\n- Incident Response folder: printed and mounted in holder on wall.\n- SIS certification documents: printed A4 in locked filing cabinet prop.\n\nThis scenario is the recommended precursor to the Meridian Insurance case (Case 3). If played in sequence, the consequences players created here (did they defer the patch? did they press ESD in time?) directly affect the insurance scenario."
+  "facilitator_notes": "Designed for 4 to 6 players split across engineering and security roles. Suggested split: 2 players as SCADA engineers (the dial, the historian, the ESD, the SIS panel: Helen's questions), 2 as IT/OT security (the jump server log, isolation, CastleTech: Marcus's and Tom's questions), and one or two as incident commander (the shutdown call, the notification, Trent Water).\n\nStop-and-discuss points (each one is a choice in play, and Priya S. comes back to it in the debrief):\n1. THE DIAL OR THE SCREEN (Helen, after the walkdown). 51°C on a mechanical dial against 28°C on SCADA. Resist telling them which to trust. The best learning happens when players briefly doubt the dial.\n2. SHUT DOWN NOW? (Helen and Marcus). Helen sees half the site off the grid against a lost hall; Marcus would rather have the logs first. Anyone may press an ESD station, by the hall door or on the console, without asking. Ask: which mistake can you live with?\n3. A PHOTO FIRST? (Marcus). The ESD resets the BMS registers and destroys the falsified values. Ten seconds for evidence, or none? This sets up the Meridian Insurance case.\n4. HOW FAR TO ISOLATE (Marcus). Cable only, the historian's enterprise leg too, or SCADA off with Hall 2 on manual rounds. Every option costs something.\n5. WHO MAY INSTRUCT A SUPPLIER (Tom). CastleTech ring Marcus back before touching the firewall. A player who claims Marcus's authority before he has given it is caught.\n6. THE INITIAL NIS NOTIFICATION (Marcus). Send what you know to Ofgem now, unknowns marked, or wait for the full picture. The countdown is an abstract game clock, not 72 real hours.\n7. TRENT WATER (Tom). Warn a neighbour now, with an uncertain picture, or verify first. It is a duty of care, not a NIS duty, and Tom needs Albion's consent.\n8. THE SAFETY CASE AND THE PATCH (Priya S.). Did CLAIM-EN-002 hold this morning? As risk owner today, patch (eight weeks without the automatic trip) or defer with controls someone checks? Neither patch answer is automatically wrong.\n\nIf nobody presses an ESD, hydrogen reaches 2.0% by volume about 43 minutes after the briefing: Helen evacuates Hall 1 and presses the console station on the way out, the hall is lost to fire, everyone gets out, and the debrief still runs. Evacuating is the right response, not a failure.\n\nPhysical prop setup:\n- Dial gauge: pre-set to 51°C, mounted at a battery rack prop. Do not label it: players should find and read it.\n- ESD stations: large red mushroom-head buttons in yellow housings, one by the battery hall door (outside) and one at the control desk. Connect to the game server via GPIO relay.\n- Alarm panel: custom multi-lamp panel with individually controllable LEDs. State driven by game server.\n- Incident Response folder: printed and kept on the duty desk.\n- SIS safety requirements extract: printed A4 in a locked filing cabinet prop.\n\nThis scenario is the recommended precursor to the Meridian Insurance case (Case 3), which picks up the same incident 48 hours later. The insurance case does not yet read what players chose here; use their choices (the ESD timing, the photo, the notification, the patch) as discussion material when you run it."
 }

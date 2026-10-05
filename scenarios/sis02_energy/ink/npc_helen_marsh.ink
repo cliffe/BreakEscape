@@ -1,725 +1,336 @@
 // ===========================================
-// NPC: Helen Marsh (SCADA Engineer)
-// Scenario: Albion Battery Hall Crisis
-// Role: Primary guide; walkdown companion; ESD knowledge; SIS expertise
+// NPC: Helen Marsh (SCADA engineer, Albion Energy Storage). Voiced; East Midlands accent.
+// Scenario: sis02 Albion Battery Hall (Saturday 21 March 2026)
+// Role: briefing; asks the questions and reacts afterwards (HEL-1), the facts stay in the rooms.
+//   Decision scenes: the dial or the screen (gauge_verdict), shut down now (shutdown_argument).
+//   Her view on the patch: eight weeks without the automatic trip is its own risk (HEL-6).
+//   evacuation_scene: the one cutscene for facility_evacuated (hydrogen at 2.0% by volume).
 // ===========================================
 //
-// GLOBALS READ:
-//   anomaly_detected, historian_flatline_found, jump_server_confirmed,
-//   sis_tamper_confirmed, esd_activated, facility_safe_state,
-//   battery_hall_badge_collected
-//
-// GLOBALS WRITTEN:
-//   helen_briefed (set in arrival_briefing and start)
-//
-// TASKS COMPLETED VIA EVENTMAPPING (not directly):
-//   check_hmi_readings, check_thermometer, read_sis_config,
-//   find_certification_doc, pull_ethernet_cable, read_incident_folder,
-//   complete_nis_form
-//
+// GLOBALS READ: anomaly_detected, historian_flatline_found, jump_server_confirmed,
+//   sis_tamper_confirmed, esd_activated, hydrogen_alarm, facility_evacuated, network_isolated,
+//   nis_notified, priya_s_visible, battery_hall_badge_collected
+// GLOBALS WRITTEN: helen_briefed, gauge_verdict, shutdown_argument, helen_patch_view_heard;
+//   esd_activated and priya_s_visible in evacuation_scene
 // ===========================================
 
-// Global variables managed by scenario - declared locally and updated by game engine
 VAR anomaly_detected = false
 VAR historian_flatline_found = false
 VAR jump_server_confirmed = false
 VAR sis_tamper_confirmed = false
 VAR esd_activated = false
 VAR hydrogen_alarm = false
-VAR facility_safe_state = false
+VAR facility_evacuated = false
+VAR network_isolated = false
+VAR nis_notified = false
+VAR priya_s_visible = false  // Synced scenario global: set here at the end of evacuation_scene
 VAR battery_hall_badge_collected = false
-VAR castletech_contacted = false
-
-// Local NPC state tracking
 VAR helen_briefed = false
-VAR topic_walkdown_offered = false
+VAR gauge_verdict = ""
+VAR shutdown_argument = ""  // Synced scenario global, also set by Marcus (last argument wins)
+VAR helen_patch_view_heard = false
+
+// Local state
+VAR topic_dial_asked = false
+VAR topic_historian_done = false
 VAR topic_esd_explained = false
+VAR topic_esd_cost = false
+VAR topic_esd_reset = false
 VAR topic_sis_explained = false
+VAR topic_sis_port = false
+VAR topic_sis_log = false
 VAR topic_patch_discussed = false
-VAR topic_facility_explained = false
-VAR topic_hmi_explained = false
-VAR topic_access_explained = false
+VAR topic_h2_asked = false
+// Re-entry line on reopen, skipped once after an exit (m03 hub_quiet pattern)
+VAR hub_quiet = false
+
+// Root divert: a variables-only restore continues from the root.
+-> start
 
 
 // ===========================================
-// TIMED OPENING CUTSCENE (called by timedConversation)
+// OPENING CUTSCENE (timedConversation on game_loaded)
 // ===========================================
 
 === arrival_briefing ===
-
-Helen Marsh: I'm Helen Marsh — I run the PLC and SCADA systems here. And you're the incident response team they sent?
-
-Helen Marsh: I haven't been here long — I came early for a maintenance window, wasn't expecting this. I called it in as soon as I saw the handover notes.
-
-Helen Marsh: The overnight shift left no incident reports. Every reading looks entirely normal — and that's the problem.
-
-Helen Marsh: Our historian data is showing almost zero variance across all racks. Temperature, state of charge, charge rate — everything flat. Too flat. Real battery systems don't behave like that.
-
-Helen Marsh: The night shift technician — Jay Patel — his handover notes just say 'uneventful.' Jay's been here three years. He never writes that when it actually was.
-
+Helen Marsh: Morning. Helen Marsh, SCADA. You're the lot booked for the seven o'clock window on the grid PLC?
+Helen Marsh: Before anybody touches that, I want a look in Hall 1. Every reading on that screen's normal. Too normal for a night on charge.
+Helen Marsh: Jay was on nights. His handover says "uneventful". He's not wrong. Look at that screen. Nothing moved all night.
+Helen Marsh: That's what bothers me. On a charge cycle, something always moves.
 { not battery_hall_badge_collected:
     #give_item:keycard
-    Helen Marsh: We should do a walkdown of Battery Hall 1 before the maintenance window opens. Check the temperature manually.
-    Helen Marsh: Here's the plant room badge — Battery Hall 1 is through the north door.
+    Helen Marsh: Here's my hall badge. North door. There's an old dial gauge at Rack A2, on no network at all. Tell me what it says.
 }
-
+Helen Marsh: I'm staying on this desk while that screen's telling us fairy stories. Read the dial and come straight back.
 ~ helen_briefed = true
-~ topic_walkdown_offered = true
 #set_global:helen_briefed:true
 #complete_task:talk_to_helen
-
+~ hub_quiet = true
 #exit_conversation
 -> hub
 
 
 // ===========================================
-// DEFAULT ENTRY (player walks up to Helen)
+// DEFAULT ENTRY
 // ===========================================
 
 === start ===
 #complete_task:talk_to_helen
-
 { not helen_briefed:
-    Helen Marsh: Oh good — you're here. Let me brief you quickly.
-    Helen Marsh: I'm Helen Marsh. Something about this morning handover isn't sitting right with me.
-    Helen Marsh: The overnight shift technician — Jay Patel — never writes 'uneventful' when it actually was. Today he did.
+    Helen Marsh: There you are. Helen Marsh, SCADA. Every reading on that screen's normal, and I don't believe a word of it.
     { not battery_hall_badge_collected:
         #give_item:keycard
-        Helen Marsh: Here's the plant room badge for Battery Hall 1 — through the north door when you're ready.
+        Helen Marsh: Here's my hall badge. North door. Read the dial gauge at Rack A2 and tell me what it says.
     }
     ~ helen_briefed = true
-    ~ topic_walkdown_offered = true
     #set_global:helen_briefed:true
+    ~ hub_quiet = true
 }
-
 -> hub
 
 
 // ===========================================
-// MAIN HUB (single repeatable entry point)
+// HUB
 // ===========================================
 
 === hub ===
-
-// --- Evidence-unlocked options appear first ---
-+ { anomaly_detected } [Ask about the analog thermometer discrepancy]
-    -> thermometer_discrepancy
-
-// Bark-response option: appears after thermometer bark but before historian is reviewed
-+ { anomaly_detected and not historian_flatline_found } [What should I look for in the historian trend?]
-    -> historian_guidance
-
-+ { historian_flatline_found } [Ask about the historian flat-line reading]
+{ hub_quiet:
+    ~ hub_quiet = false
+- else:
+    Helen Marsh: {&What else, duck?|Anything else?|Right. What else?}
+}
++ { not anomaly_detected and not topic_dial_asked } [What am I looking for in the hall?]
+    ~ topic_dial_asked = true
+    Helen Marsh: The dial gauge at Rack A2. It's old, it's mechanical, and nothing on any network can touch it.
+    Helen Marsh: On a charge like last night's, that rack sits about thirty. Tell me what it says. Touch nothing else.
+    -> hub
++ { anomaly_detected and gauge_verdict == "" } [That dial in the hall. Which do we believe?]
+    -> gauge_decision
++ { anomaly_detected and gauge_verdict != "" and not historian_flatline_found } [About that dial again.]
+    Helen Marsh: Same as before. A dial can stick. It doesn't climb twenty-three degrees on its own.
+    -> hub
++ { anomaly_detected and not esd_activated and shutdown_argument == "" } [Should we shut Hall 1 down now?]
+    -> shutdown_decision
++ { anomaly_detected and not esd_activated and shutdown_argument != "" } [About shutting down.]
+    Helen Marsh: You know where the stations are. By the hall door, or on my console.
+    -> hub
++ { historian_flatline_found and not topic_historian_done } [The historian's flat. What does that tell you?]
     -> historian_anomaly
-
-// Bark-response option: appears after jump_server bark, before SIS tamper confirmed
-+ { jump_server_confirmed and not sis_tamper_confirmed } [What should I look for on the SIS configuration panel?]
-    -> sis_investigation_guidance
-
-+ { sis_tamper_confirmed } [Ask about the SIS configuration]
-    -> sis_compromise_discussion
-
-+ { sis_tamper_confirmed and not topic_patch_discussed } [Ask about the SIS patch situation]
-    -> patch_situation
-
-// Bark-response option: hydrogen alarm urgency — only before ESD is pressed
-+ { hydrogen_alarm and not esd_activated } [The hydrogen detector just tripped — how urgent is this?]
-    -> hydrogen_alarm_response
-
-// Bark-response option: after ESD pressed, before facility safe state
-+ { esd_activated and not facility_safe_state } [ESD done — what are the next steps?]
-    -> post_esd_guidance
-
-// --- Standing options ---
-+ { not topic_esd_explained } [Ask about the hardwired ESD]
++ { not topic_esd_explained } [Tell me about the emergency shutdown.]
     -> esd_explanation
-
-+ { not topic_walkdown_offered } [Let's do the Battery Hall walkdown]
-    ~ topic_walkdown_offered = true
-    -> walkdown_offer
-
-+ { not topic_facility_explained } [Tell me about the facility]
-    ~ topic_facility_explained = true
-    -> facility_overview
-
-+ { not topic_hmi_explained } [What does the HMI show?]
-    ~ topic_hmi_explained = true
-    -> hmi_overview
-
-// Hidden once player has the badge — they already know how to get in
-+ { not battery_hall_badge_collected and not topic_access_explained } [How do we get into the battery halls?]
-    ~ topic_access_explained = true
-    -> access_explained
-
-+ [Ask about next steps]
++ { topic_esd_explained and not (topic_esd_cost and topic_esd_reset) } [More about the ESD.]
+    -> esd_more
++ { sis_tamper_confirmed and not topic_sis_explained } [The SIS trip's at eighty-five. What does that mean?]
+    -> sis_compromise
++ { sis_tamper_confirmed and topic_sis_explained and not (topic_sis_port and topic_sis_log) } [More about the SIS.]
+    -> sis_more
++ { sis_tamper_confirmed and not topic_patch_discussed } [Why wasn't the SIS patched?]
+    -> patch_situation
++ { hydrogen_alarm and not topic_h2_asked } [The hydrogen alarm. How bad is it?]
+    -> hydrogen_alarm_response
++ [What next?]
     -> next_steps
-
-+ [Nothing right now]
-    Helen Marsh: I'll be here. Don't take too long — if my instincts are right, time matters.
++ [I'll get on.]
+    Helen Marsh: {&Shout if you need me.|I'm not going anywhere.}
+    ~ hub_quiet = true
     #exit_conversation
     -> hub
 
 
-=== facility_overview ===
-
-Helen Marsh: We have two battery halls — Hall 1 and Hall 2. 220 MWh total. Four racks in each hall.
-
-Helen Marsh: The SCADA system monitors and controls everything — temperature, state of charge, charge rate. The SIS sits underneath that and should trip the system if any safety parameter is breached.
-
-Helen Marsh: Should. That's the word I keep getting stuck on this morning.
-
--> hub
-
-
-=== hmi_overview ===
-
-Helen Marsh: HMI-OPS-01 shows everything you'd expect — Battery Hall 1 sitting at a steady 28 degrees, state of charge at 72 percent, all alarms green.
-
-Helen Marsh: That's actually part of what concerns me. These readings show almost no variance overnight. Normally we'd see at least a degree of fluctuation as the cells cycle.
-
-Helen Marsh: The historian trend would show that more clearly. Have a look if you want.
-
--> hub
-
-
-=== access_explained ===
-
-Helen Marsh: Battery Hall 1 requires the plant room RFID badge — I have it here.
-
-Helen Marsh: The Engineering Workshop is east of us. Key's in the duty officer desk drawer. That room has the engineering workstation and the jump server rack.
-
--> hub
-
-
 // ===========================================
-// WALKDOWN OFFER
+// DECISION: THE DIAL OR THE SCREEN (HEL-1, pack decision 3)
 // ===========================================
 
-=== walkdown_offer ===
-
-{ not battery_hall_badge_collected:
-    #give_item:keycard
-    Helen Marsh: I've got the plant room badge here. Battery Hall 1 is through the north door.
-- else:
-    Helen Marsh: You already have the plant room badge. Battery Hall 1 is through the north door.
-}
-
-* [Yes — let's go now]
-    Helen Marsh: Good. Head north through the door — I'll catch up with you there.
-    Helen Marsh: Check the analog thermometer on Rack A2 when you arrive — that's the one I'm worried about.
+=== gauge_decision ===
+Helen Marsh: Fifty-one on the dial. Twenty-eight on my screen. One of them's lying to us. Which would you bet the hall on?
++ [The dial. Nothing on a network can reach it.]
+    ~ gauge_verdict = "dial"
+    #set_global:gauge_verdict:dial
+    Helen Marsh: That's my bet. A dial can stick, but it doesn't climb to fifty-one on its own.
     -> hub
-
-* [I want to review the historian trend first]
-    Helen Marsh: That's sensible. I'll be here when you're ready.
++ [The screen. That dial's older than the building.]
+    ~ gauge_verdict = "screen"
+    #set_global:gauge_verdict:screen
+    Helen Marsh: Dials stick. They don't climb twenty-three degrees by themselves, though.
+    Helen Marsh: Real sensors wobble. Have a look at the historian and see if ours do.
     -> hub
-
-* [What should I look for in the battery hall?]
-    -> what_to_look_for
-
-
-=== what_to_look_for ===
-
-Helen Marsh: The main thing I want to check is the temperature at Rack A2. The SCADA reading is fine — but that rack ran warmer than the others last month.
-
-Helen Marsh: There's an old analog thermometer on the wall near A2. Not networked. I want to compare it against the digital reading.
-
-Helen Marsh: If they disagree, that tells us something important.
-
-* [Why specifically compare analog vs digital?]
-    -> why_analog_comparison
-
-* [What range should we expect?]
-    -> expected_temperature_range
-
-* [Let's go check it now]
++ [Neither yet. I want the historian first.]
+    ~ gauge_verdict = "historian"
+    #set_global:gauge_verdict:historian
+    Helen Marsh: Fair enough. Be quick, mind. If the dial's right, every minute counts.
     -> hub
-
-
-=== why_analog_comparison ===
-
-Helen Marsh: Because the digital reading is part of the SCADA system — if someone has compromised the system, they can falsify that data.
-
-Helen Marsh: An analog thermometer is just a tube of mercury in a glass case. It doesn't have firmware, it doesn't have a network connection. It cannot be hacked remotely.
-
-Helen Marsh: It can fail — the mercury can break or get stuck — but if it's physically intact, it shows the truth. That's why I use it as a cross-reference. When digital and analog readings disagree, the analog wins.
-
-Helen Marsh: It's not elegant, but it's how you design systems that remain safe even when the digital parts are compromised.
-
--> hub
-
-
-=== expected_temperature_range ===
-
-Helen Marsh: Under normal charge cycle at this state-of-charge, the cells should be running between 28 and 32 degrees Celsius. Slight variance — not huge swings.
-
-Helen Marsh: If the thermometer reads significantly higher than the HMI says — like if HMI says 28 and the thermometer says 40-plus — that's a red flag.
-
-Helen Marsh: Lithium cells can undergo thermal runaway above about 55 degrees. The SIS should trip them offline before that happens. But if the SIS has been compromised or isn't working...
-
-* [What happens if we don't catch thermal runaway in time?]
-    -> thermal_runaway_explained
-
-* [Is that what you're worried about today?]
-    -> helen_intuition
-
-* [Let's look at the thermometer and find out]
-    -> hub
-
-
-=== thermal_runaway_explained ===
-
-Helen Marsh: The cells enter a self-sustaining exothermic reaction — they generate heat faster than the cooling system can remove it.
-
-Helen Marsh: Once it starts, it's very hard to stop. The temperature ramps exponentially. The cell catches fire, or releases hydrogen gas.
-
-Helen Marsh: We have 220 megawatt-hours in two battery halls. If a thermal runaway propagates across Rack A1, that's kilograms of lithium burning in a confined space.
-
-Helen Marsh: Which is why we have the SIS — to trip the system and isolate the affected cells before thermal runaway develops.
-
-Helen Marsh: And which is why, if I think the SIS might not be working, I want to verify the real temperature before trusting what the SCADA tells me.
-
--> hub
-
-
-=== helen_intuition ===
-
-Helen Marsh: Probably not. This facility has been running smoothly for two years. Overnight shift was uneventful — no alarms, no anomalies.
-
-Helen Marsh: But Jay Patel never writes 'uneventful.' And the historian trend shows absolutely no variance — exactly the same reading for hours. That's not normal.
-
-Helen Marsh: I've learned to trust my gut when the data is too clean. Perfect readings usually mean something is hiding underneath.
-
-Helen Marsh: Could be nothing. But I want to know.
-
--> hub
-
-
-// ===========================================
-// ANOMALY DETECTION BRANCH
-// ===========================================
-
-=== thermometer_discrepancy ===
-
-Helen Marsh: Fifty-one degrees. The HMI says twenty-eight.
-
-Helen Marsh: I've been in this industry long enough to know what that means. One of those readings is a lie.
-
-Helen Marsh: The analog thermometer was calibrated six months ago. It has no network connection. It cannot be falsified remotely.
-
-* [So the SCADA reading is wrong?]
-    Helen Marsh: If the physical thermometer is correct, then yes. Something is feeding the SCADA system false data.
-    Helen Marsh: That thermometer is the most important object in this building right now, because it is the only reading that cannot be compromised.
-    -> hub
-
-* [Could the thermometer itself be faulty?]
-    Helen Marsh: It's possible. But if I had to choose between trusting a networked digital system and a certified analog gauge, and those readings disagree by twenty-three degrees — I trust the gauge.
-    Helen Marsh: The digital system has more failure modes. Including deliberate manipulation.
-    -> hub
-
-* [What do we do with this information?]
-    Helen Marsh: We need to verify it — check the historian trend data, look at the access logs. And we need to seriously consider pressing the ESD before this escalates further.
++ [Let me think about it.]
+    Helen Marsh: Don't think too long.
     -> hub
 
 
 // ===========================================
-// HISTORIAN ANOMALY BRANCH
+// DECISION: SHUT DOWN NOW? (HEL-5, R1; Marcus argues the other side, MAR-1)
+// ===========================================
+
+=== shutdown_decision ===
+Helen Marsh: If I'm wrong, that's half the site off the grid and a penalty every hour. If I'm right and we wait, we lose the hall.
++ [Then press it. The dial is enough.]
+    ~ shutdown_argument = "hazard"
+    #set_global:shutdown_argument:hazard
+    Helen Marsh: Agreed. There's a station by the hall door, this side, and one on my console. Go on. I'll tell Marcus.
+    -> hub
++ [Give me five minutes with the historian first.]
+    ~ shutdown_argument = "evidence"
+    #set_global:shutdown_argument:evidence
+    Helen Marsh: Five. Not six.
+    -> hub
++ [Not sure yet.]
+    Helen Marsh: Nor am I. That's rather the point.
+    -> hub
+
+
+// ===========================================
+// HISTORIAN
 // ===========================================
 
 === historian_anomaly ===
-
-Helen Marsh: Three hours of exactly twenty-eight point zero. Not twenty-seven point nine, not twenty-eight point one. Exactly twenty-eight.
-
-Helen Marsh: Real sensor data has noise. Electrical interference, measurement jitter, thermal fluctuation. A perfectly flat line for three hours means the data is synthetic.
-
-Helen Marsh: Someone wrote a value to the sensor feed and held it there. This is not a sensor failure. This is deliberate falsification.
-
-* [How long has this been going on?]
-    Helen Marsh: The flat-line starts at 23:12 last night. That's when the real reading was replaced.
-    Helen Marsh: Which means Battery Hall 1 has been operating without meaningful temperature monitoring for over seven hours.
-    -> hub
-
-* [Is Marcus Webb the right person to call?]
-    Helen Marsh: Yes. Marcus is OT Security. He's been trying to get the IT/OT boundary sorted for eighteen months. He'll know what to do.
-    -> hub
+~ topic_historian_done = true
+Helen Marsh: Since twelve minutes past eleven last night, exactly twenty-eight point nought. Not a flicker.
+Helen Marsh: Real sensors wobble. That's somebody writing a number and holding it there. Over seven hours of it.
+{ gauge_verdict == "screen":
+    Helen Marsh: So that's the screen you backed. It's been making it up since before midnight.
+}
+Helen Marsh: Marcus needs this. He's OT security, and he's been on about that boundary for eighteen months.
+-> hub
 
 
 // ===========================================
-// ESD EXPLANATION
+// ESD (HEL-2): one knot, ending on the claim's evidence
 // ===========================================
 
 === esd_explanation ===
 ~ topic_esd_explained = true
+Helen Marsh: It's a relay and a pair of contactors. Press it and the A racks drop off charge. No software gets a vote.
+Helen Marsh: That's only true if the wiring's still as drawn. We prove it every year with everything digital switched off.
+Helen Marsh: Last test was October. Signed off. It's the one thing in here I'd stake my name on.
+Helen Marsh: There's a station by the hall door, one on my console and one inside. Anybody can press one. Nobody needs to ask.
+-> esd_more
 
-Helen Marsh: The hardwired ESD is a red mushroom-head button on the wall in Battery Hall 1, near Rack A2.
-
-Helen Marsh: It is a physical electrical interlock. When you press it, it breaks the charging circuit for Racks A1 through A4. Immediately. No SCADA involved, no SIS firmware, no network command.
-
-Helen Marsh: It cannot be disabled remotely. It cannot be falsified. A cyber attack cannot prevent a hardwired circuit from opening.
-
-* [How does it work exactly?]
-    -> esd_technical_detail
-
-* [Why do we need it if we have the SIS?]
-    -> why_independent_esd
-
-* [Should we press it now?]
-    Helen Marsh: That's what Marcus needs to confirm. The ESD is irreversible without a manual reset — pressing it without proper authority creates its own complications.
-    Helen Marsh: But if the cells are at fifty-one degrees and rising with a compromised SIS, the answer may well be yes.
+=== esd_more ===
++ { not topic_esd_cost } [What does pressing it cost us?]
+    ~ topic_esd_cost = true
+    Helen Marsh: Half the site. Fifty megawatts off the grid, and a penalty for every hour we can't deliver.
+    Helen Marsh: Against a hall fire, that's cheap. It doesn't feel cheap at six in the morning.
+    -> esd_more
++ { not topic_esd_reset } [Can it be undone?]
+    ~ topic_esd_reset = true
+    Helen Marsh: Twist the button to release it, then a reset at the hall panel. Somebody has to walk up and do it on purpose.
+    -> esd_more
++ [Right.]
     -> hub
 
 
-=== esd_technical_detail ===
-
-Helen Marsh: It's a direct relay. Power flows through a normally-closed switch. Press the button — circuit opens — racks disconnect. The software doesn't get a vote.
-
-Helen Marsh: That's the point. The hardwired ESD exists precisely because we cannot trust that the programmable safety layers will always work.
-
-Helen Marsh: The beauty of a hardwired circuit is that there's no attack surface. No firmware to patch, no network port to access, no credentials to steal.
-
-Helen Marsh: It's dumb and simple. Which in safety engineering is actually a feature, not a limitation.
-
-* [What's the physical consequence of pressing it?]
-    -> esd_consequence
-
-* [Can it be reset?]
-    -> esd_reset
-
-* [Let's move on]
-    -> hub
-
-
-=== esd_consequence ===
-
-Helen Marsh: The charging circuit to Racks A1 through A4 breaks. They're instantly disconnected from the main power feed.
-
-Helen Marsh: The battery management systems go into a safe state — no charging, no discharging, just cooling until the cells stabilise.
-
-Helen Marsh: The facility loses about 100 megawatts of stored energy in those four racks. There are contract penalties for an unplanned shutdown.
-
-Helen Marsh: But a lost contract penalty is better than a battery hall fire.
-
--> hub
-
-
-=== esd_reset ===
-
-Helen Marsh: It has to be done manually — someone walks into Battery Hall 1, finds the button housing, pops out the mechanical reset pin, and reinstalls the button.
-
-Helen Marsh: It's deliberate. You can't accidentally recover from an ESD just by power-cycling the system. The reset requires physical presence and commitment.
-
-Helen Marsh: That's a design choice. It forces deliberation. If you press the ESD, you know exactly what you've done and you take responsibility for the consequences.
-
--> hub
-
-
-=== why_independent_esd ===
-
-Helen Marsh: Because the SIS is software. It has firmware, processors, firmware updates. And all of that — in principle — can be compromised.
-
-Helen Marsh: If the SIS fails, we need a safety function that cannot fail in the same way. That means it has to be fundamentally independent — a different kind of thing.
-
-Helen Marsh: A hardwired circuit is about as far from software as you can get. No firmware, no networking, no complexity. Just relay contacts and wiring.
-
-Helen Marsh: It's not elegant. But it's the reason we can still survive even if every digital system in this building has been compromised.
-
-Helen Marsh: That's defence in depth. You don't put all your safety eggs in one digital basket.
-
--> hub
-
-
 // ===========================================
-// SIS COMPROMISE DISCUSSION
+// SIS (after the player has confirmed the change)
 // ===========================================
 
-=== sis_compromise_discussion ===
+=== sis_compromise ===
 ~ topic_sis_explained = true
+Helen Marsh: Eighty-five. It was certified at fifty-five. And the hydrogen alarm's at three point eight per cent, not one.
+Helen Marsh: We trip at fifty-five because it's well short of where cells start heating themselves. Eighty-five puts the trip inside that.
+Helen Marsh: So nothing automatic will save that hall now. It's the ESD or nowt.
+-> sis_more
 
-Helen Marsh: Eighty-five degrees. The SIS thermal runaway threshold has been raised from fifty-five to eighty-five.
-
-Helen Marsh: That means the automated safety function won't trip until the cells are already in irreversible failure. The protection we thought was there — isn't.
-
-* [How did they get into the SIS?]
-    -> sis_engineering_port
-
-* [What are the consequences?]
-    -> sis_compromise_consequences
-
-* [How do we know it's been modified?]
-    -> sis_audit_trail
-
-
-=== sis_engineering_port ===
-
-Helen Marsh: The SIS has an engineering port for configuration and maintenance. That port should be isolated — but it's reachable from the SCADA network.
-
-Helen Marsh: If someone can get onto the SCADA network, they can reach the SIS engineering interface. Which means the SIS isn't independent. It's connected.
-
-Helen Marsh: IEC 61511 requires SIS logical isolation from the control system for exactly this reason.
-
-* [Why is the engineering port connected to SCADA?]
-    -> engineering_port_history
-
-* [What should the architecture look like?]
-    -> sis_isolation_design
-
-* [Back to the main discussion]
-    #set_global:en002_claim_assessed:true
+=== sis_more ===
++ { not topic_sis_port } [How did they get in to change it?]
+    ~ topic_sis_port = true
+    Helen Marsh: The engineering port's on the SCADA network. Went on for commissioning. Never came off.
+    Helen Marsh: There's a key on the safety controller. It's meant to sit in RUN. I'd bet you it's in PROGRAM.
+    -> sis_more
++ { not topic_sis_log } [How do we know it was three twenty-two?]
+    ~ topic_sis_log = true
+    Helen Marsh: The safety controller keeps no log of changes. We only know three twenty-two because ENG-02 kept its own history.
+    -> sis_more
++ [Back to it.]
     -> hub
-
-
-=== engineering_port_history ===
-
-Helen Marsh: During commissioning, the SIS vendor needed remote access to configure the safety settings. So we connected the engineering port to the SCADA network with a temporary firewall rule.
-
-Helen Marsh: That was supposed to be temporary — removed once commissioning was finished. But 'temporary' became permanent.
-
-Helen Marsh: Now, anyone on the SCADA network who knows the access point can reach the SIS and potentially modify setpoints. Marcus flagged this eighteen months ago. The board decided to accept the risk rather than pay for a reconfiguration.
-
-Helen Marsh: That decision was made on the assumption that the SCADA network couldn't be compromised. Which turned out to be a bad assumption.
-
-#set_global:en002_claim_assessed:true
--> hub
-
-
-=== sis_isolation_design ===
-
-Helen Marsh: The SIS should be on its own isolated network. Not connected to SCADA. Not connected to enterprise IT. No network at all, ideally.
-
-Helen Marsh: Engineering access to the SIS should happen at a physical console — an air-gapped terminal in a restricted room. You plug in a portable device, make your changes, verify them, then disconnect.
-
-Helen Marsh: That way, even if the entire SCADA network is compromised, the SIS stays clean.
-
-Helen Marsh: We didn't do that because it's operationally inconvenient and it costs money. So we left the engineering port on the SCADA network and hoped nobody would exploit it.
-
-Helen Marsh: Someone did.
-
-#set_global:en002_claim_assessed:true
--> hub
-
-
-=== sis_compromise_consequences ===
-
-Helen Marsh: The SIS was our last automated safety backstop. Without it, the only safety function remaining is the hardwired ESD — which is independent, but requires someone to physically go and press it.
-
-Helen Marsh: Everything else — the BMS overcharge protection, the cell temperature alarm, the thermal runaway trip — all of those are compromised.
-
-Helen Marsh: If the cells do start to go into thermal runaway, there's no automated protection. It's all on the ESD button.
-
-* [That sounds intentional — like they wanted to disable the safeguards]
-    -> attacker_intent
-
-* [What about alarms — shouldn't we still see some warning?]
-    -> alarm_theory
-
-* [Back to the main discussion]
-    -> hub
-
-
-=== attacker_intent ===
-
-Helen Marsh: That's one theory. Another is that they wanted to keep the system running — raise the threshold to prevent any automated shutdowns that would interrupt their access.
-
-Helen Marsh: Either way, the result is the same. The safety system that's supposed to protect the facility is no longer protecting it.
-
-Helen Marsh: Which is why that analog thermometer in Battery Hall 1 is now the most important instrument in this facility.
-
--> hub
-
-
-=== alarm_theory ===
-
-Helen Marsh: In theory, yes. The alarm panel in the control room should show something — high temperature warning, SIS deviation alert, something.
-
-Helen Marsh: But if the HMI is also compromised — if they're feeding the alarm system false data the same way they're feeding false temperature readings — then the alarm system will also look normal.
-
-Helen Marsh: This is why we don't rely only on digital alarms. We have the physical thermometer, we have the hydrogen detector, we have trained operators who know what normal looks like.
-
-Helen Marsh: I'm trained to notice when everything looks too perfect. And this morning, everything looked too perfect.
-
--> hub
-
-
-=== sis_audit_trail ===
-
-Helen Marsh: The SIS has an audit log. Every configuration change is recorded — who made it, when, what was changed.
-
-Helen Marsh: The log shows that the threshold was modified at 03:22 this morning by an administrative account. Account name is in the engineering workstation logs if you look.
-
-Helen Marsh: The question is: who was authorised to make that change? The answer is: nobody who actually has that access level.
-
-Helen Marsh: So either the credentials were stolen, or the account is compromised. Either way, it's unauthorised access.
-
-#set_global:en002_claim_assessed:true
--> hub
 
 
 // ===========================================
-// PATCH SITUATION
+// PATCH (HEL-6): the safety side of the patch, as Helen's view
 // ===========================================
 
 === patch_situation ===
 ~ topic_patch_discussed = true
-
-Helen Marsh: The patch was available eighteen months ago. It fixes the authentication bypass on the SIS engineering port — the exact vulnerability that was used to change those setpoints.
-
-Helen Marsh: We deferred it because applying it requires recertification under IEC 61511. Eight weeks offline. £180,000. The board said no.
-
-* [Was the deferral the right call?]
-    -> patch_defensibility
-
-* [What would applying the patch change?]
-    -> patch_technical_detail
-
-* [Why does recertification cost so much?]
-    -> recertification_explained
-
-* [What would you recommend now?]
-    -> helen_patch_recommendation
-
-
-=== patch_defensibility ===
-
-Helen Marsh: I think about that. The risk was real — documented in Marcus's risk assessment. But it felt manageable at the time.
-
-Helen Marsh: Now? With a battery hall approaching thermal runaway because someone exploited exactly that vulnerability?
-
-Helen Marsh: It wasn't defensible. We accepted a documented risk with a compensating control that wasn't actually in place. That's the mistake.
-
-Helen Marsh: The question for the debrief is: what's the right approach going forward? Apply the patch and accept the recertification cost? Or maintain deferral with genuinely effective compensating controls that actually exist and actually work?
-
--> hub
-
-
-=== patch_technical_detail ===
-
-Helen Marsh: It would close the authentication bypass on the SIS engineering port. An attacker on the SCADA network could no longer modify SIS setpoints without proper credentials.
-
-Helen Marsh: But we'd need to re-run the full SIL 2 safety case — verify that the patched firmware meets the functional safety requirements. That's the eight weeks and £180,000.
-
-Helen Marsh: The patch itself is maybe two hours of work. The recertification is the burden. We have to prove to a third-party auditor that the patched firmware still meets all the safety requirements of the original design.
-
-Helen Marsh: That's not bureaucracy — it's actually important. You don't want to patch a safety system and accidentally break some critical function.
-
--> hub
-
-
-=== recertification_explained ===
-
-Helen Marsh: Because you can't just patch the firmware in a SIL 2 system without independent verification.
-
-Helen Marsh: The SIS has a certified safety case — a formal document that says "this configuration of hardware and firmware will reliably prevent thermal runaway within this operational envelope."
-
-Helen Marsh: If you change the firmware, you've changed the subject of the certification. So you have to certify it all over again.
-
-Helen Marsh: That means hiring a third-party SIL 2 auditor, running through all the verification tests, doing a full safety analysis on the patched code, getting sign-off.
-
-Helen Marsh: It's expensive and time-consuming because the safety function has to be proven to work correctly before we go live. You can't just patch and hope.
-
-* [How long has the patch been available?]
-    Helen Marsh: Eighteen months. Long enough that the board should have made a decision one way or the other. Instead we just kept deferring.
+~ helen_patch_view_heard = true
+#set_global:helen_patch_view_heard:true
+Helen Marsh: Patching meant eight weeks without the automatic trip. Rounds every four hours, gas monitors on our belts, no fast charging.
+Helen Marsh: I'd have been walking those rounds at three in the morning. I'm not sure I'd have said yes either.
+Helen Marsh: Mr Whitworth signed the deferral. What nobody signed was a date to look at it again.
++ [Why eight weeks?]
+    Helen Marsh: Any change to that controller goes through our modification procedure. Impact analysis, retest, sign-off. That's the eight weeks and the hundred and eighty grand.
     -> hub
-
-* [Is the risk documented anywhere?]
-    Helen Marsh: Yes — Marcus's risk assessment. The vulnerability, the mitigation options, the compensating controls. All documented. All reviewed. And then all filed away.
++ [Fair enough.]
     -> hub
 
 
-=== helen_patch_recommendation ===
+// ===========================================
+// HYDROGEN (S1, S2): per cent by volume; stay out
+// ===========================================
 
-Helen Marsh: Apply the patch and do the recertification. I would have recommended that six months ago.
-
-Helen Marsh: The alternative — deferral with compensating controls — only works if the compensating controls actually exist and actually work. At Albion, they don't.
-
-Helen Marsh: The compensating control was OT-inclusive network monitoring. We tried to implement it through the CastleTech contract. But their contract explicitly excluded OT. So the compensating control was never there.
-
-Helen Marsh: That's a business decision that looked okay on a spreadsheet but created a real safety gap.
-
-Helen Marsh: Now we're paying the cost of that gap. The recertification cost looks small in comparison.
-
+=== hydrogen_alarm_response ===
+~ topic_h2_asked = true
+Helen Marsh: Hydrogen's at one per cent of the air in there. It burns at four. That's cells venting.
+Helen Marsh: At two per cent we evacuate. Nobody goes into that hall now. Fire service are on their way.
+{ not esd_activated:
+    Helen Marsh: Use the station by the hall door, out here, or mine on the console. Not the one inside.
+- else:
+    Helen Marsh: ESD's in and the fans are on full. Now we watch it fall.
+}
 -> hub
 
 
 // ===========================================
-// NEXT STEPS
+// NEXT STEPS: the question, not the answer
 // ===========================================
 
 === next_steps ===
-
-{ not anomaly_detected:
-    Helen Marsh: Start with the manual readouts. The HMI readings look clean, but I don't trust them.
-    Helen Marsh: Go to Battery Hall 1 and check the analog thermometer on Rack A2 — it's not networked, so it can't be falsified. Compare it against what HMI-OPS-01 shows.
-    Helen Marsh: Then come back and look at the historian trend for Rack A1 on HMI-OPS-01. Three hours of data should tell us whether those readings are real.
-    -> hub
+{
+- facility_evacuated:
+    Helen Marsh: Hall 1's the fire service's now. Everybody's out. {priya_s_visible: Priya from the NCSC is here when you're ready.}
+- not anomaly_detected:
+    Helen Marsh: Hall 1. Read the dial at Rack A2 and come and tell me what it says.
+- not historian_flatline_found:
+    Helen Marsh: The historian on OPS-01. If that dial's right, my screen's been lying a while. Find out how long.
+- not jump_server_confirmed:
+    Helen Marsh: Message Marcus. Then the workshop. If somebody's in our network, ENG-02 will show who.
+- not sis_tamper_confirmed:
+    Helen Marsh: The SIS panel in the workshop. Check it against what was certified. The paperwork's in the cabinet.
+- not network_isolated:
+    Helen Marsh: Get them out of our network. Marcus has the plan, and CastleTech hold the enterprise side.
+- not nis_notified:
+    Helen Marsh: The NIS notification. The form's on the clipboard by the workshop door. Marcus signs it.
+- priya_s_visible:
+    Helen Marsh: Priya from the NCSC is here. She'll want to go through it with you.
+- else:
+    Helen Marsh: That's the urgent stuff done. Have a breather.
 }
-
-{ not esd_activated:
-    Helen Marsh: Priority one is the ESD. Those cells are at fifty-one degrees with a compromised SIS — we need to disconnect them from the charging circuit now.
-    Helen Marsh: Marcus has the authority to direct that. Have you called him yet?
-    -> hub
+{ anomaly_detected and not esd_activated:
+    Helen Marsh: And that ESD still isn't in. You know where the stations are.
 }
-
-{ esd_activated and not facility_safe_state:
-    { castletech_contacted:
-        #set_global:facility_safe_state:true
-        #set_global:priya_sharma_visible:true
-    }
-    Helen Marsh: Good — ESD is done. The racks are cooling.
-    Helen Marsh: Now we need to isolate the attacker, understand the full scope of what they changed, and get the notification to NCSC.
-    -> hub
-}
-
-{ facility_safe_state:
-    Helen Marsh: We're in a safe state now. The immediate hazard is contained.
-    Helen Marsh: Dr Priya Sharma from NCSC and HSE has arrived for the post-incident review. I'd suggest talking to her.
-    -> hub
-}
+-> hub
 
 
 // ===========================================
-// BARK-RESPONSE KNOTS (unlocked by radio messages)
+// EVACUATION (decision 7): hydrogen at 2.0% by volume before any ESD.
+// The one cutscene for facility_evacuated. Evacuating is the right call, not a failure.
 // ===========================================
 
-=== historian_guidance ===
-
-Helen Marsh: Open the historian trend on HMI-OPS-01 — look at Rack A1 temperature for the last three hours.
-
-Helen Marsh: Real sensor data always has noise — small jitter up and down. If you see a perfectly flat line, that data is synthetic. Someone wrote a fixed value to the sensor feed.
-
-Helen Marsh: Also look at the rate-of-change overlay. If the real temperature was climbing before the flat-line started, you will see a clear break. That break tells us exactly when the falsification began.
-
--> hub
-
-
-=== sis_investigation_guidance ===
-
-Helen Marsh: The SIS configuration panel is in the engineering workshop — it shows all the current setpoints for the protective functions.
-
-Helen Marsh: The key thing to look for is the thermal runaway trip threshold for Battery Hall 1. It should read fifty-five degrees Celsius — that is the certified setpoint under the IEC 61511 safety case.
-
-Helen Marsh: If it reads anything higher — especially anything near eighty-five degrees — the safety system has been tampered with. That setpoint is the temperature at which the SIS is supposed to trip the racks offline automatically.
-
-Helen Marsh: There is a SIS certification document in the filing cabinet in that room. Find it and compare the numbers against what the panel shows.
-
--> hub
-
-
-=== hydrogen_alarm_response ===
-
-Helen Marsh: That is serious. One percent LEL means the hydrogen concentration is measurable and rising. Lithium cells release hydrogen gas as they overheat.
-
-Helen Marsh: At four percent LEL it becomes flammable. We have a short window.
-
-Helen Marsh: If you have not pressed the ESD yet — that is the only thing that matters right now. Go to Battery Hall 1. Press the button. Do not wait.
-
--> hub
-
-
-=== post_esd_guidance ===
-
-Helen Marsh: Good — the racks are disconnecting from the charging circuit now. The cooling system will run at maximum until the cells stabilise.
-
-Helen Marsh: Two things still need to happen. The attacker is still in the network — pull the jump server Ethernet cable if you have not already, then message Tom Hadley at CastleTech to block the enterprise-side connections.
-
-Helen Marsh: And we need to file the NIS notification. We are inside the seventy-two hour window but it needs to go in now. The form is on the wall in the control room.
-
+=== evacuation_scene ===
+Helen Marsh: Two per cent. That's it. Everybody out of Hall 1, now. Nobody goes back in.
+Helen Marsh: I've hit the ESD on my console on the way past. Too late for the A racks. They're going.
+~ esd_activated = true
+#complete_task:press_esd_button
+#set_global:esd_activated:true
+Helen Marsh: Fire service are pulling in. Everybody's out and counted. Hall 1's theirs now.
+Helen Marsh: I've had the NCSC on the phone. Someone's coming to go through it with us.
+~ priya_s_visible = true
+#set_global:priya_s_visible:true
+~ hub_quiet = true
+#exit_conversation
 -> hub

@@ -1,0 +1,52 @@
+# sis02 fix pass: playtest script (2026-10-05)
+
+For a Sonnet playtester (`playtest-scenario` skill), keyless server on :3001, never touch :3000. Read the words on screen and quote them exactly; screenshot anything visual. Background: `DIALOGUE_REVIEW.md` (decisions at the top). Three runs of about 12 minutes each. Write findings into your report as you go. Note any line that reads as written rather than said.
+
+What changed: the ESD is never gated (three stations: by the Battery Hall 1 door in the control room, on the control room console, and inside the hall). Eight short decision scenes, each recorded in a global and returned to in Priya S.'s debrief and the credits. Hydrogen is in per cent by volume, and the 2.0% outcome is an evacuation with the debrief still running. The NIS clock no longer opens the debrief. Ids are now `helen_marsh` and `priya_s`; Priya S. uses sis01's sprite.
+
+Useful globals to read (not set) with the test bridge: `gauge_verdict`, `shutdown_argument`, `evidence_before_esd`, `isolation_scope`, `tom_refused_unverified`, `nis_initial_choice`, `nis_notified`, `en002_verdict`, `patch_decision`, `facility_safe_state`, `priya_s_visible`, `debrief_complete`.
+
+## Run A: the good path (shut down on the dial)
+
+1. New game. Helen's briefing plays once: "Morning. Helen Marsh, SCADA. You're the lot booked for the seven o'clock window on the grid PLC?" No "Helen called you in", no "mercury". She hands over the hall badge.
+2. Screenshot the control room: a red ESD button on the west wall below the alarm panel (by the north door to Battery Hall 1), and one on the right-hand operator desk. Click each: the panel says "Flip the guard to arm the station." and the label names HALL DOOR / CONTROL ROOM. **Cancel; don't press yet.** No "Authorisation required" text anywhere.
+3. Read the Incident Response folder: ESD rule, hydrogen in % by volume, NIS to Ofgem (DESNZ and Ofgem jointly), NCSC alongside, who may instruct CastleTech. No COMAH, no phone numbers.
+4. Hall 1: read "Local Dial Gauge: Rack A2" (51°C). Helen's radio popup reads "Fifty-one on the dial and twenty-eight on my screen. Which would you bet the hall on? Come and tell me." with **one** speaker prefix (not "Helen Marsh: Helen (radio): ...").
+5. Helen: "[That dial in the hall. Which do we believe?]" → pick "[The dial. Nothing on a network can reach it.]" → "That's my bet. A dial can stick..." The option is gone afterwards; "[About that dial again.]" appears.
+6. Helen: "[Should we shut Hall 1 down now?]" → "[Then press it. The dial is enough.]" → "Agreed. There's a station by the hall door, this side..."
+7. Message Marcus. First message: "Webb." then the Whitworth line. Choose the dial option. Then "[Helen and I think Hall 1 should come off now.]" → he argues for logs first → "[The dial says fifty-one. Shut down on the hazard, find the cause later.]" → "Fair. You're right." then the photo question → "[I'll photograph the screen, then press it.]".
+8. Press the **console** ESD. Helen radio: "ESD's in. Good call. We'll find out why later." (early path). Open the hall-door station: "Emergency shutdown already active." Check `early_esd_activation` true, `esd_before_dial` false.
+9. Historian minigame: the flat 28.0 starts at 23:12 on 20 March; dates are 2026. Helen's radio: "That line's been dead flat since twelve minutes past eleven..." Helen hub: "[The historian's flat...]" says "Over seven hours of it." (never "three hours").
+10. Workshop: jump server log. The c.ellison row is dated 2026-03-21 01:47, source 10.2.4.12; no daytime rows after it. Threat intel shows ALB-SRV-02 and the Tor C2 note; account history shows Fosse Controls, deprovisioned 2025-01-17, "JUMP SERVER LOCAL ACCOUNT: NOT REMOVED". The second tab is "ENG TOOL HISTORY" with two 03:22 writes (thermal 55→85°C, H2 1.0→3.8% vol). Helen radio: "The Ellison account? He left over a year ago..."
+11. SIS panel: thermal 85C/55C and H2 3.8% vol/1.0% vol in amber, CHARGE_INHIBIT_TEMP green. No MAX_CHARGE_VOLTAGE row. Confirm the tamper.
+12. Marcus: "[ENG-02 shows c.ellison on the jump server since 01:47.]" → fourteen months, Fosse Controls, default password, "historian went flat at 23:12, before he logged in", cable instruction, "I'm ringing the NCSC too." Then "[How far do we cut them off?]" → "[Cut the historian's enterprise leg too...]".
+13. Pull the jump server cable. Marcus's message: "Good. That's his RDP session gone. Not the historian, mind..."
+14. Tom: "[I need the enterprise side shut off from SCADA.]" → he asks who signs it off → "[Marcus has signed it off. Ring him.]" → "Rang him. He's confirmed." and "The historian's enterprise leg too, as Marcus asked." Then the Trent Water topic follows.
+15. Trent Water: Tom says 02:31 svc.deploy wrote the package, 05:52 a Trent PC opened it, "It's your call". Ask "[svc.deploy? Isn't that your account?]" then "[Yes. Tell them now...]".
+16. Safe state: Helen radio "That's the hall safe and them out of our network. Now the NIS notification..." Priya S. appears (sis01's sprite) with the bark "Priya, from the NCSC. I was the nearest when this came in..."
+17. Read the NIS form on the clipboard, then Marcus "[About the NIS notification.]" → "[An intrusion, SIS setpoints changed, scope unknown. Send it as initial.]" → Ofgem, NCSC copied, HSE, NESO lines.
+18. Priya: "[Give me a few minutes.]" closes; re-talk shows "Ready now?" (not blank). Then the debrief. Check these lines appear: "You shut it down on a dial reading, before you knew why", "you backed the dial", "you argued to shut down on the hazard", the photo line, the EN-002 question, "You cut the historian's enterprise leg", "Tom wouldn't touch your firewall" must **not** appear (Tom never refused) and "CastleTech rang Marcus back" must, no cable question (Marcus agreed the pull), the patch question, the air-gap line only if you asked Marcus about the safety system's network, NIS "in good time", Trent Water "straight away", root cause, closing. No "Dr", no "COMAH", no "72-hour window has passed".
+19. "[That's everything. Thank you.]": credits roll once (screenshot): title INCIDENT CONTAINED; entries for the dial, the hazard argument, the early ESD, the photo, the historian scope, the NIS, Trent Water, EN-002 and the patch. Re-talk Priya: no second credits.
+
+## Run B: wait for evidence, gas alarm, lies to Tom, verify Trent first
+
+1. New game. Read the dial. Helen: dial question → "[The screen. That dial's older than the building.]" → "Dials stick..." Shutdown question → "[Give me five minutes with the historian first.]" → "Five. Not six."
+2. Marcus: "[Helen and I think Hall 1 should come off now.]" → "[Understood. I'll get you the logs first.]".
+3. Before Marcus has seen the session, message Tom: isolation request → "[Marcus has signed it off. Ring him.]" → "Rang Marcus. He hasn't heard about it, so I can't act yet." Also try "[I'm running the response...]" → "Not for a firewall change, sorry." `tom_refused_unverified` true, `network_isolated` false.
+4. Pull the jump server cable **before** briefing Marcus on the session: Marcus message "Who pulled the jump server cable? A heads-up would've been nice..."
+5. Do the workshop slowly; let the hydrogen alarm fire (about 25 minutes after the briefing; exercise the timer if needed and record that you did). Helen radio: "Hydrogen alarm in Hall 1. One per cent and rising. Stay out of the hall and use the station by the door. I'm ringing the fire service." Detector panel: "1.1% H₂ by volume (27% LEL)". Helen hub "[The hydrogen alarm. How bad is it?]" → "It burns at four", "Not the one inside."
+6. Press the hall-door station (from the control room). Normal ESD radio.
+7. Marcus: brief him on the session (he notes you already pulled the cable). Get Tom's isolation through on the hub option "[Marcus has signed off the isolation. Ring him.]". Trent: "[Not yet. I want to see the evidence first.]" → "Don't sit on it long." Hub then offers "[About Trent Water: send that advisory now.]"; leave it unsent.
+8. NIS: Marcus "[About the NIS notification.]" before reading the form → he points to the clipboard. Read it, then "[Wait until we know how far they got.]" → "[No. We wait.]".
+9. Debrief: "after the gas alarm... the margin you spent", "backed the screen", "You wanted the logs before shutting down. The gas came up while you were getting them." The cable question appears (Priya's view) with two answers. "Tom wouldn't touch your firewall until Marcus confirmed." NIS: "You chose to wait for the full picture. It still hasn't gone." Trent: "Defensible for a day. Not for a week."
+10. Credits: entries for the screen, evidence first, after the hydrogen alarm, cable pulled before telling Marcus, CastleTech refused, NIS held back, Trent Water not yet warned.
+
+## Run C: nobody presses it (evacuation), plus checks
+
+1. New game. Read the dial, talk to nobody about shutting down, and never press an ESD. Let both hydrogen timers run (alarm about 25 min, evacuation about 43 min after the briefing; exercise them if needed and say so).
+2. At 2.0%: **no end screen**, no "Return to Missions". Helen's evacuation scene plays once: "Two per cent. That's it. Everybody out of Hall 1..." / "I've hit the ESD on my console on the way past. Too late for the A racks..." / fire service / "I've had the NCSC on the phone." Afterwards no "ESD's in" radio. Priya S. appears with her bark. Credits title later: HALL 1 LOST, EVERYONE OUT.
+3. Let the NIS clock run out (game time) without notifying: Helen's bark "That's our notification clock run out. Ofgem should have heard from us by now. Get it to Marcus." **No debrief opens by itself.**
+4. Debrief (without isolating): "The gas reached two per cent before anyone pressed the ESD. Helen pressed it on her way out." / "Getting out was right." No photo line. "The enterprise side was never cut off." NIS: "Your own notification clock ran out and nothing's gone to Ofgem."
+5. Reload mid-game (any run, after Priya is visible): she is still visible; a re-talk before the debrief shows "Ready now?" or "When you are.", and after the debrief "We're done..." with no second credits.
+6. Early-call check (M2): in a fresh game, message Marcus before reading the dial, choose "[Nothing solid yet...]". Every ESD station still works; the isolate aim unlocks.
+7. Screenshot the battery hall: the station inside on the west wall is labelled LOCAL; the dial gauge is at the left end of the first rack row.
