@@ -385,6 +385,19 @@ All six leftover minors fixed: clone label "[Lean in by her lanyard and let the 
 
 Brief in scratch `m03-blind-brief.md`: testers read only the harness skill, housekeeping and what the game shows; no scenario files, reviews or scripts; flags supplied by the session policy with in-game prerequisites earned; one reload at a risky moment; scores for fun, pacing, clarity, openness and teaching.
 
+### Blind playtest results
+
+| Persona | Game | Outcome | Fun | Pacing | Clarity | Openness | Teaching | Counts (tester) |
+|---|---|---|---|---|---|---|---|---|
+| Do your best (reload after Danny's decision) | 5012 | Finished everything in ~24 min: both clones, every document decoded in the in-game CyberChef, password first try from slip + plaque, safe 5829 from the decoded email, Danny protected, Victoria turned, Perfect Stealth | 4 | 4 | 3 | 4 | 4 | 0 / 1 / 6 |
+| Struggling player (reload after Victoria's rebuff) | 5013 | Finished in ~18 min skipping the paper trail; arrest ending; debrief judged fair | 3 | 3 | 3 | 4 | 4 (cloning) / 2 (rest) | 0 / 5 / 5 |
+
+Worst stuck moments: the conference card reader (~5 min, struggling: nothing at the door says "cloner"; only the phone's unread count); starting Victoria's clone (~3 min, struggling: reachable only through one branch, and a blunt player is rebuffed with no hint how to retry); finding Sterling after the evidence (~2 min, best); losing a read by clicking the cloner as the cloning conversation went blank (~2 min, struggling).
+
+Best lines (testers): "Ghost pulled the trigger. Someone handed them the gun."; "I priced the urgency in. Hospitals pay fast, and they pay quietly. That isn't cruelty. It's arithmetic."; "I sleep perfectly. That's the part people like you can never forgive."; "Her smile stays exactly where it was. Her eyes don't. A recruit wouldn't have said that."; "Forty per cent extra for a hospital. You priced the bodies in."
+
+Merged with rulings in scratch `m03-blind-merged.md` (B-1..B-14): majors B-1 Victoria's clone reachable from any branch, B-2 visible cue at the reader, B-3 Sterling's location, B-4 blank dialogue at the end of the cloning conversation (ink or engine); minors B-5..B-12; B-13 (optional trail skippable) by design; B-14 (flags without the VM) withdrawn. Engine items noted by testers: flipper "Cancel" aborts the read; dictionary attack sometimes 15/16; tutorial prompt over the brief notes; identical phone timestamps; reload respawns in the lobby (known E2/P10).
+
 ## SecGen
 
 m03 XML missing on SecGen master. Proposed file: `SECGEN_PROPOSED_m03_ghost_in_the_machine.xml` (D1). No SecGen edits made.
