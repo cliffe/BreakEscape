@@ -410,7 +410,19 @@ Merged with rulings in scratch `m03-blind-merged.md` (B-1..B-14): majors B-1 Vic
 | B-10, B-12 | No change: the cabinet is reachable (tester got `inRange: true`); the second file is the harness `take` |
 | B-11 | "Sable" said by the player only once they've heard it (new global `sable_named`); otherwise "[SAFETYNET. And I've read your approvals.]" with a new reply |
 
-Targeted browser check (Sonnet): running.
+Targeted browser check (Sonnet, games 5015 day and 5016 night; night state console-set): B-1, B-2, B-3, B-4, B-5, B-9 pass on screen; B-11 pass for the "not heard" variant. Not reached in the browser, checked statically by the orchestrator (grep of the erb and ink): B-6 ("Clean enough" only with history and catalogue out; otherwise "It's done. Get some rest."), B-7 (stealth credit wording), B-8 (catalogue credit matches the debrief), the "Sable" variant. B-10 confirmed reachable on foot (harness path detours). 0 blockers, 0 majors, 4 minors (harness or wording-note only). Final static checks at the close: validator schema pass, dialoguelint 0 errors (4 justified warnings), reopencheck 0 problems.
+
+**Phase 5 closed. Loop closed.**
+
+### Phase 5 summary
+
+| Round | Runs | Blockers | Majors | Minors |
+|---|---|---|---|---|
+| 1 | A, B (partial), B2 (partial), B3, struggling | 0 | 1 (guard window, orchestrator; struggling's 2 majors ruled by design / withdrawn) | 21 |
+| 1 confirm | day, night, KO | 0 | 0 | 12 (incl. harness) |
+| 2 (fix only) | - | - | - | 6 fixed |
+| Blind | best, struggling | 0 | 4 (merged: B-1..B-4) | 8 |
+| Blind fixes check | targeted | 0 | 0 | 4 |
 
 ## SecGen
 
