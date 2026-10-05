@@ -31,6 +31,11 @@ const DEFAULT_ROWS = [
     }
 ];
 
+// Long parameter names (THERMAL_RUNAWAY_THRESHOLD) should wrap at underscores, not mid-word.
+function wrapAtUnderscores(text) {
+    return String(text ?? '').replace(/_/g, '_<wbr>');
+}
+
 function normalizeStatus(status) {
     return String(status || 'GREEN').toUpperCase();
 }
@@ -173,11 +178,11 @@ export class SisConfigThresholdMinigame extends MinigameScene {
         const currentRows = this.rows.map((row) => {
             const status = normalizeStatus(row.status);
             const className = status === 'GREEN' ? 'sis-compare-item' : 'sis-compare-item sis-compare-item-alert';
-            return `<div class="${className}">${displayDashes(row.parameter)}: ${displayDashes(row.currentValue)}</div>`;
+            return `<div class="${className}">${wrapAtUnderscores(displayDashes(row.parameter))}: ${displayDashes(row.currentValue)}</div>`;
         }).join('');
 
         const certifiedRows = this.rows.map((row) => {
-            return `<div class="sis-compare-item">${displayDashes(row.parameter)}: ${displayDashes(row.certifiedValue)}</div>`;
+            return `<div class="sis-compare-item">${wrapAtUnderscores(displayDashes(row.parameter))}: ${displayDashes(row.certifiedValue)}</div>`;
         }).join('');
 
         this.overlayEl.innerHTML = `

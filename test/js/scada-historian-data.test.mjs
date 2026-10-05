@@ -67,7 +67,7 @@ test('tooltip and report quote the same values, and those are the chart values',
     assert.match(report, /flat line at 28\.0°C/);
     assert.match(report, /2026-03-20 23:12:07 to 2026-03-21 06:30:00\n7h 17m, up to now/);
     assert.match(report, /Injection timestamp: 23:12:07\./);
-    assert.equal(confirmLabel, '[CONFIRM — MARK AS INJECTION EVENT: 23:12]');
+    assert.equal(confirmLabel, '[CONFIRM: MARK AS INJECTION EVENT AT 23:12]');
     assert.doesNotMatch(report, /2025|36\.2|8\.1/);
     // sis02 story: about 36°C real at 23:12
     assert.ok(Math.abs(anomaly.lastReal.value - 36) < 1, `last real ${last}`);

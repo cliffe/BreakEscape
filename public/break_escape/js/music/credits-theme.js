@@ -87,6 +87,7 @@ export const CREDITS_THEMES = {
                 badge:      'DEBRIEF',
                 scene:      ['SCENE:', setting ? setting.toUpperCase() : name.toUpperCase()],
                 status:     'COMPLETE',
+                phase:      ['PHASE:', 'REVIEW'], // replaces the audio-driven THREAT row
                 leftTitle:  '▸ SIGNAL ANALYSIS',
                 logTitle:   '▸ REVIEW LOG',
                 logFirst:   '> OUTCOMES FOLLOW',
