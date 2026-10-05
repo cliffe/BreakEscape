@@ -12,6 +12,7 @@ import TTSManager from '../../systems/tts-manager.js';
 import MusicController from '../../music/music-controller.js';
 import { displayPhoneLine } from './phone-chat-speaker.js';
 import { displayDashes } from '../../utils/display-dashes.js';
+import { messageClockText } from '../../systems/game-clock.js';
 
 export default class PhoneChatUI {
     /**
@@ -553,8 +554,10 @@ export default class PhoneChatUI {
      * @param {string} type - Message type ('npc' or 'player')
      * @param {string} text - Message text
      * @param {boolean} scrollToBottom - Whether to auto-scroll
+     * @param {Object} [message] - the history entry being shown (its timestamp and
+     *   gameTime give the time on the bubble); omitted for a line arriving now
      */
-    addMessage(type, text, scrollToBottom = true) {
+    addMessage(type, text, scrollToBottom = true, message = null) {
         if (!text || text.trim() === '') {
             return Promise.resolve();
         }
@@ -644,7 +647,9 @@ export default class PhoneChatUI {
         // Add timestamp
         const messageTime = document.createElement('div');
         messageTime.className = 'message-time';
-        messageTime.textContent = this.getCurrentTime();
+        // The time this message arrived, not the time the thread was opened: every
+        // bubble used to show the current time, so a whole thread read e.g. "12:29"
+        messageTime.textContent = message ? messageClockText(message) : this.getCurrentTime();
         messageBubble.appendChild(messageTime);
         
         this.elements.messagesContainer.appendChild(messageBubble);
@@ -715,7 +720,7 @@ export default class PhoneChatUI {
         const savedTheme = this.isTerminalTheme;
         this.isTerminalTheme = false;
         messages.forEach(msg => {
-            this.addMessage(msg.type, msg.text, false);
+            this.addMessage(msg.type, msg.text, false, msg);
         });
         this.isTerminalTheme = savedTheme;
 
@@ -797,12 +802,8 @@ export default class PhoneChatUI {
      * @returns {string} Time in HH:MM format
      */
     getCurrentTime() {
-        const now = new Date();
-        const hours = now.getHours();
-        const minutes = now.getMinutes();
-        const displayHours = hours % 12 || 12;
-        const displayMinutes = minutes < 10 ? `0${minutes}` : minutes;
-        return `${displayHours}:${displayMinutes}`;
+        // Game time when the scenario has an in-game clock, else the wall clock (h:mm)
+        return messageClockText(null);
     }
     
     /**
