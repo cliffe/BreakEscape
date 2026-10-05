@@ -16,7 +16,15 @@ Recorded at the top of `DIALOGUE_REVIEW.md`. Date pinned by the orchestrator: Sa
 
 ## Phase 4: fix pass
 - Pack and sis03 consistency (done, 636ac86). Five voiced Eleanor lines changed (dates 2024→2025, "over a year ago", "on Saturday").
-- sis02 ink/scenario fixer: running.
+- sis02 fix pass (9cf6d9e): all blockers/majors and decisions; Priya S. from sis01; ids helen_marsh, priya_s; eight decision scenes.
+- sis03 contradictions resolved on the user's instruction "apply your best judgement" (264ff8b): set 7 May 2026; W-03 causally arguable; Whitworth General Manager; NCSC as CSIRT; Trent shares IT only.
+- Cross-consistency pass (dad0fee, 7b91f99): fact table across both scenarios, packs, lab sheets and the forensic minigame (now data-driven); Insurance Act corrected (no proportionate deduction for warranty breach); claim components rebalanced inside £8.2M; arbitration not Lloyd's; Tor address 198.51.100.45 (documentation range).
+
+## Phase 5: review and playtest loop
+- Script editor review (d135863): revise, 6 majors. Playtests A, B, C (games 5040-5043).
+- Engine (c62cb71, d816137): credits visualiser themes (user: safetynet and generic cyber; modes per theme); historian data-driven with hint and click-to-select; dash and label polish. sis01/sis03 use the cyber theme (035da41).
+- Round 2 (89ac60d), confirmation review (revise, 1 major) and playtest D-F (4 majors); round 3 (57f8230); Run G (2 majors, all steps pass); round 4 (5e52b40); Run H running.
+- Orchestrator rulings: third ESD station inside the hall kept; evidence is the PLC-BMS register export (a real action); "Good call" only after evidence.
 
 ### sis03 contradictions found, not changed (for the user)
 - T+48 hours vs later knowledge: Hartley "three weeks on-site", six-week outage over, cell assessment done, Ofgem "investigating".
