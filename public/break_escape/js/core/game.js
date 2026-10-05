@@ -1197,6 +1197,11 @@ export async function create() {
     window.playerHealth = initPlayerHealth();
     window.npcHostileSystem = initNPCHostileSystem();
     window.playerCombat = new PlayerCombat(this);
+    // NPCs that turned hostile or were knocked out before a reload (E-B), before
+    // any room's NPCs load; each behavior announces its restored hostility.
+    if (gameScenario?.savedNpcHostility) {
+        window.npcHostileSystem.restoreHostility(gameScenario.savedNpcHostility);
+    }
     window.npcCombat = new NPCCombat(this);
 
     // Initialize feedback systems

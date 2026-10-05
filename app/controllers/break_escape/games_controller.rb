@@ -333,6 +333,11 @@ module BreakEscape
           filtered['savedNpcVisibility'] = @game.player_state['npcVisibility']
         end
 
+        # NPCs turned hostile or knocked out, so they stay that way after a reload (E-B).
+        if @game.player_state['npcHostility'].present?
+          filtered['savedNpcHostility'] = @game.player_state['npcHostility']
+        end
+
         # Phone threads (texts, read state, story position) per phone contact.
         if @game.player_state['phoneState'].present?
           filtered['savedPhoneState'] = @game.player_state['phoneState']
@@ -707,6 +712,10 @@ module BreakEscape
 
       if params[:npcVisibility].respond_to?(:to_unsafe_h)
         @game.merge_npc_visibility!(params[:npcVisibility].to_unsafe_h)
+      end
+
+      if params[:npcHostility].respond_to?(:to_unsafe_h)
+        @game.merge_npc_hostility!(params[:npcHostility].to_unsafe_h)
       end
 
       if params[:commandBoardLog].is_a?(Array)

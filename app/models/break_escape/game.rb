@@ -1179,6 +1179,12 @@ module BreakEscape
     #    (revealAimForTask). Marked revealedEarly when the condition is unmet,
     #    so the client still runs unlockAim's first-task step once it is met.
     #    A story gate (globalVariable condition, unmet) keeps the aim hidden.
+    #  - story gate (globalVariable condition) met by the saved globals ->
+    #    active, with its first task opened as unlockAim does. Every mission
+    #    sets such a global in the same beat as its #unlock_aim / unlockAim
+    #    mapping, so this only repeats an unlock whose fire-and-forget POST
+    #    (persistUnlock) may have been lost to the reload; an unmet gate still
+    #    keeps the aim hidden (m03 perfect_stealth until the debrief).
     def objectives_state_for_client
       state = (player_state['objectivesState'] || {}).deep_dup
       return state unless scenario_data['objectives'].is_a?(Array)
@@ -1195,11 +1201,13 @@ module BreakEscape
         cond_met = unlock_condition_met?(cond, aims)
         opened_by_aims = cond.is_a?(Hash) && (cond['aimCompleted'].present? || cond['aimsCompleted'].is_a?(Array)) &&
                          cond_met
+        opened_by_story = story_gate?(cond) && cond_met
         revealed_by_task = Array(aim['tasks']).any? { |t| task_moved?(t, tasks[t['taskId']]) } &&
                            !story_gated?(cond, aims)
 
-        if opened_by_aims || (revealed_by_task && cond_met)
+        if opened_by_aims || opened_by_story || (revealed_by_task && cond_met)
           aims[aim_id] = { 'status' => 'active' }
+          open_first_task_for_client(aim, state) if opened_by_story
         elsif revealed_by_task
           aims[aim_id] = { 'status' => 'active', 'revealedEarly' => true }
         end
@@ -1223,7 +1231,27 @@ module BreakEscape
     # Same answer as ObjectivesManager#isStoryGated: an unmet globalVariable
     # condition holds the aim back until the player has worked something out.
     def story_gated?(cond, aims)
-      cond.is_a?(Hash) && cond['globalVariable'].present? && !unlock_condition_met?(cond, aims)
+      story_gate?(cond) && !unlock_condition_met?(cond, aims)
+    end
+
+    # A globalVariable unlockCondition (the story opens the aim, not another
+    # aim). unlock_condition_met? checks aimCompleted / aimsCompleted first,
+    # so a condition carrying one of those is not a story gate.
+    def story_gate?(cond)
+      cond.is_a?(Hash) && cond['globalVariable'].present? &&
+        cond['aimCompleted'].blank? && !cond['aimsCompleted'].is_a?(Array)
+    end
+
+    # An aim opened on reload by its met story gate gets what the client's
+    # unlockAim would have given it: its first task, if authored locked and
+    # not yet moved, shows as active. Only touches the copy sent to the client.
+    def open_first_task_for_client(aim, state)
+      first = Array(aim['tasks']).first
+      return unless first.is_a?(Hash) && first['status'] == 'locked'
+
+      tasks = state['tasks'] ||= {}
+      entry = tasks[first['taskId']] ||= {}
+      entry['status'] = 'active' if entry['status'].blank?
     end
 
     # Same answers as ObjectivesManager#isUnlockConditionMet: no condition, or
@@ -1423,6 +1451,47 @@ module BreakEscape
       return if merged.size > MAX_NPC_VISIBILITY
 
       player_state['npcVisibility'] = merged
+    end
+
+    # Merge NPC hostility and KO sent by the client ({ npcId => { hostile, ko } },
+    # npc-hostile.js exportHostility), so an NPC that turned on the player is
+    # still hostile after a reload (E-B). Only NPCs the scenario has are kept.
+    # A KO is never undone: once down, an NPC stays down. Does not save!; the
+    # caller does.
+    def merge_npc_hostility!(incoming)
+      return unless incoming.is_a?(Hash)
+
+      known = scenario_npc_ids
+      merged = (player_state['npcHostility'] || {}).dup
+      incoming.each do |npc_id, entry|
+        next unless npc_id.is_a?(String) && known.include?(npc_id)
+        next unless entry.is_a?(Hash)
+
+        hostile = entry['hostile']
+        ko = entry['ko']
+        next unless [true, false].include?(hostile) && [true, false].include?(ko)
+
+        ko ||= merged.dig(npc_id, 'ko') == true
+        merged[npc_id] = { 'hostile' => hostile, 'ko' => ko }
+      end
+      return if merged.size > MAX_NPC_VISIBILITY
+
+      player_state['npcHostility'] = merged
+    end
+
+    # Every NPC id the game can have in a room: the scenario's, plus any added
+    # to a room during play.
+    def scenario_npc_ids
+      ids = Set.new
+      (scenario_data['rooms'] || {}).each_value do |room|
+        Array(room['npcs']).each { |npc| ids << npc['id'] if npc.is_a?(Hash) && npc['id'].is_a?(String) }
+      end
+      (player_state['room_states'] || {}).each_value do |state|
+        next unless state.is_a?(Hash)
+
+        Array(state['npcs_added']).each { |npc| ids << npc['id'] if npc.is_a?(Hash) && npc['id'].is_a?(String) }
+      end
+      ids
     end
 
     MAX_NPC_INK_VARIABLES_BYTES = 128.kilobytes
