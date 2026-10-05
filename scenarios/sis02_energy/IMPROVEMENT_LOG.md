@@ -37,3 +37,12 @@ Recorded at the top of `DIALOGUE_REVIEW.md`. Date pinned by the orchestrator: Sa
 - Notification "pending" at T+75 min vs initial notification at 07:00.
 - Exhibit B: ESD "resets PLC registers"; "no forensic record of when" vs 03:22 known.
 - Minor: Hartley 58°C "approaching onset zone"; LG Chem named.
+
+- Round 4 (5e52b40); Run H clean (game 5057). Review and playtest loop closed.
+
+## Phase 6: lab sheet (done)
+- d539185: sis02 lab sheet rewritten in sis01's structure (20 questions, 9 exercises, each tied to a moment in play); publish-ready front matter for sis02/sis03 lab sheets and packs (published authors).
+- HacktivityLabSheets branch claude/practical-planck-fvt3ha (1eaf23b): all six SIS files byte-identical with BreakEscape (cmp). Not merged to main: the user decides when to publish. The published sis01 copy had never been updated (HIPAA/FDA era). That commit carries Claude attribution lines by mistake (force-push to remove them was refused).
+
+## Next
+Phase 7 cast (CAST_DESIGN.md, Gemini concepts, PixelLab: ask the user before spending), phase 8 round-2 dialogue review, phase 9 audio (ask).
