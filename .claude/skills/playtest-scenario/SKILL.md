@@ -122,6 +122,12 @@ Each of these cost at least one pass-4 run (reports in `tools/playtest/m0*-pass4
 - **`moveTo` coordinates are where the feet go**, about 31px below the sprite centre that `arrivedAt` reports. Compare `feetAt` with your target, not `arrivedAt`. A move that walks into something now returns `reason: "stuck"` within a second instead of hanging for 20s.
 - **`mg choose` is unreliable on long hubs and number-only choices.** A regex on a choice whose text is just a number ("5093.") reads as a list number and fails with `choice-no-match`; on long menus pick with `{"cmd":"mg","action":"clickText","args":["<exact choice text>"]}` instead.
 - **Interaction range is 32 px (24 px for some objects), measured from the sprite centre (`player.x/y`), not the feet.** `interact` from 36 px reports `no-effect-confirmed`. `moveToNear` used to stop 37-62 px short on the far side of desks (it clicked the sprite-centre spot as if it were a feet target); since October 2026 it clicks the feet position that puts the sprite centre on the spot, and then closes the last few px on the arrow keys. If it still reports `arrived-but-outside-plain-range`, its `nudges` show whether something blocked the way: report that as a layout finding for the scenario (m02 Bed 4, m06 rack sheet and Satoshi, m08 locker, m01 encrypted archive).
+- **In a cloud or headless container, always pass `--headless true`.** There's no X server, so the headed default never starts.
+- **RFID flipper menu items aren't in the `mg` control list.** Click the visible `.flipper-menu-item` through the DOM (an `eval` that finds it by its text) instead of `mg clickControl`.
+- **Never decode in a shell.** Pipes (`base64 -d | tr …`) were refused by the permission layer. Either give the tester the decoded values and log them as "exercised, not earned", or decode with the in-game CyberChef, which can be driven through its iframe URL hash (recipe and input in the `#recipe=…&input=…` fragment).
+- **To reload, `eval` `location.reload()`, then press Enter on the title screen.**
+- **The harness `openTasks` lists locked tasks too.** The on-screen objectives panel hides them, so don't report a task as visible to the player because `openTasks` has it.
+- **A tester's Write to the scratchpad may be refused.** Ask for the whole report in the tester's final message, not only in a file.
 
 ## Token discipline
 

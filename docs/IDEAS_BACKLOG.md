@@ -51,6 +51,8 @@ Each entry: a short title, where it came from, the idea in two or three sentence
 
 - **A short Ben Ashworth scene in m05** (m05 writer; S–M). Ben is a named red herring with no lines; a brief scene would make the suspect list two people deep.
 
+- **m04: meet the wall before the fingerprint kit** (user, 2026-10-05, from m03's RFID cloner; S–M). A capability grant only feels earned if the player has first hit the lock it opens. Let the player reach the biometric reader (or a print they can't lift) and feel the lack of the kit before the OptiGrid tool case hands it over. This is the lesson from m03's RFID cloner.
+
 ## Art and audio
 
 - **Sprite variety across missions** (m04 script editor; M). `male_telecom_v2` is Vance (m04), Owen (m05) and Park (m07); the m04 gate guard shares `hacker-red` with the four operatives. More v2 character sets (PixelLab) would let recurring-looking extras differ.
