@@ -24,7 +24,7 @@ module BreakEscape
       policy.worker_src  :self, :blob
     end
 
-    before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :complete_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :conclude_mission]
+    before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :conclude_mission]
 
     # Actions that read-modify-write @game.player_state and then save! need a
     # row lock, or two concurrent requests for the same game (e.g. a single
@@ -77,7 +77,7 @@ module BreakEscape
     # room is here for the same reason -- track_npc_encounters appends to
     # encounteredNPCs and saves, and npc_conversation tasks validate against
     # that list, so losing an entry rejects a legitimate completion.
-    around_action :with_game_lock, only: [:container, :update_room, :unlock, :complete_task, :update_task_progress, :unlock_objective, :submit_flag, :reset, :new_session, :inventory, :room]
+    around_action :with_game_lock, only: [:container, :update_room, :unlock, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :reset, :new_session, :inventory, :room]
 
     # GET /games/new?mission_id=:id
     # Show VM set selection page for VM-required missions
@@ -269,6 +269,10 @@ module BreakEscape
         if @game.player_state['objectivesState'].present?
           filtered['objectivesState'] = @game.objectives_state_for_client
         end
+
+        # show_scenario_brief "once": the brief has been shown, don't reopen it
+        brief_shown = @game.player_state.dig('scenarioBriefShown') == true
+        filtered['scenarioBriefShown'] = true if brief_shown
 
         # Include submitted flags for flag station minigame
         if @game.player_state['submitted_flags'].present?
@@ -1011,6 +1015,34 @@ module BreakEscape
       end
     end
 
+    # POST /games/:id/objectives/tasks/:task_id/skip
+    # Mark a task skipped (a scenario skipTask eventMapping or #skip_task ink
+    # tag): the story closed it off. Not counted as completed. Locked like
+    # complete_task, because it can complete the task's aim (see skip_task!).
+    def skip_task
+      authorize @game if defined?(Pundit)
+
+      task_id = params[:task_id]
+      return render json: { success: false, error: 'Missing task_id' }, status: :bad_request unless task_id.present?
+
+      result = @game.skip_task!(task_id)
+      if result[:success]
+        Rails.logger.info "[BreakEscape] Task skipped: #{task_id}"
+        # A new skip can complete the aim (and change the score), so the host
+        # rescores as it does after a completion
+        if !result.key?(:message) && (cb = BreakEscape.configuration&.on_task_complete)
+          begin
+            cb.call(@game)
+          rescue => e
+            Rails.logger.error "[BreakEscape] on_task_complete hook raised: #{e.class}: #{e.message}"
+          end
+        end
+        render json: result
+      else
+        render json: result, status: :unprocessable_entity
+      end
+    end
+
     # PUT /games/:id/objectives/tasks/:task_id
     # Update task progress (for collect_items and submit_flags tasks)
     #
@@ -1370,9 +1402,15 @@ module BreakEscape
     # Merges that only grow and are safe to repeat, so a stale request still
     # applies them: fired-handler counts keep the larger, the clock keeps the
     # later time and the union of fired / cancelled timers, the command board
-    # keeps each entry's earliest time, and fingerprints keep the better
-    # sample per owner.
+    # keeps each entry's earliest time, fingerprints keep the better sample
+    # per owner, and scenarioBriefShown is only ever set.
     def merge_grow_only_sections
+      # show_scenario_brief "once": the client showed the Mission Brief popup.
+      # Only ever set, never cleared (a reset starts a fresh player_state).
+      if ActiveModel::Type::Boolean.new.cast(params[:scenarioBriefShown]) == true
+        @game.player_state['scenarioBriefShown'] = true
+      end
+
       if params[:triggeredEvents].respond_to?(:to_unsafe_h)
         @game.merge_triggered_events!(params[:triggeredEvents].to_unsafe_h)
       end

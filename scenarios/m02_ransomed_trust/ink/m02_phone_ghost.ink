@@ -18,6 +18,10 @@ VAR ghost_deal_accepted = false
 VAR ghost_deal_refused = false
 VAR ghost_keys_used = false
 VAR ward_recovering = false
+// Playtest loop round 1 (A7): the flag scenes are barks now; these let a player who
+// missed the bark still hear them from the device.
+VAR flag_proftpd_submitted = false
+VAR flag_database_submitted = false
 
 // External variables (set by game)
 EXTERNAL player_name()
@@ -240,6 +244,12 @@ I've been reading their estates paperwork while you work. There's a five-year pl
 + [You'll be in a cell before that plan gets revised.]
     Very possibly. It'll get revised either way, is my point.
     -> end_contact
+
++ {flag_proftpd_submitted and not on_proftpd_exploited} [You messaged me. About the exploit.]
+    -> on_proftpd_exploited
+
++ {flag_database_submitted and not on_backup_located} [Something blinked on the network. That was you.]
+    -> on_backup_located
 
 + [I'm not doing this. Not tonight.]
     -> end_contact
@@ -500,6 +510,8 @@ Paying without publishing teaches nothing.
 
 One more thing.
 
+// Playtest loop round 1 (B4): the debrief only says "Ghost told you" if this was heard.
+#set_global:ghost_affiliate_heard:true
 Someone in this building confirmed our operational timing. An ENTROPY affiliate.
 
 I'll let you wonder who.
@@ -636,9 +648,13 @@ Back at the console. So you've decided.
     Noted.
     -> act3_deal_refused
 
+// Playtest loop round 1 (R11): undecided leaves the offer open; the device can still
+// accept it from mid_mission_contact until a restore is chosen.
 + [I still don't know.]
-    Then that's a no. I'll take silence as a policy -- it's what the board gave Gary.
-    -> act3_deal_refused
+    Then it stays open until you choose a restore. This device reaches me if you change your mind.
+    > GHOST PROTOCOL: CLOSED
+    #exit_conversation
+    -> DONE
 
 === act3_dismissed ===
 #speaker:ghost

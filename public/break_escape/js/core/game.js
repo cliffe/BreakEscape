@@ -33,7 +33,7 @@ import { ScenarioTimerUI } from '../ui/scenario-timer.js';  // [Phase 5] Countdo
 import { ScenarioTimerDispatcher } from '../ui/scenario-timer-dispatcher.js';  // [Phase 5] Timer event dispatcher
 import { GameClock } from '../systems/game-clock.js';  // Elapsed game time (resumes after a reload) and the in-game clock
 import { CommandBoardRecorder } from '../minigames/command-board/command-board-timeline.js';  // Board entries stamped as they happen
-import { ASSETS_VERSION } from '../config.js';
+import { collectCharacterSprites, queueCharacterAtlases, ensureCharacterTexture } from '../systems/character-textures.js';
 
 // Global variables that will be set by main.js
 let gameScenario;
@@ -697,156 +697,12 @@ export function preload() {
         frameHeight: 64
     });
 
-    // Load new PixelLab character atlases (80x80, atlas-based)
-    // Female characters
-    this.load.atlas('female_hacker_hood',
-        `characters/female_hacker_hood.png?v=${ASSETS_VERSION}`,
-        `characters/female_hacker_hood.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('female_office_worker',
-        `characters/female_office_worker.png?v=${ASSETS_VERSION}`,
-        `characters/female_office_worker.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('female_security_guard',
-        `characters/female_security_guard.png?v=${ASSETS_VERSION}`,
-        `characters/female_security_guard.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('female_hacker_hood_down',
-        `characters/female_hacker_hood_down.png?v=${ASSETS_VERSION}`,
-        `characters/female_hacker_hood_down.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('female_telecom',
-        `characters/female_telecom.png?v=${ASSETS_VERSION}`,
-        `characters/female_telecom.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('female_spy',
-        `characters/female_spy.png?v=${ASSETS_VERSION}`,
-        `characters/female_spy.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('female_scientist',
-        `characters/female_scientist.png?v=${ASSETS_VERSION}`,
-        `characters/female_scientist.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('female_blowse',
-        `characters/female_blowse.png?v=${ASSETS_VERSION}`,
-        `characters/female_blowse.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('female_nurse1',
-        `characters/female_nurse1.png?v=${ASSETS_VERSION}`,
-        `characters/female_nurse1.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('female_nurse2',
-        `characters/female_nurse2.png?v=${ASSETS_VERSION}`,
-        `characters/female_nurse2.json?v=${ASSETS_VERSION}`);
-
-    // Male characters
-    this.load.atlas('male_hacker_hood',
-        `characters/male_hacker_hood.png?v=${ASSETS_VERSION}`,
-        `characters/male_hacker_hood.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('male_hacker_hood_down',
-        `characters/male_hacker_hood_down.png?v=${ASSETS_VERSION}`,
-        `characters/male_hacker_hood_down.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('male_office_worker',
-        `characters/male_office_worker.png?v=${ASSETS_VERSION}`,
-        `characters/male_office_worker.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('male_security_guard',
-        `characters/male_security_guard.png?v=${ASSETS_VERSION}`,
-        `characters/male_security_guard.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('male_telecom',
-        `characters/male_telecom.png?v=${ASSETS_VERSION}`,
-        `characters/male_telecom.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('male_spy',
-        `characters/male_spy.png?v=${ASSETS_VERSION}`,
-        `characters/male_spy.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('male_scientist',
-        `characters/male_scientist.png?v=${ASSETS_VERSION}`,
-        `characters/male_scientist.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('male_nerd',
-        `characters/male_nerd.png?v=${ASSETS_VERSION}`,
-        `characters/male_nerd.json?v=${ASSETS_VERSION}`);
-
-    // PixelLab API imports (tools/pixellab_pipeline.py import --register)
-    this.load.atlas('bernie_nwosu',
-        `characters/bernie_nwosu.png?v=${ASSETS_VERSION}`,
-        `characters/bernie_nwosu.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('graham_reeves',
-        `characters/graham_reeves.png?v=${ASSETS_VERSION}`,
-        `characters/graham_reeves.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('sarah_kim',
-        `characters/sarah_kim.png?v=${ASSETS_VERSION}`,
-        `characters/sarah_kim.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('male_security_guard_v2',
-        `characters/male_security_guard_v2.png?v=${ASSETS_VERSION}`,
-        `characters/male_security_guard_v2.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('female_security_guard_v2',
-        `characters/female_security_guard_v2.png?v=${ASSETS_VERSION}`,
-        `characters/female_security_guard_v2.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('male_hacker_hood_v2',
-        `characters/male_hacker_hood_v2.png?v=${ASSETS_VERSION}`,
-        `characters/male_hacker_hood_v2.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('female_nurse1_v2',
-        `characters/female_nurse1_v2.png?v=${ASSETS_VERSION}`,
-        `characters/female_nurse1_v2.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('female_nurse2_v2',
-        `characters/female_nurse2_v2.png?v=${ASSETS_VERSION}`,
-        `characters/female_nurse2_v2.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('female_hacker_hood_v2',
-        `characters/female_hacker_hood_v2.png?v=${ASSETS_VERSION}`,
-        `characters/female_hacker_hood_v2.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('gary_whitlock',
-        `characters/gary_whitlock.png?v=${ASSETS_VERSION}`,
-        `characters/gary_whitlock.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('male_hacker_hood_down_v2',
-        `characters/male_hacker_hood_down_v2.png?v=${ASSETS_VERSION}`,
-        `characters/male_hacker_hood_down_v2.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('female_hacker_hood_down_v2',
-        `characters/female_hacker_hood_down_v2.png?v=${ASSETS_VERSION}`,
-        `characters/female_hacker_hood_down_v2.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('female_office_worker_v2',
-        `characters/female_office_worker_v2.png?v=${ASSETS_VERSION}`,
-        `characters/female_office_worker_v2.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('female_telecom_v2',
-        `characters/female_telecom_v2.png?v=${ASSETS_VERSION}`,
-        `characters/female_telecom_v2.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('female_spy_v2',
-        `characters/female_spy_v2.png?v=${ASSETS_VERSION}`,
-        `characters/female_spy_v2.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('female_scientist_v2',
-        `characters/female_scientist_v2.png?v=${ASSETS_VERSION}`,
-        `characters/female_scientist_v2.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('female_blowse_v2',
-        `characters/female_blowse_v2.png?v=${ASSETS_VERSION}`,
-        `characters/female_blowse_v2.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('male_office_worker_v2',
-        `characters/male_office_worker_v2.png?v=${ASSETS_VERSION}`,
-        `characters/male_office_worker_v2.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('male_telecom_v2',
-        `characters/male_telecom_v2.png?v=${ASSETS_VERSION}`,
-        `characters/male_telecom_v2.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('male_spy_v2',
-        `characters/male_spy_v2.png?v=${ASSETS_VERSION}`,
-        `characters/male_spy_v2.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('male_scientist_v2',
-        `characters/male_scientist_v2.png?v=${ASSETS_VERSION}`,
-        `characters/male_scientist_v2.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('male_nerd_v2',
-        `characters/male_nerd_v2.png?v=${ASSETS_VERSION}`,
-        `characters/male_nerd_v2.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('ravi_anand',
-        `characters/ravi_anand.png?v=${ASSETS_VERSION}`,
-        `characters/ravi_anand.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('david_osei',
-        `characters/david_osei.png?v=${ASSETS_VERSION}`,
-        `characters/david_osei.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('priya_s',
-        `characters/priya_s.png?v=${ASSETS_VERSION}`,
-        `characters/priya_s.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('helen_carver',
-        `characters/helen_carver.png?v=${ASSETS_VERSION}`,
-        `characters/helen_carver.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('fiona_hartley',
-        `characters/fiona_hartley.png?v=${ASSETS_VERSION}`,
-        `characters/fiona_hartley.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('sarah_mitchell',
-        `characters/sarah_mitchell.png?v=${ASSETS_VERSION}`,
-        `characters/sarah_mitchell.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('amy_clarke',
-        `characters/amy_clarke.png?v=${ASSETS_VERSION}`,
-        `characters/amy_clarke.json?v=${ASSETS_VERSION}`);
-    this.load.atlas('hamza_iqbal',
-        `characters/hamza_iqbal.png?v=${ASSETS_VERSION}`,
-        `characters/hamza_iqbal.json?v=${ASSETS_VERSION}`);
+    // Character atlases (80x80, atlas-based) are not listed here. Only the ones the
+    // scenario uses are loaded: see queueCharacterAtlases below and
+    // systems/character-textures.js. Each costs about 7 MB of texture memory.
+    if (window.breakEscapeConfig?.playerSprite) {
+        queueCharacterAtlases(this, [window.breakEscapeConfig.playerSprite]);
+    }
 
     // Animated plant textures are loaded above
     
@@ -895,6 +751,12 @@ export function preload() {
     window.soundManagerPreload = new SoundManager(this);
     window.soundManagerPreload.preloadSounds();
 
+    // Queue the scenario's character atlases as soon as its JSON arrives. Files added
+    // while the loader is running join the same pass, so create() waits for them.
+    this.load.once('filecomplete-json-gameScenarioJSON', (key, type, scenario) => {
+        queueCharacterAtlases(this, collectCharacterSprites(scenario || this.cache.json.get('gameScenarioJSON')));
+    });
+
     // Load scenario from Rails API endpoint if available, otherwise try URL parameter
     if (window.breakEscapeConfig?.apiBasePath) {
         // Load scenario from Rails API endpoint (returns filtered scenario for security)
@@ -932,6 +794,9 @@ export async function create() {
 
     // Set game instance for interactions module early
     setGameInstance(this);
+
+    // NPC lazy loading uses the scene to load any character atlas the boot list missed
+    window.npcLazyLoader?.setScene(this);
 
     // Ensure gameScenario is loaded before proceeding
     if (!window.gameScenario) {
@@ -1090,6 +955,11 @@ export async function create() {
         worldBounds.width, 
         worldBounds.height
     );
+
+    // The player atlas is normally queued in preload. In standalone mode (no
+    // breakEscapeConfig) or if the scenario omits it, load it now.
+    await ensureCharacterTexture(this,
+        window.breakEscapeConfig?.playerSprite || window.gameScenario?.player?.spriteSheet || 'male_hacker_hood_v2');
 
     // Create player first like in original
     createPlayer(this);

@@ -108,3 +108,49 @@ Source: the second blind playtest, runs 1 and 2 (game 1529; session scratchpad `
 ## Spoken lines
 
 5 new voiced texts, 2 retired (list: session scratchpad `sis01-blind2-fixer/SPOKEN_LINES.md`). Sarah's new greeting cycle reuses two cached texts, so only "How's it looking up there?" in it needs voicing.
+
+# Tidy round (2026-10-04)
+
+Source: the confirmation playtest after the objectives engine change (commit 657f6158: an aim shows as soon as any of its tasks makes progress), session scratchpad `sis01-confirm-aims/`, findings F1–F5.
+
+## Decisions (user, 2026-10-04)
+
+1. **F1.** Setting the Bed 2 pump first revealed "Restore Safe Clinical Operations" with five open tasks that named Helen and the incident room before the player had met them, and "Tell Sarah the drug library was tampered with" gave the tamper away. Move the pump task into "Assess Ward 7" (it is ward work at the start), keep it from blocking that aim, and make sure nothing else shows people or facts early.
+2. **F2.** After a SEVER without sign-offs, the two sign-off tasks stayed open but could no longer be done. They must not be marked complete (Hacktivity scores on completeness); show them as skipped. Add a minimal, general engine status if there isn't one.
+3. **F3.** The Mission Brief reopened after every reload. Show it once per game: on the first start, not after a reload.
+4. **F5.** The credits said "CLAIM-HC-003: Not reviewed during response" for a player who found and restored the drug library but never had David's HC-003 talk. Credit what they did, and say the claim itself wasn't reviewed with Clinical Engineering.
+
+## Outcome
+
+| # | Finding | Outcome |
+|---|---|---|
+| F1 | Pump first revealed the restore aim early, with spoilers | Fixed (data). `pump_dose_check` moved to "Assess Ward 7", still optional: that aim completes on Sarah and the charts, so a player who never sets the pump, or sets it wrong, isn't held up. The pump object's `puzzle_graph_aim` follows it. `warn_sarah` is now locked until the tamper is found (new Sarah mapping: `drug_library_compromised` → `unlockTask`), so its title can't give the tamper away in any order of play. The restore aim's other tasks can only move early from the Major Incident Room (backup console, drug library console, Helen's ICO/NCSC talks), where the player is standing next to Helen; the restore aim's required set is unchanged (backup, library, ICO). Checked the other aims: Investigate (Ravi, named in Sarah's opening), Isolation (opens with Ravi's sign-off; David's task names his room by design, S7) and the debrief (opened by relays) show nobody early. |
+| F2 | Sign-off tasks left open after a SEVER without them | Fixed: new engine status `skipped` (below). Sarah's `network_isolated` mapping (when `network_isolation_authorised` is false) skips `ravi_signoff` and `david_safety_case`, with a `game_loaded` twin; a sign-off already given is left alone. The two tasks show greyed, struck and labelled SKIPPED, don't count towards `tasks_completed` or the score, and "Authorise Network Isolation" completes with the gap, which opens the restore aim as before. |
+| F3 | Brief reopened on every reload | Fixed: `show_scenario_brief: "once"` (new opt-in engine mode, below). The brief still waits for Sarah's opening to close and stays in the Notepad. |
+| F5 | HC-003 credit after a restore without David | Fixed (data). The "not reviewed" credit is split three ways: restored ("Library checked and restored from a verified copy; the claim itself was not reviewed with Clinical Engineering"), found but not restored ("Tampered library found but not restored; …"), and not found ("Not reviewed during response"). With the reviewed line, the four conditions cover every case. |
+
+## Engine changes (flagged for approval)
+
+Both are opt-in and general. Other scenarios don't use `skipTask`, `#skip_task` or `"once"`, so their behaviour is unchanged.
+
+**Skipped tasks.** A task the story has closed off can be marked `skipped`.
+- Triggers: a `skipTask` eventMapping field (task id or list; `npc-manager.js` `_buildMappingConfig` and the handler after `completeTask`) and an ink tag `#skip_task:<id>` (`chat-helpers.js`).
+- Client: `ObjectivesManager.skipTask` and `isTaskSettled` (`objectives-manager.js`). Skipping does nothing to a completed or already skipped task. A skipped task doesn't block its aim (`checkAimCompletion`, `unlockAim`) and doesn't reveal a hidden aim by itself. It can still be completed later, and then counts. If the server refuses the skip, the task is left open.
+- Panel: `task-skipped` row, a dash instead of a tick, the title struck through and a SKIPPED label (`objectives-panel.js`, `objectives.css`). The test bridge lists `skippedTasks`.
+- Server: `POST /games/:id/objectives/tasks/:task_id/skip` → `Game#skip_task!` (game lock, policy `skip_task?`). It stores `status: skipped` and `skippedAt`, leaves `tasks_completed` alone, lets `check_aim_completion` treat the task as settled, rescores and calls the host's `on_task_complete` hook so Hacktivity sees any aim change. `concludeRequires.tasksCompleted` still needs a real completion. The validator knows `skipTask`.
+- **Aim choice:** the aim completes (and earns its aim share of the score) because its goal was reached another way; the gap shows in the task share of the score (70 points spread over every task) and on the panel. The other option, holding the aim open, would have left sis01's later aims to the relays again.
+
+**`show_scenario_brief: "once"`.** The popup shows on the first start, after any opening cutscene. When it opens, the client records it in the save (`PUT sync_state` with `scenarioBriefShown: true`, also carried by every later sync). `GET /scenario` returns `scenarioBriefShown`, and later loads leave the brief in the Notepad. A reload before the popup ever appeared still shows it; a reset starts a fresh `player_state`, so the brief shows again. Logic in `utils/scenario-brief.js`, used by `helpers.js` `introduceScenario`. `"on_start"` and `"on_resume"` are unchanged. The validator's opening-cutscene warning accepts `"once"`, and README_scenario_design.md lists the mode.
+
+## Checks
+
+- Validator (sis01): 0 errors. The old "set on_resume" warning is gone. Two new handler-pair warnings on Sarah are intended: `network_isolated` (skip, relay and bark fire together) and `drug_library_compromised` (unlock and bark).
+- Ink: no ink changed; tagdiff vs HEAD: structure unchanged in all 11 files.
+- `node --test test/js/`: 260 pass, 0 fail. New tests: `objectives-skip.test.mjs`, `scenario-brief-once.test.mjs`, and a `skipTask` mapping case in `npc-manager-triggers.test.mjs`. `engine-fixes-pass4.test.mjs` now copies `scenario-brief.js` next to `helpers.js`.
+- `bin/rails test`: 491 runs, 0 failures (1 existing skip). New cases in `reload_persistence_test.rb` (skip recorded and returned on load, aim completes with the gap and the expected score, completed task untouched, skip then complete counts, unknown task refused, `concludeRequires` not met by a skip, brief flag set by sync and returned, never cleared). `skip_task!` is added to the state writers in `game_state_locking_test.rb`.
+- reopencheck: 0 problems.
+
+## Spoken lines
+
+None. No ink changed; the credits aren't voiced.
+- Browser, keyless :3001 (Sonnet, headless; session scratchpad `sis01-tidy/playtest/`). Game 1542: the brief opened after Sarah's opening and did not reopen after a reload (server `scenarioBriefShown` true). Pump first: the task ticked under "Assess Ward 7", with no restore aim, no Helen or incident-room task, and no "Tell Sarah…". Game 1545: a real SEVER without the forms showed both sign-offs struck and labelled SKIPPED, the isolation aim completed and the restore aim opened. On the server both were `skipped`, `tasks_completed` 2 (not counting them), and it was the same after a reload. Credits (globals set by console, so exercised, not earned) gave the new HC-003 line. Game 1546, m01: no brief popup on first start, objectives normal, brief on resume as before.

@@ -40,18 +40,27 @@ VAR cover_burned = false
 VAR cover_restored = false
 VAR board_coverup_email_found = false
 VAR offline_keys_recovered = false
+// Playtest loop round 1: B11 retires the IT escape hatch once IT is open; R7 retires
+// the boardroom-code question once her diary has been read.
+VAR it_door_open = false
+VAR found_boardroom_code = false
 
 // ===========================================
 // ENTRY
 // ===========================================
 
 === start ===
-{access_explained:
+// Round 1 (B11): a player who took "Where's Gary now?" never passes access_problem,
+// so a re-talk must not replay the first meeting.
+{access_explained or first_meeting:
     -> returning
 }
 -> first_meeting
 
 === first_meeting ===
+// Round 1 (B11): near the top (README rule), so every route through the meeting counts.
+#complete_task:meet_dr_kim
+#unlock_aim:access_it_systems
 Narrator: Dr. Sarah Kim stands at the window with a mobile in each hand. She has been up since three, and good tailoring can't hide it.
 
 Dr. Sarah Kim: You're the consultant.
@@ -137,8 +146,6 @@ Dr. Sarah Kim: "Never once failed." That was the actual sentence. I said it out 
 
 === access_problem ===
 ~ access_explained = true
-#complete_task:meet_dr_kim
-#unlock_aim:access_it_systems
 #give_item:id_badge
 
 Dr. Sarah Kim: Now I disappoint you, and I'll be precise, because everyone I've told tonight assumes I'm being obstructive.
@@ -204,7 +211,7 @@ Dr. Sarah Kim: Gary has one. I don't.
 + {topic_gary and not player_warned_kim} [Gary doesn't carry this alone. I want that on the record.]
     -> protect_gary
 
-+ {not topic_escrow} [There's an offline key escrow in the emergency store. What's on that safe?]
++ {not topic_escrow and not offline_keys_recovered} [There's an offline key escrow in the emergency store. What's on that safe?]
     -> escrow_safe
 
 + {topic_ransom_vote and not advised_on_vote} [You asked what to tell the board. I'll answer properly now.]
@@ -219,15 +226,15 @@ Dr. Sarah Kim: Gary has one. I don't.
 + {not topic_gary} [Tell me about Gary Whitlock.]
     -> discuss_gary
 
-// Escape hatch. access_problem carries #complete_task:meet_dr_kim, the
-// access_it_systems aim unlock and the badge, but it sits only on the
+// Escape hatch. access_problem carries the countersigned badge (meet_dr_kim and the
+// aim unlock moved to first_meeting in round 1), but it sits only on the
 // the_deferral spine. A player who asks after Gary at explain_attack lands in
 // the hub having never passed through it, and the whole IT-access aim is dead.
 // This keeps the route open from the hub until she has actually explained it.
-+ {not access_explained} [I need to get into IT. What can you actually authorise?]
++ {not access_explained and not it_door_open} [I need to get into IT. What can you actually authorise?]
     -> access_problem
 
-+ [What's the code for the boardroom?]
++ {not found_boardroom_code} [{boardroom_code: The boardroom code again?|What's the code for the boardroom?}]
     -> boardroom_code
 
 + [I need to get on.]
@@ -375,6 +382,12 @@ Dr. Sarah Kim: If those keys are still in there, they're the only thing in this 
 -> hub
 
 === boardroom_code ===
+// Round 1 (A3): a repeat ask gets the code and nothing else.
+{boardroom_code > 1:
+    Dr. Sarah Kim: Nought-four-one-seven.
+    ~ hub_quiet = true
+    -> hub
+}
 {topic_ransom_vote:
     Dr. Sarah Kim: Nought-four-one-seven.
     Dr. Sarah Kim: It's been the same since I arrived, and it's written in my desk diary. That tells you a lot about us.

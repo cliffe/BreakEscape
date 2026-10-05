@@ -274,3 +274,15 @@ test('an oversized flush falls back to the reload-critical sections and keeps cl
   assert.ok(body.phoneState);
   assert.equal(typeof body.clientTs, 'number');
 });
+
+test('scenarioBriefShown is sent once, then not again once confirmed', async () => {
+  const sync = resetGame();
+  await sync.sync();
+  assert.equal(requests[0].body.scenarioBriefShown, undefined, 'not shown yet');
+  window.gameState.scenarioBriefShown = true;
+  await sync.sync();
+  assert.equal(requests[1].body.scenarioBriefShown, true);
+  window.gameState.globalVariables.a = 2;
+  await sync.sync();
+  assert.equal(requests[2].body.scenarioBriefShown, undefined);
+});

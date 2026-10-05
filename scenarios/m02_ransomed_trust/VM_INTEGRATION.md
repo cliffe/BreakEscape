@@ -69,10 +69,10 @@ is stable across every build.
 
 | Flag | SecGen XML source (document order) | Acquisition | Content | Break Escape label |
 |------|-----------------------------------|-------------|---------|--------------------|
-| `flag_1` | `gary` account `strings_to_leak`, `concatenate` encoder | Log in as `gary` (SSH brute-force of `top-20-common-SSH-passwords`, or autologin) | BACKUP PROCEDURES — recovery-key layout, `/var/backups/hospital_db/`, safe reference | `flag{ssh_access_granted}` — foothold |
-| `flag_2` | `proftpd_133c_backdoor` `strings_to_leak` | Post-exploitation (backdoor gives **root** directly) | EQUIPMENT DEPLOYMENT LOG — Asset #47 = night security guard, **PIN 4729**, BTC wallet | `flag{proftpd_backdoor_exploited}` |
-| `flag_3` | `proftpd_133c_backdoor` `strings_to_pre_leak` | Pre-exploitation, anonymous FTP | BACKUP SERVER info — database backup location hint | `flag{database_backup_located}` |
-| `flag_4` | `proftpd_133c_backdoor` `strings_to_pre_leak`, `ascii/alpha_reversible` encoder | Pre-exploitation, anonymous FTP, then **decode** (CyberChef) | ASSET #47 OPERATIONAL INSTRUCTIONS — motive, payment schedule | `flag{ghost_operational_log}` — opens the ENTROPY Staging Cache |
+| `flag_1` | `gary` account `strings_to_leak`, `concatenate` encoder | Log in as `gary` (SSH, password `Hospital1987` — the in-game sticky-note hint; or autologin) | BACKUP AND RECOVERY PROCEDURES — recovery-key layout, `/var/backups/hospital_db/`, restore catalogue, escrow safe (PIN = founding year) | `flag{ssh_access_granted}` — foothold |
+| `flag_2` | `proftpd_133c_backdoor` `strings_to_leak` | Post-exploitation (backdoor gives **root** directly) | EQUIPMENT DEPLOYMENT LOG — unpaid grievance-driven inside contact, internal override badge (no number) that ran the drill six weeks ago when the bridge went in and held the doors again on Friday, PIN cracker in the sealed case in the server-room rack, ransom **£150,000**, BTC wallet | `flag{proftpd_backdoor_exploited}` |
+| `flag_3` | `proftpd_133c_backdoor` `strings_to_pre_leak` | Pre-exploitation, anonymous FTP | BACKUP SERVER notice — anonymous-FTP banner, restricted paths, `/root/.ghost_ops/` pointer | `flag{database_backup_located}` |
+| `flag_4` | `proftpd_133c_backdoor` `strings_to_pre_leak`, `ascii/alpha_reversible` encoder | Pre-exploitation, anonymous FTP, then **decode** (CyberChef) | GHOST'S OPERATIONAL LOG — names override badge **SC-4471** as the badge that held Friday's 02:30–03:00 drill window (estate dark at 02:47) and ran the drill six weeks earlier when the bridge was placed (not the person), unpaid grievance contact, key material + restore-catalogue override in the staging cache | `flag{ghost_operational_log}` — opens the ENTROPY Staging Cache |
 
 Notes on the mapping:
 
@@ -80,9 +80,11 @@ Notes on the mapping:
   backdoor → database → the encoded operational document.
 - flag_2 and flag_4 are *both* "Ghost operational" documents. flag_4 (the encoded one)
   is what the **ENTROPY Staging Cache** wants (`"requires": "hospital_backup_server:flag_4"`)
-  and what unlocks `lore_ghosts_manifesto_found`. The PIN 4729 and the guard's identity
-  are in flag_2's manifest, read *in the VM* at the root stage — they are not gated on a
-  flag number, so the flag_2/flag_4 split does not break anything.
+  and what unlocks `lore_ghosts_manifesto_found`. The badge number **SC-4471** is in
+  flag_4 only; flag_2 gives the equipment and the ransom (£150,000) but no badge number.
+  Neither names the insider, and nothing on the VM points at Val (SC-2208). The VM no
+  longer carries the old paid-insider / "Asset #47" / night-security-guard / PIN 4729
+  story — that was corrected to game canon on 2026-10-04.
 - There is **no** separate SSH-service flag. `ssh_root_login` in the XML exists only to
   stand up SSH with a strong (uncrackable) root password; the "SSH access" flag is
   flag_1, earned by logging in as `gary`.

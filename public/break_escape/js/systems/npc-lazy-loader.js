@@ -3,6 +3,8 @@
  * Loads NPC Ink stories via Rails API endpoint
  * Uses in-memory caching only (no persistent storage between sessions)
  */
+import { ensureCharacterTextures, spriteKeysForNPCs } from './character-textures.js';
+
 export default class NPCLazyLoader {
   constructor(npcManager) {
     this.npcManager = npcManager;
@@ -12,6 +14,15 @@ export default class NPCLazyLoader {
     if (!this.gameId) {
       console.warn('⚠️ NPCLazyLoader: gameId not found in window.breakEscapeConfig');
     }
+  }
+
+  /**
+   * Set the Phaser scene used to load character atlases on demand.
+   * Called from game.js create(); the loader is constructed before the scene exists.
+   * @param {Phaser.Scene} scene
+   */
+  setScene(scene) {
+    this.scene = scene;
   }
 
   /**
@@ -62,8 +73,17 @@ export default class NPCLazyLoader {
     
     if (storyPromises.length > 0) {
       console.log(`📖 Loading ${storyPromises.length} Ink stories for room ${roomId}`);
-      await Promise.all(storyPromises);
     }
+
+    // Character atlases are preloaded from the scenario's characterSprites list.
+    // This loads any the list missed, alongside the stories, before sprites are made.
+    // window.game is the Phaser.Game until game.js create() swaps in the scene itself
+    const scene = this.scene || (window.game?.load ? window.game : window.game?.scene?.scenes?.[0]);
+    const texturePromise = scene
+      ? ensureCharacterTextures(scene, spriteKeysForNPCs(roomData.npcs))
+      : Promise.resolve();
+
+    await Promise.all([...storyPromises, texturePromise]);
     
     // Register NPCs (synchronous now that stories are cached)
     for (const npcDef of roomData.npcs) {

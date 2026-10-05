@@ -59,6 +59,8 @@ Each entry: a short title, where it came from, the idea in two or three sentence
 
 ## Tooling
 
+- **PixelLab pipeline: check facing after the bust pick** (portrait facing audit, 2026-10-04; S). Every portrait source must face right (the engine mirrors NPCs, not the player), but five sets faced left until the audit: David Osei, Mr Ahmed, Mr Pryce, Ms Chen and the generic male office worker. `pick <name> bust` should show the bust beside its mirror and ask which way it faces, or warn on a left-facing guess, before talk and viseme sheets are built from it. Patients in bed count by where the face looks, not which side of the pillow the head is on.
+
 - **Stacked-text check should read `mutuallyExclusiveGlobals`, and credit coverage should accept complementary conditions** (new-check fixes; S). Both checks still flag cases the agents showed are fine (m02 make_ransom_decision; credit sections split on x / !x).
 
 - **Lint: "Not X. Y." across sentences, in narration** (m04 script editor; S). The `not-x-but-y` rule misses the two-sentence form ("Not doubt. Irritation.") and narrator lines, and "She is not X; she Y".

@@ -45,6 +45,8 @@ VAR insider_identified = false
 VAR insider_confronted = false
 VAR night_security_supervisor_ko = false
 VAR awaiting_ambush = false
+// Playtest loop round 1 (B13)
+VAR ghost_deal_accepted = false
 
 === start ===
 #speaker:computer
@@ -68,7 +70,7 @@ HOSPITAL COMMUNICATIONS TERMINAL
 Secure outgoing relay -- St. Catherine's regional press network.
 14 media recipients. 3 national health correspondents. SAFETYNET Evidence Archive.
 
-Available for transmission:
+Evidence package -- transmits as one bundle, all of it or none:
 - Board liability email (cover-up plan, Gary Whitlock scapegoating)
 - FY2024 Budget Report (£85,000 security deferred, £3.2 million MRI approved)
 - Gary Whitlock security advisory archive (May-November 2024, 7 formal warnings)
@@ -215,6 +217,11 @@ The board liability email, budget decisions, and Gary Whitlock's warning archive
 St. Catherine's reputation protected. Board members retain their positions.
 
 Gary Whitlock's situation remains an internal matter.
+
+// Playtest loop round 1 (B13): the promise to Ghost is on the line here.
+{ghost_deal_accepted:
+    You told Ghost this would go out. Keeping it internal breaks that promise.
+}
 
 The sector-wide vulnerability profile does not become public knowledge.
 

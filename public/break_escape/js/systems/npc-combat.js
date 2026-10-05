@@ -6,6 +6,7 @@
 import { COMBAT_CONFIG } from '../config/combat-config.js';
 import { applyKnockback } from '../utils/knockback.js';
 import { getNPCDirection } from './npc-sprites.js';
+import { playerCanBeAttacked } from './npc-attack-guard.js';
 
 export class NPCCombat {
   constructor(scene) {
@@ -30,6 +31,11 @@ export class NPCCombat {
       if (state && state.isKO) {
         this.npcAttacking.delete(npcId);
       }
+      return false;
+    }
+
+    // Don't start an attack on a knocked-out player (CF-D)
+    if (!playerCanBeAttacked()) {
       return false;
     }
 
@@ -128,6 +134,15 @@ export class NPCCombat {
     // Check if NPC is still valid and not destroyed
     if (!npcSprite || npcSprite.destroyed) {
       console.log(`${npcId} sprite destroyed during attack`);
+      this.npcAttacking.delete(npcId);
+      return;
+    }
+
+    // The player was knocked out during the windup: stand down (CF-D)
+    if (!playerCanBeAttacked()) {
+      if (window.attackTelegraph && typeof window.attackTelegraph.hide === 'function') {
+        window.attackTelegraph.hide(npcId);
+      }
       this.npcAttacking.delete(npcId);
       return;
     }

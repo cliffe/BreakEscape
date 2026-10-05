@@ -378,7 +378,9 @@ Minigames whose meaningful state isn't expressible as raw DOM override it and sp
 the base result. Currently overridden: **person-chat** (dialogue), **phone-chat**
 (dialogue), **pin** (entered digits, attempts, lockout), **password**, **container**
 (contents), **notes** (note text, pagination), **flag-station** (submitted flags,
-`requiresExternalVm: true`), **lockpicking** (see below).
+`requiresExternalVm: true`), **lockpicking** (see below), **examine** (`examine`:
+item name, type, id, observations, text, the shown image size, the pixel `scale`
+and the `roomDisplayScale` it was worked out from).
 
 ### Containers nest
 
@@ -441,7 +443,9 @@ read-only.
 `window.__test.minigames['<id>'].*` is the same set but asserts *which* minigame it
 is first, returning `{ ok: false, reason: 'not-active', expected, active }` if not.
 Ids are the `MinigameFramework.registeredScenes` keys (`person-chat`, `notes`, `pin`,
-`container`, `flag-station`, `lockpicking`, `title-screen`, …).
+`container`, `flag-station`, `lockpicking`, `title-screen`, `examine`, …). A
+text-only object, or an inventory item with no other action, opens `examine` rather
+than a toast, so close it before the next main-world command.
 
 | Method | Notes |
 |---|---|

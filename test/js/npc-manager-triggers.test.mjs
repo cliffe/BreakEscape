@@ -170,3 +170,20 @@ test('NPC timedMessages with a plain delay still count from game start', () => {
     m.scheduleTimedMessage({ npcId: 'val', text: 'Welcome.', delay: 3000 });
     assert.equal(m.timedMessages[0].triggerTime, 3000);
 });
+
+// sis01 tidy round F2: the skipTask eventMapping field marks tasks skipped
+test('a skipTask mapping skips each listed task in turn', async () => {
+    const m = makeManager();
+    const skipped = [];
+    window.objectivesManager = { skipTask: async (id) => { skipped.push(id); } };
+    try {
+        const config = m._buildMappingConfig({ eventPattern: 'global_variable_changed:network_isolated',
+                                               skipTask: ['ravi_signoff', 'david_safety_case'] }, 0);
+        assert.deepEqual(config.skipTask, ['ravi_signoff', 'david_safety_case']);
+        m._handleEventMapping('val', 'global_variable_changed:network_isolated', config, { value: true });
+        await new Promise(resolve => setImmediate(resolve));
+        assert.deepEqual(skipped, ['ravi_signoff', 'david_safety_case']);
+    } finally {
+        delete window.objectivesManager;
+    }
+});

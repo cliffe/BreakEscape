@@ -7,6 +7,7 @@ import { rooms } from '../core/rooms.js';
 import InkEngine from './ink/ink-engine.js';
 import { CSRF_TOKEN } from '../config.js';
 import { setHudLabel, clearHudLabel } from '../ui/info-label.js';
+import { inventoryBlockedByForcedMinigame } from './forced-minigame-guard.js';
 
 // Helper function to create a unique identifier for an item
 export function createItemIdentifier(scenarioData) {
@@ -604,6 +605,8 @@ export async function addToInventory(sprite) {
         
         // Add click handler
         itemImg.addEventListener('click', function() {
+            // A forced conversation (debrief, cutscene) can't be replaced from here.
+            if (inventoryBlockedByForcedMinigame()) return;
             if (window.handleObjectInteraction) {
                 window.handleObjectInteraction(this);
             }
@@ -788,6 +791,7 @@ function updateKeyRingDisplay() {
     
     // Add click handler for key ring
     itemImg.addEventListener('click', function() {
+        if (inventoryBlockedByForcedMinigame()) return;
         if (window.handleKeyRingInteraction) {
             window.handleKeyRingInteraction(this);
         }

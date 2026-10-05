@@ -65,11 +65,23 @@ VAR bed4_manually_stabilised = false
 VAR patient_bed4_deceased = false
 VAR val_opened_office = false
 VAR ghost_keys_used = false
+// Playtest loop round 1 (A10): what the player has read, for the naming reasons and nudges.
+VAR read_handover_board = false
+VAR read_night_rota = false
+VAR reeves_known = false
+// Round 2 (BS1/CF-G): the server-room card is in hand.
+VAR keycard_held = false
+// Round 3 (struggle M4)
+VAR attacked_guard = false
+VAR guard_knocked_out = false
+VAR found_boardroom_code = false
 
 // Local
 VAR cover_advice_given = false
 VAR named_suspect = ""
 VAR insider_advice_given = false
+VAR doors_asks = 0
+VAR doors_tier = 0
 
 EXTERNAL player_name()
 
@@ -146,7 +158,7 @@ Then Dr. Kim. Past the ward, up through the handover room. She called us in.
 + {ghost_deal_accepted and not ransom_decision_made} [I have Ghost's decryption keys  --  does that change things?]
     -> ghost_deal_recovery_advice
 
-+ {insider_badge_id_found and not insider_identified} [I know whose badge SC-4471 is.]
++ {cover_burned and insider_badge_id_found and not insider_identified} [I know whose badge SC-4471 is.]
     -> name_the_badge
 
 + {flag_ghost_log_submitted and not ideology_discussed} [ENTROPY's ideology  --  how do we fight true believers?]
@@ -452,11 +464,12 @@ The ProFTPD 1.3.3c backdoor. Remote code execution via a backdoor planted in the
 
 A clean release shipped days later, back in 2010. St. Catherine's is still running the poisoned build. Your target.
 
-The exploit gets you root on the backup server. From there, work the filesystem for the encrypted database backups.
+The exploit gets you root on the backup server. Ghost's deployment log is in there.
 
 + [What's the full exploit chain?]
-    SSH access to confirm the server's reachable. ProFTPD exploit for root. Then filesystem navigation to the database backups.
-    Submit each step as a flag at the drop-site terminal. Each flag unlocks the next piece of intelligence.
+    Four flags. Gary's login gets the first. The backdoor gets root and the second.
+    Anonymous FTP holds the other two: a server notice, and Ghost's encoded log. Decode that one.
+    Each flag goes in at the drop-site terminal.
     -> support_hub
 
 + [Got it]
@@ -517,14 +530,15 @@ Go on. Whose is it?
 + [Gary Whitlock.]
     ~ named_suspect = "gary"
     -> badge_reason
-+ [Graham Reeves.]
-    ~ named_suspect = "reeves"
-    -> badge_reason
 + [Dr Kim.]
     ~ named_suspect = "kim"
     -> badge_reason
+// Round 1 (D7): only once the player has met or heard of him.
++ {reeves_known} [Graham Reeves.]
+    ~ named_suspect = "reeves"
+    -> badge_reason
 + [I'm not sure yet.]
-    Then go and look. Every post keeps a log.
+    -> doors_nudge ->
     -> support_hub
 
 === badge_reason ===
@@ -543,17 +557,27 @@ Go on. Whose is it?
     {named_suspect == "reeves":
         That makes him odd. It doesn't make him SC-4471. What ties the badge to him?
     - else:
-        They're on a rota, or a payroll, or a board list. Odd is the man who isn't. What ties the badge to anyone?
+        That's not evidence either way. What ties the badge to anyone?
     }
     -> badge_reason_choices
 + [They had the access and the motive.]
     So did half the building tonight. What ties that badge to one person?
     -> badge_reason_choices
-+ {inspected_asset_post} [The boardroom post log puts badge SC-4471 on their post.]
++ {read_handover_board} [The drill ran on a security override, and they're security.]
+    {named_suspect == "val" or named_suspect == "reeves":
+        Two people in that building call themselves security tonight. Which one carries 4471?
+    - else:
+        They aren't security. Try again.
+    }
+    -> name_the_badge_choices
++ {read_night_rota and named_suspect == "val"} [Her rota number isn't 4471.]
+    Then you've just cleared her. Who's left?
+    -> name_the_badge_choices
++ {inspected_asset_post} [Ghost's badge is the badge on the boardroom post log.]
     {named_suspect == "reeves":
         -> badge_named_reeves
     }
-    The post log puts SC-4471 on the boardroom comms post. That isn't their post. Who stands that one?
+    That's the boardroom post. Is it theirs? Who stands it?
     -> name_the_badge_choices
 + [I'll come back with proof.]
     Do. A post log beats a hunch.
@@ -688,7 +712,7 @@ ENTROPY uses encoding for obfuscation and encryption for actual security. When y
 #speaker:agent_0x99
 ~ hint_pin_given = true
 
-Ghost's logs confirmed offline backup keys are in a physical PIN safe. Emergency equipment store, far end of the ward.
+Gary's backup procedures say the offline keys are in a physical PIN safe. Emergency equipment store, far end of the ward.
 
 Four-digit code. Hospitals use institutional dates -- founding years, significant administrative anniversaries.
 
@@ -837,6 +861,39 @@ That's the last decision of this mission.
 // GENERAL ADVICE (state-aware fallback)
 // ===========================================
 
+// Playtest loop round 1 (A10): graded nudges for a stuck player. Never names him.
+// Tier from what the player has read; second and later asks are more specific.
+=== doors_nudge ===
+~ temp tier = 5
+{
+- not insider_badge_id_found and not read_handover_board:
+    ~ tier = 1
+- not insider_badge_id_found:
+    ~ tier = 2
+- not read_night_rota and not inspected_asset_post:
+    ~ tier = 3
+- not inspected_asset_post:
+    ~ tier = 4
+}
+{tier != doors_tier:
+    ~ doors_tier = tier
+    ~ doors_asks = 0
+}
+~ doors_asks = doors_asks + 1
+{
+- tier == 1:
+    {doors_asks > 1:The handover room keeps a board. Read Friday's line.|Somebody authorised that drill. Drills get written up somewhere.}
+- tier == 2:
+    {doors_asks > 1:Ghost's own log on the backup server should name the badge. Keep working the box.|A security override held those doors. Who calls themselves security tonight?}
+- tier == 3:
+    {doors_asks > 1:Both carry badge numbers. Read them and find 4471.|SC-4471. Security keeps a rota, and every post keeps a log.}
+- tier == 4:
+    {doors_asks > 1:Every post keeps a log. The boardroom is a post too. Kim has the keypad code.|The rota accounts for Val and her number. It isn't 4471.}
+- else:
+    {doors_asks > 1:Same badge. Who stands the boardroom post all night?|Put Ghost's badge number next to the boardroom post log.}
+}
+->->
+
 === general_advice ===
 #speaker:agent_0x99
 
@@ -844,19 +901,29 @@ That's the last decision of this mission.
     Bed 4 is alarming and nobody's coming for him. Patient ward, now -- talk to Mr Pryce and bag him by hand.
     -> support_hub
 }
+// Round 3 (struggle M4): after a fight Val won't talk; say what's left.
+{attacked_guard and not guard_knocked_out and not reached_security_office:
+    Val won't deal with you now. Pick her office door while she's walking away from it. That's still the way to the server room.
+    -> support_hub
+}
 {cover_burned and not reached_security_office and not cover_restored:
     One thing at a time. Get past Val and through her office to the server room. Everything else can wait.
+    // Round 2 confirmation (F1): say where, once the card's in hand.
+    {keycard_held: Her Security Office is at the west end of the main corridor. The server-room door is inside it.}
     -> support_hub
 }
 {cover_burned and not reached_security_office and cover_restored and not val_opened_office:
     Bernie's word is on the log. Val will have heard. Ask her to open her office.
     -> support_hub
 }
-{insider_badge_id_found and not insider_identified and not mission_complete and not inspected_asset_post:
-    Badge SC-4471 sits on a post somewhere in this building, and every post keeps a log. Find it before you name anybody.
+// Round 2 (BS1/CF-G, F1): with the card in hand, say where the door is. Ahead of the
+// insider nudge, so it isn't shadowed.
+{keycard_held and not scanning_guide_offered and not flag_ssh_submitted:
+    Server room's through Val's Security Office, west end of the main corridor. Gary's card opens the door at the back.
+    -> support_hub
 }
-{insider_badge_id_found and not insider_identified and not mission_complete and inspected_asset_post:
-    Badge SC-4471 is on the boardroom comms post. You've seen who stands there. Tell me who, and why -- or tell him.
+{cover_burned and not insider_identified and not mission_complete:
+    -> doors_nudge ->
 }
 {scanning_guide_offered and not flag_ssh_submitted:
     You're in the server room. Map the backup server from the Kali terminal, then get an SSH session with Gary's shared credential.
@@ -880,6 +947,10 @@ That's the last decision of this mission.
     The console has its restore point. The escrow keys in the emergency storage safe are what stop the ransom being your only way through it.
     -> support_hub
 }
+{restore_manifest_obtained and not ransom_decision_made and offline_keys_recovered and not ghost_key_material_obtained and not flag_ghost_log_submitted:
+    Escrow plus manifest is twelve hours. Ghost's key material makes it four. It's in the locked rack cache. Ghost's log flag opens it.
+    -> support_hub
+}
 {restore_manifest_obtained and not ransom_decision_made and offline_keys_recovered and not ghost_key_material_obtained and flag_ghost_log_submitted:
     Escrow keys and a restore point is twelve hours. Ghost's key material is in the staging cache. Take it and you've got four.
     -> support_hub
@@ -891,6 +962,7 @@ That's the last decision of this mission.
 }
 {ransom_decision_made:
     Conference room. Press terminal. That's the last step.
+    {not found_boardroom_code: Keypad code's in Kim's desk diary, if you didn't ask her.}
     -> support_hub
 }
 You know what you're doing. Go.

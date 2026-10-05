@@ -200,7 +200,11 @@ export function startLockpickingMinigame(lockable, scene, difficulty = 'medium',
                 callback(true);
             } else {
                 console.log('LOCKPICK FAILED');
-                window.gameAlert('Failed to pick the lock.', 'error', 'Lockpicking', 4000);
+                // Closed because the player was hit (player-damage-interrupt.js): that
+                // shows its own notice, so no "failed" toast on top of it.
+                if (!window.minigameClosedByDamage?.()) {
+                    window.gameAlert('Failed to pick the lock.', 'error', 'Lockpicking', 4000);
+                }
                 callback(false);
             }
         }
@@ -443,7 +447,10 @@ export function startKeySelectionMinigame(lockable, type, playerKeys, requiredKe
                 console.log('KEY SELECTION CLOSED: caught switching to lockpicking');
             } else {
                 console.log('KEY SELECTION FAILED');
-                window.gameAlert('The selected key doesn\'t work with this lock.', 'error', 'Wrong Key', 4000);
+                // Closed because the player was hit: no "wrong key" on top of it (F2).
+                if (!window.minigameClosedByDamage?.()) {
+                    window.gameAlert('The selected key doesn\'t work with this lock.', 'error', 'Wrong Key', 4000);
+                }
             }
         }
     });
@@ -536,7 +543,9 @@ export function startPinMinigame(lockable, type, correctPin, callback) {
                 callback(true, result); // Pass result with serverResponse
             } else {
                 console.log('PIN MINIGAME FAILED');
-                window.gameAlert("Failed to enter correct PIN.", 'error', 'PIN Rejected', 3000);
+                if (!window.minigameClosedByDamage?.()) {
+                    window.gameAlert("Failed to enter correct PIN.", 'error', 'PIN Rejected', 3000);
+                }
                 callback(false, result);
             }
         }
@@ -588,7 +597,9 @@ export function startPasswordMinigame(lockable, type, correctPassword, callback,
                 callback(true, result); // Pass result with serverResponse
             } else {
                 console.log('PASSWORD MINIGAME FAILED');
-                window.gameAlert("Failed to enter correct password.", 'error', 'Password Rejected', 3000);
+                if (!window.minigameClosedByDamage?.()) {
+                    window.gameAlert("Failed to enter correct password.", 'error', 'Password Rejected', 3000);
+                }
                 callback(false, result);
             }
         }

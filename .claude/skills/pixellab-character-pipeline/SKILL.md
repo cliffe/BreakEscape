@@ -23,6 +23,7 @@ One script, [tools/pixellab_pipeline.py](../../../tools/pixellab_pipeline.py), d
 
 - Check `balance` first. Tell the user the planned spend before any paid command, and get a yes before anything costing about 20 generations or more (`character`, `fix --use ai`, a full inpaint `visemes` set). Every paid command takes `--dry-run`.
 - At every choice point, **Read the contact sheet image yourself**. Show it to the user with your assessment, then wait for their pick unless they said to choose.
+- **Every portrait faces right.** Busts, talk sheets and viseme sheets for NPCs and player alike face the viewer's right (judge by where the face and gaze point, and for a patient in bed not by which side of the pillow the head is on). Person-chat draws the player as stored on the left and mirrors NPCs on the right, so a left-facing file makes the NPC face away. Check this at the bust pick, before any sheet is built from it; flip frame by frame if it's wrong.
 - Never delete PixelLab characters, and never overwrite a game asset silently. `pick` and `import --force` back up whatever they replace.
 - A killed run leaves jobs `submitted`. `collect <name>` finishes them without paying again (for `animate`, just rerun it; it resumes from its in-flight log). Don't rerun a paid stage command to recover.
 
@@ -141,13 +142,13 @@ Fix with the cheapest method that works, and show the user the before/after shee
 ## Stage 6: import into the game
 
 ```bash
-python3 tools/pixellab_pipeline.py import <name|id|url> --key <spriteSheet key> --register
+python3 tools/pixellab_pipeline.py import <name|id|url> --key <spriteSheet key>
 python3 tools/pixellab_pipeline.py import <key> --offline --force     # rebuild after `fix`
 ```
 
 - Downloads the ZIP from the API. Nested state folders and web-UI display names (`walking`, `jab_attack`, `animating` ...) are handled: each folder is matched to its template by comparing its pixels with the API frames. Without this, NPCs with display-name folders never animate.
 - Applies the committed overrides, then converts with `tools/convert_pixellab_to_spritesheet.py`. Frames smaller than 80×80 (Pro characters are 60×60) are placed on 80×80 cells, centred with the feet on row 69, because the engine's collision boxes assume that layout. Strips on a different canvas size (backfills can come back at 76 or 80px) get their own placement, from the median standing pose.
-- `--register` adds `this.load.atlas(...)` under "PixelLab API imports" in `game.js` preload. The NPC then only needs `"spriteSheet": "<key>"`.
+- No registration step: writing `<key>.png` and `<key>.json` to `assets/characters/` and setting `"spriteSheet": "<key>"` on the NPC is enough. The game loads only the atlases a scenario uses, by key (`js/systems/character-textures.js`). `--register` is still accepted but does nothing.
 - Refuses an incomplete character (run `animate` first) unless `--allow-incomplete`. Refuses to overwrite files without `--force`.
 - Records key → character id in `tools/pixellab_characters.json` (committed), so `import <key>` re-imports by key later.
 - **States.** A PixelLab state (web UI, or `POST /create-character-state` with an `edit_description` such as "hands in hoodie pockets") is a separate character in the same group, and the ZIP carries every state as its own folder. `--idle-from <state id>` takes breathing-idle from that state and everything else from the target, e.g. a relaxed pockets idle with hands-out walk and punches (male_hacker_hood_v2, female_hacker_hood_down_v2). Animate the state with `animate <state id> --templates breathing-idle`. The choice is saved in the manifest, and the converted state folder is recorded in `_export/<key>/.state_folder` so `qa` and the converter don't pick a state alphabetically.

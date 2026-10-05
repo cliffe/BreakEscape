@@ -32,16 +32,20 @@ stub('rooms-stub.mjs', 'export const rooms = {};');
 stub('ink-stub.mjs', 'export default class InkEngine {}');
 stub('config-stub.mjs', "export const CSRF_TOKEN = 'x';");
 stub('info-label-stub.mjs', 'export function setHudLabel() {} export function clearHudLabel() {}');
+copy('systems/forced-minigame-guard.js', 'forced-minigame-guard.mjs');
 const inventoryUrl = copy('systems/inventory.js', 'inventory.mjs', [
     ["'../core/rooms.js'", "'./rooms-stub.mjs'"],
     ["'./ink/ink-engine.js'", "'./ink-stub.mjs'"],
     ["'../config.js'", "'./config-stub.mjs'"],
     ["'../ui/info-label.js'", "'./info-label-stub.mjs'"],
+    ["'./forced-minigame-guard.js'", "'./forced-minigame-guard.mjs'"],
 ]);
 stub('notifications-stub.mjs', 'export function gameAlert() {}');
 stub('crypto-stub.mjs', 'export function createCryptoWorkstation() {} export function openCryptoWorkstation() {} export function closeLaptop() {} export function openCryptoWorkstationInNewTab() {}');
 stub('lab-stub.mjs', 'export function createLabWorkstation() {} export function openLabWorkstation() {} export function closeLabWorkstation() {} export function openLabWorkstationInNewTab() {}');
+copy('utils/scenario-brief.js', 'scenario-brief.mjs');
 const helpersUrl = copy('utils/helpers.js', 'helpers.mjs', [
+    ["'./scenario-brief.js'", "'./scenario-brief.mjs'"],
     ["'../systems/notifications.js'", "'./notifications-stub.mjs'"],
     ["'./crypto-workstation.js'", "'./crypto-stub.mjs'"],
     ["'./lab-workstation.js'", "'./lab-stub.mjs'"],

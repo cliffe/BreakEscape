@@ -19,7 +19,7 @@ BreakEscape::Engine.routes.draw do
   resources :games, only: [:new, :show, :create] do
     member do
       # Scenario and NPC data
-      get 'scenario'          # Returns full scenario_data JSON (for compatibility)
+      get 'scenario'          # Returns the bootstrap scenario: rooms stripped to navigation fields, plus characterSprites
       get 'scenario_map'      # Returns minimal layout metadata for navigation
       get 'ink'               # Returns NPC script (JIT compiled)
       post 'tts'              # Generate TTS audio for NPC dialogue
@@ -37,6 +37,7 @@ BreakEscape::Engine.routes.draw do
       # Objectives system
       get 'objectives'                                      # Get current objective state
       post 'objectives/tasks/:task_id', to: 'games#complete_task', as: 'complete_task'
+      post 'objectives/tasks/:task_id/skip', to: 'games#skip_task', as: 'skip_task'  # Story closed a task off: shown skipped, not counted
       put 'objectives/tasks/:task_id', to: 'games#update_task_progress', as: 'update_task_progress'
       post 'objectives/unlock', to: 'games#unlock_objective', as: 'unlock_objective'  # Persist an ink/eventMapping aim or task unlock
 

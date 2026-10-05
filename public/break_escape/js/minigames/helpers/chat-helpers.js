@@ -402,6 +402,21 @@ export async function processGameActionTags(tags, ui) {
                     }
                     break;
 
+                case 'skip_task':
+                    // The story closed this task off: shown as skipped, never as done
+                    if (param) {
+                        if (window.objectivesManager?.skipTask) {
+                            window.objectivesManager.skipTask(param);
+                        }
+                        result.success = true;
+                        result.message = `⏭️ Task skipped: ${param}`;
+                        console.log('📋 Task skip tag:', param);
+                    } else {
+                        result.message = '⚠️ skip_task tag missing task ID';
+                        console.warn(result.message);
+                    }
+                    break;
+
                 case 'unlock_task':
                     if (param) {
                         const taskId = param;

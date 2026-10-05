@@ -187,6 +187,104 @@ module BreakEscape
     end
 
     # =========================================================================
+    # Skipped tasks (sis01 tidy round F2): closed off by the story, shown as
+    # skipped, never counted as completed, and not blocking their aim
+    # =========================================================================
+
+    test 'a skipped task is recorded, survives a reload and is not counted as completed' do
+      game = create_game
+
+      post skip_task_game_url(game, task_id: 'hidden_task'), as: :json
+
+      assert_response :success
+      assert_equal 'skipped', response.parsed_body['status']
+      game.reload
+      assert_equal 'skipped', game.player_state.dig('objectivesState', 'tasks', 'hidden_task', 'status')
+      assert game.player_state.dig('objectivesState', 'tasks', 'hidden_task', 'skippedAt').present?
+      assert_equal 0, game.tasks_completed.to_i
+      assert_equal 'skipped', scenario_json(game).dig('objectivesState', 'tasks', 'hidden_task', 'status')
+    end
+
+    test 'a skipped task lets its aim complete, with the gap costing the task share of the score' do
+      game = create_game
+
+      post skip_task_game_url(game, task_id: 'first_task'), as: :json
+
+      assert_response :success
+      game.reload
+      assert_equal 'completed', game.player_state.dig('objectivesState', 'aims', 'first', 'status')
+      assert_equal 1, game.objectives_completed
+      assert_equal 0, game.tasks_completed.to_i
+      assert_in_delta (1.0 / game.total_aims) * 30, game.calculate_task_score, 0.001,
+                      'aim share only: the skipped task earns nothing'
+      assert_equal 'active', scenario_json(game).dig('objectivesState', 'aims', 'second', 'status'),
+                   'the aim it opens comes back active'
+    end
+
+    test 'skipping leaves a completed task alone; repeating a skip changes nothing' do
+      game = create_game(tasks: { 'first_task' => 'completed' })
+
+      post skip_task_game_url(game, task_id: 'first_task'), as: :json
+      assert_response :success
+      assert_equal 'completed', game.reload.player_state.dig('objectivesState', 'tasks', 'first_task', 'status')
+
+      post skip_task_game_url(game, task_id: 'hidden_task'), as: :json
+      at = game.reload.player_state.dig('objectivesState', 'tasks', 'hidden_task', 'skippedAt')
+      post skip_task_game_url(game, task_id: 'hidden_task'), as: :json
+      assert_response :success
+      assert_equal at, game.reload.player_state.dig('objectivesState', 'tasks', 'hidden_task', 'skippedAt')
+      assert_equal 0, game.objectives_completed.to_i, 'hidden still has an open task'
+    end
+
+    test 'a skipped task can still be completed, and then counts' do
+      game = create_game
+      post skip_task_game_url(game, task_id: 'hidden_task'), as: :json
+
+      post complete_task_game_url(game, task_id: 'hidden_task'), as: :json
+
+      assert_response :success
+      game.reload
+      assert_equal 'completed', game.player_state.dig('objectivesState', 'tasks', 'hidden_task', 'status')
+      assert_equal 1, game.tasks_completed
+    end
+
+    test 'skipping an unknown task is refused' do
+      game = create_game
+
+      post skip_task_game_url(game, task_id: 'nope'), as: :json
+
+      assert_response :unprocessable_entity
+    end
+
+    test 'a skipped task never meets concludeRequires.tasksCompleted' do
+      game = create_game
+      aim = { 'concludeRequires' => { 'tasksCompleted' => ['hidden_task'] } }
+      game.player_state['objectivesState']['tasks']['hidden_task'] = { 'status' => 'skipped' }
+
+      assert_equal ['task:hidden_task'], game.unmet_conclude_requirements(aim)
+    end
+
+    # =========================================================================
+    # show_scenario_brief "once" (sis01 tidy round F3)
+    # =========================================================================
+
+    test 'the Mission Brief shown flag is recorded by sync_state and returned on load' do
+      game = create_game
+      assert_nil scenario_json(game)['scenarioBriefShown'], 'not shown yet on a new game'
+
+      put sync_state_game_url(game), params: { scenarioBriefShown: false }, as: :json
+      assert_nil game.reload.player_state['scenarioBriefShown'], 'false never sets it'
+
+      put sync_state_game_url(game), params: { scenarioBriefShown: true }, as: :json
+      assert_response :success
+      assert_equal true, game.reload.player_state['scenarioBriefShown']
+      assert_equal true, scenario_json(game)['scenarioBriefShown']
+
+      put sync_state_game_url(game), params: { scenarioBriefShown: false }, as: :json
+      assert_equal true, game.reload.player_state['scenarioBriefShown'], 'never cleared by a sync'
+    end
+
+    # =========================================================================
     # RFID cloner saved cards
     # =========================================================================
 

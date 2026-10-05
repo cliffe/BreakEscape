@@ -109,6 +109,7 @@ export class ObjectivesManager {
         }
         this.taskIndex[taskId].currentCount = state.progress || 0;
         this.taskIndex[taskId].completedAt = state.completedAt;
+        if (state.skippedAt) this.taskIndex[taskId].skippedAt = state.skippedAt;
         // Restore submittedFlags for submit_flags tasks
         if (state.submittedFlags) {
           this.taskIndex[taskId].submittedFlags = state.submittedFlags;
@@ -625,6 +626,62 @@ export class ObjectivesManager {
   }
   
   /**
+   * Is this task out of the way for its aim? Completed, or skipped: the
+   * story closed it off (sis01: a SEVER without sign-offs leaves both sign-off
+   * tasks undoable). A skipped task never counts as completed for the score;
+   * it only stops blocking the aim, which then completes with a gap.
+   */
+  isTaskSettled(task) {
+    return task.status === 'completed' || task.status === 'skipped';
+  }
+
+  /**
+   * Mark a task skipped: it can no longer be done, so it shows struck through
+   * with a "skipped" label instead of staying open forever. Called by the
+   * `skipTask` eventMapping field and the `#skip_task:<id>` ink tag. Does
+   * nothing to a completed or already skipped task. The server records it
+   * (POST .../objectives/tasks/:id/skip) so it survives a reload, and it is
+   * left out of tasks_completed. A skipped task can still be completed later.
+   * @param {string} taskId
+   */
+  async skipTask(taskId) {
+    const task = this.taskIndex[taskId];
+    if (!task || this.isTaskSettled(task) || task.status === 'completing') return;
+
+    const previous = task.status;
+    task.status = 'skipped';
+    task.skippedAt = new Date().toISOString();
+    console.log(`⏭️ Task skipped: ${task.title}`);
+
+    const gameId = window.breakEscapeConfig?.gameId;
+    if (gameId) {
+      try {
+        const response = await fetch(`/break_escape/games/${gameId}/objectives/tasks/${taskId}/skip`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+          }
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || !result.success) throw new Error(result.error || `HTTP ${response.status}`);
+        if (result.missionConcluded) this.handleMissionConcluded(this.aimIndex[task.aimId]);
+      } catch (error) {
+        console.warn(`📋 Could not record skipped task ${taskId}:`, error);
+        // Leave it open rather than show a state the server doesn't have.
+        // A completion that landed meanwhile stays completed.
+        if (task.status === 'skipped') task.status = previous;
+        this.notifyListeners();
+        return;
+      }
+    }
+
+    this.checkAimCompletion(task.aimId);
+    this.eventDispatcher.emit('objective_task_skipped', { taskId, aimId: task.aimId, task });
+    this.notifyListeners();
+  }
+
+  /**
    * Is an aim's unlockCondition satisfied right now?
    * Aims without a recognised condition return true.
    */
@@ -753,7 +810,7 @@ export class ObjectivesManager {
     this.notifyListeners();
 
     // Tasks may have been completed while the aim was hidden
-    if (aim.tasks.some(t => t.status === 'completed')) this.checkAimCompletion(aimId);
+    if (aim.tasks.some(t => this.isTaskSettled(t))) this.checkAimCompletion(aimId);
   }
   
   /**
@@ -786,7 +843,8 @@ export class ObjectivesManager {
     // (any other locked aim was revealed by its task before this runs)
     if (aim.status === 'locked' && this.isStoryGated(aim)) return;
     
-    const allComplete = aim.tasks.every(task => task.optional || task.status === 'completed');
+    // Skipped tasks don't block the aim (it completes with a gap; see skipTask)
+    const allComplete = aim.tasks.every(task => task.optional || this.isTaskSettled(task));
     
     if (allComplete && aim.status !== 'completed') {
       aim.status = 'completed';

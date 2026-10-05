@@ -45,8 +45,9 @@ Calibrate first: put the first mission that's ready through the dialogue stage a
 
 ## Choosing a model
 
-- **Opus** for open-ended work: planning, design, adversarial review, implementation of anything that needs judgement, engine work.
-- **Sonnet** for every well-defined task: playtests from a script, mechanical edits with clear rules, audits with a checklist, re-tests, small polish items.
+- **Opus** for planning and review work: scenario planning, design review, adversarial review, implementation of anything that needs judgement, engine work, architecture decisions, and dialogue writing. These tasks require understanding nuance, weighing trade-offs, and making open-ended judgements.
+- **Sonnet** for well-defined executable tasks: browser playtests from a script, mechanical edits with clear rules (e.g. renaming, replacing a pattern across files), audits with a checklist, re-tests, polish items, and any implementation task where the scope, rules and acceptance criteria are clear and documented. Sonnet excels at following a well-written spec.
+- **Haiku** for information retrieval and mechanical file operations: searching for symbols or patterns across the codebase, building lists of files matching criteria, find-and-replace operations, and simple data extraction. These tasks are fast, reliable, and cheap, freeing Opus and Sonnet for higher-level work.
 - Don't throttle concurrency to save usage. Run independent agents together. The economy that matters is model choice, not agent count.
 
 ## Writing a subagent prompt

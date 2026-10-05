@@ -200,7 +200,7 @@ These layouts demonstrate the flexibility of the new grid system for creating en
 | `objectives` | Array of objective `aims`, each containing `tasks`. Drives the objectives HUD. |
 | `startItemsInInventory` | Array of items the player starts with (e.g., a phone, lockpick, workstation). |
 | `flags` | Map of VM flag arrays by VM name. Populated via ERB helper `vm_flags_json('vm_name')`. |
-| `show_scenario_brief` | When to show the brief: `"on_start"`, `"on_resume"`, or omit. |
+| `show_scenario_brief` | When to pop up the brief: `"on_start"` (every load), `"on_resume"` (only when resuming a game with progress), `"once"` (first start only, after any opening cutscene; recorded in the save so a reload doesn't reopen it), or omit (as `"on_start"`). The brief is always in the Notepad. |
 | `disableAttacks` | `true` turns off player attacks: no punching, no Interact/Jab/Cross toggle in the HUD (Q does nothing), and no combat step in the tutorial. NPCs can't be knocked out, so the validator skips its KO-resilience check. Used by the SIS serious games. |
 | `gameClock` | Optional in-game time: `{ "start": "Tue 07:30" }`. The command board and SIEM clocks show the start plus elapsed game time instead of the real wall clock, and board entries are stamped with it. Game time (and every scenario timer) resumes after a reload. |
 | `music` | Dynamic music event system. See Music System section. |
@@ -376,7 +376,7 @@ This laptop object will be placed at the next available `pc` slot in the room te
 | `important` | optional | `true` marks item as important in inventory |
 | `isEndGoal` | optional | `true` marks item as the scenario's win condition |
 | `triggerOnInteract` | optional | Array of actions fired on interaction. Overrides default type-based minigame behavior. See "Object Interaction Actions" below. |
-| `observationDisplay` | optional | `"gameDisplay"` for modal observation display, or omit for toast notification |
+| `observationDisplay` | optional | `"gameDisplay"` for a modal observation display. Omit it and a text-only object opens the examine view (see "Observation Display Mode") |
 | `onRead` | optional | `{ "setVariable": { "var_name": true } }` — sets a global variable on read |
 | `onPickup` | optional | `{ "setVariable": { "var_name": true } }` — sets a global variable on pickup |
 | `onInteract` | deprecated | Legacy interaction handler. Use `triggerOnInteract` + `observationDisplay` instead. |
@@ -591,7 +591,7 @@ Control how observation text is displayed using `observationDisplay`:
 
 **Display modes**:
 - `"gameDisplay"` - Full-screen modal dialog requiring player to click "Close" (use for critical information that must be read)
-- Default (omit field) - Auto-dismissing toast notification with 5-second timer (use for routine observations)
+- Default (omit field) - The **examine view** for text-only objects: the sprite at twice its size in the room (a whole-number multiple of its pixels, at least 4x), the name, then `observations` and `text`, closed with Close or Esc. It opens for a room object that is not takeable, locked, readable-with-text or otherwise actionable, and has `observations` or `text`; and for any inventory item whose click does nothing else (a single key included; the key ring, phones, notepads, readable items and tools keep their own action). An object with no `observations` or `text` still gets the old toast.
 
 #### Supported Action Types
 
@@ -960,6 +960,7 @@ Barks are triggered via event mappings (see below). Each NPC uses its own audio 
 
 - **TTS**: automatically used when the NPC has a `voice` config. No extra field needed.
 - **`barkDelay`**: milliseconds to wait after the event fires before showing the bark (default `0`). Use to stagger responses from multiple NPCs reacting to the same event so they don't all speak simultaneously.
+- **Barks wait behind a minigame** (any except phone chat) and are released when it closes (`bark-release-policy.js`). They come out first in, first out, one every 2.5 s. Before each one shows, the mapping's `condition` is run again against the original event (so a `globalVars.x` term reads the current value), and a text with `skipIfGlobal` checks that global again; a bark that no longer passes is dropped, so write conditions that say when a line has stopped being true ("next is the restore" should require `!globalVars.restore_done`). A bark with no condition is never dropped for being stale. If more than 3 are waiting, the oldest ones beyond the newest 3 are dropped, but only if the same text is in the NPC's phone thread; barks from person NPCs have no such copy and are never dropped by the cap. Drops are logged with `console.debug` ("stale" or "capped").
 
 #### NPC Timed Conversations (opening cutscenes)
 

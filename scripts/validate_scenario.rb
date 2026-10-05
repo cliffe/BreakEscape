@@ -283,7 +283,7 @@ def check_unknown_fields(json_data)
     bark message barkDelay
     targetKnot conversationMode background disableClose
     patrolOverride setPatrolSpeed setDwellMultiplier setVisible
-    sendTimedMessage setGlobal completeTask unlockTask unlockAim
+    sendTimedMessage setGlobal completeTask skipTask unlockTask unlockAim
     _comment
   ]
 
@@ -2706,8 +2706,10 @@ def check_common_issues(json_data, valid_item_types = nil)
     issues << "✅ GOOD PRACTICE: Scenario uses timedConversation.skipIfGlobal — the opening briefing will not replay when the player resumes the scenario."
   end
 
-  if has_opening_briefing_timed_conversation && json_data['show_scenario_brief'] != 'on_resume'
-    issues << "⚠️ WARNING: Scenario has a start-room opening timedConversation briefing (delay: 0 + waitForEvent: 'game_loaded') but show_scenario_brief is '#{json_data['show_scenario_brief'] || 'missing'}'. Set 'show_scenario_brief': 'on_resume' so the scenario brief does not pop at mission start and overlap/close the opening conversation."
+  # "once" is fine too: the engine holds the popup until the opening cutscene has closed
+  # (helpers.js showBriefWhenClear) and records it, so a reload doesn't reopen it.
+  if has_opening_briefing_timed_conversation && !%w[on_resume once].include?(json_data['show_scenario_brief'])
+    issues << "⚠️ WARNING: Scenario has a start-room opening timedConversation briefing (delay: 0 + waitForEvent: 'game_loaded') but show_scenario_brief is '#{json_data['show_scenario_brief'] || 'missing'}'. Set 'show_scenario_brief': 'on_resume' (brief only on resume) or 'once' (brief once, after the opening, never again) so the scenario brief does not pop up on every load."
   end
 
   if collection_groups_used.any? && (collection_groups_used & target_groups_used).any?
@@ -3034,9 +3036,9 @@ def check_unheard_room_triggers(json_data, repo_root)
           pe = node['eventPattern'].to_s
           pev, parg = pe.split(':', 2)
           at = case pev
-               when 'room_entered' then parg if rooms.key?(parg)
-               when 'npc_ko', 'conversation_closed' then npc_room[parg] if npc_person[parg]
-               end
+          when 'room_entered' then parg if rooms.key?(parg)
+          when 'npc_ko', 'conversation_closed' then npc_room[parg] if npc_person[parg]
+          end
           v.each_key { |g| setters[g] << (at || :any) }
         elsif k == 'globalVarOnKO' && v.is_a?(String)
           setters[v] << (node['npcType'] == 'person' && room_id ? room_id : :any)
@@ -3275,17 +3277,29 @@ def check_recurring_bugs(json_data, repo_root)
   end
 
   # --- 4. sprites: missing files, legacy sheets, missing talk/viseme art (m04 Vance, m05, m06 Satoshi)
+  # Character atlases are loaded by key from assets/characters (js/systems/character-textures.js);
+  # frame-based sheets (legacy hacker, beds) are preloaded with this.load.spritesheet in game.js.
   game_js = File.join(public_dir, 'js/core/game.js')
-  loaded_sheets = File.exist?(game_js) ? File.read(game_js).scan(/this\.load\.(?:atlas|spritesheet)\(\s*'([^']+)'/).flatten.to_set : nil
+  preloaded_sheets = File.exist?(game_js) ? File.read(game_js).scan(/this\.load\.spritesheet\(\s*'([^']+)'/).flatten.to_set : Set.new
+  sheet_loadable = lambda do |key|
+    preloaded_sheets.include?(key) ||
+      %w[png json].all? { |ext| File.exist?(File.join(public_dir, "assets/characters/#{key}.#{ext}")) }
+  end
+  unloadable_sheet = lambda do |key|
+    "neither assets/characters/#{key}.png and #{key}.json nor a this.load.spritesheet('#{key}' entry in game.js exists"
+  end
   legacy_talk = { 'hacker' => 'assets/characters/hacker-talk.png', 'hacker-red' => 'assets/characters/hacker-red-talk.png' }
   asset_exists = ->(rel) { rel.is_a?(String) && File.exist?(File.join(public_dir, rel)) }
   all_npcs.each do |rid, i, npc|
     next if npc['npcType'] == 'phone'
     path = "rooms/#{rid}/npcs[#{i}]"
     sheet = npc['spriteSheet']
-    if sheet && loaded_sheets && !loaded_sheets.include?(sheet)
-      issues << "⚠️ WARNING: '#{path}' (#{npc['id']}) uses spriteSheet '#{sheet}', which game.js never loads " \
-                "(no this.load.atlas/spritesheet for it). The NPC renders as a missing texture. Use a loaded sheet or add it to game.js."
+    if %w[person both].include?(npc['npcType'])
+      world_sheet = sheet || 'hacker'
+      unless sheet_loadable.call(world_sheet)
+        issues << "❌ ERROR: '#{path}' (#{npc['id']}) uses spriteSheet '#{world_sheet}', but #{unloadable_sheet.call(world_sheet)}. " \
+                  "The NPC gets no world sprite. Use an existing sheet, or add the atlas files."
+      end
     end
     %w[spriteTalk spriteVisemes avatar].each do |field|
       val = npc[field]
@@ -3312,6 +3326,12 @@ def check_recurring_bugs(json_data, repo_root)
                   "Add \"spriteVisemes\": \"#{cand}\" so their portrait lip-syncs."
       end
     end
+  end
+
+  player_sheet = json_data['player'].is_a?(Hash) ? json_data['player']['spriteSheet'] : nil
+  if player_sheet.is_a?(String) && !player_sheet.empty? && !sheet_loadable.call(player_sheet)
+    issues << "❌ ERROR: 'player' uses spriteSheet '#{player_sheet}', but #{unloadable_sheet.call(player_sheet)}. " \
+              "In standalone mode (and Rails games with no saved sprite) the player has no texture."
   end
 
   # --- 5. different characters sharing one sprite sheet (m04 guard/operatives, m08 Phantom/Netherton)

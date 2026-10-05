@@ -583,6 +583,19 @@ module BreakEscape
       room1_connections.include?(room2_id) || room2_connections.include?(room1_id)
     end
 
+    # Sprite sheet keys for every NPC with a world sprite (npcType person or both,
+    # defaulting to 'hacker' as npc-sprites.js does) plus the scenario's player sprite.
+    def character_sprite_keys
+      (scenario_data['rooms'] || {}).values
+        .select { |room| room.is_a?(Hash) }
+        .flat_map { |room| room['npcs'].is_a?(Array) ? room['npcs'] : [] }
+        .select { |npc| npc.is_a?(Hash) && %w[person both].include?(npc['npcType']) }
+        .map { |npc| npc['spriteSheet'].presence || 'hacker' }
+        .push(scenario_data.dig('player', 'spriteSheet').presence)
+        .compact
+        .uniq
+    end
+
     # Find NPC in scenario data
     def find_npc_in_scenario(npc_id)
       scenario_data['rooms']&.each do |_room_id, room|
@@ -697,6 +710,10 @@ module BreakEscape
       # Returns scenario data without room contents for lazy-loading
       # This significantly reduces initial payload by only sending metadata
       filtered = scenario_data.deep_dup
+
+      # Character atlases the client should preload. NPCs are stripped below, so
+      # send only their sprite keys (see public/break_escape/js/systems/character-textures.js).
+      filtered['characterSprites'] = character_sprite_keys
 
       # Remove all room contents - they'll be lazy-loaded via /room/:room_id endpoint
       unlocked_rooms = player_state['unlockedRooms'] || []
@@ -1106,6 +1123,41 @@ module BreakEscape
 
       mission_just_concluded = was_concluded_before && mission_concluded_at.present?
       response = { success: true, taskId: task_id, missionConcluded: mission_just_concluded }
+      response[:warning] = 'Complete required objectives first to conclude the mission.' if conclusion_result == false
+      response
+    end
+
+    # Mark a task skipped: the story closed it off, so it can no longer be
+    # done (sis01: a SEVER without sign-offs). A skipped task:
+    #  - never counts in tasks_completed, so the task share of the score is lost;
+    #  - no longer blocks its aim, which completes with a gap (and earns the aim
+    #    share, since the aim's goal was reached another way);
+    #  - never satisfies concludeRequires.tasksCompleted.
+    # A completed task is left alone, and complete_task! can still complete a
+    # skipped one later. Mirrors ObjectivesManager#skipTask.
+    def skip_task!(task_id)
+      initialize_objectives
+
+      task = find_task_in_scenario(task_id)
+      return { success: false, error: 'Task not found' } unless task
+
+      current = player_state.dig('objectivesState', 'tasks', task_id, 'status')
+      return { success: true, taskId: task_id, status: current, message: "Already #{current}" } if %w[completed skipped].include?(current)
+
+      was_concluded_before = mission_concluded_at.nil?
+
+      entry = player_state['objectivesState']['tasks'][task_id] ||= {}
+      entry['status'] = 'skipped'
+      entry['skippedAt'] = Time.current.iso8601
+
+      conclusion_result = check_aim_completion(task['aimId'])
+      recheck_pending_mission_conclusions!
+      self.score = calculate_task_score.round
+
+      save!
+
+      mission_just_concluded = was_concluded_before && mission_concluded_at.present?
+      response = { success: true, taskId: task_id, status: 'skipped', missionConcluded: mission_just_concluded }
       response[:warning] = 'Complete required objectives first to conclude the mission.' if conclusion_result == false
       response
     end
@@ -1797,7 +1849,8 @@ module BreakEscape
       return if player_state.dig('objectivesState', 'aims', aim_id, 'status') == 'completed'
 
       all_complete = aim['tasks'].all? do |task|
-        task['optional'] == true || task_status(task['taskId']) == 'completed'
+        # skipped: closed off by the story (skip_task!); the aim completes with a gap
+        task['optional'] == true || %w[completed skipped].include?(task_status(task['taskId']))
       end
 
       if all_complete

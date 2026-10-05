@@ -52,6 +52,9 @@ VAR cover_burned = false
 VAR cover_restored = false
 VAR insider_evidence_partial = false
 VAR insider_identified = false
+// Round 3 (best M4): retire the lanyard and sticky-note options once those are in hand.
+VAR staff_lanyard_obtained = false
+VAR password_hints_found = false
 
 // ===========================================
 // ENTRY
@@ -271,7 +274,7 @@ Gary Whitlock: Shared admin credential on the backup box. Never rotated. I know.
 
 Gary Whitlock: It's on the list. The list is four years long, and the list is why we're here.
 
-Gary Whitlock: Emma2018. Hospital1987. StCatherines. One of those three gets you an SSH session. I'd try the middle one.
+Gary Whitlock: Emma2018. Hospital1987. StCatherines. One of those three gets you an SSH session.
 
 -> offer_cabinet
 
@@ -378,7 +381,7 @@ Gary Whitlock: And now you've walked in with one of them in your hand.
 
 Narrator: He peels the sticky note off the monitor bezel.
 
-Gary Whitlock: Shared admin credential on the backup box, never rotated. Emma2018, Hospital1987, StCatherines. Middle one, I'd bet.
+Gary Whitlock: Shared admin credential on the backup box, never rotated. Emma2018, Hospital1987, StCatherines.
 
 Gary Whitlock: I know how that looks. Put it in the report. Put all of it in.
 
@@ -430,7 +433,7 @@ Gary Whitlock: If you can get into it, take the lot. Better your hands than the 
 + {not topic_vulnerability} [Walk me through the vulnerability.]
     -> discuss_vulnerability
 
-+ {not topic_passwords} [Is there anything reused on that backup server I should try?]
++ {not topic_passwords and not password_hints_found} [Is there anything reused on that backup server I should try?]
     -> discuss_passwords
 
 + {not topic_family} [Who's in the photo?]
@@ -439,7 +442,7 @@ Gary Whitlock: If you can get into it, take the lot. Better your hands than the 
 + {board_coverup_email_found and not gary_protected_locally} [There's something in the boardroom you need to see.]
     -> tell_him_about_board
 
-+ {(cover_burned or gave_keycard) and not cover_restored and not gave_lanyard and (not lanyard_refused or gary_influence >= 15)} [Someone's pulled my booking with security. I need something that holds up.]
++ {(cover_burned or gave_keycard) and not cover_restored and not gave_lanyard and not staff_lanyard_obtained and (not lanyard_refused or gary_influence >= 15)} [Someone's pulled my booking with security. I need something that holds up.]
     -> the_lanyard
 
 + {insider_evidence_partial and gave_keycard and not insider_identified} [Someone inside helped ENTROPY in. Was that you?]
@@ -509,19 +512,41 @@ Gary Whitlock: Unauthenticated remote code execution. You don't need a password,
 
 Gary Whitlock: A clean version was out within days. We are still running the poisoned build, in 2024, on the box that holds every clinical backup in this hospital.
 
+// Playtest loop round 1 (A4/R8): each follow-up offers the other, so the pointer at
+// the module isn't lost by asking "why reachable" first.
 + [Why is that box even reachable?]
-    ~ gary_influence += 5
-    # influence_increased
-    Gary Whitlock: A contractor set it up in 2011. Every year since, moving it's been on a list under something more urgent.
-    Gary Whitlock: Nobody decides to be insecure. They just keep deciding something else matters more.
+    -> vuln_reachable
+
++ [Then it works both ways. Their door is my door.]
+    -> vuln_door
+
+=== vuln_reachable ===
+~ gary_influence += 5
+# influence_increased
+Gary Whitlock: A contractor set it up in 2011. Every year since, moving it's been on a list under something more urgent.
+Gary Whitlock: Nobody decides to be insecure. They just keep deciding something else matters more.
+{vuln_door:
+    ~ hub_quiet = true
+    -> hub
+}
++ [Then it works both ways. Their door is my door.]
+    -> vuln_door
++ [Right.]
     ~ hub_quiet = true
     -> hub
 
-+ [Then it works both ways. Their door is my door.]
-    ~ gary_influence += 8
-    # influence_increased
-    Gary Whitlock: *grimly satisfied* It does. Scan it, fingerprint the version, and there's a module that'll walk straight in.
-    Gary Whitlock: Fourteen years that hole's been there. Might as well get one useful night out of it.
+=== vuln_door ===
+~ gary_influence += 8
+# influence_increased
+Gary Whitlock: *grimly satisfied* It does. Scan it, fingerprint the version, and there's a module that'll walk straight in.
+Gary Whitlock: Fourteen years that hole's been there. Might as well get one useful night out of it.
+{vuln_reachable:
+    ~ hub_quiet = true
+    -> hub
+}
++ [Why is that box even reachable?]
+    -> vuln_reachable
++ [Right.]
     ~ hub_quiet = true
     -> hub
 
@@ -533,7 +558,7 @@ Narrator: He peels a curling sticky note off the monitor bezel and holds it up, 
 
 Gary Whitlock: Shared admin credential on the backup box. Never rotated. Been on my list since 2021.
 
-Gary Whitlock: Emma2018. Hospital1987. StCatherines. One of those three gets you an SSH session and I'd put money on the middle one.
+Gary Whitlock: Emma2018. Hospital1987. StCatherines. One of those three gets you an SSH session.
 
 Gary Whitlock: Go on, say it. It's a disgrace.
 

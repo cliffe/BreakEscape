@@ -1,5 +1,6 @@
 import { COMBAT_CONFIG } from '../config/combat-config.js';
 import { CombatEvents } from '../events/combat-events.js';
+import { closeMinigameOnDamage } from './player-damage-interrupt.js';
 
 let state = null;
 
@@ -47,6 +48,9 @@ function damagePlayer(amount) {
       delta: -amount
     });
   }
+
+  // Taking damage closes any open minigame so the player can respond
+  closeMinigameOnDamage(amount);
 
   // Check for KO
   if (state.currentHP <= 0 && !state.isKO) {

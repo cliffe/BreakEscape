@@ -41,6 +41,7 @@ completes the task; the playtest reaches them by playing, not by setting them.
 | 1 | `talk_to_sarah` | `briefing_played=true` → Sarah eventMapping → `completeTask` |
 | 1 | `check_monitoring_station` | `monitoring_station_viewed=true` → Sarah eventMapping → `completeTask` |
 | 1 | `collect_mar_charts` | `paper_charts_collected=true` + `item_picked_up:notes` event → ObjectivesManager → `completeTask` |
+| 1 (optional) | `pump_dose_check` | `pump_dose_correct=true` or `drug_library_override=true` → bed2_patient eventMapping → `completeTask` (in Assess Ward 7 since the tidy round) |
 | 1 side-fx | Bed 4 safe, IT Office unlocked | `bed4_escalated=true` (cancels death timer) + `it_security_office` pushed to `unlockedRooms` |
 | 2 | `meet_ravi` | Talk to Ravi → `siem_briefing` knot → `#complete_task:meet_ravi`; also `#unlock_task:access_siem` + `#unlock_task:vpn_anomaly` simultaneously |
 | 2 | `access_siem` | `siem_escalated=true` → Ravi eventMapping → `completeTask`; either order vs `vpn_anomaly` |
@@ -48,11 +49,12 @@ completes the task; the playtest reaches them by playing, not by setting them.
 | 2 | `brief_ravi` | `vpn_anomaly_identified=true` → Ravi sets `ravi_vpn_briefed=true` → second eventMapping → `completeTask` |
 | 2 side-fx | David's gate + MIR door | `network_rules_reviewed=true` (gates David's PIN dialogue) + MIR in `unlockedRooms` |
 | 3 | `david_safety_case` | `safety_claim_hc001_assessed=true` → David eventMapping → `completeTask` |
+| 3 (SEVER without forms) | `ravi_signoff`, `david_safety_case` | `network_isolated=true` with `network_isolation_authorised` false → Sarah `skipTask` mapping → shown as skipped, not counted; the aim completes |
 | 3 | `authorise_isolation_panel` | Sets `itsec_authorised`, `clinical_eng_authorised`, `network_isolation_authorised`, `network_isolated=true` → Ravi eventMapping → `completeTask` (dual-auth minigame bypassed) |
 | 4 | `initiate_backup` | `backup_restore_initiated=true` → Helen eventMapping → `completeTask` |
 | 4 | `verify_drug_library` | `drug_library_verified=true` → David eventMapping → `completeTask`; also triggers Sharma `debrief_started=true` |
+| 4 (optional) | `warn_sarah` | locked until `drug_library_compromised=true` (Sarah `unlockTask`); `#complete_task:warn_sarah` in `post_drug_tamper` |
 | 4 | `helen_ico_advisory` | `ico_notified=true` → Helen eventMapping → `completeTask` |
-| 4 | `pump_dose_check` | `pump_dose_correct=true` → bed2_patient eventMapping → `completeTask` |
 | 5 | `attend_debrief` | `debrief_complete=true` → Priya S. eventMapping → `completeTask` |
 
 ### Things that were previously bypassed
@@ -89,7 +91,7 @@ No blocking gaps. All P1 minigames are implemented and the scenario can be playe
 ## PHASE 1 — WARD 7 (Starting Room)
 
 ### On game load
-- [ ] Scenario brief appears (`show_scenario_brief: "on_start"`)
+- [ ] Scenario brief appears after Sarah's opening, on the first start only (`show_scenario_brief: "once"`); a reload leaves it in the Notepad
 - [ ] Cutscene music starts (or noir if `briefing_played` already true)
 - [ ] Player spawns in Ward 7
 - [ ] Patrol nurse is moving between waypoints at 80px/s, dwelling at each bed

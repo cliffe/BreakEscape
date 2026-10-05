@@ -126,6 +126,16 @@
   "m02_ransomed_trust": {
     "globals": {
       "player_name": "Agent 0x00",
+      "read_night_rota": false,
+      "keycard_held": false,
+      "reeves_known": false,
+      "val_accused": false,
+      "found_boardroom_code": false,
+      "ghost_affiliate_heard": false,
+      "it_door_open": false,
+      "player_was_ko": false,
+      "val_challenged": false,
+      "val_argument_heard": false,
       "briefing_played": false,
       "mission_started": false,
       "ransomware_deployed": true,

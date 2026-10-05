@@ -48,6 +48,8 @@ Each character includes:
 
 ### Basic Loading
 
+In Break Escape itself you don't add this call: the game loads the atlases a scenario uses by key (`js/systems/character-textures.js`), so dropping `<key>.png` and `<key>.json` in `assets/characters/` and setting `"spriteSheet": "<key>"` is enough. The snippet below shows plain Phaser usage.
+
 ```javascript
 function preload() {
     this.load.atlas(

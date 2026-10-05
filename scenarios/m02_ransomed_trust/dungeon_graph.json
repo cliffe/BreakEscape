@@ -231,8 +231,8 @@
       "optional": false
     },
     {
-      "id": "dr_kim_s_reply_21_may",
-      "label": "Dr. Kim's Reply -- 21 May",
+      "id": "dr_kim_s_reply_12_november",
+      "label": "Dr. Kim's Reply -- 12 November",
       "kind": "item",
       "optional": false
     },
@@ -821,7 +821,7 @@
     },
     {
       "from": "lock_it_filing_cabinet",
-      "to": "dr_kim_s_reply_21_may",
+      "to": "dr_kim_s_reply_12_november",
       "soft": false
     },
     {

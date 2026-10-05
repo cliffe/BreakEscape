@@ -179,7 +179,9 @@ module SyncStateLoad
       @clock = { 'elapsedMs' => 600_000, 'timers' => { 'elapsedMs' => 600_000, 'fired' => ['intro'], 'cancelled' => [], 'started' => {} } }
     end
 
-    def text(len) = SecureRandom.alphanumeric(len).scan(/.{1,8}/).join(' ')
+    def text(len)
+      SecureRandom.alphanumeric(len).scan(/.{1,8}/).join(' ')
+    end
 
     def note(i)
       { 'id' => "note_#{i}", 'title' => "Note #{i}", 'text' => text(600), 'timestamp' => 1_700_000_000_000 + i,
@@ -194,7 +196,9 @@ module SyncStateLoad
         'storyPath' => "scenarios/x/contact_#{i}.json", 'currentKnot' => 'hub' }
     end
 
-    def tick_clock(ms) = @clock['elapsedMs'] = @clock['timers']['elapsedMs'] = @clock['elapsedMs'] + ms
+    def tick_clock(ms)
+      @clock['elapsedMs'] = @clock['timers']['elapsedMs'] = @clock['elapsedMs'] + ms
+    end
 
     def change_global!
       key = "flag_#{@rng.rand(1..140)}"
@@ -276,8 +280,8 @@ module SyncStateLoad
           model.tick_clock(interval_ms)
           roll = rng.rand
           change = if roll < 0.15 then model.change_global!
-                   elsif roll < 0.20 then model.change_phone_or_note!
-                   end
+          elsif roll < 0.20 then model.change_phone_or_note!
+          end
           payload =
             if opts.client == 'legacy'
               model.full

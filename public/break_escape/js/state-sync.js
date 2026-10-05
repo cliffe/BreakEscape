@@ -28,7 +28,7 @@ const json = v => JSON.stringify(v);
  *   shared by the team:  globalVariables, npcVisibility, scenarioClock,
  *                        commandBoardLog, triggeredEvents
  *   per player:          currentRoom, notes, phoneState, npcInkVariables,
- *                        biometricSamples, timedMessages
+ *                        biometricSamples, timedMessages, scenarioBriefShown
  * buildPayload() builds the two groups separately, in that order.
  *
  * Every request carries clientTs, which only increases within a page. The
@@ -122,6 +122,9 @@ export class StateSync {
     const npcInkVariables = window.npcConversationStateManager?.exportNpcInkVariables?.();
     if (npcInkVariables && Object.keys(npcInkVariables).length > 0) out.npcInkVariables = npcInkVariables;
 
+    // show_scenario_brief "once": the brief popup has been shown in this game
+    if (window.gameState?.scenarioBriefShown) out.scenarioBriefShown = true;
+
     // Lifted fingerprints, plain fields only, so they survive a reload.
     const biometricSamples = (window.gameState?.biometricSamples || []).map(s => ({
       id: s.id, type: s.type, owner: s.owner, ownerId: s.ownerId, ownerName: s.ownerName,
@@ -195,6 +198,11 @@ export class StateSync {
       ack.currentRoom = full.currentRoom;
     }
 
+    if (full.scenarioBriefShown && !this.confirmed.scenarioBriefShown) {
+      body.scenarioBriefShown = true;
+      ack.scenarioBriefShown = true;
+    }
+
     // Phone threads come pre-filtered (exportPhoneState onlyChanged)
     if (full.phoneState) body.phoneState = full.phoneState;
 
@@ -247,7 +255,7 @@ export class StateSync {
       }
       this.confirmed[section] = kept;
     }
-    for (const key of [...WHOLE_SECTIONS, 'currentRoom', 'timedMessagesKey', 'clockKey', 'clockElapsedMs']) {
+    for (const key of [...WHOLE_SECTIONS, 'currentRoom', 'scenarioBriefShown', 'timedMessagesKey', 'clockKey', 'clockElapsedMs']) {
       if (ack[key] !== undefined) this.confirmed[key] = ack[key];
     }
     if (body.scenarioClock) this.clockConfirmedAt = now;
