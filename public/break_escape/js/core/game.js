@@ -32,6 +32,7 @@ import { initScenarioMusicEvents } from '../music/scenario-music-events.js';
 import { ScenarioTimerUI } from '../ui/scenario-timer.js';  // [Phase 5] Countdown timer HUD widget
 import { ScenarioTimerDispatcher } from '../ui/scenario-timer-dispatcher.js';  // [Phase 5] Timer event dispatcher
 import { GameClock } from '../systems/game-clock.js';  // Elapsed game time (resumes after a reload) and the in-game clock
+import { sightChallengeWatcher } from '../systems/npc-sight-challenge.js';  // Opt-in los.challengeOnSight guards
 import { CommandBoardRecorder } from '../minigames/command-board/command-board-timeline.js';  // Board entries stamped as they happen
 import { initLighting } from '../systems/lighting.js';
 import { collectCharacterSprites, queueCharacterAtlases, ensureCharacterTexture } from '../systems/character-textures.js';
@@ -1174,7 +1175,6 @@ export async function create() {
     COMBAT_CONFIG.validate();
     window.playerHealth = initPlayerHealth();
     window.npcHostileSystem = initNPCHostileSystem();
-    window.playerCombat = new PlayerCombat(this);
     // NPCs that turned hostile or were knocked out before a reload (E-B), before
     // any room's NPCs load; each behavior announces its restored hostility.
     if (gameScenario?.savedNpcHostility) {
