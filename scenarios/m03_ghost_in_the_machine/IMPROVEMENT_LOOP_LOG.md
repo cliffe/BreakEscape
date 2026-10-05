@@ -377,6 +377,14 @@ Confirmation runs (Sonnet, three in parallel): day, night (incl. the C10/C14 rel
 
 Leftover minors for round 2: clone choice label "Lean in to read the building directory." doesn't say it copies her badge; HaX's thread opens "Agent. What do you need?" above the interview text; grace line plays while the guard is already walking off; debrief "You did the technical work and still saw the people in it" for a player who never met Danny; C10/C14 description in PASS5_PLAYTEST.md; "Anything else, love?" straight after cloning. Engine-side: first reload went to the title screen, the second to the resume overlay (both recover).
 
+### Round 2 fix (commit a73492c)
+
+All six leftover minors fixed: clone label "[Lean in by her lanyard and let the cloner read her badge.]"; HaX phone opener "On the line, {player_name()}." (phone text); guard grace pair true at his post or walking off; "saw the people in it" gated on meeting Danny; a beat after cloning before her hub; C10/C14 rewritten (C14 not reachable). Static checks clean. No confirmation run for these (wording and one gate); the blind runs play through them.
+
+### Blind playtests (Sonnet, two personas, fresh games)
+
+Brief in scratch `m03-blind-brief.md`: testers read only the harness skill, housekeeping and what the game shows; no scenario files, reviews or scripts; flags supplied by the session policy with in-game prerequisites earned; one reload at a risky moment; scores for fun, pacing, clarity, openness and teaching.
+
 ## SecGen
 
 m03 XML missing on SecGen master. Proposed file: `SECGEN_PROPOSED_m03_ghost_in_the_machine.xml` (D1). No SecGen edits made.
@@ -518,6 +526,12 @@ Restored 1 (Nightshade, above). Changed 19, cut 3, added 0.
 - debrief: "{player_name()}. Sit down..." → "There you are. Sit down..."; "clocked you {guard_detection_count} times" → "clocked you {twice|more than twice}"; "You left the drive in her desk. The search team pulled it out..." → "The search team went through Sterling's desk this morning and found a drive. Our people had it read..."; new "It is. Next time, bring it out yourself."; new "It got done. Not cleanly. Some people who never signed up for this will remember last night. We'll still need you soon."; "Go home, {player_name()}." → "Go home and get some sleep."
 - night transition (KO variant): "Sterling is out cold on the conference room floor. You pull the door shut behind you." / "You walk out with the last of the afternoon's visitors. Nobody goes looking for her before the building shuts."
 - guard: grace line → "He'll walk on in a moment. Step back, wait until his back's turned, then try again." (narration)
+
+### Phase 5 round 2 (voiced)
+
+- guard: "I'm still stood here, you know. Away from the door." → "I can still see you, you know. Away from the door."; narrator "He'll walk on in a moment. Step back, wait until his back's turned, then try again." → "Step back from the door. Wait until his back's turned, then try again."
+- receptionist (new, after a clone): "Sorry, I was miles away. Where were we?"
+- debrief (new): "Good work last night. We'll need you soon."
 
 ## Open items
 
