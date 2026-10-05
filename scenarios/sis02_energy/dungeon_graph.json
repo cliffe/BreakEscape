@@ -69,6 +69,18 @@
       "optional": false
     },
     {
+      "id": "esd_station_battery_hall_1_hall_door",
+      "label": "ESD Station: Battery Hall 1 (Hall Door)",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "esd_station_control_room_console",
+      "label": "ESD Station: Control Room Console",
+      "kind": "item",
+      "optional": false
+    },
+    {
       "id": "network_architecture_diagram",
       "label": "Network Architecture Diagram",
       "kind": "item",
@@ -99,7 +111,7 @@
       "optional": false
     },
     {
-      "id": "action_talk_to_priya_sharma",
+      "id": "action_talk_to_priya_s",
       "label": "Post-incident debrief — Priya S. (NCSC)",
       "kind": "action",
       "optional": false
@@ -112,7 +124,7 @@
     },
     {
       "id": "action_call_marcus_initial",
-      "label": "Call Marcus Webb — report anomaly",
+      "label": "Message Marcus Webb",
       "kind": "action",
       "optional": false
     },
@@ -124,19 +136,19 @@
     },
     {
       "id": "action_contact_castletech",
-      "label": "Call CastleTech SOC — initiate enterprise isolation",
+      "label": "Message CastleTech SOC: isolate the enterprise side",
       "kind": "action",
       "optional": false
     },
     {
-      "id": "analog_thermometer_rack_a2_wall",
-      "label": "Analog Thermometer — Rack A2 Wall",
+      "id": "local_dial_gauge_rack_a2",
+      "label": "Local Dial Gauge: Rack A2",
       "kind": "item",
       "optional": false
     },
     {
-      "id": "emergency_shutdown_pushbutton",
-      "label": "Emergency Shutdown Pushbutton",
+      "id": "esd_station_inside_battery_hall_1",
+      "label": "ESD Station: Inside Battery Hall 1",
       "kind": "item",
       "optional": false
     },
@@ -171,8 +183,8 @@
       "optional": false
     },
     {
-      "id": "sis_certification_document_iec_61511",
-      "label": "SIS Certification Document (IEC 61511)",
+      "id": "sis_safety_requirements_specification_extract",
+      "label": "SIS Safety Requirements Specification (extract)",
       "kind": "item",
       "optional": false
     },
@@ -260,6 +272,16 @@
     },
     {
       "from": "scada_control_room",
+      "to": "esd_station_battery_hall_1_hall_door",
+      "soft": false
+    },
+    {
+      "from": "scada_control_room",
+      "to": "esd_station_control_room_console",
+      "soft": false
+    },
+    {
+      "from": "scada_control_room",
       "to": "network_architecture_diagram",
       "soft": false
     },
@@ -290,7 +312,7 @@
     },
     {
       "from": "npc_priya_s",
-      "to": "action_talk_to_priya_sharma",
+      "to": "action_talk_to_priya_s",
       "soft": false
     },
     {
@@ -315,17 +337,17 @@
     },
     {
       "from": "battery_hall_1",
-      "to": "analog_thermometer_rack_a2_wall",
+      "to": "local_dial_gauge_rack_a2",
       "soft": false
     },
     {
-      "from": "analog_thermometer_rack_a2_wall",
+      "from": "local_dial_gauge_rack_a2",
       "to": "historian_trend_viewer",
       "soft": false
     },
     {
       "from": "battery_hall_1",
-      "to": "emergency_shutdown_pushbutton",
+      "to": "esd_station_inside_battery_hall_1",
       "soft": false
     },
     {
@@ -355,11 +377,11 @@
     },
     {
       "from": "lock_engineering_filing_cabinet",
-      "to": "sis_certification_document_iec_61511",
+      "to": "sis_safety_requirements_specification_extract",
       "soft": false
     },
     {
-      "from": "sis_certification_document_iec_61511",
+      "from": "sis_safety_requirements_specification_extract",
       "to": "lock_sis_config_panel",
       "soft": false
     },

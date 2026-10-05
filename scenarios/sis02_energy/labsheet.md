@@ -75,7 +75,7 @@ Your investigation traces this chain to determine how far the attack progressed 
 
 ### Background and Mission
 
-You are responding as a security incident responder arriving at Albion Energy Storage, a facility managing lithium-ion batteries that store energy for grid distribution. This morning, control room operators noticed something unusual: the SCADA system's temperature sensors are showing flat-line readings (no variation), which is suspicious. You're being called in to investigate whether the SCADA system has been compromised. Critically, there's also concern about whether the Safety Instrumented System (SIS)—which is supposed to prevent dangerous hydrogen gas buildup in the battery thermal management system—might have been tampered with.
+You are part of the response and engineering team at Albion Energy Storage, a 100 MW / 200 MWh lithium-ion battery site on the Trent near Newark, booked for a 07:00 maintenance window on Saturday 21 March 2026. The SCADA engineer, Helen Marsh, got in at 06:15 and doesn't like what she sees: every reading on the control room screens is normal, too normal for a night with the batteries on charge. Nobody has spotted anything else yet; finding out what the screens are hiding is your job. Critically, there's also concern about whether the Safety Instrumented System (SIS), the separate safety controller that trips the battery racks offline automatically if cells overheat or hydrogen builds up in a hall, might have been tampered with.
 
 Your mission is to:
 - Determine if and how attackers gained access to the OT network

@@ -1246,5 +1246,89 @@
         "room": "break_room"
       }
     ]
+  },
+  "sis02_energy": {
+    "globals": {
+      "briefing_played": false,
+      "helen_briefed": false,
+      "hmi_reviewed": false,
+      "incident_folder_read": false,
+      "battery_hall_badge_collected": false,
+      "anomaly_detected": false,
+      "historian_flatline_found": false,
+      "rate_of_change_viewed": false,
+      "compare_racks_viewed": false,
+      "gauge_verdict": "",
+      "shutdown_argument": "",
+      "jump_server_confirmed": false,
+      "jump_server_isolated": false,
+      "jump_server_threat_intel_viewed": false,
+      "sis_audit_reviewed": false,
+      "castletech_contacted": false,
+      "network_isolated": false,
+      "network_isolation_authorised": false,
+      "cable_pull_agreed": false,
+      "isolation_scope": "",
+      "tom_refused_unverified": false,
+      "sis_config_seen": false,
+      "sis_certification_seen": false,
+      "sis_tamper_confirmed": false,
+      "helen_patch_view_heard": false,
+      "marcus_airgap_view_heard": false,
+      "esd_stations_live": true,
+      "early_esd_activation": false,
+      "esd_before_dial": false,
+      "esd_activated": false,
+      "evidence_before_esd": "",
+      "hydrogen_alarm": false,
+      "facility_evacuated": false,
+      "marcus_webb_contacted": false,
+      "network_isolation_requested": false,
+      "en001_claim_assessed": false,
+      "nis_form_read": false,
+      "nis_notified": false,
+      "nis_initial_choice": "",
+      "nis_deadline_missed": false,
+      "trent_water_notified": false,
+      "trent_water_raised": false,
+      "trent_water_verify_first": false,
+      "trent_lateral_ioc_viewed": false,
+      "facility_safe_state": false,
+      "priya_s_visible": false,
+      "en002_verdict": "",
+      "patch_decision": "",
+      "debrief_complete": false,
+      "network_architecture_reviewed": false
+    },
+    "npcs": [
+      {
+        "id": "helen_marsh",
+        "npcType": "person",
+        "storyPath": "scenarios/sis02_energy/ink/npc_helen_marsh.json",
+        "currentKnot": "start",
+        "room": "scada_control_room"
+      },
+      {
+        "id": "priya_s",
+        "npcType": "person",
+        "storyPath": "scenarios/sis02_energy/ink/npc_priya_s.json",
+        "currentKnot": "start",
+        "room": "scada_control_room"
+      },
+      {
+        "id": "marcus_webb",
+        "npcType": "phone",
+        "storyPath": "scenarios/sis02_energy/ink/npc_marcus_webb.json",
+        "currentKnot": "start",
+        "room": "scada_control_room"
+      },
+      {
+        "id": "tom_hadley",
+        "npcType": "phone",
+        "storyPath": "scenarios/sis02_energy/ink/npc_tom_hadley.json",
+        "currentKnot": "start",
+        "room": "scada_control_room"
+      }
+    ]
   }
 }

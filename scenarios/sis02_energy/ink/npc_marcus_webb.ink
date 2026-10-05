@@ -1,498 +1,333 @@
 // ===========================================
-// NPC: Marcus Webb (OT Security Manager)
-// Scenario: Albion Battery Hall Crisis
-// Type: Phone NPC
-// Role: Security authority; ESD direction; network isolation trade-off; CLAIM-EN-001
+// NPC: Marcus Webb (OT Security Manager, at home, on the phone). Unvoiced phone texts.
+// Scenario: sis02 Albion Battery Hall (Saturday 21 March 2026)
+// Role: cyber containment. He never authorises the ESD (decision 3): anyone may press it.
+//   Decision scenes: shut down now or logs first (MAR-1, his arguable view), a photo before the
+//   ESD (R2), how far to isolate (MAR-2, R5), what goes in the initial NIS notification (MAR-3).
+//   His other arguable view: air-gap the SIS (L4); Priya S. answers it in IEC 62443 terms.
 // ===========================================
 //
-// GLOBALS READ:
-//   jump_server_confirmed, historian_flatline_found, anomaly_detected,
-//   esd_activated, network_isolated, sis_tamper_confirmed
-//
-// GLOBALS WRITTEN:
-//   marcus_webb_contacted (set when first substantive call completes)
-//   en001_claim_assessed (set when IT/OT boundary topic discussed)
-//   ncsc_notified (set when player confirms NIS submission with Marcus)
-//
-// NOTE: Phone NPC — no position, no sprite. Accessed via site_phone inventory item.
-// timedMessages are defined in scenario.json.erb eventMappings.
-//
+// GLOBALS READ: anomaly_detected, historian_flatline_found, jump_server_confirmed,
+//   jump_server_threat_intel_viewed, jump_server_isolated, sis_tamper_confirmed, esd_activated,
+//   hydrogen_alarm, network_isolated, network_isolation_requested, nis_form_read
+// GLOBALS WRITTEN: marcus_webb_contacted (first message, M2), shutdown_argument,
+//   evidence_before_esd, cable_pull_agreed, network_isolation_authorised, isolation_scope,
+//   nis_initial_choice, nis_notified, en001_claim_assessed, marcus_airgap_view_heard
 // ===========================================
 
-// Global variables managed by scenario - declared locally and updated by game engine
 VAR anomaly_detected = false
 VAR historian_flatline_found = false
 VAR jump_server_confirmed = false
-VAR marcus_webb_contacted = false
+VAR jump_server_threat_intel_viewed = false
+VAR jump_server_isolated = false
 VAR sis_tamper_confirmed = false
 VAR esd_activated = false
+VAR hydrogen_alarm = false
 VAR network_isolated = false
-VAR ncsc_notified = false
-VAR facility_safe_state = false
 VAR network_isolation_requested = false
-VAR network_isolation_authorised = false // Synced scenario global: OT Security signed off the isolation; also set when the cable is pulled with Marcus contacted
+VAR network_isolation_authorised = false
+VAR marcus_webb_contacted = false
+VAR cable_pull_agreed = false
+VAR shutdown_argument = ""  // Synced scenario global, also set by Helen (last argument wins)
+VAR evidence_before_esd = ""
+VAR isolation_scope = ""
+VAR nis_form_read = false
+VAR nis_notified = false
+VAR nis_initial_choice = ""
+VAR en001_claim_assessed = false
+VAR marcus_airgap_view_heard = false
 
-// Local NPC state tracking
+// Local state
 VAR marcus_called = false
 VAR marcus_rdp_briefed = false
-VAR topic_isolation_discussed = false
+VAR topic_shutdown_argued = false
 VAR topic_claim001_discussed = false
-VAR topic_nis_discussed = false
-VAR influence = 0
+VAR topic_why_not_fixed = false
+VAR topic_patch_view = false
+
+-> start
 
 
 // ===========================================
-// FIRST CALL
+// FIRST MESSAGE
 // ===========================================
 
 === start ===
 #complete_task:call_marcus_initial
-
 { not marcus_called:
-    Marcus Webb: Marcus Webb.
-    Marcus Webb: Helen said you'd be in touch. What have you got?
     ~ marcus_called = true
-    -> first_call_hub
+    ~ marcus_webb_contacted = true
+    #set_global:marcus_webb_contacted:true
+    Webb.
+    Helen said you'd be in touch. Whitworth's on leave, so it's me and Helen this morning. What have you got?
+    -> first_call
 }
+-> hub
 
-{ marcus_called:
-    -> hub
-}
-
-
-=== first_call_hub ===
-
-* { anomaly_detected } [The HMI readings look normal but the analog thermometer in Battery Hall 1 reads 51°C]
-    Marcus Webb: Fifty-one. Say that again.
-    Marcus Webb: The HMI says twenty-eight and the gauge says fifty-one?
-    Marcus Webb: That gauge doesn't lie. Something's feeding the SCADA false data.
-    -> initial_assessment
-
-* { historian_flatline_found } [The historian trend for Rack A1 shows a flat line for three hours]
-    Marcus Webb: Zero variance? Not possible unless the data is synthetic. Someone replaced the real readings.
-    Marcus Webb: Do you have the jump server access logs yet? I want to see who's been on that network.
-    -> initial_assessment
-
-* [Nothing specific yet — just a gut feeling from Helen]
-    Marcus Webb: Helen's gut has been right more often than our monitoring systems. Tell her I'm listening.
-    Marcus Webb: Get me something specific — historian trend, access logs, anything.
+=== first_call ===
++ { anomaly_detected } [The dial at Rack A2 says fifty-one. The HMI says twenty-eight.]
+    Fifty-one. Say that again.
+    That dial isn't on any network. If it says fifty-one, something's feeding SCADA a story.
+    -> first_call_next
++ { historian_flatline_found } [The historian's been flat at twenty-eight since 23:12.]
+    Dead flat? Nothing real does that. Somebody's writing that value.
+    -> first_call_next
++ [Nothing solid yet. Helen doesn't like the look of the screens.]
+    Helen's gut has a better record than our monitoring. Get me something I can look at. The dial, the historian, anything.
     -> hub
 
-
-=== initial_assessment ===
-#set_global:marcus_webb_contacted:true
-
-Marcus Webb: Right. I need you to get into the Engineering Workshop and pull the jump server access logs on HMI-ENG-02.
-
-Marcus Webb: Key's in the duty desk drawer. Once you're in, look for any active sessions on JS-ALBION-01 that shouldn't be there. Dormant accounts, unusual source IPs.
-
-Marcus Webb: And find out if Helen can check the SIS configuration while you're there. I want to know if anyone touched the setpoints.
-
+=== first_call_next ===
+Get into the workshop and open the jump server log on ENG-02. The key's in the duty desk drawer.
+And look at the SIS panel while you're there. I want to know if anyone's touched the setpoints.
 -> hub
 
 
 // ===========================================
-// MAIN HUB (repeatable)
+// HUB
 // ===========================================
 
 === hub ===
-
-+ { jump_server_confirmed and sis_tamper_confirmed and not marcus_rdp_briefed } [Workshop confirmed: contractor session c.ellison active since 01:47 — SIS setpoints raised to 85°C]
++ { anomaly_detected and not esd_activated and not topic_shutdown_argued } [Helen and I think Hall 1 should come off now.]
+    -> shutdown_argument_scene
++ { anomaly_detected and not esd_activated and topic_shutdown_argued and evidence_before_esd == "" } [We're pressing the ESD now.]
+    -> evidence_scene
++ { jump_server_confirmed and not marcus_rdp_briefed } [ENG-02 shows c.ellison on the jump server since 01:47.]
     -> rdp_session_confirmed
-
-+ { network_isolation_requested and not network_isolation_authorised } [CastleTech need your authorisation to isolate enterprise traffic — Tom Hadley is standing by]
-    -> authorise_castletech_isolation
-
-+ { jump_server_confirmed and not topic_isolation_discussed } [Tell me about the network isolation decision]
-    -> isolation_trade_off
-
-+ { marcus_webb_contacted and not topic_claim001_discussed } [Ask about CLAIM-EN-001 — the IT/OT boundary]
-    -> claim_en001
-
-+ { sis_tamper_confirmed } [What should we do about the SIS patch?]
-    -> sis_patch_view
-
-+ { not topic_nis_discussed } [Ask about the NIS notification obligation]
-    -> nis_obligation
-
-+ { esd_activated and network_isolated and not ncsc_notified } [Authorise the NIS notification — submit to OFGEM and NCSC]
-    ~ ncsc_notified = true
-    #set_global:ncsc_notified:true
-    Marcus Webb: Good. I'm authorising the submission — I'll countersign as OT Security Manager.
-    Marcus Webb: Competent authority notification via OFGEM OES route. Parallel copy to NCSC incident coordination. Clock started at 06:28 this morning — we're inside the 72-hour window.
-    Marcus Webb: Make sure the HSE COMAH section is flagged too. Battery hall thermal runaway is a notifiable major accident hazard.
-    Marcus Webb: Trent Water should be contacted separately — Tom at CastleTech can facilitate that. They may have been affected via the shared file server.
-    Marcus Webb: NCSC are already sending someone. Dr Priya Sharma — she covers NIS Regulations follow-up and joint COMAH review. She'll want a debrief on everything that happened. Talk to her when she arrives.
++ { network_isolation_requested and not network_isolation_authorised } [Tom at CastleTech needs your sign-off to isolate.]
+    ~ network_isolation_authorised = true
+    #set_global:network_isolation_authorised:true
+    Signed off. I'll text Tom myself so he hears it from me.
     -> hub
-
-// Fallback A: jump server logs not yet found.
-+ { marcus_webb_contacted and not jump_server_confirmed } [What should I be looking for on the jump server?]
-    -> workshop_jump_server_guidance
-
-// Fallback B: logs found but SIS tamper not yet confirmed.
-+ { jump_server_confirmed and not sis_tamper_confirmed } [I've got the jump server logs — what else do I need in the workshop?]
-    -> workshop_sis_guidance
-
-+ [What's the current status?]
++ { jump_server_confirmed and isolation_scope == "" } [How far do we cut them off?]
+    -> isolation_scope_scene
++ { historian_flatline_found and not nis_notified } [About the NIS notification.]
+    -> nis_scene
++ { marcus_webb_contacted and not topic_claim001_discussed } [Has anyone ever written up that jump server?]
+    -> claim_en001
++ { topic_claim001_discussed and not (topic_why_not_fixed and marcus_airgap_view_heard) } [About that boundary again.]
+    -> boundary_more
++ { sis_tamper_confirmed and not topic_patch_view } [Why was the SIS patch deferred?]
+    -> sis_patch_view
++ { marcus_webb_contacted and not jump_server_confirmed } [What am I looking for on the jump server?]
+    Anyone on it who shouldn't be. Look at who, when, and where from. Then tell me.
+    -> hub
++ [Where are we?]
     -> current_status
-
-+ [Nothing right now]
-    Marcus Webb: Don't take long. If that temperature reading is real, we don't have time to spare.
++ [That's all for now.]
+    Don't be long.
     #exit_conversation
     -> hub
 
 
 // ===========================================
-// RDP SESSION CONFIRMED
+// DECISION: SHUT DOWN ON THE HAZARD, OR LOGS FIRST? (MAR-1, R1)
+// Marcus's arguable view. The player can win the argument.
+// ===========================================
+
+=== shutdown_argument_scene ===
+~ topic_shutdown_argued = true
+{ shutdown_argument == "hazard":
+    Helen says you want Hall 1 off on the dial alone.
+}
+I'd want the jump server logs before we drop half the site. If it's a sensor fault, we've paid penalties for nothing.
++ [The dial says fifty-one. Shut down on the hazard, find the cause later.]
+    ~ shutdown_argument = "hazard"
+    #set_global:shutdown_argument:hazard
+    Fair. You're right. A sensor fault doesn't put twenty-three degrees on a mechanical dial.
+    -> evidence_scene
++ [Understood. I'll get you the logs first.]
+    ~ shutdown_argument = "evidence"
+    #set_global:shutdown_argument:evidence
+    Then be quick. Every minute you're in that workshop, those cells get hotter.
+    -> hub
+
+
+// ===========================================
+// DECISION: EVIDENCE BEFORE THE ESD? (R2; sets up sis03's forensic exhibit)
+// ===========================================
+
+=== evidence_scene ===
+One thing before you press it. The ESD resets the BMS. Whatever they've written into those registers goes with it.
+If you've got ten seconds, photograph the live status on OPS-01 first. If you haven't, press it anyway.
++ [I'll photograph the screen, then press it.]
+    ~ evidence_before_esd = "photo"
+    #set_global:evidence_before_esd:photo
+    Good. Ten seconds, no more.
+    -> hub
++ [No. We press it now.]
+    ~ evidence_before_esd = "press"
+    #set_global:evidence_before_esd:press
+    Fine. Forensics will cope. The hall won't.
+    -> hub
+
+
+// ===========================================
+// THE SESSION (F3): who, how, and what next
 // ===========================================
 
 === rdp_session_confirmed ===
 ~ marcus_rdp_briefed = true
-#complete_task:confirm_sis_tamper
-
-Marcus Webb: c.ellison? That account belongs to a contractor who left eight months ago. It should have been deprovisioned on their last day.
-
-Marcus Webb: Someone has been in our SCADA network since 01:47 using dead credentials — and they've already tampered with the SIS setpoints. The safety system will not protect those cells.
-
-Marcus Webb: Right. I am authorising Emergency Shutdown — confirmed major incident, active attacker in the OT network, SIS protection compromised. I have the authority and I'm exercising it now.
-
-Marcus Webb: Two tracks, in parallel. First: get back to Battery Hall 1 and press the hardwired ESD. Red mushroom-head button near Rack A2. No keypad, no confirmation prompt — just press it. Do not wait for SCADA confirmation, it cannot be trusted.
-
-Marcus Webb: Second: physically pull the jump server Ethernet cable in the Engineering Workshop. Not a firewall rule — the actual cable. Then message Tom Hadley at CastleTech. Tell him I have authorised enterprise-side isolation under the major incident protocol.
-
-Marcus Webb: Both tracks as close together as you can manage.
-
--> hub
-
-
-// ===========================================
-// CASTLETECH ISOLATION AUTHORISATION
-// ===========================================
-
-=== authorise_castletech_isolation ===
+Ellison? That account's fourteen months dead. Fosse Controls, the lot who commissioned the grid upgrade.
+Locked on the domain when he left. Still alive on the jump server, with its default password, I'd bet.
+{ jump_server_threat_intel_viewed:
+    And from ALB-SRV-02. That's a print server. Nobody logs in from a print server.
+}
+The historian went flat at 23:12, before he logged in. So there's a second way in. The historian's proxy needs no RDP.
+{ not esd_activated:
+    If the ESD's not in, get it in. Don't wait on me.
+}
+{ jump_server_isolated:
+    You've already pulled the jump server cable. Next time, tell me first.
+- else:
+    Pull the jump server's network cable. JS-SCADA-LAN, right-hand panel. The physical cable, mind. A firewall rule won't do.
+    ~ cable_pull_agreed = true
+    #set_global:cable_pull_agreed:true
+}
+Then message Tom at CastleTech for the enterprise side. I'll tell him it's coming from me.
 ~ network_isolation_authorised = true
 #set_global:network_isolation_authorised:true
-
-Marcus Webb: Yes — I'm authorising that. Marcus Webb, OT Security Manager, Albion Energy Storage. Enterprise-side isolation under the major incident protocol.
-
-Marcus Webb: Tell Tom to block all enterprise-to-SCADA traffic at the firewall and take the jump server VPN endpoint offline. I want it logged as a priority one action.
-
-Marcus Webb: And make sure he understands — this is belt and braces alongside pulling the physical cable. Both need to happen.
-
+I'm ringing the NCSC too. They help. They don't regulate.
 -> hub
 
 
 // ===========================================
-// ISOLATION TRADE-OFF
+// DECISION: HOW FAR TO ISOLATE (MAR-2, R5, CLAIM-EN-010)
 // ===========================================
 
-=== isolation_trade_off ===
-~ topic_isolation_discussed = true
-
-Marcus Webb: Here's the problem with full network isolation right now.
-
-Marcus Webb: If I kill the SCADA-to-enterprise connection — which means the jump server AND the historian proxy — we lose automated monitoring and control of Racks B1 through C4 as well.
-
-Marcus Webb: Those racks are fine right now. But if something develops while the SCADA server can't communicate, the control system can't respond automatically.
-
-* [What's the safer choice?]
-    -> isolation_surgical_approach
-
-* [What if the attacker has a secondary pathway?]
-    -> isolation_secondary_concern
-
-* [Should we isolate before or after pressing the ESD?]
-    -> isolation_timing
-
-* [What's the worst case if we isolate too early?]
-    -> isolation_worst_case
-
-
-=== isolation_surgical_approach ===
-
-Marcus Webb: Surgical isolation first. Pull the jump server cable — that kills the attacker's primary pathway. Then message Tom at CastleTech to close the enterprise-side connections.
-
-Marcus Webb: If the historian Modbus proxy is also compromised, I'll need to escalate that separately. One problem at a time.
-
-Marcus Webb: The key is the jump server first. That's the active session. Once that's severed, we've interrupted the real-time access the attacker has.
-
--> hub
+=== isolation_scope_scene ===
+The cable stops the RDP session. It doesn't stop the historian. That's dual-homed, and I've seen Modbus from it I can't explain.
+Cut the historian's enterprise leg and we lose the dispatch feed and NESO reporting. Ops fly blind for a day.
+Shut SCADA down and Hall 2 runs on local BMS only. Somebody walks it every hour with a gas monitor.
++ [Cut the historian's enterprise leg too. We can live without the feed.]
+    ~ isolation_scope = "historian"
+    #set_global:isolation_scope:historian
+    Agreed. I'll tell Tom it's in scope. Ops go to phone dispatch with NESO.
+    -> hub
++ [Leave the historian. Watch it, and cut it if it moves.]
+    ~ isolation_scope = "watch"
+    #set_global:isolation_scope:watch
+    Your call. If it's their second way in, we'll see it late.
+    -> hub
++ [Shut SCADA down. Hall 2 gets manual rounds.]
+    ~ isolation_scope = "scada"
+    #set_global:isolation_scope:scada
+    That stops everything. It also puts someone in Hall 2 every hour. I'll ring the shift in.
+    -> hub
++ [Let me think.]
+    Don't think too long.
+    -> hub
 
 
-=== isolation_secondary_concern ===
+// ===========================================
+// DECISION: THE INITIAL NIS NOTIFICATION (MAR-3, REG-1, decision 5)
+// ===========================================
 
-Marcus Webb: They probably do. I saw unusual Modbus traffic from the historian server last week — flagged it, didn't action it fast enough.
+=== nis_scene ===
+{ not nis_form_read:
+    We're a designated OES, so it goes to the competent authority. Ofgem, jointly with DESNZ. The NCSC get told alongside.
+    Without undue delay, seventy-two hours at the outside. The form's on the clipboard by the workshop door. Read it, then message me.
+    -> hub
+}
+Before I sign it. What do we actually know?
++ { sis_tamper_confirmed } [An intrusion, SIS setpoints changed, scope unknown. Send it as initial.]
+    -> nis_send
++ { jump_server_confirmed and not sis_tamper_confirmed } [Someone's on the control network. Scope unknown. Send it as initial.]
+    -> nis_send
++ { not jump_server_confirmed } [Falsified data on SCADA, cause unknown. Send it as initial.]
+    -> nis_send
++ [Wait until we know how far they got.]
+    ~ nis_initial_choice = "wait"
+    #set_global:nis_initial_choice:wait
+    I'd rather send what we know now and update it than send a perfect report on Tuesday.
+    Unknowns go in as unknowns. It's your call, though. I won't sign what you don't stand behind.
+    ++ [Fine. Send what we know.]
+        -> nis_send
+    ++ [No. We wait.]
+        Then I'll hold it. The clock's still running.
+        -> hub
 
-Marcus Webb: Which is why Tom at CastleTech needs to lock down the enterprise side simultaneously. Belt and braces.
-
-Marcus Webb: The historian is dual-homed — it sits in both the SCADA network and the enterprise network. If the attacker has compromised it, they could be using Modbus commands to manipulate the PLCs directly.
-
-Marcus Webb: That's why we need multiple isolation points. Not just pull one cable and assume we're safe.
-
-~ influence -= 1
-#influence_decreased
-
--> hub
-
-
-=== isolation_timing ===
-
-Marcus Webb: ESD first. The physical safety hazard takes priority over the network containment.
-
-Marcus Webb: If you isolate the network before pressing ESD, and the cells deteriorate while the SCADA is offline, there's no automated response left. The ESD is the one action that helps regardless of what the attacker does next.
-
-Marcus Webb: The sequence is: (1) press ESD — disconnect cells from the charging circuit; (2) pull the jump server cable — disconnect the attacker; (3) message Tom — isolate enterprise-side.
-
-Marcus Webb: All within about ten minutes. That's the clean response.
-
--> hub
-
-
-=== isolation_worst_case ===
-
-Marcus Webb: Let's say we isolate the network first, before pressing the ESD. The SCADA server goes offline.
-
-Marcus Webb: At that moment, Racks B1 through C4 are no longer under automated control. If any of those racks develop a fault — a charge controller failure, a cell problem — the SCADA can't see it and can't respond.
-
-Marcus Webb: The BMS in those racks has local protection, but SCADA coordination is lost. That creates a window of vulnerability that I'd rather not open.
-
-Marcus Webb: But if we press the ESD first — Racks A1 through A4 are already safe, already offline. Then we can isolate the network without that specific concern.
-
-Marcus Webb: The attacker is ejected, and the remaining racks are managed locally until we can bring SCADA back up in a clean state.
-
+=== nis_send ===
+{ nis_initial_choice == "":
+    ~ nis_initial_choice = "now"
+    #set_global:nis_initial_choice:now
+}
+~ nis_notified = true
+#set_global:nis_notified:true
+That's honest. It goes to Ofgem as an initial notification, NCSC copied. We update it when we know more.
+{ hydrogen_alarm:
+    The fire service already know. HSE get a call from me after.
+- else:
+    HSE get a call from me after.
+}
+And I'll tell NESO. Last night's charge pulled the feeder's frequency about. That's theirs to know.
 -> hub
 
 
 // ===========================================
-// CLAIM-EN-001 — IT/OT BOUNDARY
+// THE BOUNDARY (CLAIM-EN-001, R4, L4)
 // ===========================================
 
 === claim_en001 ===
 ~ topic_claim001_discussed = true
+~ en001_claim_assessed = true
 #set_global:en001_claim_assessed:true
+I have. Twice. Quarterly risk reports. Both times the board noted it and moved on.
+The jump server was meant to be one-way. Two-way RDP for commissioning, never reverted. The historian's Modbus proxy, same story.
+There's meant to be a DMZ between level four and level three. There is one. It just lets RDP through both ways.
+Accepting a risk's fine. It's meant to come back on a date. Ours never did.
+-> boundary_more
 
-Marcus Webb: I've written this up twice. Quarterly risk reports. Both times the board noted it and moved on.
-
-Marcus Webb: The jump server was set up during commissioning to allow bidirectional RDP. That was supposed to be temporary — to let the vendor configure the SCADA remotely. It was never reverted.
-
-Marcus Webb: The historian has a Modbus proxy that was enabled for vendor support access. Same story. Never removed.
-
-* [Why wasn't it fixed?]
-    -> why_not_fixed
-
-* [What should the boundary look like?]
-    -> proper_boundary_design
-
-* [Could this have been prevented?]
-    -> prevention_discussion
-
-
-=== why_not_fixed ===
-
-Marcus Webb: Cost and disruption. Reconfiguring the jump server means taking the SCADA offline. The historian proxy is vendor-supported infrastructure — touching it requires a change management process.
-
-Marcus Webb: The risk was real and documented. The organisation chose to accept it rather than pay to fix it. That's the honest answer.
-
-Marcus Webb: I've seen this pattern at every facility I've worked at. A temporary commissioning measure that's never properly decommissioned. A patch that's always "next quarter." A firewall rule that nobody remembers why it exists.
-
-Marcus Webb: And then one day, someone exploits it.
-
--> hub
-
-
-=== proper_boundary_design ===
-
-Marcus Webb: The historian should be read-only from the enterprise side with no execution capability. The jump server should be decommissioned or replaced with a one-way data diode for historian replication only.
-
-Marcus Webb: No bidirectional access between enterprise and SCADA. Not temporary, not conditional. No bidirectional access.
-
-Marcus Webb: The SIS engineering port should be completely isolated. Not even on the SCADA network. Air-gapped. Local terminal access only.
-
-Marcus Webb: And any system that bridges IT and OT — the jump server, the historian, the shared file server — should be treated as a perimeter, not as part of either zone.
-
-Marcus Webb: Every connection should be questioned: What is this for? Is it necessary? What could go wrong if it's compromised? And if the answer is "we don't know," then it shouldn't exist.
-
--> hub
-
-
-=== prevention_discussion ===
-
-Marcus Webb: Yes. If we'd done the proper boundary segmentation, this attack doesn't work.
-
-Marcus Webb: The attacker gets into enterprise IT — that part probably happens regardless. But from enterprise, they cannot reach the SCADA zone because there's no bidirectional pathway.
-
-Marcus Webb: The jump server doesn't exist. The historian proxy is one-way. The SIS is air-gapped. None of the attack routes we're seeing today would have been available.
-
-Marcus Webb: That was preventable. The cost of prevention was maybe £40,000 and two weeks of downtime. The cost of response is... well, let's see what the debrief says.
-
-Marcus Webb: This is why I keep writing up the risk assessments. Because eventually, someone listens.
-
--> hub
+=== boundary_more ===
++ { not topic_why_not_fixed } [Why wasn't it fixed?]
+    ~ topic_why_not_fixed = true
+    Cost and downtime. Fixing the jump server means SCADA down for a weekend. Nobody wanted to sign that.
+    A commissioning link nobody closes. A patch that's always next quarter. I've seen it everywhere I've worked.
+    -> boundary_more
++ { not marcus_airgap_view_heard } [What should the safety system's network look like?]
+    ~ marcus_airgap_view_heard = true
+    #set_global:marcus_airgap_view_heard:true
+    Honestly? Nothing. Air-gap the SIS. If it's not plugged in, they can't reach it.
+    Every time we've connected something for convenience, it's come back to bite us.
+    -> boundary_more
++ [Thanks.]
+    -> hub
 
 
 // ===========================================
-// SIS PATCH VIEW
+// THE PATCH (his part in it)
 // ===========================================
 
 === sis_patch_view ===
-
-Marcus Webb: I wrote the risk assessment on that patch eighteen months ago. The vulnerability is an authentication bypass on the SIS engineering port.
-
-Marcus Webb: The compensating control I proposed was OT-inclusive network monitoring. What actually got implemented was a SOC contract that explicitly excludes the OT zone. So the compensating control was ineffective from day one.
-
-* [Was deferral the wrong decision?]
-    -> patch_assessment_reflection
-
-* [What exactly is the vulnerability?]
-    -> patch_technical_detail
-
-* [What's your recommendation for the debrief?]
-    -> marcus_patch_rec
-
-* [Could the patch have prevented this?]
-    -> patch_prevention
-
-
-=== patch_assessment_reflection ===
-
-Marcus Webb: The decision was made on incomplete information — the board didn't understand that the compensating control didn't actually work. That's partly on me for not pushing harder.
-
-Marcus Webb: I should have said: "If you're not going to apply the patch, then we need to actually implement OT-inclusive monitoring. Not just contract with a SOC that excludes OT. That won't protect the safety system."
-
-Marcus Webb: I documented it. But I didn't force the conversation hard enough. That's my failure.
-
-Marcus Webb: Going forward: apply the patch. Spend the £180,000. Eighty-five degrees vs. fifty-five degrees — that's the cost of the deferral, sitting right there in Battery Hall 1.
-
--> hub
-
-
-=== patch_technical_detail ===
-
-Marcus Webb: The SIS engineering port has a default credential vulnerability. You can authenticate without a password using a well-known default account.
-
-Marcus Webb: Normally this would be mitigated — change the default credentials, enforce strong auth, apply vendor patches. But the patch that closes this vulnerability has been available and deferred for eighteen months.
-
-Marcus Webb: Someone on the SCADA network found the SIS engineering port, discovered the default credential vulnerability, and used it to modify the thermal runaway setpoint from 55 to 85 degrees.
-
-Marcus Webb: That's not a sophisticated attack. It's a straightforward exploitation of a documented vulnerability that we chose to leave unfixed.
-
--> hub
-
-
-=== marcus_patch_rec ===
-
-Marcus Webb: Apply the patch. Accept the recertification cost. And make sure the next risk assessment includes a realistic evaluation of whether the compensating controls actually provide the mitigation they're supposed to provide.
-
-Marcus Webb: Patch deferral is sometimes defensible. But only if the alternatives actually exist and actually work. At Albion, they didn't.
-
-Marcus Webb: The board needs to understand: accepting a risk with non-existent compensating controls is not risk acceptance. It's risk pretence.
-
--> hub
-
-
-=== patch_prevention ===
-
-Marcus Webb: Absolutely. The patch closes the authentication bypass. An attacker on the SCADA network could no longer modify SIS setpoints without proper credentials.
-
-Marcus Webb: If we'd applied the patch eighteen months ago, the attacker could still get onto the SCADA network, but they couldn't reach into the SIS. The SIS threshold would have stayed at 55 degrees.
-
-Marcus Webb: That alone would have changed the outcome. The cells would have still heated up, but the SIS would have tripped automatically. No need for a hardwired ESD. The safety system would have worked as designed.
-
-Marcus Webb: Instead, we left it unfixed. And now someone's life — or the life of this facility — depended on an old thermometer and a red button on a wall.
-
+~ topic_patch_view = true
+I wrote that deferral up in September 2024. The control we accepted was SOC monitoring. The contract excluded OT, so it never existed.
+That's partly on me. I wrote it down and didn't push.
+A risk accepted with a control that isn't there? That's risk pretence.
 -> hub
 
 
 // ===========================================
-// NIS OBLIGATION
-// ===========================================
-
-=== nis_obligation ===
-~ topic_nis_discussed = true
-
-Marcus Webb: We're an Operator of Essential Services under NIS Regulations 2018. We have 72 hours from detection to notify NCSC.
-
-Marcus Webb: Detection was approximately 06:28 this morning — when Helen called it in. The clock is running.
-
-Marcus Webb: There's also a potential COMAH notification to HSE. Battery hall thermal runaway is a major accident hazard under COMAH.
-
-* [What about Trent Water?]
-    Marcus Webb: Good question. We share a file server with Trent Water. Tom at CastleTech flagged unusual access patterns. If the attacker pivoted to Trent Water's network from that shared server, they need to know.
-    Marcus Webb: Trent Water runs SCADA for water treatment and pumping. The cross-sector implications could be significant.
-    -> hub
-
-* [What needs to go in the notification?]
-    Marcus Webb: Nature of incident, timeline, affected systems, physical consequences, actions taken. There's a printed NIS form on the wall in the control room — it covers all the mandatory fields.
-    Marcus Webb: Call me back on this phone when you're ready and I'll countersign as OT Security Manager before it goes to OFGEM.
-    Marcus Webb: The important thing is timeliness. Late notification is itself a regulatory breach.
-    -> hub
-
-
-// ===========================================
-// CURRENT STATUS
+// STATUS
 // ===========================================
 
 === current_status ===
-
-{ not esd_activated and not jump_server_confirmed and not sis_tamper_confirmed:
-    Marcus Webb: Still waiting on both — the jump server access logs and confirmation of the SIS setpoints. Both need to be in before I can authorise shutdown.
-    -> hub
+{
+- not anomaly_detected:
+    Nothing to go on yet. Get Helen's dial read.
+- not esd_activated and shutdown_argument == "evidence" and not jump_server_confirmed:
+    Logs first, you said. Be quick about it.
+- not esd_activated and shutdown_argument == "hazard":
+    You said shut down. Hall 1's still on charge.
+- not jump_server_confirmed:
+    I want to know who's on that jump server. ENG-02, in the workshop.
+- not sis_tamper_confirmed:
+    Now the SIS panel. Check it against the certified setpoints in the cabinet.
+- not esd_activated:
+    Hall 1's still on charge. What are we waiting for?
+- not network_isolated:
+    Hall's safe. Now get them out. Cable, then Tom.
+- not nis_notified:
+    Contained. Now the notification. Read the form and message me.
+- else:
+    Contained and notified. The NCSC are sending someone. Talk to them when they arrive.
 }
-
-{ not esd_activated and not jump_server_confirmed:
-    Marcus Webb: Still waiting on the jump server logs. Get onto HMI-ENG-02 — I need to know who's been on that network before I can authorise anything.
-    -> hub
-}
-
-{ not esd_activated and not sis_tamper_confirmed:
-    Marcus Webb: Access logs received. I still need SIS confirmation — check the configuration panel against the certification document.
-    -> hub
-}
-
-{ not esd_activated:
-    Marcus Webb: You've got both confirmations. Brief me on the RDP session and I'll authorise the response.
-    -> hub
-}
-
-{ esd_activated and not network_isolated:
-    Marcus Webb: Good — ESD is done. Now we need full network isolation. Jump server cable pulled?
-    Marcus Webb: Message Tom at CastleTech and get the enterprise side locked down.
-    -> hub
-}
-
-{ network_isolated and not esd_activated:
-    Marcus Webb: Enterprise side is isolated — but the cells are still live. You need to press the physical ESD in Battery Hall 1 before we're in a contained state.
-    Marcus Webb: Red mushroom-head button near Rack A2. Press it now.
-    -> hub
-}
-
-{ esd_activated and network_isolated:
-    Marcus Webb: We're in a contained state. Immediate hazard is managed. Focus shifts to the SIS investigation and NCSC notification.
-    -> hub
-}
-
-
-// ===========================================
-// WORKSHOP INVESTIGATION GUIDANCE (split by task)
-// ===========================================
-
-=== workshop_jump_server_guidance ===
-
-Marcus Webb: The jump server — JS-ALBION-01. Get onto HMI-ENG-02 and open the access logs.
-
-Marcus Webb: I need to know: any active RDP sessions? Source IPs that don't match anything legitimate? Dormant accounts — accounts deprovisioned but never fully removed — showing active connections?
-
-Marcus Webb: If someone got into our SCADA zone, the jump server is how they did it. That log will tell me whether we have an active attacker right now.
-
--> hub
-
-
-=== workshop_sis_guidance ===
-
-Marcus Webb: Good — you've got the access logs. Now I need the SIS configuration confirmed.
-
-Marcus Webb: The SIS configuration panel is in the workshop. Compare the current thermal runaway setpoints against the IEC 61511 certification document in the filing cabinet.
-
-Marcus Webb: If those setpoints have been raised, the SIS will not trip when it should. That's what I need to know before I can authorise shutdown.
-
 -> hub
