@@ -398,6 +398,20 @@ Best lines (testers): "Ghost pulled the trigger. Someone handed them the gun."; 
 
 Merged with rulings in scratch `m03-blind-merged.md` (B-1..B-14): majors B-1 Victoria's clone reachable from any branch, B-2 visible cue at the reader, B-3 Sterling's location, B-4 blank dialogue at the end of the cloning conversation (ink or engine); minors B-5..B-12; B-13 (optional trail skippable) by design; B-14 (flags without the VM) withdrawn. Engine items noted by testers: flipper "Cancel" aborts the read; dictionary attack sometimes 15/16; tutorial prompt over the brief notes; identical phone timestamps; reload respawns in the lobby (known E2/P10).
 
+### Blind-run fix pass (commit 0b49bc8)
+
+| # | Outcome |
+|---|---|
+| B-1 | "[Is that your training lab on the whiteboard?]" is on Victoria's hub from the start, whatever branch and after a rebuff; task "Clone Victoria's keycard at her whiteboard" |
+| B-2 | New optional task "Copy the receptionist's staff badge with your cloner" unlocks with a toast when the player tries the conference reader |
+| B-3 | The panel task already named the room (the tester read harness ids); HaX's hub choice and answer now name the conference room too |
+| B-4 | Engine, not ink: the flipper opens one Continue after the cloner buzzes; a cloner click from the inventory while the flipper is open starts a new reader and ends the open one (`interactions.js:877-889`, `minigame-manager.js:21-27`). Engine item E-H for approval |
+| B-5..B-9 | Debrief and credits reworded and gated ("The drive wasn't the only paper you left behind."; "It's done. Get some rest. We'll need you soon." unless the history and catalogue came out; stealth credit "past the night guard unseen, with no excuses and no bribes"; catalogue advisories credit matches the debrief; flag-3 text no longer stale or naming the cipher) |
+| B-10, B-12 | No change: the cabinet is reachable (tester got `inRange: true`); the second file is the harness `take` |
+| B-11 | "Sable" said by the player only once they've heard it (new global `sable_named`); otherwise "[SAFETYNET. And I've read your approvals.]" with a new reply |
+
+Targeted browser check (Sonnet): running.
+
 ## SecGen
 
 m03 XML missing on SecGen master. Proposed file: `SECGEN_PROPOSED_m03_ghost_in_the_machine.xml` (D1). No SecGen edits made.
@@ -546,10 +560,16 @@ Restored 1 (Nightshade, above). Changed 19, cut 3, added 0.
 - receptionist (new, after a clone): "Sorry, I was miles away. Where were we?"
 - debrief (new): "Good work last night. We'll need you soon."
 
+### Blind-run fixes (voiced)
+
+- debrief (new variant): "The drive wasn't the only paper you left behind."
+- debrief (new variant): "It's done. Get some rest. We'll need you soon." (instead of "Clean enough. We'll need you soon." when the history or the catalogue stayed behind)
+- Victoria (new): "Then you've read more than most of my staff. You really have been thorough."
+
 ## Open items
 
 - E-1 (engine, optional, for approval): on reload the server doesn't re-derive aims whose `unlockCondition` is a globalVariable; it relies on the recorded unlock. Works for m03 today; a derived check would make story gates robust if a recorded unlock were ever lost.
 - D1 SecGen m03 XML (user).
 - Other missions' voiced-line variables: DONE, commit 94716a0 (user-approved exception): 56 lines in 23 ink files (m02 7, m04 4, m05 5, m06 9, m07 2, m08 4, nine lab instructors 25); tagdiff unchanged; JSON recompiled. m02's 7 lines lose cached clips. Left for the user: m01 (frozen) has 4 voiced hits (closing debrief :59, :120, :724, and `{lore_collected}` at :896); m08 Netherton speaks `{suite_code}` (constant 5386, cacheable as is); sis03 Eleanor speaks `{archive_pin_value}` (6767 today but marked `@random_pin`, so uncacheable if randomised); demo/test/unused library ink not changed. A dialoguelint check for this is still on offer.
-- E-A..E-D (Phase 3 round 1), E-E flag station silent drop, E-F person-NPC timed message voiced and opening the NPC story, E-G harness lists locked tasks: engine items for approval.
+- E-A..E-D (Phase 3 round 1), E-E flag station silent drop, E-F person-NPC timed message voiced and opening the NPC story, E-G harness lists locked tasks, E-H a cloner click from the inventory while the flipper is open ends the open reader and loses the read; tester-noticed: flipper "Cancel" aborts the read, dictionary attack sometimes 15/16, tutorial prompt over the brief notes, identical phone timestamps, reload respawns in the lobby: engine items for approval.
 - E-2 (superseded for m03 by P2-15; still a schema inconsistency) (engine/schema, for approval): `scenario-schema.json` forbids the hash form of `flagRewards` that `games_controller.rb` prefers, so m03 keeps three dead `emit_event` rewards to preserve index pairing.
