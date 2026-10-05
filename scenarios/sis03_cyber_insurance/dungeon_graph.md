@@ -2,7 +2,7 @@
 
 # sis03_cyber_insurance — Scenario Graph Reference
 
-T+48 hours. You are the Meridian Cyber Insurance claims team. Albion Energy Storage — the battery storage facility where a cyber attack nearly caused a thermal runaway yesterday — has filed an £8.2 million insurance claim. Eleanor Vance, your Claims Manager, has opened the file. The forensic team is already on site. Your task: verify the causal chain, assess which policy warranties were breached, and make a coverage recommendation. The decision you reach will shape not just this claim — but the market's role in critical infrastructure security.
+T+48 hours. You are the Meridian Cyber Insurance claims team. Albion Energy Storage — the battery storage facility where a cyber attack nearly caused a thermal runaway on Saturday morning — has filed an £8.2 million insurance claim. Eleanor Vance, your Claims Manager, has opened the file. The forensic team is already on site. Your task: verify the causal chain, assess which policy warranties were breached, and make a coverage recommendation. The decision you reach will shape not just this claim — but the market's role in critical infrastructure security.
 
 ## Scenario Statistics
 

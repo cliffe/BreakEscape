@@ -93,9 +93,9 @@ Simon Hartley: Meridian should cover these in full. They're not contingent on wa
 
 Simon Hartley: This is where the contested arguments live.
 
-Simon Hartley: Albion's revenue baseline during the six-week outage period comes from their National Grid ESO contracts for ancillary services: frequency response and peak shaving. During normal operations, Albion's facility generates approximately £800K per week through those contracts.
+Simon Hartley: Albion's revenue baseline during the six-week outage period comes from their NESO contracts for ancillary services: frequency response and peak shaving. During normal operations, Albion's facility generates approximately £800K per week through those contracts.
 
-Simon Hartley: Six weeks at £800K equals £4.8M in lost contracted revenue. Additionally, there are contractual penalties for non-delivery — I've calculated those at approximately £200K. But those penalties are already included in the National Grid ESO revenue figure because of how the ancillary services pricing works.
+Simon Hartley: Six weeks at £800K equals £4.8M in lost contracted revenue. Additionally, there are contractual penalties for non-delivery — I've calculated those at approximately £200K. But those penalties are already included in the NESO revenue figure because of how the ancillary services pricing works.
 
 Simon Hartley: So the total business interruption claim is £4.8M.
 
@@ -103,12 +103,12 @@ Simon Hartley: So the total business interruption claim is £4.8M.
     -> contested_business_interruption
     
 * [How confident are you in the £800K baseline?]
-    Simon Hartley: Highly confident. I reviewed Albion's contract terms with National Grid ESO, their billing records for the six months prior to the incident, and the actual capacity delivered during that period.
+    Simon Hartley: Highly confident. I reviewed Albion's contract terms with NESO, their billing records for the six months prior to the incident, and the actual capacity delivered during that period.
     Simon Hartley: The baseline is solid. The question is causality — which weeks of outage were caused by the incident, and which were pre-existing maintenance.
     -> hub
     
 * [What about other revenue streams?]
-    Simon Hartley: Albion's facility provides multiple services: energy arbitrage, grid balancing, and some wholesale energy sales. But the National Grid ESO contract is the largest revenue driver during this period.
+    Simon Hartley: Albion's facility provides multiple services: energy arbitrage, grid balancing, and some wholesale energy sales. But the NESO contract is the largest revenue driver during this period.
     Simon Hartley: I've included the lost revenue from secondary services as well — approximately £100K of the total, but it's a minor component.
     -> hub
 
