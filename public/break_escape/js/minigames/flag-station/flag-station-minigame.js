@@ -610,12 +610,18 @@ export class FlagStationMinigame extends MinigameScene {
     }
     
     async submitFlag() {
-        if (this.isSubmitting) return;
-        
         const input = this.gameContainer.querySelector('#flag-input');
         const submitBtn = this.gameContainer.querySelector('#flag-submit-btn');
         const resultEl = this.gameContainer.querySelector('#flag-result');
         const rewardEl = this.gameContainer.querySelector('#reward-notification');
+
+        // One check at a time. A second Enter while the first is in flight used to be
+        // dropped silently; say so instead. What the player typed stays in the box
+        // (the first check's success only clears the value it submitted).
+        if (this.isSubmitting) {
+            this.showResult(resultEl, 'loading', 'Still checking the last flag...');
+            return;
+        }
         
         const flagValue = input.value.trim();
         
@@ -701,8 +707,9 @@ export class FlagStationMinigame extends MinigameScene {
                     this.processRewardEvents(data.rewards);
                 }
                 
-                // Clear input
-                input.value = '';
+                // Clear the input only if it still holds the flag we submitted: the
+                // player may have typed the next one while this check was in flight.
+                if (input.value.trim() === flagValue) input.value = '';
 
                 // In launch-abort mode, show ABORT/LAUNCH buttons after successful validation
                 if (this.mode === 'launch-abort' && !this.choiceMade) {
