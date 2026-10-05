@@ -23,7 +23,7 @@ All five items below use placeholder sprites that work in-game but will look wro
 
 ### Content
 - The `ins001_assessed`, `ins003_assessed`, `ins008_assessed`, `ins009_assessed` globals now surface in the credits (SIS CLAIM SYNTHESIS section). Eleanor's debrief names the four claims but does not branch on them.
-- The Forensic Data Platform's tab content lives in engine code (`public/break_escape/js/minigames/forensic-data-platform/forensic-data-platform-minigame.js`, TAB_SETS.albion_sis03) and still contradicts the SIS02 pack in places (session source, dates, % LEL, "no record of when", firmware version). Fix it there; the scenario can't override it.
+- Done (2026-10-05): the Forensic Data Platform's tabs now live in this scenario (`fdp_terminal` minigameData `tabs`) and agree with the SIS02 pack; the engine's built-in `albion_sis03` set is gone.
 
 ---
 

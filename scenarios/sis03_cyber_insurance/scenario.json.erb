@@ -373,7 +373,7 @@ cabinet_pin = 5857 # @random_pin
 
           { "text": "── COVERAGE DECISION ──",                                                                               "style": "section-header" },
           { "text": "Position A1: Full coverage accepted (£8.2M)",                                                          "style": "entry", "condition": "globalVars.coverage_decision === 'A1'" },
-          { "text": "Position A2: Proportional coverage (approx. £6.1M)",                                                   "style": "entry", "condition": "globalVars.coverage_decision === 'A2'" },
+          { "text": "Position A2: Negotiated partial settlement (approx. £6.1M)",                                           "style": "entry", "condition": "globalVars.coverage_decision === 'A2'" },
           { "text": "Position A3: Coverage declined",                                                                       "style": "entry", "condition": "globalVars.coverage_decision === 'A3'" },
           { "text": "War exclusion: invoked under Section 5.4 LMA5567A",                                                    "style": "entry", "condition": "globalVars.war_exclusion_invoked === true" },
           { "text": "War exclusion: not invoked",                                                                            "style": "entry", "condition": "globalVars.war_exclusion_invoked !== true" },
@@ -460,8 +460,8 @@ cabinet_pin = 5857 # @random_pin
                 "outcomeQuoteSection": "cdf-s1",
                 "outcomeQuotes": {
                   "A1": "Your analysis supports full coverage — Meridian will cover the £8.2M claim. However, we're retaining counsel for the post-incident arbitration with Albion over warranty compliance in the pre-incident period.",
-                  "A2": "By finding three breaches you're reducing coverage to approximately £6.1M. That's defensible — Albion will dispute it, but the Hartley report backs the deduction. Litigation budget is already factored in.",
-                  "A3": "Denying coverage entirely is the highest-risk position. Albion will take us to court, and the judge will likely find we're being unreasonable given the hardwired emergency shutdown stopped the incident after the attacker had disabled the SIS trip. I would recommend reconsidering."
+                  "A2": "A negotiated settlement of about £6.1M. It isn't a statutory deduction: it prices the risk that we lose on section 10, section 11 or waiver, and the risk that Albion loses too. Hartley's figures support it. Albion may still go to arbitration.",
+                  "A3": "Denying coverage entirely is the highest-risk position. Albion will take us to arbitration, and the tribunal will likely find we're being unreasonable given the hardwired emergency shutdown stopped the incident after the attacker had disabled the SIS trip. I would recommend reconsidering."
                 },
                 "sections": [
                     {
@@ -476,13 +476,13 @@ cabinet_pin = 5857 # @random_pin
                         },
                         {
                           "value": "A2",
-                          "label": "Position A2 &mdash; Proportional coverage (approx. £6.1M)",
-                          "sublabel": "Warranty breaches proven and causally connected. ~25% deduction on BI and physical damage per Insurance Act 2015."
+                          "label": "Position A2 &mdash; Negotiated partial settlement (approx. £6.1M)",
+                          "sublabel": "Warranty breaches proven. Settle below the full claim to reflect the litigation risk on both sides (Insurance Act 2015 sections 10 and 11, waiver at renewal), the contested modules and betterment."
                         },
                         {
                           "value": "A3",
                           "label": "Position A3 &mdash; Decline coverage",
-                          "sublabel": "Multiple safety-critical warranty breaches; coverage declined. High litigation risk."
+                          "sublabel": "Rely on the unremedied W-07 breach (Insurance Act 2015 section 10) to decline. High litigation risk after the November 2025 renewal."
                         }
                       ]
                     },
@@ -783,7 +783,7 @@ cabinet_pin = 5857 # @random_pin
               "onceOnly": true,
               "sendTimedMessage": {
                 "delay": 6000,
-                "message": "Simon Hartley: You've seen my report. Call me if you want to walk through the contested business interruption calculation — the deferred maintenance argument is the one Meridian will push hardest on."
+                "message": "Simon Hartley: You've seen my report. Call me about the contested items: the battery modules, and the deferred maintenance argument on the outage."
               }
             }
           ]
@@ -984,7 +984,7 @@ cabinet_pin = 5857 # @random_pin
           "puzzle_graph_role": "clue",
           "puzzle_graph_aim": "investigate_claim",
           "puzzle_graph_reveals": "£8.2M claim quantum breakdown; incident timeline; containment actions — contributes to investigate_claim aim",
-          "text": "INCIDENT NOTIFICATION AND CLAIM: Meridian Claims Portal\nPolicy: MC-2023-ALBE-007\nFiled by: James Whitworth, General Manager, Albion Energy Storage Ltd\n\nPART 1: INITIAL NOTIFICATION, Saturday 21 March 2026, 07:49\nNotified by phone about 75 minutes after the emergency shutdown (within the 48-hour notification requirement); written notice the same day. Mr Whitworth was on annual leave and was briefed by phone by the site team.\nIncident type: confirmed cyber intrusion into SCADA/ICS systems\nSystems affected: PLC-BMS, SIS safety PLC, enterprise IT network\nPhysical: Battery Racks A1-A4 (Hall 1) overheated; cells did not reach thermal runaway\nContainment: hardwired ESD pressed about 06:34; jump server Ethernet cables removed 06:41; enterprise connections to the site isolated\nRegulatory: initial NIS notification sent 07:00 to Ofgem (acting jointly with DESNZ); NCSC told; NESO told of the frequency deviation\n\nPART 2: CLAIM, Tuesday 5 May 2026\nESTIMATED TOTAL LOSS: £8,200,000 (provisional)\n  Incident response costs: £1,400,000\n  Business interruption (6-week outage, 21 March to 2 May, NESO penalties): £4,800,000\n  Physical equipment damage (battery cell replacement): £1,600,000\n  Third-party liability, Trent Water Services (clean-up and investigation costs claimed from Albion): £400,000\n\nNote: Facility offline 6 weeks for forensic investigation, network remediation and SIS recertification (including the deferred firmware update). Returned to service 2 May 2026.",
+          "text": "INCIDENT NOTIFICATION AND CLAIM: Meridian Claims Portal\nPolicy: MC-2023-ALBE-007\nFiled by: James Whitworth, General Manager, Albion Energy Storage Ltd\n\nPART 1: INITIAL NOTIFICATION, Saturday 21 March 2026, 07:49\nNotified by phone about 75 minutes after the emergency shutdown (within the 48-hour notification requirement); written notice the same day. Mr Whitworth was on annual leave and was briefed by phone by the site team.\nIncident type: confirmed cyber intrusion into SCADA/ICS systems\nSystems affected: PLC-BMS, SIS safety PLC, enterprise IT network\nPhysical: Battery Racks A1-A4 (Hall 1) overheated; cells did not reach thermal runaway\nContainment: hardwired ESD pressed about 06:34; jump server's network cable pulled 06:41; enterprise connections to the site isolated\nRegulatory: initial NIS notification sent 07:00 to Ofgem (acting jointly with DESNZ); NCSC told; NESO told of the frequency deviation\n\nPART 2: CLAIM, Tuesday 5 May 2026\nESTIMATED TOTAL LOSS: £8,200,000 (provisional)\n  Incident response and forensics: £1,100,000\n  Business interruption (whole site, 100 MW, offline 21 March to 2 May; lost frequency response and trading revenue, NESO non-delivery charges): £900,000\n  Physical damage (replacement battery modules, Racks A1-A4, Hall 1): £5,000,000\n  Revalidation and recommissioning (SIS revalidation including firmware 2.4.1, Hall 1 recommissioning, grid compliance retests): £800,000\n  Third-party liability, Trent Water Services (clean-up and investigation costs claimed from Albion): £400,000\n\nNote: Facility offline 6 weeks for forensic investigation, network remediation and SIS recertification (including the deferred firmware update). Returned to service 2 May 2026.",
           "observations": "James Whitworth's incident notification and claim: the first notice from the morning of the incident, and the claim Albion's general manager filed through the Meridian Claims Portal on Tuesday.",
           "onRead": { "setVariable": { "claim_file_reviewed": true } }
         },
@@ -998,8 +998,8 @@ cabinet_pin = 5857 # @random_pin
           "readable": true,
           "puzzle_graph_role": "clue",
           "puzzle_graph_aim": "make_recommendation",
-          "puzzle_graph_reveals": "£8.2M quantum breakdown with contested BI calculation; proportional deduction analysis (~25% on BI and physical damage) — informs coverage position selection",
-          "text": "FAIRBRIDGE ASSOCIATES — Loss Adjustment Report — MC-2023-ALBE-007\nPrepared by: Simon Hartley, Senior Loss Adjuster\n\nTOTAL CLAIMED LOSS: £8,200,000\n\n(a) Incident response costs: £1,400,000 — FULLY COVERED regardless of warranty status.\n(b) Business interruption: £4,800,000 — CONTESTED. Meridian argues a portion of the outage represents pre-existing SIS recertification obligation (deferred firmware patch). My assessment: the full 6-week outage is causally attributable to the incident. Emergency recertification is a consequence of the attack, not a pre-existing scheduled obligation.\n(c) Physical damage: £1,600,000 — COVERED under affirmative cyber clause.\n(d) Third-party liability, Trent Water Services: £400,000, PROVISIONAL. A file the attacker wrote to the shared file server was opened on a Trent Water workstation. Trent Water has claimed from Albion its costs of cleaning that workstation and checking its pumping station control system. Liability and quantum depend on Trent Water's forensic findings.\n\nWARRANTY DEDUCTION ANALYSIS:\nW-07 breach is causally connected to the IT-to-OT lateral movement pathway. A proportionate deduction of 20-25% applied to items (b) and (c) — approximately £1.5-1.6M — is legally defensible under the Insurance Act 2015.\n\nMY RECOMMENDATION:\nPosition A1 (full coverage) is commercially generous but legally exposed.\nPosition A2 (partial, with ~25% deduction on BI and physical damage) is the most defensible position.\nPosition A3 (decline) is not recommended: it would likely result in litigation and regulatory criticism.\n\nEstimated settlement at Position A2: approximately £6.1-6.3M.",
+          "puzzle_graph_reveals": "£8.2M quantum breakdown with the contested business interruption, module replacement and betterment items; Insurance Act 2015 sections 10 and 11 and the negotiated A2 settlement (about £6.1M): informs coverage position selection",
+          "text": "FAIRBRIDGE ASSOCIATES: Loss Adjustment Report, MC-2023-ALBE-007\nPrepared by: Simon Hartley, Senior Loss Adjuster\n\nTOTAL CLAIMED LOSS: £8,200,000\n\n(a) Incident response and forensics: £1,100,000. Covered; invoiced and verified.\n(b) Business interruption: £900,000. CONTESTED IN PART. The whole 100 MW site was offline for six weeks (21 March to 2 May): lost frequency response and trading revenue, less costs saved, plus NESO non-delivery charges. Meridian's adjusters argue that two to three weeks of a planned recertification were owed anyway because of the deferred SIS patch. My view: the full six weeks follow from the incident; a tampered safety system is revalidated whether or not it was ever patched.\n(c) Physical damage: £5,000,000. Replacement battery modules for Racks A1-A4 (Hall 1, 100 MWh). Halden Cell Systems withdrew its warranty on every module in those racks after the overcharge and temperatures of up to about 58°C. CONTESTED IN PART: Meridian's engineers say some modules could be requalified rather than replaced.\n(d) Revalidation and recommissioning: £800,000. SIS revalidation (including firmware 2.4.1), Hall 1 recommissioning and grid compliance retests. Meridian may treat about £180,000 (the patch work Albion had deferred) as betterment.\n(e) Third-party liability, Trent Water Services: £400,000, PROVISIONAL. A file the attacker wrote to the shared file server was opened on a Trent Water workstation. Trent Water has claimed from Albion its costs of cleaning that workstation and checking its pumping station control system. Liability and quantum depend on Trent Water's forensic findings.\n\nWARRANTIES AND THE INSURANCE ACT 2015 (for counsel; quantum is my remit, coverage is not):\n- The Act does not reduce cover in proportion to a warranty breach. Proportionate remedies apply to a failure of fair presentation at placement (section 8, Schedule 1), and nobody suggests Albion misrepresented the risk.\n- Section 10: cover is suspended while a warranty breach is unremedied. W-07 was unremedied from 31 December 2025, so Meridian can argue it has no liability for a loss on 21 March.\n- Section 11: Meridian cannot rely on a breach of a term aimed at a particular kind of loss if Albion shows the breach could not have increased the risk of the loss as it happened. That is hard for W-07, since the attacker came through the segmentation gaps, and arguable for W-03.\n- Albion will also argue waiver and estoppel: Meridian renewed in November 2025 knowing the deadline would be missed.\n\nMY RECOMMENDATION:\nPosition A1 (full coverage) is commercially generous but exposed.\nPosition A2, a negotiated partial settlement of about £6.1M, prices the litigation risk on both sides of the section 10, section 11 and waiver arguments, plus the contested modules and betterment. It is the most defensible commercial outcome.\nPosition A3 (decline on W-07) is legally arguable under section 10, but the renewal memo makes it the riskiest: likely arbitration and regulatory criticism.",
           "observations": "A sealed envelope. 'FAIRBRIDGE ASSOCIATES — INDEPENDENT LOSS ADJUSTMENT — PRIVILEGED AND CONFIDENTIAL'",
           "onRead": { "setVariable": { "loss_quantum_reviewed": true } }
         },
@@ -1027,7 +1027,7 @@ cabinet_pin = 5857 # @random_pin
                 "title": "Patch Management",
                 "claimRefs": ["CLAIM-INS-003"],
                 "context": "Patches applied within 90 days, or deferred with compensating controls within 30 days. IEC 61511 safety-constraint exception applies to the deferral decision only — compensating controls must still be documented and implemented.",
-                "hint": "The deferral was legitimate under IEC 61511. The failure to implement compensating controls (network isolation, OT monitoring) was not. The 03:22 threshold change went in over the unauthenticated engineering protocol the patch closes. Could the patch reasonably have gone onto a certified SIL 2 controller in time, and would W-07 segmentation have blocked the route anyway? Consider what Arguable means here."
+                "hint": "The deferral was legitimate under IEC 61511. The compensating control Albion named, monitoring by the managed SOC, never covered OT, and nothing isolated the SIS engineering port: that was not legitimate. The 03:22 threshold change went in over the unauthenticated engineering protocol the patch closes. Could the patch reasonably have gone onto a certified SIL 2 controller in time, and would W-07 segmentation have blocked the route anyway? Consider what Arguable means here."
               },
               {
                 "id": "w07",
@@ -1071,7 +1071,371 @@ cabinet_pin = 5857 # @random_pin
           "puzzle_graph_aim": "investigate_claim",
           "observations": "A secure workstation showing the Meridian forensic team's live case file. Six data tabs are visible: ATTACK TIMELINE, JUMP SERVER LOG, HISTORIAN DATA, SIS ENGINEERING LOG, DOMAIN IMPLANT CHAIN, SOC COVERAGE REPORT.",
           "minigameData": {
-            "tabSet": "albion_sis03",
+            "tabs": [
+              {
+                "id": "timeline",
+                "label": "ATTACK TIMELINE",
+                "heading": "Attack Timeline: Albion Energy Storage Incident",
+                "blocks": [
+                  {
+                    "type": "timeline",
+                    "steps": [
+                      {
+                        "label": "Weeks 1 to 4: initial access (Ferryman Collective)",
+                        "desc": "A tampered firmware update, delivered on a USB stick by a fake printer-vendor caller, is installed on two shared office printers. The printers beacon to a command-and-control server over HTTPS every four hours. A keylogger on the printers harvests <strong>svc.deploy</strong>, CastleTech's endpoint-management service account, with admin rights on Albion and Trent Water machines."
+                      },
+                      {
+                        "label": "Weeks 5 to 8: handoff to GREYMANTLE",
+                        "desc": "svc.deploy is used to plant a service DLL implant on the domain controller (DNS-over-HTTPS command and control) and to take over ALB-SRV-02, the enterprise print management server. From 3 March ALB-SRV-02 makes HTTPS connections every 15 minutes to a Tor exit node (198.51.100.45). A Modbus proxy goes onto the dual-homed historian. The dormant contractor account <strong>c.ellison</strong> is found on the jump server."
+                      },
+                      {
+                        "label": "Fri 20 March, 23:12: sensor data falsified",
+                        "desc": "Through the historian proxy, PLC-BMS registers for Racks A1 to A4 are overwritten: the historian records a flat 28.0&deg;C on all four racks (real values about 36&deg;C and rising)."
+                      },
+                      {
+                        "label": "Sat 21 March, 01:47: jump server session",
+                        "desc": "c.ellison logs in to the jump server from 10.2.4.12 (ALB-SRV-02, inside Albion's network) and opens RDP to the engineering workstation HMI-ENG-02."
+                      },
+                      {
+                        "label": "02:04 to 02:31: reconnaissance and a file for the neighbours",
+                        "desc": "The SIS configurator on HMI-ENG-02 reads the safety controller's configuration at 02:04 and 02:17. At 02:31 svc.deploy writes <code>print_driver_update.pkg</code> to the shared file server FS-ALBION-01; a Trent Water workstation (TW-WS-07) opens it at 05:52."
+                      },
+                      {
+                        "label": "03:22: SIS setpoints changed",
+                        "desc": "Over the unauthenticated SIS engineering protocol: thermal trip 55&deg;C &rarr; <strong>85&deg;C</strong>; hydrogen alarm 1.0% &rarr; <strong>3.8% by volume</strong> (hydrogen burns at 4.0%). The time comes from HMI-ENG-02's own tool history; the SIS keeps no log."
+                      },
+                      {
+                        "label": "06:30 to 06:34: detection and emergency shutdown",
+                        "desc": "The SCADA engineer briefs the response team at 06:30. The local dial gauge at Rack A2 reads 51&deg;C against 28&deg;C on SCADA. The hardwired ESD is pressed at about 06:34 with the hottest cells at about 58&deg;C. Racks A1 to A4 isolated and cooled."
+                      },
+                      {
+                        "label": "06:41 to 07:49: containment and notification",
+                        "desc": "06:41 the jump server's SCADA network cable is pulled; CastleTech then blocks the enterprise side from SCADA. 07:00 initial NIS notification to Ofgem (with DESNZ), NCSC copied. 07:49 Albion tells Meridian."
+                      },
+                      {
+                        "label": "Evidence gap",
+                        "warn": true,
+                        "desc": "The ESD trip made PLC-BMS run its shutdown routine, which wrote safe-state values over the registers holding the falsified values. Albion reports no image of the registers was taken first. The historian holds what the screens showed, not what the attacker wrote into the controller."
+                      }
+                    ]
+                  },
+                  {
+                    "type": "callout",
+                    "style": "evidence-gap",
+                    "title": "Critical Evidence Gap: see the SIS Engineering Log tab",
+                    "body": "<p>The safety action that prevented thermal runaway (pressing the ESD) also set off the routine that destroyed the register evidence. Safety restoration and evidence preservation were in direct conflict. See Policy Section 7.1 (Cooperation Clause) and CLAIM-INS-006.</p>"
+                  }
+                ]
+              },
+              {
+                "id": "jump_log",
+                "label": "JUMP SERVER LOG",
+                "heading": "Jump Server Access Log: JS-ALBION-01",
+                "blocks": [
+                  {
+                    "type": "p",
+                    "html": "Session log recovered intact from the jump server. Albion's response team read it on HMI-ENG-02 on the morning of the incident. Albion's engineers connect from the engineering subnet, 10.4.22.x."
+                  },
+                  {
+                    "type": "log-table",
+                    "columns": [
+                      "Timestamp",
+                      "User",
+                      "Source IP",
+                      "Duration",
+                      "Activity"
+                    ],
+                    "rows": [
+                      {
+                        "cells": [
+                          "20 Mar, 15:49",
+                          "j.nakamura",
+                          "10.4.22.8 (engineering)",
+                          "1h 11m",
+                          "Routine engineering access"
+                        ]
+                      },
+                      {
+                        "cells": [
+                          "20 Mar, 16:57",
+                          "j.nakamura",
+                          "10.4.22.8 (engineering)",
+                          "0h 47m",
+                          "Routine engineering access"
+                        ]
+                      },
+                      {
+                        "cells": [
+                          "20 Mar, 17:08",
+                          "s.krishna",
+                          "10.4.22.21 (engineering)",
+                          "1h 19m",
+                          "Contractor maintenance, booked"
+                        ]
+                      },
+                      {
+                        "cells": [
+                          "21 Mar, 01:47",
+                          "<strong>c.ellison</strong>",
+                          "<strong>10.2.4.12</strong> (ALB-SRV-02, enterprise print management server)",
+                          "<strong>4h 54m</strong> (cut at 06:41, cable pulled)",
+                          "RDP to HMI-ENG-02; SIS configurator read 02:04 and 02:17, write 03:22"
+                        ],
+                        "highlight": true
+                      }
+                    ]
+                  },
+                  {
+                    "type": "callout",
+                    "style": "compliance-note",
+                    "body": "<strong>WARRANTY W-09 STATUS: BREACHED</strong><br>c.ellison, a Fosse Controls commissioning engineer, left 14 months before this session. The leaver process locked his domain account on 17 January 2025 but missed his local account on the jump server, which still had its default password. No multi-factor authentication on the jump server."
+                  }
+                ]
+              },
+              {
+                "id": "historian",
+                "label": "HISTORIAN DATA",
+                "heading": "Historian Data Integrity Report",
+                "blocks": [
+                  {
+                    "type": "p",
+                    "html": "The SCADA historian faithfully recorded the falsified values written into the PLC-BMS registers. The falsification shows up in the variance."
+                  },
+                  {
+                    "type": "log-table",
+                    "columns": [
+                      "Rack",
+                      "Reading at 23:11",
+                      "Reading at 23:13",
+                      "Pre-23:12 variation",
+                      "Post-23:12 variation"
+                    ],
+                    "rows": [
+                      {
+                        "cells": [
+                          "A1",
+                          "36.6&deg;C",
+                          "28.0&deg;C (flat)",
+                          "&plusmn;0.4&deg;C on a rising trend",
+                          "<strong style=\"color:#f85149\">0.00&deg;C</strong>"
+                        ]
+                      },
+                      {
+                        "cells": [
+                          "A2",
+                          "36.2&deg;C",
+                          "28.0&deg;C (flat)",
+                          "&plusmn;0.3&deg;C on a rising trend",
+                          "<strong style=\"color:#f85149\">0.00&deg;C</strong>"
+                        ]
+                      },
+                      {
+                        "cells": [
+                          "A3",
+                          "36.8&deg;C",
+                          "28.0&deg;C (flat)",
+                          "&plusmn;0.5&deg;C on a rising trend",
+                          "<strong style=\"color:#f85149\">0.00&deg;C</strong>"
+                        ]
+                      },
+                      {
+                        "cells": [
+                          "A4",
+                          "36.4&deg;C",
+                          "28.0&deg;C (flat)",
+                          "&plusmn;0.35&deg;C on a rising trend",
+                          "<strong style=\"color:#f85149\">0.00&deg;C</strong>"
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "callout",
+                    "style": "evidence-gap",
+                    "title": "Forensic Finding",
+                    "body": "<p>From 23:12 all four racks read exactly 28.0&deg;C, a drop of more than 8&deg;C in one minute followed by over seven hours of zero variation. Real thermocouples never do that. It confirms sensor data injection. The historian recorded the falsified values: it cannot tell falsified data from real data, and it is not a record of what the attacker wrote into the controller.</p>"
+                  }
+                ]
+              },
+              {
+                "id": "sis_log",
+                "label": "SIS ENGINEERING LOG",
+                "heading": "SIS Changes: Engineering Tool History and Physical Inspection",
+                "blocks": [
+                  {
+                    "type": "p",
+                    "html": "The SIS engineering protocol needs no authentication and keeps no log, so the safety controller holds no record of any change. The SIS configurator on HMI-ENG-02 kept its own history, which was imaged intact. Post-incident physical inspection confirmed the values."
+                  },
+                  {
+                    "type": "log-table",
+                    "columns": [
+                      "Time (21 Mar)",
+                      "Operator",
+                      "Command",
+                      "Parameter",
+                      "Change"
+                    ],
+                    "rows": [
+                      {
+                        "cells": [
+                          "02:04",
+                          "c.ellison",
+                          "READ_CONFIG",
+                          "THERMAL_RUNAWAY_T",
+                          "none"
+                        ]
+                      },
+                      {
+                        "cells": [
+                          "02:17",
+                          "c.ellison",
+                          "READ_CONFIG",
+                          "H2_ALARM_THRESHOLD",
+                          "none"
+                        ]
+                      },
+                      {
+                        "cells": [
+                          "03:22",
+                          "<strong>c.ellison</strong>",
+                          "WRITE_CONFIG",
+                          "THERMAL_RUNAWAY_T",
+                          "<strong>55&deg;C &rarr; 85&deg;C</strong>"
+                        ],
+                        "highlight": true
+                      },
+                      {
+                        "cells": [
+                          "03:22",
+                          "<strong>c.ellison</strong>",
+                          "WRITE_CONFIG",
+                          "H2_ALARM_THRESHOLD",
+                          "<strong>1.0% &rarr; 3.8% by volume</strong>"
+                        ],
+                        "highlight": true
+                      },
+                      {
+                        "cells": [
+                          "06:00",
+                          "[system]",
+                          "BACKUP_FAILED",
+                          "SIS_CONFIG_NOW",
+                          "nightly configuration backup failed"
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "setpoint-table",
+                    "rows": [
+                      {
+                        "label": "THERMAL_RUNAWAY_THRESHOLD",
+                        "value": "certified 55&deg;C; found <strong>85&deg;C</strong> [MODIFIED]"
+                      },
+                      {
+                        "label": "H&#8322;_ALARM_THRESHOLD",
+                        "value": "certified 1.0% by volume (25% LEL); found <strong>3.8% by volume</strong> [MODIFIED]"
+                      },
+                      {
+                        "label": "CHARGE_INHIBIT_TEMP",
+                        "value": "certified 45&deg;C; found 45&deg;C [unchanged]"
+                      },
+                      {
+                        "label": "Firmware",
+                        "value": "pre-2.4.1 installed. Firmware <strong>2.4.1</strong> fixes the engineering protocol (vendor advisory SA-2024-09, September 2024); deferred, <strong>not applied</strong>"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "callout",
+                    "style": "evidence-gap",
+                    "title": "Critical Evidence Gap: the controller kept no record",
+                    "body": "<p>The time (03:22) and the source (the c.ellison session on HMI-ENG-02) come only from the workstation's tool history, not from the SIS. Had HMI-ENG-02 been rebuilt before it was imaged, the change could not have been tied to the session. The weakness that let the change through unlogged and unauthenticated is the one the deferred firmware closes (W-03).</p><p style=\"margin-top:6px\">This also bears on the cooperation clause (Policy Section 7.1): Albion could not preserve what the SIS never recorded.</p>"
+                  }
+                ]
+              },
+              {
+                "id": "dc_implant",
+                "label": "DOMAIN IMPLANT",
+                "heading": "Domain Controller Implant Chain",
+                "blocks": [
+                  {
+                    "type": "p",
+                    "html": "From the printers to the SCADA network, through the enterprise domain."
+                  },
+                  {
+                    "type": "timeline",
+                    "steps": [
+                      {
+                        "label": "Step 1: printer firmware compromise",
+                        "desc": "Ferryman Collective tradecraft. Tampered firmware on two shared multi-function printers gives a foothold on the corporate VLAN without touching an endpoint the EDR watches. HTTPS beacon every four hours."
+                      },
+                      {
+                        "label": "Step 2: service account harvested",
+                        "desc": "A keylogger module on the printers captures svc.deploy, CastleTech's endpoint-management account, which has admin rights on both Albion's and Trent Water's machines."
+                      },
+                      {
+                        "label": "Step 3: domain controller service DLL implant",
+                        "desc": "Using svc.deploy, a malicious service DLL disguised as a performance monitoring component is installed on the domain controller. It survives reboots and talks DNS-over-HTTPS. The DLL matches known GREYMANTLE tooling (part of the NCSC's assessment)."
+                      },
+                      {
+                        "label": "Step 4: print management server",
+                        "desc": "ALB-SRV-02 (10.2.4.12) is taken over with svc.deploy and becomes the attackers' base inside the network. Its traffic leaves through the enterprise firewall to a Tor exit node (198.51.100.45) every 15 minutes from 3 March."
+                      },
+                      {
+                        "label": "Step 5: jump server pivot via the dormant account",
+                        "desc": "From ALB-SRV-02, c.ellison's default credentials open the jump server, which is not reachable from the internet. Bidirectional RDP takes the session on to HMI-ENG-02 on the SCADA network. In parallel, a Modbus proxy on the dual-homed historian writes the falsified readings. CastleTech's SOC contract excluded the jump server's session logs."
+                      }
+                    ]
+                  },
+                  {
+                    "type": "callout",
+                    "style": "compliance-note",
+                    "body": "<strong>CLAIM-INS-001 (IT/OT Boundary):</strong> The bidirectional jump server and the dual-homed historian gave two independent IT-to-OT paths, and the legacy Modbus/TCP firewall rules a third. All three were known deficiencies at policy inception and all remained unremediated on the incident date."
+                  }
+                ]
+              },
+              {
+                "id": "soc_coverage",
+                "label": "SOC COVERAGE REPORT",
+                "heading": "CastleTech SOC Coverage Report",
+                "blocks": [
+                  {
+                    "type": "p",
+                    "html": "Excerpt from CastleTech Solutions engagement scope documentation, as held in Albion's vendor management records and confirmed by CastleTech's account manager during forensic interview."
+                  },
+                  {
+                    "type": "document-excerpt",
+                    "body": "&ldquo;CastleTech Solutions SOC Engagement, Scope Clarification (January 2024): Monitoring scope is limited to enterprise IT systems on the corporate VLAN, including email, ERP, endpoint devices, and corporate firewall. <strong>Operational technology systems, including the SCADA network, ICS field devices, the jump server session logs, engineering workstations, and historian server OT interface, fall outside the scope of this engagement.</strong> Any monitoring of OT environments would require a separate SOC-OT service agreement and additional on-site sensor deployment. CastleTech does not currently offer this service to Albion.&rdquo;",
+                    "source": "Source: CastleTech Scope Clarification Letter, January 2024, ref CCL-ALBE-2024-01"
+                  },
+                  {
+                    "type": "p",
+                    "html": "This exclusion means CastleTech had no visibility of:"
+                  },
+                  {
+                    "type": "list",
+                    "items": [
+                      "The c.ellison RDP session on the jump server (01:47)",
+                      "The session's activity on HMI-ENG-02",
+                      "The historian sensor data falsification (from 23:12)",
+                      "The SIS setpoint changes (03:22)"
+                    ]
+                  },
+                  {
+                    "type": "callout",
+                    "style": "compliance-note",
+                    "body": "<strong>WARRANTY W-12 STATUS: LIKELY BREACHED</strong><br>W-12 required managed service providers to maintain equivalent security standards, with monitoring that covers OT systems connected to the enterprise network. CastleTech's scope excluded OT, and its own svc.deploy account, with admin rights across Albion and Trent Water, was harvested and used. The SOC monitoring that Albion's September 2024 risk assessment named as the compensating control for the deferred SIS patch never covered the SIS."
+                  },
+                  {
+                    "type": "callout",
+                    "style": "compliance-note",
+                    "style2": "margin-top:10px",
+                    "body": "<strong>WARRANTY W-09 (Access Control): supporting evidence</strong><br>c.ellison was a local account on the jump server, not a domain account, so the domain logs CastleTech watched never showed it. The deprovisioning failure is Albion's; the monitoring gap meant nothing else would have caught it."
+                  }
+                ]
+              }
+            ],
             "title": "Meridian Cyber Insurance — Forensic Data Platform",
             "caseRef": "MC-2023-ALBE-007 — Albion Energy Storage Ltd",
             "reviewedVar": "fdp_reviewed",
@@ -1107,7 +1471,7 @@ cabinet_pin = 5857 # @random_pin
           "puzzle_graph_role": "clue",
           "puzzle_graph_aim": "access_evidence_archive",
           "puzzle_graph_reveals": "Domain controller implant, dormant contractor account (W-09 breach), IT/OT boundary failures (W-07), CastleTech SOC scope gap (W-12)",
-          "text": "MERIDIAN FORENSIC CASE — EXHIBIT A — IT Network Forensics\n\n1. INITIAL ACCESS: Multi-function printer firmware supply chain compromise. Periodic HTTPS beaconing to C2 infrastructure confirmed via firewall logs.\n\n2. DOMAIN CONTROLLER PERSISTENCE: CastleTech's endpoint-management service account (svc.deploy), harvested through the printer, used to reach the domain controller. Service DLL implant, DNS-over-HTTPS C2 comms. AD logs confirm lateral movement credential creation.\n\n3. JUMP SERVER, DORMANT ACCOUNT: Local account c.ellison (a Fosse Controls commissioning engineer who left 14 months earlier) used for an RDP session from 01:47 on Saturday 21 March, onward to HMI-ENG-02. The leaver process locked his domain account in January 2025 but missed this local account, which still had its default password. The session came from inside: source 10.2.4.12 (ALB-SRV-02, the enterprise print management server). The jump server is not reachable from the internet; attacker traffic left through the enterprise firewall to a Tor exit node (185.220.101.45).\n   WARRANTY W-09 STATUS: BREACHED — deprovisioning failure directly exploited.\n\n4. IT/OT BOUNDARY: Dual-homed historian (direct IT-to-OT data path). Bidirectional jump server RDP to SCADA network. Legacy Modbus/TCP firewall rules.\n   WARRANTY W-07 STATUS: BREACHED — all three remediation items from policy inception remain unremediated.\n\n5. SOC MONITORING GAP: CastleTech SOC contract explicitly excluded OT systems and jump server session logs.\n   WARRANTY W-12 STATUS: LIKELY BREACHED — MSP security governance failure.",
+          "text": "MERIDIAN FORENSIC CASE — EXHIBIT A — IT Network Forensics\n\n1. INITIAL ACCESS: Multi-function printer firmware supply chain compromise. Periodic HTTPS beaconing to C2 infrastructure confirmed via firewall logs.\n\n2. DOMAIN CONTROLLER PERSISTENCE: CastleTech's endpoint-management service account (svc.deploy), harvested through the printer, used to reach the domain controller. Service DLL implant, DNS-over-HTTPS C2 comms. AD logs confirm lateral movement credential creation.\n\n3. JUMP SERVER, DORMANT ACCOUNT: Local account c.ellison (a Fosse Controls commissioning engineer who left 14 months earlier) used for an RDP session from 01:47 on Saturday 21 March, onward to HMI-ENG-02. The leaver process locked his domain account in January 2025 but missed this local account, which still had its default password. The session came from inside: source 10.2.4.12 (ALB-SRV-02, the enterprise print management server). The jump server is not reachable from the internet; attacker traffic left through the enterprise firewall to a Tor exit node (198.51.100.45): HTTPS from ALB-SRV-02 every 15 minutes since 3 March.\n   WARRANTY W-09 STATUS: BREACHED — deprovisioning failure directly exploited.\n\n4. IT/OT BOUNDARY: Dual-homed historian (direct IT-to-OT data path). Bidirectional jump server RDP to SCADA network. Legacy Modbus/TCP firewall rules.\n   WARRANTY W-07 STATUS: BREACHED — all three remediation items from policy inception remain unremediated.\n\n5. SOC MONITORING GAP: CastleTech SOC contract explicitly excluded OT systems and jump server session logs.\n   WARRANTY W-12 STATUS: LIKELY BREACHED — MSP security governance failure.",
           "observations": "A sealed padded envelope. EXHIBIT A — IT FORENSICS — CONTROLLED DOCUMENT — ref A-ALBE-07",
           "onRead": { "setVariable": { "it_forensics_reviewed": true } }
         },
@@ -1122,7 +1486,7 @@ cabinet_pin = 5857 # @random_pin
           "puzzle_graph_role": "clue",
           "puzzle_graph_aim": "access_evidence_archive",
           "puzzle_graph_reveals": "Falsified historian data, modified SIS alarm thresholds; critical: PLC-BMS registers overwritten by its own shutdown routine when the ESD tripped — forensic evidence gap (safety action vs. evidence preservation conflict)",
-          "text": "MERIDIAN FORENSIC CASE — EXHIBIT B — OT/ICS Forensics\n\n1. HISTORIAN DATA: SCADA historian faithfully recorded the falsified temperatures (28°C reported vs. actual elevated values). Flat-line anomaly on Rack A1 from 23:12 confirms sensor data manipulation.\n\n2. SIS CONFIGURATION — PHYSICAL INSPECTION: Post-incident inspection confirmed modified alarm thresholds: thermal runaway protection raised 55°C → 85°C; H₂ gas alarm raised 1.0% → 3.8% by volume (hydrogen's LEL is 4.0% by volume). Automated safety barriers silently disabled.\n\n3. HOW AND WHEN THE SIS WAS CHANGED: The SIS engineering protocol needs no authentication and keeps no log, so the SIS itself holds no record. The engineering tool on HMI-ENG-02 kept its own history: during the c.ellison session it read the SIS configuration at 02:04 and 02:17, and sent both threshold changes over the engineering protocol at 03:22. This is the weakness the deferred SIS firmware update (W-03) closes.\n\n*** CRITICAL EVIDENCE NOTE ***\nPLC-BMS holding registers containing the falsified sensor values were OVERWRITTEN at the emergency shutdown. The hardwired ESD acts on its own: it opened the DC contactors and isolated Racks A1-A4. PLC-BMS saw the trip and ran its own shutdown routine, which writes safe-state values into those registers. No image of the registers was taken first.\n\nIMPLICATION: The falsified values are reconstructed from the historian and the analog gauge, not read from the PLC. The safety action that prevented thermal runaway (pressing ESD) is also the action that destroyed the most critical forensic evidence. Safety restoration and evidence preservation were in direct conflict. See Policy Section 7.1 (Cooperation Clause) and CLAIM-INS-006.",
+          "text": "MERIDIAN FORENSIC CASE — EXHIBIT B — OT/ICS Forensics\n\n1. HISTORIAN DATA: SCADA historian faithfully recorded the falsified temperatures (28°C reported vs. actual elevated values). Flat line at exactly 28.0°C on Racks A1-A4 from 23:12 confirms sensor data manipulation.\n\n2. SIS CONFIGURATION — PHYSICAL INSPECTION: Post-incident inspection confirmed modified alarm thresholds: thermal runaway protection raised 55°C → 85°C; H₂ gas alarm raised 1.0% → 3.8% by volume (hydrogen's LEL is 4.0% by volume). Automated safety barriers silently disabled.\n\n3. HOW AND WHEN THE SIS WAS CHANGED: The SIS engineering protocol needs no authentication and keeps no log, so the SIS itself holds no record. The engineering tool on HMI-ENG-02 kept its own history: during the c.ellison session it read the SIS configuration at 02:04 and 02:17, and sent both threshold changes over the engineering protocol at 03:22. This is the weakness the deferred SIS firmware update (W-03) closes.\n\n*** CRITICAL EVIDENCE NOTE ***\nPLC-BMS holding registers containing the falsified sensor values were OVERWRITTEN at the emergency shutdown. The hardwired ESD acts on its own: it opened the DC contactors and isolated Racks A1-A4. PLC-BMS saw the trip and ran its own shutdown routine, which writes safe-state values into those registers. Albion reports that no image of the registers was taken first.\n\nIMPLICATION: The falsified values are reconstructed from the historian and the analog gauge, not read from the PLC. The safety action that prevented thermal runaway (pressing ESD) is also the action that destroyed the most critical forensic evidence. Safety restoration and evidence preservation were in direct conflict. See Policy Section 7.1 (Cooperation Clause) and CLAIM-INS-006.",
           "observations": "A sealed padded envelope. EXHIBIT B — OT FORENSICS — CONTROLLED DOCUMENT — ref B-ALBE-07",
           "onRead": { "setVariable": { "ot_forensics_reviewed": true } }
         },
@@ -1138,7 +1502,7 @@ cabinet_pin = 5857 # @random_pin
           "puzzle_graph_unlocks": "lock_warranty_assessment",
           "puzzle_graph_reveals": "W-03/W-07/W-09/W-12 breach positions — unlocks warranty discussion with Eleanor Vance",
           "puzzle_graph_aim": "assess_warranties",
-          "text": "MERIDIAN FORENSIC CASE — EXHIBIT C — Warranty Compliance Evidence\n\nW-07 IT/OT SEGMENTATION: BREACHED\nQuarterly security posture reports (Q1-Q4 pre-incident) confirm all three IT/OT boundary deficiencies remained unremediated. Remediation deadline of 31 December 2025 passed under three months before the incident. Albion said at the November 2025 renewal meeting that the deadline would be missed. Extension request (ref WW-006) received 14 January 2026, after the deadline: under review, not approved, at time of incident.\n\nW-03 PATCH MANAGEMENT: ARGUABLE\nSIS firmware patch deferred for legitimate IEC 61511 reason — 8-week recertification, £180,000 cost. W-03 safety-constraint exception clause applies to the deferral decision.\nHOWEVER: compensating controls required by W-03 (enhanced SIS network isolation, OT-inclusive monitoring) were NOT implemented. Accepted in risk register but not actioned.\nDistinction: the deferral was legitimate; the failure to implement compensating controls was not. Deferral approved by J. Whitworth in September 2024 with a review date of March 2025; never reviewed.\nCAUSATION: the 03:22 SIS threshold change used the unauthenticated engineering protocol that the patch closes. Albion argues the patch could not reasonably have gone onto the certified SIL 2 controller in time, and that the attacker reached the SIS only through the W-07 segmentation gaps.\n\nW-09 ACCESS CONTROL: BREACHED\nContractor c.ellison left 14 months before the incident. Domain account locked; jump server local account missed by the leaver process, default password unchanged. Direct contributor to attack pathway.\n\nW-12 MSP SECURITY: LIKELY BREACHED\nCastleTech service account had cross-site privileges across Albion and Trent Water endpoints. Dormant accounts not revoked.",
+          "text": "MERIDIAN FORENSIC CASE — EXHIBIT C — Warranty Compliance Evidence\n\nW-07 IT/OT SEGMENTATION: BREACHED\nQuarterly security posture reports (Q1-Q4 pre-incident) confirm all three IT/OT boundary deficiencies remained unremediated. Remediation deadline of 31 December 2025 passed under three months before the incident. Albion said at the November 2025 renewal meeting that the deadline would be missed. Extension request (ref WW-006) received 14 January 2026, after the deadline: under review, not approved, at time of incident.\n\nW-03 PATCH MANAGEMENT: ARGUABLE\nSIS firmware patch deferred for legitimate IEC 61511 reason — 8-week recertification, £180,000 cost. W-03 safety-constraint exception clause applies to the deferral decision.\nHOWEVER: the compensating control named in Albion's September 2024 risk assessment, monitoring by the managed SOC for lateral movement, never covered the SIS: the CastleTech contract excluded OT. Nothing isolated the SIS engineering port from the SCADA network either. The control was accepted in the risk register but never existed.\nDistinction: the deferral was legitimate; the failure to implement compensating controls was not. Deferral approved by J. Whitworth in September 2024 with a review date of March 2025; never reviewed.\nCAUSATION: the 03:22 SIS threshold change used the unauthenticated engineering protocol that the patch closes. Albion argues the patch could not reasonably have gone onto the certified SIL 2 controller in time, and that the attacker reached the SIS only through the W-07 segmentation gaps.\n\nW-09 ACCESS CONTROL: BREACHED\nContractor c.ellison left 14 months before the incident. Domain account locked; jump server local account missed by the leaver process, default password unchanged. Direct contributor to attack pathway.\n\nW-12 MSP SECURITY: LIKELY BREACHED\nCastleTech service account had cross-site privileges across Albion and Trent Water endpoints. Dormant accounts not revoked.",
           "observations": "A sealed padded envelope. EXHIBIT C — WARRANTY COMPLIANCE — CONTROLLED DOCUMENT — ref C-ALBE-07",
           "onRead": { "setVariable": { "warranty_evidence_reviewed": true } }
         },

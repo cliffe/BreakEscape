@@ -136,14 +136,13 @@ NESO depends on our frequency response. We documented the risk, I signed the def
 === compensating_controls_discussion ===
 #speaker:james
 
-We committed to restricting access to the SIS engineering port through network-level controls.
-
-The SOC was going to tighten the jump server rules — to restrict RDP access from specific maintenance VLANs only, with multi-factor authentication. That would have meant even if someone compromised the IT network, they couldn't reach the SIS engineering port without additional authentication.
+Marcus's risk assessment named one: CastleTech's SOC would watch for anyone moving towards the safety system.
+I signed it on that basis. We also meant to restrict the jump server to the maintenance VLAN, with multi-factor authentication.
 
 * [Were those controls actually implemented?]
-    They were in progress. The SOC scope expansion took longer to negotiate than we anticipated.
-    We had committed to full implementation by the end of March this year. The incident came on the twenty-first.
-    So technically, no — the full control set wasn't in place. But we were actively working on it.
+    They were in progress. CastleTech's contract excluded OT, and extending it took longer to negotiate than we expected.
+    We aimed to have it in place by the end of March this year. The incident came on the twenty-first.
+    So no. The SOC never watched the safety system, and the jump server was never restricted.
     -> hub
     
 * [So the compensating controls never went live?]
@@ -173,9 +172,10 @@ The incident cascaded the recertification timeline into emergency mode. So the b
     The incident forced an unplanned, emergency recertification. The business interruption is the difference between planned and emergency.
     -> hub
     
-* [How confident are you in the £4.8M figure?]
-    That number comes from Simon Hartley's independent loss adjuster. We provided him with our NESO contract terms and revenue baseline. He calculated the lost ancillary services revenue during the outage.
-    I'm confident in the calculation. The question is whether all six weeks are attributable to the incident, or whether part of it is pre-existing maintenance.
+* [How confident are you in the business interruption figure?]
+    It's £900,000, and it's Simon Hartley's figure. We gave him our NESO contracts and six months of revenue.
+    It's the whole site, a hundred megawatts, for six weeks. The bigger number in the claim is the battery modules.
+    The question is whether all six weeks are down to the incident, or whether part of it was maintenance we owed anyway.
     -> hub
     
 * [What about the regulatory penalties?]

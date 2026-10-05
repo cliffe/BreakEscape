@@ -46,14 +46,14 @@ VAR trent_water_topic_discussed = false
 I was on site for three weeks from late March and spent another week on the forensic data.
 The quantum is complex, but I'm confident in the methodologies.
 
-My total assessment is £8.2 million across four categories. I'm prepared to discuss each one.
+My total is £8.2 million across five items. Most of it is the battery modules. I'm prepared to discuss each one.
 
 * [Tell me about the incident response costs]
     -> incident_response_discussion
-    
-* [The business interruption quantum seems high]
+
+* [Is the business interruption figure right?]
     -> business_interruption_discussion
-    
+
 * [How did you calculate physical damage?]
     -> physical_damage_discussion
 
@@ -61,63 +61,63 @@ My total assessment is £8.2 million across four categories. I'm prepared to dis
 
 
 // ===========================================
-// INCIDENT RESPONSE COSTS — £1.4M
+// INCIDENT RESPONSE COSTS: £1.1M
 // ===========================================
 
 === incident_response_discussion ===
 #speaker:hartley
 ~ incident_response_discussed = true
 
-The incident response category includes: forensic investigation (£650K — three weeks on-site with specialist team), legal and compliance costs (£380K — NCSC coordination, regulatory filings, external counsel), crisis communications (£140K), and emergency network rebuilding contractors (£230K).
+Incident response and forensics come to £1.1 million.
+That's the OT forensic specialists, three weeks on site; external counsel and the regulatory filings; crisis communications; and the emergency network rebuild.
 
 These are well-documented, vendor-invoiced costs. I've verified each one against Albion's incident management records.
 
 Meridian should cover these in full. They're not contingent on warranty status — they were incurred regardless of pre-existing compliance issues.
 
 * [Are any of these costs contested by Albion's insurance carrier?]
-    No. The property damage policy has already accepted coverage for the emergency response costs. My job was to quantify the cyber-specific component.
+    No. Albion's property policy excludes cyber, so its property insurer isn't involved.
+    Meridian's is the only policy that responds to this loss.
     -> hub
-    
-* [Does the £1.4M include recertification costs?]
-    The SIS recertification is £180K, but that's embedded in the business interruption calculation rather than incident response. The recertification was necessary because of the SIS rebuild, which was necessary because of the incident.
-    So it's part of the "cost of consequences" rather than "cost of response."
+
+* [Does the £1.1M include recertification costs?]
+    No. The SIS revalidation, Hall 1 recommissioning and grid compliance retests are a separate £800,000 item.
+    About £180,000 of that is the patch work Albion had deferred. Meridian may call that betterment: money Albion would have spent anyway.
     -> hub
 
 
 // ===========================================
-// BUSINESS INTERRUPTION — £4.8M
+// BUSINESS INTERRUPTION: £900K
 // ===========================================
 
 === business_interruption_discussion ===
 #speaker:hartley
 ~ business_interruption_discussed = true
 
-This is where the contested arguments live.
+It's smaller than people expect: £900,000.
 
-Albion's revenue baseline during the six-week outage period comes from their NESO contracts for ancillary services: frequency response and peak shaving. During normal operations, Albion's facility generates approximately £800K per week through those contracts.
-
-Six weeks at £800K equals £4.8M in lost contracted revenue. Additionally, there are contractual penalties for non-delivery — I've calculated those at approximately £200K. But those penalties are already included in the NESO revenue figure because of how the ancillary services pricing works.
-
-So the total business interruption claim is £4.8M.
+The whole site was offline for six weeks, 21 March to 2 May. A hundred megawatts of frequency response and trading.
+I took six months of Albion's revenue, less the costs they saved, and added NESO's charges for non-delivery.
 
 * [Meridian's position is that part of this represents pre-existing SIS maintenance]
     -> contested_business_interruption
-    
-* [How confident are you in the £800K baseline?]
-    Highly confident. I reviewed Albion's contract terms with NESO, their billing records for the six months prior to the incident, and the actual capacity delivered during that period.
-    The baseline is solid. The question is causality — which weeks of outage were caused by the incident, and which were pre-existing maintenance.
+
+* [How confident are you in the revenue baseline?]
+    Confident. I reviewed Albion's NESO contracts and six months of billing and delivered capacity.
+    The baseline is solid. The question is causation: which weeks the incident caused, and which were maintenance Albion owed anyway.
     -> hub
-    
-* [What about other revenue streams?]
-    Albion's facility provides multiple services: energy arbitrage, grid balancing, and some wholesale energy sales. But the NESO contract is the largest revenue driver during this period.
-    I've included the lost revenue from secondary services as well — approximately £100K of the total, but it's a minor component.
+
+* [Why isn't it bigger, for a site that size?]
+    A battery site earns from many short contracts, not one big one. Six weeks of a hundred megawatts is under a million.
+    The money in this claim is the battery modules: £5 million.
     -> hub
 
 
 === contested_business_interruption ===
 #speaker:hartley
 
-Yes. Meridian's argument is that Albion deferred a critical SIS firmware patch. That patch requires recertification, which would have necessitated a facility shutdown anyway. So part of the six-week outage represents pre-existing maintenance obligation, not incident consequence.
+Yes. Meridian's argument is that Albion deferred the SIS firmware patch, and applying it means recertification and downtime.
+So part of the six weeks was maintenance Albion owed anyway, not loss from the incident.
 
 Albion's counter-argument is that a planned recertification would have kept most of the site running, with only two to three weeks fully offline, not six.
 The incident turned it into an emergency, alongside a full infrastructure rebuild, which expanded the timeline.
@@ -125,49 +125,50 @@ The incident turned it into an emergency, alongside a full infrastructure rebuil
 This is where I have to offer professional judgment rather than objective fact.
 
 * [What's your professional judgment?]
-    I've reviewed both positions. Albion's argument is compelling: without the incident, the patch recertification would have been planned, not emergency. But I also understand Meridian's position: the deferral created a maintenance obligation that would eventually have caused downtime.
+    Albion's argument is the stronger one. Without the attack, the recertification would have been planned.
     My assessment is that the full six weeks is attributable to the incident.
     The attacker changed the SIS setpoints, and a safety system that's been tampered with gets revalidated whether or not it was ever patched.
     Applying the deferred update inside that recertification added little time.
     Meridian will answer that if the patch had gone on by December thirty-first, the attacker might never have changed the setpoints at all.
     That's a causation argument about W-03, not a quantum one.
-    So I've included the full £4.8M. But I acknowledge this is the contested territory in the claim.
+    So I've included the full £900,000. But I acknowledge this is contested territory.
     -> hub
-    
+
 * [Is there a way to quantify the pre-incident maintenance portion separately?]
     Not cleanly. The facility was either fully operational or offline for the emergency rebuild. There wasn't a clean "normal operations + planned maintenance" scenario to reference.
     Albion's own plan had two to three weeks fully offline for a planned recertification, with the rest done while the site ran under manual watch.
     Instead, they were offline for six weeks as part of the emergency response.
-    The difference — 3-4 weeks of additional lost revenue — is the cascading effect of the incident on top of the deferred maintenance. That's £2.4-3.2M.
+    If Meridian is right, two to three of those weeks were owed anyway. That's roughly £300,000 to £450,000 off the business interruption.
     -> hub
 
 
 // ===========================================
-// PHYSICAL DAMAGE — £1.6M
+// PHYSICAL DAMAGE: £5.0M
 // ===========================================
 
 === physical_damage_discussion ===
 #speaker:hartley
 ~ physical_damage_discussed = true
 
-The physical damage assessment is more straightforward.
+Physical damage is the biggest item: £5 million.
 
 The attack resulted in sustained overcharge of Battery Racks A1–A4.
 The hottest cells reached about 58°C: well above the operating limit, though short of the point where cells start heating themselves.
 The hardwired ESD stopped it there, but not before the cells were damaged.
 
 Lithium-ion cells at that temperature profile show accelerated capacity degradation and reduced cycle life.
-Albion's cell manufacturer, Halden Cell Systems, assessed the damaged cells as no longer safe for operation.
+Albion's cell manufacturer, Halden Cell Systems, withdrew its warranty on every module in Racks A1 to A4 and won't support them back in service.
 
-Replacement cost: £1.6 million for new cells and installation. I've obtained quotes from the manufacturer and verified against current market pricing.
+That's the whole of Hall 1: a hundred megawatt-hours of modules. £5 million to replace and install. I've checked the quotes against current market prices.
 
 * [Is this covered under the property damage policy?]
-    Partially. The property damage insurer is paying for the physical replacement costs. But Meridian's cyber policy covers the cyber-induced component — the fact that the damage was caused by the attack, not a manufacturing defect or accident.
-    So Meridian and the property insurer will coordinate. Likely scenario: property insurer pays the replacement cost (£1.6M), and Meridian reimburses the property insurer through subrogation or cross-coverage agreement.
+    No. Albion's property policy excludes cyber, as the market now expects.
+    Physical damage from this attack falls only on Meridian's policy. If Meridian pays less, nobody else picks up the difference.
     -> hub
-    
+
 * [Could the cells have been salvaged?]
-    The manufacturer's assessment was definitive. The cells cannot be safely returned to operation. So replacement is the only option.
+    Meridian's engineers think some modules could be tested and requalified rather than replaced. That's the contested part of this item.
+    Halden won't warrant them, and a site that has just had a near-runaway won't run unwarranted modules. I've kept the full replacement cost.
     -> hub
 
 
@@ -207,8 +208,9 @@ There's a layer of circularity there: the evidence I'm using to prove the attack
 The forensic team has done their best to reconstruct the pre-shutdown values by cross-referencing historian trends with physical measurements from the incident report. But it's reconstruction, not direct evidence.
 
 * [Does this affect the loss quantum?]
-    It affects the confidence level. I'm highly confident in the £8.2M total. But the breakdown — the specific attribution of which damages were directly caused by sensor falsification vs. the sustained overcharge — is less precise.
-    For loss adjustment purposes, it doesn't change the total. But for legal purposes, it could matter if Albion tries to claim damages beyond the physical cell replacement.
+    It affects confidence, not the total. I'm confident in the £8.2M.
+    What's less precise is how much of the module damage came from the overcharge and how much from the heat the falsified readings hid.
+    That could matter if Albion claims anything beyond replacing the modules.
     -> hub
     
 * [Could the register evidence have been saved?]
