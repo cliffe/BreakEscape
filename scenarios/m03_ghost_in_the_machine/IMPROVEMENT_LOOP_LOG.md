@@ -367,6 +367,16 @@ New engine items: E-F a timed message on a person NPC makes a voiced toast that 
 
 Confirmation runs (Sonnet, three in parallel): day, night (incl. the C10/C14 reload window), KO route.
 
+### Round 1 confirmation (Sonnet, three runs)
+
+| Run | Games | Result | Counts |
+|---|---|---|---|
+| Day | 5010 | Both clones earned; R1-1, R1-7, R1-8, R1-16, C6, two reloads, voice rule all pass | 0 / 0 / 4 |
+| Night | 5009 (to credits), 5011 | R1-10, R1-11, R1-12, R1-20 (caught at his post, clean pick as he walks off, first try), R1-21, C7, C8, C11, C12, C18, C2 (PERFECT STEALTH credit on a clean run), escape ending, reload after flag 4 all pass; reload in the window keeps the fate and the debrief opens once on the next room entry (C10 behaviour differs from the script's description; C14 unreachable) | 0 / 0 / 7 (one setup artifact, one harness) |
+| KO route | 5008 | R1-1 KO variant, R1-2, R1-3, R1-12 pass; debrief and credits agree on a messy run | 0 / 0 / 1 (harness) |
+
+Leftover minors for round 2: clone choice label "Lean in to read the building directory." doesn't say it copies her badge; HaX's thread opens "Agent. What do you need?" above the interview text; grace line plays while the guard is already walking off; debrief "You did the technical work and still saw the people in it" for a player who never met Danny; C10/C14 description in PASS5_PLAYTEST.md; "Anything else, love?" straight after cloning. Engine-side: first reload went to the title screen, the second to the resume overlay (both recover).
+
 ## SecGen
 
 m03 XML missing on SecGen master. Proposed file: `SECGEN_PROPOSED_m03_ghost_in_the_machine.xml` (D1). No SecGen edits made.
