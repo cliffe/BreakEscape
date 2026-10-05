@@ -303,9 +303,12 @@ export class RFIDMinigame extends MinigameScene {
                 cardData.rfid_data.sectors = result.foundKeys;
                 this.ui.showSuccess(result.message);
 
+                const allKeys = Object.keys(result.foundKeys).length >= 16;
                 setTimeout(() => {
-                    // Show updated protocol info
-                    this.ui.showProtocolInfo(cardData);
+                    // Every sector cracked: straight to the read screen with Save, as
+                    // Darkside and Nested do. Otherwise back to Info, which offers Nested.
+                    if (allKeys) this.ui.showCardDataScreen(cardData);
+                    else this.ui.showProtocolInfo(cardData);
                 }, 1500);
             } else {
                 this.ui.showError(result.message);

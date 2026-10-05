@@ -31,15 +31,17 @@ export class MIFAREAttackManager {
         const foundKeys = { ...existingKeys };
         let newKeysFound = 0;
 
-        // Success rate based on protocol
-        // Weak defaults: 95% (most sectors use factory default)
-        // Custom keys: 0% (no default keys)
-        const successRate = protocol === 'MIFARE_Classic_Weak_Defaults' ? 0.95 : 0.0;
+        // Deterministic by protocol. A weak-defaults card uses the factory key on every
+        // sector, so the dictionary recovers all 16 at once; a custom-keys card has no
+        // default keys, so it recovers none (use Darkside). This was a 95% roll per
+        // sector, which left about half of all reads at 14 or 15 of 16 with a Nested
+        // attack still to run before Save.
+        const defaultKeysCard = protocol === 'MIFARE_Classic_Weak_Defaults';
 
         for (let sector = 0; sector < 16; sector++) {
             if (foundKeys[sector]) continue;
 
-            if (Math.random() < successRate) {
+            if (defaultKeysCard) {
                 foundKeys[sector] = {
                     keyA: MIFARE_COMMON_KEYS[0], // FFFFFFFFFFFF (factory default)
                     keyB: MIFARE_COMMON_KEYS[0]
