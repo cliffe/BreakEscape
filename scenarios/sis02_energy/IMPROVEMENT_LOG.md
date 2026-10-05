@@ -46,3 +46,15 @@ Recorded at the top of `DIALOGUE_REVIEW.md`. Date pinned by the orchestrator: Sa
 
 ## Next
 Phase 7 cast (CAST_DESIGN.md, Gemini concepts, PixelLab: ask the user before spending), phase 8 round-2 dialogue review, phase 9 audio (ask).
+
+## Phase 7: cast (done, zero spend; user: keep reused art for Helen)
+7fcb127: CAST_DESIGN.md; Helen gets female_telecom_talk; Marcus and Tom get unused v2 headshots. PixelLab key not configured in this session.
+
+## Lab sheets published
+HacktivityLabSheets main 288fd33 (all six SIS files, user approved), 6553803 (sis02 lab sheet after round 2).
+
+## Phase 8: dialogue review round 2 (done)
+DIALOGUE_REVIEW_R2.md: ready to voice after a short pass (3 majors, 25 minors). Applied in 389abed (12 voiced lines). Static checks clean; the two new branches checked with inkjs, not in a browser.
+
+## Phase 9: audio (waiting for the user)
+Helen and Priya re-voice in full (style changes); 137 stale cached files in tts_cache/sis02_energy/. sis03 Eleanor about 26 lines changed. Listen for "SIS", "NIS", and Helen's "nowt"/"duck" in the first takes.
