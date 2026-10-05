@@ -7,7 +7,7 @@
 VAR player_approach = ""          // cautious, aggressive, diplomatic
 VAR knows_full_stakes = false      // Did player ask about casualties?
 VAR knows_insider_profile = false  // Did player ask about insider psychology?
-VAR handler_trust = 50            // Agent 0x99's confidence (0-100)
+VAR handler_trust = 50 // Synced scenario global: HaX's confidence (0-100); also lowered by m05_closing_debrief
 
 // External variables (set by game)
 VAR player_name = "Agent 0x00"

@@ -20,7 +20,7 @@
 
 // Synced scenario globals
 VAR guard_waved_through = false
-VAR guard_grace = false
+VAR guard_grace = false // Synced scenario global: the guard has let one catch go; also cleared by the lobby room_entered mapping
 VAR guard_caught = false     // set on a catch, never cleared (credits)
 VAR guard_resolved = false   // set by HaX on entering the trading floor
 

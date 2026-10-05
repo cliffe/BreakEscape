@@ -30,7 +30,7 @@ VAR network_isolated = false
 VAR ncsc_notified = false
 VAR facility_safe_state = false
 VAR network_isolation_requested = false
-VAR network_isolation_authorised = false
+VAR network_isolation_authorised = false // Synced scenario global: OT Security signed off the isolation; also set when the cable is pulled with Marcus contacted
 
 // Local NPC state tracking
 VAR marcus_called = false

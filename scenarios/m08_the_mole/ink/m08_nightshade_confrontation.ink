@@ -14,7 +14,7 @@
 // ================================================
 
 VAR player_name = "Agent 0x00"
-VAR nightshade_arrested = false
+VAR nightshade_arrested = false // Synced scenario global: Nightshade handed to the police; also set by the KO-before-fate mapping
 VAR nightshade_triple_agent = false
 VAR tomb_gamma_location_known = false
 VAR nightshade_suspected = false
@@ -25,8 +25,8 @@ VAR asked_recruit = false
 VAR asked_database = false
 VAR asked_architect = false
 VAR asked_taught = false
-VAR fate_decided = false
-VAR database_theft_understood = false
+VAR fate_decided = false // Synced scenario global: Nightshade's fate is chosen; also set by the KO-before-fate mapping
+VAR database_theft_understood = false // Synced scenario global: the player knows the attacks covered the database theft; also set by the flag4 mappings and the catalogue's onRead
 VAR netherton_ko = false
 VAR gamma_volunteered = false
 // PASS 3 (P6, P8, P9)

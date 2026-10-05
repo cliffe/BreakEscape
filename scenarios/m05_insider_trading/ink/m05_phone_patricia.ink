@@ -31,9 +31,9 @@
 VAR player_name = "Agent 0x00"
 VAR patricia_ko = false
 VAR patricia_phone_available = false
-VAR torres_identified = false
+VAR torres_identified = false // Synced scenario global: Torres named on motive and exfil; also set by HaX (m05_phone_agent_0x99) and Patricia in person (m05_npc_patricia_morgan)
 VAR final_choice = ""
-VAR patricia_authorised_office = false
+VAR patricia_authorised_office = false // Synced scenario global: Owen may hand over Torres' office spare; also set by HaX (m05_phone_agent_0x99) and Patricia in person (m05_npc_patricia_morgan)
 VAR vault_reader_seen = false
 VAR owen_ko = false
 VAR office_card_obtained = false
@@ -46,17 +46,17 @@ VAR found_upload_schedule = false
 VAR found_pamphlet = false
 VAR server_door_seen = false
 VAR server_password_obtained = false
-VAR patricia_authorised_server = false
+VAR patricia_authorised_server = false // Synced scenario global: Owen may give out the server-room password; also set by HaX (m05_phone_agent_0x99) and Patricia in person (m05_npc_patricia_morgan)
 VAR torres_print_collected = false
 VAR flag1_submitted = false
 VAR flag2_submitted = false
 VAR flag4_submitted = false
-VAR torres_suspected = false
+VAR torres_suspected = false // Synced scenario global: enough on Torres to search his office; also set by HaX (m05_phone_agent_0x99) and Patricia in person (m05_npc_patricia_morgan) and the case_motive/case_exfil mappings
 VAR found_door_log = false
 VAR found_halloran_alibi = false
-VAR halloran_accused = false
+VAR halloran_accused = false // Synced scenario global: Halloran suspended on the player's word; also set by HaX (m05_phone_agent_0x99) and Patricia in person (m05_npc_patricia_morgan)
 VAR halloran_questioned = false
-VAR door_log_reasoned = false
+VAR door_log_reasoned = false // Synced scenario global: the player has read the badge-log pattern; also set by HaX (m05_phone_agent_0x99) and Patricia in person (m05_npc_patricia_morgan)
 VAR it_notice_read = false
 
 === function has_motive()

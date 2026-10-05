@@ -48,7 +48,7 @@ VAR hub_quiet = false                // pass 4 dialogue: re-entry line on a re-t
 // Synced from globalVars by engine at call-open
 VAR gary_evidence_recovered = false
 VAR board_coverup_email_found = false
-VAR cover_burned = false
+VAR cover_burned = false // Synced scenario global: the player's booking has been pulled; also set by the talk_to_gary task mapping
 VAR cover_restored = false
 VAR insider_evidence_partial = false
 VAR insider_identified = false

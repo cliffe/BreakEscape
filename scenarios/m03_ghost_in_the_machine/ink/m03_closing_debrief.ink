@@ -10,7 +10,7 @@ VAR guard_detection_count = 0
 VAR lore_history_found = false
 VAR lore_catalogue_found = false
 VAR lore_directive_found = false
-VAR handler_trust = 50
+VAR handler_trust = 50 // Synced scenario global: HaX's trust in the player, built up in the briefing; also raised by m03_opening_briefing
 // Pass 3 (puzzle chains): Perfect Stealth must be earned past the guard (P6),
 // the catalogue has its own consequence (P2), and HaX only quotes what the
 // player brought out (P13).

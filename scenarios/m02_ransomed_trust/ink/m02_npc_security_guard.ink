@@ -42,7 +42,7 @@ VAR hub_quiet = false
 
 // Synced from globalVars by engine at call-open
 VAR cover_burned = false
-VAR cover_restored = false
+VAR cover_restored = false // Synced scenario global: the player's cover is re-established (Val clears it here); also set by Bernie's vouch (m02_npc_receptionist)
 VAR staff_lanyard_obtained = false
 VAR bernie_vouched = false
 VAR dr_kim_met = false

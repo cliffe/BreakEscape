@@ -9,7 +9,7 @@ VAR confrontation_approach = ""    // diplomatic, aggressive, evidence_based
 VAR derek_knows_safetynet = false
 VAR derek_showed_remorse = false   // Spoiler: he won't
 VAR final_choice = ""              // arrest, recruit, expose
-VAR derek_confronted = false       // Set to true when confrontation ends
+VAR derek_confronted = false // Synced scenario global: the confrontation with Derek is over; also set by his globalVarOnKO
 
 // External variables
 VAR player_name = "Agent 0x00"

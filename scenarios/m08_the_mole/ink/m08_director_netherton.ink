@@ -22,7 +22,7 @@ VAR asked_why_me = false
 VAR asked_rules = false
 VAR met = false
 VAR told_name = false
-VAR brief_taken = false
+VAR brief_taken = false // Synced scenario global: Netherton's brief is done; also set by his npc_ko mapping
 // PASS 3 (P6): the door-audit check. Globals synced in from the scenario.
 VAR suite_code = ""
 // PASS 3 (playtest B-F1): set by a pickup mapping when the keycard actually

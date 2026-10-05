@@ -8,7 +8,7 @@ EXTERNAL player_name()
 // one throws at runtime.
 VAR player_approach = ""
 VAR knows_m2_connection = false
-VAR handler_trust = 50
+VAR handler_trust = 50 // Synced scenario global: HaX's trust in the player, carried into the debrief; also raised by m03_closing_debrief
 VAR asked_about_victoria = false
 VAR asked_clone = false
 VAR asked_network = false

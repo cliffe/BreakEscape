@@ -12,7 +12,7 @@ VAR topic_zero_day_philosophy = false
 VAR topic_ethics = false
 VAR recruitment_discussed = false
 VAR night_confrontation_ready = false
-VAR victoria_fate = ""
+VAR victoria_fate = "" // Synced scenario global: Sterling's fate (recruited/arrested/escaped/ko); also set to ko by her npc_ko mapping
 // Synced scenario globals: what the player has opened (pass 3, P1/P3). usb_seen is
 // written directly by the drive's onRead; lore_directive_found arrives via a task
 // completion, so both are checked.

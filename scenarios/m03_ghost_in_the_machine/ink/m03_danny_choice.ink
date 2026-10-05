@@ -3,7 +3,7 @@ EXTERNAL player_name()
 // danny_fate is a scenario global; assigning it writes through to game state,
 // where the credits and the debrief read it back. No unbound EXTERNAL getters.
 VAR danny_fate = ""
-VAR danny_evidence_seen = false
+VAR danny_evidence_seen = false // Synced scenario global: the player has seen Danny's hospital files; also set by the GHOST folder's onRead
 // Final round: a return visit gets its own line, skipped once after an exit.
 VAR rest_quiet = false
 

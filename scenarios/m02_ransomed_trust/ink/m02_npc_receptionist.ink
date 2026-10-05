@@ -37,7 +37,7 @@ VAR met_after_burn = false
 
 // Synced from globalVars by engine at call-open
 VAR cover_burned = false
-VAR cover_restored = false
+VAR cover_restored = false // Synced scenario global: the player's cover is re-established (Bernie vouches here); also set by Val (m02_npc_security_guard)
 VAR bernie_trusts_player = false
 VAR noticed_struck_booking = false
 VAR insider_identified = false

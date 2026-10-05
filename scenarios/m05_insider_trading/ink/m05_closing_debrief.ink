@@ -31,7 +31,7 @@
 // Act 1 (opening)
 VAR player_approach = "" // cautious, aggressive, diplomatic
 VAR knows_full_stakes = false
-VAR handler_trust = 50
+VAR handler_trust = 50 // Synced scenario global: HaX's confidence (0-100), built up in the briefing; also raised by m05_insider_trading_opening
 
 // Act 2 (the case)
 VAR found_pamphlet = false
