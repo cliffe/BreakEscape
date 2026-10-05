@@ -51,12 +51,6 @@
       "optional": false
     },
     {
-      "id": "coverage_recommendation_form",
-      "label": "Coverage Recommendation Form",
-      "kind": "item",
-      "optional": false
-    },
-    {
       "id": "warranty_compliance_checklist",
       "label": "Warranty Compliance Checklist",
       "kind": "item",
@@ -78,6 +72,12 @@
       "id": "npc_eleanor_vance",
       "label": "Eleanor Vance",
       "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "coverage_recommendation_form",
+      "label": "Coverage Recommendation Form",
+      "kind": "item",
       "optional": false
     },
     {
@@ -165,15 +165,15 @@
       "optional": false
     },
     {
-      "id": "lock_lock_closing_debrief",
-      "label": "Lock Closing Debrief",
-      "kind": "lock",
-      "optional": false
-    },
-    {
       "id": "andgate3",
       "label": "+",
       "kind": "gate",
+      "optional": false
+    },
+    {
+      "id": "lock_lock_closing_debrief",
+      "label": "Lock Closing Debrief",
+      "kind": "lock",
       "optional": false
     }
   ],
@@ -210,11 +210,6 @@
     },
     {
       "from": "meridian_claims_suite",
-      "to": "coverage_recommendation_form",
-      "soft": false
-    },
-    {
-      "from": "meridian_claims_suite",
       "to": "warranty_compliance_checklist",
       "soft": false
     },
@@ -231,6 +226,11 @@
     {
       "from": "meridian_claims_suite",
       "to": "npc_eleanor_vance",
+      "soft": false
+    },
+    {
+      "from": "npc_eleanor_vance",
+      "to": "coverage_recommendation_form",
       "soft": false
     },
     {
@@ -305,21 +305,21 @@
     },
     {
       "from": "andgate2",
-      "to": "lock_lock_closing_debrief",
-      "soft": false
-    },
-    {
-      "from": "coverage_recommendation_form",
-      "to": "andgate2",
-      "soft": false
-    },
-    {
-      "from": "andgate3",
       "to": "door_meridian_evidence_archive",
       "soft": false
     },
     {
       "from": "forensic_data_platform_terminal",
+      "to": "andgate2",
+      "soft": false
+    },
+    {
+      "from": "andgate3",
+      "to": "lock_lock_closing_debrief",
+      "soft": false
+    },
+    {
+      "from": "coverage_recommendation_form",
       "to": "andgate3",
       "soft": false
     }

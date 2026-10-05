@@ -162,7 +162,7 @@ cabinet_pin = 5857 # @random_pin
         {
           "taskId": "read_claim_file",
           "type": "manual",
-          "status": "locked",
+          "status": "active",
           "title": "Read Whitworth's incident notification — confirm claim quantum and timeline"
         },
         {
@@ -181,6 +181,8 @@ cabinet_pin = 5857 # @random_pin
       "status": "locked",
       "order": 2,
       "unlockCondition": { "aimCompleted": "investigate_claim" },
+<%# The exhibit tasks ship active: unlockAim only activates the first task (enter_archive), so
+    once inside the archive the aim showed nothing left to do. %>
       "tasks": [
         {
           "taskId": "enter_archive",
@@ -192,19 +194,19 @@ cabinet_pin = 5857 # @random_pin
         {
           "taskId": "read_packet_a",
           "type": "manual",
-          "status": "locked",
+          "status": "active",
           "title": "Review Exhibit A — IT forensics summary"
         },
         {
           "taskId": "read_packet_b",
           "type": "manual",
-          "status": "locked",
+          "status": "active",
           "title": "Review Exhibit B — OT forensics summary (note the evidence gaps)"
         },
         {
           "taskId": "read_packet_c",
           "type": "manual",
-          "status": "locked",
+          "status": "active",
           "title": "Review Exhibit C — warranty compliance evidence"
         }
       ]
@@ -235,38 +237,42 @@ cabinet_pin = 5857 # @random_pin
       "status": "locked",
       "order": 4,
       "unlockCondition": { "aimCompleted": "assess_warranties" },
+<%# The three reading tasks ship active, so the aim always shows something to do when it
+    opens (unlockAim only activates the first task). The decision task unlocks once the
+    NCSC brief and the underwriting file are both read (Eleanor eventMappings), and
+    completes when the form is submitted (coverage_decision_made mapping), not when
+    Eleanor hands the form over. %>
       "tasks": [
-        {
-          "taskId": "complete_warranty_checklist",
-          "type": "manual",
-          "status": "locked",
-          "optional": true,
-          "title": "Complete the warranty compliance assessment — record breach positions for W-03, W-07, W-09, and W-12"
-        },
         {
           "taskId": "read_hartley_report",
           "type": "manual",
-          "status": "locked",
+          "status": "active",
           "title": "Review Simon Hartley's independent loss adjustment report"
         },
         {
           "taskId": "read_ncsc_brief",
           "type": "manual",
-          "status": "locked",
+          "status": "active",
           "title": "Open and read the NCSC Attribution Brief (TLP:AMBER)"
         },
         {
           "taskId": "read_underwriting_file",
           "type": "manual",
-          "status": "locked",
+          "status": "active",
           "title": "Review the Meridian underwriting file — the renewal memo is critical"
         },
         {
           "taskId": "talk_to_eleanor_decision",
-          "type": "npc_conversation",
-          "targetNPC": "eleanor_vance",
+          "type": "manual",
           "status": "locked",
-          "title": "Make your coverage recommendation to Eleanor Vance"
+          "title": "Get the Coverage Decision Form from Eleanor Vance and submit your recommendation"
+        },
+        {
+          "taskId": "complete_warranty_checklist",
+          "type": "manual",
+          "status": "active",
+          "optional": true,
+          "title": "Complete the warranty compliance assessment — record breach positions for W-03, W-07, W-09, and W-12"
         }
       ]
     },
@@ -292,6 +298,13 @@ cabinet_pin = 5857 # @random_pin
     {
       "aimId": "closing_debrief",
       "title": "Closing Debrief — Insurance as Safety Governance",
+      "missionConclusion": true,
+<%# No VM or flag work in this SIS game, so there is nothing the server must hold the ending
+    for: the empty gate trusts the client (README_scenario_design.md, concludeRequires). The
+    only task completes on the debrief's last line, after debrief_complete has rolled the
+    credits. A globals gate on debrief_complete would race that task's POST against the
+    state sync and could flash "Not Yet" over the credits. %>
+      "concludeRequires": {},
       "description": "Eleanor Vance reviews the coverage decision and its implications for insurance as a safety governance mechanism. Topics vary based on what you found and what you decided.",
       "status": "locked",
       "order": 6,
@@ -417,6 +430,126 @@ cabinet_pin = 5857 # @random_pin
               "readable": true,
               "text": "MERIDIAN CYBER INSURANCE — CLAIMS\n\nEvidence Archive (north door, Claims Suite)\nAccess code: <%= archive_pin %>\n\nIssued for the Albion Energy Storage claim review.\nE. Vance, Claims Manager",
               "observations": "Eleanor's handwritten slip with the Evidence Archive door code."
+            },
+            {
+              // [MG-05] Coverage Decision Form, interactive 4-section recommendation form.
+              // Held by Eleanor and handed over (#give_item in form_presentation) only once the
+              // NCSC brief and the underwriting file are both read: the form minigame has no gate
+              // of its own (a desk copy could be opened and submitted at any time). Opened from
+              // the inventory; dispatched by type in interactions.js.
+              // Sets coverage_form_reviewed=true on open; writes coverage_decision, war_exclusion_invoked,
+              // disclosure_position, trent_water_in_scope, coverage_decision_made on submit.
+              "type": "coverage_decision_form",
+              "id": "coverage_decision_form",
+              "name": "Coverage Recommendation Form",
+              "takeable": true,
+              "puzzle_graph_role": "action",
+              "puzzle_graph_unlocks": "lock_closing_debrief",
+              "puzzle_graph_and_with": "underwriting_file",
+              "puzzle_graph_reveals": "Coverage position (A1/A2/A3), war exclusion decision, disclosure posture, Trent Water scope — final player decision that triggers Eleanor's closing debrief",
+              "puzzle_graph_aim": "closing_debrief",
+              "observations": "A one-page form on Meridian letterhead. COVERAGE RECOMMENDATION — MC-2023-ALBE-007. Four sections await completion.",
+              "minigameData": {
+                "formTitle": "Coverage Recommendation Form",
+                "headerRef": "MC-2023-ALBE-007",
+                "claimsManager": "Eleanor Vance",
+                "openVar": "coverage_form_reviewed",
+                "outcomeSpeaker": "Eleanor Vance &mdash; Claims Manager",
+                "outcomeQuoteSection": "cdf-s1",
+                "outcomeQuotes": {
+                  "A1": "Your analysis supports full coverage — Meridian will cover the £8.2M claim. However, we're retaining counsel for the post-incident arbitration with Albion over warranty compliance in the pre-incident period.",
+                  "A2": "By finding three breaches you're reducing coverage to approximately £6.1M. That's defensible — Albion will dispute it, but the Hartley report backs the deduction. Litigation budget is already factored in.",
+                  "A3": "Denying coverage entirely is the highest-risk position. Albion will take us to court, and the judge will likely find we're being unreasonable given the SIS functioned correctly despite the attack. I would recommend reconsidering."
+                },
+                "sections": [
+                    {
+                      "id": "cdf-s1",
+                      "title": "Section 1 &mdash; Coverage Position",
+                      "description": "Select the coverage position based on your warranty compliance assessment and the Hartley loss adjustment report.",
+                      "options": [
+                        {
+                          "value": "A1",
+                          "label": "Position A1 &mdash; Accept full claim (£8.2M)",
+                          "sublabel": "All warranties compliant or no material breaches found. Coverage stands in full."
+                        },
+                        {
+                          "value": "A2",
+                          "label": "Position A2 &mdash; Proportional coverage (approx. £6.1M)",
+                          "sublabel": "Warranty breaches proven and causally connected. ~25% deduction on BI and physical damage per Insurance Act 2015."
+                        },
+                        {
+                          "value": "A3",
+                          "label": "Position A3 &mdash; Decline coverage",
+                          "sublabel": "Multiple safety-critical warranty breaches; coverage declined. High litigation risk."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "cdf-s2",
+                      "title": "Section 2 &mdash; Act-of-War Exclusion Decision",
+                      "description": "GREYMANTLE attribution: moderate-to-high confidence (70&ndash;80%) state-aligned, but below English law threshold for formal &ldquo;act of war&rdquo; determination. Meridian underwriting position: residual risk accepted.",
+                      "options": [
+                        {
+                          "value": "invoke",
+                          "label": "Invoke the exclusion",
+                          "sublabel": "Treat attack as state-sponsored act of war; decline coverage on this basis. Requires formal state actor assertion."
+                        },
+                        {
+                          "value": "preserve",
+                          "label": "Preserve right without formal invocation",
+                          "sublabel": "Reserve Meridian&rsquo;s position pending any future formal state attribution; maintain coverage for now."
+                        },
+                        {
+                          "value": "waive",
+                          "label": "Expressly waive the exclusion",
+                          "sublabel": "Attribution confidence insufficient; treat as covered cyber event regardless of state-aligned indicators."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "cdf-s3",
+                      "title": "Section 3 &mdash; Regulatory Disclosure",
+                      "description": "Determine the disclosure posture for NCSC attribution indicators. Standard FCA / PRA reporting applies regardless of this selection.",
+                      "options": [
+                        {
+                          "value": "full",
+                          "label": "Support full NCSC disclosure of all technical indicators",
+                          "sublabel": "Disclose GREYMANTLE attribution evidence, C2 infrastructure details, and tooling signatures to NCSC without restriction."
+                        },
+                        {
+                          "value": "restricted",
+                          "label": "Advise restricted legally-reviewed disclosure only",
+                          "sublabel": "Disclose only what is required under NIS Regulations; withhold attribution intelligence pending legal review."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "cdf-s4",
+                      "title": "Section 4 &mdash; Trent Water Third-Party Scope",
+                      "description": "Cross-sector exposure from shared CastleTech MSP infrastructure. Provisional Trent Water quantum: £400K. Forensic findings pending.",
+                      "options": [
+                        {
+                          "value": "include",
+                          "label": "Include in initial scope (est. £400K)",
+                          "sublabel": "Accept provisional quantum; adjust on final Trent Water forensic report."
+                        },
+                        {
+                          "value": "refer",
+                          "label": "Refer out pending Trent Water forensic findings",
+                          "sublabel": "Exclude from this determination; open separate claim reference once scope confirmed."
+                        }
+                      ]
+                    }
+                ],
+                "completionActions": [
+                  { "setVariable": "coverage_form_reviewed",  "value": true },
+                  { "setVariable": "coverage_decision",       "fromSection": "cdf-s1" },
+                  { "setVariable": "war_exclusion_invoked",   "fromSection": "cdf-s2", "equalsValue": "invoke" },
+                  { "setVariable": "disclosure_position",     "fromSection": "cdf-s3" },
+                  { "setVariable": "trent_water_in_scope",    "fromSection": "cdf-s4", "equalsValue": "include" },
+                  { "setVariable": "coverage_decision_made",  "value": true }
+                ]
+              }
             }
           ],
           "timedConversation": {
@@ -540,10 +673,33 @@ cabinet_pin = 5857 # @random_pin
               }
             },
             {
+              // Same guard as read_hartley_report: the cabinet can be opened as soon as the
+              // archive is, and an early completion would show make_recommendation over the
+              // evidence-archive aim
               "eventPattern": "global_variable_changed:underwriting_file_reviewed",
-              "condition": "value === true",
+              "condition": "value === true && globalVars.warranty_evidence_reviewed === true",
               "onceOnly": true,
               "completeTask": "read_underwriting_file"
+            },
+            {
+              "eventPattern": "global_variable_changed:warranty_evidence_reviewed",
+              "condition": "value === true && globalVars.underwriting_file_reviewed === true",
+              "onceOnly": true,
+              "completeTask": "read_underwriting_file"
+            },
+            {
+              // The decision task opens once the NCSC brief and the underwriting file are both
+              // read: the same condition under which Eleanor hands over the form
+              "eventPattern": "global_variable_changed:underwriting_file_reviewed",
+              "condition": "value === true && globalVars.attribution_brief_reviewed === true",
+              "onceOnly": true,
+              "unlockTask": "talk_to_eleanor_decision"
+            },
+            {
+              "eventPattern": "global_variable_changed:attribution_brief_reviewed",
+              "condition": "value === true && globalVars.underwriting_file_reviewed === true",
+              "onceOnly": true,
+              "unlockTask": "talk_to_eleanor_decision"
             },
             {
               "eventPattern": "global_variable_changed:warranty_checklist_complete",
@@ -559,6 +715,8 @@ cabinet_pin = 5857 # @random_pin
               "eventPattern": "global_variable_changed:coverage_decision_made",
               "condition": "value === true",
               "onceOnly": true,
+              // The decision task completes on the actual submission of the form
+              "completeTask": "talk_to_eleanor_decision",
               "setGlobal": { "eleanor_debrief_mode": true },
               "unlockAim": "closing_debrief",
               "sendTimedMessage": {
@@ -655,12 +813,6 @@ cabinet_pin = 5857 # @random_pin
                 "delay": 10000,
                 "message": "Robert Ngata (NCSC): You have the attribution brief. I'm available to discuss the confidence assessment, the act-of-war threshold question, and the Trent Water cross-sector exposure — message me when you're ready."
               }
-            },
-            {
-              "eventPattern": "global_variable_changed:trent_water_assessed",
-              "condition": "value === true",
-              "onceOnly": true,
-              "completeTask": "assess_trent_water"
             }
           ]
         }
@@ -846,127 +998,6 @@ cabinet_pin = 5857 # @random_pin
           "text": "FAIRBRIDGE ASSOCIATES — Loss Adjustment Report — MC-2023-ALBE-007\nPrepared by: Simon Hartley, Senior Loss Adjuster\n\nTOTAL CLAIMED LOSS: £8,200,000\n\n(a) Incident response costs: £1,400,000 — FULLY COVERED regardless of warranty status.\n(b) Business interruption: £4,800,000 — CONTESTED. Meridian argues a portion of the outage represents pre-existing SIS recertification obligation (deferred firmware patch). My assessment: the full 6-week outage is causally attributable to the incident. Emergency recertification is a consequence of the attack, not a pre-existing scheduled obligation.\n(c) Physical damage: £1,600,000 — COVERED under affirmative cyber clause.\n(d) Third-party — Trent Water: £400,000 — PROVISIONAL pending Trent Water forensic findings.\n\nWARRANTY DEDUCTION ANALYSIS:\nW-07 breach is causally connected to the IT-to-OT lateral movement pathway. A proportionate deduction of 20-25% applied to items (b) and (c) — approximately £1.5-1.6M — is legally defensible under the Insurance Act 2015.\n\nMY RECOMMENDATION:\nPosition A (full coverage) is commercially generous but legally exposed.\nPosition B (partial with ~25% deduction on BI and physical damage) is the most defensible position.\nPosition C (decline) is not recommended — would likely result in litigation and regulatory criticism.\n\nEstimated settlement at Position B: approximately £6.1-6.3M.",
           "observations": "A sealed envelope. 'FAIRBRIDGE ASSOCIATES — INDEPENDENT LOSS ADJUSTMENT — PRIVILEGED AND CONFIDENTIAL'",
           "onRead": { "setVariable": { "loss_quantum_reviewed": true } }
-        },
-
-        {
-          // [MG-05] Coverage Decision Form — interactive 4-section recommendation form
-          // type: "coverage_decision_form" dispatched via interactions.js (Cliffe pattern — no lockType)
-          // Sets coverage_form_reviewed=true on open; writes coverage_decision, war_exclusion_invoked,
-          // disclosure_position, trent_water_in_scope, coverage_decision_made on submit.
-          "type": "coverage_decision_form",
-          "id": "coverage_decision_form",
-          "name": "Coverage Recommendation Form",
-          "takeable": false,
-          "gateVar": "underwriting_file_reviewed",
-          "sealedMessage": "You cannot submit a coverage recommendation until you have reviewed the underwriting file. The renewal memo documents what Meridian knew before the incident — it is critical to the legal position on any coverage reduction.",
-          "openableReadyMessage": "All required documents reviewed. You are ready to complete your coverage recommendation.",
-          "puzzle_graph_role": "action",
-          "puzzle_graph_unlocks": "lock_closing_debrief",
-          "puzzle_graph_and_with": "underwriting_file",
-          "puzzle_graph_reveals": "Coverage position (A1/A2/A3), war exclusion decision, disclosure posture, Trent Water scope — final player decision that triggers Eleanor's closing debrief",
-          "puzzle_graph_aim": "closing_debrief",
-          "observations": "A one-page form on Meridian letterhead. COVERAGE RECOMMENDATION — MC-2023-ALBE-007. Four sections await completion.",
-          "minigameData": {
-            "formTitle": "Coverage Recommendation Form",
-            "headerRef": "MC-2023-ALBE-007",
-            "claimsManager": "Eleanor Vance",
-            "openVar": "coverage_form_reviewed",
-            "outcomeSpeaker": "Eleanor Vance &mdash; Claims Manager",
-            "outcomeQuoteSection": "cdf-s1",
-            "outcomeQuotes": {
-              "A1": "Your analysis supports full coverage — Meridian will cover the £8.2M claim. However, we're retaining counsel for the post-incident arbitration with Albion over warranty compliance in the pre-incident period.",
-              "A2": "By finding three breaches you're reducing coverage to approximately £6.1M. That's defensible — Albion will dispute it, but the Hartley report backs the deduction. Litigation budget is already factored in.",
-              "A3": "Denying coverage entirely is the highest-risk position. Albion will take us to court, and the judge will likely find we're being unreasonable given the SIS functioned correctly despite the attack. I would recommend reconsidering."
-            },
-            "sections": [
-                {
-                  "id": "cdf-s1",
-                  "title": "Section 1 &mdash; Coverage Position",
-                  "description": "Select the coverage position based on your warranty compliance assessment and the Hartley loss adjustment report.",
-                  "options": [
-                    {
-                      "value": "A1",
-                      "label": "Position A1 &mdash; Accept full claim (£8.2M)",
-                      "sublabel": "All warranties compliant or no material breaches found. Coverage stands in full."
-                    },
-                    {
-                      "value": "A2",
-                      "label": "Position A2 &mdash; Proportional coverage (approx. £6.1M)",
-                      "sublabel": "Warranty breaches proven and causally connected. ~25% deduction on BI and physical damage per Insurance Act 2015."
-                    },
-                    {
-                      "value": "A3",
-                      "label": "Position A3 &mdash; Decline coverage",
-                      "sublabel": "Multiple safety-critical warranty breaches; coverage declined. High litigation risk."
-                    }
-                  ]
-                },
-                {
-                  "id": "cdf-s2",
-                  "title": "Section 2 &mdash; Act-of-War Exclusion Decision",
-                  "description": "GREYMANTLE attribution: moderate-to-high confidence (70&ndash;80%) state-aligned, but below English law threshold for formal &ldquo;act of war&rdquo; determination. Meridian underwriting position: residual risk accepted.",
-                  "options": [
-                    {
-                      "value": "invoke",
-                      "label": "Invoke the exclusion",
-                      "sublabel": "Treat attack as state-sponsored act of war; decline coverage on this basis. Requires formal state actor assertion."
-                    },
-                    {
-                      "value": "preserve",
-                      "label": "Preserve right without formal invocation",
-                      "sublabel": "Reserve Meridian&rsquo;s position pending any future formal state attribution; maintain coverage for now."
-                    },
-                    {
-                      "value": "waive",
-                      "label": "Expressly waive the exclusion",
-                      "sublabel": "Attribution confidence insufficient; treat as covered cyber event regardless of state-aligned indicators."
-                    }
-                  ]
-                },
-                {
-                  "id": "cdf-s3",
-                  "title": "Section 3 &mdash; Regulatory Disclosure",
-                  "description": "Determine the disclosure posture for NCSC attribution indicators. Standard FCA / PRA reporting applies regardless of this selection.",
-                  "options": [
-                    {
-                      "value": "full",
-                      "label": "Support full NCSC disclosure of all technical indicators",
-                      "sublabel": "Disclose GREYMANTLE attribution evidence, C2 infrastructure details, and tooling signatures to NCSC without restriction."
-                    },
-                    {
-                      "value": "restricted",
-                      "label": "Advise restricted legally-reviewed disclosure only",
-                      "sublabel": "Disclose only what is required under NIS Regulations; withhold attribution intelligence pending legal review."
-                    }
-                  ]
-                },
-                {
-                  "id": "cdf-s4",
-                  "title": "Section 4 &mdash; Trent Water Third-Party Scope",
-                  "description": "Cross-sector exposure from shared CastleTech MSP infrastructure. Provisional Trent Water quantum: £400K. Forensic findings pending.",
-                  "options": [
-                    {
-                      "value": "include",
-                      "label": "Include in initial scope (est. £400K)",
-                      "sublabel": "Accept provisional quantum; adjust on final Trent Water forensic report."
-                    },
-                    {
-                      "value": "refer",
-                      "label": "Refer out pending Trent Water forensic findings",
-                      "sublabel": "Exclude from this determination; open separate claim reference once scope confirmed."
-                    }
-                  ]
-                }
-            ],
-            "completionActions": [
-              { "setVariable": "coverage_form_reviewed",  "value": true },
-              { "setVariable": "coverage_decision",       "fromSection": "cdf-s1" },
-              { "setVariable": "war_exclusion_invoked",   "fromSection": "cdf-s2", "equalsValue": "invoke" },
-              { "setVariable": "disclosure_position",     "fromSection": "cdf-s3" },
-              { "setVariable": "trent_water_in_scope",    "fromSection": "cdf-s4", "equalsValue": "include" },
-              { "setVariable": "coverage_decision_made",  "value": true }
-            ]
-          }
         },
 
         {
@@ -1193,8 +1224,10 @@ cabinet_pin = 5857 # @random_pin
           "takeable": false,
           "readable": true,
           "text": "ALBION ENERGY STORAGE — NETWORK ARCHITECTURE\nAnnotated by Meridian Underwriting Team — January 2024\n\n[ENTERPRISE IT] — Corporate VLAN, Active Directory, Email, ERP\n    DOWN (RDP — BIDIRECTIONAL)\n[DMZ] — Jump Server (JS-ALBION-01) HIGH RISK annotation in red marker\n    DOWN (Modbus/TCP — UNRESTRICTED)\n[OPERATIONS / SCADA] — Historian (DUAL-HOMED), HMI-OPS-01, HMI-ENG-02\n    DOWN\n[CONTROL NETWORK] — PLC-BMS, PLC-GRID, RTUs\n    DOWN\n[SAFETY LAYER] — SIS (SIL 2), Hardwired ESD, Analog Thermometers\n\nRED MARKER ANNOTATIONS:\nJump Server: HIGH RISK — bidirectional RDP, no session recording\nHistorian: DUAL-HOMED — direct IT-to-OT data path, segmentation exception\nW-07 deadline note: REMEDIATION REQUIRED Q4 2024\nTrent Water: SHARED FILE SERVER — cross-sector exposure",
-          "observations": "A large printed network diagram pinned to the wall, covered in red marker annotations from the Meridian underwriting team.",
-          "onRead": { "setVariable": { "it_forensics_reviewed": true } }
+          // Background reading only: it is the underwriting team's January 2024 diagram, not
+          // the IT forensics exhibit, so it no longer sets it_forensics_reviewed (that let
+          // Exhibit A be skipped). Exhibit A's own onRead is the only route.
+          "observations": "A large printed network diagram pinned to the wall, covered in red marker annotations from the Meridian underwriting team."
         },
 
         {

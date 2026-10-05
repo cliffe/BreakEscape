@@ -20,7 +20,7 @@ VAR trent_water_discussed = false
 VAR infrastructure_incentives_discussed = false
 
 // Global reads: attribution_brief_reviewed, disclosure_position, trent_water_assessed, war_exclusion_invoked
-// Global writes: (none — NPC provides perspective, players make decisions)
+// Global writes: trent_water_assessed (trent_water_discussion)
 
 // ===========================================
 // FIRST CALL — Introduction
@@ -28,7 +28,7 @@ VAR infrastructure_incentives_discussed = false
 
 === start ===
 #speaker:robert
-#complete_task:assess_trent_water
+// assess_trent_water completes in trent_water_discussion, not on opening the thread.
 
 {not robert_welcomed:
     Robert Ngata: Meridian — yes. I'm Robert Ngata, NCSC Incident Officer for the Albion notification. I've been expecting your message.
@@ -152,6 +152,7 @@ Robert Ngata: But I also understand Albion's legal position. They're concerned a
 #speaker:robert
 ~ trent_water_discussed = true
 #set_global:trent_water_assessed:true
+#complete_task:assess_trent_water
 
 Robert Ngata: Trent Water's investigation is ongoing. No confirmed ICS compromise on their side at this point.
 

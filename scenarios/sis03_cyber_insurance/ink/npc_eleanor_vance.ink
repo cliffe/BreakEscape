@@ -15,7 +15,6 @@ VAR warranty_checklist_complete = false
 VAR underwriting_file_reviewed = false
 VAR loss_quantum_reviewed = false
 VAR attribution_brief_reviewed = false // Synced scenario global: the player has read the NCSC brief; set only by the ncsc_brief_envelope onRead (gated on warranty_evidence_reviewed); read-only here
-VAR coverage_form_reviewed = false
 VAR trent_water_assessed = false
 VAR coverage_decision_made = false
 VAR coverage_decision = "not_yet"
@@ -24,6 +23,8 @@ VAR disclosure_position = "not_yet"
 VAR eleanor_debrief_mode = false // Synced scenario global: Eleanor is in debrief mode; also set when coverage_decision_made
 VAR debrief_started = false
 VAR debrief_complete = false
+VAR ins001_assessed = false // Synced scenario global: CLAIM-INS-001 (segmentation as a coverage condition) assessed; set when the four warranties have been discussed
+VAR ins003_assessed = false // Synced scenario global: CLAIM-INS-003 (safety-constrained patch deferral) assessed; set with ins001_assessed
 
 // The Evidence Archive PIN is never spoken: it is printed on the access slip in Eleanor's
 // itemsHeld (scenario.json.erb), so the code can be randomised without breaking cached TTS.
@@ -41,7 +42,8 @@ VAR w09_discussed = false
 VAR w12_discussed = false
 VAR underwriting_challenge_discussed = false
 VAR act_of_war_discussed = false
-VAR form_reviewed = false
+VAR form_reviewed = false // Eleanor has handed over the Coverage Decision Form (form_presentation)
+VAR act_of_war_decided = false // The act-of-war decision scene has been played (act_of_war_decision)
 VAR debrief_warranty_synthesis = false
 VAR debrief_war_exclusion_synthesis = false
 VAR debrief_underwriting_synthesis = false
@@ -50,7 +52,7 @@ VAR debrief_underwriting_synthesis = false
 //               evidence_archive_unlocked, warranty_checklist_complete, underwriting_file_reviewed,
 //               loss_quantum_reviewed, attribution_brief_reviewed, coverage_decision_made, coverage_decision,
 //               war_exclusion_invoked, disclosure_position, eleanor_debrief_mode
-// Global writes: warranty_checklist_complete, coverage_decision, coverage_decision_made
+// Global writes: warranty_checklist_complete, ins001_assessed, ins003_assessed, war_exclusion_invoked, debrief_complete
 
 // ===========================================
 // FIRST ENCOUNTER — Welcome and Initial Briefing
@@ -60,30 +62,30 @@ VAR debrief_underwriting_synthesis = false
 #speaker:eleanor
 #complete_task:talk_to_eleanor_initial
 
-{not eleanor_welcomed:
-    Eleanor Vance: Good — you're here. I'm Eleanor Vance, Claims Manager.
-    
-    Eleanor Vance: Albion Energy Storage filed forty-eight hours ago. £8.2 million. You're our coverage assessor on this one. I need your analysis before we respond.
-    
-    ~ eleanor_welcomed = true
-    
-    * [Brief me on the incident]
-        -> claim_briefing
-    
-    * [What's the main coverage question?]
-        Eleanor Vance: Whether Albion's warranty breaches — particularly their IT-to-OT segmentation failure — justify a coverage reduction. That's the central question.
-        Eleanor Vance: But let me give you the full picture first.
-        -> claim_briefing
+// Returning visits are checked first, so the first-meeting choices below can't
+// fall through into the re-entry line and merge with the hub's choices.
+{eleanor_debrief_mode:
+    -> debrief_hub
 }
 
-{eleanor_welcomed and not eleanor_debrief_mode:
+{eleanor_welcomed:
     Eleanor Vance: Back to the task at hand?
     -> hub
 }
 
-{eleanor_debrief_mode:
-    -> debrief_hub
-}
+Eleanor Vance: Good — you're here. I'm Eleanor Vance, Claims Manager.
+
+Eleanor Vance: Albion Energy Storage filed forty-eight hours ago. £8.2 million. You're our coverage assessor on this one. I need your analysis before we respond.
+
+~ eleanor_welcomed = true
+
+* [Brief me on the incident]
+    -> claim_briefing
+
+* [What's the main coverage question?]
+    Eleanor Vance: Whether Albion's warranty breaches — particularly their IT-to-OT segmentation failure — justify a coverage reduction. That's the central question.
+    Eleanor Vance: But let me give you the full picture first.
+    -> claim_briefing
 
 
 // ===========================================
@@ -200,30 +202,29 @@ Eleanor Vance: When you can answer all three, and connect them to a cyber event 
 #speaker:eleanor
 #complete_task:talk_to_eleanor_warranties
 
-{not warranty_discussion_offered:
-    Eleanor Vance: Right. Let's walk through the warranties one at a time.
-
-    Eleanor Vance: You've reviewed the forensic evidence. Let me hear your reasoning on each condition before we move to the act-of-war question.
-
-    ~ warranty_discussion_offered = true
-
-    * [W-07: IT-to-OT Segmentation]
-        -> w07_discussion
-
-    * [W-03: SIS Patch Management]
-        -> w03_discussion
-
-    * [W-09: Access Control]
-        -> w09_discussion
-
-    * [W-12: Third-Party Risk]
-        -> w12_discussion
-}
-
+// Re-entry checked first, so the opening choices below can't fall through into it
 {warranty_discussion_offered:
     Eleanor Vance: Any other warranties you want to discuss?
     -> hub
 }
+
+Eleanor Vance: Right. Let's walk through the warranties one at a time.
+
+Eleanor Vance: You've reviewed the forensic evidence. Let me hear your reasoning on each condition before we move to the act-of-war question.
+
+~ warranty_discussion_offered = true
+
+* [W-07: IT-to-OT Segmentation]
+    -> w07_discussion
+
+* [W-03: SIS Patch Management]
+    -> w03_discussion
+
+* [W-09: Access Control]
+    -> w09_discussion
+
+* [W-12: Third-Party Risk]
+    -> w12_discussion
 
 
 // ===========================================
@@ -299,10 +300,15 @@ Eleanor Vance: That renewal memo is going to be in every court filing if this cl
 + {not w12_discussed} [W-12: Third-Party Risk]
     -> w12_discussion
 
-+ {w07_discussed and w03_discussed and w09_discussed and w12_discussed} [Ready for act-of-war discussion]
+// Retired once the act-of-war decision has been made, so the decision scene (and the
+// form hand-over after it) can't be replayed from here
++ {w07_discussed and w03_discussed and w09_discussed and w12_discussed and not act_of_war_decided} [Ready for act-of-war discussion]
+    // One write each: the ink VAR sync emits global_variable_changed; a #set_global
+    // tag as well would emit it a second time
     ~ warranty_checklist_complete = true
+    ~ ins001_assessed = true
+    ~ ins003_assessed = true
     Eleanor Vance: That's thorough. Let's talk about the other coverage issue: state attribution.
-    #set_global:warranty_checklist_complete:true
     -> act_of_war_intro
 
 + [Return to main conversation]
@@ -426,10 +432,10 @@ Eleanor Vance: This is a contractual failure — Albion failed to ensure their M
     
     Eleanor Vance: Our policy excludes losses caused by "war, military action, or acts of a hostile state power." The question is: does the Albion incident fall into that category?
     
-    * [It's a cyber attack by a state actor — shouldn't it be excluded?]
+    + [It's a cyber attack by a state actor — shouldn't it be excluded?]
         -> act_of_war_complexity
         
-    * [What does our policy say exactly?]
+    + [What does our policy say exactly?]
         Eleanor Vance: The exclusion is based on Lloyd's LMA5567A model language. It excludes acts occurring "in the course of war." Peacetime state-sponsored attacks are in a grey zone.
         -> act_of_war_complexity
 }
@@ -454,11 +460,11 @@ Eleanor Vance: Our external counsel advises against invoking the exclusion.
 
 ~ act_of_war_discussed = true
 
-* [So we're covering the claim despite the state attribution?]
++ [So we're covering the claim despite the state attribution?]
     Eleanor Vance: Not "despite" — we're understanding what "act of war" legally means. If every state-backed cyber operation triggered the exclusion, critical infrastructure would become uninsurable. And that's a policy problem beyond Meridian.
     -> opening_brief
     
-* [Isn't that risky commercially?]
++ [Isn't that risky commercially?]
     Eleanor Vance: It is. Our syndicate partners are going to ask tough questions. But the alternative — invoking an exclusion with uncertain legal standing — is riskier.
     -> opening_brief
 
@@ -468,12 +474,13 @@ Eleanor Vance: Our external counsel advises against invoking the exclusion.
 
 Eleanor Vance: Open the NCSC brief. See what the intelligence assessment says. Then we'll talk about the decision.
 
-* [I'll read the brief now]
++ [I'll read the brief now]
     -> hub
 
 
 === act_of_war_decision ===
 #speaker:eleanor
+~ act_of_war_decided = true
 
 Eleanor Vance: You've read the NCSC assessment. GREYMANTLE attribution at moderate-to-high confidence. Ferryman Collective as the initial access broker.
 
@@ -481,15 +488,15 @@ Eleanor Vance: Now the decision: do we invoke the exclusion or do we accept the 
 
 Eleanor Vance: My counsel advised against invocation. But I want to hear your reasoning.
 
-* [We should invoke the exclusion to protect capital]
++ [We should invoke the exclusion to protect capital]
     -> war_exclusion_invoked_path
     
-* [We should preserve our right without invoking — take the risk]
++ [We should preserve our right without invoking — take the risk]
     Eleanor Vance: That's the middle ground. We note the state attribution, we acknowledge the exclusion's applicability, but we don't invoke it. We accept the financial risk.
     Eleanor Vance: That's a defensible position. It shows we reviewed the evidence and made a deliberate choice.
     -> form_presentation
     
-* [The state attribution is credible — we should deny the claim]
++ [The state attribution is credible — we should deny the claim]
     -> war_exclusion_invoked_path
 
 
@@ -506,23 +513,34 @@ Eleanor Vance: Why invest in cyber security if the insurance fails when you face
 
 Eleanor Vance: It's a strategic question, not just a legal one. I want you to think carefully before we put this in the claim record. What's your final position?
 
-* [You've convinced me — preserve the exclusion without invoking]
++ [You've convinced me — preserve the exclusion without invoking]
     ~ war_exclusion_invoked = false
     Eleanor Vance: Noted. We preserve the right without invoking. That's the legally defensible position and the one I'd recommend.
     -> form_presentation
 
-* [I understand the risk — I still want to invoke the exclusion]
++ [I understand the risk — I still want to invoke the exclusion]
     ~ war_exclusion_invoked = true
     Eleanor Vance: Understood. I'll record the invocation. I want it on file that I advised against it — but the decision is yours.
-    #set_global:war_exclusion_invoked:true
     -> form_presentation
 
 
 === form_presentation ===
 #speaker:eleanor
-#complete_task:talk_to_eleanor_decision
+// The decision task completes when the form is submitted (coverage_decision_made
+// mapping), not here. The form is handed over only once the NCSC brief and the
+// underwriting file have both been read; every route here has the brief read.
+{not underwriting_file_reviewed:
+    -> decision_not_ready
+}
+// Defensive: the form has already been handed over
+{form_reviewed:
+    Eleanor Vance: Take your time. Come back once it's submitted.
+    -> hub
+}
+~ form_reviewed = true
 
-Eleanor Vance: Now the final decision. The Coverage Decision Form is on my desk — four sections.
+#give_item:coverage_decision_form:coverage_decision_form
+Eleanor Vance: Now the final decision. Here's the Coverage Decision Form. It has four sections.
 
 Eleanor Vance: Section one: your coverage position — full, proportional, or decline. That should reflect the warranty positions, the Hartley loss view, and the underwriting file.
 
@@ -532,15 +550,21 @@ Eleanor Vance: Section three: regulatory disclosure posture. Section four: Trent
 
 Eleanor Vance: Complete the form based on everything you've reviewed. When you submit it, the decision is logged to the claims system and I'll debrief you on what it means for critical infrastructure security governance.
 
-~ coverage_form_reviewed = true
-
 * [Understood — I'll complete the form now]
     Eleanor Vance: Take your time. Come back once it's submitted.
     -> hub
 
 * [I want to review a few more things first]
-    Eleanor Vance: Of course. The form is on the desk whenever you're ready.
+    Eleanor Vance: Of course. Keep the form until you're ready.
     -> hub
+
+
+=== decision_not_ready ===
+#speaker:eleanor
+Eleanor Vance: Not quite yet. Before we log a coverage position, you need to review the underwriting file in the Evidence Archive.
+Eleanor Vance: The renewal memo in that cabinet shows what Meridian knew before the incident. It changes the legal picture — particularly if you're considering declining.
+Eleanor Vance: The cabinet PIN is a reference code in the CMS policy notes. Find it, open the cabinet, read the file. Then come back.
+-> hub
 
 
 // ===========================================
@@ -570,8 +594,10 @@ Eleanor Vance: Complete the form based on everything you've reviewed. When you s
 
     + [That completes the scenario]
         Eleanor Vance: Well done. This was hard work, and it matters.
+        // One write: the VAR sync emits global_variable_changed:debrief_complete once,
+        // which rolls the credits and concludes the mission. A #set_global tag as well
+        // emitted it twice (two /conclude POSTs in one instant).
         ~ debrief_complete = true
-        #set_global:debrief_complete:true
         #complete_task:talk_to_eleanor_debrief
         -> hub
 }
@@ -725,20 +751,23 @@ Eleanor Vance: I think your coverage decision should reflect that tension — be
 
 // --- Late-game / unlocked-last options rise to the top ---
 
-+ {coverage_decision_made} [Debrief — let's discuss the decision]
++ {coverage_decision_made and not debrief_complete} [Debrief — let's discuss the decision]
     ~ eleanor_debrief_mode = true
     -> debrief_hub
 
-+ {attribution_brief_reviewed and underwriting_file_reviewed and not coverage_form_reviewed} [I'm ready to make the coverage decision]
-    -> form_presentation
+// form_reviewed (local) rather than coverage_form_reviewed (set when the form is opened),
+// so opening the form can't hide this option. The act-of-war decision comes first if
+// the player hasn't had it yet.
++ {attribution_brief_reviewed and underwriting_file_reviewed and not form_reviewed} [I'm ready to make the coverage decision]
+    {act_of_war_decided:
+        -> form_presentation
+    }
+    -> act_of_war_decision
 
-+ {attribution_brief_reviewed and not underwriting_file_reviewed and not coverage_form_reviewed} [I'm ready to make the coverage decision]
-    Eleanor Vance: Not quite yet. Before we log a coverage position, you need to review the underwriting file in the Evidence Archive.
-    Eleanor Vance: The renewal memo in that cabinet shows what Meridian knew before the incident. It changes the legal picture — particularly if you're considering declining.
-    Eleanor Vance: The cabinet PIN is a reference code in the CMS policy notes. Find it, open the cabinet, read the file. Then come back.
-    -> hub
++ {attribution_brief_reviewed and not underwriting_file_reviewed and not form_reviewed} [I'm ready to make the coverage decision]
+    -> decision_not_ready
 
-+ {underwriting_file_reviewed and not act_of_war_discussed} [About the renewal memo...]
++ {underwriting_file_reviewed and not act_of_war_discussed and not act_of_war_decided} [About the renewal memo...]
     Eleanor Vance: It's uncomfortable, I know. But that's the point. Let's move on to the act-of-war question.
     -> act_of_war_intro
 
@@ -753,7 +782,7 @@ Eleanor Vance: I think your coverage decision should reflect that tension — be
 + {forensic_chain_verified and not evidence_archive_access_granted} [We've traced the causal chain]
     -> grant_evidence_archive_access
 
-+ {evidence_archive_unlocked and not underwriting_file_reviewed} [Where is the underwriting cabinet PIN?]
+* {evidence_archive_unlocked and not underwriting_file_reviewed} [Where is the underwriting cabinet PIN?]
     Eleanor Vance: The PIN is a policy reference code embedded in the CMS terminal — look in the Policy Info section. It's formatted as a notation: UW-CAB-REF followed by four digits.
     Eleanor Vance: Once you have it, use it on the cabinet in the Evidence Archive.
     -> hub
@@ -764,7 +793,7 @@ Eleanor Vance: I think your coverage decision should reflect that tension — be
 
 // --- Early-game options ---
 
-+ {policy_reviewed and not forensic_challenge_briefing_delivered} [What about the forensic evidence?]
++ {policy_reviewed and not forensic_chain_verified and not forensic_challenge_briefing_delivered} [What about the forensic evidence?]
     -> forensic_chain_briefing
 
 + {not policy_briefing_delivered} [Where should we start the review?]
@@ -783,8 +812,11 @@ Eleanor Vance: I think your coverage decision should reflect that tension — be
     {forensic_chain_verified and not warranty_evidence_reviewed:
         Eleanor Vance: Review all three evidence packets in the archive. You need them before we can discuss the warranties.
     }
-    {warranty_evidence_reviewed and not coverage_decision_made:
-        Eleanor Vance: The form is on the desk when you're ready. Take your time with it.
+    {warranty_evidence_reviewed and not form_reviewed and not coverage_decision_made:
+        Eleanor Vance: Read Hartley's report, the NCSC brief and the underwriting file. Then come back to me for the decision form.
+    }
+    {form_reviewed and not coverage_decision_made:
+        Eleanor Vance: The form is yours now. Take your time with it.
     }
     {coverage_decision_made:
         Eleanor Vance: Good work today.
