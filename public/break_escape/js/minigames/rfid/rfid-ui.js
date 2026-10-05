@@ -524,11 +524,23 @@ export class RFIDUIRenderer {
             actions.appendChild(readBtn);
         }
 
-        const cancelBtn = document.createElement('div');
-        cancelBtn.className = 'flipper-button-back';
-        cancelBtn.textContent = '← Cancel';
-        cancelBtn.addEventListener('click', () => this.minigame.complete(false));
-        actions.appendChild(cancelBtn);
+        // Back goes one step, to the read screen, keeping the read and any keys
+        // already cracked. Abandoning the read is a separate, explicit choice.
+        const backBtn = document.createElement('div');
+        backBtn.className = 'flipper-button-back';
+        backBtn.textContent = '← Back';
+        backBtn.addEventListener('click', () => this.showCardDataScreen(cardData));
+        actions.appendChild(backBtn);
+
+        const abandonBtn = document.createElement('div');
+        abandonBtn.className = 'flipper-button-back';
+        abandonBtn.textContent = 'Abandon read';
+        abandonBtn.addEventListener('click', () => this.minigame.complete(false));
+        actions.appendChild(abandonBtn);
+
+        // The menu entries are divs: mark them as buttons for assistive tech and the
+        // test bridge, which finds controls by role.
+        for (const item of actions.children) item.setAttribute?.('role', 'button');
 
         screen.appendChild(actions);
     }
@@ -685,9 +697,11 @@ export class RFIDUIRenderer {
             saveBtn.addEventListener('click', () => this.minigame.handleSaveCard(cardData));
         }
 
+        // The read screen is the first step of a clone, so its only way out is to
+        // abandon the read: say so rather than "Cancel".
         const cancelBtn = document.createElement('button');
         cancelBtn.className = 'flipper-button flipper-button-secondary';
-        cancelBtn.textContent = 'Cancel';
+        cancelBtn.textContent = 'Abandon read';
         cancelBtn.addEventListener('click', () => this.minigame.complete(false));
 
         buttons.appendChild(saveBtn);
