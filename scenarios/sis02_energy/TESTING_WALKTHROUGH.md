@@ -2,6 +2,8 @@
 **Scenario**: `scenarios/sis02_energy/scenario.json.erb`  
 **Last updated**: April 2026
 
+> **Stale (October 2026).** This walkthrough predates the October 2026 fix passes (dates, the attack story, the ESD stations, the debrief and most ink knots have changed). The current step-by-step check is `PASS_PLAYTEST.md`. Facts: `information_pack.md` and `scenario.json.erb`. Only the Tor address and a few lines below have been corrected; treat everything else here as history.
+
 This document describes what a player does to complete the scenario from start to finish, step by step. It is a combined player guide and tester's checklist. Each step notes what global variable changes to expect and which tasks/aims should complete.
 
 For known gaps, placeholder substitutions, and development status, see [TODO.md](./TODO.md).
@@ -221,7 +223,7 @@ Use the Engineering Workshop RFID Key on the east door RFID reader.
 Enter the Engineering Workshop. Objects in this room:
 
 **Read the Jump Server Rack** (servers object). Shows:
-- Active RDP session: `c.ellison`, started 01:47, source IP `185.220.101.45` (Tor exit node)
+- Active RDP session: `c.ellison`, started 01:47, from `10.2.4.12` (ALB-SRV-02, an enterprise print server); its C2 leaves through the enterprise firewall to Tor exit `198.51.100.45`
 - Account was deprovisioned 8 months ago
 
 **Open HMI-ENG-02 Engineering Workstation** (`type: log_filter_terminal`, `minigameId: log-filter`). This is a Phaser.js minigame — no external VM.
@@ -232,7 +234,7 @@ Enter the Engineering Workshop. Objects in this room:
 |-------|-------|
 | Timestamp | 2025-01-16 01:47 |
 | Account | `c.ellison` |
-| Source IP | `185.220.101.45` (Tor exit node — Frankfurt) |
+| Source IP | `10.2.4.12` (ALB-SRV-02, enterprise print server; C2 egress to Tor exit `198.51.100.45`) |
 | Duration | 04:46+ |
 | Status | **ACTIVE** |
 | Access Level | CONTRACTOR |
@@ -448,7 +450,7 @@ Call Tom Hadley. Either follow the `post_isolation` → `trent_water_topic` path
 
 Tom explains:
 - Shared file server FS-ALBION-01 accessed by Trent Water workstations
-- Unusual access from workstation `TW-SCADA-ENG-02` at 23:47 Tuesday — same time as the Albion attack
+- CastleTech's `svc.deploy` account wrote `print_driver_update.pkg` to the shared server at 02:31; Trent Water workstation `TW-WS-07` opened it at 05:52
 - Both Albion and Trent Water are CastleTech clients
 
 Tom offers: *"I can send an advisory to Trent Water's security team right now. Do you want me to?"*
@@ -505,7 +507,7 @@ Talk to Priya S.. Four main topics, each unlocking once in the hub:
 
 Once `topic_root_cause_done`, `topic_sis_independence_done`, and `topic_patch_done` are all true, the hub shows **"Closing summary — what have we learned?"**
 
-Priya S. delivers the scenario's closing synthesis: the hardwired ESD worked because it was designed to be independent; normalisation of deviance led to each documented risk being accepted and forgotten; a safety case is a living document.
+Priya S. delivers the scenario's closing synthesis: the hardwired ESD worked because it was designed to be independent; each documented risk was written down, accepted and never looked at again.
 
 Player chooses a closing question:
 - *"What happens next — from a regulatory standpoint?"* → 3-month NIS investigation, de-identified findings, Albion remediation plan required

@@ -4,25 +4,25 @@
   "nodes": [
     {
       "id": "door_battery_hall_1",
-      "label": "BATTERY HALL 1 — RESTRICTED ACCESS — PPE REQUIRED<br/>RFID lock",
+      "label": "BATTERY HALL 1. RESTRICTED ACCESS. PPE REQUIRED<br/>RFID lock",
       "kind": "lock",
       "optional": false
     },
     {
       "id": "battery_hall_1",
-      "label": "BATTERY HALL 1 — RESTRICTED ACCESS — PPE REQUIRED",
+      "label": "BATTERY HALL 1. RESTRICTED ACCESS. PPE REQUIRED",
       "kind": "room",
       "optional": false
     },
     {
       "id": "door_engineering_workshop",
-      "label": "Engineering Workshop — Authorised Access Only<br/>RFID lock",
+      "label": "Engineering Workshop. Authorised Access Only<br/>RFID lock",
       "kind": "lock",
       "optional": false
     },
     {
       "id": "engineering_workshop",
-      "label": "Engineering Workshop — Authorised Access Only",
+      "label": "Engineering Workshop. Authorised Access Only",
       "kind": "room",
       "optional": false
     },
@@ -37,6 +37,12 @@
       "label": "SCADA Live Status",
       "kind": "item",
       "optional": false
+    },
+    {
+      "id": "export_plc_bms_register_table",
+      "label": "Export PLC-BMS Register Table",
+      "kind": "item",
+      "optional": true
     },
     {
       "id": "historian_trend_viewer",
@@ -178,7 +184,7 @@
     },
     {
       "id": "lock_engineering_filing_cabinet",
-      "label": "Filing Cabinet — ICS Documentation<br/>Key lock",
+      "label": "Filing Cabinet: ICS Documentation<br/>Key lock",
       "kind": "lock",
       "optional": false
     },
@@ -234,6 +240,11 @@
       "from": "scada_control_room",
       "to": "scada_live_status",
       "soft": false
+    },
+    {
+      "from": "scada_control_room",
+      "to": "export_plc_bms_register_table",
+      "soft": true
     },
     {
       "from": "scada_control_room",

@@ -142,7 +142,7 @@
       <tr><th>AND-gate convergences</th><td class="val">1</td></tr>
       <tr><th>Physical locks (puzzle)</th><td class="val">4</td></tr>
       <tr><th>Rooms</th><td class="val">3</td></tr>
-      <tr><th>Puzzle nodes / edges</th><td class="val">36 / 38</td></tr>
+      <tr><th>Puzzle nodes / edges</th><td class="val">37 / 39</td></tr>
       <tr><th>Story nodes / edges</th><td class="val">11 / 11</td></tr>
     </table>
   </div>
@@ -171,12 +171,13 @@
   node_start(("▶"))
   node_start --> scada_control_room
 
-  door_battery_hall_1["BATTERY HALL 1 — RESTRICTED ACCESS — PPE REQUIRED<br/>RFID lock"]
-  battery_hall_1("BATTERY HALL 1 — RESTRICTED ACCESS — PPE REQUIRED")
-  door_engineering_workshop["Engineering Workshop — Authorised Access Only<br/>RFID lock"]
-  engineering_workshop("Engineering Workshop — Authorised Access Only")
+  door_battery_hall_1["BATTERY HALL 1. RESTRICTED ACCESS. PPE REQUIRED<br/>RFID lock"]
+  battery_hall_1("BATTERY HALL 1. RESTRICTED ACCESS. PPE REQUIRED")
+  door_engineering_workshop["Engineering Workshop. Authorised Access Only<br/>RFID lock"]
+  engineering_workshop("Engineering Workshop. Authorised Access Only")
   scada_control_room("SCADA Control Room")
   scada_live_status{"SCADA Live Status"}
+  export_plc_bms_register_table{"Export PLC-BMS Register Table"}
   historian_trend_viewer["Historian Trend Viewer"]
   incident_response_folder{"Incident Response Folder"}
   engineering_workshop_rfid_key{"Engineering Workshop RFID Key"}
@@ -200,7 +201,7 @@
   jump_server_rack_js_albion_01{"Jump Server Rack (JS-ALBION-01)"}
   jump_server_ethernet_cable{"Jump Server Ethernet Cable"}
   sis_configuration_panel{"SIS Configuration Panel"}
-  lock_engineering_filing_cabinet["Filing Cabinet — ICS Documentation<br/>Key lock"]
+  lock_engineering_filing_cabinet["Filing Cabinet: ICS Documentation<br/>Key lock"]
   sis_safety_requirements_specification_extract{"SIS Safety Requirements Specification (extract)"}
   lock_sis_config_panel["Sis Config Panel"]
   deferred_patch_risk_assessment{"Deferred Patch Risk Assessment"}
@@ -211,6 +212,7 @@
   door_battery_hall_1 --> battery_hall_1
   door_engineering_workshop --> engineering_workshop
   scada_control_room --> scada_live_status
+  scada_control_room -.-> export_plc_bms_register_table
   scada_control_room --> historian_trend_viewer
   scada_control_room --> incident_response_folder
   scada_control_room --> engineering_workshop_rfid_key
@@ -249,13 +251,13 @@
 
   class door_battery_hall_1,door_engineering_workshop,lock_engineering_filing_cabinet,lock_sis_config_panel lock
   class battery_hall_1,engineering_workshop,scada_control_room room
-  class scada_live_status,incident_response_folder,nis_notification_form,esd_station_battery_hall_1_hall_door,esd_station_control_room_console,network_architecture_diagram,local_dial_gauge_rack_a2,esd_station_inside_battery_hall_1,jump_server_rack_js_albion_01,jump_server_ethernet_cable,sis_configuration_panel,sis_safety_requirements_specification_extract,deferred_patch_risk_assessment,it_ot_boundary_rules_document,shared_file_server_access_extract_albion_trent_water item
+  class scada_live_status,export_plc_bms_register_table,incident_response_folder,nis_notification_form,esd_station_battery_hall_1_hall_door,esd_station_control_room_console,network_architecture_diagram,local_dial_gauge_rack_a2,esd_station_inside_battery_hall_1,jump_server_rack_js_albion_01,jump_server_ethernet_cable,sis_configuration_panel,sis_safety_requirements_specification_extract,deferred_patch_risk_assessment,it_ot_boundary_rules_document,shared_file_server_access_extract_albion_trent_water item
   class historian_trend_viewer,hmi_eng_02_engineering_workstation vm
   class engineering_workshop_rfid_key,duty_officer_desk,npc_helen_marsh,battery_hall_access_badge,npc_priya_s,npc_marcus_webb,npc_tom_hadley,filing_cabinet_key key
   class action_talk_to_helen,action_talk_to_priya_s,action_call_marcus_initial,action_contact_castletech action
 
   classDef optional stroke-dasharray:5 2
-  class deferred_patch_risk_assessment,it_ot_boundary_rules_document,shared_file_server_access_extract_albion_trent_water optional
+  class export_plc_bms_register_table,deferred_patch_risk_assessment,it_ot_boundary_rules_document,shared_file_server_access_extract_albion_trent_water optional
   class node_start start`,
       story:      `flowchart TD
 
@@ -320,12 +322,13 @@
   node_start(("▶"))
   node_start --> scada_control_room
 
-  door_battery_hall_1["BATTERY HALL 1 — RESTRICTED ACCESS — PPE REQUIRED<br/>RFID lock"]
-  battery_hall_1("BATTERY HALL 1 — RESTRICTED ACCESS — PPE REQUIRED")
-  door_engineering_workshop["Engineering Workshop — Authorised Access Only<br/>RFID lock"]
-  engineering_workshop("Engineering Workshop — Authorised Access Only")
+  door_battery_hall_1["BATTERY HALL 1. RESTRICTED ACCESS. PPE REQUIRED<br/>RFID lock"]
+  battery_hall_1("BATTERY HALL 1. RESTRICTED ACCESS. PPE REQUIRED")
+  door_engineering_workshop["Engineering Workshop. Authorised Access Only<br/>RFID lock"]
+  engineering_workshop("Engineering Workshop. Authorised Access Only")
   scada_control_room("SCADA Control Room")
   scada_live_status{"SCADA Live Status"}
+  export_plc_bms_register_table{"Export PLC-BMS Register Table"}
   historian_trend_viewer["Historian Trend Viewer"]
   incident_response_folder{"Incident Response Folder"}
   engineering_workshop_rfid_key{"Engineering Workshop RFID Key"}
@@ -349,7 +352,7 @@
   jump_server_rack_js_albion_01{"Jump Server Rack (JS-ALBION-01)"}
   jump_server_ethernet_cable{"Jump Server Ethernet Cable"}
   sis_configuration_panel{"SIS Configuration Panel"}
-  lock_engineering_filing_cabinet["Filing Cabinet — ICS Documentation<br/>Key lock"]
+  lock_engineering_filing_cabinet["Filing Cabinet: ICS Documentation<br/>Key lock"]
   sis_safety_requirements_specification_extract{"SIS Safety Requirements Specification (extract)"}
   lock_sis_config_panel["Sis Config Panel"]
   deferred_patch_risk_assessment{"Deferred Patch Risk Assessment"}
@@ -371,6 +374,7 @@
   door_battery_hall_1 --> battery_hall_1
   door_engineering_workshop --> engineering_workshop
   scada_control_room --> scada_live_status
+  scada_control_room -.-> export_plc_bms_register_table
   scada_control_room --> historian_trend_viewer
   scada_control_room --> incident_response_folder
   scada_control_room --> engineering_workshop_rfid_key
@@ -438,7 +442,7 @@
 
   class door_battery_hall_1,door_engineering_workshop,lock_engineering_filing_cabinet,lock_sis_config_panel lock
   class battery_hall_1,engineering_workshop,scada_control_room room
-  class scada_live_status,incident_response_folder,nis_notification_form,esd_station_battery_hall_1_hall_door,esd_station_control_room_console,network_architecture_diagram,local_dial_gauge_rack_a2,esd_station_inside_battery_hall_1,jump_server_rack_js_albion_01,jump_server_ethernet_cable,sis_configuration_panel,sis_safety_requirements_specification_extract,deferred_patch_risk_assessment,it_ot_boundary_rules_document,shared_file_server_access_extract_albion_trent_water item
+  class scada_live_status,export_plc_bms_register_table,incident_response_folder,nis_notification_form,esd_station_battery_hall_1_hall_door,esd_station_control_room_console,network_architecture_diagram,local_dial_gauge_rack_a2,esd_station_inside_battery_hall_1,jump_server_rack_js_albion_01,jump_server_ethernet_cable,sis_configuration_panel,sis_safety_requirements_specification_extract,deferred_patch_risk_assessment,it_ot_boundary_rules_document,shared_file_server_access_extract_albion_trent_water item
   class historian_trend_viewer,hmi_eng_02_engineering_workstation vm
   class engineering_workshop_rfid_key,duty_officer_desk,npc_helen_marsh,battery_hall_access_badge,npc_priya_s,npc_marcus_webb,npc_tom_hadley,filing_cabinet_key key
   class action_talk_to_helen,action_talk_to_priya_s,action_call_marcus_initial,action_contact_castletech action
@@ -446,7 +450,7 @@
   class aim_investigate_sis,aim_initiate_esd,aim_nis_notification,aim_trent_water_notification aim
 
   classDef optional stroke-dasharray:5 2
-  class deferred_patch_risk_assessment,it_ot_boundary_rules_document,shared_file_server_access_extract_albion_trent_water optional
+  class export_plc_bms_register_table,deferred_patch_risk_assessment,it_ot_boundary_rules_document,shared_file_server_access_extract_albion_trent_water optional
   class node_start start`,
       rooms:      `flowchart TD
 
@@ -469,8 +473,8 @@
   node_start --> scada_control_room
 
   scada_control_room("SCADA Control Room")
-  battery_hall_1["BATTERY HALL 1 — RESTRICTED ACCESS — PPE REQUIRED<br/>(locked)"]
-  engineering_workshop["Engineering Workshop — Authorised Access Only<br/>(locked)"]
+  battery_hall_1["BATTERY HALL 1. RESTRICTED ACCESS. PPE REQUIRED<br/>(locked)"]
+  engineering_workshop["Engineering Workshop. Authorised Access Only<br/>(locked)"]
 
   scada_control_room --> battery_hall_1
   scada_control_room --> engineering_workshop
@@ -499,87 +503,89 @@
   node_start --> scada_control_room
 
   scada_control_room("SCADA Control Room")
-  battery_hall_1["BATTERY HALL 1 — RESTRICTED ACCESS — PPE REQUIRED<br/>(locked)"]
-  engineering_workshop["Engineering Workshop — Authorised Access Only<br/>(locked)"]
+  battery_hall_1["BATTERY HALL 1. RESTRICTED ACCESS. PPE REQUIRED<br/>(locked)"]
+  engineering_workshop["Engineering Workshop. Authorised Access Only<br/>(locked)"]
   rc_hmi_ops_01_1[["HMI-OPS-01 Workstation"]]
   rc_obj2_2{"SCADA Live Status"}
-  rc_historian_trend_viewer_3{"Historian Trend Viewer"}
-  rc_incident_response_folder_4{"Incident Response Folder"}
-  rc_duty_officer_desk_5[["Duty Officer Desk"]]
-  rc_obj6_6{"Engineering Workshop RFID Key"}
-  rc_nis_notification_form_7{"NIS Notification Form"}
-  rc_alarm_panel_8{"Facility Alarm Panel"}
-  rc_esd_station_hall_door_9{"ESD Station: Battery Hall 1 (Hall Door)"}
-  rc_esd_station_console_10{"ESD Station: Control Room Console"}
-  rc_obj11_11{"Facility Status Board"}
-  rc_control_room_extinguisher_12{"CO2 Fire Extinguisher"}
-  rc_network_architecture_diagram_13{"Network Architecture Diagram"}
-  rc_npc_helen_marsh_14("Helen Marsh")
-  rc_obj15_15{"Battery Hall Access Badge"}
-  rc_npc_priya_s_16("Priya S.")
-  rc_npc_marcus_webb_17("Marcus Webb")
-  rc_npc_tom_hadley_18("Tom Hadley")
-  rc_analog_thermometer_19{"Local Dial Gauge: Rack A2"}
-  rc_esd_pushbutton_20{"ESD Station: Inside Battery Hall 1"}
-  rc_rack_status_panel_21{"Battery Rack Status Panels (Digital)"}
-  rc_hydrogen_detector_22{"H₂ Gas Detector Panel"}
-  rc_hall1_suppression_panel_23{"Fire Suppression Control Panel"}
-  rc_hall1_safety_sign_24{"Battery Hall Safety Sign"}
-  rc_hmi_eng_02_25{"HMI-ENG-02 Engineering Workstation"}
-  rc_jump_server_rack_26{"Jump Server Rack (JS-ALBION-01)"}
-  rc_jump_server_cable_27{"Jump Server Ethernet Cable"}
-  rc_sis_config_panel_28{"SIS Configuration Panel"}
-  rc_engineering_filing_cabinet_29[["Filing Cabinet — ICS Documentation"]]
-  rc_obj30_30{"SIS Safety Requirements Specification (extract)"}
-  rc_obj31_31{"Deferred Patch Risk Assessment"}
-  rc_obj32_32{"Filing Cabinet Key"}
-  rc_obj33_33{"Engineering Laptop"}
-  rc_obj34_34{"IT/OT Boundary Rules Document"}
-  rc_trent_shared_server_access_extract_35{"Shared File Server Access Extract (Albion / Trent Water)"}
+  rc_obj3_3{"Export PLC-BMS Register Table"}
+  rc_historian_trend_viewer_4{"Historian Trend Viewer"}
+  rc_incident_response_folder_5{"Incident Response Folder"}
+  rc_duty_officer_desk_6[["Duty Officer Desk"]]
+  rc_obj7_7{"Engineering Workshop RFID Key"}
+  rc_nis_notification_form_8{"NIS Notification Form"}
+  rc_alarm_panel_9{"Facility Alarm Panel"}
+  rc_esd_station_hall_door_10{"ESD Station: Battery Hall 1 (Hall Door)"}
+  rc_esd_station_console_11{"ESD Station: Control Room Console"}
+  rc_obj12_12{"Facility Status Board"}
+  rc_control_room_extinguisher_13{"CO2 Fire Extinguisher"}
+  rc_network_architecture_diagram_14{"Network Architecture Diagram"}
+  rc_npc_helen_marsh_15("Helen Marsh")
+  rc_obj16_16{"Battery Hall Access Badge"}
+  rc_npc_priya_s_17("Priya S.")
+  rc_npc_marcus_webb_18("Marcus Webb")
+  rc_npc_tom_hadley_19("Tom Hadley")
+  rc_analog_thermometer_20{"Local Dial Gauge: Rack A2"}
+  rc_esd_pushbutton_21{"ESD Station: Inside Battery Hall 1"}
+  rc_rack_status_panel_22{"Battery Rack Status Panels (Digital)"}
+  rc_hydrogen_detector_23{"H₂ Gas Detector Panel"}
+  rc_hall1_suppression_panel_24{"Fire Suppression Control Panel"}
+  rc_hall1_safety_sign_25{"Battery Hall Safety Sign"}
+  rc_hmi_eng_02_26{"HMI-ENG-02 Engineering Workstation"}
+  rc_jump_server_rack_27{"Jump Server Rack (JS-ALBION-01)"}
+  rc_jump_server_cable_28{"Jump Server Ethernet Cable"}
+  rc_sis_config_panel_29{"SIS Configuration Panel"}
+  rc_engineering_filing_cabinet_30[["Filing Cabinet: ICS Documentation"]]
+  rc_obj31_31{"SIS Safety Requirements Specification (extract)"}
+  rc_obj32_32{"Deferred Patch Risk Assessment"}
+  rc_obj33_33{"Filing Cabinet Key"}
+  rc_obj34_34{"Engineering Laptop"}
+  rc_obj35_35{"IT/OT Boundary Rules Document"}
+  rc_trent_shared_server_access_extract_36{"Shared File Server Access Extract (Albion / Trent Water)"}
 
   scada_control_room --> battery_hall_1
   scada_control_room --> engineering_workshop
   scada_control_room --> rc_hmi_ops_01_1
   rc_hmi_ops_01_1 --> rc_obj2_2
-  rc_hmi_ops_01_1 --> rc_historian_trend_viewer_3
-  scada_control_room --> rc_incident_response_folder_4
-  scada_control_room --> rc_duty_officer_desk_5
-  rc_duty_officer_desk_5 --> rc_obj6_6
-  scada_control_room --> rc_nis_notification_form_7
-  scada_control_room --> rc_alarm_panel_8
-  scada_control_room --> rc_esd_station_hall_door_9
-  scada_control_room --> rc_esd_station_console_10
-  scada_control_room --> rc_obj11_11
-  scada_control_room --> rc_control_room_extinguisher_12
-  scada_control_room --> rc_network_architecture_diagram_13
-  scada_control_room --> rc_npc_helen_marsh_14
-  rc_npc_helen_marsh_14 --> rc_obj15_15
-  scada_control_room --> rc_npc_priya_s_16
-  scada_control_room --> rc_npc_marcus_webb_17
-  scada_control_room --> rc_npc_tom_hadley_18
-  battery_hall_1 --> rc_analog_thermometer_19
-  battery_hall_1 --> rc_esd_pushbutton_20
-  battery_hall_1 --> rc_rack_status_panel_21
-  battery_hall_1 --> rc_hydrogen_detector_22
-  battery_hall_1 --> rc_hall1_suppression_panel_23
-  battery_hall_1 --> rc_hall1_safety_sign_24
-  engineering_workshop --> rc_hmi_eng_02_25
-  engineering_workshop --> rc_jump_server_rack_26
-  engineering_workshop --> rc_jump_server_cable_27
-  engineering_workshop --> rc_sis_config_panel_28
-  engineering_workshop --> rc_engineering_filing_cabinet_29
-  rc_engineering_filing_cabinet_29 --> rc_obj30_30
-  rc_engineering_filing_cabinet_29 --> rc_obj31_31
-  engineering_workshop --> rc_obj32_32
+  rc_hmi_ops_01_1 --> rc_obj3_3
+  rc_hmi_ops_01_1 --> rc_historian_trend_viewer_4
+  scada_control_room --> rc_incident_response_folder_5
+  scada_control_room --> rc_duty_officer_desk_6
+  rc_duty_officer_desk_6 --> rc_obj7_7
+  scada_control_room --> rc_nis_notification_form_8
+  scada_control_room --> rc_alarm_panel_9
+  scada_control_room --> rc_esd_station_hall_door_10
+  scada_control_room --> rc_esd_station_console_11
+  scada_control_room --> rc_obj12_12
+  scada_control_room --> rc_control_room_extinguisher_13
+  scada_control_room --> rc_network_architecture_diagram_14
+  scada_control_room --> rc_npc_helen_marsh_15
+  rc_npc_helen_marsh_15 --> rc_obj16_16
+  scada_control_room --> rc_npc_priya_s_17
+  scada_control_room --> rc_npc_marcus_webb_18
+  scada_control_room --> rc_npc_tom_hadley_19
+  battery_hall_1 --> rc_analog_thermometer_20
+  battery_hall_1 --> rc_esd_pushbutton_21
+  battery_hall_1 --> rc_rack_status_panel_22
+  battery_hall_1 --> rc_hydrogen_detector_23
+  battery_hall_1 --> rc_hall1_suppression_panel_24
+  battery_hall_1 --> rc_hall1_safety_sign_25
+  engineering_workshop --> rc_hmi_eng_02_26
+  engineering_workshop --> rc_jump_server_rack_27
+  engineering_workshop --> rc_jump_server_cable_28
+  engineering_workshop --> rc_sis_config_panel_29
+  engineering_workshop --> rc_engineering_filing_cabinet_30
+  rc_engineering_filing_cabinet_30 --> rc_obj31_31
+  rc_engineering_filing_cabinet_30 --> rc_obj32_32
   engineering_workshop --> rc_obj33_33
   engineering_workshop --> rc_obj34_34
-  engineering_workshop --> rc_trent_shared_server_access_extract_35
+  engineering_workshop --> rc_obj35_35
+  engineering_workshop --> rc_trent_shared_server_access_extract_36
 
   class scada_control_room room
   class battery_hall_1,engineering_workshop lock
-  class rc_hmi_ops_01_1,rc_duty_officer_desk_5,rc_engineering_filing_cabinet_29 container
-  class rc_obj2_2,rc_historian_trend_viewer_3,rc_incident_response_folder_4,rc_obj6_6,rc_nis_notification_form_7,rc_alarm_panel_8,rc_esd_station_hall_door_9,rc_esd_station_console_10,rc_obj11_11,rc_control_room_extinguisher_12,rc_network_architecture_diagram_13,rc_obj15_15,rc_analog_thermometer_19,rc_esd_pushbutton_20,rc_rack_status_panel_21,rc_hydrogen_detector_22,rc_hall1_suppression_panel_23,rc_hall1_safety_sign_24,rc_hmi_eng_02_25,rc_jump_server_rack_26,rc_jump_server_cable_27,rc_sis_config_panel_28,rc_obj30_30,rc_obj31_31,rc_obj32_32,rc_obj33_33,rc_obj34_34,rc_trent_shared_server_access_extract_35 item
-  class rc_npc_helen_marsh_14,rc_npc_priya_s_16,rc_npc_marcus_webb_17,rc_npc_tom_hadley_18 npc
+  class rc_hmi_ops_01_1,rc_duty_officer_desk_6,rc_engineering_filing_cabinet_30 container
+  class rc_obj2_2,rc_obj3_3,rc_historian_trend_viewer_4,rc_incident_response_folder_5,rc_obj7_7,rc_nis_notification_form_8,rc_alarm_panel_9,rc_esd_station_hall_door_10,rc_esd_station_console_11,rc_obj12_12,rc_control_room_extinguisher_13,rc_network_architecture_diagram_14,rc_obj16_16,rc_analog_thermometer_20,rc_esd_pushbutton_21,rc_rack_status_panel_22,rc_hydrogen_detector_23,rc_hall1_suppression_panel_24,rc_hall1_safety_sign_25,rc_hmi_eng_02_26,rc_jump_server_rack_27,rc_jump_server_cable_28,rc_sis_config_panel_29,rc_obj31_31,rc_obj32_32,rc_obj33_33,rc_obj34_34,rc_obj35_35,rc_trent_shared_server_access_extract_36 item
+  class rc_npc_helen_marsh_15,rc_npc_priya_s_17,rc_npc_marcus_webb_18,rc_npc_tom_hadley_19 npc
   class node_start start`
     };
     const rendered = {};
