@@ -26,6 +26,11 @@ VAR roster_seen = false
 VAR receptionist_ko = false
 VAR clone_call_done = false
 VAR guard_told_safetynet = false
+// Pass 5 blind (B-11): synced. Has the player met the name Sable (briefing topic,
+// transaction log, distcc call)? Only then does the player say it to her face.
+VAR sable_named = false
+VAR transaction_log_read = false
+VAR revelation_heard = false
 // Local state (pass 3). P4: Victoria's suspicion decides whether the custom-key read
 // lands first time. P1: the recruit offer is refused once without the drive.
 VAR suspicion_warned = false
@@ -160,7 +165,9 @@ Victoria Sterling: Systems fail. What matters is who knows first, and who pays t
     -> zero_day_philosophy
 + {not topic_ethics} [Can I ask about the ethics of it?]
     -> ethics_discussion
-+ {(victoria_influence >= 20 or (topic_zero_day_philosophy and topic_ethics)) && not rfid_clone_started} [Is that your training lab on the whiteboard?]
+// Pass 5 blind (B-1): always on offer until the read starts, whatever branch the
+// player took and after a rebuff. Low influence gets her curt answer below.
++ {not rfid_clone_started} [Is that your training lab on the whiteboard?]
     -> clone_rfid_opportunity
 + {rfid_clone_started && not rfid_clone_complete && not read_dropped} [Keep her talking about the lab]
     -> clone_rfid_distraction
@@ -449,8 +456,11 @@ Victoria Sterling: You came back after hours. Recruits don't do that.
 - else:
     Victoria Sterling: So let's not perform the part where I'm surprised. Who are you with?
 }
-* [SAFETYNET. And I know the name on your approvals. Sable.]
+* {sable_named or transaction_log_read or revelation_heard} [SAFETYNET. And I know the name on your approvals. Sable.]
     Victoria Sterling: *drily* Nobody's said that name to my face before. You really have been thorough.
+    -> the_reckoning
+* {not (sable_named or transaction_log_read or revelation_heard)} [SAFETYNET. And I've read your approvals.]
+    Victoria Sterling: Then you've read more than most of my staff. You really have been thorough.
     -> the_reckoning
 * [St. Catherine's Hospital. Your ProFTPD exploit. People died on that ward.]
     Victoria Sterling: I sold a vulnerability. What a buyer builds with it is a buyer's problem.
@@ -458,7 +468,7 @@ Victoria Sterling: You came back after hours. Recruits don't do that.
     ++ [Forty per cent extra for a hospital. You priced the bodies in.]
         Victoria Sterling: I priced the urgency in. Hospitals pay fast, and they pay quietly. That isn't cruelty. It's arithmetic.
         -> the_reckoning
-* {usb_seen or lore_directive_found or roster_seen} [I've been through your office, Sable. Your desk. Your files.]
+* {usb_seen or lore_directive_found or roster_seen} [I've been through your office{sable_named or transaction_log_read or revelation_heard:, Sable}. Your desk. Your files.]
     Victoria Sterling: *a beat* Then you understand how far past me this runs. And how little arresting me changes it.
     -> the_reckoning
 

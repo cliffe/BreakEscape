@@ -103,7 +103,7 @@ On the line, {player_name()}.
     -> on_exploit_catalog_found
 + {pc_call_done and not pc_call_heard} [I'm on Sterling's machine. What am I looking for?]
     -> on_victoria_computer_accessed
-+ {night_confrontation_ready and victoria_fate == "" and not hint_confrontation_given} [Sterling's still in the building. How do I play this?]
++ {night_confrontation_ready and victoria_fate == "" and not hint_confrontation_given} [Sterling's still in the conference room. How do I play this?]
     -> hint_confrontation
 + {(usb_seen or lore_directive_found) and not directive_decoded} [About the drive from her desk. I've decoded it.]
     -> directive_ask
@@ -158,7 +158,7 @@ On the line, {player_name()}.
 === hint_confrontation ===
 #speaker:agent_0x99
 ~ hint_confrontation_given = true
-{player_name()}. You've got the logs. The case stands whether or not she's in cuffs.
+{player_name()}. You've got the logs, and she's still in the conference room. The case stands whether or not she's in cuffs.
 Want the Architect? Offer her a deal, and a cold one. She flips to save herself, not because she's sorry -- don't mistake the two.
 Want her off the board? Arrest her. But she came ready to run, so corner her or she walks.
 And if the evidence is enough for you, let her go and secure it.
