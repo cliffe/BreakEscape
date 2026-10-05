@@ -1,5 +1,6 @@
 // ===========================================
-// NPC: Robert Ngata — Incident Liaison, NCSC
+// NPC: Robert Ngata, NCSC threat assessment lead for the Albion case (attribution).
+// Not the incident manager: Priya S. (sis01/sis02) is the NCSC incident manager working with Albion.
 // Scenario: Meridian Cyber Insurance Coverage Determination
 // Role: NCSC perspective on attribution, disclosure, critical infrastructure incentives
 // Triggered: Called via phone after attribution_brief_reviewed = true
@@ -31,13 +32,14 @@ VAR infrastructure_incentives_discussed = false
 // assess_trent_water completes in trent_water_discussion, not on opening the thread.
 
 {not robert_welcomed:
-    Robert Ngata: Meridian — yes. I'm Robert Ngata, NCSC Incident Officer for the Albion notification. I've been expecting your message.
+    Meridian, yes. Robert Ngata, NCSC. I lead the threat assessment on the Albion case; my colleague Priya S. is the incident manager working with Albion.
+    I've been expecting your message.
     ~ robert_welcomed = true
     -> call_initial
 }
 
 {robert_welcomed:
-    Robert Ngata: Anything else I can help clarify?
+    Anything else I can help clarify?
     -> hub
 }
 
@@ -45,12 +47,13 @@ VAR infrastructure_incentives_discussed = false
 === call_initial ===
 #speaker:robert
 
-Robert Ngata: I understand you're working through the coverage determination. I want to be direct: the NCSC's interest is in disclosure and protective action for other critical infrastructure operators. But I also understand Meridian's commercial position. Let's see where we can align.
+I'll be direct about what I can and can't do. I can explain our assessment and what its confidence levels mean.
+I won't advise you on your policy: that's for you and your lawyers. Our interest is getting indicators to other operators quickly.
 
 * [Can you tell me about the attribution?]
     -> attribution_discussion
     
-* [What's the NCSC's position on disclosure?]
+* [What does the NCSC want to share?]
     -> disclosure_discussion
     
 * [How concerned are you about the Trent Water cross-sector exposure?]
@@ -67,39 +70,39 @@ Robert Ngata: I understand you're working through the coverage determination. I 
 #speaker:robert
 ~ attribution_discussed = true
 
-Robert Ngata: The NCSC has assessed the post-exploitation activity — from week five onward — to GREYMANTLE, a known state-sponsored APT group, with moderate-to-high confidence.
+The NCSC has assessed the post-exploitation activity — from week five onward — to GREYMANTLE, a known state-sponsored APT group, with moderate-to-high confidence.
 
-Robert Ngata: The basis is: custom implant characteristics match known GREYMANTLE tooling; the C&C infrastructure overlaps with previously attributed GREYMANTLE campaigns; the ICS-specific attack capabilities are consistent with GREYMANTLE's operational profile; and the targeting pattern — Western European energy infrastructure — aligns with GREYMANTLE's strategic interests.
+The basis is: custom implant characteristics match known GREYMANTLE tooling; the C&C infrastructure overlaps with previously attributed GREYMANTLE campaigns; the ICS-specific attack capabilities are consistent with GREYMANTLE's operational profile; and the targeting pattern — Western European energy infrastructure — aligns with GREYMANTLE's strategic interests.
 
-Robert Ngata: I want to be explicit about what that confidence level means: intelligence assessment confidence. It's not legal certainty. And it's not the legal threshold for "act of war."
+I want to be explicit about what that confidence level means: intelligence assessment confidence. It's not legal certainty. And it's not the legal threshold for "act of war."
 
 * [What's the difference between intelligence confidence and legal threshold?]
     -> war_exclusion_context
     
 * [Does the attribution change if the initial access broker is Ferryman Collective?]
-    Robert Ngata: That's the complex part. The first phase — weeks one to four — we attribute to Ferryman Collective with high confidence. They're financially motivated, not state-sponsored.
-    Robert Ngata: Ferryman likely sold access to GREYMANTLE. So we have a two-actor model: initial access broker plus state sponsor.
-    Robert Ngata: That creates an attribution ambiguity. Is this a state-sponsored operation (because GREYMANTLE was involved) or a criminal-to-state escalation?
+    That's the complex part. The first phase — weeks one to four — we attribute to Ferryman Collective with high confidence. They're financially motivated, not state-sponsored.
+    Ferryman likely sold access to GREYMANTLE. So we have a two-actor model: initial access broker plus state sponsor.
+    That creates an attribution ambiguity. Is this a state-sponsored operation (because GREYMANTLE was involved) or a criminal-to-state escalation?
     -> hub
     
 * [Is the attribution likely to change with further investigation?]
-    Robert Ngata: Possible, but I don't think material. The post-exploitation activity signatures are quite distinct. We're confident GREYMANTLE was involved.
-    Robert Ngata: What might change is the timeline — we might discover additional evidence of GREYMANTLE's involvement earlier than week five. But the attribution itself is solid.
+    Possible, but I don't think material. The post-exploitation activity signatures are quite distinct. We're confident GREYMANTLE was involved.
+    What might change is the timeline — we might discover additional evidence of GREYMANTLE's involvement earlier than week five. But the attribution itself is solid.
     -> hub
 
 
 === war_exclusion_context ===
 #speaker:robert
 
-Robert Ngata: Intelligence confidence is about probability: we're 70-80% confident based on available evidence and known patterns.
+Intelligence confidence is about probability: we're 70-80% confident based on available evidence and known patterns.
 
-Robert Ngata: The legal standard for "act of war" under English insurance law is different. A court looks at: was this operation part of an armed conflict? Was there a "major detrimental impact" on state functioning? Was the attacker acting with explicit state authority?
+A legal standard is a different thing, and it's not mine to apply. What I can tell you is what our assessment is not.
+It isn't a formal government attribution. Publicly attributing an attack to a state is a decision for ministers, and none has been made for Albion.
 
-Robert Ngata: The Albion incident doesn't clearly meet those thresholds. It was a state-sponsored attack on critical infrastructure, but it occurred in peacetime, targeted a single operator, and didn't cascade to national-level consequences.
+If your war clause looks to government attribution, that matters to you.
+Whether one battery site going offline amounts to the kind of impact your clause has in mind is a question for your counsel.
 
-Robert Ngata: I've seen insurers try to invoke war exclusions based on intelligence-level attribution. It never ends well. Courts have pushed back — consistently — because the legal and intelligence definitions of "state action" are different.
-
-Robert Ngata: My advice: don't invoke the exclusion. Accept the coverage and the financial risk. That's the position that makes insurance available for critical infrastructure.
+Speaking only for myself: I'd be uneasy if intelligence confidence levels started being read as legal proof. They weren't written for that.
 
 ~ war_exclusion_perspective_discussed = true
 
@@ -107,8 +110,8 @@ Robert Ngata: My advice: don't invoke the exclusion. Accept the coverage and the
     -> infrastructure_incentives_discussion
     
 * [What about Meridian's syndicate pressure?]
-    Robert Ngata: Syndicates want to protect capital, I understand that. But if capital protection means declining coverage for the exact scenarios critical infrastructure operators are buying insurance for, the product becomes meaningless.
-    Robert Ngata: I'd rather see premiums go up for state-backed-attack risk than coverage go down.
+    That's your business, not the NCSC's. Syndicates want to protect capital; I understand that.
+    Personally, I'd rather see premiums go up for state-backed attack risk than cover go down. But I don't price risk.
     -> hub
 
 
@@ -120,27 +123,31 @@ Robert Ngata: My advice: don't invoke the exclusion. Accept the coverage and the
 #speaker:robert
 ~ disclosure_discussed = true
 
-Robert Ngata: The NCSC needs to disclose the indicators of compromise to other critical infrastructure operators — particularly energy and water utilities.
+We want to share the indicators of compromise, anonymised, with other operators, particularly in energy and water.
 
-Robert Ngata: The Ferryman Collective access point was a printer firmware vulnerability. That's a common beachhead. Multiple operators use similar equipment. If we can share the technical profile quickly, we might prevent similar incidents at other facilities.
+The Ferryman Collective access point was a printer firmware vulnerability. That's a common beachhead. Multiple operators use similar equipment. If we can share the technical profile quickly, we might prevent similar incidents at other facilities.
 
-Robert Ngata: The GREYMANTLE tools — the DNS-over-HTTPS C&C, the domain controller implant characteristics — those are indicators we need in the hands of defenders at other critical infrastructure sites.
+The GREYMANTLE tools — the DNS-over-HTTPS C&C, the domain controller implant characteristics — those are indicators we need in the hands of defenders at other critical infrastructure sites.
 
-Robert Ngata: But I also understand Albion's legal position. They're concerned about disclosure of their architectural deficiencies. Their solicitor is fighting to limit the scope of disclosure.
+We already hold what Albion's team gave us that morning. The fuller picture is in the forensic work your firm commissioned.
+Albion's solicitor wants to limit what leaves that report, because it describes their architecture in detail.
 
-* [What level of disclosure is essential from NCSC perspective?]
-    Robert Ngata: IOCs (indicators of compromise), attack timeline, affected device types, mitigation steps — that's the minimal set. We don't need to disclose Albion's specific architectural failures. We just need to share the threat indicators.
-    Robert Ngata: The challenge is: once technical details are public, they're public. An attacker can infer architectural information from the IOCs.
+* [What does the NCSC need from the forensic work?]
+    IOCs (indicators of compromise), attack timeline, affected device types, mitigation steps — that's the minimal set. We don't need to disclose Albion's specific architectural failures. We just need to share the threat indicators.
+    The challenge is: once technical details are public, they're public. An attacker can infer architectural information from the IOCs.
     -> hub
     
-* [If Meridian restricts disclosure, what happens?]
-    Robert Ngata: NCSC can pursue disclosure through regulatory channels. The NIS Regulations allow for mandatory disclosure of incident details. It's not immediate, but it will happen.
-    Robert Ngata: I'd prefer to coordinate with Meridian and Albion to find a timeline and scope that's legally sound but still protective.
+* [What if we advise Albion to restrict what it shares?]
+    The NCSC can't compel anything. We're not a regulator.
+    Ofgem can require information from Albion under the NIS Regulations, but that goes to Ofgem, not to other operators.
+    So we share what we have, later and thinner than we'd like.
+    I'd rather agree a scope with Albion and you that's legally sound and still useful to defenders.
     -> hub
     
 * [What's the timeline pressure?]
-    Robert Ngata: High. Ferryman Collective is active. They sold printer vulnerability exploits to multiple operations. If other operators know which printers are vulnerable and which indicators to look for, containment is weeks faster.
-    Robert Ngata: Every week we delay sharing IOCs is a week another critical infrastructure site could be compromised.
+    High. Ferryman Collective is active and sells access to more than one buyer.
+    If other operators know which printers are vulnerable and which indicators to look for, containment is weeks faster.
+    Every week we delay sharing IOCs is a week another critical infrastructure site could be compromised.
     -> hub
 
 
@@ -154,27 +161,28 @@ Robert Ngata: But I also understand Albion's legal position. They're concerned a
 #set_global:trent_water_assessed:true
 #complete_task:assess_trent_water
 
-Robert Ngata: Trent Water's investigation is ongoing. No confirmed ICS compromise on their side at this point.
+Trent Water is a small pumping station, not an operator of essential services, but we've helped them since Albion warned them.
+One of their workstations opened a file the attacker had written to the shared file server, early that Saturday morning. They've cleaned it.
 
-Robert Ngata: But I want to flag: Trent Water's workstations showed some suspicious artefacts — evidence of network reconnaissance, possible lateral movement attempts. Not definitive proof of intrusion, but concerning.
+Their pumping station control system is separate from Albion's SCADA. Checks so far have found no compromise there, but they're not finished.
 
-Robert Ngata: The shared infrastructure — Albion's IT systems directly interfacing with Trent Water's SCADA — creates a cross-sector risk that was real.
+The risk was the shared IT: one file server, shared printers, and a CastleTech service account with admin rights on both companies' machines.
+Nobody had risk-assessed that arrangement.
 
-Robert Ngata: From a critical infrastructure resilience standpoint, that's a design flaw. Two essential service providers shouldn't have that level of direct network connectivity without extensive isolation and monitoring.
-
-* [If Trent Water's water supply had been affected, what would be the implications?]
-    Robert Ngata: Catastrophic. Water supply is essential infrastructure. An attack that disrupts water supply has public health and safety implications.
-    Robert Ngata: Depending on duration and scale, it could trigger national emergency protocols. That's why the shared infrastructure design is so concerning.
+* [What if Trent Water's pumps had been affected?]
+    It's a small station serving an industrial estate, so this was never a regional water supply problem.
+    But losing pumping matters to the businesses that depend on it, and a compromised control system is slow to trust again.
+    That's why we want the checks finished properly rather than quickly.
     -> hub
     
 * [Should Meridian include Trent Water exposure in the coverage?]
-    Robert Ngata: Yes. The investigation is a necessary consequence. You should reserve for investigation costs and potential remediation.
-    Robert Ngata: This is exactly the cross-sector risk that insurance should incentivise operators to mitigate through better network design.
+    That's a coverage question, and it's yours. From our side: the pumping station checks aren't finished, so any figure today is an estimate.
+    I'd only add that shared IT between neighbours is exactly the kind of risk that nobody owns until something like this happens.
     -> hub
     
 * [Is there an indication that Trent Water was deliberately targeted?]
-    Robert Ngata: Not that we've found. The attacker's objective seems to have been focused on Albion — manipulating the battery systems, potentially for competitive advantage or intelligence gathering.
-    Robert Ngata: But once inside Albion's network, the path to Trent Water was accessible. Whether the attacker explored that path or chose not to — that's uncertain.
+    Not that we've found. The objective seems to have been Albion's battery systems, consistent with pre-positioning or testing capability against energy sites.
+    But once inside Albion's network, the path to Trent Water was accessible. Whether the attacker explored that path or chose not to — that's uncertain.
     -> hub
 
 
@@ -186,32 +194,34 @@ Robert Ngata: From a critical infrastructure resilience standpoint, that's a des
 #speaker:robert
 ~ infrastructure_incentives_discussed = true
 
-Robert Ngata: Let me put this directly.
+Let me put this directly.
 
-Robert Ngata: Critical infrastructure operators have to make security investments. They're competing against budget pressures, operational constraints, and the temptation to defer maintenance.
+Critical infrastructure operators have to make security investments. They're competing against budget pressures, operational constraints, and the temptation to defer maintenance.
 
-Robert Ngata: What should incentivise security investment at those organisations? Several things: regulatory requirements (which Albion broadly met), reputational consequences (which are real but delayed), and financial consequences.
+What should incentivise security investment at those organisations?
+Regulation, which is Ofgem's job and still open for Albion; reputation, which is real but slow; and money.
 
-Robert Ngata: Insurance is the financial consequence mechanism. If a critical infrastructure operator knows that a security failure will result in an insurance claim denial, they take the failure seriously.
+Insurance is the financial consequence mechanism. If a critical infrastructure operator knows that a security failure will result in an insurance claim denial, they take the failure seriously.
 
-Robert Ngata: But if they know that an insurance claim will be denied specifically because a nation-state was involved — because the exclusion applies to state-sponsored attacks — the incentive flips. It becomes: "Why invest in security against nation-states? The insurance won't cover it anyway."
+But if they know that an insurance claim will be denied specifically because a nation-state was involved — because the exclusion applies to state-sponsored attacks — the incentive flips. It becomes: "Why invest in security against nation-states? The insurance won't cover it anyway."
 
-Robert Ngata: That's the systemic problem. If that's the precedent Meridian sets, other insurers will follow. And critical infrastructure operators will stop investing in defences against state-sponsored threats because the financial incentive disappears.
+That's the systemic problem. If that's the precedent Meridian sets, other insurers will follow. And critical infrastructure operators will stop investing in defences against state-sponsored threats because the financial incentive disappears.
 
-Robert Ngata: So from NCSC perspective, what Meridian decides here matters beyond Albion. It sets the market expectation for how cyber insurance functions in the face of state-sponsored attacks.
+That's my view, not NCSC advice on your claim. But what Meridian decides here matters beyond Albion.
+It sets the market expectation for how cyber insurance responds to state-sponsored attacks.
 
 * [That's a powerful argument]
-    Robert Ngata: It's not just an argument — it's a reality. Insurance is governance. It shapes behaviour. If the insurance model breaks, the governance model breaks.
+    It's not just an argument — it's a reality. Insurance is governance. It shapes behaviour. If the insurance model breaks, the governance model breaks.
     -> hub
     
 * [How should Meridian balance that against commercial risk?]
-    Robert Ngata: Charge higher premiums for state-backed-attack coverage. Don't decline coverage outright. It's the difference between risk pricing and risk avoidance.
-    Robert Ngata: Risk pricing keeps insurance available. Risk avoidance makes insurance disappear.
+    Charge higher premiums for state-backed-attack coverage. Don't decline coverage outright. It's the difference between risk pricing and risk avoidance.
+    Risk pricing keeps insurance available. Risk avoidance makes insurance disappear.
     -> hub
     
 * [What if Meridian's capital position doesn't allow for this risk?]
-    Robert Ngata: Then Meridian shouldn't underwrite critical infrastructure cyber coverage. There are other insurers. But the market needs at least some capital willing to write this risk at a price.
-    Robert Ngata: If all cyber insurers decline state-backed-attack coverage, critical infrastructure becomes uninsurable. And uninsurable critical infrastructure means underinvested security and higher risk for everyone.
+    Then Meridian shouldn't underwrite critical infrastructure cyber coverage. There are other insurers. But the market needs at least some capital willing to write this risk at a price.
+    If all cyber insurers decline state-backed-attack coverage, critical infrastructure becomes uninsurable. And uninsurable critical infrastructure means underinvested security and higher risk for everyone.
     -> hub
 
 
@@ -225,10 +235,10 @@ Robert Ngata: So from NCSC perspective, what Meridian decides here matters beyon
 + {not attribution_discussed} [Attribution confidence and the legal threshold]
     -> attribution_discussion
 
-+ {not war_exclusion_perspective_discussed} [NCSC perspective on the act-of-war exclusion]
++ {not war_exclusion_perspective_discussed} [What the assessment means for the act-of-war question]
     -> war_exclusion_context
 
-+ {not disclosure_discussed} [NCSC disclosure requirements]
++ {not disclosure_discussed} [Sharing indicators with other operators]
     -> disclosure_discussion
 
 + {not trent_water_discussed} [Trent Water cross-sector exposure]
@@ -238,7 +248,7 @@ Robert Ngata: So from NCSC perspective, what Meridian decides here matters beyon
     -> infrastructure_incentives_discussion
 
 + [I have what I need]
-    Robert Ngata: I hope you take the systemic perspective seriously. The decision you make here will echo beyond Albion.
-    Robert Ngata: NCSC will respect whatever Meridian decides. But I wanted you to understand what's at stake.
+    I hope you take the systemic perspective seriously. The decision you make here will echo beyond Albion.
+    The decision is Meridian's. I wanted you to understand what's at stake from where I sit.
     #exit_conversation
     -> hub

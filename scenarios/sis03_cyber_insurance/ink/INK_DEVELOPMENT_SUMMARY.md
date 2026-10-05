@@ -42,7 +42,7 @@
 
 ---
 
-### 2. James Whitworth — Albion Risk Manager (Phone NPC)
+### 2. James Whitworth, Albion General Manager (Phone NPC; on leave the weekend of the incident, so his account of the morning is second-hand)
 **File**: `npc_james_whitworth.ink` (13 KB)
 
 **Scope**: Policyholder perspective on warranty breaches and claim justification.
@@ -92,7 +92,7 @@
 
 ---
 
-### 4. Robert Ngata — NCSC Incident Liaison (Phone NPC)
+### 4. Robert Ngata, NCSC threat assessment lead (Phone NPC; Priya S. is the NCSC incident manager, not Ngata)
 **File**: `npc_robert_ngata.ink` (14 KB)
 
 **Scope**: NCSC perspective on attribution, disclosure, and systemic infrastructure risk.
@@ -101,8 +101,8 @@
 - Welcome & Initial Call
 - Attribution Discussion: GREYMANTLE confidence (70-80%), intelligence vs. legal thresholds
 - War Exclusion Context: difference between intelligence confidence and legal "act of war" standard
-- Disclosure Discussion: IOCs, timeline pressure, regulatory authority
-- Trent Water Exposure: suspicious artefacts, cross-sector design flaw
+- Disclosure Discussion: IOCs, timeline pressure; the NCSC cannot compel disclosure (only Ofgem can require information, and only for itself)
+- Trent Water Exposure: one Trent workstation opened the attacker's file on the shared server; pumping station checks unfinished; shared IT, not SCADA
 - Critical Infrastructure Incentives: systemic effect of insurance exclusions on security investment
 
 **Teaching Integration**:
@@ -155,7 +155,7 @@ All 10 SIS teaching moments from GDD Section 6 are embedded:
 | W-07 (IT/OT segmentation) as coverage condition | Eleanor, James | warranty_hub → w07_discussion; James policy defence |
 | W-03 (SIS patch with safety constraint) | Eleanor, James | w03_discussion; James compensating_controls_discussion |
 | Underwriting file / Meridian prior knowledge | Eleanor | underwriting_context → Evidence Archive access |
-| Evidence lost during ESD reset | Hartley | evidence_gaps_discussion → forensic_circularity |
+| Evidence lost when PLC-BMS ran its shutdown routine after the ESD | Hartley | evidence_gaps_discussion → forensic_circularity |
 | NCSC Attribution Brief / legal threshold | Eleanor, Robert | act_of_war_intro → war_exclusion_context |
 | Act-of-war exclusion systemic effect | Eleanor, Robert | debrief_war_exclusion_synthesis; infrastructure_incentives_discussion |
 | Trent Water third-party exposure | James, Hartley, Robert | shared_infrastructure_discussion; trent_water_discussed (all NPCs) |
@@ -213,7 +213,7 @@ The four NPCs collectively present:
 1. The insurer's duty (coverage determination based on policy wording)
 2. The policyholder's position (operational constraints, documented risk decisions)
 3. The adjuster's analysis (financial quantification, evidence limitations)
-4. The regulator's concern (systemic incentive effects, critical infrastructure resilience)
+4. The NCSC's concern (indicator sharing, systemic incentive effects, critical infrastructure resilience); the NCSC is not a regulator
 
 This multi-perspective approach aligns with CyBOK SIS theme: security-informed safety requires understanding all stakeholder positions, not just technical factors.
 

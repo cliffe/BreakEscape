@@ -100,7 +100,8 @@ Eleanor Vance: Supplier compromise — network-connected printers on their estat
 
 Eleanor Vance: Their hardwired emergency shutdown caught it. No thermal runaway. Facility is stable. But six weeks offline, full ICS rebuild, and physical battery cell damage. Whitworth's breakdown is £8.2 million.
 
-Eleanor Vance: Here's the problem. Albion's IT-to-OT segmentation — the network isolation that should have stopped lateral movement at the boundary — was incomplete at the time of the incident. Meridian set a remediation deadline: December thirty-first. That passed four months before the attack.
+Eleanor Vance: Here's the problem. Albion's IT-to-OT segmentation — the network isolation that should have stopped lateral movement at the boundary — was incomplete at the time of the incident.
+Eleanor Vance: Meridian set a remediation deadline: December thirty-first. That passed less than three months before the attack.
 
 Eleanor Vance: So the question isn't just "did a cyber event cause this loss." It's "did Albion maintain the conditions under which we agreed to cover it."
 
@@ -246,7 +247,7 @@ Eleanor Vance: The forensic evidence shows the attacker used both of those pathw
     -> warranty_hub
     
 * [But Albion submitted an extension request, didn't they?]
-    Eleanor Vance: They did — four months after the deadline. A request doesn't suspend the warranty's operative effect unless it's been accepted in writing. And it wasn't.
+    Eleanor Vance: They did, two weeks after the deadline had passed. A request doesn't suspend the warranty's operative effect unless it's been accepted in writing. And it wasn't.
     Eleanor Vance: We're not being unreasonable here. We set a deadline. We got a claim instead of a completion notice.
     -> warranty_hub
     
@@ -355,11 +356,12 @@ Eleanor Vance: Those compensating controls were never implemented.
 
 Eleanor Vance: W-03 is a breach. Whether it was inevitable or culpable — that's the argument.
 
-Eleanor Vance: But here's the sober truth: the attack didn't actually exploit the SIS firmware vulnerability. The attacker didn't need to authenticate to the engineering port because they falsified the historian data. They blinded the operator and the control logic to the anomaly.
+Eleanor Vance: And here's what makes it hard. The attacker did use that weakness. The threshold change at 03:22 went over the unauthenticated engineering protocol, the very thing the patch closes.
 
-Eleanor Vance: The patch would have been desirable. The compensating controls would have helped. But the attack succeeded through a different pathway.
+Eleanor Vance: But Albion will say the patch couldn't reasonably go onto a certified SIL 2 controller in time, and that the attacker only reached the port through the segmentation gaps.
+Eleanor Vance: Fix W-07 and the route is never there.
 
-Eleanor Vance: So do we reduce coverage for this warranty? That's your call. I'd note it down as Breached but note the causality question.
+Eleanor Vance: So is W-03 a separate ground for reduction, or W-07 by another name? That's your call. I'd record it as arguable and write down why.
 
 -> warranty_hub
 
@@ -383,7 +385,8 @@ Eleanor Vance: This is the clearest operational security failure.
     -> warranty_hub
     
 * [What's the causal connection?]
-    Eleanor Vance: The c.ellison account was compromised as part of the credential harvesting phase. Without that dormant account, the attacker would have needed a different RDP credential — more difficulty, more likely to be detected.
+    Eleanor Vance: The c.ellison account still had its default password. The leaver process locked his domain account and missed the local one on the jump server.
+    Eleanor Vance: Without it, the attacker would have needed a different RDP credential: more effort, more chance of being caught.
     Eleanor Vance: It's not the primary attack vector, but it's part of the causal chain.
     -> warranty_hub
     
@@ -452,7 +455,9 @@ Eleanor Vance: The question is more subtle than it sounds.
 
 Eleanor Vance: The NCSC is going to tell us they attribute the post-exploitation activity to GREYMANTLE — a state-sponsored APT group. That's intelligence-level confidence.
 
-Eleanor Vance: But here's the thing: the legal standard for "act of war" is much higher than intelligence-level attribution. Courts have held that peacetime cyber operations, even if state-backed, don't meet the exclusion threshold unless they're part of an actual armed conflict or have a "major detrimental impact" on state functioning.
+Eleanor Vance: But the bar for this exclusion is much higher than intelligence-level attribution.
+Eleanor Vance: The clause only reaches peacetime state-backed operations with a major detrimental impact on how a state functions.
+Eleanor Vance: And it looks first to whether our own government has attributed the attack. It hasn't.
 
 Eleanor Vance: The Albion incident — a single battery storage facility — doesn't meet that threshold. It's a targeted industrial espionage and infrastructure attack. It's serious. But it's not an act of war in the legal sense.
 
@@ -702,7 +707,7 @@ Eleanor Vance: I understand the reasoning. GREYMANTLE attribution is credible. S
 
 Eleanor Vance: But I want you to think about this from Albion's perspective.
 
-Eleanor Vance: Albion is an Operator of Essential Services. They invest in cyber security. They maintain defensive capabilities. They implement mitigations like the hardwired ESD that prevented thermal runaway on Saturday.
+Eleanor Vance: Albion is an Operator of Essential Services. They invest in cyber security. They maintain defensive capabilities. They implement mitigations like the hardwired ESD that prevented thermal runaway in March.
 
 Eleanor Vance: Now they face a state-sponsored attack. They act. They prevent catastrophe. And the insurance denies coverage because a nation-state was involved.
 
@@ -731,7 +736,7 @@ Eleanor Vance: They chose option two. They set a warranty. They renewed. And the
 
 Eleanor Vance: That decision is legal. The Insurance Act is clear: the insurer's knowledge of a risk doesn't waive the contractual remedy if the warranty is breached.
 
-Eleanor Vance: But it complicates things. It says: Meridian had information Albion didn't have. Meridian made a deliberate choice. Meridian accepted a known risk. And now, when that risk manifests as a claim, we're trying to reduce coverage?
+Eleanor Vance: But it complicates things. Meridian knew. Meridian made a deliberate choice. Meridian accepted a known risk. And now, when that risk becomes a claim, we're trying to reduce coverage?
 
 Eleanor Vance: That's the final claim in the chain. Insurance doesn't just observe safety-relevant weakness. It prices it, conditions coverage on it, and then has to justify what it does when the weakness later becomes a loss.
 

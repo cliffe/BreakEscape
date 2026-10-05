@@ -1,151 +1,197 @@
 ---
-title: "SIS03 Cyber Insurance - Meridian Insurance Breach Investigation"
+title: "SIS03 Cyber Insurance - Meridian Coverage Determination"
 author: ["Dr Chris Lewin", "Break Escape Team"]
 license: "CC BY-SA 4.0"
 overview: |
-  This scenario explores how cybersecurity breaches at trusted service providers can create cascading safety impacts across their clients' organizations. You will investigate a data breach at Meridian Insurance, a provider of cyber risk assessment and insurance services to critical infrastructure operators. The scenario demonstrates systemic risk: when an insurer's confidential risk assessments, security audits, and vulnerability information are stolen, attackers gain detailed intelligence for targeted attacks on the insurer's policyholders. This reveals the critical but often overlooked connection between trust relationships and safety-critical security failures—a breach at one organization can enable compromises at many others.
+  This scenario looks at a cyber-physical incident from the insurer's side. Seven weeks after a cyber attack switched off the safety trips at Albion Energy Storage's grid battery site (SIS02), you are on Meridian Cyber Insurance's claims team, deciding how to respond to Albion's £8.2 million claim. You will trace the forensic chain from a compromised printer to overheated battery cells, judge which of the security warranties Albion gave were breached and whether each breach mattered to the loss, weigh a state-sponsored attribution against the policy's act-of-war exclusion, and face the uncomfortable fact that Meridian renewed the policy knowing the work was late. The scenario shows how insurance works as a safety governance mechanism, and where it stops working.
 description: |
-  Investigate a data breach at Meridian Insurance and trace how stolen information about policyholder security postures and vulnerabilities can be weaponized for targeted attacks on critical infrastructure. Learn about cyber insurance, third-party risk management, cascading security failures, information as an attack multiplier, trust architecture in business ecosystems, and regulatory frameworks (GDPR, PCI DSS, SOC 2). Experience how your organization's security failures create safety risks for others, and how security and safety failures propagate through business relationships. The scenario connects to SIS02 (Albion Energy): Meridian's stolen risk assessments may provide the intelligence for attacking Albion's Safety Instrumented Systems.
+  Assess a cyber insurance claim for a battery storage site where an attacker disabled the Safety Instrumented System and a hardwired emergency shutdown stopped a thermal runaway. Learn how cyber policies cover physical damage, how security warranties turn technical controls into coverage conditions, why a safety-constrained patch deferral is hard to judge, how evidence is lost when safety comes first, what intelligence attribution can and cannot prove, and how UK bodies divide the work (Ofgem as competent authority under the NIS Regulations, the NCSC as the CSIRT, the FCA and PRA for the insurer). You will make, and defend, a coverage recommendation that has no clean answer.
 cybok:
   - ka: "SIS"
     topic: "Language and Concept Alignment"
-    keywords: ["cyber insurance risk assessment", "safety-critical infrastructure terminology", "trust and assurance chains"]
+    keywords: ["warranty, breach and causation", "safety case versus insurance argument", "intelligence confidence versus legal proof"]
   - ka: "SIS"
     topic: "Incident Response and Resilience"
-    keywords: ["cascading incident response", "downstream attack implications", "ecosystem resilience"]
+    keywords: ["forensic causal chain", "evidence preservation versus safety", "post-incident recovery and recertification"]
   - ka: "SIS"
     topic: "Requirements Reconciliation"
-    keywords: ["service provider obligations", "policyholder security vs privacy", "GDPR vs detailed risk assessment"]
+    keywords: ["patch management versus IEC 61511 recertification", "compensating controls", "cooperation clause versus safety action"]
   - ka: "SIS"
     topic: "Patching of Systems with Safety Cases"
-    keywords: ["indirect safety certification exposure", "third-party risk information", "compliance assessment"]
+    keywords: ["deferred SIS firmware update", "SIL 2 recertification", "risk acceptance and review"]
   - ka: "SIS"
     topic: "Architecture"
-    keywords: ["trust architecture", "third-party integration", "insurer-policyholder ecosystem"]
+    keywords: ["IT/OT segmentation", "SIS independence", "shared IT between neighbouring organisations"]
   - ka: "SIS"
     topic: "Organisational Culture"
-    keywords: ["service provider accountability", "multi-stakeholder trust", "security lockdown vs business continuity"]
+    keywords: ["insurer and policyholder incentives", "accepted risks nobody reviewed", "knowledge at renewal"]
   - ka: "SIS"
     topic: "Tools and Standards"
-    keywords: ["GDPR", "PCI DSS", "SOC 2", "IEC 62443", "NERC CIP"]
-  - ka: "CPS"
-    topic: "Policy and Political Aspects"
-    keywords: ["incentives and regulation", "industry practices and standards"]
+    keywords: ["IEC 61511", "IEC 62443", "NCSC CAF", "LMA5567A", "Insurance Act 2015"]
   - ka: "RMG"
     topic: "Risk Governance"
-    keywords: ["governance models", "security culture", "risk perception factors"]
-  - ka: "RMG"
-    topic: "Risk Assessment and Management Principles"
-    keywords: ["risk assessment and management methods", "incident response and recovery planning"]
-  - ka: "LR"
-    topic: "Data Protection"
-    keywords: ["personal data breach notification", "regulatory compliance"]
+    keywords: ["risk transfer", "residual risk", "moral hazard"]
   - ka: "LR"
     topic: "Other Regulatory Matters"
-    keywords: ["industry-specific regulations", "financial services standards"]
+    keywords: ["NIS Regulations 2018", "cyber insurance and war exclusions", "third-party liability"]
+  - ka: "MAT"
+    topic: "Attacks and Exploitation"
+    keywords: ["initial access broker to APT handoff", "printer firmware supply chain", "attribution confidence"]
+categories: ["security_informed_safety"]
+tags: ["security-informed-safety", "cyber-insurance", "energy", "battery-storage", "warranties", "act-of-war-exclusion", "forensics", "safety-case", "nis-regulations", "break-escape"]
+type: ["game-based-learning", "lab-sheet"]
+source: "https://github.com/cliffe/BreakEscape/blob/main/scenarios/sis03_cyber_insurance/labsheet.md"
 ---
 
-## Introduction: Key Concepts
+## Introduction: Key Concepts {#introduction-key-concepts}
 
-**Cyber Insurance and Risk Assessment** involve detailed evaluation of client organizations' security controls, vulnerabilities, and incident response capabilities. Insurance underwriters conduct security audits, network assessments, and penetration testing to understand risk levels and set premiums. This creates a valuable repository of information: detailed knowledge of security weaknesses across hundreds of organizations in critical sectors (energy, healthcare, transportation). For insurers, this information is business-critical; for attackers, it's intelligence gold. A breach of an insurance provider's database can expose the security weaknesses of many critical infrastructure operators at once.
+**Affirmative cyber cover for physical damage.** A traditional property policy may or may not respond when a cyber attack breaks equipment; Lloyd's has required insurers to say clearly which policies cover cyber loss. Meridian's policy covers it affirmatively: physical damage caused by a cyber event, such as the battery cells damaged at Albion, is inside the insuring clause. That settles whether there is cover in principle. It does not settle how much.
 
-**Third-Party Risk and Cascading Failures** occur when security failures at one organization (the insurer) create safety or security impacts at many other organizations (the policyholders). This is particularly acute in sectors providing security services: when the security provider is compromised, all their clients' risk assessments, compliance audits, and vulnerability reports are potentially exposed. Attackers can use this information to identify and exploit weaknesses they wouldn't have discovered otherwise. The insurer's breach becomes a force multiplier for attacks on safety-critical infrastructure.
+**Security warranties as coverage conditions.** Meridian insured Albion on condition that Albion kept certain controls: IT/OT segmentation (W-07), patch management (W-03), access control (W-09) and oversight of its managed service provider (W-12). A warranty turns a security control into a financial condition. Under the Insurance Act 2015 a breach does not simply void the policy; it matters whether the breach could have contributed to the loss that happened. So every breach comes with a causation question.
 
-**Information as an Attack Vector** differs from traditional cyber attacks. Rather than exploiting a technical vulnerability directly, attackers use stolen information about security controls and gaps to plan more effective attacks. A stolen risk assessment that documents "the Industrial DMZ has not been patched since 2021" is direct intelligence for a targeted attack. This highlights why confidentiality of risk and security information is a safety issue—information is not just a privacy concern but a security enabler for attackers.
+**Patching a certified safety system.** The fix for the weakness in Albion's Safety Instrumented System (SIS) was a firmware update. Changing a SIL 2 safety controller means recertifying it under IEC 61511: eight weeks and £180,000, with the automatic trip out of service and people watching the battery halls instead. Albion deferred the update and promised compensating controls, then never delivered them and never reviewed the decision. Was the deferral reasonable? Was the failure to follow it up?
 
-**Trust Architecture in Business Ecosystems** refers to the networks of relationships and dependencies between organizations. Insurance providers, security consultants, managed security service providers, and other service providers sit at critical nodes in this ecosystem. A compromise at one of these service providers cascades through all their clients. Understanding trust architecture is essential for understanding systemic risk—your organization's security failures don't just affect you, they affect everyone who trusts you with their security information.
+**Evidence and safety pull against each other.** Insurers need forensic evidence to accept a causal chain. Safety actions can destroy it. At Albion, the battery management PLC overwrote the falsified values in its registers when the emergency shutdown tripped, and nobody should have delayed the shutdown to image it first. The SIS itself keeps no log; the time of the attack on it is known only because an engineering workstation kept its own history.
 
-**Regulatory Frameworks** in financial services (GDPR for EU privacy, PCI DSS for payment systems, SOC 2 for service organizations) create specific requirements for protecting client data and maintaining security certifications. GDPR breach notification requirements (72 hours) combined with the complexity of determining which clients might be affected create response challenges. SOC 2 audits specifically evaluate whether service organizations' access controls and systems are secure enough to protect client data. A service provider's breach can result in loss of trust, failed audits, and liability for downstream impacts.
+**Attribution is not proof.** The NCSC assesses with moderate to high confidence that a state-sponsored group carried out the attack after buying access from a criminal broker. That is a technical assessment, not a formal government attribution, and the NCSC does not advise insurers. Whether the policy's act-of-war exclusion (based on the LMA5567A model clause) applies is Meridian's question, not the NCSC's.
 
-## What You Will Do
+**Who does what after an incident.** Albion is a designated operator of essential services (OES). Under the NIS Regulations 2018 it notifies its competent authority, Ofgem acting jointly with DESNZ, and it did so at 07:00 on the morning of the attack. The NCSC is the UK's computer security incident response team: it helps and shares threat intelligence but is not a regulator and cannot compel disclosure. Meridian answers to the FCA and PRA for how it handles claims and reserves capital.
 
-You will play through an interactive game-based learning scenario set at Meridian Insurance during the discovery and response to a data breach. The scenario puts you in the role of a security incident responder investigating how attackers breached the insurance company's systems and what information was stolen. You will investigate Meridian's database systems, determine which policyholder information was exposed, trace the attack path, and make decisions about notification, remediation, and reputation management. Your investigation will reveal connections to other critical infrastructure: Albion Energy (from SIS02) is a major Meridian policyholder, and the stolen risk assessment about Albion may provide the intelligence for the attack in the SIS02 scenario. This creates a meta-layer of understanding: incidents don't occur in isolation, and your organization's security failures have ecosystem-wide consequences. Throughout the scenario, you will navigate the tension between rapid containment, thorough investigation, client notification requirements, and managing the reputational and financial consequences of the breach.
+## What You Will Do {#what-you-will-do}
 
-## Security-Informed Safety: Core Concepts
+You will play Meridian's claims team in London on Thursday 7 May 2026. Albion filed its claim two days earlier. Your Claims Manager, Eleanor Vance, briefs you and then expects your reasoning. You will read the policy binder and Albion's incident notification, confirm the causal chain on the Forensic Data Platform terminal, review three forensic exhibits and Meridian's own underwriting file in the Evidence Archive, and phone three people: James Whitworth, Albion's General Manager, who is arguing his company's case; Simon Hartley, the independent loss adjuster; and Robert Ngata, who led the NCSC's threat assessment. You will talk Eleanor through each warranty, decide on the act-of-war exclusion with her, then complete the Coverage Recommendation Form and defend it in her debrief.
 
-This scenario examines **systemic risk and cascading safety impacts** beyond individual organizations. A breach at a cyber insurance provider can expose information about policyholders' security postures, potentially enabling targeted attacks on safety-critical infrastructure (including Albion Energy from SIS02). This demonstrates how cybersecurity incidents propagate through trust relationships and business ecosystems.
+## Security-Informed Safety: Core Concepts {#security-informed-safety-core-concepts}
 
-### CyBOK Security-Informed Safety Topics Covered
+SIS01 and SIS02 asked whether a safety argument still holds when someone is trying to defeat it. SIS03 asks what happens afterwards, when the same evidence is used to build a different argument: an insurance argument about who pays. The two can reach different conclusions from the same facts.
 
-This scenario addresses the following topics from the CyBOK Security-Informed Safety topic guide:
+### CyBOK Security-Informed Safety Topics Covered {#cybok-security-informed-safety-topics-covered}
 
-- **Language and Concept Alignment**: Bridging insurance risk assessment, cybersecurity, and client safety obligations across multiple domains
-- **Incident Response and Resilience**: Cascading IR when your organization's compromise creates downstream risk for others, ecosystem-level resilience *(core focus)*
-- **Requirements Reconciliation**: Security/privacy requirements vs. insurance business needs, GDPR data minimization vs. detailed risk information
-- **Patching of Systems with Safety Cases**: Indirect exposure of policyholder patching status and safety certification challenges as attack intelligence
-- **Architecture**: Trust architecture across insurer-policyholder ecosystem, third-party access creating cascading vulnerabilities
-- **Organisational Culture**: Multi-stakeholder tensions (security lockdown vs. client services, legal liability vs. transparency)
-- **Tools and Standards**: GDPR, PCI DSS, SOC 2, how insurers evaluate client compliance with IEC 62443, NERC CIP
+- **Language and Concept Alignment**: "breach", "cause", "confidence" and "accepted risk" mean different things to an engineer, an underwriter and a lawyer
+- **Incident Response and Resilience**: how the response on the morning (the ESD, pulling the jump server cables, the notifications) shapes the evidence and the claim weeks later
+- **Requirements Reconciliation**: patch management against IEC 61511 recertification; the cooperation clause against making the plant safe
+- **Patching of Systems with Safety Cases**: the deferred SIS firmware update, and the compensating controls that never arrived *(core focus)*
+- **Architecture**: IT/OT segmentation, the SIS engineering port on the SCADA network, and IT shared with a neighbouring company
+- **Organisational Culture**: a risk accepted in 2024 with a review date nobody kept; an insurer that renewed knowing the work was late
+- **Tools and Standards**: IEC 61511, IEC 62443, the NCSC CAF, LMA5567A and the Insurance Act 2015
 
-## Playing the Scenario
+### From Cyber Event to Covered Loss {#from-cyber-event-to-covered-loss}
 
-### Background and Mission
+The chain Meridian must accept before it pays anything:
 
-You are a security incident responder arriving at Meridian Insurance after discovery of a data breach affecting their customer database. Systems logs show unusual access patterns over the past three weeks, and there are concerns that policyholder information has been stolen—including detailed security assessments and vulnerability reports for critical infrastructure customers like Albion Energy (an energy operator). Meridian's risk and compliance team is concerned about GDPR breach notification requirements (72-hour window), SOC 2 audit implications, and potential downstream attacks on insured organizations.
+1. **Initial access**: a printer firmware supply chain compromise, sold on by a criminal broker
+2. **Crossing the boundary**: a dormant contractor account with a default password on the jump server, and a dual-homed historian
+3. **Loss of the safety function**: at 03:22 the SIS trip thresholds were raised over the unauthenticated engineering protocol, while falsified readings blinded the operator
+4. **Physical loss**: cells overheated to about 58°C before a hardwired emergency shutdown stopped the charging; the cells had to be replaced and the site was offline for six weeks
+
+Each link is also a place where a warranty might have been broken. Your job is to say which breaks mattered.
+
+## Playing the Scenario {#playing-the-scenario}
+
+### Background and Mission {#background-and-mission}
+
+On the night of Friday 20 to Saturday 21 March 2026, attackers inside Albion Energy Storage's network falsified battery temperatures and switched off the SIS trips on Battery Hall 1. A SCADA engineer read an analog gauge that the attacker could not touch, and the hardwired emergency shutdown was pressed at about 06:34. Nobody was hurt. The site was offline for six weeks for forensic work, network remediation and SIS recertification, and came back on 2 May. Albion has claimed £8.2 million: incident response, business interruption, replacement cells, and a claim from its neighbour, Trent Water, whose workstation opened a file the attacker had left on a shared server.
 
 Your mission is to:
-- Investigate how the attackers breached Meridian's systems and achieved data access
-- Determine exactly what policyholder information was stolen (focus on critical infrastructure customers)
-- Trace whether the breach was targeted at specific high-value customers or was opportunistic
-- Assess the potential for attackers to weaponize stolen security assessments against Albion Energy and other policyholders
-- Make decisions about incident response, remediation, and regulatory notification
-- Connect the dots: understand how this breach enables the attack on Albion Energy documented in SIS02
+- Confirm that the loss falls within the policy's insuring clause, and trace the causal chain from cyber event to physical damage
+- Assess Albion's four warranties (W-03, W-07, W-09 and W-12): breached or not, and causally connected or not
+- Weigh the NCSC's attribution against the act-of-war exclusion
+- Recognise what Meridian itself knew and did at renewal
+- Recommend a coverage position, an act-of-war position, advice to Albion on sharing its forensic findings with the NCSC, and how to treat the Trent Water claim
 
-### How to Play
+### How to Play {#how-to-play}
 
-The game is a top-down 2D exploration scenario set in Meridian's corporate offices and IT infrastructure spaces. You navigate through office environments by moving your character with arrow keys or mouse clicks. You interact with NPCs (security team members, risk managers, executives, regulatory liaisons) by talking to them—they provide insights into the business, explain data flows, and react to your decisions. You'll examine interactive objects like computer terminals, database servers, policy files, and incident response documentation. Your conversations and investigations will uncover evidence about the attack, reveal connections to policyholder organizations, and lead to decisions about response, notification, and reputation management. The scenario has a time constraint (the 72-hour GDPR breach notification deadline and SOC 2 audit implications) creating urgency.
+The game is a top-down 2D scenario set in Meridian's Claims Suite and its locked Evidence Archive. Move with the arrow keys or by clicking, and interact with people and objects. Eleanor Vance is in the room; the other three people are contacts on your claims phone. Documents on the desks, the Claims Management System terminal and the Forensic Data Platform terminal hold the evidence. Eleanor gives you the archive code once you have read the policy and confirmed the causal chain; the underwriting cabinet's code is in the CMS policy notes.
 
-### What You're Aiming For
+### What You're Aiming For {#what-youre-aiming-for}
 
-By the end of the scenario, you should have a complete understanding of:
-1. **The attack chain**: How attackers breached Meridian's systems, achieved data access, and extracted information
-2. **The data exposure**: What specific policyholder information was stolen, with focus on critical infrastructure customers
-3. **The cascading impact**: How stolen security assessments about Albion Energy create intelligence for attacking their systems
-4. **The business/safety consequence**: Understanding that the Meridian breach may have directly enabled the Albion Energy attack
-5. **The organizational dilemma**: Managing competing pressures of rapid containment, thorough investigation, regulatory notification, and customer communication
+By the end you should be able to explain:
+1. **The causal chain**, and which parts of it rest on direct evidence and which on reconstruction
+2. **Each warranty position** and the argument on each side of it
+3. **The act-of-war question**: what the NCSC assessment shows, what it does not, and what the clause requires
+4. **Meridian's own position**: what it knew in November 2025 and how that limits what it can fairly do now
+5. **Your recommendation**, and the strongest argument against it
 
-### Getting Started
+### Getting Started {#getting-started}
 
-1. **Read the Information Pack**: Start by reading `information_pack.md` in this directory to understand Meridian's business model, customer relationships, data systems, GDPR/SOC 2 requirements, and the connection to Albion Energy
-2. **Cross-reference with SIS02**: If you've completed SIS02 (Albion Energy), you'll recognize the connection—the intelligence that enables the Albion attack comes from this breach
-3. **Launch the Scenario**: Load **SIS03 Cyber Insurance** from the BreakEscape scenario selection screen
-4. **Initial Orientation**: Explore Meridian's offices and IT infrastructure, talk to staff, and build an understanding of the breach scope
+1. ==action: Read the Information Pack (`information_pack.md`)== for the policy, the warranty schedule, the insurer's systems, the regulatory frameworks and the response timeline. The SIS02 information pack is the source for what happened at Albion.
+2. ==action: Launch **SIS03 Cyber Insurance**== from the BreakEscape scenario selection screen
+3. ==action: Listen to Eleanor's briefing==, then read the policy binder and Albion's incident notification on the desk
 
-## Reflection Questions
+## Reflection and Exercises {#reflection-and-exercises}
 
-After completing the scenario, reflect on these questions to consolidate your learning:
+Work through these after you have finished. Use your own run: Eleanor's debrief and the closing credits record your coverage position, your act-of-war decision and your Trent Water choice, and other players will have decided differently.
 
-**Understanding the Attack**
-1. How did attackers initially compromise Meridian's systems, and what methods did they use to maintain persistence and exfiltrate data?
-2. Was the attack targeted at specific high-value policyholders (like Albion Energy), or was it opportunistic? What evidence supports your conclusion?
+> Tip: In a group, split the roles: one player argues Albion's case using Whitworth's points, one argues Meridian's using Eleanor's, and one plays the loss adjuster. Swap and repeat.
 
-**Data Exposure and Business Impact**
-3. What categories of policyholder data were exposed, and which customers are at highest risk from weaponization of that information?
-4. Review the policyholder list from the information pack—if you were an attacker with stolen security assessments, which organizations would you target next?
+### 1. Risk Management {#1-risk-management}
 
-**Cascading Risk and the SIS02 Connection**
-5. If you've completed SIS02 (Albion Energy), review the attack on Albion. Could Meridian's stolen risk assessments have provided the intelligence needed for that attack?
-6. What information about Albion's network architecture, IT/OT segmentation, or security weaknesses would have been in Meridian's risk assessment database?
+**Questions**
 
-**Incident Response Decisions**
-7. What decisions did you make about incident response, remediation, and communication? How did each decision affect customer trust, regulatory compliance, and downstream security?
-8. How did competing priorities (speed of notification, thoroughness of investigation, management of reputational damage) influence your response strategy?
+> Question: Q1. Whitworth tells you he signed the SIS patch deferral in September 2024, that it went to the board's risk committee, and that its March 2025 review never happened. Was the original decision reasonable? What should the review have checked, and who owned making it happen?
 
-**Organizational and Systemic Impact**
-9. Consider the role of insurance in critical infrastructure resilience. How does a breach at a service provider like Meridian affect the broader security posture of their clients?
-10. What systemic risks emerge from the concentration of security assessment data at insurance companies, and how could this risk be better managed?
+> Question: Q2. Albion said its compensating controls were "in progress" when the attack came. Exhibit C says they were never implemented. Is a control that is planned but not in place a control at all? What does that do to the residual risk Albion thought it had accepted?
 
-**Regulatory and Compliance Context**
-11. Review the GDPR breach notification requirements (72-hour window) in the information pack. Did your investigation fit within regulatory timelines, or did thoroughness require longer?
-12. How do SOC 2 audit requirements and breach notification obligations create competing pressures for incident response?
+> Question: Q3. Meridian's renewal memo (in the underwriting cabinet) shows Meridian knew in November 2025 that the W-07 deadline would be missed, and renewed with a premium uplift. From a risk-transfer point of view, what risk did Meridian accept at that moment, and did it price it?
+
+> Question: Q4. Trent Water shared a file server, printers and a CastleTech service account with Albion, but not SCADA. Nobody had risk-assessed that arrangement. Who should have owned that risk: Albion, Trent Water or CastleTech?
+
+**Exercises**
+
+> Action: **E1. Risk register entry.** Rewrite Albion's register entry for the deferred SIS firmware update as it should have been in September 2024: the risk as cause, event and consequence; the owner; likelihood and impact before and after the compensating controls; the controls themselves, each with an owner and a date; and a review trigger that would have fired before March 2026.
+
+> Action: **E2. Moral hazard.** In no more than 300 words, explain how insurance can weaken or strengthen a policyholder's incentive to invest in security, using one example from Albion and one from Meridian's own conduct.
+
+### 2. Incident Response and Evidence {#2-incident-response-and-evidence}
+
+**Questions**
+
+> Question: Q5. Using the FDP terminal and Exhibits A and B, list each link in the causal chain and mark whether it rests on direct evidence (logs, images, the engineering tool's history) or on reconstruction. Where is the chain weakest?
+
+> Question: Q6. Exhibit B and Hartley both say the falsified values in the PLC-BMS registers were overwritten at the emergency shutdown. Should anyone have captured them first? What does the policy's cooperation clause (Section 7.1) ask, and what should it not ask when people are at risk?
+
+> Question: Q7. The SIS keeps no log. How was the 03:22 change timed and traced, and what would the investigation have been left with if that engineering workstation had been rebuilt before it was imaged?
+
+> Question: Q8. Albion notified Ofgem at 07:00, told the NCSC and NESO, and told Meridian at 07:49. What did each of those four need to know, and why do the notifications go to different bodies?
+
+**Exercises**
+
+> Action: **E3. Evidence preservation plan.** Write a one-page plan for an OT site that says what to capture, in what order and by whom after an emergency shutdown, without delaying any safety action. Include the PLCs, the SIS, the engineering workstations, the historian and the jump server.
+
+> Action: **E4. Two timelines.** Build a timeline of the incident from the first foothold to the claim on 5 May 2026, then a second timeline of the policy (inception, renewal review, deadline, extension request, incident, claim). Mark where the two meet.
+
+### 3. Security-Informed Safety and the Coverage Decision {#3-security-informed-safety-and-the-coverage-decision}
+
+**Questions**
+
+> Question: Q9. Eleanor tells you the attacker did use the SIS engineering protocol weakness that the W-03 patch closes, and that Albion will say the attacker only reached it through the W-07 segmentation gaps. Is W-03 a separate causal breach or "W-07 by another name"? Argue both sides.
+
+> Question: Q10. Whitworth says an authenticated protocol might not have stopped an attacker sitting on the engineering workstation. If that is true, what does it say about where the real safety barrier should have been?
+
+> Question: Q11. Hartley counts the whole six-week outage as caused by the incident, because a tampered safety system must be recertified whether or not it was ever patched. Meridian could argue that part of that time was owed anyway. Who has the better argument, and what evidence would settle it?
+
+> Question: Q12. The NCSC brief is a technical assessment at moderate to high confidence and says no formal government attribution has been made. Eleanor's attached note says the clause looks first to government attribution. Using both, explain why intelligence confidence is not the same thing as meeting the exclusion, and what would change if the UK Government did attribute the attack.
+
+> Question: Q13. Robert Ngata wants the forensic indicators shared quickly so the NCSC can warn other operators, but says he cannot compel it. What did you advise on the form, and what does that choice trade off between Albion's legal position and other operators' safety?
+
+> Question: Q14. Albion's hardwired ESD worked; its programmable SIS was defeated. What does that say about the independence argument in Albion's safety case, and should an insurer reward the barrier that held or penalise the one that failed?
+
+**Exercises**
+
+> Action: **E5. Claim, argument, evidence.** Take CLAIM-INS-003 (patch management with a safety constraint) from the information pack. Rewrite it as a short Goal Structuring Notation (GSN) fragment: the claim, the argument, the evidence Albion would need, and one defeater taken from the Albion incident.
+
+> Action: **E6. Coverage memo.** Write the memo Eleanor would send to Meridian's syndicates, in no more than 500 words, recommending your coverage position. Cover the insuring clause, each warranty with its causation argument, the act-of-war exclusion, Meridian's knowledge at renewal, and the Trent Water claim. End with the strongest argument against your own recommendation.
+
+> Action: **E7. Better warranties.** Rewrite W-03 and W-07 so that they would work as safety controls rather than only as grounds to reduce a claim afterwards. Say how Meridian would check compliance during the policy year.
 
 ---
 
-## Additional Resources
+## Additional Resources {#additional-resources}
 
-- Review the **Information Pack** (`information_pack.md`) for detailed explanations of cyber insurance business models, policyholder relationships, data protection requirements, and regulatory frameworks
-- Refer to **GDPR Articles 33-34** for breach notification requirements and timelines
-- Review **PCI DSS requirements** for payment card data protection
-- Study **SOC 2 Trust Services Criteria** for service organization controls
-- Research **cascading risk frameworks** in critical infrastructure security
-- If you've completed SIS02 (Albion Energy), compare your findings to understand the connection between the attacks
+- The **Information Pack** (`information_pack.md`) for the policy wording, warranty schedule, claims (CLAIM-INS-001 to 009), the response chain and the regulatory frameworks
+- The **SIS02 Information Pack** (`scenarios/sis02_energy/information_pack.md`) for what happened at Albion
+- The **Insurance Act 2015**, Part 3 (warranties and other terms), especially sections 10 and 11
+- The **Lloyd's Market Association** state-backed cyber operation exclusion clauses (LMA5564 to LMA5567)
+- **IEC 61511** on modifying a safety instrumented system, and **IEC 62443** for zones and conduits
+- The **NCSC Cyber Assessment Framework**, and the NCSC's guidance for organisations on cyber insurance
+- The **GSN Community Standard** for Goal Structuring Notation, used in exercise E5

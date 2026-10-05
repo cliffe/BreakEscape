@@ -1,5 +1,6 @@
 // ===========================================
-// NPC: James Whitworth — Risk Manager, Albion Energy Storage
+// NPC: James Whitworth, General Manager, Albion Energy Storage (on leave the weekend of the
+// incident and briefed by phone: anything he says about that morning is second-hand)
 // Scenario: Meridian Cyber Insurance Coverage Determination
 // Role: Policyholder perspective; defends warranty compliance position
 // Triggered: Called via phone from Meridian office
@@ -30,13 +31,13 @@ VAR shared_infrastructure_discussed = false
 #speaker:james
 
 {not james_welcomed:
-    James Whitworth: Meridian — yes. I was expecting your message. James Whitworth, Risk Manager at Albion. What do you need from me?
+    Meridian — yes. I was expecting your message. James Whitworth, General Manager at Albion. What do you need from me?
     ~ james_welcomed = true
     -> call_initial
 }
 
 {james_welcomed:
-    James Whitworth: Anything else you need to know about the claim?
+    Anything else you need to know about the claim?
     -> hub
 }
 
@@ -44,7 +45,8 @@ VAR shared_infrastructure_discussed = false
 === call_initial ===
 #speaker:james
 
-James Whitworth: I know you're reviewing the coverage. I'm prepared to walk you through anything on our side. We acted in good faith throughout this incident.
+I know you're reviewing the coverage. I was on leave that weekend, so the morning itself I have from Helen and Marcus.
+The decisions before it were mine, and I'll answer for those. We acted in good faith throughout.
 
 * [I wanted to discuss the warranty breaches — starting with W-07]
     -> w07_remediation_discussion
@@ -66,24 +68,26 @@ James Whitworth: I know you're reviewing the coverage. I'm prepared to walk you 
 #speaker:james
 ~ w07_remediation_discussed = true
 
-James Whitworth: The historian migration and jump server reconfiguration were on the work plan. We had vendors scheduled. We had budget allocated.
+The historian migration and jump server reconfiguration were on the work plan. We had vendors scheduled. We had budget allocated.
 
-James Whitworth: But the historian migration hit vendor delays — the hardware we needed wasn't available. And the jump server reconfiguration required coordination with our operations team. We were also managing the NESO ancillary services upgrade simultaneously. Resource constraints are real.
+But the historian migration hit vendor delays — the hardware we needed wasn't available. And the jump server reconfiguration required coordination with our operations team. We were also managing the NESO ancillary services upgrade simultaneously. Resource constraints are real.
 
 * [Did you file an extension request?]
-    James Whitworth: We did — four months before the incident. We documented the constraint, requested a six-month extension, and proposed a phased remediation approach.
-    James Whitworth: That request should be in Meridian's files. We acted in good faith. We didn't just miss the deadline silently.
+    We told your underwriters at the renewal meeting in November that we'd miss it.
+    The formal request went in on fourteenth January: a six-month extension and a phased plan.
+    Late on paper, I accept. But it should all be in Meridian's files. We didn't just miss the deadline silently.
     ~ extension_request_discussed = true
     -> hub
     
 * [What was the actual status at the time of the incident?]
-    James Whitworth: We had completed the jump server configuration analysis. We were waiting on the historian migration — that was scheduled for January. We were ninety percent through the work plan.
-    James Whitworth: We were not compliant. But we were not neglectful either. This was a two-year project with competing operational priorities.
+    We had completed the jump server configuration analysis. We were waiting on the historian migration: the hardware slipped to the second quarter of this year.
+    We were ninety percent through the work plan.
+    We were not compliant. But we were not neglectful either. This was a two-year project with competing operational priorities.
     -> hub
     
 * [Why didn't Meridian's renewal decision flag a firmer remediation requirement?]
-    James Whitworth: You tell me. Your underwriters reviewed our quarterly reports. They saw the progress. They renewed the policy with a warranty they must have known was aggressive given our constraints.
-    James Whitworth: If Meridian thought the deadline was impossibly tight, they should have said so. They set it. We tried to meet it.
+    You tell me. Your underwriters reviewed our quarterly reports. They saw the progress. They renewed the policy with a warranty they must have known was aggressive given our constraints.
+    If Meridian thought the deadline was impossibly tight, they should have said so. They set it. We tried to meet it.
     -> hub
 
 
@@ -95,29 +99,36 @@ James Whitworth: But the historian migration hit vendor delays — the hardware 
 #speaker:james
 ~ sis_patch_discussed = true
 
-James Whitworth: The SIS patch is a different question. And I want to be direct about this.
+The SIS patch is a different question. And I want to be direct about this.
 
-James Whitworth: The patch requires eight weeks offline and £180,000 in recertification under IEC 61511. That's not arbitrary — that's functional safety regulation. We have to validate that the safety case still holds after we modify the SIS.
+The patch means eight weeks with the safety system out of service and £180,000 in recertification under IEC 61511.
+That's not arbitrary — that's functional safety regulation. We have to validate that the safety case still holds after we modify the SIS.
 
-James Whitworth: We couldn't justify taking eight weeks offline during peak summer demand season. NESO depends on our frequency response capability. We documented the risk. We accepted it with a compensating control commitment.
+That was September 2024.
+Eight weeks without the automatic trip, going into winter, with people watching the halls round the clock: I didn't think that was safer.
+NESO depends on our frequency response. We documented the risk, I signed the deferral, and we committed to compensating controls.
 
 * [Tell me about those compensating controls]
     -> compensating_controls_discussion
     
 * [Wasn't deferring a critical patch a safety decision you should have escalated?]
-    James Whitworth: We did escalate it. The decision went to our board-level risk committee. They understood the constraints. They accepted the deferred patch with the compensating controls.
-    James Whitworth: This wasn't a casual skipping of a security update. This was a deliberate, documented, risk-managed decision with safety trade-offs.
+    We did. It went to our board-level risk committee and they accepted the deferral with the compensating controls.
+    It had a review date of March 2025. I'll be straight with you: nobody reviewed it.
+    This wasn't a casual skipping of a security update. This was a deliberate, documented, risk-managed decision with safety trade-offs.
     -> hub
     
 * [Did the patch end up causing the SIS compromise?]
     {ot_forensics_reviewed:
-        James Whitworth: The patch would have helped. But from what the forensics show, the attacker didn't need to exploit the engineering protocol vulnerability. They falsified the historian data and disabled the SIS thresholds — they blinded the operator instead of breaking the lock.
-        James Whitworth: The attack succeeded through a different pathway than the patch would have prevented.
+        I won't pretend otherwise: the threshold change went in over the engineering protocol, the one the patch fixes.
+        But look at where it came from. They were sitting on our engineering workstation, through the jump server.
+        Our engineers tell me that tool holds its own credentials, so an authenticated protocol might not have stopped them.
+        And they only got there through the segmentation gaps.
         -> hub
     }
     
     {not ot_forensics_reviewed:
-        James Whitworth: We'll know more once you review the forensic evidence. But the attack chain seems to focus on data falsification rather than direct SIS engineering protocol access.
+        The forensics will show the change came in over the SIS engineering protocol. I'm not going to hide that.
+        But read how they reached the port before you decide what the patch would have stopped.
         -> hub
     }
 
@@ -125,17 +136,18 @@ James Whitworth: We couldn't justify taking eight weeks offline during peak summ
 === compensating_controls_discussion ===
 #speaker:james
 
-James Whitworth: We committed to restricting access to the SIS engineering port through network-level controls.
+We committed to restricting access to the SIS engineering port through network-level controls.
 
-James Whitworth: The SOC was going to tighten the jump server rules — to restrict RDP access from specific maintenance VLANs only, with multi-factor authentication. That would have meant even if someone compromised the IT network, they couldn't reach the SIS engineering port without additional authentication.
+The SOC was going to tighten the jump server rules — to restrict RDP access from specific maintenance VLANs only, with multi-factor authentication. That would have meant even if someone compromised the IT network, they couldn't reach the SIS engineering port without additional authentication.
 
 * [Were those controls actually implemented?]
-    James Whitworth: They were in progress. The SOC scope expansion took longer to negotiate than we anticipated. We had committed to full implementation by Q1 of this year. The incident happened in Q1.
-    James Whitworth: So technically, no — the full control set wasn't in place. But we were actively working on it.
+    They were in progress. The SOC scope expansion took longer to negotiate than we anticipated.
+    We had committed to full implementation by the end of March this year. The incident came on the twenty-first.
+    So technically, no — the full control set wasn't in place. But we were actively working on it.
     -> hub
     
 * [So the compensating controls never went live?]
-    James Whitworth: Not fully, no. That's a point against us in your warranty assessment. I acknowledge that. But it's not the same as willfully ignoring safety. We documented the risk. We committed to controls. We were implementing them.
+    Not fully, no. That's a point against us in your warranty assessment. I acknowledge that. But it's not the same as willfully ignoring safety. We documented the risk. We committed to controls. We were implementing them.
     -> hub
 
 
@@ -147,32 +159,34 @@ James Whitworth: The SOC was going to tighten the jump server rules — to restr
 #speaker:james
 ~ business_interruption_discussed = true
 
-James Whitworth: The six-week outage is entirely attributable to the incident. We were forced to shut down the facility for incident response, network isolation, forensic examination, and complete infrastructure rebuild. We had no choice.
+The six-week outage is entirely attributable to the incident. We were forced to shut down the facility for incident response, network isolation, forensic examination, and complete infrastructure rebuild. We had no choice.
 
-James Whitworth: Meridian is arguing that part of that outage — the SIS recertification period — addresses a pre-existing maintenance obligation. But that's not accurate.
+Meridian is arguing that part of that outage — the SIS recertification period — addresses a pre-existing maintenance obligation. But that's not accurate.
 
-James Whitworth: The SIS recertification was accelerated and expanded in scope because of the incident. Without the attack, we would have applied the patch during a planned maintenance window — probably two to three weeks, not six.
+The SIS recertification was accelerated and expanded in scope because of the incident. Without the attack, we would have applied the patch during a planned maintenance window — probably two to three weeks, not six.
 
-James Whitworth: The incident cascaded the recertification timeline into emergency mode. So the business interruption should reflect the full six weeks.
+The incident cascaded the recertification timeline into emergency mode. So the business interruption should reflect the full six weeks.
 
 * [Meridian's position is that the patch was deferred — so the recertification would have happened eventually]
-    James Whitworth: Eventually, yes. But not during this outage. Without the incident, the recertification would have happened in a planned window next year. We would have maintained some operational capacity through most of the facility.
-    James Whitworth: The incident forced an unplanned, emergency recertification. The business interruption is the difference between planned and emergency.
+    Eventually, yes. But not during this outage, and not like this.
+    Planned, we'd have kept most of the site running for most of the eight weeks, with two or three weeks fully offline.
+    The incident forced an unplanned, emergency recertification. The business interruption is the difference between planned and emergency.
     -> hub
     
 * [How confident are you in the £4.8M figure?]
-    James Whitworth: That number comes from Simon Hartley's independent loss adjuster. We provided him with our NESO contract terms and revenue baseline. He calculated the lost ancillary services revenue during the outage.
-    James Whitworth: I'm confident in the calculation. The question is whether all six weeks are attributable to the incident, or whether part of it is pre-existing maintenance.
+    That number comes from Simon Hartley's independent loss adjuster. We provided him with our NESO contract terms and revenue baseline. He calculated the lost ancillary services revenue during the outage.
+    I'm confident in the calculation. The question is whether all six weeks are attributable to the incident, or whether part of it is pre-existing maintenance.
     -> hub
     
 * [What about the regulatory penalties?]
     {loss_quantum_reviewed:
-        James Whitworth: Ofgem hasn't imposed penalties yet. They're investigating. We made our NIS notification and we've cooperated fully. I don't think we're exposed to significant regulatory penalties given our responsive posture.
+        Ofgem hasn't imposed anything. Their investigation is under way. Marcus sent the initial NIS notification at seven that morning, and we've cooperated fully since.
+        I don't think we're exposed to significant penalties, but that's Ofgem's call, not mine.
         -> hub
     }
     
     {not loss_quantum_reviewed:
-        James Whitworth: Ofgem hasn't made a decision yet. We've cooperated with their investigation. Meridian will need to assess the regulatory exposure when Ofgem completes their review.
+        Ofgem hasn't made a decision yet. We've cooperated with their investigation. Meridian will need to assess the regulatory exposure when Ofgem completes their review.
         -> hub
     }
 
@@ -185,20 +199,24 @@ James Whitworth: The incident cascaded the recertification timeline into emergen
 #speaker:james
 ~ shared_infrastructure_discussed = true
 
-James Whitworth: The shared infrastructure with Trent Water is a separate concern. Our IT systems interface with theirs at the supervisory control level — we coordinate pumping and water storage operations.
+Trent Water are our neighbours on the site: a small pumping station, separate company.
+We share some IT with them, a file server, the office printers and CastleTech's service desk. Not SCADA. Their pumps run on their own system.
 
-James Whitworth: We've confirmed that Trent Water's systems were not directly compromised. Their investigation is ongoing, but they found no active intrusion on their side. There may be investigation costs, but not operational damage.
+A file the attacker put on the shared server was opened on one of their workstations.
+They've cleaned that machine and they're checking the pumping station control system. Nothing found there so far, but they haven't finished.
 
-James Whitworth: Meridian needs to clarify whether this falls under our first-party coverage or represents a third-party liability claim. We're treating it as third-party because the damage — if any — is to Trent Water, not to us.
+They've put their costs to us.
+We're treating it as a third-party liability claim, because the cost, whatever it comes to, is Trent Water's, not ours.
 
 * [How significant is the potential Trent Water exposure?]
-    James Whitworth: Simon Hartley estimated provisional investigation costs at £400,000. But if Trent Water's investigation finds no evidence of compromise on their side, that figure could drop significantly.
-    James Whitworth: The worst case would be if the investigation revealed some persistent threat or required substantial remediation at Trent Water. But initial indications suggest that's unlikely.
+    Simon Hartley has it provisionally at £400,000. If their checks of the pumping station come back clean, that figure should drop.
+    The worst case is that they find something on the control system and have to rebuild it. Nothing so far suggests that.
     -> hub
     
-* [Are you concerned about potential regulatory repercussions if Trent Water's water supply was threatened?]
-    James Whitworth: I'd be lying if I said it wasn't a concern. Water supply is critical infrastructure. If our incident had compromised water supply — even hypothetically — that escalates beyond operational impact to public safety.
-    James Whitworth: But Trent Water has confirmed no operational compromise. So the exposure is limited to investigation and any remediation work they undertake independently.
+* [Are you worried about what this means if Trent Water's pumps were reached?]
+    It's a concern. They pump water for the industrial estate.
+    Trent Water isn't an essential service under NIS. Still, if their pumps had been touched, the claim against us would be far bigger.
+    So far they've found nothing on the pumps. The exposure is the clean-up and the checks.
     -> hub
 
 
@@ -222,7 +240,7 @@ James Whitworth: Meridian needs to clarify whether this falls under our first-pa
     -> shared_infrastructure_discussion
 
 + [We've covered what I needed]
-    James Whitworth: I hope that gives you the picture. We weren't reckless. We were managing genuine trade-offs.
-    James Whitworth: I expect a fair assessment from Meridian.
+    I hope that gives you the picture. We weren't reckless. We were managing genuine trade-offs.
+    I expect a fair assessment from Meridian.
     #exit_conversation
     -> hub

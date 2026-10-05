@@ -22,7 +22,8 @@ All five items below use placeholder sprites that work in-game but will look wro
 - Room ambience for `meridian_evidence_archive`: near-silent, fluorescent hum
 
 ### Content
-- The `ins001_assessed`, `ins003_assessed`, `ins008_assessed`, `ins009_assessed` global variables are declared and set by the warranty checklist minigame but are not referenced by any NPC dialogue or task wiring. These are CLAIM reference codes from the CyBOK SIS educational framework — consider whether they should surface anywhere in Eleanor's debrief or the credits sequence.
+- The `ins001_assessed`, `ins003_assessed`, `ins008_assessed`, `ins009_assessed` globals now surface in the credits (SIS CLAIM SYNTHESIS section). Eleanor's debrief names the four claims but does not branch on them.
+- The Forensic Data Platform's tab content lives in engine code (`public/break_escape/js/minigames/forensic-data-platform/forensic-data-platform-minigame.js`, TAB_SETS.albion_sis03) and still contradicts the SIS02 pack in places (session source, dates, % LEL, "no record of when", firmware version). Fix it there; the scenario can't override it.
 
 ---
 
