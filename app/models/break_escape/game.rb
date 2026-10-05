@@ -1616,12 +1616,21 @@ module BreakEscape
       end
       tags = Array(entry['deferredTags']).select { |t| t.is_a?(String) && t.length <= 300 }.first(100)
       clean['deferredTags'] = tags if tags.any?
-      if entry['deferredGlobals'].is_a?(Hash)
-        globals = entry['deferredGlobals'].to_h.select do |k, v|
+      scalar_map = lambda do |hash|
+        hash.to_h.select do |k, v|
           k.is_a?(String) && k.length <= 100 &&
             (v.is_a?(String) || v.is_a?(Numeric) || v == true || v == false || v.nil?)
         end
+      end
+      if entry['deferredGlobals'].is_a?(Hash)
+        globals = scalar_map.call(entry['deferredGlobals'])
         clean['deferredGlobals'] = globals if globals.any?
+        # Each deferred global's value at preload time: the client applies the
+        # deferred value on first open only if the global still holds it
+        if globals.any? && entry['deferredGlobalsBase'].is_a?(Hash)
+          base = scalar_map.call(entry['deferredGlobalsBase']).select { |k, _| globals.key?(k) }
+          clean['deferredGlobalsBase'] = base if base.any?
+        end
       end
 
       return nil if history.empty? && !clean.key?('storyState')

@@ -314,20 +314,42 @@ class NPCConversationStateManager {
     }
 
     /**
-     * Check if a variable is global (either declared in scenario or uses global_ prefix)
+     * Record the scenario's declared globals (game.js, at load, before the
+     * server's saved globals are merged in). These, plus the global_ prefix, are
+     * the names that sync between gameState and the ink stories.
+     * @param {Iterable<string>} names
+     */
+    setDeclaredGlobals(names) {
+        this.declaredGlobalNames = new Set(names || []);
+    }
+
+    /**
+     * Check if a variable is a synced global: declared in the scenario's
+     * globalVariables, or named with the global_ prefix.
+     *
+     * Membership of gameState.globalVariables is NOT the test. That object also
+     * holds every key of the server's saved globals (merged, never pruned) and
+     * anything set at runtime, so a global a scenario has since renamed away
+     * (m03's old guard_hostile) would keep syncing over an ink's local VAR of the
+     * same name in an old save. Those keys stay in gameState (engine code such as
+     * the ransomware deadline reads them there); they just don't reach the inks.
+     *
+     * Without a recorded set (unit harnesses), the scenario's globalVariables is
+     * read; with no scenario at all, gameState membership is the fallback.
      * @param {string} name - Variable name
      * @returns {boolean} True if variable is global
      */
     isGlobalVariable(name) {
-        // Check scenario declaration
-        if (window.gameState?.globalVariables?.hasOwnProperty(name)) {
-            return true;
+        if (typeof name !== 'string') return false;
+        // Naming convention
+        if (name.startsWith('global_')) return true;
+        if (this.declaredGlobalNames) return this.declaredGlobalNames.has(name);
+        const scenarioGlobals = window.gameScenario?.globalVariables;
+        if (scenarioGlobals && typeof scenarioGlobals === 'object') {
+            return Object.prototype.hasOwnProperty.call(scenarioGlobals, name);
         }
-        // Check naming convention
-        if (name.startsWith('global_')) {
-            return true;
-        }
-        return false;
+        return !!window.gameState?.globalVariables &&
+            Object.prototype.hasOwnProperty.call(window.gameState.globalVariables, name);
     }
 
     /**
@@ -357,8 +379,11 @@ class NPCConversationStateManager {
     syncGlobalVariablesToStory(story) {
         if (!story || !window.gameState?.globalVariables) return;
         
-        // Sync all global variables to this story
+        // Sync the declared globals to this story. gameState can also hold
+        // undeclared keys (an old save's renamed globals, engine-only values);
+        // an ink VAR that happens to share such a name is the ink's own.
         Object.entries(window.gameState.globalVariables).forEach(([name, value]) => {
+            if (!this.isGlobalVariable(name)) return;
             // Only sync if variable exists in this story
             if (story.variablesState.GlobalVariableExistsWithName(name)) {
                 try {
@@ -405,6 +430,7 @@ class NPCConversationStateManager {
         const changed = [];
         names.forEach(name => {
             if (!(name in window.gameState.globalVariables)) return;
+            if (!this.isGlobalVariable(name)) return;
             if (story.variablesState.GlobalVariableExistsWithName(name)) {
                 // Use the indexer which automatically unwraps Ink's Value objects
                 // According to Ink source: this[variableName] returns (varContents as Runtime.Value).valueObject
@@ -478,6 +504,9 @@ class NPCConversationStateManager {
      */
     broadcastGlobalVariableChange(variableName, value, sourceNpcId) {
         if (!window.npcManager?.inkEngineCache) return;
+        // Only declared globals reach the inks (see isGlobalVariable): an
+        // undeclared name set at runtime stays in gameState
+        if (!this.isGlobalVariable(variableName)) return;
         
         // Sync to all loaded stories except the source
         window.npcManager.inkEngineCache.forEach((inkEngine, npcId) => {

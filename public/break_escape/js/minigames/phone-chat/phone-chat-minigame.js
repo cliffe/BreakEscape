@@ -473,13 +473,9 @@ export class PhoneChatMinigame extends MinigameScene {
 
             // Process any game action tags that were collected during preload but deferred
             // until the player actually opens the conversation (e.g. complete_task, set_global)
+            // A deferred global is applied only if nothing has set it since the preload
             if (npc.deferredGlobals) {
-                Object.entries(npc.deferredGlobals).forEach(([name, value]) => {
-                    window.gameState.globalVariables[name] = value;
-                    window.npcConversationStateManager?.broadcastGlobalVariableChange(name, value, npc.id);
-                    window.eventDispatcher?.emit(`global_variable_changed:${name}`, { name, value });
-                });
-                npc.deferredGlobals = null;
+                PhoneChatConversation.applyDeferredGlobals(npc);
             }
             if (npc.deferredTags && npc.deferredTags.length > 0) {
                 console.log(`📋 Processing ${npc.deferredTags.length} deferred tag(s) for ${npc.id}:`, npc.deferredTags);
@@ -503,6 +499,7 @@ export class PhoneChatMinigame extends MinigameScene {
             // This run plays (and applies the tags and globals of) the knot itself, so anything a
             // preload deferred for it would be a second copy
             npc.deferredGlobals = null;
+            npc.deferredGlobalsBase = null;
             npc.deferredTags = null;
             
             // Continue story to get fresh content and choices
