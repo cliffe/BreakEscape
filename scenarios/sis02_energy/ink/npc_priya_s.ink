@@ -4,7 +4,9 @@
 // demand remediation plans: that's Ofgem's job, as competent authority with DESNZ.
 // Scenario: sis02 Albion Battery Hall (Saturday 21 March 2026)
 // Shape: a linear debrief like sis01's. Each section gives verdicts gated on what the player
-//   did and heard (PRI-1, PRI-7), then asks one question.
+//   did and heard (PRI-1, PRI-7), then asks one question. No spoken section headers: each
+//   section opens on its first verdict. Claim, argument and evidence are named once, in the
+//   safety-case scene; "nobody reviewed it" is said once, in the closing.
 //   the_hall (R1, R2, dial)  → safety_case (EN-002, R9; EN-008, EN-007)
 //   → isolation_review (R5, TOM-2, PRI-8 arguable view) → patch_review (R3, R4, L4, R8)
 //   → notifications (NIS, R7) → root_cause (F3, R4) → closing_summary → closing_end
@@ -12,6 +14,7 @@
 // Renamed from npc_priya_sharma.ink with the id dr_nalini_bashir → priya_s (2026-10-05).
 // ===========================================
 
+VAR anomaly_detected = false
 VAR esd_activated = false
 VAR early_esd_activation = false
 VAR esd_before_dial = false
@@ -20,6 +23,9 @@ VAR facility_evacuated = false
 VAR gauge_verdict = ""
 VAR shutdown_argument = ""
 VAR evidence_before_esd = ""
+VAR bms_registers_saved = false  // the register export was read before the ESD (scenario mapping)
+VAR entered_hall_in_gas_alarm = false
+VAR esd_pressed_inside_in_alarm = false
 VAR sis_tamper_confirmed = false
 VAR jump_server_confirmed = false
 VAR jump_server_isolated = false
@@ -27,6 +33,7 @@ VAR cable_pull_agreed = false
 VAR network_isolated = false
 VAR isolation_scope = ""
 VAR tom_refused_unverified = false
+VAR tom_told_false_authority = false
 VAR nis_notified = false
 VAR nis_initial_choice = ""
 VAR nis_deadline_missed = false
@@ -67,7 +74,7 @@ VAR debrief_quiet = false
         Priya S.: {&Ready now?|When you are.}
     - else:
         ~ priya_met = true
-        Priya S.: Priya, NCSC incident management. I'm here to help, not to inspect. Ready to go through it, or is there something to finish?
+        Priya S.: Priya. I'm here to help, not to inspect. Ready to go through it, or is there something to finish?
     }
 }
 + [I'm ready.]
@@ -86,36 +93,46 @@ Priya S.: Nobody's being blamed here. What we learn goes out to other sites like
 
 
 // ===========================================
-// HALL 1: the dial, the shutdown, the evidence (HEL-1, R1, R2, PRI-1)
+// HALL 1: the dial, the shutdown, the evidence (HEL-1, R1, R2, PRI-1, MJ1, MJ2, MJ4)
 // ===========================================
 
 === the_hall ===
 { facility_evacuated:
-    Priya S.: Hall 1 first. The gas reached two per cent before anyone pressed the ESD. Helen pressed it on her way out.
+    Priya S.: The gas reached two per cent before anyone pressed the ESD. Helen pressed it on her way out.
     Priya S.: Everyone got out, and the fire service had it. Getting out was right. It's what the alarm is for.
 - else:
     {
-    - esd_before_dial:
-        Priya S.: Hall 1 first. The ESD went in before anyone had read the dial. On a feeling, really.
-        Priya S.: It turned out right. Next time, read the dial first. It takes two minutes.
+    - esd_before_dial and early_esd_activation:
+        Priya S.: The ESD went in before anyone had read the dial. A precaution, and it happened to be right.
+        Priya S.: Next time, read the dial first. It takes two minutes.
     - early_esd_activation:
-        Priya S.: Hall 1 first. You shut it down on a dial reading, before you knew why. That cost a morning's revenue.
+        Priya S.: You shut Hall 1 down on a dial reading, before you knew why. That cost a morning's revenue.
         Priya S.: It was the right trade.
     - hydrogen_alarm:
-        Priya S.: Hall 1 first. The ESD went in after the gas alarm. The hall survived, but that was the margin you spent.
+        Priya S.: The ESD went in after the gas alarm. The hall survived, but that was the margin you spent.
     - else:
-        Priya S.: Hall 1 first. The ESD went in before the gas came up. That was the right time.
+        Priya S.: The ESD went in before the gas came up. That was the right time.
     }
 }
 {
+- esd_pressed_inside_in_alarm:
+    Priya S.: You pressed the one inside the hall, in a gas alarm. The one by the door does the same job from outside.
+- entered_hall_in_gas_alarm:
+    Priya S.: Someone walked into Hall 1 in a gas alarm. Nothing in there needed you, and the door station works from outside.
+}
+{
 - gauge_verdict == "dial":
-    Priya S.: In the hall you backed the dial over the screen. Right call, and for the right reason.
+    Priya S.: You backed the dial over the screen. Right call, and for the right reason.
 - gauge_verdict == "screen":
     Priya S.: You backed the screen over the dial at first. The screen was the one thing an attacker could reach.
 - gauge_verdict == "historian":
     Priya S.: You wanted the historian before you'd back the dial. Fair, as long as it's quick.
+- not anomaly_detected:
+    Priya S.: Nobody read the dial at Rack A2. It said fifty-one the whole time.
 }
 {
+- shutdown_argument == "hazard" and hydrogen_alarm:
+    Priya S.: You argued to shut down on the hazard. Then nobody pressed it till the gas came up. An argument only counts once somebody acts on it.
 - shutdown_argument == "hazard":
     Priya S.: And you argued to shut down on the hazard, before anyone knew the cause. That's the right order.
 - shutdown_argument == "evidence" and hydrogen_alarm:
@@ -123,39 +140,43 @@ Priya S.: Nobody's being blamed here. What we learn goes out to other sites like
 - shutdown_argument == "evidence":
     Priya S.: You wanted the logs before shutting down. This time the cells gave you the time.
 }
-{ not facility_evacuated:
-    {
-    - evidence_before_esd == "photo":
-        Priya S.: You took ten seconds for a photo of the live screen. The ESD reset those registers. That photo's the only record of what they wrote.
-    - evidence_before_esd == "press":
-        Priya S.: You pressed it without saving the screen. The fake values went with the reset. Forensics will cope. The hall came first.
-    }
+{
+- bms_registers_saved:
+    Priya S.: You took ten seconds to save the BMS registers. The ESD wiped them. That export's the only record of what they wrote into the controller.
+- facility_evacuated:
+    // nothing more on evidence: the hall came first and Helen pressed it on the way out
+- evidence_before_esd == "save":
+    Priya S.: You meant to save the registers first, and the ESD went in before anyone did. What they wrote went with the reset. The hall came first.
+- evidence_before_esd == "press":
+    Priya S.: You pressed it without saving the registers. What they wrote went with the reset. The historian kept the screen values, so forensics will cope.
 }
 Priya S.: When one mistake costs money and the other costs the building, how sure do you need to be?
 * [Sure it's a real hazard. Not sure of the cause.]
     Priya S.: Yes. The dial was enough. The cause could wait.
-* [Certain. A shutdown costs real money.]
-    Priya S.: You'd be certain in the car park. You don't need to be sure. You need to know which mistake you can live with.
+* [Sure it isn't the gauge. One more reading would do it.]
+    Priya S.: A second reading's fair, if it takes two minutes. Wait to be certain and you'll be watching it from the car park.
+    Priya S.: You don't need to be certain. You need to know which mistake you can live with.
 - -> safety_case
 
 
 // ===========================================
-// SAFETY CASE: claim, condition, evidence (PRI-6, R9)
+// SAFETY CASE: claim, argument, evidence, said once (PRI-6, R9, MJ5)
 // ===========================================
 
 === safety_case ===
-Priya S.: Now the safety case. A claim, the condition it rests on, and the evidence that the condition still holds.
 { not sis_tamper_confirmed:
-    Priya S.: You didn't confirm the SIS change on the day. Helen's team did it afterwards: the trip at eighty-five, the hydrogen alarm at three point eight.
+    Priya S.: You didn't confirm the SIS change on the day. Helen's team did afterwards: the trip at eighty-five, the hydrogen alarm at three point eight per cent.
+    Priya S.: They changed it through the engineering port, which had been on the SCADA network since commissioning.
 }
-Priya S.: Albion claimed its safety system would trip whatever happened to SCADA, provided it sat on its own network. Did that claim hold this morning?
+Priya S.: Albion's safety case made a claim: the safety system trips, whatever happens to SCADA.
+Priya S.: The argument was that it sat on its own network, so nothing on SCADA could reach it. Did that hold this morning?
 -> en002_question
 
 === en002_question ===
-+ [No. Its condition broke when the engineering port went on the SCADA network.]
++ [No. It stopped being true when the engineering port went on the SCADA network.]
     ~ en002_verdict = "broken"
     #set_global:en002_verdict:broken
-    Priya S.: Yes. It was broken before anyone attacked it. The attack just found out.
+    Priya S.: Yes. It broke at commissioning, when that port went on. The attackers just found it.
     -> claims_more
 + [It held. The trip worked; it just had the wrong number in it.]
     ~ en002_verdict = "held"
@@ -174,26 +195,28 @@ Priya S.: The dial claim only half held. The dial was independent, but the claim
 
 
 // ===========================================
-// GETTING THEM OUT (MAR-2, R5, TOM-2, PRI-8)
+// GETTING THEM OUT (MAR-2, R5, TOM-2, PRI-8, m17)
 // ===========================================
 
 === isolation_review ===
-Priya S.: Then getting them out.
 {
 - isolation_scope == "historian":
-    Priya S.: You cut the historian's enterprise leg as well. Ops lost the dispatch feed for a day. That was the price of closing the second way in.
+    Priya S.: When you isolated them, you cut the historian's enterprise leg as well. Ops lost the dispatch feed for a day. That was the price of closing the second way in.
 - isolation_scope == "watch":
-    Priya S.: You left the historian connected and watched it. You kept the dispatch feed. If it was their second way in, you'd have seen it late.
+    Priya S.: When you isolated them, you left the historian connected and watched it. You kept the dispatch feed. If it was their second way in, you'd have seen it late.
 - isolation_scope == "scada":
-    Priya S.: You shut SCADA down. That stopped everything, and put someone in Hall 2 every hour with a gas monitor.
+    Priya S.: To stop them, you shut SCADA down. That stopped everything, and put someone in Hall 2 every hour with a gas monitor.
 - network_isolated:
-    Priya S.: Nobody decided how far to cut. The historian stayed connected by default.
+    Priya S.: When you isolated them, nobody decided how far to cut. The historian stayed connected by default.
 }
 { isolation_scope != "":
     Priya S.: Every way of stopping them cost you something. The plan should have said which, before the night.
 }
 { network_isolated:
-    { tom_refused_unverified:
+    {
+    - tom_told_false_authority:
+        Priya S.: You told Tom Marcus had signed it off before he had. Tom rang him. Plenty of suppliers wouldn't.
+    - tom_refused_unverified:
         Priya S.: Tom wouldn't touch your firewall until Marcus confirmed. Annoying on the night. It's exactly what you want from a supplier.
     - else:
         Priya S.: CastleTech rang Marcus back before they touched your boundary. That's how it should work.
@@ -222,7 +245,7 @@ Priya S.: Cut someone mid-write to a safety controller and you can leave it half
 // ===========================================
 
 === patch_review ===
-Priya S.: The patch. It's been on the shelf since September 2024.
+Priya S.: That SIS patch has been on the shelf since September 2024.
 { helen_patch_view_heard:
     Priya S.: Helen told you what patching meant. Eight weeks of rounds at three in the morning, instead of an automatic trip.
 - else:
@@ -236,16 +259,21 @@ Priya S.: Say you're Albion's risk owner, today. Patch, or defer with controls t
 * [Defer, with the safety controller in its own zone and someone watching it.]
     ~ patch_decision = "deferral"
     #set_global:patch_decision:deferral
-    Priya S.: Defensible, if it's real. Who checks it's still true in a year? That's what nobody did here.
+    Priya S.: Defensible, if the controls are real. Who checks they still are in a year?
 -
-Priya S.: The deferral was signed inside the board's appetite, with a control that didn't exist. Nobody checked it stayed inside.
+// R4, the appetite beat: the old deferral only fitted the board's appetite on paper.
+Priya S.: On paper, Albion's deferral fitted the board's risk appetite. It only fitted because of a control that never existed.
 { en001_claim_assessed:
-    Priya S.: Marcus told you he wrote the boundary up twice. Writing it up doesn't get it reviewed.
+    Priya S.: Marcus wrote the boundary up twice. A risk the board only notes hasn't been decided.
 }
 { marcus_airgap_view_heard:
     Priya S.: Marcus wants the safety system air-gapped. Air gaps get bridged, usually by a laptop or a USB stick.
 }
-Priya S.: I'd put it in its own zone, with one conduit in and someone watching it. That's IEC 62443's language.
+{ patch_decision == "deferral":
+    Priya S.: Your own zone and someone watching is what the control-system security standard asks for. One way in, and only one.
+- else:
+    Priya S.: Patched or not, I'd put it in its own zone, with one way in and someone watching it. The control-system security standard, sixty-two four four three, asks for that.
+}
 Priya S.: And a key on the controller that someone on site has to turn before anything changes. In the Triton attack in 2017, it was left in program.
 -> notifications
 
@@ -255,22 +283,21 @@ Priya S.: And a key on the controller that someone on site has to turn before an
 // ===========================================
 
 === notifications ===
-Priya S.: Notifications.
 {
 - nis_notified and nis_deadline_missed:
     Priya S.: Your NIS notification went in after your own clock ran out. Ofgem will ask why. Waiting for the full picture won't satisfy them.
 - nis_notified and nis_initial_choice == "wait":
-    Priya S.: You held the notification for the full picture, then sent what you knew. The second was right.
+    Priya S.: You held the NIS notification for the full picture, then sent what you knew. The second was right.
 - nis_notified:
-    Priya S.: Your initial notification reached Ofgem in good time, unknowns marked as unknown. That's what they want.
+    Priya S.: Your initial NIS notification reached Ofgem in good time, unknowns marked as unknown. That's what they want.
 - nis_deadline_missed:
     Priya S.: Your own notification clock ran out and nothing's gone to Ofgem. That's the line in this review I'd most like changed. Send what you know today.
 - nis_initial_choice == "wait":
-    Priya S.: You chose to wait for the full picture. It still hasn't gone. Ofgem should hear today, even if it's only what you know.
+    Priya S.: You chose to wait for the full picture before notifying. It still hasn't gone. Ofgem should hear today, even if it's only what you know.
 - else:
     Priya S.: The NIS notification hasn't gone yet. Marcus can send it today. Initial, with the unknowns marked.
 }
-Priya S.: Ofgem's the competent authority, with DESNZ. We're told alongside, and we help. We don't fine anyone.
+Priya S.: Ofgem's the competent authority, with the energy department. We're told alongside, and we help. We don't fine anyone.
 { trent_water_raised:
     -> trent_review
 }
@@ -304,12 +331,12 @@ Priya S.: And Tom needed your say-so to tell them, because he works for both of 
 // ===========================================
 
 === root_cause ===
-Priya S.: How they got in. A printer driver update, pushed through CastleTech's management account, gave them a foothold and then your domain.
+Priya S.: How they got in. Tampered firmware on your printers gave them a foothold. From there they took CastleTech's management account, and then your domain.
 Priya S.: Then the Ellison account. Locked on the domain when he left, still alive on the jump server, with its default password.
 { jump_server_confirmed:
-    Priya S.: You'll have seen it on ENG-02. Fourteen months gone, and it still worked.
+    Priya S.: You'll have seen it on the engineering workstation. Fourteen months gone, and it still worked.
 }
-Priya S.: Marcus's risk assessment described this. Its review date was March last year. Nobody looked at it again.
+Priya S.: Marcus's risk assessment described this attack, eighteen months ago, almost word for word.
 -> closing_summary
 
 
@@ -320,8 +347,7 @@ Priya S.: Marcus's risk assessment described this. Its review date was March las
 === closing_summary ===
 #complete_task:talk_to_priya_s
 Priya S.: Nothing that failed today was new. A commissioning link nobody closed, a dead account nobody removed, a patch nobody rescheduled.
-Priya S.: That's what's called normalisation of deviance. Each one was written down, accepted, and never looked at again.
-Priya S.: A safety case is more than a file in a cabinet. Its conditions are controls. When a control lapses, the claim goes with it.
+Priya S.: Each one was written down, accepted, and never looked at again.
 -> closing_questions
 
 === closing_questions ===
@@ -335,7 +361,7 @@ Priya S.: A safety case is more than a file in a cabinet. Its conditions are con
         Priya S.: Helen didn't trust a perfect screen. Look after people like that. They're your last line of defence.
     }
     -> closing_questions
-+ [That's everything. Thank you.]
++ [Nothing else from us.]
     -> closing_end
 
 
@@ -344,7 +370,7 @@ Priya S.: A safety case is more than a file in a cabinet. Its conditions are con
 // here once debrief_closed is true (start and debrief_over both route past it).
 === closing_end ===
 ~ debrief_closed = true
-Priya S.: That's everything from me. Thank you.
+Priya S.: Then thank you, all of you. My notes go to Marcus this week.
 #set_global:debrief_complete:true
 ~ debrief_quiet = true
 #exit_conversation
@@ -358,7 +384,7 @@ Priya S.: That's everything from me. Thank you.
 { debrief_quiet:
     ~ debrief_quiet = false
 - else:
-    Priya S.: {&We're done. My notes go to Marcus this week.|That's everything from me.}
+    Priya S.: {&We're done here.|That's everything from me.}
 }
 + [Thanks, Priya.]
     Priya S.: Get some rest. It's been a long morning.

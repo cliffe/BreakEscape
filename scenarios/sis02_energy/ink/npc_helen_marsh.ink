@@ -9,7 +9,8 @@
 //
 // GLOBALS READ: anomaly_detected, historian_flatline_found, jump_server_confirmed,
 //   sis_tamper_confirmed, esd_activated, hydrogen_alarm, facility_evacuated, network_isolated,
-//   nis_notified, priya_s_visible, battery_hall_badge_collected
+//   nis_notified, nis_form_read, nis_initial_choice, priya_s_visible, battery_hall_badge_collected,
+//   marcus_webb_contacted
 // GLOBALS WRITTEN: helen_briefed, gauge_verdict, shutdown_argument, helen_patch_view_heard;
 //   esd_activated and priya_s_visible in evacuation_scene
 // ===========================================
@@ -23,6 +24,9 @@ VAR hydrogen_alarm = false
 VAR facility_evacuated = false
 VAR network_isolated = false
 VAR nis_notified = false
+VAR nis_form_read = false
+VAR nis_initial_choice = ""
+VAR marcus_webb_contacted = false
 VAR priya_s_visible = false  // Synced scenario global: set here at the end of evacuation_scene
 VAR battery_hall_badge_collected = false
 VAR helen_briefed = false
@@ -107,7 +111,7 @@ Helen Marsh: I'm staying on this desk while that screen's telling us fairy stori
 + { anomaly_detected and gauge_verdict == "" } [That dial in the hall. Which do we believe?]
     -> gauge_decision
 + { anomaly_detected and gauge_verdict != "" and not historian_flatline_found } [About that dial again.]
-    Helen Marsh: Same as before. A dial can stick. It doesn't climb twenty-three degrees on its own.
+    Helen Marsh: You've told me what you think. Now let's see the historian.
     -> hub
 + { anomaly_detected and not esd_activated and shutdown_argument == "" } [Should we shut Hall 1 down now?]
     -> shutdown_decision
@@ -152,7 +156,7 @@ Helen Marsh: Fifty-one on the dial. Twenty-eight on my screen. One of them's lyi
     ~ gauge_verdict = "screen"
     #set_global:gauge_verdict:screen
     Helen Marsh: Dials stick. They don't climb twenty-three degrees by themselves, though.
-    Helen Marsh: Real sensors wobble. Have a look at the historian and see if ours do.
+    Helen Marsh: Have a look at the historian and see if ours wobble.
     -> hub
 + [Neither yet. I want the historian first.]
     ~ gauge_verdict = "historian"
@@ -173,7 +177,7 @@ Helen Marsh: If I'm wrong, that's half the site off the grid and a penalty every
 + [Then press it. The dial is enough.]
     ~ shutdown_argument = "hazard"
     #set_global:shutdown_argument:hazard
-    Helen Marsh: Agreed. There's a station by the hall door, this side, and one on my console. Go on. I'll tell Marcus.
+    Helen Marsh: Agreed. The station on my console's right here. Press it, and I'll tell Marcus.
     -> hub
 + [Give me five minutes with the historian first.]
     ~ shutdown_argument = "evidence"
@@ -181,7 +185,7 @@ Helen Marsh: If I'm wrong, that's half the site off the grid and a penalty every
     Helen Marsh: Five. Not six.
     -> hub
 + [Not sure yet.]
-    Helen Marsh: Nor am I. That's rather the point.
+    Helen Marsh: Nor am I. That's the trouble.
     -> hub
 
 
@@ -241,11 +245,11 @@ Helen Marsh: So nothing automatic will save that hall now. It's the ESD or nowt.
 + { not topic_sis_port } [How did they get in to change it?]
     ~ topic_sis_port = true
     Helen Marsh: The engineering port's on the SCADA network. Went on for commissioning. Never came off.
-    Helen Marsh: There's a key on the safety controller. It's meant to sit in RUN. I'd bet you it's in PROGRAM.
+    Helen Marsh: There's a key on the safety controller. It's meant to sit in run. I'd bet you it's in program.
     -> sis_more
 + { not topic_sis_log } [How do we know it was three twenty-two?]
     ~ topic_sis_log = true
-    Helen Marsh: The safety controller keeps no log of changes. We only know three twenty-two because ENG-02 kept its own history.
+    Helen Marsh: The safety controller keeps no log of changes. We only know three twenty-two because the engineering workstation kept its own history.
     -> sis_more
 + [Back to it.]
     -> hub
@@ -275,6 +279,10 @@ Helen Marsh: Mr Whitworth signed the deferral. What nobody signed was a date to 
 
 === hydrogen_alarm_response ===
 ~ topic_h2_asked = true
+{ facility_evacuated:
+    Helen Marsh: It went past two per cent and it's alight. Hall 1's the fire service's now. Nobody goes back in.
+    -> hub
+}
 Helen Marsh: Hydrogen's at one per cent of the air in there. It burns at four. That's cells venting.
 Helen Marsh: At two per cent we evacuate. Nobody goes into that hall now. Fire service are on their way.
 { not esd_activated:
@@ -296,13 +304,19 @@ Helen Marsh: At two per cent we evacuate. Nobody goes into that hall now. Fire s
 - not anomaly_detected:
     Helen Marsh: Hall 1. Read the dial at Rack A2 and come and tell me what it says.
 - not historian_flatline_found:
-    Helen Marsh: The historian on OPS-01. If that dial's right, my screen's been lying a while. Find out how long.
+    Helen Marsh: The historian, on the operator screen. If that dial's right, my screen's been lying a while. Find out how long.
+- not jump_server_confirmed and not marcus_webb_contacted:
+    Helen Marsh: Message Marcus. Then the workshop. If somebody's in our network, the engineering workstation will show who.
 - not jump_server_confirmed:
-    Helen Marsh: Message Marcus. Then the workshop. If somebody's in our network, ENG-02 will show who.
+    Helen Marsh: The workshop. If somebody's in our network, the engineering workstation will show who.
 - not sis_tamper_confirmed:
     Helen Marsh: The SIS panel in the workshop. Check it against what was certified. The paperwork's in the cabinet.
 - not network_isolated:
     Helen Marsh: Get them out of our network. Marcus has the plan, and CastleTech hold the enterprise side.
+- not nis_notified and nis_initial_choice == "wait":
+    Helen Marsh: You're holding the notification till you know more. Your call. The clock's still running, mind.
+- not nis_notified and nis_form_read:
+    Helen Marsh: The notification. You've read the form, so message Marcus and he'll sign it.
 - not nis_notified:
     Helen Marsh: The NIS notification. The form's on the clipboard by the workshop door. Marcus signs it.
 - priya_s_visible:
@@ -310,8 +324,12 @@ Helen Marsh: At two per cent we evacuate. Nobody goes into that hall now. Fire s
 - else:
     Helen Marsh: That's the urgent stuff done. Have a breather.
 }
-{ anomaly_detected and not esd_activated:
-    Helen Marsh: And that ESD still isn't in. You know where the stations are.
+// The nudge only once the player has the evidence or has said to shut down (not straight
+// after Helen granted "five minutes" for the historian).
+{ anomaly_detected and not esd_activated and not facility_evacuated:
+    { historian_flatline_found or shutdown_argument == "hazard":
+        Helen Marsh: And that ESD still isn't in. You know where the stations are.
+    }
 }
 -> hub
 
@@ -323,9 +341,10 @@ Helen Marsh: At two per cent we evacuate. Nobody goes into that hall now. Fire s
 
 === evacuation_scene ===
 Helen Marsh: Two per cent. That's it. Everybody out of Hall 1, now. Nobody goes back in.
-Helen Marsh: I've hit the ESD on my console on the way past. Too late for the A racks. They're going.
+Helen Marsh: I've hit the ESD on my console. Too late for the A racks. They're going.
 ~ esd_activated = true
-#complete_task:press_esd_button
+// Helen pressed it, not the player: the player's ESD task is skipped, not ticked (playtest C m5).
+#skip_task:press_esd_button
 #set_global:esd_activated:true
 Helen Marsh: Fire service are pulling in. Everybody's out and counted. Hall 1's theirs now.
 Helen Marsh: I've had the NCSC on the phone. Someone's coming to go through it with us.

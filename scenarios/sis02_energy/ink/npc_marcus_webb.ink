@@ -2,14 +2,15 @@
 // NPC: Marcus Webb (OT Security Manager, at home, on the phone). Unvoiced phone texts.
 // Scenario: sis02 Albion Battery Hall (Saturday 21 March 2026)
 // Role: cyber containment. He never authorises the ESD (decision 3): anyone may press it.
-//   Decision scenes: shut down now or logs first (MAR-1, his arguable view), a photo before the
-//   ESD (R2), how far to isolate (MAR-2, R5), what goes in the initial NIS notification (MAR-3).
+//   Decision scenes: shut down now or logs first (MAR-1, his arguable view), save the PLC-BMS
+//   registers before the ESD (R2, MJ2: the trip's shutdown routine overwrites them), how far to isolate (MAR-2, R5), what goes in the initial NIS notification (MAR-3).
 //   His other arguable view: air-gap the SIS (L4); Priya S. answers it in IEC 62443 terms.
 // ===========================================
 //
 // GLOBALS READ: anomaly_detected, historian_flatline_found, jump_server_confirmed,
 //   jump_server_threat_intel_viewed, jump_server_isolated, sis_tamper_confirmed, esd_activated,
-//   hydrogen_alarm, network_isolated, network_isolation_requested, nis_form_read
+//   hydrogen_alarm, facility_evacuated, network_isolated, network_isolation_requested, nis_form_read,
+//   bms_registers_saved (set by a scenario mapping when the register export was read before the ESD)
 // GLOBALS WRITTEN: marcus_webb_contacted (first message, M2), shutdown_argument,
 //   evidence_before_esd, cable_pull_agreed, network_isolation_authorised, isolation_scope,
 //   nis_initial_choice, nis_notified, en001_claim_assessed, marcus_airgap_view_heard
@@ -23,13 +24,15 @@ VAR jump_server_isolated = false
 VAR sis_tamper_confirmed = false
 VAR esd_activated = false
 VAR hydrogen_alarm = false
+VAR facility_evacuated = false
+VAR bms_registers_saved = false
 VAR network_isolated = false
 VAR network_isolation_requested = false
 VAR network_isolation_authorised = false
 VAR marcus_webb_contacted = false
 VAR cable_pull_agreed = false
 VAR shutdown_argument = ""  // Synced scenario global, also set by Helen (last argument wins)
-VAR evidence_before_esd = ""
+VAR evidence_before_esd = ""  // "save" (said they'd export the registers first) / "press"
 VAR isolation_scope = ""
 VAR nis_form_read = false
 VAR nis_notified = false
@@ -87,7 +90,7 @@ And look at the SIS panel while you're there. I want to know if anyone's touched
 // ===========================================
 
 === hub ===
-+ { anomaly_detected and not esd_activated and not topic_shutdown_argued } [Helen and I think Hall 1 should come off now.]
++ { anomaly_detected and not esd_activated and not topic_shutdown_argued } [I think Hall 1 should come off now.]
     -> shutdown_argument_scene
 + { anomaly_detected and not esd_activated and topic_shutdown_argued and evidence_before_esd == "" } [We're pressing the ESD now.]
     -> evidence_scene
@@ -96,7 +99,7 @@ And look at the SIS panel while you're there. I want to know if anyone's touched
 + { network_isolation_requested and not network_isolation_authorised } [Tom at CastleTech needs your sign-off to isolate.]
     ~ network_isolation_authorised = true
     #set_global:network_isolation_authorised:true
-    Signed off. I'll text Tom myself so he hears it from me.
+    Signed off. Tell Tom to ring me and I'll confirm.
     -> hub
 + { jump_server_confirmed and isolation_scope == "" } [How far do we cut them off?]
     -> isolation_scope_scene
@@ -147,12 +150,16 @@ I'd want the jump server logs before we drop half the site. If it's a sensor fau
 // ===========================================
 
 === evidence_scene ===
-One thing before you press it. The ESD resets the BMS. Whatever they've written into those registers goes with it.
-If you've got ten seconds, photograph the live status on OPS-01 first. If you haven't, press it anyway.
-+ [I'll photograph the screen, then press it.]
-    ~ evidence_before_esd = "photo"
-    #set_global:evidence_before_esd:photo
-    Good. Ten seconds, no more.
+{ bms_registers_saved:
+    You've saved the BMS register table already? Good. Then press it. Don't wait on me.
+    -> hub
+}
+One thing before you press it. The ESD makes the BMS run its shutdown routine. That overwrites whatever they've written into its registers.
+The historian only has what the screen showed. Got ten seconds? Export the BMS register table on OPS-01 first. If not, press it anyway.
++ [I'll save the registers, then press it.]
+    ~ evidence_before_esd = "save"
+    #set_global:evidence_before_esd:save
+    Good. It's on OPS-01, next to the live status. Ten seconds, no more.
     -> hub
 + [No. We press it now.]
     ~ evidence_before_esd = "press"
@@ -228,14 +235,10 @@ Shut SCADA down and Hall 2 runs on local BMS only. Somebody walks it every hour 
     Without undue delay, seventy-two hours at the outside. The form's on the clipboard by the workshop door. Read it, then message me.
     -> hub
 }
-Before I sign it. What do we actually know?
-+ { sis_tamper_confirmed } [An intrusion, SIS setpoints changed, scope unknown. Send it as initial.]
+Before I sign it. Do we send what we've got, or wait till we know more?
++ [Send it now with what we've got. We'll update it as we go.]
     -> nis_send
-+ { jump_server_confirmed and not sis_tamper_confirmed } [Someone's on the control network. Scope unknown. Send it as initial.]
-    -> nis_send
-+ { not jump_server_confirmed } [Falsified data on SCADA, cause unknown. Send it as initial.]
-    -> nis_send
-+ [Wait until we know how far they got.]
++ [Hold it till we know how far they got. Wrong reports are hard to undo.]
     ~ nis_initial_choice = "wait"
     #set_global:nis_initial_choice:wait
     I'd rather send what we know now and update it than send a perfect report on Tuesday.
@@ -253,13 +256,24 @@ Before I sign it. What do we actually know?
 }
 ~ nis_notified = true
 #set_global:nis_notified:true
-That's honest. It goes to Ofgem as an initial notification, NCSC copied. We update it when we know more.
+{
+- sis_tamper_confirmed:
+    Right. Initial notification: an intrusion, safety setpoints changed at 03:22, the rest unknown.
+- jump_server_confirmed:
+    Right. Initial notification: someone on our control network since 01:47, safety system not yet checked.
+- else:
+    Right. Initial notification: falsified data on SCADA since 23:12, cause unknown.
+}
+{ facility_evacuated:
+    And Hall 1 lost to fire, everyone out, nobody hurt.
+}
+It goes to Ofgem, NCSC copied. We update it when we know more.
 { hydrogen_alarm:
     The fire service already know. HSE get a call from me after.
 - else:
     HSE get a call from me after.
 }
-And I'll tell NESO. Last night's charge pulled the feeder's frequency about. That's theirs to know.
+And I'll tell NESO. That overcharge put a blip on the local feeder's frequency last night. They'll have logged it.
 -> hub
 
 
@@ -311,6 +325,12 @@ A risk accepted with a control that isn't there? That's risk pretence.
 
 === current_status ===
 {
+- facility_evacuated and not network_isolated:
+    Hall 1's gone and everyone's out. Now get them off our network. Cable, then Tom.
+- facility_evacuated and not nis_notified:
+    Hall 1's gone, everyone's out, and they're off our network. Now the notification.
+- facility_evacuated:
+    Hall 1's gone, but everyone's out and it's reported. The NCSC are with you. Talk to them.
 - not anomaly_detected:
     Nothing to go on yet. Get Helen's dial read.
 - not esd_activated and shutdown_argument == "evidence" and not jump_server_confirmed:
@@ -325,6 +345,10 @@ A risk accepted with a control that isn't there? That's risk pretence.
     Hall 1's still on charge. What are we waiting for?
 - not network_isolated:
     Hall's safe. Now get them out. Cable, then Tom.
+- not nis_notified and nis_initial_choice == "wait":
+    Contained. You're holding the notification. Say when.
+- not nis_notified and nis_form_read:
+    Contained. Now the notification. Message me when you're ready to send.
 - not nis_notified:
     Contained. Now the notification. Read the form and message me.
 - else:
