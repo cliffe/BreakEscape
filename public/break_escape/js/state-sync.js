@@ -72,6 +72,9 @@ export class StateSync {
     // NPCs shown or hidden by setVisible, so a reveal survives a reload (N2)
     const npcVisibility = window.npcManager?.exportNpcVisibility?.();
 
+    // NPCs turned hostile or knocked out, so they stay that way after a reload (E-B)
+    const npcHostility = window.npcHostileSystem?.exportHostility?.();
+
     // Command board entries ({ id, t }), only in scenarios with a board
     const commandBoardLog = window.commandBoardRecorder?.exportLog?.();
 
@@ -85,6 +88,9 @@ export class StateSync {
     }
     if (npcVisibility && Object.keys(npcVisibility).length > 0) {
       payload.npcVisibility = npcVisibility;
+    }
+    if (npcHostility && Object.keys(npcHostility).length > 0) {
+      payload.npcHostility = npcHostility;
     }
     if (commandBoardLog && commandBoardLog.length > 0) {
       payload.commandBoardLog = commandBoardLog;
@@ -138,10 +144,10 @@ export class StateSync {
       if (body.length > KEEPALIVE_BODY_LIMIT) {
         // Keep the reload-critical parts: globals, fired one-shot handlers, the timed
         // texts they scheduled, and the phone threads changed since the last sync
-        const { globalVariables, triggeredEvents, timedMessages, phoneState, scenarioClock, npcVisibility, commandBoardLog } = payload;
-        body = JSON.stringify({ globalVariables, triggeredEvents, timedMessages, phoneState, scenarioClock, npcVisibility, commandBoardLog });
+        const { globalVariables, triggeredEvents, timedMessages, phoneState, scenarioClock, npcVisibility, npcHostility, commandBoardLog } = payload;
+        body = JSON.stringify({ globalVariables, triggeredEvents, timedMessages, phoneState, scenarioClock, npcVisibility, npcHostility, commandBoardLog });
         if (body.length > KEEPALIVE_BODY_LIMIT) {
-          body = JSON.stringify({ globalVariables, triggeredEvents, timedMessages, scenarioClock, npcVisibility, commandBoardLog });
+          body = JSON.stringify({ globalVariables, triggeredEvents, timedMessages, scenarioClock, npcVisibility, npcHostility, commandBoardLog });
           if (body.length > KEEPALIVE_BODY_LIMIT) return;
         }
       }

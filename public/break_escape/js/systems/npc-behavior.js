@@ -307,8 +307,19 @@ class NPCBehavior {
         this.unstuckCheckInterval = 200; // Check for stuck every 200ms
         this.escapeWallBox = null; // Reference to the wall we're escaping from
 
-        // Apply initial hostile state if configured
-        if (this.config.hostile.startHostile) {
+        // Hostility saved before a reload (E-B) wins over startHostile: an NPC
+        // that turned stays hostile, one that was calmed stays calm, a KO'd one
+        // stays down without a health bar. Otherwise apply the configured state.
+        const restored = window.npcHostileSystem?.takeRestoredHostility?.(npcId);
+        if (restored) {
+            if (restored.hostile) {
+                this.hostile = true;
+                if (!restored.ko) {
+                    this.sprite?.setTint?.(0xff6666);
+                    window.npcHostileSystem.announceRestoredHostile?.(npcId, this.config.hostile);
+                }
+            }
+        } else if (this.config.hostile.startHostile) {
             this.setHostile(true);
         }
 

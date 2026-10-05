@@ -121,11 +121,62 @@ module BreakEscape
       assert_equal 'active', scenario_json(set).dig('objectivesState', 'aims', 'gated', 'status')
     end
 
-    test 'a globalVariable condition alone does not reveal an aim with no completed task' do
+    # E-1 (2026-10-05): every mission sets a story-gate global in the same beat
+    # as the #unlock_aim / unlockAim that opens the aim, so a met gate on load
+    # means the aim was opened, even if the persistUnlock POST was lost.
+    test 'a met story gate opens its aim on load with no task progress' do
       game = create_game(globals: { 'gate_open' => true })
 
-      assert_nil scenario_json(game).dig('objectivesState', 'aims', 'gated'),
-                 'The client only checks that condition when a task completes'
+      aim = scenario_json(game).dig('objectivesState', 'aims', 'gated')
+      assert_equal 'active', aim['status'], 'Reload must derive the unlock from the saved globals'
+      assert_nil aim['revealedEarly'], 'The gate is met, so unlockAim has no work left'
+    end
+
+    test 'an unmet story gate keeps its aim hidden on load' do
+      %w[unset false].each do |variant|
+        globals = variant == 'unset' ? {} : { 'gate_open' => false }
+        game = create_game(globals: globals)
+        assert_nil scenario_json(game).dig('objectivesState', 'aims', 'gated'), "gate_open #{variant}"
+      end
+    end
+
+    test 'a story gate with equals needs that exact value' do
+      wrong = create_game(globals: { 'phase' => 'day' })
+      assert_nil scenario_json(wrong).dig('objectivesState', 'aims', 'phased')
+
+      right = create_game(globals: { 'phase' => 'night' })
+      assert_equal 'active', scenario_json(right).dig('objectivesState', 'aims', 'phased', 'status')
+    end
+
+    test 'a met story gate opens the first task when it is authored locked, as unlockAim does' do
+      game = create_game(globals: { 'phase' => 'night' })
+      tasks = scenario_json(game).dig('objectivesState', 'tasks')
+
+      assert_equal 'active', tasks.dig('phased_task', 'status')
+      assert_nil tasks['phased_task_2'], 'Only the first task opens'
+      assert_nil game.reload.player_state.dig('objectivesState', 'tasks', 'phased_task'),
+                 'Derived on read, never written'
+    end
+
+    test 'a met story gate leaves a recorded first task alone' do
+      game = create_game(globals: { 'phase' => 'night' }, tasks: { 'phased_task' => 'completed' })
+
+      assert_equal 'completed', scenario_json(game).dig('objectivesState', 'tasks', 'phased_task', 'status')
+    end
+
+    test 'a met story gate does not override a stored aim status' do
+      game = create_game(globals: { 'gate_open' => true }, aims: { 'gated' => 'completed' })
+
+      assert_equal 'completed', scenario_json(game).dig('objectivesState', 'aims', 'gated', 'status')
+    end
+
+    test 'globals do not open aims with aimCompleted conditions or none' do
+      game = create_game(globals: { 'gate_open' => true, 'phase' => 'night' })
+      aims = scenario_json(game).dig('objectivesState', 'aims')
+
+      assert_nil aims['second']
+      assert_nil aims['both']
+      assert_nil aims['hidden']
     end
 
     test 'derivation does not change the stored state' do
@@ -585,6 +636,44 @@ module BreakEscape
       assert_equal true, game.reload.player_state.dig('room_states', 'lobby', 'npc_states', 'hamza', 'isVisible')
     end
 
+    # E-B (2026-10-05): an NPC that turned hostile was calm again after a reload.
+    test 'NPC hostility syncs, the latest value wins, and it comes back on load' do
+      game = create_game
+      game.scenario_data['rooms']['lobby']['npcs'] = [{ 'id' => 'guard', 'npcType' => 'person' },
+                                                     { 'id' => 'clerk', 'npcType' => 'person' }]
+      game.save!
+
+      put sync_state_game_url(game), params: { npcHostility: { 'guard' => { hostile: true, ko: false },
+                                                               'clerk' => { hostile: true, ko: false } } }, as: :json
+      put sync_state_game_url(game), params: { npcHostility: { 'clerk' => { hostile: false, ko: false } } }, as: :json
+      assert_response :success
+
+      assert_equal({ 'guard' => { 'hostile' => true, 'ko' => false }, 'clerk' => { 'hostile' => false, 'ko' => false } },
+                   scenario_json(game)['savedNpcHostility'])
+    end
+
+    test 'NPC hostility keeps a KO and ignores unknown NPCs and bad values' do
+      game = create_game
+      game.scenario_data['rooms']['lobby']['npcs'] = [{ 'id' => 'guard', 'npcType' => 'person' }]
+      game.player_state['room_states'] = { 'lobby' => { 'npcs_added' => [{ 'id' => 'runner' }] } }
+      game.save!
+
+      put sync_state_game_url(game), params: { npcHostility: { 'guard' => { hostile: true, ko: true },
+                                                               'runner' => { hostile: true, ko: false },
+                                                               'ghost' => { hostile: true, ko: false },
+                                                               'bad' => 'yes' } }, as: :json
+      put sync_state_game_url(game), params: { npcHostility: { 'guard' => { hostile: true, ko: false },
+                                                               'runner' => { hostile: 'yes', ko: false } } }, as: :json
+      assert_response :success
+
+      assert_equal({ 'guard' => { 'hostile' => true, 'ko' => true }, 'runner' => { 'hostile' => true, 'ko' => false } },
+                   game.reload.player_state['npcHostility'], 'A KO is never undone; an unknown NPC is dropped')
+    end
+
+    test 'no savedNpcHostility when nothing has turned' do
+      assert_nil scenario_json(create_game)['savedNpcHostility']
+    end
+
     private
 
     def scenario_json(game)
@@ -622,7 +711,11 @@ module BreakEscape
             'tasks' => [task.call('hidden_task'), task.call('locked_task', 'status' => 'locked')] },
           { 'aimId' => 'gated', 'title' => 'Gated', 'status' => 'locked', 'order' => 4,
             'unlockCondition' => { 'globalVariable' => 'gate_open' },
-            'tasks' => [task.call('gated_task'), task.call('gated_task_2')] }
+            'tasks' => [task.call('gated_task'), task.call('gated_task_2')] },
+          { 'aimId' => 'phased', 'title' => 'Phased', 'status' => 'locked', 'order' => 5,
+            'unlockCondition' => { 'globalVariable' => 'phase', 'equals' => 'night' },
+            'tasks' => [task.call('phased_task', 'status' => 'locked'),
+                        task.call('phased_task_2', 'status' => 'locked')] }
         ]
       }
     end
