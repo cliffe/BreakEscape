@@ -479,19 +479,61 @@ Set `GEMINI_API_KEY` before running.  The batch processor:
 Commit the resulting `tts_cache/<scenario>/` files to git so that Hacktivity
 deployments pick them up automatically.
 
-### Cleaning Up Stale Cache Files
+### Provenance Sidecars
 
-A helper script identifies and removes cache files that should no longer exist
-(e.g. audio generated for phone-NPC Ink dialogue before the batch processor
-was updated to skip them):
+Each MP3 generated since October 2026 has a small `<md5hash>.json` sidecar beside
+it recording the exact text, voice name, style, language, scenario and time
+(`TtsService#write_sidecar`). The service also backfills a sidecar when it serves
+an older file that has none, and the batch processor does the same on a cache
+hit. Sidecars are never served (the controller only sends the `.mp3`), and the
+`cache_stats` / batch size counts only glob `*.mp3`. Commit them with the MP3s
+(`git add -f`, since `tts_cache/` is in `.gitignore`): they are tiny, and they let
+the pruner judge a file on its exact text.
+
+### Pruning Stale Cache Files
+
+When dialogue is rewritten or a voice is recast, the old audio stays on disk
+under a key nothing requests any more. The prune task lists those files. It is
+a dry run unless you ask otherwise:
 
 ```bash
-# Preview what would be deleted
-ruby scripts/tts_cache_cleanup_phone.rb
+# From the BreakEscape engine directory
+bin/rails app:break_escape:tts:prune_cache                  # dry run, all scenarios
+bin/rails app:break_escape:tts:prune_cache[sis02_energy]    # dry run, one scenario
+APPLY=1  bin/rails app:break_escape:tts:prune_cache[sis02_energy]  # move orphans to tmp/tts_pruned/<date>/
+DELETE=1 bin/rails app:break_escape:tts:prune_cache[sis02_energy]  # delete them permanently
+UNKNOWN=quota_test APPLY=1 bin/rails app:break_escape:tts:prune_cache   # a cache dir that matches no scenario
 
-# Actually delete
-ruby scripts/tts_cache_cleanup_phone.rb --delete
+# or the wrapper
+scripts/tts_prune_cache.sh sis02_energy --apply
 ```
+
+How it decides: for each scenario it renders `scenario.json.erb` (as the batch
+processor does) and collects every voice config (NPC `voice`, the narrator,
+object `ttsVoice`) and every line the client can send to `/tts`:
+
+- the ink source, with every branch of inline alternatives and conditionals
+  expanded (`{&a|b}`, `{cond: a|b}`), glued lines joined, choice output, and
+  printed variables filled with their known values (ink `VAR` defaults, scenario
+  `globalVariables`, the client's `player_name()` fallback);
+- the compiled ink's stored fragments (what the server's text validation reads);
+- a runtime walk of each compiled ink with inkjs
+  (`scripts/ink_runtime_check/voicelines.mjs`, needs node), for lines composed at
+  runtime;
+- every string in the scenario: barks, timed messages, fixed-text voice objects.
+
+Each line is also tried with its speaker prefix stripped, as person-chat,
+phone voice messages (`voice:`) and barks do, and crossed with every voice in the
+scenario, so the expected set is a superset. A cache file whose key is in none of
+it is an orphan. A file with a sidecar is judged on its exact text: if the
+`/tts` endpoint would still accept that text in a voice the scenario still uses,
+it is kept. Cache directories that match no scenario, and legacy flat files in
+the cache root, are listed separately and only touched when named in `UNKNOWN`
+(`(flat)` for the flat files). Moving to `tmp/tts_pruned/<date>/` (with a
+`manifest.json`) is the default action, because audio generated since the last
+commit cannot be got back from git; move the files back to restore them.
+
+---
 
 ---
 
