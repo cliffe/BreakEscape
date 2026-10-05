@@ -15,13 +15,13 @@ Somebody sold Ghost the way into St. Catherine's. The trail leads to WhiteHat Se
 | AND-gate convergences | 3 |
 | Rooms | 7 |
 | Puzzle graph nodes / edges | 39 / 46 |
-| Story graph nodes / edges | 6 / 0 |
+| Story graph nodes / edges | 6 / 5 |
 
 ## Critical Path
 
-0 hops through story aims — minimum mandatory sequence to reach mission completion:
+2 hops through story aims — minimum mandatory sequence to reach mission completion:
 
-****
+**Get Inside WhiteHat → Breach The Server Room → Settle Accounts**
 
 ## How to Read These Diagrams
 
@@ -199,8 +199,14 @@ flowchart TD
   aim_perfect_stealth{{"Perfect Stealth"}}
   aim_moral_choices{{"Settle Accounts"}}
 
+  aim_act1_gain_access -.->|clone_call_done| aim_act2_breach_server_room
+  aim_act1_gain_access -.->|exec_wing_night| aim_search_executive_office
+  aim_act1_gain_access -.->|night_explored| aim_collect_lore
+  aim_act2_breach_server_room -.->|perfect_stealth_earned| aim_perfect_stealth
+  aim_act2_breach_server_room -.->|night_confrontation_ready| aim_moral_choices
 
-  class aim_act1_gain_access,aim_act2_breach_server_room,aim_search_executive_office,aim_collect_lore,aim_perfect_stealth,aim_moral_choices aim
+  class aim_act1_gain_access,aim_act2_breach_server_room,aim_moral_choices critical
+  class aim_search_executive_office,aim_collect_lore,aim_perfect_stealth aim
 ```
 
 ## Story + Puzzle (Integrated)
@@ -320,6 +326,11 @@ flowchart TD
   reception_lobby --> main_hallway
   main_hallway --> executive_wing_hallway
   executive_wing_hallway --> danny_office
+  aim_act1_gain_access -.->|clone_call_done| aim_act2_breach_server_room
+  aim_act1_gain_access -.->|exec_wing_night| aim_search_executive_office
+  aim_act1_gain_access -.->|night_explored| aim_collect_lore
+  aim_act2_breach_server_room -.->|perfect_stealth_earned| aim_perfect_stealth
+  aim_act2_breach_server_room -.->|night_confrontation_ready| aim_moral_choices
   vmfl_submit_network_scan_flag -.-> aim_act2_breach_server_room
   vmfl_submit_ftp_flag -.-> aim_act2_breach_server_room
   vmfl_submit_http_flag -.-> aim_act2_breach_server_room
@@ -339,7 +350,8 @@ flowchart TD
   class vm_access_terminal,vmch_submit_network_scan_flag,vmch_submit_ftp_flag,vmch_submit_http_flag,vmch_submit_distcc_flag vm
   class andgate1,andgate2,andgate3 gate
   class vmfl_submit_network_scan_flag,vmfl_submit_ftp_flag,vmfl_submit_http_flag,vmfl_submit_distcc_flag flag
-  class aim_act1_gain_access,aim_act2_breach_server_room,aim_search_executive_office,aim_collect_lore,aim_perfect_stealth,aim_moral_choices aim
+  class aim_act1_gain_access,aim_act2_breach_server_room,aim_moral_choices critical
+  class aim_search_executive_office,aim_collect_lore,aim_perfect_stealth aim
 
   classDef optional stroke-dasharray:5 2
   class lock_pick_kit,company_founding_plaque,server_room_whiteboard,unsent_email_to_the_night_team_raw_source optional
