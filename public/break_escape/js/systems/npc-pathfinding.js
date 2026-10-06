@@ -15,6 +15,7 @@
  */
 
 import { TILE_SIZE, GRID_SIZE, PATHFINDING_STEP } from '../utils/constants.js';
+import { addDoorway } from './path-doorways.js';
 
 const PATROL_EDGE_OFFSET = 2; // Distance from room edge (2 tiles)
 
@@ -51,6 +52,11 @@ export class NPCPathfindingManager {
         // North/South doors: track opened positions so we can re-apply the south-edge
         // corner blocks after every rebuildWorldGrid() call.
         this.openNSDoors = []; // [{worldX, worldY}]
+
+        // Every opened doorway, one entry per opening (both rooms' doors share
+        // it). The player's paths pin waypoints on its centre line so the feet
+        // collider enters and leaves square (path-doorways.js).
+        this.openDoorways = []; // [{axis, cx, cy}]
 
         console.log('✅ NPCPathfindingManager initialized');
     }
@@ -506,6 +512,16 @@ export class NPCPathfindingManager {
      * @param {string} direction - Door direction (north/south/east/west)
      */
     markDoorWalkable(roomId, worldX, worldY, direction) {
+        // Record an N/S opening before the per-room grid check below: the far
+        // room is often not loaded yet, but the doorway is open either way.
+        // (openDoor also calls this for the far room with the direction
+        // flipped but the same sprite position, which is the same N/S doorway.
+        // Side doors are recorded in markSideDoorCorridor, which gets the
+        // door's own direction; a flipped one would put the opening 32px off.)
+        if (direction === 'north' || direction === 'south') {
+            addDoorway(this.openDoorways, { x: worldX, y: worldY, direction });
+        }
+
         const grid = this.grids.get(roomId);
         const pathfinder = this.pathfinders.get(roomId);
         const bounds = this.roomBounds.get(roomId);
@@ -609,9 +625,14 @@ export class NPCPathfindingManager {
             // Expand by 1 extra cell horizontally — the player body is wider than
             // tall, so a gap that fits vertically may not fit the collision box.
             const cx1 = Math.max(0, Math.floor((left   - minX) / step) - 1);
-            const cy1 = Math.max(0, Math.floor((top    - minY) / step));
+            // The feet collider is 10px tall and a cell is 8px, so a cell
+            // whose centre is 4px from an obstacle's top or bottom edge would
+            // put the body 1px into it. Pad 2px vertically: a free cell's centre
+            // is then at least 6px clear, more than half the body.
+            const padY = 2;
+            const cy1 = Math.max(0, Math.floor((top - padY - minY) / step));
             const cx2 = Math.min(cols - 1, Math.floor((right  - minX - 1) / step) + 1);
-            const cy2 = Math.min(rows - 1, Math.floor((bottom - minY - 1) / step));
+            const cy2 = Math.min(rows - 1, Math.floor((bottom + padY - minY - 1) / step));
             for (let cy = cy1; cy <= cy2; cy++) {
                 for (let cx = cx1; cx <= cx2; cx++) grid[cy][cx] = 1;
             }
@@ -636,6 +657,11 @@ export class NPCPathfindingManager {
         pf.setGrid(grid);
         pf.setAcceptableTiles([0]);
         pf.enableDiagonals();
+        // No diagonal step past a blocked cell: by default EasyStar takes a
+        // diagonal when only one of the two orthogonal neighbours is free, and
+        // that step clips the corner of whatever the blocked cell holds (a desk,
+        // a stall, a door frame) with the 18x10 feet collider.
+        pf.disableCornerCutting();
         this.worldPathfinder = pf;
 
         const blocked = grid.reduce((n, row) => n + row.filter(v => v === 1).length, 0);
@@ -708,9 +734,19 @@ export class NPCPathfindingManager {
 
         // Temporarily avoid cells occupied by active NPCs so the player routes
         // around them. Cleared inside the callback once calculate() has run.
-        if (avoidNPCs) this._avoidNPCPositions(toCX(startX), toCY(startY));
+        // The grid keeps a body's clearance round every obstacle, so a body
+        // can be standing (legally, a few px from a wall or desk) in a cell the
+        // grid calls blocked, and EasyStar finds nothing from a blocked start.
+        // Start from the nearest walkable cell instead; it is within 2 cells.
+        let sx = toCX(startX), sy = toCY(startY);
+        if (this.worldGrid[sy]?.[sx] !== 0) {
+            const near = this.findNearestWalkableWorldCell(startX, startY, 2);
+            if (near) { sx = toCX(near.x); sy = toCY(near.y); }
+        }
 
-        this.worldPathfinder.findPath(toCX(startX), toCY(startY), toCX(endX), toCY(endY), (tilePath) => {
+        if (avoidNPCs) this._avoidNPCPositions(sx, sy);
+
+        this.worldPathfinder.findPath(sx, sy, toCX(endX), toCY(endY), (tilePath) => {
             if (avoidNPCs) this.worldPathfinder.stopAvoidingAllAdditionalPoints();
             callback(tilePath?.length > 0 ? tilePath.map(p => toWorld(p.x, p.y)) : null);
         });
@@ -832,6 +868,7 @@ export class NPCPathfindingManager {
      * The top and bottom rows of the combined span stay blocked to prevent corner clipping.
      */
     markSideDoorCorridor(worldX, worldY, direction) {
+        addDoorway(this.openDoorways, { x: worldX, y: worldY, direction });
         // Store so rebuildWorldGrid() can reapply after future rebuilds.
         if (!this.openSideDoorCorridors.some(c => c.worldX === worldX && c.worldY === worldY)) {
             this.openSideDoorCorridors.push({ worldX, worldY, direction });
@@ -996,7 +1033,11 @@ export class NPCPathfindingManager {
 
         while (i < path.length) {
             let farthest = i;
-            for (let j = path.length - 1; j > i; j--) {
+            // A pinned waypoint (a doorway's centre line, path-doorways.js) must
+            // be visited, so never look past the next one.
+            let limit = path.length - 1;
+            for (let k = i; k < path.length; k++) if (path[k].pinned) { limit = k; break; }
+            for (let j = limit; j > i; j--) {
                 if (this.hasWorldPhysicsLineOfSight(cx, cy, path[j].x, path[j].y)) {
                     farthest = j; break;
                 }
