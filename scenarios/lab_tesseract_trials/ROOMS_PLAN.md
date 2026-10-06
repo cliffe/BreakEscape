@@ -68,7 +68,7 @@ Palette (default; question Q5): back wall warm off-white (232, 226, 212), side w
 |---|---|---|---|
 | `room_uni` | blue-grey sheet vinyl with flecks | corridor | none (halls remap rows via `room6_hall_floor`, so no decals) |
 | `room_uni_carpet` | charcoal-blue carpet tiles, quarter-turned grain | lab, Sidhu's office, seminar room | none |
-| `room_uni_foyer` | cream terrazzo with coloured chips | foyer | a brass-ring inlay with an "M" centred on the spawn point (160, 144), radius 26 |
+| `room_uni_foyer` | cream terrazzo with coloured chips | foyer | a brass-ring inlay with an "M" centred on (160, 176), radius 26, under the player's feet at the spawn (the spawn point (160, 144) is the sprite centre; the feet are about 32 px lower) |
 | `room_uni_lecture` | blue carpet; y 64-127 a grey vinyl "front" strip | lecture theatre | tier nosings: a 2 px light line and 1 px shadow at y 128, 160, 192, 224, 256, 288. They run the full width, so they survive the 20-wide column repeat |
 | `room_uni_common` | warm carpet | common room | kitchen safety-vinyl patch under the kitchenette, x 224-288, y 64-128 |
 | `room_uni_library` | deep green carpet | library | none |
@@ -79,17 +79,17 @@ Palette (default; question Q5): back wall warm off-white (232, 226, 212), side w
 
 **Conventions in the tables below.** Coordinates are room pixels, `x` = left edge, `y` = feet (bottom edge), as `make_obj()` takes them. "(H)" = new hand-drawn art and "(P0-P3)" = a PixelLab batch (section 4); until that art exists the builder uses the placeholder named. Layer `ct` = `conditional_table_items`, `ci` = `conditional_items`, `ti` = `table_items`. Items marked "Phase 3 only: omit until registered" are left out of the builder until their art is registered (`lookup()` raises `KeyError` on an unknown name, `generate_rooms.py:168-176`). Catalog `objects` placed in the `tables` layer (`it_workbench1`, `kitchen_counter_sink1`) are made with `make_obj("objects", ...)` and appended to the tables list, as `room_hospital_staff` does. A **claimed slot** is where a scenario object lands; it names the object id and the `as-type` the scenario needs (section 1, finding 2). Decor is drawn whenever nothing claims it. Every wall item keeps top ≥ 12, bottom ≤ 59 and x inside 64-256 (10 wide) on the back wall, or x 12-30 / 290-308 on a side wall below the door row; every floor item keeps its feet out of the NW and NE 2x3-tile corners, x ≥ 24 and right ≤ W−24, and out of the bottom two rows. Wall-backed furniture stands with its top edge on y 70, as the existing builders do (`room_hospital_hall`'s vending machine at 104,130, height 60). **Recessed** means a tall item whose feet sit at y 74 and top at y ≥ 12: it stands on the floor line and takes only 10 px of floor, the way the ward corridor's clinical sink does; it's the only kind of floor furniture the 10x6 rooms can take without blocking their two-row strip.
 
-**Spacing rule (revised after review 1).** A tap gathers every interactable whose bounds contain the tap point or whose anchor is within 32 px of it (`public/break_escape/js/core/game.js:1723-1742`, `TAP_SLOP = TILE_SIZE`), and two or more raise a pick-one menu. Only objects with `interactable` set are gathered (`game.js:1750`): scenario objects (`rooms.js:368`) and swivel chairs (`rooms.js:2695-2698`); plain decor is not, so decor may sit close to an interactable but a `chair-*` may not. So neighbouring interactables need **at least 32 px of clear space between their edges**, not just between their top-left corners; for side-by-side wall items that means the next item's left edge is ≥ 32 px past the previous one's right edge. An NPC counts too: its 80x80 sprite bounds (`npc-sprites.js:43`, feet at the bottom centre) must not cover an interactable. The exceptions are pairs that belong together, named where they occur.
+**Spacing rule (revised after reviews 1 and 2).** A tap gathers every interactable whose bounds contain the tap point or whose anchor is within 32 px of it (`public/break_escape/js/core/game.js:1723-1742`, `TAP_SLOP = TILE_SIZE`), and two or more raise a pick-one menu. Only objects with `interactable` set are gathered (`game.js:1750`): scenario objects (`rooms.js:368`) and swivel chairs (`rooms.js:2695-2698`); plain decor is not, so decor may sit close to an interactable but a `chair-*` may not. So neighbouring interactables need **at least 32 px of clear space between their edges**, not just between their top-left corners; for side-by-side wall items that means the next item's left edge is ≥ 32 px past the previous one's right edge. An NPC counts too. Its tile position is its body centre, the feet (`npc-sprites.js:116-123`), so an NPC at pixel (x, y) has sprite bounds x−40..x+40, y−71..y+9 and a tap anchor at (x, y−31); those bounds, plus 32 px, must stay off every interactable. **Closed doors count as well** (`game.js:1797-1813`: anchor at the door's centre, `doors.js:451`, gathered within 64 px), so keep wall interactables away from door corners. Section 2 names the few accepted pairs; the browser walk taps every claimed object and reports any menu. The exceptions are pairs that belong together, named where they occur.
 
 ### 2.1 Foyer / atrium: `room_uni_foyer` (10x10, builder)
 
 A Computing-school atrium on the first day of freshers' week: the school's crest sign, the 1979 heritage display (the Byte Wall teaching corner), a display case of old media, and the CryptoSecure stand where Jordan works the crowd. The player starts standing on the brass "M" inlay.
 
-Doors: north (corridor) NW corner, centre (48, 32); west (lab) and east (common room) on row 2, centres (16, 80) and (304, 80); south (lecture theatre, Phase 2) SW corner, centre (48, 288), in the bottom rows the lecture theatre's wall covers. Keep clear: the corners, the W-E door lane y 64-128, the spawn box x 128-192 y 112-176, and a south lane x 32-96 from y 96 to 256.
+Doors: north (corridor) NW corner, centre (48, 32); west (lab) and east (common room) on row 2, centres (16, 80) and (304, 80); south (lecture theatre, Phase 2) SW corner, centre (48, 288), in the bottom rows the lecture theatre's wall covers. Keep clear: the corners, the W-E door lane y 64-128, the spawn area (the player's feet land near (160, 176); keep x 128-192, y 150-200 free of furniture), and a south lane x 32-96 from y 96 to 256.
 
 ```
      0   1   2   3   4   5   6   7   8   9
- 0   #  [N]  p   .   B   .   c  [crest]  #      p plaque, B Byte Wall, c powers-of-two chart (≥ 32 px gaps)
+ 0   #  [N]   .  p   .  B  [crest] c   #      p plaque, B Byte Wall, c powers-of-two chart (≥ 32 px gaps, clear of the N door)
  1   #  [N]  #   .   .   .   .   .   .   #
  2  [W]  .   .   .   .   .   .   .   .  [E]     W-E lane
  3   ^   .   .   .   .  @M   .   .   .   f      @ spawn on the inlay, f fire point (E wall)
@@ -104,10 +104,10 @@ Doors: north (corridor) NW corner, centre (48, 32); west (lab) and east (common 
 
 | Sprite | Layer | x, y | Claimed by / role |
 |---|---|---|---|
-| `plaque1` | items | 64, 52 (x 64-88) | `display_plaque`, needs `as-type:plaque` |
-| `alarm_panel` | items | 120, 52 (x 120-137; `alarm_panel2` 120-152) | `byte_wall` (type `alarm_panel`, no change). Later `alarm_panel2` (P2, the 1979 front panel, ≤ 32x30) at the same anchor; the base type stays `alarm_panel`, so the scenario needs no edit |
-| `chart2` | items | 184, 52 (x 184-203) | `powers_of_two_poster` (type `chart`, no change) |
-| `uni_crest_sign1` (H, **44x22**) | items | 208, 42 (x 208-252) | decor: crest and "COMPUTING" (decor is not gathered by a tap, so it may sit close to the chart) |
+| `plaque1` | items | 82, 52 (x 82-106) | `display_plaque`, needs `as-type:plaque` |
+| `alarm_panel` | items | 138, 52 (x 138-155; `alarm_panel2` 138-170) | `byte_wall` (type `alarm_panel`, no change). Later `alarm_panel2` (P2, the 1979 front panel, ≤ 32x30) at the same anchor; the base type stays `alarm_panel`, so the scenario needs no edit |
+| `chart2` | items | 222, 52 (x 222-241) | `powers_of_two_poster` (type `chart`, no change) |
+| `uni_crest_sign1` (H, **44x22**) | items | 174, 42 (x 174-218) | decor: crest and "COMPUTING" (decor is not gathered by a tap, so it may sit between the Byte Wall and the chart) |
 | `uni_poster1` (H, Freshers' Week, 16x21) | items | 14, 136 | decor, west wall |
 | `fire_alarm_point1` | items | 292, 132 | decor, east wall |
 | `desk1` (P1: `display_case1`, 64x36) | tables | 206, 196 | heritage display table (replaces the scenario's dynamic `heritage_display_table`). When `display_case1` replaces it, recompute the two fractions to keep 32 px between the papers, or accept one menu for the pair |
@@ -118,7 +118,7 @@ Doors: north (corridor) NW corner, centre (48, 32); west (lab) and east (common 
 | `laptop6` (17x12) | ct, x_frac 0.83, surface 0.40 (x about 156-173) | | `signup_laptop`; the smaller laptop leaves 32 px clear of the lockbox |
 | `cryptosecure_banner1` (H, 22x58) | items | 182, 240 | decor |
 
-NPCs: `jordan_pike` at tile (3.6, 6.1) = x 115, feet 195, standing behind the west end of his stand, just south-west of the spawn (clear of the player's spawn box), so he's the first person the player sees. Hidden NPCs stay at 500, 500.
+NPCs: `jordan_pike` at tile (3.6, 5.3) = x 115, feet 170, standing beside the west end of his stand, just south-west of the spawn; his sprite bounds (x 75-155, y 99-179) and their 32 px margin stay off the lockbox and laptop on the stand. Hidden NPCs stay at 500, 500.
 
 ### 2.2 Computer teaching lab: `room_uni_lab` (10x10, builder)
 
@@ -151,14 +151,14 @@ Door: east, row 2, centre (304, 80). Keep clear: the corners, the east lane y 64
 | `hospital_desk1` (lecturer's desk) | tables | 222, 150 | decor; `laptop1` at x_frac 0.35, surface 0.40 and `office-misc-lamp3` at 0.85, 0.20 (ti) |
 | `pc11` | **ti, first pc entry**, on desk (114,132), x_frac 0.80, surface 0.30 | | `lab_account_pc` |
 | `pc9` | **ti, second pc entry**, on desk (114,220), x_frac 0.80, surface 0.30 | | `keyholder_guest_terminal` |
-| `pc12` ×5 | ti, after the two above: desks (36,132) at 0.30 and 0.78, (114,132) at 0.30, (36,220) at 0.30 and 0.78, (114,220) at 0.30 | | decor |
-| `chair-white-2-rotate5` ×6 | items | x 46, 84, 124 at y 160 and at y 248 | decor (wheeled, face north). No chair under either claimed PC, so a tap on L3 or the lab account never also offers the chair |
+| `pc12` ×6 | ti, after the two above: desks (36,132) at 0.30 and 0.78, (114,132) at 0.30, (36,220) at 0.30 and 0.78, (114,220) at 0.30 | | decor |
+| `chair-white-2-rotate5` ×4 | items | x 46 and 84 at y 160 and at y 248 | decor (wheeled, face north). None within 32 px of a claimed PC (the nearest chair ends at x 116; the PCs start at about x 157). The two chairs in a row are 6 px apart, so tapping one can offer the other: accepted, since chairs only get kicked |
 | `photocopier1` | items | 248, 250 | decor |
 | `bin8` | items | 226, 250 | decor (out of the aisle) |
 
 The two claimed PCs go first in `table_items`, because scenario `pc` objects search `table_items` before any conditional layer and would otherwise take decor PCs; they use images (`pc11`, `pc9`) no decor PC uses, so no decor PC is hidden. Both sit at the aisle end of their bench; the player reaches them from the aisle corner or from the gap behind the row (the browser walk confirms which).
 
-NPCs: Phase 1 `tom_shaw` at (7.6, 2.9) = x 243, feet 93, by the lecturer's desk. His sprite bounds (x 203-283, y 13-93) clear the whiteboard (x ≤ 114) and the lab account PC (x ≤ 192). Phase 2: none.
+NPCs: Phase 1 `tom_shaw` at (7.6, 2.9) = x 243, feet 93, by the lecturer's desk. His sprite bounds (x 203-283, y 22-102) clear the whiteboard (x ≤ 114) and the lab account PC (x ≤ 192). Phase 2: none.
 
 ### 2.3 Student common room: `room_uni_common` (10x10, builder)
 
@@ -196,7 +196,7 @@ Door: west, row 2, centre (16, 80). Keep clear: the west lane y 64-128, the floo
 | `smalldesk1` (high table) | tables | 220, 240 | |
 | `laptop1` | ct, on the high table, x_frac 0.70, surface 0.40 (x about 243-267) | | `cliffe_laptop` (type `laptop`, `sprite` `laptop1`; lands by its type) |
 
-NPCs: `megan_oyelaran` at (2.4, 7.6) = x 77, feet 243, below the sofa; `cliffe_schreuders` at (6.25, 7.4) = x 200, feet 237, at the west end of his high table. His sprite bounds (x 160-240, y 157-237) stay clear of the laptop (x ≥ 243), Locker 4 (y ≤ 132) and the coffee station (x ≥ 258).
+NPCs: `megan_oyelaran` at (2.4, 7.6) = x 77, feet 243, below the sofa; `cliffe_schreuders` at (5.3, 7.4) = x 170, feet 237, west of his high table. His sprite bounds (x 130-210, y 166-246) keep 32 px off the laptop (x ≥ 243), and stay clear of Locker 4 (y ≤ 132) and the coffee station (x ≥ 258).
 
 ### 2.4 Corridor: `room_uni_corridor` (10x6, builder)
 
@@ -215,17 +215,17 @@ Doors: south (foyer) SW corner, centre (48, 160), drawn in the foyer's wall; nor
 
 | Sprite | Layer | x, y | Claimed by / role |
 |---|---|---|---|
-| `student_lockers1` (H) | items | 64, 74 (recessed, top 12) | decor |
-| `notice_board1` | items | 118, 50 | decor (nothing in this room claims a noticeboard) |
-| `notes6` | **ci, first notes entry** | 120, 54 (x 120-134, on the board's left half; feet 54 > 50 so it draws over it) | `trial_v_poster` (type `notes`, `sprite` `notes6`; no change) |
-| `pigeonholes1` | items | 166, 52 (x 166-194, 32 px clear of the poster) | `pigeonholes`, needs `as-type:pigeonholes` |
-| `uni_poster4` (H, CryptoSecure "Verify everything") | items | 198, 46 | decor |
-| `drop_box1` (H, wall-mounted post box with a keypad and the CryptoSecure mark, 20x24) | ci | 226, 54 (x 226-246, 32 px clear of the pigeonholes) | `cryptosecure_drop_box`, needs `as-type:drop_box` (stays a locked container) |
-| `notes3` | **ci, second notes entry** | 232, 59 (x 232-246, on the box: feet 59 > 54) | `drop_box_tag`, needs `as-type:notes`. Shares a pick-one menu with the box: a tag tied to its box is a pair |
+| `student_lockers1` (H) | items | 58, 74 (recessed, top 12; foot centre x 83, outside the NW corner) | decor |
+| `notice_board1` | items | 112, 50 | decor (nothing in this room claims a noticeboard) |
+| `notes6` | **ci, first notes entry** | 114, 54 (x 114-128, on the board's left half; feet 54 > 50 so it draws over it) | `trial_v_poster` (type `notes`, `sprite` `notes6`; no change) |
+| `pigeonholes1` | items | 160, 52 (x 160-188, 32 px clear of the poster) | `pigeonholes`, needs `as-type:pigeonholes` |
+| `uni_poster4` (H, CryptoSecure "Verify everything") | items | 192, 46 | decor |
+| `drop_box1` (H, wall-mounted post box with a keypad and the CryptoSecure mark, 20x24) | ci | 220, 54 (x 220-240, 32 px clear of the pigeonholes and clear of the workshop door's tap range) | `cryptosecure_drop_box`, needs `as-type:drop_box` (stays a locked container) |
+| `notes3` | **ci, second notes entry** | 226, 59 (x 226-240, on the box: feet 59 > 54) | `drop_box_tag`, needs `as-type:notes`. Shares a pick-one menu with the box: a tag tied to its box is a pair |
 | `fire_alarm_point1` | items | 14, 128 | decor, west wall |
-| `uni_directory1` (H, narrow wall directory, 16x32) | items | 292, 128 (east wall, just below the door row) | `floor_directory`, needs `as-type:uni_directory` |
+| `uni_directory1` (H, narrow wall directory, 16x32) | items | 292, 128 (east wall, just below the door row) | `floor_directory`, needs `as-type:uni_directory`. Shares a pick-one menu with the east door (Sidhu's office): the only visible side-wall strip is y 96-128, next to the door, so this is an accepted pair; the directory names that door anyway |
 
-Interactable spacing on the back wall: poster x 120-134, pigeonholes 166-194, drop box and tag 226-246, so 32 px of clear wall between each (section 2.0 rule). The old wide `directory_sign1` doesn't fit on this wall with everything else, which is why the directory becomes a narrow side-wall sign. `validate_room()` will warn "wall items overlap" for notice board/poster and drop box/tag (`generate_rooms.py:825-828`): both are deliberate (pinned on), so note them in the check-1 report.
+Interactable spacing on the back wall: poster x 114-128, pigeonholes 160-188, drop box and tag 220-240 (6 px further west than round 1 had them, to keep the drop box out of the workshop door's tap range), so 32 px of clear wall between each (section 2.0 rule). The old wide `directory_sign1` doesn't fit on this wall with everything else, which is why the directory becomes a narrow side-wall sign. `validate_room()` will warn "wall items overlap" for notice board/poster and drop box/tag (`generate_rooms.py:825-828`): both are deliberate (pinned on), so note them in the check-1 report.
 
 NPCs: none.
 
@@ -317,7 +317,7 @@ Doors: west (corridor) row 2; north (seminar room, Phase 2) NE corner, centre (2
 | `office-misc-cup` | ti, x_frac 0.60, surface 0.40 | | decor |
 | `notes1` | ct, x_frac 0.82, surface 0.50 | | `fn07_desk_copy` (type `notes`, no change) |
 
-NPCs: Phase 1 `sidhu_selvarajan` at (5.6, 3.4) = x 180, feet 109, beside the ledger (his sprite bounds x 140-220 clear the board at x 92-136 and the handout at x ≥ 228). Phase 2: none.
+NPCs: Phase 1 `sidhu_selvarajan` at (4.85, 3.8) = x 155, feet 122, beside the ledger: his bounds (x 115-195) with their margin stay off the handout (x ≥ 228), and his body (bottom y 127) stays in the visible strip. The board (x 92-136) sits behind his left shoulder; tapping the board's right edge may also offer Sidhu, which is accepted (the man and his board). Phase 2: none.
 
 ### 2.8 Seminar room: `room_uni_seminar` (10x10, builder, Phase 2)
 
@@ -349,7 +349,7 @@ Door: south (Sidhu's office) SE corner, centre (272, 288). Keep clear: the east 
 | `flip_chart1` | items | 44, 130 | decor |
 | `water_cooler1` | items | 40, 250 | decor |
 
-NPCs: `sidhu_selvarajan` at (6.75, 3.7) = x 216, feet 118, beside his whiteboard (sprite bounds x 176-256 clear the board at x 130-174). His opening lines ("Come in, come in." / "You were looking at my whiteboard. It is from my blockchain lecture.", `ink/npc_sidhu.ink:23-24`) fit this room unchanged.
+NPCs: `sidhu_selvarajan` at (6.75, 3.7) = x 216, feet 118, beside his whiteboard (sprite bounds x 176-256, y 47-127, clear of the board at x 130-174). His opening ("Come in, come in. ... That's my whiteboard. It's from my blockchain lecture.", `ink/npc_sidhu.ink`, start knot) fits this room unchanged.
 
 ### 2.9 Lecture theatre: `room_uni_lecture` (20x10, builder, Phase 2)
 
@@ -383,7 +383,7 @@ Door: north (foyer) NW corner, centre (48, 32). The room is not covered at the b
 | `desk1` (demonstration bench) | tables | 240, 118 | decor; on it (ti): `laptop6` at x_frac 0.3, surface 0.40 and `office-misc-speakers` at 0.75, 0.25 |
 | `smalldesk2` (P0: `lectern1`, swapped in Phase 3) | tables | 326, 118 | decor |
 | `hospital_chair_north` ×69 (P1: `lecture_seat_row1`, still in `items`) | items | rows at feet y 170, 202, 234; x 96 to 258 step 18 (10 a row) and x 340 to 556 step 18 (13 a row) | decor. `hospital_chair_*` aren't wheeled (`rooms.js:2471` only gives wheels to `chair-*` and `-rotateN` names), so the rows stay put |
-| collision rectangles | `Object Layer 1` | one per seat row and block: x 96-274 and x 340-572, y (row feet − 14) to (row feet), named `collision` | makes the rows solid with the aisles open. The engine already turns `Object Layer 1` rectangles named `collision` into static bodies (`rooms.js:2777-2810`); `build_room()` always writes that layer empty, so add a `collisions=[...]` parameter that fills it (tooling only, no engine change). This also avoids the seams a row of 64 px `tables` sprites would leave: a table body is the bottom quarter inset 10 px each side (`rooms.js:2576-2583`), so two abutting sprites leave a 20 px gap, wider than the player's 18 px body (`player.js:150`) |
+| collision rectangles | `Object Layer 1` | one per seat row and block: x 96-274 and x 340-572, y (row feet − 14) to (row feet), named `collision` | Object format: an `id`, `"name": "collision"`, `x`, `y`, `width`, `height`, no `gid`, and **`y` is the top edge** (the engine adds `height/2` to `y`, `rooms.js:2783-2789`), unlike tile objects whose `y` is the bottom. No shipped map uses these yet, so the Phase 2 walk tries to walk and click-to-move through a row. | makes the rows solid with the aisles open. The engine already turns `Object Layer 1` rectangles named `collision` into static bodies (`rooms.js:2777-2810`); `build_room()` always writes that layer empty, so add a `collisions=[...]` parameter that fills it (tooling only, no engine change). This also avoids the seams a row of 64 px `tables` sprites would leave: a table body is the bottom quarter inset 10 px each side (`rooms.js:2576-2583`), so two abutting sprites leave a 20 px gap, wider than the player's 18 px body (`player.js:150`) |
 
 NPCs: `tom_shaw` at (6.6, 3.9) = x 211, feet 125, at the west end of the bench, east of his whiteboard so he doesn't stand in front of it.
 
@@ -424,12 +424,12 @@ NPCs: `cliffe_workshop` at (2.8, 7.0) = x 90, feet 224, west of the bench (sprit
 
 | NPC | Room | Tile (x, y) | Pixels (x, feet) | Phase |
 |---|---|---|---|---|
-| `jordan_pike` | foyer | 3.6, 6.1 | 115, 195 | 1 |
+| `jordan_pike` | foyer | 3.6, 5.3 | 115, 170 | 1 |
 | `tom_shaw` | teaching_lab | 7.6, 2.9 | 243, 93 | 1 only |
 | `tom_shaw` | lecture_theatre | 6.6, 3.9 | 211, 125 | 2 |
 | `megan_oyelaran` | common_room | 2.4, 7.6 | 77, 243 | 1 |
-| `cliffe_schreuders` | common_room | 6.25, 7.4 | 200, 237 | 1 |
-| `sidhu_selvarajan` | sidhu_office | 5.6, 3.4 | 180, 109 | 1 only |
+| `cliffe_schreuders` | common_room | 5.3, 7.4 | 170, 237 | 1 |
+| `sidhu_selvarajan` | sidhu_office | 4.85, 3.8 | 155, 122 | 1 only |
 | `sidhu_selvarajan` | seminar_room | 6.75, 3.7 | 216, 118 | 2 |
 | `cliffe_workshop` | workshop | 2.8, 7.0 | 90, 224 | 1 |
 | `briefing_cutscene`, `closing_debrief_person` | foyer (hidden) | 500, 500 | | unchanged |
@@ -455,9 +455,9 @@ Add the three rooms the user asked for and change nothing else in the graph: a *
 
 | Moves | From | To | Why it reads better | Chain effect |
 |---|---|---|---|---|
-| Tom Shaw, his laptop and Field Notes 1-3 (NPC `tom_shaw`, items held), his "Hi" whiteboard (`tom_board`) | teaching lab | lecture theatre | Tom "looks after the first-years this week" (`ink/npc_tom.ink:25`); a first-year induction is a lecture-theatre event, and the "Hi three ways" board becomes the lecture's worked example | None. The lecture theatre is open and off the start room; the laptop is still the first thing the briefing sends you for. The guest terminal (L3) and your lab account (L8a) stay in the lab |
+| Tom Shaw, his laptop and Field Notes 1-3 (NPC `tom_shaw`, items held), his "Hi" whiteboard (`tom_board`) | teaching lab | lecture theatre | Tom "looks after the first-years this week" (`ink/npc_tom.ink`, first meeting); a first-year induction is a lecture-theatre event, and the "Hi three ways" board becomes the lecture's worked example | None. The lecture theatre is open and off the start room; the laptop is still the first thing the briefing sends you for. The guest terminal (L3) and your lab account (L8a) stay in the lab |
 | The Special Collections safe (L6) and its contents (Trial VII, the candidate file, the 1979 job tape) | library | Special Collections | The safe, the job tape and Ghost's file are archive material; the library keeps the returns desk, where the slip (Trial VI) is found | L6's clue (slip, library) and lock (safe, Special Collections) are now one open door apart, instead of in the same room. Both are still behind L5 |
-| Sidhu Selvarajan (NPC) and his ledger whiteboard (`ledger_whiteboard`, the Vigenère key) | Sidhu's office | seminar room | His own line is "You were looking at my whiteboard. It is from my blockchain lecture" (`ink/npc_sidhu.ink:24`): a teaching room fits it better than his office. His office keeps the desk copy of the hash handout and a door card pointing to the seminar room | None: the seminar room is reached through his office, which is behind L4 as before. The key is still useless until Trial VII (L6) |
+| Sidhu Selvarajan (NPC) and his ledger whiteboard (`ledger_whiteboard`, the Vigenère key) | Sidhu's office | seminar room | His own line is "That's my whiteboard. It's from my blockchain lecture" (`ink/npc_sidhu.ink`, start knot): a teaching room fits it better than his office. His office keeps the desk copy of the hash handout and a door card pointing to the seminar room | None: the seminar room is reached through his office, which is behind L4 as before. The key is still useless until Trial VII (L6) |
 
 What doesn't move: Jordan, the stand and L1 (foyer); Locker 4 / L2, Megan and early Cliffe (common room); the guest terminal / L3 and the lab account PC (lab); the poster, pigeonholes, drop box and directory (corridor); the workshop and everything in it. The chain in SOLUTION_GUIDE.md ("The chain at a glance") is unchanged except for the walks.
 
@@ -523,20 +523,20 @@ The solution guide prices one room-to-room walk at 15 to 30 seconds and the whol
 3. **Keep each required object in the room's first sightline.** The safe, the ledger and Tom are placed in view from their room's door (section 2).
 4. **Run the timed blind playtest DESIGN.md already requires** (D3) on the expanded graph. If the middle comes out over 85, apply the fallback below before anything in DESIGN.md's cut list (Q3).
 
-**Fallback (if the timed run says so):** keep the new maps and drop the extra hops. Put the safe back on the library's Phase 1 slot (2.5) and/or Sidhu and the ledger back in his office (2.7 keeps the Phase 1 whiteboard slot). The new rooms stay as optional places to look round. Each saves half a minute to a minute and needs only scenario edits. (A roped-off Special Collections corner inside the library isn't an option: the library's two-row strip has no space for it, 2.5.)
+**Fallback (if the timed run says so):** keep the new maps and drop the extra hops. Put the safe back on the library's Phase 1 slot (2.5) and/or Sidhu and the ledger back in his office (2.7 keeps the Phase 1 whiteboard slot; drop the door-card flavour object then, since it says the seminar room is through the back and sits too close to the board). The new rooms stay as optional places to look round. Each saves half a minute to a minute and needs only scenario edits. (A roped-off Special Collections corner inside the library isn't an option: the library's two-row strip has no space for it, 2.5.)
 
 ### 3.4 Scenario edits for Phase 2 (follow-on, not done by the map builder)
 
 1. Add rooms `lecture_theatre` (`room_uni_lecture`), `special_collections` (`room_uni_special`) and `seminar_room` (`room_uni_seminar`), all unlocked, with the connections in 3.2 and a `door_sign` each.
 2. Move `tom_shaw` (with `itemsHeld` unchanged) and `tom_board` to `lecture_theatre`; `special_collections_safe` (contents unchanged) to `special_collections`; `sidhu_selvarajan` and `ledger_whiteboard` to `seminar_room`. Positions from 2.11; objects take the slots in 2.6, 2.8 and 2.9.
 3. Text that names a place:
-   - `ink/opening_briefing.ink:56` "Get a lab laptop from Dr Shaw in the teaching lab, west of the foyer." → "... in the lecture theatre, south of the foyer." **Spoken** (briefing, Aoede).
-   - `ink/npc_tom.ink:44` "Your lab account's on that PC." → name the place: "Your lab account's on a PC in the teaching lab, west of the foyer." **Spoken** (Tom, Fenrir).
+   - `ink/opening_briefing.ink` (the briefing's laptop line) "Get a lab laptop from Dr Shaw in the teaching lab, west of the foyer." → "... in the lecture theatre, south of the foyer." **Spoken** (briefing, Aoede).
+   - `ink/npc_tom.ink` (first-meeting knot) "Your lab account's on that PC." → name the place: "Your lab account's on a PC in the teaching lab, west of the foyer." **Spoken** (Tom, Fenrir).
    - The floor directory's observations (not spoken).
    - The written brief, `scenario.json.erb:133` (`kh_txt[:brief]`): "get a lab laptop from Dr Shaw in the teaching lab first" → "... in the lecture theatre first" (shown, not spoken).
-   - Tom's player choice, `ink/npc_tom.ink:52`: "That CryptoSecure terminal on your desk. Is it yours?" → "That CryptoSecure terminal in your lab. Is it yours?" (a player line, not voiced).
+   - Tom's player choice in `ink/npc_tom.ink`: "That CryptoSecure terminal on your desk. Is it yours?" → "That CryptoSecure terminal in your lab. Is it yours?" (a player line, not voiced).
    - Optional flavour object: the office door card (2.7).
-   Lines checked and left alone: Tom's "Someone's put a terminal in my lab I never ordered" (`npc_tom.ink:65`, still his lab), his narrated "slides a ... laptop across the desk" (`:26`, the demonstration bench), Sidhu's opening (`npc_sidhu.ink:23-24`), HaX's "The guest terminal's in the teaching lab" and "Your private key is on your lab account in the teaching lab" (`phone_agent_0x99.ink:279`, `:308`).
+   Lines checked and left alone: Tom's "Someone's put a terminal in my lab I never ordered" (still his lab), his narrated "slides a battered department laptop across the desk" (the demonstration bench), Sidhu's opening, HaX's "The guest terminal's in the teaching lab" and "Your private key is on your lab account in the teaching lab" (`phone_agent_0x99.ink:279`, `:308`).
    So **two spoken lines** change. If this lab's audio has already been generated, list them for the TTS cost (AGENTS.md "Spoken-line changes cost money"); if not, no cost.
 4. Re-run the dialogue checks for the two changed knots (`dialoguelint.mjs`, ink compile) and the static checks in section 6.
 
@@ -615,7 +615,7 @@ Each phase ships on its own and leaves the mission playable. Cheapest and most v
 2. `generate_rooms.py`: `UNI_FLOOR_SHEETS` + the `room_tilesets()` branch; the `20x10` template; the docstring rule.
 3. `game.js`: the eight `this.load.image` lines.
 
-Checks: `python3 -c "import sys; sys.path.insert(0,'scripts/room_gen'); from room_geometry import sheet_floor_top as t; import glob; [print(p, t(p)) for p in sorted(glob.glob('public/break_escape/assets/tiles/rooms/room_uni*.png'))]"` prints 64 for all eight. To prove the `room_tilesets()` change leaves the existing builders alone (`generate_rooms.py --check` only re-validates the existing .json files, `:1974-1977`), a scratch script imports `generate_rooms`, calls each function in `builders` and compares the returned dict with the committed `.tmj` (`json.load`), writing nothing. `game.js` copied to `<scratch>/x.mjs` and `node --check`ed. Look at each sheet at 4x.
+Checks: `python3 -c "import sys; sys.path.insert(0,'scripts/room_gen'); from room_geometry import sheet_floor_top as t; import glob; [print(p, t(p)) for p in sorted(glob.glob('public/break_escape/assets/tiles/rooms/room_uni*.png'))]"` prints 64 for all eight. To prove the `room_tilesets()` change leaves the existing builders alone (`generate_rooms.py --check` only re-validates the existing .json files, `:1974-1977`), a scratch script imports `generate_rooms`, calls each existing builder function by name (the `builders` dict is local to `main()`, so list them in the script), and saves the returned dicts as JSON **before** the edit; after the edit it runs again and diffs. Don't compare with the committed `.tmj`: 10 of the 11 builders already differ from it in `tilesets` (extras registered since their last regeneration) and `room_hospital_reception` in its layers too (hand edits), as review 2 found by running it. `game.js` copied to `<scratch>/x.mjs` and `node --check`ed. Look at each sheet at 4x.
 
 ### Phase 1: re-skin the seven existing rooms (free art only)
 
@@ -637,7 +637,7 @@ Checks, in this order:
 | 8 | Other scenarios | none: no shared map changed. Run `slot_audit.py --all` only to confirm the count of old problems elsewhere is unchanged | same count as before |
 | 9 | Browser walk | a Sonnet playtest agent on the keyless server (`PLAYTEST_PORT=3001`), following the skill's step 5 list | below |
 
-The browser walk for Phase 1 (numbered checklist, pass/fail with evidence, scratchpad only, kill only its own PIDs): screenshot every room; spawn not on top of Jordan or furniture; walk every door both ways (retry the first `enter` through a north door); in the corridor, library and office, walk the full strip end to end and reach each door (the two-row band); reach and open every claimed object listed in section 2 from where a player would stand, and report world x,y, texture key and depth for each; Locker 4 opens as a locker and asks for the PIN; the scoreboard and build screen open as before; no duplicate sprites, no "No Tiled item found" logs, no 4xx/5xx, no console errors. Unlock rooms server-side for the layout check and say so.
+The browser walk for Phase 1 (numbered checklist, pass/fail with evidence, scratchpad only, kill only its own PIDs): screenshot every room; spawn not on top of Jordan or furniture; walk every door both ways (retry the first `enter` through a north door); in the corridor, library and office, walk the full strip end to end and reach each door (the two-row band); reach and open every claimed object listed in section 2 from where a player would stand, tap each one and report any pick-one menu (only the pairs section 2 names are expected), and report world x,y, texture key and depth for each; Locker 4 opens as a locker and asks for the PIN; the scoreboard and build screen open as before; no duplicate sprites, no "No Tiled item found" logs, no 4xx/5xx, no console errors. Unlock rooms server-side for the layout check and say so.
 
 ### Phase 2: the three new rooms and the expanded graph (free art only)
 
@@ -674,6 +674,8 @@ Anything the reviews and walks raise; `ART_NEEDED.md` and `DESIGN.md` section 3 
 
 ## 8. Review log
 
+Ink line numbers are not quoted in 3.4: the ink was being edited during planning (review 2 found every number from round 1 had moved), so the plan quotes the text and names the knot.
+
 ### Round 1 (fresh Opus reviewer, read-only; verdict "ready after fixes")
 
 | # | Finding (tag) | Outcome |
@@ -691,3 +693,21 @@ Anything the reviews and walks raise; `ART_NEEDED.md` and `DESIGN.md` section 3 
 | 11 | Expected "wall items overlap" WARNs; hand-drawn art in one go; aisle bin; Sidhu behind a chair (minor) | Fixed (WARNs pre-justified in check 1; hand-drawn shown in small sets); the chair point is moot after Sidhu moved |
 
 Withdrawn: none. The reviewer's note that the sheet and map share a name (`room_uni_foyer`) was left as an assumption by the reviewer, not a finding; the plan keeps the names: there is a precedent, `room_reception` is both a tilemap key and an image key in `game.js` (`tilemapTiledJSON('room_reception', ...)` and `load.image('room_reception', 'tiles/rooms/room1.png')`), and that room loads in 29 scenarios.
+
+### Round 2 (fresh Opus reviewer, read-only, confirmation; verdict "ready after fixes")
+
+The reviewer scripted every placement (catalog sizes, `place_on_table` maths), reach (32 px from the player's sprite centre to an object's top-left), pick-one menus, a walkability flood fill from every door, and ran the real `validate_room()` on in-memory mocks including the 20x10 template. Result before the fixes below: every claimed object reachable from visible floor, every room one connected area from every door, the seat rows trap nobody, door positions clean, and only the two WARNs the plan already expects.
+
+| # | Finding (tag) | Outcome |
+|---|---|---|
+| 1 | The spacing rule left out closed doors, which a tap also gathers (`game.js:1797-1813`); the foyer plaque shared a menu with the L4 corridor door, the corridor drop box with the L9 workshop door, the directory with the office door (major) | Fixed: doors added to the rule; foyer wall re-spaced (plaque 82, Byte Wall 138, crest 174, chart 222); corridor wall shifted 6 px west (lockers at 58); directory + east door named as an accepted pair (no other visible spot on that wall); the browser walk now taps every claimed object and reports menus |
+| 2 | NPC bounds were 9 px off: the tile position is the body centre (`npc-sprites.js:116-123`), so bounds run y−71..y+9; Jordan, Cliffe (common room) and Phase 1 Sidhu still raised menus (minor) | Fixed: rule restated; Jordan (3.6, 5.3), Cliffe (5.3, 7.4), Sidhu (4.85, 3.8); Tom's quoted bounds corrected; Sidhu-and-his-board named as an accepted pair in Phase 1 |
+| 3 | Phase 0's no-write comparison can't pass: existing builders already differ from their committed `.tmj` (minor) | Fixed: snapshot builder output before the edit and diff after |
+| 4 | Ink line numbers in 3.4 had moved; Sidhu's opening text has changed (minor) | Fixed: text quoted with the knot named; the new Sidhu line still fits the seminar room |
+| 5 | The foyer inlay was under the player's torso, not the feet (minor) | Fixed: centred on (160, 176); spawn keep-clear stated in feet terms |
+| 6 | `Object Layer 1` collision rectangles have no shipped user; format not stated; `y` is the top edge (minor) | Fixed: format given; the Phase 2 walk tries to walk and click-to-move through a row |
+| 7 | Lab chairs 6 px apart, and one offered the guest terminal (minor) | Fixed: two chairs a row, none within 32 px of a claimed PC; chair-to-chair menus accepted |
+| 8 | `pc12` count said 5, listed 6 (minor) | Fixed |
+| 9 | The fallback didn't deal with the door card (minor) | Fixed: drop the door-card object if Sidhu goes back to his office |
+
+Withdrawn: none. Not acted on: the reviewer's note that Tom's lab sprite touches the lab's east door for about 6% of taps; too small to matter, and Tom leaves the lab in Phase 2.

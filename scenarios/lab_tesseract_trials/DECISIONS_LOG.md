@@ -59,3 +59,8 @@ Each line gives a decision, its reason and who made it. The user can overrule an
 - (2026-10-06) Alignment round committed. Note for the user: the double ending names a decoy flat 'in Leeds' (the lab's only real place name).
 - (2026-10-06, user) Backgrounds approved; PixelLab may be used without checking in for the rest of this session. Installed hq4 (field HQ), hq5 (fallback site after the burn) and miskatonic_campus (narrator transition), all s500 conversions of Gemini concepts. Cost: 3 Gemini images, 10 PixelLab generations.
 - (2026-10-06) DIALOGUE_REVIEW_R2: revise lightly (0 blockers, 3 majors). Queued for the builder after the backgrounds round. The 'Schreuders' TTS check goes to the user at the audio stage (generate those two lines first).
+- (2026-10-06) ROOMS_PLAN.md accepted. Defaults taken (orchestrator, following the user's "be ambitious, include all room types" and the session's PixelLab clearance):
+  - Q1 full ten-room graph: yes. Q2 Tom's induction in the lecture theatre: yes. Q3 Sidhu and the ledger in the seminar room: yes. Q4 Special Collections as its own room holding the safe: yes.
+  - Q5 palette: warm off-white walls with teal skirting (the user can name a Miskatonic house colour instead).
+  - Q6 P0 pilot first: yes. Q7 lecture theatre 20x10: yes. Q8 README rows so other scenarios can reuse the maps: yes. Q9 the directory becomes a narrow side-wall sign: yes.
+  - Map registrations (game.js preload, schema enum, README, generate_rooms builders, register_object.py) count as asset registration, not new engine functionality.
