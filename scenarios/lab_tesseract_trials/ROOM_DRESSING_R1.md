@@ -99,7 +99,15 @@ The foosball tables, pool tables and the teal stall could go into a room later w
 
 ## Verify (in game)
 
-(Filled in from the Sonnet playtest below.)
+Sonnet playtest, game 1622 on :3001; corridor, library and workshop unlocked server-side for layout (disclosed). Full report and screenshots: `build_evidence/dressing_r1/ingame/`. 9 of 10 items pass:
+
+- New sprites show with the right texture and depth (stall, TV, kiosk, certificate, portrait). No missing textures, no duplicate sprites.
+- Lab: both claimed PCs open directly with the chairs in front; the chairs have no body and can't be pushed.
+- Lecture theatre: the fourth ledge blocks, the centre and west aisles are open.
+- Megan stands below the sofa; Cliffe, Tom, Oleg and Sidhu are clear of furniture.
+- **Fail:** library. The returned book and the returns slip are 15 px apart, so either tap raises a pick-one menu (until the slip is taken). Round 2.
+- Console: only TTS 503s (keyless server). "No Tiled item found" logs weren't scannable from the harness.
+- Harness: side-door `enter` took 1-3 tries (fixed in the harness after this run, see DECISIONS_PENDING E9).
 
 ## What's left, and why
 
