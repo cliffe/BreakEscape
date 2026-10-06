@@ -64,3 +64,4 @@ Each line gives a decision, its reason and who made it. The user can overrule an
   - Q5 palette: warm off-white walls with teal skirting (the user can name a Miskatonic house colour instead).
   - Q6 P0 pilot first: yes. Q7 lecture theatre 20x10: yes. Q8 README rows so other scenarios can reuse the maps: yes. Q9 the directory becomes a narrow side-wall sign: yes.
   - Map registrations (game.js preload, schema enum, README, generate_rooms builders, register_object.py) count as asset registration, not new engine functionality.
+- (2026-10-06) Rooms plan complete (phases 0-4 committed). Estimate ~80 min (61-100). Remaining: full end-to-end confirmation playtest on the ten-room graph, then audio (user listens to the Schreuders lines first), character art for Cliffe/Tom/Sidhu, engine items E1-E8.
