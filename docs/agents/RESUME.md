@@ -2,7 +2,7 @@
 
 Brief: `docs/agents/TESSERACT_TRIALS_BRIEF.md`. Log: `scenarios/lab_tesseract_trials/DECISIONS_LOG.md`.
 Loop: design (Opus, DESIGN.md) → 3 adversarial review rounds (alignment + design-review lenses) → implement → puzzle-chains + dialogue reviews → Sonnet playtests → fix until clean.
-Status: confirmation round done (REVIEW_FIX1 small fixes; P2B pass; BLIND reached Trial VI, then refused by an auto-mode safety check). Builder running fix round 2. Then: commit; the rest of the blind run needs a non-auto-mode session or human testers (ask the user); art and audio need user approval.
+Status: fix round 2 committed (5ec40ad8): reviewed, playable draft; every lock earned in a browser; all four endings reach the credits. Waiting on the user: D4 (blind timing, Trial VI onward), D5 (art), D6 (audio); engine items E1-E6 deferred.
 
 # Resume note — pass 4 (editorial, m02–m08)
 

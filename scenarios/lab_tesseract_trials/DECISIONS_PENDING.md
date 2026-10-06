@@ -1,6 +1,19 @@
 # The Tesseract Trials: decisions pending
 
-(D2, D3 resolved 2026-10-06; see DECISIONS_LOG.md)
+(D1-D3 resolved 2026-10-06; see DECISIONS_LOG.md)
+
+## D4. Blind timing for Trial VI onward
+
+Two blind/regression playtests in auto mode were stopped by the auto-mode safety check at the same step (the command decoding Trial VI's Base64 and Caesar layers). A non-blind Opus run got through it, so every lock is proven playable, but there's no blind timing from Trial VI to the end. Trials I-V took ~13 min blind with no hints. Options: (1, recommended) a human run: you or a couple of students play it start to finish on :3001, timed, which is also the real beginner test; (2) a session outside auto mode where the blind playtest agent can drive CyberChef.
+
+## D5. Art for the real academics and new NPCs
+
+`ART_NEEDED.md` lists the portraits and sprites: Cliffe, Tom, Sidhu, Jordan, Megan, plus props. The academics need reference photos and their consent. Standing rule: Gemini concept first for approval, then PixelLab one at a time; a full walking character with lip sync costs ~125 PixelLab generations, a bust-only character ~50.
+
+## D6. Audio
+
+No TTS has been generated. It costs money, and every spoken line is listed in the fix notes. The usual order is after the art and after you've read the lines.
+
 
 ## Deferred engine items (for the user later, not blocking)
 
