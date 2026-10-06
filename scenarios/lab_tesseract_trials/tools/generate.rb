@@ -15,7 +15,7 @@ WORDS_T1   = %w[lantern harbour compass granite meadow falcon orchard thistle br
 WORDS_T3   = %w[signal beacon quartz pewter cobalt saffron juniper marble amber basalt cinder copper indigo jasper lantana magenta nickel ochre pumice russet silver tawny umber velvet walnut zircon]
 WORDS_T4   = %w[stairwell archway landing bellrope clocktower gargoyle balcony buttress cloister corbel cupola doorway gable gallery lintel mezzanine parapet portico quadrangle rafter spire steeple transom turret vestibule wainscot]
 WORDS_T6   = %w[parchment vellum folio quarto codex scroll almanac atlas binding chapbook colophon errata flyleaf gazetteer glossary incunable lexicon marginalia octavo palimpsest primer quire recto treatise verso woodcut]
-VIG_KEYS   = %w[ledger merkle nonce genesis anchor witness]
+VIG_KEYS   = %w[ledger merkle nonce tally anchor witness]
 PASSPHRASE = %w[keyholder lockstock deadbolt tumbler skeleton keystone padlock latchkey wardkey mortise]
 TOKEN_WORD = %w[kestrel osprey merlin hobby peregrine harrier]
 PORTER_WORD = %w[postmark franking satchel parcel sorting letterbox]
@@ -70,7 +70,7 @@ ans[:l4] = w4
 
 # L5: Base64 sentence containing the library PIN
 p5 = pin4
-l5_plain = "Library keypad: #{p5}. The returns shelf has your next trial."
+l5_plain = "The returns shelf has your next trial. Library keypad: #{p5}"
 a[:l5_base64] = Base64.strict_encode64(l5_plain)
 ans[:l5] = p5
 
@@ -109,7 +109,7 @@ vkey = VIG_KEYS.sample
 hole = rand(2..5)
 pigeon_pw = PORTER_WORD.sample + '-' + rand(10..99).to_s
 hole_word = %w[zero one two three four five six][hole]
-l7_plain = "The pigeonholes open with #{pigeon_pw}. Yours is number #{hole_word}. Your envelope is sealed to your public key. The IV travels with this letter: #{ans[:l8_aes_iv_hex]}"
+l7_plain = "Yours is pigeonhole number #{hole_word}. Your envelope is sealed to your public key. The IV for the drop box is #{ans[:l8_aes_iv_hex]} and the pigeonholes open with #{pigeon_pw}"
 a[:l7_vig_key] = vkey
 a[:l7_vigenere] = vigenere_encode(l7_plain, vkey)
 ans[:l7_plain] = l7_plain
@@ -135,7 +135,7 @@ report_plain = <<~TXT.strip
   STATUS: Recruited. Candidate passed all trials. Recruiter met on screen only.
   ASSESSMENT: Cell interested in crypto students for future operations. No names yet.
   RECOMMENDATION: Maintain cover. Await next contact.
-  <img src="https://cdn.cryptosecure-recovery.example/px/locate/#{token}.png" width="1" height="1">
+  <img src="https://cdn.cryptosecure-recovery.example/px/locate/#{token}/1x1.png" width="1" height="1">
 TXT
 report_b64 = Base64.strict_encode64(report_plain)
 a[:report_b64] = report_b64                     # file 1: report.b64 (body only)

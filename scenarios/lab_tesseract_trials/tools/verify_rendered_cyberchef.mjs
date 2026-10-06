@@ -44,14 +44,14 @@ check(`L3 card [${where("trial_iii_card")}] From Binary`, await bake(byId("trial
 // L4 hex (in guest terminal) -> corridor door: last word
 const l4 = await bake(byId("trial_iv_hex").text, [[FromHex, ["Auto"]]]); check(`L4 file [${where("trial_iv_hex")}] From Hex, last word`, l4.split(" ").pop(), "corridor");
 // L5 poster (corridor) -> library PIN
-const l5 = await bake(byId("trial_v_poster").text, [[FromBase64, [B64, true, false]]]); check(`L5 poster [${where("trial_v_poster")}] From Base64, the 4 digits`, (l5.match(/\d{4}/) || [""])[0], "library");
+const l5 = await bake(byId("trial_v_poster").text, [[FromBase64, [B64, true, false]]]); check(`L5 poster [${where("trial_v_poster")}] From Base64, the 4 digits`, (l5.match(/\d{4}$/) || [""])[0], "library");
 // L6 slip (library) -> special collections
 const l6 = await bake(byId("returns_slip").text, [[FromBase64, [B64, true, false]], [ROT13, [true, true, false, -6]]]); check(`L6 slip [${where("returns_slip")}] From Base64 + ROT13(-6), last word`, l6.split(" ").pop(), "special_collections_safe");
 // L7 Trial VII (in safe) + key word from Sidhu's whiteboard (block 4) -> pigeonholes
-const wb = byId("ledger_whiteboard").observations; const vkey = (wb.match(/Block 4 \| data: ([a-z]+) /) || [])[1];
+const wb = byId("ledger_whiteboard").observations; const vkey = (wb.match(/Block 4, the last entry, holds the data "([a-z]+)"/) || [])[1];
 const l7 = await bake(byId("trial_vii_txt").text, [[VigenereDecode, [vkey]]]);
-check(`L7 Trial VII [${where("trial_vii_txt")}] Vigenère with whiteboard key "${vkey}" [${where("ledger_whiteboard")}]`, (l7.match(/open with ([a-z]+-\d\d)/) || [])[1], "pigeonholes");
-const hole = ["zero","one","two","three","four","five","six"].indexOf((l7.match(/number ([a-z]+)\./) || [])[1]); const iv = (l7.match(/letter: ([0-9a-f]{32})/) || [])[1];
+check(`L7 Trial VII [${where("trial_vii_txt")}] Vigenère with whiteboard key "${vkey}" [${where("ledger_whiteboard")}]`, (l7.match(/open with ([a-z]+-\d\d)$/) || [])[1], "pigeonholes");
+const hole = ["zero","one","two","three","four","five","six"].indexOf((l7.match(/pigeonhole number ([a-z]+)\./) || [])[1]); const iv = (l7.match(/drop box is ([0-9a-f]{32})/) || [])[1];
 // L8a envelope in pigeonhole <hole> + private key from the lab PC
 const env = byId(`pigeonhole_${hole}`).text; const priv = byId("private_key_pem").text;
 const key = await bake(env, [[FromBase64, [B64, true, false]], [RSADecrypt, [priv, "", "RSA-OAEP", "SHA-1"]]]);
@@ -68,7 +68,7 @@ console.log(`${kok ? "PASS" : "FAIL"} L9 brass key [${where("brass_key")}] opens
 check(`L10 SHA2(256) under AES Decrypt, first 8`, (await bake(byId("drop_box_tag").text, [[AESDecrypt, aes(key, iv)], [SHA2, ["256", 64, 160]]])).slice(0, 8), "relay_terminal");
 // Report (in relay) -> token -> scoreboard
 const rep = await bake(byId("report_b64").text, [[FromBase64, [B64, true, false]]]);
-check(`Climax report.b64 [${where("report_b64")}] From Base64, token from the pixel URL`, (rep.match(/px\/locate\/([a-z]+-\d{4})\.png/) || [])[1], "hacktivity_scoreboard");
+check(`Climax report.b64 [${where("report_b64")}] From Base64, token from the pixel URL`, (rep.match(/px\/locate\/([a-z]+-\d{4})\/1x1\.png/) || [])[1], "hacktivity_scoreboard");
 const sha = await bake(byId("report_b64").text, [[SHA2, ["256", 64, 160]]]);
 console.log(`${sha === byId("report_sha256").text ? "PASS" : "FAIL"} report.sha256 matches SHA2(256) of report.b64`); if (sha !== byId("report_sha256").text) fails++;
 const ver = await bake(byId("report_sig").text, [[FromBase64, [B64, true, false]], [RSAVerify, [byId("keyholder_public_pem").text, byId("report_b64").text, "Raw", "SHA-256"]]]);

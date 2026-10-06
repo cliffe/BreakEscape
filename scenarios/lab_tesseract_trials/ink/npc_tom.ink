@@ -23,10 +23,10 @@ VAR corridor_open = false
 #give_item:notes:fn02_ascii_encodings
 #give_item:notes:fn03_hex
 Dr Tom Shaw: Right then. You'll be one of mine. Tom Shaw. I look after the first-years this week.
-Narrator: He slides a battered department laptop across the desk, with a stack of handouts on top.
+Narrator: He slides a battered department laptop across the desk.
 Dr Tom Shaw: That's yours for the year. CyberChef's on it. No rocket science, just base two.
 Dr Tom Shaw: Pop it out into its own tab with the little arrow by the cross, top of the laptop. Then you can have the clue and the recipe side by side.
-Dr Tom Shaw: The handouts are the induction pack. Your notepad's got a pencil on every page. Paste owt you'll need later in there.
+Dr Tom Shaw: I've put the induction handouts in your notepad. It's got a pencil on every page. Write down owt you'll need later in there.
 + [What's CyberChef actually do?]
     -> magic
 + [Thanks. Anything else I should know?]

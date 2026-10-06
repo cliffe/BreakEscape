@@ -8,7 +8,7 @@
 === start ===
 #give_item:notes:comms_discipline
 Agent HaX: Before anything else, read the note I've just sent you. If your phone is ever compromised, that's how you reach me.
-+ [How does it reach you?]
++ (asked_reach) [How does it reach you?]
     Agent HaX: That's classified. Next.
     -> cover
 + [I'll read it. Go on.]
@@ -46,7 +46,7 @@ Agent HaX: I'll take either.
 === cliffe ===
 Agent HaX: One more name. Dr Cliffe Schreuders. Builds Hacktivity. He'll know what you are within a minute of meeting you.
 + [Is he one of ours?]
-    Agent HaX: That's classified too.
+    Agent HaX: That's classified{start.asked_reach: too}.
     -> deploy
 + [Noted.]
     -> deploy

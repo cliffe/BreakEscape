@@ -52,14 +52,14 @@ Teaching exhibits (`byte_wall`, `display_plaque`, `powers_of_two_poster`, `ascii
 CyberChef is opened from the inventory item `lab_laptop`. Paste the clue into **Input**, search the operation name, double-click it into the **Recipe**.
 
 4. **L1 — `cryptosecure_lockbox` (foyer stand, password)**
-   - *Input from:* `keyholder_leaflet` in the notepad (the spaced decimal codes).
+   - *Input from:* `keyholder_leaflet` in the notepad (the spaced decimal codes). It is a notepad page only, not an inventory-bar item. Three pointers lead to it (fix round 2, blind B1/B2): Jordan ("Here, leaflet. It's in your notepad now… See the numbers on it? They spell a word."), HaX's text 1.5 s after the hand-over ("Jordan's leaflet is in your notepad…"), and the lockbox's password screen ("…open the Notepad in your inventory, page to \"Keyholder Leaflet\" and decode them.").
    - *Recipe:* **From Decimal** (delimiter Space). Output is a lower-case word.
    - *Do:* type the word into the lockbox → task `open_lockbox` complete, `lockbox_open` true. HaX texts the L2 nudge ("Eight digits for a four-digit keypad…").
    - *Example (seed 42):* `112 101 98 98 108 101` → `pebble`.
 5. **Foyer — lockbox contents** — Take `trial_ii_card` and `keyholder_device`. Taking the device opens the Keyholder chat (Ghost's first line; `ghost_greeted` true). Close the chat. (Taking the device is optional but the later Ghost lines assume it.)
 6. **L2 — `candidate_locker_4` (common room, PIN)**
    - *Input from:* `trial_ii_card` text, eight digits run together.
-   - *Recipe:* put a space after every two digits by hand (digit characters are ASCII 48-57, two digits each), then **From Decimal**. Unsplit, CyberChef errors; Magic or From Hex read it as hex and give four capital letters, which is the wrong route.
+   - *Recipe:* in CyberChef's Input, type a space between each pair of digits (FN2 and hint rung 3 now say exactly this) (digit characters are ASCII 48-57, two digits each), then **From Decimal**. Unsplit, CyberChef errors; Magic or From Hex read it as hex and give four capital letters, which is the wrong route.
    - *Do:* enter the four digits on the PIN pad → task `open_locker` complete, `locker_open` true. Three wrong PINs show "System locked", which resets when the pad is reopened. Ghost texts the Trial II line (2 s), HaX texts "That phrasing…" (8 s). Take `trial_iii_card`.
    - *Example (seed 42):* `49565448` → `49 56 54 48` → `1860`.
 7. **L3 — `keyholder_guest_terminal` (teaching lab, password)**
@@ -78,7 +78,7 @@ CyberChef is opened from the inventory item `lab_laptop`. Paste the clue into **
 
 9. **L5 — library door (corridor west, PIN)**
    - *Input from:* `trial_v_poster` in the corridor (take it; Base64 text only; the worked "Hi!" example is in its observations). Entering the corridor makes HaX offer `fn04_base64` (sets `fn04_offered`) with "Not decimal, not hex, not binary. Something new on that wall." The text doesn't name Base64 (P1).
-   - *Recipe:* **From Base64**. Output reads "Library keypad: NNNN. The returns shelf has your next trial."
+   - *Recipe:* **From Base64**. Output reads "The returns shelf has your next trial. Library keypad: NNNN" (fix round 2: the PIN ends the sentence, with no full stop after it).
    - *Do:* enter the four digits → task `open_library` complete, `library_open` true.
    - *Example (seed 42):* `TGlicmFyeSBr…` → `6191`.
 10. **L6 — `special_collections_safe` (library, password)**
@@ -87,13 +87,13 @@ CyberChef is opened from the inventory item `lab_laptop`. Paste the clue into **
     - *Do:* type the last word → task `open_special_collections` complete, `special_collections_open` true. Ghost texts "Special Collections…" (2 s); HaX texts the L7 nudge and offers `fn06_vigenere` (8 s).
     - *Example (seed 42):* `Yvkiogr Iurrkizouty yglk vgyycuxj: vxoskx` (after Base64) → shift back 6 → `primer`.
 11. **Library — safe contents** — Take or open `trial_vii_txt` (its content is the Vigenère ciphertext only; copy with the viewer's Copy button, not by hand). Also in the safe: `candidate_assessments` and `job_tape_hex` (both optional; see Optional Path).
-12. **Sidhu's office (corridor east) — `ledger_whiteboard`** — Examine the whiteboard. **Block 4's data word is the Vigenère key.** (`trial_vii_txt`'s observations point at "the ledger of the man who checks everything twice".) Optional here: talk to `sidhu_selvarajan` → optional task `consult_sidhu` complete, `fn07_hashing` and `fn10_signatures` in the notepad.
+12. **Sidhu's office (corridor east) — `ledger_whiteboard`** — Examine the whiteboard. **Block 4's data word is the Vigenère key.** The examine text reads "Block 4, the last entry, holds the data \"<word>\" (prev e21d, hash 51a8)." (fix round 2: one sentence per block, so it reads correctly when the line breaks are lost). The key pool is ledger, merkle, nonce, tally, anchor, witness; `genesis` was dropped because block 1 holds "genesis-0". (`trial_vii_txt`'s observations point at "the ledger of the man who checks everything twice".) Optional here: talk to `sidhu_selvarajan` → optional task `consult_sidhu` complete, `fn07_hashing` and `fn10_signatures` in the notepad.
     - *Example (seed 42):* block 4 data = `nonce`.
 13. **L7 — decode Trial VII** (CyberChef, no lock yet)
-    - *Input:* the `trial_vii_txt` ciphertext, nothing else (an extra header line garbles the whole decode).
+    - *Input:* the `trial_vii_txt` ciphertext, nothing else, taken with the text viewer's **Copy** button. **Add to Notepad** wraps the file in a header and footer (engine behaviour, E6), and those extra letters garble the whole decode; the file's observations, FN1, FN6 and hint rung 3 all say to use Copy.
     - *Recipe:* **Vigenère Decode**, Key = the whiteboard word.
     - *Output gives three things:* the pigeonhole password (`<word>-NN`), which pigeonhole is yours (a number word, two to five), and a 32-hex IV. Paste all three into the notepad with the pencil, ideally on `drop_box_tag`'s observations ("Key: ____ IV: ____").
-    - *Example (seed 42):* "The pigeonholes open with sorting-33. Yours is number four. … The IV travels with this letter: <32 hex>". Only the IV differs between renders.
+    - *Example (game 1590, key `genesis` under the old pool):* "Yours is pigeonhole number three. Your envelope is sealed to your public key. The IV for the drop box is bcdc11b2a631f6ee7750ceebbf87bdf9 and the pigeonholes open with sorting-24". The password ends the text, with nothing after it (fix round 2, P2B B7).
 14. **L7 — `pigeonholes` (corridor, password)** — Type the pigeonhole password → task `open_pigeonholes` complete, `pigeonholes_open` true. HaX texts the L8a nudge and offers `fn09_public_key` (2 s) and `fn08_aes` (8 s). "Send me that field note" sends FN9 (public keys) first, then FN8 (AES) on the next request (fix round 1).
     - *Example (seed 42):* `sorting-33`.
 15. **Corridor — your envelope** — Open the pigeonhole whose number matches step 13 (`pigeonhole_2` … `pigeonhole_5`) and copy its Base64. The other three are sealed to other students' keys and fail in step 17, which is the intended lesson.
@@ -125,7 +125,7 @@ CyberChef is opened from the inventory item `lab_laptop`. Paste the clue into **
 
 22. **Ghost's video call (`ghost`, knot `the_offer_call`)** — Fires on `relay_opened` (condition `!ghost_offer_made`). Expected: Ghost recognises 0x00 from St Catherine's, refuses a name again ("You can call me what your handler does: Ghost."), asks for the report to be sent to HaX, and prices each route unprompted: refusing costs Megan (or "the second this week" if she was warned), a wrong location earns "a third offer", and "Send it and you start Monday. So does she." (no "So does she." if Megan was warned). `ghost_offer_made` is set on the first line; `ghost_offer_heard` only on that last line. Choices: `[What's in it?]`, `[Could I change it first?]` loop; `[I'll think about it.]` exits the call on "Your terminal's still open. Read what I gave you." (no "Back. So you've decided." after it); `[No. Find another student.]` refuses (Ending C below) and the call closes on "CONTACT CLOSED.". Afterwards HaX texts the FN10 offer (`fn10_offered`, 6 s) if `fn10_had` is false and no decision has been made.
 23. **Workshop — reopen `relay_terminal`** (the call closed it) — Four files:
-    - `report_b64`: **From Base64** → a field report ending in `<img src="https://cdn.cryptosecure-recovery.example/px/locate/<token>.png" width="1" height="1">`. **The token (`<word>-NNNN`) is the scoreboard answer.** Reading the file also sets `relay_opened` again (harmless).
+    - `report_b64`: **From Base64** → a field report ending in `<img src="https://cdn.cryptosecure-recovery.example/px/locate/<token>/1x1.png" width="1" height="1">` (fix round 2: the token sits between slashes, not against ".png"). **The token (`<word>-NNNN`) is the scoreboard answer.** Reading the file also sets `relay_opened` again (harmless).
     - `report_sha256` (optional check): **SHA2** Size 256 on the `report_b64` text as given must equal it. A trailing new line breaks it.
     - `report_sig` (optional check): **From Base64**, then **RSA Verify** with the `keyholder_public_pem` key, Message = the `report_b64` text exactly as given, Message format **Raw**, digest **SHA-256** → "Verified OK". Decoded text as Message, Base64 format, SHA-1 or a trailing new line all give "Verification Failure".
     - `keyholder_public_pem`: the key for the check. Its first 16 hex of SHA-256 is the fingerprint on the leaflet.
@@ -208,6 +208,8 @@ After step 24: `decision_made` true, `ending` one of `sent`, `double`, `refused`
 - **Debrief questions:** "Who is Dr Schreuders?" / "Was Ghost really reading my phone?".
 
 ### Edge Cases
+- **Container text when open (fix round 2):** the lockbox, safe, pigeonholes and drop box now have one description that reads true both locked and open ("…with a password pad"). The password and container minigames both show the raw `observations`; only the world examine honours `observationVariants` (engine), so a locked/open variant isn't possible from the scenario.
+- **Passwords are exact:** FN1 step 4 says to type answers lower case with no full stop after them. No generated sentence puts punctuation directly after an answer.
 
 - **Briefing closed early:** note given on the first line; HaX holds `comms_discipline_hax`. No later step depends on the rest.
 - **Keyholder device left in the lockbox:** `ghost_greeted` false; Ghost's call uses the "You left my device in the box" line. All endings still work.

@@ -199,13 +199,19 @@ Send it and you start Monday.{ megan_choice != "warned": So does she.}
 
 === send_says_go ===
 #speaker:ghost
+~ parked = true
+#exit_conversation
 Then send it. Your handler's phone, not this one. I'll know when it's opened.
 -> the_offer_again
 
 === refuse ===
 { decision_made: -> closed }
 #speaker:ghost
-Noted. Two hundred and twelve picked up a card, and you're the first to say no to me.
+{ megan_choice == "warned":
+    Noted. The second this week. Miss Oyelaran at least had the excuse of a conscience.
+- else:
+    Noted. Two hundred and twelve picked up a card, and you're the first to say no to me.
+}
 I'll put you in the column for it.
 ~ ending = "refused"
 #set_global:ending:refused

@@ -42,8 +42,8 @@ def vig_dec(t, key):
 v = vig_dec(a["l7_vigenere"], a["l7_vig_key"])
 check("L7 vigenere", v == ans["l7_plain"], v)
 import re
-iv = re.search(r"letter: ([0-9a-f]{32})", v).group(1)
-pw = re.search(r"open with ([a-z]+-\d\d)", v).group(1)
+iv = re.search(r"drop box is ([0-9a-f]{32})", v).group(1)
+pw = re.search(r"open with ([a-z]+-\d\d)$", v).group(1)
 check("L7 IV and pigeonhole password", iv == ans["l8_aes_iv_hex"] and pw == ans["l7_pigeon_pw"], (iv, pw))
 
 with tempfile.TemporaryDirectory() as td:
@@ -57,7 +57,7 @@ with tempfile.TemporaryDirectory() as td:
     h = ossl(["dgst", "-sha256", "-r"], ans["l8"].encode()).decode().split()[0]
     check("L10 openssl sha256[0:8]", h[:8] == ans["l10"], h[:8])
     rep = base64.b64decode(a["report_b64"]).decode()
-    check("Report base64 has token in a locate pixel URL", ("/px/locate/" + ans["token"] + ".png") in rep, ans["token"])
+    check("Report base64 has token in a locate pixel URL", ("/px/locate/" + ans["token"] + "/1x1.png") in rep, ans["token"])
     h2 = ossl(["dgst", "-sha256", "-r"], a["report_b64"].encode()).decode().split()[0]
     check("Report sha256", h2 == a["report_sha256"], h2)
     pub = os.path.join(td, "ghost.pem"); open(pub, "w").write(a["ghost_public_pem"])

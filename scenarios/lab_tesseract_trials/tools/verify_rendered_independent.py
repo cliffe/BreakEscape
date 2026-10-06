@@ -22,10 +22,10 @@ check('L1', bytes(int(x) for x in objs['keyholder_leaflet']['text'].split()).dec
 s = objs['trial_ii_card']['text']; check('L2', bytes(int(s[i:i+2]) for i in range(0, len(s), 2)).decode(), 'candidate_locker_4')
 check('L3', bytes(int(b, 2) for b in objs['trial_iii_card']['text'].split()).decode(), 'keyholder_guest_terminal')
 check('L4', bytes.fromhex(objs['trial_iv_hex']['text']).decode().split()[-1], 'corridor')
-check('L5', re.search(r'\d{4}', base64.b64decode(objs['trial_v_poster']['text']).decode()).group(0), 'library')
+check('L5', re.search(r'\d{4}$', base64.b64decode(objs['trial_v_poster']['text']).decode()).group(0), 'library')
 def unshift(t, n): return ''.join(chr((ord(c)-97-n) % 26+97) if c.islower() else chr((ord(c)-65-n) % 26+65) if c.isupper() else c for c in t)
 check('L6', unshift(base64.b64decode(objs['returns_slip']['text']).decode(), 6).split()[-1], 'special_collections_safe')
-key = re.search(r'Block 4 \| data: ([a-z]+) ', objs['ledger_whiteboard']['observations']).group(1)
+key = re.search(r'Block 4, the last entry, holds the data "([a-z]+)"', objs['ledger_whiteboard']['observations']).group(1)
 def vig_dec(t, k):
     kk = [ord(c)-97 for c in k]; i = 0; out = []
     for c in t:
@@ -34,8 +34,8 @@ def vig_dec(t, k):
         else: out.append(c)
     return ''.join(out)
 p7 = vig_dec(objs['trial_vii_txt']['text'], key)
-check('L7', re.search(r'open with ([a-z]+-\d\d)', p7).group(1), 'pigeonholes')
-hole = ['zero','one','two','three','four','five','six'].index(re.search(r'number ([a-z]+)\.', p7).group(1)); iv = re.search(r'letter: ([0-9a-f]{32})', p7).group(1)
+check('L7', re.search(r'open with ([a-z]+-\d\d)$', p7).group(1), 'pigeonholes')
+hole = ['zero','one','two','three','four','five','six'].index(re.search(r'pigeonhole number ([a-z]+)\.', p7).group(1)); iv = re.search(r'drop box is ([0-9a-f]{32})', p7).group(1)
 with tempfile.TemporaryDirectory() as td:
     pk = os.path.join(td, 'p.pem'); open(pk, 'w').write(objs['private_key_pem']['text'])
     aeskey = ossl(['pkeyutl', '-decrypt', '-inkey', pk, '-pkeyopt', 'rsa_padding_mode:oaep', '-pkeyopt', 'rsa_oaep_md:sha1'], base64.b64decode(objs[f'pigeonhole_{hole}']['text'])).decode()
@@ -43,7 +43,7 @@ with tempfile.TemporaryDirectory() as td:
     check('L8', pw, 'cryptosecure_drop_box')
     check('L10', ossl(['dgst', '-sha256', '-r'], pw.encode()).decode().split()[0][:8], 'relay_terminal')
     rep = base64.b64decode(objs['report_b64']['text']).decode()
-    check('scoreboard token', re.search(r'px/locate/([a-z]+-\d{4})\.png', rep).group(1), 'hacktivity_scoreboard')
+    check('scoreboard token', re.search(r'px/locate/([a-z]+-\d{4})/1x1\.png', rep).group(1), 'hacktivity_scoreboard')
     pub = os.path.join(td, 'g.pem'); open(pub, 'w').write(objs['keyholder_public_pem']['text'])
     sig = os.path.join(td, 's'); open(sig, 'wb').write(base64.b64decode(objs['report_sig']['text']))
     msg = os.path.join(td, 'm'); open(msg, 'w').write(objs['report_b64']['text'])

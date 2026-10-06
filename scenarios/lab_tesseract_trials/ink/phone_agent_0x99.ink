@@ -246,7 +246,7 @@ On my way to you.
     { hint_rung:
     - 1: The keypad wants four digits. You have eight.
     - 2: The digits 0 to 9 are ASCII 48 to 57, two digits each. If you got four capital letters, it read them as hex.
-    - else: Put a space after every two digits, then From Decimal. If the keypad locks you out, walk away and try again.
+    - else: In CyberChef's Input, type a space between each pair of digits, then From Decimal. If the keypad locks you out, walk away and try again.
     }
 - step == "l3":
     { hint_rung:
@@ -276,7 +276,7 @@ On my way to you.
     { hint_rung:
     - 1: Trial VII needs a key word. The file's notes say where.
     - 2: Dr Selvarajan's whiteboard. Block four.
-    - else: Copy only the ciphertext. Vigenère Decode, with block four's word as the key. It gives you the pigeonhole code and an IV. Paste the IV onto the drop box tag in your notepad.
+    - else: Copy the ciphertext with the file's Copy button, not Add to Notepad. Vigenère Decode, with block four's word as the key. It gives you the pigeonhole code and an IV. Paste the IV onto the drop box tag in your notepad.
     }
 - step == "l8":
     { hint_rung:

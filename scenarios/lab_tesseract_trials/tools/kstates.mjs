@@ -49,6 +49,10 @@ const cases = [
   // Prices in the offer, unprompted (REVIEW_IMPL M3)
   { id: 'K16', f: G, entry: 'the_offer_call', g: { relay_opened: true, ghost_greeted: true }, expect: 'offer_hub', textHas: 'third offer', textHas2: 'So does she', choiceLacks: /What happens if I say no/ },
   { id: 'K17', f: G, entry: 'the_offer_call', g: { relay_opened: true, megan_choice: 'warned' }, expect: 'offer_hub', textHas: 'Miss Oyelaran was the first', textLacks: 'So does she' },
+  // Fix round 2: REVIEW_FIX1 m1 (no greeting after [Sending it now.]) and m2 (refusal after Megan was warned)
+  { id: 'K18', f: G, entry: 'start', g: { relay_opened: true, ghost_offer_made: true, ghost_offer_heard: true }, choose: /Sending it now/, expect: 'the_offer_again', afterHas: 'Then send it', afterLacks: 'Back. So you' },
+  { id: 'K19', f: G, entry: 'the_offer_call', g: { relay_opened: true, megan_choice: 'warned' }, choose: /Find another student/, expect: 'closed', endingIs: 'refused', afterHas: 'The second this week', afterLacks: 'first to say no' },
+  { id: 'K20', f: G, entry: 'the_offer_call', g: { relay_opened: true }, choose: /Find another student/, expect: 'closed', afterHas: 'first to say no', afterLacks: 'second this week' },
   { id: 'H1', f: H, entry: 'start', g: { comms_had: false }, expect: 'hub', choiceHas: /Remind me how I reach you/ },
   { id: 'H2', f: H, entry: 'start', g: { comms_had: true, lockbox_open: true, fn04_offered: true }, expect: 'hub', choiceHas: /field note/, choiceLacks: /Sending you my report/ },
   { id: 'H3', f: H, entry: 'start', g: { comms_had: true, ghost_offer_made: true }, expect: 'hub', choiceHas: /Sending you my report/, choiceLacks: /Debrief me/ },

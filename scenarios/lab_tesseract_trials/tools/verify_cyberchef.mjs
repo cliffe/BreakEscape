@@ -62,8 +62,8 @@ check("L6 From Base64 + ROT13(amount -6)", await bake(a.l6_base64_caesar, [[From
 // L7 Vigenere Decode with key; the player reads the pigeonhole password and IV from the output
 const l7 = await bake(a.l7_vigenere, [[VigenereDecode, [a.l7_vig_key]]]);
 check("L7 Vigenère Decode", l7, ans.l7_plain);
-const ivFromL7 = (l7.match(/letter: ([0-9a-f]{32})/) || [])[1] || "";
-const pwFromL7 = (l7.match(/open with ([a-z]+-\d\d)/) || [])[1] || "";
+const ivFromL7 = (l7.match(/drop box is ([0-9a-f]{32})/) || [])[1] || "";
+const pwFromL7 = (l7.match(/open with ([a-z]+-\d\d)$/) || [])[1] || "";
 check("L7 gives pigeonhole password", pwFromL7, ans.l7_pigeon_pw);
 check("L7 gives the IV", ivFromL7, ans.l8_aes_iv_hex);
 const garbled = await bake("Trial VII. The key is on the ledger.\n" + a.l7_vigenere, [[VigenereDecode, [a.l7_vig_key]]]);
@@ -100,7 +100,7 @@ console.log(`INFO RSA Verify with the digest left on SHA-1: ${JSON.stringify(awa
 console.log(`INFO RSA Verify with a new line after the Message: ${JSON.stringify(await vf(a.report_b64 + "\n", "Raw", "SHA-256"))}`);
 const shaDecoded = await bake(ans.report_plain, [[SHA2, ["256", 64, 160]]]);
 console.log(`INFO SHA2 of the DECODED report matches report.sha256? ${shaDecoded === a.report_sha256} (it shouldn't: the hash is of the Base64 text)`);
-check("Report pixel URL says locate", ans.report_plain.includes("/px/locate/" + ans.token + ".png") ? "yes" : "no", "yes");
+check("Report pixel URL says locate", ans.report_plain.includes("/px/locate/" + ans.token + "/1x1.png") ? "yes" : "no", "yes");
 const tampered = a.report_b64.slice(0, -4) + "AAAA";
 console.log(`INFO Report RSA Verify after one change: ${JSON.stringify(await bake(a.report_sig_b64, [[FromBase64, [B64, true, false]], [RSAVerify, [a.ghost_public_pem, tampered, "Raw", "SHA-256"]]]))}`);
 check("Leaflet fingerprint = SHA2 of Ghost PEM", (await bake(a.ghost_public_pem, [[SHA2, ["256", 64, 160]]])).slice(0, 16), a.ghost_key_fingerprint);

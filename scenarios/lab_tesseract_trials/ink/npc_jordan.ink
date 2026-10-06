@@ -12,7 +12,8 @@ VAR asked_mailer = false
 #complete_task:visit_stand
 ~ met_jordan = true
 #give_item:notes:keyholder_leaflet
-Jordan Pike: Hey! Honestly, no pressure, but you look like a Keyholder. Here, leaflet. Nobody applies, you get found. Solve the numbers, the lockbox opens, and you're in the Trials.
+Jordan Pike: Hey! Honestly, no pressure, but you look like a Keyholder. Here, leaflet. It's in your notepad now. Nobody applies, you get found.
+Jordan Pike: See the numbers on it? They spell a word. Type the word into the lockbox and you're in the Trials.
 Jordan Pike: Nine grand a year and fees paid. It's literally free money.
 -> hub
 
@@ -22,7 +23,7 @@ Jordan Pike: {&Any questions? I get a referral bonus, so ask away.|Anything else
     Jordan Pike: Data recovery. Companies get hit by ransomware, CryptoSecure gets them back up. Very busy, apparently.
     -> hub
 + [What happened to last year's Keyholders?]
-    Jordan Pike: Two of us work for them now. Placements, then jobs. They ask some odd questions, to be fair. I don't ask back.
+    Jordan Pike: Two of us work for them now. Placements, then jobs. They ask some odd questions, though. I don't ask back.
     -> hub
 + {not asked_mailer} [What's the Mailer on the laptop?]
     ~ asked_mailer = true
