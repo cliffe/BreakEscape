@@ -57,6 +57,12 @@ const cases = [
   { id: 'H10', f: H, entry: 'start', g: { comms_had: true, ghost_greeted: true, lockbox_open: true }, choose: /black device from the lockbox/, expect: 'hub', afterHas: 'Keep it on you', choiceLacks: /black device/ },
   { id: 'H11', f: H, entry: 'start', g: { comms_had: true, megan_file_read: true }, choose: /files on the candidates/, expect: 'hub', afterHas: 'probably you', choiceLacks: /files on the candidates/, choiceHas: /Megan Oyelaran is on their list/ },
   { id: 'H12', f: H, entry: 'start', g: { comms_had: true, ghost_greeted: true, ghost_offer_made: true }, expect: 'hub', choiceLacks: /black device/ },
+  // PLAYTEST_FINAL F2: hub greetings don't reprint after a topic, on HaX's hub or the Keyholder device
+  { id: 'H13', f: H, entry: 'start', g: { comms_had: true, ghost_offer_made: true, fn09_offered: true }, choose: /field note/, expect: 'hub', afterHas: 'Public keys', afterLacks: "I'm here" },
+  { id: 'H14', f: H, entry: 'start', g: { comms_had: true, lockbox_open: true }, choose: /I'm stuck/, expect: 'hub', afterHas: 'keypad', afterLacks: 'Go ahead' },
+  { id: 'H15', f: H, entry: 'start', g: { comms_had: true, ghost_greeted: true, lockbox_open: true }, choose: /black device/, expect: 'hub', afterHas: 'done this before', afterLacks: 'Go ahead' },
+  { id: 'K21', f: G, entry: 'start', g: {}, expect: 'waiting', textHas: "I'll be watching", textLacks: 'Still watching' },
+  { id: 'K22', f: G, entry: 'start', g: {}, choose: /Who are you/, expect: 'waiting', afterHas: 'The examiner', afterLacks: 'Still watching' },
   { id: 'H1', f: H, entry: 'start', g: { comms_had: false }, expect: 'hub', choiceHas: /Remind me how I reach you/ },
   { id: 'H2', f: H, entry: 'start', g: { comms_had: true, lockbox_open: true, fn04_offered: true }, expect: 'hub', choiceHas: /field note/, choiceLacks: /Sending you my report/ },
   { id: 'H3', f: H, entry: 'start', g: { comms_had: true, ghost_offer_made: true }, expect: 'hub', choiceHas: /Sending you my report/, choiceLacks: /Debrief me/ },
@@ -132,6 +138,7 @@ const qcases = [
   { id: 'Q-oleg-name', f: 'npc_oleg', knot: 'start', g: {}, choose: /look annoyed/, lastLine: 'nobody has ever been called', greet: /Yes\?|Something else|Still here/ },
   { id: 'Q-oleg-explain', f: 'npc_oleg', knot: 'start', g: { staff_list_read: true }, choose: /What happened to it/, lastLine: 'I wrote it down', greet: /Yes\?|Something else|Still here/ },
   { id: 'Q-oleg-fixed', f: 'npc_oleg', knot: 'start', g: { staff_list_read: true }, choose: /I fixed your name/, lastLine: 'works on their machine', greet: /Yes\?|Something else|Still here/ },
+  { id: 'Q-oleg-lookalike', f: 'npc_oleg', knot: 'start', g: { lookalike_seen: true }, choose: /two people/, lastLine: 'not sure which is worse', greet: /Yes\?|Something else|Still here/ },
   { id: 'Q-cliffe-build', f: 'npc_cliffe', knot: 'common_room', g: {}, choose: /working on/, lastLine: 'closes the lid', greet: /Still here|Yeah\?|Committee/ },
 ];
 for (const k of qcases) {

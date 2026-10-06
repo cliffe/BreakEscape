@@ -49,7 +49,9 @@ VAR fn11_sent = false
 VAR hint_step = ""
 VAR hint_rung = 0
 // Skips the hub greeting once after a reply that closes or answers a decision,
-// so "Copy." isn't followed by "Go ahead." (fix round 1, REVIEW_IMPL m1)
+// so "Copy." isn't followed by "Go ahead." (fix round 1, REVIEW_IMPL m1).
+// Also set at the end of every topic (field notes, comms, H1/H2, Megan, the
+// hint ladder): the hub_quiet pattern (PLAYTEST_FINAL F2).
 VAR parked = false
 // Story topics (ALIGNMENT_PLAN H1, H2), each once
 VAR device_discussed = false
@@ -137,6 +139,7 @@ VAR assessments_discussed = false
 - else:
     Nothing new to send. You've got them all so far.
 }
+~ parked = true
 -> hub
 
 // ------------------------------------------------
@@ -149,6 +152,7 @@ VAR assessments_discussed = false
 - else:
     Not on this line. It's in your brief.
 }
+~ parked = true
 -> hub
 
 // ------------------------------------------------
@@ -159,12 +163,14 @@ VAR assessments_discussed = false
 ~ device_discussed = true
 Then it's theirs. Keep it on you. A candidate who leaves it behind isn't a candidate.
 Whoever's on the other end put it where a first-year would find it. They've done this before.
+~ parked = true
 -> hub
 
 === assessments_reaction ===
 ~ assessments_discussed = true
 That's how they pick everything. At St Catherine's it was a hospital that couldn't afford downtime.
 One of those files is probably you. I can't tell which, and that's the point.
+~ parked = true
 -> hub
 
 // ------------------------------------------------
@@ -176,6 +182,7 @@ Not on this line. Leave it with me.
 #set_global:megan_choice:protected
 #set_global:megan_choice_made:true
 ~ megan_choice = "protected"
+~ parked = true
 -> hub
 
 // ------------------------------------------------
@@ -321,4 +328,5 @@ On my way to you.
     - else: Add SHA2 under AES Decrypt in the recipe you've got, Size two fifty-six. Or Dr Selvarajan's handout.
     }
 }
+~ parked = true
 -> hub

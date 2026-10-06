@@ -67,6 +67,7 @@ VAR parked = false
     DEVICE ACTIVE. Candidate. You opened a box most of your year walked past. The rest get harder.
 }
 I'll be watching. You won't see me do it.
+~ parked = true
 -> waiting
 
 === waiting ===
@@ -104,6 +105,7 @@ I'll be watching. You won't see me do it.
 === who_reply ===
 #speaker:ghost
 The examiner. You'll meet me when you've earned it.
+~ parked = true
 -> waiting
 
 // ------------------------------------------------

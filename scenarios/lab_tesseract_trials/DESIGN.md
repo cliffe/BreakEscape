@@ -435,6 +435,7 @@ HaX's pattern (m01/m02, scaled down so the hub stays small):
 | `fn10_signatures` | Signatures | Sidhu; HaX (`fn10_hax`) when the relay terminal opens, if not had | The sender **signs** a hash of the message with their private key; anyone with their public key can check it. One character changed and the check fails. A signature proves who sent it and that nothing changed; **it hides nothing, so read what you send.** A document can even carry a remote image that reports where it was opened. Check exactly what was signed: if they signed the Base64 file, decode it and you're checking a different message. CyberChef: **From Base64** on the signature, then **RSA Verify**: paste the public key; Message = the signed text exactly as given; **Message format: leave on Raw**; Message Digest Algorithm **SHA-256**. "Verified OK" means it checks out. CLI: `openssl dgst -sha256 -verify pub.pem -signature sig.bin msg`. |
 | `fn11_text_encodings` | Not everything is ASCII (optional) | HaX; job tape read (`ebcdic_seen`) | IBM mainframes used EBCDIC, where "A" is 0xC1, not 0x41. Same letters, a different table. CyberChef: **From Hex** then **Decode text** (IBM EBCDIC US-Canada (37)). CLI: `xxd -r -p tape.hex \| iconv -f IBM037 -t UTF-8`. |
 | `fn12_mojibake` | Mojibake (optional) | Dr Illiashenko, in person, when asked what happened to his name (after `staff_list_read`) | UTF-8 stores a Cyrillic letter as two bytes; read with a one-byte table (Windows-1251 or 1252) each letter becomes two wrong ones. The bytes are fine; only the table is wrong. Worked: "О" = D0 9E, read in 1251 as "Рћ". In CyberChef: Encode text (Windows-1251 Cyrillic (1251)), then Decode text (UTF-8 (65001)). CLI: `iconv -f UTF-8 -t CP1251`. |
+| `fn13_lookalikes` | Lookalike letters (optional) | Dr Illiashenko, when shown the duplicate accounts (after `lookalike_seen`) | Different alphabets share shapes: English "e" is 65, Cyrillic "е" is d0 b5 in UTF-8. Computers compare bytes, not shapes. Homograph attacks: lookalike usernames and web addresses. In CyberChef: To Hex shows the extra bytes; SHA2 gives different hashes. CLI: `xxd`. |
 
 Lab-sheet errors not repeated: the Base64 alphabet is A-Z, a-z, 0-9, + and / (not "a-Z"); DES's keyspace is 2^56 (not 256); private keys are kept secret "as with symmetric keys".
 
@@ -726,7 +727,7 @@ And for HaX's phone story:
 - The report files' observations and FN10 fix the verification traps first, so his line matches what the player saw.
 
 5. **After the decision.** HaX mappings on `global_variable_changed:decision_made` (one per `ending` value, `&&`-only conditions) complete `answer_the_keyholder` and send:
-   - **sent and double: identical texts.** "Received. Opening it now." at 1.5 s; then "My phone just did something it shouldn't. Get out of the building. Call me when you're clear." at 7.5 s. On the double route HaX is performing for a line Ghost reads.
+   - **sent and double:** "Received. Opening it now." at 1.5 s on both. At 7.5 s, sent gets "My phone just did something it shouldn't. Get out of the building. Call me when you're clear." Double gets "The phone just did exactly what your flag said it would. Get out of the building anyway. Call me when you're clear." (PLAYTEST_FINAL F9, so the warned player isn't left thinking the warning failed; the debrief still explains the decoy).
    - **refused** (N-m5): HaX can't see the device, so she checks in: "Your end's gone quiet. Talk to me." at 3 s. Her hub then shows `[I turned the Keyholder down.]` (while `!refusal_reported`): "Copy. Leave by the front. Don't run. Then call me." (sets `refusal_reported`).
    - **blown:** the player has just told her: "Copy. Leave by the front. Don't run. Call me when you're clear." at 6 s (Ghost's "I did say it listens." goes at 2 s).
 6. **Cliffe** has one line per ending (section 9). Jordan's stand empties on refused and blown (`setVisible: false` on `jordan_pike`, one mapping per value).
@@ -1499,3 +1500,34 @@ The `Background[...]:` line has no text after its colon, so the TTS batch skips 
 - The in-game CyberChef with Encode text (Windows-1251 Cyrillic (1251)) then Decode text (UTF-8 (65001)) outputs "Dr Олег Ілляшенко" (`oleg-04-cyberchef-fixed.png`).
 - The payoff beat plays (`oleg-05-after-fixed.png`, `oleg-talk3.txt`).
 - Finding for the rooms owner: in harness runs, the common room's east door to the staff office let the player through only near the top of the door row (y ≈ 46) after the door had been interacted with. A row at y 64-96 stayed blocked. A mouse click into the room works after the door is open.
+
+### Final-playtest minors (PLAYTEST_FINAL.md) and Oleg's lookalike beat
+
+| Id | Change or reason |
+|---|---|
+| F2 | hub_quiet on the two phones. HaX's hub sets the existing `parked` flag at the end of every topic: `send_field_note`, `comms_reminder`, `device_reaction`, `assessments_reaction`, `megan_request` and the hint ladder (`rung`). The Keyholder device sets it at the end of `intro` and `who_reply`. Reopen behaviour is unchanged: the flag is spent on the same pass, and reopencheck still reports 0 problems. kstates H13-H15 and K21-K22. |
+| F3 | Scenario data: `panelTitle` is now "MISKATONIC COMPUTING SERVICE, 1979<br>ONE LAMP = ONE BIT. LIT = 1.<br>THIS BYTE: 01001101", in the panel's amber title style. `footer` is now "8 BITS = 1 BYTE". The footer's near-invisible look (7px, #1e2d4a on near-black, `.ap-footer` in `alarm-panel-minigame.css`) is engine styling, not changed. The teaching line no longer depends on it. |
+| F4 | Not fixable in the scenario. A door's password pad gets only `doorProperties` (`systems/doors.js:504-519`): locked, lockType, requires, keyPins, difficulty, door_sign and so on. A door sprite has no `scenarioData`, so `unlock-system.js:277-284` falls back to `maxAttempts` 3 and no hint, and the pad shows no image or observations. None of the fields the container locks use (`maxAttempts`, `observations`, `passwordHint`) reaches a door. Suggested engine fix: copy `maxAttempts`, `passwordHint` and `showHint` from the connected room into `doorProperties`, and read them in `unlock-system.js`. Browser: the pad shows "Password:" and "Attempts: 0/3" (`fm-04-corridor-pad.png`). |
+| F8 | Walkthrough step 22: "I'll think about it" gets "Take your time…", then the call closes. The exit tag rides on "Your terminal's still open…", which the playtest saw as the device's next line. Both are described. |
+| F9 | Double route only, 7.5 s HaX text: "The phone just did exactly what your flag said it would. Get out of the building anyway. Call me when you're clear." The sent route keeps "My phone just did something it shouldn't…". The text says the warning worked, but not how; the decoy flat is still the debrief's reveal. |
+| Homoglyph beat | `staff_photocopier` holds a second job, `duplicate_accounts.txt`: two usernames, `olеg.illiashenko` (Cyrillic small letter ie, U+0435) and `oleg.illiashenko`. `onRead` sets the new global `lookalike_seen` (in `globalVariables`, the Oleg ink and the missions.json block). Oleg's new topic `lookalike` gives FN13, "Lookalike Letters", a separate note because it reads better than an addition to FN12. Verified in the bundled CyberChef 10.19.4 (`build_evidence/final_minors/homoglyph_check.mjs`, `homoglyph_verification.txt`): To Hex gives `6f 6c d0 b5 67…` against `6f 6c 65 67…`; SHA2-256 gives `54558c7c…` against `4f3e98db…`. The same results came from the in-game CyberChef. kstates Q-oleg-lookalike. |
+
+**Spoken lines added** (Dr Oleg Illiashenko, Sadaltager; 4):
+1. "Look at the bytes, not the letters. One of those has a Cyrillic letter that looks exactly like an English e."
+2. "Same shape, different number. The computer is right: those are two different names."
+3. "Two names that look the same aren't the same bytes. Ask anyone who has clicked a link to a bank that wasn't quite their bank."
+4. "Either the system imported me twice, or someone wants a staff login with my name on it. Today I'm not sure which is worse."
+
+Not voiced: the F9 text, the Byte Wall panel and FN13.
+
+**Checks** (`build_evidence/final_minors/`):
+- tagdiff: STRUCTURE UNCHANGED before; 19 differences after (HaX 6 `parked` assigns, Ghost 2, Oleg 11 for the new topic). No knot or divert changed outside Oleg's addition.
+- Ink compile 10/10. Validator 0 errors, the same 8 warnings. dialoguelint: none.
+- inkcheck 12/12. loopcheck 51/51. reopencheck: 0 problems. kstates 64/64.
+- Rendered seeds 31, 707 and 5150: ALL PASS. The rendered seed-5 duplicate file also passes the homoglyph harness.
+
+**Browser** (:3001, game 1613):
+- F3: the Byte Wall's amber title carries the teaching line (`fm-01-byte-wall.png`).
+- F2: HaX's hub after two "I'm stuck" hints shows no repeated "Go ahead." (`fm-02-hax-after-stuck.png`). The Keyholder device after its intro and after "Who are you?" shows no "Still watching." (`fm-03-device-who.png`).
+- F4: the corridor pad shows "Password:" and 0/3, the engine limit (`fm-04-corridor-pad.png`).
+- Homoglyph beat: the photocopier lists both jobs. `duplicate_accounts.txt` opened, and its Copy button copied the Cyrillic "е" intact (`fm-05-duplicate-accounts.png`). Oleg's topic played and FN13 arrived (`fm-06-oleg-lookalike.png`, `fm-oleg-lookalike.txt`). CyberChef's To Hex showed `d0 b5` under two identical-looking input lines (`fm-07-cyberchef-tohex.png`).

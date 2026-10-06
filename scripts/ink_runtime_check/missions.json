@@ -1265,6 +1265,7 @@
       "megan_choice_made": false,
       "ebcdic_seen": false,
       "staff_list_read": false,
+      "lookalike_seen": false,
       "fn04_offered": false,
       "fn05_offered": false,
       "fn06_offered": false,

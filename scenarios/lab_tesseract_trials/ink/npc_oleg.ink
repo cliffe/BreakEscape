@@ -7,6 +7,8 @@
 // read as Windows-1251). Optional, no lock and no quiz. The "fixed it" beat is
 // a conversation claim after the player has read the file (staff_list_read),
 // because the game can't see CyberChef's output.
+// Second beat: lookalike usernames (homoglyphs), one with a Cyrillic е;
+// lookalike_seen is set by reading duplicate_accounts.txt. Gives FN13.
 // hub_quiet as in the other person-chat inks (DIALOGUE_REVIEW_R2 M1).
 // ================================================
 
@@ -17,10 +19,12 @@ VAR fixed_claimed = false
 VAR asked_cryptosecure = false
 VAR asked_colleagues = false
 VAR asked_week = false
+VAR asked_lookalike = false
 VAR quiet = false
 
 // Synced scenario globals
 VAR staff_list_read = false
+VAR lookalike_seen = false
 
 === start ===
 { met_oleg: -> hub }
@@ -43,6 +47,8 @@ Dr Oleg Illiashenko: Oleg Illiashenko. I'm one of the lecturers here. Sit anywhe
     -> explain
 + {staff_list_read and not fixed_claimed} [I fixed your name. It reads properly in CyberChef now.]
     -> fixed
++ {lookalike_seen and not asked_lookalike} [The system thinks you're two people. Two usernames that look the same.]
+    -> lookalike
 + {not asked_cryptosecure} [What do you make of CryptoSecure?]
     -> cryptosecure
 + {not asked_colleagues} [What are the others like? Dr Shaw, Dr Selvarajan, Dr Schreuders?]
@@ -76,6 +82,16 @@ Dr Oleg Illiashenko: Show me.
 Narrator: He reads it off your screen and, for once today, smiles at a computer.
 Dr Oleg Illiashenko: There it is. Thank you. I'll send your recipe to the people who built the system.
 Dr Oleg Illiashenko: They'll tell me it works on their machine.
+~ quiet = true
+-> hub
+
+=== lookalike ===
+~ asked_lookalike = true
+#give_item:notes:fn13_lookalikes
+Dr Oleg Illiashenko: Look at the bytes, not the letters. One of those has a Cyrillic letter that looks exactly like an English e.
+Dr Oleg Illiashenko: Same shape, different number. The computer is right: those are two different names.
+Dr Oleg Illiashenko: Two names that look the same aren't the same bytes. Ask anyone who has clicked a link to a bank that wasn't quite their bank.
+Dr Oleg Illiashenko: Either the system imported me twice, or someone wants a staff login with my name on it. Today I'm not sure which is worse.
 ~ quiet = true
 -> hub
 
