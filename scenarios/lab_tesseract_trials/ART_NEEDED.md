@@ -1,6 +1,6 @@
 # The Keyholder Trials: art needed
 
-Nothing here has been generated. Per the brief and the user's standing rule, images are made one at a time with the user's go-ahead, PixelLab first, at target size (never downscaled). Until then the scenario uses the placeholders listed. Priorities: **P1** = the game looks wrong without it; **P2** = noticeably better with it; **P3** = nice to have.
+**Status 2026-10-06:** the room and object art is done (`ROOMS_PLAN.md` Phases 0-4: hand-drawn props and five PixelLab batches, 100 generations; picks in `build_evidence/rooms/pixellab/`). The character art below is still open. Per the brief and the user's standing rule, images are made one at a time with the user's go-ahead, PixelLab first, at target size (never downscaled). Until then the scenario uses the placeholders listed. Priorities: **P1** = the game looks wrong without it; **P2** = noticeably better with it; **P3** = nice to have.
 
 ## Characters
 
@@ -20,20 +20,24 @@ Portrait facing: all character art faces one way; the engine flips per speaker (
 
 ## Objects
 
-| Object | Needed | Placeholder | Priority | Notes |
+All rooms now use the university maps (`room_uni_*`), so the object rows below describe what each map draws.
+
+| Object | Needed | Now | Priority | Notes |
 |---|---|---|---|---|
-| Byte Wall | Wall-mounted 1970s computer front panel with a row of eight lamps and toggle switches | `alarm_panel` | P2 | The `alarm_panel` minigame draws the lamps, so only the room sprite changes. |
-| Punched paper tape | A strip of paper tape in a display case | `notes2` | P3 | |
-| Keyholder device | A small matte-black handheld terminal, CryptoSecure logo | `phone` | P2 | Shown in inventory and the phone UI frame. |
-| CryptoSecure stand | Pop-up banner and table | `picture1` + the reception desk | P3 | |
-| Pigeonholes | | `pigeonholes1` exists | - | Already in the assets. |
-| Ledger whiteboard | | `whiteboard1` exists | - | Already in the assets. |
-| Cliffe's build screen | | `smartscreen` exists | - | Already in the assets; the content is described in text. Since the room-dressing pass it takes the map's `smartscreen` slot with the `info_screen1` texture. |
-| Heritage display case | Low glass-topped display cabinet, about 78x40, for the paper tape and the ASCII handouts | `desk1` as a scenario table (room-dressing pass) | P3 | Would replace the plain desk in the foyer. Needs to be a table-type sprite so it gets a collision box. |
-| CryptoSecure drop box | Small branded steel post box with a slot, floor-standing, about 24x28 | `briefcase11` (map slot) | P3 | The same briefcase is also the lockbox in the foyer, so the two read alike. |
-| Trial V poster | A3 recruitment poster with a block of Base64 on it, wall-mounted, about 16x22 | `notes6` | P3 | Pinned on the corridor's back wall. |
-| Library returns trolley | Book trolley with a few returned books, about 32x30 | the returned book and slip sit on top of a front-row bookcase | P3 | Would make the "returns shelf" in the slip's text literal. |
-| Lab and library lamp stands | (map change, not new art) | `lamp-stand3`/`lamp-stand4` in `room_lab` and `room_library_1x2gu` | P3 | Garden-style lamp posts in a teaching lab and a library. Removing them is a map edit in shared room types, so it was left out of a scenario-only pass. |
+| Byte Wall | Wall-mounted 1970s computer front panel with a row of eight lamps and toggle switches | **done:** `alarm_panel2` (PixelLab P3, lamps hand-set to 01001101) | - | The `alarm_panel` minigame still draws the lamps; only the room sprite changed. |
+| Punched paper tape | A strip of paper tape in a display case | `notes2` on the display table, beside a glass case of old tapes (`display_case1`) | P3 | Still the generic notes sprite. |
+| Keyholder device | A small matte-black handheld terminal, CryptoSecure logo | `phone` | P2 | **Open.** Shown in inventory and the phone UI frame; not a room sprite. |
+| CryptoSecure stand | Pop-up banner and table | **done:** `cryptosecure_banner1` (hand-drawn) beside `desk1` | - | The table stays `desk1`: the lockbox and laptop need its width to sit 32 px apart. |
+| Pigeonholes | | `pigeonholes1` | - | |
+| Ledger whiteboard | | `whiteboard1`, seminar room | - | |
+| Cliffe's build screen | | `smartscreen` slot with the `info_screen1` texture | - | |
+| Heritage display case | Glass-topped display cabinet | **done:** `display_case1` (PixelLab P1), beside the display table | - | Decor next to the table rather than replacing it, so the ASCII chart and paper tape stay 32 px apart. |
+| CryptoSecure drop box | Branded steel post box with a slot | **done:** `drop_box1` (hand-drawn, wall-mounted, with a keypad) | - | |
+| Trial V poster | A3 recruitment poster with Base64 | `notes6`, pinned on the corridor noticeboard | P3 | Still the generic sheet. |
+| Library returns trolley | Book trolley with returned books | **done:** `book_trolley1` (PixelLab P0) | - | The slip and book sit on the issue desk; the trolley is decor. |
+| Lab and library lamp stands | (map change) | **done:** gone with the new maps | - | |
+| University rooms | crest sign, projector screen, lockers, directory, door card, library and Special Collections signs, timetable, six posters, lecture ledges | **done:** hand-drawn (`make_uni_props.py`) | - | |
+| Maker space and campus props | lectern, seat rows, sofa, plan chest, display cabinet, pegboard, laser cutter, oscilloscope cart, electronics bench, parts drawers, robot arm, bean bags, stanchions, CNC mill, 3D printer, banker's lamp, journals, Pi cluster, soldering iron | **done:** PixelLab P0-P3 | - | Registered but not placed yet: `scope_cart1`, `robot_arm1`, `stanchions1`, `pi_cluster1`, `soldering_iron1`, `beanbag1` (split into `beanbag_teal1` and `beanbag_orange1`). |
 
 ## Exhibit (optional, needs approval)
 

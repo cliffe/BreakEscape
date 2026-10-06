@@ -1,6 +1,6 @@
 # The Keyholder Trials: university rooms plan
 
-Status: **Phases 0-2 built and committed** (`ed2be44c`, `4d840ff0`, `f5ab595b`); **Phase 3 (PixelLab props) built, not yet committed** (build notes in sections 9-11). Plan written 2026-10-06 against HEAD `532bd7d3` (the room-dressing pass on the current maps is commit `1c18b9a3`). Kind of game: a lab scenario with SAFETYNET spy framing (AGENTS.md "Lab, demo and test scenarios"; brief `docs/agents/TESSERACT_TRIALS_BRIEF.md`). Aim of this plan: rooms that read as the Computing building of a UK university in freshers' week, with every scenario object landing on a proper map slot.
+Status: **done.** Phases 0-3 are committed (`ed2be44c`, `4d840ff0`, `f5ab595b` and the Phase 3 commits). Phase 4 (polish and docs) is built and not yet committed. Build notes are in sections 9-12. Plan written 2026-10-06 against HEAD `532bd7d3` (the room-dressing pass on the current maps is commit `1c18b9a3`). Kind of game: a lab scenario with SAFETYNET spy framing (AGENTS.md "Lab, demo and test scenarios"; brief `docs/agents/TESSERACT_TRIALS_BRIEF.md`). Aim of this plan: rooms that read as the Computing building of a UK university in freshers' week, with every scenario object landing on a proper map slot.
 
 User direction (via the orchestrator, during planning): be ambitious, design a new map for **every** room type named (foyer/atrium, computer teaching lab, student common room, corridor with lockers, pigeonholes and noticeboards, library with Special Collections, academic office, maker space/workshop, lecture theatre, seminar room); place the rooms that have no scenario room yet, spread **existing** clues into them rather than adding locks, and keep the middle play-time estimate under about 90 minutes.
 
@@ -962,3 +962,97 @@ Corridor, library and workshop were unlocked server-side for the layout check. `
 - The 404 on `female_hacker_hood_v2_talk.png`.
 - The doc updates already listed: SOLUTION_GUIDE, TESTING_WALKTHROUGH, DESIGN.md, and `ART_NEEDED.md` (the Byte Wall and banner items are now done).
 - The timed blind playtest.
+
+## 12. Phase 4 build notes (2026-10-06)
+
+Polish after the coordinator's review of `p3-previews-contact.png`, then the scenario docs. Nothing committed. No PixelLab or Gemini spend.
+
+### Layout fixes
+
+- **Special Collections:**
+  - Bookcases move to x 32-204, clear of the west wall strip. The plan chest moves to the end of the shelves (208, 112), standing on floor and off the wall line.
+  - The reading table moves 24 px east (x 96-222), and the rug decal in `room_uni_special.png` moves with it (x 88-230, `make_uni_tileset.py`).
+  - The display cabinet stands against the west wall below (24, 250), clear of the rug and the chairs. The north chairs follow the table (134 and 184).
+  - The east chair is at 224; the safe moves to (224, 252), by the door and off the east lane.
+  - Stanchions dropped: no clear spot left in front of the cabinet.
+- **Workshop:** a clear walking ring round the island (about x 100-208, y 116-222), and a clear band y 222-256 from the east lane to Cliffe.
+  - Back wall: laser cutter with the pegboard above.
+  - West wall: parts drawers, CNC mill and 3D printer, top to bottom.
+  - Electronics bench: east of the island, off the lane.
+  - Dropped from the floor: robot arm, oscilloscope cart and cable.
+- **Seminar room:** the bean bag sprite was one PixelLab image of two overlapping bags. I split it, with no rescale (`build_evidence/rooms/phase4/split_beanbag.py`): the front orange bag cut out with its outline closed (`beanbag_orange1`, 29x27), and a teal copy made by mapping its shades onto the original teal bag's shades by brightness rank (`beanbag_teal1`). They sit apart at (196, 252) and (228, 248).
+- **Anything else at game scale:** nothing else needed changing in the other seven rooms (contact sheet `p4-previews-contact.png`).
+
+### Docs (formats kept)
+
+- **DESIGN.md:**
+  - a pointer under the status line;
+  - §3 intro, layout diagram, grid positions, room table and every room's object list (types, slots, `as-type`, map decor), with the new rooms' sections;
+  - cast table (Tom and Sidhu's rooms);
+  - lock table (L6 and L7 locations);
+  - the "library branch" paragraph.
+- **TESTING_WALKTHROUGH.md:**
+  - a dated note under the header;
+  - the Rooms section, with every door and a "where things are" paragraph;
+  - steps 3, 7, 10, 11, 12 and 23 and the optional path renamed to the rooms things are in now;
+  - Tom's choice text updated.
+- **SOLUTION_GUIDE.md:**
+  - the room map and room table (ten rooms);
+  - the chain at a glance;
+  - "Before the first lock" (Tom in the lecture theatre);
+  - L6 and L7 locations;
+  - optional content;
+  - the time estimate: about **80 minutes (61-100)**, from 76 (58-94), with a new evidence item for the timed walk, the L6 and L7 rows re-priced for the extra hops, and a row for the first look round the three new rooms. The 60-minute stopping point is now about 47 minutes; the 90-minute advice is reworded.
+- **ART_NEEDED.md:** status line; objects table rewritten (done / still open). Open: the Keyholder device and the character art.
+- **labsheet.md:** names no rooms ("Find the lecturer who has the lab laptop"), so it is unchanged.
+
+### Checks
+
+| Check | Result |
+|---|---|
+| `generate_rooms.py --check` (all ten) | the 2 corridor WARNs and the 14 deliberate ledge/seat-row overlaps, as Phase 3 |
+| `check_room_walls.py --scenario` | 0 off the standard |
+| `slot_audit.py --notes` | 0 problems; `--all` 143 |
+| `check_door_alignment.py` | 9/9 OK |
+| `predict_door_sides.py` | unchanged |
+| `validate_scenario.rb` | 0 errors, the same 8 warnings, no overlaps |
+| Rendered verifiers | ALL PASS on seeds 42, 777, 9001 |
+| Existing builders | identical apart from `tilesets` |
+| Ink | not touched |
+
+### Browser
+
+Fresh game 1606 on the keyless :3001, headless. The whole critical path was played in a player's order, with answers read from the server and used only to open locks. Every lock opened:
+- L1 lockbox, L2 Locker 4, L3 guest terminal, L4 corridor door, L5 library door, L6 safe (Special Collections), L7 pigeonholes, L8b drop box;
+- the brass key taken from the drop box;
+- L9 workshop door, L10 relay terminal (then the offer).
+
+`verify-run.rb`: 9 rooms beyond the first, 8 objects unlocked. Screenshots of the changed rooms: `p4-after-workshop.png`, `p4-after-special_collections.png`, `p4-after-seminar_room.png`.
+
+Walking times between rooms (harness at full speed; lower bounds for a human, who takes 15-30 s a hop; `phase4/walk-legs-1606.txt`):
+
+| Leg | Seconds |
+|---|---|
+| spawn → Jordan (foyer) | 0.4 |
+| foyer → lecture theatre → Tom | 5.2 |
+| lecture theatre → foyer → lockbox | 2.4 |
+| foyer → common room → Locker 4 | 6.4 |
+| common room → foyer → teaching lab → guest terminal | 9.2 |
+| teaching lab → foyer → corridor door | 2.6 |
+| corridor → library door | 0.7 |
+| library door → issue desk | 3.0 |
+| library → Special Collections → safe | 4.3 |
+| Special Collections → library → corridor → office → seminar room → whiteboard | 13.7 |
+| seminar room → office → corridor → pigeonholes | 6.1 |
+| corridor → foyer → teaching lab → lab account PC | 5.3 |
+| teaching lab → foyer → corridor → drop box | 6.1 |
+| drop box → workshop door | 0.9 |
+| workshop door → relay terminal | 3.6 |
+| **Total walking** | **about 70** |
+
+### What's left
+
+- Engine E7 (collision rectangles) and E8 (the player's `spriteTalk` falls back, giving a harmless 404), both logged.
+- The timed blind playtest (D3) on the ten-room graph, which would replace the reasoned 80-minute estimate.
+- Character art (Cliffe, Tom, Sidhu) and the Keyholder device icon (`ART_NEEDED.md`).
+- Registered but unused props: `scope_cart1`, `robot_arm1`, `stanchions1`, `pi_cluster1`, `soldering_iron1` and the original `beanbag1`. Each is a free asset for later rooms.

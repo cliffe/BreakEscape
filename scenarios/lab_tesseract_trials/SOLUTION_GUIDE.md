@@ -51,43 +51,49 @@ Shapes stay the same in every game, and they help you check a student's screen:
 ## Room map
 
 ```
-                       +------------------------------+
-                       |  WORKSHOP  (Dr Schreuders)   |
-                       |  relay terminal (L10)        |
-                       |  Hacktivity scoreboard       |
-                       |  [brass key, L9]             |
-                       +--------------+---------------+
-                                      | north
- +-----------+   west   +-------------+--------------+   east   +----------------+
+ +--------------------+    +------------------------------+    +--------------------+
+ | SPECIAL            |    |  WORKSHOP  (Dr Schreuders)   |    | SEMINAR ROOM       |
+ | COLLECTIONS (open) |    |  relay terminal (L10)        |    | (open)             |
+ | safe [L6]          |    |  Hacktivity scoreboard       |    | Dr Selvarajan      |
+ |                    |    |  [brass key, L9]             |    | ledger whiteboard  |
+ +---------+----------+    +--------------+---------------+    +---------+----------+
+           | north                        | north                        | north
+ +---------+-+   west   +-----------------+----------+   east   +--------+-------+
  |  LIBRARY  |<---------+      COMPUTING CORRIDOR    +--------->| SIDHU'S OFFICE |
  | [PIN, L5] |          |  [password, L4]            |          | (open)         |
- | returns   |          |  Trial V poster            |          | ledger         |
- |  slip     |          |  pigeonholes [pw, L7]      |          |  whiteboard    |
- | safe [L6] |          |  drop box [pw, L8b] + tag  |          | hash handout   |
+ | returns   |          |  Trial V poster            |          | hash handout   |
+ |  slip     |          |  pigeonholes [pw, L7]      |          | door card      |
+ |           |          |  drop box [pw, L8b] + tag  |          |                |
  +-----------+          +-------------+--------------+          +----------------+
                                       | south
  +-----------+   west   +-------------+--------------+   east   +----------------+
  | TEACHING  |<---------+     FOYER  (START)         +--------->| COMMON ROOM    |
  | LAB       |  (open)  |  Jordan Pike + CryptoSecure|  (open)  | Megan, Cliffe  |
- | Tom Shaw  |          |   stand and lockbox (L1)   |          | Locker 4 (L2)  |
- | laptop    |          |  Byte Wall, plaque, ASCII  |          | noticeboard    |
- | lab PC    |          |   chart, paper tape        |          +----------------+
- | guest     |          +----------------------------+
- | terminal  |
- | (L3)      |
- +-----------+
+ | lab PC    |          |   stand and lockbox (L1)   |          | Locker 4 (L2)  |
+ | guest     |          |  Byte Wall, plaque, ASCII  |          | noticeboard    |
+ | terminal  |          |   chart, paper tape        |          +----------------+
+ | (L3)      |          +-------------+--------------+
+ +-----------+                        | south (open)
+                        +-------------+--------------+
+                        |  LECTURE THEATRE           |
+                        |  Tom Shaw: laptop, FN1-3,  |
+                        |  "Hi" whiteboard           |
+                        +----------------------------+
 ```
 
-Brackets are locks. The corridor, library and workshop are the only rooms you cannot walk into at the start. The corridor is the hub for Acts 2 and 3: the poster, the pigeonholes and the drop box are all there, and the library, Sidhu's office and the workshop open off it.
+Brackets are locks. The corridor, library and workshop are the only rooms you cannot walk into at the start. The corridor is the hub for Acts 2 and 3: the poster, the pigeonholes and the drop box are all there, and the library, Sidhu's office and the workshop open off it. Special Collections is through the library, and the seminar room through Sidhu's office (his door card says "Seminar room through the back"; the corridor directory lists both).
 
 | Room | Door | What matters |
 |---|---|---|
-| Foyer | start | Jordan Pike hands over the leaflet. The lockbox (L1) is on the CryptoSecure stand. Exhibits (Byte Wall, plaque, powers-of-two poster, ASCII chart, paper tape) teach bits and ASCII and are optional. |
-| Teaching lab (west) | open | Tom Shaw gives the laptop and Field Notes 1 to 3. "Your Lab Account" PC holds the student's own RSA key pair. The Keyholder guest terminal (L3) is here. |
-| Common room (east) | open | Candidate Locker 4 (L2). Megan Oyelaran, the noticeboard and Cliffe's laptop are optional. |
-| Corridor (north) | password, L4 | Trial V poster, pigeonholes (L7), drop box with its tag (L8b). Exits to the library, Sidhu's office and the workshop. |
-| Library (corridor, west) | PIN, L5 | Returns Slip, Special Collections safe (L6). |
-| Sidhu's office (corridor, east) | open | Ledger whiteboard (the Vigenère key). Dr Selvarajan and his hashing handout. |
+| Foyer | start | Jordan Pike hands over the leaflet. The lockbox (L1) is on the CryptoSecure stand. Exhibits (Byte Wall, plaque, powers-of-two poster, ASCII chart and paper tape on the display table) teach bits and ASCII and are optional. |
+| Lecture theatre (south) | open | Tom Shaw gives the laptop and Field Notes 1 to 3. His whiteboard shows "Hi" three ways (optional). |
+| Teaching lab (west) | open | "Your Lab Account" PC (aisle end of the front bench) holds the student's own RSA key pair. The Keyholder guest terminal (L3) is the black PC at the aisle end of the back bench. |
+| Common room (east) | open | Candidate Locker 4 (L2), the end locker with a keypad. Megan Oyelaran, the noticeboard and Cliffe's laptop are optional. |
+| Corridor (north) | password, L4 | Trial V poster (on the noticeboard), pigeonholes (L7), drop box with its tag (L8b). Exits to the library, Sidhu's office and the workshop. |
+| Library (corridor, west) | PIN, L5 | Returns Slip, in *The Codebreakers* on the issue desk. |
+| Special Collections (library, north) | open | Special Collections safe (L6), by the door. |
+| Sidhu's office (corridor, east) | open | A desk copy of his hashing handout; his door card. |
+| Seminar room (Sidhu's office, north) | open | Dr Selvarajan and his ledger whiteboard (the Vigenère key). |
 | Workshop (corridor, north) | brass key, L9 | Relay terminal (L10) and the scoreboard. The endgame happens here. |
 
 **The chain at a glance.** Each arrow is "this opens the thing that holds the next clue".
@@ -95,21 +101,21 @@ Brackets are locks. The corridor, library and workshop are the only rooms you ca
 ```
 Jordan -> leaflet --L1--> lockbox -> Trial II card --L2--> Locker 4 -> Trial III card
   --L3--> guest terminal -> trial_iv.hex --L4--> corridor door -> Trial V poster
-  --L5--> library door -> Returns Slip --L6--> safe -> trial_vii.txt
-  + whiteboard key (Sidhu's office) --L7--> pigeonholes (password + hole number + IV)
+  --L5--> library door -> Returns Slip --L6--> safe (Special Collections) -> trial_vii.txt
+  + whiteboard key (seminar room) --L7--> pigeonholes (password + hole number + IV)
   your hole's envelope + lab PC private key --L8a--> AES key
   tag + AES key + IV --L8b--> drop box -> brass key + Final Trial card
   brass key --L9--> workshop --L10 (SHA-256 of the drop box passphrase)--> relay terminal
   -> Ghost's call -> report -> decision -> debrief -> credits
 ```
 
-The library cannot be skipped. The pigeonhole password and the AES IV exist only inside the Vigenère text from the library safe, and the pigeonholes' contents are not sent to the browser until the lock opens. A student who goes straight to the drop box has nothing to decrypt it with.
+The library cannot be skipped. The pigeonhole password and the AES IV exist only inside the Vigenère text from the Special Collections safe, and the pigeonholes' contents are not sent to the browser until the lock opens. A student who goes straight to the drop box has nothing to decrypt it with.
 
 ## Before the first lock
 
 1. **Briefing.** It plays by itself. Agent HaX (the handler, on a phone) sets up the cover: the student is Agent 0x00, going undercover as a first-year to get picked by CryptoSecure Recovery's Keyholder Studentship. It plays over the field HQ (background `hq4`). After HaX's line about Dr Shaw the background turns to the campus (`miskatonic_campus`), and four narrator lines walk the student up to the Computing building ("Miskatonic University. Freshers' week." … "Someone has put a CryptoSecure stand right inside the door."). Then the scene closes in the foyer and the Mission Brief note opens. A student can close it early; nothing later depends on the rest, and HaX can resend the "Comms Discipline" note.
 2. **Jordan Pike (foyer, CryptoSecure stand).** Talking to him puts the Keyholder Leaflet in the notepad. The leaflet is a **notepad page**, not an item on the inventory bar. This is the single most common first-five-minutes stall, because the lockbox wants a word and no numbers are visible in the room. Jordan, HaX's text and the lockbox's own password screen all say to look in the Notepad.
-3. **Tom Shaw (teaching lab).** Talking to him gives the laptop and Field Notes 1 to 3 (bits and bytes, characters are numbers, hex and binary). Tom stands behind a row of desks. The test harness found him hard to reach from the door (walk left, then down, then along); a mouse player clicking a point past the desks should be fine, but watch for a student who stalls here.
+3. **Tom Shaw (lecture theatre, through the foyer's south door).** Talking to him gives the laptop and Field Notes 1 to 3 (bits and bytes, characters are numbers, hex and binary). He stands at the front, by the demonstration bench, in view from the door; walk along the front strip, not into the seat rows (the rows are solid, and only the aisles go between them). His lab account PC and the guest terminal are in the teaching lab, west of the foyer; he says so.
 4. **Optional exhibits.** The Byte Wall (an alarm panel showing lamps for 01001101), the plaque (64 + 8 + 4 + 1 = 77 = "M"), the ASCII chart and the paper tape teach the ideas before the first lock. Strong students skip them. Weak students should not.
 
 ---
@@ -191,10 +197,10 @@ HaX's phone has two helpers for any step: **[I'm stuck.]** gives a three-rung hi
   - Choosing From Hex or From Decimal because those worked before. The letters, digits, plus and slash alphabet is the hint that it is Base64.
 - **Say to a stuck student.** "What characters does it use? Which of the ones you've done uses the whole alphabet and digits? Look at the poster's example: what happens to three letters?"
 
-### L6. Trial VI: the Special Collections safe, library (layers, and Caesar)
+### L6. Trial VI: the Special Collections safe (layers, and Caesar)
 
 - **Clue.** The Returns Slip, on the library's returns shelf. Take it. Seed 42: `WXZraW9nciBJdXJya2l6b3V0eSB5Z2xrIHZneXljdXhqOiB2eG9za3g=`. Its observations say "Shift: the number of this Trial."
-- **Lock.** Password pad on the safe in the library. Five attempts.
+- **Lock.** Password pad on the safe in Special Collections, through the library's north door (it stands by that door). Five attempts.
 - **Idea.** Encodings stack, and you peel the outside layer first. Caesar is the first cipher with a **key**: the shift. It has only 25 possible keys, which is why it is weak.
 - **Recipe.**
   1. Input: the slip text.
@@ -216,7 +222,7 @@ HaX's phone has two helpers for any step: **[I'm stuck.]** gives a three-rung hi
 
 This lock produces three things, not one. Make sure the student writes all three down.
 
-- **Clue (ciphertext).** `trial_vii.txt`, in the library safe. Use its **Copy button**. Its observations say the key is "the last entry in the ledger of the man who checks everything twice". Seed 42 (one example render, each game differs): `Lchtw vg ckkrcajsys awqose hshf. Lqye saxiyccg mf grcprr gq cbie ryozve orm. Gji VJ sqv gvr fvbd oqb vg 5s7c0e56n349qq7fe11r180809196p5r crq hug tvurqrucygw bdrp avhu usehvpk-33`.
+- **Clue (ciphertext).** `trial_vii.txt`, in the Special Collections safe. Use its **Copy button**. Its observations say the key is "the last entry in the ledger of the man who checks everything twice". Seed 42 (one example render, each game differs): `Lchtw vg ckkrcajsys awqose hshf. Lqye saxiyccg mf grcprr gq cbie ryozve orm. Gji VJ sqv gvr fvbd oqb vg 5s7c0e56n349qq7fe11r180809196p5r crq hug tvurqrucygw bdrp avhu usehvpk-33`.
 - **Clue (key).** The ledger whiteboard in **Dr Selvarajan's office** (east of the corridor, open). Examine it. It lists four blocks, one sentence each: "Block 4, the last entry, holds the data "<word>" (prev e21d, hash 51a8)." **The key is block 4's data word.** Seed 42: `nonce`. The key is one of ledger, merkle, nonce, tally, anchor or witness. "The man who checks everything twice" is Dr Selvarajan, who teaches blockchains and hashes. Talking to him is optional (it gives Field Notes 7 and 10), but the whiteboard can be read without speaking to him.
 - **Lock.** Password pad on the pigeonholes in the corridor. Five attempts.
 - **Idea.** Vigenère: the key is a word, so the shift changes letter by letter, and counting by hand stops working. The key travels separately from the message, so someone with the ciphertext alone is stuck.
@@ -368,9 +374,9 @@ Quick students who finish early can do these. Weak students should not be sent t
 
 - **Exhibits.** The Byte Wall, plaque, powers-of-two poster, ASCII chart and paper tape (spells "HI") in the foyer, and Tom's whiteboard ("Hi" in decimal, binary and hex). They teach the ideas the early locks use.
 - **Megan Oyelaran** (common room) and the noticeboard nudge Trial II ("read it as characters"). Megan says what the two wrong routes look like, so a student who talks to her has most of L2 given away.
-- **Dr Selvarajan** gives Field Notes 7 (hashes) and 10 (signatures) in person. A desk copy of the hash handout in his office can be taken without talking to him.
+- **Dr Selvarajan** (seminar room) gives Field Notes 7 (hashes) and 10 (signatures) in person. A desk copy of the hash handout in his office can be taken without talking to him.
 - **Field notes by phone.** HaX offers Notes 4 to 11 as the student meets the topic. `[Send me that field note]` delivers the latest.
-- **The EBCDIC tape** (`job_tape_hex`, in the library safe): **From Hex**, then **Decode text** with encoding **IBM EBCDIC US-Canada (37)**. It teaches that other character tables exist.
+- **The EBCDIC tape** (`job_tape_hex`, in the Special Collections safe): **From Hex**, then **Decode text** with encoding **IBM EBCDIC US-Canada (37)**. It teaches that other character tables exist.
 - **Megan's file** (`candidate_assessments`, in the safe). Reading it opens a hidden side aim, "Loose Threads". The student can warn Megan, ask HaX to protect her, or do nothing. The choice changes Ghost's prices on the call and some debrief and credits lines. It does not change the four endings.
 - **Cliffe Schreuders** is in the common room early, with a laptop, and appears in the workshop later. His lines change after the call and after the decision.
 
@@ -378,7 +384,7 @@ Quick students who finish early can do these. Weak students should not be sent t
 
 ## Time estimate
 
-Target: 60 to 75 minutes, a limit the project owner accepted for this lab. **Estimate: about 76 minutes, in a range of 58 to 94, for a first-year beginner working alone with no hints.** The middle sits at the top of the target. Plan a 90 minute slot, and read the last section of this part before you promise a 60 minute session.
+Target: 60 to 75 minutes, a limit the project owner accepted for this lab. **Estimate: about 80 minutes, in a range of 61 to 100, for a first-year beginner working alone with no hints** (76 before the three new rooms were added; they add about 3 to 6 minutes of walking and looking round). The middle sits above the target. Plan a 90 minute slot, and read the last section of this part before you promise a 60 minute session.
 
 ### What the estimate is built on
 
@@ -387,6 +393,7 @@ I did not have a timed blind run of the second half. The figures are reasoned fr
 1. **The blind run (Trials I to V, no hints).** An agent with no walkthrough took about 12 and a half minutes of wall clock from game start to the library door (05:54:48 to 06:07:25). Per lock: the foyer lockbox took about 4 minutes, but most of that was finding the numbers in the notepad, which the three new pointers now cover. Locker 4 took about 3 minutes, the guest terminal 41 seconds, the corridor door 25 seconds and the library door 30 seconds. The run lost about 2 minutes to the agent's own typo, ran with a load average above 13, and spent 5 to 10 seconds on each CyberChef command. The agent put a player who already knows the controls at 8 to 10 minutes for Trials I to V.
 2. **The earned runs, which are agent runs too.** Briefing to the library door took 11 minutes 42 seconds (P1, fastest honest route under load: briefing 1 minute, exhibits 22 seconds, Jordan 40 seconds, Tom 1 minute 29 seconds, lockbox 1 minute 16 seconds, Locker 4 2 minutes 19 seconds, then 21, 45 and 45 seconds for the next three). The second-half run (P2B, library and Trial VII) took about 9 minutes once a 7-minute harness fault is taken out. The finale run (P3, game 1580: Trial VII to credits, with the report decoded and the hash and signature checked) took 17 minutes 40 seconds.
 3. **Step counts for the later locks**, which nobody timed blind. I counted the discrete actions a student takes (open a file, copy, switch to the laptop, paste, search, add an operation, set a field, read, write down, walk to the next room, type) and priced them.
+4. **A timed walk of the ten-room graph** (game 1606, 2026-10-06, keyless server, test harness at its fast setting, answers typed only to open locks). The walking alone, from the spawn to the relay terminal in play order, took 70 seconds of harness time over 15 legs. The longest leg is Special Collections to the seminar room's whiteboard (four doors, 13.7 s), then the common room to the guest terminal (9.2 s); a one-door hop is 1 to 5 s. The harness moves at full speed in straight lines, so these are lower bounds. A beginner who has to find the door and look round takes the 15 to 30 seconds per hop priced below. The new rooms add six hops to the critical path (three to Special Collections and back, three more on the round trip to Sidhu), which is where the extra minutes come from.
 
 ### Unit times used
 
@@ -411,8 +418,8 @@ The agent's per-step times are close to a human's clicks, so the real difference
 | L3 guest terminal | about 9 | 41 s, 21 s | **2 to 3.5** | Walk to the lab, one known-style operation. |
 | L4 corridor door | about 8 | 25 s, 45 s | **2 to 3** | Same shape as L3. The risk is typing the whole sentence (add a minute). |
 | L5 library door | about 8 | 30 s, 45 s | **2 to 3.5** | Walk to the corridor and take the poster; From Base64. |
-| L6 safe | about 14 | not blind (read the route first); P2B about 45 agent commands | **4 to 7** | Two operations, one setting to change, and the Roman numeral. Walk to the library. |
-| L7 Trial VII and pigeonholes | about 22 | P2B about 130 agent commands | **7 to 12** | Safe contents, Copy, a trip to Sidhu's office, the whiteboard, Vigenère, three values written down, back to the corridor. Add 2 to 3 minutes if they used Add to Notepad. |
+| L6 safe | about 14 | not blind (read the route first); P2B about 45 agent commands | **4.5 to 7.5** | Two operations, one setting to change, and the Roman numeral. Walk to the library, then on to Special Collections. |
+| L7 Trial VII and pigeonholes | about 22 | P2B about 130 agent commands | **8 to 13.5** | Safe contents, Copy, a trip through Sidhu's office to the seminar room, the whiteboard, Vigenère, three values written down, back to the corridor (six hops instead of three). Add 2 to 3 minutes if they used Add to Notepad. |
 | L8a envelope | about 17 | P3 combined | **6 to 9** | Choose a hole, walk to the lab PC (two hops), copy a long PEM, two operations (one new, a long field). |
 | L8b drop box | about 12 | P3 combined | **4 to 7** | One new operation with two hex fields, plus the toggles. |
 | L9 workshop | about 4 | | **1 to 2** | One hop and a key. |
@@ -426,13 +433,14 @@ Optional hash and signature checks add 4 to 8 minutes and are not in the totals.
 
 | Act | Locks | Low | Middle | High | Design budget |
 |---|---|---|---|---|---|
-| Arrival | briefing, foyer, Tom | 9 | 11.5 | 14 | 14 |
+| Arrival | briefing, foyer, Tom (lecture theatre) | 9 | 12 | 14.5 | 14 |
 | Act 1: Bits and Bytes | L1 to L4 | 11 | 14.5 | 18 | 13 |
-| Act 2: Secrets and Keys, first half | L5 to L7 | 13 | 17.5 | 22 | 17 |
+| Act 2: Secrets and Keys, first half | L5 to L7 | 14.5 | 19 | 24.5 | 17 |
 | Act 3: Secrets and Keys, second half, and The Keyholder | L8a to L10 | 14 | 18.5 | 23 | 16 |
 | The Offer: call, report, decision | | 8 | 10 | 12 | 10 |
 | Debrief and credits | | 3 | 4 | 5 | 4 |
-| **Total** | | **58** | **76** | **94** | **74** |
+| First look round the three new rooms (the theatre, Special Collections, the seminar room) | | 1.5 | 2.5 | 3 | |
+| **Total** | | **61** | **80.5** | **100** | **74** |
 
 ("Act" here follows the play, not the in-game aim names. The in-game aims are Freshers' Week, Bits and Bytes, Secrets and Keys, The Keyholder and The Offer.)
 
@@ -444,7 +452,7 @@ Optional hash and signature checks add 4 to 8 minutes and are not in the totals.
 - **Things that add time and are not in the totals.** A HaX hint round trip is about a minute each. A page reload costs 2 to 5 minutes (walk back from the foyer, click through "Continue?", rebuild the recipe). Optional content adds 5 to 15 minutes. A student who loses the IV or key adds 3 to 6.
 - **Things that take time off.** A student who skips the briefing, the exhibits and the optional talks can finish in the high 50s.
 
-**For a 60 minute class.** Most students will not finish. The natural stopping point is the end of Act 2: the pigeonholes open (L7), which is about 35 to 55 minutes in (44 on the middle estimate). They will have met every encoding and Caesar and Vigenère. The remaining half teaches hybrid encryption, AES, hashes and signatures, so the next session should resume the same game. Progress, notes and unlocked rooms survive a reload or a return, but the player's position and the CyberChef recipe do not. **For a 90 minute slot,** nearly everyone finishes with a few minutes spare for the debrief questions.
+**For a 60 minute class.** Most students will not finish. The natural stopping point is the end of Act 2: the pigeonholes open (L7), which is about 37 to 58 minutes in (47 on the middle estimate). They will have met every encoding and Caesar and Vigenère. The remaining half teaches hybrid encryption, AES, hashes and signatures, so the next session should resume the same game. Progress, notes and unlocked rooms survive a reload or a return, but the player's position and the CyberChef recipe do not. **For a 90 minute slot,** most students finish with a few minutes spare for the debrief questions; the slowest (the top of the range, near 100) need the first ten minutes of the next session.
 
 ---
 

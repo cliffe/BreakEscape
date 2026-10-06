@@ -1,0 +1,14 @@
+game            1606  (mission 79)
+created         2026-10-06 09:51:33 UTC
+last write      2026-10-06 09:56:45 UTC
+played for      312s of wall clock
+current room    "foyer"
+unlocked rooms  10: foyer, lecture_theatre, common_room, teaching_lab, corridor, library, special_collections, sidhu_office, seminar_room, workshop
+unlocked objs   8: cryptosecure_lockbox, candidate_locker_4, keyholder_guest_terminal, special_collections_safe, pigeonholes, lab_account_pc, cryptosecure_drop_box, relay_terminal
+inventory       12: Your Phone, Notepad, Comms Discipline, Keyholder Leaflet, Lab Laptop (CyberChef), Field Note 1: Bits, Bytes, Bases, CyberChef, Field Note 2: Characters Are Numbers, Field Note 3: Hex and Binary, Trial II Card, Field Note 7: Hashes, Field Note 10: Signatures, Brass Key
+NPCs met        10: briefing_cutscene, agent_0x99, ghost, closing_debrief_person, jordan_pike, tom_shaw, megan_oyelaran, cliffe_schreuders, sidhu_selvarajan, cliffe_workshop
+flags submitted 0: 
+globals set     25: briefing_played, comms_had, corridor_open, drop_box_open, ending, engine_tutorial_declined, fn04_offered, fn05_offered, fn06_offered, fn07_had, fn08_offered, fn09_offered, fn10_had, ghost_offer_made, guest_terminal_open, library_open, lockbox_open, locker_open, megan_choice, pigeonholes_open, player_name, relay_opened, report_read_claimed, special_collections_open, workshop_open
+
+VERDICT: progress recorded — 9 rooms beyond the first, 8 objects unlocked, 0 flags submitted.
+Cross-check the specifics above against the report.
