@@ -144,6 +144,7 @@ kh_txt[:fn07] = "FIELD NOTE 7: HASHES AND FINGERPRINTS\n\nWHAT IT IS\nA hash tur
 kh_txt[:fn08] = "FIELD NOTE 8: SYMMETRIC ENCRYPTION, AES\n\nWHAT IT IS\nOne shared secret key locks and unlocks. DES used 56-bit keys (2^56 possibilities: now too few). AES uses 128, 192 or 256 bits.\nAES works on 16-byte blocks. CBC mode mixes each block with the one before, and the first block with an IV. An IV needn't be secret, but it has to arrive with the message.\nGetting the key to the other person safely is the key distribution problem.\n\nIN CYBERCHEF\nAES Decrypt: paste the key and the IV (both hex). Leave everything else as it is.\n\nON THE COMMAND LINE\nxxd -r -p ct.hex | openssl enc -d -aes-128-cbc -K <key> -iv <iv>"
 kh_txt[:fn09] = "FIELD NOTE 9: PUBLIC-KEY ENCRYPTION\n\nHandler note: Dr Shaw put your key pair on your lab account. You'll want the private one. - H.\n\nWHAT IT IS\nTwo keys that belong together. The public key can go to anyone. For encryption, it only locks. The private key stays with you and unlocks.\nYour public key sits in a directory, so anyone can send you a secret using a key that was never secret. That answers the key distribution problem.\nReal systems send a fresh AES key this way (hybrid encryption). So does ransomware.\nKeep private keys secret, as with symmetric keys.\n\nIN CYBERCHEF\nFrom Base64, then RSA Decrypt: paste your private key PEM. Leave the rest.\n\nON THE COMMAND LINE\nbase64 -d env.b64 | openssl pkeyutl -decrypt -inkey private.pem -pkeyopt rsa_padding_mode:oaep"
 kh_txt[:fn10] = "FIELD NOTE 10: SIGNATURES\n\nWHAT IT IS\nThe sender signs a hash of the message with their private key. Anyone with their public key can check it. Change one character and the check fails.\nA signature proves which key signed something, and that nothing has changed since. Whose key that is, and what the text claims, are separate questions. It hides nothing, so read what you send. A document can even carry a remote image that reports where it was opened.\nCheck exactly what was signed: if they signed a Base64 file, decode it and you're checking a different message.\nGet the sender's public key from somewhere you trust, and compare its fingerprint.\n\nIN CYBERCHEF\nFrom Base64 on the signature, then RSA Verify:\n - paste the public key;\n - Message = the signed text exactly as given;\n - Message format: leave on Raw;\n - Message Digest Algorithm: SHA-256.\n\"Verified OK\" means it checks out.\n\nON THE COMMAND LINE\nopenssl dgst -sha256 -verify pub.pem -signature sig.bin msg"
+kh_txt[:fn12] = "FIELD NOTE 12: MOJIBAKE\n(from Dr Illiashenko)\n\nWHAT IT IS\nText is stored as bytes, and a character encoding is the table that turns bytes back into letters. UTF-8 stores each Cyrillic letter as two bytes. Read those bytes with a one-byte table such as Windows-1251 (Cyrillic) or Windows-1252 (Western), and every letter turns into two wrong ones. The bytes are fine. Only the table is wrong.\nWorked: the Cyrillic letter \"О\" is the bytes D0 9E in UTF-8. Windows-1251 reads D0 as \"Р\" and 9E as \"ћ\", so \"О\" shows as \"Рћ\".\n\nHOW TO SPOT IT\nText that should read normally but is full of repeating pairs: Р and С in front of nearly every letter (UTF-8 read as Windows-1251), or Ã and Ð (UTF-8 read as Windows-1252).\n\nIN CYBERCHEF\nUndo the wrong reading, then do the right one:\n1. Encode text, Encoding: Windows-1251 Cyrillic (1251). This turns the wrong letters back into the original bytes.\n2. Decode text, Encoding: UTF-8 (65001).\nNo key and no secret: this is an encoding problem, not encryption.\n\nON THE COMMAND LINE\nprintf '%s' 'РћР»РµРі' | iconv -f UTF-8 -t CP1251"
 kh_txt[:fn11] = "FIELD NOTE 11: NOT EVERYTHING IS ASCII\n\nWHAT IT IS\nIBM mainframes used EBCDIC, where \"A\" is 0xC1, not 0x41. Same letters, a different table, so the bytes look like nonsense if you assume ASCII.\n\nIN CYBERCHEF\nFrom Hex, then Decode text (IBM EBCDIC US-Canada (37)).\n\nON THE COMMAND LINE\nxxd -r -p tape.hex | iconv -f IBM037 -t UTF-8"
 kh_txt[:readme] = "README\n\nYour lab account has a key pair: two keys made together.\nA .pem file is the key's bytes in Base64 between two header lines.\nYour public key goes in the department directory, so anyone can use it to send you something. That's the point.\nThe private key stays private. Don't email it to anyone, including me.\n\n- T. Shaw"
 kh_txt[:assessments] = "CANDIDATE ASSESSMENTS (Keyholder Studentship)\n\nC1. Strong on encodings, weak on patience. Retain for now.\nC2. Asked Magic for everything. Release.\nC3. Megan Oyelaran. Overdraft eleven thousand four hundred pounds; mother's care-home fees two months behind. Quick, proud, short of options. Highly retainable.\nC4. Copied C1's answers. Release both.\nC5. Has not yet opened the lockbox. Unlikely.\nC6. Strong, careful, and asks the wrong questions for a student.\nC7. See separate file."
@@ -209,6 +210,7 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
     "megan_choice": "",
     "megan_choice_made": false,
     "ebcdic_seen": false,
+    "staff_list_read": false,
     "fn04_offered": false,
     "fn05_offered": false,
     "fn06_offered": false,
@@ -906,8 +908,39 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
       "type": "room_uni_staff",
       "door_sign": "Computing: Staff Only",
       "connections": { "west": "common_room" },
-      "npcs": [],
-      "objects": []
+      "npcs": [
+        {
+          "id": "oleg_illiashenko",
+          "displayName": "Dr Oleg Illiashenko",
+          "npcType": "person",
+          "position": { "x": 7.31, "y": 7.06 },
+          "spriteSheet": "male_telecom_v2",
+          "spriteTalk": "assets/characters/male_telecom_talk.png",
+          "spriteVisemes": "assets/characters/male_telecom_visemes.png",
+          "avatar": "assets/characters/male_telecom_v2_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/lab_tesseract_trials/ink/npc_oleg.json",
+          "currentKnot": "start",
+          "voice": { "name": "Sadaltager", "style": "Ukrainian computer science lecturer speaking English with a light Russian-speaking Ukrainian accent, consistent throughout. Calm, dry, warm, unhurried, a little wry.", "language": "en-GB" },
+          "itemsHeld": [
+            { "type": "notes", "id": "fn12_mojibake", "name": "Field Note 12: Mojibake", "takeable": true, "readable": true, "text": <%= kh_txt[:fn12].to_json %>, "observations": "Dr Illiashenko's note, written on the back of a staff list." }
+          ]
+        }
+      ],
+      "objects": [
+        <%# Oleg's optional beat. Type photocopier (the base type of the map's photocopier1 prop) matches the map's own photocopier, so the scenario object takes over that prop in place (no new sprite). %>
+        {
+          "type": "photocopier",
+          "id": "staff_photocopier",
+          "name": "Staff Photocopier",
+          "takeable": false,
+          "locked": false,
+          "observations": "The staff photocopier. One job is held, waiting to be printed: a staff list for Dr Illiashenko.",
+          "contents": [
+            { "type": "text_file", "id": "staff_list_txt", "name": "staff_list.txt", "takeable": false, "readable": true, "text": "SCHOOL OF COMPUTING: STAFF LIST\nExported from the new staff system. Held at the printer for: Illiashenko\n\nDr Z. Cliffe Schreuders\nDr Tom Shaw\nDr Sidhu Selvarajan\nDr РћР»РµРі Р†Р»Р»СЏС€РµРЅРєРѕ\n\nIf any name above looks wrong, please contact the system team.", "observations": "The new staff system's export. One name hasn't survived the trip. For anything you paste into CyberChef, use the file's Copy button, not Add to Notepad.", "onRead": { "setVariable": { "staff_list_read": true } } }
+          ]
+        }
+      ]
     }
   }
 }

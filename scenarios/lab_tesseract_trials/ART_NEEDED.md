@@ -11,6 +11,7 @@ Real academics appear with the user's approval (brief). Their likenesses still n
 | Dr Z. Cliffe Schreuders | 8-direction walk sheet (v2, six standard animations), talk portrait, viseme sheet, headshot | `male_nerd_v2` (+ its talk/visemes/headshot) | P1 | Workshop look: sleeves up, a soldering iron or a laptop. Ask the user for a reference photo and how he wants to look. |
 | Dr Tom Shaw | same set | `male_office_worker_v2` | P1 | Approachable lecturer, lanyard. Reference photo from the user. |
 | Dr Sidhu Selvarajan | same set | `male_scientist_v2` | P1 | Office academic, smart casual. Reference photo from the user. |
+| Dr Oleg Illiashenko | same set (8-direction walk sheet, talk portrait, viseme sheet, headshot); portrait art being made separately | `male_telecom_v2` (+ its talk/visemes/headshot): the only unused male v2 sheet with talk and visemes; the hi-vis jacket is a stopgap, not his look | P1 | Real colleague. Office academic. Reference photo from the user. Swap `spriteSheet`, `spriteTalk`, `spriteVisemes` and `avatar` on `oleg_illiashenko` when the art lands. |
 | Jordan Pike | **done (user, 2026-10-06): reuse `male_hacker_hood_down_v2`** (walk, talk, visemes, headshot) | - | - | No new art. |
 | Megan Oyelaran | **done (user, 2026-10-06): reuse `female_hacker_hood_down_v2`** (walk, talk, visemes, headshot) | - | - | No new art. Same outfit family as the player (`female_hacker_hood_v2`, hood up). |
 | Agent HaX | none | `female_spy_v2` (m01/m02) | - | Reuse. |

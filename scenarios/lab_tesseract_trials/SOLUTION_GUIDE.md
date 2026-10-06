@@ -380,6 +380,7 @@ Quick students who finish early can do these. Weak students should not be sent t
 - **The EBCDIC tape** (`job_tape_hex`, in the Special Collections safe): **From Hex**, then **Decode text** with encoding **IBM EBCDIC US-Canada (37)**. It teaches that other character tables exist.
 - **Megan's file** (`candidate_assessments`, in the safe). Reading it opens a hidden side aim, "Loose Threads". The student can warn Megan, ask HaX to protect her, or do nothing. The choice changes Ghost's prices on the call and some debrief and credits lines. It does not change the four endings.
 - **Cliffe Schreuders** is in the common room early, with a laptop, and appears in the workshop later. His lines change after the call and after the decision.
+- **Dr Oleg Illiashenko** (the staff office, through the common room's east door). The new staff system has garbled his name on a staff list held in the photocopier: "РћР»РµРі Р†Р»Р»СЏС€РµРЅРєРѕ". He explains it ("Same bytes, wrong table") and gives Field Note 12. The fix in CyberChef: paste the file (Copy button), then **Encode text** with **Windows-1251 Cyrillic (1251)** and **Decode text** with **UTF-8 (65001)**. The name reads "Олег Ілляшенко". Telling him earns a thank-you; the game takes the student's word, because it can't see CyberChef. It teaches the same idea as the EBCDIC tape: the bytes are fine, and the table you read them with decides what you see. About 5 minutes.
 
 ---
 

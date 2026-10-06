@@ -128,6 +128,10 @@ const qcases = [
   { id: 'Q-tom-terminal', f: 'npc_tom', knot: 'start', g: { locker_open: true }, pre: /Anything else I should know/, choose: /terminal in your lab/, lastLine: 'You first', greet: /Got into that terminal|Owt else/ },
   { id: 'Q-tom-magic-keys', f: 'npc_tom', knot: 'start', g: {}, choose: null, pre: /CyberChef actually do/, lastLine: 'key pair', greet: /Owt else/ },
   { id: 'Q-megan-warn', f: 'npc_megan', knot: 'start', g: { megan_file_read: true, lockbox_open: true }, choose: /Walk away from this/, lastLine: "I'm out", greet: /Binned the leaflet/ },
+  { id: 'Q-oleg-intro', f: 'npc_oleg', knot: 'start', g: {}, choose: null, lastLine: 'covered in marking', greet: /Yes\?|Something else|Still here/ },
+  { id: 'Q-oleg-name', f: 'npc_oleg', knot: 'start', g: {}, choose: /look annoyed/, lastLine: 'nobody has ever been called', greet: /Yes\?|Something else|Still here/ },
+  { id: 'Q-oleg-explain', f: 'npc_oleg', knot: 'start', g: { staff_list_read: true }, choose: /What happened to it/, lastLine: 'I wrote it down', greet: /Yes\?|Something else|Still here/ },
+  { id: 'Q-oleg-fixed', f: 'npc_oleg', knot: 'start', g: { staff_list_read: true }, choose: /I fixed your name/, lastLine: 'works on their machine', greet: /Yes\?|Something else|Still here/ },
   { id: 'Q-cliffe-build', f: 'npc_cliffe', knot: 'common_room', g: {}, choose: /working on/, lastLine: 'closes the lid', greet: /Still here|Yeah\?|Committee/ },
 ];
 for (const k of qcases) {

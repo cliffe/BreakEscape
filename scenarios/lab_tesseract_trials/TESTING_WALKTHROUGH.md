@@ -210,6 +210,15 @@ After step 24: `decision_made` true, `ending` one of `sent`, `double`, `refused`
 - **Megan side aim (`loose_threads`, hidden until `megan_file_read`):** read `candidate_assessments` (Special Collections safe; `onRead` sets `megan_file_read`, HaX's mapping then unlocks the aim and Ghost texts "Candidate 7…"). Then one of: tell her (`[CryptoSecure isn't what it looks like. Walk away from this.]` to `megan_oyelaran`, `megan_choice` = `warned`); ask HaX (`[Megan Oyelaran is on their list. Can we help her?]`, `protected`); or do nothing (`""`). Any choice sets `megan_choice_made` and completes `decide_about_megan`. Ghost's call and the debrief change with the choice.
 - **Cliffe's build:** `cliffe_build_screen` in the workshop has three description variants (default, after `ghost_offer_made`, after `decision_made`). `cliffe_workshop` between the call and the decision: "Scoreboard's been quiet today. Takes flags from anyone."
 - **Debrief questions:** "Who is Dr Schreuders?" / "Was Ghost really reading my phone?".
+- **Staff office (common room east door) — Dr Oleg Illiashenko (`oleg_illiashenko`):**
+  - Interact with the door first if it doesn't open by walking into it. In harness runs it crossed only near the top of the door row (y ≈ 46).
+  - Talk to him: `[You look annoyed. Is something wrong?]` points at the photocopier. His other topics are CryptoSecure, the colleagues and "Busy week?".
+  - Open `staff_photocopier` → `staff_list.txt`. `onRead` sets `staff_list_read`. Copy with the viewer's Copy button.
+  - Back with him: `[Your name on that staff list. What happened to it?]` → "Same bytes, wrong table…" and `fn12_mojibake` in the notepad.
+  - In CyberChef, paste the whole file and run **Encode text** (Windows-1251 Cyrillic (1251)), then **Decode text** (UTF-8 (65001)). The name line reads "Dr Олег Ілляшенко". The rest of the file is ASCII and comes through unchanged.
+  - CyberChef's Input pane may show the pasted text in "Raw Bytes" display mode, so the garbled line looks different there; the Output is right.
+  - `[I fixed your name. It reads properly in CyberChef now.]` → "Show me." … "They'll tell me it works on their machine." It's a conversation claim: the game can't check CyberChef.
+  - No greeting reprints after any topic (`quiet`).
 
 ### Edge Cases
 - **Container text when open (fix round 2):** the lockbox, safe, pigeonholes and drop box now have one description that reads true both locked and open ("…with a password pad"). The password and container minigames both show the raw `observations`; only the world examine honours `observationVariants` (engine), so a locked/open variant isn't possible from the scenario.

@@ -56,6 +56,7 @@ Accents come through word choice and rhythm only, never phonetic spelling. Every
 | **Dr Tom Shaw** | `tom_shaw`, lecture theatre (his lab account PCs are in the teaching lab), `ink/npc_tom.ink` | Helper. Runs the first-year induction. Gives the CyberChef lab laptop and the induction handouts (FN1-FN3), sets up the player's lab key pair, teaches bases on his chalkboard. **His beats:** the pop-out tab and notepad-pencil lines; the Magic line ("It'll do the first few for you. It'll do nowt once there's a key. That's the bit they're paying for."); the tracking-pixel line about CryptoSecure's mailer; and his reaction to the Keyholder terminal in his own lab ("Someone's put a terminal in my lab I never ordered. Half a mind to break into it myself. Go on then, you first."). | Huddersfield through word choice: "right then", "owt"/"nowt", "it's not rocket science, it's base two", "go on then". Warm and practical, keen on breaking things to see how they work. Voice Fenrir, "consistent West Yorkshire (Huddersfield) accent throughout, warm, encouraging, quick". | How to use CyberChef. That CryptoSecure's stand turned up this year without going through the department, and that nobody ordered the guest terminal in his lab; he says both. How tracking pixels work. | Students who learn by doing. On the player's side, and mildly, practically suspicious of CryptoSecure. |
 | **Dr Sidhu Selvarajan** | `sidhu_selvarajan`, the seminar room through his office off the corridor, `ink/npc_sidhu.ink` | Helper. Hashing, integrity, signatures. His whiteboard is a toy hash-chain ledger from his blockchain lecture, and holds the Vigenère key. Hands over FN7 and FN10, and with FN10 plants his scene: "If anyone hands you something signed, bring it to me. I like to watch a signature check out." **His beat:** when the player brings him the report after the relay terminal opens (also pointed at by `report.sig`'s observations): "It verifies. That tells you who wrote it, and that nobody has changed it. It does not tell you whether you should send it." | Indian English through rhythm and register, respectful: precise, courteous, an editor's ear ("Let us be exact about this."), small concrete examples. The stock markers "see," as an opener and "isn't it?" as a tag are **not** used unless the user approves them in the voice sample (Q11). Voice Enceladus, "consistent Indian English accent throughout, calm, precise, warm". | Hashes, chains, signatures. Has noticed CryptoSecure's leaflet asks students to "verify everything", and approves. | That the player checks what they're given. Firmly on the player's side. |
 | **Jordan Pike** | `jordan_pike`, foyer stand, `ink/npc_jordan.ink` | The only ENTROPY presence in person, and a small one: CryptoSecure campus ambassador, third-year, an earlier Keyholder. Hands out the leaflet. | Salesy student rep: "honestly", "no pressure", "it's literally free money", talks fast, laughs at his own lines. Voice Puck, "consistent Estuary English accent throughout, upbeat, fast". | That CryptoSecure pays well and asks odd questions. Suspects more and chooses not to look. | His referral bonus. |
+| **Dr Oleg Illiashenko** | `oleg_illiashenko`, staff office (optional, off the common room's east door), `ink/npc_oleg.ink` | Real colleague of the user. Optional helper with one small teaching beat. **His beat:** the new staff system has turned his name into mojibake: "Олег Ілляшенко" stored as UTF-8 and read as Windows-1251, "РћР»РµРі Р†Р»Р»СЏС€РµРЅРєРѕ". It sits in `staff_list.txt`, a held print job in the staff photocopier (`staff_photocopier`, which takes over the map's photocopier in place). He explains "Same bytes, wrong table" and hands over FN12. The player can fix it in CyberChef (Encode text, Windows-1251 Cyrillic (1251), then Decode text, UTF-8 (65001)) and tell him. The game can't see CyberChef's output, so the payoff is a conversation claim, offered once `staff_list_read` is set by reading the file. No lock, no quiz. | A Russian-speaking Ukrainian academic, speaking English throughout. His voice comes through dry understatement and rhythm only: no phonetic spelling, no broken English, no stereotypes, nothing political, no Russian or Ukrainian lines (his name in Cyrillic appears only as text). He doesn't state his teaching subject (real-colleague rule). Voice Sadaltager, "Ukrainian computer science lecturer speaking English with a light Russian-speaking Ukrainian accent, consistent throughout. Calm, dry, warm, unhurried, a little wry." | Encodings, the new staff system, his colleagues (one kind line each on Tom, Sidhu and Cliffe). Sceptical of CryptoSecure. | His name spelled right, for once. |
 | **Megan Oyelaran** | `megan_oyelaran`, common room, `ink/npc_megan.ink` | Fellow first-year chasing the studentship, and the mid-mission moral choice (section 8). Teaches by example: she's stuck on Trial II because she typed the run-together digits straight in. | Bright, skint, competitive, Mancunian through word choice ("our mam", "proper", "dead good"). Voice Leda, "consistent Manchester accent throughout, quick, wry". | Her debts. Nothing about ENTROPY. | The money. Her mum's care fees. |
 | **Narrator** | top-level `narrator` | Stage directions in cutscenes. | Voice Algenib, as m01. | | |
 
@@ -100,7 +101,7 @@ Grid positions (GU, from the BFS in `core/rooms.js`): foyer (0,0) 2x2; lab (-2,0
 | `sidhu_office` | `room_uni_office` | open | A desk copy of his hashing handout; his door card points to the seminar room. |
 | `seminar_room` | `room_uni_seminar` | open | Sidhu; ledger whiteboard (Vigenère key). |
 | `workshop` | `room_uni_workshop` | key (L9, brass key) | Cliffe's build. Relay terminal (L10). Hacktivity scoreboard (the fallback channel). Climax. |
-| `staff_office` | `room_uni_staff` | open | Optional side room off the common room's east door, off the critical path. Open-plan staff office; Dr Oleg Illiashenko's desk, with standing spots for more staff later (`ROOMS_PLAN.md` section 13). No objects yet. |
+| `staff_office` | `room_uni_staff` | open | Optional side room off the common room's east door, off the critical path. Open-plan staff office; Dr Oleg Illiashenko (`oleg_illiashenko`) stands at his desk spot (7.31, 7.06). `staff_photocopier` is the map's own photocopier (type `photocopier`, the base type of `photocopier1`, so it claims the prop in place) and holds `staff_list.txt`. The spare staff slots stay empty (`ROOMS_PLAN.md` section 13). |
 
 ### Objects by room
 
@@ -433,6 +434,7 @@ HaX's pattern (m01/m02, scaled down so the hub stays small):
 | `fn09_public_key` | Public-key encryption | HaX; pigeonholes opened. Handler note: "Dr Shaw put your key pair on your lab account. You'll want the private one." (R2B-m8) | Two keys that belong together. The public key can go to anyone and only locks; the private key stays with you and unlocks. Your public key sits in a directory so anyone can send you a secret, using a key that was never secret: that answers key distribution. Real systems send a fresh AES key this way (hybrid encryption), and so does ransomware. Keep private keys secret, as with symmetric keys. CyberChef: **From Base64** then **RSA Decrypt**: paste your private key PEM; leave the rest. CLI: `base64 -d env.b64 \| openssl pkeyutl -decrypt -inkey private.pem -pkeyopt rsa_padding_mode:oaep`. |
 | `fn10_signatures` | Signatures | Sidhu; HaX (`fn10_hax`) when the relay terminal opens, if not had | The sender **signs** a hash of the message with their private key; anyone with their public key can check it. One character changed and the check fails. A signature proves who sent it and that nothing changed; **it hides nothing, so read what you send.** A document can even carry a remote image that reports where it was opened. Check exactly what was signed: if they signed the Base64 file, decode it and you're checking a different message. CyberChef: **From Base64** on the signature, then **RSA Verify**: paste the public key; Message = the signed text exactly as given; **Message format: leave on Raw**; Message Digest Algorithm **SHA-256**. "Verified OK" means it checks out. CLI: `openssl dgst -sha256 -verify pub.pem -signature sig.bin msg`. |
 | `fn11_text_encodings` | Not everything is ASCII (optional) | HaX; job tape read (`ebcdic_seen`) | IBM mainframes used EBCDIC, where "A" is 0xC1, not 0x41. Same letters, a different table. CyberChef: **From Hex** then **Decode text** (IBM EBCDIC US-Canada (37)). CLI: `xxd -r -p tape.hex \| iconv -f IBM037 -t UTF-8`. |
+| `fn12_mojibake` | Mojibake (optional) | Dr Illiashenko, in person, when asked what happened to his name (after `staff_list_read`) | UTF-8 stores a Cyrillic letter as two bytes; read with a one-byte table (Windows-1251 or 1252) each letter becomes two wrong ones. The bytes are fine; only the table is wrong. Worked: "О" = D0 9E, read in 1251 as "Рћ". In CyberChef: Encode text (Windows-1251 Cyrillic (1251)), then Decode text (UTF-8 (65001)). CLI: `iconv -f UTF-8 -t CP1251`. |
 
 Lab-sheet errors not repeated: the Base64 alphabet is A-Z, a-z, 0-9, + and / (not "a-Z"); DES's keyspace is 2^56 (not 256); private keys are kept secret "as with symmetric keys".
 
@@ -1444,3 +1446,56 @@ The `Background[...]:` line has no text after its colon, so the TTS batch skips 
 **Browser** (:3001, game 1599, lock answers typed from the database to reach Sidhu):
 - Tom: "What's CyberChef actually do?" plays the two Magic lines, then the key-pair line once. "Walk me through the board?" plays three lines, and the choices follow with no "Owt else?" (`dr2-tom-after-board.png`, `dr2-tom.txt`). Reopening greets with "Owt else?" (`dr2-tom-reopen.txt`).
 - Sidhu: the introduction runs straight into the choices. The ledger and the new hash answer each end on their last line, with no "What can I do for you?" (`dr2-sidhu-after-ledger.png`, `dr2-sidhu-after-hash.png`, `dr2-sidhu.txt`). Reopening greets with "What can I do for you?" (`dr2-sidhu-reopen.png`).
+
+### Oleg round (Dr Oleg Illiashenko, staff office)
+
+| Item | What and why |
+|---|---|
+| NPC | `oleg_illiashenko` in `staff_office` at (7.31, 7.06), the slot `ROOMS_PLAN.md` §13 reserves for him. The spare slots stay empty. Ink `npc_oleg.ink`: start, a hub with `quiet` (hub_quiet), topics `name`, `explain` (gives FN12), `fixed`, `cryptosecure`, `colleagues` and `week`, and an exit. |
+| Voice | Sadaltager (not used anywhere else in this lab): "Ukrainian computer science lecturer speaking English with a light Russian-speaking Ukrainian accent, consistent throughout. Calm, dry, warm, unhurried, a little wry." |
+| Sprite | `male_telecom_v2`, as a placeholder. No other NPC in this lab uses it, and of the male v2 sheets with talk and visemes the only other unused ones are `male_security_guard_v2` (a uniform) and `male_spy_v2` (a trench coat and fedora that would read as a spy next to HaX). ART_NEEDED has his row. |
+| Encoding | Windows-1251, not the proposed Windows-1252. In UTF-8, "я" is D1 8F. Byte 0x8F is undefined in Windows-1252, so the 1252 mojibake can't round-trip: in the bundled CyberChef 10.19.4, Encode text (1252) then Decode text (UTF-8) gives "Олег Іллршенко". Windows-1251 defines every byte in the name, and the recipe gives "Олег Ілляшенко" exactly. UTF-8 read as 1251 ("РћР»РµРі…") is also the mojibake a Russian or Ukrainian speaker actually meets, which suits his "it happens to me all the time". Evidence: `build_evidence/oleg/recipe_verification.txt` and `oleg_check.mjs`. |
+| File | `staff_list.txt` in `staff_photocopier`, a held print job. The type is `photocopier`, the base type of the map's `photocopier1` prop, so the scenario object claims that prop in place. A first attempt with type `photocopier1` added a second photocopier by the door. Copy button; observations say to use it. `onRead` sets the new global `staff_list_read` (declared in `globalVariables`, the ink and the missions.json block). |
+| "Fixed" | The game can't read CyberChef's output, so the payoff is a conversation claim. `[I fixed your name…]` is offered once the file has been read. |
+| Not built | Objectives: none, so it stays fully optional. No timed texts. |
+
+**Spoken lines added** (Dr Oleg Illiashenko, Sadaltager; 19 strings, the three greeting alternatives counted separately; plus 1 narrator line):
+1. "The sign on that door says staff only. You read it and came in anyway. That's a good instinct for this department."
+2. "Oleg Illiashenko. I'm one of the lecturers here. Sit anywhere that isn't covered in marking."
+3. "Yes?" / 4. "Something else?" / 5. "Still here? Good." (greeting cycle)
+6. "Close the door properly on your way out. It sticks."
+7. "Only the usual. The new staff system has made soup of my name again."
+8. "It's waiting in the photocopier, if the photocopier will give it back. My name, in letters nobody has ever been called."
+9. "Same bytes, wrong table. My name is saved as UTF-8, two bytes for every Cyrillic letter."
+10. "Then some program reads those bytes with a one-byte table, Windows-1251, and every letter becomes two wrong ones."
+11. "Nothing is lost. You only have to read the bytes the way they were written. Here, I wrote it down. Again."
+12. "Show me."
+13. Narrator: "He reads it off your screen and, for once today, smiles at a computer."
+14. "There it is. Thank you. I'll send your recipe to the people who built the system."
+15. "They'll tell me it works on their machine."
+16. "A recovery company that recruits first-years with puzzles. I have seen better business models. Not many more interesting ones."
+17. "If they offer you money for your password, the answer is no. If they offer you money for theirs, also no."
+18. "Tom has three hundred first-years this week and still remembers their names. I don't know how. I suspect a spreadsheet."
+19. "Sidhu checks everything twice, which is why I give him my exam papers to check once."
+20. "Cliffe I mostly see in corridors, walking quickly away from a committee."
+21. "Freshers' week. Lost students, free pizza, and one laptop that won't join the Wi-Fi."
+22. "This time the laptop is mine. Please don't tell my students."
+
+(Lines 3-5 are one `{&…}` cycle, so 21 distinct Oleg strings plus 1 narrator line in the TTS batch.)
+
+**Checks** (`build_evidence/oleg/`):
+- tagdiff: before, the ink matched HEAD; after, the only difference is the added file `npc_oleg.ink` (60 items, all new). No existing ink changed.
+- Ink compile 10/10. Validator 0 errors, 8 warnings, all the known deliberate ones. dialoguelint: none, after rewording "Not wrong. Familiar.", which the not-x-but-y rule flagged.
+- inkcheck 12/12 (adds Oleg). loopcheck 50/50 (adds Oleg at start, with the file read, and at the hub).
+- reopencheck: 0 problems. kstates 58/58: new Q-oleg-intro, Q-oleg-name, Q-oleg-explain and Q-oleg-fixed, each checking that no greeting follows the topic's last line and that a reopen still greets.
+- Door alignment 10/10.
+- Rendered seeds 23, 616 and 4242: both verifiers ALL PASS, and each seed's rendered staff list decodes with the 1251 recipe.
+
+**Browser** (:3001, game 1610):
+- The staff office shows one photocopier, the map's own, carrying `staff_photocopier`. Oleg is at his spot (`oleg-01-office.png`).
+- The first conversation runs the intro and all four topics with no greeting reprinted (`oleg-talk1.txt`, `oleg-talk1-*.png`).
+- In the photocopier, `staff_list.txt` opens, and its Copy button copied the whole file with the garbled line (`oleg-02-staff-list.png`). `staff_list_read` became true.
+- He explains and gives FN12, which arrives in the notepad (`oleg-03-after-explain.png`).
+- The in-game CyberChef with Encode text (Windows-1251 Cyrillic (1251)) then Decode text (UTF-8 (65001)) outputs "Dr Олег Ілляшенко" (`oleg-04-cyberchef-fixed.png`).
+- The payoff beat plays (`oleg-05-after-fixed.png`, `oleg-talk3.txt`).
+- Finding for the rooms owner: in harness runs, the common room's east door to the staff office let the player through only near the top of the door row (y ≈ 46) after the door had been interacted with. A row at y 64-96 stayed blocked. A mouse click into the room works after the door is open.
