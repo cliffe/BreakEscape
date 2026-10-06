@@ -1,0 +1,20 @@
+PASS L1 leaflet text is codes only -> '111 114 99 104 97 114 100'
+PASS L1 decimal -> 'orchard'
+PASS L2 pairs -> '1860'
+PASS L3 binary -> 'lantana'
+PASS L4 hex -> 'corridor door passphrase: cupola'
+PASS L5 base64 -> '6191'
+PASS L6 base64+caesar6 -> 'Special Collections safe password: primer'
+PASS L7 vigenere -> 'The pigeonholes open with sorting-33. Yours is number four. Your envelope is se
+PASS L7 IV and pigeonhole password -> ('d13d0da3fc2ec7fcb01418ed86c23d83', 'sorting-33')
+PASS L8a openssl RSA-OAEP decrypt -> '51d776b37e2d3583b792c48925d1433b'
+PASS L8b openssl AES-128-CBC -> 'padlock-92'
+PASS L10 openssl sha256[0:8] -> '8841f594'
+PASS Report base64 has token in a locate pixel URL -> 'merlin-2685'
+PASS Report sha256 -> '19e4976ec027a47a09795c8ca18f83714c2aad01fc88260f9788184f3957f19e'
+PASS Report openssl signature -> 'Verified OK'
+PASS Leaflet fingerprint -> '5fb0a36ac2315696'
+PASS EBCDIC cp037 -> 'MISKATONIC UNIVERSITY COMPUTING SERVICE 1979. JOB 0412 OWNER [REDACTED]. PROJEC
+PASS Poster example Hi! -> SGkh -> 'SGkh'
+PASS all typed answers <= 50 chars and lower case -> ['orchard', '1860', 'lantana', 'cupola', '6191', 'primer', 'sorting-33', 'padloc
+ALL PASS

@@ -1,0 +1,35 @@
+# The Tesseract Trials: decisions log
+
+Each line gives a decision, its reason and who made it. The user can overrule any orchestrator decision.
+
+## User decisions (2026-10-05/06)
+
+- Undercover-student double-agent premise; Miskatonic University UK; HaX gives field notes and hints.
+- No VMs; all challenges solvable in CyberChef; secrets embedded in the scenario.
+- No quizzes. No new engine functionality; a new minigame only if fully specified.
+- Climax: ENTROPY says you passed, knows SAFETYNET sent you, and asks you to turn; signed beacon report; three endings.
+- Real academics appear: Cliffe (Australian, leader/story NPC, building something, knows the player is an agent), Tom Shaw (Huddersfield, helpful, gives something physical), Sidhu Selvarajan (Indian, helpful, blockchain).
+- (2026-10-06) Recruiter is Ghost, on screen not in person; "Tesseract" is taken by canon (Dr Adrian Tesseract), so the studentship and cell change. Cell: Ransomware Inc. (Ghost's own, and the cell that weaponises encryption). Set after m02 so Ghost already knows 0x00 (orchestrator, following the user's suggestion).
+- (2026-10-06) No assumed knowledge: the game teaches bits, bytes, bases, character encoding and ASCII from scratch before any decoding.
+- Use the story_dev_prompts stages and the review skills in an iterative loop; build a working, fun scenario.
+
+## Orchestrator decisions
+
+- New folder `lab_tesseract_trials` rather than rebuilding `lab_encoding_encryption` in place: the old one is wired to the SecGen VM lab (`mission.json` `secgen_scenario`, `collection: vm_labs`), and removing the VM would break it for Hacktivity users.
+- No art generation without the user's go-ahead; placeholders in the meantime.
+- (2026-10-06) Design v1 accepted for review (DESIGN.md). Defaults taken from its section 11: studentship and trail named "Keyholder"; Ghost's contact shows "Keyholder" until the video reveal; Cliffe is building a live map of the building; student NPC Megan Oyelaran, ENTROPY's in-person presence a third-year, Jordan Pike; double-agent route = enter the beacon token on Cliffe's Hacktivity scoreboard PC; in the betrayal ending nobody is hurt (HaX is relocated); field notes are in-game notes only; collection `escape_room`; ECB image and EBCDIC tape optional. Reason: sensible defaults, all open to review.
+- (2026-10-06) Orchestrator re-ran the generator and the independent verifier on seed 7: all pass.
+- (2026-10-06, user) D1: approved a small engine change so CyberChef keeps its state when the laptop closes (hide, don't clear the iframe), plus Tom mentions the pop-out tab.
+- (2026-10-06) Review round 1 resolutions (orchestrator):
+  - Both reviewers found L6-L7 and Sidhu skippable (A-M1, B-M1). Fix: the pigeonholes get a password that is only in the Vigenère plaintext, and the AES IV moves into Trial VII. The designer picks the exact gating.
+  - Keep L3 (binary) despite B-M4's suggestion to cut it, because the user stressed teaching the basics; defer any cuts to the first timed blind playtest.
+  - "Keyholder" is the device's contact name all game; Ghost names themselves in the video call (A-M6, since the engine can't rename a contact).
+  - In the double-agent ending HaX's texts match the betrayal ending, and the truth comes in the debrief (A-M2).
+  - Probe workarounds become design rules: `"locked": false` on every unlocked container; no `currentKnot`/`targetKnot` on the Keyholder phone; password answers 50 characters or fewer; no terminal lines starting with `>`.
+- (2026-10-06) D1 implemented (uncommitted): `crypto-workstation.js` loads CyberChef once and only hides it on close; the new-tab button carries the live recipe/input hash over. New `test/js/crypto-workstation-persist.test.mjs` (3/3); node suite 316/316. Browser: probe game 1571 and m01 game 1572 keep the recipe and input across close/reopen. Orchestrator check: the bundled CyberChef bakes headless on :3001 (From Base64 gives "hello world"; AES Decrypt with the wrong key gives the expected error), so the fixer's "empty output" was its typed input not landing, not a fault. The Rails suite was not run (JS-only change).
+- (2026-10-06) DESIGN v2 accepted for round 2. Orchestrator spot-check: pigeonholes password-locked (DESIGN:108,192), report split (DESIGN:129-131), changes table covers 48 findings, seed 4242 passes the independent verifier.
+- (2026-10-06, user) D2: fix the unlock hole: the server must reject an unlock method that doesn't match the lock's lockType, for objects and doors. Engine fixer (Opus) running.
+- (2026-10-06, user) D3: 60-75 minutes is acceptable; keep all locks; a timed blind playtest decides any cuts, in the logged order.
+- (2026-10-06) DESIGN v3 accepted for round 3 (seeds 1-120 pass; budget ~74 min). The designer chose to price each route in Ghost's offer (lever 2) to make the choice hard, and rejected hinting that the scoreboard is unsafe, because that would scare players off the best ending.
+- (2026-10-06) Round 3: ready to build with small fixes (REVIEW_R3.md; no blockers or majors). R3-1 to R3-4 go into the design before the build; the rest during it. Builder = the designer (holds the context).
+- (2026-10-06, user) Commit as each pass completes (the container can reset). Design pass and CyberChef engine change (062953fa) committed.

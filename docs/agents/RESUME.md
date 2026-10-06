@@ -1,3 +1,9 @@
+# Resume note — The Tesseract Trials (lab_tesseract_trials), started 2026-10-06
+
+Brief: `docs/agents/TESSERACT_TRIALS_BRIEF.md`. Log: `scenarios/lab_tesseract_trials/DECISIONS_LOG.md`.
+Loop: design (Opus, DESIGN.md) → 3 adversarial review rounds (alignment + design-review lenses) → implement → puzzle-chains + dialogue reviews → Sonnet playtests → fix until clean.
+Status: design review done (R3 ready with small fixes). Running: D2 engine fixer; BUILD (designer) incl. R3 fixes and first-run probes. Next: implementation review (fresh Opus), puzzle-chains + npc-dialog reviews, Sonnet playtests, fix loop.
+
 # Resume note — pass 4 (editorial, m02–m08)
 
 Updated 2026-10-02. Brief: `docs/agents/PASS4_BRIEF.md`. Log: `scenarios/PASS4_EDITORIAL_LOG.md`.
