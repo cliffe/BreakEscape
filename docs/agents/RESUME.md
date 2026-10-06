@@ -2,7 +2,7 @@
 
 Brief: `docs/agents/TESSERACT_TRIALS_BRIEF.md`. Log: `scenarios/lab_tesseract_trials/DECISIONS_LOG.md`.
 Loop: design (Opus, DESIGN.md) → 3 adversarial review rounds (alignment + design-review lenses) → implement → puzzle-chains + dialogue reviews → Sonnet playtests → fix until clean.
-Status: rooms plan complete (phase 4: 0380636c, 641369ab). Running: final end-to-end Opus playtest (PLAYTEST_FINAL.md, double-agent ending, earned). Then: fix anything it finds; audio needs the user (Schreuders lines first); character art for Cliffe/Tom/Sidhu needs photos and consent; engine items E1-E8 deferred.
+Status: staff office committed (1dbbc1af, ca6cb491). Portraits approved and committed. Running: story builder adding Oleg (ink, mojibake beat); art agent running the PixelLab pipeline for the four academics; final end-to-end playtest (may have finished). Then: wire the art into the scenario, check in game, commit.
 
 # Resume note — pass 4 (editorial, m02–m08)
 
