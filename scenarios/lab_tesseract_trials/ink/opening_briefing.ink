@@ -58,7 +58,7 @@ Agent HaX: One more name. Dr Cliffe Schreuders. Builds Hacktivity. He'll know wh
 
 === deploy ===
 Agent HaX: Every Trial opens with something you decode. You'll do it in CyberChef.
-Agent HaX: Get a lab laptop from Dr Shaw in the teaching lab, west of the foyer. Then go and be found.
+Agent HaX: Get a lab laptop from Dr Shaw in the lecture theatre, south of the foyer. Then go and be found.
 -> campus
 
 === campus ===

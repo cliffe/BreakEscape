@@ -130,7 +130,7 @@ kh_ebcdic = "MISKATONIC UNIVERSITY COMPUTING SERVICE 1979. JOB 0412 OWNER [REDAC
 
 # --- Static texts (field notes and documents). No per-game values in here. ---
 kh_txt = {}
-kh_txt[:brief] = "Freshers' week at Miskatonic University UK. CryptoSecure Recovery, the front for Ransomware Incorporated, is talent-spotting first-years through a puzzle trail called the Keyholder Trials. You're undercover as a student. Get picked. Every Trial opens with something you decode in CyberChef: get a lab laptop from Dr Shaw in the teaching lab first. If your phone is ever compromised, submit what HaX most needs to know as a flag on a Hacktivity terminal (lower case, exactly as found); the one in this building is in Dr Schreuders' workshop."
+kh_txt[:brief] = "Freshers' week at Miskatonic University UK. CryptoSecure Recovery, the front for Ransomware Incorporated, is talent-spotting first-years through a puzzle trail called the Keyholder Trials. You're undercover as a student. Get picked. Every Trial opens with something you decode in CyberChef: get a lab laptop from Dr Shaw in the lecture theatre first. If your phone is ever compromised, submit what HaX most needs to know as a flag on a Hacktivity terminal (lower case, exactly as found); the one in this building is in Dr Schreuders' workshop."
 kh_txt[:comms] = "COMMS DISCIPLINE\n\nIf you think your handset is compromised, don't message me.\n\nSubmit what I most need to know as a flag on any Hacktivity terminal. It reaches me and nobody else.\n\nFlags are lower case, exactly as you find them: usually a word, a dash and some digits.\n\nThe only Hacktivity terminal in that building is in Dr Schreuders' workshop.\n\n- H."
 kh_txt[:ascii] = "ASCII CHART (printable characters)\n\nDec Hex Char | Dec Hex Char | Dec Hex Char\n 32  20 space|  64  40 @    |  96  60 `\n 33  21 !    |  65  41 A    |  97  61 a\n 34  22 \"    |  66  42 B    |  98  62 b\n 35  23 #    |  67  43 C    |  99  63 c\n 36  24 $    |  68  44 D    | 100  64 d\n 37  25 %    |  69  45 E    | 101  65 e\n 38  26 &    |  70  46 F    | 102  66 f\n 39  27 '    |  71  47 G    | 103  67 g\n 40  28 (    |  72  48 H    | 104  68 h\n 41  29 )    |  73  49 I    | 105  69 i\n 42  2A *    |  74  4A J    | 106  6A j\n 43  2B +    |  75  4B K    | 107  6B k\n 44  2C ,    |  76  4C L    | 108  6C l\n 45  2D -    |  77  4D M    | 109  6D m\n 46  2E .    |  78  4E N    | 110  6E n\n 47  2F /    |  79  4F O    | 111  6F o\n 48  30 0    |  80  50 P    | 112  70 p\n 49  31 1    |  81  51 Q    | 113  71 q\n 50  32 2    |  82  52 R    | 114  72 r\n 51  33 3    |  83  53 S    | 115  73 s\n 52  34 4    |  84  54 T    | 116  74 t\n 53  35 5    |  85  55 U    | 117  75 u\n 54  36 6    |  86  56 V    | 118  76 v\n 55  37 7    |  87  57 W    | 119  77 w\n 56  38 8    |  88  58 X    | 120  78 x\n 57  39 9    |  89  59 Y    | 121  79 y\n 58  3A :    |  90  5A Z    | 122  7A z\n 59  3B ;    |  91  5B [    | 123  7B {\n 60  3C <    |  92  5C \\    | 124  7C |\n 61  3D =    |  93  5D ]    | 125  7D }\n 62  3E >    |  94  5E ^    | 126  7E ~\n 63  3F ?    |  95  5F _    |"
 kh_txt[:tape] = "PUNCHED PAPER TAPE, 1979\n\n  ○ ● ○ ○ ● ○ ○ ○\n  ○ ● ○ ○ ● ○ ○ ●\n\nEach row across the tape is one byte: a hole (●) is a 1, no hole (○) is a 0.\nRow 1: 01001000 = 64 + 8 = 72 = H\nRow 2: 01001001 = 64 + 8 + 1 = 73 = I"
@@ -369,7 +369,7 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
     "foyer": {
       "type": "room_uni_foyer",
       "door_sign": "Computing Building Foyer",
-      "connections": { "north": "corridor", "west": "teaching_lab", "east": "common_room" },
+      "connections": { "north": "corridor", "west": "teaching_lab", "east": "common_room", "south": "lecture_theatre" },
       "npcs": [
         {
           "id": "briefing_cutscene",
@@ -567,30 +567,7 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
       "type": "room_uni_lab",
       "door_sign": "Teaching Lab 1",
       "connections": { "east": "foyer" },
-      "npcs": [
-        {
-          "id": "tom_shaw",
-          "displayName": "Dr Tom Shaw",
-          "npcType": "person",
-          "position": { "x": 7.6, "y": 2.9 },
-          "spriteSheet": "male_office_worker_v2",
-          "spriteTalk": "assets/characters/male_office_worker_talk.png",
-          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
-          "avatar": "assets/characters/male_office_worker_v2_headshot.png",
-          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
-          "storyPath": "scenarios/lab_tesseract_trials/ink/npc_tom.json",
-          "currentKnot": "start",
-          "voice": { "name": "Fenrir", "style": "University lecturer running first-year induction, keen on practical hacking challenges. Consistent West Yorkshire (Huddersfield) accent throughout. Warm, encouraging, quick, a bit dry.", "language": "en-GB" },
-          "itemsHeld": [
-            { "type": "workstation", "id": "lab_laptop", "puzzle_graph_role": "tool", "name": "Lab Laptop (CyberChef)", "takeable": true, "observations": "A department laptop with CyberChef on it. The arrow by the cross pops it into its own tab." },
-            { "type": "notes", "id": "fn01_bits_bytes_bases", "name": "Field Note 1: Bits, Bytes, Bases, CyberChef", "takeable": true, "readable": true, "text": <%= kh_txt[:fn01].to_json %>, "observations": "Induction handout." },
-            { "type": "notes", "id": "fn02_ascii_encodings", "name": "Field Note 2: Characters Are Numbers", "takeable": true, "readable": true, "text": <%= kh_txt[:fn02].to_json %>, "observations": "Induction handout." },
-            { "type": "notes", "id": "fn03_hex", "name": "Field Note 3: Hex and Binary", "takeable": true, "readable": true, "text": <%= kh_txt[:fn03].to_json %>, "observations": "Induction handout." }
-          ]
-        }
-      ],
       "objects": [
-        { "type": "whiteboard2", "id": "tom_board", "name": "Dr Shaw's Whiteboard", "takeable": false, "position": "as-type:whiteboard", "observations": "\"Hi\" written three ways. Decimal: 72 105. Binary: 01001000 01101001, with 128 64 32 16 8 4 2 1 written under each bit. Hex: 48 69, with \"one hex digit = four bits\" underlined twice." },
         {
           "type": "pc",
           "id": "lab_account_pc",
@@ -620,6 +597,37 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
             { "type": "text_file", "id": "trial_iv_hex", "name": "trial_iv.hex", "takeable": false, "readable": true, "text": <%= kh_trial4_hex.to_json %>, "observations": "Trial IV. The corridor door is listening. For the code itself, use the file's Copy button, not Add to Notepad: that adds a header and footer CyberChef will try to decode." }
           ]
         }
+      ]
+    },
+
+    "lecture_theatre": {
+      "type": "room_uni_lecture",
+      "door_sign": "Lecture Theatre 1",
+      "connections": { "north": "foyer" },
+      "npcs": [
+        {
+          "id": "tom_shaw",
+          "displayName": "Dr Tom Shaw",
+          "npcType": "person",
+          "position": { "x": 6.6, "y": 3.9 },
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "avatar": "assets/characters/male_office_worker_v2_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/lab_tesseract_trials/ink/npc_tom.json",
+          "currentKnot": "start",
+          "voice": { "name": "Fenrir", "style": "University lecturer running first-year induction, keen on practical hacking challenges. Consistent West Yorkshire (Huddersfield) accent throughout. Warm, encouraging, quick, a bit dry.", "language": "en-GB" },
+          "itemsHeld": [
+            { "type": "workstation", "id": "lab_laptop", "puzzle_graph_role": "tool", "name": "Lab Laptop (CyberChef)", "takeable": true, "observations": "A department laptop with CyberChef on it. The arrow by the cross pops it into its own tab." },
+            { "type": "notes", "id": "fn01_bits_bytes_bases", "name": "Field Note 1: Bits, Bytes, Bases, CyberChef", "takeable": true, "readable": true, "text": <%= kh_txt[:fn01].to_json %>, "observations": "Induction handout." },
+            { "type": "notes", "id": "fn02_ascii_encodings", "name": "Field Note 2: Characters Are Numbers", "takeable": true, "readable": true, "text": <%= kh_txt[:fn02].to_json %>, "observations": "Induction handout." },
+            { "type": "notes", "id": "fn03_hex", "name": "Field Note 3: Hex and Binary", "takeable": true, "readable": true, "text": <%= kh_txt[:fn03].to_json %>, "observations": "Induction handout." }
+          ]
+        }
+      ],
+      "objects": [
+        { "type": "whiteboard2", "id": "tom_board", "name": "Dr Shaw's Whiteboard", "takeable": false, "position": "as-type:whiteboard", "observations": "\"Hi\" written three ways. Decimal: 72 105. Binary: 01001000 01101001, with 128 64 32 16 8 4 2 1 written under each bit. Hex: 48 69, with \"one hex digit = four bits\" underlined twice." }
       ]
     },
 
@@ -730,7 +738,7 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
           ]
         },
         { "type": "notes3", "id": "drop_box_tag", "puzzle_graph_unlocks": "cryptosecure_drop_box", "puzzle_graph_and_with": "Pigeonholes", "name": "Tag on the Drop Box", "takeable": true, "readable": true, "position": "as-type:notes", "text": <%= kh_tag_hex.to_json %>, "observations": "AES-128-CBC. The key and the IV travel separately. Key: ____ IV: ____" },
-        { "type": "directory_sign1", "id": "floor_directory", "name": "Floor Directory", "takeable": false, "position": "as-type:uni_directory", "observations": "West: Library. East: Dr S. Selvarajan. North: Z. C. Schreuders, Workshop (knock)." }
+        { "type": "directory_sign1", "id": "floor_directory", "name": "Floor Directory", "takeable": false, "position": "as-type:uni_directory", "observations": "West: Library, Special Collections beyond. East: Dr S. Selvarajan, Seminar Room 2 beyond. North: Z. C. Schreuders, Workshop (knock). South: Foyer, Lecture Theatre 1 beyond." }
       ]
     },
 
@@ -740,10 +748,18 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
       "locked": true,
       "lockType": "pin",
       "requires": <%= kh_l5.to_json %>,
-      "connections": { "east": "corridor" },
+      "connections": { "east": "corridor", "north": "special_collections" },
       "objects": [
         { "type": "notes4", "id": "returns_slip", "puzzle_graph_unlocks": "special_collections_safe", "name": "Returns Slip", "takeable": true, "readable": true, "position": "as-type:notes", "text": <%= kh_slip6.to_json %>, "observations": "Tucked in a returned copy of The Codebreakers on the returns shelf. Trial VI. Shift: the number of this Trial." },
-        { "type": "book1", "sprite": "book", "id": "codebreakers_book", "name": "The Codebreakers (returned)", "takeable": false, "observations": "David Kahn's history of secret writing. Someone has been using it as a bookmark holder." },
+        { "type": "book1", "sprite": "book", "id": "codebreakers_book", "name": "The Codebreakers (returned)", "takeable": false, "observations": "David Kahn's history of secret writing. Someone has been using it as a bookmark holder." }
+      ]
+    },
+
+    "special_collections": {
+      "type": "room_uni_special",
+      "door_sign": "Special Collections",
+      "connections": { "south": "library" },
+      "objects": [
         {
           "type": "safe",
           "id": "special_collections_safe",
@@ -768,13 +784,23 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
     "sidhu_office": {
       "type": "room_uni_office",
       "door_sign": "Dr S. Selvarajan",
-      "connections": { "west": "corridor" },
+      "connections": { "west": "corridor", "north": "seminar_room" },
+      "objects": [
+        { "type": "uni_doorcard1", "id": "sidhu_door_card", "name": "Door Card", "takeable": false, "position": "as-type:uni_doorcard", "readable": true, "readDisplay": "gameDisplay", "addToNotes": false, "text": "DR S. SELVARAJAN\nReader in Cyber Security\n\nOffice hours: Tuesday 2-4.\nSeminar room through the back.", "observations": "A name card on the office wall, with an office-hours slip taped under it." },
+        { "type": "notes", "id": "fn07_desk_copy", "name": "Handout: Hashes", "takeable": true, "readable": true, "text": <%= kh_txt[:fn07].to_json %>, "observations": "A spare copy of Dr Selvarajan's handout.", "onPickup": { "setVariable": { "fn07_had": true } } }
+      ]
+    },
+
+    "seminar_room": {
+      "type": "room_uni_seminar",
+      "door_sign": "Seminar Room 2",
+      "connections": { "south": "sidhu_office" },
       "npcs": [
         {
           "id": "sidhu_selvarajan",
           "displayName": "Dr Sidhu Selvarajan",
           "npcType": "person",
-          "position": { "x": 4.85, "y": 3.8 },
+          "position": { "x": 6.75, "y": 3.7 },
           "spriteSheet": "male_scientist_v2",
           "spriteTalk": "assets/characters/male_scientist_talk.png",
           "spriteVisemes": "assets/characters/male_scientist_visemes.png",
@@ -790,8 +816,7 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
         }
       ],
       "objects": [
-        { "type": "whiteboard1", "id": "ledger_whiteboard", "puzzle_graph_unlocks": "pigeonholes", "puzzle_graph_and_with": "Special Collections Safe", "name": "Dr Selvarajan's Ledger Whiteboard", "takeable": false, "position": "as-type:whiteboard", "observations": <%= format(kh_txt[:whiteboard], kh_vkey).to_json %> },
-        { "type": "notes", "id": "fn07_desk_copy", "name": "Handout: Hashes", "takeable": true, "readable": true, "text": <%= kh_txt[:fn07].to_json %>, "observations": "A spare copy of Dr Selvarajan's handout.", "onPickup": { "setVariable": { "fn07_had": true } } }
+        { "type": "whiteboard1", "id": "ledger_whiteboard", "puzzle_graph_unlocks": "pigeonholes", "puzzle_graph_and_with": "Special Collections Safe", "name": "Dr Selvarajan's Ledger Whiteboard", "takeable": false, "position": "as-type:whiteboard", "observations": <%= format(kh_txt[:whiteboard], kh_vkey).to_json %> }
       ]
     },
 

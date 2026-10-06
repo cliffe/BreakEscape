@@ -105,6 +105,12 @@
       "optional": false
     },
     {
+      "id": "lecture_theatre",
+      "label": "Lecture Theatre 1",
+      "kind": "room",
+      "optional": false
+    },
+    {
       "id": "lab_laptop_cyberchef",
       "label": "Lab Laptop (CyberChef)",
       "kind": "item",
@@ -183,14 +189,20 @@
       "optional": false
     },
     {
+      "id": "special_collections",
+      "label": "Special Collections",
+      "kind": "room",
+      "optional": false
+    },
+    {
       "id": "special_collections_safe",
       "label": "Special Collections Safe",
       "kind": "item",
       "optional": false
     },
     {
-      "id": "sidhu_office",
-      "label": "Dr S. Selvarajan",
+      "id": "seminar_room",
+      "label": "Seminar Room 2",
       "kind": "room",
       "optional": false
     },
@@ -222,6 +234,12 @@
       "id": "andgate2",
       "label": "+",
       "kind": "gate",
+      "optional": false
+    },
+    {
+      "id": "sidhu_office",
+      "label": "Dr S. Selvarajan",
+      "kind": "room",
       "optional": false
     }
   ],
@@ -292,7 +310,7 @@
       "soft": false
     },
     {
-      "from": "teaching_lab",
+      "from": "lecture_theatre",
       "to": "npc_dr_tom_shaw",
       "soft": false
     },
@@ -387,12 +405,12 @@
       "soft": false
     },
     {
-      "from": "library",
+      "from": "special_collections",
       "to": "lock_special_collections_safe",
       "soft": false
     },
     {
-      "from": "library",
+      "from": "special_collections",
       "to": "special_collections_safe",
       "soft": false
     },
@@ -402,7 +420,7 @@
       "soft": false
     },
     {
-      "from": "sidhu_office",
+      "from": "seminar_room",
       "to": "dr_selvarajan_s_ledger_whiteboard",
       "soft": false
     },
@@ -469,6 +487,16 @@
     {
       "from": "foyer",
       "to": "common_room",
+      "soft": false
+    },
+    {
+      "from": "foyer",
+      "to": "lecture_theatre",
+      "soft": false
+    },
+    {
+      "from": "sidhu_office",
+      "to": "seminar_room",
       "soft": false
     }
   ]

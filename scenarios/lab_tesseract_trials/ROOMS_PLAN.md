@@ -1,6 +1,6 @@
 # The Keyholder Trials: university rooms plan
 
-Status: **plan only.** No map, sprite, sheet or game file has been made or changed. Written 2026-10-06 against HEAD `532bd7d3` (the room-dressing pass on the current maps is commit `1c18b9a3`). Kind of game: a lab scenario with SAFETYNET spy framing (AGENTS.md "Lab, demo and test scenarios"; brief `docs/agents/TESSERACT_TRIALS_BRIEF.md`). Aim of this plan: rooms that read as the Computing building of a UK university in freshers' week, with every scenario object landing on a proper map slot.
+Status: **Phases 0-1 built and committed** (`ed2be44c`, `4d840ff0`); **Phase 2 built, not yet committed** (build notes in sections 9 and 10). Plan written 2026-10-06 against HEAD `532bd7d3` (the room-dressing pass on the current maps is commit `1c18b9a3`). Kind of game: a lab scenario with SAFETYNET spy framing (AGENTS.md "Lab, demo and test scenarios"; brief `docs/agents/TESSERACT_TRIALS_BRIEF.md`). Aim of this plan: rooms that read as the Computing building of a UK university in freshers' week, with every scenario object landing on a proper map slot.
 
 User direction (via the orchestrator, during planning): be ambitious, design a new map for **every** room type named (foyer/atrium, computer teaching lab, student common room, corridor with lockers, pigeonholes and noticeboards, library with Special Collections, academic office, maker space/workshop, lecture theatre, seminar room); place the rooms that have no scenario room yet, spread **existing** clues into them rather than adding locks, and keep the middle play-time estimate under about 90 minutes.
 
@@ -777,3 +777,103 @@ Rooms were unlocked server-side (`corridor`, `library`, `workshop` via `unlock_r
 - Phase 2 moves Sidhu and the ledger to the seminar room: the office's `whiteboard1` slot then goes unclaimed and hidden, as planned. Tom's lab position (7.6, 2.9) stands in front of the wall clock; moot once he moves to the lecture theatre.
 - The floor directory's text still lists West/East/North only; Phase 2's observations edit (seminar room beyond the office) fits its three-line art.
 - Harness tips for the next walk: the `enter` retries and `moveTo` fallbacks above; server unlocks set `workshop_open` once the workshop is entered, which hides the common-room Cliffe.
+
+## 10. Phase 2 build notes (2026-10-06)
+
+Built by the room builder (Opus) after the coordinator's review of Phases 0-1. Nothing committed. No PixelLab or Gemini spend.
+
+### What was built
+
+- **Three builders** in `generate_rooms.py`, following 2.6, 2.8 and 2.9: `room_uni_lecture` (20x10 on the `20x10` template, room layer by `COLS_20`), `room_uni_special` and `room_uni_seminar`. Registered in game.js (tilemaps), the schema enum, the README room table and `builders`.
+- **`build_room(collisions=[...])`** and `_Uni.collision()` exist as planned, but nothing uses them (deviation 1).
+- **Scenario moves** (3.4):
+  - rooms `lecture_theatre`, `special_collections` and `seminar_room` added, all unlocked, with door signs "Lecture Theatre 1", "Special Collections" and "Seminar Room 2";
+  - the three links added on both sides (foyer S, library N, office N);
+  - Tom (with `itemsHeld` unchanged) and `tom_board` moved to the lecture theatre at (6.6, 3.9);
+  - the safe and its contents moved to Special Collections;
+  - Sidhu and `ledger_whiteboard` moved to the seminar room at (6.75, 3.7);
+  - the office keeps the FN7 desk copy and gains the door-card flavour object `sidhu_door_card` (`as-type:uni_doorcard`, `readDisplay: gameDisplay`, `addToNotes: false`, "Seminar room through the back.");
+  - the floor directory's observations now name what lies beyond each door (Special Collections, Seminar Room 2, Lecture Theatre 1).
+- **Text edits** (3.4.3):
+  - the briefing's laptop line;
+  - Tom's lab-account line;
+  - Tom's terminal choice ("in your lab");
+  - the written brief ("in the lecture theatre first");
+  - header comments in `npc_tom.ink` and `npc_sidhu.ink`;
+  - the scenario's own `tools/kstates.mjs` regex for Tom's choice, which matched the old wording.
+- **Review fixes**:
+  1. The foyer terrazzo is calmer: fewer, lower-contrast chips (`p2-foyer-terrazzo-3x.png`). Only `room_uni_foyer.png` changed; the other seven sheets are byte-identical.
+  2. The workshop has a parts rack against the back wall (`supply_shelves1`), boxed stock (`supply_boxes1`) and a cable on the floor between the benches. The electronics bench moved to the south-east and gained a fan. The scoreboard, build screen, relay PC and Cliffe's spot stay clear.
+  3. In a fresh game with no server unlocks (1604, before its unlocks), Cliffe stands in the common room and talks (`p2-fresh-common_room-cliffe.png`).
+
+### Spoken lines changed
+
+No audio is cached for this lab yet (`tts_cache/` has no `lab_tesseract_trials` folder), so none of these has a TTS cost yet.
+
+| Speaker (voice) | Before | After |
+|---|---|---|
+| HaX, briefing (Aoede) | "Get a lab laptop from Dr Shaw in the teaching lab, west of the foyer. Then go and be found." | "Get a lab laptop from Dr Shaw in the lecture theatre, south of the foyer. Then go and be found." |
+| Tom (Fenrir) | "Your lab account's on that PC. I've put a key pair on it. Have a read of the README; you'll want the private one before the week's out." | Split in two, because the edited line came to 36 words, over dialoguelint's 30-word cap: "Your lab account's on a PC in the teaching lab, west of the foyer." / "I've put a key pair on it. Have a read of the README; you'll want the private one before the week's out." |
+
+Not spoken: Tom's player choice ("That CryptoSecure terminal in your lab. Is it yours?"), the written brief, the door card and the directory.
+
+### Deviations, and why
+
+1. **The lecture seat rows are made solid by writing ledges, not by `Object Layer 1` collision rectangles.**
+   - The rectangles break the room. `createRoom` throws "Cannot access 'room' before initialization": the collision branch uses `room` at `rooms.js` ~2807, but `const room` is declared at ~2826. The exception aborts the rest of the room's setup, so Tom never spawned (game 1604, first visit).
+   - Fixing that is an engine change, so it goes to the user/orchestrator; it is a one-line move of the `const room` declaration above the object-layer block.
+   - Instead, two hand-drawn writing ledges (`lecture_ledge1` 198x12 and `lecture_ledge2` 252x12, in `make_uni_props.py`, registered without `--wall`) sit in the `tables` layer in front of each row and block, at feet y (row - 22).
+   - A table's body is its bottom quarter inset 10 px each side. Each ledge is 20 px wider than its seat block, so the body covers exactly the seats: x 96-274 and 340-572.
+   - In the browser the player can't walk or click through a row from front or back, and can step into a row from the aisles and back out. Reading-wise, a ledge on the back of each row is what a lecture theatre has anyway.
+2. **`book1` had no texture as decor.** game.js loads `objects/book1.png` only under the key `book`, so an unclaimed `book1` map sprite drew as a missing-texture box (Special Collections' reading table). I added a `book1` key for the same image next to that line; a scan of all ten maps finds no other image they use that game.js doesn't load.
+3. **Special Collections omits the Phase 3 placeholders** (display case, plan chest), as the plan marks them; nothing stands in for them yet.
+
+### Check results
+
+| Check | Result |
+|---|---|
+| `generate_rooms.py --check` (all ten) | 2 WARNs, the expected corridor pair |
+| `check_room_walls.py --scenario` | 0 maps off the standard |
+| `slot_audit.py --verbose --notes` | 0 problems, 0 notes prompts; `--all` 143 (unchanged) |
+| `check_door_alignment.py` | 9/9 OK (the six old links plus foyer↔lecture, library↔Special Collections, office↔seminar) |
+| `predict_door_sides.py` | as 3.2: foyer N and S LEFT; library, office, SC, seminar and workshop N/S RIGHT; lecture N LEFT |
+| `validate_scenario.rb` | 0 errors, 8 warnings (the same 8 as Phase 1; the two "multiple solution paths" warnings now cite the new rooms); room layout geometry OK, no overlaps |
+| Rendered verifiers | ALL PASS on seeds 42, 777, 9001 |
+| Ink compile | 9/9 |
+| tagdiff vs HEAD | before: STRUCTURE UNCHANGED; after: STRUCTURE UNCHANGED (prose: briefing 1 line, Tom 2 lines plus the split) |
+| dialoguelint | none |
+| inkcheck | 12/12 (the 11 entry points plus the briefing with `--no-memo`) |
+| loopcheck | 40/40 (the backgrounds round's state matrix) |
+| kstates | ALL PASS (54) after the regex update |
+| reopencheck | HaX 1800 reopens and Ghost 1800 reopens, 0 problems |
+| Existing builders | output identical apart from `tilesets` |
+
+The check outputs are in `build_evidence/rooms/phase2_checks/`, along with `ink_text_diff.txt` and `verify-run-1604.txt`.
+
+### Browser walk (keyless :3001, headless, game 1604)
+
+- **Fresh game first**, with no server unlocks: Cliffe is visible in the common room and talks. The lecture theatre is open from the start, so Tom's hand-over was played for real: "Get a lab laptop" completed, and the laptop and FN1-FN3 were received. The transcript shows the new split lines.
+- **Then** corridor, library and workshop were unlocked server-side for the layout tour. `verify-run.rb`: 9 rooms beyond the first.
+- All ten rooms visited and screenshotted. New doors walked both ways: foyer↔lecture theatre, library↔Special Collections, office↔seminar room.
+- Taps:
+  - Tom's whiteboard, Tom, the safe (password pad), the door card (game display), the FN7 desk copy, the ledger whiteboard, Sidhu, the directory and all four workshop interactables open directly;
+  - no new pick-one menus.
+- All scenario objects sit on their slots with the intended textures (`whiteboard2` in the theatre, `safe1` in SC, `whiteboard1` in the seminar room, `uni_doorcard1` in the office). The office's Phase 1 whiteboard slot stays hidden.
+- No missing textures after the `book1` fix. Duplicates are only the engine's door sprites at shared N/S doors. Console errors are only TTS 503s.
+- Harness quirks, as in Phase 1: `enter` needs retries, the first `moveTo` after a side-door crossing can be ignored, and straight-line `moveToNear` needs a waypoint round furniture.
+
+### Evidence (`build_evidence/rooms/`)
+
+- `p2-after-<room>.png` for all ten rooms. The Phase 1 `after-*` shots are the "before" for the seven existing rooms; the three new rooms have none.
+- `p2-lecture_theatre-tom.png`, `p2-sidhu_office-doorcard.png`, `p2-fresh-common_room-cliffe.png`
+- `p2-previews-contact.png` (all ten maps), `p2-props-ledges-4x.png`, `p2-foyer-terrazzo-3x.png`
+- `phase2_checks/` (text outputs)
+
+### For the next phase
+
+- Engine (needs approval): move `const room = rooms[roomId]` above the `Object Layer 1` block in `rooms.js createRoom`. After that, `build_room(collisions=...)` can replace the ledges' collision role, and the ledges can stay as decor.
+- Phase 3 placeholders still in use:
+  - the `smalldesk2` lectern;
+  - `hospital_chair_north` seats (the P1 `lecture_seat_row1` art should keep the ledges' line, row feet - 22);
+  - the electronics bench, the workshop's printer/cart, and the Special Collections display case and plan chest.
+- Phase 4: SOLUTION_GUIDE, TESTING_WALKTHROUGH and DESIGN.md still describe Tom in the lab, the safe in the library and Sidhu in his office. The timed blind playtest (D3) on the expanded graph is still outstanding.

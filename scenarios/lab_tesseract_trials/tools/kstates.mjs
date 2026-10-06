@@ -125,7 +125,7 @@ const P = f => JSON.parse(readFileSync(join(REPO, 'scenarios/lab_tesseract_trial
 const qcases = [
   { id: 'Q-sidhu-signed', f: 'npc_sidhu', knot: 'start', g: { relay_opened: true }, choose: /something signed/, lastLine: 'whether you should send it', greet: /look of someone|What can I do/ },
   { id: 'Q-sidhu-intro', f: 'npc_sidhu', knot: 'start', g: {}, choose: null, lastLine: 'watch a signature check out', greet: /What can I do/ },
-  { id: 'Q-tom-terminal', f: 'npc_tom', knot: 'start', g: { locker_open: true }, pre: /Anything else I should know/, choose: /terminal on your desk/, lastLine: 'You first', greet: /Got into that terminal|Owt else/ },
+  { id: 'Q-tom-terminal', f: 'npc_tom', knot: 'start', g: { locker_open: true }, pre: /Anything else I should know/, choose: /terminal in your lab/, lastLine: 'You first', greet: /Got into that terminal|Owt else/ },
   { id: 'Q-tom-magic-keys', f: 'npc_tom', knot: 'start', g: {}, choose: null, pre: /CyberChef actually do/, lastLine: 'key pair', greet: /Owt else/ },
   { id: 'Q-megan-warn', f: 'npc_megan', knot: 'start', g: { megan_file_read: true, lockbox_open: true }, choose: /Walk away from this/, lastLine: "I'm out", greet: /Binned the leaflet/ },
   { id: 'Q-cliffe-build', f: 'npc_cliffe', knot: 'common_room', g: {}, choose: /working on/, lastLine: 'closes the lid', greet: /Still here|Yeah\?|Committee/ },

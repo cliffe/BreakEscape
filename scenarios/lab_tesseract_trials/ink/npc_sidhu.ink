@@ -1,5 +1,5 @@
 // ================================================
-// The Keyholder Trials: Dr Sidhu Selvarajan (his office)
+// The Keyholder Trials: Dr Sidhu Selvarajan (the seminar room, through his office)
 // Helper: hashing, integrity, signatures. Gives FN7 and FN10, plants his scene,
 // and has the signature line at the climax. Indian English through register;
 // no stock markers ("see," / "isn't it?") unless the user approves them.

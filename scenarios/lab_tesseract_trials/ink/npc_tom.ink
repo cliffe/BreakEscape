@@ -1,5 +1,5 @@
 // ================================================
-// The Keyholder Trials: Dr Tom Shaw (teaching lab)
+// The Keyholder Trials: Dr Tom Shaw (lecture theatre; his lab account PCs are in the teaching lab)
 // Helper. Gives the CyberChef lab laptop and the induction handouts (FN1-FN3).
 // Huddersfield through word choice only. No knot ends in DONE or END.
 // ================================================
@@ -47,7 +47,8 @@ Dr Tom Shaw: There's a button called Magic. It'll do the first few for you. It'l
 - not told_keys:
     ~ told_keys = true
     ~ quiet = false
-    Dr Tom Shaw: Your lab account's on that PC. I've put a key pair on it. Have a read of the README; you'll want the private one before the week's out.
+    Dr Tom Shaw: Your lab account's on a PC in the teaching lab, west of the foyer.
+    Dr Tom Shaw: I've put a key pair on it. Have a read of the README; you'll want the private one before the week's out.
 - quiet:
     ~ quiet = false
 - asked_terminal and not guest_terminal_open:
@@ -57,7 +58,7 @@ Dr Tom Shaw: There's a button called Magic. It'll do the first few for you. It'l
 - else:
     Dr Tom Shaw: Owt else?
 }
-+ {locker_open and not guest_terminal_open and not asked_terminal} [That CryptoSecure terminal on your desk. Is it yours?]
++ {locker_open and not guest_terminal_open and not asked_terminal} [That CryptoSecure terminal in your lab. Is it yours?]
     -> terminal
 + {not asked_cryptosecure} [What do you make of CryptoSecure?]
     -> cryptosecure
