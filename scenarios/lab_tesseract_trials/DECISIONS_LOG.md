@@ -57,3 +57,4 @@ Each line gives a decision, its reason and who made it. The user can overrule an
   - On every route Ghost withdraws the offer by the end (the Keyholder Studentship is never awarded), so 0x00 is never an ENTROPY agent in canon.
   - K1 (canon note) records all this for campaign writers.
 - (2026-10-06) Alignment round committed. Note for the user: the double ending names a decoy flat 'in Leeds' (the lab's only real place name).
+- (2026-10-06, user) Backgrounds approved; PixelLab may be used without checking in for the rest of this session. Installed hq4 (field HQ), hq5 (fallback site after the burn) and miskatonic_campus (narrator transition), all s500 conversions of Gemini concepts. Cost: 3 Gemini images, 10 PixelLab generations.

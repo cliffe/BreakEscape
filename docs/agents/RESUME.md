@@ -2,7 +2,7 @@
 
 Brief: `docs/agents/TESSERACT_TRIALS_BRIEF.md`. Log: `scenarios/lab_tesseract_trials/DECISIONS_LOG.md`.
 Loop: design (Opus, DESIGN.md) → 3 adversarial review rounds (alignment + design-review lenses) → implement → puzzle-chains + dialogue reviews → Sonnet playtests → fix until clean.
-Status: alignment round committed (80171772). Running: DIALOGUE_REVIEW_R2 (Opus), ROOMS_PLAN (Opus). Waiting on the user: hq4 variant pick (s500 recommended), campus concept approval (scratchpad hq4/). Then: fix round from dialogue R2, wire hq4 + campus narrator transition, burned-site background, rooms build after approval.
+Status: backgrounds committed (8926df10: hq4, hq5, miskatonic_campus). Running: builder wiring them + campus narrator transition; DIALOGUE_REVIEW_R2; ROOMS_PLAN. PixelLab allowed without check-in this session.
 
 # Resume note — pass 4 (editorial, m02–m08)
 
