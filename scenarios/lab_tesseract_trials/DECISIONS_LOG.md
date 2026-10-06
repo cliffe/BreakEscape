@@ -56,3 +56,4 @@ Each line gives a decision, its reason and who made it. The user can overrule an
   - Nobody is killed in the burn (the earlier settled "nobody hurt" stands); the loss is the site, its kit and its cover.
   - On every route Ghost withdraws the offer by the end (the Keyholder Studentship is never awarded), so 0x00 is never an ENTROPY agent in canon.
   - K1 (canon note) records all this for campaign writers.
+- (2026-10-06) Alignment round committed. Note for the user: the double ending names a decoy flat 'in Leeds' (the lab's only real place name).
