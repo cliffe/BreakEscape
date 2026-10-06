@@ -2,7 +2,7 @@
 
 Brief: `docs/agents/TESSERACT_TRIALS_BRIEF.md`. Log: `scenarios/lab_tesseract_trials/DECISIONS_LOG.md`.
 Loop: design (Opus, DESIGN.md) → 3 adversarial review rounds (alignment + design-review lenses) → implement → puzzle-chains + dialogue reviews → Sonnet playtests → fix until clean.
-Status: staff office committed (1dbbc1af, ca6cb491). Portraits approved and committed. Running: story builder adding Oleg (ink, mojibake beat); art agent running the PixelLab pipeline for the four academics; final end-to-end playtest (may have finished). Then: wire the art into the scenario, check in game, commit.
+Status: Oleg committed (1f9e6983); final playtest PASS (881b52e3). Running: room builder (side-door offset F1 + staff door + Tom approach), story builder (F2 F3 F4 F8 F9 + homoglyph beat), art agent (PixelLab pipeline x4). Then wire the art (skill steps 8-9), short confirmation run, commit.
 
 # Resume note — pass 4 (editorial, m02–m08)
 
