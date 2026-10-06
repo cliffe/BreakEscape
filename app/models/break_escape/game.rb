@@ -861,6 +861,67 @@ module BreakEscape
       end
     end
 
+    # The unlock methods each lockType accepts. The client names the method it
+    # used, so a method that doesn't belong to the lock is refused before any
+    # other check: otherwise claiming 'key' or 'rfid' would open a PIN safe.
+    # A key lock also takes a lockpick. A missing lockType means key, as on the
+    # client (unlock-system.js getLockRequirementsForItem). Lock types not listed
+    # here (ransomware_display, and the type-dispatched minigames) never unlock
+    # through a client-named method. 'npc', 'unlocked' and 'flag_reward' are
+    # checked separately, against the NPC, the scenario and the claimed flag.
+    UNLOCK_METHODS_BY_LOCK_TYPE = {
+      'key' => %w[key lockpick],
+      'pin' => %w[pin],
+      'password' => %w[password],
+      'flag' => %w[flag],
+      'biometric' => %w[biometric],
+      'bluetooth' => %w[bluetooth],
+      'ble' => %w[ble],
+      'rfid' => %w[rfid]
+    }.freeze
+
+    def unlock_method_matches_lock?(lock_type, method)
+      allowed = UNLOCK_METHODS_BY_LOCK_TYPE[lock_type.presence || 'key']
+      allowed.present? && allowed.include?(method.to_s)
+    end
+
+    # A flag-station reward of type unlock_object opens its object on the client,
+    # which then reports method 'flag_reward'. Accept that only when the object is
+    # the target of such a reward and the player has claimed the flag that pays it
+    # (process_flag_rewards records the flag before the client applies rewards).
+    def flag_reward_unlocks_object?(object)
+      claimed = Array(player_state['flag_rewards_claimed']).map { |f| f.to_s.downcase }
+      return false if claimed.empty?
+
+      object_refs = [object['id'], object['name']].compact.map(&:to_s)
+      resolve = lambda do |ref|
+        next nil unless ref.is_a?(String)
+        ref.match?(/\A[^:]+:flag_\d+\z/) ? resolve_flag_ref(ref) : ref
+      end
+      targets_object = ->(reward) { reward.is_a?(Hash) && reward['type'] == 'unlock_object' && object_refs.include?(reward['objectId'].to_s) }
+
+      stations = []
+      scenario_data['rooms']&.each_value do |room|
+        room['objects']&.each { |o| stations << o if o['flagRewards'] }
+        room['npcs']&.each { |n| n['itemsHeld']&.each { |i| stations << i if i['flagRewards'] } }
+      end
+
+      stations.any? do |station|
+        rewards = station['flagRewards']
+        paying_flags =
+          if rewards.is_a?(Hash)
+            rewards.select { |_flag, reward| targets_object.(reward) }.keys
+          elsif rewards.is_a?(Array) && station['requires']
+            rewards.any?(&targets_object) ? [resolve.(station['requires'])] : []
+          elsif rewards.is_a?(Array)
+            rewards.each_index.select { |i| targets_object.(rewards[i]) }.map { |i| resolve.(Array(station['flags'])[i]) }
+          else
+            []
+          end
+        paying_flags.compact.any? { |flag| claimed.include?(flag.to_s.downcase) }
+      end
+    end
+
     # Unlock validation
     def validate_unlock(target_type, target_id, attempt, method)
       Rails.logger.info "[BreakEscape] validate_unlock: type=#{target_type}, id=#{target_id}, attempt=#{attempt}, method=#{method}"
@@ -893,6 +954,11 @@ module BreakEscape
             return validate_npc_unlock(npc_id, target_id)
           end
 
+          unless unlock_method_matches_lock?(room['lockType'], method)
+            Rails.logger.warn "[BreakEscape] SECURITY VIOLATION: method='#{method}' does not match lockType='#{room['lockType']}' for door: #{target_id}"
+            return false
+          end
+
           result = case method
           when 'key'
             # Server validates player has the correct key in inventory
@@ -901,12 +967,14 @@ module BreakEscape
             is_valid
           when 'lockpick'
             # Server validates player has lockpick in inventory
-            # Lockpick can bypass any key-based lock
+            # Lockpick can bypass any key-based lock (the lockType check above
+            # has already confirmed this is a key lock)
             is_valid = has_lockpick_in_inventory?
             Rails.logger.info "[BreakEscape] Lockpick validation result: #{is_valid}"
             is_valid
-          when 'biometric', 'bluetooth', 'rfid'
-            # Client validated these - trust it
+          when 'biometric', 'bluetooth', 'ble', 'rfid'
+            # Client validated these - trust it, now that the method is known to
+            # match the door's lockType
             # (player had fingerprint, had bluetooth device, had RFID card)
             Rails.logger.info "[BreakEscape] #{method} validation passed (trusted client)"
             true
@@ -974,9 +1042,39 @@ module BreakEscape
             return validate_npc_unlock(npc_id, target_id)
           end
 
+          # Only an object marked locked is checked. One with locked: false or no
+          # 'locked' field keeps the old behaviour whatever its lockType, matching
+          # the 'unlocked' path above, which already opens such an object.
+          lock_in_force = object['locked'] ? true : false
+
+          # Flag-station reward: unlocks remotely, whatever the object's lockType
+          # (in practice a flag lock with no requires), so it is checked against
+          # the reward and the claimed flag rather than the lockType.
+          if method == 'flag_reward'
+            result = !lock_in_force || flag_reward_unlocks_object?(object)
+            Rails.logger.info "[BreakEscape] Flag reward unlock validation: result=#{result}"
+            return result
+          end
+
+          if lock_in_force && !unlock_method_matches_lock?(object['lockType'], method)
+            Rails.logger.warn "[BreakEscape] SECURITY VIOLATION: method='#{method}' does not match lockType='#{object['lockType'] || 'key (default)'}' for object: #{target_id}"
+            return false
+          end
+
           case method
-          when 'key', 'lockpick', 'biometric', 'bluetooth', 'ble', 'rfid', 'flag_reward'
-            # Client validated the unlock - trust it
+          when 'key'
+            return true unless lock_in_force
+            result = object['requires'].present? && has_key_in_inventory?(object['requires'])
+            Rails.logger.info "[BreakEscape] Object key validation result: #{result}"
+            return result
+          when 'lockpick'
+            return true unless lock_in_force
+            result = has_lockpick_in_inventory?
+            Rails.logger.info "[BreakEscape] Object lockpick validation result: #{result}"
+            return result
+          when 'biometric', 'bluetooth', 'ble', 'rfid'
+            # Client validated the unlock - trust it, now that the method is
+            # known to match the object's lockType
             return true
           when 'flag'
             # Resolve the flag reference and validate — client never sees the correct value
