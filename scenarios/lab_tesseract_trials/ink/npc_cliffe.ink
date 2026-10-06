@@ -21,10 +21,10 @@ VAR ending = ""
 // ------------------------------------------------
 === common_room ===
 { met_cliffe:
-    Still here. Coffee's still terrible.
+    Dr Z. Cliffe Schreuders: {&Still here. Coffee's still terrible.|Mm?|Committee's still looking for me.}
 - else:
     ~ met_cliffe = true
-    G'day. Don't mind me, I'm hiding from a committee.
+    Dr Z. Cliffe Schreuders: G'day. Don't mind me, I'm hiding from a committee.
 }
 + [What are you working on?]
     -> build
@@ -32,23 +32,23 @@ VAR ending = ""
     -> leaflets
 + [I'll leave you to it.]
     #exit_conversation
-    No worries.
+    Dr Z. Cliffe Schreuders: No worries.
     -> common_room
 
 === build ===
 ~ asked_build = true
-A teaching tool. Sort of. A game where you learn by getting caught.
+Dr Z. Cliffe Schreuders: A teaching tool. Sort of. A game where you learn by getting caught.
 Narrator: He turns the laptop a little towards you. A map of this building. Small figures walking about. One of them is wearing your hoodie.
-Reckon that's enough of a preview.
+Dr Z. Cliffe Schreuders: Reckon that's enough of a preview.
 Narrator: He closes the lid.
 -> common_room
 
 === leaflets ===
 ~ slipped = true
-Saw them. Reckon whoever wrote them has marked a lot of exams.
-Good luck with it, Agent.
+Dr Z. Cliffe Schreuders: Saw them. Reckon whoever wrote them has marked a lot of exams.
+Dr Z. Cliffe Schreuders: Good luck with it, Agent.
 Narrator: A beat.
-Student. Sorry. Long week.
+Dr Z. Cliffe Schreuders: Student. Sorry. Long week.
 -> common_room
 
 // ------------------------------------------------
@@ -57,7 +57,7 @@ Student. Sorry. Long week.
 === workshop ===
 { not met_in_workshop:
     ~ met_in_workshop = true
-    Door was locked for a reason, mate. Though I suppose you had the key. Interesting, that.
+    Dr Z. Cliffe Schreuders: Door was locked for a reason, mate. Though I suppose you had the key. Interesting, that.
     -> workshop_hub
 }
 -> workshop_hub
@@ -65,28 +65,28 @@ Student. Sorry. Long week.
 === workshop_hub ===
 {
 - decision_made && ending == "sent":
-    Hope that was worth it.
+    Dr Z. Cliffe Schreuders: Hope that was worth it.
 - decision_made && ending == "double":
-    Interesting choice of channel.
+    Dr Z. Cliffe Schreuders: Interesting choice of channel.
 - decision_made && ending == "refused":
-    Good. Some offers you hear out and still say no to.
+    Dr Z. Cliffe Schreuders: Good. Some offers you hear out and still say no to.
 - decision_made && ending == "blown":
-    Phones. Never trusted them.
+    Dr Z. Cliffe Schreuders: Phones. Never trusted them.
 - relay_opened:
-    Scoreboard's been quiet today. Takes flags from anyone. Never asked who reads them.
+    Dr Z. Cliffe Schreuders: Scoreboard's been quiet today. Takes flags from anyone. Never asked who reads them.
 - else:
-    Busy. Don't touch the iron, it's hot.
+    Dr Z. Cliffe Schreuders: Busy. Don't touch the iron, it's hot.
 }
 + {not asked_build} [What's on the big screen?]
     -> workshop_build
 + [I'll leave you to it.]
     #exit_conversation
-    Mind the cable.
+    Dr Z. Cliffe Schreuders: Mind the cable.
     -> workshop_hub
 
 === workshop_build ===
 ~ asked_build = true
-Same thing as before. Bit further along.
+Dr Z. Cliffe Schreuders: The building. Bit further along than this morning.
 { ghost_offer_made:
     Narrator: On the screen, the small figure in your hoodie is standing near the scoreboard.
 - else:

@@ -1253,6 +1253,7 @@
       "relay_opened": false,
       "ghost_greeted": false,
       "ghost_offer_made": false,
+      "ghost_offer_heard": false,
       "decision_made": false,
       "ending": "",
       "warned_out_of_band": false,

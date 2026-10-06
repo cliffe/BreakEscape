@@ -40,9 +40,9 @@ foyer (start) → west `teaching_lab` (open), east `common_room` (open), north `
 ## Aim: Freshers' Week (`freshers_week`)
 [Unlocks at start]
 
-1. **Foyer — briefing (`briefing_cutscene`)** — Load the game. The opening briefing plays by itself and gives `comms_discipline` as its first line. Click through to "On my way." → `briefing_played` true, `comms_discipline` in the notepad, music `noir`. The brief ("scenario_brief") shows once. The briefing can be closed early; do that on a second run and check nothing later depends on it (`comms_had` stays false, HaX offers `comms_discipline_hax`).
+1. **Foyer — briefing (`briefing_cutscene`)** — Load the game. The opening briefing plays by itself and gives `comms_discipline` as its first line. Click through; the scene closes by itself after HaX's line about Dr Shaw ("…Then go and be found.", fix round 1: there is no "On my way." choice on the first run) → `briefing_played` true, `comms_discipline` in the notepad, music `noir`. The brief ("scenario_brief") shows once. The briefing can be closed early; do that on a second run and check nothing later depends on it (`comms_had` stays false, HaX offers `comms_discipline_hax`).
 2. **Foyer — Jordan Pike (`jordan_pike`)** — Talk to him at the CryptoSecure stand → task `visit_stand` complete, `keyholder_leaflet` in the notepad (the leaflet is decimal codes only; the fingerprint is in its observations). HaX texts "Numbers between 97 and 122…".
-3. **Teaching lab (west door) — Tom Shaw (`tom_shaw`)** — Talk to him → task `get_lab_laptop` complete, `lab_laptop` in inventory, `fn01_bits_bytes_bases`, `fn02_ascii_encodings`, `fn03_hex` in the notepad. Aim `freshers_week` completes (`read_byte_wall` is optional) → `trials_bits` unlocks. HaX texts "You left before I'd finished…" only if `comms_had` is false.
+3. **Teaching lab (west door) — Tom Shaw (`tom_shaw`)** — Talk to him → task `get_lab_laptop` complete, `lab_laptop` in inventory, `fn01_bits_bytes_bases`, `fn02_ascii_encodings`, `fn03_hex` in the notepad. Aim `freshers_week` completes (`read_byte_wall` is optional) → `trials_bits` unlocks. HaX texts "You left before I'd finished…" only if `comms_had` is false. Tom introduces himself as "Tom Shaw. I look after the first-years this week." After the player's first choice, his hub greeting plants the key pair once ("Your lab account's on that PC. I've put a key pair on it…", P3, ink-local `told_keys`).
 
 Teaching exhibits (`byte_wall`, `display_plaque`, `powers_of_two_poster`, `ascii_chart`, `paper_tape`, `tom_board`) are optional; see Optional Path.
 
@@ -77,7 +77,7 @@ CyberChef is opened from the inventory item `lab_laptop`. Paste the clue into **
 [Unlocks after: `trials_bits` complete]
 
 9. **L5 — library door (corridor west, PIN)**
-   - *Input from:* `trial_v_poster` in the corridor (take it; Base64 text only; the worked "Hi!" example is in its observations). Entering the corridor makes HaX offer `fn04_base64` (sets `fn04_offered`).
+   - *Input from:* `trial_v_poster` in the corridor (take it; Base64 text only; the worked "Hi!" example is in its observations). Entering the corridor makes HaX offer `fn04_base64` (sets `fn04_offered`) with "Not decimal, not hex, not binary. Something new on that wall." The text doesn't name Base64 (P1).
    - *Recipe:* **From Base64**. Output reads "Library keypad: NNNN. The returns shelf has your next trial."
    - *Do:* enter the four digits → task `open_library` complete, `library_open` true.
    - *Example (seed 42):* `TGlicmFyeSBr…` → `6191`.
@@ -94,7 +94,7 @@ CyberChef is opened from the inventory item `lab_laptop`. Paste the clue into **
     - *Recipe:* **Vigenère Decode**, Key = the whiteboard word.
     - *Output gives three things:* the pigeonhole password (`<word>-NN`), which pigeonhole is yours (a number word, two to five), and a 32-hex IV. Paste all three into the notepad with the pencil, ideally on `drop_box_tag`'s observations ("Key: ____ IV: ____").
     - *Example (seed 42):* "The pigeonholes open with sorting-33. Yours is number four. … The IV travels with this letter: <32 hex>". Only the IV differs between renders.
-14. **L7 — `pigeonholes` (corridor, password)** — Type the pigeonhole password → task `open_pigeonholes` complete, `pigeonholes_open` true. HaX texts the L8a nudge and offers `fn09_public_key` (2 s) and `fn08_aes` (8 s).
+14. **L7 — `pigeonholes` (corridor, password)** — Type the pigeonhole password → task `open_pigeonholes` complete, `pigeonholes_open` true. HaX texts the L8a nudge and offers `fn09_public_key` (2 s) and `fn08_aes` (8 s). "Send me that field note" sends FN9 (public keys) first, then FN8 (AES) on the next request (fix round 1).
     - *Example (seed 42):* `sorting-33`.
 15. **Corridor — your envelope** — Open the pigeonhole whose number matches step 13 (`pigeonhole_2` … `pigeonhole_5`) and copy its Base64. The other three are sealed to other students' keys and fail in step 17, which is the intended lesson.
     - *Example (seed 42):* `pigeonhole_4`.
@@ -123,7 +123,7 @@ CyberChef is opened from the inventory item `lab_laptop`. Paste the clue into **
 ## Aim: The Offer (`the_offer`) — mission conclusion
 [Unlocks after: `the_keyholder` complete. Concludes on `open_relay_terminal`, so the credits can't appear without the whole chain.]
 
-22. **Ghost's video call (`ghost`, knot `the_offer_call`)** — Fires on `relay_opened` (condition `!ghost_offer_made`). Expected: Ghost names themselves, recognises 0x00 from St Catherine's, asks for the report to be sent to HaX, and prices each route. Choices: `[What's in it?]`, `[Could I change it first?]`, `[What happens if I say no?]` loop; `[I'll think about it.]` exits the call; `[No. Find another student.]` refuses (Ending C below). `ghost_offer_made` true. Closing line: "Your terminal's still open. Read what I gave you." Afterwards HaX texts the FN10 offer (`fn10_offered`) if `fn10_had` is false.
+22. **Ghost's video call (`ghost`, knot `the_offer_call`)** — Fires on `relay_opened` (condition `!ghost_offer_made`). Expected: Ghost recognises 0x00 from St Catherine's, refuses a name again ("You can call me what your handler does: Ghost."), asks for the report to be sent to HaX, and prices each route unprompted: refusing costs Megan (or "the second this week" if she was warned), a wrong location earns "a third offer", and "Send it and you start Monday. So does she." (no "So does she." if Megan was warned). `ghost_offer_made` is set on the first line; `ghost_offer_heard` only on that last line. Choices: `[What's in it?]`, `[Could I change it first?]` loop; `[I'll think about it.]` exits the call on "Your terminal's still open. Read what I gave you." (no "Back. So you've decided." after it); `[No. Find another student.]` refuses (Ending C below) and the call closes on "CONTACT CLOSED.". Afterwards HaX texts the FN10 offer (`fn10_offered`, 6 s) if `fn10_had` is false and no decision has been made.
 23. **Workshop — reopen `relay_terminal`** (the call closed it) — Four files:
     - `report_b64`: **From Base64** → a field report ending in `<img src="https://cdn.cryptosecure-recovery.example/px/locate/<token>.png" width="1" height="1">`. **The token (`<word>-NNNN`) is the scoreboard answer.** Reading the file also sets `relay_opened` again (harmless).
     - `report_sha256` (optional check): **SHA2** Size 256 on the `report_b64` text as given must equal it. A trailing new line breaks it.
@@ -143,14 +143,15 @@ All four share steps 1-23 and 25-26. HaX's hub choices for sending and warning i
 
 | # | Ending (`ending`) | How to reach it | Immediate result | Debrief opening |
 |---|---|---|---|---|
-| A | **Send** (`sent`) | HaX hub `[Sending you my report now.]` with `warned_out_of_band` false. Works with or without decoding the report. | HaX texts "Received. Opening it now." (1.5 s), then "My phone just did something it shouldn't…" (7.5 s). Cliffe: "Hope that was worth it." | HaX's phone was fetched from a Rotterdam server; asks "Did you read it before you sent it?" Two answers set `report_read_claimed` (`unread` / `read`), which only the credits read. |
-| B | **Double agent** (`double`) | In the workshop, type the **token from step 23** into `hacktivity_scoreboard` (the post-it says flags are lower case, exactly as found) → `warn_handler` complete, `warned_out_of_band` true. Optionally read `submission_accepted` (HaX's "+50 points…" reply). Then send as in A. | Same HaX texts as A. Cliffe: "Interesting choice of channel." | Decoy handset in Leeds; "Thank you for the flag." Adds "Ghost will ask again…". |
-| C | **Refuse** (`refused`) | Ghost's `[No. Find another student.]`, on the call (step 22) or on the Keyholder device (`the_offer_again`). | "CONTACT CLOSED." HaX texts "Your end's gone quiet. Talk to me." (3 s); her hub then shows `[I turned the Keyholder down.]` (sets `refusal_reported`). `jordan_pike` hides. Cliffe: "Good. Some offers you hear out…". | Refusal opening; "A clean no is worth something." |
-| D | **Blown** (`blown`) | HaX hub `[It's a trap. Don't open anything from me.]`. | Ghost texts "I did say it listens." (2 s); HaX texts "Copy. Leave by the front…" (6 s). `jordan_pike` hides. Cliffe: "Phones. Never trusted them." | Blown opening: "You told me on the line Ghost said was listening." |
+| A | **Send** (`sent`) | HaX hub `[Sending you my report now.]` with `warned_out_of_band` false. Works with or without decoding the report. | HaX replies "Copy." in the hub (no greeting after it), then texts "Received. Opening it now." (1.5 s), then "My phone just did something it shouldn't…" (7.5 s). Cliffe: "Hope that was worth it." | HaX's phone was fetched from a Rotterdam server; asks "Did you read it before you sent it?" Two answers set `report_read_claimed` (`unread` / `read`), which only the credits read. Then "Ghost thinks you're theirs now. I'm meant to wonder too. I'm trying not to." |
+| B | **Double agent** (`double`) | In the workshop, type the **token from step 23** into `hacktivity_scoreboard` (the post-it says flags are lower case, exactly as found) → `warn_handler` complete, `warned_out_of_band` true. Optionally read `submission_accepted` (HaX's "+50 points…" reply). Then send as in A. | Same HaX texts as A. Cliffe: "Interesting choice of channel." | Decoy handset in Leeds; "Thank you for the flag." "Congratulations. You now work for both of us. Only one of us knows." Adds "Ghost will ask again…". Credits add the sequel hook "Term's started. So have you." |
+| C | **Refuse** (`refused`) | Ghost's `[No. Find another student.]`, on the call (step 22) or on the Keyholder device (`the_offer_again`). | "CONTACT CLOSED." HaX texts "Your end's gone quiet. Talk to me." (3 s); her hub then shows `[I turned the Keyholder down.]` (sets `refusal_reported`). `jordan_pike` hides. Cliffe: "Good. Some offers you hear out…". | Refusal opening; "A clean no is worth something." Ghost's last line on refusing: "Noted. Two hundred and twelve picked up a card, and you're the first to say no to me." |
+| D | **Blown** (`blown`) | HaX hub `[It's a trap. Don't open anything from me.]`. | Ghost texts "I did say it listens." (2 s); HaX texts "Copy. Leave by the front…" (6 s). `jordan_pike` hides. Cliffe: "Phones. Never trusted them." | Blown opening: "You told me on the line Ghost said was listening." No "clean no" line: "Next time, the scoreboard. It's why it's there." (or, if the token was sent too, "The scoreboard was enough…"). |
 
 Order rules to test:
 - Warn, then send → `double` (B).
-- Send, then warn → stays `sent`, `late_warning` true, the debrief adds "You tried. It was already open." The scoreboard still accepts the token.
+- Send, then warn → stays `sent`, `late_warning` true. The debrief replaces "Did you read it?" with "Your flag reached me after the report did. You tried. It was already open." and sets `report_read_claimed` to `read`; the credits show "REPORT: Read, sent, then flagged. Too late." The scoreboard still accepts the token.
+- Debrief device line: if the Keyholder device was never taken (`ghost_greeted` false), HaX says "We're replacing your phone anyway. Ghost had the building's network all week." instead of "Hand in the device…".
 - Refuse or blown, with or without a warning before → stays `refused` / `blown` with `warned_out_of_band` true; the debrief thanks the player for the token.
 - Ghost's `[Sending it now.]` (device, `the_offer_again`) does **not** set an ending; Ghost says "Send it. Your handler's phone, not this one." Sending happens only in HaX's hub.
 - Credits titles: "KEYHOLDER: RECRUITED" for `sent` and `double`; "KEYHOLDER: DECLINED" for `refused` and `blown`. HaX, Megan and Jordan credit lines vary by ending and `megan_choice`.
@@ -166,7 +167,8 @@ Order rules to test:
 | `library_open`, `special_collections_open`, `pigeonholes_open`, `drop_box_open` | true | task `onComplete` (steps 9, 10, 14, 18) |
 | `workshop_open` | true | `open_workshop` (step 20) |
 | `relay_opened` | true | `open_relay_terminal` (step 21), and `report_b64` `onRead` |
-| `ghost_offer_made` | true | `the_offer` (step 22) |
+| `ghost_offer_made` | true | `the_offer`, first line (step 22) |
+| `ghost_offer_heard` | true | `offer_terms`, last line (step 22; fix round 1) |
 | `fn04_offered` … `fn09_offered` | true | HaX mappings on room entry and task completion |
 | `fn07_had` | true if Sidhu, desk copy or HaX note received | `onPickup` of each copy |
 | `decision_made` | false until step 24 | HaX or Ghost ink |
@@ -214,7 +216,8 @@ After step 24: `decision_made` true, `ending` one of `sent`, `double`, `refused`
 - **IV lost:** AES Decrypt errors ("Invalid IV length"). Re-run step 13. The notepad pencil on `drop_box_tag` is the intended store.
 - **Trailing new line or wrong SHA2 size:** the L10 eight characters are wrong, and so is the report hash check. Size 512 is the default.
 - **Wrong PIN three times** on the Trial II locker: "System locked"; reopen the pad to reset.
-- **Video call lost or closed early:** the Keyholder device's `route` knot delivers the offer instead (`the_offer`, `ghost_offer_made` guard). Test closing the call at its first line, then opening the device. The call must not replay.
+- **Video call lost or closed early:** closing the call before its last line leaves `ghost_offer_heard` false. Ghost texts "You closed the call. I'll say it here instead." (1.5 s), and the Keyholder device's `route` knot then delivers the whole offer ("CONTACT RESUMED.", then the offer and the prices) and lands on `offer_hub` (fix round 1, kstates K11/K12). The call must not replay.
+- **Exit lines on the device:** `[Close the device.]` replies "DEVICE IDLE." and the greeting ("Still watching." or "NO CARRIER.") doesn't follow it; `[Still thinking.]` replies "Take as long as the building gives you." with no "Back. So you've decided." after it (kstates K13-K15).
 - **Reading `report_b64` before the call ends:** re-sets `relay_opened`; the music switch is guarded by `!decision_made`; the call mapping by `!ghost_offer_made`. Neither should repeat.
 - **Reload mid-debrief:** `[I'm clear. Debrief me.]` is sticky and reopens it.
 - **Send then warn:** see order rules. **Double decisions:** the second HaX choice after `decision_made` is hidden; `send_report` and `warn_in_band` route back to the hub if `decision_made`.

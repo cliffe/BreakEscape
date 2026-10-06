@@ -11,6 +11,7 @@ VAR warned_out_of_band = false
 VAR late_warning = false
 VAR megan_choice = ""
 VAR report_read_claimed = ""
+VAR ghost_greeted = false
 
 VAR debrief_done = false
 
@@ -28,38 +29,45 @@ VAR debrief_done = false
 }
 
 === opening_sent ===
-Agent HaX: Sit down.
+Agent HaX: Sit down, Agent.
 Agent HaX: I opened your report on my phone at eleven minutes past six. At twelve minutes past, my phone told a server in Rotterdam where I was.
 Agent HaX: We moved me, and two others, before midnight. Nobody's hurt.
+{ late_warning:
+    #set_global:report_read_claimed:read
+    Agent HaX: Your flag reached me after the report did. You tried. It was already open.
+    -> sent_cost
+}
 Agent HaX: Did you read it before you sent it?
 + [No. I didn't decode it.]
     #set_global:report_read_claimed:unread
     Agent HaX: No. Most people wouldn't have. That's why it works.
-    -> pixel
+    -> sent_cost
 + [I read it. I sent it anyway.]
     #set_global:report_read_claimed:read
     Agent HaX: Then you'll have your reasons, and one day you'll tell me them. Not today.
-    -> pixel
+    -> sent_cost
+
+=== sent_cost ===
+Agent HaX: Ghost thinks you're theirs now. I'm meant to wonder too. I'm trying not to.
+-> pixel
 
 === opening_double ===
 Agent HaX: My phone did exactly what Ghost wanted, in a flat in Leeds we rent for the purpose.
 Agent HaX: Ghost's server thinks that's where I live. It'll go on thinking it while we watch who comes to look.
 Agent HaX: Thank you for the flag.
-{ late_warning:
-    Agent HaX: Even if it came a little late to be any use.
-}
+Agent HaX: Congratulations. You now work for both of us. Only one of us knows.
 -> pixel
 
 === opening_refused ===
 Agent HaX: You said no to Ghost on their own terms. That's rarer than you'd think.
 { warned_out_of_band:
-    Agent HaX: And you sent me the token first. We're watching that server now.
+    Agent HaX: And you sent me the token. We're watching that server now.
 }
 -> pixel
 
 === opening_blown ===
 Agent HaX: You told me on the line Ghost said was listening. They heard. That was the end of it.
-Agent HaX: You were right about the report, mind. Nobody opened it.
+Agent HaX: You were right about the report. Nobody opened it.
 { warned_out_of_band:
     Agent HaX: And you sent me the token. We're watching that server now.
 }
@@ -76,10 +84,21 @@ Agent HaX: I said I'd take either outcome. Ghost recognised you and wanted you a
 { ending == "double":
     Agent HaX: Ghost will ask again, and next time it'll be something we can't fake.
 }
-{ ending == "refused" or ending == "blown":
+{ ending == "refused":
     Agent HaX: A clean no is worth something. It's also the last time they'll talk to you.
 }
-Agent HaX: Hand in the device. We're replacing your phone too. It sat next to theirs all day.
+{ ending == "blown":
+    { warned_out_of_band:
+        Agent HaX: The scoreboard was enough. The phone call was one call too many.
+    - else:
+        Agent HaX: Next time, the scoreboard. It's why it's there.
+    }
+}
+{ ghost_greeted:
+    Agent HaX: Hand in the device. We're replacing your phone too. It sat next to theirs all day.
+- else:
+    Agent HaX: We're replacing your phone anyway. Ghost had the building's network all week.
+}
 -> people
 
 === people ===
@@ -102,17 +121,17 @@ Agent HaX: You can read Base64 now. Most people who'd have opened that report ca
 -> questions
 
 === questions ===
-+ [Who is Dr Schreuders?]
+* [Who is Dr Schreuders?]
     Agent HaX: That's classified.
     -> questions_more
-+ [Was Ghost really reading my phone?]
+* [Was Ghost really reading my phone?]
     Agent HaX: We're replacing it. That's all the answer you get.
     -> questions
 + [That's everything.]
     -> close
 
 === questions_more ===
-+ [Classified by whom?]
+* [Classified by whom?]
     Agent HaX: Classified isn't the same as "I don't know", Agent. Leave it there.
     -> questions
 + [Fine.]

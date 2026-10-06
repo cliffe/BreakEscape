@@ -17,20 +17,22 @@ VAR decision_made = false
 === start ===
 { met_megan: -> hub }
 ~ met_megan = true
-You after the Keyholder money as well? Get in the queue.
-Megan. First year. Our mam thinks I'm doing something sensible.
+Megan Oyelaran: You after the Keyholder money as well? Get in the queue.
+Megan Oyelaran: Megan. First year. Our mam thinks I'm doing something sensible.
 -> hub
 
 === hub ===
 {
 - megan_choice == "warned":
-    I'm still thinking about what you said. Proper thinking.
+    Megan Oyelaran: Binned the leaflet. Still skint, mind. Worth it.
+- corridor_open:
+    Megan Oyelaran: Still on Trial III. Don't tell me how. I want to get it myself.
 - locker_open:
-    You got past the locker? Dead good. I'm still on it.
+    Megan Oyelaran: You got past the locker? Dead good. I'm still on it.
 - lockbox_open:
-    Locker four's done my head in.
+    Megan Oyelaran: Locker four's done my head in.
 - else:
-    Go on, then.
+    Megan Oyelaran: Go on, then.
 }
 + {lockbox_open and not locker_open} [How are you getting on with Trial II?]
     -> trial_two
@@ -40,28 +42,28 @@ Megan. First year. Our mam thinks I'm doing something sensible.
     -> why
 + [See you around.]
     #exit_conversation
-    Not if I see you first.
+    Megan Oyelaran: Not if I see you first.
     -> hub
 
 === trial_two ===
-Eight digits, four-digit keypad. I typed the first four straight in and it locked me out. Three goes and you're done.
-It resets if you walk off and come back, mind.
-Someone said the card's not a number, it's characters. And I tried that hex thing and got four capital letters, so that's not it either.
+Megan Oyelaran: Eight digits, four-digit keypad. I typed the first four straight in and it locked me out. Three goes and you're done.
+Megan Oyelaran: It resets if you walk off and come back, mind.
+Megan Oyelaran: Someone said the card's not a number, it's characters. And I tried that hex thing and got four capital letters, so that's not it either.
 -> hub
 
 === why ===
-My mam's care home is two months behind. I'm on an overdraft I'm not telling you the size of.
-Nine grand a year sorts both. So yeah. I want it.
+Megan Oyelaran: My mam's care-home fees are two months behind. I'm on an overdraft I'm not telling you the size of.
+Megan Oyelaran: Nine grand a year sorts both. So yeah. I want it.
 -> hub
 
 === warn_her ===
 { megan_choice != "": -> hub }
 Narrator: You tell her what you read in the candidate assessments.
-They wrote that down? About my mam?
+Megan Oyelaran: They wrote that down? About my mam?
 Narrator: She's quiet for a long moment.
-Right. Glad I know. Doesn't pay the care home, does it.
-I'm out. They can find another charity case.
+Megan Oyelaran: Right. Glad I know. Doesn't pay the care home, does it.
 #set_global:megan_choice:warned
 #set_global:megan_choice_made:true
 ~ megan_choice = "warned"
+Megan Oyelaran: I'm out. They can find another charity case.
 -> hub

@@ -47,20 +47,22 @@ VAR fn10_sent = false
 VAR fn11_sent = false
 VAR hint_step = ""
 VAR hint_rung = 0
+// Skips the hub greeting once after a reply that closes or answers a decision,
+// so "Copy." isn't followed by "Go ahead." (fix round 1, REVIEW_IMPL m1)
+VAR parked = false
 
 === start ===
 -> hub
 
 === hub ===
 #speaker:agent_0x99
-{ decision_made:
-    Call me when you're clear.
+{
+- parked:
+    ~ parked = false
+- ghost_offer_made and not decision_made:
+    I'm here. Careful what you say on this line.
 - else:
-    { ghost_offer_made:
-        I'm here. Careful what you say on this line.
-    - else:
-        Go ahead.
-    }
+    Go ahead.
 }
 + {decision_made} [I'm clear. Debrief me.]
     -> debrief
@@ -79,12 +81,13 @@ VAR hint_rung = 0
 + {not decision_made} [I'm stuck.]
     -> stuck
 + [That's all for now.]
+    ~ parked = true
     #exit_conversation
     Copy.
     -> hub
 
 === function field_note_waiting() ===
-~ return (fn11_offered and not fn11_sent) or (fn10_offered and not fn10_sent and not fn10_had) or (fn08_offered and not fn08_sent) or (fn09_offered and not fn09_sent) or (fn07_offered and not fn07_sent and not fn07_had) or (fn06_offered and not fn06_sent) or (fn05_offered and not fn05_sent) or (fn04_offered and not fn04_sent)
+~ return (fn11_offered and not fn11_sent) or (fn10_offered and not fn10_sent and not fn10_had) or (fn09_offered and not fn09_sent) or (fn08_offered and not fn08_sent) or (fn07_offered and not fn07_sent and not fn07_had) or (fn06_offered and not fn06_sent) or (fn05_offered and not fn05_sent) or (fn04_offered and not fn04_sent)
 
 // ------------------------------------------------
 // Field notes: the newest offered note that hasn't been sent
@@ -99,18 +102,18 @@ VAR hint_rung = 0
     ~ fn10_sent = true
     #give_item:notes:fn10_hax
     Signatures. Read the part about what was signed. Sent.
-- fn08_offered and not fn08_sent:
-    ~ fn08_sent = true
-    #give_item:notes:fn08_aes
-    AES. Sent.
 - fn09_offered and not fn09_sent:
     ~ fn09_sent = true
     #give_item:notes:fn09_public_key
-    Public keys. Sent.
+    Public keys. Yours locks, the private one opens. Sent.
+- fn08_offered and not fn08_sent:
+    ~ fn08_sent = true
+    #give_item:notes:fn08_aes
+    AES. Same key both ends. Sent.
 - fn07_offered and not fn07_sent and not fn07_had:
     ~ fn07_sent = true
     #give_item:notes:fn07_hax
-    Hashes. Sent.
+    Hashes. Fingerprints, not locks. Sent.
 - fn06_offered and not fn06_sent:
     ~ fn06_sent = true
     #give_item:notes:fn06_vigenere
@@ -165,7 +168,8 @@ Not on this line. Leave it with me.
 }
 #set_global:decision_made:true
 ~ decision_made = true
-Received.
+~ parked = true
+Copy.
 -> hub
 
 === warn_in_band ===
@@ -174,16 +178,19 @@ Received.
 #set_global:ending:blown
 #set_global:decision_made:true
 ~ decision_made = true
+~ parked = true
 Understood.
 -> hub
 
 === refusal_report ===
 ~ refusal_reported = true
+~ parked = true
 #set_global:refusal_reported:true
 Copy. Leave by the front. Don't run. Then call me.
 -> hub
 
 === debrief ===
+~ parked = true
 #set_global:start_debrief_cutscene:true
 #exit_conversation
 On my way to you.

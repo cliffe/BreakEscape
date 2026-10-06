@@ -7,6 +7,7 @@
 
 VAR met_sidhu = false
 VAR asked_ledger = false
+VAR checked_report = false
 
 // Synced scenario globals
 VAR fn07_had = false
@@ -19,25 +20,29 @@ VAR special_collections_open = false
 { met_sidhu: -> hub }
 #complete_task:consult_sidhu
 ~ met_sidhu = true
-Come in, come in. Sidhu Selvarajan. You must be one of the new first-years.
-You were looking at my whiteboard. It is from my blockchain lecture. A toy ledger, four blocks.
+Dr Sidhu Selvarajan: Come in, come in. Sidhu Selvarajan. You must be one of the new first-years.
+Dr Sidhu Selvarajan: You were looking at my whiteboard. It is from my blockchain lecture. A toy ledger, four blocks.
 { not fn07_had:
     #give_item:notes:fn07_hashing
 }
 #give_item:notes:fn10_signatures
-Take these. One on hashes, one on signatures. Let us be exact about the difference, because people confuse them.
-If anyone hands you something signed, bring it to me. I like to watch a signature check out.
+{ fn07_had:
+    Dr Sidhu Selvarajan: Take this. It is on signatures. Let us be exact about them, because people confuse them with hashes.
+- else:
+    Dr Sidhu Selvarajan: Take these. One on hashes, one on signatures. Let us be exact about the difference, because people confuse them.
+}
+Dr Sidhu Selvarajan: If anyone hands you something signed, bring it to me. I like to watch a signature check out.
 -> hub
 
 === hub ===
-{ relay_opened and not decision_made:
-    You have the look of someone holding a document.
+{ relay_opened and not decision_made and not checked_report:
+    Dr Sidhu Selvarajan: You have the look of someone holding a document.
 - else:
-    What can I do for you?
+    Dr Sidhu Selvarajan: What can I do for you?
 }
-+ {relay_opened and not decision_made} [I've been given something signed. Will you look?]
++ {relay_opened and not decision_made and not checked_report} [I've been given something signed. Will you look?]
     -> signed_now
-+ {decision_made} [I had something signed. I made a choice about it.]
++ {decision_made} [That signed report. I've made my choice.]
     -> signed_after
 + {not asked_ledger} [What's the ledger on the board?]
     -> ledger
@@ -45,30 +50,32 @@ If anyone hands you something signed, bring it to me. I like to watch a signatur
     -> hash_for
 + [Thank you. I'll leave you to it.]
     #exit_conversation
-    Do check everything twice.
+    Dr Sidhu Selvarajan: Do check everything twice.
     -> hub
 
 === ledger ===
 ~ asked_ledger = true
-Each block keeps the hash of the block before it. That is the chain.
-Change one letter in block two and its hash changes, so block three no longer points at it, and so on to the end. Tampering shows.
+Dr Sidhu Selvarajan: Each block keeps the hash of the block before it. That is the chain.
+Dr Sidhu Selvarajan: Change one letter in block two and its hash changes, so block three no longer points at it, and so on to the end. Tampering shows.
 { special_collections_open:
-    And yes, the data in block four is a word. Somebody has been reading my board very closely this week.
+    Dr Sidhu Selvarajan: And yes, the data in block four is a word. Somebody has been reading my board very closely this week.
 }
 -> hub
 
 === hash_for ===
-A hash is a fingerprint. Any amount of input, a fixed-length output, and you cannot run it backwards.
-Same input, same hash. One byte different, even a new line you cannot see, and it is a completely different hash.
-So you can check that nothing has changed without keeping the thing itself. That is how good systems store passwords.
+Dr Sidhu Selvarajan: A hash is a fingerprint. Any amount of input, a fixed-length output, and you cannot run it backwards.
+Dr Sidhu Selvarajan: Same input, same hash. One byte different, even a new line you cannot see, and it is a completely different hash.
+Dr Sidhu Selvarajan: So you can check that nothing has changed without keeping the thing itself. That is the start of how good systems store passwords.
+Dr Sidhu Selvarajan: They add salt and a slow hash, but that is another lecture.
 -> hub
 
 === signed_now ===
+~ checked_report = true
 Narrator: He reads the report, the hash and the signature, and checks them on his own screen.
-It verifies. That tells you who wrote it, and that nobody has changed it.
-It does not tell you whether you should send it.
+Dr Sidhu Selvarajan: It verifies against the Keyholder's key. So the Keyholder signed it, whatever the FROM line says, and nobody has touched it since.
+Dr Sidhu Selvarajan: It does not tell you whether you should send it.
 -> hub
 
 === signed_after ===
-It verified, I expect. That was never the question.
+Dr Sidhu Selvarajan: It verified, I expect. That was never the question.
 -> hub

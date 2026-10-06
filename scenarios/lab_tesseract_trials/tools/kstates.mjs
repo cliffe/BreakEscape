@@ -28,32 +28,48 @@ const G = 'scenarios/lab_tesseract_trials/ink/phone_ghost.json', H = 'scenarios/
 // Each case: entry knot, globals at entry, optional [globals change, then reopen] steps, expected knot and choice checks.
 const cases = [
   { id: 'K1', f: G, entry: 'start', g: {}, expect: 'waiting' },
-  { id: 'K2', f: G, entry: 'start', g: { special_collections_open: true }, expect: 'waiting', textHas: 'took your time' },
+  { id: 'K2', f: G, entry: 'start', g: { special_collections_open: true }, expect: 'waiting', textHas: 'most of the Trials' },
   { id: 'K3', f: G, entry: 'start', g: { relay_opened: true }, expect: 'offer_hub' },
   { id: 'K4', f: G, entry: 'start', g: {}, then: { relay_opened: true }, expect: 'offer_hub' },
-  { id: 'K5', f: G, entry: 'the_offer_call', g: { relay_opened: true }, choose: /think about it/, expect: 'the_offer_again', choiceHas: /Find another student/ },
+  { id: 'K5', f: G, entry: 'the_offer_call', g: { relay_opened: true }, choose: /think about it/, expect: 'the_offer_again', choiceHas: /Find another student/, afterLacks: 'Back. So you', varIs: ['ghost_offer_heard', true] },
   { id: 'K6', f: G, entry: 'the_offer_call', g: { relay_opened: true }, choose: /think about it/, then: { decision_made: true, ending: 'sent' }, expect: 'closed', choiceLacks: /Find another student/, endingStays: 'sent' },
-  { id: 'K7', f: G, entry: 'the_offer_call', g: { relay_opened: true }, choose: /Find another student/, expect: 'closed', endingIs: 'refused' },
-  { id: 'K8', f: G, entry: 'start', g: {}, then: { decision_made: true, ending: 'blown', relay_opened: true, ghost_offer_made: true }, expect: 'closed' },
+  { id: 'K7', f: G, entry: 'the_offer_call', g: { relay_opened: true }, choose: /Find another student/, expect: 'closed', endingIs: 'refused', afterHas: 'CONTACT CLOSED', afterLacks: 'NO CARRIER' },
+  { id: 'K8', f: G, entry: 'start', g: {}, then: { decision_made: true, ending: 'blown', relay_opened: true, ghost_offer_made: true, ghost_offer_heard: true }, expect: 'closed' },
   { id: 'K9', f: G, entry: 'the_offer_call', g: { relay_opened: true }, choose: /think about it/, reload: true, then: {}, expect: 'the_offer_again' },
-  { id: 'K10a', f: G, entry: 'the_offer_call', g: { relay_opened: true, ghost_offer_made: true }, expect: 'the_offer_again', textLacks: 'Congratulations' },
-  { id: 'K10b', f: G, entry: 'the_offer_call', g: { relay_opened: true, ghost_offer_made: true, decision_made: true, ending: 'sent' }, expect: 'closed', textLacks: 'Congratulations' },
+  { id: 'K10a', f: G, entry: 'the_offer_call', g: { relay_opened: true, ghost_offer_made: true, ghost_offer_heard: true }, expect: 'the_offer_again', textLacks: 'Congratulations' },
+  { id: 'K10b', f: G, entry: 'the_offer_call', g: { relay_opened: true, ghost_offer_made: true, ghost_offer_heard: true, decision_made: true, ending: 'sent' }, expect: 'closed', textLacks: 'Congratulations' },
+  // Fix round 1. K11/K12: the video call closed at its first line (P3-M1): ghost_offer_made set, ghost_offer_heard not.
+  { id: 'K11', f: G, entry: 'start', g: {}, then: { relay_opened: true, ghost_offer_made: true }, expect: 'offer_hub', textHas: 'CONTACT RESUMED', textHas2: 'start Monday', varIs: ['ghost_offer_heard', true] },
+  { id: 'K12', f: G, entry: 'start', g: { relay_opened: true, ghost_offer_made: true }, expect: 'offer_hub', textHas: 'CONTACT RESUMED', textHas2: 'third offer' },
+  { id: 'K12b', f: G, entry: 'the_offer_call', g: { relay_opened: true, ghost_offer_made: true }, expect: 'offer_hub', textHas: 'Congratulations' },
+  // Exit lines (REVIEW_IMPL M1, m9): the farewell is not followed by the resting knot's greeting.
+  { id: 'K13', f: G, entry: 'start', g: {}, choose: /Close the device/, expect: 'waiting', afterHas: 'DEVICE IDLE', afterLacks: 'Still watching' },
+  { id: 'K14', f: G, entry: 'start', g: { relay_opened: true, ghost_offer_made: true, ghost_offer_heard: true }, choose: /Still thinking/, expect: 'the_offer_again', afterHas: 'Take as long', afterLacks: 'Back. So you' },
+  { id: 'K15', f: G, entry: 'start', g: { relay_opened: true, ghost_offer_made: true, ghost_offer_heard: true, decision_made: true, ending: 'sent' }, choose: /Close the device/, expect: 'closed', afterHas: 'DEVICE IDLE', afterLacks: 'NO CARRIER' },
+  // Prices in the offer, unprompted (REVIEW_IMPL M3)
+  { id: 'K16', f: G, entry: 'the_offer_call', g: { relay_opened: true, ghost_greeted: true }, expect: 'offer_hub', textHas: 'third offer', textHas2: 'So does she', choiceLacks: /What happens if I say no/ },
+  { id: 'K17', f: G, entry: 'the_offer_call', g: { relay_opened: true, megan_choice: 'warned' }, expect: 'offer_hub', textHas: 'Miss Oyelaran was the first', textLacks: 'So does she' },
   { id: 'H1', f: H, entry: 'start', g: { comms_had: false }, expect: 'hub', choiceHas: /Remind me how I reach you/ },
   { id: 'H2', f: H, entry: 'start', g: { comms_had: true, lockbox_open: true, fn04_offered: true }, expect: 'hub', choiceHas: /field note/, choiceLacks: /Sending you my report/ },
   { id: 'H3', f: H, entry: 'start', g: { comms_had: true, ghost_offer_made: true }, expect: 'hub', choiceHas: /Sending you my report/, choiceLacks: /Debrief me/ },
   { id: 'H4', f: H, entry: 'start', g: { comms_had: true, ghost_offer_made: true, decision_made: true, ending: 'refused' }, expect: 'hub', choiceHas: /turned the Keyholder down/ },
   { id: 'H5', f: H, entry: 'start', g: { comms_had: true, decision_made: true, ending: 'sent' }, expect: 'hub', choiceHas: /Debrief me/ },
   { id: 'H6', f: H, entry: 'start', g: { comms_had: true, decision_made: true, ending: 'sent', start_debrief_cutscene: true }, reload: true, then: {}, expect: 'hub', choiceHas: /Debrief me/ },
+  // Fix round 1: FN9 (public key) before FN8 (AES) (REVIEW_IMPL m5); no greeting after a decision reply (m1)
+  { id: 'H7', f: H, entry: 'start', g: { comms_had: true, fn08_offered: true, fn09_offered: true }, choose: /field note/, expect: 'hub', afterHas: 'Public keys', afterLacks: 'AES' },
+  { id: 'H8', f: H, entry: 'start', g: { comms_had: true, ghost_offer_made: true }, choose: /Sending you my report/, expect: 'hub', afterHas: 'Copy.', afterLacks: 'Go ahead', choiceHas: /Debrief me/ },
+  { id: 'H9', f: H, entry: 'start', g: { comms_had: true }, choose: /That's all for now/, expect: 'hub', afterHas: 'Copy.', afterLacks: 'Go ahead' },
 ];
 let fails = 0;
 for (const k of cases) {
   window.gameState.globalVariables = { ...base, ...k.g };
   let c = await conv(k.f); sync(c.engine.story);
   c.goToEntryKnot(k.entry);
-  let text = run(c.engine.story);
+  let text = run(c.engine.story), after = [];
   if (k.choose) {
     const i = c.engine.story.currentChoices.findIndex(ch => k.choose.test(ch.text));
-    c.engine.story.ChooseChoiceIndex(i); text = text.concat(run(c.engine.story));
+    if (i < 0) { fails++; quiet(`FAIL ${k.id}: no choice ${k.choose}`); continue; }
+    c.engine.story.ChooseChoiceIndex(i); after = run(c.engine.story); text = text.concat(after);
     for (const n of Object.keys(base)) if (c.engine.story.variablesState.GlobalVariableExistsWithName(n)) window.gameState.globalVariables[n] = c.engine.story.variablesState[n];
   }
   if (k.then) {
@@ -69,6 +85,10 @@ for (const k of cases) {
   if (k.choiceLacks && choices.some(x => k.choiceLacks.test(x))) errs.push(`unexpected choice ${k.choiceLacks}`);
   if (k.textHas && !text.join(' ').includes(k.textHas)) errs.push(`text lacks "${k.textHas}"`);
   if (k.textLacks && text.join(' ').includes(k.textLacks)) errs.push(`text has "${k.textLacks}"`);
+  if (k.textHas2 && !text.join(' ').includes(k.textHas2)) errs.push(`text lacks "${k.textHas2}"`);
+  if (k.afterHas && !after.join(' ').includes(k.afterHas)) errs.push(`reply lacks "${k.afterHas}"`);
+  if (k.afterLacks && after.join(' ').includes(k.afterLacks)) errs.push(`reply has "${k.afterLacks}"`);
+  if (k.varIs && st.variablesState[k.varIs[0]] !== k.varIs[1]) errs.push(`${k.varIs[0]} is ${st.variablesState[k.varIs[0]]}`);
   if (k.endingIs && window.gameState.globalVariables.ending !== k.endingIs && st.variablesState.ending !== k.endingIs) errs.push(`ending ${st.variablesState.ending}`);
   if (k.endingStays && st.variablesState.ending !== k.endingStays) errs.push(`ending changed to ${st.variablesState.ending}`);
   if (errs.length) fails++;

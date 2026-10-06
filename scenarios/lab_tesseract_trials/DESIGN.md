@@ -1079,3 +1079,146 @@ Validator, final: 0 errors, 7 warnings, all deliberate:
 - two "multiple solution paths" warnings for the pigeonholes and the drop box, which are AND gates, marked with `puzzle_graph_and_with`.
 
 The 29 suggestions are VM, RFID, hostile-NPC and patrol prompts that don't apply to a lab; `onPickup` on hand-over notes (intended: the global means "has the note"); and graph metadata on items inside containers whose container already carries the edge (adding it there creates duplicate-path warnings).
+
+### Fix round 1 (after REVIEW_IMPL, DIALOGUE_REVIEW, PUZZLE_PLAN Phase A, PLAYTEST_P1-P3)
+
+Decisions in `DECISIONS_LOG.md` (2026-10-06, user and orchestrator) were applied first and override the reviewers. Two structural additions:
+
+- **`ghost_offer_heard` (new global).** `ghost_offer_made` is still set on the offer's first line (the call has happened; HaX's send and warn choices appear). `ghost_offer_heard` is set only on its last line ("Send it and you start Monday."). Ghost's router, `the_offer_call` and `the_offer` now guard on `ghost_offer_heard`, so a call closed early leaves the device to deliver the whole offer. It has to be a global: the device restores its own saved story (`phone-chat-minigame.js:427-436`), so an ink-local set during the call never reaches it. A Ghost text on `conversation_closed:ghost` ("You closed the call. I'll say it here instead.") sends the player to the device.
+- **`parked` (ink-local, Ghost and HaX).** Phone chat shows every line up to the next choices, so a farewell after `#exit_conversation` was followed by the resting knot's greeting ("Back. So you've decided." after "I'll think about it"). The exits set `parked`; the resting knot skips its greeting once. On the call the exit tag now sits on the farewell line itself, so person-chat closes there.
+
+#### Findings mapped to changes
+
+**From DECISIONS_LOG (applied as instructed)**
+
+| Decision | Change |
+|---|---|
+| Coffee sign | "Wash your mug. The sink is not a cupboard." |
+| Tom's intro | "Right then. You'll be one of mine. Tom Shaw. I look after the first-years this week." |
+| Cliffe's idiom | Kept: "G'day", both "Reckon", "mate", "No worries" unchanged. |
+| Ghost's prices back in the offer (REVIEW_IMPL M3) | `offer_terms` now ends with the three prices, unprompted, and "So does she." is back (not when Megan was warned). `[What happens if I say no?]` is removed because it would only repeat them. |
+| One fix for send-then-warn (REVIEW_IMPL M2, DIALOGUE M2, P3 m2) | `opening_sent`: with `late_warning`, HaX says "Your flag reached me after the report did. You tried. It was already open." and the "Did you read it?" question is skipped (`report_read_claimed` set to `read`). Dead branch in `opening_double` removed. New credit "REPORT: Read, sent, then flagged. Too late."; "Read, and sent." is suppressed on that route. |
+| Tom's placeholder sprite (P1 finding 11) | **Not changed: the premise was wrong.** Tom already uses `male_office_worker_v2` (white shirt, tie). The hooded figure in P1's `03-lab.png` stands at the whiteboard and matches the HUD portrait: it is the player (`female_hacker_hood_v2`, the m01 default; `validSprites` offers hood variants). P1 finding 1 ("coordinates looked mirrored") is the same mix-up. Confirmed on screen in the fix-round browser check. |
+| FN9 before FN8 (REVIEW_IMPL m5) | `send_field_note` and `field_note_waiting()` check FN9 before FN8. |
+| P4 waits for the timed blind run | Not done. |
+
+**REVIEW_IMPL.md**
+
+| Id | Change |
+|---|---|
+| M1 | `parked` skip (above). The call's `[I'll think about it.]` closes on "Your terminal's still open…"; the device's `[Still thinking.]` replies "Take as long as the building gives you."; `[Close the device.]` replies "DEVICE IDLE." in `waiting` and `closed`. kstates K5, K13-K15. |
+| M2 | See the DECISIONS_LOG table (send-then-warn). |
+| M3 | See the DECISIONS_LOG table (prices). kstates K16, K17. |
+| m1 | HaX's hub greets "Go ahead." after a decision (the "I'm here. Careful…" line stays between the offer and the decision). Replies that answer a decision ("Copy.", "Understood.", "On my way to you.", the refusal report) skip the greeting. "Call me when you're clear." stays only in the blown-route timed text. kstates H8, H9. |
+| m2 | "And you sent me the token." ("first" dropped). |
+| m3 | Debrief declares `ghost_greeted`; never taken: "We're replacing your phone anyway. Ghost had the building's network all week." |
+| m4 | Sidhu branches on `fn07_had`: "Take this. It is on signatures…" |
+| m5 | Done (FN9 first). kstates H7. |
+| m6 | Tom's greeting: "Well? Got into that terminal yet?" while it's locked, "You got into it, then. Good. I'm still not ordering one." until the corridor opens, then "Owt else?". |
+| m7 | Megan: new `corridor_open` greeting "Still on Trial III. Don't tell me how. I want to get it myself." |
+| m8 | Ghost at `pigeonholes_open`: "Your envelope's waiting. Only one key opens it." |
+| m9 | Refusal: the exit tag sits on "CONTACT CLOSED."; `closed` skips "NO CARRIER." once. kstates K7. |
+| m10 | Rows added below ("Deviations recorded in fix round 1"). |
+| m11 | `[I'll read it. Go on.]` (chosen over the dialogue review's `[Got it. Go on.]` because HaX has just asked the player to read the note). |
+
+**DIALOGUE_REVIEW.md**
+
+| Id | Change |
+|---|---|
+| M1 | "I told you at St Catherine's: no name. That hasn't changed. You can call me what your handler does: Ghost." |
+| M2 | As REVIEW_IMPL M2. |
+| M3 | Paper tape rows redrawn: `○ ● ○ ○ ● ○ ○ ○` and `○ ● ○ ○ ● ○ ○ ●`. |
+| M4 | As REVIEW_IMPL m3. |
+| M5 | Every spoken line in `npc_tom`, `npc_sidhu`, `npc_cliffe`, `npc_megan` and `npc_jordan` now carries its `displayName` prefix (79 lines). dialoguelint then saw them for the first time and flagged two long lines (Tom's Mailer line, Ghost's refusal), both split. |
+| M6 | All three HaX voice styles start with the voice bible's identity part, word for word (m01 form, with the em dash), then the scene sentence. |
+| M7 | Sidhu: "It verifies against the Keyholder's key. So the Keyholder signed it, whatever the FROM line says, and nobody has touched it since." |
+| M8 | Double: "Congratulations. You now work for both of us. Only one of us knows." Sent (new knot `sent_cost`, every sent path): "Ghost thinks you're theirs now. I'm meant to wonder too. I'm trying not to." |
+| M9 | Intro (late): "You left this in my box for most of the Trials. I watched all of them." (the review's "three Trials" undercounts: the device sits in the box from Trial I to at least Trial VI). Special Collections: "A key word, then a key pair. Fewer than twenty of you will see the second." Refusal: "Noted. Two hundred and twelve picked up a card, and you're the first to say no to me." / "I'll put you in the column for it." |
+| Choices | `[Walk me through the board?]`; `[That signed report. I've made my choice.]`; Tom's `[Thanks. I'll get on.]` (which didn't exit) is now `[Thanks. Anything else I should know?]`, which leads into P3's key-pair line. |
+| Briefing | "That's classified. Next." first, "That's classified too." second. `[Ransomware Incorporated. Ghost's people.]` gets "Yes. Ghost's. St Catherine's was theirs." and skips the explanation (new knot `ghost_known`). "Dr Cliffe Schreuders" in speech; the displayName keeps "Z.". |
+| Repeating greetings | Jordan and Cliffe cycle through three greetings (`{&…}`); Ghost's "Still watching." alternates with "Two hundred and twelve candidates. I'd rather watch you than most of them."; Ghost's `[Who are you?]` is once-only. |
+| Same fact twice | HaX's "Received." in `send_report` is now "Copy." |
+| HaX register | Acknowledgements gain a clause: "Public keys. Yours locks, the private one opens. Sent.", "AES. Same key both ends. Sent.", "Hashes. Fingerprints, not locks. Sent."; "mind" removed from the blown debrief; "Sit down, Agent." |
+| Stale lines | Megan, warned: "Binned the leaflet. Still skint, mind. Worth it." (the tags now ride on "I'm out…", not on the next greeting). Ghost intro: "…The rest get harder." Cliffe workshop: "The building. Bit further along than this morning." "monitors" → "CCTV screens". |
+| Debrief | Blown no longer gets "A clean no": "Next time, the scoreboard. It's why it's there." or, with the token sent too, "The scoreboard was enough. The phone call was one call too many." Both questions are once-only (`*`). |
+| Teaching | FN6: "can encrypt differently each time"; "any letters before it, such as a heading, knock the key out of step". FN9: "For encryption, it only locks." Sidhu: "That is the start of how good systems store passwords. / They add salt and a slow hash, but that is another lecture." Ghost's drop-box text: "It's how we locked forty companies last year." |
+| Megan | "My mam's care-home fees are two months behind." Jordan: "to be fair" for "mind". |
+| Rejected | Cliffe's accent density ("drop G'day and one Reckon"): rejected, user decision to keep the idiom. Sidhu's optional "every second paper I review" line: not taken, it's optional and his hash answer is already three lines. "St Catherine's" and "Schreuders" pronunciation: can't be checked on the keyless :3001 server; left for the user's first listen when audio is cached. |
+
+**PUZZLE_PLAN.md (Phase A)**
+
+| Id | Change |
+|---|---|
+| P1 | L2 text: "Eight digits for a four-digit keypad. Odd. Bring the black box too…"; corridor text: "Not decimal, not hex, not binary. Something new on that wall. Field note on request." |
+| P2 | HaX's Special Collections text removed; the mapping keeps `onceOnly` and `fn06_offered`. |
+| P3 | Tom's hub greeting, once (ink-local `told_keys`): "Your lab account's on that PC. I've put a key pair on it. Have a read of the README; you'll want the private one before the week's out." `lab_account_pc` observations add "Dr Shaw's README is on it." |
+| P5 | "Brass. Old-fashioned. The workshop's north. Schreuders' door." Door sign and directory keep "(knock)". |
+| P6 | "Special Collections. Fourteen left. The key to the next one…" |
+| P7 | FN1 step 1: "Copy the code, never retype it: in a note, drag across the text and press Ctrl+C (Cmd+C on a Mac); files have a Copy button. Paste into Input (top right)." |
+| P4 | Not done: waits for the timed blind playtest (orchestrator decision). |
+
+**PLAYTEST_P1.md**
+
+| # | Change or rejection |
+|---|---|
+| 1 | Rejected as a game fault. The "mirrored" layout is the player/Tom mix-up (see Tom's sprite above): Tom is the white-shirted figure below the desks, next to his whiteboard. `moveToNear` stopping short is a harness pathing limit P2 also hit on other targets (P2 finding P4). |
+| 2 | Rejected: by design. The Comms note is the out-of-band channel and has to arrive before the phone is compromised (N2, R3-12). Knowing the channel early doesn't give the double route away: the token only exists inside the decoded report. |
+| 3, 4 | Engine behaviour, logged by the orchestrator as E4/E5. FN1 and Tom already point at the notepad pencil as the place to keep anything needed later. |
+| 5 | HaX's "Read it as characters" removed (P1). The noticeboard and Megan stay: they are the designed in-room teaching (PUZZLE_PLAN F1, DIALOGUE section 4). The CyberChef error text is CyberChef's own; FN2 and ladder rung 3 already say to put a space after every two digits. |
+| 6 | `[Who are you?]` is once-only, so it no longer loops. The late opening is engine timing: the pickup mapping has no delay, and the chat opens once the container minigame has closed. Not changed. |
+| 7 | Harness note; no change. |
+| 8 | Walkthrough step 1 now says the briefing closes by itself after "…Then go and be found." |
+| 9 | The corridor text is P1's new string. Ghost's Trial IV line fires 2 s after L4 opens; it landed during Trial V only because the run moved on quickly and the toasts queued. Not changed. |
+| 10 | `trial_iv.hex` is a text file with a Copy button; P7 now says so in FN1. Not changed otherwise. |
+| 11 | See the DECISIONS_LOG table (premise wrong, no change). |
+
+**PLAYTEST_P2.md**
+
+| # | Change or rejection |
+|---|---|
+| P1, P2 | P7 (copy, never retype) in FN1. |
+| P3-P5 | Harness notes; no change. |
+
+**PLAYTEST_P3.md**
+
+| # | Change or rejection |
+|---|---|
+| M1 | `ghost_offer_heard` (above), plus Ghost's "You closed the call. I'll say it here instead." text. kstates K11, K12, K12b. |
+| M2 | As DIALOGUE "Debrief": no "clean no" on `blown`. |
+| m1 | HaX's FN10 offer on `conversation_closed:ghost` now also needs `decision_made !== true`, and its delay is 6 s (validator: 4.5 s clear of Ghost's new 1.5 s text). A decision made within those 6 s can still be followed by the offer, because a timed text can't re-check its condition on delivery. Accepted. |
+| m2 | See the DECISIONS_LOG table (send-then-warn). |
+| m3 | Rejected. The pixel explanation is what HaX would tell any agent about the trap, and it's true on every route. "You can read Base64 now" is true for every player, because L5 and L6 both need Base64. |
+| m4 | Sidhu's signed-report choice and his "holding a document" greeting hide after the scene (ink-local `checked_report`). |
+| m5 | Engine (E5). |
+| m6 | `returnsToContainer` on text files is shared engine or harness behaviour, not mission-local. Reported, not changed. |
+| m7 | As P1 finding 6. |
+| m8 | Harness. |
+| m9 | Not rechecked this round (see the browser check notes). |
+
+#### Deviations recorded in fix round 1 (REVIEW_IMPL m10)
+
+| Where | Design said | Built | Why |
+|---|---|---|---|
+| FN7 fallback text | 2 s after the Final Trial Card | 12 s | Clears the drop-box texts (Ghost 7 s, HaX 1.5 s); the smoke run still stacked four at speed. |
+| Hint ladder | separate steps for L8a and L8b | one step, `l8`, whose rungs walk through both | Both locks open from the same corridor visit; one ladder avoids a step change halfway through. |
+| Double-route sequel hook | a message on the Keyholder device a week later | a credits line on `ending === 'double'`: "A week later, on the Keyholder device: \"Term's started. So have you.\"" | The game ends at the debrief, so a "week later" text can only live in the credits. |
+| Ghost's offer hub | not in the design | the build's `[What happens if I say no?]` removed in this round | The prices are back in the offer itself (M3). |
+| HaX post-decision greeting | "Call me when you're clear." | "Go ahead." | REVIEW_IMPL m1. |
+
+#### Checks after fix round 1 (evidence in `build_evidence/fix1/`)
+
+- Ink compile: 9/9. `tagdiff.mjs` against HEAD: 125 structural differences, every one from the changes above. Ghost: `ghost_offer_heard` and `parked`; the `waiting_choices` stitch, so the greeting skip can jump to the choices; removed `[What happens if I say no?]`; the router's `relay_opened or ghost_offer_made`. HaX: `parked`, FN9/FN8 order. Debrief: `sent_cost`, the `late_warning`, `blown` and `ghost_greeted` branches, once-only questions. Briefing: `ghost_known`. Tom: `told_keys` and the greeting conditions. Sidhu: `checked_report` and the `fn07_had` branch. Megan: the `corridor_open` greeting. The snapshot taken before the rewrite is in the builder scratch folder (`fix1_snapshot/`).
+- The first reopencheck run on the new Ghost ink never finished. With `ghost_offer_made` true, `relay_opened` false and `ghost_offer_heard` false (a state play can't reach, but reopencheck sets globals at random), `waiting` and `route` diverted to each other forever. The router now sends `relay_opened or ghost_offer_made` to `the_offer`. Re-run: 1800 reopens per phone, 0 problems.
+- Validator: 0 errors, the same 7 deliberate warnings, 29 suggestions. The new Ghost text first raised a stacking warning against HaX's FN10 offer; that offer moved from 2 s to 6 s.
+- dialoguelint: no findings, now covering all nine files (the person-chat files were invisible to it before M5).
+- inkcheck 11/11. loopcheck 30/30: the build's 21 states plus the debrief on `sent` + `late_warning`, `sent` + no device, `blown` + token and `double`; Ghost on `route` with the call closed early, `the_offer_again` and `closed`; Megan warned; Tom after asking about the terminal.
+- kstates 28/28: K1-K10b and H1-H6 updated for the new global, plus K11, K12 and K12b (call closed at its first line: the device delivers the whole offer and sets `ghost_offer_heard`), K13-K15 (exit lines), K16 and K17 (prices with and without Megan warned), H7 (FN9 first), H8 and H9 (no greeting after "Copy.").
+- Door alignment 6/6. Rendered seeds 5, 77 and 2026: both verifiers ALL PASS. The paper tape renders with the corrected rows.
+
+**Browser check (:3001, keyless; game 1585, setup typed from the DB, "exercised, not earned"; game 1586 for the lab).** Run before the router fix above, which only changes a state play can't reach.
+
+- Call closed early: the call opened on `relay_opened`, and End Conversation was clicked on its second line. Then `ghost_offer_made` was true and `ghost_offer_heard` false. Ghost's thread got "You closed the call. I'll say it here instead." Opening the device showed "CONTACT RESUMED.", the whole offer with the three prices ("…a third offer." / "Send it and you start Monday. So does she.") and the `offer_hub` choices; `ghost_offer_heard` was then true (`fix1-01`, `fix1-02`).
+- Exit lines on the device: the setup's early `[Close the device.]` shows "DEVICE IDLE." with no "Still watching." after it. `[I'll think about it.]` ends on "Your terminal's still open. Read what I gave you." and the device closes, with no "Back. So you've decided." On reopen, `[Still thinking.]` gives "Take as long as the building gives you." and closes (`fix1-03`, `fix1-04`).
+- Send, then warn: HaX's hub answered "Copy." with no greeting after it (`fix1-05`). The scoreboard accepted the token after sending: `late_warning` true, `ending` still `sent`. The debrief had no "Did you read it?" and gave "Your flag reached me after the report did. You tried. It was already open." then "Ghost thinks you're theirs now…" (`fix1-06`). Credits: "REPORT: Read, sent, then flagged. Too late.", without "Read, and sent." (`fix1-07`). Game status `completed`.
+- Tom: in a fresh game the player enters the lab as the hooded figure (the HUD portrait), and Tom is the white-shirted figure below the desks (`fix1-08`). A pointer click below the desks walks round to him (the engine pathfinds), and the conversation then plays the new intro and, after the first choice, the key-pair line once. The harness's `moveToNear` uses a straight keyboard walk near interactables, which is why P1 and this run's setup stalled at the desk row.
+- Not covered in the browser: refusing on the call (kstates K7 covers the "CONTACT CLOSED." exit), the blown and double debriefs (loopcheck), P3 m9 (Cliffe hiding in the common room).

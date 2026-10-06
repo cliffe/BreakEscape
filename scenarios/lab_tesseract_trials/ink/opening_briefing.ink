@@ -9,9 +9,9 @@
 #give_item:notes:comms_discipline
 Agent HaX: Before anything else, read the note I've just sent you. If your phone is ever compromised, that's how you reach me.
 + [How does it reach you?]
-    Agent HaX: That's classified too. Next.
+    Agent HaX: That's classified. Next.
     -> cover
-+ [Read it. Go on.]
++ [I'll read it. Go on.]
     -> cover
 
 === cover ===
@@ -20,13 +20,17 @@ Agent HaX: CryptoSecure Recovery has a stand in the Computing foyer. They're fun
 Agent HaX: Nobody applies. You're found, by solving a trail of puzzles around the building. They call it the Trials.
 Agent HaX: Two of last year's Keyholders now work for CryptoSecure. CryptoSecure is Ransomware Incorporated with a logo.
 + [Ransomware Incorporated. Ghost's people.]
-    -> ghost
+    Agent HaX: Yes. Ghost's. St Catherine's was theirs.
+    -> ghost_known
 + [What do you want from me?]
     Agent HaX: Get picked. I want someone inside their recruitment.
     -> ghost
 
 === ghost ===
 Agent HaX: Ransomware Incorporated is run by someone who calls themselves Ghost. St Catherine's was theirs.
+-> ghost_known
+
+=== ghost_known ===
 Agent HaX: No name, no face. A voice on a console, and a hood on a screen.
 + [Ghost knows me. From St Catherine's.]
     -> why_me
@@ -40,9 +44,9 @@ Agent HaX: I'll take either.
 -> cliffe
 
 === cliffe ===
-Agent HaX: One more name. Dr Z. Cliffe Schreuders. Builds Hacktivity. He'll know what you are within a minute of meeting you.
+Agent HaX: One more name. Dr Cliffe Schreuders. Builds Hacktivity. He'll know what you are within a minute of meeting you.
 + [Is he one of ours?]
-    Agent HaX: That's classified.
+    Agent HaX: That's classified too.
     -> deploy
 + [Noted.]
     -> deploy

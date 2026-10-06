@@ -8,7 +8,15 @@
 //    at its top, and so do start, the_offer_call and the_offer;
 //  - the video call targets the_offer_call, which sets on_call so call-only
 //    stage lines show; route and start clear it for the device;
-//  - every global the router reads is declared below, so a change re-runs it.
+//  - every global the router reads is declared below, so a change re-runs it;
+//  - ghost_offer_made is set when the offer starts (the call has happened);
+//    ghost_offer_heard only on its last line. A call closed early leaves
+//    ghost_offer_heard false, so the device delivers the whole offer (fix round 1,
+//    PLAYTEST_P3 M1). It must be a global: the device restores its own saved
+//    story, so ink-local values from the call never reach it;
+//  - parked (ink-local) skips a resting knot's greeting once when the player has
+//    just closed the conversation, so the farewell isn't followed by a greeting
+//    (fix round 1, REVIEW_IMPL M1, m9).
 // Lines never start with ">" (the terminal theme adds its own prompt, E2).
 // No knot ends in DONE or END.
 // ================================================
@@ -16,6 +24,7 @@
 // Synced scenario globals
 VAR decision_made = false
 VAR ghost_offer_made = false
+VAR ghost_offer_heard = false
 VAR relay_opened = false
 VAR ghost_greeted = false
 VAR ending = ""
@@ -33,6 +42,7 @@ VAR workshop_open = false
 // Ink-local
 VAR intro_done = false
 VAR on_call = false
+VAR parked = false
 
 === start ===
 ~ ghost_greeted = true
@@ -43,8 +53,8 @@ VAR on_call = false
 === route ===
 ~ on_call = false
 { decision_made: -> closed }
-{ ghost_offer_made: -> the_offer_again }
-{ relay_opened: -> the_offer }
+{ ghost_offer_heard: -> the_offer_again }
+{ relay_opened or ghost_offer_made: -> the_offer }
 { not intro_done: -> intro }
 -> waiting
 
@@ -52,9 +62,9 @@ VAR on_call = false
 ~ intro_done = true
 #speaker:ghost
 { special_collections_open:
-    DEVICE ACTIVE. Candidate. You took your time collecting this. I didn't take mine watching you.
+    DEVICE ACTIVE. Candidate. You left this in my box for most of the Trials. I watched all of them.
 - else:
-    DEVICE ACTIVE. Candidate. You opened a box most of your year walked past. There are seven more Trials.
+    DEVICE ACTIVE. Candidate. You opened a box most of your year walked past. The rest get harder.
 }
 I'll be watching. You won't see me do it.
 -> waiting
@@ -62,24 +72,33 @@ I'll be watching. You won't see me do it.
 === waiting ===
 { decision_made or ghost_offer_made or relay_opened: -> route }
 #speaker:ghost
+{ parked:
+    ~ parked = false
+    -> waiting_choices
+}
 {
 - drop_box_open:
     One more door. You have the key.
 - pigeonholes_open:
-    Your own key opened your own envelope. That's the whole idea.
+    Your envelope's waiting. Only one key opens it.
 - special_collections_open:
-    A key word, then a key pair. Keep going.
+    A key word, then a key pair. Fewer than twenty of you will see the second.
 - corridor_open:
     The corridor. Fewer candidates every hour.
 - locker_open:
     Binary next. The basics are where most of them fall over.
 - else:
-    Still watching.
+    {&Still watching.|Two hundred and twelve candidates. I'd rather watch you than most of them.}
 }
-+ [Who are you?]
+-> waiting_choices
+
+= waiting_choices
+* [Who are you?]
     -> who_reply
 + [Close the device.]
+    ~ parked = true
     #exit_conversation
+    DEVICE IDLE.
     -> waiting
 
 === who_reply ===
@@ -92,12 +111,12 @@ The examiner. You'll meet me when you've earned it.
 // lost, by the device's router.
 // ------------------------------------------------
 === the_offer_call ===
-{ ghost_offer_made: -> route }
+{ ghost_offer_heard: -> route }
 ~ on_call = true
 -> the_offer
 
 === the_offer ===
-{ ghost_offer_made: -> route }
+{ ghost_offer_heard: -> route }
 ~ ghost_offer_made = true
 #set_global:ghost_offer_made:true
 { decision_made: -> closed }
@@ -109,8 +128,8 @@ The examiner. You'll meet me when you've earned it.
 }
 Congratulations. You passed. All of them.
 St Catherine's had forty-one cameras. I switched off the recorders, not the cameras. I watched you all night.
-You still walk like you're expecting a door to be locked. Your monitors said no signal. Mine didn't.
-At St Catherine's you never asked my name. Most people do. It's Ghost.
+You still walk like you're expecting a door to be locked. Your CCTV screens said no signal. Mine didn't.
+I told you at St Catherine's: no name. That hasn't changed. You can call me what your handler does: Ghost.
 The last time I made you an offer, there was a ward in the next room. This one's simpler.
 { on_call:
     Narrator: Behind you, Dr Schreuders keeps soldering. He hasn't looked up.
@@ -132,7 +151,14 @@ Your handler's location is a number I can check.
 }
 { megan_choice == "warned":
     You warned the Oyelaran girl. Sentimental. It cost me a candidate, so it costs you nothing. Yet.
+    Say no to me and you're the second this week. Miss Oyelaran was the first.
+- else:
+    Say no and you're the candidate who walked away. So is Miss Oyelaran. I don't keep one without the other.
 }
+And if that location turns out to be wrong, I'll know who told me, and I'll be making you a third offer.
+~ ghost_offer_heard = true
+#set_global:ghost_offer_heard:true
+Send it and you start Monday.{ megan_choice != "warned": So does she.}
 -> offer_hub
 
 === offer_hub ===
@@ -144,19 +170,11 @@ Your handler's location is a number I can check.
 + [Could I change it first?]
     Change one character and the signature fails. Your handler would know someone had been at it. So would I.
     -> offer_hub
-+ [What happens if I say no?]
-    { megan_choice == "warned":
-        Miss Oyelaran already said no. I respect that more than you'd think. You'd be the second.
-    - else:
-        Then you're the candidate who walked away. So is Miss Oyelaran. I don't keep one without the other.
-    }
-    And if that location turns out to be wrong, I'll know who told me, and I'll be making you a third offer.
-    Send it, and you start Monday.
-    -> offer_hub
 + [I'll think about it.]
     Take your time. The relay closes when you leave the building. I don't.
-    Your terminal's still open. Read what I gave you.
+    ~ parked = true
     #exit_conversation
+    Your terminal's still open. Read what I gave you.
     -> the_offer_again
 + [No. Find another student.]
     -> refuse
@@ -164,13 +182,19 @@ Your handler's location is a number I can check.
 === the_offer_again ===
 { decision_made: -> closed }
 #speaker:ghost
-Back. So you've decided.
+{ parked:
+    ~ parked = false
+- else:
+    Back. So you've decided.
+}
 + {not decision_made} [Sending it now.]
     -> send_says_go
 + {not decision_made} [No. Find another student.]
     -> refuse
 + [Still thinking.]
+    ~ parked = true
     #exit_conversation
+    Take as long as the building gives you.
     -> the_offer_again
 
 === send_says_go ===
@@ -181,18 +205,26 @@ Then send it. Your handler's phone, not this one. I'll know when it's opened.
 === refuse ===
 { decision_made: -> closed }
 #speaker:ghost
-Noted. You're the first candidate this year to say no to my face. It won't be the last thing you regret saying no to.
+Noted. Two hundred and twelve picked up a card, and you're the first to say no to me.
+I'll put you in the column for it.
 ~ ending = "refused"
 #set_global:ending:refused
 #set_global:decision_made:true
 ~ decision_made = true
-CONTACT CLOSED.
+~ parked = true
 #exit_conversation
+CONTACT CLOSED.
 -> closed
 
 === closed ===
 #speaker:ghost
-NO CARRIER.
+{ parked:
+    ~ parked = false
+- else:
+    NO CARRIER.
+}
 + [Close the device.]
+    ~ parked = true
     #exit_conversation
+    DEVICE IDLE.
     -> closed

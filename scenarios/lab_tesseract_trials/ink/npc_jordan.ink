@@ -12,23 +12,23 @@ VAR asked_mailer = false
 #complete_task:visit_stand
 ~ met_jordan = true
 #give_item:notes:keyholder_leaflet
-Hey! Honestly, no pressure, but you look like a Keyholder. Here, leaflet. Nobody applies, you get found. Solve the numbers, the lockbox opens, and you're in the Trials.
-Nine grand a year and fees paid. It's literally free money.
+Jordan Pike: Hey! Honestly, no pressure, but you look like a Keyholder. Here, leaflet. Nobody applies, you get found. Solve the numbers, the lockbox opens, and you're in the Trials.
+Jordan Pike: Nine grand a year and fees paid. It's literally free money.
 -> hub
 
 === hub ===
-Any questions? I get a referral bonus, so ask away.
+Jordan Pike: {&Any questions? I get a referral bonus, so ask away.|Anything else?|Go on, ask. It's all commission.}
 + [Who's CryptoSecure?]
-    Data recovery. Companies get hit by ransomware, CryptoSecure gets them back up. Very busy, apparently.
+    Jordan Pike: Data recovery. Companies get hit by ransomware, CryptoSecure gets them back up. Very busy, apparently.
     -> hub
 + [What happened to last year's Keyholders?]
-    Two of us work for them now. Placements, then jobs. They ask some odd questions, mind. I don't ask back.
+    Jordan Pike: Two of us work for them now. Placements, then jobs. They ask some odd questions, to be fair. I don't ask back.
     -> hub
 + {not asked_mailer} [What's the Mailer on the laptop?]
     ~ asked_mailer = true
-    Some email thing they sell. Tells you when people open stuff? No idea how. I just do the stand.
+    Jordan Pike: Some email thing they sell. Tells you when people open stuff? No idea how. I just do the stand.
     -> hub
 + [Thanks. I'll have a go.]
     #exit_conversation
-    Nice one. Lockbox is right there.
+    Jordan Pike: Nice one. Lockbox is right there.
     -> hub
