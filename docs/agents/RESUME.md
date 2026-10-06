@@ -2,7 +2,7 @@
 
 Brief: `docs/agents/TESSERACT_TRIALS_BRIEF.md`. Log: `scenarios/lab_tesseract_trials/DECISIONS_LOG.md`.
 Loop: design (Opus, DESIGN.md) → 3 adversarial review rounds (alignment + design-review lenses) → implement → puzzle-chains + dialogue reviews → Sonnet playtests → fix until clean.
-Status: rooms phase 2 committed (455bea8f, f5ab595b); E7 logged (collision rectangles crash). Running: room builder phase 3 (PixelLab props, pilot first, ceiling ~120). Then phase 4 polish + docs, timed playtest on the ten-room graph, audio (Schreuders lines first).
+Status: rooms phase 3 committed (f83c1cce props, b7249d2f notes; 100 PixelLab gens, 4888 left). Running: room builder phase 4 (placement polish, docs for the ten-room graph, timed walk). Then confirmation playtest + audio (Schreuders lines first). Engine items E1-E8 deferred.
 
 # Resume note — pass 4 (editorial, m02–m08)
 
