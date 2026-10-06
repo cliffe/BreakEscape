@@ -1149,6 +1149,17 @@ export async function create() {
                 window.npcBehaviorManager = new module.NPCBehaviorManager(this, window.npcManager);
                 console.log('✅ NPC Behavior Manager initialized');
                 // NOTE: Individual behaviors registered per-room in rooms.js createNPCSpritesForRoom()
+                // That skips NPCs whose sprites were created before this import finished
+                // (the start room can win the race), so register those now.
+                const mgr = window.npcBehaviorManager;
+                for (const roomData of Object.values(window.rooms || {})) {
+                    for (const sprite of roomData?.npcSprites || []) {
+                        const id = sprite?.npcId;
+                        if (!id || mgr.behaviors.has(id) || !sprite.active) continue;
+                        const npc = window.npcManager.getNPC(id);
+                        mgr.registerBehavior(id, sprite, npc?.behavior || {});
+                    }
+                }
             })
             .catch(error => {
                 console.error('❌ Failed to initialize NPC Behavior Manager:', error);
