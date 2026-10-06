@@ -1122,3 +1122,36 @@ Screenshots: `build_evidence/rooms/staff-office-ingame.png`, `staff-office-previ
 
 DESIGN.md §3 (layout diagram, grid, room table and a room entry) and SOLUTION_GUIDE.md (room map and table) list the staff office as optional.
 
+
+## 14. Side doors and Tom's approach: investigation (2026-10-06)
+
+The final playtest (`PLAYTEST_FINAL.md` F1) and the story builder reported side doors walkable only about 25-34 px above their listed position, and `moveToNear` failing on Tom. **No map change was needed. Neither is specific to the uni maps.**
+
+### Side doors
+
+**Cause.** The engine builds every side door the same way, whatever the map. With the door open, the passage is the gap between two collision strips at room y 60-68 and 92-100: a 24 px opening at y 68-92, inside the drawn door (y 64-96). The player's 18x10 body sits at the feet, 26-36 px below `player.y` (the sprite centre). The body therefore passes only when `player.y` is about door y − 38 to door y − 24: feet in the doorway, with the sprite overlapping the wall above. The harness's `enter`, and the engine's out-of-range door click (`game.js`, `targetY = doorAtPosition.y` for E/W doors), aim the sprite centre at the door's centre. That puts the feet about 34 px below the opening, so a walk at that height is blocked.
+
+**Not uni-specific.** I measured the identical strip layout and the identical band on m01's old maps: `room_office` west door to `room_break`, game 1612. Body list, keyboard walks:
+- m01 crossed at `player.y` = door − 34 both ways, and was blocked at the door's listed y both ways;
+- every uni side door (foyer↔lab, corridor↔library, corridor↔Sidhu's office, common room↔staff office) behaves the same, both ways (game 1611; `build_evidence/rooms/doors/side-doors-keyboard-1611.txt`).
+
+**Pointer clicks** across a side door got through 7 of 8 times on the uni doors and 3 of 4 on m01. The failures stop at, or just past, the door: the engine's click path, the same on both.
+
+**Fix.** Nothing to change in the maps. Two follow-ups are outside this role:
+1. **Harness:** aim side doors at door y − 34 (feet in the doorway) in `enter` and when walking through.
+2. **Engine (candidate item):** aim the out-of-range door click's target so the feet, not the sprite centre, land in the doorway. Or centre the passage strips on where the sprite's feet are when it is drawn level with the door.
+
+Evidence:
+- `doors/foyer-lab-door-crossing.png`: crossing at the drawn height, feet in the opening;
+- `doors/foyer-lab-door-blocked-at-listed-y.png`: the sprite level with the door, feet below it, blocked;
+- `doors/list_bodies.js`: the body lister used.
+
+### Tom's approach (lecture theatre)
+
+Tom's spot (tile 6.6, 3.9) has a clear approach. Between the north door and him there's only the front strip; the bench body is east of him (local x 250-308) and the first ledge is below.
+
+`moveToNear` fails for a different reason. The player arrives from the north door at local (45, 30), with its feet on the north wall's collision strip (local y 56-64). The harness walks right first, and the strip's corner just east of the door column blocks it. A click from that exact arrival point also didn't move. After one step down, both `moveToNear` and a pointer click reach him, and his conversation opens (game 1611).
+
+This is the engine's north-door arrival point, the same in every room with a north door in a corner. It isn't a map or position problem, so Tom stays where he is. Harness follow-up: after entering through a north door, take one step south before path-finding.
+
+Checks after the investigation (no files changed): `--check` on all eleven maps (the known warnings), walls 0 off, slot audit 0, door alignment 10/10, validator 0 errors / 8 warnings, rendered verifiers ALL PASS on seeds 42, 777 and 9001.
