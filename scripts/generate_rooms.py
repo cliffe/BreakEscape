@@ -2206,7 +2206,7 @@ def room_uni_common():
     r.item("student_lockers1", 160.0, 132.0)
     r.item("student_locker1", 210.0, 132.0, layer="conditional_items")  # Candidate Locker 4
     r.item("coffee_station1", 258.0, 172.0)
-    r.item("uni_sofa1", 44.0, 252.0)               # below the foosball (bottom 196), facing the room
+    r.item("uni_sofa2", 44.0, 252.0)               # below the foosball (bottom 196); front-on (round 3)
     r.item("uni_dartboard1", 13.0, 156.0)          # west wall, below the door row, by the foosball
     # no chair east of the low table: Cliffe stands there (scenario position 5.3, 7.4)
     r.on(counter, "kettle1", 0.25, 0.25)
@@ -2309,7 +2309,8 @@ def room_uni_office():
     """
     2×1 GU (10×6) academic's office: door card, a framed certificate, a recessed
     bookcase, a year planner, a desk against the wall with a PC, a handout slot
-    and his chair, and a visitor's chair. Only y 64-128 is visible floor. Doors:
+    and his chair, and a visitor's chair; below them a small meeting table (round
+    3). Nothing is south of the office, so the whole floor (y 64-180) shows. Doors:
     W on row 2, N (NE corner); the W-to-N route along y 100-128 stays clear of
     anything solid (the chairs are walk-through items).
     Slots: notes1 on the desk. (The conditional whiteboard1 went when Sidhu's
@@ -2323,6 +2324,21 @@ def room_uni_office():
     r.item("year_planner1", 192.0, 48.0)
     r.item("hospital_chair_north", 203.0, 126.0)    # his chair, in front of the desk
     r.item("hospital_chair2", 170.0, 120.0)         # visitor's chair, facing the desk
+    # round 3: the lower half is visible floor (nothing south of the office), so a
+    # small meeting table with two chairs, a fire point and extinguisher by the W
+    # door, a research poster, a plant in the SW corner and a bin by the desk.
+    # All below the W-to-N route (y 100-128) except the wall items; the plant's
+    # leaves reach y 102 but only at x 32-70, below the W door row (y 64-96).
+    meet = r.table("smalldesk1", 98.0, 172.0)       # x 98-148, top 131
+    r.item("hospital_chair2", 78.0, 170.0)          # west side, faces east
+    r.item("hospital_chair1", 152.0, 170.0)         # east side, faces west
+    r.item("uni_poster8", 14.0, 152.0)              # west wall, below the door row: a chain of hashed blocks
+    r.item("fire_alarm_point1", 292.0, 140.0)       # east wall
+    r.item("fire_extinguisher1", 270.0, 176.0)      # under the call point
+    r.item("plant-large11", 32.0, 178.0)
+    r.item("bin8", 222.0, 142.0)                    # beside the desk, under the route's south edge
+    r.on(meet, "office-misc-pens", 0.25, 0.35)
+    r.on(meet, "office-misc-cup2", 0.70, 0.40)
     r.on(desk, "pc7", 0.35, 0.30)
     r.on(desk, "office-misc-cup", 0.60, 0.40)
     r.on(desk, "notes1", 0.82, 0.50, layer="conditional_table_items")
@@ -2345,18 +2361,20 @@ def room_uni_workshop():
     # Island in the middle with a clear walking ring (about x 100-208, y 116-222);
     # the machines stand against the back and west walls; the band y 222-256
     # stays clear from the east lane to Cliffe (x 90, feet 224).
-    bench = r.table("it_workbench1", 124.0, 198.0, kind="objects")
-    r.table("laser_cutter1", 190.0, 128.0, kind="objects")       # back wall, top y 70
+    # round 3: every machine but the parts drawers is a front-on redraw (user: orthogonal props)
+    bench = r.table("it_workbench2", 128.0, 198.0, kind="objects")
+    r.table("laser_cutter2", 196.0, 128.0, kind="objects")       # back wall, top y 68
     # west wall, top to bottom: drawers, mill, 3D printer; all from x 32 so none
     # overhangs the side wall (round 2: the angled printer_3d1 at x 24 did)
     r.table("component_drawers1", 32.0, 140.0, kind="objects")
-    r.table("cnc_mill1", 32.0, 190.0, kind="objects")
+    r.table("cnc_mill2", 32.0, 196.0, kind="objects")
     r.table("printer_3d2", 32.0, 250.0, kind="objects")         # orthogonal, on its stand
-    r.table("electronics_bench1", 208.0, 200.0, kind="objects")  # east of the island, off the lane
+    r.table("electronics_bench2", 208.0, 200.0, kind="objects")  # east of the island, off the lane
     r.item("conference_screen1", 70.0, 52.0)
     r.item("smartscreen2", 130.0, 50.0)             # the build: a live floor plan (was a landscape picture)
     r.item("pegboard_tools1", 182.0, 57.0)          # over the laser cutter
     r.item("uni_poster6", 240.0, 46.0)              # safety glasses must be worn
+    r.item("fire_alarm_point1", 292.0, 132.0)       # east wall (round 3)
     r.on(bench, "pc5", 0.50, 0.30, layer="conditional_table_items")
     return r.build("room_uni_workshop")
 
@@ -2449,6 +2467,16 @@ def room_uni_seminar():
     r.item("water_cooler1", 40.0, 250.0)
     r.item("beanbag_teal1", 196.0, 252.0)           # reading-group bean bags, clear of the east lane
     r.item("beanbag_orange1", 228.0, 248.0)
+    # round 3: radiators under the windows, a clock, a fire point on the east wall,
+    # a stack of spare chairs and the room's booking sheet. Sidhu stands at
+    # (6.75, 3.7) = x 216, feet 118, so the NE floor stays clear.
+    # The radiators touch the blinds' bottom pixel row (sill), deliberately.
+    r.item("uni_radiator1", 77.0, 59.0)
+    r.item("uni_radiator1", 203.0, 59.0)
+    r.item("wall_clock1", 252.0, 46.0)
+    r.item("fire_alarm_point1", 292.0, 132.0)
+    r.item("uni_timetable1", 14.0, 196.0)           # west wall: the room's booking sheet
+    r.item("chairs_stacked1", 72.0, 252.0)          # spare chairs, between the cooler and the south row
     r.on(table, "office-misc-pens", 0.3, 0.35)
     r.on(table, "mugs_tray1", 0.7, 0.35)
     r.on(table, "journal_stack1", 0.5, 0.30)

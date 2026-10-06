@@ -556,6 +556,78 @@
      "width": 29,
      "x": 228.0,
      "y": 248.0
+    },
+    {
+     "gid": 975,
+     "height": 10,
+     "id": 17,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 26,
+     "x": 77.0,
+     "y": 59.0
+    },
+    {
+     "gid": 975,
+     "height": 10,
+     "id": 18,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 26,
+     "x": 203.0,
+     "y": 59.0
+    },
+    {
+     "gid": 866,
+     "height": 26,
+     "id": 19,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 25,
+     "x": 252.0,
+     "y": 46.0
+    },
+    {
+     "gid": 828,
+     "height": 20,
+     "id": 20,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 16,
+     "x": 292.0,
+     "y": 132.0
+    },
+    {
+     "gid": 930,
+     "height": 22,
+     "id": 21,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 16,
+     "x": 14.0,
+     "y": 196.0
+    },
+    {
+     "gid": 810,
+     "height": 45,
+     "id": 22,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 20,
+     "x": 72.0,
+     "y": 252.0
     }
    ],
    "opacity": 1,
@@ -594,7 +666,7 @@
     {
      "gid": 210,
      "height": 15,
-     "id": 17,
+     "id": 23,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -606,7 +678,7 @@
     {
      "gid": 835,
      "height": 15,
-     "id": 18,
+     "id": 24,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -618,7 +690,7 @@
     {
      "gid": 962,
      "height": 27,
-     "id": 19,
+     "id": 25,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -647,7 +719,7 @@
   }
  ],
  "nextlayerid": 14,
- "nextobjectid": 20,
+ "nextobjectid": 26,
  "orientation": "orthogonal",
  "renderorder": "right-down",
  "tiledversion": "1.11.2",
@@ -3080,7 +3152,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 165,
+   "tilecount": 185,
    "tileheight": 60,
    "tiles": [
     {
@@ -3836,7 +3908,7 @@
     {
      "id": 125,
      "image": "../objects/uni_directory1.png",
-     "imageheight": 18,
+     "imageheight": 15,
      "imagewidth": 16
     },
     {
@@ -3954,42 +4026,6 @@
      "imagewidth": 38
     },
     {
-     "id": 145,
-     "image": "../objects/printer_3d1.png",
-     "imageheight": 46,
-     "imagewidth": 34
-    },
-    {
-     "id": 146,
-     "image": "../objects/plan_chest1.png",
-     "imageheight": 42,
-     "imagewidth": 44
-    },
-    {
-     "id": 147,
-     "image": "../objects/display_case1.png",
-     "imageheight": 60,
-     "imagewidth": 54
-    },
-    {
-     "id": 148,
-     "image": "../objects/display_case2.png",
-     "imageheight": 57,
-     "imagewidth": 58
-    },
-    {
-     "id": 149,
-     "image": "../objects/uni_sofa1.png",
-     "imageheight": 51,
-     "imagewidth": 60
-    },
-    {
-     "id": 150,
-     "image": "../objects/laser_cutter1.png",
-     "imageheight": 58,
-     "imagewidth": 60
-    },
-    {
      "id": 151,
      "image": "../objects/scope_cart1.png",
      "imageheight": 57,
@@ -4000,12 +4036,6 @@
      "image": "../objects/lecture_seat_row1.png",
      "imageheight": 32,
      "imagewidth": 61
-    },
-    {
-     "id": 153,
-     "image": "../objects/electronics_bench1.png",
-     "imageheight": 44,
-     "imagewidth": 42
     },
     {
      "id": 154,
@@ -4029,12 +4059,6 @@
      "id": 157,
      "image": "../objects/stanchions1.png",
      "imageheight": 35,
-     "imagewidth": 41
-    },
-    {
-     "id": 158,
-     "image": "../objects/cnc_mill1.png",
-     "imageheight": 44,
      "imagewidth": 41
     },
     {
@@ -4072,6 +4096,174 @@
      "image": "../objects/beanbag_teal1.png",
      "imageheight": 27,
      "imagewidth": 29
+    },
+    {
+     "id": 165,
+     "image": "../objects/uni_sign_staff1.png",
+     "imageheight": 14,
+     "imagewidth": 64
+    },
+    {
+     "id": 166,
+     "image": "../objects/uni_tv1.png",
+     "imageheight": 26,
+     "imagewidth": 40
+    },
+    {
+     "id": 167,
+     "image": "../objects/uni_certificate1.png",
+     "imageheight": 14,
+     "imagewidth": 18
+    },
+    {
+     "id": 168,
+     "image": "../objects/uni_portrait1.png",
+     "imageheight": 28,
+     "imagewidth": 22
+    },
+    {
+     "id": 170,
+     "image": "../objects/uni_bunting1.png",
+     "imageheight": 10,
+     "imagewidth": 104
+    },
+    {
+     "id": 171,
+     "image": "../objects/uni_bunting2.png",
+     "imageheight": 10,
+     "imagewidth": 64
+    },
+    {
+     "id": 172,
+     "image": "../objects/smartscreen2.png",
+     "imageheight": 34,
+     "imagewidth": 48
+    },
+    {
+     "id": 173,
+     "image": "../objects/uni_fountain1.png",
+     "imageheight": 22,
+     "imagewidth": 14
+    },
+    {
+     "id": 174,
+     "image": "../objects/uni_radiator1.png",
+     "imageheight": 10,
+     "imagewidth": 26
+    },
+    {
+     "id": 175,
+     "image": "../objects/uni_firedoor_sign1.png",
+     "imageheight": 11,
+     "imagewidth": 11
+    },
+    {
+     "id": 176,
+     "image": "../objects/uni_dartboard1.png",
+     "imageheight": 16,
+     "imagewidth": 16
+    },
+    {
+     "id": 177,
+     "image": "../objects/uni_sign_returns1.png",
+     "imageheight": 11,
+     "imagewidth": 32
+    },
+    {
+     "id": 178,
+     "image": "../objects/uni_sign_study1.png",
+     "imageheight": 11,
+     "imagewidth": 44
+    },
+    {
+     "id": 179,
+     "image": "../objects/uni_banner_soc1.png",
+     "imageheight": 58,
+     "imagewidth": 22
+    },
+    {
+     "id": 181,
+     "image": "../objects/study_carrels1.png",
+     "imageheight": 58,
+     "imagewidth": 57
+    },
+    {
+     "id": 182,
+     "image": "../objects/periodicals_rack1.png",
+     "imageheight": 52,
+     "imagewidth": 48
+    },
+    {
+     "id": 183,
+     "image": "../objects/balloons1.png",
+     "imageheight": 59,
+     "imagewidth": 32
+    },
+    {
+     "id": 184,
+     "image": "../objects/freshers_stall2.png",
+     "imageheight": 47,
+     "imagewidth": 62
+    },
+    {
+     "id": 185,
+     "image": "../objects/display_case3.png",
+     "imageheight": 45,
+     "imagewidth": 56
+    },
+    {
+     "id": 186,
+     "image": "../objects/plan_chest2.png",
+     "imageheight": 46,
+     "imagewidth": 52
+    },
+    {
+     "id": 187,
+     "image": "../objects/printer_3d2.png",
+     "imageheight": 57,
+     "imagewidth": 38
+    },
+    {
+     "id": 188,
+     "image": "../objects/foosball_table2.png",
+     "imageheight": 57,
+     "imagewidth": 48
+    },
+    {
+     "id": 189,
+     "image": "../objects/laser_cutter2.png",
+     "imageheight": 60,
+     "imagewidth": 46
+    },
+    {
+     "id": 190,
+     "image": "../objects/it_workbench2.png",
+     "imageheight": 60,
+     "imagewidth": 52
+    },
+    {
+     "id": 191,
+     "image": "../objects/electronics_bench2.png",
+     "imageheight": 55,
+     "imagewidth": 42
+    },
+    {
+     "id": 192,
+     "image": "../objects/cnc_mill2.png",
+     "imageheight": 57,
+     "imagewidth": 41
+    },
+    {
+     "id": 193,
+     "image": "../objects/uni_sofa2.png",
+     "imageheight": 38,
+     "imagewidth": 62
+    },
+    {
+     "id": 194,
+     "image": "../objects/uni_poster8.png",
+     "imageheight": 21,
+     "imagewidth": 16
     }
    ],
    "tilewidth": 60

@@ -522,14 +522,14 @@
      "y": 172.0
     },
     {
-     "gid": 950,
-     "height": 51,
+     "gid": 994,
+     "height": 38,
      "id": 15,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 60,
+     "width": 62,
      "x": 44.0,
      "y": 252.0
     },
@@ -3094,7 +3094,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 189,
+   "tilecount": 185,
    "tileheight": 60,
    "tiles": [
     {
@@ -3850,7 +3850,7 @@
     {
      "id": 125,
      "image": "../objects/uni_directory1.png",
-     "imageheight": 18,
+     "imageheight": 15,
      "imagewidth": 16
     },
     {
@@ -3968,42 +3968,6 @@
      "imagewidth": 38
     },
     {
-     "id": 145,
-     "image": "../objects/printer_3d1.png",
-     "imageheight": 46,
-     "imagewidth": 34
-    },
-    {
-     "id": 146,
-     "image": "../objects/plan_chest1.png",
-     "imageheight": 42,
-     "imagewidth": 44
-    },
-    {
-     "id": 147,
-     "image": "../objects/display_case1.png",
-     "imageheight": 60,
-     "imagewidth": 54
-    },
-    {
-     "id": 148,
-     "image": "../objects/display_case2.png",
-     "imageheight": 57,
-     "imagewidth": 58
-    },
-    {
-     "id": 149,
-     "image": "../objects/uni_sofa1.png",
-     "imageheight": 51,
-     "imagewidth": 60
-    },
-    {
-     "id": 150,
-     "image": "../objects/laser_cutter1.png",
-     "imageheight": 58,
-     "imagewidth": 60
-    },
-    {
      "id": 151,
      "image": "../objects/scope_cart1.png",
      "imageheight": 57,
@@ -4014,12 +3978,6 @@
      "image": "../objects/lecture_seat_row1.png",
      "imageheight": 32,
      "imagewidth": 61
-    },
-    {
-     "id": 153,
-     "image": "../objects/electronics_bench1.png",
-     "imageheight": 44,
-     "imagewidth": 42
     },
     {
      "id": 154,
@@ -4043,12 +4001,6 @@
      "id": 157,
      "image": "../objects/stanchions1.png",
      "imageheight": 35,
-     "imagewidth": 41
-    },
-    {
-     "id": 158,
-     "image": "../objects/cnc_mill1.png",
-     "imageheight": 44,
      "imagewidth": 41
     },
     {
@@ -4112,12 +4064,6 @@
      "imagewidth": 22
     },
     {
-     "id": 169,
-     "image": "../objects/freshers_stall1.png",
-     "imageheight": 59,
-     "imagewidth": 61
-    },
-    {
      "id": 170,
      "image": "../objects/uni_bunting1.png",
      "imageheight": 10,
@@ -4178,12 +4124,6 @@
      "imagewidth": 22
     },
     {
-     "id": 180,
-     "image": "../objects/foosball_table1.png",
-     "imageheight": 57,
-     "imagewidth": 57
-    },
-    {
      "id": 181,
      "image": "../objects/study_carrels1.png",
      "imageheight": 58,
@@ -4230,6 +4170,42 @@
      "image": "../objects/foosball_table2.png",
      "imageheight": 57,
      "imagewidth": 48
+    },
+    {
+     "id": 189,
+     "image": "../objects/laser_cutter2.png",
+     "imageheight": 60,
+     "imagewidth": 46
+    },
+    {
+     "id": 190,
+     "image": "../objects/it_workbench2.png",
+     "imageheight": 60,
+     "imagewidth": 52
+    },
+    {
+     "id": 191,
+     "image": "../objects/electronics_bench2.png",
+     "imageheight": 55,
+     "imagewidth": 42
+    },
+    {
+     "id": 192,
+     "image": "../objects/cnc_mill2.png",
+     "imageheight": 57,
+     "imagewidth": 41
+    },
+    {
+     "id": 193,
+     "image": "../objects/uni_sofa2.png",
+     "imageheight": 38,
+     "imagewidth": 62
+    },
+    {
+     "id": 194,
+     "image": "../objects/uni_poster8.png",
+     "imageheight": 21,
+     "imagewidth": 16
     }
    ],
    "tilewidth": 60

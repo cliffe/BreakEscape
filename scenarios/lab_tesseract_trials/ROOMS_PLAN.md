@@ -1157,3 +1157,35 @@ Tom's spot (tile 6.6, 3.9) has a clear approach. Between the north door and him 
 This is the engine's north-door arrival point, the same in every room with a north door in a corner. It isn't a map or position problem, so Tom stays where he is. Harness follow-up: after entering through a north door, take one step south before path-finding.
 
 Checks after the investigation (no files changed): `--check` on all eleven maps (the known warnings), walls 0 off, slot audit 0, door alignment 10/10, validator 0 errors / 8 warnings, rendered verifiers ALL PASS on seeds 42, 777 and 9001.
+
+## 15. Room dressing summary (rounds 1-3, 2026-10-06)
+
+Three rounds of `.claude/skills/mission-room-dressing/`; details in `ROOM_DRESSING_R1.md`, `_R2.md` and `_R3.md`, evidence in `build_evidence/dressing_r1/` to `dressing_r3/`.
+
+**What changed overall**
+- **Foyer:** reads as a freshers' fair: two front-on stalls, bunting, a society banner, balloons, a CTF poster.
+- **Teaching lab:** three benches with a static chair at every PC, and a lecturer's chair.
+- **Lecture theatre:** a fourth row of seats.
+- **Common room:** a wall TV, a games corner (front-on foosball, dartboard) with Megan playing at it (her one position change), and a front-on sofa.
+- **Library:** widened to 20x6. A reading room in the west half (carrels, periodicals, reading table, trolley) and a proper issue and returns counter. The book and Returns Slip were moved apart, so each opens without a menu, and the slip's text now matches where it lies.
+- **Corridor:** a radiator, a drinking fountain, a fire-door sign and a wet-floor sign. The Floor Directory was redrawn shorter so a tap never pairs it with the Sidhu door.
+- **Special Collections:** the founder's portrait, and a front-on display case and plan chest.
+- **Sidhu's office:** chairs, a certificate, and in round 3 a meeting table, a plant, a fire point and a blockchain poster in the lower half.
+- **Seminar room:** radiators, a clock, a fire point, a booking sheet, stacked chairs.
+- **Workshop:** a build screen showing a floor plan of the building. Every machine is now front-on, and none overhangs a wall.
+- **Staff office:** loose bags tidied.
+
+Ten unused sprites were retired in round 3; copies are kept in `build_evidence/dressing_r3/retired/`.
+
+The user's art direction from round 2 applies throughout: front-on, orthogonal props, at most one or two angled per room, and none over a wall. Every room now meets it.
+
+**PixelLab spend:** round 1 20, round 2 40, round 3 20, a total of 80 generations. The balance went from 4224 to 4144 of 5000. Hand-drawn props (signs, posters, TV, certificate, portrait, bunting, radiator, fountain, dartboard, build screen) cost nothing.
+
+**Checked:** each round ran the slot audit, wall and door checks and the validator, all clean. The final in-game layout pass covered all 11 rooms:
+- every scenario object opens directly, except the drop box and its tag, which share a menu by design;
+- NPCs are clear of furniture, every door crosses first time, and there were no console errors.
+
+**What's left**
+- The library's check-in kiosk is angled and just touches the wall base line. It's within the two-per-room allowance; a front-on redraw is optional.
+- The seminar bean bags are a judgement call.
+- Harness quirks (`moveTo` stopping short, menus lingering between taps) are recorded in R3 for the harness owner.

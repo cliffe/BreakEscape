@@ -182,15 +182,14 @@ def staff_sign():
 
 
 def directory():
-    """Narrow side-wall directory: a title bar and three lines, each with an arrow
-    (W, E, N). 16x18, so it fits under a side door with its top-left corner (the
-    tap anchor) more than 32px from the door's centre."""
-    c = Canvas(16, 18)
-    c.sign_panel(BLUE)
-    c.rect(2, 2, 13, 3, NAVY)
-    c.hline(4, 11, 2, WHITE)
+    """Narrow side-wall directory: three lines, each with an arrow (W, E, N).
+    16x15 (round 3, was 16x18): hung with its feet on the corridor's
+    floor edge (y 128), its top edge is at y 113, so no part of it is within 32px
+    of the E door's centre (304, 80) and a tap never pairs it with the door."""
+    c = Canvas(16, 15)
+    c.sign_panel(BLUE)                              # no title bar: three spaced lines need the height
     for k, a in enumerate(["L", "R", "U"]):
-        y = 6 + k * 4
+        y = 3 + k * 4
         # thick chevrons: a shaft and thin arms on a 3px band read as crosses
         pts = {"L": [(4, -1), (3, 0), (4, 1), (5, -1), (4, 0), (5, 1)],
                "R": [(4, -1), (5, 0), (4, 1), (5, -1), (6, 0), (5, 1)],
@@ -646,6 +645,20 @@ def dartboard():
     return c
 
 
+def poster_chain():
+    """Sidhu's office: a research poster, a chain of three hashed blocks."""
+    c = poster_base(WHITE)
+    c.rect(1, 1, 14, 4, TEAL_DARK)
+    c.hline(3, 12, 2, WHITE)
+    for i, (x, y) in enumerate(((2, 7), (6, 10), (10, 13))):
+        c.frame(x, y, x + 3, y + 3, NAVY)
+        c.rect(x + 1, y + 1, x + 2, y + 2, (BRASS, LIME, ORANGE)[i])
+        if i < 2:
+            c.px(x + 4, y + 2, GREY_TEXT); c.px(x + 4, y + 3, GREY_TEXT)  # link to the next block
+    c.hline(3, 12, 19, GREY_TEXT)
+    return c
+
+
 def small_sign(width, words):
     c = Canvas(width, 11)
     c.sign_panel(TEAL_DARK)
@@ -683,6 +696,7 @@ PROPS = {
     "uni_poster4": poster_verify,
     "uni_poster6": poster_glasses,
     "uni_poster7": poster_no_food,
+    "uni_poster8": poster_chain,
     "student_lockers1": student_lockers,
     "student_locker1": student_locker,
 }
