@@ -34,7 +34,7 @@ import {
     sleepFrames, sleep, worldToClient, isWorldPointOnScreen,
     clickElement as clickElementDom
 } from './input.js';
-import { getState, scanNearby, activeMinigameSummary, detectBlockingUi, interactionMenuState, solveStandingPoint, engineInteractDistance, plainNearestEntity, roomContents } from './state.js';
+import { getState, scanNearby, activeMinigameSummary, detectBlockingUi, interactionMenuState, solveStandingPoint, engineInteractDistance, plainNearestEntity, roomContents, doorways } from './state.js';
 import {
     waitUntil, waitForEvent, waitForMovementEnd, waitFrames,
     waitForMinigame, waitForMinigameClosed
@@ -53,11 +53,38 @@ const TILE_SIZE = 32;
  * gather radius: a click inside it acts rather than moves.
  */
 function interactableNear(x, y) {
-    const st = window.__test && window.__test.getState ? window.__test.getState() : null;
-    if (!st) return null;
-    for (const e of st.nearby) {
-        if (typeof e.x !== 'number' || typeof e.y !== 'number') continue;
-        if (Math.hypot(e.x - x, e.y - y) <= INTERACTION_RANGE) return e;
+    // Mirrors the engine's pointerdown routing (core/game.js), which acts on
+    // a click instead of walking when:
+    //  - it lands inside the sprite bounds of any visible interactable object
+    //    or NPC, at ANY distance (findObjectsAtPosition / findNPCAtPosition:
+    //    the player then walks towards THAT thing, stopping 3/4 tile short);
+    //  - it lands within 32px (TAP_SLOP) of an interactable already in reach
+    //    (gatherInteractablesNearClick).
+    // Checking only "within 32px of a centre in the 6-tile scan" missed large
+    // sprites (vending machine, noticeboard, tables), so moveTo clicks there
+    // were hijacked and the player ended up 100+px from where it was sent.
+    const p = window.player;
+    const rooms = window.rooms || {};
+    const inBounds = (s) => {
+        try { const b = s.getBounds(); return x >= b.left && x <= b.right && y >= b.top && y <= b.bottom; }
+        catch (e) { return false; }
+    };
+    const inReach = (s) => p && Math.hypot(s.x - p.x, s.y - p.y) <= INTERACTION_RANGE;
+    const near = (s) => Math.hypot(s.x - x, s.y - y) <= INTERACTION_RANGE;
+    const ko = window.npcHostileSystem;
+    for (const room of Object.values(rooms)) {
+        for (const obj of Object.values(room.objects || {})) {
+            if (!obj || !obj.active || !obj.visible || !obj.interactable) continue;
+            if (inBounds(obj) || (inReach(obj) && near(obj))) {
+                const d = obj.scenarioData || {};
+                return { id: d.id || obj.objectId || null, name: d.name || obj.name || null, x: obj.x, y: obj.y };
+            }
+        }
+        for (const s of (room.npcSprites || [])) {
+            if (!s || s.destroyed || !s.visible || !s._isNPC) continue;
+            if (ko && s.npcId && ko.isNPCKO(s.npcId)) continue;
+            if (inBounds(s) || (inReach(s) && near(s))) return { id: s.npcId || null, name: s.npcId || null, x: s.x, y: s.y };
+        }
     }
     return null;
 }
@@ -67,31 +94,81 @@ function interactableNear(x, y) {
  * trigger an interaction on arrival. Steps along each axis in turn and stops
  * when close enough or when a wall stops progress.
  */
+// The feet collider (body centre) is what the engine steers to a click target
+// and what collides with walls and door gaps; the sprite centre sits ~30px above.
+function playerFeet() {
+    const p = window.player;
+    const b = p && p.body;
+    return b ? { x: b.center.x, y: b.center.y } : { x: p.x, y: p.y };
+}
+
 async function keyboardWalkTo(x, y, { timeoutMs = 20000 } = {}) {
     const started = Date.now();
     const steps = [];
     let stalled = 0;
+    let blockedAxis = null;
     while (Date.now() - started < timeoutMs) {
-        const p = window.player;
+        const p = playerFeet();
         const dx = x - p.x;
         const dy = y - p.y;
         if (Math.hypot(dx, dy) <= TILE_SIZE / 4) return { ok: true, steps };
-        const horizontal = Math.abs(dx) >= Math.abs(dy);
+        // Walk the longer axis first, unless that axis just hit something: then
+        // walk the other one. Standing in a doorway only one axis is free, and
+        // retrying the blocked one made this give up having moved 0px (the
+        // "first move after a north door stalls" quirk: the old `enter` left the
+        // feet in the doorway and the longer axis ran into the frame).
+        let horizontal = Math.abs(dx) >= Math.abs(dy);
+        if (blockedAxis === (horizontal ? 'x' : 'y')) {
+            const otherSpan = horizontal ? Math.abs(dy) : Math.abs(dx);
+            if (otherSpan > 1) horizontal = !horizontal;
+        }
         const dir = horizontal ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
         const before = { x: p.x, y: p.y };
         const span = Math.min(Math.abs(horizontal ? dx : dy), TILE_SIZE);
         await bridge.walk(dir, Math.max(60, Math.round(span * 8)));
-        const moved = Math.hypot(window.player.x - before.x, window.player.y - before.y);
+        const now = playerFeet();
+        const moved = Math.hypot(now.x - before.x, now.y - before.y);
         steps.push({ dir, moved: Math.round(moved) });
         if (moved < 1) {
             stalled += 1;
-            // Blocked on this axis — try the other one before giving up.
+            blockedAxis = horizontal ? 'x' : 'y';
+            // Blocked on both axes in turn: nothing more the keys can do.
             if (stalled >= 2) return { ok: false, reason: 'blocked', steps };
         } else {
             stalled = 0;
+            // Progress on the other axis may have cleared the obstacle.
+            if (blockedAxis !== (horizontal ? 'x' : 'y')) blockedAxis = null;
         }
     }
     return { ok: false, reason: 'timeout', steps };
+}
+
+/**
+ * The nearest point to (x, y), within two tiles, that a click would treat as a
+ * plain move (not hijacked by an interactable) and whose feet cell is walkable
+ * in the engine's pathfinding grid. Null if there is none.
+ */
+function clearClickPointNear(x, y) {
+    const pm = window.pathfindingManager;
+    const g = pm && pm.worldGrid, B = pm && pm.worldGridBounds;
+    const walkable = (px, py) => {
+        if (!g || !B) return true;
+        const cx = Math.floor((px - B.minX) / B.step), cy = Math.floor((py - B.minY) / B.step);
+        return g[cy] && g[cy][cx] === 0;
+    };
+    for (let r = 8; r <= TILE_SIZE * 2; r += 8) {
+        let best = null, bestD = Infinity;
+        for (let a = 0; a < 360; a += 20) {
+            const px = x + Math.cos(a * Math.PI / 180) * r;
+            const py = y + Math.sin(a * Math.PI / 180) * r;
+            if (!isWorldPointOnScreen(px, py) || !walkable(px, py) || interactableNear(px, py)) continue;
+            const f = playerFeet();
+            const d = Math.hypot(px - f.x, py - f.y);
+            if (d < bestD) { bestD = d; best = { x: px, y: py }; }
+        }
+        if (best) return best;
+    }
+    return null;
 }
 
 function fail(reason, extra = {}) {
@@ -309,15 +386,32 @@ const bridge = {
         const trigger = interactableNear(x, y);
         if (onScreen && trigger) {
             via = 'keyboard(avoids-click-trigger)';
+            // Keyboard walking has no pathfinding, so get close by clicking the
+            // nearest point the engine will treat as a plain move, then walk
+            // the last stretch on the keys.
+            const staging = clearClickPointNear(x, y);
+            let staged;
+            if (staging) {
+                const f0 = playerFeet();
+                if (Math.hypot(staging.x - f0.x, staging.y - f0.y) > TILE_SIZE / 2) {
+                    await clickWorld(staging.x, staging.y);
+                    await waitForMovementEnd({ timeoutMs });
+                    staged = { x: Math.round(staging.x), y: Math.round(staging.y) };
+                    via = 'pointer-then-keyboard(avoids-click-trigger)';
+                }
+            }
             const nudged = await keyboardWalkTo(x, y, { timeoutMs });
             const pk = window.player;
+            const fk = playerFeet();
             const res = {
                 ok: nudged.ok, via, avoidedTrigger: { id: trigger.id, name: trigger.name },
                 target: { x, y },
                 arrivedAt: { x: Math.round(pk.x), y: Math.round(pk.y) },
-                distanceToTarget: Math.round(Math.hypot(pk.x - x, pk.y - y)),
-                reachedTarget: Math.hypot(pk.x - x, pk.y - y) <= TILE_SIZE / 4,
-                steps: nudged.steps
+                feetAt: { x: Math.round(fk.x), y: Math.round(fk.y) },
+                distanceToTarget: Math.round(Math.hypot(fk.x - x, fk.y - y)),
+                reachedTarget: Math.hypot(fk.x - x, fk.y - y) <= TILE_SIZE / 4,
+                steps: nudged.steps,
+                staged
             };
             if (!res.reachedTarget) res.shortfall = res.distanceToTarget;
             logAction('moveTo', { x, y }, res);
@@ -341,7 +435,9 @@ const bridge = {
 
         const arrival = await waitForMovementEnd({ timeoutMs });
         const p = window.player;
-        const distanceToTarget = Math.round(Math.hypot(p.x - x, p.y - y));
+        // The engine steers the feet to the target, so measure from the feet.
+        const feet = playerFeet();
+        const distanceToTarget = Math.round(Math.hypot(feet.x - x, feet.y - y));
         const result = {
             // ok means "the move completed"; the player legitimately stops
             // short when the exact point is unwalkable and pathfinding snaps
@@ -350,8 +446,11 @@ const bridge = {
             ok: arrival.ok,
             via,
             reason: arrival.ok ? undefined : arrival.reason,
+            // 'stuck': walking into a collider without moving (see waitForMovementEnd).
+            blocked: arrival.blocked,
             target: { x, y },
             arrivedAt: { x: Math.round(p.x), y: Math.round(p.y) },
+            feetAt: { x: Math.round(feet.x), y: Math.round(feet.y) },
             distanceToTarget,
             // One tile is too generous to call "reached": a full tile of drift is
             // enough to change which interactable the engine treats as nearest,
@@ -384,7 +483,9 @@ const bridge = {
         const entity = findEntity(id);
         if (!entity) return fail(`unknown-entity:${id}`);
 
-        const spot = solveStandingPoint(entity.x, entity.y, window.player.x, window.player.y);
+        const feet0 = playerFeet();
+        const spot = solveStandingPoint(entity.x, entity.y, window.player.x, window.player.y,
+            { x: feet0.x - window.player.x, y: feet0.y - window.player.y });
         if (!spot) {
             return fail('no-viable-standing-point', {
                 id, entity,
@@ -392,15 +493,49 @@ const bridge = {
             });
         }
 
-        const moved = await bridge.moveTo(spot.x, spot.y, { timeoutMs });
+        // The solver works in sprite-centre terms (player.x/y), because that is
+        // what the engine measures interaction range from: getInteractionDistance
+        // and gatherInteractablesNearClick both read player.x/y. A click, though,
+        // steers the FEET (body centre) to the clicked point, and the feet sit
+        // ~31px below the sprite centre. Clicking the solved spot itself
+        // therefore parked the sprite centre a body-height short of it, which
+        // is how moveToNear came to stop 37-62px from targets on the far side
+        // of a desk. Click where the feet must go for the sprite centre to land
+        // on the spot.
+        const feetNow = playerFeet();
+        const feetOffset = { x: feetNow.x - window.player.x, y: feetNow.y - window.player.y };
+        const moved = await bridge.moveTo(spot.x + feetOffset.x, spot.y + feetOffset.y, { timeoutMs });
+        // A click stops up to 8px short and pathfinding can stop short of an
+        // unreachable feet cell, so the sprite can land at the edge of range.
+        // Close the rest on the arrow keys (real input), straight at the
+        // target, until comfortably inside range or something blocks the way.
+        const nudges = [];
+        for (let k = 0; k < 3; k++) {
+            const pk = window.player;
+            const plainNow = Math.hypot(pk.x - entity.x, pk.y - entity.y);
+            if (plainNow <= INTERACTION_RANGE - 6) break;
+            const step = plainNow - (INTERACTION_RANGE - 12);
+            const f = playerFeet();
+            const nx = f.x + (entity.x - pk.x) / plainNow * step;
+            const ny = f.y + (entity.y - pk.y) / plainNow * step;
+            const kw = await keyboardWalkTo(nx, ny, { timeoutMs: 4000 });
+            const moved = kw.steps.reduce((t, st) => t + st.moved, 0);
+            nudges.push({ from: Math.round(plainNow), moved });
+            if (!moved) break;
+        }
         const after = findEntity(id) || entity;
         const result = {
             ok: !!after.inRange,
             id,
             reason: after.inRange ? undefined : 'arrived-but-still-out-of-range',
+            // Where the sprite centre was meant to end up (the engine's measure
+            // point), and the feet target actually clicked to get it there.
             aimedAt: { x: Math.round(spot.x), y: Math.round(spot.y) },
+            clickedFeetTarget: { x: Math.round(spot.x + feetOffset.x), y: Math.round(spot.y + feetOffset.y) },
             predictedDistance: Math.round(spot.predictedDistance),
             arrivedAt: moved.arrivedAt,
+            moveShortfall: moved.shortfall,
+            nudges: nudges.length ? nudges : undefined,
             entity: after
         };
         // Judge where we actually landed, not where we aimed: moveTo can stop
@@ -439,6 +574,131 @@ const bridge = {
                 + 'menu (interact again and choose by name), and do not record a plain interact here as a pass.';
         }
         logAction('moveToNear', { id }, result);
+        return result;
+    },
+
+    /** Doorways out of a room (default: the current one), sprite or not. See state.js. */
+    doorways(roomId) { return doorways(roomId); },
+
+    /**
+     * Walk through the doorway into an adjacent room, the way a player does:
+     * open the door if it is shut, click a point square in front of the
+     * opening, then click a point on the far side straight through it.
+     *
+     * Movement is moveTo only (real clicks, or the documented off-screen
+     * pathfinder call), so this is still never a teleport.
+     *
+     * Why it is built this way, from measurements (Oct 2026):
+     * - The doorway comes from doorways(), i.e. the engine's own placement,
+     *   not from a door sprite. Opened doors lose their sprite on both sides,
+     *   which made every return trip fail with `no-known-doorway`.
+     * - Whether the door is still shut is read from the room's door sprites at
+     *   any distance. Reading it from the 6-tile `nearby` scan missed doors
+     *   more than 192px away, so the player walked into a shut door and
+     *   stopped 40px short (the "second `enter` call" that every side door
+     *   needed in the dressing playtests).
+     * - The feet collider (18x10) has to fit the gap: 24px tall for E/W doors,
+     *   32px wide for N/S. So the player is first lined up on the gap's centre
+     *   line, then sent straight across; a slanted approach clips the frame.
+     *
+     * Every attempt reports the feet position before and after and the gap,
+     * so a failure says where the feet were relative to the opening.
+     */
+    async enterRoom(toRoom, { timeoutMs = 20000, maxAttempts = 3 } = {}) {
+        const blocked = blockedByMinigame();
+        if (blocked) return blocked;
+        if (!window.player) return fail('no-player');
+        const from = window.currentPlayerRoom || null;
+        const all = doorways(from);
+        const door = all.find(d => d.to === toRoom);
+        if (!door) {
+            const result = fail('no-doorway', {
+                from, wanted: toRoom, adjacent: all.map(d => d.to),
+                hint: `${from} has no door to ${toRoom}. Rooms reachable from here: ${all.map(d => d.to).join(', ') || 'none'}.`
+            });
+            logAction('enterRoom', { toRoom }, result);
+            return result;
+        }
+
+        // Feet targets: `near` is on this side, square to the opening; `far`
+        // is past the threshold, beyond the two-tile N/S doorway, inside the
+        // next room's floor (room detection reads the feet: rooms.js
+        // updatePlayerRoom).
+        const near = { x: door.x, y: door.y };
+        const far = { x: door.x, y: door.y };
+        switch (door.direction) {
+            case 'east':  near.x -= 36; far.x += 40; break;
+            case 'west':  near.x += 36; far.x -= 40; break;
+            case 'north': near.y += 48; far.y -= 48; break;
+            case 'south': near.y -= 40; far.y += 48; break;
+        }
+        const round = (p) => ({ x: Math.round(p.x), y: Math.round(p.y) });
+        const inGap = (f) => door.gap.axis === 'y'
+            ? f.y >= door.gap.feetMin && f.y <= door.gap.feetMax
+            : f.x >= door.gap.feetMin && f.x <= door.gap.feetMax;
+        const doorway = { id: door.id, direction: door.direction, x: door.x, y: door.y, gap: door.gap };
+
+        // A shut door: open it first, or the player walks into its frame.
+        let opened;
+        if (door.sprite.present && !door.sprite.open) {
+            if (door.sprite.locked) {
+                const result = fail('door-locked', {
+                    from, wanted: toRoom, doorway, lockType: door.sprite.lockType,
+                    hint: `moveToNear("${door.id}"), interact, solve it with the lock command, then enter again.`
+                });
+                logAction('enterRoom', { toRoom }, result);
+                return result;
+            }
+            await bridge.moveTo(near.x, near.y, { timeoutMs });
+            const clicked = await bridge.interact(door.id, { timeoutMs });
+            const open = await waitUntil(() => {
+                const d = doorways(from).find(x => x.to === toRoom);
+                return d && (!d.sprite.present || d.sprite.open);
+            }, { label: 'door-open', timeoutMs: 4000 });
+            opened = { ok: open.ok, via: clicked.mode || clicked.reason };
+            if (!open.ok) {
+                const mg = activeMinigameSummary();
+                const result = fail(mg ? 'door-locked' : 'door-did-not-open', {
+                    from, wanted: toRoom, doorway, interact: clicked, activeMinigame: mg,
+                    hint: mg ? 'The door opened a lock: solve it with the lock command, then enter again.'
+                        : 'Clicking the door did not open it. Check drainLog() for why.'
+                });
+                logAction('enterRoom', { toRoom }, result);
+                return result;
+            }
+        }
+
+        const attempts = [];
+        for (let i = 0; i < maxAttempts; i++) {
+            const stop = blockedByMinigame();
+            if (stop) { attempts.push({ stoppedBy: stop.reason }); break; }
+            const startFeet = playerFeet();
+            const align = await bridge.moveTo(near.x, near.y, { timeoutMs });
+            const alignedFeet = playerFeet();
+            const cross = await bridge.moveTo(far.x, far.y, { timeoutMs });
+            const feetAfter = playerFeet();
+            const room = window.currentPlayerRoom || null;
+            attempts.push({
+                startFeet: round(startFeet),
+                alignedFeet: round(alignedFeet), alignedInGap: inGap(alignedFeet), alignVia: align.via,
+                feetAfter: round(feetAfter), crossVia: cross.via, crossReason: cross.reason,
+                room, crossed: room === toRoom
+            });
+            if (room === toRoom || (room && room !== from)) break;
+        }
+        const now = window.currentPlayerRoom || null;
+        const result = {
+            ok: now === toRoom, from, to: now, wanted: toRoom, doorway,
+            opened, attempts: attempts.length, trace: attempts,
+            arrivedAt: { x: Math.round(window.player.x), y: Math.round(window.player.y) },
+            feetAt: round(playerFeet())
+        };
+        if (!result.ok) {
+            result.reason = 'did-not-cross';
+            result.hint = 'The feet never got through the gap: compare trace[].alignedFeet and feetAfter with '
+                + 'doorway.gap (feetMin..feetMax). Something may stand in front of the door.';
+        }
+        logAction('enterRoom', { toRoom }, result);
         return result;
     },
 

@@ -15,6 +15,10 @@
 
 import { isWorldPointOnScreen, getCanvas } from './input.js';
 import { staticNpcBodyDistSq } from '../npc-reach.js';
+// The engine's own door placement: door sprites (doors.js) and the wall gaps
+// cut for them (collision.js) both come from this one function, so a doorway
+// computed with it is where the gap really is, sprite or no sprite.
+import { calculateDoorPositionsForRoom } from '../doors.js';
 // Imported, never mirrored: an `inRange` that disagrees with the game's own
 // threshold makes the bridge claim an interaction will work when the click
 // will actually just walk the player closer.
@@ -511,8 +515,34 @@ function competingInteractables(targetX, targetY) {
     return out;
 }
 
-export function solveStandingPoint(targetX, targetY, fromX, fromY) {
-    const MARGIN = 0.75; // aim well inside range, not on the boundary
+export function solveStandingPoint(targetX, targetY, fromX, fromY, feetOffset = null) {
+    // With feetOffset (feet minus sprite centre), only consider spots where the
+    // feet would stand on a walkable cell of the engine's pathfinding grid: a
+    // spot whose feet are inside a desk can't be reached, and walking at it
+    // stops wherever the desk does. Falls back to the unfiltered search.
+    if (feetOffset) {
+        const pm = window.pathfindingManager;
+        const g = pm && pm.worldGrid, B = pm && pm.worldGridBounds;
+        if (g && B) {
+            const ok = (px, py) => {
+                const cx = Math.floor((px + feetOffset.x - B.minX) / B.step);
+                const cy = Math.floor((py + feetOffset.y - B.minY) / B.step);
+                return !!(g[cy] && g[cy][cx] === 0);
+            };
+            const found = solveStandingPointWhere(targetX, targetY, fromX, fromY, ok);
+            if (found) return found;
+        }
+    }
+    return solveStandingPointWhere(targetX, targetY, fromX, fromY, () => true);
+}
+
+function solveStandingPointWhere(targetX, targetY, fromX, fromY, standable) {
+    // Aim well inside range, not on the boundary. 20px, not 24: the solved
+    // spot is reached by a click, and click-to-move stops up to
+    // ARRIVAL_THRESHOLD (8px) short of its target along the approach, so the
+    // sprite lands 6-8px further out than aimed (measured: 24px aims landed at
+    // 29-31px, and some past the 32px range).
+    const MARGIN = 0.625;
     const rivals = competingInteractables(targetX, targetY);
     let best = null;
     let bestCost = Infinity;
@@ -523,6 +553,7 @@ export function solveStandingPoint(targetX, targetY, fromX, fromY) {
             const rad = a * Math.PI / 180;
             const sx = targetX + Math.cos(rad) * r;
             const sy = targetY + Math.sin(rad) * r;
+            if (!standable(sx, sy)) continue;
             // The game faces the player at the target before checking, so
             // predict the direction it will pick, then apply that offset.
             const dir = quantiseDirection(targetX - sx, targetY - sy);
@@ -653,6 +684,57 @@ export function plainNearestEntity() {
  * lists a whole room so a caller can pick a target id and moveToNear it.
  * Defaults to the room the player is in.
  */
+/**
+ * Every doorway out of a room, from the room's connections and the engine's
+ * door-placement function, whether or not the door sprite still exists.
+ *
+ * Opening a door destroys its sprite on both sides (doors.js openDoor and
+ * removeMatchingDoorSprite), so anything that finds doorways by looking for
+ * door sprites loses them once they are opened: the `enter` command used to
+ * fail with `no-known-doorway` on every return trip for exactly that reason.
+ *
+ * `gap` is the opening the player's feet collider has to pass through:
+ * - E/W doors: wall tile removed over door.y ± 16, with 8px collision bars
+ *   centred on its top and bottom faces (collision.js), leaving door.y ± 12.
+ * - N/S doors: one wall tile removed, door.x ± 16.
+ * The feet collider is 18x10, so its centre has to be within the gap less
+ * half the body (±7 for side doors, ±7 for N/S doors).
+ */
+export function doorways(roomId = null) {
+    const id = roomId || currentRoomId();
+    const scenarioRoom = window.gameScenario?.rooms?.[id];
+    const position = window.roomPositions?.[id];
+    const dims = window.roomDimensions?.[id];
+    if (!scenarioRoom || !position || !dims) return [];
+    const positions = calculateDoorPositionsForRoom(
+        id, position, dims, scenarioRoom.connections || {},
+        window.roomPositions || {}, window.roomDimensions || {}, window.gameScenario
+    );
+    const sprites = Object.values(window.rooms?.[id]?.doorSprites || {});
+    return positions.map(d => {
+        const side = d.direction === 'east' || d.direction === 'west';
+        const sprite = sprites.find(s => s?.active && s.doorProperties
+            && s.doorProperties.connectedRoom === d.connectedRoom
+            && s.doorProperties.direction === d.direction);
+        const props = sprite?.doorProperties || null;
+        return {
+            from: id,
+            to: d.connectedRoom,
+            id: `door:${id}->${d.connectedRoom}`,
+            direction: d.direction,
+            x: d.x,
+            y: d.y,
+            gap: side
+                ? { axis: 'y', min: d.y - 12, max: d.y + 12, feetMin: d.y - 7, feetMax: d.y + 7 }
+                : { axis: 'x', min: d.x - 16, max: d.x + 16, feetMin: d.x - 7, feetMax: d.x + 7 },
+            // No sprite = opened at some point (from either side); the gap is clear.
+            sprite: props
+                ? { present: true, open: !!props.open, locked: !!props.locked, lockType: props.lockType || null }
+                : { present: false, open: true, locked: false }
+        };
+    });
+}
+
 export function roomContents(roomId = null) {
     const p = window.player;
     const rooms = window.rooms || {};
