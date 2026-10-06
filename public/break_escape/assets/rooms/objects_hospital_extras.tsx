@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="122" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="139" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../objects/iv_stand1.png" width="25" height="60"/>
@@ -366,5 +366,56 @@
  </tile>
  <tile id="121">
   <image source="../objects/checkin_kiosk_locked1.png" width="24" height="43"/>
+ </tile>
+ <tile id="122">
+  <image source="../objects/uni_crest_sign1.png" width="44" height="22"/>
+ </tile>
+ <tile id="123">
+  <image source="../objects/projector_screen1.png" width="88" height="42"/>
+ </tile>
+ <tile id="124">
+  <image source="../objects/drop_box1.png" width="20" height="24"/>
+ </tile>
+ <tile id="125">
+  <image source="../objects/uni_directory1.png" width="16" height="18"/>
+ </tile>
+ <tile id="126">
+  <image source="../objects/uni_doorcard1.png" width="20" height="24"/>
+ </tile>
+ <tile id="127">
+  <image source="../objects/uni_sign_library1.png" width="44" height="14"/>
+ </tile>
+ <tile id="128">
+  <image source="../objects/uni_sign_special1.png" width="64" height="14"/>
+ </tile>
+ <tile id="129">
+  <image source="../objects/uni_timetable1.png" width="16" height="22"/>
+ </tile>
+ <tile id="130">
+  <image source="../objects/uni_poster1.png" width="16" height="21"/>
+ </tile>
+ <tile id="131">
+  <image source="../objects/uni_poster2.png" width="16" height="21"/>
+ </tile>
+ <tile id="132">
+  <image source="../objects/uni_poster3.png" width="16" height="21"/>
+ </tile>
+ <tile id="133">
+  <image source="../objects/uni_poster4.png" width="16" height="21"/>
+ </tile>
+ <tile id="134">
+  <image source="../objects/uni_poster6.png" width="16" height="21"/>
+ </tile>
+ <tile id="135">
+  <image source="../objects/uni_poster7.png" width="16" height="21"/>
+ </tile>
+ <tile id="136">
+  <image source="../objects/cryptosecure_banner1.png" width="22" height="58"/>
+ </tile>
+ <tile id="137">
+  <image source="../objects/student_lockers1.png" width="50" height="62"/>
+ </tile>
+ <tile id="138">
+  <image source="../objects/student_locker1.png" width="16" height="62"/>
  </tile>
 </tileset>

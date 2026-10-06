@@ -3001,6 +3001,108 @@
       "w": 24,
       "h": 43,
       "gid": 922
+    },
+    "uni_crest_sign1": {
+      "id": 122,
+      "w": 44,
+      "h": 22,
+      "gid": 923
+    },
+    "projector_screen1": {
+      "id": 123,
+      "w": 88,
+      "h": 42,
+      "gid": 924
+    },
+    "drop_box1": {
+      "id": 124,
+      "w": 20,
+      "h": 24,
+      "gid": 925
+    },
+    "uni_directory1": {
+      "id": 125,
+      "w": 16,
+      "h": 18,
+      "gid": 926
+    },
+    "uni_doorcard1": {
+      "id": 126,
+      "w": 20,
+      "h": 24,
+      "gid": 927
+    },
+    "uni_sign_library1": {
+      "id": 127,
+      "w": 44,
+      "h": 14,
+      "gid": 928
+    },
+    "uni_sign_special1": {
+      "id": 128,
+      "w": 64,
+      "h": 14,
+      "gid": 929
+    },
+    "uni_timetable1": {
+      "id": 129,
+      "w": 16,
+      "h": 22,
+      "gid": 930
+    },
+    "uni_poster1": {
+      "id": 130,
+      "w": 16,
+      "h": 21,
+      "gid": 931
+    },
+    "uni_poster2": {
+      "id": 131,
+      "w": 16,
+      "h": 21,
+      "gid": 932
+    },
+    "uni_poster3": {
+      "id": 132,
+      "w": 16,
+      "h": 21,
+      "gid": 933
+    },
+    "uni_poster4": {
+      "id": 133,
+      "w": 16,
+      "h": 21,
+      "gid": 934
+    },
+    "uni_poster6": {
+      "id": 134,
+      "w": 16,
+      "h": 21,
+      "gid": 935
+    },
+    "uni_poster7": {
+      "id": 135,
+      "w": 16,
+      "h": 21,
+      "gid": 936
+    },
+    "cryptosecure_banner1": {
+      "id": 136,
+      "w": 22,
+      "h": 58,
+      "gid": 937
+    },
+    "student_lockers1": {
+      "id": 137,
+      "w": 50,
+      "h": 62,
+      "gid": 938
+    },
+    "student_locker1": {
+      "id": 138,
+      "w": 16,
+      "h": 62,
+      "gid": 939
     }
   }
 }

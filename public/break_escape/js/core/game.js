@@ -92,6 +92,14 @@ export function preload() {
     this.load.tilemapTiledJSON('room_hospital_waiting_1x1gu', 'rooms/room_hospital_waiting_1x1gu.json'); // Small hospital waiting area / vestibule (1x1 GU)
     this.load.tilemapTiledJSON('room_hospital_storage_1x1gu', 'rooms/room_hospital_storage_1x1gu.json'); // Small hospital store room (1x1 GU)
     this.load.tilemapTiledJSON('room_hospital_staff', 'rooms/room_hospital_staff.json'); // Hospital night staff / handover room (room6, 2x2 GU, doors on all four sides)
+    // University (campus) rooms, builder maps in scripts/generate_rooms.py (room_uni_*)
+    this.load.tilemapTiledJSON('room_uni_foyer', 'rooms/room_uni_foyer.json'); // University foyer / atrium: crest, heritage display, recruiter's stand (2x2 GU)
+    this.load.tilemapTiledJSON('room_uni_lab', 'rooms/room_uni_lab.json'); // Computer teaching lab: two benches of PCs, projector screen, whiteboard (2x2 GU)
+    this.load.tilemapTiledJSON('room_uni_common', 'rooms/room_uni_common.json'); // Student common room: lockers, kitchenette, snack machine, sofa (2x2 GU)
+    this.load.tilemapTiledJSON('room_uni_corridor', 'rooms/room_uni_corridor.json'); // University corridor: lockers, noticeboard, pigeonholes, drop box (2x1 GU, two visible floor rows)
+    this.load.tilemapTiledJSON('room_uni_library', 'rooms/room_uni_library.json'); // Library front desk: shelves, issue desk, floor safe slot (2x1 GU, two visible floor rows)
+    this.load.tilemapTiledJSON('room_uni_office', 'rooms/room_uni_office.json'); // Academic's office: door card, whiteboard slot, desk with PC (2x1 GU, two visible floor rows)
+    this.load.tilemapTiledJSON('room_uni_workshop', 'rooms/room_uni_workshop.json'); // Maker space / workshop: scoreboard and build screens, island workbench (2x2 GU)
 
     // Load room images (now using smaller 32px scale images)
     this.load.image('room_reception', 'tiles/rooms/room1.png');
@@ -102,6 +110,15 @@ export function preload() {
     this.load.image('room_hospital_exec', 'tiles/rooms/room_hospital_exec.png'); // carpet with a rug under the desk (Dr Kim's office)
     this.load.image('room_hospital_raised', 'tiles/rooms/room_hospital_raised.png'); // same walls, raised access floor (server room)
     this.load.image('room_hospital_kitchen', 'tiles/rooms/room_hospital_kitchen.png'); // same walls, flecked kitchen safety vinyl (staff room)
+    // University (campus) room sheets: room6 repainted, off-white walls and teal skirting (scripts/room_gen/make_uni_tileset.py)
+    this.load.image('room_uni', 'tiles/rooms/room_uni.png'); // sheet vinyl (corridor)
+    this.load.image('room_uni_carpet', 'tiles/rooms/room_uni_carpet.png'); // charcoal-blue carpet tiles (lab, offices, seminar room)
+    this.load.image('room_uni_foyer', 'tiles/rooms/room_uni_foyer.png'); // terrazzo with a brass "M" inlay
+    this.load.image('room_uni_lecture', 'tiles/rooms/room_uni_lecture.png'); // blue carpet, vinyl front strip, tier lines
+    this.load.image('room_uni_common', 'tiles/rooms/room_uni_common.png'); // warm carpet, kitchenette vinyl patch
+    this.load.image('room_uni_library', 'tiles/rooms/room_uni_library.png'); // deep green carpet
+    this.load.image('room_uni_special', 'tiles/rooms/room_uni_special.png'); // oxblood carpet with a rug
+    this.load.image('room_uni_workshop', 'tiles/rooms/room_uni_workshop.png'); // concrete, hazard line round the bench
     this.load.image('room14', 'tiles/rooms/room14.png');
     this.load.image('room19', 'tiles/rooms/room19.png');
     this.load.image('door_32', 'tiles/door_32.png');
@@ -650,6 +667,23 @@ export function preload() {
     this.load.image('cctv_monitors2', 'objects/cctv_monitors2.png');
     this.load.image('wall_rail2', 'objects/wall_rail2.png');
     this.load.image('checkin_kiosk_locked1', 'objects/checkin_kiosk_locked1.png');
+    this.load.image('uni_crest_sign1', 'objects/uni_crest_sign1.png');
+    this.load.image('projector_screen1', 'objects/projector_screen1.png');
+    this.load.image('drop_box1', 'objects/drop_box1.png');
+    this.load.image('uni_directory1', 'objects/uni_directory1.png');
+    this.load.image('uni_doorcard1', 'objects/uni_doorcard1.png');
+    this.load.image('uni_sign_library1', 'objects/uni_sign_library1.png');
+    this.load.image('uni_sign_special1', 'objects/uni_sign_special1.png');
+    this.load.image('uni_timetable1', 'objects/uni_timetable1.png');
+    this.load.image('uni_poster1', 'objects/uni_poster1.png');
+    this.load.image('uni_poster2', 'objects/uni_poster2.png');
+    this.load.image('uni_poster3', 'objects/uni_poster3.png');
+    this.load.image('uni_poster4', 'objects/uni_poster4.png');
+    this.load.image('uni_poster6', 'objects/uni_poster6.png');
+    this.load.image('uni_poster7', 'objects/uni_poster7.png');
+    this.load.image('cryptosecure_banner1', 'objects/cryptosecure_banner1.png');
+    this.load.image('student_lockers1', 'objects/student_lockers1.png');
+    this.load.image('student_locker1', 'objects/student_locker1.png');
     this.load.image('backup_recovery',         'objects/backup_recovery.png');
     this.load.image('dual_auth',               'objects/dual_auth.png');
     this.load.image('ehr-terminal',            'objects/ehr-terminal.png');
