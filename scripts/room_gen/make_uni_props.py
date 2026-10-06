@@ -155,10 +155,13 @@ def crest_sign():
 
 
 def library_sign():
+    """Two lines in 14px: the bottom rim row is painted over so "QUIET" doesn't
+    run into it (round 2: in RIM grey on the rim it read as "OUITFT")."""
     c = Canvas(44, 14)
     c.sign_panel(TEAL_DARK)
+    c.hline(2, 41, 12, TEAL_DARK)
     c.text_centred(0, 43, 2, "LIBRARY", WHITE)
-    c.text_centred(0, 43, 8, "QUIET", RIM)
+    c.text_centred(0, 43, 8, "QUIET", TEAL_LIGHT)
     return c
 
 
@@ -503,7 +506,164 @@ def portrait():
     return c
 
 
+# --- round 2 (ROOM_DRESSING_R2.md) --------------------------------------------------
+
+BUNTING_COLOURS = (MAGENTA, YELLOW, TEAL_LIGHT, LIME, ORANGE, BLUE)
+
+
+def bunting(width):
+    """A strand of triangular flags on a sagging string, for the back wall."""
+    c = Canvas(width, 10)
+    sag = lambda x: 1 + round(3 * (1 - ((2 * x / (width - 1)) - 1) ** 2))
+    for x in range(width):
+        c.px(x, sag(x), OUTLINE)
+    for k, x0 in enumerate(range(2, width - 5, 8)):
+        col = BUNTING_COLOURS[k % len(BUNTING_COLOURS)]
+        top = sag(x0 + 2) + 1
+        for j, (off, wdt) in enumerate(((0, 5), (0, 5), (1, 3), (1, 3), (2, 1))):
+            for i in range(wdt):
+                c.px(x0 + off + i, top + j, col)
+    return c
+
+
+def banner_society():
+    """Pull-up banner for the Cyber Security Society, same build as the CryptoSecure one."""
+    c = Canvas(22, 58)
+    c.rect(4, 0, 17, 1, STEEL_DARK)
+    c.rect(2, 1, 19, 53, OUTLINE)
+    c.rect(3, 2, 18, 52, BLACK)
+    # the society's padlock, as on its poster
+    c.frame(8, 5, 13, 9, LIME)
+    c.rect(7, 9, 14, 15, LIME)
+    c.rect(10, 11, 11, 13, BLACK)
+    c.text_centred(3, 18, 19, "SEC", LIME)
+    c.text_centred(3, 18, 26, "SOC", WHITE)
+    c.rect(3, 34, 18, 36, MAGENTA)
+    for y in (40, 42, 44):
+        c.hline(5, 16 - (y % 3), y, GREY_TEXT)
+    c.text_centred(3, 18, 46, "CTF", YELLOW)
+    c.rect(0, 54, 21, 57, STEEL_DARK)
+    c.hline(1, 20, 55, STEEL_LIGHT)
+    c.hline(0, 21, 57, OUTLINE)
+    return c
+
+
+def build_screen():
+    """Dr Schreuders' build (workshop back wall, replaces the landscape picture in
+    the smartscreen slot): a wall screen showing a live floor plan of the building,
+    rooms drawn to the game's world layout, small figures moving about. Yours (the
+    hoodie, yellow) is in the workshop, next to a second one by the scoreboard."""
+    c = Canvas(48, 34)
+    c.rect(0, 0, 47, 31, BLACK)
+    c.rect(2, 2, 45, 29, NAVY)
+    # world rooms (x0, y0, x1, y1), floor only, from check_door_alignment's layout
+    rooms = {
+        "special": (-320, -320, 0, -128), "workshop": (0, -320, 320, -128), "seminar": (320, -320, 640, -128),
+        "library": (-640, -64, 0, 0), "corridor": (0, -64, 320, 0), "sidhu": (320, -64, 640, 0),
+        "lab": (-320, 64, 0, 320), "foyer": (0, 64, 320, 256), "common": (320, 64, 640, 256),
+        "staff": (640, 64, 1280, 320), "lecture": (0, 320, 640, 576),
+    }
+    sx = lambda x: 3 + round((x + 640) * 41 / 1920)
+    sy = lambda y: 3 + round((y + 384) * 25 / 960)
+    for name, (x0, y0, x1, y1) in rooms.items():
+        col = TEAL_LIGHT if name == "workshop" else TEAL
+        c.frame(sx(x0), sy(y0), sx(x1) - 1, sy(y1) - 1, col)
+    # figures: you (yellow hood) and a stranger in the workshop, people elsewhere
+    for x, y, col in ((15, 8, YELLOW), (18, 7, WHITE), (16, 18, WHITE), (24, 16, WHITE),
+                      (34, 18, WHITE), (9, 19, WHITE), (20, 24, WHITE)):
+        c.px(x, y, col)
+        c.px(x, y + 1, col)
+    c.hline(3, 12, 28, STEEL_DARK)                  # status bar
+    c.px(44, 28, (0, 200, 90))
+    c.rect(18, 32, 29, 33, OUTLINE)                 # wall bracket
+    return c
+
+
+def drinking_fountain():
+    """Wall-hung drinking fountain: steel bowl and push button on a back plate."""
+    c = Canvas(14, 22)
+    c.rect(2, 0, 11, 13, STEEL_LIGHT)               # back plate
+    c.frame(2, 0, 11, 13, STEEL_DARK)
+    c.rect(0, 12, 13, 17, STEEL)                    # bowl
+    c.hline(1, 12, 12, WHITE)
+    c.hline(0, 13, 17, STEEL_DARK)
+    c.rect(1, 13, 12, 13, STEEL_DARK)               # basin rim shadow
+    c.px(6, 11, STEEL_DARK); c.px(7, 11, STEEL_DARK)  # spout
+    c.rect(9, 4, 10, 6, BLUE)                       # button
+    c.rect(4, 18, 9, 21, STEEL_DARK)                # trap under the bowl
+    c.rect(5, 18, 8, 20, STEEL)
+    return c
+
+
+def radiator():
+    """Low white panel radiator with fins and a valve, for under a wall poster."""
+    c = Canvas(26, 10)
+    c.rect(0, 0, 25, 8, WHITE)
+    c.frame(0, 0, 25, 8, RIM)
+    for x in range(2, 24, 3):
+        c.rect(x, 1, x, 7, (214, 217, 222))
+    c.hline(0, 25, 9, OUTLINE)
+    c.rect(24, 6, 25, 9, STEEL_DARK)                # valve
+    return c
+
+
+def fire_door_sign():
+    """UK blue mandatory sign, FIRE DOOR KEEP SHUT, too small to letter."""
+    c = Canvas(11, 11)
+    for y in range(11):
+        for x in range(11):
+            d = (x - 5) ** 2 + (y - 5) ** 2
+            if d <= 30:
+                c.px(x, y, BLUE_DARK if d > 24 else BLUE)
+    c.hline(3, 7, 3, WHITE)
+    c.hline(2, 8, 5, WHITE)
+    c.hline(3, 7, 7, WHITE)
+    return c
+
+
+def dartboard():
+    """Dartboard: black surround, 20 alternating black and cream segments, a red
+    and green double ring, a red bull."""
+    import math
+    cream = (232, 220, 186)
+    c = Canvas(16, 16)
+    for y in range(16):
+        for x in range(16):
+            dx, dy = x - 7.5, y - 7.5
+            r = math.hypot(dx, dy)
+            if r > 7.8:
+                continue
+            seg = int((math.atan2(dy, dx) + math.pi) / (2 * math.pi) * 20) % 20
+            if r > 6.6:
+                col = BLACK
+            elif r > 5.4:
+                col = RED if seg % 2 else GREEN
+            elif r > 1.6:
+                col = BLACK if seg % 2 else cream
+            else:
+                col = RED
+            c.px(x, y, col)
+    return c
+
+
+def small_sign(width, words):
+    c = Canvas(width, 11)
+    c.sign_panel(TEAL_DARK)
+    c.text_centred(0, width - 1, 3, words, WHITE)
+    return c
+
+
 PROPS = {
+    "uni_bunting1": lambda: bunting(104),
+    "uni_bunting2": lambda: bunting(64),
+    "uni_banner_soc1": banner_society,
+    "smartscreen2": build_screen,
+    "uni_fountain1": drinking_fountain,
+    "uni_radiator1": radiator,
+    "uni_firedoor_sign1": fire_door_sign,
+    "uni_dartboard1": dartboard,
+    "uni_sign_returns1": lambda: small_sign(32, "RETURNS"),
+    "uni_sign_study1": lambda: small_sign(44, "STUDY AREA"),
     "uni_tv1": wall_tv,
     "uni_certificate1": certificate,
     "uni_portrait1": portrait,

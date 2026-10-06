@@ -3289,6 +3289,120 @@
       "w": 61,
       "h": 59,
       "gid": 970
+    },
+    "uni_bunting1": {
+      "id": 170,
+      "w": 104,
+      "h": 10,
+      "gid": 971
+    },
+    "uni_bunting2": {
+      "id": 171,
+      "w": 64,
+      "h": 10,
+      "gid": 972
+    },
+    "smartscreen2": {
+      "id": 172,
+      "w": 48,
+      "h": 34,
+      "gid": 973
+    },
+    "uni_fountain1": {
+      "id": 173,
+      "w": 14,
+      "h": 22,
+      "gid": 974
+    },
+    "uni_radiator1": {
+      "id": 174,
+      "w": 26,
+      "h": 10,
+      "gid": 975
+    },
+    "uni_firedoor_sign1": {
+      "id": 175,
+      "w": 11,
+      "h": 11,
+      "gid": 976
+    },
+    "uni_dartboard1": {
+      "id": 176,
+      "w": 16,
+      "h": 16,
+      "gid": 977
+    },
+    "uni_sign_returns1": {
+      "id": 177,
+      "w": 32,
+      "h": 11,
+      "gid": 978
+    },
+    "uni_sign_study1": {
+      "id": 178,
+      "w": 44,
+      "h": 11,
+      "gid": 979
+    },
+    "uni_banner_soc1": {
+      "id": 179,
+      "w": 22,
+      "h": 58,
+      "gid": 980
+    },
+    "foosball_table1": {
+      "id": 180,
+      "w": 57,
+      "h": 57,
+      "gid": 981
+    },
+    "study_carrels1": {
+      "id": 181,
+      "w": 57,
+      "h": 58,
+      "gid": 982
+    },
+    "periodicals_rack1": {
+      "id": 182,
+      "w": 48,
+      "h": 52,
+      "gid": 983
+    },
+    "balloons1": {
+      "id": 183,
+      "w": 32,
+      "h": 59,
+      "gid": 984
+    },
+    "freshers_stall2": {
+      "id": 184,
+      "w": 62,
+      "h": 47,
+      "gid": 985
+    },
+    "display_case3": {
+      "id": 185,
+      "w": 56,
+      "h": 45,
+      "gid": 986
+    },
+    "plan_chest2": {
+      "id": 186,
+      "w": 52,
+      "h": 46,
+      "gid": 987
+    },
+    "printer_3d2": {
+      "id": 187,
+      "w": 38,
+      "h": 57,
+      "gid": 988
+    },
+    "foosball_table2": {
+      "id": 188,
+      "w": 48,
+      "h": 57,
+      "gid": 989
     }
   }
 }

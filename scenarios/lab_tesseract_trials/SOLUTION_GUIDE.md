@@ -46,7 +46,7 @@ Shapes stay the same in every game, and they help you check a student's screen:
 4. Read **Output** (bottom right). The bin icon above the recipe clears it.
 5. Closing and reopening the laptop keeps the recipe and input. Reloading the page does not (see "Running it in a lab").
 
-**Two habits to teach in the first five minutes.** Use the file's **Copy** button, never "Add to Notepad", for any code (the notepad wraps the text in a header and footer). And write down anything you will need later with the pencil on a notepad page, because the IV and the AES key have to survive a long gap.
+**Two habits to teach in the first five minutes.** Use the file's **Copy** button for any code, rather than selecting the text by hand on screen or in the notepad (a hand selection easily catches a file name, a heading or a space, and the notepad shows a typed ` -- ` as a dash). And write down anything you will need later with the pencil on a notepad page, because the IV and the AES key have to survive a long gap.
 
 ## Room map
 
@@ -234,7 +234,7 @@ This lock produces three things, not one. Make sure the student writes all three
   4. Take from it: **the password** (word, hyphen, two digits: it ends the text with nothing after it), **your pigeonhole number** (a number word from two to five), and **the IV** (32 hex characters).
   5. **Write the IV onto the "Tag on the Drop Box" notepad page with the pencil** ("Key: ____ IV: ____"), together with the hole number. The IV is not needed until the drop box, some minutes later.
 - **Common mistakes.**
-  - **Add to Notepad on the file.** The notepad wraps the text in a header and footer ("Text File: trial_vii.txt / FILE CONTENTS / End of File"). Vigenère runs the key across every letter it sees, so the extra letters knock the key out of step and the whole output is wrong. Typical symptom: the whole output is nonsense of the right length, for example `Uhj vcafosniffs tvyh xiyn jittrgle-39 ...` (from a real run), with the digits and hyphen at the end looking right. The fix is to re-copy with the file's Copy button, not to change the key.
+  - **Extra text copied with the ciphertext.** A hand selection, on screen or from the notepad page, often catches the file name, a heading or the observation line. Vigenère runs the key across every letter it sees, so the extra letters knock the key out of step and the whole output is wrong. (Before engine fix E6, Add to Notepad wrapped the file in a header and footer, which did the same. It now stores the raw text, so a notepad copy is only wrong if the selection is.) Typical symptom: the whole output is nonsense of the right length, for example `Uhj vcafosniffs tvyh xiyn jittrgle-39 ...` (from a real run), with the digits and hyphen at the end looking right. The fix is to re-copy with the file's Copy button, not to change the key.
   - Wrong key: using block 1 ("genesis-0"), the last hash (`51a8`) or a word from the lesson text. The output is nonsense in every case.
   - A typo in the key (`nonse` for `nonce`). The output is nonsense, exactly as with a wrong key.
   - Extracting the password with a full stop copied in, or with the next word. The text deliberately ends on the password, but selecting by mouse can still catch a space. The pad says "Incorrect password."
@@ -258,7 +258,7 @@ There is no lock on this step. It makes the AES key.
 - **Common mistakes.**
   - The wrong pigeonhole: CyberChef errors with **"Invalid RSAES-OAEP padding"** or **"Encrypted message is invalid"**. This is the single most likely error, and it is also the point of the exercise. Ask: "Which hole did the text say was yours?"
   - Skipping From Base64: RSA Decrypt on the Base64 text errors.
-  - Pasting the key without the BEGIN and END lines, or pasting from the notepad (with a header and footer). The error mentions the key.
+  - Pasting the key without the BEGIN and END lines, or a hand selection that misses or adds a line. The error mentions the key.
   - Pasting the **public** key. Only the private key decrypts.
   - Changing the scheme or the digest. Both start in the right place.
   - Expecting a readable answer. The student sees hex and thinks it has gone wrong.
@@ -422,7 +422,7 @@ The agent's per-step times are close to a human's clicks, so the real difference
 | L4 corridor door | about 8 | 25 s, 45 s | **2 to 3** | Same shape as L3. The risk is typing the whole sentence (add a minute). |
 | L5 library door | about 8 | 30 s, 45 s | **2 to 3.5** | Walk to the corridor and take the poster; From Base64. |
 | L6 safe | about 14 | not blind (read the route first); P2B about 45 agent commands | **4.5 to 7.5** | Two operations, one setting to change, and the Roman numeral. Walk to the library, then on to Special Collections. |
-| L7 Trial VII and pigeonholes | about 22 | P2B about 130 agent commands | **8 to 13.5** | Safe contents, Copy, a trip through Sidhu's office to the seminar room, the whiteboard, Vigenère, three values written down, back to the corridor (six hops instead of three). Add 2 to 3 minutes if they used Add to Notepad. |
+| L7 Trial VII and pigeonholes | about 22 | P2B about 130 agent commands | **8 to 13.5** | Safe contents, Copy, a trip through Sidhu's office to the seminar room, the whiteboard, Vigenère, three values written down, back to the corridor (six hops instead of three). Add 2 to 3 minutes if they copied extra text with the ciphertext. |
 | L8a envelope | about 17 | P3 combined | **6 to 9** | Choose a hole, walk to the lab PC (two hops), copy a long PEM, two operations (one new, a long field). |
 | L8b drop box | about 12 | P3 combined | **4 to 7** | One new operation with two hex fields, plus the toggles. |
 | L9 workshop | about 4 | | **1 to 2** | One hop and a key. |
@@ -468,7 +468,7 @@ Optional hash and signature checks add 4 to 8 minutes and are not in the totals.
 - **The keyless note is for playtesting only.** The playtest runs used a server on port 3001 started without a Gemini key, which turns off speech. A production server does not need to be run that way. Be aware that **no voice audio has been generated for this scenario yet**, so dialogue is text only until that is done, and several character portraits are placeholders (see `ART_NEEDED.md`). Neither affects the puzzles.
 - No VMs, no flag submission and no combat. A student needs nothing beyond the browser.
 - Run the scenario once yourself beforehand. Note the walk to Tom Shaw and the Keyholder device chat that opens a few seconds after the lockbox.
-- Give each student the two habits from "How to use this guide": Copy button, not Add to Notepad; pencil for the IV, the AES key and the hole number.
+- Give each student the two habits from "How to use this guide": Copy button rather than a hand selection; pencil for the IV, the AES key and the hole number.
 
 **The CyberChef pop-out tab.** The small up-arrow beside the cross on the laptop opens CyberChef in its own browser tab, with the recipe and input carried over. A student who uses it can keep the clue (in the game tab) and the recipe (in the second tab) on screen together. It is the biggest time saver in the lab, and Tom and Field Note 1 both suggest it. Two cautions. The pop-out is a separate copy, so a recipe built in the tab does not appear back in the game laptop. And whether the pop-out survives a reload of the game tab has not been tested.
 
@@ -519,7 +519,7 @@ Tell students not to reload to "fix" something. Tell them that if they do reload
 | "Invalid RSAES-OAEP padding" or "Encrypted message is invalid" | Wrong pigeonhole for this student's key, or the wrong key pasted |
 | "Invalid IV length" | AES Decrypt has no IV |
 | "Unable to decrypt input with these parameters" or junk | Wrong key, IV or tag |
-| Nonsense of the right length from Vigenère | Wrong key, or the ciphertext came from Add to Notepad |
+| Nonsense of the right length from Vigenère | Wrong key, or extra text was copied with the ciphertext |
 | SHA2 output is 128 characters | Size is still 512 |
 | "Verification Failure" | RSA Verify with the decoded text, a trailing new line, Message format Base64 or the digest left on SHA-1 |
 

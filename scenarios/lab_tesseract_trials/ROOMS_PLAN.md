@@ -231,6 +231,8 @@ NPCs: none.
 
 ### 2.5 Library (issue desk and returns): `room_uni_library` (10x6, builder)
 
+> Note (2026-10-06, room dressing round 2): the library is now 20x6, doubled westwards with a reading room; the east half keeps this section's front-of-house layout, shifted 320 px east. See `ROOM_DRESSING_R2.md` and the builder's docstring.
+
 The library's front of house: shelves along the back wall, the issue desk with the returns on it (the Codebreakers copy with the slip inside), the librarian's empty chair, and from Phase 2 the stairs/door up to Special Collections in the NE corner. Only y 64-128 is floor; the strip west of the desk is the librarian's side and is not walked.
 
 Doors: east (corridor) row 2; north (Special Collections, Phase 2) NE corner, centre (272, 32).

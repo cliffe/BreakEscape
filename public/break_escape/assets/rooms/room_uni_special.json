@@ -83,27 +83,27 @@
                  "y":206
                 }, 
                 {
-                 "gid":947,
-                 "height":42,
+                 "gid":987,
+                 "height":46,
                  "id":8,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":44,
-                 "x":208,
-                 "y":112
+                 "width":52,
+                 "x":206,
+                 "y":116
                 }, 
                 {
-                 "gid":949,
-                 "height":57,
+                 "gid":986,
+                 "height":45,
                  "id":9,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":58,
-                 "x":24,
+                 "width":56,
+                 "x":34,
                  "y":250
                 }],
          "opacity":1,
@@ -2796,7 +2796,7 @@
          "margin":0,
          "name":"objects\/hospital_extras",
          "spacing":0,
-         "tilecount":170,
+         "tilecount":189,
          "tileheight":63,
          "tiles":[
                 {
@@ -3834,6 +3834,122 @@
                  "image":"..\/objects\/freshers_stall1.png",
                  "imageheight":59,
                  "imagewidth":61
+                },
+            
+                {
+                 "id":170,
+                 "image":"..\/objects\/uni_bunting1.png",
+                 "imageheight":10,
+                 "imagewidth":104
+                }, 
+                {
+                 "id":171,
+                 "image":"..\/objects\/uni_bunting2.png",
+                 "imageheight":10,
+                 "imagewidth":64
+                }, 
+                {
+                 "id":172,
+                 "image":"..\/objects\/smartscreen2.png",
+                 "imageheight":34,
+                 "imagewidth":48
+                }, 
+                {
+                 "id":173,
+                 "image":"..\/objects\/uni_fountain1.png",
+                 "imageheight":22,
+                 "imagewidth":14
+                }, 
+                {
+                 "id":174,
+                 "image":"..\/objects\/uni_radiator1.png",
+                 "imageheight":10,
+                 "imagewidth":26
+                }, 
+                {
+                 "id":175,
+                 "image":"..\/objects\/uni_firedoor_sign1.png",
+                 "imageheight":11,
+                 "imagewidth":11
+                }, 
+                {
+                 "id":176,
+                 "image":"..\/objects\/uni_dartboard1.png",
+                 "imageheight":16,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":177,
+                 "image":"..\/objects\/uni_sign_returns1.png",
+                 "imageheight":11,
+                 "imagewidth":32
+                }, 
+                {
+                 "id":178,
+                 "image":"..\/objects\/uni_sign_study1.png",
+                 "imageheight":11,
+                 "imagewidth":44
+                }, 
+                {
+                 "id":179,
+                 "image":"..\/objects\/uni_banner_soc1.png",
+                 "imageheight":58,
+                 "imagewidth":22
+                },
+            
+                {
+                 "id":180,
+                 "image":"..\/objects\/foosball_table1.png",
+                 "imageheight":57,
+                 "imagewidth":57
+                }, 
+                {
+                 "id":181,
+                 "image":"..\/objects\/study_carrels1.png",
+                 "imageheight":58,
+                 "imagewidth":57
+                }, 
+                {
+                 "id":182,
+                 "image":"..\/objects\/periodicals_rack1.png",
+                 "imageheight":52,
+                 "imagewidth":48
+                }, 
+                {
+                 "id":183,
+                 "image":"..\/objects\/balloons1.png",
+                 "imageheight":59,
+                 "imagewidth":32
+                }, 
+                {
+                 "id":184,
+                 "image":"..\/objects\/freshers_stall2.png",
+                 "imageheight":47,
+                 "imagewidth":62
+                }, 
+                {
+                 "id":185,
+                 "image":"..\/objects\/display_case3.png",
+                 "imageheight":45,
+                 "imagewidth":56
+                }, 
+                {
+                 "id":186,
+                 "image":"..\/objects\/plan_chest2.png",
+                 "imageheight":46,
+                 "imagewidth":52
+                }, 
+                {
+                 "id":187,
+                 "image":"..\/objects\/printer_3d2.png",
+                 "imageheight":57,
+                 "imagewidth":38
+                }, 
+                {
+                 "id":188,
+                 "image":"..\/objects\/foosball_table2.png",
+                 "imageheight":57,
+                 "imagewidth":48
                 }],
          "tilewidth":252
         }],

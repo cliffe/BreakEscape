@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="170" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="189" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../objects/iv_stand1.png" width="25" height="60"/>
@@ -510,5 +510,62 @@
  </tile>
  <tile id="169">
   <image source="../objects/freshers_stall1.png" width="61" height="59"/>
+ </tile>
+ <tile id="170">
+  <image source="../objects/uni_bunting1.png" width="104" height="10"/>
+ </tile>
+ <tile id="171">
+  <image source="../objects/uni_bunting2.png" width="64" height="10"/>
+ </tile>
+ <tile id="172">
+  <image source="../objects/smartscreen2.png" width="48" height="34"/>
+ </tile>
+ <tile id="173">
+  <image source="../objects/uni_fountain1.png" width="14" height="22"/>
+ </tile>
+ <tile id="174">
+  <image source="../objects/uni_radiator1.png" width="26" height="10"/>
+ </tile>
+ <tile id="175">
+  <image source="../objects/uni_firedoor_sign1.png" width="11" height="11"/>
+ </tile>
+ <tile id="176">
+  <image source="../objects/uni_dartboard1.png" width="16" height="16"/>
+ </tile>
+ <tile id="177">
+  <image source="../objects/uni_sign_returns1.png" width="32" height="11"/>
+ </tile>
+ <tile id="178">
+  <image source="../objects/uni_sign_study1.png" width="44" height="11"/>
+ </tile>
+ <tile id="179">
+  <image source="../objects/uni_banner_soc1.png" width="22" height="58"/>
+ </tile>
+ <tile id="180">
+  <image source="../objects/foosball_table1.png" width="57" height="57"/>
+ </tile>
+ <tile id="181">
+  <image source="../objects/study_carrels1.png" width="57" height="58"/>
+ </tile>
+ <tile id="182">
+  <image source="../objects/periodicals_rack1.png" width="48" height="52"/>
+ </tile>
+ <tile id="183">
+  <image source="../objects/balloons1.png" width="32" height="59"/>
+ </tile>
+ <tile id="184">
+  <image source="../objects/freshers_stall2.png" width="62" height="47"/>
+ </tile>
+ <tile id="185">
+  <image source="../objects/display_case3.png" width="56" height="45"/>
+ </tile>
+ <tile id="186">
+  <image source="../objects/plan_chest2.png" width="52" height="46"/>
+ </tile>
+ <tile id="187">
+  <image source="../objects/printer_3d2.png" width="38" height="57"/>
+ </tile>
+ <tile id="188">
+  <image source="../objects/foosball_table2.png" width="48" height="57"/>
  </tile>
 </tileset>

@@ -307,7 +307,7 @@ On my way to you.
     { hint_rung:
     - 1: Trial VII needs a key word. The file's notes say where.
     - 2: Dr Selvarajan's whiteboard. Block four.
-    - else: Copy the ciphertext with the file's Copy button, not Add to Notepad. Vigenère Decode, with block four's word as the key. It gives you the pigeonhole code and an IV. Paste the IV onto the drop box tag in your notepad.
+    - else: Copy the ciphertext with the file's Copy button, and nothing around it. Vigenère Decode, with block four's word as the key. It gives you the pigeonhole code and an IV. Paste the IV onto the drop box tag in your notepad.
     }
 - step == "l8":
     { hint_rung:
