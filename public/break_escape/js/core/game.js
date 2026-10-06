@@ -27,7 +27,7 @@ import { PlayerCombat } from '../systems/player-combat.js';
 import { NPCCombat } from '../systems/npc-combat.js';
 import { ApiClient } from '../api-client.js'; // Import to ensure window.ApiClient is set
 import { getTutorialManager } from '../systems/tutorial-manager.js';
-import { TILE_SIZE, SPRITE_PADDING_BOTTOM_ATLAS, SPRITE_PADDING_BOTTOM_LEGACY, DOOR_INTERACTION_RANGE } from '../utils/constants.js';
+import { TILE_SIZE, SPRITE_PADDING_BOTTOM_ATLAS, SPRITE_PADDING_BOTTOM_LEGACY, DOOR_INTERACTION_RANGE, INTERACTION_RANGE } from '../utils/constants.js';
 import { initScenarioMusicEvents } from '../music/scenario-music-events.js';
 import { ScenarioTimerUI } from '../ui/scenario-timer.js';  // [Phase 5] Countdown timer HUD widget
 import { ScenarioTimerDispatcher } from '../ui/scenario-timer-dispatcher.js';  // [Phase 5] Timer event dispatcher
@@ -1392,18 +1392,52 @@ export async function create() {
                             // Chairs: move onto the clicked position (player sits/stands at the chair).
                             movePlayerToPoint(worldX, worldY);
                         } else {
-                            // Object is out of range - move toward it, stopping just short.
-                            const objBottomY = obj.y + obj.height * (1 - (obj.originY || 0));
+                            // Object is out of range - walk until it's within reach.
+                            // Reach is measured from the sprite centre (player.x/y) to obj.x/y
+                            // (isObjectInInteractionRange), but movePlayerToPoint steers the
+                            // feet (body centre, ~31px lower). Aim so the sprite centre ends
+                            // half a reach from that point, then convert to a feet target;
+                            // stopping 3/4 tile short of the object's base could leave the
+                            // player just outside reach, where further taps did nothing.
                             const dx = obj.x - player.x;
-                            const dy = objBottomY - player.y;
+                            const dy = obj.y - player.y;
                             const distance = Math.sqrt(dx * dx + dy * dy);
                             if (distance > 0) {
-                                const stopShortOffset = TILE_SIZE * 0.75; // 3/4 tile short of object
-                                const normalizedDx = dx / distance;
-                                const normalizedDy = dy / distance;
-                                const targetX = obj.x - normalizedDx * stopShortOffset;
-                                const targetY = objBottomY - normalizedDy * stopShortOffset;
-                                movePlayerToPoint(targetX, targetY);
+                                const stopShort = INTERACTION_RANGE / 2;
+                                const centreX = obj.x - (dx / distance) * stopShort;
+                                const centreY = obj.y - (dy / distance) * stopShort;
+                                const footDx = player.body ? player.body.center.x - player.x : 0;
+                                const footDy = player.body ? player.body.center.y - player.y : 0;
+                                let target = { x: centreX + footDx, y: centreY + footDy };
+                                // The straight-line aim can fall inside a wall or furniture (a
+                                // noticeboard high on the back wall), and the pathfinder's snap
+                                // to the nearest free cell may then leave the player just out of
+                                // reach. Try stand points around the object and keep the one that
+                                // ends in reach with the shortest walk.
+                                const pfm = window.pathfindingManager;
+                                if (pfm?.findNearestWalkableWorldCell) {
+                                    const reachAfter = (p) => Math.hypot(p.x - footDx - obj.x, p.y - footDy - obj.y);
+                                    const walk = (p) => Math.hypot(p.x - (player.x + footDx), p.y - (player.y + footDy));
+                                    const aimed = pfm.findNearestWalkableWorldCell(target.x, target.y);
+                                    if (!aimed || reachAfter(aimed) > INTERACTION_RANGE - 4) {
+                                        let best = aimed, bestReach = aimed ? reachAfter(aimed) : Infinity, bestWalk = aimed ? walk(aimed) : Infinity;
+                                        for (let a = 0; a < 16; a++) {
+                                            const ang = (a / 16) * Math.PI * 2;
+                                            for (const r of [8, 16, 24]) {
+                                                const c = pfm.findNearestWalkableWorldCell(
+                                                    obj.x + Math.cos(ang) * r + footDx, obj.y + Math.sin(ang) * r + footDy, 3);
+                                                if (!c) continue;
+                                                const ra = reachAfter(c), wk = walk(c);
+                                                const ok = ra <= INTERACTION_RANGE - 4, bestOk = bestReach <= INTERACTION_RANGE - 4;
+                                                if ((ok && (!bestOk || wk < bestWalk)) || (!ok && !bestOk && ra < bestReach)) {
+                                                    best = c; bestReach = ra; bestWalk = wk;
+                                                }
+                                            }
+                                        }
+                                        if (best) target = best;
+                                    }
+                                }
+                                movePlayerToPoint(target.x, target.y);
                             }
                         }
                         return; // Handled (either interact or move)
