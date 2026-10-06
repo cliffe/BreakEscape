@@ -387,7 +387,7 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
           "timedConversation": {
             "delay": 0,
             "targetKnot": "start",
-            "background": "assets/backgrounds/hq2.png",
+            "background": "assets/backgrounds/hq4.png",
             "waitForEvent": "game_loaded",
             "skipIfGlobal": "briefing_played",
             "setGlobalOnStart": "briefing_played"
@@ -494,9 +494,9 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
           "voice": { "name": "Aoede", "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.", "language": "en-GB" },
           "behavior": { "initiallyHidden": true },
           "eventMappings": [
-            <%# D9: the field HQ (hq2) is burned on the sent ending, so that debrief runs at the fallback site (hq3) %>
-            { "eventPattern": "global_variable_changed:start_debrief_cutscene", "condition": "value === true && globalVars.ending !== 'sent'", "conversationMode": "person-chat", "targetKnot": "start", "background": "assets/backgrounds/hq2.png", "disableClose": true },
-            { "eventPattern": "global_variable_changed:start_debrief_cutscene", "condition": "value === true && globalVars.ending === 'sent'", "conversationMode": "person-chat", "targetKnot": "start", "background": "assets/backgrounds/hq3.png", "disableClose": true }
+            <%# D9: the field HQ (hq4) is burned on the sent ending, so that debrief runs at the fallback site (hq5). hq1-hq3 belong to other missions. %>
+            { "eventPattern": "global_variable_changed:start_debrief_cutscene", "condition": "value === true && globalVars.ending !== 'sent'", "conversationMode": "person-chat", "targetKnot": "start", "background": "assets/backgrounds/hq4.png", "disableClose": true },
+            { "eventPattern": "global_variable_changed:start_debrief_cutscene", "condition": "value === true && globalVars.ending === 'sent'", "conversationMode": "person-chat", "targetKnot": "start", "background": "assets/backgrounds/hq5.png", "disableClose": true }
           ]
         },
         {

@@ -1,5 +1,10 @@
 // ================================================
 // The Keyholder Trials: opening briefing (HaX, person-chat cutscene)
+// Background hq4 (the field HQ). The last knot switches the background to the
+// campus with person-chat's Background[...] line and hands over to the
+// narrator: the transition to the building plays inside the briefing, so it
+// runs once, never replays after a reload (skipIfGlobal briefing_played), and
+// leaves no gap for the Mission Brief popup (backgrounds round).
 // DESIGN section 8, "The opening briefing". The Comms Discipline note is
 // handed over on the very first line, so closing the scene early still
 // delivers it (N2). Nothing here sets a global the game depends on.
@@ -54,7 +59,15 @@ Agent HaX: One more name. Dr Cliffe Schreuders. Builds Hacktivity. He'll know wh
 === deploy ===
 Agent HaX: Every Trial opens with something you decode. You'll do it in CyberChef.
 Agent HaX: Get a lab laptop from Dr Shaw in the teaching lab, west of the foyer. Then go and be found.
+-> campus
+
+=== campus ===
+Background[assets/backgrounds/miskatonic_campus.png]:
+Narrator[player]: Miskatonic University. Freshers' week.
+Narrator[player]: Bunting on the portico, music from the lawn, and a thousand new students trying to look as if they know where they're going.
+Narrator[player]: You join them. New lanyard, new tote bag, a timetable you haven't read. Nobody looks at you twice.
 #exit_conversation
+Narrator[player]: The Computing building is through the columns. Someone has put a CryptoSecure stand right inside the door.
 -> briefing_done
 
 === briefing_done ===

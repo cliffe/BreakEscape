@@ -494,7 +494,7 @@ Everything here uses features already in the engine and proved in m02 or the pro
 
 **Wiring** (m01 pattern):
 - Hidden person NPC `briefing_cutscene` in the foyer at 500,500, `spriteSheet: female_spy_v2`, voice as m01.
-- `timedConversation: { "delay": 0, "targetKnot": "start", "background": "assets/backgrounds/hq1.png", "waitForEvent": "game_loaded", "skipIfGlobal": "briefing_played", "setGlobalOnStart": "briefing_played" }`.
+- `timedConversation: { "delay": 0, "targetKnot": "start", "background": "assets/backgrounds/hq4.png", "waitForEvent": "game_loaded", "skipIfGlobal": "briefing_played", "setGlobalOnStart": "briefing_played" }`.
 - `#set_global:briefing_played:true` in `start` too.
 - The player's phone in `startItemsInInventory` with `npcIds: ["agent_0x99"]`.
 - `"show_scenario_brief": "once"`.
@@ -768,7 +768,7 @@ He's present at the climax in his own room, says nothing during the call, and hi
 
 ### The debrief (outline)
 
-`ink/closing_debrief.ink`, hidden person-chat at HQ (`hq1`), opened by `start_debrief_cutscene`, `disableClose: true`.
+`ink/closing_debrief.ink`, hidden person-chat at the field HQ (`hq4`; the fallback site, `hq5`, on the sent ending), opened by `start_debrief_cutscene`, `disableClose: true`.
 1. **Opening by ending**, four variants: what happened to HaX's handset. For "double", this is where the player learns the truth: "My phone did exactly what Ghost wanted, in a flat in Leeds we rent for the purpose. Thank you for the flag."
    **Then, on every route, the pixel in plain words (R2B-m14):** "One pixel. A picture too small to see, fetched from Ghost's server the moment anyone opens the report. That's all a location costs. Your mail app does the same thing every day, unless you turn remote images off."
 2. **The report.**
@@ -795,7 +795,7 @@ For campaign writers. This lab is canon, with these limits:
 
 1. **ENTROPY never takes 0x00 on.** On every route the Keyholder Studentship is never awarded. On refused, the player turns it down. On blown, Ghost hears the warning and withdraws it. On sent and double, Ghost withdraws it once the report is opened: "anyone a handler can send, a handler can recall". 0x00 is never an ENTROPY agent, double or otherwise, so m08's mole hunt needs no change.
 2. **What each route leaves behind.**
-   - Sent: the beacon burns a SAFETYNET site, "the field HQ" (never named; background `hq2`). The team gets out before midnight and nobody is hurt, but the site, its kit and its cover are lost. HaX debriefs from a fallback site (`hq3`).
+   - Sent: the beacon burns a SAFETYNET site, "the field HQ" (never named; background `hq4`). The team gets out before midnight and nobody is hurt, but the site, its kit and its cover are lost. HaX debriefs from a fallback site (`hq5`).
    - Double: the field HQ stays dark. SAFETYNET photographs the person who comes to look at the decoy flat in Leeds.
    - Refused and blown: no site is lost.
    - Megan, Jordan and the stand vary by route, as in the debrief and credits.
@@ -806,7 +806,7 @@ For campaign writers. This lab is canon, with these limits:
    - No line claims a campaign event after m02.
    - Ghost stays at large.
    - Nothing in the fiction is called Tesseract or the Architect.
-   - hq2 and hq3 are used elsewhere (m07, m08) without a location name, so nothing here may name them.
+   - This lab uses only its own backgrounds: `hq4` (the field HQ), `hq5` (the fallback site) and `miskatonic_campus`. hq1-hq3 belong to other missions (m01, m07, m08) and must not appear here.
 6. **Recruitment.** The canon recruiting cell is the Insider Threat Initiative (`story_design/universe_bible/10_reference/quick_reference.md:33`). Ghost recruiting students here is a user decision (DECISIONS_LOG, 2026-10-06), seeded in m02 ("I hope it's you leading it"). It is not a conflict.
 
 ## 10. Art needed
@@ -1283,7 +1283,7 @@ D7-D9 (DECISIONS_LOG, 2026-10-06) override the plan where they differ. The canon
 | X1 | must | Under D7 there is no double-agent hook, so "Hand in the device" is right on every route. The debrief keeps its `ghost_greeted` switch (hand in / "replacing your phone anyway"), and the double "A week later, on the Keyholder device…" credit is gone. Nothing now says Ghost uses the device later. kstates D-matrix: 14 cases (4 endings × device taken or not × token sent or not; sent also × late warning). |
 | D7 | user | Ghost withdraws the studentship on every route. On sent and double, a Ghost text 14 s after the decision: "Opened. Thank you, Candidate. That was the last Trial. The studentship is withdrawn: anyone a handler can send, a handler can recall." Ghost doesn't trust anyone a handler sent, so the reason holds whether or not Ghost knows about the decoy. Blown: "I did say it listens. The studentship is withdrawn." Refused: the player said no. Debrief, sent: "Ghost withdrew the studentship this morning. They had what they wanted, and it was never you." Debrief, double: "Ghost withdrew the studentship this morning anyway. They don't keep anyone a handler sent. Today, take that as a compliment." Removed: "Congratulations. You now work for both of us…", "Ghost thinks you're theirs now…", "Ghost will ask again…". Credits: "KEYHOLDER: RECRUITED" became "KEYHOLDER: OFFER WITHDRAWN"; a new line on every route, "THE KEYHOLDER STUDENTSHIP: Never awarded." |
 | D8 | user | "last year's Keyholders" became "earlier Keyholders" (briefing; Jordan's choice; Jordan's header comment), and S2 drops "last year". No dated claim remains in the ink or the ERB. |
-| D9 | user (supersedes D1) | The briefing background is now `hq2` (the field HQ; m01 uses hq1). The debrief mapping is split: `ending !== 'sent'` uses `hq2`, `ending === 'sent'` uses `hq3`, the fallback site (pattern from m07/m08). Sent opening: "Sit down, Agent. Anywhere. This is the fallback site, and nothing in it is ours yet." / "I opened your report at the field HQ…" / "We were all out before midnight. Nobody's hurt." / "At four, someone went through the field HQ. The kit we couldn't carry, the cover it took years to build. All of it. We won't be going back." Credits: "THE FIELD HQ: Burned at four. Kit and cover lost. Nobody hurt." and "AGENT HaX: Working from the fallback site." replace "Location reached Ghost's server. Relocated." Double (D1's double half, kept): "Someone came to look at four. We have their photograph. The field HQ never showed up on anyone's screen."; credit "DECOY FLAT, LEEDS: One visitor at four. Photographed." The second debrief mapping adds a validator warning (no `onceOnly`), deliberate for the same reason as the first (N-m10). |
+| D9 | user (supersedes D1) | The briefing background is now `hq2` (the field HQ; m01 uses hq1; **replaced by `hq4` in the backgrounds round**). The debrief mapping is split: `ending !== 'sent'` uses `hq2`, `ending === 'sent'` uses `hq3` (now `hq4` and `hq5`, backgrounds round), the fallback site (pattern from m07/m08). Sent opening: "Sit down, Agent. Anywhere. This is the fallback site, and nothing in it is ours yet." / "I opened your report at the field HQ…" / "We were all out before midnight. Nobody's hurt." / "At four, someone went through the field HQ. The kit we couldn't carry, the cover it took years to build. All of it. We won't be going back." Credits: "THE FIELD HQ: Burned at four. Kit and cover lost. Nobody hurt." and "AGENT HaX: Working from the fallback site." replace "Location reached Ghost's server. Relocated." Double (D1's double half, kept): "Someone came to look at four. We have their photograph. The field HQ never showed up on anyone's screen."; credit "DECOY FLAT, LEEDS: One visitor at four. Photographed." The second debrief mapping adds a validator warning (no `onceOnly`), deliberate for the same reason as the first (N-m10). |
 | S1 | should | Both "St Catherine's was theirs." lines in the briefing add "A hospital. Not everyone on the ward lived." |
 | S2 | should | Ghost's drop-box text: "Hybrid encryption. Nine candidates got this far. It's how we locked forty companies. Hospitals pay fastest." |
 | H1 | should | HaX hub, once, before the offer: `[The black box from the lockbox talks. It calls itself the Keyholder.]` gets "Then it's theirs. Keep it on you. A candidate who leaves it behind isn't a candidate." / "Whoever's on the other end wanted you to find it. That tells me they're patient." It doesn't say the device listens, doesn't name Ghost and doesn't mention the scoreboard. `ghost_greeted` is now declared in HaX's ink. kstates H10, H12. |
@@ -1309,10 +1309,55 @@ D7-D9 (DECISIONS_LOG, 2026-10-06) override the plan where they differ. The canon
 - Rendered verifiers on seeds 7, 101, 555, 2026 and 9001: ALL PASS.
 
 **Browser** (:3001, games 1593-1596, one per ending; lock answers typed from the database, so exercised, not earned):
-- Sent (1593): debrief background `hq3`; the field HQ and four o'clock lines; the withdrawal. Ghost's device thread ends "Opened. Thank you, Candidate…". Credits: OFFER WITHDRAWN, FIELD HQ burned, fallback site, REPORT: Sent unread, Never awarded. My driver stalled at the "Did you read it?" question, so I finished this debrief by hand.
-- Double (1594): background `hq2`; the photograph and the withdrawal; the same Ghost text. Credits: OFFER WITHDRAWN, DECOY FLAT, Never awarded, and no "A week later" line.
-- Refused (1595): background `hq2`; "A clean no…". Credits: DECLINED, Never awarded.
-- Blown (1596): background `hq2`; "Next time, the scoreboard…"; Ghost's "I did say it listens. The studentship is withdrawn." Credits: DECLINED, Never awarded.
+- Sent (1593): debrief background `hq3` (hq5 since the backgrounds round); the field HQ and four o'clock lines; the withdrawal. Ghost's device thread ends "Opened. Thank you, Candidate…". Credits: OFFER WITHDRAWN, FIELD HQ burned, fallback site, REPORT: Sent unread, Never awarded. My driver stalled at the "Did you read it?" question, so I finished this debrief by hand.
+- Double (1594): background `hq2` (hq4 since the backgrounds round); the photograph and the withdrawal; the same Ghost text. Credits: OFFER WITHDRAWN, DECOY FLAT, Never awarded, and no "A week later" line.
+- Refused (1595): background `hq2` (hq4 since the backgrounds round); "A clean no…". Credits: DECLINED, Never awarded.
+- Blown (1596): background `hq2` (hq4 since the backgrounds round); "Next time, the scoreboard…"; Ghost's "I did say it listens. The studentship is withdrawn." Credits: DECLINED, Never awarded.
 - All four games ended `completed`.
 - Under load the setup closed the Keyholder chat before it opened, so `ghost_greeted` was false in all four. The browser therefore shows the never-taken device line ("replacing your phone anyway"); the device-taken line is covered by kstates.
 - Each debrief's first one or two lines went by before the capture began; kstates checks them.
+
+### Backgrounds round (hq4, hq5, miskatonic_campus; commit 8926df10)
+
+| Item | Change |
+|---|---|
+| hq4 | The field HQ. Used by the briefing (`briefing_cutscene` `timedConversation.background`) and the normal debrief mapping (`ending !== 'sent'`). |
+| hq5 | The fallback site after the burn. Used by the sent-ending debrief mapping (`ending === 'sent'`). |
+| hq1-hq3 | No longer used anywhere in this lab; they belong to other missions. §9 "Canon status" now says so. ART_NEEDED, TESTING_WALKTHROUGH, SOLUTION_GUIDE and DESIGN §8 updated; the alignment-round evidence keeps its original values with "(now hq4/hq5)" notes. |
+| Campus transition | New knot `campus` at the end of `opening_briefing.ink`. After HaX's "…Then go and be found.", the line `Background[assets/backgrounds/miskatonic_campus.png]:` switches the scene's background. Four `Narrator[player]:` lines follow, and `#exit_conversation` rides on the last one. |
+
+**Mechanism, and why.** I used person-chat's own in-conversation background change (`parseBackgroundLine` and `changeBackground`, `person-chat-minigame.js:888`, `:1318`, `:1671`) inside the briefing itself. That gives three properties for free:
+
+- **It plays once and survives a reload.** It is part of the briefing, which already has `skipIfGlobal: briefing_played` (set when the scene starts), so a reload after it, or during it, never replays it.
+- **It keeps the opening flow.** The briefing's `waitForEvent: game_loaded` is unchanged.
+- **Nothing races the Mission Brief popup.** The popup (`show_scenario_brief: "once"`) polls every 500 ms for an empty screen.
+
+Rejected alternatives:
+
+- **The m03 pattern**, a hidden narrator person-NPC launched on `conversation_closed:briefing_cutscene` (`m03_night_transition`). A mapping waits 500 ms before starting person-chat (`npc-manager.js` person-chat branch), and in that gap the Mission Brief popup can take the screen and then be ended by the new scene.
+- **`transition_to_person_chat`.** It is a phone-to-person tag, it ends the current minigame as soon as its tags are processed, and person-chat processes tags before showing the line, so HaX's last line would be cut.
+
+Plain `Narrator:` keeps the last speaker's portrait, which put HaX on the campus in the first browser run. `Narrator[player]:` shows the player there instead. It is a documented person-chat form (`person-chat-minigame.js:748`) and `player` is in the character index (`:121`). No engine change.
+
+**Spoken lines added** (narrator voice, scenario top-level `narrator`, Algenib):
+1. "Miskatonic University. Freshers' week."
+2. "Bunting on the portico, music from the lawn, and a thousand new students trying to look as if they know where they're going."
+3. "You join them. New lanyard, new tote bag, a timetable you haven't read. Nobody looks at you twice."
+4. "The Computing building is through the columns. Someone has put a CryptoSecure stand right inside the door."
+
+The `Background[...]:` line has no text after its colon, so the TTS batch skips it (`tts_batch_processor.rb` needs "Speaker: text").
+
+**Checks** (`build_evidence/backgrounds/`):
+- tagdiff: STRUCTURE UNCHANGED before; 6 differences after, all from the briefing's new `campus` knot (one knot, the exit tag moved, three diverts).
+- Ink compile 9/9. Validator 0 errors and the same 11 warnings; it doesn't flag the `Background[...]` or `Narrator[player]` lines.
+- dialoguelint none. inkcheck 11/11, plus the briefing with `--no-memo`. loopcheck 40/40, plus the briefing again after the `Narrator[player]` change.
+- kstates 48/48. reopencheck 0 problems. Door alignment 6/6.
+- Rendered seeds 11, 222 and 3333: both verifiers ALL PASS; a render carries hq4 twice and hq5 once.
+
+**Browser** (:3001; games 1597 and 1598, briefing driven by hand rather than bootstrap):
+- The briefing loads on hq4 (`bg-01`).
+- The campus background loads (`miskatonic_campus.png`) and the narrator lines play over it (`bg-02`, the final `Narrator[player]` version, with the player's portrait).
+- The Mission Brief popup opens straight after the scene (`bg-03a`); then the foyer arrival (`bg-03`).
+- A reload right after the transition (1597) shows the title screen and then the foyer. No briefing or transition replays, and nothing opens within 10 s (`bg-04`).
+- Sent ending (1598, lock answers typed from the database up to the relay): the debrief runs on hq5 (`bg-05`), with the burn, fallback and withdrawal lines and the credits (`bg-06`, `sent-1598.txt`). Game status `completed`.
+- The fourth narrator line closes the scene the same way any closing line does: it is displayed, then the scene closes on the next advance. My driver clicked through it before a screenshot.

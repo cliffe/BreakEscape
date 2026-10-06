@@ -1,8 +1,8 @@
 // ================================================
 // The Keyholder Trials: closing debrief (HaX at HQ, hidden person-chat)
-// Opened by start_debrief_cutscene. Background hq2 (the field HQ); on the
+// Opened by start_debrief_cutscene. Background hq4 (the field HQ); on the
 // sent ending the field HQ is burned and this scene runs at the fallback site,
-// hq3 (D9; the mapping is split by ending). On every route Ghost withdraws
+// hq5 (D9; the mapping is split by ending). On every route Ghost withdraws
 // the studentship (D7). Branches on the ending, the warning,
 // Megan and Jordan. hear_debrief completes on the last line, before the exit,
 // so the credits never cover the debrief. DESIGN section 9.

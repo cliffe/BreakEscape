@@ -58,3 +58,4 @@ Each line gives a decision, its reason and who made it. The user can overrule an
   - K1 (canon note) records all this for campaign writers.
 - (2026-10-06) Alignment round committed. Note for the user: the double ending names a decoy flat 'in Leeds' (the lab's only real place name).
 - (2026-10-06, user) Backgrounds approved; PixelLab may be used without checking in for the rest of this session. Installed hq4 (field HQ), hq5 (fallback site after the burn) and miskatonic_campus (narrator transition), all s500 conversions of Gemini concepts. Cost: 3 Gemini images, 10 PixelLab generations.
+- (2026-10-06) DIALOGUE_REVIEW_R2: revise lightly (0 blockers, 3 majors). Queued for the builder after the backgrounds round. The 'Schreuders' TTS check goes to the user at the audio stage (generate those two lines first).

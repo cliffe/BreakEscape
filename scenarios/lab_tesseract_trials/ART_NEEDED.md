@@ -43,4 +43,4 @@ Portrait facing: all character art faces one way; the engine flips per speaker (
 
 ## Backgrounds
 
-None needed: HaX's briefing and debrief use `assets/backgrounds/hq1.png` as m01 does; Ghost's video call uses the m02 presentation.
+Done (backgrounds round, commit 8926df10): the briefing and the normal debrief use `hq4.png` (the field HQ); the sent-ending debrief uses `hq5.png` (the fallback site); the campus transition at the end of the briefing uses `miskatonic_campus.png`. This lab uses none of hq1-hq3, which belong to other missions. Ghost's video call uses the m02 presentation.
