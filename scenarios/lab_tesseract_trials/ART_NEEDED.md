@@ -11,8 +11,8 @@ Real academics appear with the user's approval (brief). Their likenesses still n
 | Dr Z. Cliffe Schreuders | 8-direction walk sheet (v2, six standard animations), talk portrait, viseme sheet, headshot | `male_nerd_v2` (+ its talk/visemes/headshot) | P1 | Workshop look: sleeves up, a soldering iron or a laptop. Ask the user for a reference photo and how he wants to look. |
 | Dr Tom Shaw | same set | `male_office_worker_v2` | P1 | Approachable lecturer, lanyard. Reference photo from the user. |
 | Dr Sidhu Selvarajan | same set | `male_scientist_v2` | P1 | Office academic, smart casual. Reference photo from the user. |
-| Jordan Pike | same set | `male_telecom_v2` | P2 | Third-year in a branded CryptoSecure fleece. |
-| Megan Oyelaran | same set | `female_office_worker_v2` | P2 | First-year, rucksack, tired. |
+| Jordan Pike | **done (user, 2026-10-06): reuse `male_hacker_hood_down_v2`** (walk, talk, visemes, headshot) | - | - | No new art. |
+| Megan Oyelaran | **done (user, 2026-10-06): reuse `female_hacker_hood_down_v2`** (walk, talk, visemes, headshot) | - | - | No new art. Same outfit family as the player (`female_hacker_hood_v2`, hood up). |
 | Agent HaX | none | `female_spy_v2` (m01/m02) | - | Reuse. |
 | Ghost | none | `male_hacker_hood_talk.png`, `assets/npc/avatars/npc_hacker.png` (m02) | - | Reuse, so returning players recognise the hood. |
 
