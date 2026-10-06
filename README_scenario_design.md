@@ -247,6 +247,7 @@ The `type` field of each room must match a file in `public/break_escape/assets/r
 | `room_uni_lecture` | Lecture theatre (4×2 GU, 20×10) — whiteboard, projector screen, demonstration bench and lectern, three tiered rows of seats in two blocks; door N (NW corner). The seat rows are solid (collision rectangles in `Object Layer 1`) with west, centre and east aisles. Slots: wall `whiteboard` |
 | `room_uni_special` | Special Collections (2×2 GU) — sign, portrait, a wall of bookcases, reading table with lamps on a rug; door S (SE corner). Slots: conditional floor `safe` |
 | `room_uni_seminar` | Seminar room (2×2 GU) — whiteboard between two windows with blinds, long table with chairs round it, flip chart, water cooler; door S (SE corner). Slots: wall `whiteboard` |
+| `room_uni_staff` | Open-plan staff office (4×2 GU, 20×10) — three face-to-face desk pods with PCs and chairs, staff kitchenette with pigeonholes, coffee table, photocopier, bookcase, filing cabinet, windows, noticeboard, "COMPUTING / STAFF ONLY" sign; door W on row 2. No scenario slots (decor only); open standing spots for staff NPCs are listed in the builder's docstring |
 | `small_office_room1_1x1gu` | Small private office (1×1 GU) |
 | `small_office_room2_1x1gu` | Small private office variant 2 |
 | `small_office_room3_1x1gu` | Small private office variant 3 |

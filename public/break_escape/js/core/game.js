@@ -103,6 +103,7 @@ export function preload() {
     this.load.tilemapTiledJSON('room_uni_lecture', 'rooms/room_uni_lecture.json'); // Lecture theatre: whiteboard, projector screen, bench and lectern, three tiered seat rows (4x2 GU)
     this.load.tilemapTiledJSON('room_uni_special', 'rooms/room_uni_special.json'); // Special Collections: bookcases, reading table on a rug, archive safe slot (2x2 GU)
     this.load.tilemapTiledJSON('room_uni_seminar', 'rooms/room_uni_seminar.json'); // Seminar room: whiteboard between blinds, long table, flip chart (2x2 GU)
+    this.load.tilemapTiledJSON('room_uni_staff', 'rooms/room_uni_staff.json'); // Open-plan staff office: three desk pods, kitchenette, pigeonholes, photocopier (4x2 GU)
 
     // Load room images (now using smaller 32px scale images)
     this.load.image('room_reception', 'tiles/rooms/room1.png');
@@ -714,6 +715,7 @@ export function preload() {
     this.load.image('soldering_iron1', 'objects/soldering_iron1.png');
     this.load.image('beanbag_orange1', 'objects/beanbag_orange1.png');
     this.load.image('beanbag_teal1', 'objects/beanbag_teal1.png');
+    this.load.image('uni_sign_staff1', 'objects/uni_sign_staff1.png');
     this.load.image('backup_recovery',         'objects/backup_recovery.png');
     this.load.image('dual_auth',               'objects/dual_auth.png');
     this.load.image('ehr-terminal',            'objects/ehr-terminal.png');

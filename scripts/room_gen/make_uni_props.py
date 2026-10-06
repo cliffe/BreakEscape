@@ -170,6 +170,14 @@ def special_sign():
     return c
 
 
+def staff_sign():
+    c = Canvas(64, 14)
+    c.sign_panel(TEAL_DARK)
+    c.text_centred(0, 63, 2, "COMPUTING", BRASS)
+    c.text_centred(0, 63, 8, "STAFF ONLY", WHITE)
+    return c
+
+
 def directory():
     """Narrow side-wall directory: a title bar and three lines, each with an arrow
     (W, E, N). 16x18, so it fits under a side door with its top-left corner (the
@@ -429,6 +437,7 @@ PROPS = {
     "uni_crest_sign1": crest_sign,
     "uni_sign_library1": library_sign,
     "uni_sign_special1": special_sign,
+    "uni_sign_staff1": staff_sign,
     "uni_directory1": directory,
     "uni_doorcard1": door_card,
     "uni_timetable1": timetable,

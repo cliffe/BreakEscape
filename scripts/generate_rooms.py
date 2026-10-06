@@ -333,6 +333,7 @@ UNI_FLOOR_SHEETS = {
     "room_uni_lecture": "room_uni_lecture",
     "room_uni_special": "room_uni_special",
     "room_uni_seminar": "room_uni_carpet",
+    "room_uni_staff": "room_uni_carpet",
 }
 
 
@@ -813,6 +814,7 @@ WALL_MOUNTED_EXTRAS = {
     "uni_poster",
     "alarm_panel",
     "pegboard_tools",
+    "uni_sign_staff",
 }
 
 
@@ -2349,6 +2351,84 @@ def room_uni_seminar():
     return r.build("room_uni_seminar")
 
 
+def room_uni_staff():
+    """
+    4×2 GU (20×10) open-plan staff office: three face-to-face desk pods (each two
+    desk1 joined, a chair on the north and south side), a staff kitchenette in
+    the NE corner with pigeonholes over it, a coffee table, a photocopier, a
+    bookcase and a filing cabinet, windows with blinds, a noticeboard, a year
+    planner, a clock and a "COMPUTING / STAFF ONLY" sign. Door: W on row 2
+    (y 64-128 stays clear from the door to x 110). Nothing covers the bottom rows.
+    No scenario slots: decor only. The chairs are static (hospital_chair_*), so
+    they never join an NPC's pick-one menu.
+
+    Staff desks and standing spots (feet), for NPCs added later
+    (ROOMS_PLAN.md section 13):
+      pod P1 x 120-198, P2 x 270-348, P3 x 420-498; desk A (north, faces the
+      wall) feet 150, desk B (south) feet 189.
+      oleg          P1-B (his, occupied)  stand (234, 226)
+      staff_slot_2  P1-A / P2-A           stand (234, 140)
+      staff_slot_3  P2-A / P3-A           stand (384, 140)
+      staff_slot_4  P2-B / P3-B           stand (384, 226)
+      staff_slot_5  P3-A, kitchen side    stand (540, 150)
+      staff_slot_6  P1-B, west side       stand (60, 226)
+    Each spot keeps an NPC's sprite (x-40..x+40, feet-71..feet+9) off the
+    other spots and off the clutter.
+    """
+    r = _Uni()
+    pods = []
+    for x in (120.0, 270.0, 420.0):
+        a = r.table("desk1", x, 150.0)              # desk A, staff sits on its north side
+        b = r.table("desk1", x, 189.0)              # desk B, joined below, sits on its south side
+        pods.append((a, b))
+        r.item("hospital_chair_south", x + 31.0, 118.0)   # behind desk A, facing south
+        r.item("hospital_chair_north", x + 31.0, 214.0)   # in front of desk B, facing north
+    counter = r.table("kitchen_counter_sink1", 500.0, 110.0, kind="objects")
+    fridge = r.table("undercounter_fridge1", 547.0, 110.0, kind="objects")
+    coffee = r.table("smalldesk1", 548.0, 250.0)    # coffee table in the SE corner
+    # back wall
+    r.item("uni_sign_staff1", 72.0, 34.0)
+    r.item("window_blinds1", 150.0, 50.0)
+    r.item("notice_board1", 200.0, 50.0)
+    r.item("window_blinds1", 284.0, 50.0)
+    r.item("year_planner1", 334.0, 48.0)
+    r.item("wall_clock1", 388.0, 46.0)
+    r.item("window_blinds1", 424.0, 50.0)
+    r.item("hot_water_boiler1", 504.0, 56.0)
+    r.item("pigeonholes1", 540.0, 52.0)
+    r.item("fire_alarm_point1", 612.0, 132.0)      # east wall
+    # floor against the back wall, in the gaps between the pods
+    r.item("photocopier1", 216.0, 116.0)
+    r.item("bookcase", 352.0, 120.0)
+    r.item("filing_cabinet", 395.0, 124.0)
+    r.item("coffee_station1", 572.0, 111.0)
+    # staff clutter
+    r.item("bag18", 110.0, 205.0)                   # Dr Illiashenko's bag, by his desk
+    r.item("bag5", 280.0, 252.0)
+    r.item("bag12", 440.0, 252.0)
+    r.item("bin8", 40.0, 290.0)
+    r.item("plant-large12-top-ani1", 120.0, 306.0)  # floor plants along the uncovered bottom edge
+    r.item("plant-large11-top-ani3", 470.0, 306.0)
+    r.item("coat_stand1", 590.0, 200.0)
+    r.item("hospital_chair2", 528.0, 248.0)         # at the coffee table, facing east
+    # desk tops: P1-B is Dr Illiashenko's (occupied: PC, lamp, mug, binders, phone)
+    (a1, b1), (a2, b2), (a3, b3) = pods
+    r.on(b1, "pc7", 0.40, 0.30)
+    r.on(b1, "office-misc-lamp3", 0.88, 0.18)
+    r.on(b1, "office-misc-cup", 0.70, 0.42)
+    r.on(b1, "binders1", 0.10, 0.25)
+    r.on(b1, "phone4", 0.85, 0.48)
+    for desk, extra in ((a1, "office-misc-pens"), (a2, "office-misc-box1"), (b2, "office-misc-smallplant3"),
+                        (a3, "mugs_tray1"), (b3, "office-misc-pens")):
+        r.on(desk, "pc12", 0.40, 0.30)
+        r.on(desk, extra, 0.80, 0.30)
+    r.on(counter, "kettle1", 0.25, 0.25)
+    r.on(counter, "dirty_mugs1", 0.70, 0.36)
+    r.on(fridge, "microwave1", 0.5, 0.18)
+    r.on(coffee, "mugs_tray1", 0.5, 0.35)
+    return r.build("room_uni_staff", "20x10")
+
+
 def main():
     # Hand-maintained (do not regenerate — edit .tmj in Tiled, then export JSON):
     #   room_hospital_office, room_hospital_cto_office, room_hospital_meeting
@@ -2378,6 +2458,7 @@ def main():
         "room_uni_lecture": room_uni_lecture,
         "room_uni_special": room_uni_special,
         "room_uni_seminar": room_uni_seminar,
+        "room_uni_staff": room_uni_staff,
     }
     # Optionally restrict to specific rooms (argv) so already-updated rooms are
     # not clobbered, e.g.  python3 scripts/generate_rooms.py room_hospital_hall
