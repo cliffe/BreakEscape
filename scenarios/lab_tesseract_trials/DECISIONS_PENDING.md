@@ -2,6 +2,13 @@
 
 (D1-D3 resolved 2026-10-06; see DECISIONS_LOG.md)
 
+## D7-D9. Canon, dating, betrayal tone (from ALIGNMENT_PLAN.md OD1-OD3)
+
+Full options and evidence: `ALIGNMENT_PLAN.md` "OD1"-"OD3". Short form:
+- **D7 (OD1) canon status:** (a, recommended) a non-canonical side story with lab-local endings; (b) canon, with "refused" as the canon outcome; (c) canonise "double" as a sequel hook (m08's mole story would need checking, `m08_closing_debrief.ink:130`).
+- **D8 (OD2) dating:** (a, recommended) freshers' week, undated; (b) a January "Welcome Week", right after m02/m03; (c) say "ten months on".
+- **D9 (OD3) betrayal ending:** (b, recommended) nobody hurt, but ENTROPY visibly came for HaX's flat; alternatively keep it as is (nobody hurt, nothing seen).
+
 ## D4. Blind timing for Trial VI onward
 
 Two blind/regression playtests in auto mode were stopped by the auto-mode safety check at the same step (the command decoding Trial VI's Base64 and Caesar layers). A non-blind Opus run got through it, so every lock is proven playable, but there's no blind timing from Trial VI to the end. Trials I-V took ~13 min blind with no hints. Options: (1, recommended) a human run: you or a couple of students play it start to finish on :3001, timed, which is also the real beginner test; (2) a session outside auto mode where the blind playtest agent can drive CyberChef.
