@@ -720,7 +720,9 @@ module BreakEscape
           # keyPins MUST be included: Door locks need pin configuration at interaction time,
           # before the connected room is lazy-loaded. Without keyPins here, lockpicking uses random pins.
           kept_fields = {}
-          %w[type connections locked lockType requires difficulty door_sign keyPins ambientSound ambientVolume].each do |field|
+          # maxAttempts..showKeyboard are the password/PIN pad options (not secret): door pads read them from here.
+          %w[type connections locked lockType requires difficulty door_sign keyPins ambientSound ambientVolume
+             maxAttempts passwordHint showHint postitNote showPostit showKeyboard].each do |field|
             kept_fields[field] = room_data[field] if room_data.key?(field)
           end
 
@@ -1661,7 +1663,7 @@ module BreakEscape
         clean['storyState'] = story_state
         clean['storyPath'] = entry['storyPath'] if entry['storyPath'].is_a?(String) && entry['storyPath'].length <= 300
       end
-      %w[currentKnot lastEnteredKnot].each do |key|
+      %w[currentKnot lastEnteredKnot preloadedKnot].each do |key|
         clean[key] = entry[key] if entry[key].is_a?(String) && entry[key].length <= 200
       end
       tags = Array(entry['deferredTags']).select { |t| t.is_a?(String) && t.length <= 300 }.first(100)
@@ -1917,6 +1919,35 @@ module BreakEscape
 
       if task['onComplete']['unlockAim']
         unlock_objective_aim!(task['onComplete']['unlockAim'])
+      end
+
+      apply_task_set_globals!(task)
+    end
+
+    # task.onComplete.setGlobal, applied here as well as on the client
+    # (objectives-manager.js), so the global reaches the server even if the
+    # client's sync is lost (E3). The values come from the scenario, never the
+    # request, and only for globals the scenario declares in globalVariables.
+    # The caller saves.
+    def apply_task_set_globals!(task)
+      set_global = task.dig('onComplete', 'setGlobal')
+      return unless set_global.is_a?(Hash)
+
+      declared = scenario_data['globalVariables']
+      declared = {} unless declared.is_a?(Hash)
+      player_state['globalVariables'] ||= {}
+
+      set_global.each do |name, value|
+        name = name.to_s
+        unless declared.key?(name)
+          Rails.logger.warn "[BreakEscape] Task #{task['taskId']} onComplete.setGlobal '#{name}' is not declared in globalVariables; not applied server-side"
+          next
+        end
+        unless value.nil? || value.is_a?(String) || value.is_a?(Numeric) || value == true || value == false
+          Rails.logger.warn "[BreakEscape] Task #{task['taskId']} onComplete.setGlobal '#{name}' has a non-scalar value; not applied server-side"
+          next
+        end
+        player_state['globalVariables'][name] = value
       end
     end
 

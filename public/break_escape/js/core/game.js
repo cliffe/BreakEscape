@@ -716,6 +716,10 @@ export function preload() {
     this.load.image('beanbag_orange1', 'objects/beanbag_orange1.png');
     this.load.image('beanbag_teal1', 'objects/beanbag_teal1.png');
     this.load.image('uni_sign_staff1', 'objects/uni_sign_staff1.png');
+    this.load.image('uni_tv1', 'objects/uni_tv1.png');
+    this.load.image('uni_certificate1', 'objects/uni_certificate1.png');
+    this.load.image('uni_portrait1', 'objects/uni_portrait1.png');
+    this.load.image('freshers_stall1', 'objects/freshers_stall1.png');
     this.load.image('backup_recovery',         'objects/backup_recovery.png');
     this.load.image('dual_auth',               'objects/dual_auth.png');
     this.load.image('ehr-terminal',            'objects/ehr-terminal.png');
@@ -1041,6 +1045,14 @@ export async function create() {
             spriteSheet: window.breakEscapeConfig?.playerSprite || window.gameScenario?.player?.spriteSheet || 'male_hacker_hood_v2',
             spriteTalk: (() => {
                 const sprite = window.breakEscapeConfig?.playerSprite || window.gameScenario?.player?.spriteSheet || 'male_hacker_hood_v2';
+                // Use the scenario's configured player.spriteTalk when it belongs to the played sprite
+                // (the player's chosen sprite overrides the scenario's, and old scenarios carry a stale
+                // default talk image, so a file for a different character is ignored)
+                const configuredTalk = window.gameScenario?.player?.spriteTalk;
+                if (configuredTalk) {
+                    const stem = (configuredTalk.split('/').pop() || '').replace(/\.\w+$/, '').replace(/[_-]talk$/, '');
+                    if (stem && stem === sprite.replace(/_v2$/, '')) return configuredTalk;
+                }
                 // Legacy sprites use hyphen naming; all others follow {sprite}_talk.png convention
                 const legacyMap = { 'hacker': 'assets/characters/hacker-talk.png', 'hacker-red': 'assets/characters/hacker-red-talk.png' };
                 return legacyMap[sprite] || `assets/characters/${sprite}_talk.png`;

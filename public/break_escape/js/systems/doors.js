@@ -515,7 +515,14 @@ export function createDoorSpritesForRoom(roomId, position) {
             difficulty: lockProps.difficulty || connectedRoomData?.difficulty,  // Include difficulty from scenario
             isSideDoor: isSideDoor,  // Track if this is a side (E/W) door for animation purposes
             door_sign: connectedRoomData?.door_sign || null,
-            biometricMatchThreshold: lockProps.biometricMatchThreshold ?? connectedRoomData?.biometricMatchThreshold ?? null
+            biometricMatchThreshold: lockProps.biometricMatchThreshold ?? connectedRoomData?.biometricMatchThreshold ?? null,
+            // Password/PIN pad options (the answer in `requires` is never sent to the client)
+            maxAttempts: lockProps.maxAttempts ?? connectedRoomData?.maxAttempts ?? null,
+            passwordHint: lockProps.passwordHint ?? connectedRoomData?.passwordHint ?? null,
+            showHint: lockProps.showHint ?? connectedRoomData?.showHint ?? null,
+            postitNote: lockProps.postitNote ?? connectedRoomData?.postitNote ?? null,
+            showPostit: lockProps.showPostit ?? connectedRoomData?.showPostit ?? null,
+            showKeyboard: lockProps.showKeyboard ?? connectedRoomData?.showKeyboard ?? null
         };
 
         // Debug door properties

@@ -1,6 +1,24 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 
+/**
+ * The notepad entry "Add to Notepad" makes for a text file: the raw file text as the
+ * body, and the file name in the title, with its source when the scenario gives one.
+ * The body used to be wrapped in a header and footer ("Text File: … FILE CONTENTS: …
+ * End of File"), which garbled ciphertext copied from the note (E6).
+ * @param {{fileName: string, fileContent: string, source?: string}} data
+ * @returns {{title: string, content: string}}
+ */
+export function textFileNotebookEntry(data) {
+    const fileName = data.fileName || 'Unknown File';
+    const source = data.source && data.source !== 'Unknown Source' && data.source !== fileName
+        ? data.source : null;
+    return {
+        title: source ? `Text File - ${fileName} (${source})` : `Text File - ${fileName}`,
+        content: data.fileContent || ''
+    };
+}
+
 export class TextFileMinigame extends MinigameScene {
     constructor(container, params) {
         super(container, params);
@@ -289,9 +307,9 @@ export class TextFileMinigame extends MinigameScene {
             return;
         }
         
-        // Create comprehensive notebook content
-        const notebookContent = this.formatContentForNotebook();
-        const notebookTitle = `Text File - ${this.textFileData.fileName}`;
+        // The note body is the file's text as it is, so it can be copied straight into
+        // a decoder; the file name (and source, if given) goes in the title (E6)
+        const { title: notebookTitle, content: notebookContent } = textFileNotebookEntry(this.textFileData);
         const notebookObservations = this.textFileData.observations || 
             `Text file "${this.textFileData.fileName}" from ${this.textFileData.source}`;
         
@@ -334,21 +352,6 @@ export class TextFileMinigame extends MinigameScene {
         } else {
             this.showFailure("Notepad not available", false, 2000);
         }
-    }
-    
-    formatContentForNotebook() {
-        let content = `Text File: ${this.textFileData.fileName}\n`;
-        content += `Source: ${this.textFileData.source}\n`;
-        content += `Type: ${this.textFileData.fileType.toUpperCase()}\n`;
-        content += `Date: ${new Date().toLocaleString()}\n\n`;
-        content += `${'='.repeat(20)}\n\n`;
-        content += `FILE CONTENTS:\n`;
-        content += `${'-'.repeat(20)}\n\n`;
-        content += this.textFileData.fileContent;
-        content += `\n\n${'='.repeat(20)}\n`;
-        content += `End of File: ${this.textFileData.fileName}`;
-        
-        return content;
     }
     
     start() {

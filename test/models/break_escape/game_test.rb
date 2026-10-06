@@ -968,4 +968,71 @@ module BreakEscape
       assert_equal 100.0, @game.calculate_task_score
     end
   end
+
+  # E3: task onComplete.setGlobal is applied server-side as well as on the client.
+  class TaskSetGlobalModelTest < ActiveSupport::TestCase
+    SCENARIO = {
+      "startRoom" => "room1",
+      "rooms" => {},
+      "globalVariables" => { "relay_opened" => false, "count" => 0 },
+      "objectives" => [
+        {
+          "aimId" => "aim", "title" => "Aim", "status" => "active", "order" => 0,
+          "tasks" => [
+            { "taskId" => "open_relay", "title" => "Open", "type" => "custom", "status" => "active",
+              "onComplete" => { "setGlobal" => { "relay_opened" => true, "count" => 3, "rogue" => true },
+                                "unlockTask" => "later" } },
+            { "taskId" => "later", "title" => "Later", "type" => "custom", "status" => "locked" },
+            { "taskId" => "bad_value", "title" => "Bad", "type" => "custom", "status" => "active",
+              "onComplete" => { "setGlobal" => { "count" => { "nested" => 1 } } } }
+          ]
+        },
+        {
+          "aimId" => "flags", "title" => "Flags", "status" => "active", "order" => 1,
+          "tasks" => [
+            { "taskId" => "submit_flag", "title" => "Flag", "type" => "submit_flags", "status" => "active",
+              "targetFlags" => ["vm-flag1"], "onComplete" => { "setGlobal" => { "count" => 7 } } }
+          ]
+        }
+      ]
+    }.freeze
+
+    setup do
+      @game = BreakEscape::Game.create!(
+        mission: break_escape_missions(:ceo_exfil),
+        player: break_escape_demo_users(:test_user),
+        scenario_data: SCENARIO.deep_dup,
+        player_state: { "currentRoom" => "room1", "unlockedRooms" => ["room1"], "unlockedObjects" => [],
+                        "inventory" => [], "encounteredNPCs" => [], "globalVariables" => {},
+                        "notes" => [], "health" => 100 }
+      )
+    end
+
+    test "complete_task! applies the declared setGlobal values and persists them" do
+      @game.complete_task!("open_relay")
+      globals = @game.reload.player_state["globalVariables"]
+      assert_equal true, globals["relay_opened"]
+      assert_equal 3, globals["count"]
+      assert_not globals.key?("rogue"), "a global the scenario doesn't declare is not set"
+      assert_equal "active", @game.player_state.dig("objectivesState", "tasks", "later", "status"),
+                   "the other onComplete actions still run"
+    end
+
+    test "a repeat completion is a no-op and does not reapply the globals" do
+      @game.complete_task!("open_relay")
+      @game.update_global_variables!("relay_opened" => false)   # the story moved on
+      @game.complete_task!("open_relay")
+      assert_equal false, @game.reload.player_state["globalVariables"]["relay_opened"]
+    end
+
+    test "a non-scalar setGlobal value is not applied" do
+      @game.complete_task!("bad_value")
+      assert_not @game.reload.player_state["globalVariables"].key?("count")
+    end
+
+    test "a flag submission that completes a task applies its setGlobal" do
+      @game.process_flag_task_completions!(["vm-flag1"])
+      assert_equal 7, @game.reload.player_state["globalVariables"]["count"]
+    end
+  end
 end

@@ -2773,6 +2773,9 @@ export function createRoom(roomId, roomData, position) {
             return closestTable;
         }
 
+        // Declared here (not after the Object Layer 1 block) so collision rectangles can use it
+        const room = rooms[roomId];
+
         // Handle objects layer (legacy)
         const objectsLayer = map.getObjectLayer('Object Layer 1');
         console.log(`Object layer found for room ${roomId}:`, objectsLayer ? `${objectsLayer.objects.length} objects` : 'No objects layer');
@@ -2824,7 +2827,6 @@ export function createRoom(roomId, roomData, position) {
         }
         
         // Set up pending wall collision boxes if player is ready
-        const room = rooms[roomId];
         if (room && room.pendingWallCollisionBoxes && window.player && window.player.body) {
             room.pendingWallCollisionBoxes.forEach(collisionBox => {
                 gameRef.physics.add.collider(window.player, collisionBox);

@@ -660,6 +660,10 @@
     opacity: 0.5;
 }
 
+.phone-terminal-theme .message-bubble.npc .message-text.has-own-prompt::before {
+    content: none;
+}
+
 .phone-terminal-theme .message-bubble.player .message-text::before {
     content: '$ ';
     opacity: 0.5;

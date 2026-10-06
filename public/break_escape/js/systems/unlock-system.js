@@ -274,13 +274,15 @@ export function handleUnlock(lockable, type) {
             console.log('PASSWORD REQUESTED (server-side validation)');
 
             // Get password options from the lockable object
+            // Doors keep their options on doorProperties; containers use scenarioData.
+            const pwDoor = lockable.doorProperties || {};
             const passwordOptions = {
-                passwordHint: lockable.passwordHint || lockable.scenarioData?.passwordHint || '',
-                showHint: lockable.showHint || lockable.scenarioData?.showHint || false,
-                showKeyboard: lockable.showKeyboard || lockable.scenarioData?.showKeyboard || false,
-                maxAttempts: lockable.maxAttempts || lockable.scenarioData?.maxAttempts || 3,
-                postitNote: lockable.postitNote || lockable.scenarioData?.postitNote || '',
-                showPostit: lockable.showPostit || lockable.scenarioData?.showPostit || false
+                passwordHint: lockable.passwordHint || lockable.scenarioData?.passwordHint || pwDoor.passwordHint || '',
+                showHint: lockable.showHint || lockable.scenarioData?.showHint || pwDoor.showHint || false,
+                showKeyboard: lockable.showKeyboard || lockable.scenarioData?.showKeyboard || pwDoor.showKeyboard || false,
+                maxAttempts: lockable.maxAttempts || lockable.scenarioData?.maxAttempts || pwDoor.maxAttempts || 3,
+                postitNote: lockable.postitNote || lockable.scenarioData?.postitNote || pwDoor.postitNote || '',
+                showPostit: lockable.showPostit || lockable.scenarioData?.showPostit || pwDoor.showPostit || false
             };
 
             // Pass null for required password - will be validated server-side
