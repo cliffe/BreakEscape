@@ -2195,7 +2195,7 @@ def room_uni_common():
     r.table("foosball_table2", 40.0, 196.0, kind="objects")  # games corner, x 40-88; body y 182-196
     low = r.table("smalldesk1", 106.0, 250.0)      # low table beside the sofa, west of Cliffe
     high = r.table("smalldesk1", 220.0, 240.0)
-    r.item("notice_board1", 68.0, 50.0)
+    r.item("notice_board1", 68.0, 54.0)  # 4px lower: keeps its top in reach from the floor
     r.item("uni_poster2", 116.0, 46.0)
     r.item("uni_poster3", 136.0, 46.0)
     r.item("uni_tv1", 166.0, 48.0)                  # wall TV above the lockers
