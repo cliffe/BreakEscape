@@ -9,6 +9,10 @@ VAR met_cliffe = false
 VAR asked_build = false
 VAR slipped = false
 VAR met_in_workshop = false
+// hub_quiet (m03 pattern; DIALOGUE_REVIEW_R2 M1): set at the end of each topic
+// knot, so the hub doesn't reprint its greeting straight after a scene's last
+// line. Spent on the same pass, so a reopened conversation still greets.
+VAR quiet = false
 
 // Synced scenario globals
 VAR relay_opened = false
@@ -20,8 +24,11 @@ VAR ending = ""
 // Common room
 // ------------------------------------------------
 === common_room ===
-{ met_cliffe:
-    Dr Z. Cliffe Schreuders: {&Still here. Coffee's still terrible.|Mm?|Committee's still looking for me.}
+{
+- quiet:
+    ~ quiet = false
+- met_cliffe:
+    Dr Z. Cliffe Schreuders: {&Still here. Coffee's still terrible.|Yeah?|Committee's still looking for me.}
 - else:
     ~ met_cliffe = true
     Dr Z. Cliffe Schreuders: G'day. Don't mind me, I'm hiding from a committee.
@@ -41,6 +48,7 @@ Dr Z. Cliffe Schreuders: A teaching tool. Sort of. A game where you learn by get
 Narrator: He turns the laptop a little towards you. A map of this building. Small figures walking about. One of them is wearing your hoodie.
 Dr Z. Cliffe Schreuders: Reckon that's enough of a preview.
 Narrator: He closes the lid.
+~ quiet = true
 -> common_room
 
 === leaflets ===
@@ -49,6 +57,7 @@ Dr Z. Cliffe Schreuders: Saw them. Reckon whoever wrote them has marked a lot of
 Dr Z. Cliffe Schreuders: Good luck with it, Agent.
 Narrator: A beat.
 Dr Z. Cliffe Schreuders: Student. Sorry. Long week.
+~ quiet = true
 -> common_room
 
 // ------------------------------------------------
@@ -64,6 +73,8 @@ Dr Z. Cliffe Schreuders: Student. Sorry. Long week.
 
 === workshop_hub ===
 {
+- quiet:
+    ~ quiet = false
 - decision_made && ending == "sent":
     Dr Z. Cliffe Schreuders: Hope that was worth it.
 - decision_made && ending == "double":
@@ -92,4 +103,5 @@ Dr Z. Cliffe Schreuders: The building. Bit further along than this morning.
 - else:
     Narrator: On the screen, the small figure in your hoodie is standing in his workshop.
 }
+~ quiet = true
 -> workshop_hub

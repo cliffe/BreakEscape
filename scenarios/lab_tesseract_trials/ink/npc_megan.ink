@@ -5,6 +5,10 @@
 // ================================================
 
 VAR met_megan = false
+// hub_quiet (m03 pattern; DIALOGUE_REVIEW_R2 M1): set at the end of each topic
+// knot, so the hub doesn't reprint its greeting straight after a scene's last
+// line. Spent on the same pass, so a reopened conversation still greets.
+VAR quiet = false
 
 // Synced scenario globals
 VAR lockbox_open = false
@@ -23,18 +27,20 @@ Megan Oyelaran: Megan. First year. Our mam thinks I'm doing something sensible.
 
 === hub ===
 {
+- quiet:
+    ~ quiet = false
 - megan_choice == "warned":
     Megan Oyelaran: Binned the leaflet. Still skint, mind. Worth it.
 - megan_choice == "protected":
     Megan Oyelaran: Student Services left me a voicemail. About my fees. Can't face it yet.
 - corridor_open:
-    Megan Oyelaran: Still on Trial III. Don't tell me how. I want to get it myself.
+    Megan Oyelaran: Still on the third one. Don't tell me how. I want to get it myself.
 - locker_open:
     Megan Oyelaran: You got past the locker? Dead good. I'm still on it.
 - lockbox_open:
     Megan Oyelaran: Locker four's done my head in.
 - else:
-    Megan Oyelaran: Go on, then.
+    Megan Oyelaran: Alright?
 }
 + {lockbox_open and not locker_open} [How are you getting on with Trial II?]
     -> trial_two
@@ -49,13 +55,15 @@ Megan Oyelaran: Megan. First year. Our mam thinks I'm doing something sensible.
 
 === trial_two ===
 Megan Oyelaran: Eight digits, four-digit keypad. I typed the first four straight in and it locked me out. Three goes and you're done.
-Megan Oyelaran: It resets if you walk off and come back, mind.
+Megan Oyelaran: It resets if you walk off and come back, though.
 Megan Oyelaran: Someone said the card's not a number, it's characters. And I tried that hex thing and got four capital letters, so that's not it either.
+~ quiet = true
 -> hub
 
 === why ===
 Megan Oyelaran: My mam's care-home fees are two months behind. I'm on an overdraft I'm not telling you the size of.
 Megan Oyelaran: Nine grand a year sorts both. So yeah. I want it.
+~ quiet = true
 -> hub
 
 === warn_her ===
@@ -68,4 +76,5 @@ Megan Oyelaran: Right. Glad I know. Doesn't pay the care home, does it.
 #set_global:megan_choice_made:true
 ~ megan_choice = "warned"
 Megan Oyelaran: I'm out. They can find another charity case.
+~ quiet = true
 -> hub

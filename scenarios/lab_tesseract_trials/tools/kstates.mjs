@@ -36,27 +36,27 @@ const cases = [
   { id: 'K7', f: G, entry: 'the_offer_call', g: { relay_opened: true }, choose: /Find another student/, expect: 'closed', endingIs: 'refused', afterHas: 'CONTACT CLOSED', afterLacks: 'NO CARRIER' },
   { id: 'K8', f: G, entry: 'start', g: {}, then: { decision_made: true, ending: 'blown', relay_opened: true, ghost_offer_made: true, ghost_offer_heard: true }, expect: 'closed' },
   { id: 'K9', f: G, entry: 'the_offer_call', g: { relay_opened: true }, choose: /think about it/, reload: true, then: {}, expect: 'the_offer_again' },
-  { id: 'K10a', f: G, entry: 'the_offer_call', g: { relay_opened: true, ghost_offer_made: true, ghost_offer_heard: true }, expect: 'the_offer_again', textLacks: 'Congratulations' },
-  { id: 'K10b', f: G, entry: 'the_offer_call', g: { relay_opened: true, ghost_offer_made: true, ghost_offer_heard: true, decision_made: true, ending: 'sent' }, expect: 'closed', textLacks: 'Congratulations' },
+  { id: 'K10a', f: G, entry: 'the_offer_call', g: { relay_opened: true, ghost_offer_made: true, ghost_offer_heard: true }, expect: 'the_offer_again', textLacks: 'You passed' },
+  { id: 'K10b', f: G, entry: 'the_offer_call', g: { relay_opened: true, ghost_offer_made: true, ghost_offer_heard: true, decision_made: true, ending: 'sent' }, expect: 'closed', textLacks: 'You passed' },
   // Fix round 1. K11/K12: the video call closed at its first line (P3-M1): ghost_offer_made set, ghost_offer_heard not.
   { id: 'K11', f: G, entry: 'start', g: {}, then: { relay_opened: true, ghost_offer_made: true }, expect: 'offer_hub', textHas: 'CONTACT RESUMED', textHas2: 'start Monday', varIs: ['ghost_offer_heard', true] },
   { id: 'K12', f: G, entry: 'start', g: { relay_opened: true, ghost_offer_made: true }, expect: 'offer_hub', textHas: 'CONTACT RESUMED', textHas2: 'third offer' },
-  { id: 'K12b', f: G, entry: 'the_offer_call', g: { relay_opened: true, ghost_offer_made: true }, expect: 'offer_hub', textHas: 'Congratulations' },
+  { id: 'K12b', f: G, entry: 'the_offer_call', g: { relay_opened: true, ghost_offer_made: true }, expect: 'offer_hub', textHas: 'You passed' },
   // Exit lines (REVIEW_IMPL M1, m9): the farewell is not followed by the resting knot's greeting.
   { id: 'K13', f: G, entry: 'start', g: {}, choose: /Close the device/, expect: 'waiting', afterHas: 'DEVICE IDLE', afterLacks: 'Still watching' },
   { id: 'K14', f: G, entry: 'start', g: { relay_opened: true, ghost_offer_made: true, ghost_offer_heard: true }, choose: /Still thinking/, expect: 'the_offer_again', afterHas: 'Take as long', afterLacks: 'Back. So you' },
   { id: 'K15', f: G, entry: 'start', g: { relay_opened: true, ghost_offer_made: true, ghost_offer_heard: true, decision_made: true, ending: 'sent' }, choose: /Close the device/, expect: 'closed', afterHas: 'DEVICE IDLE', afterLacks: 'NO CARRIER' },
   // Prices in the offer, unprompted (REVIEW_IMPL M3)
-  { id: 'K16', f: G, entry: 'the_offer_call', g: { relay_opened: true, ghost_greeted: true }, expect: 'offer_hub', textHas: 'third offer', textHas2: 'So does she', choiceLacks: /What happens if I say no/ },
-  { id: 'K17', f: G, entry: 'the_offer_call', g: { relay_opened: true, megan_choice: 'warned' }, expect: 'offer_hub', textHas: 'Miss Oyelaran was the first', textLacks: 'So does she' },
+  { id: 'K16', f: G, entry: 'the_offer_call', g: { relay_opened: true, ghost_greeted: true }, expect: 'offer_hub', textHas: 'third offer', textHas2: 'So does she', textLacks: 'walked away. So is', choiceLacks: /What happens if I say no/ },
+  { id: 'K17', f: G, entry: 'the_offer_call', g: { relay_opened: true, megan_choice: 'warned' }, expect: 'offer_hub', textHas: "you'll be the second this week", textLacks: 'So does she' },
   // Fix round 2: REVIEW_FIX1 m1 (no greeting after [Sending it now.]) and m2 (refusal after Megan was warned)
   { id: 'K18', f: G, entry: 'start', g: { relay_opened: true, ghost_offer_made: true, ghost_offer_heard: true }, choose: /Sending it now/, expect: 'the_offer_again', afterHas: 'Then send it', afterLacks: 'Back. So you' },
   { id: 'K19', f: G, entry: 'the_offer_call', g: { relay_opened: true, megan_choice: 'warned' }, choose: /Find another student/, expect: 'closed', endingIs: 'refused', afterHas: 'The second this week', afterLacks: 'first to say no' },
   { id: 'K20', f: G, entry: 'the_offer_call', g: { relay_opened: true }, choose: /Find another student/, expect: 'closed', afterHas: 'first to say no', afterLacks: 'second this week' },
   // Alignment round: HaX story topics (H1, H2), once each, no greeting skipped
-  { id: 'H10', f: H, entry: 'start', g: { comms_had: true, ghost_greeted: true, lockbox_open: true }, choose: /black box from the lockbox/, expect: 'hub', afterHas: 'Keep it on you', choiceLacks: /black box/ },
+  { id: 'H10', f: H, entry: 'start', g: { comms_had: true, ghost_greeted: true, lockbox_open: true }, choose: /black device from the lockbox/, expect: 'hub', afterHas: 'Keep it on you', choiceLacks: /black device/ },
   { id: 'H11', f: H, entry: 'start', g: { comms_had: true, megan_file_read: true }, choose: /files on the candidates/, expect: 'hub', afterHas: 'probably you', choiceLacks: /files on the candidates/, choiceHas: /Megan Oyelaran is on their list/ },
-  { id: 'H12', f: H, entry: 'start', g: { comms_had: true, ghost_greeted: true, ghost_offer_made: true }, expect: 'hub', choiceLacks: /black box/ },
+  { id: 'H12', f: H, entry: 'start', g: { comms_had: true, ghost_greeted: true, ghost_offer_made: true }, expect: 'hub', choiceLacks: /black device/ },
   { id: 'H1', f: H, entry: 'start', g: { comms_had: false }, expect: 'hub', choiceHas: /Remind me how I reach you/ },
   { id: 'H2', f: H, entry: 'start', g: { comms_had: true, lockbox_open: true, fn04_offered: true }, expect: 'hub', choiceHas: /field note/, choiceLacks: /Sending you my report/ },
   { id: 'H3', f: H, entry: 'start', g: { comms_had: true, ghost_offer_made: true }, expect: 'hub', choiceHas: /Sending you my report/, choiceLacks: /Debrief me/ },
@@ -120,5 +120,27 @@ for (const ending of ['sent', 'double', 'refused', 'blown']) for (const ghost_gr
   dcases.push({ id: `D-${ending}-${ghost_greeted ? 'dev' : 'nodev'}${warned_out_of_band ? '-token' : ''}${late_warning ? '-late' : ''}`, g: { ending, ghost_greeted, warned_out_of_band, late_warning, megan_choice: '' }, has, lacks });
 }
 for (const k of dcases) { const t = runDebrief(k.g); const errs = k.has.filter(h => !t.includes(h)).map(h => `lacks "${h}"`).concat(k.lacks.filter(l => t.includes(l)).map(l => `has "${l}"`)); if (errs.length) fails++; quiet(`${errs.length ? 'FAIL' : 'PASS'} ${k.id}${errs.length ? '  -- ' + errs.join('; ') : ''}`); }
+// Dialogue round 2 (DIALOGUE_REVIEW_R2 M1): hub_quiet. After a topic's last line, the hub greeting doesn't reprint; a reopen still greets.
+const P = f => JSON.parse(readFileSync(join(REPO, 'scenarios/lab_tesseract_trials/ink/' + f + '.json'), 'utf8').replace(/^\uFEFF/, ''));
+const qcases = [
+  { id: 'Q-sidhu-signed', f: 'npc_sidhu', knot: 'start', g: { relay_opened: true }, choose: /something signed/, lastLine: 'whether you should send it', greet: /look of someone|What can I do/ },
+  { id: 'Q-sidhu-intro', f: 'npc_sidhu', knot: 'start', g: {}, choose: null, lastLine: 'watch a signature check out', greet: /What can I do/ },
+  { id: 'Q-tom-terminal', f: 'npc_tom', knot: 'start', g: { locker_open: true }, pre: /Anything else I should know/, choose: /terminal on your desk/, lastLine: 'You first', greet: /Got into that terminal|Owt else/ },
+  { id: 'Q-tom-magic-keys', f: 'npc_tom', knot: 'start', g: {}, choose: null, pre: /CyberChef actually do/, lastLine: 'key pair', greet: /Owt else/ },
+  { id: 'Q-megan-warn', f: 'npc_megan', knot: 'start', g: { megan_file_read: true, lockbox_open: true }, choose: /Walk away from this/, lastLine: "I'm out", greet: /Binned the leaflet/ },
+  { id: 'Q-cliffe-build', f: 'npc_cliffe', knot: 'common_room', g: {}, choose: /working on/, lastLine: 'closes the lid', greet: /Still here|Yeah\?|Committee/ },
+];
+for (const k of qcases) {
+  const st = new inkjs.Story(P(k.f)); for (const [n, v] of Object.entries(k.g)) if (st.variablesState.GlobalVariableExistsWithName(n)) st.variablesState[n] = v;
+  st.ChoosePathString(k.knot); const read = () => { const o = []; while (st.canContinue) { const t = st.Continue().trim(); if (t) o.push(t); } return o; };
+  let out = read(); const pick = re => { const i = st.currentChoices.findIndex(c => re.test(c.text)); if (i < 0) return false; st.ChooseChoiceIndex(i); return true; };
+  if (k.pre) { pick(k.pre); out = read(); }
+  if (k.choose) { pick(k.choose); out = read(); }
+  const idx = out.findIndex(t => t.includes(k.lastLine)); const after = idx >= 0 ? out.slice(idx + 1) : ['(last line missing)'];
+  const errs = []; if (idx < 0) errs.push(`no "${k.lastLine}"`); if (after.some(t => k.greet.test(t))) errs.push(`greeting reprinted: ${after.join(' / ')}`);
+  // reopen: re-enter at the entry knot and the greeting plays
+  st.ChoosePathString(k.knot); const re = read(); if (!re.some(t => /:/.test(t))) errs.push('reopen printed nothing');
+  if (errs.length) fails++; quiet(`${errs.length ? 'FAIL' : 'PASS'} ${k.id}${errs.length ? '  -- ' + errs.join('; ') : ''}`);
+}
 quiet(fails ? `${fails} FAILED` : 'ALL PASS');
 process.exit(fails ? 1 : 0);

@@ -31,5 +31,5 @@ Jordan Pike: {&Any questions? I get a referral bonus, so ask away.|Anything else
     -> hub
 + [Thanks. I'll have a go.]
     #exit_conversation
-    Jordan Pike: Nice one. Lockbox is right there.
+    Jordan Pike: Nice one. Tell your mates.
     -> hub

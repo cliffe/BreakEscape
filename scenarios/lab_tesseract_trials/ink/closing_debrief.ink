@@ -35,7 +35,7 @@ VAR debrief_done = false
 Agent HaX: Sit down, Agent. Anywhere. This is the fallback site, and nothing in it is ours yet.
 Agent HaX: I opened your report at the field HQ at eleven minutes past six. At twelve minutes past, my phone told a server in Rotterdam where it was.
 Agent HaX: We were all out before midnight. Nobody's hurt.
-Agent HaX: At four, someone went through the field HQ. The kit we couldn't carry, the cover it took years to build. All of it. We won't be going back.
+Agent HaX: At four, someone went through the field HQ. Everything we couldn't carry is theirs now. We won't be going back.
 { late_warning:
     #set_global:report_read_claimed:read
     Agent HaX: Your flag reached me after the report did. You tried. It was already open.
@@ -52,7 +52,7 @@ Agent HaX: Did you read it before you sent it?
     -> sent_cost
 
 === sent_cost ===
-Agent HaX: Ghost withdrew the studentship this morning. They had what they wanted, and it was never you.
+Agent HaX: Ghost withdrew the studentship last night. They had what they wanted, and it was never you.
 Agent HaX: I'm meant to wonder whose side you're on. I'm trying not to.
 -> pixel
 
@@ -60,7 +60,7 @@ Agent HaX: I'm meant to wonder whose side you're on. I'm trying not to.
 Agent HaX: My phone did exactly what Ghost wanted, in a flat in Leeds we rent for the purpose.
 Agent HaX: Someone came to look at four. We have their photograph. The field HQ never showed up on anyone's screen.
 Agent HaX: Thank you for the flag.
-Agent HaX: Ghost withdrew the studentship this morning anyway. They don't keep anyone a handler sent. Today, take that as a compliment.
+Agent HaX: Ghost withdrew the studentship last night anyway. They don't keep anyone a handler sent. Today, take that as a compliment.
 -> pixel
 
 === opening_refused ===
@@ -91,7 +91,7 @@ Agent HaX: I said I'd take either outcome. Ghost recognised you and wanted you a
 }
 { ending == "blown":
     { warned_out_of_band:
-        Agent HaX: The scoreboard was enough. The phone call was one call too many.
+        Agent HaX: The scoreboard was enough. The message on your phone was one too many.
     - else:
         Agent HaX: Next time, the scoreboard. It's why it's there.
     }
@@ -110,7 +110,7 @@ Agent HaX: I said I'd take either outcome. Ghost recognised you and wanted you a
 - megan_choice == "protected":
     Agent HaX: Megan Oyelaran has a bursary from a donor she'll never meet. Don't tell her.
 - ending == "sent" or ending == "double":
-    Agent HaX: Megan Oyelaran took a CryptoSecure summer placement. We'll keep an eye on her. You could have.
+    Agent HaX: Megan Oyelaran took a CryptoSecure summer placement. We'll keep an eye on her. You could have warned her.
 - else:
     Agent HaX: Megan Oyelaran's placement vanished with CryptoSecure. She's still eleven thousand down and still looking.
 }
@@ -127,7 +127,7 @@ Agent HaX: You can read Base64 now. Most people who'd have opened that report ca
     Agent HaX: That's classified.
     -> questions_more
 * [Was Ghost really reading my phone?]
-    Agent HaX: We're replacing it. That's all the answer you get.
+    Agent HaX: Assume they were. That's all the answer you get.
     -> questions
 + [That's everything.]
     -> close
@@ -141,7 +141,7 @@ Agent HaX: You can read Base64 now. Most people who'd have opened that report ca
 
 === close ===
 ~ debrief_done = true
-Agent HaX: Term starts Monday. Go to your lectures. You never know who's watching.
+Agent HaX: Term starts Monday. Go to your lectures. Dr Shaw takes a register.
 #complete_task:hear_debrief
 #exit_conversation
 -> after

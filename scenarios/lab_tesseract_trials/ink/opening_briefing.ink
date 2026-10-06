@@ -43,7 +43,7 @@ Agent HaX: No name, no face. A voice on a console, and a hood on a screen.
     -> cliffe
 
 === why_me ===
-Agent HaX: Ghost never saw your face. You saw theirs, near enough: a hood on a screen.
+Agent HaX: Ghost never saw your face. You never saw theirs.
 Agent HaX: And if they do know you and still want you, that tells us more than a clean recruit ever could.
 Agent HaX: I'll take either.
 -> cliffe

@@ -8,6 +8,10 @@ VAR met_tom = false
 VAR asked_cryptosecure = false
 VAR asked_terminal = false
 VAR told_keys = false
+// hub_quiet (m03 pattern; DIALOGUE_REVIEW_R2 M1): set at the end of each topic
+// knot, so the hub doesn't reprint its greeting straight after a scene's last
+// line. Spent on the same pass, so a reopened conversation still greets.
+VAR quiet = false
 
 // Synced scenario globals
 VAR locker_open = false
@@ -35,13 +39,17 @@ Dr Tom Shaw: I've put the induction handouts in your notepad. It's got a pencil 
 === magic ===
 Dr Tom Shaw: You give it some input, you stack up operations, it shows you the output. That's all.
 Dr Tom Shaw: There's a button called Magic. It'll do the first few for you. It'll do nowt once there's a key. That's the bit they're paying for.
+~ quiet = true
 -> hub
 
 === hub ===
 {
 - not told_keys:
     ~ told_keys = true
+    ~ quiet = false
     Dr Tom Shaw: Your lab account's on that PC. I've put a key pair on it. Have a read of the README; you'll want the private one before the week's out.
+- quiet:
+    ~ quiet = false
 - asked_terminal and not guest_terminal_open:
     Dr Tom Shaw: Well? Got into that terminal yet?
 - asked_terminal and not corridor_open:
@@ -64,6 +72,7 @@ Dr Tom Shaw: There's a button called Magic. It'll do the first few for you. It'l
 ~ asked_terminal = true
 Dr Tom Shaw: Someone's put a terminal in my lab I never ordered. Half a mind to break into it myself.
 Dr Tom Shaw: Go on then. You first.
+~ quiet = true
 -> hub
 
 === cryptosecure ===
@@ -71,14 +80,12 @@ Dr Tom Shaw: Go on then. You first.
 Dr Tom Shaw: Turned up without asking the department, for one.
 Dr Tom Shaw: And see that Mailer they're flogging on the stand? It hides a one-pixel picture in the email.
 Dr Tom Shaw: Your mail app fetches it, and their server learns when you opened it and roughly where.
-Dr Tom Shaw: Turn remote images off. Everyone should.
+~ quiet = true
 -> hub
 
 === board ===
 Dr Tom Shaw: Same two letters, three ways. "Hi" is seventy-two, a hundred and five in decimal.
 Dr Tom Shaw: In binary every bit's a power of two: a hundred and twenty-eight down to one. Add up the ones that are lit.
 Dr Tom Shaw: In hex each digit is four bits, so a byte's always two digits: four-eight, six-nine.
-{ corridor_open:
-    Dr Tom Shaw: You're past all that now, mind. Good.
-}
+~ quiet = true
 -> hub

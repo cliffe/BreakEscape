@@ -634,16 +634,16 @@ And for HaX's phone story:
    - The terminal text goes dark; a hooded, backlit figure, as in m02.
    - **Recognition, true to m02** (R2B-m11): "St Catherine's had forty-one cameras. I switched off the recorders, not the cameras. I watched you all night. You still walk like you're expecting a door to be locked. Your monitors said no signal. Mine didn't." (m02's CCTV object shows NO SIGNAL and RECORDER OFFLINE, `m02 scenario.json.erb:3004-3005`, R3-7; "Tonight I have had it on you. Every terminal, every room.")
    - **The name** (N-m8): "At St Catherine's you never asked my name. Most people do. It's Ghost." The contact stays "Keyholder" in the phone UI; the debrief and credits say Ghost.
-   - **The callback:** "The last time I made you an offer, there was a ward in the next room. This one's simpler."
+   - **The callback:** "The last time I made you an offer, there was a ward forty feet away. This one's simpler." (dialogue round 2, C2)
    - Ghost knows SAFETYNET sent 0x00 and says that's the attraction: a recruit has to be smuggled in; a double agent is already inside.
    - **The motive, in Ghost's idiom:** "SAFETYNET audits everyone and publishes nothing. I don't recruit talent. I recruit people who've shown me what they'll give up. Your handler's location is a number I can check."
    - **The ask:** send the report to HaX "the way you send everything". It's signed, so "nobody improves it on the way".
    - **Scoped watching:** if `ghost_greeted`: "That device has been in the same pocket as your phone since you took it out of my box. It listens. Everything you've said to your handler since, I've read." Otherwise: "You left my device in the box. It doesn't matter. This building's network has been mine all week, and so has everything your phone said on it." Both scope the claim to today (A-m19).
    - **Pricing each route (R2B-M8, lever 2; see "Why this lever" below):**
-     - refusal: "Say no and you're the candidate who walked away. So is Miss Oyelaran; I don't keep one without the other." (only if `megan_choice != "warned"`; if she's already walked: "Miss Oyelaran already said no. I respect that more than you'd think.");
+     - refusal: "Say no and you walk away, and Miss Oyelaran walks with you. I don't keep one without the other." (only if `megan_choice != "warned"`; if she's already walked: "Say no to me and you'll be the second this week."; dialogue round 2, M2);
      - any trick: "And if that location turns out to be wrong, I'll know who told me, and I'll be making you a third offer.";
      - sending: "Send it and you start Monday. So does she."
-   - If `megan_choice == "warned"`: "You warned the Oyelaran girl. Sentimental. It cost me a candidate, so it costs you nothing. Yet."
+   - If `megan_choice == "warned"`: "You warned the Oyelaran girl. Sentimental. One candidate in two hundred and twelve, so I'll let it pass." (dialogue round 2, M2)
    - **Choices:**
      - `[What's in it?]` → "Read it. You've earned the right to read anything I give you." Loops back.
      - `[Could I change it first?]` → Ghost explains that the signature would fail (the signature lesson in Ghost's voice). Loops back.
@@ -780,7 +780,7 @@ He's present at the climax in his own room, says nothing during the call, and hi
 4. **Ghost.** What they now believe about 0x00, by ending. The device: "Hand it in. We'll replace your phone too; it sat next to theirs all day."
 5. **Megan** by `megan_choice` and `ending` (section 8); **Jordan** by ending.
 6. **What the player can now do**, as tradecraft, not a quiz: "You can read Base64 now. Most people who'd have opened that report can't." One line, no questions.
-7. **Optional questions:** "Who is Dr Schreuders?" ("That's classified."); "Was Ghost really reading my phone?" ("We're replacing it. That's all the answer you get.").
+7. **Optional questions:** "Who is Dr Schreuders?" ("That's classified."); "Was Ghost really reading my phone?" ("Assume they were. That's all the answer you get.").
 8. `#complete_task:hear_debrief`, then `#exit_conversation`.
 
 ### Sequel hook (lab-local; A-m18)
@@ -1361,3 +1361,57 @@ The `Background[...]:` line has no text after its colon, so the TTS batch skips 
 - A reload right after the transition (1597) shows the title screen and then the foyer. No briefing or transition replays, and nothing opens within 10 s (`bg-04`).
 - Sent ending (1598, lock answers typed from the database up to the relay): the debrief runs on hq5 (`bg-05`), with the burn, fallback and withdrawal lines and the credits (`bg-06`, `sent-1598.txt`). Game status `completed`.
 - The fourth narrator line closes the scene the same way any closing line does: it is displayed, then the scene closes on the next advance. My driver clicked through it before a screenshot.
+
+### Dialogue round 2 (DIALOGUE_REVIEW_R2.md)
+
+| Id | Change or rejection |
+|---|---|
+| M1 | The m03 `hub_quiet` pattern in `npc_sidhu`, `npc_tom`, `npc_megan` and `npc_cliffe`.<br>• Each has an ink-local `VAR quiet`. Every topic knot that returns to a hub sets it on its last line: Sidhu `start`, `ledger`, `hash_for`, `signed_now`, `signed_after`; Tom `magic`, `terminal`, `cryptosecure`, `board`; Megan `trial_two`, `why`, `warn_her`; Cliffe `build`, `leaflets`, `workshop_build`.<br>• Each hub greeting checks `- quiet:` first and clears it. Cliffe has two hubs, `common_room` and `workshop_hub`.<br>• In Tom's hub, `- quiet:` comes after `- not told_keys:`, and that branch also clears `quiet`. So the key-pair line still plays after `magic`, and a stale flag can't swallow the greeting on his next visit.<br>• Jordan's prompt is left alone, as the review said. A reopened conversation still greets: the flag is spent on the same pass (kstates Q-cases; browser). |
+| M2 | Ghost's prices:<br>• "Say no and you walk away, and Miss Oyelaran walks with you. I don't keep one without the other."<br>• Warned route: "You warned the Oyelaran girl. Sentimental. One candidate in two hundred and twelve, so I'll let it pass." / "Say no to me and you'll be the second this week." |
+| M3 | Sidhu: "Come in, come in. I'm Sidhu. You must be one of the new first-years." "Schreuders" is left as it is; see the audio notes below. |
+| m1, m4 | Ghost's opening:<br>• "You passed. All of them. I'd rather hoped you would."<br>• "St Catherine's had forty-one cameras. I switched off the recorders, not the cameras. Your screens said no signal. Mine didn't."<br>• "I watched you all night. You still walk like you're expecting a door to be locked." |
+| m2 (C1) | "No name at St Catherine's, and no name now. The handle is Ghost. It's all you get." |
+| m3 (C2) | "The last time I made you an offer, there was a ward forty feet away. This one's simpler." |
+| m5 | Not changed. "CONTACT CLOSED." is the device's terminal text as well as the call's last line; see the audio notes below. |
+| m6 | Debrief: "Ghost withdrew the studentship last night…" (sent and double). |
+| m7 | "Assume they were. That's all the answer you get." |
+| m8 | "The scoreboard was enough. The message on your phone was one too many." |
+| m9 | "At four, someone went through the field HQ. Everything we couldn't carry is theirs now. We won't be going back." The credits keep "Kit and cover lost." |
+| m10 | "Term starts Monday. Go to your lectures. Dr Shaw takes a register." |
+| m11 | "…We'll keep an eye on her. You could have warned her." |
+| m12 | Briefing: "Ghost never saw your face. You never saw theirs." |
+| m13 (cut) | Tom's "Turn remote images off. Everyone should." removed. The debrief delivers that moral to everyone. |
+| m14 (cut 4 to 3) | Sidhu's hash answer, so it no longer reads Field Note 7 aloud:<br>• "For noticing change. Any input, a short fingerprint out, and you cannot run it backwards."<br>• "Change one byte, even a new line you can't see, and you get a different fingerprint entirely. That's all my ledger is doing."<br>• "Good systems store passwords that way too, with salt and a slow hash. But that is another lecture." |
+| m15 | Sidhu's contractions: "That's my whiteboard. It's from my blockchain lecture…" (drops "You were looking at…"); "That's the chain." He keeps "Let us be exact…" and "It does not tell you whether you should send it." |
+| m16, m17 | Megan: "Still on the third one…"; "Alright?" for "Go on, then."; "…come back, though." |
+| m18 | Jordan's exit: "Nice one. Tell your mates." |
+| m19 | Rejected. "Pop it in your notepad" implies the player has to do something, but the leaflet is already in the notepad. "It's in your notepad now" is round 2's fix for blind-playtest B1/B2 (players couldn't find the leaflet), and it stays. |
+| m20 | Cliffe: "Mm?" became "Yeah?". |
+| m21, m22 | HaX hub (text only): `[That black device from the lockbox talks. It calls itself the Keyholder.]`; "Whoever's on the other end put it where a first-year would find it. They've done this before." |
+| m23 | Ghost device (text only): "A key word, then a key pair. Fourteen of you. Fewer will see the second." |
+| m24 (cut) | Tom's "You're past all that now, mind. Good." and its `corridor_open` block removed. |
+| m25 | Rejected. "Miskatonic University. Monday morning." sits badly beside the debrief's "Term starts Monday", which would then read as the same day. The title card stays "Freshers' week." |
+| H3 | Not built, as the review and the coordinator said. |
+
+**Spoken-string diff** (voiced files only: briefing, debrief, the five person-chat files, Ghost's call knots): **27 changed, 0 added, 3 removed** (`build_evidence/dialogue_r2/spoken_diff.txt`). Text only, not counted: the HaX choice and reply (m21, m22) and the Ghost device line (m23).
+
+#### Audio notes (generate these first)
+
+- **"Schreuders", voiced twice.**
+  - HaX in the briefing: "One more name. Dr Cliffe Schreuders. Builds Hacktivity. He'll know what you are within a minute of meeting you."
+  - The narrator on Ghost's call: "Behind you, Dr Schreuders keeps soldering. He hasn't looked up."
+  - Generate these two first and have Dr Schreuders listen. If the name is wrong, add a pronunciation note to the scene part of the briefing and narrator `style` strings (after HaX's identity part, which stays word for word). The narrator's fallback is "Behind you, the man at the bench keeps soldering."
+- **"CONTACT CLOSED."** (Ghost on the call, refusal): listen once. If Gemini spells it out, write it in sentence case; the device shows it either way.
+- **"Oyelaran" and "St Catherine's":** listen to one line of each.
+
+**Checks** (`build_evidence/dialogue_r2/`):
+- tagdiff: STRUCTURE UNCHANGED before; 31 differences after, all the `quiet` flag plus the removed `corridor_open` block in Tom's `board` (m24).
+- Ink compile 9/9. Validator 0 errors, the same 11 warnings. dialoguelint: none.
+- inkcheck 11/11. loopcheck 47/47 (adds Sidhu at first meeting and after the decision, Tom with the terminal asked and opened, Megan with the file read, Cliffe in both hubs).
+- reopencheck: 0 problems.
+- kstates 54/54. Updated for the new Ghost lines (K10a/b, K12b, K16, K17), with H10/H12 renamed for m22. New hub_quiet cases: Q-sidhu-signed, Q-sidhu-intro, Q-tom-terminal, Q-tom-magic-keys, Q-megan-warn, Q-cliffe-build. Each checks that no greeting follows the topic's last line and that a reopen still greets.
+- Rendered seeds 17, 404 and 8080: ALL PASS.
+
+**Browser** (:3001, game 1599, lock answers typed from the database to reach Sidhu):
+- Tom: "What's CyberChef actually do?" plays the two Magic lines, then the key-pair line once. "Walk me through the board?" plays three lines, and the choices follow with no "Owt else?" (`dr2-tom-after-board.png`, `dr2-tom.txt`). Reopening greets with "Owt else?" (`dr2-tom-reopen.txt`).
+- Sidhu: the introduction runs straight into the choices. The ledger and the new hash answer each end on their last line, with no "What can I do for you?" (`dr2-sidhu-after-ledger.png`, `dr2-sidhu-after-hash.png`, `dr2-sidhu.txt`). Reopening greets with "What can I do for you?" (`dr2-sidhu-reopen.png`).

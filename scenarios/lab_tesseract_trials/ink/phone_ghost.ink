@@ -82,7 +82,7 @@ I'll be watching. You won't see me do it.
 - pigeonholes_open:
     Your envelope's waiting. Only one key opens it.
 - special_collections_open:
-    A key word, then a key pair. Fewer than twenty of you will see the second.
+    A key word, then a key pair. Fourteen of you. Fewer will see the second.
 - corridor_open:
     The corridor. Fewer candidates every hour.
 - locker_open:
@@ -126,11 +126,11 @@ The examiner. You'll meet me when you've earned it.
 - else:
     CONTACT RESUMED.
 }
-Congratulations. You passed. All of them.
-St Catherine's had forty-one cameras. I switched off the recorders, not the cameras. I watched you all night.
-You still walk like you're expecting a door to be locked. Your CCTV screens said no signal. Mine didn't.
-I told you at St Catherine's: no name. That hasn't changed. You can call me what your handler does: Ghost.
-The last time I made you an offer, there was a ward in the next room. This one's simpler.
+You passed. All of them. I'd rather hoped you would.
+St Catherine's had forty-one cameras. I switched off the recorders, not the cameras. Your screens said no signal. Mine didn't.
+I watched you all night. You still walk like you're expecting a door to be locked.
+No name at St Catherine's, and no name now. The handle is Ghost. It's all you get.
+The last time I made you an offer, there was a ward forty feet away. This one's simpler.
 { on_call:
     Narrator: Behind you, Dr Schreuders keeps soldering. He hasn't looked up.
 }
@@ -150,10 +150,10 @@ Your handler's location is a number I can check.
     This building's network has been mine all week, and so has everything your phone said on it.
 }
 { megan_choice == "warned":
-    You warned the Oyelaran girl. Sentimental. It cost me a candidate, so it costs you nothing. Yet.
-    Say no to me and you're the second this week. Miss Oyelaran was the first.
+    You warned the Oyelaran girl. Sentimental. One candidate in two hundred and twelve, so I'll let it pass.
+    Say no to me and you'll be the second this week.
 - else:
-    Say no and you're the candidate who walked away. So is Miss Oyelaran. I don't keep one without the other.
+    Say no and you walk away, and Miss Oyelaran walks with you. I don't keep one without the other.
 }
 And if that location turns out to be wrong, I'll know who told me, and I'll be making you a third offer.
 ~ ghost_offer_heard = true

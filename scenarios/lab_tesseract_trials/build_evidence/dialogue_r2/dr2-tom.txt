@@ -1,0 +1,18 @@
+  He slides a battered department laptop across the desk.
+  Dr Tom Shaw / That's yours for the year. CyberChef's on it. No rocket science, just base two.
+  Dr Tom Shaw / Pop it out into its own tab with the little arrow by the cross, top of the laptop. Then you can have the clue and the recipe side by side.
+  Dr Tom Shaw / I've put the induction handouts in your notepad. It's got a pencil on every page. Write down owt you'll need later in there.
+  CHOICES(1): What's CyberChef actually do?;Thanks. Anything else I should know?
+  > CyberChef actually do
+  Dr Tom Shaw / You give it some input, you stack up operations, it shows you the output. That's all.
+  Dr Tom Shaw / There's a button called Magic. It'll do the first few for you. It'll do nowt once there's a key. That's the bit they're paying for.
+  Dr Tom Shaw / Your lab account's on that PC. I've put a key pair on it. Have a read of the README; you'll want the private one before the week's out.
+  CHOICES(2): What do you make of CryptoSecure?;Walk me through the board?;I'll get on.
+  > board
+  Dr Tom Shaw / Same two letters, three ways. "Hi" is seventy-two, a hundred and five in decimal.
+  Dr Tom Shaw / In binary every bit's a power of two: a hundred and twenty-eight down to one. Add up the ones that are lit.
+  Dr Tom Shaw / In hex each digit is four bits, so a byte's always two digits: four-eight, six-nine.
+  CHOICES(3): What do you make of CryptoSecure?;Walk me through the board?;I'll get on.
+  > get on
+  Dr Tom Shaw / Right. Off you go.
+[closed: None]

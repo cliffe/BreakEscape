@@ -1,0 +1,18 @@
+  Dr Sidhu Selvarajan / Come in, come in. I'm Sidhu. You must be one of the new first-years.
+  Dr Sidhu Selvarajan / That's my whiteboard. It's from my blockchain lecture. A toy ledger, four blocks.
+  Dr Sidhu Selvarajan / Take these. One on hashes, one on signatures. Let us be exact about the difference, because people confuse them.
+  Dr Sidhu Selvarajan / If anyone hands you something signed, bring it to me. I like to watch a signature check out.
+  CHOICES(1): What's the ledger on the board?;What's a hash actually for?;Thank you. I'll leave you to it.
+  > ledger on the board
+  Dr Sidhu Selvarajan / Each block keeps the hash of the block before it. That's the chain.
+  Dr Sidhu Selvarajan / Change one letter in block two and its hash changes, so block three no longer points at it, and so on to the end. Tampering shows.
+  Dr Sidhu Selvarajan / And yes, the data in block four is a word. Somebody has been reading my board very closely this week.
+  CHOICES(2): What's a hash actually for?;Thank you. I'll leave you to it.
+  > hash actually for
+  Dr Sidhu Selvarajan / For noticing change. Any input, a short fingerprint out, and you cannot run it backwards.
+  Dr Sidhu Selvarajan / Change one byte, even a new line you can't see, and you get a different fingerprint entirely. That's all my ledger is doing.
+  Dr Sidhu Selvarajan / Good systems store passwords that way too, with salt and a slow hash. But that is another lecture.
+  CHOICES(3): What's a hash actually for?;Thank you. I'll leave you to it.
+  > leave you to it
+  Dr Sidhu Selvarajan / Do check everything twice.
+[closed: None]

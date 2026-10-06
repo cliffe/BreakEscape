@@ -76,7 +76,7 @@ VAR assessments_discussed = false
     -> send_report
 + {ghost_offer_made and not decision_made} [It's a trap. Don't open anything from me.]
     -> warn_in_band
-+ {ghost_greeted and not device_discussed and not ghost_offer_made} [The black box from the lockbox talks. It calls itself the Keyholder.]
++ {ghost_greeted and not device_discussed and not ghost_offer_made} [That black device from the lockbox talks. It calls itself the Keyholder.]
     -> device_reaction
 + {megan_file_read and not assessments_discussed and not decision_made} [They keep files on the candidates. Who can't afford to say no.]
     -> assessments_reaction
@@ -158,7 +158,7 @@ VAR assessments_discussed = false
 === device_reaction ===
 ~ device_discussed = true
 Then it's theirs. Keep it on you. A candidate who leaves it behind isn't a candidate.
-Whoever's on the other end wanted you to find it. That tells me they're patient.
+Whoever's on the other end put it where a first-year would find it. They've done this before.
 -> hub
 
 === assessments_reaction ===
