@@ -2239,19 +2239,19 @@ def room_uni_workshop():
     pc5 on the workbench.
     """
     r = _Uni()
+    # Island in the middle with a clear walking ring (about x 100-208, y 116-222);
+    # the machines stand against the back and west walls; the band y 222-256
+    # stays clear from the east lane to Cliffe (x 90, feet 224).
     bench = r.table("it_workbench1", 124.0, 198.0, kind="objects")
-    r.table("electronics_bench1", 200.0, 240.0, kind="objects")  # scope, soldering station, magnifier
-    r.table("laser_cutter1", 196.0, 128.0, kind="objects")       # back to the wall, top y 70
-    r.table("printer_3d1", 36.0, 240.0, kind="objects")
-    r.table("cnc_mill1", 152.0, 250.0, kind="objects")
+    r.table("laser_cutter1", 190.0, 128.0, kind="objects")       # back wall, top y 70
+    r.table("component_drawers1", 28.0, 140.0, kind="objects")   # west wall, top to bottom:
+    r.table("cnc_mill1", 24.0, 190.0, kind="objects")            #   drawers, mill, 3D printer
+    r.table("printer_3d1", 24.0, 240.0, kind="objects")
+    r.table("electronics_bench1", 208.0, 200.0, kind="objects")  # east of the island, off the lane
     r.item("conference_screen1", 70.0, 52.0)
     r.item("smartscreen", 130.0, 50.0)
     r.item("pegboard_tools1", 182.0, 57.0)          # over the laser cutter
     r.item("uni_poster6", 240.0, 46.0)              # safety glasses must be worn
-    r.item("component_drawers1", 28.0, 150.0)       # parts drawers on the west wall
-    r.item("robot_arm1", 88.0, 140.0)
-    r.item("scope_cart1", 200.0, 190.0)             # oscilloscope trolley (walk-through items layer)
-    r.item("cable", 96.0, 252.0)                    # a lead trailing from the printer
     r.on(bench, "pc5", 0.50, 0.30, layer="conditional_table_items")
     return r.build("room_uni_workshop")
 
@@ -2303,18 +2303,18 @@ def room_uni_special():
     Slots: safe1 (conditional).
     """
     r = _Uni()
-    reading = r.table("hospital_conference_table", 72.0, 206.0)
+    # reading table on the rug (painted in the sheet at x 88-230, y 140-214)
+    reading = r.table("hospital_conference_table", 96.0, 206.0)
     r.item("uni_sign_special1", 100.0, 40.0)
     r.item("picture11", 190.0, 44.0)
-    for x in (68.0, 111.0, 154.0, 197.0):
+    for x in (32.0, 75.0, 118.0, 161.0):
         r.item("bookcase", x, 120.0)                # top edge on y 70
-    r.table("plan_chest1", 24.0, 140.0, kind="objects")
-    r.table("display_case2", 24.0, 255.0, kind="objects")   # 1970s media under glass
-    r.item("stanchions1", 88.0, 255.0)              # rope across the front of the case
-    r.item("hospital_chair1", 200.0, 200.0)         # east end, faces west
-    r.item("hospital_chair_south", 110.0, 150.0)    # north side, facing the table
-    r.item("hospital_chair_south", 160.0, 150.0)
-    r.item("safe1", 220.0, 236.0, layer="conditional_items")
+    r.table("plan_chest1", 208.0, 112.0, kind="objects")    # beside the shelves, back to the wall
+    r.table("display_case2", 24.0, 250.0, kind="objects")   # 1970s media under glass, west wall
+    r.item("hospital_chair_south", 134.0, 150.0)    # north side, facing the table
+    r.item("hospital_chair_south", 184.0, 150.0)
+    r.item("hospital_chair1", 224.0, 200.0)         # east end, faces west
+    r.item("safe1", 224.0, 252.0, layer="conditional_items")  # by the door, off the east lane
     r.on(reading, "bankers_lamp1", 0.2, 0.20)
     r.on(reading, "bankers_lamp1", 0.8, 0.20)
     r.on(reading, "book1", 0.5, 0.40)
@@ -2341,7 +2341,8 @@ def room_uni_seminar():
     r.item("hospital_chair1", 220.0, 200.0)         # east end, faces west
     r.item("flip_chart1", 44.0, 130.0)
     r.item("water_cooler1", 40.0, 250.0)
-    r.item("beanbag1", 205.0, 252.0)                # reading-group bean bags, clear of the east lane
+    r.item("beanbag_teal1", 196.0, 252.0)           # reading-group bean bags, clear of the east lane
+    r.item("beanbag_orange1", 228.0, 248.0)
     r.on(table, "office-misc-pens", 0.3, 0.35)
     r.on(table, "mugs_tray1", 0.7, 0.35)
     r.on(table, "journal_stack1", 0.5, 0.30)

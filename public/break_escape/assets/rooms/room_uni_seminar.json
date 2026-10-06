@@ -251,16 +251,28 @@
                  "y":250
                 }, 
                 {
-                 "gid":957,
-                 "height":41,
+                 "gid":965,
+                 "height":27,
                  "id":15,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":44,
-                 "x":205,
+                 "width":29,
+                 "x":196,
                  "y":252
+                }, 
+                {
+                 "gid":964,
+                 "height":27,
+                 "id":16,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":29,
+                 "x":228,
+                 "y":248
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -298,7 +310,7 @@
                 {
                  "gid":210,
                  "height":15,
-                 "id":16,
+                 "id":17,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -310,7 +322,7 @@
                 {
                  "gid":835,
                  "height":15,
-                 "id":17,
+                 "id":18,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -322,7 +334,7 @@
                 {
                  "gid":962,
                  "height":27,
-                 "id":18,
+                 "id":19,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -349,7 +361,7 @@
          "y":0
         }],
  "nextlayerid":14,
- "nextobjectid":19,
+ "nextobjectid":20,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.2",
@@ -2821,7 +2833,7 @@
          "margin":0,
          "name":"objects\/hospital_extras",
          "spacing":0,
-         "tilecount":163,
+         "tilecount":165,
          "tileheight":63,
          "tiles":[
                 {
@@ -3817,6 +3829,18 @@
                  "image":"..\/objects\/soldering_iron1.png",
                  "imageheight":26,
                  "imagewidth":26
+                }, 
+                {
+                 "id":163,
+                 "image":"..\/objects\/beanbag_orange1.png",
+                 "imageheight":27,
+                 "imagewidth":29
+                }, 
+                {
+                 "id":164,
+                 "image":"..\/objects\/beanbag_teal1.png",
+                 "imageheight":27,
+                 "imagewidth":29
                 }],
          "tilewidth":252
         }],

@@ -333,7 +333,8 @@ def main():
     sheets["room_uni_library"] = paint_floor(walls, CARPET_GREEN)
 
     special = paint_floor(walls, CARPET_OXBLOOD)
-    paint_rug(special.load(), (64, 140, 206, 214))
+    # under the reading table (room_uni_special: table x 96-222), clear of the west-wall cabinet
+    paint_rug(special.load(), (88, 140, 230, 214))
     sheets["room_uni_special"] = special
 
     workshop = paint_floor(walls, concrete_pixel)

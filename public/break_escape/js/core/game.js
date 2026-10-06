@@ -712,6 +712,8 @@ export function preload() {
     this.load.image('pi_cluster1', 'objects/pi_cluster1.png');
     this.load.image('journal_stack1', 'objects/journal_stack1.png');
     this.load.image('soldering_iron1', 'objects/soldering_iron1.png');
+    this.load.image('beanbag_orange1', 'objects/beanbag_orange1.png');
+    this.load.image('beanbag_teal1', 'objects/beanbag_teal1.png');
     this.load.image('backup_recovery',         'objects/backup_recovery.png');
     this.load.image('dual_auth',               'objects/dual_auth.png');
     this.load.image('ehr-terminal',            'objects/ehr-terminal.png');
