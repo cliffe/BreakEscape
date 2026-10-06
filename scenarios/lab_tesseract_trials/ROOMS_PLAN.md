@@ -711,3 +711,69 @@ The reviewer scripted every placement (catalog sizes, `place_on_table` maths), r
 | 9 | The fallback didn't deal with the door card (minor) | Fixed: drop the door-card object if Sidhu goes back to his office |
 
 Withdrawn: none. Not acted on: the reviewer's note that Tom's lab sprite touches the lab's east door for about 6% of taps; too small to matter, and Tom leaves the lab in Phase 2.
+
+## 9. Phase 0-1 build notes (2026-10-06)
+
+Built by the room builder (Opus). Nothing committed. No PixelLab or Gemini spend: every new image is hand-drawn or a scripted repaint.
+
+### What was built
+
+**Phase 0 (tooling).**
+- `scripts/room_gen/make_uni_tileset.py` writes the eight sheets in 4.3 (`room_uni`, `_carpet`, `_foyer`, `_lecture`, `_common`, `_library`, `_special`, `_workshop`). Each is room6 raised to the 2-tile wall, repainted with the Q5 palette, and checked with `sheet_floor_top()` = 64 before it is written (the script exits otherwise). Decals as section 2.0: brass "M" inlay at (160, 176) r 26, kitchen vinyl patch, rug, hazard line, lecture tier nosings and vinyl front strip.
+- `generate_rooms.py`: `UNI_FLOOR_SHEETS` (all ten map names) and its branch in `room_tilesets()`; the docstring rule on covered 10x6 rooms (feet above y 128).
+- `templates.json`: the `20x10` template, built from the 10x10 rows by `COLS_20`, with the explicit doors layer (101/102 in columns 1 and 18, 495 in columns 0 and 19 of rows 2 and 7).
+- `game.js`: eight `this.load.image` lines for the sheets.
+- No-change proof: the eleven existing builders, called by name from a scratch script, give the same output before and after every edit in this run, apart from `tilesets` (which grew by the 17 newly registered objects).
+
+**Phase 1.**
+- Hand-drawn art, all 17 items in 4.1, from `scripts/room_gen/make_uni_props.py` (PIL at native size; palette from `directory_sign1`, `exit_sign1`, `fire_action_notice1`, `whiteboard1` and the sheets' teal; the lockers are pixel edits of `staff_lockers1`). Registered with `register_object.py`: `--wall` for the crest, projector screen, drop box, directory, door card, two signs, timetable and six posters; without for the banner and both locker sprites (tiles 122-138, gids 923-939). `uni_sign_special1` and the lecture/special sheets are made but not yet used (Phase 2).
+- Seven builders (`room_uni_foyer`, `_lab`, `_common`, `_corridor`, `_library`, `_office`, `_workshop`) following sections 2.1-2.5, 2.7 and 2.10, with a small `_Uni` helper so each builder lists its layout and nothing else. Registered: game.js tilemaps, schema enum (the seven built maps only; Phase 2 adds the other three), README room table, `builders` dict.
+- Scenario edits (2.12): the seven room types; `as-type` on every digit-suffixed type and on the new slots (`plaque`, `notes` ×4, `whiteboard` ×2, `notice_board`, `vending_machine`, `coffee_station`, `student_locker`, `pigeonholes`, `drop_box`, `uni_directory`, `conference_screen`); every pinned `x`/`y` removed from slotted objects; `heritage_display_table` removed; the scoreboard's `sprite` removed; NPC positions from 2.11. Object ids, locks, `requires`, contents, tasks, event mappings and note references are untouched. The validator rewrote `dungeon_graph.md/.html` (the display table node is gone).
+
+### Deviations from the plan, and why
+
+1. **Floor directory is 16x18, not 16x32.** In the browser, once the corridor's east door had been opened (so there was no door object left to share a menu with), clicking the doorway opened the directory instead of walking through: its top-left anchor (292, 96) was 20 px from the door centre. At 16x18 with its feet still at y 128, the anchor is (292, 110), 32.3 px from (304, 80), and `enter sidhu_office` then went through first time. It now lists three directions (W, E, N) with thick chevrons; thin arrowheads read as crosses at this size. Residual: a click on the lower edge of the doorway (y > 90) can still offer the directory when the player is beside it.
+2. **Common room fire point on the east wall** (292, 132), not the west. On the west wall it sat back to back with the foyer's east-wall call point, two red boxes side by side.
+3. **No chair east of the common room's low table.** Cliffe's spot (5.3, 7.4) stands on it; the sofa still serves the table.
+4. **Two carpet palettes nudged:** the charcoal and green carpets carry a little more colour than first drawn, because `check_room_walls` reads a dark, near-neutral row as the floor line and found no floor at all on the grey version.
+5. Schema enum has seven names now, not ten (only the built maps are registered).
+
+### Check results (final state)
+
+| Check | Result |
+|---|---|
+| `generate_rooms.py <7 rooms>` and `--check` | no bad gids; 2 WARNs, both expected (corridor notice board / Trial V poster, drop box / tag: pinned on) |
+| `check_room_walls.py 'room_uni_*'` and `--scenario` | 0 maps off the standard (all 64) |
+| `slot_audit.py --verbose --notes` | 0 problems (was 17), 0 notes prompts; every object `ok` on the slot section 2 names |
+| `slot_audit.py --all` | 143 problems (was 160: the 17 fixed here; nothing else changed) |
+| `check_door_alignment.py` | 6/6 OK |
+| `predict_door_sides.py` | foyer N=LEFT, corridor N=RIGHT S=LEFT, workshop S=RIGHT, side doors TOP(y2.5), as in 3.2 |
+| `validate_scenario.rb` | 0 errors, 8 warnings: the 7 deliberate ones in DESIGN.md plus the logged second-debrief `onceOnly` one. The three room-dressing warnings (`tableItems`, two foyer spacing) are gone |
+| Rendered verifiers (`render_scenario.rb` + `verify_rendered_independent.py`) | ALL PASS on seeds 42, 777, 9001 |
+| JSON / JS | catalog, tilesets_ref, templates, schema parse; `game.js` passes `node --check` |
+
+### Browser walk (keyless :3001, headless)
+
+Rooms were unlocked server-side (`corridor`, `library`, `workshop` via `unlock_room!`) for the layout check; nothing was earned, so this is a layout run, not a solvability run. Games: 1600 (the HEAD scenario, for the "before" shots), 1601 and 1602 (taps, doors, positions), 1603 (common room with Cliffe visible). `verify-run.rb`: 1601 and 1602 both "progress recorded". Session logs are in the session scratchpad (`rooms-build/after-*.jsonl`).
+
+- Spawn at (160, 144) on the inlay, clear of Jordan and furniture.
+- Every door walked both ways. The harness's `enter` needs a retry on N doors and can't find an opened door from the far side (`no-known-doorway`, a known quirk); walking through with `moveTo` works every time.
+- 10x6 strips: the office walked end to end (W door to x 274); the corridor and library walked to each door.
+- Every claimed object and NPC tapped. All open directly with no pick-one menu, except the drop box and tag (the plan's accepted pair). Locked objects open their own pads (lockbox, guest terminal, Locker 4 as a PIN pad, pigeonholes, drop box, safe, relay terminal, scoreboard). The harness flags some as "mismatch" because the pad's title ("Enter password for item", "Facility Alarm Panel") differs from the object name; the right object opened in each case.
+- Reach notes: the guest terminal (pc9) is reached by click-to-move into the gap between the benches, not by the harness's straight-line approach; the Codebreakers book from behind the issue desk; Megan and the common-room Cliffe from the east. Cliffe (common room) is hidden once `workshop_open` is set, by design, so he was checked in a fresh game.
+- Texture keys and depths as intended: `alarm_panel`, `plaque1`, `chart2`, `briefcase11`, `laptop6`, `whiteboard2`, `pc11`, `pc9`, `student_locker1`, `notice_board1`, `vending_machine1`, `coffee_station1`, `laptop1`, `pigeonholes1`, `drop_box1`, `uni_directory1`, `whiteboard1`, `book`, `safe1`, `pc5`, `conference_screen1`, `info_screen1` (the build screen keeps its `info_screen1` sprite on the `smartscreen` slot).
+- No "No Tiled item found" or random-position logs; console errors are only the expected TTS 503s. Duplicate scan: the only repeats are the engine's door sprites at shared N/S doors and the drop box's hover highlight (depth 9000, alpha 0.29), neither from the maps.
+
+### Evidence (`build_evidence/rooms/`)
+
+- `before-<room>.png` ×7 (game 1600, HEAD scenario, old maps) and `after-<room>.png` ×7, plus `after-foyer-spawn.png`.
+- `previews-contact.png` (render_room_preview of the seven maps, grid), `floor-sheets-2x.png` (all eight sheets).
+- `props-signs-8x.png`, `props-posters-boxes-8x.png`, `props-lockers-screen-6x.png` (the hand-drawn art beside the existing sprites it was matched to).
+
+### For Phase 2 onward
+
+- `uni_sign_special1`, `room_uni_lecture`, `room_uni_special` and the `20x10` template are ready; the `collisions=[...]` parameter for `build_room()` (2.9) is not written yet.
+- Add the three new names to the schema enum, game.js tilemaps and README when their maps exist.
+- Phase 2 moves Sidhu and the ledger to the seminar room: the office's `whiteboard1` slot then goes unclaimed and hidden, as planned. Tom's lab position (7.6, 2.9) stands in front of the wall clock; moot once he moves to the lecture theatre.
+- The floor directory's text still lists West/East/North only; Phase 2's observations edit (seminar room beyond the office) fits its three-line art.
+- Harness tips for the next walk: the `enter` retries and `moveTo` fallbacks above; server unlocks set `workshop_open` once the workshop is entered, which hides the common-room Cliffe.
