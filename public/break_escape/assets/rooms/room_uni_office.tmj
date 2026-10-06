@@ -270,6 +270,18 @@
      "y": 50.0
     },
     {
+     "gid": 968,
+     "height": 14,
+     "id": 3,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 18,
+     "x": 104.0,
+     "y": 44.0
+    },
+    {
      "gid": 339,
      "height": 50,
      "id": 4,
@@ -292,6 +304,30 @@
      "width": 44,
      "x": 192.0,
      "y": 48.0
+    },
+    {
+     "gid": 316,
+     "height": 26,
+     "id": 6,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 16,
+     "x": 203.0,
+     "y": 126.0
+    },
+    {
+     "gid": 309,
+     "height": 32,
+     "id": 7,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 17,
+     "x": 170.0,
+     "y": 120.0
     }
    ],
    "opacity": 1,
@@ -304,20 +340,7 @@
    "draworder": "topdown",
    "id": 7,
    "name": "conditional_items",
-   "objects": [
-    {
-     "gid": 851,
-     "height": 28,
-     "id": 3,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 44,
-     "x": 92.0,
-     "y": 50.0
-    }
-   ],
+   "objects": [],
    "opacity": 1,
    "type": "objectgroup",
    "visible": true,
@@ -332,7 +355,7 @@
     {
      "gid": 304,
      "height": 16,
-     "id": 8,
+     "id": 10,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -356,7 +379,7 @@
     {
      "gid": 367,
      "height": 28,
-     "id": 6,
+     "id": 8,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -368,7 +391,7 @@
     {
      "gid": 217,
      "height": 11,
-     "id": 7,
+     "id": 9,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -397,7 +420,7 @@
   }
  ],
  "nextlayerid": 14,
- "nextobjectid": 9,
+ "nextobjectid": 11,
  "orientation": "orthogonal",
  "renderorder": "right-down",
  "tiledversion": "1.11.2",
@@ -2830,7 +2853,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 139,
+   "tilecount": 170,
    "tileheight": 60,
    "tiles": [
     {
@@ -3586,7 +3609,7 @@
     {
      "id": 125,
      "image": "../objects/uni_directory1.png",
-     "imageheight": 32,
+     "imageheight": 18,
      "imagewidth": 16
     },
     {
@@ -3666,6 +3689,192 @@
      "image": "../objects/student_locker1.png",
      "imageheight": 62,
      "imagewidth": 16
+    },
+    {
+     "id": 139,
+     "image": "../objects/lecture_ledge1.png",
+     "imageheight": 12,
+     "imagewidth": 198
+    },
+    {
+     "id": 140,
+     "image": "../objects/lecture_ledge2.png",
+     "imageheight": 12,
+     "imagewidth": 252
+    },
+    {
+     "id": 141,
+     "image": "../objects/alarm_panel2.png",
+     "imageheight": 21,
+     "imagewidth": 33
+    },
+    {
+     "id": 142,
+     "image": "../objects/pegboard_tools1.png",
+     "imageheight": 44,
+     "imagewidth": 56
+    },
+    {
+     "id": 143,
+     "image": "../objects/lectern1.png",
+     "imageheight": 46,
+     "imagewidth": 30
+    },
+    {
+     "id": 144,
+     "image": "../objects/book_trolley1.png",
+     "imageheight": 43,
+     "imagewidth": 38
+    },
+    {
+     "id": 145,
+     "image": "../objects/printer_3d1.png",
+     "imageheight": 46,
+     "imagewidth": 34
+    },
+    {
+     "id": 146,
+     "image": "../objects/plan_chest1.png",
+     "imageheight": 42,
+     "imagewidth": 44
+    },
+    {
+     "id": 147,
+     "image": "../objects/display_case1.png",
+     "imageheight": 60,
+     "imagewidth": 54
+    },
+    {
+     "id": 148,
+     "image": "../objects/display_case2.png",
+     "imageheight": 57,
+     "imagewidth": 58
+    },
+    {
+     "id": 149,
+     "image": "../objects/uni_sofa1.png",
+     "imageheight": 51,
+     "imagewidth": 60
+    },
+    {
+     "id": 150,
+     "image": "../objects/laser_cutter1.png",
+     "imageheight": 58,
+     "imagewidth": 60
+    },
+    {
+     "id": 151,
+     "image": "../objects/scope_cart1.png",
+     "imageheight": 57,
+     "imagewidth": 48
+    },
+    {
+     "id": 152,
+     "image": "../objects/lecture_seat_row1.png",
+     "imageheight": 32,
+     "imagewidth": 61
+    },
+    {
+     "id": 153,
+     "image": "../objects/electronics_bench1.png",
+     "imageheight": 44,
+     "imagewidth": 42
+    },
+    {
+     "id": 154,
+     "image": "../objects/component_drawers1.png",
+     "imageheight": 41,
+     "imagewidth": 37
+    },
+    {
+     "id": 155,
+     "image": "../objects/robot_arm1.png",
+     "imageheight": 41,
+     "imagewidth": 31
+    },
+    {
+     "id": 156,
+     "image": "../objects/beanbag1.png",
+     "imageheight": 41,
+     "imagewidth": 44
+    },
+    {
+     "id": 157,
+     "image": "../objects/stanchions1.png",
+     "imageheight": 35,
+     "imagewidth": 41
+    },
+    {
+     "id": 158,
+     "image": "../objects/cnc_mill1.png",
+     "imageheight": 44,
+     "imagewidth": 41
+    },
+    {
+     "id": 159,
+     "image": "../objects/bankers_lamp1.png",
+     "imageheight": 25,
+     "imagewidth": 23
+    },
+    {
+     "id": 160,
+     "image": "../objects/pi_cluster1.png",
+     "imageheight": 25,
+     "imagewidth": 27
+    },
+    {
+     "id": 161,
+     "image": "../objects/journal_stack1.png",
+     "imageheight": 27,
+     "imagewidth": 26
+    },
+    {
+     "id": 162,
+     "image": "../objects/soldering_iron1.png",
+     "imageheight": 26,
+     "imagewidth": 26
+    },
+    {
+     "id": 163,
+     "image": "../objects/beanbag_orange1.png",
+     "imageheight": 27,
+     "imagewidth": 29
+    },
+    {
+     "id": 164,
+     "image": "../objects/beanbag_teal1.png",
+     "imageheight": 27,
+     "imagewidth": 29
+    },
+    {
+     "id": 165,
+     "image": "../objects/uni_sign_staff1.png",
+     "imageheight": 14,
+     "imagewidth": 64
+    },
+    {
+     "id": 166,
+     "image": "../objects/uni_tv1.png",
+     "imageheight": 26,
+     "imagewidth": 40
+    },
+    {
+     "id": 167,
+     "image": "../objects/uni_certificate1.png",
+     "imageheight": 14,
+     "imagewidth": 18
+    },
+    {
+     "id": 168,
+     "image": "../objects/uni_portrait1.png",
+     "imageheight": 28,
+     "imagewidth": 22
+    },
+    {
+     "id": 169,
+     "image": "../objects/freshers_stall1.png",
+     "imageheight": 59,
+     "imagewidth": 61
     }
    ],
    "tilewidth": 60

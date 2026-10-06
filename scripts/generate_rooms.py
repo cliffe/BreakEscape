@@ -815,6 +815,9 @@ WALL_MOUNTED_EXTRAS = {
     "alarm_panel",
     "pegboard_tools",
     "uni_sign_staff",
+    "uni_tv",
+    "uni_certificate",
+    "uni_portrait",
 }
 
 
@@ -2064,7 +2067,8 @@ def room_uni_foyer():
     """
     2×2 GU Computing-school atrium in freshers' week: the school crest, the 1979
     heritage display (Byte Wall, plaque, powers-of-two chart; a display table with
-    two papers on it) and a recruiter's stand with a lockbox and a laptop.
+    two papers on it), a recruiter's stand with a lockbox and a laptop, and a
+    society's freshers' fair stall.
 
     Doors: N (NW corner), W and E on row 2, S (SW corner, covered rows). The
     player spawns at (160, 144) on the brass "M" inlay in the floor sheet, so
@@ -2084,7 +2088,9 @@ def room_uni_foyer():
     r.item("uni_poster1", 14.0, 136.0)              # west wall, below the door row
     r.item("fire_alarm_point1", 292.0, 132.0)       # east wall
     r.item("cryptosecure_banner1", 182.0, 240.0)    # pull-up banner beside the stand
-    r.table("display_case1", 226.0, 253.0, kind="objects")  # glass case of old tapes and cards, by the papers
+    # a second freshers' fair stall (a society's, purple cloth, leaflets and a sweet jar)
+    # where the decor glass case stood: the foyer now reads as a fair, not a museum
+    r.table("freshers_stall1", 222.0, 253.0, kind="objects")
     # papers on the display: the ASCII chart first, then the tape (scenario order)
     r.on(display, "notes4", 0.17, 0.45, layer="conditional_table_items")
     r.on(display, "notes2", 0.86, 0.45, layer="conditional_table_items")
@@ -2095,33 +2101,42 @@ def room_uni_foyer():
 
 def room_uni_lab():
     """
-    2×2 GU computer teaching lab: two benches of PCs facing a front wall with a
-    whiteboard and a projector screen, the lecturer's desk at the front, a
-    photocopier at the back. Door: E on row 2; the aisle x 192-222 and the east
-    lane stay clear. Slots: whiteboard2 (as-type:whiteboard); the first two PCs in
-    table_items (pc11, pc9) are the ones scenario `pc` objects claim, before the
-    pc12 decor PCs.
+    2×2 GU computer teaching lab: three benches of PCs (four seats each) facing a
+    front wall with a whiteboard and a projector screen, the lecturer's desk at
+    the front right with a chair behind it, a photocopier at the back. Door: E on
+    row 2; the aisle x 192-222 and the east lane stay clear. Nothing covers the
+    bottom rows (no room to the south).
+    Every PC has a static chair in front of it (hospital_chair_north, the
+    building's seat): wheeled chair-* sprites are pushable and join taps, and a
+    chair pushed against a claimed PC would raise a pick-one menu.
+    Slots: the first two PCs in table_items (pc11, pc9) are the ones scenario
+    `pc` objects claim, before the pc12 decor PCs.
     """
     r = _Uni()
-    b1a = r.table("desk1", 36.0, 132.0)
-    b1b = r.table("desk1", 114.0, 132.0)
-    b2a = r.table("desk1", 36.0, 220.0)
-    b2b = r.table("desk1", 114.0, 220.0)
+    benches = []
+    for feet in (124.0, 196.0, 268.0):
+        benches.append((r.table("desk1", 36.0, feet), r.table("desk1", 114.0, feet)))
+    (b1a, b1b), (b2a, b2b), (b3a, b3b) = benches
     lect = r.table("hospital_desk1", 222.0, 150.0)
     r.item("whiteboard2", 70.0, 50.0)
     r.item("projector_screen1", 122.0, 54.0)
     r.item("wall_clock1", 222.0, 46.0)
     r.item("uni_timetable1", 14.0, 140.0)           # west wall
     r.item("uni_poster7", 292.0, 140.0)             # east wall: no food or drink
-    for x, y in ((46.0, 160.0), (84.0, 160.0), (46.0, 248.0), (84.0, 248.0)):
-        r.item("chair-white-2-rotate5", x, y)       # wheeled, facing north
-    r.item("photocopier1", 248.0, 250.0)
-    r.item("bin8", 226.0, 250.0)
-    # claimed PCs first, at the aisle end of each bench
+    r.item("hospital_chair_south", 245.0, 118.0)    # lecturer's chair, behind the desk, facing the class
+    r.item("photocopier1", 248.0, 264.0)
+    r.item("bin8", 226.0, 264.0)
+    seats = []                                      # (desk, x_frac) of every PC, for its chair
+    # claimed PCs first, at the aisle end of the first two benches
     r.on(b1b, "pc11", 0.80, 0.30)
     r.on(b2b, "pc9", 0.80, 0.30)
-    for desk, xf in ((b1a, 0.30), (b1a, 0.78), (b1b, 0.30), (b2a, 0.30), (b2a, 0.78), (b2b, 0.30)):
+    seats += [(b1b, 0.80), (b2b, 0.80)]
+    for desk, xf in ((b1a, 0.30), (b1a, 0.78), (b1b, 0.30), (b2a, 0.30), (b2a, 0.78), (b2b, 0.30),
+                     (b3a, 0.30), (b3a, 0.78), (b3b, 0.30), (b3b, 0.80)):
         r.on(desk, "pc12", xf, 0.30)
+        seats.append((desk, xf))
+    for desk, xf in seats:                          # a chair in front of each PC, seen from behind
+        r.item("hospital_chair_north", desk["x"] + xf * desk["width"] - 8.0, desk["y"] + 24.0)
     r.on(lect, "laptop1", 0.35, 0.40)
     r.on(lect, "office-misc-lamp3", 0.85, 0.20)
     return r.build("room_uni_lab")
@@ -2132,18 +2147,19 @@ def room_uni_common():
     2×2 GU student common room: noticeboard and society posters, a snack machine,
     student lockers with Locker 4 at the end (conditional, student_locker1), a
     kitchenette on a vinyl patch, a coffee station, a sofa round a low table and
-    a high table. Door: W on row 2. The floor under the noticeboard and in front
+    a high table, a wall TV. Doors: W and E on row 2. The floor under the noticeboard and in front
     of the lockers stays clear; the bottom two rows may be covered.
     Slots (as-type): notice_board, vending_machine, student_locker, coffee_station;
     laptop1 on the high table (base laptop).
     """
     r = _Uni()
     counter = r.table("kitchen_counter_sink1", 230.0, 110.0, kind="objects")
-    low = r.table("smalldesk1", 108.0, 214.0)
+    low = r.table("smalldesk1", 108.0, 190.0)      # 24px up from 214: Megan (2.4, 7.6) stood in the sofa
     high = r.table("smalldesk1", 220.0, 240.0)
     r.item("notice_board1", 68.0, 50.0)
     r.item("uni_poster2", 116.0, 46.0)
     r.item("uni_poster3", 136.0, 46.0)
+    r.item("uni_tv1", 166.0, 48.0)                  # wall TV above the lockers
     r.item("hot_water_boiler1", 236.0, 56.0)
     # east wall: the foyer's call point is on the other face of the west wall
     r.item("fire_alarm_point1", 292.0, 132.0)
@@ -2151,7 +2167,7 @@ def room_uni_common():
     r.item("student_lockers1", 160.0, 132.0)
     r.item("student_locker1", 210.0, 132.0, layer="conditional_items")  # Candidate Locker 4
     r.item("coffee_station1", 258.0, 172.0)
-    r.item("uni_sofa1", 44.0, 214.0)
+    r.item("uni_sofa1", 44.0, 190.0)
     # no chair east of the low table: Cliffe stands there (scenario position 5.3, 7.4)
     r.on(counter, "kettle1", 0.25, 0.25)
     r.on(counter, "mugs_tray1", 0.70, 0.30)
@@ -2190,10 +2206,11 @@ def room_uni_corridor():
 def room_uni_library():
     """
     2×1 GU (10×6) library front of house: recessed bookcases, the library sign,
-    the issue desk with the returns on it, the librarian's chair, and a
-    conditional floor safe. Only y 64-128 is visible floor (a room to the south
-    covers the rest). Doors: E on row 2, N (NE corner).
-    Slots: book1 then notes4 on the desk (base book; as-type:notes), safe1.
+    the issue desk with the returns on it, the librarian's chair, a returns
+    trolley and a self-service kiosk. Only y 64-128 is visible floor (a room to
+    the south covers the rest). Doors: E on row 2, N (NE corner).
+    Slots: book1 then notes4 on the desk (base book; as-type:notes). The old
+    conditional floor safe is gone: the scenario's safe is in Special Collections.
     """
     r = _Uni()
     desk = r.table("hospital_desk2", 124.0, 124.0)  # issue desk
@@ -2202,7 +2219,7 @@ def room_uni_library():
     r.item("uni_sign_library1", 200.0, 34.0)
     r.item("hospital_chair_south", 100.0, 110.0)    # the librarian's chair
     r.item("book_trolley1", 40.0, 118.0)            # returns waiting to be shelved
-    r.item("safe1", 232.0, 120.0, layer="conditional_items")
+    r.item("checkin_kiosk1", 226.0, 120.0)          # self-service issue and returns kiosk
     r.on(desk, "book1", 0.62, 0.35, layer="conditional_table_items")
     r.on(desk, "notes4", 0.80, 0.50, layer="conditional_table_items")
     r.on(desk, "office-misc-lamp4", 0.15, 0.20)
@@ -2211,18 +2228,22 @@ def room_uni_library():
 
 def room_uni_office():
     """
-    2×1 GU (10×6) academic's office: door card, a conditional ledger whiteboard,
-    a recessed bookcase, a year planner, a desk against the wall with a PC and a
-    handout slot. Only y 64-128 is visible floor. Doors: W on row 2, N (NE corner);
-    the W-to-N route along y 100-128 stays clear.
-    Slots: whiteboard1 (conditional, as-type:whiteboard), notes1 on the desk.
+    2×1 GU (10×6) academic's office: door card, a framed certificate, a recessed
+    bookcase, a year planner, a desk against the wall with a PC, a handout slot
+    and his chair, and a visitor's chair. Only y 64-128 is visible floor. Doors:
+    W on row 2, N (NE corner); the W-to-N route along y 100-128 stays clear of
+    anything solid (the chairs are walk-through items).
+    Slots: notes1 on the desk. (The conditional whiteboard1 went when Sidhu's
+    ledger board moved to the seminar room.)
     """
     r = _Uni()
     desk = r.table("smalldesk1", 194.0, 111.0)
     r.item("uni_doorcard1", 66.0, 50.0)
-    r.item("whiteboard1", 92.0, 50.0, layer="conditional_items")
+    r.item("uni_certificate1", 104.0, 44.0)         # his Hyperledger certification, framed
     r.item("bookcase", 142.0, 74.0)
     r.item("year_planner1", 192.0, 48.0)
+    r.item("hospital_chair_north", 203.0, 126.0)    # his chair, in front of the desk
+    r.item("hospital_chair2", 170.0, 120.0)         # visitor's chair, facing the desk
     r.on(desk, "pc7", 0.35, 0.30)
     r.on(desk, "office-misc-cup", 0.60, 0.40)
     r.on(desk, "notes1", 0.82, 0.50, layer="conditional_table_items")
@@ -2261,7 +2282,7 @@ def room_uni_workshop():
 def room_uni_lecture():
     """
     4×2 GU (20×10) lecture theatre: whiteboard and projector screen at the front,
-    a demonstration bench and a lectern, three tiered rows of seats facing the
+    a demonstration bench and a lectern, four tiered rows of seats facing the
     front in two blocks (the tier lines are in the room_uni_lecture floor sheet).
     The seats are walk-through sprites. A writing ledge in front of each row and
     block (tables layer) makes the rows solid: a table's body is its bottom
@@ -2282,7 +2303,7 @@ def room_uni_lecture():
     r.item("wall_clock1", 420.0, 46.0)
     r.item("uni_poster1", 500.0, 46.0)
     r.item("fire_alarm_point1", 612.0, 132.0)       # east wall
-    for feet in (170.0, 202.0, 234.0):
+    for feet in (170.0, 202.0, 234.0, 266.0):
         # seat rows seen from behind (3 seats a sprite), 8px below the row line so
         # the backs just overlap their own ledge and the next ledge hides the legs
         for x in (92.0, 153.0, 214.0):
@@ -2308,7 +2329,7 @@ def room_uni_special():
     # reading table on the rug (painted in the sheet at x 88-230, y 140-214)
     reading = r.table("hospital_conference_table", 96.0, 206.0)
     r.item("uni_sign_special1", 100.0, 40.0)
-    r.item("picture11", 190.0, 44.0)
+    r.item("uni_portrait1", 190.0, 46.0)            # the founder's portrait
     for x in (32.0, 75.0, 118.0, 161.0):
         r.item("bookcase", x, 120.0)                # top edge on y 70
     r.table("plan_chest1", 208.0, 112.0, kind="objects")    # beside the shelves, back to the wall
@@ -2404,8 +2425,7 @@ def room_uni_staff():
     r.item("coffee_station1", 572.0, 111.0)
     # staff clutter
     r.item("bag18", 110.0, 205.0)                   # Dr Illiashenko's bag, by his desk
-    r.item("bag5", 280.0, 252.0)
-    r.item("bag12", 440.0, 252.0)
+    r.item("bag12", 500.0, 205.0)                   # beside P3-B, not loose mid-floor
     r.item("bin8", 40.0, 290.0)
     r.item("plant-large12-top-ani1", 120.0, 306.0)  # floor plants along the uncovered bottom edge
     r.item("plant-large11-top-ani3", 470.0, 306.0)

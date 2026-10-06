@@ -15,7 +15,7 @@ Nothing is rescaled. Miskatonic is fictional; the crest is a plain shield with a
 Writes PNGs into public/break_escape/assets/objects/ (then register them with
 register_object.py, --wall for the wall items).
 
-Usage: python3 scripts/room_gen/make_uni_props.py [--out DIR]
+Usage: python3 scripts/room_gen/make_uni_props.py [--out DIR] [--only name1,name2]
 """
 
 import sys
@@ -433,7 +433,80 @@ def student_locker():
     return c
 
 
+# --- dressing round 1 (ROOM_DRESSING_R1.md): wall TV, certificate, portrait ----
+
+FRAME_DARK = (81, 48, 45)      # picture frames (picture1, picture11)
+FRAME = (113, 73, 65)
+FRAME_LIGHT = (175, 97, 68)
+GILT = (196, 156, 60)
+GILT_DARK = (140, 104, 36)
+
+
+def wall_tv():
+    """Common-room wall TV, front on: black bezel, a quiz show (blue set, two
+    contestant podiums, a question bar), a small bracket shadow below."""
+    c = Canvas(40, 26)
+    c.rect(0, 0, 39, 23, BLACK)
+    c.rect(2, 2, 37, 20, NAVY)
+    c.rect(2, 2, 37, 9, NAVY_LIGHT)                 # studio back wall
+    for x in range(4, 36, 6):                       # stage lights
+        c.px(x, 3, YELLOW)
+    c.rect(8, 9, 13, 14, MAGENTA)                   # podiums
+    c.rect(26, 9, 31, 14, TEAL_LIGHT)
+    c.rect(10, 6, 11, 8, (230, 190, 150))           # contestants' heads
+    c.rect(28, 6, 29, 8, (150, 100, 70))
+    c.rect(4, 16, 35, 19, BLUE)                     # question bar
+    c.hline(6, 30, 17, WHITE)
+    c.hline(6, 22, 18, STEEL_LIGHT)
+    c.px(37, 21, (0, 200, 90))                      # power light on the bezel
+    c.rect(14, 24, 25, 25, OUTLINE)                 # wall bracket below
+    return c
+
+
+def certificate():
+    """Framed certificate (Sidhu's office): black frame, cream sheet, a title
+    line, text lines and a red seal with a ribbon."""
+    c = Canvas(18, 14)
+    c.rect(0, 0, 17, 13, BLACK)
+    c.rect(1, 1, 16, 12, (238, 230, 205))
+    c.hline(4, 13, 3, NAVY)
+    c.hline(3, 14, 5, GREY_TEXT)
+    c.hline(3, 11, 7, GREY_TEXT)
+    c.rect(12, 8, 14, 10, RED)                      # seal
+    c.px(13, 9, BRASS)
+    c.px(12, 11, RED_DARK)
+    c.px(14, 11, RED_DARK)
+    c.hline(3, 8, 10, INK)                          # signature
+    return c
+
+
+def portrait():
+    """The founder's portrait for Special Collections: gilt frame, dark oil
+    background, a grey-haired figure in a black gown with a white collar."""
+    c = Canvas(22, 28)
+    c.rect(0, 0, 21, 27, GILT_DARK)
+    c.frame(1, 1, 20, 26, GILT)
+    c.rect(2, 2, 19, 25, (46, 38, 34))              # dark varnish
+    c.rect(3, 3, 18, 12, (62, 50, 42))              # lighter behind the head
+    c.rect(8, 6, 13, 12, (214, 176, 140))           # face
+    c.rect(8, 4, 13, 6, (196, 196, 200))            # grey hair
+    c.px(7, 6, (196, 196, 200))
+    c.px(14, 6, (196, 196, 200))
+    c.px(9, 9, INK)                                 # eyes
+    c.px(12, 9, INK)
+    c.rect(5, 14, 16, 25, BLACK)                    # gown
+    c.rect(4, 17, 17, 25, BLACK)
+    c.rect(9, 13, 12, 15, WHITE)                    # collar
+    c.rect(6, 22, 8, 23, (214, 176, 140))           # a hand on a book
+    c.rect(9, 21, 13, 24, RED_DARK)
+    c.frame(0, 0, 21, 27, GILT_DARK)
+    return c
+
+
 PROPS = {
+    "uni_tv1": wall_tv,
+    "uni_certificate1": certificate,
+    "uni_portrait1": portrait,
     "uni_crest_sign1": crest_sign,
     "uni_sign_library1": library_sign,
     "uni_sign_special1": special_sign,
@@ -488,7 +561,12 @@ def main(argv):
     if "--out" in argv:
         out = Path(argv[argv.index("--out") + 1])
         out.mkdir(parents=True, exist_ok=True)
+    only = None
+    if "--only" in argv:                         # --only name1,name2: draw just these
+        only = set(argv[argv.index("--only") + 1].split(","))
     for name, fn in PROPS.items():
+        if only is not None and name not in only:
+            continue
         fn().save(out, name)
 
 

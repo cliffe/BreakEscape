@@ -1026,33 +1026,21 @@
      "y": 205.0
     },
     {
-     "gid": 294,
-     "height": 21,
+     "gid": 287,
+     "height": 24,
      "id": 31,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 26,
-     "x": 280.0,
-     "y": 252.0
-    },
-    {
-     "gid": 287,
-     "height": 24,
-     "id": 32,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 26,
-     "x": 440.0,
-     "y": 252.0
+     "x": 500.0,
+     "y": 205.0
     },
     {
      "gid": 119,
      "height": 25,
-     "id": 33,
+     "id": 32,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -1064,7 +1052,7 @@
     {
      "gid": 399,
      "height": 75,
-     "id": 34,
+     "id": 33,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -1076,7 +1064,7 @@
     {
      "gid": 401,
      "height": 75,
-     "id": 35,
+     "id": 34,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -1088,7 +1076,7 @@
     {
      "gid": 897,
      "height": 45,
-     "id": 36,
+     "id": 35,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -1100,7 +1088,7 @@
     {
      "gid": 309,
      "height": 32,
-     "id": 37,
+     "id": 36,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -1146,7 +1134,7 @@
     {
      "gid": 367,
      "height": 28,
-     "id": 38,
+     "id": 37,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -1158,7 +1146,7 @@
     {
      "gid": 183,
      "height": 14,
-     "id": 39,
+     "id": 38,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -1170,7 +1158,7 @@
     {
      "gid": 217,
      "height": 11,
-     "id": 40,
+     "id": 39,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -1182,7 +1170,7 @@
     {
      "gid": 830,
      "height": 22,
-     "id": 41,
+     "id": 40,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -1194,7 +1182,7 @@
     {
      "gid": 219,
      "height": 16,
-     "id": 42,
+     "id": 41,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -1206,7 +1194,7 @@
     {
      "gid": 372,
      "height": 24,
-     "id": 43,
+     "id": 42,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -1218,7 +1206,7 @@
     {
      "gid": 210,
      "height": 15,
-     "id": 44,
+     "id": 43,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -1230,7 +1218,7 @@
     {
      "gid": 372,
      "height": 24,
-     "id": 45,
+     "id": 44,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -1242,7 +1230,7 @@
     {
      "gid": 181,
      "height": 14,
-     "id": 46,
+     "id": 45,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -1254,7 +1242,7 @@
     {
      "gid": 372,
      "height": 24,
-     "id": 47,
+     "id": 46,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -1266,7 +1254,7 @@
     {
      "gid": 328,
      "height": 12,
-     "id": 48,
+     "id": 47,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -1278,7 +1266,7 @@
     {
      "gid": 372,
      "height": 24,
-     "id": 49,
+     "id": 48,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -1290,7 +1278,7 @@
     {
      "gid": 835,
      "height": 15,
-     "id": 50,
+     "id": 49,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -1302,7 +1290,7 @@
     {
      "gid": 372,
      "height": 24,
-     "id": 51,
+     "id": 50,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -1314,7 +1302,7 @@
     {
      "gid": 210,
      "height": 15,
-     "id": 52,
+     "id": 51,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -1326,7 +1314,7 @@
     {
      "gid": 834,
      "height": 18,
-     "id": 53,
+     "id": 52,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -1338,7 +1326,7 @@
     {
      "gid": 847,
      "height": 14,
-     "id": 54,
+     "id": 53,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -1350,7 +1338,7 @@
     {
      "gid": 843,
      "height": 18,
-     "id": 55,
+     "id": 54,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -1362,7 +1350,7 @@
     {
      "gid": 835,
      "height": 15,
-     "id": 56,
+     "id": 55,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -1391,7 +1379,7 @@
   }
  ],
  "nextlayerid": 14,
- "nextobjectid": 57,
+ "nextobjectid": 56,
  "orientation": "orthogonal",
  "renderorder": "right-down",
  "tiledversion": "1.11.2",
@@ -3824,7 +3812,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 166,
+   "tilecount": 170,
    "tileheight": 60,
    "tiles": [
     {
@@ -4822,6 +4810,30 @@
      "image": "../objects/uni_sign_staff1.png",
      "imageheight": 14,
      "imagewidth": 64
+    },
+    {
+     "id": 166,
+     "image": "../objects/uni_tv1.png",
+     "imageheight": 26,
+     "imagewidth": 40
+    },
+    {
+     "id": 167,
+     "image": "../objects/uni_certificate1.png",
+     "imageheight": 14,
+     "imagewidth": 18
+    },
+    {
+     "id": 168,
+     "image": "../objects/uni_portrait1.png",
+     "imageheight": 28,
+     "imagewidth": 22
+    },
+    {
+     "id": 169,
+     "image": "../objects/freshers_stall1.png",
+     "imageheight": 59,
+     "imagewidth": 61
     }
    ],
    "tilewidth": 60

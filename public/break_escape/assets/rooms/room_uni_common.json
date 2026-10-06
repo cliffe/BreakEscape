@@ -92,7 +92,7 @@
                  "visible":true,
                  "width":50,
                  "x":108,
-                 "y":214
+                 "y":190
                 }, 
                 {
                  "gid":109,
@@ -154,9 +154,21 @@
                  "y":46
                 }, 
                 {
+                 "gid":967,
+                 "height":26,
+                 "id":7,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":40,
+                 "x":166,
+                 "y":48
+                }, 
+                {
                  "gid":844,
                  "height":30,
-                 "id":7,
+                 "id":8,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -168,7 +180,7 @@
                 {
                  "gid":828,
                  "height":20,
-                 "id":8,
+                 "id":9,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -180,7 +192,7 @@
                 {
                  "gid":802,
                  "height":60,
-                 "id":9,
+                 "id":10,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -192,7 +204,7 @@
                 {
                  "gid":938,
                  "height":62,
-                 "id":10,
+                 "id":11,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -204,7 +216,7 @@
                 {
                  "gid":813,
                  "height":41,
-                 "id":12,
+                 "id":13,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -216,14 +228,14 @@
                 {
                  "gid":950,
                  "height":51,
-                 "id":13,
+                 "id":14,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":60,
                  "x":44,
-                 "y":214
+                 "y":190
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -239,7 +251,7 @@
                 {
                  "gid":939,
                  "height":62,
-                 "id":11,
+                 "id":12,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -262,7 +274,7 @@
                 {
                  "gid":335,
                  "height":18,
-                 "id":17,
+                 "id":18,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -285,7 +297,7 @@
                 {
                  "gid":834,
                  "height":18,
-                 "id":14,
+                 "id":15,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -297,7 +309,7 @@
                 {
                  "gid":835,
                  "height":15,
-                 "id":15,
+                 "id":16,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -309,14 +321,14 @@
                 {
                  "gid":203,
                  "height":14,
-                 "id":16,
+                 "id":17,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":17,
                  "x":124.5,
-                 "y":187.35
+                 "y":163.35
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -336,7 +348,7 @@
          "y":0
         }],
  "nextlayerid":14,
- "nextobjectid":18,
+ "nextobjectid":19,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.2",
@@ -2808,7 +2820,7 @@
          "margin":0,
          "name":"objects\/hospital_extras",
          "spacing":0,
-         "tilecount":163,
+         "tilecount":170,
          "tileheight":63,
          "tiles":[
                 {
@@ -3804,6 +3816,48 @@
                  "image":"..\/objects\/soldering_iron1.png",
                  "imageheight":26,
                  "imagewidth":26
+                }, 
+                {
+                 "id":163,
+                 "image":"..\/objects\/beanbag_orange1.png",
+                 "imageheight":27,
+                 "imagewidth":29
+                }, 
+                {
+                 "id":164,
+                 "image":"..\/objects\/beanbag_teal1.png",
+                 "imageheight":27,
+                 "imagewidth":29
+                }, 
+                {
+                 "id":165,
+                 "image":"..\/objects\/uni_sign_staff1.png",
+                 "imageheight":14,
+                 "imagewidth":64
+                }, 
+                {
+                 "id":166,
+                 "image":"..\/objects\/uni_tv1.png",
+                 "imageheight":26,
+                 "imagewidth":40
+                }, 
+                {
+                 "id":167,
+                 "image":"..\/objects\/uni_certificate1.png",
+                 "imageheight":14,
+                 "imagewidth":18
+                }, 
+                {
+                 "id":168,
+                 "image":"..\/objects\/uni_portrait1.png",
+                 "imageheight":28,
+                 "imagewidth":22
+                }, 
+                {
+                 "id":169,
+                 "image":"..\/objects\/freshers_stall1.png",
+                 "imageheight":59,
+                 "imagewidth":61
                 }],
          "tilewidth":252
         }],

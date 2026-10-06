@@ -328,6 +328,18 @@
      "width": 38,
      "x": 40.0,
      "y": 118.0
+    },
+    {
+     "gid": 891,
+     "height": 60,
+     "id": 8,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 27,
+     "x": 226.0,
+     "y": 120.0
     }
    ],
    "opacity": 1,
@@ -340,20 +352,7 @@
    "draworder": "topdown",
    "id": 7,
    "name": "conditional_items",
-   "objects": [
-    {
-     "gid": 303,
-     "height": 43,
-     "id": 8,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 32,
-     "x": 232.0,
-     "y": 120.0
-    }
-   ],
+   "objects": [],
    "opacity": 1,
    "type": "objectgroup",
    "visible": true,
@@ -2866,7 +2865,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 163,
+   "tilecount": 170,
    "tileheight": 60,
    "tiles": [
     {
@@ -3846,6 +3845,48 @@
      "image": "../objects/soldering_iron1.png",
      "imageheight": 26,
      "imagewidth": 26
+    },
+    {
+     "id": 163,
+     "image": "../objects/beanbag_orange1.png",
+     "imageheight": 27,
+     "imagewidth": 29
+    },
+    {
+     "id": 164,
+     "image": "../objects/beanbag_teal1.png",
+     "imageheight": 27,
+     "imagewidth": 29
+    },
+    {
+     "id": 165,
+     "image": "../objects/uni_sign_staff1.png",
+     "imageheight": 14,
+     "imagewidth": 64
+    },
+    {
+     "id": 166,
+     "image": "../objects/uni_tv1.png",
+     "imageheight": 26,
+     "imagewidth": 40
+    },
+    {
+     "id": 167,
+     "image": "../objects/uni_certificate1.png",
+     "imageheight": 14,
+     "imagewidth": 18
+    },
+    {
+     "id": 168,
+     "image": "../objects/uni_portrait1.png",
+     "imageheight": 28,
+     "imagewidth": 22
+    },
+    {
+     "id": 169,
+     "image": "../objects/freshers_stall1.png",
+     "imageheight": 59,
+     "imagewidth": 61
     }
    ],
    "tilewidth": 60

@@ -748,6 +748,30 @@
      "width": 252,
      "x": 330.0,
      "y": 212.0
+    },
+    {
+     "gid": 940,
+     "height": 12,
+     "id": 43,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 198,
+     "x": 86.0,
+     "y": 244.0
+    },
+    {
+     "gid": 941,
+     "height": 12,
+     "id": 44,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 252,
+     "x": 330.0,
+     "y": 244.0
     }
    ],
    "opacity": 1,
@@ -1084,6 +1108,90 @@
      "width": 61,
      "x": 517.0,
      "y": 242.0
+    },
+    {
+     "gid": 953,
+     "height": 32,
+     "id": 36,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 61,
+     "x": 92.0,
+     "y": 274.0
+    },
+    {
+     "gid": 953,
+     "height": 32,
+     "id": 37,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 61,
+     "x": 153.0,
+     "y": 274.0
+    },
+    {
+     "gid": 953,
+     "height": 32,
+     "id": 38,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 61,
+     "x": 214.0,
+     "y": 274.0
+    },
+    {
+     "gid": 953,
+     "height": 32,
+     "id": 39,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 61,
+     "x": 334.0,
+     "y": 274.0
+    },
+    {
+     "gid": 953,
+     "height": 32,
+     "id": 40,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 61,
+     "x": 395.0,
+     "y": 274.0
+    },
+    {
+     "gid": 953,
+     "height": 32,
+     "id": 41,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 61,
+     "x": 456.0,
+     "y": 274.0
+    },
+    {
+     "gid": 953,
+     "height": 32,
+     "id": 42,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 61,
+     "x": 517.0,
+     "y": 274.0
     }
    ],
    "opacity": 1,
@@ -1122,7 +1230,7 @@
     {
      "gid": 330,
      "height": 12,
-     "id": 36,
+     "id": 45,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -1134,7 +1242,7 @@
     {
      "gid": 216,
      "height": 15,
-     "id": 37,
+     "id": 46,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -1163,7 +1271,7 @@
   }
  ],
  "nextlayerid": 14,
- "nextobjectid": 38,
+ "nextobjectid": 47,
  "orientation": "orthogonal",
  "renderorder": "right-down",
  "tiledversion": "1.11.2",
@@ -3596,7 +3704,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 163,
+   "tilecount": 170,
    "tileheight": 60,
    "tiles": [
     {
@@ -4576,6 +4684,48 @@
      "image": "../objects/soldering_iron1.png",
      "imageheight": 26,
      "imagewidth": 26
+    },
+    {
+     "id": 163,
+     "image": "../objects/beanbag_orange1.png",
+     "imageheight": 27,
+     "imagewidth": 29
+    },
+    {
+     "id": 164,
+     "image": "../objects/beanbag_teal1.png",
+     "imageheight": 27,
+     "imagewidth": 29
+    },
+    {
+     "id": 165,
+     "image": "../objects/uni_sign_staff1.png",
+     "imageheight": 14,
+     "imagewidth": 64
+    },
+    {
+     "id": 166,
+     "image": "../objects/uni_tv1.png",
+     "imageheight": 26,
+     "imagewidth": 40
+    },
+    {
+     "id": 167,
+     "image": "../objects/uni_certificate1.png",
+     "imageheight": 14,
+     "imagewidth": 18
+    },
+    {
+     "id": 168,
+     "image": "../objects/uni_portrait1.png",
+     "imageheight": 28,
+     "imagewidth": 22
+    },
+    {
+     "id": 169,
+     "image": "../objects/freshers_stall1.png",
+     "imageheight": 59,
+     "imagewidth": 61
     }
    ],
    "tilewidth": 60

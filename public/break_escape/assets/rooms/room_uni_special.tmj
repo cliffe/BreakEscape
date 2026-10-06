@@ -414,16 +414,16 @@
      "y": 40.0
     },
     {
-     "gid": 168,
-     "height": 21,
+     "gid": 969,
+     "height": 28,
      "id": 3,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 29,
+     "width": 22,
      "x": 190.0,
-     "y": 44.0
+     "y": 46.0
     },
     {
      "gid": 339,
@@ -3045,7 +3045,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 165,
+   "tilecount": 170,
    "tileheight": 60,
    "tiles": [
     {
@@ -4037,6 +4037,36 @@
      "image": "../objects/beanbag_teal1.png",
      "imageheight": 27,
      "imagewidth": 29
+    },
+    {
+     "id": 165,
+     "image": "../objects/uni_sign_staff1.png",
+     "imageheight": 14,
+     "imagewidth": 64
+    },
+    {
+     "id": 166,
+     "image": "../objects/uni_tv1.png",
+     "imageheight": 26,
+     "imagewidth": 40
+    },
+    {
+     "id": 167,
+     "image": "../objects/uni_certificate1.png",
+     "imageheight": 14,
+     "imagewidth": 18
+    },
+    {
+     "id": 168,
+     "image": "../objects/uni_portrait1.png",
+     "imageheight": 28,
+     "imagewidth": 22
+    },
+    {
+     "id": 169,
+     "image": "../objects/freshers_stall1.png",
+     "imageheight": 59,
+     "imagewidth": 61
     }
    ],
    "tilewidth": 60
