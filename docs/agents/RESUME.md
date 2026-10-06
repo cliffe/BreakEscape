@@ -2,7 +2,7 @@
 
 Brief: `docs/agents/TESSERACT_TRIALS_BRIEF.md`. Log: `scenarios/lab_tesseract_trials/DECISIONS_LOG.md`.
 Loop: design (Opus, DESIGN.md) → 3 adversarial review rounds (alignment + design-review lenses) → implement → puzzle-chains + dialogue reviews → Sonnet playtests → fix until clean.
-Status: BUILD committed (64acb9c6), walkthrough committed (45118701). Running: REVIEW_IMPL, PUZZLE_PLAN (puzzle-chains), DIALOGUE_REVIEW (Opus); playtests P1 (start-L5), P2 (library-L8b), P3 (finale + 4 endings) (Sonnet). Then all findings to the builder, fix, commit, confirmation runs + timed blind run.
+Status: review+playtest round 1 committed (a42064df). Builder running fix round 1. Next: commit fixes; fresh re-review + P2 re-run (L6 onward, Opus if Sonnet gets refused) + timed blind playtest; then PUZZLE_PLAN P4 decision.
 
 # Resume note — pass 4 (editorial, m02–m08)
 
