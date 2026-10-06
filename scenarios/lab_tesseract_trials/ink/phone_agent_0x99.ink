@@ -35,6 +35,7 @@ VAR fn10_offered = false
 VAR fn11_offered = false
 VAR fn07_had = false
 VAR fn10_had = false
+VAR ghost_greeted = false
 
 // Ink-local state
 VAR fn04_sent = false
@@ -50,6 +51,9 @@ VAR hint_rung = 0
 // Skips the hub greeting once after a reply that closes or answers a decision,
 // so "Copy." isn't followed by "Go ahead." (fix round 1, REVIEW_IMPL m1)
 VAR parked = false
+// Story topics (ALIGNMENT_PLAN H1, H2), each once
+VAR device_discussed = false
+VAR assessments_discussed = false
 
 === start ===
 -> hub
@@ -72,6 +76,10 @@ VAR parked = false
     -> send_report
 + {ghost_offer_made and not decision_made} [It's a trap. Don't open anything from me.]
     -> warn_in_band
++ {ghost_greeted and not device_discussed and not ghost_offer_made} [The black box from the lockbox talks. It calls itself the Keyholder.]
+    -> device_reaction
++ {megan_file_read and not assessments_discussed and not decision_made} [They keep files on the candidates. Who can't afford to say no.]
+    -> assessments_reaction
 + {megan_file_read and megan_choice == "" and not decision_made} [Megan Oyelaran is on their list. Can we help her?]
     -> megan_request
 + {not comms_had} [Remind me how I reach you if this phone's no good.]
@@ -141,6 +149,22 @@ VAR parked = false
 - else:
     Not on this line. It's in your brief.
 }
+-> hub
+
+// ------------------------------------------------
+// Story topics (ALIGNMENT_PLAN H1, H2). Neither names Ghost before the call,
+// says the line is compromised or points at the scoreboard.
+// ------------------------------------------------
+=== device_reaction ===
+~ device_discussed = true
+Then it's theirs. Keep it on you. A candidate who leaves it behind isn't a candidate.
+Whoever's on the other end wanted you to find it. That tells me they're patient.
+-> hub
+
+=== assessments_reaction ===
+~ assessments_discussed = true
+That's how they pick everything. At St Catherine's it was a hospital that couldn't afford downtime.
+One of those files is probably you. I can't tell which, and that's the point.
 -> hub
 
 // ------------------------------------------------

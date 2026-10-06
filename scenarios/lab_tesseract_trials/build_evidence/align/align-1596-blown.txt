@@ -1,0 +1,18 @@
+GLOBALS: {"ok":true,"cmd":"eval","result":{"ending":"blown","dm":true,"warned":false,"greeted":false}}
+GHOST THREAD: {"ok":true,"cmd":"eval","result":["Special Collections. Fourteen left. The key to the next one is somewhere a careful man keeps his accounts.","Hybrid encryption. Nine candidates got this far. It's how we locked forty companies. Hospitals pay fastest.","I did say it listens. The studentship is withdrawn."]}
+BACKGROUND: {"ok":true,"cmd":"eval","result":["assets/backgrounds/hq2.png","http://127.0.0.1:3001/break_escape/assets/backgrounds/hq2.png"]}
+Agent HaX: You were right about the report. Nobody opened it.
+Agent HaX: One pixel. A picture too small to see, fetched from Ghost's server the moment anyone opens the report. That's all a location costs.
+Agent HaX: Your mail app does the same thing every day, unless you turn remote images off.
+Agent HaX: I bet Ghost never saw your face at St Catherine's. I lost.
+Agent HaX: I said I'd take either outcome. Ghost recognised you and wanted you anyway. That's worth knowing. I didn't enjoy learning it.
+Agent HaX: Next time, the scoreboard. It's why it's there.
+Agent HaX: We're replacing your phone anyway. Ghost had the building's network all week.
+Agent HaX: Megan Oyelaran's placement vanished with CryptoSecure. She's still eleven thousand down and still looking.
+Agent HaX: The stand was gone by morning. Jordan Pike's student email bounces.
+Agent HaX: You can read Base64 now. Most people who'd have opened that report can't.
+demo_player: That's everything.
+Agent HaX: Term starts Monday. Go to your lectures. You never know who's watching.
+[no dialogue] mg= None
+CREDITS: {"ok":true,"cmd":"eval","result":["KEYHOLDER: DECLINED","THE KEYHOLDER TRIALS","── HANDLER ──","AGENT HaX: Unharmed.","AGENT HaX: Still your handler.","THE KEYHOLDER STUDENTSHIP: Never awarded.","── CAMPUS ──","MEGAN OYELARAN: Still looking for the money.","JORDAN PIKE: Email bounces.","DR TOM SHAW: Reported the stand to the department.","DR SIDHU SELVARAJAN: Still checks everything twice.","MISKATONIC UNIVERSITY: Term starts Monday.","On the map, a room you haven't been in has a light on."]}
+DONE

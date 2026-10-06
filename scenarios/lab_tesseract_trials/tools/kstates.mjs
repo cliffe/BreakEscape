@@ -53,6 +53,10 @@ const cases = [
   { id: 'K18', f: G, entry: 'start', g: { relay_opened: true, ghost_offer_made: true, ghost_offer_heard: true }, choose: /Sending it now/, expect: 'the_offer_again', afterHas: 'Then send it', afterLacks: 'Back. So you' },
   { id: 'K19', f: G, entry: 'the_offer_call', g: { relay_opened: true, megan_choice: 'warned' }, choose: /Find another student/, expect: 'closed', endingIs: 'refused', afterHas: 'The second this week', afterLacks: 'first to say no' },
   { id: 'K20', f: G, entry: 'the_offer_call', g: { relay_opened: true }, choose: /Find another student/, expect: 'closed', afterHas: 'first to say no', afterLacks: 'second this week' },
+  // Alignment round: HaX story topics (H1, H2), once each, no greeting skipped
+  { id: 'H10', f: H, entry: 'start', g: { comms_had: true, ghost_greeted: true, lockbox_open: true }, choose: /black box from the lockbox/, expect: 'hub', afterHas: 'Keep it on you', choiceLacks: /black box/ },
+  { id: 'H11', f: H, entry: 'start', g: { comms_had: true, megan_file_read: true }, choose: /files on the candidates/, expect: 'hub', afterHas: 'probably you', choiceLacks: /files on the candidates/, choiceHas: /Megan Oyelaran is on their list/ },
+  { id: 'H12', f: H, entry: 'start', g: { comms_had: true, ghost_greeted: true, ghost_offer_made: true }, expect: 'hub', choiceLacks: /black box/ },
   { id: 'H1', f: H, entry: 'start', g: { comms_had: false }, expect: 'hub', choiceHas: /Remind me how I reach you/ },
   { id: 'H2', f: H, entry: 'start', g: { comms_had: true, lockbox_open: true, fn04_offered: true }, expect: 'hub', choiceHas: /field note/, choiceLacks: /Sending you my report/ },
   { id: 'H3', f: H, entry: 'start', g: { comms_had: true, ghost_offer_made: true }, expect: 'hub', choiceHas: /Sending you my report/, choiceLacks: /Debrief me/ },
@@ -98,5 +102,23 @@ for (const k of cases) {
   if (errs.length) fails++;
   quiet(`${errs.length ? 'FAIL' : 'PASS'} ${k.id}: ${knot} [${choices.join(' | ')}]${errs.length ? '  -- ' + errs.join('; ') : ''}`);
 }
+// Alignment round (D7, D9, X1): the debrief for every ending x device taken or not x token sent or not
+const D = JSON.parse(readFileSync(join(REPO, 'scenarios/lab_tesseract_trials/ink/closing_debrief.json'), 'utf8').replace(/^\uFEFF/, ''));
+const runDebrief = g => { const st = new inkjs.Story(D); for (const [k, v] of Object.entries(g)) if (st.variablesState.GlobalVariableExistsWithName(k)) st.variablesState[k] = v;
+  st.ChoosePathString('start'); const out = []; for (let i = 0; i < 40; i++) { while (st.canContinue) { const t = st.Continue().trim(); if (t) out.push(t); }
+    const ch = st.currentChoices; if (!ch.length) break; const last = ch.findIndex(c => /everything|Going/.test(c.text)); if (/Going/.test(ch[0]?.text || '')) break; st.ChooseChoiceIndex(last >= 0 ? last : 0); } return out.join(' '); };
+const dcases = [];
+for (const ending of ['sent', 'double', 'refused', 'blown']) for (const ghost_greeted of [true, false]) for (const warned_out_of_band of (ending === 'double' ? [true] : [false, true])) for (const late_warning of (ending === 'sent' && warned_out_of_band ? [true] : [false])) {
+  const has = [], lacks = ['Congratulations', 'work for both of us', "Ghost thinks you're theirs", 'will ask again', "Term's started"];
+  if (ending === 'sent') has.push('fallback site', 'field HQ', 'withdrew the studentship');
+  if (ending === 'double') has.push('photograph', 'withdrew the studentship', 'Thank you for the flag');
+  if (ending === 'refused') has.push('clean no'); else lacks.push('clean no');
+  if (ending === 'blown') has.push(warned_out_of_band ? 'scoreboard was enough' : 'Next time, the scoreboard');
+  if (ending !== 'sent') lacks.push('fallback site');
+  if (late_warning) has.push('Your flag reached me'); else lacks.push('Your flag reached me');
+  has.push(ghost_greeted ? 'Hand in the device' : 'replacing your phone anyway');
+  dcases.push({ id: `D-${ending}-${ghost_greeted ? 'dev' : 'nodev'}${warned_out_of_band ? '-token' : ''}${late_warning ? '-late' : ''}`, g: { ending, ghost_greeted, warned_out_of_band, late_warning, megan_choice: '' }, has, lacks });
+}
+for (const k of dcases) { const t = runDebrief(k.g); const errs = k.has.filter(h => !t.includes(h)).map(h => `lacks "${h}"`).concat(k.lacks.filter(l => t.includes(l)).map(l => `has "${l}"`)); if (errs.length) fails++; quiet(`${errs.length ? 'FAIL' : 'PASS'} ${k.id}${errs.length ? '  -- ' + errs.join('; ') : ''}`); }
 quiet(fails ? `${fails} FAILED` : 'ALL PASS');
 process.exit(fails ? 1 : 0);

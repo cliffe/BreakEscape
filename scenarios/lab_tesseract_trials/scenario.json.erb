@@ -312,31 +312,36 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
       { "trigger": "game_loaded", "condition": "!globalVars.briefing_played", "playlist": "cutscene", "fade": false },
       { "trigger": "game_loaded", "condition": "globalVars.briefing_played === true", "playlist": "noir", "fade": false },
       { "trigger": "conversation_closed:briefing_cutscene", "playlist": "noir", "fade": true },
-      { "trigger": "global_variable_changed:relay_opened", "condition": "value === true && !globalVars.decision_made", "playlist": "spy-action", "fade": true },
+      { "trigger": "global_variable_changed:relay_opened", "condition": "value === true && !globalVars.decision_made", "playlist": "spy-action", "track": "Cold Bond Circuit", "fade": true },
+      <%# U3: back to noir for the walk-out after a refusal or a blown line %>
+      { "trigger": "global_variable_changed:decision_made", "condition": "value === true && globalVars.ending === 'refused'", "playlist": "noir", "fade": true },
+      { "trigger": "global_variable_changed:decision_made", "condition": "value === true && globalVars.ending === 'blown'", "playlist": "noir", "fade": true },
       { "trigger": "global_variable_changed:start_debrief_cutscene", "condition": "value === true", "playlist": "cutscene", "fade": true },
       {
         "trigger": "conversation_closed:closing_debrief_person",
         "playlist": "victory",
+        "track": "Hacktivity Neon",
         "autoStop": true,
         "disableClose": true,
         "fade": true,
         "credits": [
-          { "text": "KEYHOLDER: RECRUITED", "style": "title", "condition": "globalVars.ending === 'sent'" },
-          { "text": "KEYHOLDER: RECRUITED", "style": "title", "condition": "globalVars.ending === 'double'" },
+          { "text": "KEYHOLDER: OFFER WITHDRAWN", "style": "title", "condition": "globalVars.ending === 'sent'" },
+          { "text": "KEYHOLDER: OFFER WITHDRAWN", "style": "title", "condition": "globalVars.ending === 'double'" },
           { "text": "KEYHOLDER: DECLINED", "style": "title", "condition": "globalVars.ending === 'refused'" },
           { "text": "KEYHOLDER: DECLINED", "style": "title", "condition": "globalVars.ending === 'blown'" },
           { "text": "THE KEYHOLDER TRIALS", "style": "subtitle" },
           { "text": "" },
           { "text": "── HANDLER ──", "style": "section-header" },
-          { "text": "AGENT HaX: Location reached Ghost's server. Relocated.", "style": "entry", "condition": "globalVars.ending === 'sent'" },
+          { "text": "THE FIELD HQ: Burned at four. Kit and cover lost. Nobody hurt.", "style": "entry", "condition": "globalVars.ending === 'sent'" },
+          { "text": "AGENT HaX: Working from the fallback site.", "style": "entry", "condition": "globalVars.ending === 'sent'" },
           { "text": "REPORT: Read, and sent.", "style": "entry", "condition": "globalVars.ending === 'sent' && globalVars.report_read_claimed === 'read' && globalVars.late_warning !== true" },
           { "text": "REPORT: Sent unread.", "style": "entry", "condition": "globalVars.ending === 'sent' && globalVars.report_read_claimed === 'unread'" },
           { "text": "REPORT: Read, sent, then flagged. Too late.", "style": "entry", "condition": "globalVars.ending === 'sent' && globalVars.late_warning === true" },
-          { "text": "AGENT HaX: Decoy location live. Ghost is watching it.", "style": "entry", "condition": "globalVars.ending === 'double'" },
-          { "text": "A week later, on the Keyholder device: \"Term's started. So have you.\"", "style": "entry", "condition": "globalVars.ending === 'double'" },
+          { "text": "DECOY FLAT, LEEDS: One visitor at four. Photographed.", "style": "entry", "condition": "globalVars.ending === 'double'" },
           { "text": "AGENT HaX: Unharmed.", "style": "entry", "condition": "globalVars.ending === 'refused'" },
           { "text": "AGENT HaX: Unharmed.", "style": "entry", "condition": "globalVars.ending === 'blown'" },
           { "text": "AGENT HaX: Still your handler.", "style": "entry" },
+          { "text": "THE KEYHOLDER STUDENTSHIP: Never awarded.", "style": "entry" },
           { "text": "" },
           { "text": "── CAMPUS ──", "style": "section-header" },
           { "text": "MEGAN OYELARAN: Walked away from CryptoSecure.", "style": "entry", "condition": "globalVars.megan_choice === 'warned'" },
@@ -382,7 +387,7 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
           "timedConversation": {
             "delay": 0,
             "targetKnot": "start",
-            "background": "assets/backgrounds/hq1.png",
+            "background": "assets/backgrounds/hq2.png",
             "waitForEvent": "game_loaded",
             "skipIfGlobal": "briefing_played",
             "setGlobalOnStart": "briefing_played"
@@ -464,11 +469,14 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
             { "eventPattern": "objective_task_completed:open_special_collections", "onceOnly": true, "sendTimedMessage": { "delay": 2000, "message": "Special Collections. Fourteen left. The key to the next one is somewhere a careful man keeps his accounts." } },
             { "eventPattern": "global_variable_changed:megan_file_read", "condition": "value === true", "onceOnly": true, "sendTimedMessage": { "delay": 14000, "message": "You read the other candidates' files. So did I. Candidate 7 is the interesting one." } },
             { "eventPattern": "global_variable_changed:megan_choice", "condition": "value === 'protected'", "onceOnly": true, "sendTimedMessage": { "delay": 2000, "message": "Your handler's about to get generous with bursaries." } },
-            { "eventPattern": "objective_task_completed:open_drop_box", "onceOnly": true, "sendTimedMessage": { "delay": 7000, "message": "Hybrid encryption. Nine candidates got this far. It's how we locked forty companies last year." } },
+            { "eventPattern": "objective_task_completed:open_drop_box", "onceOnly": true, "sendTimedMessage": { "delay": 7000, "message": "Hybrid encryption. Nine candidates got this far. It's how we locked forty companies. Hospitals pay fastest." } },
             { "eventPattern": "global_variable_changed:relay_opened", "condition": "value === true && !globalVars.ghost_offer_made", "onceOnly": true, "conversationMode": "video-call", "targetKnot": "the_offer_call" },
             <%# Fix round 1 (PLAYTEST_P3 M1): a call closed before the offer's last line leaves ghost_offer_heard false; the device then delivers the offer. This text sends the player there. %>
             { "eventPattern": "conversation_closed:ghost", "condition": "globalVars.ghost_offer_made === true && globalVars.ghost_offer_heard !== true && globalVars.decision_made !== true", "onceOnly": true, "sendTimedMessage": { "delay": 1500, "message": "You closed the call. I'll say it here instead." } },
-            { "eventPattern": "global_variable_changed:decision_made", "condition": "value === true && globalVars.ending === 'blown'", "onceOnly": true, "sendTimedMessage": { "delay": 2000, "message": "I did say it listens." } }
+            <%# D7: on every route ENTROPY never takes the player on. Sent and double: Ghost withdraws once the report is opened. %>
+            { "eventPattern": "global_variable_changed:decision_made", "condition": "value === true && globalVars.ending === 'sent'", "onceOnly": true, "sendTimedMessage": { "delay": 14000, "message": "Opened. Thank you, Candidate. That was the last Trial. The studentship is withdrawn: anyone a handler can send, a handler can recall." } },
+            { "eventPattern": "global_variable_changed:decision_made", "condition": "value === true && globalVars.ending === 'double'", "onceOnly": true, "sendTimedMessage": { "delay": 14000, "message": "Opened. Thank you, Candidate. That was the last Trial. The studentship is withdrawn: anyone a handler can send, a handler can recall." } },
+            { "eventPattern": "global_variable_changed:decision_made", "condition": "value === true && globalVars.ending === 'blown'", "onceOnly": true, "sendTimedMessage": { "delay": 2000, "message": "I did say it listens. The studentship is withdrawn." } }
           ]
         },
         {
@@ -486,7 +494,9 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
           "voice": { "name": "Aoede", "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.", "language": "en-GB" },
           "behavior": { "initiallyHidden": true },
           "eventMappings": [
-            { "eventPattern": "global_variable_changed:start_debrief_cutscene", "condition": "value === true", "conversationMode": "person-chat", "targetKnot": "start", "background": "assets/backgrounds/hq1.png", "disableClose": true }
+            <%# D9: the field HQ (hq2) is burned on the sent ending, so that debrief runs at the fallback site (hq3) %>
+            { "eventPattern": "global_variable_changed:start_debrief_cutscene", "condition": "value === true && globalVars.ending !== 'sent'", "conversationMode": "person-chat", "targetKnot": "start", "background": "assets/backgrounds/hq2.png", "disableClose": true },
+            { "eventPattern": "global_variable_changed:start_debrief_cutscene", "condition": "value === true && globalVars.ending === 'sent'", "conversationMode": "person-chat", "targetKnot": "start", "background": "assets/backgrounds/hq3.png", "disableClose": true }
           ]
         },
         {

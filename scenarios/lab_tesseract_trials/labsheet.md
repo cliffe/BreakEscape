@@ -42,14 +42,14 @@ The game teaches by doing, and it has no quizzes. The questions are in this shee
 
 You play Agent 0x00, a SAFETYNET agent who has gone undercover as a first-year student at Miskatonic University UK. A company has been spotting students through a studentship, and a trail of puzzles around campus is how it picks them. Your handler, Agent HaX, wants you inside. You do not need to know anything about cryptography before you start. The game builds up from what a bit is, and Agent HaX and the lecturers you meet give you short field notes on each scheme as you reach it.
 
-Everything you need is in the browser. There are no virtual machines and no flags to submit to Hacktivity. Your game is generated just for you, so the words and numbers you find will differ from other students', and there is nothing to copy from a neighbour. Sharing ideas and recipes is fine.
+Everything you need is in the browser. There are no virtual machines and nothing to submit on the Hacktivity website: everything happens inside the game. Your game is generated just for you, so the words and numbers you find will differ from other students', and there is nothing to copy from a neighbour. Sharing ideas and recipes is fine.
 
 1. ==action: Launch **The Keyholder Trials** from the BreakEscape scenario selection screen==. It is in the escape room collection.
 2. ==action: Watch the briefing from Agent HaX==, then ==action: explore the foyer and talk to the people in it==.
 3. ==action: Find the lecturer who has the lab laptop, and take it==. It holds CyberChef.
 4. ==action: Open the notepad and the field notes you collect==. You can reopen any of them at any time.
 
-The game takes about 75 to 90 minutes. If your session is shorter, you can stop and resume the same game later: your progress, notes and unlocked rooms are kept. Your position in the building and your CyberChef recipe are not kept.
+The game takes about 75 to 90 minutes. In a 60-minute class, stop when the pigeonholes open (Trial VII, about 45 minutes in) and resume the same game next time. You can stop and resume at any point: your progress, notes and unlocked rooms are kept. Your position in the building and your CyberChef recipe are not kept.
 
 ### How to Play {#how-to-play}
 
@@ -123,7 +123,7 @@ Symmetric encryption is fast, but it leaves the **key distribution problem**: be
 
 ### Public-Key Encryption: RSA {#public-key-encryption}
 
-**Public-key** (asymmetric) cryptography uses a pair of mathematically linked keys. The **public key** can be given to anyone, and it only locks. The **private key** is kept secret, and it unlocks. Anyone can send you a secret using your published public key, without ever having met you. That answers key distribution. Keep private keys secret, just as you keep symmetric keys secret.
+**Public-key** (asymmetric) cryptography uses a pair of mathematically linked keys. The **public key** can be given to anyone, and for encryption it only locks (it also checks signatures, below). The **private key** is kept secret, and it unlocks. Anyone can send you a secret using your published public key, without ever having met you. That answers key distribution. Keep private keys secret, just as you keep symmetric keys secret.
 
 **RSA** is the classic example. It is much slower than AES, and it can only encrypt data smaller than its key. It also needs padding (OAEP is the modern choice) to be safe. Public keys are also used the other way round, for signatures (below).
 

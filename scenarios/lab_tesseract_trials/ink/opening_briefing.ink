@@ -18,16 +18,16 @@ Agent HaX: Before anything else, read the note I've just sent you. If your phone
 Agent HaX: Freshers' week at Miskatonic University. You're a first-year again.
 Agent HaX: CryptoSecure Recovery has a stand in the Computing foyer. They're funding something called the Keyholder Studentship. Nine thousand a year, fees paid.
 Agent HaX: Nobody applies. You're found, by solving a trail of puzzles around the building. They call it the Trials.
-Agent HaX: Two of last year's Keyholders now work for CryptoSecure. CryptoSecure is Ransomware Incorporated with a logo.
+Agent HaX: Two earlier Keyholders now work for CryptoSecure. CryptoSecure is Ransomware Incorporated with a logo.
 + [Ransomware Incorporated. Ghost's people.]
-    Agent HaX: Yes. Ghost's. St Catherine's was theirs.
+    Agent HaX: Yes. Ghost's. St Catherine's was theirs. A hospital. Not everyone on the ward lived.
     -> ghost_known
 + [What do you want from me?]
     Agent HaX: Get picked. I want someone inside their recruitment.
     -> ghost
 
 === ghost ===
-Agent HaX: Ransomware Incorporated is run by someone who calls themselves Ghost. St Catherine's was theirs.
+Agent HaX: Ransomware Incorporated is run by someone who calls themselves Ghost. St Catherine's was theirs. A hospital. Not everyone on the ward lived.
 -> ghost_known
 
 === ghost_known ===

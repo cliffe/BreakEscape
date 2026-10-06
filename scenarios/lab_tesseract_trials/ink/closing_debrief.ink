@@ -1,6 +1,9 @@
 // ================================================
 // The Keyholder Trials: closing debrief (HaX at HQ, hidden person-chat)
-// Opened by start_debrief_cutscene. Branches on the ending, the warning,
+// Opened by start_debrief_cutscene. Background hq2 (the field HQ); on the
+// sent ending the field HQ is burned and this scene runs at the fallback site,
+// hq3 (D9; the mapping is split by ending). On every route Ghost withdraws
+// the studentship (D7). Branches on the ending, the warning,
 // Megan and Jordan. hear_debrief completes on the last line, before the exit,
 // so the credits never cover the debrief. DESIGN section 9.
 // ================================================
@@ -29,9 +32,10 @@ VAR debrief_done = false
 }
 
 === opening_sent ===
-Agent HaX: Sit down, Agent.
-Agent HaX: I opened your report on my phone at eleven minutes past six. At twelve minutes past, my phone told a server in Rotterdam where I was.
-Agent HaX: We moved me, and two others, before midnight. Nobody's hurt.
+Agent HaX: Sit down, Agent. Anywhere. This is the fallback site, and nothing in it is ours yet.
+Agent HaX: I opened your report at the field HQ at eleven minutes past six. At twelve minutes past, my phone told a server in Rotterdam where it was.
+Agent HaX: We were all out before midnight. Nobody's hurt.
+Agent HaX: At four, someone went through the field HQ. The kit we couldn't carry, the cover it took years to build. All of it. We won't be going back.
 { late_warning:
     #set_global:report_read_claimed:read
     Agent HaX: Your flag reached me after the report did. You tried. It was already open.
@@ -48,14 +52,15 @@ Agent HaX: Did you read it before you sent it?
     -> sent_cost
 
 === sent_cost ===
-Agent HaX: Ghost thinks you're theirs now. I'm meant to wonder too. I'm trying not to.
+Agent HaX: Ghost withdrew the studentship this morning. They had what they wanted, and it was never you.
+Agent HaX: I'm meant to wonder whose side you're on. I'm trying not to.
 -> pixel
 
 === opening_double ===
 Agent HaX: My phone did exactly what Ghost wanted, in a flat in Leeds we rent for the purpose.
-Agent HaX: Ghost's server thinks that's where I live. It'll go on thinking it while we watch who comes to look.
+Agent HaX: Someone came to look at four. We have their photograph. The field HQ never showed up on anyone's screen.
 Agent HaX: Thank you for the flag.
-Agent HaX: Congratulations. You now work for both of us. Only one of us knows.
+Agent HaX: Ghost withdrew the studentship this morning anyway. They don't keep anyone a handler sent. Today, take that as a compliment.
 -> pixel
 
 === opening_refused ===
@@ -81,9 +86,6 @@ Agent HaX: Your mail app does the same thing every day, unless you turn remote i
 === why_you ===
 Agent HaX: I bet Ghost never saw your face at St Catherine's. I lost.
 Agent HaX: I said I'd take either outcome. Ghost recognised you and wanted you anyway. That's worth knowing. I didn't enjoy learning it.
-{ ending == "double":
-    Agent HaX: Ghost will ask again, and next time it'll be something we can't fake.
-}
 { ending == "refused":
     Agent HaX: A clean no is worth something. It's also the last time they'll talk to you.
 }

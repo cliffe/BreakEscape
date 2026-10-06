@@ -1,6 +1,6 @@
 // ================================================
 // The Keyholder Trials: Jordan Pike (CryptoSecure stand, foyer)
-// Third-year campus ambassador, last year's Keyholder. Small-time ENTROPY asset.
+// Third-year campus ambassador, an earlier Keyholder. Small-time ENTROPY asset.
 // Hands over the leaflet (Trial I). Estuary English through word choice only.
 // ================================================
 
@@ -22,7 +22,7 @@ Jordan Pike: {&Any questions? I get a referral bonus, so ask away.|Anything else
 + [Who's CryptoSecure?]
     Jordan Pike: Data recovery. Companies get hit by ransomware, CryptoSecure gets them back up. Very busy, apparently.
     -> hub
-+ [What happened to last year's Keyholders?]
++ [What happened to the earlier Keyholders?]
     Jordan Pike: Two of us work for them now. Placements, then jobs. They ask some odd questions, though. I don't ask back.
     -> hub
 + {not asked_mailer} [What's the Mailer on the laptop?]

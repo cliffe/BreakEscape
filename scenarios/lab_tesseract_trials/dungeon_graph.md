@@ -427,78 +427,80 @@ flowchart TD
   rc_byte_wall_1{"The Byte Wall (1979 front panel)"}
   rc_display_plaque_2{"Display Plaque"}
   rc_powers_of_two_poster_3{"Poster: Powers of Two"}
-  rc_ascii_chart_4{"ASCII Chart Handout"}
-  rc_paper_tape_5{"Punched Paper Tape (1979)"}
-  rc_cryptosecure_lockbox_6[["CryptoSecure Lockbox"]]
-  rc_keyholder_device_7{"Keyholder Device"}
-  rc_trial_ii_card_8{"Trial II Card"}
-  rc_signup_laptop_9{"CryptoSecure Sign-up Laptop"}
-  rc_npc_agent_hax_10("Agent HaX")
-  rc_comms_discipline_11{"Comms Discipline"}
-  rc_npc_agent_hax_12("Agent HaX")
-  rc_fn04_base64_13{"Field Note 4: Base64"}
-  rc_fn05_layers_caesar_14{"Field Note 5: Layers and Caesar"}
-  rc_fn06_vigenere_15{"Field Note 6: Vigenère"}
-  rc_fn07_hax_16{"Field Note 7: Hashes"}
-  rc_fn08_aes_17{"Field Note 8: AES"}
-  rc_fn09_public_key_18{"Field Note 9: Public Keys"}
-  rc_fn10_hax_19{"Field Note 10: Signatures"}
-  rc_fn11_text_encodings_20{"Field Note 11: EBCDIC"}
-  rc_comms_discipline_hax_21{"Comms Discipline"}
-  rc_npc_keyholder_22("Keyholder")
-  rc_npc_agent_hax_23("Agent HaX")
-  rc_npc_jordan_pike_24("Jordan Pike")
-  rc_keyholder_leaflet_25{"Keyholder Leaflet"}
-  rc_tom_board_26{"Dr Shaw's Whiteboard"}
-  rc_lab_account_pc_27[["Your Lab Account"]]
-  rc_private_key_pem_28{"private_key.pem"}
-  rc_public_key_pem_29{"public_key.pem"}
-  rc_lab_readme_30{"README.txt"}
-  rc_keyholder_guest_terminal_31[["Keyholder Guest Terminal"]]
-  rc_trial_iv_hex_32{"trial_iv.hex"}
-  rc_npc_dr_tom_shaw_33("Dr Tom Shaw")
-  rc_lab_laptop_34{"Lab Laptop (CyberChef)"}
-  rc_fn01_bits_bytes_bases_35{"Field Note 1: Bits, Bytes, Bases, CyberChef"}
-  rc_fn02_ascii_encodings_36{"Field Note 2: Characters Are Numbers"}
-  rc_fn03_hex_37{"Field Note 3: Hex and Binary"}
-  rc_candidate_locker_4_38[["Candidate Locker 4"]]
-  rc_trial_iii_card_39{"Trial III Card"}
-  rc_common_noticeboard_40{"Common Room Noticeboard"}
-  rc_coffee_station_41{"Coffee Station"}
-  rc_cliffe_laptop_42{"Dr Schreuders' Laptop"}
-  rc_npc_megan_oyelaran_43("Megan Oyelaran")
-  rc_npc_dr_z_cliffe_schreuders_44("Dr Z. Cliffe Schreuders")
-  rc_trial_v_poster_45{"Trial V Poster"}
-  rc_pigeonholes_46[["Pigeonholes"]]
-  rc_pigeonhole_2_47{"Pigeonhole 2"}
-  rc_pigeonhole_3_48{"Pigeonhole 3"}
-  rc_pigeonhole_4_49{"Pigeonhole 4"}
-  rc_pigeonhole_5_50{"Pigeonhole 5"}
-  rc_cryptosecure_drop_box_51[["CryptoSecure Drop Box"]]
-  rc_brass_key_52{"Brass Key"}
-  rc_final_trial_card_53{"Final Trial Card"}
-  rc_drop_box_tag_54{"Tag on the Drop Box"}
-  rc_floor_directory_55{"Floor Directory"}
-  rc_returns_slip_56{"Returns Slip"}
-  rc_codebreakers_book_57{"The Codebreakers (returned)"}
-  rc_special_collections_safe_58[["Special Collections Safe"]]
-  rc_trial_vii_txt_59{"trial_vii.txt"}
-  rc_candidate_assessments_60{"Candidate Assessments"}
-  rc_job_tape_hex_61{"job_0412.hex"}
-  rc_ledger_whiteboard_62{"Dr Selvarajan's Ledger Whiteboard"}
-  rc_fn07_desk_copy_63{"Handout: Hashes"}
-  rc_npc_dr_sidhu_selvarajan_64("Dr Sidhu Selvarajan")
-  rc_fn07_hashing_65{"Field Note 7: Hashes"}
-  rc_fn10_signatures_66{"Field Note 10: Signatures"}
-  rc_relay_terminal_67[["Relay Terminal"]]
-  rc_report_b64_68{"report.b64"}
-  rc_report_sha256_69{"report.sha256"}
-  rc_report_sig_70{"report.sig"}
-  rc_keyholder_public_pem_71{"keyholder_public.pem"}
-  rc_hacktivity_scoreboard_72[["Hacktivity Scoreboard"]]
-  rc_submission_accepted_73{"submission_accepted.txt"}
-  rc_cliffe_build_screen_74{"Dr Schreuders' Build"}
-  rc_npc_dr_z_cliffe_schreuders_75("Dr Z. Cliffe Schreuders")
+  rc_heritage_display_table_4{"Heritage Display Table"}
+  rc_ascii_chart_5{"ASCII Chart Handout"}
+  rc_paper_tape_6{"Punched Paper Tape (1979)"}
+  rc_cryptosecure_lockbox_7[["CryptoSecure Lockbox"]]
+  rc_keyholder_device_8{"Keyholder Device"}
+  rc_trial_ii_card_9{"Trial II Card"}
+  rc_signup_laptop_10{"CryptoSecure Sign-up Laptop"}
+  rc_npc_agent_hax_11("Agent HaX")
+  rc_comms_discipline_12{"Comms Discipline"}
+  rc_npc_agent_hax_13("Agent HaX")
+  rc_fn04_base64_14{"Field Note 4: Base64"}
+  rc_fn05_layers_caesar_15{"Field Note 5: Layers and Caesar"}
+  rc_fn06_vigenere_16{"Field Note 6: Vigenère"}
+  rc_fn07_hax_17{"Field Note 7: Hashes"}
+  rc_fn08_aes_18{"Field Note 8: AES"}
+  rc_fn09_public_key_19{"Field Note 9: Public Keys"}
+  rc_fn10_hax_20{"Field Note 10: Signatures"}
+  rc_fn11_text_encodings_21{"Field Note 11: EBCDIC"}
+  rc_comms_discipline_hax_22{"Comms Discipline"}
+  rc_npc_keyholder_23("Keyholder")
+  rc_npc_agent_hax_24("Agent HaX")
+  rc_npc_jordan_pike_25("Jordan Pike")
+  rc_keyholder_leaflet_26{"Keyholder Leaflet"}
+  rc_tom_board_27{"Dr Shaw's Whiteboard"}
+  rc_lab_account_pc_28[["Your Lab Account"]]
+  rc_private_key_pem_29{"private_key.pem"}
+  rc_public_key_pem_30{"public_key.pem"}
+  rc_lab_readme_31{"README.txt"}
+  rc_keyholder_guest_terminal_32[["Keyholder Guest Terminal"]]
+  rc_trial_iv_hex_33{"trial_iv.hex"}
+  rc_npc_dr_tom_shaw_34("Dr Tom Shaw")
+  rc_lab_laptop_35{"Lab Laptop (CyberChef)"}
+  rc_fn01_bits_bytes_bases_36{"Field Note 1: Bits, Bytes, Bases, CyberChef"}
+  rc_fn02_ascii_encodings_37{"Field Note 2: Characters Are Numbers"}
+  rc_fn03_hex_38{"Field Note 3: Hex and Binary"}
+  rc_candidate_locker_4_39[["Candidate Locker 4"]]
+  rc_trial_iii_card_40{"Trial III Card"}
+  rc_common_noticeboard_41{"Common Room Noticeboard"}
+  rc_common_vending_machine_42{"Snack Machine"}
+  rc_coffee_station_43{"Coffee Station"}
+  rc_cliffe_laptop_44{"Dr Schreuders' Laptop"}
+  rc_npc_megan_oyelaran_45("Megan Oyelaran")
+  rc_npc_dr_z_cliffe_schreuders_46("Dr Z. Cliffe Schreuders")
+  rc_trial_v_poster_47{"Trial V Poster"}
+  rc_pigeonholes_48[["Pigeonholes"]]
+  rc_pigeonhole_2_49{"Pigeonhole 2"}
+  rc_pigeonhole_3_50{"Pigeonhole 3"}
+  rc_pigeonhole_4_51{"Pigeonhole 4"}
+  rc_pigeonhole_5_52{"Pigeonhole 5"}
+  rc_cryptosecure_drop_box_53[["CryptoSecure Drop Box"]]
+  rc_brass_key_54{"Brass Key"}
+  rc_final_trial_card_55{"Final Trial Card"}
+  rc_drop_box_tag_56{"Tag on the Drop Box"}
+  rc_floor_directory_57{"Floor Directory"}
+  rc_returns_slip_58{"Returns Slip"}
+  rc_codebreakers_book_59{"The Codebreakers (returned)"}
+  rc_special_collections_safe_60[["Special Collections Safe"]]
+  rc_trial_vii_txt_61{"trial_vii.txt"}
+  rc_candidate_assessments_62{"Candidate Assessments"}
+  rc_job_tape_hex_63{"job_0412.hex"}
+  rc_ledger_whiteboard_64{"Dr Selvarajan's Ledger Whiteboard"}
+  rc_fn07_desk_copy_65{"Handout: Hashes"}
+  rc_npc_dr_sidhu_selvarajan_66("Dr Sidhu Selvarajan")
+  rc_fn07_hashing_67{"Field Note 7: Hashes"}
+  rc_fn10_signatures_68{"Field Note 10: Signatures"}
+  rc_relay_terminal_69[["Relay Terminal"]]
+  rc_report_b64_70{"report.b64"}
+  rc_report_sha256_71{"report.sha256"}
+  rc_report_sig_72{"report.sig"}
+  rc_keyholder_public_pem_73{"keyholder_public.pem"}
+  rc_hacktivity_scoreboard_74[["Hacktivity Scoreboard"]]
+  rc_submission_accepted_75{"submission_accepted.txt"}
+  rc_cliffe_build_screen_76{"Dr Schreuders' Build"}
+  rc_npc_dr_z_cliffe_schreuders_77("Dr Z. Cliffe Schreuders")
 
   foyer --> corridor
   foyer --> teaching_lab
@@ -509,83 +511,85 @@ flowchart TD
   foyer --> rc_byte_wall_1
   foyer --> rc_display_plaque_2
   foyer --> rc_powers_of_two_poster_3
-  foyer --> rc_ascii_chart_4
-  foyer --> rc_paper_tape_5
-  foyer --> rc_cryptosecure_lockbox_6
-  rc_cryptosecure_lockbox_6 --> rc_keyholder_device_7
-  rc_cryptosecure_lockbox_6 --> rc_trial_ii_card_8
-  foyer --> rc_signup_laptop_9
-  foyer --> rc_npc_agent_hax_10
-  rc_npc_agent_hax_10 --> rc_comms_discipline_11
-  foyer --> rc_npc_agent_hax_12
-  rc_npc_agent_hax_12 --> rc_fn04_base64_13
-  rc_npc_agent_hax_12 --> rc_fn05_layers_caesar_14
-  rc_npc_agent_hax_12 --> rc_fn06_vigenere_15
-  rc_npc_agent_hax_12 --> rc_fn07_hax_16
-  rc_npc_agent_hax_12 --> rc_fn08_aes_17
-  rc_npc_agent_hax_12 --> rc_fn09_public_key_18
-  rc_npc_agent_hax_12 --> rc_fn10_hax_19
-  rc_npc_agent_hax_12 --> rc_fn11_text_encodings_20
-  rc_npc_agent_hax_12 --> rc_comms_discipline_hax_21
-  foyer --> rc_npc_keyholder_22
-  foyer --> rc_npc_agent_hax_23
-  foyer --> rc_npc_jordan_pike_24
-  rc_npc_jordan_pike_24 --> rc_keyholder_leaflet_25
-  teaching_lab --> rc_tom_board_26
-  teaching_lab --> rc_lab_account_pc_27
-  rc_lab_account_pc_27 --> rc_private_key_pem_28
-  rc_lab_account_pc_27 --> rc_public_key_pem_29
-  rc_lab_account_pc_27 --> rc_lab_readme_30
-  teaching_lab --> rc_keyholder_guest_terminal_31
-  rc_keyholder_guest_terminal_31 --> rc_trial_iv_hex_32
-  teaching_lab --> rc_npc_dr_tom_shaw_33
-  rc_npc_dr_tom_shaw_33 --> rc_lab_laptop_34
-  rc_npc_dr_tom_shaw_33 --> rc_fn01_bits_bytes_bases_35
-  rc_npc_dr_tom_shaw_33 --> rc_fn02_ascii_encodings_36
-  rc_npc_dr_tom_shaw_33 --> rc_fn03_hex_37
-  common_room --> rc_candidate_locker_4_38
-  rc_candidate_locker_4_38 --> rc_trial_iii_card_39
-  common_room --> rc_common_noticeboard_40
-  common_room --> rc_coffee_station_41
-  common_room --> rc_cliffe_laptop_42
-  common_room --> rc_npc_megan_oyelaran_43
-  common_room --> rc_npc_dr_z_cliffe_schreuders_44
-  corridor --> rc_trial_v_poster_45
-  corridor --> rc_pigeonholes_46
-  rc_pigeonholes_46 --> rc_pigeonhole_2_47
-  rc_pigeonholes_46 --> rc_pigeonhole_3_48
-  rc_pigeonholes_46 --> rc_pigeonhole_4_49
-  rc_pigeonholes_46 --> rc_pigeonhole_5_50
-  corridor --> rc_cryptosecure_drop_box_51
-  rc_cryptosecure_drop_box_51 --> rc_brass_key_52
-  rc_cryptosecure_drop_box_51 --> rc_final_trial_card_53
-  corridor --> rc_drop_box_tag_54
-  corridor --> rc_floor_directory_55
-  library --> rc_returns_slip_56
-  library --> rc_codebreakers_book_57
-  library --> rc_special_collections_safe_58
-  rc_special_collections_safe_58 --> rc_trial_vii_txt_59
-  rc_special_collections_safe_58 --> rc_candidate_assessments_60
-  rc_special_collections_safe_58 --> rc_job_tape_hex_61
-  sidhu_office --> rc_ledger_whiteboard_62
-  sidhu_office --> rc_fn07_desk_copy_63
-  sidhu_office --> rc_npc_dr_sidhu_selvarajan_64
-  rc_npc_dr_sidhu_selvarajan_64 --> rc_fn07_hashing_65
-  rc_npc_dr_sidhu_selvarajan_64 --> rc_fn10_signatures_66
-  workshop --> rc_relay_terminal_67
-  rc_relay_terminal_67 --> rc_report_b64_68
-  rc_relay_terminal_67 --> rc_report_sha256_69
-  rc_relay_terminal_67 --> rc_report_sig_70
-  rc_relay_terminal_67 --> rc_keyholder_public_pem_71
-  workshop --> rc_hacktivity_scoreboard_72
-  rc_hacktivity_scoreboard_72 --> rc_submission_accepted_73
-  workshop --> rc_cliffe_build_screen_74
-  workshop --> rc_npc_dr_z_cliffe_schreuders_75
+  foyer --> rc_heritage_display_table_4
+  foyer --> rc_ascii_chart_5
+  foyer --> rc_paper_tape_6
+  foyer --> rc_cryptosecure_lockbox_7
+  rc_cryptosecure_lockbox_7 --> rc_keyholder_device_8
+  rc_cryptosecure_lockbox_7 --> rc_trial_ii_card_9
+  foyer --> rc_signup_laptop_10
+  foyer --> rc_npc_agent_hax_11
+  rc_npc_agent_hax_11 --> rc_comms_discipline_12
+  foyer --> rc_npc_agent_hax_13
+  rc_npc_agent_hax_13 --> rc_fn04_base64_14
+  rc_npc_agent_hax_13 --> rc_fn05_layers_caesar_15
+  rc_npc_agent_hax_13 --> rc_fn06_vigenere_16
+  rc_npc_agent_hax_13 --> rc_fn07_hax_17
+  rc_npc_agent_hax_13 --> rc_fn08_aes_18
+  rc_npc_agent_hax_13 --> rc_fn09_public_key_19
+  rc_npc_agent_hax_13 --> rc_fn10_hax_20
+  rc_npc_agent_hax_13 --> rc_fn11_text_encodings_21
+  rc_npc_agent_hax_13 --> rc_comms_discipline_hax_22
+  foyer --> rc_npc_keyholder_23
+  foyer --> rc_npc_agent_hax_24
+  foyer --> rc_npc_jordan_pike_25
+  rc_npc_jordan_pike_25 --> rc_keyholder_leaflet_26
+  teaching_lab --> rc_tom_board_27
+  teaching_lab --> rc_lab_account_pc_28
+  rc_lab_account_pc_28 --> rc_private_key_pem_29
+  rc_lab_account_pc_28 --> rc_public_key_pem_30
+  rc_lab_account_pc_28 --> rc_lab_readme_31
+  teaching_lab --> rc_keyholder_guest_terminal_32
+  rc_keyholder_guest_terminal_32 --> rc_trial_iv_hex_33
+  teaching_lab --> rc_npc_dr_tom_shaw_34
+  rc_npc_dr_tom_shaw_34 --> rc_lab_laptop_35
+  rc_npc_dr_tom_shaw_34 --> rc_fn01_bits_bytes_bases_36
+  rc_npc_dr_tom_shaw_34 --> rc_fn02_ascii_encodings_37
+  rc_npc_dr_tom_shaw_34 --> rc_fn03_hex_38
+  common_room --> rc_candidate_locker_4_39
+  rc_candidate_locker_4_39 --> rc_trial_iii_card_40
+  common_room --> rc_common_noticeboard_41
+  common_room --> rc_common_vending_machine_42
+  common_room --> rc_coffee_station_43
+  common_room --> rc_cliffe_laptop_44
+  common_room --> rc_npc_megan_oyelaran_45
+  common_room --> rc_npc_dr_z_cliffe_schreuders_46
+  corridor --> rc_trial_v_poster_47
+  corridor --> rc_pigeonholes_48
+  rc_pigeonholes_48 --> rc_pigeonhole_2_49
+  rc_pigeonholes_48 --> rc_pigeonhole_3_50
+  rc_pigeonholes_48 --> rc_pigeonhole_4_51
+  rc_pigeonholes_48 --> rc_pigeonhole_5_52
+  corridor --> rc_cryptosecure_drop_box_53
+  rc_cryptosecure_drop_box_53 --> rc_brass_key_54
+  rc_cryptosecure_drop_box_53 --> rc_final_trial_card_55
+  corridor --> rc_drop_box_tag_56
+  corridor --> rc_floor_directory_57
+  library --> rc_returns_slip_58
+  library --> rc_codebreakers_book_59
+  library --> rc_special_collections_safe_60
+  rc_special_collections_safe_60 --> rc_trial_vii_txt_61
+  rc_special_collections_safe_60 --> rc_candidate_assessments_62
+  rc_special_collections_safe_60 --> rc_job_tape_hex_63
+  sidhu_office --> rc_ledger_whiteboard_64
+  sidhu_office --> rc_fn07_desk_copy_65
+  sidhu_office --> rc_npc_dr_sidhu_selvarajan_66
+  rc_npc_dr_sidhu_selvarajan_66 --> rc_fn07_hashing_67
+  rc_npc_dr_sidhu_selvarajan_66 --> rc_fn10_signatures_68
+  workshop --> rc_relay_terminal_69
+  rc_relay_terminal_69 --> rc_report_b64_70
+  rc_relay_terminal_69 --> rc_report_sha256_71
+  rc_relay_terminal_69 --> rc_report_sig_72
+  rc_relay_terminal_69 --> rc_keyholder_public_pem_73
+  workshop --> rc_hacktivity_scoreboard_74
+  rc_hacktivity_scoreboard_74 --> rc_submission_accepted_75
+  workshop --> rc_cliffe_build_screen_76
+  workshop --> rc_npc_dr_z_cliffe_schreuders_77
 
   class foyer,teaching_lab,common_room,sidhu_office room
   class corridor,library,workshop lock
-  class rc_byte_wall_1,rc_display_plaque_2,rc_powers_of_two_poster_3,rc_ascii_chart_4,rc_paper_tape_5,rc_keyholder_device_7,rc_trial_ii_card_8,rc_signup_laptop_9,rc_comms_discipline_11,rc_fn04_base64_13,rc_fn05_layers_caesar_14,rc_fn06_vigenere_15,rc_fn07_hax_16,rc_fn08_aes_17,rc_fn09_public_key_18,rc_fn10_hax_19,rc_fn11_text_encodings_20,rc_comms_discipline_hax_21,rc_keyholder_leaflet_25,rc_tom_board_26,rc_private_key_pem_28,rc_public_key_pem_29,rc_lab_readme_30,rc_trial_iv_hex_32,rc_lab_laptop_34,rc_fn01_bits_bytes_bases_35,rc_fn02_ascii_encodings_36,rc_fn03_hex_37,rc_trial_iii_card_39,rc_common_noticeboard_40,rc_coffee_station_41,rc_cliffe_laptop_42,rc_trial_v_poster_45,rc_pigeonhole_2_47,rc_pigeonhole_3_48,rc_pigeonhole_4_49,rc_pigeonhole_5_50,rc_brass_key_52,rc_final_trial_card_53,rc_drop_box_tag_54,rc_floor_directory_55,rc_returns_slip_56,rc_codebreakers_book_57,rc_trial_vii_txt_59,rc_candidate_assessments_60,rc_job_tape_hex_61,rc_ledger_whiteboard_62,rc_fn07_desk_copy_63,rc_fn07_hashing_65,rc_fn10_signatures_66,rc_report_b64_68,rc_report_sha256_69,rc_report_sig_70,rc_keyholder_public_pem_71,rc_submission_accepted_73,rc_cliffe_build_screen_74 item
-  class rc_cryptosecure_lockbox_6,rc_lab_account_pc_27,rc_keyholder_guest_terminal_31,rc_candidate_locker_4_38,rc_pigeonholes_46,rc_cryptosecure_drop_box_51,rc_special_collections_safe_58,rc_relay_terminal_67,rc_hacktivity_scoreboard_72 container
-  class rc_npc_agent_hax_10,rc_npc_agent_hax_12,rc_npc_keyholder_22,rc_npc_agent_hax_23,rc_npc_jordan_pike_24,rc_npc_dr_tom_shaw_33,rc_npc_megan_oyelaran_43,rc_npc_dr_z_cliffe_schreuders_44,rc_npc_dr_sidhu_selvarajan_64,rc_npc_dr_z_cliffe_schreuders_75 npc
+  class rc_byte_wall_1,rc_display_plaque_2,rc_powers_of_two_poster_3,rc_heritage_display_table_4,rc_ascii_chart_5,rc_paper_tape_6,rc_keyholder_device_8,rc_trial_ii_card_9,rc_signup_laptop_10,rc_comms_discipline_12,rc_fn04_base64_14,rc_fn05_layers_caesar_15,rc_fn06_vigenere_16,rc_fn07_hax_17,rc_fn08_aes_18,rc_fn09_public_key_19,rc_fn10_hax_20,rc_fn11_text_encodings_21,rc_comms_discipline_hax_22,rc_keyholder_leaflet_26,rc_tom_board_27,rc_private_key_pem_29,rc_public_key_pem_30,rc_lab_readme_31,rc_trial_iv_hex_33,rc_lab_laptop_35,rc_fn01_bits_bytes_bases_36,rc_fn02_ascii_encodings_37,rc_fn03_hex_38,rc_trial_iii_card_40,rc_common_noticeboard_41,rc_common_vending_machine_42,rc_coffee_station_43,rc_cliffe_laptop_44,rc_trial_v_poster_47,rc_pigeonhole_2_49,rc_pigeonhole_3_50,rc_pigeonhole_4_51,rc_pigeonhole_5_52,rc_brass_key_54,rc_final_trial_card_55,rc_drop_box_tag_56,rc_floor_directory_57,rc_returns_slip_58,rc_codebreakers_book_59,rc_trial_vii_txt_61,rc_candidate_assessments_62,rc_job_tape_hex_63,rc_ledger_whiteboard_64,rc_fn07_desk_copy_65,rc_fn07_hashing_67,rc_fn10_signatures_68,rc_report_b64_70,rc_report_sha256_71,rc_report_sig_72,rc_keyholder_public_pem_73,rc_submission_accepted_75,rc_cliffe_build_screen_76 item
+  class rc_cryptosecure_lockbox_7,rc_lab_account_pc_28,rc_keyholder_guest_terminal_32,rc_candidate_locker_4_39,rc_pigeonholes_48,rc_cryptosecure_drop_box_53,rc_special_collections_safe_60,rc_relay_terminal_69,rc_hacktivity_scoreboard_74 container
+  class rc_npc_agent_hax_11,rc_npc_agent_hax_13,rc_npc_keyholder_23,rc_npc_agent_hax_24,rc_npc_jordan_pike_25,rc_npc_dr_tom_shaw_34,rc_npc_megan_oyelaran_45,rc_npc_dr_z_cliffe_schreuders_46,rc_npc_dr_sidhu_selvarajan_66,rc_npc_dr_z_cliffe_schreuders_77 npc
   class node_start start
 ```

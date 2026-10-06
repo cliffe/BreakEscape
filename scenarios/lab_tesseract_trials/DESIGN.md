@@ -53,7 +53,7 @@ Accents come through word choice and rhythm only, never phonetic spelling. Every
 | **Dr Z. Cliffe Schreuders** | `cliffe_schreuders` (common room, early) and `cliffe_workshop` (workshop, end), one ink `ink/npc_cliffe.ink` with two entry knots | Leader / story NPC, not a helper. Building something in his workshop (section 9). **His beat:** he's the one who points at the out-of-band channel, without saying why he knows it exists. | Australian through word choice: "reckon", "mate" (sparingly), "no worries", "heaps", understatement, sentences that stop a beat early. Laconic and amused. Answers a question with a better question. Voice Orus, "consistent Australian accent throughout, relaxed, dry, quick". | That the player is an agent. Never says how. Possibly more. | To finish the build. Possibly to watch what the player does with the offer. Left open. |
 | **Dr Tom Shaw** | `tom_shaw`, teaching lab, `ink/npc_tom.ink` | Helper. Runs the first-year induction. Gives the CyberChef lab laptop and the induction handouts (FN1-FN3), sets up the player's lab key pair, teaches bases on his chalkboard. **His beats:** the pop-out tab and notepad-pencil lines; the Magic line ("It'll do the first few for you. It'll do nowt once there's a key. That's the bit they're paying for."); the tracking-pixel line about CryptoSecure's mailer; and his reaction to the Keyholder terminal in his own lab ("Someone's put a terminal in my lab I never ordered. Half a mind to break into it myself. Go on then, you first."). | Huddersfield through word choice: "right then", "owt"/"nowt", "it's not rocket science, it's base two", "go on then". Warm and practical, keen on breaking things to see how they work. Voice Fenrir, "consistent West Yorkshire (Huddersfield) accent throughout, warm, encouraging, quick". | How to use CyberChef. That CryptoSecure's stand turned up this year without going through the department, and that nobody ordered the guest terminal in his lab; he says both. How tracking pixels work. | Students who learn by doing. On the player's side, and mildly, practically suspicious of CryptoSecure. |
 | **Dr Sidhu Selvarajan** | `sidhu_selvarajan`, his office off the corridor, `ink/npc_sidhu.ink` | Helper. Hashing, integrity, signatures. His whiteboard is a toy hash-chain ledger from his blockchain lecture, and holds the Vigenère key. Hands over FN7 and FN10, and with FN10 plants his scene: "If anyone hands you something signed, bring it to me. I like to watch a signature check out." **His beat:** when the player brings him the report after the relay terminal opens (also pointed at by `report.sig`'s observations): "It verifies. That tells you who wrote it, and that nobody has changed it. It does not tell you whether you should send it." | Indian English through rhythm and register, respectful: precise, courteous, an editor's ear ("Let us be exact about this."), small concrete examples. The stock markers "see," as an opener and "isn't it?" as a tag are **not** used unless the user approves them in the voice sample (Q11). Voice Enceladus, "consistent Indian English accent throughout, calm, precise, warm". | Hashes, chains, signatures. Has noticed CryptoSecure's leaflet asks students to "verify everything", and approves. | That the player checks what they're given. Firmly on the player's side. |
-| **Jordan Pike** | `jordan_pike`, foyer stand, `ink/npc_jordan.ink` | The only ENTROPY presence in person, and a small one: CryptoSecure campus ambassador, third-year, last year's Keyholder. Hands out the leaflet. | Salesy student rep: "honestly", "no pressure", "it's literally free money", talks fast, laughs at his own lines. Voice Puck, "consistent Estuary English accent throughout, upbeat, fast". | That CryptoSecure pays well and asks odd questions. Suspects more and chooses not to look. | His referral bonus. |
+| **Jordan Pike** | `jordan_pike`, foyer stand, `ink/npc_jordan.ink` | The only ENTROPY presence in person, and a small one: CryptoSecure campus ambassador, third-year, an earlier Keyholder. Hands out the leaflet. | Salesy student rep: "honestly", "no pressure", "it's literally free money", talks fast, laughs at his own lines. Voice Puck, "consistent Estuary English accent throughout, upbeat, fast". | That CryptoSecure pays well and asks odd questions. Suspects more and chooses not to look. | His referral bonus. |
 | **Megan Oyelaran** | `megan_oyelaran`, common room, `ink/npc_megan.ink` | Fellow first-year chasing the studentship, and the mid-mission moral choice (section 8). Teaches by example: she's stuck on Trial II because she typed the run-together digits straight in. | Bright, skint, competitive, Mancunian through word choice ("our mam", "proper", "dead good"). Voice Leda, "consistent Manchester accent throughout, quick, wry". | Her debts. Nothing about ENTROPY. | The money. Her mum's care fees. |
 | **Narrator** | top-level `narrator` | Stage directions in cutscenes. | Voice Algenib, as m01. | | |
 
@@ -507,7 +507,7 @@ The briefing **can be closed** and never replays: timed conversations can't pass
 
 **Beats** (`ink/opening_briefing.ink`, about two minutes):
 1. **The note first.** `#give_item:notes:comms_discipline` on the opening line. HaX: "Before anything else, read the note I've just sent you. If your phone's ever compromised, that's how you reach me." The note says: *"If you think your handset is compromised, don't message me. Submit what I most need to know as a flag on any Hacktivity terminal. It reaches me and nobody else. Flags are lower case, exactly as you find them: usually a word, a dash and some digits. The only Hacktivity terminal in that building is in Dr Schreuders' workshop."* `[How does it reach you?]` "That's classified too."
-2. **Cover.** "Freshers' week at Miskatonic. You're a first-year again." The studentship, CryptoSecure as Ransomware Inc.'s front, two of last year's Keyholders now on its payroll.
+2. **Cover.** "Freshers' week at Miskatonic. You're a first-year again." The studentship, CryptoSecure as Ransomware Inc.'s front, two earlier Keyholders now on its payroll (D8: no "last year").
 3. **Ghost, for anyone who skipped m02.** Two lines: Ransomware Inc.'s leader; St Catherine's; no name, no face, "they".
 4. **"Why me?"** `[Ghost knows me. From St Catherine's.]` HaX (R2B-m1, the right way round): "Ghost never saw your face. You saw theirs, near enough: a hood on a screen. And if they do know you and still want you, that tells us more than a clean recruit ever could. I'll take either." The first half is HaX's misjudgement; Ghost's camera line on the call shows it. The second half is the gamble the debrief closes.
 5. **Cliffe.** "Dr Z. Cliffe Schreuders. Builds Hacktivity. He'll know what you are within a minute." `[Is he one of ours?]` "That's classified."
@@ -525,7 +525,7 @@ The Keyholder device is in the L1 lockbox. Taking it opens Ghost's intro (phone-
 | `objective_task_completed:open_special_collections` | "Special Collections. The key to the next one is somewhere a careful man keeps his accounts." |
 | `global_variable_changed:megan_file_read` | "You read the other candidates' files. So did I. Candidate 7 is the interesting one." |
 | `global_variable_changed:megan_choice`, condition `value === 'protected'` | "Your handler's about to get generous with bursaries." (N-m9: intent, since no bursary exists yet) |
-| `objective_task_completed:open_drop_box` | "Hybrid encryption. Nine candidates got this far. It's how forty of our invoices opened last year." (R2B-m11) |
+| `objective_task_completed:open_drop_box` | "Hybrid encryption. Nine candidates got this far. It's how we locked forty companies. Hospitals pay fastest." (R2B-m11; DIALOGUE_REVIEW; S2) |
 
 **HaX suspects.** On `objective_task_completed:open_locker`, after Ghost's Trial II line: "That phrasing. I've read this voice before. Keep going, and keep your eyes open." No name, so the call still lands.
 
@@ -785,9 +785,29 @@ He's present at the climax in his own room, says nothing during the call, and hi
 
 ### Sequel hook (lab-local; A-m18)
 
-- **Double:** a week later, a message on the Keyholder device: "Term's started. So have you." SAFETYNET is feeding Ransomware Inc. a fake handler location, and 0x00 is the only line in. This stays inside this lab: it isn't campaign canon, and it doesn't touch m08's mole plot, unless the user decides otherwise.
+- **Double:** ~~a week later, a message on the Keyholder device: "Term's started. So have you."~~ Removed in the alignment round (D7): there is no double-agent hook. The double route's win is that SAFETYNET photographs whoever comes to look at the decoy flat.
 - **All endings:** the credits' last line before "Ghost remains at large." is Cliffe's screen: "On the map, a room you haven't been in has a light on." A small open question, committing to nothing.
 - **Sidhu seed** (a paper he once reviewed, signed "Keyholder"): cut by default (Q4), because it ties a real academic to Ghost's past.
+
+### Canon status (K1; user decisions D7-D9, 2026-10-06)
+
+For campaign writers. This lab is canon, with these limits:
+
+1. **ENTROPY never takes 0x00 on.** On every route the Keyholder Studentship is never awarded. On refused, the player turns it down. On blown, Ghost hears the warning and withdraws it. On sent and double, Ghost withdraws it once the report is opened: "anyone a handler can send, a handler can recall". 0x00 is never an ENTROPY agent, double or otherwise, so m08's mole hunt needs no change.
+2. **What each route leaves behind.**
+   - Sent: the beacon burns a SAFETYNET site, "the field HQ" (never named; background `hq2`). The team gets out before midnight and nobody is hurt, but the site, its kit and its cover are lost. HaX debriefs from a fallback site (`hq3`).
+   - Double: the field HQ stays dark. SAFETYNET photographs the person who comes to look at the decoy flat in Leeds.
+   - Refused and blown: no site is lost.
+   - Megan, Jordan and the stand vary by route, as in the debrief and credits.
+   Later missions may refer to "a field site lost to a ransomware beacon" only if they don't depend on which ending the player chose.
+3. **Dating.** Freshers' week, undated. Nothing says how long it has been since St Catherine's, and no line uses "last year" or any other dated claim (D8).
+4. **St Catherine's.** HaX says it was a hospital and not everyone on the ward lived (consistent with every m02 outcome). Ghost's video call recognises 0x00 from that night.
+5. **Rules for later edits.**
+   - No line claims a campaign event after m02.
+   - Ghost stays at large.
+   - Nothing in the fiction is called Tesseract or the Architect.
+   - hq2 and hq3 are used elsewhere (m07, m08) without a location name, so nothing here may name them.
+6. **Recruitment.** The canon recruiting cell is the Insider Threat Initiative (`story_design/universe_bible/10_reference/quick_reference.md:33`). Ghost recruiting students here is a user decision (DECISIONS_LOG, 2026-10-06), seeded in m02 ("I hope it's you leading it"). It is not a conflict.
 
 ## 10. Art needed
 
@@ -1252,3 +1272,47 @@ Decisions in `DECISIONS_LOG.md` (2026-10-06, user and orchestrator) were applied
 - The open safe shows the neutral text above its contents (`fix2-03`). trial_vii.txt shows the new observations. Its Copy button, with the clipboard captured in the page, copied exactly the ciphertext with no header (`fix2-04`).
 - The ledger whiteboard's examine text in Sidhu's office showed the new one-sentence-per-block form with block 4's word quoted (`fix2-05`).
 - The copied text pasted into the in-game CyberChef with Vigenère Decode and that word gave "…and the pigeonholes open with sorting-24" (`fix2-06`). Typing `sorting-24` opened the pigeonholes, which show the neutral text (`fix2-07`).
+
+### Alignment round (ALIGNMENT_PLAN.md, with user decisions D7-D9)
+
+D7-D9 (DECISIONS_LOG, 2026-10-06) override the plan where they differ. The canon note is §9 "Canon status".
+
+| Id | Pri | Change or rejection |
+|---|---|---|
+| K1 | must | §9 "Canon status": ENTROPY never takes 0x00 on; the field HQ burn on sent; undated; St Catherine's; edit rules; recruiting cell note. The "Sequel hook" double entry is struck through. |
+| X1 | must | Under D7 there is no double-agent hook, so "Hand in the device" is right on every route. The debrief keeps its `ghost_greeted` switch (hand in / "replacing your phone anyway"), and the double "A week later, on the Keyholder device…" credit is gone. Nothing now says Ghost uses the device later. kstates D-matrix: 14 cases (4 endings × device taken or not × token sent or not; sent also × late warning). |
+| D7 | user | Ghost withdraws the studentship on every route. On sent and double, a Ghost text 14 s after the decision: "Opened. Thank you, Candidate. That was the last Trial. The studentship is withdrawn: anyone a handler can send, a handler can recall." Ghost doesn't trust anyone a handler sent, so the reason holds whether or not Ghost knows about the decoy. Blown: "I did say it listens. The studentship is withdrawn." Refused: the player said no. Debrief, sent: "Ghost withdrew the studentship this morning. They had what they wanted, and it was never you." Debrief, double: "Ghost withdrew the studentship this morning anyway. They don't keep anyone a handler sent. Today, take that as a compliment." Removed: "Congratulations. You now work for both of us…", "Ghost thinks you're theirs now…", "Ghost will ask again…". Credits: "KEYHOLDER: RECRUITED" became "KEYHOLDER: OFFER WITHDRAWN"; a new line on every route, "THE KEYHOLDER STUDENTSHIP: Never awarded." |
+| D8 | user | "last year's Keyholders" became "earlier Keyholders" (briefing; Jordan's choice; Jordan's header comment), and S2 drops "last year". No dated claim remains in the ink or the ERB. |
+| D9 | user (supersedes D1) | The briefing background is now `hq2` (the field HQ; m01 uses hq1). The debrief mapping is split: `ending !== 'sent'` uses `hq2`, `ending === 'sent'` uses `hq3`, the fallback site (pattern from m07/m08). Sent opening: "Sit down, Agent. Anywhere. This is the fallback site, and nothing in it is ours yet." / "I opened your report at the field HQ…" / "We were all out before midnight. Nobody's hurt." / "At four, someone went through the field HQ. The kit we couldn't carry, the cover it took years to build. All of it. We won't be going back." Credits: "THE FIELD HQ: Burned at four. Kit and cover lost. Nobody hurt." and "AGENT HaX: Working from the fallback site." replace "Location reached Ghost's server. Relocated." Double (D1's double half, kept): "Someone came to look at four. We have their photograph. The field HQ never showed up on anyone's screen."; credit "DECOY FLAT, LEEDS: One visitor at four. Photographed." The second debrief mapping adds a validator warning (no `onceOnly`), deliberate for the same reason as the first (N-m10). |
+| S1 | should | Both "St Catherine's was theirs." lines in the briefing add "A hospital. Not everyone on the ward lived." |
+| S2 | should | Ghost's drop-box text: "Hybrid encryption. Nine candidates got this far. It's how we locked forty companies. Hospitals pay fastest." |
+| H1 | should | HaX hub, once, before the offer: `[The black box from the lockbox talks. It calls itself the Keyholder.]` gets "Then it's theirs. Keep it on you. A candidate who leaves it behind isn't a candidate." / "Whoever's on the other end wanted you to find it. That tells me they're patient." It doesn't say the device listens, doesn't name Ghost and doesn't mention the scoreboard. `ghost_greeted` is now declared in HaX's ink. kstates H10, H12. |
+| H2 | should | HaX hub, once, after the candidate files: `[They keep files on the candidates. Who can't afford to say no.]` gets "That's how they pick everything. At St Catherine's it was a hospital that couldn't afford downtime." / "One of those files is probably you. I can't tell which, and that's the point." Placed above the Megan choice. kstates H11. |
+| M1 | could, done | Megan, protected: "Student Services left me a voicemail. About my fees. Can't face it yet." |
+| U1, U2, U3 | could, done | `relay_opened` pins "Cold Bond Circuit"; the credits pin "Hacktivity Neon"; two new music events return to `noir` on `decision_made` with `ending` refused or blown. |
+| L1 | should | `labsheet.md`: "nothing to submit on the Hacktivity website: everything happens inside the game"; the 60-minute class advice (stop when the pigeonholes open, about 45 minutes in, and resume); the public key "for encryption it only locks (it also checks signatures, below)", matching FN9. Front matter and `==action:==` / `> Question:` formats are untouched. Operation names were cross-checked against FN1-FN11 and match. The three known source-sheet errors ("a-Z", "256", "as with symmetric keys") don't appear. |
+| V1 | must | Quotes updated in TESTING_WALKTHROUGH (endings table, credits, backgrounds), SOLUTION_GUIDE (endings table, tutor rules) and DESIGN (§2 Jordan, §8 cover and drop-box text). |
+| H3 | could, not done | It needs a new global shared by both phones, for one optional line. Left for the dialogue review together with C1/C2. |
+| C1, C2 | could | Waiting for the scheduled npc-dialog-review, as instructed. |
+| D1 | – | Superseded by D9. Its double half (the photograph) is used. |
+
+**Checks** (`build_evidence/align/`):
+- Ink compile 9/9.
+- tagdiff before: STRUCTURE UNCHANGED. After: 17 structural differences, all from H1, H2 (the new HaX VARs, knots and choices), M1 (Megan's protected greeting) and the removed double "will ask again" condition.
+- Validator: 0 errors, 11 warnings. One is new and deliberate (the second debrief mapping has no `onceOnly`). Three came from the room-dressing pass (`tableItems` and two foyer spacing warnings).
+- dialoguelint: none.
+- inkcheck 11/11, plus the briefing with `--no-memo`.
+- loopcheck 40/40 (adds the HaX topics, Megan protected, and four debrief states).
+- reopencheck: 0 problems.
+- kstates 48/48: adds H10-H12 and a 14-case debrief matrix (4 endings × device taken or not × token sent or not, sent also with a late warning). It checks the burn and fallback lines, the withdrawal, the device line, and that no recruitment or double-agent line remains.
+- Door alignment 6/6.
+- Rendered verifiers on seeds 7, 101, 555, 2026 and 9001: ALL PASS.
+
+**Browser** (:3001, games 1593-1596, one per ending; lock answers typed from the database, so exercised, not earned):
+- Sent (1593): debrief background `hq3`; the field HQ and four o'clock lines; the withdrawal. Ghost's device thread ends "Opened. Thank you, Candidate…". Credits: OFFER WITHDRAWN, FIELD HQ burned, fallback site, REPORT: Sent unread, Never awarded. My driver stalled at the "Did you read it?" question, so I finished this debrief by hand.
+- Double (1594): background `hq2`; the photograph and the withdrawal; the same Ghost text. Credits: OFFER WITHDRAWN, DECOY FLAT, Never awarded, and no "A week later" line.
+- Refused (1595): background `hq2`; "A clean no…". Credits: DECLINED, Never awarded.
+- Blown (1596): background `hq2`; "Next time, the scoreboard…"; Ghost's "I did say it listens. The studentship is withdrawn." Credits: DECLINED, Never awarded.
+- All four games ended `completed`.
+- Under load the setup closed the Keyholder chat before it opened, so `ghost_greeted` was false in all four. The browser therefore shows the never-taken device line ("replacing your phone anyway"); the device-taken line is covered by kstates.
+- Each debrief's first one or two lines went by before the capture began; kstates checks them.

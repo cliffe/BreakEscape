@@ -25,6 +25,8 @@ Megan Oyelaran: Megan. First year. Our mam thinks I'm doing something sensible.
 {
 - megan_choice == "warned":
     Megan Oyelaran: Binned the leaflet. Still skint, mind. Worth it.
+- megan_choice == "protected":
+    Megan Oyelaran: Student Services left me a voicemail. About my fees. Can't face it yet.
 - corridor_open:
     Megan Oyelaran: Still on Trial III. Don't tell me how. I want to get it myself.
 - locker_open:
