@@ -66,11 +66,11 @@ Shapes stay the same in every game, and they help you check a student's screen:
  |           |          |  drop box [pw, L8b] + tag  |          |                |
  +-----------+          +-------------+--------------+          +----------------+
                                       | south
- +-----------+   west   +-------------+--------------+   east   +----------------+
- | TEACHING  |<---------+     FOYER  (START)         +--------->| COMMON ROOM    |
- | LAB       |  (open)  |  Jordan Pike + CryptoSecure|  (open)  | Megan, Cliffe  |
- | lab PC    |          |   stand and lockbox (L1)   |          | Locker 4 (L2)  |
- | guest     |          |  Byte Wall, plaque, ASCII  |          | noticeboard    |
+ +-----------+   west   +-------------+--------------+   east   +----------------+  east  +----------------+
+ | TEACHING  |<---------+     FOYER  (START)         +--------->| COMMON ROOM    +------->| STAFF OFFICE   |
+ | LAB       |  (open)  |  Jordan Pike + CryptoSecure|  (open)  | Megan, Cliffe  | (open) | (optional)     |
+ | lab PC    |          |   stand and lockbox (L1)   |          | Locker 4 (L2)  |        | Dr Illiashenko |
+ | guest     |          |  Byte Wall, plaque, ASCII  |          | noticeboard    |        +----------------+
  | terminal  |          |   chart, paper tape        |          +----------------+
  | (L3)      |          +-------------+--------------+
  +-----------+                        | south (open)
@@ -95,6 +95,7 @@ Brackets are locks. The corridor, library and workshop are the only rooms you ca
 | Sidhu's office (corridor, east) | open | A desk copy of his hashing handout; his door card. |
 | Seminar room (Sidhu's office, north) | open | Dr Selvarajan and his ledger whiteboard (the Vigenère key). |
 | Workshop (corridor, north) | brass key, L9 | Relay terminal (L10) and the scoreboard. The endgame happens here. |
+| Staff office (common room, east) | open | Optional. The department's open-plan staff office; nothing in it is needed to finish. |
 
 **The chain at a glance.** Each arrow is "this opens the thing that holds the next clue".
 

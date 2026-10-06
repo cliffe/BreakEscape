@@ -634,7 +634,7 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
     "common_room": {
       "type": "room_uni_common",
       "door_sign": "Student Common Room",
-      "connections": { "west": "foyer" },
+      "connections": { "west": "foyer", "east": "staff_office" },
       "npcs": [
         {
           "id": "megan_oyelaran",
@@ -897,6 +897,17 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
           ]
         }
       ]
+    },
+
+    <%# Optional side room off the common room (ROOMS_PLAN.md section 13). No objects; the
+        story builder adds Dr Oleg Illiashenko (desk P1-B, stand at tile 7.31, 7.06) and
+        later staff at the listed staff slots. %>
+    "staff_office": {
+      "type": "room_uni_staff",
+      "door_sign": "Computing: Staff Only",
+      "connections": { "west": "common_room" },
+      "npcs": [],
+      "objects": []
     }
   }
 }

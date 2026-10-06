@@ -237,6 +237,12 @@
       "optional": false
     },
     {
+      "id": "staff_office",
+      "label": "Computing: Staff Only",
+      "kind": "room",
+      "optional": false
+    },
+    {
       "id": "sidhu_office",
       "label": "Dr S. Selvarajan",
       "kind": "room",
@@ -492,6 +498,11 @@
     {
       "from": "foyer",
       "to": "lecture_theatre",
+      "soft": false
+    },
+    {
+      "from": "common_room",
+      "to": "staff_office",
       "soft": false
     },
     {

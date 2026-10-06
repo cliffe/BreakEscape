@@ -141,8 +141,8 @@
       <tr><th>VM flag challenges</th><td class="val">0</td></tr>
       <tr><th>AND-gate convergences</th><td class="val">2</td></tr>
       <tr><th>Physical locks (puzzle)</th><td class="val">11</td></tr>
-      <tr><th>Rooms</th><td class="val">10</td></tr>
-      <tr><th>Puzzle nodes / edges</th><td class="val">40 / 51</td></tr>
+      <tr><th>Rooms</th><td class="val">11</td></tr>
+      <tr><th>Puzzle nodes / edges</th><td class="val">41 / 52</td></tr>
       <tr><th>Story nodes / edges</th><td class="val">6 / 4</td></tr>
     </table>
   </div>
@@ -210,6 +210,7 @@
   lock_hacktivity_scoreboard["Hacktivity Scoreboard"]
   andgate1((" + "))
   andgate2((" + "))
+  staff_office("Computing: Staff Only")
   sidhu_office("Dr S. Selvarajan")
 
   door_corridor --> corridor
@@ -262,10 +263,11 @@
   foyer --> teaching_lab
   foyer --> common_room
   foyer --> lecture_theatre
+  common_room --> staff_office
   sidhu_office --> seminar_room
 
   class door_corridor,door_library,door_workshop,lock_cryptosecure_lockbox,lock_candidate_locker_4,lock_keyholder_guest_terminal,lock_pigeonholes,lock_cryptosecure_drop_box,lock_relay_terminal,lock_special_collections_safe,lock_hacktivity_scoreboard lock
-  class corridor,library,workshop,foyer,teaching_lab,lecture_theatre,common_room,special_collections,seminar_room,sidhu_office room
+  class corridor,library,workshop,foyer,teaching_lab,lecture_theatre,common_room,special_collections,seminar_room,staff_office,sidhu_office room
   class cryptosecure_lockbox,keyholder_leaflet,private_key_pem,keyholder_guest_terminal,lab_laptop_cyberchef,candidate_locker_4,trial_v_poster,pigeonholes,cryptosecure_drop_box,tag_on_the_drop_box,returns_slip,special_collections_safe,dr_selvarajan_s_ledger_whiteboard,relay_terminal item
   class npc_jordan_pike,npc_dr_tom_shaw,brass_key key
   class andgate1,andgate2 gate
@@ -360,6 +362,7 @@
   lock_hacktivity_scoreboard["Hacktivity Scoreboard"]
   andgate1((" + "))
   andgate2((" + "))
+  staff_office("Computing: Staff Only")
   sidhu_office("Dr S. Selvarajan")
   aim_freshers_week{{"Freshers' Week"}}
   aim_trials_bits{{"The Trials: Bits and Bytes"}}
@@ -418,6 +421,7 @@
   foyer --> teaching_lab
   foyer --> common_room
   foyer --> lecture_theatre
+  common_room --> staff_office
   sidhu_office --> seminar_room
   aim_freshers_week -.-> aim_trials_bits
   aim_trials_bits -.-> aim_trials_keys
@@ -436,7 +440,7 @@
   lock_hacktivity_scoreboard -.-> aim_the_offer
 
   class door_corridor,door_library,door_workshop,lock_cryptosecure_lockbox,lock_candidate_locker_4,lock_keyholder_guest_terminal,lock_pigeonholes,lock_cryptosecure_drop_box,lock_relay_terminal,lock_special_collections_safe,lock_hacktivity_scoreboard lock
-  class corridor,library,workshop,foyer,teaching_lab,lecture_theatre,common_room,special_collections,seminar_room,sidhu_office room
+  class corridor,library,workshop,foyer,teaching_lab,lecture_theatre,common_room,special_collections,seminar_room,staff_office,sidhu_office room
   class cryptosecure_lockbox,keyholder_leaflet,private_key_pem,keyholder_guest_terminal,lab_laptop_cyberchef,candidate_locker_4,trial_v_poster,pigeonholes,cryptosecure_drop_box,tag_on_the_drop_box,returns_slip,special_collections_safe,dr_selvarajan_s_ledger_whiteboard,relay_terminal item
   class npc_jordan_pike,npc_dr_tom_shaw,brass_key key
   class andgate1,andgate2 gate
@@ -473,18 +477,20 @@
   sidhu_office("Dr S. Selvarajan")
   seminar_room("Seminar Room 2")
   workshop["Workshop (knock)<br/>(locked)"]
+  staff_office("Computing: Staff Only")
 
   foyer --> corridor
   foyer --> teaching_lab
   foyer --> common_room
   foyer --> lecture_theatre
+  common_room --> staff_office
   corridor --> workshop
   corridor --> library
   corridor --> sidhu_office
   library --> special_collections
   sidhu_office --> seminar_room
 
-  class foyer,teaching_lab,lecture_theatre,common_room,special_collections,sidhu_office,seminar_room room
+  class foyer,teaching_lab,lecture_theatre,common_room,special_collections,sidhu_office,seminar_room,staff_office room
   class corridor,library,workshop lock
   class node_start start`,
       contents:   `flowchart TD
@@ -517,6 +523,7 @@
   sidhu_office("Dr S. Selvarajan")
   seminar_room("Seminar Room 2")
   workshop["Workshop (knock)<br/>(locked)"]
+  staff_office("Computing: Staff Only")
   rc_byte_wall_1{"The Byte Wall (1979 front panel)"}
   rc_display_plaque_2{"Display Plaque"}
   rc_powers_of_two_poster_3{"Poster: Powers of Two"}
@@ -599,6 +606,7 @@
   foyer --> teaching_lab
   foyer --> common_room
   foyer --> lecture_theatre
+  common_room --> staff_office
   corridor --> workshop
   corridor --> library
   corridor --> sidhu_office
@@ -682,7 +690,7 @@
   workshop --> rc_cliffe_build_screen_76
   workshop --> rc_npc_dr_z_cliffe_schreuders_77
 
-  class foyer,teaching_lab,lecture_theatre,common_room,special_collections,sidhu_office,seminar_room room
+  class foyer,teaching_lab,lecture_theatre,common_room,special_collections,sidhu_office,seminar_room,staff_office room
   class corridor,library,workshop lock
   class rc_byte_wall_1,rc_display_plaque_2,rc_powers_of_two_poster_3,rc_ascii_chart_4,rc_paper_tape_5,rc_keyholder_device_7,rc_trial_ii_card_8,rc_signup_laptop_9,rc_comms_discipline_11,rc_fn04_base64_13,rc_fn05_layers_caesar_14,rc_fn06_vigenere_15,rc_fn07_hax_16,rc_fn08_aes_17,rc_fn09_public_key_18,rc_fn10_hax_19,rc_fn11_text_encodings_20,rc_comms_discipline_hax_21,rc_keyholder_leaflet_25,rc_private_key_pem_27,rc_public_key_pem_28,rc_lab_readme_29,rc_trial_iv_hex_31,rc_tom_board_32,rc_lab_laptop_34,rc_fn01_bits_bytes_bases_35,rc_fn02_ascii_encodings_36,rc_fn03_hex_37,rc_trial_iii_card_39,rc_common_noticeboard_40,rc_common_vending_machine_41,rc_coffee_station_42,rc_cliffe_laptop_43,rc_trial_v_poster_46,rc_pigeonhole_2_48,rc_pigeonhole_3_49,rc_pigeonhole_4_50,rc_pigeonhole_5_51,rc_brass_key_53,rc_final_trial_card_54,rc_drop_box_tag_55,rc_floor_directory_56,rc_returns_slip_57,rc_codebreakers_book_58,rc_trial_vii_txt_60,rc_candidate_assessments_61,rc_job_tape_hex_62,rc_sidhu_door_card_63,rc_fn07_desk_copy_64,rc_ledger_whiteboard_65,rc_fn07_hashing_67,rc_fn10_signatures_68,rc_report_b64_70,rc_report_sha256_71,rc_report_sig_72,rc_keyholder_public_pem_73,rc_submission_accepted_75,rc_cliffe_build_screen_76 item
   class rc_cryptosecure_lockbox_6,rc_lab_account_pc_26,rc_keyholder_guest_terminal_30,rc_candidate_locker_4_38,rc_pigeonholes_47,rc_cryptosecure_drop_box_52,rc_special_collections_safe_59,rc_relay_terminal_69,rc_hacktivity_scoreboard_74 container

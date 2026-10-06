@@ -63,7 +63,7 @@ Who's in on what: Tom and Sidhu are clearly on the player's side. Jordan is a sm
 
 ## 3. Rooms
 
-**Updated 2026-10-06 for the university rooms** (`ROOMS_PLAN.md`, Phases 0-4; build notes in its sections 9-12). Every room now uses its own `room_uni_*` map: builder rooms in `scripts/generate_rooms.py`, on sheets from `scripts/room_gen/make_uni_tileset.py`, registered in `core/game.js`, the schema enum and the README room table. Every scenario object lands on a map slot (`slot_audit.py`: 0 problems). Digit-suffixed types claim theirs with `"position": "as-type:<base>"`, because `TiledItemPool` strips trailing digits from slot names but not from a scenario `type`. No object carries pinned coordinates any more. The graph grew from seven rooms to ten: a lecture theatre (Tom's induction), Special Collections (the safe) and a seminar room (Sidhu and his ledger). No lock was added or moved in the chain. `check_door_alignment.py` passes 9/9 links and the validator reports no overlaps.
+**Updated 2026-10-06 for the university rooms** (`ROOMS_PLAN.md`, Phases 0-4; build notes in its sections 9-12). Every room now uses its own `room_uni_*` map: builder rooms in `scripts/generate_rooms.py`, on sheets from `scripts/room_gen/make_uni_tileset.py`, registered in `core/game.js`, the schema enum and the README room table. Every scenario object lands on a map slot (`slot_audit.py`: 0 problems). Digit-suffixed types claim theirs with `"position": "as-type:<base>"`, because `TiledItemPool` strips trailing digits from slot names but not from a scenario `type`. No object carries pinned coordinates any more. The graph grew from seven rooms to ten (eleven with the optional staff office, off the common room): a lecture theatre (Tom's induction), Special Collections (the safe) and a seminar room (Sidhu and his ledger). No lock was added or moved in the chain. `check_door_alignment.py` passes all 10 links and the validator reports no overlaps.
 
 ### Layout and connections
 
@@ -77,16 +77,16 @@ Who's in on what: Tom and Sidhu are clearly on the player's side. Jordan is a sm
   returns slip                poster, pigeonholes L7,           FN7 desk copy, door card
                               drop box L8b, directory
                                     | S
- [ TEACHING LAB ] --W-- [ FOYER (START) ] --E-- [ STUDENT COMMON ROOM ]
-  room_uni_lab 10x10      room_uni_foyer 10x10     room_uni_common 10x10
-  guest terminal L3,      Jordan, stand L1,        Locker 4 L2, Megan,
-  lab account PC          Byte Wall exhibits       Cliffe (early)
+ [ TEACHING LAB ] --W-- [ FOYER (START) ] --E-- [ STUDENT COMMON ROOM ] --E-- [ STAFF OFFICE ]
+  room_uni_lab 10x10      room_uni_foyer 10x10     room_uni_common 10x10        room_uni_staff 20x10
+  guest terminal L3,      Jordan, stand L1,        Locker 4 L2, Megan,          (open, optional)
+  lab account PC          Byte Wall exhibits       Cliffe (early)               Dr Illiashenko
                                     | S (open)
                          [ LECTURE THEATRE ]  room_uni_lecture 20x10
                           Tom: laptop, FN1-3, "Hi" whiteboard
 ```
 
-Grid positions (GU, from the BFS in `core/rooms.js`): foyer (0,0) 2x2; lab (-2,0); common room (2,0); lecture theatre (0,2) 4x2; corridor (0,-1) 2x1; library (-2,-1) 2x1; Sidhu's office (2,-1) 2x1; workshop (0,-3) 2x2; Special Collections (-2,-3) 2x2; seminar room (2,-3) 2x2. N/S pairs land on a corner (foyer↔corridor and foyer↔lecture theatre on the left; corridor↔workshop, library↔Special Collections and office↔seminar room on the right); E/W doors are on row 2. The 10x6 rooms (corridor, library, office) show only two rows of floor (y 64-128), because the 10x10 room south of each covers the rest.
+Grid positions (GU, from the BFS in `core/rooms.js`): foyer (0,0) 2x2; lab (-2,0); common room (2,0); lecture theatre (0,2) 4x2; staff office (4,0) 4x2; corridor (0,-1) 2x1; library (-2,-1) 2x1; Sidhu's office (2,-1) 2x1; workshop (0,-3) 2x2; Special Collections (-2,-3) 2x2; seminar room (2,-3) 2x2. N/S pairs land on a corner (foyer↔corridor and foyer↔lecture theatre on the left; corridor↔workshop, library↔Special Collections and office↔seminar room on the right); E/W doors are on row 2. The 10x6 rooms (corridor, library, office) show only two rows of floor (y 64-128), because the 10x10 room south of each covers the rest.
 
 | Room id | Type | Door into it | Purpose |
 |---|---|---|---|
@@ -100,6 +100,7 @@ Grid positions (GU, from the BFS in `core/rooms.js`): foyer (0,0) 2x2; lab (-2,0
 | `sidhu_office` | `room_uni_office` | open | A desk copy of his hashing handout; his door card points to the seminar room. |
 | `seminar_room` | `room_uni_seminar` | open | Sidhu; ledger whiteboard (Vigenère key). |
 | `workshop` | `room_uni_workshop` | key (L9, brass key) | Cliffe's build. Relay terminal (L10). Hacktivity scoreboard (the fallback channel). Climax. |
+| `staff_office` | `room_uni_staff` | open | Optional side room off the common room's east door, off the critical path. Open-plan staff office; Dr Oleg Illiashenko's desk, with standing spots for more staff later (`ROOMS_PLAN.md` section 13). No objects yet. |
 
 ### Objects by room
 
@@ -177,6 +178,10 @@ Types are sprite names from `public/break_escape/assets/objects/`. "(c)" = conta
 - `info_screen1` "Cliffe's build" (`id: cliffe_build_screen`), `as-type:smartscreen`, drawn with the `info_screen1` sprite, with `observationVariants` that follow progress (section 9).
 - Map decor: the island workbench inside a hazard line on the concrete floor (the relay terminal sits on it, reachable from three sides), a laser cutter and tool pegboard on the back wall, parts drawers, a CNC mill and a 3D printer along the west wall, an electronics bench (oscilloscope, soldering station) east of the island, a safety-glasses sign.
 - NPC: `cliffe_workshop`.
+
+**Staff office** (`room_uni_staff`, 20x10, optional, off the common room's east door; no slots)
+- No scenario objects. Map decor: three face-to-face desk pods with PCs and static chairs, a staff kitchenette with pigeonholes and a boiler, a coffee table, a photocopier, a bookcase and a filing cabinet, three windows, a noticeboard, a year planner, a clock, a "COMPUTING / STAFF ONLY" sign, bags and plants.
+- NPCs: none yet (`"npcs": []`). Dr Oleg Illiashenko's desk is pod P1's south desk; stand him at tile (7.31, 7.06). Spare standing spots for later staff are listed in `ROOMS_PLAN.md` section 13.
 
 ### Object ids (R3-10)
 

@@ -1056,3 +1056,69 @@ Walking times between rooms (harness at full speed; lower bounds for a human, wh
 - The timed blind playtest (D3) on the ten-room graph, which would replace the reasoned 80-minute estimate.
 - Character art (Cliffe, Tom, Sidhu) and the Keyholder device icon (`ART_NEEDED.md`).
 - Registered but unused props: `scope_cart1`, `robot_arm1`, `stanchions1`, `pi_cluster1`, `soldering_iron1` and the original `beanbag1`. Each is a free asset for later rooms.
+
+## 13. Staff office build notes (2026-10-06)
+
+User request (via the coordinator): an open-plan staff office for the Computing building, like `room_office`, as an optional side room. Nothing committed. No PixelLab; one new hand-drawn sign.
+
+### The room
+
+`room_uni_staff`, 20x10 (4x2 GU), builder `room_uni_staff()` in `generate_rooms.py` on the 20x10 template, floor `room_uni_carpet`. Registered in game.js (tilemap), the schema enum, the README room table and `builders`.
+
+- **Desks:** three face-to-face pods (P1 x 120-198, P2 x 270-348, P3 x 420-498). Each is two `desk1` joined: desk A (feet 150), whose chair (`hospital_chair_south`) sits behind it, and desk B (feet 189), whose chair (`hospital_chair_north`) sits in front. Every desk has a PC and a desk item. The chairs are static, so they never join an NPC's pick-one menu.
+- **Back wall:** a new hand-drawn `uni_sign_staff1` ("COMPUTING / STAFF ONLY", 64x14, `make_uni_props.py`, registered `--wall`), three windows with blinds, a noticeboard, a year planner, a clock, a hot-water boiler and pigeonholes.
+- **Floor:** a kitchenette in the NE corner (counter and sink with a kettle and mugs, a fridge with a microwave, a coffee station), a coffee table with a chair in the SE corner, a photocopier, a bookcase and a filing cabinet against the back wall, a coat stand, three bags, a bin and two floor plants.
+- **Door:** W, row 2. The lane y 64-128 stays clear. Nothing covers the bottom rows (the room is the east end of its row).
+
+### Connection
+
+The **common room's east door**, unlocked, at grid (4,0). The corridor already has all four sides taken. East of the common room, a 4x2 GU room clears every other room: the office and seminar room above stop at x 3, and the lecture theatre below spans x 0-3.
+
+Results:
+- `check_door_alignment.py`: `common_room east -> staff_office: door (624, 80) vs (656, 80)` OK; 10/10 links.
+- `predict_door_sides.py`: both doors TOP (row 2).
+- The validator reports no world-space overlaps.
+
+Every existing connection is unchanged. The scenario edit is additive: the common room gains `"east": "staff_office"`, and a new `staff_office` room is added with `type` `room_uni_staff`, `door_sign` "Computing: Staff Only", `connections` `{ "west": "common_room" }`, and empty `npcs` and `objects`.
+
+### Staff slots
+
+Positions are scenario NPC tiles (x = pixel/32 at the body centre, y = feet/32). Each spot keeps an NPC's sprite (x-40..x+40, feet-71..feet+9) clear of the other spots, the clutter and the door lane. All six were walked to in game 1608. The coordinates are also in the builder's docstring, and the overlay is in `build_evidence/rooms/staff-office-spots.png`.
+
+| Slot | Desk | Stand (pixels) | NPC `position` (tiles) | Notes |
+|---|---|---|---|---|
+| **oleg** (Dr Oleg Illiashenko) | P1-B, occupied: PC, lamp, mug, binders, phone, his bag beside it | (234, 226) | `{ "x": 7.31, "y": 7.06 }` | open floor between pods P1 and P2 |
+| staff_slot_2 | P1-A / P2-A | (234, 140) | `{ "x": 7.31, "y": 4.38 }` | stands in front of the photocopier |
+| staff_slot_3 | P2-A / P3-A | (384, 140) | `{ "x": 12.0, "y": 4.38 }` | stands in front of the bookcase |
+| staff_slot_4 | P2-B / P3-B | (384, 226) | `{ "x": 12.0, "y": 7.06 }` | open floor |
+| staff_slot_5 | P3-A, kitchen side | (540, 150) | `{ "x": 16.88, "y": 4.69 }` | below the kitchenette |
+| staff_slot_6 | P1-B, west side | (60, 226) | `{ "x": 1.88, "y": 7.06 }` | below the door lane |
+
+The spare desks (P1-A, P2-A, P2-B, P3-A, P3-B) have a PC and one item each, so a later NPC's desk can be "made theirs" by adding items in the builder.
+
+### Checks
+
+| Check | Result |
+|---|---|
+| `generate_rooms.py room_uni_staff` / `--check` (eleven maps) | no new WARNs (only the known corridor and lecture ones) |
+| `check_room_walls.py --scenario` | 0 off the standard |
+| `slot_audit.py --notes` | 0 problems; `--all` 143 |
+| `check_door_alignment.py` | 10/10 OK |
+| `predict_door_sides.py` | common room E and staff office W on row 2 |
+| `validate_scenario.rb` | 0 errors, the same 8 warnings, no overlaps |
+| Rendered verifiers | ALL PASS on seeds 42, 777, 9001 |
+| Existing builders | identical apart from `tilesets` |
+
+### Browser
+
+Fresh game 1608 on the keyless :3001, headless. The playtest game on :3001 and the server were left alone.
+
+- Walked foyer → common room → staff office, and back. Each `enter` worked first time; the walks took 3.8 s and 4.9 s of harness time.
+- The common room's kitchenette leaves a clear path from its new east door.
+- Walked to Oleg's spot and the spare spots.
+- No missing textures. The console shows only the known TTS 503s and the E8 404.
+
+Screenshots: `build_evidence/rooms/staff-office-ingame.png`, `staff-office-preview.png`, `staff-office-spots.png` (the spots overlaid) and `staff-sign-8x.png`.
+
+DESIGN.md §3 (layout diagram, grid, room table and a room entry) and SOLUTION_GUIDE.md (room map and table) list the staff office as optional.
+
