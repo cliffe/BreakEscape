@@ -28,7 +28,12 @@ Portrait facing: all character art faces one way; the engine flips per speaker (
 | CryptoSecure stand | Pop-up banner and table | `picture1` + the reception desk | P3 | |
 | Pigeonholes | | `pigeonholes1` exists | - | Already in the assets. |
 | Ledger whiteboard | | `whiteboard1` exists | - | Already in the assets. |
-| Cliffe's build screen | | `smartscreen` exists | - | Already in the assets; the content is described in text. |
+| Cliffe's build screen | | `smartscreen` exists | - | Already in the assets; the content is described in text. Since the room-dressing pass it takes the map's `smartscreen` slot with the `info_screen1` texture. |
+| Heritage display case | Low glass-topped display cabinet, about 78x40, for the paper tape and the ASCII handouts | `desk1` as a scenario table (room-dressing pass) | P3 | Would replace the plain desk in the foyer. Needs to be a table-type sprite so it gets a collision box. |
+| CryptoSecure drop box | Small branded steel post box with a slot, floor-standing, about 24x28 | `briefcase11` (map slot) | P3 | The same briefcase is also the lockbox in the foyer, so the two read alike. |
+| Trial V poster | A3 recruitment poster with a block of Base64 on it, wall-mounted, about 16x22 | `notes6` | P3 | Pinned on the corridor's back wall. |
+| Library returns trolley | Book trolley with a few returned books, about 32x30 | the returned book and slip sit on top of a front-row bookcase | P3 | Would make the "returns shelf" in the slip's text literal. |
+| Lab and library lamp stands | (map change, not new art) | `lamp-stand3`/`lamp-stand4` in `room_lab` and `room_library_1x2gu` | P3 | Garden-style lamp posts in a teaching lab and a library. Removing them is a map edit in shared room types, so it was left out of a scenario-only pass. |
 
 ## Exhibit (optional, needs approval)
 

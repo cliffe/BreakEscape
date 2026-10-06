@@ -517,7 +517,7 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
           "id": "byte_wall",
           "name": "The Byte Wall (1979 front panel)",
           "takeable": false,
-          "position": { "x": 4.0, "y": 4.4 },
+          "position": { "x": 8.19, "y": 0.5 },
           "observations": "A restored 1979 computer front panel. A row of lamps, some lit.",
           "minigameData": {
             "panelTitle": "MISKATONIC COMPUTING SERVICE, 1979",
@@ -529,17 +529,18 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
             ]
           }
         },
-        { "type": "plaque1", "id": "display_plaque", "name": "Display Plaque", "takeable": false, "position": { "x": 5.4, "y": 4.4 }, "observations": "THE BYTE WALL. Add up the place values of the lit lamps: 64 + 8 + 4 + 1 = 77. Now find 77 on an ASCII chart: it's \"M\", for Miskatonic. That's all text is underneath: numbers, agreed in a table." },
-        { "type": "chart", "id": "powers_of_two_poster", "name": "Poster: Powers of Two", "takeable": false, "position": { "x": 8.6, "y": 4.4 }, "observations": "1, 2, 4, 8, 16, 32, 64, 128. Each one is double the last. 8 bits = 1 byte = 256 possible values (0-255)." },
-        { "type": "notes", "id": "ascii_chart", "name": "ASCII Chart Handout", "takeable": true, "readable": true, "position": { "x": 2.6, "y": 4.6 }, "text": <%= kh_txt[:ascii].to_json %>, "observations": "A character encoding is an agreed table from numbers to characters. ASCII is the oldest one still everywhere." },
-        { "type": "notes2", "id": "paper_tape", "name": "Punched Paper Tape (1979)", "takeable": true, "readable": true, "position": { "x": 7.0, "y": 4.6 }, "text": <%= kh_txt[:tape].to_json %>, "observations": "From the heritage display. A worked example." },
+        { "type": "plaque1", "id": "display_plaque", "name": "Display Plaque", "takeable": false, "position": { "x": 8.84, "y": 0.63 }, "observations": "THE BYTE WALL. Add up the place values of the lit lamps: 64 + 8 + 4 + 1 = 77. Now find 77 on an ASCII chart: it's \"M\", for Miskatonic. That's all text is underneath: numbers, agreed in a table." },
+        { "type": "chart", "id": "powers_of_two_poster", "name": "Poster: Powers of Two", "takeable": false, "position": { "x": 9.16, "y": 3.5 }, "observations": "1, 2, 4, 8, 16, 32, 64, 128. Each one is double the last. 8 bits = 1 byte = 256 possible values (0-255)." },
+        { "type": "table", "id": "heritage_display_table", "name": "Heritage Display Table", "sprite": "desk1", "takeable": false, "position": { "x": 6.44, "y": 3.5 }, "tableItems": [] },
+        { "type": "notes4", "id": "ascii_chart", "name": "ASCII Chart Handout", "takeable": true, "readable": true, "position": { "x": 6.63, "y": 3.69, "elevation": 22 }, "text": <%= kh_txt[:ascii].to_json %>, "observations": "A character encoding is an agreed table from numbers to characters. ASCII is the oldest one still everywhere." },
+        { "type": "notes2", "id": "paper_tape", "name": "Punched Paper Tape (1979)", "takeable": true, "readable": true, "position": { "x": 8.0, "y": 3.66, "elevation": 22 }, "text": <%= kh_txt[:tape].to_json %>, "observations": "From the heritage display. A worked example." },
         {
           "type": "briefcase",
           "id": "cryptosecure_lockbox",
           "puzzle_graph_unlocks": "candidate_locker_4",
           "name": "CryptoSecure Lockbox",
           "takeable": false,
-          "position": { "x": 6.9, "y": 3.3 },
+          "position": { "x": 3.13, "y": 1.81, "elevation": 18 },
           "locked": true,
           "lockType": "password",
           "requires": <%= kh_l1.to_json %>,
@@ -564,7 +565,7 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
           "id": "tom_shaw",
           "displayName": "Dr Tom Shaw",
           "npcType": "person",
-          "position": { "x": 5.0, "y": 6.4 },
+          "position": { "x": 7.4, "y": 3.1 },
           "spriteSheet": "male_office_worker_v2",
           "spriteTalk": "assets/characters/male_office_worker_talk.png",
           "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
@@ -582,7 +583,7 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
         }
       ],
       "objects": [
-        { "type": "whiteboard2", "id": "tom_board", "name": "Dr Shaw's Whiteboard", "takeable": false, "position": { "x": 8.0, "y": 5.5 }, "observations": "\"Hi\" written three ways. Decimal: 72 105. Binary: 01001000 01101001, with 128 64 32 16 8 4 2 1 written under each bit. Hex: 48 69, with \"one hex digit = four bits\" underlined twice." },
+        { "type": "whiteboard2", "id": "tom_board", "name": "Dr Shaw's Whiteboard", "takeable": false, "position": { "x": 8.06, "y": 0.63 }, "observations": "\"Hi\" written three ways. Decimal: 72 105. Binary: 01001000 01101001, with 128 64 32 16 8 4 2 1 written under each bit. Hex: 48 69, with \"one hex digit = four bits\" underlined twice." },
         {
           "type": "pc",
           "id": "lab_account_pc",
@@ -638,7 +639,7 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
           "id": "cliffe_schreuders",
           "displayName": "Dr Z. Cliffe Schreuders",
           "npcType": "person",
-          "position": { "x": 8.4, "y": 7.4 },
+          "position": { "x": 5.94, "y": 7.25 },
           "spriteSheet": "male_nerd_v2",
           "spriteTalk": "assets/characters/male_nerd_talk.png",
           "spriteVisemes": "assets/characters/male_nerd_visemes.png",
@@ -667,9 +668,10 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
             { "type": "notes", "id": "trial_iii_card", "name": "Trial III Card", "takeable": true, "readable": true, "text": <%= kh_card3_text.to_json %>, "observations": "Trial III, styled as a punched card. The guest terminal in the teaching lab takes a word." }
           ]
         },
-        { "type": "notice_board1", "id": "common_noticeboard", "name": "Common Room Noticeboard", "takeable": false, "position": { "x": 4.2, "y": 7.4 }, "observations": "Flat-share ads, a chess society poster, and a CryptoSecure flyer: \"Trial II stuck? So was everyone. Read it as characters, not as a number.\"" },
-        { "type": "coffee_station1", "id": "coffee_station", "name": "Coffee Station", "takeable": false, "position": { "x": 6.0, "y": 8.4 }, "observations": "Instant coffee and a sign: \"Wash your mug. The sink is not a cupboard.\"" },
-        { "type": "laptop", "id": "cliffe_laptop", "name": "Dr Schreuders' Laptop", "takeable": false, "position": { "x": 7.2, "y": 6.4 }, "observations": "A top-down map of this building, room by room, with small figures walking about. One of them is wearing your hoodie, standing exactly where you're standing." }
+        { "type": "notice_board1", "id": "common_noticeboard", "name": "Common Room Noticeboard", "takeable": false, "position": { "x": 0.63, "y": 0.56 }, "observations": "Flat-share ads, a chess society poster, and a CryptoSecure flyer: \"Trial II stuck? So was everyone. Read it as characters, not as a number.\"" },
+        { "type": "vending_machine1", "id": "common_vending_machine", "name": "Snack Machine", "takeable": false, "position": { "x": 8.06, "y": 0.375 }, "observations": "Crisps, chocolate and one sad sandwich. A handwritten sign: \"Takes cards. Does not take hints.\"" },
+        { "type": "coffee_station1", "id": "coffee_station", "name": "Coffee Station", "takeable": false, "position": { "x": 8.38, "y": 5.0 }, "observations": "Instant coffee and a sign: \"Wash your mug. The sink is not a cupboard.\"" },
+        { "type": "laptop", "sprite": "laptop1", "id": "cliffe_laptop", "name": "Dr Schreuders' Laptop", "takeable": false, "position": { "x": 5.56, "y": 5.13, "elevation": 20 }, "observations": "A top-down map of this building, room by room, with small figures walking about. One of them is wearing your hoodie, standing exactly where you're standing." }
       ]
     },
 
@@ -681,14 +683,14 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
       "requires": <%= kh_l4.to_json %>,
       "connections": { "south": "foyer", "north": "workshop", "west": "library", "east": "sidhu_office" },
       "objects": [
-        { "type": "notes", "id": "trial_v_poster", "puzzle_graph_unlocks": "library", "name": "Trial V Poster", "takeable": true, "readable": true, "position": { "x": 2.6, "y": 3.0 }, "text": <%= kh_poster5.to_json %>, "observations": "Trial V. Worked example: \"Hi!\" = 01001000 01101001 00100001 -> 010010 000110 100100 100001 -> 18 6 36 33 -> S G k h. Three bytes become four symbols." },
+        { "type": "notes", "sprite": "notes6", "id": "trial_v_poster", "puzzle_graph_unlocks": "library", "name": "Trial V Poster", "takeable": true, "readable": true, "position": { "x": 1.63, "y": 0.81 }, "text": <%= kh_poster5.to_json %>, "observations": "Trial V. Worked example: \"Hi!\" = 01001000 01101001 00100001 -> 010010 000110 100100 100001 -> 18 6 36 33 -> S G k h. Three bytes become four symbols." },
         {
           "type": "pigeonholes1",
           "id": "pigeonholes",
           "puzzle_graph_unlocks": "cryptosecure_drop_box",
           "name": "Pigeonholes",
           "takeable": false,
-          "position": { "x": 4.2, "y": 2.4 },
+          "position": { "x": 3.13, "y": 0.75 },
           "locked": true,
           "lockType": "password",
           "requires": <%= kh_l7.to_json %>,
@@ -718,8 +720,8 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
             { "type": "notes", "id": "final_trial_card", "name": "Final Trial Card", "takeable": true, "readable": true, "text": "This terminal stores no passwords, only fingerprints. Enter the first eight characters of the SHA-256 of the passphrase that opened this box. In CyberChef: SHA2, and set Size to 256 (it starts on 512). No spaces, no new line.", "observations": "Easiest way: add SHA2 under AES Decrypt in the recipe you've already got. Leave Rounds alone. 256 bits is 64 hex digits, four bits each." }
           ]
         },
-        { "type": "notes3", "id": "drop_box_tag", "puzzle_graph_unlocks": "cryptosecure_drop_box", "puzzle_graph_and_with": "Pigeonholes", "name": "Tag on the Drop Box", "takeable": true, "readable": true, "position": { "x": 6.4, "y": 3.0 }, "text": <%= kh_tag_hex.to_json %>, "observations": "AES-128-CBC. The key and the IV travel separately. Key: ____ IV: ____" },
-        { "type": "directory_sign1", "id": "floor_directory", "name": "Floor Directory", "takeable": false, "position": { "x": 7.2, "y": 4.6 }, "observations": "West: Library. East: Dr S. Selvarajan. North: Z. C. Schreuders, Workshop (knock)." }
+        { "type": "notes3", "id": "drop_box_tag", "puzzle_graph_unlocks": "cryptosecure_drop_box", "puzzle_graph_and_with": "Pigeonholes", "name": "Tag on the Drop Box", "takeable": true, "readable": true, "position": { "x": 5.53, "y": 1.75, "elevation": 5 }, "text": <%= kh_tag_hex.to_json %>, "observations": "AES-128-CBC. The key and the IV travel separately. Key: ____ IV: ____" },
+        { "type": "directory_sign1", "id": "floor_directory", "name": "Floor Directory", "takeable": false, "position": { "x": 5.81, "y": 0.69 }, "observations": "West: Library. East: Dr S. Selvarajan. North: Z. C. Schreuders, Workshop (knock)." }
       ]
     },
 
@@ -731,8 +733,8 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
       "requires": <%= kh_l5.to_json %>,
       "connections": { "east": "corridor" },
       "objects": [
-        { "type": "notes4", "id": "returns_slip", "puzzle_graph_unlocks": "special_collections_safe", "name": "Returns Slip", "takeable": true, "readable": true, "position": { "x": 3.0, "y": 4.7 }, "text": <%= kh_slip6.to_json %>, "observations": "Tucked in a returned copy of The Codebreakers on the returns shelf. Trial VI. Shift: the number of this Trial." },
-        { "type": "book1", "id": "codebreakers_book", "name": "The Codebreakers (returned)", "takeable": false, "position": { "x": 6.6, "y": 4.7 }, "observations": "David Kahn's history of secret writing. Someone has been using it as a bookmark holder." },
+        { "type": "notes4", "id": "returns_slip", "puzzle_graph_unlocks": "special_collections_safe", "name": "Returns Slip", "takeable": true, "readable": true, "position": { "x": 3.75, "y": 2.06, "elevation": 50 }, "text": <%= kh_slip6.to_json %>, "observations": "Tucked in a returned copy of The Codebreakers on the returns shelf. Trial VI. Shift: the number of this Trial." },
+        { "type": "book1", "sprite": "book", "id": "codebreakers_book", "name": "The Codebreakers (returned)", "takeable": false, "position": { "x": 2.44, "y": 1.94, "elevation": 50 }, "observations": "David Kahn's history of secret writing. Someone has been using it as a bookmark holder." },
         {
           "type": "safe",
           "id": "special_collections_safe",
@@ -763,7 +765,7 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
           "id": "sidhu_selvarajan",
           "displayName": "Dr Sidhu Selvarajan",
           "npcType": "person",
-          "position": { "x": 3.4, "y": 4.8 },
+          "position": { "x": 3.6, "y": 3.4 },
           "spriteSheet": "male_scientist_v2",
           "spriteTalk": "assets/characters/male_scientist_talk.png",
           "spriteVisemes": "assets/characters/male_scientist_visemes.png",
@@ -779,7 +781,7 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
         }
       ],
       "objects": [
-        { "type": "whiteboard1", "id": "ledger_whiteboard", "puzzle_graph_unlocks": "pigeonholes", "puzzle_graph_and_with": "Special Collections Safe", "name": "Dr Selvarajan's Ledger Whiteboard", "takeable": false, "position": { "x": 1.0, "y": 4.6 }, "observations": <%= format(kh_txt[:whiteboard], kh_vkey).to_json %> },
+        { "type": "whiteboard1", "id": "ledger_whiteboard", "puzzle_graph_unlocks": "pigeonholes", "puzzle_graph_and_with": "Special Collections Safe", "name": "Dr Selvarajan's Ledger Whiteboard", "takeable": false, "position": { "x": 3.25, "y": 0.5 }, "observations": <%= format(kh_txt[:whiteboard], kh_vkey).to_json %> },
         { "type": "notes", "id": "fn07_desk_copy", "name": "Handout: Hashes", "takeable": true, "readable": true, "text": <%= kh_txt[:fn07].to_json %>, "observations": "A spare copy of Dr Selvarajan's handout.", "onPickup": { "setVariable": { "fn07_had": true } } }
       ]
     },
@@ -798,7 +800,7 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
           "id": "cliffe_workshop",
           "displayName": "Dr Z. Cliffe Schreuders",
           "npcType": "person",
-          "position": { "x": 2.9, "y": 7.2 },
+          "position": { "x": 3.4, "y": 6.7 },
           "spriteSheet": "male_nerd_v2",
           "spriteTalk": "assets/characters/male_nerd_talk.png",
           "spriteVisemes": "assets/characters/male_nerd_visemes.png",
@@ -834,7 +836,8 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
           "id": "hacktivity_scoreboard",
           "name": "Hacktivity Scoreboard",
           "takeable": false,
-          "position": { "x": 1.1, "y": 7.6 },
+          "sprite": "conference_screen1",
+          "position": { "x": 8.0, "y": 0.69 },
           "locked": true,
           "lockType": "password",
           "requires": <%= kh_token.to_json %>,
@@ -852,7 +855,8 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
           "id": "cliffe_build_screen",
           "name": "Dr Schreuders' Build",
           "takeable": false,
-          "position": { "x": 1.1, "y": 2.4 },
+          "sprite": "info_screen1",
+          "position": "as-type:smartscreen",
           "observations": "A map of this building. One of the little figures is wearing your hoodie. Beside it, a soldering iron, still warm.",
           "observationVariants": [
             { "condition": "globalVars.decision_made === true", "value": "On the map, the small figure in your hoodie walks out of the workshop. A second figure you don't recognise stays by the scoreboard." },
