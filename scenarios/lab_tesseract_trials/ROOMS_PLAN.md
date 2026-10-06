@@ -1,6 +1,6 @@
 # The Keyholder Trials: university rooms plan
 
-Status: **Phases 0-1 built and committed** (`ed2be44c`, `4d840ff0`); **Phase 2 built, not yet committed** (build notes in sections 9 and 10). Plan written 2026-10-06 against HEAD `532bd7d3` (the room-dressing pass on the current maps is commit `1c18b9a3`). Kind of game: a lab scenario with SAFETYNET spy framing (AGENTS.md "Lab, demo and test scenarios"; brief `docs/agents/TESSERACT_TRIALS_BRIEF.md`). Aim of this plan: rooms that read as the Computing building of a UK university in freshers' week, with every scenario object landing on a proper map slot.
+Status: **Phases 0-2 built and committed** (`ed2be44c`, `4d840ff0`, `f5ab595b`); **Phase 3 (PixelLab props) built, not yet committed** (build notes in sections 9-11). Plan written 2026-10-06 against HEAD `532bd7d3` (the room-dressing pass on the current maps is commit `1c18b9a3`). Kind of game: a lab scenario with SAFETYNET spy framing (AGENTS.md "Lab, demo and test scenarios"; brief `docs/agents/TESSERACT_TRIALS_BRIEF.md`). Aim of this plan: rooms that read as the Computing building of a UK university in freshers' week, with every scenario object landing on a proper map slot.
 
 User direction (via the orchestrator, during planning): be ambitious, design a new map for **every** room type named (foyer/atrium, computer teaching lab, student common room, corridor with lockers, pigeonholes and noticeboards, library with Special Collections, academic office, maker space/workshop, lecture theatre, seminar room); place the rooms that have no scenario room yet, spread **existing** clues into them rather than adding locks, and keep the middle play-time estimate under about 90 minutes.
 
@@ -877,3 +877,88 @@ The check outputs are in `build_evidence/rooms/phase2_checks/`, along with `ink_
   - `hospital_chair_north` seats (the P1 `lecture_seat_row1` art should keep the ledges' line, row feet - 22);
   - the electronics bench, the workshop's printer/cart, and the Special Collections display case and plan chest.
 - Phase 4: SOLUTION_GUIDE, TESTING_WALKTHROUGH and DESIGN.md still describe Tom in the lab, the safe in the library and Sidhu in his office. The timed blind playtest (D3) on the expanded graph is still outstanding.
+
+## 11. Phase 3 build notes (2026-10-06)
+
+Built by the room builder (Opus). PixelLab use was cleared by the user for the session (relayed by the coordinator). Nothing committed. No Gemini.
+
+### Generations
+
+Balance before 4988/5000, after 4888/5000: **100 generations**, under the plan's ceiling of about 120.
+
+| Batch | Canvas, refs | Generations | Frames | Kept |
+|---|---|---|---|---|
+| P0 pilot | 48; `photocopier1`, `coffee_station1` | 20 | 16 | `lectern1` (#1), `book_trolley1` (#3), `printer_3d1` (#5), `plan_chest1` (#13, a bonus that saved it from P1) |
+| P1 | 64; `it_workbench1`, `binder_shelves1` | 20 | 16 | `display_case1` (#2), `display_case2` (#3), `uni_sofa1` (#4), `pegboard_tools1` (#6), `laser_cutter1` (#8), `scope_cart1` (#15) |
+| P1 re-roll (seats only, the one allowed) | 64; `hospital_chair_north`, `hospital_chair_south` | 20 | 16 | `lecture_seat_row1` (#1) |
+| P2 | 48; `photocopier1`, `supply_boxes1` | 20 | 16 | `electronics_bench1` (#0), `component_drawers1` (#2), `robot_arm1` (#4), `beanbag1` (#6), `stanchions1` (#8), `cnc_mill1` (#13) |
+| P3 | 32; `alarm_panel`, `office-misc-lamp4` | 20 | 64 | `alarm_panel2` (#3, hand-edited), `bankers_lamp1` (#4), `pi_cluster1` (#5), `journal_stack1` (#6), `soldering_iron1` (#22) |
+
+The P0 style matched the room sheets and neighbouring sprites (same outline weight, shading and front-on three-quarter view as `photocopier1` and `it_workbench1`), so the other batches went ahead. Every frame was installed by trimming only (`import_pixellab_objects.py`); nothing was resized. The plan's target sizes were guides: each builder uses the size that came back. P3 was run at 32, not the plan's 24, so the Byte Wall panel could come back at the size of the current wall item; the small props came out 23-27 px.
+
+**Rejects:**
+- P1 #0 and #1, the seat rows. They are drawn at a three-quarter angle and looked skewed against straight rows and the ledges. The re-roll with straight rear-view references gave #1.
+- Everything else not listed above, mostly second phrasings and off-brief extras (lockers, a coffee machine, a microscope desk, a whiteboard).
+
+**The Byte Wall panel** (`alarm_panel2`, 33x21) is P3 #3 with a pixel edit, no rescale. The frame came back packed against its neighbour, missing its left border column, so I copied the border back in from the right edge (2 columns). The lamp row is repainted as 8 even lamps lit for 01001101 (64, 8, 4 and 1), as the plaque says. The edit script is `build_evidence/rooms/pixellab/alarm_panel2_edit.py`, with an 8x check, `alarm_panel2-edit-8x.png`. Registered with `--wall`. Its base type is still `alarm_panel`, so the scenario is unchanged.
+
+### Placed
+
+| Room | Change |
+|---|---|
+| Foyer | Byte Wall slot is now `alarm_panel2` (same anchor 138, 52). `display_case1` (glass case of old tapes and cards) in the tables layer at (226, 253), beside the display table. The table still holds the two papers: a 54 px case can't keep them 32 px apart, so the case is decor next to the table rather than replacing it, and there is no new pick-one menu |
+| Lecture theatre | `lectern1` replaces `smalldesk2`. `lecture_seat_row1` (3 seats a sprite) replaces the 69 single chairs: 3 + 4 sprites per row, feet at row + 8, so each row's backs just overlap its own ledge and the next ledge covers its legs. Ledges and their collision unchanged |
+| Common room | `uni_sofa1` replaces `sofa1` (x 44) |
+| Library | `book_trolley1` on the librarian's side, (40, 118) |
+| Special Collections | `plan_chest1` (24, 140) and `display_case2` (24, 255) in the tables layer, `stanchions1` across the case's front, `bankers_lamp1` ×2 replacing the plain lamps. The bookcases shift 4 px east (68-240) to make room for the plan chest; the west-end chair is gone (the case stands there) |
+| Seminar room | `journal_stack1` on the table; `beanbag1` in the SE corner, clear of the east lane |
+| Workshop | `electronics_bench1` (scope, soldering station, magnifier) replaces the small desk and its three table props. `printer_3d1` replaces the KVM cart. `laser_cutter1` stands against the wall where the parts rack was, with `pegboard_tools1` above it (the safety poster moves to x 240). `component_drawers1` replaces the binders. `cnc_mill1` replaces the boxes. `robot_arm1` is NW of the island. `scope_cart1` (walk-through) sits between the laser cutter and the bench. The cable moves to the printer. Scoreboard, build screen, relay PC and Cliffe's spot unchanged |
+
+Registered but not placed:
+- `soldering_iron1` and `pi_cluster1`. The electronics bench art already has a soldering station, and no table has room for either without overlapping a slot.
+- The old placeholders `sofa1`, `smalldesk2`, `kvm_cart1`, `binder_shelves1` and `supply_boxes1` stay in the catalogue for other rooms.
+
+### Checks
+
+| Check | Result |
+|---|---|
+| `generate_rooms.py --check` (all ten) | the 2 corridor WARNs as before, plus 14 "footprints overlap" between a ledge and the seat row in front of it. Deliberate: the ledge is on the back of the row in front, as in a real theatre |
+| `check_room_walls.py --scenario` | 0 maps off the standard |
+| `slot_audit.py --verbose --notes` | 0 problems; the Byte Wall lands on `alarm_panel2`; `--all` 143 (unchanged) |
+| `check_door_alignment.py` | 9/9 OK |
+| `predict_door_sides.py` | unchanged |
+| `validate_scenario.rb` | 0 errors, the same 8 warnings |
+| Rendered verifiers | ALL PASS on seeds 42, 777, 9001 |
+| Existing builders | output identical apart from `tilesets` |
+| Texture scan | every image on the ten maps is loaded by game.js |
+| Ink | not touched, so the ink checks were not re-run |
+
+### Browser walk (keyless :3001, headless, game 1605)
+
+Corridor, library and workshop were unlocked server-side for the layout check. `verify-run.rb`: 8 rooms beyond the first.
+
+- **Byte Wall:** opens its alarm-panel minigame from the new sprite, showing "MISKATONIC COMPUTING SERVICE, 1979" with lamps 01001101 (`p3-byte_wall-minigame.png`). `read_byte_wall` completed.
+- **Taps:** every claimed object and NPC in the changed rooms opens:
+  - foyer: Byte Wall, plaque, both papers, lockbox, sign-up laptop, Jordan;
+  - lecture theatre: Tom's whiteboard, Tom;
+  - common room: snack machine, Megan, Cliffe;
+  - library: slip, book;
+  - Special Collections: safe;
+  - seminar room: ledger whiteboard, Sidhu;
+  - workshop: relay PC, scoreboard, build screen, Cliffe.
+  No new pick-one menus. Megan, the common-room Cliffe and the book needed the same waypoints as in Phases 1-2 (the harness's straight-line approach).
+- **Seat rows:** still block front to back with the new seat art.
+- **Sprites:** no missing textures; duplicates are only the engine's shared door sprites.
+- **Console:** 503s (TTS, expected), plus 7 404s. All 7 are `characters/female_hacker_hood_v2_talk.png`, requested by the briefing's campus narration. Not a room asset and not from this phase; passed on for the dialogue/backgrounds owner.
+
+### Evidence (`build_evidence/rooms/`)
+
+- `pixellab/`: `P0-pilot-marked.png`, `P1-marked.png`, `P1-reroll-seats-marked.png`, `P2-marked.png`, `P3-marked.png` (picks boxed in red and named); each batch's item list (`*-items.json`); object ids and status (`*-object.json`, URLs stripped); the panel edit and its 8x check; `verify-run-1605.txt`.
+- `p3-after-{foyer,lecture_theatre,common_room,library,special_collections,seminar_room,workshop}.png`, `p3-byte_wall-minigame.png`, `p3-previews-contact.png`.
+
+### For Phase 4
+
+- Engine E7 is still open. If it is fixed, the ledges can stay as decor.
+- The 404 on `female_hacker_hood_v2_talk.png`.
+- The doc updates already listed: SOLUTION_GUIDE, TESTING_WALKTHROUGH, DESIGN.md, and `ART_NEEDED.md` (the Byte Wall and banner items are now done).
+- The timed blind playtest.
