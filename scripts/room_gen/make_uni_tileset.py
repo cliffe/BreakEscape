@@ -107,20 +107,21 @@ CARPET_OXBLOOD = carpet_pixel_fn((112, 44, 50), (98, 37, 43), (128, 56, 62), (86
 
 
 def terrazzo_pixel(x, y):
-    """Cream terrazzo: chips of grey, teal, rust and black, brass strips every 2 tiles."""
+    """Cream terrazzo: sparse, low-contrast chips (so floor items and the inlay
+    read at game scale), brass strips every 2 tiles."""
     if x % (2 * TILE) == 0 or y % (2 * TILE) == 0:
-        return (176, 150, 92)  # brass divider strip
+        return (190, 168, 116)  # brass divider strip
     h = hashxy(x, y)
-    if h % 17 == 0:
-        return (150, 146, 138)
-    if h % 31 == 0:
-        return (70, 128, 132)
-    if h % 37 == 0:
-        return (168, 96, 70)
-    if h % 53 == 0:
-        return (52, 50, 48)
-    if h % 7 == 0:
-        return (226, 219, 202)
+    if h % 23 == 0:
+        return (198, 190, 172)   # grey chip
+    if h % 61 == 0:
+        return (176, 190, 182)   # teal chip
+    if h % 67 == 0:
+        return (210, 184, 164)   # rust chip
+    if h % 97 == 0:
+        return (176, 168, 152)   # dark chip
+    if h % 9 == 0:
+        return (220, 213, 195)
     return (214, 206, 186)
 
 

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="139" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="141" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../objects/iv_stand1.png" width="25" height="60"/>
@@ -417,5 +417,11 @@
  </tile>
  <tile id="138">
   <image source="../objects/student_locker1.png" width="16" height="62"/>
+ </tile>
+ <tile id="139">
+  <image source="../objects/lecture_ledge1.png" width="198" height="12"/>
+ </tile>
+ <tile id="140">
+  <image source="../objects/lecture_ledge2.png" width="252" height="12"/>
  </tile>
 </tileset>

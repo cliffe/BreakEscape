@@ -3,7 +3,7 @@
  "editorsettings": {
   "export": {
    "format": "json",
-   "target": "room_uni_workshop.json"
+   "target": "room_uni_special.json"
   }
  },
  "height": 10,
@@ -354,28 +354,16 @@
    "name": "tables",
    "objects": [
     {
-     "gid": 916,
-     "height": 58,
+     "gid": 105,
+     "height": 55,
      "id": 1,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 60,
-     "x": 124.0,
-     "y": 198.0
-    },
-    {
-     "gid": 109,
-     "height": 41,
-     "id": 2,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 50,
-     "x": 200.0,
-     "y": 240.0
+     "width": 126,
+     "x": 72.0,
+     "y": 206.0
     }
    ],
    "opacity": 1,
@@ -390,100 +378,124 @@
    "name": "items",
    "objects": [
     {
-     "gid": 912,
-     "height": 36,
+     "gid": 929,
+     "height": 14,
+     "id": 2,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 64,
+     "x": 100.0,
+     "y": 40.0
+    },
+    {
+     "gid": 168,
+     "height": 21,
      "id": 3,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 48,
-     "x": 70.0,
-     "y": 52.0
+     "width": 29,
+     "x": 190.0,
+     "y": 44.0
     },
     {
-     "gid": 379,
-     "height": 34,
+     "gid": 339,
+     "height": 50,
      "id": 4,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 48,
-     "x": 130.0,
-     "y": 50.0
+     "width": 43,
+     "x": 64.0,
+     "y": 120.0
     },
     {
-     "gid": 935,
-     "height": 21,
+     "gid": 339,
+     "height": 50,
      "id": 5,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 16,
-     "x": 186.0,
-     "y": 46.0
+     "width": 43,
+     "x": 107.0,
+     "y": 120.0
     },
     {
-     "gid": 803,
-     "height": 60,
+     "gid": 339,
+     "height": 50,
      "id": 6,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 50,
-     "x": 200.0,
-     "y": 130.0
+     "width": 43,
+     "x": 150.0,
+     "y": 120.0
     },
     {
-     "gid": 889,
-     "height": 60,
+     "gid": 339,
+     "height": 50,
      "id": 7,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 48,
-     "x": 28.0,
-     "y": 150.0
+     "width": 43,
+     "x": 193.0,
+     "y": 120.0
     },
     {
-     "gid": 890,
-     "height": 61,
+     "gid": 309,
+     "height": 32,
      "id": 8,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 37,
-     "x": 36.0,
-     "y": 240.0
+     "width": 17,
+     "x": 54.0,
+     "y": 200.0
     },
     {
-     "gid": 914,
-     "height": 40,
+     "gid": 308,
+     "height": 32,
      "id": 9,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 29,
-     "x": 152.0,
-     "y": 250.0
+     "width": 17,
+     "x": 200.0,
+     "y": 200.0
     },
     {
-     "gid": 453,
-     "height": 12,
+     "gid": 317,
+     "height": 32,
      "id": 10,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 36,
-     "x": 190.0,
-     "y": 186.0
+     "width": 16,
+     "x": 110.0,
+     "y": 150.0
+    },
+    {
+     "gid": 317,
+     "height": 32,
+     "id": 11,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 16,
+     "x": 160.0,
+     "y": 150.0
     }
    ],
    "opacity": 1,
@@ -496,7 +508,20 @@
    "draworder": "topdown",
    "id": 7,
    "name": "conditional_items",
-   "objects": [],
+   "objects": [
+    {
+     "gid": 303,
+     "height": 43,
+     "id": 12,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 32,
+     "x": 220.0,
+     "y": 236.0
+    }
+   ],
    "opacity": 1,
    "type": "objectgroup",
    "visible": true,
@@ -507,20 +532,7 @@
    "draworder": "topdown",
    "id": 11,
    "name": "conditional_table_items",
-   "objects": [
-    {
-     "gid": 365,
-     "height": 27,
-     "id": 14,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 34,
-     "x": 137.0,
-     "y": 157.4
-    }
-   ],
+   "objects": [],
    "opacity": 1,
    "type": "objectgroup",
    "visible": true,
@@ -533,40 +545,40 @@
    "name": "table_items",
    "objects": [
     {
-     "gid": 184,
-     "height": 18,
-     "id": 11,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 12,
-     "x": 204.0,
-     "y": 211.3
-    },
-    {
-     "gid": 196,
-     "height": 20,
-     "id": 12,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 17,
-     "x": 216.5,
-     "y": 208.02
-    },
-    {
-     "gid": 198,
-     "height": 18,
+     "gid": 350,
+     "height": 23,
      "id": 13,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 10,
-     "x": 236.0,
-     "y": 209.25
+     "width": 12,
+     "x": 91.2,
+     "y": 162.0
+    },
+    {
+     "gid": 350,
+     "height": 23,
+     "id": 14,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 12,
+     "x": 166.8,
+     "y": 162.0
+    },
+    {
+     "gid": 448,
+     "height": 20,
+     "id": 15,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 18,
+     "x": 126.0,
+     "y": 173.0
     }
    ],
    "opacity": 1,
@@ -588,7 +600,7 @@
   }
  ],
  "nextlayerid": 14,
- "nextobjectid": 15,
+ "nextobjectid": 16,
  "orientation": "orthogonal",
  "renderorder": "right-down",
  "tiledversion": "1.11.2",
@@ -3000,11 +3012,11 @@
   {
    "columns": 10,
    "firstgid": 701,
-   "image": "../tiles/rooms/room_uni_workshop.png",
+   "image": "../tiles/rooms/room_uni_special.png",
    "imageheight": 320,
    "imagewidth": 320,
    "margin": 0,
-   "name": "room_uni_workshop",
+   "name": "room_uni_special",
    "spacing": 0,
    "tilecount": 100,
    "tileheight": 32,

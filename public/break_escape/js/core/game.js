@@ -100,6 +100,9 @@ export function preload() {
     this.load.tilemapTiledJSON('room_uni_library', 'rooms/room_uni_library.json'); // Library front desk: shelves, issue desk, floor safe slot (2x1 GU, two visible floor rows)
     this.load.tilemapTiledJSON('room_uni_office', 'rooms/room_uni_office.json'); // Academic's office: door card, whiteboard slot, desk with PC (2x1 GU, two visible floor rows)
     this.load.tilemapTiledJSON('room_uni_workshop', 'rooms/room_uni_workshop.json'); // Maker space / workshop: scoreboard and build screens, island workbench (2x2 GU)
+    this.load.tilemapTiledJSON('room_uni_lecture', 'rooms/room_uni_lecture.json'); // Lecture theatre: whiteboard, projector screen, bench and lectern, three tiered seat rows (4x2 GU)
+    this.load.tilemapTiledJSON('room_uni_special', 'rooms/room_uni_special.json'); // Special Collections: bookcases, reading table on a rug, archive safe slot (2x2 GU)
+    this.load.tilemapTiledJSON('room_uni_seminar', 'rooms/room_uni_seminar.json'); // Seminar room: whiteboard between blinds, long table, flip chart (2x2 GU)
 
     // Load room images (now using smaller 32px scale images)
     this.load.image('room_reception', 'tiles/rooms/room1.png');
@@ -168,6 +171,7 @@ export function preload() {
     this.load.image('photo', 'objects/picture1.png');
     this.load.image('safe', 'objects/safe1.png');
     this.load.image('book', 'objects/book1.png');
+    this.load.image('book1', 'objects/book1.png'); // same image under its Tiled name, so an unclaimed book1 map sprite draws
     this.load.image('workstation', 'objects/workstation.png');
     this.load.image('lab-workstation', 'objects/lab-workstation.png');
     this.load.image('filing_cabinet', 'objects/filing_cabinet.png');
@@ -684,6 +688,8 @@ export function preload() {
     this.load.image('cryptosecure_banner1', 'objects/cryptosecure_banner1.png');
     this.load.image('student_lockers1', 'objects/student_lockers1.png');
     this.load.image('student_locker1', 'objects/student_locker1.png');
+    this.load.image('lecture_ledge1', 'objects/lecture_ledge1.png');
+    this.load.image('lecture_ledge2', 'objects/lecture_ledge2.png');
     this.load.image('backup_recovery',         'objects/backup_recovery.png');
     this.load.image('dual_auth',               'objects/dual_auth.png');
     this.load.image('ehr-terminal',            'objects/ehr-terminal.png');

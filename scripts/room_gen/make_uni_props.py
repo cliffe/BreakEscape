@@ -446,6 +446,34 @@ PROPS = {
 }
 
 
+# --- lecture theatre writing ledges (tables layer: their bottom-quarter body
+# makes a seat row solid; 20px wider than the seat block, so the inset body
+# matches the seats) --------------------------------------------------------
+
+LEDGE_TOP = (186, 140, 94)
+LEDGE_HI = (212, 170, 120)
+LEDGE_EDGE = (128, 86, 54)
+LEDGE_DARK = (82, 54, 34)
+
+
+def ledge(width):
+    c = Canvas(width, 12)
+    c.rect(0, 0, width - 1, 6, LEDGE_TOP)       # writing surface
+    c.hline(0, width - 1, 0, LEDGE_DARK)
+    c.hline(1, width - 2, 1, LEDGE_HI)
+    c.rect(0, 7, width - 1, 9, LEDGE_EDGE)      # front edge
+    c.hline(0, width - 1, 10, LEDGE_DARK)
+    for x in range(8, width - 4, 18):           # a bracket under every seat
+        c.rect(x, 10, x + 1, 11, LEDGE_DARK)
+    c.rect(0, 0, 0, 10, LEDGE_DARK)
+    c.rect(width - 1, 0, width - 1, 10, LEDGE_DARK)
+    return c
+
+
+PROPS["lecture_ledge1"] = lambda: ledge(198)   # west block: seats x 96-274
+PROPS["lecture_ledge2"] = lambda: ledge(252)   # east block: seats x 340-572
+
+
 def main(argv):
     out = OBJ
     if "--out" in argv:

@@ -347,7 +347,12 @@ def build_room(
     conditional_table_items: list[dict],
     use_room6: bool = False,
     room_override: list[int] | None = None,
+    collisions: list[dict] | None = None,
 ) -> dict:
+    """collisions: rectangles for "Object Layer 1" (name "collision", y = top
+    edge), which rooms.js is meant to turn into static bodies. Not usable yet:
+    createRoom throws on them (it reads `room` before declaring it, rooms.js
+    ~2807 vs ~2826), so the room's NPCs and later setup never load."""
     tmpl = TEMPLATES[template_key]
     w, h = tmpl["width"], tmpl["height"]
     if room_override is not None:
@@ -366,7 +371,7 @@ def build_room(
         object_layer("conditional_items", 7, conditional_items),
         object_layer("conditional_table_items", 11, conditional_table_items),
         object_layer("table_items", 12, table_items),
-        object_layer("Object Layer 1", 13, []),
+        object_layer("Object Layer 1", 13, list(collisions or [])),
     ]
 
     next_oid = 1
@@ -1990,6 +1995,11 @@ def room_hospital_storage_1x1gu():
 # types (README "Available Room Types").
 # ---------------------------------------------------------------------------
 
+# A 20-wide row from a 10-wide one (templates.json "20x10" uses the same map):
+# the side-wall and corner columns stay at the ends, interior columns repeat.
+COLS_20 = list(range(9)) + [1, 2, 3] + list(range(2, 10))
+
+
 class _Uni:
     """Collects a builder room's layers and numbers its objects in order."""
 
@@ -1997,6 +2007,7 @@ class _Uni:
         self.oid = 1
         self.tables, self.items, self.table_items = [], [], []
         self.conditional_items, self.conditional_table_items = [], []
+        self.collisions = []
 
     def _next(self):
         oid = self.oid
@@ -2017,10 +2028,22 @@ class _Uni:
             place_on_table(table, name, x_frac=x_frac, surface_frac=surface_frac, obj_id=self._next())
         )
 
+    def collision(self, x, y_top, w, h):
+        """An invisible blocking rectangle (room pixels; y is the TOP edge)."""
+        self.collisions.append({
+            "height": h, "id": self._next(), "name": "collision", "rotation": 0,
+            "type": "", "visible": True, "width": w, "x": x, "y": y_top,
+        })
+
     def build(self, name, template_key="10x10"):
         kw = {"use_room6": True}
         if template_key == "10x6_hall":
             kw = {"room_override": room6_hall_floor(10, 6)}
+        elif template_key == "20x10":
+            kw = {"room_override": [ROOM6_FIRSTGID + row * ROOM6_SHEET_COLS + COLS_20[col]
+                                    for row in range(10) for col in range(20)]}
+        if self.collisions:
+            kw["collisions"] = self.collisions
         return build_room(
             name=name,
             template_key=template_key,
@@ -2203,24 +2226,116 @@ def room_uni_office():
 def room_uni_workshop():
     """
     2×2 GU maker space: a scoreboard screen and a build screen on the back wall,
-    a safety sign, an island workbench inside the floor's hazard line, an
-    electronics bench, parts shelving and a cart. Door: S (SE corner, covered
-    rows); the east lane x 250-288 and the floor under the screens stay clear.
+    a safety sign, an island workbench inside the floor's hazard line, a parts
+    rack against the wall, an electronics bench, binders, a cart, boxed stock and
+    a cable on the floor. Door: S (SE corner, covered rows); the east lane
+    x 250-288 and the floor under the screens (x 64-180, y 64-100) stay clear, as
+    does the floor west of the island where Cliffe stands (x 50-130, y 153-233).
     Slots: conference_screen1 (as-type:conference_screen), smartscreen,
     pc5 on the workbench.
     """
     r = _Uni()
     bench = r.table("it_workbench1", 124.0, 198.0, kind="objects")
-    elec = r.table("smalldesk1", 196.0, 130.0)
+    elec = r.table("smalldesk1", 200.0, 240.0)       # electronics bench, SE of the island
     r.item("conference_screen1", 70.0, 52.0)
     r.item("smartscreen", 130.0, 50.0)
     r.item("uni_poster6", 186.0, 46.0)              # safety glasses must be worn
+    r.item("supply_shelves1", 200.0, 130.0)         # parts rack, back to the wall (top y 70)
     r.item("binder_shelves1", 28.0, 150.0)
     r.item("kvm_cart1", 36.0, 240.0)
-    r.on(elec, "office-misc-hdd6", 0.3, 0.30)
-    r.on(elec, "office-misc-camera", 0.75, 0.25)
+    r.item("supply_boxes1", 152.0, 250.0)           # deliveries waiting to be unpacked
+    r.item("cable", 190.0, 186.0)                   # a lead trailing between the benches
+    r.on(elec, "office-misc-hdd6", 0.2, 0.30)
+    r.on(elec, "office-misc-fan", 0.5, 0.22)
+    r.on(elec, "office-misc-camera", 0.82, 0.25)
     r.on(bench, "pc5", 0.50, 0.30, layer="conditional_table_items")
     return r.build("room_uni_workshop")
+
+
+def room_uni_lecture():
+    """
+    4×2 GU (20×10) lecture theatre: whiteboard and projector screen at the front,
+    a demonstration bench and a lectern, three tiered rows of seats facing the
+    front in two blocks (the tier lines are in the room_uni_lecture floor sheet).
+    The seats are walk-through sprites. A writing ledge in front of each row and
+    block (tables layer) makes the rows solid: a table's body is its bottom
+    quarter inset 10px each side, so a ledge 20px wider than its seat block
+    blocks exactly the seats and leaves the aisles open: west x 32-96, centre
+    x 274-340, east x 572-608. (Object Layer 1 collision rectangles would be the
+    tidier way, but rooms.js throws on them today: createRoom reads `room` before
+    its declaration. Don't use build_room(collisions=...) until that is fixed.)
+    Door: N (NW corner).
+    Slots: whiteboard2 (as-type:whiteboard).
+    """
+    r = _Uni()
+    demo = r.table("desk1", 240.0, 118.0)           # demonstration bench
+    r.table("smalldesk2", 326.0, 118.0)             # lectern (placeholder until PixelLab)
+    r.item("exit_sign1", 80.0, 30.0)
+    r.item("whiteboard2", 110.0, 50.0)
+    r.item("projector_screen1", 276.0, 54.0)
+    r.item("wall_clock1", 420.0, 46.0)
+    r.item("uni_poster1", 500.0, 46.0)
+    r.item("fire_alarm_point1", 612.0, 132.0)       # east wall
+    for feet in (170.0, 202.0, 234.0):
+        for x in range(96, 259, 18):
+            r.item("hospital_chair_north", float(x), feet)
+        for x in range(340, 557, 18):
+            r.item("hospital_chair_north", float(x), feet)
+        r.table("lecture_ledge1", 86.0, feet - 22, kind="objects")
+        r.table("lecture_ledge2", 330.0, feet - 22, kind="objects")
+    r.on(demo, "laptop6", 0.3, 0.40)
+    r.on(demo, "office-misc-speakers", 0.75, 0.25)
+    return r.build("room_uni_lecture", "20x10")
+
+
+def room_uni_special():
+    """
+    2×2 GU Special Collections: a sign and the founder's portrait, a wall of
+    bookcases, a reading table with lamps on the rug (painted in the floor
+    sheet), chairs round it, and the archive safe (conditional). Door: S (SE
+    corner, covered rows); the east lane x 256-288 stays clear.
+    Slots: safe1 (conditional).
+    """
+    r = _Uni()
+    reading = r.table("hospital_conference_table", 72.0, 206.0)
+    r.item("uni_sign_special1", 100.0, 40.0)
+    r.item("picture11", 190.0, 44.0)
+    for x in (64.0, 107.0, 150.0, 193.0):
+        r.item("bookcase", x, 120.0)                # top edge on y 70
+    r.item("hospital_chair2", 54.0, 200.0)          # west end, faces east
+    r.item("hospital_chair1", 200.0, 200.0)         # east end, faces west
+    r.item("hospital_chair_south", 110.0, 150.0)    # north side, facing the table
+    r.item("hospital_chair_south", 160.0, 150.0)
+    r.item("safe1", 220.0, 236.0, layer="conditional_items")
+    r.on(reading, "office-misc-lamp4", 0.2, 0.20)
+    r.on(reading, "office-misc-lamp4", 0.8, 0.20)
+    r.on(reading, "book1", 0.5, 0.40)
+    return r.build("room_uni_special")
+
+
+def room_uni_seminar():
+    """
+    2×2 GU seminar room: windows with blinds either side of a whiteboard, a long
+    table with chairs round it, a flip chart and a water cooler. Door: S (SE
+    corner, covered rows); the east lane x 256-288 and the floor under the
+    whiteboard stay clear.
+    Slots: whiteboard1 (as-type:whiteboard).
+    """
+    r = _Uni()
+    table = r.table("hospital_conference_table", 90.0, 206.0)
+    r.item("window_blinds1", 70.0, 50.0)
+    r.item("whiteboard1", 130.0, 50.0)
+    r.item("window_blinds1", 196.0, 50.0)
+    for x in (104.0, 145.0, 186.0):
+        r.item("hospital_chair_south", x, 150.0)    # north side, facing the table
+        r.item("hospital_chair_north", x, 232.0)    # south side, seen from behind
+    r.item("hospital_chair2", 70.0, 200.0)          # west end, faces east
+    r.item("hospital_chair1", 220.0, 200.0)         # east end, faces west
+    r.item("flip_chart1", 44.0, 130.0)
+    r.item("water_cooler1", 40.0, 250.0)
+    r.on(table, "office-misc-pens", 0.3, 0.35)
+    r.on(table, "mugs_tray1", 0.7, 0.35)
+    return r.build("room_uni_seminar")
 
 
 def main():
@@ -2249,6 +2364,9 @@ def main():
         "room_uni_library": room_uni_library,
         "room_uni_office": room_uni_office,
         "room_uni_workshop": room_uni_workshop,
+        "room_uni_lecture": room_uni_lecture,
+        "room_uni_special": room_uni_special,
+        "room_uni_seminar": room_uni_seminar,
     }
     # Optionally restrict to specific rooms (argv) so already-updated rooms are
     # not clobbered, e.g.  python3 scripts/generate_rooms.py room_hospital_hall
