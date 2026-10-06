@@ -2,7 +2,7 @@
 
 Folder `lab_tesseract_trials` (working title retired from the fiction: "Tesseract" is canon, see the brief). Kind of game: **lab scenario with SAFETYNET spy framing**. Aim: a short, fun escape-room mission where every lock opens by decoding or decrypting something in CyberChef, HaX's field notes do the teaching, and the dialogue sounds like the campaign, lighter and shorter.
 
-Status: **design v4 (build version)**, after review rounds 1-3 (`REVIEW_R1_A.md`, `REVIEW_R1_B.md`, `REVIEW_R2_A.md`, `REVIEW_R2_B.md`, `REVIEW_R3.md`), the browser probes (`scenarios/test-tesseract-probes/PROBE_RESULTS.md`) and the orchestrator's resolutions (`DECISIONS_LOG.md`, `DECISIONS_PENDING.md`). Nothing is built yet. Every finding is answered in "Changes in v2", "v3" and "v4" at the end. The user has decided D2 (the server must check the claimed unlock method against the lock; the engine fix is in the working tree, uncommitted, and must be committed before this scenario, as for D1) and D3 (60-75 minutes is acceptable; keep all locks; a timed blind playtest decides any cuts).
+Status: **design v4 (build version)**, after review rounds 1-3 (`REVIEW_R1_A.md`, `REVIEW_R1_B.md`, `REVIEW_R2_A.md`, `REVIEW_R2_B.md`, `REVIEW_R3.md`), the browser probes (`scenarios/test-tesseract-probes/PROBE_RESULTS.md`) and the orchestrator's resolutions (`DECISIONS_LOG.md`, `DECISIONS_PENDING.md`). Built (scenario.json.erb, ink/), then fix rounds 1 and 2 (see the build notes at the end); both engine changes (D1, D2) are committed. Every finding is answered in "Changes in v2", "v3" and "v4" at the end. The user has decided D2 (the server must check the claimed unlock method against the lock; the engine fix is in the working tree, uncommitted, and must be committed before this scenario, as for D1) and D3 (60-75 minutes is acceptable; keep all locks; a timed blind playtest decides any cuts).
 
 ## 1. Pitch and play time
 
@@ -486,7 +486,7 @@ Titles avoid giving answers away (README "Task, aim and item names don't give th
   - unconditional: "MISKATONIC UNIVERSITY: Term starts Monday."
 - Last line, unconditional: "Ghost remains at large."
 
-## 8. Climax and the three endings
+## 8. Climax and the endings (three choices; the build records four `ending` values: sent, double, refused, blown)
 
 Everything here uses features already in the engine and proved in m02 or the probes: a terminal-themed phone NPC on a second device (probe R2), a `video-call` mapping on a global change (probe R3), `sendTimedMessage` from a phone NPC (m02's Ghost), ink choices with `#set_global`, password locks with containers, `setVisible` mappings and a hidden person-chat debrief. No new minigame.
 
@@ -701,7 +701,7 @@ And for HaX's phone story:
 6. **Cliffe** has one line per ending (section 9). Jordan's stand empties on refused and blown (`setVisible: false` on `jordan_pike`, one mapping per value).
 7. **Debrief.** HaX's hub shows a **sticky** `[I'm clear. Debrief me.]` whenever `decision_made` is true (N-m10). It sets `start_debrief_cutscene`, which opens the hidden `closing_debrief_person` (`disableClose: true`, `hq1`). `#set_global` emits even for an unchanged value (`chat-helpers.js:477-497`), so after a reload mid-debrief, picking it again reopens the debrief.
 
-### The three endings
+### The endings (four `ending` values in the build)
 
 - **Betrayal (sent).** HaX's phone fetched the pixel. Nobody is hurt: SAFETYNET moves HaX and two others that night, and she debriefs from somewhere new. Ghost believes 0x00 belongs to them; SAFETYNET can't know if that's true, so HaX can't either. "Did you read it?" is the line that stays.
 - **Refusal (refused / blown).** HaX is safe. Ghost knew who 0x00 was all along, so this is **a door shut**, not a blown cover: CryptoSecure's stand is gone by morning and Jordan's email bounces. HaX: "A clean no is worth something. It's also the last time they'll talk to you."

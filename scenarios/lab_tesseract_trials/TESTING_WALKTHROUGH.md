@@ -103,8 +103,8 @@ CyberChef is opened from the inventory item `lab_laptop`. Paste the clue into **
     - *Recipe:* **From Base64** on the envelope, then **RSA Decrypt** (paste the private key PEM; leave the scheme RSA-OAEP and digest SHA-1).
     - *Output:* 32 hex characters, the AES key. Write it on the tag in the notepad. A wrong pigeonhole gives "Invalid RSAES-OAEP padding" or "Encrypted message is invalid".
 18. **L8b — `cryptosecure_drop_box` (corridor, password)**
-    - *Input from:* `drop_box_tag` text (the AES ciphertext as hex). The tag sits on the corridor wall and is takeable.
-    - *Recipe:* **AES Decrypt**, Key = the step 17 hex (toggle Hex), IV = the step 13 hex (toggle Hex), Mode CBC, Input Hex, Output Raw. Leave the rest. No IV gives "Invalid IV length"; a guessed IV errors or gives junk.
+    - *Input from:* `drop_box_tag` text (the AES ciphertext as hex). The tag is tied to the drop box's handle and is takeable (it goes to the notepad).
+    - *Recipe:* **AES Decrypt**, Key = the step 17 hex (check the toggle says Hex, the default), IV = the step 13 hex (likewise Hex), Mode CBC, Input Hex, Output Raw. Leave the rest. No IV gives "Invalid IV length"; a guessed IV errors or gives junk.
     - *Output:* the passphrase `<word>-NN`. **Keep this recipe open**; step 21 appends to it.
     - *Do:* type the passphrase → task `open_drop_box` complete, `drop_box_open` true. Aim `trials_keys` completes → `the_keyholder` unlocks. HaX texts "Brass. Old-fashioned…" (1.5 s), Ghost texts the hybrid-encryption line (7 s).
     - *Example (seed 42):* `padlock-92`.
