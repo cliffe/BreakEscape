@@ -2,7 +2,7 @@
 
 Brief: `docs/agents/TESSERACT_TRIALS_BRIEF.md`. Log: `scenarios/lab_tesseract_trials/DECISIONS_LOG.md`.
 Loop: design (Opus, DESIGN.md) → 3 adversarial review rounds (alignment + design-review lenses) → implement → puzzle-chains + dialogue reviews → Sonnet playtests → fix until clean.
-Status: backgrounds committed (8926df10: hq4, hq5, miskatonic_campus). Running: builder wiring them + campus narrator transition; DIALOGUE_REVIEW_R2; ROOMS_PLAN. PixelLab allowed without check-in this session.
+Status: dialogue round 2 committed (56b27630); ROOMS_PLAN committed (ea27675e) with defaults. Running: room builder, phases 0-1 (ten room_uni_* maps; this run re-skins the 7 existing rooms). Then phase 2 (3 new rooms + timed blind playtest), phase 3 (PixelLab batches, cleared this session), phase 4 polish; confirmation playtest; audio (Schreuders lines first).
 
 # Resume note — pass 4 (editorial, m02–m08)
 
