@@ -811,6 +811,8 @@ WALL_MOUNTED_EXTRAS = {
     "uni_sign_special",
     "uni_timetable",
     "uni_poster",
+    "alarm_panel",
+    "pegboard_tools",
 }
 
 
@@ -2074,12 +2076,13 @@ def room_uni_foyer():
     stand = r.table("desk1", 100.0, 240.0)          # recruiter's stand
     # back wall: plaque, Byte Wall, crest (decor), chart; >= 32px between interactables
     r.item("plaque1", 82.0, 52.0)
-    r.item("alarm_panel", 138.0, 52.0)
+    r.item("alarm_panel2", 138.0, 52.0)            # the 1979 front panel, lit 01001101 (base alarm_panel)
     r.item("uni_crest_sign1", 174.0, 42.0)
     r.item("chart2", 222.0, 52.0)
     r.item("uni_poster1", 14.0, 136.0)              # west wall, below the door row
     r.item("fire_alarm_point1", 292.0, 132.0)       # east wall
     r.item("cryptosecure_banner1", 182.0, 240.0)    # pull-up banner beside the stand
+    r.table("display_case1", 226.0, 253.0, kind="objects")  # glass case of old tapes and cards, by the papers
     # papers on the display: the ASCII chart first, then the tape (scenario order)
     r.on(display, "notes4", 0.17, 0.45, layer="conditional_table_items")
     r.on(display, "notes2", 0.86, 0.45, layer="conditional_table_items")
@@ -2146,7 +2149,7 @@ def room_uni_common():
     r.item("student_lockers1", 160.0, 132.0)
     r.item("student_locker1", 210.0, 132.0, layer="conditional_items")  # Candidate Locker 4
     r.item("coffee_station1", 258.0, 172.0)
-    r.item("sofa1", 48.0, 214.0)
+    r.item("uni_sofa1", 44.0, 214.0)
     # no chair east of the low table: Cliffe stands there (scenario position 5.3, 7.4)
     r.on(counter, "kettle1", 0.25, 0.25)
     r.on(counter, "mugs_tray1", 0.70, 0.30)
@@ -2196,6 +2199,7 @@ def room_uni_library():
         r.item("bookcase", x, 74.0)                 # recessed shelves
     r.item("uni_sign_library1", 200.0, 34.0)
     r.item("hospital_chair_south", 100.0, 110.0)    # the librarian's chair
+    r.item("book_trolley1", 40.0, 118.0)            # returns waiting to be shelved
     r.item("safe1", 232.0, 120.0, layer="conditional_items")
     r.on(desk, "book1", 0.62, 0.35, layer="conditional_table_items")
     r.on(desk, "notes4", 0.80, 0.50, layer="conditional_table_items")
@@ -2236,18 +2240,18 @@ def room_uni_workshop():
     """
     r = _Uni()
     bench = r.table("it_workbench1", 124.0, 198.0, kind="objects")
-    elec = r.table("smalldesk1", 200.0, 240.0)       # electronics bench, SE of the island
+    r.table("electronics_bench1", 200.0, 240.0, kind="objects")  # scope, soldering station, magnifier
+    r.table("laser_cutter1", 196.0, 128.0, kind="objects")       # back to the wall, top y 70
+    r.table("printer_3d1", 36.0, 240.0, kind="objects")
+    r.table("cnc_mill1", 152.0, 250.0, kind="objects")
     r.item("conference_screen1", 70.0, 52.0)
     r.item("smartscreen", 130.0, 50.0)
-    r.item("uni_poster6", 186.0, 46.0)              # safety glasses must be worn
-    r.item("supply_shelves1", 200.0, 130.0)         # parts rack, back to the wall (top y 70)
-    r.item("binder_shelves1", 28.0, 150.0)
-    r.item("kvm_cart1", 36.0, 240.0)
-    r.item("supply_boxes1", 152.0, 250.0)           # deliveries waiting to be unpacked
-    r.item("cable", 190.0, 186.0)                   # a lead trailing between the benches
-    r.on(elec, "office-misc-hdd6", 0.2, 0.30)
-    r.on(elec, "office-misc-fan", 0.5, 0.22)
-    r.on(elec, "office-misc-camera", 0.82, 0.25)
+    r.item("pegboard_tools1", 182.0, 57.0)          # over the laser cutter
+    r.item("uni_poster6", 240.0, 46.0)              # safety glasses must be worn
+    r.item("component_drawers1", 28.0, 150.0)       # parts drawers on the west wall
+    r.item("robot_arm1", 88.0, 140.0)
+    r.item("scope_cart1", 200.0, 190.0)             # oscilloscope trolley (walk-through items layer)
+    r.item("cable", 96.0, 252.0)                    # a lead trailing from the printer
     r.on(bench, "pc5", 0.50, 0.30, layer="conditional_table_items")
     return r.build("room_uni_workshop")
 
@@ -2269,7 +2273,7 @@ def room_uni_lecture():
     """
     r = _Uni()
     demo = r.table("desk1", 240.0, 118.0)           # demonstration bench
-    r.table("smalldesk2", 326.0, 118.0)             # lectern (placeholder until PixelLab)
+    r.table("lectern1", 326.0, 118.0, kind="objects")
     r.item("exit_sign1", 80.0, 30.0)
     r.item("whiteboard2", 110.0, 50.0)
     r.item("projector_screen1", 276.0, 54.0)
@@ -2277,10 +2281,12 @@ def room_uni_lecture():
     r.item("uni_poster1", 500.0, 46.0)
     r.item("fire_alarm_point1", 612.0, 132.0)       # east wall
     for feet in (170.0, 202.0, 234.0):
-        for x in range(96, 259, 18):
-            r.item("hospital_chair_north", float(x), feet)
-        for x in range(340, 557, 18):
-            r.item("hospital_chair_north", float(x), feet)
+        # seat rows seen from behind (3 seats a sprite), 8px below the row line so
+        # the backs just overlap their own ledge and the next ledge hides the legs
+        for x in (92.0, 153.0, 214.0):
+            r.item("lecture_seat_row1", x, feet + 8)
+        for x in (334.0, 395.0, 456.0, 517.0):
+            r.item("lecture_seat_row1", x, feet + 8)
         r.table("lecture_ledge1", 86.0, feet - 22, kind="objects")
         r.table("lecture_ledge2", 330.0, feet - 22, kind="objects")
     r.on(demo, "laptop6", 0.3, 0.40)
@@ -2300,15 +2306,17 @@ def room_uni_special():
     reading = r.table("hospital_conference_table", 72.0, 206.0)
     r.item("uni_sign_special1", 100.0, 40.0)
     r.item("picture11", 190.0, 44.0)
-    for x in (64.0, 107.0, 150.0, 193.0):
+    for x in (68.0, 111.0, 154.0, 197.0):
         r.item("bookcase", x, 120.0)                # top edge on y 70
-    r.item("hospital_chair2", 54.0, 200.0)          # west end, faces east
+    r.table("plan_chest1", 24.0, 140.0, kind="objects")
+    r.table("display_case2", 24.0, 255.0, kind="objects")   # 1970s media under glass
+    r.item("stanchions1", 88.0, 255.0)              # rope across the front of the case
     r.item("hospital_chair1", 200.0, 200.0)         # east end, faces west
     r.item("hospital_chair_south", 110.0, 150.0)    # north side, facing the table
     r.item("hospital_chair_south", 160.0, 150.0)
     r.item("safe1", 220.0, 236.0, layer="conditional_items")
-    r.on(reading, "office-misc-lamp4", 0.2, 0.20)
-    r.on(reading, "office-misc-lamp4", 0.8, 0.20)
+    r.on(reading, "bankers_lamp1", 0.2, 0.20)
+    r.on(reading, "bankers_lamp1", 0.8, 0.20)
     r.on(reading, "book1", 0.5, 0.40)
     return r.build("room_uni_special")
 
@@ -2333,8 +2341,10 @@ def room_uni_seminar():
     r.item("hospital_chair1", 220.0, 200.0)         # east end, faces west
     r.item("flip_chart1", 44.0, 130.0)
     r.item("water_cooler1", 40.0, 250.0)
+    r.item("beanbag1", 205.0, 252.0)                # reading-group bean bags, clear of the east lane
     r.on(table, "office-misc-pens", 0.3, 0.35)
     r.on(table, "mugs_tray1", 0.7, 0.35)
+    r.on(table, "journal_stack1", 0.5, 0.30)
     return r.build("room_uni_seminar")
 
 

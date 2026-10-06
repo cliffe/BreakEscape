@@ -249,6 +249,18 @@
                  "width":24,
                  "x":40,
                  "y":250
+                }, 
+                {
+                 "gid":957,
+                 "height":41,
+                 "id":15,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":44,
+                 "x":205,
+                 "y":252
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -286,7 +298,7 @@
                 {
                  "gid":210,
                  "height":15,
-                 "id":15,
+                 "id":16,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -298,7 +310,7 @@
                 {
                  "gid":835,
                  "height":15,
-                 "id":16,
+                 "id":17,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -306,6 +318,18 @@
                  "width":20,
                  "x":168.2,
                  "y":170.25
+                }, 
+                {
+                 "gid":962,
+                 "height":27,
+                 "id":18,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":26,
+                 "x":140,
+                 "y":167.5
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -325,7 +349,7 @@
          "y":0
         }],
  "nextlayerid":14,
- "nextobjectid":17,
+ "nextobjectid":19,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.2",
@@ -2797,7 +2821,7 @@
          "margin":0,
          "name":"objects\/hospital_extras",
          "spacing":0,
-         "tilecount":139,
+         "tilecount":163,
          "tileheight":63,
          "tiles":[
                 {
@@ -3646,8 +3670,155 @@
                  "image":"..\/objects\/student_locker1.png",
                  "imageheight":62,
                  "imagewidth":16
+                }, 
+                {
+                 "id":139,
+                 "image":"..\/objects\/lecture_ledge1.png",
+                 "imageheight":12,
+                 "imagewidth":198
+                },
+            
+                {
+                 "id":140,
+                 "image":"..\/objects\/lecture_ledge2.png",
+                 "imageheight":12,
+                 "imagewidth":252
+                }, 
+                {
+                 "id":141,
+                 "image":"..\/objects\/alarm_panel2.png",
+                 "imageheight":21,
+                 "imagewidth":33
+                }, 
+                {
+                 "id":142,
+                 "image":"..\/objects\/pegboard_tools1.png",
+                 "imageheight":44,
+                 "imagewidth":56
+                }, 
+                {
+                 "id":143,
+                 "image":"..\/objects\/lectern1.png",
+                 "imageheight":46,
+                 "imagewidth":30
+                }, 
+                {
+                 "id":144,
+                 "image":"..\/objects\/book_trolley1.png",
+                 "imageheight":43,
+                 "imagewidth":38
+                }, 
+                {
+                 "id":145,
+                 "image":"..\/objects\/printer_3d1.png",
+                 "imageheight":46,
+                 "imagewidth":34
+                }, 
+                {
+                 "id":146,
+                 "image":"..\/objects\/plan_chest1.png",
+                 "imageheight":42,
+                 "imagewidth":44
+                }, 
+                {
+                 "id":147,
+                 "image":"..\/objects\/display_case1.png",
+                 "imageheight":60,
+                 "imagewidth":54
+                }, 
+                {
+                 "id":148,
+                 "image":"..\/objects\/display_case2.png",
+                 "imageheight":57,
+                 "imagewidth":58
+                }, 
+                {
+                 "id":149,
+                 "image":"..\/objects\/uni_sofa1.png",
+                 "imageheight":51,
+                 "imagewidth":60
+                },
+            
+                {
+                 "id":150,
+                 "image":"..\/objects\/laser_cutter1.png",
+                 "imageheight":58,
+                 "imagewidth":60
+                }, 
+                {
+                 "id":151,
+                 "image":"..\/objects\/scope_cart1.png",
+                 "imageheight":57,
+                 "imagewidth":48
+                }, 
+                {
+                 "id":152,
+                 "image":"..\/objects\/lecture_seat_row1.png",
+                 "imageheight":32,
+                 "imagewidth":61
+                }, 
+                {
+                 "id":153,
+                 "image":"..\/objects\/electronics_bench1.png",
+                 "imageheight":44,
+                 "imagewidth":42
+                }, 
+                {
+                 "id":154,
+                 "image":"..\/objects\/component_drawers1.png",
+                 "imageheight":41,
+                 "imagewidth":37
+                }, 
+                {
+                 "id":155,
+                 "image":"..\/objects\/robot_arm1.png",
+                 "imageheight":41,
+                 "imagewidth":31
+                }, 
+                {
+                 "id":156,
+                 "image":"..\/objects\/beanbag1.png",
+                 "imageheight":41,
+                 "imagewidth":44
+                }, 
+                {
+                 "id":157,
+                 "image":"..\/objects\/stanchions1.png",
+                 "imageheight":35,
+                 "imagewidth":41
+                }, 
+                {
+                 "id":158,
+                 "image":"..\/objects\/cnc_mill1.png",
+                 "imageheight":44,
+                 "imagewidth":41
+                }, 
+                {
+                 "id":159,
+                 "image":"..\/objects\/bankers_lamp1.png",
+                 "imageheight":25,
+                 "imagewidth":23
+                },
+            
+                {
+                 "id":160,
+                 "image":"..\/objects\/pi_cluster1.png",
+                 "imageheight":25,
+                 "imagewidth":27
+                }, 
+                {
+                 "id":161,
+                 "image":"..\/objects\/journal_stack1.png",
+                 "imageheight":27,
+                 "imagewidth":26
+                }, 
+                {
+                 "id":162,
+                 "image":"..\/objects\/soldering_iron1.png",
+                 "imageheight":26,
+                 "imagewidth":26
                 }],
-         "tilewidth":192
+         "tilewidth":252
         }],
  "tilewidth":32,
  "type":"map",

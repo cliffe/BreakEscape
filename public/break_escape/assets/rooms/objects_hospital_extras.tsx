@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="141" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="163" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../objects/iv_stand1.png" width="25" height="60"/>
@@ -423,5 +423,71 @@
  </tile>
  <tile id="140">
   <image source="../objects/lecture_ledge2.png" width="252" height="12"/>
+ </tile>
+ <tile id="141">
+  <image source="../objects/alarm_panel2.png" width="33" height="21"/>
+ </tile>
+ <tile id="142">
+  <image source="../objects/pegboard_tools1.png" width="56" height="44"/>
+ </tile>
+ <tile id="143">
+  <image source="../objects/lectern1.png" width="30" height="46"/>
+ </tile>
+ <tile id="144">
+  <image source="../objects/book_trolley1.png" width="38" height="43"/>
+ </tile>
+ <tile id="145">
+  <image source="../objects/printer_3d1.png" width="34" height="46"/>
+ </tile>
+ <tile id="146">
+  <image source="../objects/plan_chest1.png" width="44" height="42"/>
+ </tile>
+ <tile id="147">
+  <image source="../objects/display_case1.png" width="54" height="60"/>
+ </tile>
+ <tile id="148">
+  <image source="../objects/display_case2.png" width="58" height="57"/>
+ </tile>
+ <tile id="149">
+  <image source="../objects/uni_sofa1.png" width="60" height="51"/>
+ </tile>
+ <tile id="150">
+  <image source="../objects/laser_cutter1.png" width="60" height="58"/>
+ </tile>
+ <tile id="151">
+  <image source="../objects/scope_cart1.png" width="48" height="57"/>
+ </tile>
+ <tile id="152">
+  <image source="../objects/lecture_seat_row1.png" width="61" height="32"/>
+ </tile>
+ <tile id="153">
+  <image source="../objects/electronics_bench1.png" width="42" height="44"/>
+ </tile>
+ <tile id="154">
+  <image source="../objects/component_drawers1.png" width="37" height="41"/>
+ </tile>
+ <tile id="155">
+  <image source="../objects/robot_arm1.png" width="31" height="41"/>
+ </tile>
+ <tile id="156">
+  <image source="../objects/beanbag1.png" width="44" height="41"/>
+ </tile>
+ <tile id="157">
+  <image source="../objects/stanchions1.png" width="41" height="35"/>
+ </tile>
+ <tile id="158">
+  <image source="../objects/cnc_mill1.png" width="41" height="44"/>
+ </tile>
+ <tile id="159">
+  <image source="../objects/bankers_lamp1.png" width="23" height="25"/>
+ </tile>
+ <tile id="160">
+  <image source="../objects/pi_cluster1.png" width="27" height="25"/>
+ </tile>
+ <tile id="161">
+  <image source="../objects/journal_stack1.png" width="26" height="27"/>
+ </tile>
+ <tile id="162">
+  <image source="../objects/soldering_iron1.png" width="26" height="26"/>
  </tile>
 </tileset>

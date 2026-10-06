@@ -3115,6 +3115,138 @@
       "w": 252,
       "h": 12,
       "gid": 941
+    },
+    "alarm_panel2": {
+      "id": 141,
+      "w": 33,
+      "h": 21,
+      "gid": 942
+    },
+    "pegboard_tools1": {
+      "id": 142,
+      "w": 56,
+      "h": 44,
+      "gid": 943
+    },
+    "lectern1": {
+      "id": 143,
+      "w": 30,
+      "h": 46,
+      "gid": 944
+    },
+    "book_trolley1": {
+      "id": 144,
+      "w": 38,
+      "h": 43,
+      "gid": 945
+    },
+    "printer_3d1": {
+      "id": 145,
+      "w": 34,
+      "h": 46,
+      "gid": 946
+    },
+    "plan_chest1": {
+      "id": 146,
+      "w": 44,
+      "h": 42,
+      "gid": 947
+    },
+    "display_case1": {
+      "id": 147,
+      "w": 54,
+      "h": 60,
+      "gid": 948
+    },
+    "display_case2": {
+      "id": 148,
+      "w": 58,
+      "h": 57,
+      "gid": 949
+    },
+    "uni_sofa1": {
+      "id": 149,
+      "w": 60,
+      "h": 51,
+      "gid": 950
+    },
+    "laser_cutter1": {
+      "id": 150,
+      "w": 60,
+      "h": 58,
+      "gid": 951
+    },
+    "scope_cart1": {
+      "id": 151,
+      "w": 48,
+      "h": 57,
+      "gid": 952
+    },
+    "lecture_seat_row1": {
+      "id": 152,
+      "w": 61,
+      "h": 32,
+      "gid": 953
+    },
+    "electronics_bench1": {
+      "id": 153,
+      "w": 42,
+      "h": 44,
+      "gid": 954
+    },
+    "component_drawers1": {
+      "id": 154,
+      "w": 37,
+      "h": 41,
+      "gid": 955
+    },
+    "robot_arm1": {
+      "id": 155,
+      "w": 31,
+      "h": 41,
+      "gid": 956
+    },
+    "beanbag1": {
+      "id": 156,
+      "w": 44,
+      "h": 41,
+      "gid": 957
+    },
+    "stanchions1": {
+      "id": 157,
+      "w": 41,
+      "h": 35,
+      "gid": 958
+    },
+    "cnc_mill1": {
+      "id": 158,
+      "w": 41,
+      "h": 44,
+      "gid": 959
+    },
+    "bankers_lamp1": {
+      "id": 159,
+      "w": 23,
+      "h": 25,
+      "gid": 960
+    },
+    "pi_cluster1": {
+      "id": 160,
+      "w": 27,
+      "h": 25,
+      "gid": 961
+    },
+    "journal_stack1": {
+      "id": 161,
+      "w": 26,
+      "h": 27,
+      "gid": 962
+    },
+    "soldering_iron1": {
+      "id": 162,
+      "w": 26,
+      "h": 26,
+      "gid": 963
     }
   }
 }
