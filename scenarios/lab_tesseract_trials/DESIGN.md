@@ -1051,3 +1051,31 @@ Round 3 (`REVIEW_R3.md`, "ready to build with these small fixes") and the user's
 | R3-11 (verifier run note) | Rule 19 and a note at the top of `tools/verify_cyberchef.mjs`. |
 | R3-12 (Comms reminder over the watched line) | After `lockbox_open`, HaX points at the brief and sends no note. `comms_had` set by each note's `onPickup`. |
 | D2, D3 | Decided by the user; see the status line. |
+
+### Build notes (v4 build, deviations from the design text)
+
+The build follows sections 3-9 except where these say otherwise. Each is mission-local.
+
+| Where | Design said | Built | Why |
+|---|---|---|---|
+| Lab board | `chalkboard2` pinned over the template's | `whiteboard2` "Dr Shaw's Whiteboard" at (8.0, 5.5) | Avoids a doubled sprite (R20) with the same text. |
+| Workshop screen | `smartscreen` | `info_screen1` at (1.1, 2.4), with the same `observationVariants`; the soldering iron moved into its text | Same reason; the template already draws a smartscreen. |
+| Workshop decor | `it_workbench1`, `server_rack1`, `kvm_cart1` | dropped | The workbench sat across the only path from the south door (R22). |
+| Positions | section 3 pins | foyer exhibits moved to the open floor (Byte Wall 4.0,4.4; plaque 5.4,4.4; ASCII chart 2.6,4.6; tape 7.0,4.6; poster 8.6,4.4); directory 7.2,4.6; Sidhu 3.4,4.8 with his whiteboard at 1.0,4.6; Cliffe (workshop) 2.9,7.2; scoreboard 1.1,7.6 | Smoke run 1576 found the foyer pins walling the player in by the west door; the others were the same pattern on inspection (PROBE_RESULTS "Build smoke run"). |
+| Loose Threads aim | `unlockCondition.globalVariable` alone | plus a HaX mapping `global_variable_changed:megan_file_read` → `unlockAim: loose_threads` | Probe R21: a global-gated aim stays `locked` until something unlocks it (m05 pattern). |
+| `comms_had`, `fn07_had`, `fn10_had` | one mapping per note id | each note's own `onPickup.setVariable` | R3 note 9; probe R19 confirmed `onPickup` fires on an NPC hand-over. |
+| `fnXX_sent` | scenario globals | ink-local VARs in HaX's story | Only HaX reads them. |
+| Music on `relay_opened` | `onceOnly` | condition only (`!globalVars.decision_made`) | The music system has no `onceOnly`; a repeat switch to the playlist already playing is harmless. |
+| `decide_about_megan` | completed on `megan_choice_made` | as designed, by a HaX mapping | (was missing from the first draft of the build) |
+| `validSprites` | not in the design | kept from m01 | The validator warns it's unknown to the schema; m01 uses it. |
+| Debrief | the cameras line | "I bet Ghost never saw your face at St Catherine's. I lost." | R3-6 |
+
+Validator, final: 0 errors, 7 warnings, all deliberate:
+- `validSprites` (m01 pattern);
+- two HaX mappings on `open_pigeonholes` (the FN9 and FN8 offers, 6 s apart, meant to both fire);
+- `concludeRequires` names a non-flag task (design decision Q13: the relay terminal proves the whole chain);
+- the Keyholder pickup mapping has "no visible effect" (it opens the phone chat, which is the effect);
+- the debrief cutscene mapping has no `onceOnly` (N-m10: the sticky debrief choice must be able to reopen it after a reload);
+- two "multiple solution paths" warnings for the pigeonholes and the drop box, which are AND gates, marked with `puzzle_graph_and_with`.
+
+The 29 suggestions are VM, RFID, hostile-NPC and patrol prompts that don't apply to a lab; `onPickup` on hand-over notes (intended: the global means "has the note"); and graph metadata on items inside containers whose container already carries the edge (adding it there creates duplicate-path warnings).

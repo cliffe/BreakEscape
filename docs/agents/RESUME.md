@@ -2,7 +2,7 @@
 
 Brief: `docs/agents/TESSERACT_TRIALS_BRIEF.md`. Log: `scenarios/lab_tesseract_trials/DECISIONS_LOG.md`.
 Loop: design (Opus, DESIGN.md) → 3 adversarial review rounds (alignment + design-review lenses) → implement → puzzle-chains + dialogue reviews → Sonnet playtests → fix until clean.
-Status: design review done (R3 ready with small fixes). Running: D2 engine fixer; BUILD (designer) incl. R3 fixes and first-run probes. Next: implementation review (fresh Opus), puzzle-chains + npc-dialog reviews, Sonnet playtests, fix loop.
+Status: BUILD committed. Next: implementation review + puzzle-chains + dialogue reviews (Opus) and Sonnet walkthrough + split playtests, side by side; fixes to the builder; commit after each round.
 
 # Resume note — pass 4 (editorial, m02–m08)
 

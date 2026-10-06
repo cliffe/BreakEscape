@@ -1,0 +1,133 @@
+// ================================================
+// The Keyholder Trials: closing debrief (HaX at HQ, hidden person-chat)
+// Opened by start_debrief_cutscene. Branches on the ending, the warning,
+// Megan and Jordan. hear_debrief completes on the last line, before the exit,
+// so the credits never cover the debrief. DESIGN section 9.
+// ================================================
+
+// Synced scenario globals
+VAR ending = ""
+VAR warned_out_of_band = false
+VAR late_warning = false
+VAR megan_choice = ""
+VAR report_read_claimed = ""
+
+VAR debrief_done = false
+
+=== start ===
+{ debrief_done: -> after }
+{
+- ending == "sent":
+    -> opening_sent
+- ending == "double":
+    -> opening_double
+- ending == "blown":
+    -> opening_blown
+- else:
+    -> opening_refused
+}
+
+=== opening_sent ===
+Agent HaX: Sit down.
+Agent HaX: I opened your report on my phone at eleven minutes past six. At twelve minutes past, my phone told a server in Rotterdam where I was.
+Agent HaX: We moved me, and two others, before midnight. Nobody's hurt.
+Agent HaX: Did you read it before you sent it?
++ [No. I didn't decode it.]
+    #set_global:report_read_claimed:unread
+    Agent HaX: No. Most people wouldn't have. That's why it works.
+    -> pixel
++ [I read it. I sent it anyway.]
+    #set_global:report_read_claimed:read
+    Agent HaX: Then you'll have your reasons, and one day you'll tell me them. Not today.
+    -> pixel
+
+=== opening_double ===
+Agent HaX: My phone did exactly what Ghost wanted, in a flat in Leeds we rent for the purpose.
+Agent HaX: Ghost's server thinks that's where I live. It'll go on thinking it while we watch who comes to look.
+Agent HaX: Thank you for the flag.
+{ late_warning:
+    Agent HaX: Even if it came a little late to be any use.
+}
+-> pixel
+
+=== opening_refused ===
+Agent HaX: You said no to Ghost on their own terms. That's rarer than you'd think.
+{ warned_out_of_band:
+    Agent HaX: And you sent me the token first. We're watching that server now.
+}
+-> pixel
+
+=== opening_blown ===
+Agent HaX: You told me on the line Ghost said was listening. They heard. That was the end of it.
+Agent HaX: You were right about the report, mind. Nobody opened it.
+{ warned_out_of_band:
+    Agent HaX: And you sent me the token. We're watching that server now.
+}
+-> pixel
+
+=== pixel ===
+Agent HaX: One pixel. A picture too small to see, fetched from Ghost's server the moment anyone opens the report. That's all a location costs.
+Agent HaX: Your mail app does the same thing every day, unless you turn remote images off.
+-> why_you
+
+=== why_you ===
+Agent HaX: I bet Ghost never saw your face at St Catherine's. I lost.
+Agent HaX: I said I'd take either outcome. Ghost recognised you and wanted you anyway. That's worth knowing. I didn't enjoy learning it.
+{ ending == "double":
+    Agent HaX: Ghost will ask again, and next time it'll be something we can't fake.
+}
+{ ending == "refused" or ending == "blown":
+    Agent HaX: A clean no is worth something. It's also the last time they'll talk to you.
+}
+Agent HaX: Hand in the device. We're replacing your phone too. It sat next to theirs all day.
+-> people
+
+=== people ===
+{
+- megan_choice == "warned":
+    Agent HaX: Megan Oyelaran walked away from CryptoSecure. Still skint. Still free.
+- megan_choice == "protected":
+    Agent HaX: Megan Oyelaran has a bursary from a donor she'll never meet. Don't tell her.
+- ending == "sent" or ending == "double":
+    Agent HaX: Megan Oyelaran took a CryptoSecure summer placement. We'll keep an eye on her. You could have.
+- else:
+    Agent HaX: Megan Oyelaran's placement vanished with CryptoSecure. She's still eleven thousand down and still looking.
+}
+{ ending == "sent" or ending == "double":
+    Agent HaX: Jordan Pike got his referral bonus. He'll never know what for.
+- else:
+    Agent HaX: The stand was gone by morning. Jordan Pike's student email bounces.
+}
+Agent HaX: You can read Base64 now. Most people who'd have opened that report can't.
+-> questions
+
+=== questions ===
++ [Who is Dr Schreuders?]
+    Agent HaX: That's classified.
+    -> questions_more
++ [Was Ghost really reading my phone?]
+    Agent HaX: We're replacing it. That's all the answer you get.
+    -> questions
++ [That's everything.]
+    -> close
+
+=== questions_more ===
++ [Classified by whom?]
+    Agent HaX: Classified isn't the same as "I don't know", Agent. Leave it there.
+    -> questions
++ [Fine.]
+    -> questions
+
+=== close ===
+~ debrief_done = true
+Agent HaX: Term starts Monday. Go to your lectures. You never know who's watching.
+#complete_task:hear_debrief
+#exit_conversation
+-> after
+
+=== after ===
+Agent HaX: Go home, Agent.
++ [Going.]
+    Agent HaX: Good.
+    #exit_conversation
+    -> after

@@ -1,0 +1,475 @@
+{
+  "scenario": "lab_tesseract_trials",
+  "start_room": "foyer",
+  "nodes": [
+    {
+      "id": "door_corridor",
+      "label": "Computing Corridor<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "corridor",
+      "label": "Computing Corridor",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_library",
+      "label": "Library<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "library",
+      "label": "Library",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_workshop",
+      "label": "Workshop (knock)<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "workshop",
+      "label": "Workshop (knock)",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "foyer",
+      "label": "Computing Building Foyer",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lock_cryptosecure_lockbox",
+      "label": "CryptoSecure Lockbox<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "cryptosecure_lockbox",
+      "label": "CryptoSecure Lockbox",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_candidate_locker_4",
+      "label": "Candidate Locker 4",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "npc_jordan_pike",
+      "label": "Jordan Pike",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "keyholder_leaflet",
+      "label": "Keyholder Leaflet",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "teaching_lab",
+      "label": "Teaching Lab 1",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "private_key_pem",
+      "label": "private_key.pem",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_keyholder_guest_terminal",
+      "label": "Keyholder Guest Terminal<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "keyholder_guest_terminal",
+      "label": "Keyholder Guest Terminal",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "npc_dr_tom_shaw",
+      "label": "Dr Tom Shaw",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "lab_laptop_cyberchef",
+      "label": "Lab Laptop (CyberChef)",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "common_room",
+      "label": "Student Common Room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "candidate_locker_4",
+      "label": "Candidate Locker 4",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "trial_v_poster",
+      "label": "Trial V Poster",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_pigeonholes",
+      "label": "Pigeonholes<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "pigeonholes",
+      "label": "Pigeonholes",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_cryptosecure_drop_box",
+      "label": "Cryptosecure Drop Box",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "brass_key",
+      "label": "Brass Key",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cryptosecure_drop_box",
+      "label": "CryptoSecure Drop Box",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_relay_terminal",
+      "label": "Relay Terminal",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "tag_on_the_drop_box",
+      "label": "Tag on the Drop Box",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "returns_slip",
+      "label": "Returns Slip",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_special_collections_safe",
+      "label": "Special Collections Safe",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "special_collections_safe",
+      "label": "Special Collections Safe",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "sidhu_office",
+      "label": "Dr S. Selvarajan",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "dr_selvarajan_s_ledger_whiteboard",
+      "label": "Dr Selvarajan's Ledger Whiteboard",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "relay_terminal",
+      "label": "Relay Terminal",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_hacktivity_scoreboard",
+      "label": "Hacktivity Scoreboard",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "andgate1",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    },
+    {
+      "id": "andgate2",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_corridor",
+      "to": "corridor",
+      "soft": false
+    },
+    {
+      "from": "door_library",
+      "to": "library",
+      "soft": false
+    },
+    {
+      "from": "door_workshop",
+      "to": "workshop",
+      "soft": false
+    },
+    {
+      "from": "foyer",
+      "to": "lock_cryptosecure_lockbox",
+      "soft": false
+    },
+    {
+      "from": "foyer",
+      "to": "cryptosecure_lockbox",
+      "soft": false
+    },
+    {
+      "from": "cryptosecure_lockbox",
+      "to": "lock_candidate_locker_4",
+      "soft": false
+    },
+    {
+      "from": "foyer",
+      "to": "npc_jordan_pike",
+      "soft": false
+    },
+    {
+      "from": "npc_jordan_pike",
+      "to": "keyholder_leaflet",
+      "soft": false
+    },
+    {
+      "from": "keyholder_leaflet",
+      "to": "lock_cryptosecure_lockbox",
+      "soft": false
+    },
+    {
+      "from": "teaching_lab",
+      "to": "private_key_pem",
+      "soft": false
+    },
+    {
+      "from": "teaching_lab",
+      "to": "lock_keyholder_guest_terminal",
+      "soft": false
+    },
+    {
+      "from": "teaching_lab",
+      "to": "keyholder_guest_terminal",
+      "soft": false
+    },
+    {
+      "from": "keyholder_guest_terminal",
+      "to": "door_corridor",
+      "soft": false
+    },
+    {
+      "from": "teaching_lab",
+      "to": "npc_dr_tom_shaw",
+      "soft": false
+    },
+    {
+      "from": "npc_dr_tom_shaw",
+      "to": "lab_laptop_cyberchef",
+      "soft": false
+    },
+    {
+      "from": "common_room",
+      "to": "lock_candidate_locker_4",
+      "soft": false
+    },
+    {
+      "from": "common_room",
+      "to": "candidate_locker_4",
+      "soft": false
+    },
+    {
+      "from": "candidate_locker_4",
+      "to": "lock_keyholder_guest_terminal",
+      "soft": false
+    },
+    {
+      "from": "corridor",
+      "to": "trial_v_poster",
+      "soft": false
+    },
+    {
+      "from": "trial_v_poster",
+      "to": "door_library",
+      "soft": false
+    },
+    {
+      "from": "corridor",
+      "to": "lock_pigeonholes",
+      "soft": false
+    },
+    {
+      "from": "corridor",
+      "to": "pigeonholes",
+      "soft": false
+    },
+    {
+      "from": "pigeonholes",
+      "to": "lock_cryptosecure_drop_box",
+      "soft": false
+    },
+    {
+      "from": "corridor",
+      "to": "lock_cryptosecure_drop_box",
+      "soft": false
+    },
+    {
+      "from": "lock_cryptosecure_drop_box",
+      "to": "brass_key",
+      "soft": false
+    },
+    {
+      "from": "brass_key",
+      "to": "door_workshop",
+      "soft": false
+    },
+    {
+      "from": "corridor",
+      "to": "cryptosecure_drop_box",
+      "soft": false
+    },
+    {
+      "from": "cryptosecure_drop_box",
+      "to": "door_workshop",
+      "soft": false
+    },
+    {
+      "from": "cryptosecure_drop_box",
+      "to": "lock_relay_terminal",
+      "soft": false
+    },
+    {
+      "from": "corridor",
+      "to": "tag_on_the_drop_box",
+      "soft": false
+    },
+    {
+      "from": "library",
+      "to": "returns_slip",
+      "soft": false
+    },
+    {
+      "from": "returns_slip",
+      "to": "lock_special_collections_safe",
+      "soft": false
+    },
+    {
+      "from": "library",
+      "to": "lock_special_collections_safe",
+      "soft": false
+    },
+    {
+      "from": "library",
+      "to": "special_collections_safe",
+      "soft": false
+    },
+    {
+      "from": "special_collections_safe",
+      "to": "lock_pigeonholes",
+      "soft": false
+    },
+    {
+      "from": "sidhu_office",
+      "to": "dr_selvarajan_s_ledger_whiteboard",
+      "soft": false
+    },
+    {
+      "from": "workshop",
+      "to": "lock_relay_terminal",
+      "soft": false
+    },
+    {
+      "from": "workshop",
+      "to": "relay_terminal",
+      "soft": false
+    },
+    {
+      "from": "relay_terminal",
+      "to": "lock_hacktivity_scoreboard",
+      "soft": false
+    },
+    {
+      "from": "workshop",
+      "to": "lock_hacktivity_scoreboard",
+      "soft": false
+    },
+    {
+      "from": "pigeonholes",
+      "to": "andgate1",
+      "soft": true
+    },
+    {
+      "from": "andgate1",
+      "to": "lock_cryptosecure_drop_box",
+      "soft": false
+    },
+    {
+      "from": "private_key_pem",
+      "to": "andgate1",
+      "soft": false
+    },
+    {
+      "from": "tag_on_the_drop_box",
+      "to": "andgate1",
+      "soft": false
+    },
+    {
+      "from": "special_collections_safe",
+      "to": "andgate2",
+      "soft": true
+    },
+    {
+      "from": "andgate2",
+      "to": "lock_pigeonholes",
+      "soft": false
+    },
+    {
+      "from": "dr_selvarajan_s_ledger_whiteboard",
+      "to": "andgate2",
+      "soft": false
+    },
+    {
+      "from": "foyer",
+      "to": "teaching_lab",
+      "soft": false
+    },
+    {
+      "from": "foyer",
+      "to": "common_room",
+      "soft": false
+    }
+  ]
+}

@@ -1,22 +1,23 @@
+// RUN (R3-11): in a scratch folder, `npm install cyberchef@10.19.4 terser`, copy this file there,
+// then `node --experimental-specifier-resolution=node --no-warnings <this file> <json>`.
 // Runs each player recipe through CyberChef 10.19.4's own operation code
-// Needs: npm install cyberchef@10.19.4 terser (in the directory you run it from).
 // (npm cyberchef@10.19.4, same version as the bundled HTML), using CyberChef's
 // Dish type conversion between steps, exactly as Recipe.execute does.
 // Usage: node --experimental-specifier-resolution=node --no-warnings verify.mjs out.json
 import fs from "fs";
-import Dish from "cyberchef/src/core/Dish.mjs";
-import FromDecimal from "cyberchef/src/core/operations/FromDecimal.mjs";
-import FromBinary from "cyberchef/src/core/operations/FromBinary.mjs";
-import FromHex from "cyberchef/src/core/operations/FromHex.mjs";
-import FromBase64 from "cyberchef/src/core/operations/FromBase64.mjs";
-import ROT13 from "cyberchef/src/core/operations/ROT13.mjs";
-import VigenereDecode from "cyberchef/src/core/operations/VigenèreDecode.mjs";
-import RSADecrypt from "cyberchef/src/core/operations/RSADecrypt.mjs";
-import RSAVerify from "cyberchef/src/core/operations/RSAVerify.mjs";
-import AESDecrypt from "cyberchef/src/core/operations/AESDecrypt.mjs";
-import ToBase64 from "cyberchef/src/core/operations/ToBase64.mjs";
-import SHA2 from "cyberchef/src/core/operations/SHA2.mjs";
-import DecodeText from "cyberchef/src/core/operations/DecodeText.mjs";
+import Dish from "./node_modules/cyberchef/src/core/Dish.mjs";
+import FromDecimal from "./node_modules/cyberchef/src/core/operations/FromDecimal.mjs";
+import FromBinary from "./node_modules/cyberchef/src/core/operations/FromBinary.mjs";
+import FromHex from "./node_modules/cyberchef/src/core/operations/FromHex.mjs";
+import FromBase64 from "./node_modules/cyberchef/src/core/operations/FromBase64.mjs";
+import ROT13 from "./node_modules/cyberchef/src/core/operations/ROT13.mjs";
+import VigenereDecode from "./node_modules/cyberchef/src/core/operations/VigenèreDecode.mjs";
+import RSADecrypt from "./node_modules/cyberchef/src/core/operations/RSADecrypt.mjs";
+import RSAVerify from "./node_modules/cyberchef/src/core/operations/RSAVerify.mjs";
+import AESDecrypt from "./node_modules/cyberchef/src/core/operations/AESDecrypt.mjs";
+import ToBase64 from "./node_modules/cyberchef/src/core/operations/ToBase64.mjs";
+import SHA2 from "./node_modules/cyberchef/src/core/operations/SHA2.mjs";
+import DecodeText from "./node_modules/cyberchef/src/core/operations/DecodeText.mjs";
 
 const B64 = "A-Za-z0-9+/=";
 async function bake(input, steps) {

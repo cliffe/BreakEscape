@@ -43,3 +43,39 @@ Static checks: `scripts/compile-ink.sh test-tesseract-probes` compiled 2 of 2 fi
 
 1. `pigeonholes`: added `"locked": false` (R9 fix, from game 1569 on).
 2. `keyholder`: removed `"currentKnot": "start"`. Removed `"targetKnot": "start"` from its `item_picked_up:phone` mapping. Added global `kh_greeted` and `#set_global:kh_greeted:true` in `start` to check that preloaded tags still apply (R2 workaround, game 1570).
+
+## Round 2 probes (builder, game 1574, :3001 headless, load ~11)
+
+Fixture extended for R17-R25: a password-locked `pigeonholes1` (`pigeonholes_locked`), a second-device timed text, a player phone with a phone NPC (`hax_probe`) that gives a note, a story-gated aim (`side_aim`, `unlockCondition.globalVariable: file_read`), a readable note whose observation is edited with the pencil, and a mapping on `conversation_closed:keyholder`. Session log: `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/6fd2619b-d6ba-4c71-be4b-f1c8e1689252/scratchpad/builder/session-1574.jsonl`. Screenshot of the call: `.../scratchpad/builder/probe-r3-call.png`.
+
+| Probe | Result | Evidence | Consequence for the build |
+|---|---|---|---|
+| R17 password-locked `pigeonholes1` | **PASS** | Password minigame opened; `porter-12` unlocked it and the container listed "Pigeonhole 4". | none |
+| R18 `sendTimedMessage` on the second device | **PASS** | After `unlock_pin_safe`, the Keyholder thread held "PROBE R18: timed text on the second device." | none |
+| R19 phone NPC gives a `notes` item | **PASS** | Choosing "Send me the probe note." put "HaX Probe Note" in the notepad, and its `onPickup.setVariable` set `hax_note_had` | `comms_had` can come from each note's `onPickup` (R3 note 9) |
+| R21 story-gated aim | **PARTIAL** | Before: `side_aim` locked and story-gated. After reading the note (`file_read` true): still `status: locked` (no longer gated, but not unlocked). The objectives manager does not unlock a `globalVariable`-gated aim by itself; m05 calls `unlockAim` from a mapping. | Add a HaX mapping `global_variable_changed:megan_file_read` → `unlockAim: loose_threads` |
+| R23 pencil notes survive a reload | **PASS** | Edited "Assessment Note"'s observation to "Key: aabbccdd IV: 11223344 R23", synced, reloaded, resumed: the note text still ends "Observation: Key: aabbccdd IV: 11223344 R23". | none |
+| R25 `conversation_closed:<phone npc>` after a video call | **PASS** | After the video call's exit, the `hax_probe` mapping on `conversation_closed:keyholder` (condition `globalVars.call_seen === true`) set `closed_after_call`. | FN10 fallback trigger works as designed |
+| R3-1 call rewrites `currentKnot` | **confirmed** | After the call `npcManager.getNPC('keyholder').currentKnot === 'relay_call'` | design's `the_offer` first-line route is needed |
+| Unlocked containers under the D2 working-tree code | **PASS** | `lab_pc` (`locked: false`, no `lockType`) and `pigeonholes` opened after reload | rule 4 holds |
+| Click targeting | finding | A real click on `pigeonholes_locked` (pinned at 7,7 beside a chair) and on `relay_pc` gave `no-effect-confirmed` from in range; calling the game's own `handleObjectInteraction` on the same sprite opened them. The click landed on the neighbouring chair. | Pin scenario objects clear of furniture; probe each in the build smoke run |
+
+## Build smoke run (builder, real scenario `lab_tesseract_trials`, games 1576 and 1577, :3001 headless)
+
+These close the remaining design risks against the real build rather than the fixture. Evidence: `scenarios/lab_tesseract_trials/build_evidence/` (screenshots, `verify-1577.txt`).
+
+| Risk | Result | Evidence / action |
+|---|---|---|
+| R20 doubled decor | **Avoided by design change** | Tom's board is a pinned `whiteboard2` and Cliffe's build an `info_screen1`, not the template's own `chalkboard2`/`smartscreen` sprites, so nothing doubles (screenshots smoke-3/8). |
+| R22 reach and paths | **FOUND and fixed** | Game 1576: pinned exhibits at the foyer's west edge (Byte Wall at 1.2,3.2) walled the player into the strip between the reception desk and the wall after entering from the lab. Same pattern found by inspection in the corridor (directory under the workshop door), Sidhu's office (Sidhu beside the door) and the workshop (scoreboard and workbench across the only path from the south door). All moved; game 1577 walked foyer, lab, corridor and workshop without getting stuck. The common room, library and Sidhu's office were not walked in this run. |
+| N2 Comms note on line one | **PASS** | 1577: after the first briefing line the notepad already held "Comms Discipline" and `comms_had` was true. |
+| R1 laptop from Tom | **PASS** | 1577: "Lab Laptop (CyberChef)" in inventory plus FN1-FN3 in the notepad. |
+| L1 decoded in the in-game CyberChef | **PASS** | Leaflet text (from the notepad) set as CyberChef's Input with From Decimal in the bundled v10.19.4 frame: Output "fennel" (smoke-4); the lockbox accepted it server-side and `open_lockbox` completed. |
+| E1 workaround (device intro once) | **PASS** | smoke-6: the intro appears once. |
+| R3 call on `relay_opened`, `on_call` lines | **PASS** | The relay terminal's password opened the video call (smoke-9); the call-only Narrator line "Behind you, Dr Schreuders keeps soldering" showed; `ghost_greeted` variant used. |
+| K5 live | **PASS** | After "I'll think about it", reopening the device landed on `the_offer_again` with the refuse choice (smoke-10). |
+| R25 | **PASS** | `fn10_offered` was set after the call closed. |
+| R12 Magic | not run | Still to record in the walkthrough. |
+| Text stacking | observation | Moving quickly from the drop box into the workshop stacked four toasts (drop box, Ghost, FN7 offer, workshop). Each pair on one event is spaced; the pile-up is cross-event and only at speed. Left for the first timed playtest. |
+
+Locks after L1 in game 1577 were opened with answers read from the server (`exercised, not earned`): corridor, drop box, workshop door (brass key), relay terminal. Their recipes are proven by `tools/verify_rendered_*` instead.
