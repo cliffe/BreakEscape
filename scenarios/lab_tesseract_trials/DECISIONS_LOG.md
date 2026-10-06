@@ -49,3 +49,10 @@ Each line gives a decision, its reason and who made it. The user can overrule an
 - (2026-10-06, user) Close the skill gaps: mission-alignment-plan in full, room-dressing pass, then a fresh npc-dialog-review; lab sheet yes (written in the scenario folder; copying it to HacktivityLabSheets waits on the user).
 - (2026-10-06, user) New rooms are to be designed for the university setting. Planner (Opus) writing ROOMS_PLAN.md from scripts/generate_rooms.py and scripts/room_gen; plan only. New props and maps need the user's approval before any generation.
 - (2026-10-06, user) Rooms plan: be ambitious; include every room type (foyer/atrium, computer lab, common room, corridor, library + Special Collections, academic office, maker space, lecture theatre, seminar room). New rooms get existing puzzles or clues spread into them, not new locks; keep play time under ~90 min.
+- (2026-10-06, user) D7 canon: the lab IS canon, but in the end ENTROPY doesn't actually accept the player as an agent (on every route; the "double agent" sequel hook goes). There can be ramifications for SAFETYNET losing an HQ, using a different HQ background from m01's. D8 dating: freshers' week, undated. D9 betrayal ("sent") ending: burn a SAFETYNET site.
+- (2026-10-06) Orchestrator, applying D7-D9:
+  - The lab's own briefing and debrief site is "the field HQ" (unnamed), background `hq2` (m01 uses hq1). On the sent ending the beacon burns that site and the debrief moves to a fallback, `hq3`.
+  - hq2 and hq3 appear in m07/m08 without a location name, so the lab names no site that the campaign shows intact later.
+  - Nobody is killed in the burn (the earlier settled "nobody hurt" stands); the loss is the site, its kit and its cover.
+  - On every route Ghost withdraws the offer by the end (the Keyholder Studentship is never awarded), so 0x00 is never an ENTROPY agent in canon.
+  - K1 (canon note) records all this for campaign writers.

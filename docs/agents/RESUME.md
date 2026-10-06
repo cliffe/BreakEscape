@@ -2,7 +2,7 @@
 
 Brief: `docs/agents/TESSERACT_TRIALS_BRIEF.md`. Log: `scenarios/lab_tesseract_trials/DECISIONS_LOG.md`.
 Loop: design (Opus, DESIGN.md) → 3 adversarial review rounds (alignment + design-review lenses) → implement → puzzle-chains + dialogue reviews → Sonnet playtests → fix until clean.
-Status: lab sheet committed (e4875b8e). Running: ALIGNMENT_PLAN, room dressing (current maps), ROOMS_PLAN (new university maps, plan only). Next: user approves the rooms plan and art; builder implements alignment + rooms; fresh dialogue review; confirmation playtest.
+Status: room dressing committed. User answered D7-D9 (canon, not accepted; sent burns a site; hq2/hq3). Running: ROOMS_PLAN (ambitious, all room types). Next: builder implements ALIGNMENT_PLAN + D7-D9, then fresh npc-dialog-review; new rooms after the user approves ROOMS_PLAN.
 
 # Resume note — pass 4 (editorial, m02–m08)
 
