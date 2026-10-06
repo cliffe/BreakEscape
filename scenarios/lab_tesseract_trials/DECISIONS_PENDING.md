@@ -8,3 +8,5 @@
 - **E2. Terminal theme doubles the prompt:** ink `> DEVICE ACTIVE` shows `> > DEVICE ACTIVE` (m02 too). Workaround: don't start terminal lines with `>`.
 
 - **E3. Task `onComplete.setGlobal` is applied only on the client** (review R2-A N-m11; DESIGN R26). If the client update is lost, the global never reaches the server. Scenario-side cover in DESIGN v3; the engine fix is for later.
+- **E4. A page reload loses the CyberChef recipe and input** (PLAYTEST_P1 finding 3). The iframe state isn't saved. A possible fix is to keep CyberChef's URL hash in localStorage and restore it on first open. Mitigation here: the notepad scratch pad for keys and IVs.
+- **E5. A page reload puts the player back at the start position** (PLAYTEST_P1 finding 4, P3 m5), though rooms, inventory and tasks are restored. It affects every mission.
