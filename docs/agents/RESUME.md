@@ -2,7 +2,7 @@
 
 Brief: `docs/agents/TESSERACT_TRIALS_BRIEF.md`. Log: `scenarios/lab_tesseract_trials/DECISIONS_LOG.md`.
 Loop: design (Opus, DESIGN.md) → 3 adversarial review rounds (alignment + design-review lenses) → implement → puzzle-chains + dialogue reviews → Sonnet playtests → fix until clean.
-Status: academics art committed + wired (c1d1be83, df24d878). Running: Sonnet in-game art and lip-sync check. Remaining for the user: audio (Schreuders lines first), E1-E10 engine items, the half-filled project-summary doc (delete or finish?), PixelLab leftover characters to delete by hand.
+Status (2026-10-06): Keyholder Trials complete and dressed. Engine E1-E3, E6-E10 fixed (3cfada8b; E9 was the harness, a4a102f0); pathfinding doorway waypoints + corner clearance (99cb5cab) and NPC registration race fix (ba3e0bdd); room dressing rounds 1-3 committed (5b29ea83 last), 80 PixelLab gens, balance 4144. Remaining for the user: audio (Schreuders lines first), E4/E5 deferred, the half-filled project-summary doc (delete or finish?), Cliffe's 3 failed PixelLab characters to delete by hand, m01 encrypted-archive approach (flag station takes the click).
 
 # Resume note — pass 4 (editorial, m02–m08)
 
