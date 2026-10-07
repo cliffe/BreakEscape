@@ -1,8 +1,9 @@
 module BreakEscape
   class GamePolicy < ApplicationPolicy
     def show?
-      # Owner or admin/account_manager
-      record.player == user || user&.admin? || user&.account_manager?
+      # Owner, admin, or an account_manager who manages the player (same org when the
+      # host has orgs)
+      record.player == user || user&.admin? || managing_account_manager?
     end
 
     def update?
@@ -81,24 +82,44 @@ module BreakEscape
       show?
     end
 
+    # Creates a game for, and abandons the game of, the current player, so only the
+    # owner may do it. Staff can view other players' games but not spawn sessions.
     def new_session?
-      show?
+      user.present? && record.player == user
     end
 
     def vm_panel?
-      (record.player == user || user&.admin? || user&.account_manager?) &&
-        record.status == 'in_progress'
+      show? && record.status == 'in_progress'
     end
 
     def vm_set_panel?
-      (record.player == user || user&.admin? || user&.account_manager?) &&
-        record.status == 'in_progress'
+      show? && record.status == 'in_progress'
+    end
+
+    private
+
+    # An account_manager only manages players in their own org. Hosts without orgs
+    # (standalone demo users have no org_id) keep the old behaviour of managing everyone.
+    def managing_account_manager?
+      return false unless user&.account_manager?
+      return true unless user.respond_to?(:org_id)
+
+      user.org_id.present? && record.player.respond_to?(:org_id) && record.player.org_id == user.org_id
     end
 
     class Scope < Scope
       def resolve
-        if user&.admin? || user&.account_manager?
+        if user&.admin?
           scope.all
+        elsif user&.account_manager?
+          if user.respond_to?(:org_id)
+            return scope.where(player: user) if user.org_id.blank?
+
+            same_org = user.class.where(org_id: user.org_id).select(:id)
+            scope.where(player_type: user.class.name, player_id: same_org)
+          else
+            scope.all
+          end
         else
           scope.where(player: user)
         end

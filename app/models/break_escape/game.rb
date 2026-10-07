@@ -8,7 +8,7 @@ module BreakEscape
 
     # GameSlot association (Hacktivity only) — guard prevents LoadError in standalone mode
     if defined?(::GameSlot)
-      belongs_to :game_slot, class_name: '::GameSlot', optional: true
+      belongs_to :game_slot, class_name: '::GameSlot', optional: true, inverse_of: :games
     end
 
     # Validations
