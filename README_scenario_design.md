@@ -381,7 +381,7 @@ This laptop object will be placed at the next available `pc` slot in the room te
 | `id` | optional | Explicit ID for cross-referencing in objectives (`targetObject`) |
 | `locked` | required for containers | Must be `true` or `false` on any container with `contents` |
 | `readable` | optional | `true` enables the "Read" interaction |
-| `text` | optional | Body text shown when the player reads the item |
+| `text` | optional | Body text shown when the player reads the item. In the notebook (`notes` items) it renders a markdown subset: `#` headings, `**bold**`, `*italic*`, `` `code` ``, `- ` bullets, fenced code and tables (a header row, then a `\|---\|---\|` row; `:` sets alignment). Backslash-escape a literal `\|`, `*`, `` ` `` or `\\`. Everything else shows as typed (`js/utils/note-markdown.js`) |
 | `textVariants` | optional | Runtime readable-text overrides. Same format/rules as `observationVariants`; first matching condition is used. |
 | `collection_group` | optional | Tag used for objective `collect_items` task tracking |
 | `important` | optional | `true` marks item as important in inventory |
