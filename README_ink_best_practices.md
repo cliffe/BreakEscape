@@ -70,6 +70,14 @@ Narrator[maya_chen]: Maya shifts uncomfortably and lowers her voice.
 Maya Chen: I've seen the target lists. People will die.
 ```
 
+A plain `Narrator:` line keeps whatever portrait is showing. For a scene with nobody in frame, use `Narrator[none]:`. A `Background[path]:` line also clears the frame: the new background shows on its own until the next speaker line (or `Narrator[character_id]:`) brings a portrait back.
+
+```ink
+Background[assets/backgrounds/miskatonic_campus.png]:
+Narrator: Miskatonic University. Freshers' week.
+Narrator[player]: You join them. Nobody looks at you twice.
+```
+
 ### Emotes vs. Narration: describe actions with the Narrator, keep flavour on dialogue
 
 Two related rules — a real bug in the m01 Derek confrontation taught us why they matter (emote lines that began with `*` compiled into phantom player-choice buttons and dead-ended the surrender branch):

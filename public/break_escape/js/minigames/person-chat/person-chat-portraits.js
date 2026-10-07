@@ -117,6 +117,7 @@ export default class PersonChatPortraits {
         this._loadingSpriteTalkImage = false; // Guard against duplicate loads
         this._lastRenderedTalkFrame = -1;  // Sentinel – forces first render
         this._narratorMode = false; // When true, suppress mouth animation (narrator lines)
+        this._characterHidden = false; // When true, draw the background only (a scene shot)
 
         // Lip-sync mode (optional spriteVisemes sheet; replaces the 2×2 talk cycle when loaded)
         this.visemeSheet = null;      // Loaded sheet for the current speaker, or null
@@ -557,6 +558,13 @@ export default class PersonChatPortraits {
      * In narrator mode the portrait stays visible but mouth animation is suppressed.
      * @param {boolean} enabled
      */
+    setCharacterHidden(hidden) {
+        hidden = !!hidden;
+        if (this._characterHidden === hidden) return;
+        this._characterHidden = hidden;
+        this.render();
+    }
+
     setNarratorMode(enabled) {
         this._narratorMode = !!enabled;
     }
@@ -711,6 +719,12 @@ export default class PersonChatPortraits {
             // Clear canvas
             this.ctx.fillStyle = '#000';
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+            // Scene shot (after a Background[...] line, or Narrator[none]): no character
+            if (this._characterHidden) {
+                if (this.backgroundImage) this.drawBackground(this.calculateSpriteTalkScale() || 1);
+                return;
+            }
             
             // Lip-sync mode: draw the current viseme column
             if (this.visemeSheet) {

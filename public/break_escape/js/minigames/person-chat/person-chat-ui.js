@@ -332,14 +332,17 @@ export default class PersonChatUI {
                 this.portraitRenderer.setNarratorMode(true);
             }
 
-            // If narratorCharacter is specified, switch to that character's portrait
-            if (narratorCharacter) {
+            // Narrator[none]: the background alone. Otherwise, if narratorCharacter
+            // is specified, switch to that character's portrait
+            if (narratorCharacter === 'none') {
+                this.portraitRenderer?.setCharacterHidden(true);
+            } else if (narratorCharacter) {
                 const character = this.characters[narratorCharacter];
                 if (character) {
                     this.updatePortraitForSpeaker(narratorCharacter, character);
                 }
             }
-            // Otherwise keep whatever portrait is currently showing
+            // Otherwise keep whatever is showing (a scene shot stays a scene shot)
 
             console.log(`📝 Narrator mode: character=${narratorCharacter}, portrait preserved=${!narratorCharacter}`);
         } else {
@@ -409,6 +412,9 @@ export default class PersonChatUI {
             if (!this.portraitRenderer || !character) {
                 return;
             }
+
+            // A speaker brings a character back after a scene shot
+            this.portraitRenderer.setCharacterHidden(false);
 
             // Video-call mode: the player never takes over the main frame — they live in the PiP
             // self-view. Keep the remote party (NPC) on-screen even while the player's line shows,
