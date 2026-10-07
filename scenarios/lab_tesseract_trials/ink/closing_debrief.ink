@@ -84,8 +84,8 @@ Agent HaX: Your mail app does the same thing every day, unless you turn remote i
 -> why_you
 
 === why_you ===
-Agent HaX: I bet Ghost never saw your face at St Catherine's. I lost.
-Agent HaX: I said I'd take either outcome. Ghost recognised you and wanted you anyway. That's worth knowing. I didn't enjoy learning it.
+Agent HaX: I sent you in as a clean first-year. Ghost knew what you were from the start, and wanted you because of it.
+Agent HaX: That's worth knowing. I didn't enjoy learning it.
 { ending == "refused":
     Agent HaX: A clean no is worth something. It's also the last time they'll talk to you.
 }

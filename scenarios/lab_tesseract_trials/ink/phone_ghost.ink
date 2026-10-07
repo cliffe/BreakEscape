@@ -129,10 +129,9 @@ The examiner. You'll meet me when you've earned it.
     CONTACT RESUMED.
 }
 You passed. All of them. I'd rather hoped you would.
-St Catherine's had forty-one cameras. I switched off the recorders, not the cameras. Your screens said no signal. Mine didn't.
-I watched you all night. You still walk like you're expecting a door to be locked.
-No name at St Catherine's, and no name now. The handle is Ghost. It's all you get.
-The last time I made you an offer, there was a ward forty feet away. This one's simpler.
+I've watched you since Monday. You walk like you're expecting a door to be locked. First-years don't.
+No name. The handle is Ghost. It's all you get.
+I don't make many offers. This one's simple.
 { on_call:
     Narrator: Behind you, Dr Schreuders keeps soldering. He hasn't looked up.
 }
@@ -157,7 +156,7 @@ Your handler's location is a number I can check.
 - else:
     Say no and you walk away, and Miss Oyelaran walks with you. I don't keep one without the other.
 }
-And if that location turns out to be wrong, I'll know who told me, and I'll be making you a third offer.
+And if that location turns out to be wrong, I'll know who told me, and I'll be making you a different kind of offer.
 ~ ghost_offer_heard = true
 #set_global:ghost_offer_heard:true
 Send it and you start Monday.{ megan_choice != "warned": So does she.}

@@ -168,7 +168,7 @@ Whoever's on the other end put it where a first-year would find it. They've done
 
 === assessments_reaction ===
 ~ assessments_discussed = true
-That's how they pick everything. At St Catherine's it was a hospital that couldn't afford downtime.
+That's how they pick everything. They look for whoever can least afford to say no.
 One of those files is probably you. I can't tell which, and that's the point.
 ~ parked = true
 -> hub

@@ -62,8 +62,8 @@ Dr Oleg Illiashenko: Oleg Illiashenko. I'm one of the lecturers here. Sit anywhe
 
 === name ===
 ~ asked_name = true
-Dr Oleg Illiashenko: Only the usual. The new staff system has made soup of my name again.
-Dr Oleg Illiashenko: It's waiting in the photocopier, if the photocopier will give it back. My name, in letters nobody has ever been called.
+Dr Oleg Illiashenko: Only the new staff system. It printed the staff list, and my name came out as nonsense.
+Dr Oleg Illiashenko: The list is in the photocopier, if you want to see.
 ~ quiet = true
 -> hub
 
@@ -72,7 +72,7 @@ Dr Oleg Illiashenko: It's waiting in the photocopier, if the photocopier will gi
 #give_item:notes:fn12_mojibake
 Dr Oleg Illiashenko: Same bytes, wrong table. My name is saved as UTF-8, two bytes for every Cyrillic letter.
 Dr Oleg Illiashenko: Then some program reads those bytes with a one-byte table, Windows-1251, and every letter becomes two wrong ones.
-Dr Oleg Illiashenko: Nothing is lost. You only have to read the bytes the way they were written. Here, I wrote it down. Again.
+Dr Oleg Illiashenko: Nothing is lost. You only have to read the bytes the way they were written. Here, I wrote it down.
 ~ quiet = true
 -> hub
 
