@@ -44,7 +44,7 @@ VAR ending = ""
 
 === build ===
 ~ asked_build = true
-Dr Z. Cliffe Schreuders: A teaching tool. Sort of. A game where you learn by getting caught.
+Dr Z. Cliffe Schreuders: A teaching tool. Sort of. A game where you learn by breaking things.
 Narrator: He turns the laptop a little towards you. A map of this building. Small figures walking about. One of them is wearing your hoodie.
 Dr Z. Cliffe Schreuders: Reckon that's enough of a preview.
 Narrator: He closes the lid.

@@ -36,14 +36,6 @@ Agent HaX: Two earlier Keyholders now work for CryptoSecure. CryptoSecure is Ran
 Agent HaX: Ransomware Incorporated is run by someone who calls themselves Ghost. They lock up a company's files and sell them back.
 Agent HaX: No name, no face. A voice on a console, and a hood on a screen.
 + [Then let's be found.]
-    -> cliffe
-
-=== cliffe ===
-Agent HaX: One more name. Dr Cliffe Schreuders. Builds Hacktivity. He'll know what you are within a minute of meeting you.
-+ [Is he one of ours?]
-    Agent HaX: That's classified{start.asked_reach: too}.
-    -> deploy
-+ [Noted.]
     -> deploy
 
 === deploy ===
@@ -53,8 +45,8 @@ Agent HaX: Get a lab laptop from Dr Shaw in the lecture theatre, south of the fo
 
 === campus ===
 Background[assets/backgrounds/miskatonic_campus.png]:
-Narrator[player]: Miskatonic University. Freshers' week.
-Narrator[player]: Bunting on the portico, music from the lawn, and a thousand new students trying to look as if they know where they're going.
+Narrator: Miskatonic University. Freshers' week.
+Narrator: Bunting on the portico, music from the lawn, and a thousand new students trying to look as if they know where they're going.
 Narrator[player]: You join them. New lanyard, new tote bag, a timetable you haven't read. Nobody looks at you twice.
 #exit_conversation
 Narrator[player]: The Computing building is through the columns. Someone has put a CryptoSecure stand right inside the door.
