@@ -237,8 +237,13 @@ module BreakEscape
       # The unique partial index allows only one in_progress game per player+mission.
       @game.update!(status: 'abandoned') if @game.status == 'in_progress'
 
+      callback = BreakEscape.configuration&.can_continue_in_slot
+      slot = @game.game_slot if @game.respond_to?(:game_slot)
+      inherit_slot = slot && callback && callback.call(current_player, slot)
+
       new_game = Game.new(player: current_player, mission: @game.mission)
       new_game.player_state = initial_state
+      new_game.game_slot = slot if inherit_slot && new_game.respond_to?(:game_slot=)
       new_game.save!
 
       render json: { success: true, redirect_url: game_path(new_game, skip_resume: 1) }

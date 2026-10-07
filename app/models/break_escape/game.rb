@@ -6,6 +6,11 @@ module BreakEscape
     belongs_to :player, polymorphic: true
     belongs_to :mission, class_name: 'BreakEscape::Mission'
 
+    # GameSlot association (Hacktivity only) — guard prevents LoadError in standalone mode
+    if defined?(::GameSlot)
+      belongs_to :game_slot, class_name: '::GameSlot', optional: true
+    end
+
     # Validations
     validates :player, presence: true
     validates :mission, presence: true
