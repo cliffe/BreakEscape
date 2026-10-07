@@ -1323,11 +1323,17 @@ export class PersonChatMinigame extends MinigameScene {
         if (block.backgroundChange) {
             console.log(`🎨 Background change block detected: ${block.backgroundChange}`);
             
-            // Change background and go straight on to the next block. Waiting here cost
-            // the player a click on the new scene with the previous speaker's caption
-            // still showing and nobody in frame.
+            // Change background and go straight on to the next block. Waiting for a click
+            // left the previous speaker's caption up over the new scene with nobody in
+            // frame. Deferred, not called directly: this runs inside
+            // displayAccumulatedDialogue, and if the background was the last block the
+            // next ink line would be fetched while isProcessingDialogue is still set and
+            // dropped (the conversation then stuck on the bare background).
             this.changeBackground(block.backgroundChange);
-            this.displayDialogueBlocksSequentially(blocks, originalResult, blockIndex + 1, 0, '');
+            setTimeout(() => {
+                if (!this.ui) return;
+                this.displayDialogueBlocksSequentially(blocks, originalResult, blockIndex + 1, 0, '');
+            }, 0);
             return;
         }
         
