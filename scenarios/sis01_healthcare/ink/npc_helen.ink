@@ -88,7 +88,7 @@ Helen Carver: NHS England had our NIS incident report at eleven last night. That
 + {not network_isolated and not ico_notified} [Shouldn't the ICO hear from us before it's contained?]
     -> ico_advisory
 + [I'll come back when I know more.]
-    Helen Carver: Do. The deadline's on the tablet by the window.
+    Helen Carver: Do. The deadline's on the ICO tablet, on the conference table.
     ~ hub_quiet = true
     #exit_conversation
     -> hub

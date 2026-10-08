@@ -206,7 +206,7 @@ Dr Fiona Hartley: We'll have to explain the delay in the notification. The ICO w
     Dr Fiona Hartley: We can, and we must. Write down what delayed us and who decided.
     -> hub
 + [I didn't know about the deadline.]
-    Dr Fiona Hartley: The tablet by the window has been counting down all morning. Next time, look at it.
+    Dr Fiona Hartley: The ICO tablet on the conference table has been counting down all morning. Next time, look at it.
     -> hub
 
 === ncsc_advisory ===
