@@ -167,6 +167,7 @@
         "radius": { "type": "number", "minimum": 0 },
         "intensity": { "type": "number", "minimum": 0, "maximum": 1 },
         "effect": { "enum": [null, "screen", "blink", "pulse", "breathe"] },
+        "offsetX": { "type": "number" },
         "offsetY": { "type": "number" },
         "ledColor": { "type": "string" },
         "ledAlpha": { "type": "number", "minimum": 0, "maximum": 1 },

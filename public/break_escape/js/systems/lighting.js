@@ -22,7 +22,7 @@
  *       "alarm_panel": [                   // first variant whose condition holds wins; none: the EMITTERS entry
  *         { "condition": "globalVars.alarm", "color": "#ff5050", "radius": 24, "intensity": 0.5, "effect": "pulse" },
  *         { "color": "#7dffa0" }
- *       ]                                  // also: offsetY, ledColor, ledAlpha (0 hides LEDs), floorTint (0-1: tint
+ *       ]                                  // also: offsetX, offsetY (px from the object's centre), ledColor, ledAlpha (0 hides LEDs), floorTint (0-1: tint
  *                                          // a lit floor with the glow's colour), above (true: stays above the light
  *                                          // map in a lit room, for small indicators); effect null|screen|blink|pulse|breathe
  *     }
@@ -857,11 +857,15 @@ export class LightingSystem {
           l.img.setPosition(lx, ly).setVisible(lit).setAlpha(ledA);
         }
         const c = obj.getCenter ? obj.getCenter(centre) : obj;
-        const x = c.x, y = c.y + (def.offsetY || 0);
+        const x = c.x + (def.offsetX || 0), y = c.y + (def.offsetY || 0);
         let k = 1;
         if (!still) {
           if (def.effect === 'screen') k = 0.9 + 0.1 * Math.sin(time / 90 + e.phase);
-          else if (def.effect === 'blink') k = 0.7 + 0.3 * (Math.sin(time / 140 + e.phase) > 0.6 ? 1 : 0);
+          // An `above` indicator (a phone's message light) blinks truly on and off, about
+          // once a second (well under 3 flashes/s); racks keep their subtle flicker.
+          else if (def.effect === 'blink') k = def.above
+            ? (Math.sin(time / 159 + e.phase) > 0 ? 1 : 0.1)
+            : 0.7 + 0.3 * (Math.sin(time / 140 + e.phase) > 0.6 ? 1 : 0);
           else if (def.effect === 'pulse') k = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(time / 300 + e.phase));
           else if (def.effect === 'breathe') k = 0.75 + 0.25 * Math.sin(time / 700 + e.phase);
         }
