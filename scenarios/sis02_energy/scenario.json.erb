@@ -63,6 +63,7 @@ require 'base64'
   "scenario_brief": "06:28 — Helen Marsh called you in early. She's a SCADA engineer doing scheduled maintenance at the Albion Energy Storage facility — 200 MWh of lithium-ion battery storage powering the East Midlands grid. Everything looks normal on the digital displays. But Helen has been doing this job for twelve years, and something doesn't feel right about this morning handover. You are here because she trusts her instincts. If she's right, this could escalate quickly.",
   "show_scenario_brief": "on_resume",
   "disableAttacks": true,
+  "lighting": { "enabled": true, "defaultMode": "on", "ambient": "#b8bfce" },
 
   "startRoom": "scada_control_room",
 
@@ -542,6 +543,23 @@ require 'base64'
     "scada_control_room": {
       "type": "room_control_1x2gu",
       "door_sign": "SCADA Control Room",
+      "lighting": {
+        "mode": "on",
+        "ambient": "#aeb6c8",
+        "panels": false,
+        "emitters": {
+          "screens": { "radius": 140, "intensity": 0.7, "offsetY": 40, "floorTint": 0.35 },
+          "alarm_panel": [
+            { "condition": "globalVars.facility_evacuated",       "color": "#ff5050", "radius": 32, "intensity": 0.8,  "effect": "pulse", "floorTint": 0.5 },
+            { "condition": "globalVars.sis_tamper_confirmed",     "color": "#ff5050", "radius": 32, "intensity": 0.8,  "effect": "pulse", "floorTint": 0.5 },
+            { "condition": "globalVars.network_isolated",         "color": "#ff5050", "radius": 40, "intensity": 0.8, "effect": null, "floorTint": 0.5 },
+            { "condition": "globalVars.hydrogen_alarm",           "color": "#ffb347", "radius": 40, "intensity": 0.8,  "effect": null, "floorTint": 0.5 },
+            { "condition": "globalVars.historian_flatline_found", "color": "#ffb347", "radius": 40, "intensity": 0.8,  "effect": null, "floorTint": 0.5 },
+            { "condition": "globalVars.jump_server_isolated",     "color": "#ffb347", "radius": 40, "intensity": 0.8,  "effect": null, "floorTint": 0.5 },
+            {                                                     "color": "#7dffa0", "radius": 22, "intensity": 0.35, "effect": null }
+          ]
+        }
+      },
       "connections": {
         "north": "battery_hall_1",
         "east": "engineering_workshop"
@@ -1227,6 +1245,17 @@ require 'base64'
       "door_sign": "BATTERY HALL 1 — RESTRICTED ACCESS — PPE REQUIRED",
       "ambientSound": "server_room_ventilation",
       "ambientVolume": 0.7,
+      "lighting": {
+        "mode": "motion",
+        "ambient": "#c4cad8",
+        "darkAmbient": "#0a0f1c",
+        "emitters": {
+          "batrack": [
+            { "condition": "globalVars.hydrogen_alarm", "color": "#ff5a3c", "radius": 30, "intensity": 0.3, "effect": null, "ledColor": "#ff7a3c", "ledAlpha": 0.5 },
+            { "ledColor": "#4dff7a" }
+          ]
+        }
+      },
       "connections": {
         "south": "scada_control_room"
       },
@@ -1371,6 +1400,7 @@ require 'base64'
       "door_sign": "Engineering Workshop — Authorised Access Only",
       "ambientSound": "server_room_ventilation",
       "ambientVolume": 0.4,
+      "lighting": { "mode": "motion", "emitters": { "servers": [ { "ledColor": "#4dff7a" } ] } },
       "connections": {
         "west": "scada_control_room"
       },
