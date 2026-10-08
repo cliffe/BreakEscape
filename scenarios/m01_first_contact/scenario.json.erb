@@ -505,9 +505,15 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
     }
   },
 
+  "lighting": { "enabled": true, "defaultMode": "on" },
   "rooms": {
     "reception_area": {
       "type": "room_reception",
+      "lighting": {
+        "emitters": {
+          "reception_desk_phone": [ { "color": "#ff2414", "radius": 10, "intensity": 1.0, "offsetX": 7, "offsetY": 3, "effect": "blink", "above": true } ]
+        }
+      },
       "connections": {
         "north": "main_office_area"
       },
@@ -1150,6 +1156,13 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
 
     "main_office_area": {
       "type": "room_office",
+      "lighting": {
+        "mode": "motion",
+        "emitters": {
+          "office-misc-lamp": [ { "intensity": 0.6 } ],
+          "main_office_area_office-misc-lamp3_90": [ { "intensity": 0.6, "radius": 48 } ]
+        }
+      },
       "locked": true,
       "lockType": "key",
       "requires": "main_office_key",
@@ -1237,6 +1250,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
 
     "storage_closet": {
       "type": "small_room_storage_1x1gu",
+      "lighting": { "mode": "motion" },
       "locked": false,
       "door_sign": "Storage",
       "connections": {
@@ -1425,6 +1439,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
 
     "conference_room": {
       "type": "room_meeting",
+      "lighting": { "mode": "motion", "emitters": { "office-misc-lamp": [ { "intensity": 0.6 } ] } },
       "locked": false,
       "door_sign": "Conference Room",
       "connections": {
@@ -1563,6 +1578,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
 
     "hallway_west": {
       "type": "hall_1x2gu",
+      "lighting": { "mode": "motion", "flicker": true, "offAfter": 75, "darkAmbient": "#161c30" },
       "locked": false,
       "connections": {
         "south": "main_office_area",
@@ -1574,6 +1590,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
 
     "hallway_east": {
       "type": "hall_1x2gu",
+      "lighting": { "mode": "motion", "offAfter": 75, "darkAmbient": "#161c30" },
       "locked": false,
       "connections": {
         "south": "main_office_area",
@@ -1586,6 +1603,12 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
 
     "manager_office": {
       "type": "small_office_room2_1x1gu",
+      "lighting": {
+        "mode": "motion",
+        "emitters": {
+          "patricia_desk_phone": [ { "color": "#ff2414", "radius": 5, "intensity": 1.0, "offsetX": 3, "offsetY": 2, "effect": "blink", "above": true } ]
+        }
+      },
       "locked": false,
       "door_sign": "Patricia Wells — Manager",
       "connections": {
@@ -1680,6 +1703,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
 
     "kevin_office": {
       "type": "small_office_room1_1x1gu",
+      "lighting": { "mode": "motion" },
       "locked": false,
       "door_sign": "Kevin Park — IT",
       "connections": {
@@ -1793,6 +1817,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
 
     "derek_office": {
       "type": "small_office_room1_1x1gu",
+      "lighting": { "mode": "motion" },
       "locked": true,
       "lockType": "key",
       "requires": "derek_office_key",
@@ -1952,6 +1977,12 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
 
     "server_room": {
       "type": "room_servers",
+      "lighting": {
+        "mode": "motion", "darkAmbient": "#0a0f1c", "ambient": "#a0b0c0",
+        "emitters": {
+          "server": { "radius": 56, "intensity": 0.7, "floorTint": 0.6 }
+        }
+      },
       "locked": true,
       "lockType": "rfid",
       "requires": "server_keycard",
