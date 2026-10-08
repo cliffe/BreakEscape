@@ -1,3 +1,14 @@
+# Resume note — lighting pass 2: m02, sis02, sis01, m01 (2026-10-08)
+
+Brief: `docs/agents/LIGHTING_PASS_BRIEF.md`. Log: `docs/agents/LIGHTING_LOG.md` (dated heading per mission). Plans: `scenarios/<mission>/LIGHTING_PLAN.md`.
+Scratch: session scratchpad `<mission>-<role>/` subfolders (lost at session end).
+- m02: DONE, committed eda5423a (brownout verified from the conversation).
+- sis02: DONE, committed dfac2abc. Engine committed 273d6261.
+- sis01: DONE, committed ac923d31 (engine 5c8efcfc, 352c106b first).
+- m01: DONE, committed b105f391 (engine c0092c83, a4ec046e first).
+- PASS COMPLETE (2026-10-08): m02 eda5423a, sis02 dfac2abc, sis01 ac923d31, m01 b105f391. Engine 273d6261, 5c8efcfc, 352c106b, c0092c83, a4ec046e. Tour tool 8f52fa74. Skill SKILL.md not updated (user has uncommitted edits there).
+- lighting.js: one editor at a time; m02 engine work first, sis02 emitters after.
+
 # Resume note — room lighting (2026-10-08)
 
 Log: `docs/agents/LIGHTING_LOG.md`. Five rounds done on m02 plus the back-wall fix; committed 2026-10-08 (engine, skill and docs, m02 config). Skill: `.claude/skills/mission-room-lighting/`. Next: other missions, ideas in docs/IDEAS_BACKLOG.md "Lighting".

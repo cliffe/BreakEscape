@@ -48,7 +48,96 @@ On (people in them, or default): reception, ward, IT, Dr Kim's office, conferenc
 
 ## Known limits
 
-- Light passes through walls into the neighbouring room (torch, panels near a wall). Spill into the void is invisible.
-- Emitter glows and LEDs draw above everything, so an NPC walking in front of a rack shows its LEDs on top.
-- Torch light still crosses a side wall when the beam points along it; only the wall it faces is respected.
-- Emitters are matched on texture key; a new screen or lamp sprite needs adding to `EMITTERS`.
+Updated after pass 2 (2026-10-08).
+
+- Light from a lit room's panels can still cross a side wall into a lit neighbour. Into a darker neighbour it is covered, because darker rooms draw later. The torch is drawn with the player's room, so a darker neighbour covers its leak.
+- Fixed in pass 2: LEDs over characters (they hide behind a figure in front), glows over characters in lit rooms (they sit at the object's depth), a north room's ransom tint on the south room's back wall (lit rooms draw north to south).
+- In a dark room, glows still draw above the map and only fade when a figure covers their centre (racks: when a figure overlaps their inner circle). A player right in front of a lit rack picks up a little green from the rack's light on the map; accepted as realistic.
+- Emitters match on texture key; a scenario can override or add one per room by object id or texture prefix (`emitters`). Map-generated ids (e.g. `main_office_area_office-misc-lamp3_90`) change if the map's object order changes.
+- Glows can't colour a near-white lit room by adding light. Use `floorTint` (a multiply stamp) or `above` (draw above the map) for colour that must show in a lit room.
+- After a reload, motion rooms the player had lit start dark again and strike on re-entry; lighting state isn't saved.
+
+## Pass 2: m02 review, sis02, sis01, m01 (2026-10-08)
+
+Brief: `docs/agents/LIGHTING_PASS_BRIEF.md`. Plans in each mission's `LIGHTING_PLAN.md`.
+
+### sis02_energy (2026-10-08)
+
+- Mood: end of a night shift, 06:28 Saturday (`scenario.json.erb:63`, `information_pack.md:755`); reuses m02's night ambient `#b8bfce`, which stays above the readability floor.
+- Lighting must not hint that anything is wrong: the scenario's point is that every display looks normal (`scenario.json.erb:13`).
+- User approved (D1): `emitters` added to the room lighting block in `scripts/scenario-schema.json`, so a room can override an object's glow without changing other missions.
+- User approved (D2, this pass): glows that follow game state (e.g. the alarm panel after the hydrogen advisory). Condition: it only repeats what the player is already told, never carries information on its own.
+- Review M1 accepted: thermometer, alarm panel and ESD glows fixed globally in EMITTERS (the old pulses don't match the art in m02 either); the per-room schema key carries D2 only.
+- Review M2 folded into D2: batrack LEDs and glow follow the H₂ advisory tint (`scenario.json.erb:420-428`), so green LEDs don't work against the red.
+- Review m4 accepted: under reduced motion, emitter shimmer and LEDs hold steady.
+- `network_architecture` glows as a screen: the scenario calls it "a wall-mounted display" (`scenario.json.erb:1117`) and its art is a backlit panel (review m3).
+- Alarm panel's default variant is green, not the new warm-neutral global, because sis02's text says "mostly green" (`:1036`).
+- D3 (rack tint lost after a reload mid-advisory, `ui/scenario-timer-dispatcher.js:71-78`): outside lighting; accepted for this pass, filed in the backlog.
+
+- Visual round 1 (2 majors): the lit control room matched its lighting-off baseline because ceiling panels saturate the map; control room gets `panels: false` and the video wall as its main light (radius 120, intensity 0.7). Alarm amber/red variants raised so they show; they only repeat the radio calls.
+- No amber LEDs on battery racks in the normal state: a student team could read them as rack warnings in a mission whose clue is one rack's temperature.
+- Panel saturation passed to the m02 engine round as a general fix (it would also explain why m02's colour change barely showed).
+- H₂ tint's alpha pulse (racks look see-through, hard-coded at `apply-actions.js:126`) kept: it is the scenario's own warning cue, not lighting, and the effect is minor.
+- Visual round 2: nothing above minor. Round 2 applied anyway (the brief asks for two): video wall `floorTint` 0.35 and a longer throw so it reads as the room's light; control room ambient `#aeb6c8`; `floorTint` 0.5 on the amber/red alarm states; smoother light texture to remove the ceiling-pool rim (engine).
+- Noticed, not lighting: a solid black open doorway in the control room's north wall; Helen's NPC id is still `priya_chandra` (the rename-ids rule). Reported to the user.
+- Visual round 3: nothing above minor, so sis02's rounds stop (two improvement rounds run). Applied two one-line minors: workshop rack LEDs green only (the amber-lit rack is the attacker's jump server, seen before the logs say anything; same rule as the hall), and the evacuation/tamper pulse radius 40 → 32 so the halo stays on the panel.
+- Tour follow-camera option: backlog, not this pass (manual shots cover it).
+
+### m02_ransomed_trust (2026-10-08)
+
+- User approved (P1, this pass): generator brownout, a scenario action that dims every lit room once and recovers, fired by an ink tag at the guard's "a generator changes note" line (tag only, no spoken-line change).
+- User approved (P3, this pass): `--player` option on `tools/playtest/lighting-tour.sh` so tours show the torch and glows over a character.
+- Mood: 4 am on generator power, "the lights run amber" (`ink/m02_npc_receptionist.ink:66`); lit ambient moves from cool `#b8bfce` to amber `#c6beac` (fallback `#c0bdb2` if teal art turns olive).
+- Review M1: ransom screens glow red while `ransomware_deployed`; the EHR terminal goes back to blue on `ward_recovering` through an `emitters` variant. P4 withdrawn: `ransomware_display` never unlocks (`unlock-system.js:296-329`), so a lock-based check could never fire.
+- Review M2: a faulty panel's dip no longer dims the whole room (both m02 flicker rooms have one panel); flicker stays in storage and the vestibule.
+- Review M3: glows try the object's own depth so characters in front cover them; partial fade as fallback. LEDs hide where a figure covers them.
+- Review M4: glow alpha also scales with how dark a lit room's ambient is (C2's colour change alone did almost nothing).
+- Review M6: WebGL scissor dropped (3.60 disables it during capture); torch leak fixed by redrawing neighbours, lowest priority.
+- E8 dropped: the tour leaves rooms on, which explained the bright neighbour.
+- P2 merged into the `emitters` key with object-id matching, rather than a new object key. Bed 4's dark monitor stays out (shared map sprite, would need new art).
+- Corridor `offAfter` 75 s rather than 45, as the player crosses them often and each relight replays the strike.
+- Left alone: Val's vision cone drawing over the lighting (outside lighting).
+- Round 0 (engine + config) done: emitter data model with per-room variants (object id, then texture prefix), ransom-screen red breathe, glows at object depth behind characters, LEDs hidden behind figures, faulty dip limited to its panel, panel colour from the ambient, strike sound by distance, `offAfter` waits for NPCs, torch drawn with the player's room so a darker neighbour covers its leak, `lighting_dip` action and ink tag (`m02_npc_security_guard.ink:216`, tag only). C5 (Dr Kim's lamp) dropped: invisible in a lit room. Screens and racks hold steady during the brownout, as if on UPS.
+- Visual round 1 (3 majors): glows under the light map lost the dark server room's bloom; ransom red invisible in lit rooms; lit server room still office-like. Sent back with the sepia, kiosk-offset and khaki-ward minors. Skipped door pools in dark rooms (motion rooms light on entry).
+- Round 1 done: glows above the map again in dark rooms (fade only when a figure covers the centre); racks exempt from de-clustering; ransom screens stamp a red multiply tint so they read in lit rooms; panel add capped by the ambient's headroom (`PANEL_HEADROOM` 0.8) so a lit room's mood colour shows; lit ambient now `#c0bdb2` (less sepia than `#c6beac`), panel light 60% towards white; ward `#b8b4a8`; server room `#a0b0c0` with green `floorTint` in front of the racks.
+- `floorTint` accepted as a field of the user-approved `emitters` key (schema `emitterVariant`).
+- Rack glow tinting a player standing in front of it in the dark: racks (emitters with LEDs) will fade on figure overlap; screens keep the centre test so desk screens stay bright.
+- Visual round 2 (1 major): ransom red invisible on IT's infected terminal, weak at Dr Kim's PC (lamps probably counted in screen de-clustering). Minors sent: warmth moved into the panel light (`PANEL_WHITE_MIX` 0.6 → ~0.35, global), vitals-monitor glow offset onto the screen, Bed 2 pool stronger, one small light in the dark vestibule. Skipped a darker lit server room: the dark state carries it.
+- Round 2 done: ransom screens never damped and grow to radius 56 in lit rooms (IT red-pixel count 387 → 1,627); racks fade on figure overlap; `PANEL_WHITE_MIX` 0.35; vitals-monitor glow on the screen; Bed 2 pool 0.6; exit-sign light in the vestibule; smooth light texture ((1−t²)^2.7, same total light).
+- Accepted: a player standing right in front of a lit rack picks up a little green from the rack's light on the map. It's realistic, and the LEDs and glow sprite no longer draw over the figure.
+- sis02 battery-hall "pool rim" is in the floor art, not the lighting (shown with the light map hidden); left alone.
+- Visual round 3: nothing above minor, so m02's rounds stop (two improvement rounds run). Applied two one-line minors: the manual BP cuff (an aneroid cuff, "doesn't need the network", `scenario.json.erb:1890`) no longer glows, and the vestibule's light is a neutral door pool rather than a green light with no sign above it. Left: reception kiosks louder than Bernie's PC (fits the thriller), IT's red slightly below the screen (an id variant would have to restate the built-in ransom glow), amber mostly showing in reception (the blue-grey carpet art keeps other rooms neutral; they're 7–25% darker than before, which is the moodier part).
+
+### sis01_healthcare (2026-10-08)
+
+- Mood: 07:30 Tuesday, day shift after a bad night, mains power (`scenario.json.erb:9`, `:130`, `:141`; `information_pack.md:2157`). Engine default ambient; all three rooms `on` (people in each, and students spend long in each). Doesn't copy m02's 4 am night ward: different hour.
+- Built-in ransom red kept (two screens; the text says "red text" and "casts a red glow", `:1388`, `:2066`). Bed 4's monitor gets a red alarm glow that repeats its text (`:1616`, `:1620`).
+- User decision (P1, not lighting): the two ink lines that put the ICO tablet "by the window" now say "the ICO tablet on the conference table" (`npc_hartley.ink:209`, `npc_helen.ink:91`). tagdiff: structure unchanged. Two spoken lines need new audio (Hartley, Helen Carver).
+- Browser checks: sis02 8/8 pass (game 1814, `tools/playtest/sis02-lighting-check-session.jsonl`); H2 exercised by winding the timer. m02 7/9 (game 1813, `tools/playtest/m02-lighting-check-session.jsonl` + `-part2`): talk icons in the dark not exercised; the brownout not reached through the conversation, so a targeted run follows. After a reload, motion rooms the player had lit start dark again and strike on re-entry: accepted, lighting state isn't saved.
+- Committed: engine 273d6261, sis02 dfac2abc.
+- sis01 review m1: the IT office's ransom tint reaches the ward's back wall because the player's room draws first among lit rooms; fix: north before south among fully lit rooms (engine, separate commit before sis01).
+- m02 brownout checked from the real conversation (game 1816, `tools/playtest/m02-brownout-check-session.jsonl`; `cover_burned` and `staff_lanyard_obtained` set by console): the tag queues the dip, it waits for the chat to close, then one dip to 0.5 and back over ~1.6 s. Following lines and choices unaffected. m02 committed eda5423a.
+- Engine 5c8efcfc: fully lit rooms draw north to south, so a north room's ransom tint no longer lands on the south room's back-wall strip (sis01's IT office over the ward). Torch unaffected (it only draws below level 1). m02 and sis02 re-rendered within 2 per channel.
+- sis01 visual round 1 (1 major): Bed 4's alarm glow invisible in the lit ward (glows under the map can't show red there). Engine: `above` flag on emitter variants for small indicators that must show in a lit room; Bed 4 uses it. A field of the user-approved `emitters` key, like `floorTint`.
+- Kept: infected PC's red sits on the trolley, matching "casts a red glow over the trolley" (`:2066`).
+- Taken: a slightly warmer ambient (`#cccbd2`) in the IT office and incident room for the morning; the ward stays at the default.
+- Noticed, not lighting: Bed 4's monitor sprite still shows a green trace after the patient dies (art or text variants); and `bed2_vitals` always reads "STABLE" though Bed 2 can go critical (review m6). Reported to the user.
+- Engine 352c106b: `above` variants. sis01 improvement round 1: Bed 4 alarm `above`, intensity 1.0 (pulses before, steady red after the death); IT office and incident room ambient `#cccbd2`. m02 and sis02 unchanged (within 1 per channel).
+- sis01 visual round 2: nothing above minor. Improvement round 2 (the brief asks for two): IT office and incident room ambient `#d2cdc8` (`#cccbd2` moved the floor only ~4 per channel); Bed 4's glow radius 20, offsetY −26, a small indicator at the top of the screen as its text says. Accepted: ransom red tints the MAR charts beside the station PC (still clear, repeats the text); soft pools round the bedhead units.
+
+### m01_first_contact (2026-10-08, added by the user mid-pass)
+
+- No ink or spoken-line changes (cached audio), not even tags.
+- Mood (designer): end of a working day on mains power; engine default ambient (`ink/m01_derek_confrontation.ink:39` "Working late"; nothing gives an hour or a power problem). Under review.
+- L1 decided: no brownout in m01. Nothing in its story explains one, so it would read as a hint that leads nowhere.
+- sis01 visual round 3: nothing above minor, so rounds stop (two improvement rounds run). Polish applied: Bed 4's indicator deeper red (`#ff2414`; `#ff5a4a` clipped to pink-white on the pale floor) and offsetY −20 so it sits on the bezel.
+- Review: approve with minors. Mood kept at the engine default: no hour is given and the cues conflict (morning voicemail, "T-72 hours", "working late"), and m01's tension comes from its nine motion rooms.
+- Reception phone's blinking message light kept as a gentle signpost to a critical-path clue: the phone's own text says its light is blinking (`scenario.json.erb:1130`). Tuned in the visual round so it shows in a lit room.
+- Engine E1: an NPC counts as in a room by its feet inside that room's fill area, so Sarah at reception no longer lights the main office.
+- sis01 browser check 7/7 (game 1835, `tools/playtest/sis01-lighting-check-session.jsonl`; Bed 4's steady state set by console). sis01 committed ac923d31.
+- Engine c0092c83 (E1): NPCs trip a sensor by their feet on the room's own floor. m02, sis01, sis02 re-rendered: same on/off states, within 3 per channel. m01 config applied (motion in nine rooms, west-hallway flicker, phone message lights); visual round 1 next.
+- m01 visual round 1 (1 major): phone message lights don't read as blinking in a lit room (blink swings only 0.7–1.0; pale keys turn the red pink; glow off the key). Engine: `above` variants blink on/off (~1 Hz), new `offsetX`. Config: deeper red, small radius on the key. Minors taken: main-office lamps at 0.6 (blown-out desks in the dark), hallway `darkAmbient` `#161c30` so doors are findable. Left: dark storage closet (nothing in the art to glow), Derek's plant (dressing). West-hallway flicker reads (~13–15% dip) despite its panel sitting on the strip.
+- m01 improvement round 1 done; engine a4ec046e (on/off blink for `above` variants, `offsetX`). Phones blink on the red message key (two different sprites, so different offsets); main-office east lamp tamed by object id (`main_office_area_office-misc-lamp3_90`, a map-generated id: update it if the map's object order changes). Rack blink in m02/sis02 unchanged.
+- m01 visual round 2: nothing above minor. Improvement round 2: conference-room lamps at 0.6 (table washed out in the dark), Patricia's phone light radius 7, intensity 0.8 (it turned her pale keypad pink when lit). Storage closet left dark (lights on entry).
+- m01 visual round 3: nothing above minor, so rounds stop (two improvement rounds run). Polish: Patricia's phone light radius 5, intensity 1.0 (a point on the key rather than a pink tint when lit).
+- m01 browser check 7/8 (game 1852, `tools/playtest/m01-lighting-check-session.jsonl`): motion rooms dark until entered (main office dark with Sarah at reception), people rooms lit, torch, icons, both phone lights blink, flicker under the flash limit, reload clean. Partial: the IT room, Maya's office, Derek's office, storage and server room weren't reached in 10 minutes; all were covered by three tours. m01 committed b105f391.

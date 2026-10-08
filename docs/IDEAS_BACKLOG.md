@@ -89,3 +89,5 @@ Each entry: a short title, where it came from, the idea in two or three sentence
 - **Player setting** (S). A lighting on/off toggle on the preferences page (now only `?lighting=off` or localStorage).
 - **Phaser 3.60 → 3.90** (S–M). WebGL context restore and FX fixes; one animation-duration change in player.js idle frames to fix.
 - **Measure on a lab PC's GPU** (S). Headless numbers are software WebGL.
+- **Lighting tour follow-camera** (S). `--player` shots keep the camera on the room centre, so HUD panels can hide objects near the player.
+- **Timer effects after a reload** (S). A timer that fired before a reload is skipped on resume (`ui/scenario-timer-dispatcher.js:71-78`), so its side effects (sis02's red rack tint during the H₂ advisory) don't come back, while state-driven glows do. Replay the timer's visual actions on resume.
