@@ -380,6 +380,7 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
     ]
   },
 
+  "lighting": { "enabled": true, "defaultMode": "on", "ambient": "#d2cdc8" },
   "rooms": {
     "foyer": {
       "type": "room_uni_foyer",
@@ -581,6 +582,7 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
 
     "teaching_lab": {
       "type": "room_uni_lab",
+      "lighting": { "mode": "motion", "emitters": { "pc": { "intensity": 0.4 }, "laptop": { "intensity": 0.4 }, "office-misc-lamp": { "intensity": 0.4 }, "projector_screen": { "offsetY": 8 } } },
       "door_sign": "Teaching Lab 1",
       "connections": { "east": "foyer" },
       "objects": [
@@ -618,6 +620,7 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
 
     "lecture_theatre": {
       "type": "room_uni_lecture",
+      "lighting": { "ambient": "#c0bab4", "emitters": { "laptop": { "intensity": 0 } } },
       "door_sign": "Lecture Theatre 1",
       "connections": { "north": "foyer" },
       "npcs": [
@@ -709,6 +712,7 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
 
     "corridor": {
       "type": "room_uni_corridor",
+      "lighting": { "mode": "motion", "offAfter": 75, "emitters": { "fire_alarm_point": { "intensity": 0 } } },
       "door_sign": "Computing Corridor",
       "locked": true,
       "lockType": "password",
@@ -760,6 +764,7 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
 
     "library": {
       "type": "room_uni_library",
+      "lighting": { "mode": "motion" },
       "door_sign": "Library",
       "locked": true,
       "lockType": "pin",
@@ -773,6 +778,7 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
 
     "special_collections": {
       "type": "room_uni_special",
+      "lighting": { "mode": "motion" },
       "door_sign": "Special Collections",
       "connections": { "south": "library" },
       "objects": [
@@ -799,6 +805,7 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
 
     "sidhu_office": {
       "type": "room_uni_office",
+      "lighting": { "mode": "motion", "emitters": { "fire_alarm_point": { "intensity": 0 } } },
       "door_sign": "Dr S. Selvarajan",
       "connections": { "west": "corridor", "north": "seminar_room" },
       "objects": [
