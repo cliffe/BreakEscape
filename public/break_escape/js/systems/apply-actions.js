@@ -16,6 +16,7 @@ import { displayDashes } from '../utils/display-dashes.js';
  *   unlock_door    { room_id }       — adds room_id to gameState.unlockedRooms
  *   give_item      { item }          — adds an item sprite to the player inventory
  *   hint           { message, title? } — shows an informational alert to the player
+ *   lighting_dip   { level?, ms? }   — one slow brownout dip of the room lights
  *
  * @param {Array}  actions            Array of action descriptor objects.
  * @param {Object} [opts]
@@ -131,6 +132,14 @@ export function applyActions(actions, { source = 'scenario', gameId = null } = {
                     tinted++;
                 }
                 console.log(`[applyActions] tint_objects: tinted ${tinted} '${textureKey}' sprite(s) in room '${roomId}' with color 0x${color.toString(16).padStart(6, '0').toUpperCase()}`);
+                break;
+            }
+
+            // Brownout: one slow dip of every room's lights (systems/lighting.js dip()).
+            // action: { type: 'lighting_dip', level (0.2-1, default 0.5), ms (default 1600) }
+            // Does nothing without lighting or under prefers-reduced-motion.
+            case 'lighting_dip': {
+                window.lightingSystem?.dip?.({ level: action.level, ms: action.ms });
                 break;
             }
 

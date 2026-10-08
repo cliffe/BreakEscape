@@ -159,6 +159,21 @@
     }
   },
   "definitions": {
+    "emitterVariant": {
+      "type": "object",
+      "properties": {
+        "condition": { "type": "string" },
+        "color": { "type": "string" },
+        "radius": { "type": "number", "minimum": 0 },
+        "intensity": { "type": "number", "minimum": 0, "maximum": 1 },
+        "effect": { "enum": [null, "screen", "blink", "pulse", "breathe"] },
+        "offsetY": { "type": "number" },
+        "ledColor": { "type": "string" },
+        "ledAlpha": { "type": "number", "minimum": 0, "maximum": 1 },
+        "floorTint": { "type": "number", "minimum": 0, "maximum": 1, "description": "In a lit room, tint the floor in front of the object with its glow colour (0 = off)" }
+      },
+      "additionalProperties": false
+    },
     "objective": {
       "type": "object",
       "required": ["aimId", "title", "status", "order"],
@@ -396,6 +411,16 @@
                 },
                 "required": ["x", "y"],
                 "additionalProperties": false
+              }
+            },
+            "emitters": {
+              "type": "object",
+              "description": "Per-room changes to object glows, keyed by object id (checked first) or texture-key prefix. A list of variants; the first whose condition (globalVars syntax) holds wins. A single object is one variant.",
+              "additionalProperties": {
+                "anyOf": [
+                  { "$ref": "#/definitions/emitterVariant" },
+                  { "type": "array", "items": { "$ref": "#/definitions/emitterVariant" } }
+                ]
               }
             }
           },
@@ -996,7 +1021,7 @@
             "properties": {
               "type": {
                 "type": "string",
-                "enum": ["set_global", "emit_event", "complete_task", "unlock_task", "unlock_aim", "confirm_action", "unlock_object", "unlock_door", "give_item", "tint_objects", "show_end_screen"]
+                "enum": ["set_global", "emit_event", "complete_task", "unlock_task", "unlock_aim", "confirm_action", "unlock_object", "unlock_door", "give_item", "tint_objects", "show_end_screen", "lighting_dip"]
               },
               "key": { "type": "string" },
               "value": {},
@@ -1022,7 +1047,9 @@
               "title": { "type": "string" },
               "body": { "type": "string" },
               "buttonText": { "type": "string" },
-              "outcome": { "type": "string" }
+              "outcome": { "type": "string" },
+              "level": { "type": "number", "minimum": 0.2, "maximum": 1, "description": "lighting_dip: how far the lights sag (0.5 = half)" },
+              "ms": { "type": "number", "minimum": 800, "maximum": 4000, "description": "lighting_dip: length of the dip" }
             }
           }
         }

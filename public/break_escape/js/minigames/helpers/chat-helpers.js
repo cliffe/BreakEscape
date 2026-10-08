@@ -506,6 +506,17 @@ export async function processGameActionTags(tags, ui) {
                     }
                     break;
 
+                case 'lighting_dip': {
+                    // Format: lighting_dip or lighting_dip:0.5 (how far the lights sag).
+                    // One slow brownout dip (systems/lighting.js dip()); it waits for the
+                    // conversation to close so the player sees it.
+                    const level = param ? Number(param) : undefined;
+                    const started = window.lightingSystem?.dip?.({ level }) || false;
+                    result.success = true;
+                    result.message = started ? '💡 Lighting dip queued' : '💡 Lighting dip skipped (no lighting or reduced motion)';
+                    break;
+                }
+
                 case 'set_variable':
                     // Format: set_variable:varName=value
                     if (param) {
