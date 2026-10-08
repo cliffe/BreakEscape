@@ -1,3 +1,7 @@
+# Resume note — room lighting (2026-10-08)
+
+Log: `docs/agents/LIGHTING_LOG.md`. Five rounds done on m02 plus the back-wall fix; committed 2026-10-08 (engine, skill and docs, m02 config). Skill: `.claude/skills/mission-room-lighting/`. Next: other missions, ideas in docs/IDEAS_BACKLOG.md "Lighting".
+
 # Resume note — The Tesseract Trials (lab_tesseract_trials), started 2026-10-06
 
 Brief: `docs/agents/TESSERACT_TRIALS_BRIEF.md`. Log: `scenarios/lab_tesseract_trials/DECISIONS_LOG.md`.
