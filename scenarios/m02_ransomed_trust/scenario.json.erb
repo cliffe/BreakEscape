@@ -555,6 +555,7 @@ boardroom_pin = "0417"
     }
   },
 
+  "lighting": { "enabled": true, "defaultMode": "on", "ambient": "#b8bfce" },
   "rooms": {
     "reception_lobby": {
       "type": "room_hospital_reception",
@@ -2130,6 +2131,7 @@ boardroom_pin = "0417"
 
     "server_room": {
       "type": "room_hospital_servers",
+      "lighting": { "mode": "motion", "darkAmbient": "#0a0f1c" },
       "dimensions": {
         "width": 10,
         "height": 10
@@ -2531,6 +2533,7 @@ boardroom_pin = "0417"
 
     "emergency_equipment_storage": {
       "type": "room_hospital_storage_1x1gu",
+      "lighting": { "mode": "motion", "flicker": true },
       "door_sign": "Emergency Storage",
       "connections": {
         "west": "hospital_ward"
@@ -2936,6 +2939,7 @@ boardroom_pin = "0417"
 
     "security_office": {
       "type": "room_hospital_office_security",
+      "lighting": { "mode": "motion" },
       "dimensions": {
         "width": 10,
         "height": 10
@@ -3174,6 +3178,7 @@ boardroom_pin = "0417"
 
     "staff_room": {
       "type": "room_hospital_staff",
+      "lighting": { "mode": "motion" },
       "dimensions": {
         "width": 10,
         "height": 10
@@ -3251,6 +3256,7 @@ boardroom_pin = "0417"
 
     "ward_hall": {
       "type": "room_hospital_hall_ward",
+      "lighting": { "mode": "motion" },
       "dimensions": {
         "width": 5,
         "height": 10
@@ -3266,6 +3272,7 @@ boardroom_pin = "0417"
 
     "ward_vestibule": {
       "type": "room_hospital_waiting_1x1gu",
+      "lighting": { "mode": "motion", "flicker": true },
       "door_sign": "Ward Vestibule",
       "connections": {
         "west": "reception_lobby",
@@ -3291,6 +3298,7 @@ boardroom_pin = "0417"
 
     "ward_approach": {
       "type": "room_hospital_hall_waiting",
+      "lighting": { "mode": "motion" },
       "door_sign": "Ward Approach",
       "connections": {
         "west": "ward_vestibule",
