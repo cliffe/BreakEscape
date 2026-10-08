@@ -4,6 +4,7 @@
   "difficulty_level": 1,
   "secgen_scenario": null,
   "collection": "escape_room",
+  "lab_sheet_url": "https://cliffe.github.io/HacktivityLabSheets/labs/cyber_security_landscape/4-encoding-encryption-v2/",
   "cybok": [
     {
       "ka": "AC",

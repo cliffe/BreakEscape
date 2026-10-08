@@ -16,6 +16,7 @@ ruby scripts/lighting_lookup.rb scenarios/<mission>/scenario.json.erb
 ```
 
 For every room it prints:
+
 - the room type and whether people stand in it (`[people]`);
 - the room's own lighting block, if any;
 - every other scenario that lights the same room type, and with what;
@@ -33,10 +34,10 @@ Read the scenario brief and opening (time of day, setting). Pick the scenario-le
 "lighting": { "enabled": true, "defaultMode": "on", "ambient": "#b8bfce" }
 ```
 
-| Mood | `ambient` | Used in |
-| ---- | --------- | ------- |
-| Day office, default | omit (engine default `#c4cad8`) | — |
-| Night shift | `#b8bfce` | m02 |
+| Mood                | `ambient`                       | Used in |
+| ------------------- | ------------------------------- | ------- |
+| Day office, default | omit (engine default `#c4cad8`) | —       |
+| Night shift         | `#b8bfce`                       | m02     |
 
 Keep lit rooms readable: below about `#a8b0c0`, the art starts to look muddy. `darkAmbient` defaults to `#101424`; `#0a0f1c` suits server rooms, where the LEDs carry the room.
 
@@ -65,6 +66,7 @@ tools/playtest/lighting-tour.sh <mission> <scratch>/<mission>-lighting
 The tour makes a fresh game on the keyless :3001 server and unlocks every room in that game. It writes `<room>-a.png` for every room, plus `<room>-b.png` with the lights on for rooms that start dark. It moves the camera from the console, so it's a visual check, not a playtest. Pass room ids after the out dir to shoot only those.
 
 **Look at every image yourself.** Check:
+
 - **Dark rooms:** the glows read as screens, lamps and LEDs, the doorways are findable, and nothing the player must find is lost in the dark.
 - **Lit rooms:** they look like the room, a little moodier, not grey.
 - **Faulty-flicker rooms:** they aren't where the main puzzle happens.

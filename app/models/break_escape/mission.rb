@@ -58,6 +58,12 @@ module BreakEscape
       nil
     end
 
+    # Optional lab sheet for this mission, from mission.json's "lab_sheet_url".
+    # Hacktivity copies it onto a new GameSlot whose own URL is left blank.
+    def lab_sheet_url
+      load_mission_metadata&.dig('lab_sheet_url').presence
+    end
+
     # Get all CyBOK entries. Always returns break_escape_cyboks — these are the
     # authoritative source for the mission regardless of host mode. In Hacktivity,
     # the GameSlot syncs these into the host's cyboks table on save so that the
