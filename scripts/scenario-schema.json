@@ -170,6 +170,7 @@
         "offsetY": { "type": "number" },
         "ledColor": { "type": "string" },
         "ledAlpha": { "type": "number", "minimum": 0, "maximum": 1 },
+        "above": { "type": "boolean", "description": "Draw the glow above the light map in a lit room too (small indicators that must stay visible)" },
         "floorTint": { "type": "number", "minimum": 0, "maximum": 1, "description": "In a lit room, tint the floor in front of the object with its glow colour (0 = off)" }
       },
       "additionalProperties": false

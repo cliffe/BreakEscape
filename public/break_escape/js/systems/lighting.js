@@ -23,7 +23,8 @@
  *         { "condition": "globalVars.alarm", "color": "#ff5050", "radius": 24, "intensity": 0.5, "effect": "pulse" },
  *         { "color": "#7dffa0" }
  *       ]                                  // also: offsetY, ledColor, ledAlpha (0 hides LEDs), floorTint (0-1: tint
- *                                          // a lit floor with the glow's colour); effect null|screen|blink|pulse|breathe
+ *                                          // a lit floor with the glow's colour), above (true: stays above the light
+ *                                          // map in a lit room, for small indicators); effect null|screen|blink|pulse|breathe
  *     }
  *   }
  * Objects with lockType "ransomware_display" glow red while globalVars.ransomware_deployed holds
@@ -863,13 +864,16 @@ export class LightingSystem {
         // the figure overlaps the glow's inner circle (it's a big glow behind you).
         // In a lit room the glow sits just in front of its object, under the map, so
         // anyone in front covers it.
-        const above = darkRoom || def.ransom;
+        // `above` (a variant flag): a small indicator that must stay visible in a lit
+        // room takes the ransom path (above the map, figure fade, steady lit factor) but
+        // keeps its own radius and gets no floor tint unless it sets floorTint.
+        const above = darkRoom || def.ransom || def.above;
         if (def.ransom) e.glow.setScale((radius * 0.6) / (LIGHT_TEX_SIZE / 2));
         const covered = e.leds.length
           ? this.figureOverlapsCircle(x, y, radius * 0.3, obj.depth, figures)
           : this.hiddenByFigure(x, y, obj.depth, figures);
         e.fade = (e.fade ?? 1) + ((covered ? GLOW_COVERED : 1) - (e.fade ?? 1)) * 0.35;
-        const fade = def.ransom ? 0.6 : glowFade;
+        const fade = (def.ransom || def.above) ? 0.6 : glowFade;
         e.glow.setPosition(x, y).setDepth(above ? LIGHT_DEPTH + 1 : obj.depth + 0.01).setVisible(true)
           .setAlpha(Math.min(1, def.intensity * k * e.glowK * fade * (above ? e.fade : GLOW_BOOST)));
         // ADD can't colour a near-white light map, so in a lit room an emitter with
