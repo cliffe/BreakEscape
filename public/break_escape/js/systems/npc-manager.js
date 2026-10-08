@@ -1438,6 +1438,14 @@ export default class NPCManager {
 
       // Remove event listener since it's one-time
       this.eventDispatcher.off(eventName, listener);
+
+      // No delay: start it now rather than on the next 1s tick. The title screen
+      // closes on this same game_loaded, and waiting for the tick showed the bare
+      // game canvas for up to a second before an opening briefing.
+      if ((conversation.delay || 0) <= 0 && !conversation.delivered) {
+        conversation.delivered = true;
+        this._deliverTimedConversation(conversation);
+      }
     };
 
     this.eventDispatcher.on(eventName, listener);
