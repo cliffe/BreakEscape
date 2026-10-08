@@ -1,4 +1,4 @@
-# Lighting pass brief: m02, sis02, sis01, m01 (2026-10-08)
+# Lighting pass brief: m02, sis02, sis01, m01, lab_tesseract_trials (2026-10-08)
 
 Every subagent on this pass reads this file first, then:
 
@@ -11,6 +11,7 @@ Every subagent on this pass reads this file first, then:
 
 - **m02_ransomed_trust** is a SAFETYNET spy-thriller mission. Lighting adds tension and atmosphere: dark corridors that light up as you walk in, a server room that glows. It is the reference lighting other missions copy, so its round is "review and improve". The known limits in the log (light crossing side walls, LEDs and glows drawing over NPCs) are fair game.
 - **m01_first_contact** (added by the user mid-pass) is a SAFETYNET spy-thriller mission like m02, and the first one players see. Its audio is cached: no ink or spoken-line changes, not even tags.
+- **lab_tesseract_trials** (added by the user after the pass): a lab with SAFETYNET spy framing (`docs/agents/TESSERACT_TRIALS_BRIEF.md`): a short CyberChef escape room for first-year students. Atmosphere yes, but nothing a puzzle needs may be harder to read. Other files in its folder have someone else's uncommitted edits: touch only `scenario.json.erb` and `LIGHTING_PLAN.md`, and commit by explicit path.
 - **sis01_healthcare** and **sis02_energy** are Security-Informed Safety serious games. Education comes first, they are often played by student teams, and there is no spy framing. Lighting makes the setting feel real (a hospital at the hour the incident happens, a battery storage site and its control room) and must never hide information a decision depends on, or make a room harder to read. Moderate atmosphere; no horror.
 - Work out each mission's time of day and mood from its brief, opening cutscene/ink and `information_pack.md`, not from guesses. Cite where you found it.
 

@@ -6,6 +6,7 @@ Scratch: session scratchpad `<mission>-<role>/` subfolders (lost at session end)
 - sis02: DONE, committed dfac2abc. Engine committed 273d6261.
 - sis01: DONE, committed ac923d31 (engine 5c8efcfc, 352c106b first).
 - m01: DONE, committed b105f391 (engine c0092c83, a4ec046e first).
+- lab_tesseract_trials: DONE, committed 96fd31ec (engine 2f228f81 first).
 - PASS COMPLETE (2026-10-08): m02 eda5423a, sis02 dfac2abc, sis01 ac923d31, m01 b105f391. Engine 273d6261, 5c8efcfc, 352c106b, c0092c83, a4ec046e. Tour tool 8f52fa74. Skill SKILL.md not updated (user has uncommitted edits there).
 - lighting.js: one editor at a time; m02 engine work first, sis02 emitters after.
 
