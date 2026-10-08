@@ -44,10 +44,10 @@ You play Agent 0x00, a SAFETYNET agent who has gone undercover as a first-year s
 
 Everything you need is in the browser. There are no virtual machines and nothing to submit on the Hacktivity website: everything happens inside the game. Your game is generated just for you, so the words and numbers you find will differ from other students', and there is nothing to copy from a neighbour. Sharing ideas and recipes is fine.
 
-1. ==action: Launch **The Keyholder Trials** from the BreakEscape scenario selection screen==. It is in the escape room collection.
-2. ==action: Watch the briefing from Agent HaX==, then ==action: explore the foyer and talk to the people in it==.
-3. ==action: Find the lecturer who has the lab laptop, and take it==. It holds CyberChef.
-4. ==action: Open the notepad and the field notes you collect==. You can reopen any of them at any time.
+1. \==action: Launch **The Keyholder Trials** from the BreakEscape scenario selection screen==. It is in the escape room collection.
+2. \==action: Watch the briefing from Agent HaX==, then ==action: explore the foyer and talk to the people in it==.
+3. \==action: Find the lecturer who has the lab laptop, and take it==. It holds CyberChef.
+4. \==action: Open the notepad and the field notes you collect==. You can reopen any of them at any time.
 
 The game takes about 75 to 90 minutes. In a 60-minute class, stop when the pigeonholes open (Trial VII, about 45 minutes in) and resume the same game next time. You can stop and resume at any point: your progress, notes and unlocked rooms are kept. Your position in the building and your CyberChef recipe are not kept.
 
@@ -73,12 +73,12 @@ You do not need to read this before you play. Use it when a field note leaves yo
 
 ### Encoding, Encryption and Hashing {#encoding-encryption-hashing}
 
-| | Encoding | Encryption | Hashing |
-|---|---|---|---|
-| Purpose | Represent data in a form that is easier to store, send or display | Keep data secret from anyone without the key | Make a short fingerprint of data, to check it has not changed |
-| Key or secret needed to reverse it | None. The scheme is public | Yes: the key | Not reversible |
-| Output length | Depends on the input | Depends on the input | Fixed, whatever the input |
-| Examples | ASCII, hex, Base64 | Caesar, Vigenère, AES, RSA | SHA-256 |
+|                                    | Encoding                                                          | Encryption                                   | Hashing                                                       |
+| ---------------------------------- | ----------------------------------------------------------------- | -------------------------------------------- | ------------------------------------------------------------- |
+| Purpose                            | Represent data in a form that is easier to store, send or display | Keep data secret from anyone without the key | Make a short fingerprint of data, to check it has not changed |
+| Key or secret needed to reverse it | None. The scheme is public                                        | Yes: the key                                 | Not reversible                                                |
+| Output length                      | Depends on the input                                              | Depends on the input                         | Fixed, whatever the input                                     |
+| Examples                           | ASCII, hex, Base64                                                | Caesar, Vigenère, AES, RSA                   | SHA-256                                                       |
 
 Encoding is not security. Anyone who recognises the scheme can undo it, and tools like CyberChef's Magic will often recognise it for them. Encryption is only as good as the key: if the key is weak, guessed, or sent along with the message, the cipher does not help. A hash is a one-way function, so you cannot "decrypt" one, though you can guess inputs and compare.
 
@@ -163,7 +163,7 @@ CyberChef is convenient, but you will often have only a shell, for example on a 
 
 ### Characters, Hex and Binary {#cli-hex-binary}
 
-==action: Show a string as hex, then as binary==:
+\==action: Show a string as hex, then as binary==:
 
 ```bash
 printf 'Valhalla!' | xxd -p
@@ -172,20 +172,20 @@ printf 'Valhalla!' | xxd -b
 
 The first command prints `56616c68616c6c6121`: two hex digits per character. The second prints each byte as eight bits, with the characters alongside.
 
-==action: Go back from hex to text==:
+\==action: Go back from hex to text==:
 
 ```bash
 printf 'Valhalla!' | xxd -p | xxd -r -p
 ```
 
-==action: Show the decimal ASCII code of each character==, and ==action: turn decimal codes back into text==:
+\==action: Show the decimal ASCII code of each character==, and ==action: turn decimal codes back into text==:
 
 ```bash
 printf 'Valhalla!' | od -An -tu1
 python3 -c "print(bytes([72, 105]).decode())"
 ```
 
-==action: Convert between decimal and hex==:
+\==action: Convert between decimal and hex==:
 
 ```bash
 printf '%d\n' 0x4d
@@ -196,14 +196,14 @@ printf '%x\n' 77
 
 ### Base64 {#cli-base64}
 
-==action: Encode and decode Base64==:
+\==action: Encode and decode Base64==:
 
 ```bash
 printf 'Valhalla!' | base64
 printf 'VmFsaGFsbGEh' | base64 -d
 ```
 
-==action: Compare these three inputs and look at the `=` padding==:
+\==action: Compare these three inputs and look at the `=` padding==:
 
 ```bash
 printf '\x14\xfb\x9c\x03\xd9\x7e' | base64
@@ -222,7 +222,7 @@ printf 'Valhalla' | tr 'A-Za-z' 'G-ZA-Fg-za-f'
 printf 'Bgrngrrg' | tr 'G-ZA-Fg-za-f' 'A-Za-z'
 ```
 
-==action: Try all 25 shifts of a ciphertext, to see why a Caesar cipher is weak==:
+\==action: Try all 25 shifts of a ciphertext, to see why a Caesar cipher is weak==:
 
 ```bash
 for n in $(seq 1 25); do
@@ -247,7 +247,7 @@ printf 'c889' | xxd -r -p | iconv -f IBM037 -t UTF-8
 
 ### Hashes {#cli-hashes}
 
-==action: Hash the same text with and without a trailing new line==:
+\==action: Hash the same text with and without a trailing new line==:
 
 ```bash
 printf '%s' 'Valhalla!' | sha256sum
@@ -261,7 +261,7 @@ The first and third give the same hash. The second is completely different, beca
 
 OpenSSL can encrypt with a password, or with an explicit key and IV. CyberChef's AES Decrypt takes an explicit key and IV, so start there.
 
-==action: Make a random 128-bit key and IV, as hex==:
+\==action: Make a random 128-bit key and IV, as hex==:
 
 ```bash
 openssl rand -hex 16 > key.hex
@@ -269,7 +269,7 @@ openssl rand -hex 16 > iv.hex
 cat key.hex iv.hex
 ```
 
-==action: Encrypt a message with AES-128 in CBC mode, writing the ciphertext as hex==:
+\==action: Encrypt a message with AES-128 in CBC mode, writing the ciphertext as hex==:
 
 ```bash
 printf 'Meet at the library' | openssl enc -aes-128-cbc -K $(cat key.hex) -iv $(cat iv.hex) | xxd -p > message.hex
@@ -284,7 +284,7 @@ xxd -r -p message.hex | openssl enc -d -aes-128-cbc -K $(cat key.hex) -iv $(cat 
 
 > Tip: Paste `message.hex`, `key.hex` and `iv.hex` into CyberChef's AES Decrypt (Mode CBC, Input Hex, Output Raw, with the key and IV both set to Hex) and you should get the same message.
 
-==action: Now try decrypting with the wrong IV, then with a wrong key==:
+\==action: Now try decrypting with the wrong IV, then with a wrong key==:
 
 ```bash
 xxd -r -p message.hex | openssl enc -d -aes-128-cbc -K $(cat key.hex) -iv 00000000000000000000000000000000 | xxd
@@ -309,7 +309,7 @@ openssl enc -d -aes-256-cbc -pbkdf2 -in note.enc
 
 ### Public-Key Encryption with OpenSSL {#cli-public-key}
 
-==action: Generate an RSA key pair, and extract the public key==:
+\==action: Generate an RSA key pair, and extract the public key==:
 
 ```bash
 openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out private.pem
@@ -319,7 +319,7 @@ head -1 private.pem
 
 > Question: Look at the two `.pem` files. What do the header lines say? What is the text between them, and what encoding is it?
 
-==action: Encrypt a short message to the public key (with OAEP padding), and decrypt it with the private key==:
+\==action: Encrypt a short message to the public key (with OAEP padding), and decrypt it with the private key==:
 
 ```bash
 printf 'a short secret' | openssl pkeyutl -encrypt -pubin -inkey public.pem -pkeyopt rsa_padding_mode:oaep -out secret.bin
@@ -333,7 +333,7 @@ The last command prints the same ciphertext as Base64, which is the form you wou
 
 ### Hybrid Encryption by Hand {#cli-hybrid}
 
-==action: Encrypt a file with a random AES key, then lock that key with the public key==:
+\==action: Encrypt a file with a random AES key, then lock that key with the public key==:
 
 ```bash
 echo 'a longer message than RSA could handle directly' > report.txt
@@ -352,7 +352,7 @@ openssl enc -d -aes-256-cbc -K "$KEY" -iv $(cat session.iv) -in report.enc
 
 ### Signatures with OpenSSL {#cli-signatures}
 
-==action: Sign a file with the private key, then verify it with the public key==:
+\==action: Sign a file with the private key, then verify it with the public key==:
 
 ```bash
 printf 'status report' > msg.txt
@@ -375,7 +375,7 @@ This prints `Verification failure`, and the command exits with a non-zero status
 
 GnuPG (GPG) implements the OpenPGP standard, and does the hybrid encryption for you. To play both sides on one machine, give each person their own key ring with the `GNUPGHOME` variable.
 
-==action: Create two key rings and generate a key pair in each==. GPG asks for a passphrase to protect each private key:
+\==action: Create two key rings and generate a key pair in each==. GPG asks for a passphrase to protect each private key:
 
 ```bash
 mkdir -m 700 ~/alice ~/bob
@@ -383,7 +383,7 @@ GNUPGHOME=~/alice gpg --quick-generate-key "Alice <alice@example.com>"
 GNUPGHOME=~/bob gpg --quick-generate-key "Bob <bob@example.com>"
 ```
 
-==action: List the keys and fingerprints in one ring==:
+\==action: List the keys and fingerprints in one ring==:
 
 ```bash
 GNUPGHOME=~/alice gpg --list-keys
@@ -391,7 +391,7 @@ GNUPGHOME=~/alice gpg --fingerprint alice@example.com
 GNUPGHOME=~/alice gpg --list-secret-keys
 ```
 
-==action: Export Bob's public key and import it into Alice's ring==:
+\==action: Export Bob's public key and import it into Alice's ring==:
 
 ```bash
 GNUPGHOME=~/bob gpg --armor --export bob@example.com > bob_public.asc
@@ -401,7 +401,7 @@ GNUPGHOME=~/alice gpg --fingerprint bob@example.com
 
 > Note: Fingerprints are how you check that you imported the right key. In real use, you would confirm Bob's fingerprint with him over a different channel, such as a phone call.
 
-==action: As Alice, encrypt a message to Bob, then decrypt it as Bob==:
+\==action: As Alice, encrypt a message to Bob, then decrypt it as Bob==:
 
 ```bash
 echo 'meet at the library' > message.txt
@@ -411,7 +411,7 @@ GNUPGHOME=~/bob gpg -d message.asc
 
 > Note: `--trust-model always` skips the "use this key anyway?" prompt, because here you have already checked the key yourself.
 
-==action: As Alice, sign the message, and as Bob, verify it==:
+\==action: As Alice, sign the message, and as Bob, verify it==:
 
 ```bash
 GNUPGHOME=~/alice gpg --armor --detach-sign message.txt
@@ -420,7 +420,7 @@ GNUPGHOME=~/bob gpg --import alice_public.asc
 GNUPGHOME=~/bob gpg --verify message.txt.asc message.txt
 ```
 
-==action: Add a line to `message.txt` and verify again==. GPG reports `BAD signature`.
+\==action: Add a line to `message.txt` and verify again==. GPG reports `BAD signature`.
 
 > Warning: Use `~/alice` and `~/bob` for practice only. Delete them when you finish, and never export or share the secret key of a real identity.
 
