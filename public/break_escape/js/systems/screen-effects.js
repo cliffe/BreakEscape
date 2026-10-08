@@ -3,6 +3,8 @@
  * Handles screen flash and shake effects for combat feedback
  */
 
+import { overlayDepth } from '../utils/constants.js';
+
 export class ScreenEffectsSystem {
   constructor(scene) {
     this.scene = scene;
@@ -16,7 +18,7 @@ export class ScreenEffectsSystem {
       0xff0000,
       0
     );
-    this.flashOverlay.setDepth(10000); // Above everything
+    this.flashOverlay.setDepth(overlayDepth(10000)); // Above everything
     this.flashOverlay.setScrollFactor(0); // Fixed to camera
     this.flashOverlay.setOrigin(0, 0);
 

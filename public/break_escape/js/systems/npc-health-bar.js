@@ -5,6 +5,8 @@
  * @module npc-health-bar
  */
 
+import { overlayDepth } from '../utils/constants.js';
+
 export class NPCHealthBarManager {
   constructor(scene) {
     this.scene = scene;
@@ -54,7 +56,7 @@ export class NPCHealthBarManager {
     });
 
     // Set depth so bar appears above NPC
-    graphics.setDepth(npc.sprite.depth + 1);
+    graphics.setDepth(overlayDepth(npc.sprite.depth + 1));
 
     // Draw the health bar
     this.drawHealthBar(graphics, currentHP, maxHP);
@@ -132,7 +134,7 @@ export class NPCHealthBarManager {
     );
 
     // Update depth to keep above NPC
-    barData.graphics.setDepth(npc.sprite.depth + 1);
+    barData.graphics.setDepth(overlayDepth(npc.sprite.depth + 1));
 
     // Update health if changed
     if (currentHP !== barData.currentHP) {

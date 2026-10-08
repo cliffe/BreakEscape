@@ -26,7 +26,7 @@ const dataUrl = (src) => 'data:text/javascript;base64,' + Buffer.from(src).toStr
 const record = (name) => `export function ${name}(...a) { globalThis.__calls.push(['${name}', a[0]?.scenarioData?.id ?? a[0]]); return Promise.resolve({ ok: true }); }`;
 globalThis.__calls = calls;
 const stubs = {
-    '../utils/constants.js': dataUrl('export const INTERACTION_RANGE = 64, INTERACTION_RANGE_SQ = 4096, INTERACTION_CHECK_INTERVAL = 100, DOOR_INTERACTION_RANGE_SQ = 4096;'),
+    '../utils/constants.js': dataUrl('export const INTERACTION_RANGE = 64, INTERACTION_RANGE_SQ = 4096, INTERACTION_CHECK_INTERVAL = 100, DOOR_INTERACTION_RANGE_SQ = 4096; export const overlayDepth = (d) => d;'),
     '../core/rooms.js': dataUrl('export const rooms = {};'),
     '../core/player.js': dataUrl('export function facePlayerToward() {}'),
     './unlock-system.js': dataUrl(record('handleUnlock')),

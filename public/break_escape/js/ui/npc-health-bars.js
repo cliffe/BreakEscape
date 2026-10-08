@@ -4,6 +4,7 @@
  */
 
 import { COMBAT_CONFIG } from '../config/combat-config.js';
+import { overlayDepth } from '../utils/constants.js';
 import { CombatEvents } from '../events/combat-events.js';
 
 export class NPCHealthBars {
@@ -80,7 +81,7 @@ export class NPCHealthBars {
       height,
       0x333333
     );
-    background.setDepth(850);
+    background.setDepth(overlayDepth(850));
     background.setStrokeStyle(1, 0x000000);
 
     // Create health bar (red to green gradient based on HP)
@@ -91,7 +92,7 @@ export class NPCHealthBars {
       height,
       0x00ff00
     );
-    bar.setDepth(851);
+    bar.setDepth(overlayDepth(851));
 
     this.healthBars.set(npcId, {
       background,

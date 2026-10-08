@@ -2851,6 +2851,8 @@ export function createRoom(roomId, roomData, position) {
         // ===== NPC SPRITE CREATION =====
         // Create NPC sprites for person-type NPCs in this room
         createNPCSpritesForRoom(roomId, rooms[roomId]);
+
+        window.lightingSystem?.registerRoom(roomId, roomData);
     } catch (error) {
         console.error(`Error creating room ${roomId}:`, error);
         console.error('Error details:', error.stack);

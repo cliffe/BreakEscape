@@ -3,6 +3,7 @@
 // default export class NPCBarkSystem
 
 import { ASSETS_PATH } from '../config.js';
+import { overlayDepth } from '../utils/constants.js';
 import TTSManager from './tts-manager.js';
 import { phoneBarkText } from '../minigames/phone-chat/phone-chat-speaker.js';
 import { displayDashes } from '../utils/display-dashes.js';
@@ -259,7 +260,7 @@ export default class NPCBarkSystem {
         Math.round(sprite.y - 38),
         'talk'
       );
-      sprite.barkIcon.setDepth(sprite.depth + 2); // above proximity indicator
+      sprite.barkIcon.setDepth(overlayDepth(sprite.depth + 2)); // above proximity indicator
       sprite.barkIcon.setVisible(false);
     }
 

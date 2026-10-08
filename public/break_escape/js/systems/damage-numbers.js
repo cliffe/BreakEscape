@@ -3,6 +3,8 @@
  * Displays floating damage numbers above entities using object pooling
  */
 
+import { overlayDepth } from '../utils/constants.js';
+
 export class DamageNumbersSystem {
   constructor(scene) {
     this.scene = scene;
@@ -20,7 +22,7 @@ export class DamageNumbersSystem {
         strokeThickness: 4
       });
       text.setVisible(false);
-      text.setDepth(1000); // Above everything
+      text.setDepth(overlayDepth(1000)); // Above everything
       this.pool.push(text);
     }
 

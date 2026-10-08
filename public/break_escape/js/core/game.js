@@ -33,6 +33,7 @@ import { ScenarioTimerUI } from '../ui/scenario-timer.js';  // [Phase 5] Countdo
 import { ScenarioTimerDispatcher } from '../ui/scenario-timer-dispatcher.js';  // [Phase 5] Timer event dispatcher
 import { GameClock } from '../systems/game-clock.js';  // Elapsed game time (resumes after a reload) and the in-game clock
 import { CommandBoardRecorder } from '../minigames/command-board/command-board-timeline.js';  // Board entries stamped as they happen
+import { initLighting } from '../systems/lighting.js';
 import { collectCharacterSprites, queueCharacterAtlases, ensureCharacterTexture } from '../systems/character-textures.js';
 
 // Global variables that will be set by main.js
@@ -1142,6 +1143,9 @@ export async function create() {
     // Initialize rooms system after player exists
     initializeRooms(this);
 
+    // Room lighting (only when the scenario opts in); before the first room is created
+    initLighting(this, window.gameScenario);
+
     // Initialize NPC Behavior Manager (async lazy loading)
     if (window.npcManager) {
         import('../systems/npc-behavior.js')
@@ -1630,6 +1634,10 @@ export function update() {
     // [Phase 5] Update scenario timers (fire timers and dispatch events)
     if (window.scenarioTimerDispatcher) {
         window.scenarioTimerDispatcher.update(Date.now());
+    }
+
+    if (window.lightingSystem) {
+        window.lightingSystem.update(this.time.now);
     }
 
     // Update NPC LOS visualizations if enabled

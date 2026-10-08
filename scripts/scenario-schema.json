@@ -47,6 +47,17 @@
       "description": "Top-level VM flag data, keyed by VM name. Use ERB helper vm_flags_json() to populate.",
       "additionalProperties": true
     },
+    "lighting": {
+      "type": "object",
+      "description": "Room lighting (systems/lighting.js). Off unless enabled. Rooms can override in their own 'lighting' block.",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "defaultMode": { "type": "string", "enum": ["on", "motion", "dark"] },
+        "ambient": { "type": "string", "description": "Lit ambient colour, e.g. '#c4cad8'. Lower is moodier." },
+        "darkAmbient": { "type": "string", "description": "Ambient colour with the lights off, e.g. '#101424'." }
+      },
+      "additionalProperties": false
+    },
     "music": {
       "type": "object",
       "description": "Music system configuration. Events trigger music changes based on game events.",
@@ -361,6 +372,35 @@
           "enum": ["easy", "medium", "hard", "tutorial"]
         },
         "door_sign": { "type": "string" },
+        "lighting": {
+          "type": "object",
+          "description": "Per-room lighting. 'motion': dark until the player or an NPC walks in. Rooms with people in them start lit unless startOn is false.",
+          "properties": {
+            "mode": { "type": "string", "enum": ["on", "motion", "dark"] },
+            "startOn": { "type": "boolean" },
+            "offAfter": { "type": "number", "minimum": 0, "description": "Motion rooms: seconds after the player leaves before the lights go off." },
+            "flicker": { "type": "boolean", "description": "One faulty fluorescent panel." },
+            "panels": { "type": "boolean", "description": "false: no ceiling panel pools." },
+            "ambient": { "type": "string" },
+            "darkAmbient": { "type": "string" },
+            "lights": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "x": { "type": "number", "description": "Tile x within the room" },
+                  "y": { "type": "number", "description": "Tile y within the room" },
+                  "color": { "type": "string" },
+                  "radius": { "type": "number" },
+                  "intensity": { "type": "number", "minimum": 0, "maximum": 1 }
+                },
+                "required": ["x", "y"],
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        },
         "ambientSound": {
           "type": "string",
           "description": "Audio asset key for ambient room sound"

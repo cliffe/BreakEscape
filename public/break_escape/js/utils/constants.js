@@ -11,6 +11,14 @@ export const BREAK_ESCAPE_DEBUG = false;
 
 // Game constants
 export const TILE_SIZE = 32;
+
+// Room lighting draws a light map at LIGHT_DEPTH (systems/lighting.js). Markers that
+// must stay readable in a dark room (talk icons, health bars, damage numbers) go
+// above it, keeping their order among themselves.
+export const LIGHT_DEPTH = 100000;
+export function overlayDepth(depth) {
+    return window.lightingSystem ? LIGHT_DEPTH + 10 + depth / 100 : depth;
+}
 export const DOOR_ALIGN_OVERLAP = 32 * 3;
 export const GRID_SIZE = 32;
 

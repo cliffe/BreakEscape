@@ -7,7 +7,7 @@
  * @module npc-talk-icons
  */
 
-import { DOOR_INTERACTION_RANGE } from '../utils/constants.js';
+import { DOOR_INTERACTION_RANGE, overlayDepth } from '../utils/constants.js';
 
 export class NPCTalkIconSystem {
     constructor(scene) {
@@ -66,7 +66,7 @@ export class NPCTalkIconSystem {
             
             // Hide by default
             icon.setVisible(false);
-            icon.setDepth(spriteObj.depth + 1);
+            icon.setDepth(overlayDepth(spriteObj.depth + 1));
             // icon.setOrigin(0.5, 0.5);
             
             // Store reference with calculated offset for consistent positioning
@@ -121,7 +121,7 @@ export class NPCTalkIconSystem {
             iconData.icon.setPosition(newX, newY);
             
             // Update depth if needed
-            const expectedDepth = iconData.npc.depth + 1;
+            const expectedDepth = overlayDepth(iconData.npc.depth + 1);
             if (iconData.icon.depth !== expectedDepth) {
                 iconData.icon.setDepth(expectedDepth);
             }

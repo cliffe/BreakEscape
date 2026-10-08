@@ -1,5 +1,5 @@
 // Object interaction system
-import { INTERACTION_RANGE, INTERACTION_RANGE_SQ, INTERACTION_CHECK_INTERVAL, DOOR_INTERACTION_RANGE_SQ } from '../utils/constants.js';
+import { INTERACTION_RANGE, INTERACTION_RANGE_SQ, INTERACTION_CHECK_INTERVAL, DOOR_INTERACTION_RANGE_SQ, overlayDepth } from '../utils/constants.js';
 // IMPORTANT: version must match all other imports of rooms.js — mismatched ?v= strings
 // create separate module instances with separate rooms objects, causing state to diverge.
 import { rooms } from '../core/rooms.js';
@@ -561,7 +561,7 @@ function addInteractionIndicator(obj) {
             const talkIconY = Math.round(obj.y - 38); // 32 pixels above
             
             const indicator = obj.scene.add.image(talkIconX, talkIconY, 'talk');
-            indicator.setDepth(obj.depth + 1);
+            indicator.setDepth(overlayDepth(obj.depth + 1));
             indicator.setVisible(false); // Hidden until player is in range
             
             // Store reference for cleanup and visibility management
@@ -587,7 +587,7 @@ function addInteractionIndicator(obj) {
         const indicatorY = center.y; // Position above with 10px offset
         
         const indicator = obj.scene.add.image(indicatorX, indicatorY, spriteKey);
-        indicator.setDepth(999); // High depth to appear on top
+        indicator.setDepth(overlayDepth(999)); // High depth to appear on top
         indicator.setOrigin(0.5, 0.5); // Center the sprite
         // indicator.setScale(0.5); // Scale down to be less intrusive
         

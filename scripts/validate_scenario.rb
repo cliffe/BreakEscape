@@ -247,7 +247,7 @@ def check_unknown_fields(json_data)
   known_top_level = %w[
     scenario_id scenario_name scenario_brief endGoal version startRoom startPosition
     show_scenario_brief disableAttacks gameClock flags music startItemsInInventory globalVariables
-    player objectives rooms npcs phoneNPCs narrator timers _comment mutuallyExclusiveGlobals
+    player objectives rooms npcs phoneNPCs narrator timers _comment mutuallyExclusiveGlobals lighting
   ]
 
   # Check top-level unknown fields
@@ -260,7 +260,7 @@ def check_unknown_fields(json_data)
   # Known room fields
   known_room_fields = %w[
     type door_sign connections locked lockType requires keyPins difficulty
-    ambientSound ambientVolume objects npcs _comment dimensions biometricMatchThreshold
+    ambientSound ambientVolume objects npcs _comment dimensions biometricMatchThreshold lighting
   ]
 
   # Known NPC fields
