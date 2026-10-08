@@ -52,8 +52,8 @@ export function getCanvas() {
 /**
  * Convert world coordinates to viewport (client) coordinates.
  *
- * The game runs at a 640x480 base resolution and is upscaled by an integer
- * zoom factor chosen at runtime (main.js calculateOptimalScale). Rather than
+ * The game size flexes around 640x480 and is upscaled by an integer number of
+ * device pixels chosen at runtime (main.js applyPixelPerfectScale). Rather than
  * reading that zoom directly, derive the scale from the canvas's rendered CSS
  * size versus the camera's logical size — that stays correct across zoom
  * changes, fullscreen, and browser resizes.

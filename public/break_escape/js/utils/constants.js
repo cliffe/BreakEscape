@@ -75,20 +75,14 @@ export const GAME_CONFIG = typeof Phaser !== 'undefined' ? {
         baseURL: (window.breakEscapeConfig?.assetsPath || '/break_escape/assets') + '/'
     },
     scale: {
-        mode: Phaser.Scale.ENVELOP,  // Fill entire container while maintaining aspect ratio
-        autoCenter: Phaser.Scale.CENTER_BOTH,
+        // Sized by hand in main.js (applyPixelPerfectScale): the canvas is drawn at an
+        // integer number of *device* pixels per game pixel, and the game size flexes to
+        // fill the window. ENVELOP/FIT stretch by a fractional factor, which makes
+        // nearest-neighbour drop or double pixel columns as the camera scrolls.
+        mode: Phaser.Scale.NONE,
+        autoCenter: Phaser.Scale.NO_CENTER,
         width: 640,
-        height: 480,
-        // Minimum size to ensure playability
-        min: {
-            width: 320,
-            height: 240
-        },
-        // Maximum size to prevent excessive scaling
-        max: {
-            width: 2560,
-            height: 1920
-        },
+        height: 480
     },
     render: {
         pixelArt: true,

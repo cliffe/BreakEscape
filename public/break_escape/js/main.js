@@ -196,86 +196,65 @@ function initializeGame() {
         }).catch(err => console.warn('[BreakEscape] VM set activate_and_start failed:', err));
     }
 
-    // Calculate optimal integer scale factor for current browser window
-    const calculateOptimalScale = () => {
+    // Pixel-perfect scaling. Each game pixel must cover a whole number of *device*
+    // pixels, otherwise nearest-neighbour upscaling gives some columns one more
+    // device pixel than their neighbours and, as the camera scrolls, those columns
+    // shift: pixels look squashed or doubled. So pick an integer device-pixel scale,
+    // size the game to cover the container at that scale (the visible world flexes a
+    // little with the window rather than being stretched), and lay the canvas out on
+    // device-pixel boundaries.
+    const BASE_WIDTH = 640;
+    const BASE_HEIGHT = 480;
+
+    const applyPixelPerfectScale = () => {
         const container = document.getElementById('game-container');
-        if (!container) return 2; // Default fallback
-        
-        const containerWidth = container.clientWidth;
-        const containerHeight = container.clientHeight;
-        
-        // Base resolution
-        const baseWidth = 640;
-        const baseHeight = 480;
-        
-        // Calculate scale factors for both dimensions
-        const scaleX = containerWidth / baseWidth;
-        const scaleY = containerHeight / baseHeight;
-        
-        // Use the smaller scale to maintain aspect ratio
-        const maxScale = Math.min(scaleX, scaleY);
-        
-        // Find the best integer scale factor (prefer 2x or higher for pixel art)
-        let bestScale = 2; // Minimum for good pixel art
-        
-        // Check integer scales from 2x up to the maximum that fits
-        for (let scale = 2; scale <= Math.floor(maxScale); scale++) {
-            const scaledWidth = baseWidth * scale;
-            const scaledHeight = baseHeight * scale;
-            
-            // If this scale fits within the container, use it
-            if (scaledWidth <= containerWidth && scaledHeight <= containerHeight) {
-                bestScale = scale;
-            } else {
-                break; // Stop at the largest scale that fits
-            }
+        if (!game?.scale || !game.canvas || !container) return;
+
+        const dpr = window.devicePixelRatio || 1;
+        const deviceWidth = Math.round(container.clientWidth * dpr);
+        const deviceHeight = Math.round(container.clientHeight * dpr);
+        if (!deviceWidth || !deviceHeight) return;
+
+        // Integer scale closest to covering a 640x480 view (what ENVELOP used to show)
+        const scale = Math.max(1, Math.round(Math.max(deviceWidth / BASE_WIDTH, deviceHeight / BASE_HEIGHT)));
+        const gameWidth = Math.ceil(deviceWidth / scale);
+        const gameHeight = Math.ceil(deviceHeight / scale);
+
+        // Centre the (slightly oversized) canvas by a whole number of device pixels;
+        // the container's overflow:hidden crops the remainder.
+        const canvas = game.canvas;
+        canvas.style.position = 'absolute';
+        canvas.style.left = `${-Math.floor((gameWidth * scale - deviceWidth) / 2) / dpr}px`;
+        canvas.style.top = `${-Math.floor((gameHeight * scale - deviceHeight) / 2) / dpr}px`;
+        canvas.style.imageRendering = 'pixelated';
+
+        if (game.scale.width !== gameWidth || game.scale.height !== gameHeight) {
+            game.scale.resize(gameWidth, gameHeight);
         }
-        
-        return bestScale;
+        // CSS size = gameSize * zoom = exactly gameSize * scale device pixels.
+        // setZoom also refreshes the input bounds for the new canvas rect.
+        game.scale.setZoom(scale / dpr);
+
+        console.log(`Pixel scale ${scale}x (dpr ${dpr}): game ${gameWidth}x${gameHeight}`);
     };
-    
-    // Setup pixel-perfect rendering with optimal scaling
-    const setupPixelArt = () => {
-        if (game && game.canvas && game.scale) {
-            const canvas = game.canvas;
-            
-            // Set pixel-perfect rendering
-            canvas.style.imageRendering = 'pixelated';
-            canvas.style.imageRendering = '-moz-crisp-edges';
-            canvas.style.imageRendering = 'crisp-edges';
-            
-            // Calculate and apply optimal scale
-            const optimalScale = calculateOptimalScale();
-            game.scale.setZoom(optimalScale);
-            
-            console.log(`Applied ${optimalScale}x scaling for pixel art`);
-        }
-    };
-    
-    // Handle orientation changes and fullscreen
-    const handleOrientationChange = () => {
-        if (game && game.scale) {
-            setTimeout(() => {
-                game.scale.refresh();
-                const optimalScale = calculateOptimalScale();
-                game.scale.setZoom(optimalScale);
-                console.log(`Orientation change: Applied ${optimalScale}x scaling`);
-            }, 100);
-        }
-    };
-    
-    // Handle window resize
+
+    let resizeTimer = null;
     const handleResize = () => {
-        if (game && game.scale) {
-            setTimeout(() => {
-                game.scale.refresh();
-                const optimalScale = calculateOptimalScale();
-                game.scale.setZoom(optimalScale);
-                console.log(`Resize: Applied ${optimalScale}x scaling`);
-            }, 16);
-        }
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(applyPixelPerfectScale, 50);
     };
-    
+    // Browser zoom and moving between monitors change devicePixelRatio without
+    // always firing 'resize' on the container's size.
+    const watchDevicePixelRatio = () => {
+        const mq = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+        mq.addEventListener?.('change', () => {
+            handleResize();
+            watchDevicePixelRatio();
+        }, { once: true });
+    };
+    watchDevicePixelRatio();
+    const handleOrientationChange = handleResize;
+
     // Add event listeners
     window.addEventListener('resize', handleResize);
     window.addEventListener('orientationchange', handleOrientationChange);
@@ -386,7 +365,8 @@ function initializeGame() {
     };
     
     // Initial setup
-    setTimeout(setupPixelArt, 100);
+    applyPixelPerfectScale();
+    setTimeout(applyPixelPerfectScale, 100);
 }
 
 // Guard: do not initialise the game when this page is loaded inside an iframe.
