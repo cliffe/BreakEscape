@@ -126,6 +126,7 @@ const EMITTERS = [
     color: 0x9fd4ff, radius: 44, intensity: 0.65, offsetY: 6, effect: 'screen' },
   { re: /^checkin_kiosk/, color: 0x9fd4ff, radius: 44, intensity: 0.65, offsetY: -14, effect: 'screen' },
   { re: /^screens/, color: 0x9fd4ff, radius: 72, intensity: 0.45, offsetY: 16, effect: 'screen' },
+  { re: /^projector_screen/, color: 0xe8f0ff, radius: 72, intensity: 0.5, offsetY: 24, effect: null },
   { re: /(lamp)/, color: 0xffd9a0, radius: 80, intensity: 0.9, effect: null },
   { re: /^(server|network_rack|comms_cabinet|pi_cluster|rack|storage_array|tape_library)/, color: 0x6dffb0, radius: 40, intensity: 0.45, effect: 'blink', leds: 1 },
   { re: /^batrack/, color: 0x7dffa8, radius: 30, intensity: 0.35, effect: null, leds: 0.5 },
