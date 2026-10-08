@@ -213,7 +213,7 @@ Narrator: She turns the lanyard over, checks the back, and hands it back.
 
 Val Okonkwo: Hospital pass. Blank, no photo. Could have come out of anybody's drawer.
 
-Narrator: She looks at you for a long moment. Somewhere behind you a generator changes note.
+Narrator: She looks at you for a long moment. Somewhere behind you a generator changes note. #lighting_dip
 
 Val Okonkwo: Here's where I've got to. Either you're a wrong 'un with a stolen pass, or somebody's had my control room told a lie about you.
 

@@ -555,7 +555,7 @@ boardroom_pin = "0417"
     }
   },
 
-  "lighting": { "enabled": true, "defaultMode": "on", "ambient": "#b8bfce" },
+  "lighting": { "enabled": true, "defaultMode": "on", "ambient": "#c0bdb2" },
   "rooms": {
     "reception_lobby": {
       "type": "room_hospital_reception",
@@ -1481,6 +1481,23 @@ boardroom_pin = "0417"
 
     "hospital_ward": {
       "type": "room_hospital_ward",
+<%# Night ward: main lights down, pools at the nurses' station and at Bed 2 (Doyle's
+    vigil); Bed 4 sits between them under its dead monitor. The EHR terminal glows red
+    (ransom screen) until the ward starts recovering. LIGHTING_PLAN.md C3/C6. %>
+      "lighting": {
+        "panels": false,
+        "ambient": "#b8b4a8",
+        "lights": [
+          { "x": 16.5, "y": 5, "color": "#ffd9a0", "radius": 140, "intensity": 0.75 },
+          { "x": 8, "y": 3, "color": "#ffe6c0", "radius": 90, "intensity": 0.6 }
+        ],
+        "emitters": {
+          "ward_manual_bp_cuff": [ { "intensity": 0 } ],
+          "ehr_terminal_ward": [
+            { "condition": "globalVars.ward_recovering", "color": "#9fd4ff", "radius": 44, "intensity": 0.65, "effect": "screen" }
+          ]
+        }
+      },
       "door_sign": "Patient Ward",
       "connections": {
         "south": "ward_approach",
@@ -2131,7 +2148,15 @@ boardroom_pin = "0417"
 
     "server_room": {
       "type": "room_hospital_servers",
-      "lighting": { "mode": "motion", "darkAmbient": "#0a0f1c" },
+      "lighting": {
+        "mode": "motion", "darkAmbient": "#0a0f1c", "ambient": "#a0b0c0",
+        "emitters": {
+          "server": { "radius": 56, "intensity": 0.7, "floorTint": 0.6 },
+          "network_rack": { "radius": 56, "intensity": 0.7, "floorTint": 0.6 },
+          "storage_array": { "radius": 56, "intensity": 0.7, "floorTint": 0.6 },
+          "tape_library": { "radius": 56, "intensity": 0.7, "floorTint": 0.6 }
+        }
+      },
       "dimensions": {
         "width": 10,
         "height": 10
@@ -3256,7 +3281,7 @@ boardroom_pin = "0417"
 
     "ward_hall": {
       "type": "room_hospital_hall_ward",
-      "lighting": { "mode": "motion" },
+      "lighting": { "mode": "motion", "offAfter": 75 },
       "dimensions": {
         "width": 5,
         "height": 10
@@ -3272,7 +3297,10 @@ boardroom_pin = "0417"
 
     "ward_vestibule": {
       "type": "room_hospital_waiting_1x1gu",
-      "lighting": { "mode": "motion", "flicker": true },
+      "lighting": {
+        "mode": "motion", "flicker": true,
+        "lights": [ { "x": 4.4, "y": 2.6, "color": "#ffe6c0", "radius": 40, "intensity": 0.3 } ]
+      },
       "door_sign": "Ward Vestibule",
       "connections": {
         "west": "reception_lobby",
@@ -3298,7 +3326,7 @@ boardroom_pin = "0417"
 
     "ward_approach": {
       "type": "room_hospital_hall_waiting",
-      "lighting": { "mode": "motion" },
+      "lighting": { "mode": "motion", "offAfter": 75 },
       "door_sign": "Ward Approach",
       "connections": {
         "west": "ward_vestibule",
