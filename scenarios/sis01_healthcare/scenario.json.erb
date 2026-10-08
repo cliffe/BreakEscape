@@ -708,6 +708,8 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
     }
   ],
 
+  "lighting": { "enabled": true, "defaultMode": "on" },
+
   "rooms": {
 
     "ward_7": {
@@ -721,6 +723,14 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
     Suggested elements: quiet rhythmic beeping (bedside monitors), soft footsteps on vinyl floor,
     occasional muffled PA system announcement, no music. Low-volume, clinical feel. %>
       "ambientVolume": 0.3,
+      "lighting": {
+        "emitters": {
+          "bed4_monitor": [
+            { "condition": "globalVars.patient_bed4_deceased", "color": "#ff2414", "radius": 20, "offsetY": -20, "intensity": 1.0, "effect": null, "above": true },
+            { "color": "#ff2414", "radius": 20, "offsetY": -20, "intensity": 1.0, "effect": "pulse", "above": true }
+          ]
+        }
+      },
       "connections": { "north": "it_security_office" },
 <%# Ward 7 is open — no RFID lock. Players start here and can always re-enter.
     The IT security office (north) is RFID-locked; Sarah gives the card during arrival_briefing.
@@ -1655,6 +1665,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
 
     "it_security_office": {
       "type": "room_hospital_office_it",
+      "lighting": { "ambient": "#d2cdc8" },
       "door_sign": "IT Security",
       "ambientSound": "server_room_ventilation",
       "ambientVolume": 0.25,
@@ -2100,6 +2111,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
 
     "major_incident_room": {
       "type": "room_hospital_meeting",
+      "lighting": { "ambient": "#d2cdc8" },
       "door_sign": "Major Incident Room",
       "ambientSound": "office_ambient",
       "ambientVolume": 0.15,
