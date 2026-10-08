@@ -611,15 +611,32 @@ module BreakEscape
         return render_error('Cannot validate text for this object', :bad_request)
       end
 
-      # Generate or retrieve cached audio
+      # Voice from the scenario as it is now, so games started before a voice was
+      # restyled still hit the regenerated cache. The snapshot is the fallback.
+      snapshot_voice = voice_config
+      voice_config = @game.mission&.current_voice_configs&.dig(npc_id) || snapshot_voice
+      scenario_name = @game.mission&.name
+
+      # A clip on the current model, else one from the previous model (missions
+      # not yet regenerated), else generate. Old clips are served before
+      # generating so an un-migrated mission plays as it did, with no delay.
       tts_service = TtsService.new
+      current_clip = tts_service.cache_path(
+        tts_service.cache_key_for(text, voice_config['name'], voice_config['style'], voice_config['language']),
+        scenario_name
+      )
+      mp3_path = current_clip if File.exist?(current_clip)
+      mp3_path ||= legacy_tts_clip(tts_service, text, [voice_config, snapshot_voice], scenario_name)
+      return send_file(mp3_path, type: 'audio/mpeg', disposition: 'inline') if mp3_path
+
       begin
         mp3_path = tts_service.generate(
           text,
           voice_config['name'],
           voice_config['style'],
           voice_config['language'],
-          scenario_name: @game.mission&.name
+          scenario_name: scenario_name,
+          npc_id: npc_id
         )
       rescue TtsService::QuotaExhaustedError => e
         # Out of quota is a temporary condition, not a server fault. 429 tells the
@@ -1829,6 +1846,20 @@ module BreakEscape
               }
             end
           end
+        end
+      end
+      nil
+    end
+
+    # A clip from the previous TTS model, tried under the current voice and then
+    # under the voice the game started with.
+    def legacy_tts_clip(tts_service, text, voice_configs, scenario_name)
+      voice_configs.uniq.each do |config|
+        path = tts_service.legacy_cached_path(text, config['name'], config['style'], config['language'],
+                                              scenario_name: scenario_name)
+        if path
+          Rails.logger.info "[TTS] Serving previous-model clip for: #{text.truncate(60)}"
+          return path
         end
       end
       nil

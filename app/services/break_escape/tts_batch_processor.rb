@@ -235,7 +235,7 @@ module BreakEscape
 
       # Handle fixed text (room objects like intercoms)
       if npc['fixed_text']
-        process_fixed_text(npc['fixed_text'], voice_config, scenario_name)
+        process_fixed_text(npc['fixed_text'], voice_config, scenario_name, npc_id)
         return
       end
 
@@ -257,14 +257,14 @@ module BreakEscape
       log_info "      Extracted #{dialogue_lines.length} dialogue lines"
 
       dialogue_lines.each do |line|
-        generate_audio_for_line(line, voice_config, scenario_name)
+        generate_audio_for_line(line, voice_config, scenario_name, npc_id)
       end
     end
 
-    def process_fixed_text(text, voice_config, scenario_name)
+    def process_fixed_text(text, voice_config, scenario_name, npc_id)
       @stats[:dialogue_lines_extracted] += 1
       log_info "      Fixed text (1 line)"
-      generate_audio_for_line(text, voice_config, scenario_name)
+      generate_audio_for_line(text, voice_config, scenario_name, npc_id)
     end
 
     def resolve_ink_path(story_path, scenario_path)
@@ -337,14 +337,14 @@ module BreakEscape
       npc_lines.uniq
     end
 
-    def generate_audio_for_line(text, voice_config, scenario_name)
+    def generate_audio_for_line(text, voice_config, scenario_name, npc_id)
       voice_name = voice_config['name']
       style_prompt = voice_config['style']
       language_code = voice_config['language']
 
       # Check if already cached — no API call needed.
       # Use the service's own cache_path so the path logic is defined in one place.
-      cache_key = compute_cache_key(text, voice_name, style_prompt, language_code)
+      cache_key = @tts_service.cache_key_for(text, voice_name, style_prompt, language_code)
       mp3_path = @tts_service.cache_path(cache_key, scenario_name)
 
       if File.exist?(mp3_path)
@@ -364,7 +364,7 @@ module BreakEscape
       begin
         attempt += 1
         @stats[:requests_made] += 1
-        result = @tts_service.generate(text, voice_name, style_prompt, language_code, scenario_name: scenario_name)
+        result = @tts_service.generate(text, voice_name, style_prompt, language_code, scenario_name: scenario_name, npc_id: npc_id)
 
         if result
           @stats[:audio_generated] += 1
@@ -561,11 +561,6 @@ module BreakEscape
         log_verbose "      ⚙ Adjusted delay: #{@current_delay.round(3)}s → #{new_delay.round(3)}s (RPM quota: #{rpm_quota}, RPD quota: #{rpd_quota})"
         @current_delay = new_delay
       end
-    end
-
-    def compute_cache_key(text, voice_name, style_prompt, language_code)
-      normalized = text.to_s.downcase.gsub(/[^\w\s]/, "").strip.gsub(/\s+/, " ")
-      Digest::MD5.hexdigest("#{normalized}|#{voice_name}|#{style_prompt}|#{language_code}")
     end
 
     def print_summary

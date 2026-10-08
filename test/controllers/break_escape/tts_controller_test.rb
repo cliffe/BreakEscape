@@ -2,6 +2,8 @@ require 'test_helper'
 require 'minitest/mock'
 require 'digest'
 require 'fileutils'
+require 'tmpdir'
+require 'base64'
 
 module BreakEscape
   class TtsControllerTest < ActionDispatch::IntegrationTest
@@ -10,7 +12,16 @@ module BreakEscape
     VOICE_TEXT = "Welcome to the security system. Please verify your identity.".freeze
 
     setup do
+      # Every test gets its own cache directory, so nothing reads or writes the
+      # repo's committed tts_cache/.
+      @cache_root   = Pathname.new(Dir.mktmpdir("tts_cache_test"))
+      @real_cache   = TtsService::CACHE_DIR
+      TtsService.send(:remove_const, :CACHE_DIR)
+      TtsService.const_set(:CACHE_DIR, @cache_root)
+
       @mission = break_escape_missions(:ceo_exfil)
+      @saved_voice_cache = Mission.voice_config_cache[@mission.name]
+      stub_current_voices({})
       @player  = break_escape_demo_users(:test_user)
 
       # Scenario with:
@@ -62,6 +73,17 @@ module BreakEscape
       )
     end
 
+    teardown do
+      TtsService.send(:remove_const, :CACHE_DIR)
+      TtsService.const_set(:CACHE_DIR, @real_cache)
+      FileUtils.remove_entry(@cache_root) if @cache_root&.exist?
+      if @saved_voice_cache
+        Mission.voice_config_cache[@mission.name] = @saved_voice_cache
+      else
+        Mission.voice_config_cache.delete(@mission.name)
+      end
+    end
+
     # ─── Parameter validation ────────────────────────────────────────────────
 
     test "tts returns 400 when npc_id is missing" do
@@ -105,25 +127,12 @@ module BreakEscape
 
     # ─── TTS service disabled ────────────────────────────────────────────────
 
-    test "tts returns 503 when GEMINI_API_KEY is not set" do
-      # Remove any on-disk cache for this text so the service can't return a hit.
-      # The file may live in a scenario subdirectory, so search recursively.
-      normalized = VOICE_TEXT.downcase.gsub(/[^\w\s]/, "").strip.gsub(/\s+/, " ")
-      cache_key  = Digest::MD5.hexdigest("#{normalized}|Aoede||")
-      cached     = Dir.glob(TtsService::CACHE_DIR.join("**", "#{cache_key}.mp3"))
-      moved      = cached.map { |f| [f, "#{f}.bak"] }
-      moved.each { |src, dst| FileUtils.mv(src, dst) }
-
+    test "tts returns 503 when GEMINI_API_KEY is not set and nothing is cached" do
       with_env("GEMINI_API_KEY" => nil) do
-        post tts_game_url(@game), params: {
-          npc_id: "intercom_1",
-          text:   VOICE_TEXT
-        }
+        post tts_game_url(@game), params: { npc_id: "intercom_1", text: VOICE_TEXT }
         assert_response :service_unavailable
         assert_match(/not configured|GEMINI_API_KEY/i, json_body["error"])
       end
-    ensure
-      moved&.each { |src, dst| FileUtils.mv(dst, src) if File.exist?(dst) }
     end
 
     # ─── Text validation for room objects (voice as String) ──────────────────
@@ -147,7 +156,10 @@ module BreakEscape
       with_env("GEMINI_API_KEY" => "dummy_key_for_test") do
         mock_service = Minitest::Mock.new
         mock_service.expect(:enabled?, true)
-        mock_service.expect(:generate, nil, [String, String, NilClass, NilClass], scenario_name: String)
+        mock_service.expect(:cache_key_for, "missing", [String, String, NilClass, NilClass])
+        mock_service.expect(:cache_path, Pathname.new("/nonexistent/missing.mp3"), [String, String])
+        mock_service.expect(:generate, nil, [String, String, NilClass, NilClass], scenario_name: String, npc_id: String)
+        mock_service.expect(:legacy_cached_path, nil, [String, String, NilClass, NilClass], scenario_name: String)
 
         TtsService.stub(:new, mock_service) do
           post tts_game_url(@game), params: {
@@ -168,6 +180,9 @@ module BreakEscape
       with_env("GEMINI_API_KEY" => "dummy_key_for_test") do
         quota_service = Object.new
         quota_service.define_singleton_method(:generate) { |*_args, **_kw| raise TtsService::QuotaExhaustedError.new(52) }
+        quota_service.define_singleton_method(:legacy_cached_path) { |*_args, **_kw| nil }
+        quota_service.define_singleton_method(:cache_key_for) { |*_args| "missing" }
+        quota_service.define_singleton_method(:cache_path) { |*_args| Pathname.new("/nonexistent/missing.mp3") }
 
         TtsService.stub(:new, quota_service) do
           post tts_game_url(@game), params: { npc_id: "intercom_1", text: VOICE_TEXT }
@@ -184,6 +199,9 @@ module BreakEscape
       with_env("GEMINI_API_KEY" => "dummy_key_for_test") do
         quota_service = Object.new
         quota_service.define_singleton_method(:generate) { |*_args, **_kw| raise TtsService::QuotaExhaustedError.new }
+        quota_service.define_singleton_method(:legacy_cached_path) { |*_args, **_kw| nil }
+        quota_service.define_singleton_method(:cache_key_for) { |*_args| "missing" }
+        quota_service.define_singleton_method(:cache_path) { |*_args| Pathname.new("/nonexistent/missing.mp3") }
 
         TtsService.stub(:new, quota_service) do
           post tts_game_url(@game), params: { npc_id: "intercom_1", text: VOICE_TEXT }
@@ -285,7 +303,10 @@ module BreakEscape
       with_env("GEMINI_API_KEY" => "dummy_key_for_test") do
         mock_service = Minitest::Mock.new
         mock_service.expect(:enabled?, true)
-        mock_service.expect(:generate, nil, [String, String, NilClass, NilClass], scenario_name: String)
+        mock_service.expect(:cache_key_for, "missing", [String, String, NilClass, NilClass])
+        mock_service.expect(:cache_path, Pathname.new("/nonexistent/missing.mp3"), [String, String])
+        mock_service.expect(:generate, nil, [String, String, NilClass, NilClass], scenario_name: String, npc_id: String)
+        mock_service.expect(:legacy_cached_path, nil, [String, String, NilClass, NilClass], scenario_name: String)
 
         TtsService.stub(:new, mock_service) do
           post tts_game_url(@game), params: { npc_id: "ink_npc", text: bark_text }
@@ -347,7 +368,10 @@ module BreakEscape
       with_env("GEMINI_API_KEY" => "dummy_key_for_test") do
         mock_service = Minitest::Mock.new
         mock_service.expect(:enabled?, true)
-        mock_service.expect(:generate, nil, [String, String, NilClass, NilClass], scenario_name: String)
+        mock_service.expect(:cache_key_for, "missing", [String, String, NilClass, NilClass])
+        mock_service.expect(:cache_path, Pathname.new("/nonexistent/missing.mp3"), [String, String])
+        mock_service.expect(:generate, nil, [String, String, NilClass, NilClass], scenario_name: String, npc_id: String)
+        mock_service.expect(:legacy_cached_path, nil, [String, String, NilClass, NilClass], scenario_name: String)
 
         TtsService.stub(:new, mock_service) do
           post tts_game_url(@game), params: { npc_id: "bark_only_npc", text: bark_text }
@@ -402,7 +426,10 @@ module BreakEscape
       with_env("GEMINI_API_KEY" => "dummy_key_for_test") do
         mock_service = Minitest::Mock.new
         mock_service.expect(:enabled?, true)
-        mock_service.expect(:generate, nil, [String, String, NilClass, NilClass], scenario_name: String)
+        mock_service.expect(:cache_key_for, "missing", [String, String, NilClass, NilClass])
+        mock_service.expect(:cache_path, Pathname.new("/nonexistent/missing.mp3"), [String, String])
+        mock_service.expect(:generate, nil, [String, String, NilClass, NilClass], scenario_name: String, npc_id: String)
+        mock_service.expect(:legacy_cached_path, nil, [String, String, NilClass, NilClass], scenario_name: String)
 
         TtsService.stub(:new, mock_service) do
           post tts_game_url(@game), params: { npc_id: "director", text: line }
@@ -445,7 +472,10 @@ module BreakEscape
       with_env("GEMINI_API_KEY" => "dummy_key_for_test") do
         mock_service = Minitest::Mock.new
         mock_service.expect(:enabled?, true)
-        mock_service.expect(:generate, nil, [String, String, NilClass, NilClass], scenario_name: String)
+        mock_service.expect(:cache_key_for, "missing", [String, String, NilClass, NilClass])
+        mock_service.expect(:cache_path, Pathname.new("/nonexistent/missing.mp3"), [String, String])
+        mock_service.expect(:generate, nil, [String, String, NilClass, NilClass], scenario_name: String, npc_id: String)
+        mock_service.expect(:legacy_cached_path, nil, [String, String, NilClass, NilClass], scenario_name: String)
 
         TtsService.stub(:new, mock_service) do
           post tts_game_url(@game), params: {
@@ -460,32 +490,208 @@ module BreakEscape
       end
     end
 
-    # ─── Successful TTS via cache hit (no real API call) ─────────────────────
+    test "tts serves the previous model's clip without generating, for missions not yet regenerated" do
+      write_clip(legacy_key(VOICE_TEXT, "Aoede", nil, nil))
 
-    test "tts serves mp3 audio for intercom object when audio is cached" do
-      cache_dir = Rails.root.join("tmp", "tts_cache")
-      FileUtils.mkdir_p(cache_dir)
+      post_with_generate_forbidden("intercom_1", VOICE_TEXT)
 
-      # Compute the exact cache key TtsService will look up
-      voice_name   = "Aoede"
-      normalized   = VOICE_TEXT.downcase.gsub(/[^\w\s]/, "").strip.gsub(/\s+/, " ")
-      cache_key    = Digest::MD5.hexdigest("#{normalized}|#{voice_name}||")
-      mp3_path     = cache_dir.join("#{cache_key}.mp3")
+      assert_response :success
+      assert_equal "audio/mpeg", response.media_type
+    end
 
-      # Write a minimal fake MP3 (non-empty so send_file is satisfied)
-      File.binwrite(mp3_path, "\xFF\xFB\x90\x00" + ("\x00" * 128))
+    test "tts serves a current-model clip without generating" do
+      write_clip(TtsService.new.cache_key_for(VOICE_TEXT, "Aoede", nil, nil))
 
-      with_env("GEMINI_API_KEY" => "dummy_key_for_test") do
-        post tts_game_url(@game), params: {
-          npc_id: "intercom_1",
-          text:   VOICE_TEXT
-        }
+      post_with_generate_forbidden("intercom_1", VOICE_TEXT)
+
+      assert_response :success
+      assert_equal "audio/mpeg", response.media_type
+    end
+
+    test "tts prefers the current voice config over the saved scenario_data voice" do
+      current = { "name" => "Puck", "style" => "Calm and slow.", "language" => "en-GB" }
+      stub_current_voices("intercom_1" => current)
+      # Clip exists only under the current voice; the saved voice (Aoede) has none.
+      write_clip(TtsService.new.cache_key_for(VOICE_TEXT, "Puck", "Calm and slow.", "en-GB"))
+
+      post_with_generate_forbidden("intercom_1", VOICE_TEXT)
+
+      assert_response :success
+    end
+
+    test "tts ignores a current-model clip made under the saved voice when the current voice differs" do
+      stub_current_voices("intercom_1" => { "name" => "Puck", "style" => nil, "language" => nil })
+      write_clip(TtsService.new.cache_key_for(VOICE_TEXT, "Aoede", nil, nil)) # saved voice only
+
+      calls = []
+      stub_generate_returning(nil, calls) do
+        post tts_game_url(@game), params: { npc_id: "intercom_1", text: VOICE_TEXT }
+      end
+
+      assert_response :internal_server_error
+      assert_equal 1, calls.size
+      assert_equal "Puck", calls.first[:args][1]
+    end
+
+    test "tts finds a previous-model clip under the saved voice when the current style has changed" do
+      # In-progress game: the clip was made under the voice the game started with.
+      stub_current_voices("intercom_1" => { "name" => "Aoede", "style" => "A new style.", "language" => nil })
+      write_clip(legacy_key(VOICE_TEXT, "Aoede", nil, nil))
+
+      post_with_generate_forbidden("intercom_1", VOICE_TEXT)
+
+      assert_response :success
+      assert_equal "audio/mpeg", response.media_type
+    end
+
+    test "tts generates with the speaker's npc_id when no clip exists anywhere" do
+      calls = []
+      stub_generate_returning(nil, calls) do
+        post tts_game_url(@game), params: { npc_id: "intercom_1", text: VOICE_TEXT }
+      end
+
+      assert_response :internal_server_error
+      assert_equal 1, calls.size
+      assert_equal "intercom_1", calls.first[:kwargs][:npc_id]
+      assert_equal @mission.name, calls.first[:kwargs][:scenario_name]
+      assert_equal VOICE_TEXT, calls.first[:args][0]
+    end
+
+    test "tts serves the clip that generate returns" do
+      generated = @cache_root.join("generated.mp3")
+      File.binwrite(generated, FAKE_MP3)
+
+      stub_generate_returning(generated, []) do
+        post tts_game_url(@game), params: { npc_id: "intercom_1", text: VOICE_TEXT }
       end
 
       assert_response :success
       assert_equal "audio/mpeg", response.media_type
-    ensure
-      File.delete(mp3_path) if mp3_path && File.exist?(mp3_path)
+    end
+
+    # ─── TtsService#generate ─────────────────────────────────────────────────
+
+    test "generate writes the mp3 and a manifest entry, leaving no temp files" do
+      service = stubbed_gemini_service
+      with_env("GEMINI_API_KEY" => "dummy_key_for_test") do
+        path = service.generate("Hello there, agent.", "Kore", "Speak formally.", "en-GB",
+                                scenario_name: "gen_test", npc_id: "agent_x")
+
+        assert_equal @cache_root.join("gen_test", "#{service.cache_key_for('Hello there, agent.', 'Kore', 'Speak formally.', 'en-GB')}.mp3"), path
+        assert File.size(path) > 0
+
+        manifest = JSON.parse(File.read(@cache_root.join("gen_test", "manifest.json")))
+        entry = manifest.fetch(path.basename(".mp3").to_s)
+        assert_equal "agent_x", entry["npc"]
+        assert_equal "Hello there, agent.", entry["text"]
+        assert_equal "Kore", entry["voice"]
+        assert_equal "Speak formally.", entry["style"]
+        assert_equal "en-GB", entry["language"]
+        assert_equal TtsService::GEMINI_TTS_MODEL, entry["model"]
+
+        leftovers = Dir.children(@cache_root.join("gen_test")).select do |f|
+          f.start_with?(".") || f.end_with?(".pcm", ".tmp")
+        end
+        assert_empty leftovers
+      end
+    end
+
+    test "generate sets a corrupt manifest aside rather than losing it" do
+      dir = @cache_root.join("gen_test")
+      FileUtils.mkdir_p(dir)
+      File.write(dir.join("manifest.json"), "{ this is not json")
+
+      service = stubbed_gemini_service
+      with_env("GEMINI_API_KEY" => "dummy_key_for_test") do
+        path = service.generate("A fresh line.", "Kore", nil, nil, scenario_name: "gen_test", npc_id: "agent_x")
+        assert path && File.exist?(path)
+      end
+
+      corrupt = Dir.glob(dir.join("manifest.json.corrupt-*").to_s)
+      assert_equal 1, corrupt.size
+      assert_equal "{ this is not json", File.read(corrupt.first)
+      assert_equal 1, JSON.parse(File.read(dir.join("manifest.json"))).size
+    end
+
+    # ─── Gemini request and response ─────────────────────────────────────────
+
+    test "call_gemini_tts sends style as speech_metadata and does not prepend it to the text" do
+      pcm = "\x01\x00" * 100
+      captured = nil
+      http = fake_http { |req| captured = req; ok_audio_response(pcm) }
+
+      result = with_env("GEMINI_API_KEY" => "dummy_key_for_test") do
+        Net::HTTP.stub(:new, http) do
+          TtsService.new.send(:call_gemini_tts, "Spoken words only.", "Kore", "Speak formally.", "en-GB")
+        end
+      end
+
+      body = JSON.parse(captured.body)
+      assert_equal TtsService::GEMINI_TTS_MODEL, body["model"]
+
+      content = body.dig("input", 0, "content", 0)
+      assert_equal "Spoken words only.", content["text"]
+      assert_equal [{ "type" => "speech_metadata", "style" => "Speak formally." }], content["annotations"]
+      refute_includes content["text"], "formally"
+
+      assert_equal [{ "voice" => "Kore", "language" => "en-GB" }], body.dig("generation_config", "speech_config")
+      assert_equal "audio", body.dig("response_format", "type")
+      assert_equal "audio/l16", body.dig("response_format", "mime_type")
+      assert_equal 24_000, body.dig("response_format", "sample_rate")
+      assert_equal pcm.b, result.b
+    end
+
+    test "call_gemini_tts omits the annotation and language when there is no style or language" do
+      captured = nil
+      http = fake_http { |req| captured = req; ok_audio_response("\x00\x00") }
+
+      with_env("GEMINI_API_KEY" => "dummy_key_for_test") do
+        Net::HTTP.stub(:new, http) do
+          TtsService.new.send(:call_gemini_tts, "Plain.", "Aoede", nil, nil)
+        end
+      end
+
+      body = JSON.parse(captured.body)
+      assert_nil body.dig("input", 0, "content", 0, "annotations")
+      assert_equal [{ "voice" => "Aoede" }], body.dig("generation_config", "speech_config")
+    end
+
+    test "call_gemini_tts raises QuotaExhaustedError with the Retry-After header on a 429" do
+      response = Net::HTTPTooManyRequests.new("1.1", "429", "Too Many Requests")
+      response["Retry-After"] = "30"
+      set_body(response, { "error" => { "message" => "Resource exhausted", "code" => "resource_exhausted" } }.to_json)
+      http = fake_http { |_req| response }
+
+      error = with_env("GEMINI_API_KEY" => "dummy_key_for_test") do
+        Net::HTTP.stub(:new, http) do
+          assert_raises(TtsService::QuotaExhaustedError) do
+            TtsService.new.send(:call_gemini_tts, "Anything.", "Kore", nil, nil)
+          end
+        end
+      end
+
+      assert_equal 30, error.retry_after
+      refute error.is_daily_limit
+    end
+
+    test "TtsService cache keys include the model, so a model change can't reuse old clips" do
+      service = TtsService.new
+      normalized = "hello there"
+      refute_equal Digest::MD5.hexdigest("#{normalized}|Kore||"), service.cache_key_for("Hello there!", "Kore")
+      assert_equal service.cache_key_for("Hello there!", "Kore"), service.cache_key_for("hello   there", "Kore")
+    end
+
+    # ─── Successful TTS via cache hit (no real API call) ─────────────────────
+
+    test "tts serves mp3 audio for intercom object when audio is cached" do
+      write_clip(TtsService.new.cache_key_for(VOICE_TEXT, "Aoede"))
+
+      with_env("GEMINI_API_KEY" => "dummy_key_for_test") do
+        post tts_game_url(@game), params: { npc_id: "intercom_1", text: VOICE_TEXT }
+      end
+
+      assert_response :success
+      assert_equal "audio/mpeg", response.media_type
     end
 
     # ─── Ink NPC — successful TTS via cache hit ───────────────────────────────
@@ -509,13 +715,7 @@ module BreakEscape
       ]
       @game.save!
 
-      # Pre-populate TTS cache for this request
-      cache_dir  = Rails.root.join("tmp", "tts_cache")
-      FileUtils.mkdir_p(cache_dir)
-      normalized = npc_text.downcase.gsub(/[^\w\s]/, "").strip.gsub(/\s+/, " ")
-      cache_key  = Digest::MD5.hexdigest("#{normalized}|Kore||")
-      mp3_path   = cache_dir.join("#{cache_key}.mp3")
-      File.binwrite(mp3_path, "\xFF\xFB\x90\x00" + ("\x00" * 128))
+      write_clip(TtsService.new.cache_key_for(npc_text, "Kore"))
 
       with_env("GEMINI_API_KEY" => "dummy_key_for_test") do
         post tts_game_url(@game), params: {
@@ -528,10 +728,82 @@ module BreakEscape
       assert_equal "audio/mpeg", response.media_type
     ensure
       FileUtils.rm_rf(tmp_dir) if tmp_dir
-      File.delete(mp3_path) if mp3_path && File.exist?(mp3_path)
     end
 
     private
+
+    FAKE_MP3 = ("\xFF\xFB\x90\x00" + ("\x00" * 128)).b.freeze
+
+    # Put a fake clip where the controller looks: <cache>/<mission name>/<key>.mp3
+    def write_clip(key)
+      dir = @cache_root.join(@mission.name)
+      FileUtils.mkdir_p(dir)
+      File.binwrite(dir.join("#{key}.mp3"), FAKE_MP3)
+    end
+
+    # Key used by the previous (2.5) model, which did not include the model name.
+    def legacy_key(text, voice, style, language)
+      normalized = text.downcase.gsub(/[^\w\s]/, "").strip.gsub(/\s+/, " ")
+      Digest::MD5.hexdigest("#{normalized}|#{voice}|#{style}|#{language}")
+    end
+
+    # Seed Mission#current_voice_configs (the controller loads its own Mission
+    # instance, so a singleton on @mission would not reach it). The cache is
+    # keyed on the template's real mtime, so this is used as if just computed.
+    def stub_current_voices(configs)
+      mtime = File.mtime(@mission.scenario_path.join("scenario.json.erb"))
+      Mission.voice_config_cache[@mission.name] = { mtime: mtime, configs: configs.freeze }
+    end
+
+    # POST a line whose clip is already on disk; generate must not be reached.
+    def post_with_generate_forbidden(npc_id, text)
+      service = TtsService.new
+      service.define_singleton_method(:generate) { |*_args, **_kw| flunk "generated a line that already had a clip" }
+      TtsService.stub(:new, service) do
+        post tts_game_url(@game), params: { npc_id: npc_id, text: text }
+      end
+    end
+
+    # Replace TtsService#generate with a recorder returning +result+.
+    def stub_generate_returning(result, calls)
+      service = TtsService.new
+      service.define_singleton_method(:enabled?) { true }
+      service.define_singleton_method(:generate) do |*args, **kwargs|
+        calls << { args: args, kwargs: kwargs }
+        result
+      end
+      TtsService.stub(:new, service) { yield }
+    end
+
+    # A real service whose Gemini call returns a short burst of PCM.
+    def stubbed_gemini_service
+      service = TtsService.new
+      service.define_singleton_method(:call_gemini_tts) { |*_args| "\x00\x00" * 2400 }
+      service
+    end
+
+    # Stand-in for the Net::HTTP instance; the block receives the request.
+    def fake_http(&on_request)
+      http = Object.new
+      %i[use_ssl= open_timeout= read_timeout=].each { |m| http.define_singleton_method(m) { |_v| } }
+      http.define_singleton_method(:request) { |req| on_request.call(req) }
+      http
+    end
+
+    def ok_audio_response(pcm)
+      response = Net::HTTPOK.new("1.1", "200", "OK")
+      set_body(response, {
+        "steps" => [{ "type" => "model_output",
+                      "content" => [{ "type" => "audio", "mime_type" => "audio/l16; rate=24000; channels=1",
+                                      "data" => Base64.strict_encode64(pcm) }] }]
+      }.to_json)
+      response
+    end
+
+    def set_body(response, body)
+      response.instance_variable_set(:@body, body)
+      response.instance_variable_set(:@read, true)
+    end
 
     def json_body
       JSON.parse(response.body)

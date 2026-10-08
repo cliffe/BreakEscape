@@ -42,8 +42,16 @@ public/break_escape/assets/characters/wip/*
 node_modules/
 package-lock.json
 
-# TTS audio cache — regenerated on demand, ~117MB of mp3
-tts_cache/
+# TTS audio cache: committed, so players hear the takes that were reviewed
+# (generation isn't deterministic). Ignore only in-flight and test files.
+tts_cache/**/.*.pcm
+tts_cache/**/.*.mp3
+tts_cache/**/*.lock
+tts_cache/**/*.tmp
+tts_cache/**/*.corrupt-*
+tts_cache/quota_test/
+tts_cache/test_debug/
+tts_cache/test_event_cascade/
 
 # Playtest session scratch — large or per-run, all regenerable. Reports, flag
 # XMLs and checked-in scripts under tools/playtest are committed; the raw

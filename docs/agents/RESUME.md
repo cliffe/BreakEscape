@@ -1,3 +1,7 @@
+# Resume note — TTS move to Gemini 3.8 (2026-10-08/09)
+
+Brief and runbook: `docs/agents/TTS_38_MIGRATION.md`. User approved m01 (listened) and asked for m02, sis01, sis02, lab_tesseract_trials next; one Sonnet agent per mission running the runbook (logs `tmp/tts-<mission>-38.log`). m01 batch still running; m01 coverage audit (Opus) reports when it ends. m02 has the v2 HaX style; m03–m06 still old wording. Engine change, tests (35) and .gitignore done, uncommitted. 293 matched older clips to commit; 442 orphans moved to `~/tts_orphans_2026-10/`. Commit order: engine, then each mission's style + clips + manifest together, then the 293. Not pushed.
+
 # Resume note — lighting pass 2: m02, sis02, sis01, m01 (2026-10-08)
 
 Brief: `docs/agents/LIGHTING_PASS_BRIEF.md`. Log: `docs/agents/LIGHTING_LOG.md` (dated heading per mission). Plans: `scenarios/<mission>/LIGHTING_PLAN.md`.

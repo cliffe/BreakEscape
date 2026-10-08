@@ -120,6 +120,41 @@ module BreakEscape
       raise "Invalid JSON in #{name} after ERB processing: #{e.message}"
     end
 
+    # Voice configs by speaker id ('narrator', NPC ids, and objects with a
+    # ttsVoice) from the scenario as it is now. A game keeps the scenario_data it
+    # started with, so without this a game begun before a voice was restyled
+    # would ask for clips under the old style and miss the regenerated cache.
+    # Cached per template mtime; voice configs don't depend on vm_context.
+    def current_voice_configs
+      template_path = scenario_path.join('scenario.json.erb')
+      mtime = File.mtime(template_path)
+      cached = self.class.voice_config_cache[name]
+      return cached[:configs] if cached && cached[:mtime] == mtime
+
+      configs = {}
+      data = generate_scenario_data({})
+      configs['narrator'] = data['narrator']['voice'] if data.dig('narrator', 'voice').is_a?(Hash)
+      (data['rooms'] || {}).each_value do |room|
+        Array(room['npcs']).each do |npc|
+          configs[npc['id']] ||= npc['voice'] if npc['voice'].is_a?(Hash)
+        end
+        Array(room['objects']).each do |obj|
+          configs[obj['id']] ||= obj['ttsVoice'] if obj['ttsVoice'].is_a?(Hash)
+        end
+      end
+      self.class.voice_config_cache[name] = { mtime: mtime, configs: configs.freeze }
+      configs
+    rescue => e
+      Rails.logger.warn "[BreakEscape] Could not read current voice configs for #{name}: #{e.message}"
+      # Cache the failure too, so a broken template logs once rather than per request
+      self.class.voice_config_cache[name] = { mtime: mtime, configs: {}.freeze } if mtime
+      {}
+    end
+
+    def self.voice_config_cache
+      @voice_config_cache ||= Concurrent::Map.new
+    end
+
     # Parse SecGen flag_hints.xml to extract flags per VM
     # Returns: { "desktop" => ["flag{abc}", "flag{def}"], "kali" => [] }
     def self.parse_flag_hints_xml(xml_content)

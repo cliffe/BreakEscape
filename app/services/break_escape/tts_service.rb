@@ -33,9 +33,13 @@ module BreakEscape
 
     # Stores detected rate limit information from Gemini API responses
     RateLimitInfo = Struct.new(:requests_per_minute, :requests_per_day, :detected_at)
-    # GEMINI_TTS_MODEL = "gemini-2.5-flash-tts"  # GA model (currently 404 — not available)
-    GEMINI_TTS_MODEL = "gemini-2.5-flash-preview-tts"
-    GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
+    # The model is part of the cache key, so changing it regenerates every line
+    # rather than mixing models within a conversation.
+    GEMINI_TTS_MODEL = "gemini-3.8-flash-tts"
+    GEMINI_INTERACTIONS_URL = "https://generativelanguage.googleapis.com/v1beta/interactions"
+    # Clips made with gemini-2.5-flash-preview-tts were keyed without a model;
+    # legacy_cached_path finds them for missions not yet regenerated.
+    MANIFEST_FILENAME = "manifest.json"
     # Engine-root cache so pre-generated MP3s can be committed to git and are
     # found in both standalone and mounted (Hacktivity) mode without relying on
     # the host app's Rails.root.
@@ -68,8 +72,9 @@ module BreakEscape
     # @param style_prompt [String, nil] Optional style instructions
     # @param language_code [String, nil] BCP-47 language code (e.g., "en-GB")
     # @param scenario_name [String, nil] Scenario directory name (e.g., "m01_first_contact")
+    # @param npc_id [String, nil] Speaker, recorded in the manifest only (not part of the key)
     # @return [Pathname, nil] Path to cached MP3 file, or nil on failure
-    def generate(text, voice_name, style_prompt = nil, language_code = nil, scenario_name: nil)
+    def generate(text, voice_name, style_prompt = nil, language_code = nil, scenario_name: nil, npc_id: nil)
       return nil if text.blank?
 
       cache_key = compute_cache_key(text, voice_name, style_prompt, language_code)
@@ -87,27 +92,32 @@ module BreakEscape
       # Cache miss — generate via API (requires API key)
       return nil unless enabled?
       Rails.logger.info "[TTS] Cache miss, generating: #{text.truncate(60)} (voice: #{voice_name})"
-      FileUtils.mkdir_p(mp3_path.dirname)
-
       pcm_data = call_gemini_tts(text, voice_name, style_prompt, language_code)
       return nil unless pcm_data
 
-      # Write raw PCM to temp file alongside the final MP3
-      pcm_path = mp3_path.dirname.join("#{cache_key}.pcm")
+      FileUtils.mkdir_p(mp3_path.dirname)
+
+      # Convert via uniquely named temp files and rename into place, so two
+      # requests for the same line can't clobber each other and a crash can't
+      # leave a half-written MP3 that later counts as a cache hit.
+      tmp_base = mp3_path.dirname.join(".#{cache_key}.#{SecureRandom.hex(4)}")
+      pcm_path = Pathname.new("#{tmp_base}.pcm")
+      tmp_mp3  = Pathname.new("#{tmp_base}.mp3")
       File.binwrite(pcm_path, pcm_data)
 
-      # Convert PCM to MP3 via ffmpeg
-      success = convert_pcm_to_mp3(pcm_path, mp3_path)
+      success = convert_pcm_to_mp3(pcm_path, tmp_mp3)
+      File.rename(tmp_mp3, mp3_path) if success
 
-      # Cleanup temp PCM
-      begin
-        File.delete(pcm_path) if File.exist?(pcm_path)
+      [pcm_path, tmp_mp3].each do |path|
+        File.delete(path) if File.exist?(path)
       rescue => e
-        Rails.logger.warn "[TTS] Failed to delete temp PCM file #{pcm_path}: #{e.message}"
+        Rails.logger.warn "[TTS] Failed to delete temp file #{path}: #{e.message}"
       end
 
       if success
         Rails.logger.info "[TTS] Generated: #{scenario_name}/#{cache_key}.mp3 (#{(File.size(mp3_path) / 1024.0).round(1)} KB)"
+        record_in_manifest(mp3_path, text: text, npc_id: npc_id, voice_name: voice_name,
+                                     style_prompt: style_prompt, language_code: language_code)
         mp3_path
       else
         nil
@@ -137,7 +147,48 @@ module BreakEscape
       compute_cache_key(text, voice_name, style_prompt, language_code)
     end
 
+    # A clip from the previous model for this line, if one is still on disk.
+    # Missions are moved to the new model one at a time, so for a mission not
+    # yet regenerated this is its audio; elsewhere an older voice beats silence.
+    def legacy_cached_path(text, voice_name, style_prompt = nil, language_code = nil, scenario_name: nil)
+      return nil if text.blank?
+
+      key = Digest::MD5.hexdigest("#{normalize_text(text)}|#{voice_name}|#{style_prompt}|#{language_code}")
+      [cache_path(key, scenario_name), cache_path(key)].uniq.find { |path| File.exist?(path) }
+    end
+
     private
+
+    # Per-scenario manifest.json maps each clip's key to what it says and who
+    # says it, so a clip can be found by its line and stale clips can be pruned.
+    # Locked (the endpoint's threads and the batch can generate at once) and
+    # replaced by rename, so a crash mid-write can't truncate it. A manifest
+    # that won't parse is set aside rather than overwritten.
+    def record_in_manifest(mp3_path, text:, npc_id:, voice_name:, style_prompt:, language_code:)
+      manifest_path = mp3_path.dirname.join(MANIFEST_FILENAME)
+      File.open("#{manifest_path}.lock", File::RDWR | File::CREAT, 0o644) do |lock|
+        lock.flock(File::LOCK_EX)
+        manifest = {}
+        if File.exist?(manifest_path)
+          begin
+            manifest = JSON.parse(File.read(manifest_path))
+          rescue JSON::ParserError => e
+            corrupt_path = "#{manifest_path}.corrupt-#{Time.now.strftime('%Y%m%d%H%M%S')}"
+            FileUtils.mv(manifest_path, corrupt_path)
+            Rails.logger.error "[TTS] Unreadable manifest moved to #{corrupt_path}: #{e.message}"
+          end
+        end
+        manifest[mp3_path.basename(".mp3").to_s] = {
+          "npc" => npc_id, "text" => text, "voice" => voice_name, "style" => style_prompt,
+          "language" => language_code, "model" => GEMINI_TTS_MODEL, "generated" => Date.today.iso8601
+        }.compact
+        tmp_path = "#{manifest_path}.#{SecureRandom.hex(4)}.tmp"
+        File.write(tmp_path, JSON.pretty_generate(manifest.sort.to_h))
+        File.rename(tmp_path, manifest_path)
+      end
+    rescue => e
+      Rails.logger.warn "[TTS] Could not update manifest #{manifest_path}: #{e.message}"
+    end
 
     # Parse rate limit info from Gemini API response headers or error details
     # The API may include X-Goog-* headers or rate limit details in error responses
@@ -223,7 +274,7 @@ module BreakEscape
 
     def compute_cache_key(text, voice_name, style_prompt = nil, language_code = nil)
       normalized = normalize_text(text)
-      Digest::MD5.hexdigest("#{normalized}|#{voice_name}|#{style_prompt}|#{language_code}")
+      Digest::MD5.hexdigest("#{normalized}|#{voice_name}|#{style_prompt}|#{language_code}|#{GEMINI_TTS_MODEL}")
     end
 
     def normalize_text(text)
@@ -231,28 +282,22 @@ module BreakEscape
     end
 
     def call_gemini_tts(text, voice_name, style_prompt, language_code = nil)
-      uri = URI("#{GEMINI_API_BASE}/#{GEMINI_TTS_MODEL}:generateContent?key=#{@api_key}")
+      uri = URI("#{GEMINI_INTERACTIONS_URL}?key=#{@api_key}")
 
-      # Build the text input — prepend style prompt if provided
-      input_text = style_prompt.present? ? "#{style_prompt}\n\n#{text}" : text
+      # 3.8 speaks the input text verbatim, so the style prompt goes in a
+      # speech_metadata annotation rather than in front of the line.
+      content = { type: "text", text: text }
+      content[:annotations] = [{ type: "speech_metadata", style: style_prompt }] if style_prompt.present?
 
-      speech_config = {
-        voiceConfig: {
-          prebuiltVoiceConfig: {
-            voiceName: voice_name
-          }
-        }
-      }
-      speech_config[:languageCode] = language_code if language_code.present?
+      speaker = { voice: voice_name }
+      speaker[:language] = language_code if language_code.present?
 
       body = {
-        contents: [{
-          parts: [{ text: input_text }]
-        }],
-        generationConfig: {
-          responseModalities: ["AUDIO"],
-          speechConfig: speech_config
-        }
+        model: GEMINI_TTS_MODEL,
+        input: [{ type: "user_input", content: [content] }],
+        # Raw PCM rather than the default WAV, to suit convert_pcm_to_mp3
+        response_format: { type: "audio", mime_type: "audio/l16", sample_rate: 24_000 },
+        generation_config: { speech_config: [speaker] }
       }
 
       http = Net::HTTP.new(uri.host, uri.port)
@@ -276,7 +321,9 @@ module BreakEscape
         # Surface quota exhaustion clearly so callers (e.g. batch processor) can
         # detect it and abort early rather than retrying hundreds of times.
         if response.code == "429"
-          retry_seconds = parse_retry_delay(response.body)
+          # The Interactions API's error body may carry no RetryInfo, so fall
+          # back to the HTTP header before giving up on a delay.
+          retry_seconds = parse_retry_delay(response.body) || response['Retry-After'].to_s[/\A\d+\z/]&.to_i
           raise QuotaExhaustedError.new(retry_seconds)
         end
 
@@ -287,11 +334,12 @@ module BreakEscape
       extract_rate_limit_info(response)
 
       parsed = JSON.parse(response.body)
-      audio_data = parsed.dig("candidates", 0, "content", "parts", 0, "inlineData", "data")
+      audio_part = Array(parsed["steps"]).flat_map { |step| Array(step["content"]) }
+                                         .find { |part| part["type"] == "audio" }
+      audio_data = audio_part&.dig("data")
 
       unless audio_data
-        finish_reason = parsed.dig("candidates", 0, "finishReason")
-        Rails.logger.error "[TTS] No audio data in Gemini response (finishReason: #{finish_reason.inspect})"
+        Rails.logger.error "[TTS] No audio data in Gemini response (status: #{parsed['status'].inspect})"
         Rails.logger.debug "[TTS] Full response: #{response.body.to_s.truncate(500)}"
         return nil
       end
