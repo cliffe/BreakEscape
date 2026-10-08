@@ -35,3 +35,7 @@
 4. Spot-check 5 clips with the most style-heavy prompts: transcribe with `gemini-3.8-flash` (generateContent, inline audio) and confirm the style prompt is not spoken and the text matches.
 5. Make `tmp/tts_comparison/<mission>_new/` with readable symlinks (`NN_<npc>_<first words>.mp3`, ordered by mtime) for the user to listen.
 Known gap: the batch voices every line of an ink story with the story owner's voice; narrator / co-speaker lines are requested at runtime under the speaker's own voice, so they may stay uncovered until the batch is fixed.
+
+## Log
+- 2026-10-09: engine committed eb0ff353; m01 (style + 518 clips + manifest) 0b30dbbc, 43 min of audio, ~$0.58; 22 current 2.5 clips for m03/m05/m08 28d2515b.
+- The other 271 matched 2.5 clips (m02, sis01, sis02, Tesseract) and 9 uncommitted 2.5 m01 clips were archived to `~/tts_orphans_2026-10/_superseded/` instead of committed: those missions are being regenerated on 3.8 and production never had these clips, so they would only add history.
