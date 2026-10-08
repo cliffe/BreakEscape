@@ -655,17 +655,26 @@ export class LightingSystem {
     }
   }
 
-  /** Is a visible NPC standing on this room's floor? */
+  /**
+   * Is a visible NPC standing on this room's floor? Judged by their feet (the physics
+   * body, which sits at the feet), below the room's own back wall, and inside the part
+   * of the map this room owns (fillAreas): a room's map overlaps the room to its south
+   * by two tiles, and an NPC standing against that south room's back wall belongs to
+   * the south room, not this one. Used by the NPC motion trigger and the offAfter wait;
+   * which rooms start lit for people is decided from the scenario, not positions.
+   */
   npcInRoom(state) {
     const npcs = window.npcManager?.npcs;
     const room = window.rooms?.[state.roomId];
     if (!npcs || !room?.map) return false;
-    const x0 = room.position.x, y0 = room.position.y + TILE_SIZE * 2;
-    const x1 = room.position.x + room.map.widthInPixels, y1 = room.position.y + room.map.heightInPixels;
+    const y0 = room.position.y + TILE_SIZE * 2;
+    const areas = this.fillAreas(state.roomId);
     for (const npc of npcs.values()) {
       const sp = npc._sprite;
       if (!sp?.active || !sp.visible) continue;
-      if (sp.x >= x0 && sp.x <= x1 && sp.y >= y0 && sp.y <= y1) return true;
+      const fx = sp.body?.center?.x ?? sp.x, fy = sp.body?.center?.y ?? sp.y;
+      if (fy < y0) continue;
+      if (areas.some(a => fx >= a.x && fx <= a.x + a.w && fy >= a.y && fy <= a.y + a.h)) return true;
     }
     return false;
   }
