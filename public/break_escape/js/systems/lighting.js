@@ -807,9 +807,16 @@ export class LightingSystem {
     const still = this.reducedMotion;
 
     // Brightest rooms first: a darker room's fill then covers light that bled
-    // through the wall from its lit neighbour. The player's room goes first among
-    // equals, so its torch, drawn with it, is covered where it crosses into a neighbour.
-    visible.sort((a, b) => (b.level - a.level) || ((b === here) - (a === here)));
+    // through the wall from its lit neighbour. Among fully lit rooms, north before
+    // south: a room's map overlaps the room to its south by two tiles (the south room's
+    // back wall, which takes the south room's light, see fillAreas), so drawing the
+    // south room later covers anything the north room stamped onto that strip (e.g. a
+    // ransom floor tint). Among equally lit rooms that aren't fully lit, the player's
+    // room goes first, so its torch, drawn with it, is covered where it crosses into a
+    // neighbour (the torch only draws below level 1).
+    const posY = (s) => window.rooms[s.roomId].position.y;
+    visible.sort((a, b) => (b.level - a.level)
+      || (a.level >= 1 ? posY(a) - posY(b) : (b === here) - (a === here)));
     const centre = this.tmpCentre || (this.tmpCentre = new Phaser.Math.Vector2());
     for (const state of visible) {
       // Ceiling light, ambient and extra lights run off the mains (and sag in a dip);
