@@ -340,6 +340,10 @@ export class PhoneChatMinigame extends MinigameScene {
         // Show conversation view
         this.ui.showConversation(npcId);
         
+        // A preload of this contact's opening may still be running (the inventory starts
+        // one when the phone is picked up); let it finish so its lines are in the thread
+        await PhoneChatConversation.waitForPreload(npc);
+
         // Load conversation history
         const history = this.history.loadHistory();
         
@@ -366,7 +370,16 @@ export class PhoneChatMinigame extends MinigameScene {
         // (timed messages are just notifications, not actual Ink dialogue)
         const conversationHistory = history.filter(msg => !msg.isBark && !msg.timed);
         const hasConversationHistory = conversationHistory.length > 0;
-        
+
+        // The explicit knot is the one whose opening was preloaded, and the player hasn't
+        // opened the thread since: that opening is already the thread, so this is a first
+        // open, not a new call. Playing the knot again showed the intro twice (E1: a phone
+        // picked up with a pickup mapping's targetKnot or its currentKnot).
+        if (PhoneChatConversation.isPreloadedOpening(npc, explicitStartKnot, conversationHistory)) {
+            console.log(`📱 ${npcId}: opening at ${explicitStartKnot} was preloaded; showing it once`);
+            explicitStartKnot = null;
+        }
+
         // Show all history (including barks) in the UI
         if (history.length > 0) {
             this.ui.addMessages(history);
@@ -444,6 +457,19 @@ export class PhoneChatMinigame extends MinigameScene {
             // Restore previous story state (only if no explicit knot override)
             console.log('📚 Restoring story state from previous conversation');
 
+            // Globals the preloaded intro assigned (~ x = true) were held back until the
+            // player opened the thread. Apply them first: the restored story already
+            // holds them, so syncing the older values over it read as a change and
+            // re-ran the intro knot, showing its opening a second time (E1, m02 Ghost).
+            if (npc.deferredGlobals) {
+                Object.entries(npc.deferredGlobals).forEach(([name, value]) => {
+                    window.gameState.globalVariables[name] = value;
+                    window.npcConversationStateManager?.broadcastGlobalVariableChange(name, value, npc.id);
+                    window.eventDispatcher?.emit(`global_variable_changed:${name}`, { name, value });
+                });
+                npc.deferredGlobals = null;
+            }
+
             // Sync current globals into the restored story. If that changed a global the
             // saved story held, re-run the knot that owns the saved choices so Ink
             // re-evaluates them (resting knots re-check state at the top and divert).
@@ -473,14 +499,6 @@ export class PhoneChatMinigame extends MinigameScene {
 
             // Process any game action tags that were collected during preload but deferred
             // until the player actually opens the conversation (e.g. complete_task, set_global)
-            if (npc.deferredGlobals) {
-                Object.entries(npc.deferredGlobals).forEach(([name, value]) => {
-                    window.gameState.globalVariables[name] = value;
-                    window.npcConversationStateManager?.broadcastGlobalVariableChange(name, value, npc.id);
-                    window.eventDispatcher?.emit(`global_variable_changed:${name}`, { name, value });
-                });
-                npc.deferredGlobals = null;
-            }
             if (npc.deferredTags && npc.deferredTags.length > 0) {
                 console.log(`📋 Processing ${npc.deferredTags.length} deferred tag(s) for ${npc.id}:`, npc.deferredTags);
                 processGameActionTags(npc.deferredTags, this.ui);

@@ -88,6 +88,15 @@ module BreakEscape
       @other.update!(role: 'user')
     end
 
+    test "admin and account_manager cannot new_session another player's game" do
+      %w[admin account_manager].each do |role|
+        @other.update!(role: role)
+        assert_not GamePolicy.new(@other, @game).new_session?, "#{role} must not spawn sessions on others' games"
+      end
+    ensure
+      @other.update!(role: 'user')
+    end
+
     # ─── Scope ────────────────────────────────────────────────────────────────
 
     test "scope returns only the owner's games for regular users" do

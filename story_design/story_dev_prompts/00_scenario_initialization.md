@@ -20,6 +20,7 @@ You are a scenario initialization specialist for Break Escape, a cybersecurity e
 Before beginning, review these documents:
 
 ### Essential References
+
 - `story_design/universe_bible/09_scenario_design/framework.md` - Complete scenario design framework
 - `story_design/universe_bible/03_entropy_cells/README.md` - All ENTROPY cells and their specialties
 - `story_design/universe_bible/05_world_building/technology.md` - Technology constraints and capabilities
@@ -27,6 +28,7 @@ Before beginning, review these documents:
 - `docs/GAME_DESIGN.md` - Core game mechanics and challenge types
 
 ### Helpful References
+
 - `story_design/universe_bible/09_scenario_design/examples/` - Example scenarios to study
 - `story_design/universe_bible/05_world_building/rules_and_tone.md` - World rules and tone guidance
 - `story_design/universe_bible/02_organisations/entropy/operations.md` - ENTROPY operational methods
@@ -47,12 +49,14 @@ Select 3-5 core technical challenges that will be the educational heart of your 
 Break Escape uses a **hybrid approach** that separates technical validation from narrative content:
 
 **VM/SecGen Scenarios (Technical Validation)**
+
 - Pre-built CTF challenges remain **unchanged** for stability
 - Provide technical skill validation (SSH, exploitation, scanning, etc.)
 - Generate flags that represent ENTROPY operational communications
 - Players complete traditional hacking challenges
 
 **ERB Templates (Narrative Content)**
+
 - Generate story-rich encoded messages directly in game world
 - Create ENTROPY documents, emails, whiteboards, communications
 - Allow narrative flexibility without modifying VMs
@@ -68,6 +72,7 @@ VM flags are integrated into the narrative through the **dead drop system**:
 4. Unlocks resources: equipment, intel, credentials, access
 
 **Example Integration (Mission 1):**
+
 - **VM Flag:** `flag{ssh_brute_success}`
 - **Narrative Context:** "You've intercepted Social Fabric's server credentials"
 - **Game Unlock:** Access to encrypted documents on in-game computer
@@ -96,6 +101,7 @@ Both VM flags AND in-game encoded messages are tracked as objectives (see `docs/
 ```
 
 Ink scripts use tags to track progress:
+
 - `#complete_task:submit_flag_1` - Mark VM flag submitted
 - `#complete_task:decode_whiteboard` - Mark in-game message decoded
 - `#unlock_task:new_task` - Unlock next task
@@ -119,7 +125,6 @@ For each scenario, you'll select challenges from TWO categories:
    - PIN cracking on safes (investigation reveals PIN, or use pin cracker device)
    - Encoding/decoding challenges (CyberChef workstation access)
    - Hostile NPCs combat (drop items when defeated)
-
 2. **VM/SecGen Challenges** (technical validation):
    - Select ONE SecGen scenario per Break Escape scenario
    - VM challenges should complement in-game challenges
@@ -154,19 +159,19 @@ Choose which ENTROPY cell is behind this scenario. This decision should be based
 
 #### ENTROPY Cell Quick Reference
 
-| Cell | Specialty | Best For |
-|------|-----------|----------|
-| **Zero Day Syndicate** | Exploit development, vulnerability research | Advanced exploitation challenges |
-| **Ghost Protocol** | Stealth, anonymity, infrastructure | Network forensics, attribution challenges |
-| **Ransomware Incorporated** | Encryption, extortion | Cryptography, incident response |
-| **Social Fabric** | Social engineering, manipulation | Phishing, trust exploitation |
-| **Supply Chain Saboteurs** | Third-party compromise | Dependencies, trust relationships |
-| **Insider Threat Initiative** | Internal compromise | Access control, privilege abuse |
-| **Critical Mass** | Infrastructure disruption | SCADA, critical systems |
-| **Crypto Anarchists** | Privacy, anonymity tech | Encryption, privacy technologies |
-| **AI Singularity** | Machine learning exploitation | AI/ML security, adversarial examples |
-| **Digital Vanguard** | Ideological hacktivism | Ethics, motivation-driven attacks |
-| **Quantum Cabal** | Cutting-edge tech, future threats | Advanced/emerging technologies |
+| Cell                          | Specialty                                   | Best For                                  |
+| ----------------------------- | ------------------------------------------- | ----------------------------------------- |
+| **Zero Day Syndicate**        | Exploit development, vulnerability research | Advanced exploitation challenges          |
+| **Ghost Protocol**            | Stealth, anonymity, infrastructure          | Network forensics, attribution challenges |
+| **Ransomware Incorporated**   | Encryption, extortion                       | Cryptography, incident response           |
+| **Social Fabric**             | Social engineering, manipulation            | Phishing, trust exploitation              |
+| **Supply Chain Saboteurs**    | Third-party compromise                      | Dependencies, trust relationships         |
+| **Insider Threat Initiative** | Internal compromise                         | Access control, privilege abuse           |
+| **Critical Mass**             | Infrastructure disruption                   | SCADA, critical systems                   |
+| **Crypto Anarchists**         | Privacy, anonymity tech                     | Encryption, privacy technologies          |
+| **AI Singularity**            | Machine learning exploitation               | AI/ML security, adversarial examples      |
+| **Digital Vanguard**          | Ideological hacktivism                      | Ethics, motivation-driven attacks         |
+| **Quantum Cabal**             | Cutting-edge tech, future threats           | Advanced/emerging technologies            |
 
 #### Cell Selection Template
 
@@ -203,26 +208,31 @@ Create 2-3 narrative theme options that naturally support your technical challen
 For each theme option, specify:
 
 **Setting:**
+
 - Where does this take place? (Office building, data center, research facility, etc.)
 - What is the cover story for this location?
 - What makes this location vulnerable to ENTROPY?
 
 **Inciting Incident:**
+
 - What has ENTROPY done (or what are they about to do)?
 - How was this discovered?
 - Why is the player being sent in?
 
 **Stakes:**
+
 - What happens if ENTROPY succeeds?
 - Who gets hurt?
 - What makes this urgent?
 
 **Central Conflict:**
+
 - What is the player fighting against?
 - What is ENTROPY trying to achieve?
 - What are the competing interests?
 
 **Tone:**
+
 - Serious espionage thriller?
 - Cat-and-mouse investigation?
 - Race against time?
@@ -346,6 +356,7 @@ This initialization document should be passed to:
 Before finalizing your initialization, verify:
 
 ### Technical Challenge Quality
+
 - [ ] Each challenge maps to a specific CyBOK knowledge area
 - [ ] Challenges are appropriate for target tier
 - [ ] Challenges have clear learning objectives
@@ -354,12 +365,14 @@ Before finalizing your initialization, verify:
 - [ ] Challenges build on each other logically
 
 ### ENTROPY Cell Selection
+
 - [ ] Cell's technical capabilities match challenge requirements
 - [ ] Cell's philosophy aligns with scenario methodology
 - [ ] Cell has narrative potential (interesting characters, conflicts)
 - [ ] Cell selection adds to ongoing LORE storylines
 
 ### Narrative Theme Quality
+
 - [ ] Theme makes technical challenges feel organic and necessary
 - [ ] Theme creates emotional stakes players will care about
 - [ ] Theme fits within Break Escape universe rules and tone
@@ -369,6 +382,7 @@ Before finalizing your initialization, verify:
 - [ ] Stakes are understandable and urgent
 
 ### Hybrid Architecture Integration
+
 - [ ] VM challenges selected from ONE SecGen scenario
 - [ ] VM challenges complement (don't duplicate) in-game challenges
 - [ ] Flags have clear narrative context (what do they represent?)
@@ -380,6 +394,7 @@ Before finalizing your initialization, verify:
 - [ ] Flexible learning paths supported (can do labs separately if needed)
 
 ### Integration
+
 - [ ] Technical challenges and narrative theme support each other
 - [ ] ENTROPY cell's involvement makes sense for both challenges and theme
 - [ ] Scope is achievable for target duration
@@ -388,6 +403,7 @@ Before finalizing your initialization, verify:
 ## Common Pitfalls to Avoid
 
 ### Challenge Selection Pitfalls
+
 - **Too many challenges** - Stick to 3-5 core challenges; more dilutes educational focus
 - **Challenges don't connect** - Challenges should build on each other, not be random
 - **Unrealistic challenges** - Avoid Hollywood hacking; teach real concepts
@@ -395,11 +411,13 @@ Before finalizing your initialization, verify:
 - **Implementation impossible** - Check that game engine can actually support the challenge
 
 ### Cell Selection Pitfalls
+
 - **Wrong cell capabilities** - Don't pick Supply Chain Saboteurs for a web security scenario
 - **Forgetting cell philosophy** - Cell motivation should make sense
 - **Missing LORE opportunities** - Consider how this fits into larger storylines
 
 ### Theme Development Pitfalls
+
 - **Theme doesn't support challenges** - Story should explain why challenges exist
 - **Unclear stakes** - Players need to know what they're fighting for
 - **Too generic** - "Stop the bad guys from stealing data" is boring; be specific
@@ -407,6 +425,7 @@ Before finalizing your initialization, verify:
 - **Scope creep** - Don't try to tell an epic trilogy in a 30-minute scenario
 
 ### Stakes and Evil Pitfalls (CRITICAL)
+
 - **Vague threats** - "ENTROPY will hurt people" is weak. Say "42-85 projected casualties"
 - **Abstract harm** - Name the victims: "elderly people with anxiety disorders"
 - **Sympathetic villains** - ENTROPY operatives should be TRUE BELIEVERS, not tragic antiheroes
@@ -420,12 +439,14 @@ Before finalizing your initialization, verify:
 For inspiration, review these example initializations:
 
 ### Example 1: "The Cipher Inheritance"
+
 - **Challenges:** Symmetric/asymmetric encryption, certificate analysis, key recovery
 - **Cell:** Crypto Anarchists
 - **Theme:** Museum exhibit of historical ciphers is cover for stealing a quantum-resistant encryption algorithm
 - **Why it works:** Natural integration of cryptography challenges with Crypto Anarchists' philosophy and methods
 
 ### Example 2: "First Contact" (Hybrid Architecture)
+
 - **VM Challenges:** SSH brute force (Hydra), Linux basics, flag collection
 - **In-Game Challenges:** Social engineering NPC for password hints, Base64 decoding whiteboard messages, lockpicking
 - **Cell:** Social Fabric
@@ -434,6 +455,7 @@ For inspiration, review these example initializations:
 - **Why it works:** Seamless flow between physical (in-game) and digital (VM) investigation, teaches both social engineering and technical skills, validates SSH skills while providing narrative context
 
 ### Example 3: "The Trust Fall"
+
 - **Challenges:** Phishing detection, social engineering, insider threats
 - **Cell:** Social Fabric
 - **Theme:** Financial firm being manipulated by ENTROPY using compromised employees
@@ -452,11 +474,13 @@ For inspiration, review these example initializations:
 ## Output Format
 
 Save your initialization document as:
+
 ```
 scenario_designs/[scenario_name]/00_initialization/initialization_summary.md
 ```
 
 Also create supporting files:
+
 ```
 scenario_designs/[scenario_name]/00_initialization/technical_challenges.md
 scenario_designs/[scenario_name]/00_initialization/narrative_themes.md

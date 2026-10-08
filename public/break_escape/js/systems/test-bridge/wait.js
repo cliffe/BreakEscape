@@ -82,6 +82,13 @@ export async function waitFrames(n = 1) {
 export async function waitForMovementEnd({ timeoutMs = DEFAULT_TIMEOUT_MS, stillFrames = 6 } = {}) {
     let still = 0;
     const started = performance.now();
+    // Walking into a collider leaves the player "moving" (velocity set, every
+    // frame) without going anywhere, and the engine never gives up on its own.
+    // Judged on velocity alone, that held moveTo for its whole 20s timeout
+    // (measured: library furniture, Oct 2026). Track displacement too, and call
+    // it stuck after STUCK_MS without moving a pixel.
+    const STUCK_MS = 800;
+    let anchor = null;
     // Give the click a few frames to actually start a path before judging.
     await sleepFrames(4);
     for (;;) {
@@ -92,6 +99,17 @@ export async function waitForMovementEnd({ timeoutMs = DEFAULT_TIMEOUT_MS, still
         still = moving ? 0 : still + 1;
         if (still >= stillFrames) {
             return { ok: true, x: Math.round(p.x), y: Math.round(p.y), elapsedMs: Math.round(performance.now() - started) };
+        }
+        const now = performance.now();
+        if (!moving || !anchor || Math.hypot(p.x - anchor.x, p.y - anchor.y) >= 1) {
+            anchor = { x: p.x, y: p.y, t: now };
+        } else if (now - anchor.t > STUCK_MS) {
+            const b = p.body?.blocked || {};
+            return {
+                ok: false, reason: 'stuck', x: Math.round(p.x), y: Math.round(p.y),
+                blocked: ['up', 'down', 'left', 'right'].filter(k => b[k]),
+                elapsedMs: Math.round(now - started)
+            };
         }
         if (performance.now() - started > timeoutMs) {
             return { ok: false, reason: 'timeout', x: Math.round(p.x), y: Math.round(p.y) };

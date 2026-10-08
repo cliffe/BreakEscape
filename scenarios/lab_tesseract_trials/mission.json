@@ -1,0 +1,24 @@
+{
+  "display_name": "The Keyholder Trials",
+  "description": "Freshers' week at Miskatonic University UK, and a ransomware gang's front company is talent-spotting first-years through a trail of puzzles. Go undercover as a student and get recruited. Learn bits, bytes, ASCII, hex, Base64, Caesar and Vigenère ciphers, AES, public-key encryption, hashes and digital signatures from scratch, solving every lock in CyberChef. No virtual machines needed.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "escape_room",
+  "cybok": [
+    {
+      "ka": "AC",
+      "topic": "Algorithms, Schemes and Protocols",
+      "keywords": ["Encoding vs Cryptography", "Caesar cipher", "Vigenere cipher", "SYMMETRIC CRYPTOGRAPHY - AES (ADVANCED ENCRYPTION STANDARD)", "Public key cryptography", "Hash functions", "Digital signatures"]
+    },
+    {
+      "ka": "F",
+      "topic": "Artifact Analysis",
+      "keywords": ["Encoding and alternative data formats"]
+    },
+    {
+      "ka": "WAM",
+      "topic": "Fundamental Concepts and Approaches",
+      "keywords": ["ENCODING", "BASE64"]
+    }
+  ]
+}

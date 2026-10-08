@@ -237,6 +237,17 @@ The `type` field of each room must match a file in `public/break_escape/assets/r
 | `room_hospital_hall_waiting` | Hospital corridor variant (2×1 GU) — row of waiting seats; same slots as `room_hospital_hall` |
 | `room_hospital_waiting_1x1gu` | Small hospital waiting area / vestibule (1×1 GU) — seats along both side walls, side doors on row 2; no scenario slots |
 | `room_hospital_storage_1x1gu` | Small hospital store room (1×1 GU) — drugs cabinet, crash cart, boxed supplies; slots: floor `safe`, wall `notes` |
+| `room_uni_foyer` | University foyer / atrium (2×2 GU) — crest sign, heritage display, recruiter's stand, brass inlay under the spawn point; doors on all four sides. Slots: wall `plaque`, `alarm_panel`, `chart`; on the display table two `notes` (conditional); on the stand a `briefcase` and a `laptop` (conditional) |
+| `room_uni_lab` | Computer teaching lab (2×2 GU) — two benches of PCs facing a projector screen and whiteboard, lecturer's desk, photocopier; door E. Slots: wall `whiteboard`; the first two `pc` slots in table_items (the aisle-end PCs), then six decor PCs |
+| `room_uni_common` | Student common room (2×2 GU) — noticeboard, society posters, snack machine, student lockers, kitchenette, sofa and tables; door W. Slots: `notice_board`, `vending_machine`, `coffee_station`, conditional `student_locker` (a single keypad locker), conditional `laptop` on the high table |
+| `room_uni_corridor` | University corridor (2×1 GU) — recessed lockers, department noticeboard, pigeonholes, wall drop box, side-wall directory; doors on all four sides. A 2×2 room to the south covers the bottom two rows, so only y 64-128 is floor. Slots: two conditional wall `notes` (on the noticeboard, then on the drop box), `pigeonholes`, conditional `drop_box`, `uni_directory` |
+| `room_uni_library` | Library (4×1 GU, 20×6) — east half: recessed bookcases, library and returns signs, issue and returns counter, kiosk; west half: reading room with carrels, periodicals, a reading table. Doors E and N (NE corner). The east half shows two floor rows when a room sits south of it, the west half three. Slots: conditional `book` and `notes` on the returns counter |
+| `room_uni_office` | Academic's office (2×1 GU) — door card, bookcase, year planner, desk with a PC; doors W and N. Two visible floor rows. Slots: conditional `whiteboard`, conditional `notes` on the desk |
+| `room_uni_workshop` | Maker space / workshop (2×2 GU) — two wall screens, safety sign, island workbench inside a hazard line, electronics bench, parts shelving; door S. Slots: `conference_screen`, `smartscreen`, conditional `pc` on the workbench |
+| `room_uni_lecture` | Lecture theatre (4×2 GU, 20×10) — whiteboard, projector screen, demonstration bench and lectern, three tiered rows of seats in two blocks; door N (NW corner). The seat rows are solid (collision rectangles in `Object Layer 1`) with west, centre and east aisles. Slots: wall `whiteboard` |
+| `room_uni_special` | Special Collections (2×2 GU) — sign, portrait, a wall of bookcases, reading table with lamps on a rug; door S (SE corner). Slots: conditional floor `safe` |
+| `room_uni_seminar` | Seminar room (2×2 GU) — whiteboard between two windows with blinds, long table with chairs round it, flip chart, water cooler; door S (SE corner). Slots: wall `whiteboard` |
+| `room_uni_staff` | Open-plan staff office (4×2 GU, 20×10) — three face-to-face desk pods with PCs and chairs, staff kitchenette with pigeonholes, coffee table, photocopier, bookcase, filing cabinet, windows, noticeboard, "COMPUTING / STAFF ONLY" sign; door W on row 2. No scenario slots (decor only); open standing spots for staff NPCs are listed in the builder's docstring |
 | `small_office_room1_1x1gu` | Small private office (1×1 GU) |
 | `small_office_room2_1x1gu` | Small private office variant 2 |
 | `small_office_room3_1x1gu` | Small private office variant 3 |
@@ -370,7 +381,7 @@ This laptop object will be placed at the next available `pc` slot in the room te
 | `id` | optional | Explicit ID for cross-referencing in objectives (`targetObject`) |
 | `locked` | required for containers | Must be `true` or `false` on any container with `contents` |
 | `readable` | optional | `true` enables the "Read" interaction |
-| `text` | optional | Body text shown when the player reads the item |
+| `text` | optional | Body text shown when the player reads the item. In the notebook (`notes` items) it renders a markdown subset: `#` headings, `**bold**`, `*italic*`, `` `code` ``, `- ` bullets, fenced code and tables (a header row, then a `\|---\|---\|` row; `:` sets alignment). Backslash-escape a literal `\|`, `*`, `` ` `` or `\\`. Everything else shows as typed (`js/utils/note-markdown.js`) |
 | `textVariants` | optional | Runtime readable-text overrides. Same format/rules as `observationVariants`; first matching condition is used. |
 | `collection_group` | optional | Tag used for objective `collect_items` task tracking |
 | `important` | optional | `true` marks item as important in inventory |

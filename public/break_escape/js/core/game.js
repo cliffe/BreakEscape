@@ -27,7 +27,7 @@ import { PlayerCombat } from '../systems/player-combat.js';
 import { NPCCombat } from '../systems/npc-combat.js';
 import { ApiClient } from '../api-client.js'; // Import to ensure window.ApiClient is set
 import { getTutorialManager } from '../systems/tutorial-manager.js';
-import { TILE_SIZE, SPRITE_PADDING_BOTTOM_ATLAS, SPRITE_PADDING_BOTTOM_LEGACY, DOOR_INTERACTION_RANGE } from '../utils/constants.js';
+import { TILE_SIZE, SPRITE_PADDING_BOTTOM_ATLAS, SPRITE_PADDING_BOTTOM_LEGACY, DOOR_INTERACTION_RANGE, INTERACTION_RANGE } from '../utils/constants.js';
 import { initScenarioMusicEvents } from '../music/scenario-music-events.js';
 import { ScenarioTimerUI } from '../ui/scenario-timer.js';  // [Phase 5] Countdown timer HUD widget
 import { ScenarioTimerDispatcher } from '../ui/scenario-timer-dispatcher.js';  // [Phase 5] Timer event dispatcher
@@ -92,6 +92,18 @@ export function preload() {
     this.load.tilemapTiledJSON('room_hospital_waiting_1x1gu', 'rooms/room_hospital_waiting_1x1gu.json'); // Small hospital waiting area / vestibule (1x1 GU)
     this.load.tilemapTiledJSON('room_hospital_storage_1x1gu', 'rooms/room_hospital_storage_1x1gu.json'); // Small hospital store room (1x1 GU)
     this.load.tilemapTiledJSON('room_hospital_staff', 'rooms/room_hospital_staff.json'); // Hospital night staff / handover room (room6, 2x2 GU, doors on all four sides)
+    // University (campus) rooms, builder maps in scripts/generate_rooms.py (room_uni_*)
+    this.load.tilemapTiledJSON('room_uni_foyer', 'rooms/room_uni_foyer.json'); // University foyer / atrium: crest, heritage display, recruiter's stand (2x2 GU)
+    this.load.tilemapTiledJSON('room_uni_lab', 'rooms/room_uni_lab.json'); // Computer teaching lab: two benches of PCs, projector screen, whiteboard (2x2 GU)
+    this.load.tilemapTiledJSON('room_uni_common', 'rooms/room_uni_common.json'); // Student common room: lockers, kitchenette, snack machine, sofa (2x2 GU)
+    this.load.tilemapTiledJSON('room_uni_corridor', 'rooms/room_uni_corridor.json'); // University corridor: lockers, noticeboard, pigeonholes, drop box (2x1 GU, two visible floor rows)
+    this.load.tilemapTiledJSON('room_uni_library', 'rooms/room_uni_library.json'); // Library front desk: shelves, issue desk, floor safe slot (2x1 GU, two visible floor rows)
+    this.load.tilemapTiledJSON('room_uni_office', 'rooms/room_uni_office.json'); // Academic's office: door card, whiteboard slot, desk with PC (2x1 GU, two visible floor rows)
+    this.load.tilemapTiledJSON('room_uni_workshop', 'rooms/room_uni_workshop.json'); // Maker space / workshop: scoreboard and build screens, island workbench (2x2 GU)
+    this.load.tilemapTiledJSON('room_uni_lecture', 'rooms/room_uni_lecture.json'); // Lecture theatre: whiteboard, projector screen, bench and lectern, three tiered seat rows (4x2 GU)
+    this.load.tilemapTiledJSON('room_uni_special', 'rooms/room_uni_special.json'); // Special Collections: bookcases, reading table on a rug, archive safe slot (2x2 GU)
+    this.load.tilemapTiledJSON('room_uni_seminar', 'rooms/room_uni_seminar.json'); // Seminar room: whiteboard between blinds, long table, flip chart (2x2 GU)
+    this.load.tilemapTiledJSON('room_uni_staff', 'rooms/room_uni_staff.json'); // Open-plan staff office: three desk pods, kitchenette, pigeonholes, photocopier (4x2 GU)
 
     // Load room images (now using smaller 32px scale images)
     this.load.image('room_reception', 'tiles/rooms/room1.png');
@@ -102,6 +114,15 @@ export function preload() {
     this.load.image('room_hospital_exec', 'tiles/rooms/room_hospital_exec.png'); // carpet with a rug under the desk (Dr Kim's office)
     this.load.image('room_hospital_raised', 'tiles/rooms/room_hospital_raised.png'); // same walls, raised access floor (server room)
     this.load.image('room_hospital_kitchen', 'tiles/rooms/room_hospital_kitchen.png'); // same walls, flecked kitchen safety vinyl (staff room)
+    // University (campus) room sheets: room6 repainted, off-white walls and teal skirting (scripts/room_gen/make_uni_tileset.py)
+    this.load.image('room_uni', 'tiles/rooms/room_uni.png'); // sheet vinyl (corridor)
+    this.load.image('room_uni_carpet', 'tiles/rooms/room_uni_carpet.png'); // charcoal-blue carpet tiles (lab, offices, seminar room)
+    this.load.image('room_uni_foyer', 'tiles/rooms/room_uni_foyer.png'); // terrazzo with a brass "M" inlay
+    this.load.image('room_uni_lecture', 'tiles/rooms/room_uni_lecture.png'); // blue carpet, vinyl front strip, tier lines
+    this.load.image('room_uni_common', 'tiles/rooms/room_uni_common.png'); // warm carpet, kitchenette vinyl patch
+    this.load.image('room_uni_library', 'tiles/rooms/room_uni_library.png'); // deep green carpet
+    this.load.image('room_uni_special', 'tiles/rooms/room_uni_special.png'); // oxblood carpet with a rug
+    this.load.image('room_uni_workshop', 'tiles/rooms/room_uni_workshop.png'); // concrete, hazard line round the bench
     this.load.image('room14', 'tiles/rooms/room14.png');
     this.load.image('room19', 'tiles/rooms/room19.png');
     this.load.image('door_32', 'tiles/door_32.png');
@@ -151,6 +172,7 @@ export function preload() {
     this.load.image('photo', 'objects/picture1.png');
     this.load.image('safe', 'objects/safe1.png');
     this.load.image('book', 'objects/book1.png');
+    this.load.image('book1', 'objects/book1.png'); // same image under its Tiled name, so an unclaimed book1 map sprite draws
     this.load.image('workstation', 'objects/workstation.png');
     this.load.image('lab-workstation', 'objects/lab-workstation.png');
     this.load.image('filing_cabinet', 'objects/filing_cabinet.png');
@@ -650,6 +672,69 @@ export function preload() {
     this.load.image('cctv_monitors2', 'objects/cctv_monitors2.png');
     this.load.image('wall_rail2', 'objects/wall_rail2.png');
     this.load.image('checkin_kiosk_locked1', 'objects/checkin_kiosk_locked1.png');
+    this.load.image('uni_crest_sign1', 'objects/uni_crest_sign1.png');
+    this.load.image('projector_screen1', 'objects/projector_screen1.png');
+    this.load.image('drop_box1', 'objects/drop_box1.png');
+    this.load.image('uni_directory1', 'objects/uni_directory1.png');
+    this.load.image('uni_doorcard1', 'objects/uni_doorcard1.png');
+    this.load.image('uni_sign_library1', 'objects/uni_sign_library1.png');
+    this.load.image('uni_sign_special1', 'objects/uni_sign_special1.png');
+    this.load.image('uni_timetable1', 'objects/uni_timetable1.png');
+    this.load.image('uni_poster1', 'objects/uni_poster1.png');
+    this.load.image('uni_poster2', 'objects/uni_poster2.png');
+    this.load.image('uni_poster3', 'objects/uni_poster3.png');
+    this.load.image('uni_poster4', 'objects/uni_poster4.png');
+    this.load.image('uni_poster6', 'objects/uni_poster6.png');
+    this.load.image('uni_poster7', 'objects/uni_poster7.png');
+    this.load.image('cryptosecure_banner1', 'objects/cryptosecure_banner1.png');
+    this.load.image('student_lockers1', 'objects/student_lockers1.png');
+    this.load.image('student_locker1', 'objects/student_locker1.png');
+    this.load.image('lecture_ledge1', 'objects/lecture_ledge1.png');
+    this.load.image('lecture_ledge2', 'objects/lecture_ledge2.png');
+    this.load.image('alarm_panel2', 'objects/alarm_panel2.png');
+    this.load.image('pegboard_tools1', 'objects/pegboard_tools1.png');
+    this.load.image('lectern1', 'objects/lectern1.png');
+    this.load.image('book_trolley1', 'objects/book_trolley1.png');
+    this.load.image('scope_cart1', 'objects/scope_cart1.png');
+    this.load.image('lecture_seat_row1', 'objects/lecture_seat_row1.png');
+    this.load.image('component_drawers1', 'objects/component_drawers1.png');
+    this.load.image('robot_arm1', 'objects/robot_arm1.png');
+    this.load.image('beanbag1', 'objects/beanbag1.png');
+    this.load.image('stanchions1', 'objects/stanchions1.png');
+    this.load.image('bankers_lamp1', 'objects/bankers_lamp1.png');
+    this.load.image('pi_cluster1', 'objects/pi_cluster1.png');
+    this.load.image('journal_stack1', 'objects/journal_stack1.png');
+    this.load.image('soldering_iron1', 'objects/soldering_iron1.png');
+    this.load.image('beanbag_orange1', 'objects/beanbag_orange1.png');
+    this.load.image('beanbag_teal1', 'objects/beanbag_teal1.png');
+    this.load.image('uni_sign_staff1', 'objects/uni_sign_staff1.png');
+    this.load.image('uni_tv1', 'objects/uni_tv1.png');
+    this.load.image('uni_certificate1', 'objects/uni_certificate1.png');
+    this.load.image('uni_portrait1', 'objects/uni_portrait1.png');
+    this.load.image('uni_bunting1', 'objects/uni_bunting1.png');
+    this.load.image('uni_bunting2', 'objects/uni_bunting2.png');
+    this.load.image('smartscreen2', 'objects/smartscreen2.png');
+    this.load.image('uni_fountain1', 'objects/uni_fountain1.png');
+    this.load.image('uni_radiator1', 'objects/uni_radiator1.png');
+    this.load.image('uni_firedoor_sign1', 'objects/uni_firedoor_sign1.png');
+    this.load.image('uni_dartboard1', 'objects/uni_dartboard1.png');
+    this.load.image('uni_sign_returns1', 'objects/uni_sign_returns1.png');
+    this.load.image('uni_sign_study1', 'objects/uni_sign_study1.png');
+    this.load.image('uni_banner_soc1', 'objects/uni_banner_soc1.png');
+    this.load.image('study_carrels1', 'objects/study_carrels1.png');
+    this.load.image('periodicals_rack1', 'objects/periodicals_rack1.png');
+    this.load.image('balloons1', 'objects/balloons1.png');
+    this.load.image('freshers_stall2', 'objects/freshers_stall2.png');
+    this.load.image('display_case3', 'objects/display_case3.png');
+    this.load.image('plan_chest2', 'objects/plan_chest2.png');
+    this.load.image('printer_3d2', 'objects/printer_3d2.png');
+    this.load.image('foosball_table2', 'objects/foosball_table2.png');
+    this.load.image('laser_cutter2', 'objects/laser_cutter2.png');
+    this.load.image('it_workbench2', 'objects/it_workbench2.png');
+    this.load.image('electronics_bench2', 'objects/electronics_bench2.png');
+    this.load.image('cnc_mill2', 'objects/cnc_mill2.png');
+    this.load.image('uni_sofa2', 'objects/uni_sofa2.png');
+    this.load.image('uni_poster8', 'objects/uni_poster8.png');
     this.load.image('backup_recovery',         'objects/backup_recovery.png');
     this.load.image('dual_auth',               'objects/dual_auth.png');
     this.load.image('ehr-terminal',            'objects/ehr-terminal.png');
@@ -975,6 +1060,14 @@ export async function create() {
             spriteSheet: window.breakEscapeConfig?.playerSprite || window.gameScenario?.player?.spriteSheet || 'male_hacker_hood_v2',
             spriteTalk: (() => {
                 const sprite = window.breakEscapeConfig?.playerSprite || window.gameScenario?.player?.spriteSheet || 'male_hacker_hood_v2';
+                // Use the scenario's configured player.spriteTalk when it belongs to the played sprite
+                // (the player's chosen sprite overrides the scenario's, and old scenarios carry a stale
+                // default talk image, so a file for a different character is ignored)
+                const configuredTalk = window.gameScenario?.player?.spriteTalk;
+                if (configuredTalk) {
+                    const stem = (configuredTalk.split('/').pop() || '').replace(/\.\w+$/, '').replace(/[_-]talk$/, '');
+                    if (stem && stem === sprite.replace(/_v2$/, '')) return configuredTalk;
+                }
                 // Legacy sprites use hyphen naming; all others follow {sprite}_talk.png convention
                 const legacyMap = { 'hacker': 'assets/characters/hacker-talk.png', 'hacker-red': 'assets/characters/hacker-red-talk.png' };
                 return legacyMap[sprite] || `assets/characters/${sprite}_talk.png`;
@@ -1056,6 +1149,17 @@ export async function create() {
                 window.npcBehaviorManager = new module.NPCBehaviorManager(this, window.npcManager);
                 console.log('✅ NPC Behavior Manager initialized');
                 // NOTE: Individual behaviors registered per-room in rooms.js createNPCSpritesForRoom()
+                // That skips NPCs whose sprites were created before this import finished
+                // (the start room can win the race), so register those now.
+                const mgr = window.npcBehaviorManager;
+                for (const roomData of Object.values(window.rooms || {})) {
+                    for (const sprite of roomData?.npcSprites || []) {
+                        const id = sprite?.npcId;
+                        if (!id || mgr.behaviors.has(id) || !sprite.active) continue;
+                        const npc = window.npcManager.getNPC(id);
+                        mgr.registerBehavior(id, sprite, npc?.behavior || {});
+                    }
+                }
             })
             .catch(error => {
                 console.error('❌ Failed to initialize NPC Behavior Manager:', error);
@@ -1288,18 +1392,52 @@ export async function create() {
                             // Chairs: move onto the clicked position (player sits/stands at the chair).
                             movePlayerToPoint(worldX, worldY);
                         } else {
-                            // Object is out of range - move toward it, stopping just short.
-                            const objBottomY = obj.y + obj.height * (1 - (obj.originY || 0));
+                            // Object is out of range - walk until it's within reach.
+                            // Reach is measured from the sprite centre (player.x/y) to obj.x/y
+                            // (isObjectInInteractionRange), but movePlayerToPoint steers the
+                            // feet (body centre, ~31px lower). Aim so the sprite centre ends
+                            // half a reach from that point, then convert to a feet target;
+                            // stopping 3/4 tile short of the object's base could leave the
+                            // player just outside reach, where further taps did nothing.
                             const dx = obj.x - player.x;
-                            const dy = objBottomY - player.y;
+                            const dy = obj.y - player.y;
                             const distance = Math.sqrt(dx * dx + dy * dy);
                             if (distance > 0) {
-                                const stopShortOffset = TILE_SIZE * 0.75; // 3/4 tile short of object
-                                const normalizedDx = dx / distance;
-                                const normalizedDy = dy / distance;
-                                const targetX = obj.x - normalizedDx * stopShortOffset;
-                                const targetY = objBottomY - normalizedDy * stopShortOffset;
-                                movePlayerToPoint(targetX, targetY);
+                                const stopShort = INTERACTION_RANGE / 2;
+                                const centreX = obj.x - (dx / distance) * stopShort;
+                                const centreY = obj.y - (dy / distance) * stopShort;
+                                const footDx = player.body ? player.body.center.x - player.x : 0;
+                                const footDy = player.body ? player.body.center.y - player.y : 0;
+                                let target = { x: centreX + footDx, y: centreY + footDy };
+                                // The straight-line aim can fall inside a wall or furniture (a
+                                // noticeboard high on the back wall), and the pathfinder's snap
+                                // to the nearest free cell may then leave the player just out of
+                                // reach. Try stand points around the object and keep the one that
+                                // ends in reach with the shortest walk.
+                                const pfm = window.pathfindingManager;
+                                if (pfm?.findNearestWalkableWorldCell) {
+                                    const reachAfter = (p) => Math.hypot(p.x - footDx - obj.x, p.y - footDy - obj.y);
+                                    const walk = (p) => Math.hypot(p.x - (player.x + footDx), p.y - (player.y + footDy));
+                                    const aimed = pfm.findNearestWalkableWorldCell(target.x, target.y);
+                                    if (!aimed || reachAfter(aimed) > INTERACTION_RANGE - 4) {
+                                        let best = aimed, bestReach = aimed ? reachAfter(aimed) : Infinity, bestWalk = aimed ? walk(aimed) : Infinity;
+                                        for (let a = 0; a < 16; a++) {
+                                            const ang = (a / 16) * Math.PI * 2;
+                                            for (const r of [8, 16, 24]) {
+                                                const c = pfm.findNearestWalkableWorldCell(
+                                                    obj.x + Math.cos(ang) * r + footDx, obj.y + Math.sin(ang) * r + footDy, 3);
+                                                if (!c) continue;
+                                                const ra = reachAfter(c), wk = walk(c);
+                                                const ok = ra <= INTERACTION_RANGE - 4, bestOk = bestReach <= INTERACTION_RANGE - 4;
+                                                if ((ok && (!bestOk || wk < bestWalk)) || (!ok && !bestOk && ra < bestReach)) {
+                                                    best = c; bestReach = ra; bestWalk = wk;
+                                                }
+                                            }
+                                        }
+                                        if (best) target = best;
+                                    }
+                                }
+                                movePlayerToPoint(target.x, target.y);
                             }
                         }
                         return; // Handled (either interact or move)

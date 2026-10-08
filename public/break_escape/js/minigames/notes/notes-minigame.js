@@ -1,5 +1,6 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
+import { renderNoteMarkdown } from '../../utils/note-markdown.js';
 
 // Load fonts
 const fontLink1 = document.createElement('link');
@@ -124,7 +125,7 @@ export class NotesMinigame extends MinigameScene {
         // Add note content
         const noteText = document.createElement('div');
         noteText.className = 'notes-minigame-text';
-        noteText.textContent = displayDashes(this.noteContent);
+        noteText.innerHTML = renderNoteMarkdown(displayDashes(this.noteContent));
         textBox.appendChild(noteText);
         
         contentArea.appendChild(textBox);
@@ -380,7 +381,7 @@ export class NotesMinigame extends MinigameScene {
         }
         
         if (noteText) {
-            noteText.textContent = displayDashes(this.noteContent);
+            noteText.innerHTML = renderNoteMarkdown(displayDashes(this.noteContent));
         }
         
         // Update observation container

@@ -366,5 +366,47 @@ module BreakEscape
       assert_nil held['flags'], 'NPC-held device leaked flag values'
       assert_equal 1, held['flagCount']
     end
+
+    test 'password room keeps its pad options but loses the answer' do
+      scenario = @scenario_data.deep_dup
+      scenario['rooms']['next_room'].merge!(
+        'locked' => true, 'lockType' => 'password', 'requires' => 'hunter2',
+        'maxAttempts' => 6, 'passwordHint' => 'A pet', 'showHint' => true,
+        'postitNote' => 'Pet name', 'showPostit' => true, 'showKeyboard' => true
+      )
+      game = Game.new(mission: break_escape_missions(:ceo_exfil),
+                      player: break_escape_demo_users(:test_user),
+                      scenario_data: scenario)
+      game.save(validate: false)
+
+      room = game.send(:filtered_room_data, 'next_room')
+      assert_nil room['requires'], 'the answer must not reach the client'
+      assert_equal 6, room['maxAttempts']
+      assert_equal 'A pet', room['passwordHint']
+      assert_equal true, room['showHint']
+      assert_equal 'Pet name', room['postitNote']
+      assert_equal true, room['showPostit']
+      assert_equal true, room['showKeyboard']
+    end
+
+    test 'bootstrap keeps door pad options for locked rooms and drops the answer' do
+      scenario = @scenario_data.deep_dup
+      scenario['rooms']['next_room'].merge!(
+        'locked' => true, 'lockType' => 'password', 'requires' => 'hunter2',
+        'maxAttempts' => 6, 'passwordHint' => 'A pet', 'showHint' => true, 'showKeyboard' => true
+      )
+      game = Game.new(mission: break_escape_missions(:ceo_exfil),
+                      player: break_escape_demo_users(:test_user),
+                      scenario_data: scenario)
+      game.save(validate: false)
+
+      room = game.filtered_scenario_for_bootstrap['rooms']['next_room']
+      assert_equal 6, room['maxAttempts']
+      assert_equal 'A pet', room['passwordHint']
+      assert_equal true, room['showHint']
+      assert_equal true, room['showKeyboard']
+      # `requires` stays in this layer; the controller strips it before sending
+      assert_nil room['objects'], 'contents are still lazy-loaded'
+    end
   end
 end

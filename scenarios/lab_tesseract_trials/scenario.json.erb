@@ -1,0 +1,961 @@
+<%
+# ============================================================================
+# THE KEYHOLDER TRIALS (folder lab_tesseract_trials) - scenario file
+# Lab scenario with SAFETYNET spy framing. Design: DESIGN.md (v4).
+#
+# Per-game generation. Rules (DESIGN section 5):
+#  - no `def` here: methods would land on the shared ScenarioBinding class, so
+#    helpers are lambdas with a kh_ prefix and everything else is a local;
+#  - every interpolated string goes through .to_json;
+#  - no generated value ever appears in a spoken line (ink, barks, timed texts),
+#    because the TTS batch renders this template separately;
+#  - copyable text is ciphertext only; instructions go in observations.
+# Proof that each recipe gives back its answer: tools/verify_*.
+# ============================================================================
+require 'openssl'
+require 'base64'
+require 'securerandom'
+
+kh_words_t1 = %w[lantern harbour compass granite meadow falcon orchard thistle bramble cobble ember fennel gravel heather hollow kettle lichen marrow nettle pebble quill saddle sorrel tinder willow yarrow]
+kh_words_t3 = %w[signal beacon quartz pewter cobalt saffron juniper marble amber basalt cinder copper indigo jasper lantana magenta nickel ochre pumice russet silver tawny umber velvet walnut zircon]
+kh_words_t4 = %w[stairwell archway landing bellrope clocktower gargoyle balcony buttress cloister corbel cupola doorway gable gallery lintel mezzanine parapet portico quadrangle rafter spire steeple transom turret vestibule wainscot]
+kh_words_t6 = %w[parchment vellum folio quarto codex scroll almanac atlas binding chapbook colophon errata flyleaf gazetteer glossary incunable lexicon marginalia octavo palimpsest primer quire recto treatise verso woodcut]
+kh_vig_keys = %w[ledger merkle nonce tally anchor witness]
+kh_passphrase = %w[keyholder lockstock deadbolt tumbler skeleton keystone padlock latchkey wardkey mortise]
+kh_token_word = %w[kestrel osprey merlin hobby peregrine harrier]
+kh_porter_word = %w[postmark franking satchel parcel sorting letterbox]
+
+kh_pin4 = -> { format('%04d', rand(1000..9999)) }
+# Caesar exactly as CyberChef's ROT13 operation: letters only, case kept
+kh_caesar = lambda do |text, n|
+  text.gsub(/[a-z]/) { |ch| ((ch.ord - 97 + n) % 26 + 97).chr }
+      .gsub(/[A-Z]/) { |ch| ((ch.ord - 65 + n) % 26 + 65).chr }
+end
+# Vigenere exactly as CyberChef's "Vigenère Encode": key advances only on letters
+kh_vigenere = lambda do |text, key|
+  k = key.downcase.chars.map { |ch| ch.ord - 97 }
+  i = 0
+  text.chars.map do |ch|
+    if ch =~ /[a-z]/
+      r = ((ch.ord - 97 + k[i % k.size]) % 26 + 97).chr; i += 1; r
+    elsif ch =~ /[A-Z]/
+      r = ((ch.ord - 65 + k[i % k.size]) % 26 + 65).chr; i += 1; r
+    else
+      ch
+    end
+  end.join
+end
+
+# --- L1: ASCII decimal, spaced (Jordan's leaflet) ---
+kh_l1 = kh_words_t1.sample
+kh_leaflet_text = kh_l1.bytes.join(' ')
+# --- L2: the PIN's digits as ASCII codes, run together ---
+kh_l2 = kh_pin4.call
+kh_card2_text = kh_l2.bytes.join('')
+# --- L3: binary ---
+kh_l3 = kh_words_t3.sample
+kh_card3_text = kh_l3.bytes.map { |b| format('%08b', b) }.join(' ')
+# --- L4: hex, run together ---
+kh_l4 = kh_words_t4.sample
+kh_trial4_hex = "corridor door passphrase: #{kh_l4}".unpack1('H*')
+# --- L5: Base64 ---
+kh_l5 = kh_pin4.call
+kh_poster5 = Base64.strict_encode64("The returns shelf has your next trial. Library keypad: #{kh_l5}")
+# --- L6: Base64 around Caesar shift 6 ---
+kh_l6 = kh_words_t6.sample
+kh_slip6 = Base64.strict_encode64(kh_caesar.call("Special Collections safe password: #{kh_l6}", 6))
+
+# --- Player key pair (Tom's lab account) ---
+kh_player = OpenSSL::PKey::RSA.new(2048)
+kh_player_priv = kh_player.to_pem.strip
+kh_player_pub = kh_player.public_key.to_pem.strip
+
+# --- L8: AES-128-CBC; key sealed to the player's public key; IV only in Trial VII ---
+kh_aes_key = SecureRandom.random_bytes(16)
+kh_aes_iv = SecureRandom.random_bytes(16)
+kh_l8 = kh_passphrase.sample + '-' + rand(10..99).to_s
+kh_cipher = OpenSSL::Cipher.new('aes-128-cbc')
+kh_cipher.encrypt
+kh_cipher.key = kh_aes_key
+kh_cipher.iv = kh_aes_iv
+kh_tag_hex = (kh_cipher.update(kh_l8) + kh_cipher.final).unpack1('H*')
+kh_iv_hex = kh_aes_iv.unpack1('H*')
+kh_env_raw = nil
+loop do
+  kh_env_raw = kh_player.public_encrypt(kh_aes_key.unpack1('H*'), OpenSSL::PKey::RSA::PKCS1_OAEP_PADDING)
+  break unless kh_env_raw.dup.force_encoding('UTF-8').valid_encoding?
+end
+kh_envelope = Base64.strict_encode64(kh_env_raw)
+
+# --- L7: Vigenere; key on Sidhu's whiteboard; plaintext gives porter's code, pigeonhole, IV ---
+kh_vkey = kh_vig_keys.sample
+kh_hole = rand(2..5)
+kh_l7 = kh_porter_word.sample + '-' + rand(10..99).to_s
+kh_hole_word = %w[zero one two three four five six][kh_hole]
+kh_trial7 = kh_vigenere.call("Yours is pigeonhole number #{kh_hole_word}. Your envelope is sealed to your public key. The IV for the drop box is #{kh_iv_hex} and the pigeonholes open with #{kh_l7}", kh_vkey)
+# the four pigeonholes: the player's envelope in kh_hole, three decoys sealed to other keys
+kh_pigeon = {}
+(2..5).each do |n|
+  if n == kh_hole
+    kh_pigeon[n] = kh_envelope
+  else
+    other = OpenSSL::PKey::RSA.new(2048)
+    kh_pigeon[n] = Base64.strict_encode64(other.public_encrypt(SecureRandom.hex(16), OpenSSL::PKey::RSA::PKCS1_OAEP_PADDING))
+  end
+end
+
+# --- L10: first 8 hex of SHA-256 of the drop box passphrase ---
+kh_l10 = OpenSSL::Digest::SHA256.hexdigest(kh_l8)[0, 8]
+
+# --- Climax: Ghost's report with a tracking pixel; hash; signature ---
+kh_ghost = OpenSSL::PKey::RSA.new(2048)
+kh_token = "#{kh_token_word.sample}-#{rand(1000..9999)}"
+kh_report_plain = <<~TXT.strip
+  KEYHOLDER FIELD REPORT
+  FROM: Agent 0x00 (undercover, Miskatonic University UK)
+  TO: Agent HaX
+  STATUS: Recruited. Candidate passed all trials. Recruiter met on screen only.
+  ASSESSMENT: Cell interested in crypto students for future operations. No names yet.
+  RECOMMENDATION: Maintain cover. Await next contact.
+  <img src="https://cdn.cryptosecure-recovery.example/px/locate/#{kh_token}/1x1.png" width="1" height="1">
+TXT
+kh_report_b64 = Base64.strict_encode64(kh_report_plain)
+kh_report_sha = OpenSSL::Digest::SHA256.hexdigest(kh_report_b64)
+kh_report_sig = Base64.strict_encode64(kh_ghost.sign(OpenSSL::Digest::SHA256.new, kh_report_b64))
+kh_ghost_pub = kh_ghost.public_key.to_pem.strip
+kh_fingerprint = OpenSSL::Digest::SHA256.hexdigest(kh_ghost_pub)[0, 16]
+
+# --- Optional: EBCDIC (code page 037) job tape ---
+kh_ebcdic = "MISKATONIC UNIVERSITY COMPUTING SERVICE 1979. JOB 0412 OWNER [REDACTED]. PROJECT KEYHOLDER. STATUS: STILL RUNNING.".encode('IBM037').unpack1('H*').scan(/../).join(' ')
+
+# --- Static texts (field notes and documents). No per-game values in here. ---
+kh_txt = {}
+kh_txt[:brief] = "Freshers' week at Miskatonic University UK. CryptoSecure Recovery, the front for Ransomware Incorporated, is talent-spotting first-years through a puzzle trail called the Keyholder Trials. You're undercover as a student. Get picked. Every Trial opens with something you decode in CyberChef: get a lab laptop from Dr Shaw in the lecture theatre first. If your phone is ever compromised, submit what HaX most needs to know as a flag on a Hacktivity terminal (lower case, exactly as found); the one in this building is in Dr Schreuders' workshop."
+kh_txt[:comms] = "COMMS DISCIPLINE\n\nIf you think your handset is compromised, don't message me.\n\nSubmit what I most need to know as a flag on any Hacktivity terminal. It reaches me and nobody else.\n\nFlags are lower case, exactly as you find them: usually a word, a dash and some digits.\n\nThe only Hacktivity terminal in that building is in Dr Schreuders' workshop.\n\n- H."
+# A markdown table (the notebook renders markdown): Dec, Hex and Char, three blocks of 32 side by side.
+# Characters markdown would read (pipe, star, backtick, backslash) are backslash-escaped.
+kh_ascii_cell = lambda do |n|
+  next ['', '', ''] if n > 126
+  ch = n == 32 ? 'space' : n.chr
+  ch = "\\#{ch}" if %w[| * ` \\].include?(ch)
+  [n.to_s, format('%02X', n), ch]
+end
+kh_ascii_rows = (32..63).map { |n| '| ' + [n, n + 32, n + 64].flat_map { |m| kh_ascii_cell.call(m) }.join(' | ') + ' |' }
+kh_txt[:ascii] = "ASCII CHART (printable characters)\n\n" \
+  "| Dec | Hex | Char | Dec | Hex | Char | Dec | Hex | Char |\n" \
+  "|---:|---:|:---:|---:|---:|:---:|---:|---:|:---:|\n" + kh_ascii_rows.join("\n")
+kh_txt[:tape] = "PUNCHED PAPER TAPE, 1979\n\n  ○ ● ○ ○ ● ○ ○ ○\n  ○ ● ○ ○ ● ○ ○ ●\n\nEach row across the tape is one byte: a hole (●) is a 1, no hole (○) is a 0.\nRow 1: 01001000 = 64 + 8 = 72 = H\nRow 2: 01001001 = 64 + 8 + 1 = 73 = I"
+kh_txt[:fn01] = "FIELD NOTE 1: BITS, BYTES, BASES, AND CYBERCHEF\n(from Dr Shaw's induction pack)\n\nWHAT IT IS\nA bit is 0 or 1. Eight bits make a byte: 256 possible values, 0-255.\nPlace values, left to right: 128 64 32 16 8 4 2 1.\nWorked: 01001101 = 64 + 8 + 4 + 1 = 77. The same value is 4D in hex.\nOne hex digit is exactly four bits, so a byte is always two hex digits.\n\nDRIVING CYBERCHEF\n1. Copy the code, never retype it: in a note, drag across the text and press Ctrl+C (Cmd+C on a Mac); files have a Copy button, which copies exactly what's in the file: use it rather than selecting a file's text by hand. Paste into Input (top right).\n2. Type the operation's name in Search (top left) and double-click it to add it to the Recipe (middle).\n3. The answer appears in Output (bottom right). The bin icon on the Recipe clears it.\n4. Answers are exact: type them as they come out, lower case, with no full stop after them.\nThe up-arrow next to the cross on the laptop pops CyberChef into its own tab, recipe and all.\nYour notepad has a pencil on every page: write down anything you'll need later there.\n\nON THE COMMAND LINE\nprintf '%d\\n' 0x4D"
+kh_txt[:fn02] = "FIELD NOTE 2: CHARACTERS ARE NUMBERS\n\nWHAT IT IS\nA character encoding is an agreed table from numbers to characters. ASCII covers English letters, digits and punctuation in 0-127.\n\"A\" = 65, \"a\" = 97, space = 32, and the digit \"4\" is 52, not 4.\n\nHOW TO SPOT IT\nNumbers between 32 and 126, usually separated by spaces.\nDecimal codes are 2 or 3 digits long, so codes run together need splitting by thinking about the range: digits (48-57) are two digits each; lowercase letters (97-122) are three.\nCyberChef can't guess where one code ends. Type a space between the codes in Input yourself: 52535455 becomes 52 53 54 55.\nIf you get capital letters instead of what you expected, something has read your digits as hex.\n\nIN CYBERCHEF\nFrom Decimal\n\nON THE COMMAND LINE\npython3 -c \"print(bytes([104,105]).decode())\""
+kh_txt[:fn03] = "FIELD NOTE 3: HEX AND BINARY\n\nWHAT IT IS\nHex uses 0-9 and a-f for the values 0-15. Two hex digits per byte, always, so hex can run together and still be read, unlike decimal.\nBinary is eight 0s and 1s per byte.\n\nHOW TO SPOT IT\nHex: only 0-9 and a-f, an even number of them.\nBinary: only 0 and 1, in groups of eight.\n\nIN CYBERCHEF\nFrom Hex, From Binary\n\nON THE COMMAND LINE\necho 6869 | xxd -r -p"
+kh_txt[:fn04] = "FIELD NOTE 4: BASE64\n\nHandler note: posters on campus aren't usually written in this. Take a look. - H.\n\nWHAT IT IS\nTake the bytes three at a time (24 bits), cut them into four 6-bit pieces, and write each piece as one of 64 symbols: A-Z, a-z, 0-9, + and /. \"=\" pads the end.\nWorked: \"Hi!\" = 01001000 01101001 00100001 -> 010010 000110 100100 100001 -> 18 6 36 33 -> S G k h.\nIt's an encoding, not encryption: there's no key, and CyberChef's Magic undoes it for anyone.\nA .pem key file is Base64 too, between two header lines.\n\nHOW TO SPOT IT\nThat alphabet, a length that's a multiple of 4, often ending in = or ==.\n\nIN CYBERCHEF\nFrom Base64\n\nON THE COMMAND LINE\necho SGkh | base64 -d"
+kh_txt[:fn05] = "FIELD NOTE 5: LAYERS, AND YOUR FIRST KEY\n\nWHAT IT IS\nEncodings stack. Peel the outside layer first and look at what's left.\nA Caesar cipher shifts every letter the same number of places. The shift is the key. There are only 25 possible keys, so trying them all is quick, which is why it isn't secure.\n\nHOW TO SPOT IT\nAfter decoding, words of normal lengths made of the wrong letters.\n\nIN CYBERCHEF\nCyberChef's Caesar operation is called ROT13 (searching \"caesar\" lists Caesar Box Cipher first, which is a different cipher). From Base64, then ROT13 with Amount set to minus the shift: a shift of 3 is undone by -3. Or ROT13 Brute Force, which tries every shift.\n\nON THE COMMAND LINE\ntr 'D-ZA-Cd-za-c' 'A-Za-z'   (undoes a shift of 3)"
+kh_txt[:fn06] = "FIELD NOTE 6: VIGENERE\n\nWHAT IT IS\nThe key is a word. Each letter of the key gives the shift for one letter of the message, then the key repeats. The same letter can encrypt differently each time, so counting letters stops working.\nWithout the key you're stuck. Keys travel separately from messages.\n\nHOW TO SPOT IT\nScrambled words of normal lengths, with punctuation and digits left alone.\n\nIN CYBERCHEF\nVigenère Decode (Key: the word).\nCopy only the ciphertext, with the file's Copy button: any letters before it, such as a file name or heading caught in a hand selection, knock the key out of step.\nWrite down what the plaintext tells you with your notepad's pencil.\n\nON THE COMMAND LINE\nNo standard tool. A five-line Python loop does it."
+kh_txt[:fn07] = "FIELD NOTE 7: HASHES AND FINGERPRINTS\n\nWHAT IT IS\nA hash turns any input into a fixed-length fingerprint. SHA-256 gives 256 bits, which is 64 hex digits, because each hex digit is four bits.\nSame input, same hash. Change one byte, even an invisible new line, and it changes completely. You can't run it backwards.\nUsed to check nothing has changed, and to store passwords without storing them.\n\nIN CYBERCHEF\nSHA2, and set Size to 256 (it starts on 512). Leave Rounds alone.\nEasiest: add SHA2 underneath the operation that produced your input, so no stray new line gets in.\n\nON THE COMMAND LINE\nprintf '%s' 'text' | sha256sum   (echo adds a new line, so its hash differs)"
+kh_txt[:fn08] = "FIELD NOTE 8: SYMMETRIC ENCRYPTION, AES\n\nWHAT IT IS\nOne shared secret key locks and unlocks. DES used 56-bit keys (2^56 possibilities: now too few). AES uses 128, 192 or 256 bits.\nAES works on 16-byte blocks. CBC mode mixes each block with the one before, and the first block with an IV. An IV needn't be secret, but it has to arrive with the message.\nGetting the key to the other person safely is the key distribution problem.\n\nIN CYBERCHEF\nAES Decrypt: paste the key and the IV (both hex). Leave everything else as it is.\n\nON THE COMMAND LINE\nxxd -r -p ct.hex | openssl enc -d -aes-128-cbc -K <key> -iv <iv>"
+kh_txt[:fn09] = "FIELD NOTE 9: PUBLIC-KEY ENCRYPTION\n\nHandler note: Dr Shaw put your key pair on your lab account. You'll want the private one. - H.\n\nWHAT IT IS\nTwo keys that belong together. The public key can go to anyone. For encryption, it only locks. The private key stays with you and unlocks.\nYour public key sits in a directory, so anyone can send you a secret using a key that was never secret. That answers the key distribution problem.\nReal systems send a fresh AES key this way (hybrid encryption). So does ransomware.\nKeep private keys secret, as with symmetric keys.\n\nIN CYBERCHEF\nFrom Base64, then RSA Decrypt: paste your private key PEM. Leave the rest.\n\nON THE COMMAND LINE\nbase64 -d env.b64 | openssl pkeyutl -decrypt -inkey private.pem -pkeyopt rsa_padding_mode:oaep"
+kh_txt[:fn10] = "FIELD NOTE 10: SIGNATURES\n\nWHAT IT IS\nThe sender signs a hash of the message with their private key. Anyone with their public key can check it. Change one character and the check fails.\nA signature proves which key signed something, and that nothing has changed since. Whose key that is, and what the text claims, are separate questions. It hides nothing, so read what you send. A document can even carry a remote image that reports where it was opened.\nCheck exactly what was signed: if they signed a Base64 file, decode it and you're checking a different message.\nGet the sender's public key from somewhere you trust, and compare its fingerprint.\n\nIN CYBERCHEF\nFrom Base64 on the signature, then RSA Verify:\n - paste the public key;\n - Message = the signed text exactly as given;\n - Message format: leave on Raw;\n - Message Digest Algorithm: SHA-256.\n\"Verified OK\" means it checks out.\n\nON THE COMMAND LINE\nopenssl dgst -sha256 -verify pub.pem -signature sig.bin msg"
+kh_txt[:fn13] = "FIELD NOTE 13: LOOKALIKE LETTERS\n(from Dr Illiashenko)\n\nWHAT IT IS\nDifferent alphabets share shapes. The English \"e\" is one byte, 65 in hex. The Cyrillic \"е\" looks the same on screen but is a different character: two bytes, d0 b5, in UTF-8. Computers compare bytes, not shapes, so two names that look identical can be two different names.\nAttackers use this for lookalike usernames and web addresses (a homograph attack): a link to your bank with one letter swapped looks right and goes somewhere else.\n\nHOW TO SPOT IT\nYou can't, by eye. Check the bytes.\n\nIN CYBERCHEF\nTo Hex on each name. Plain English letters are one byte (two hex digits) each. A Cyrillic letter is two bytes and starts d0 or d1.\nSHA2 on each name gives a completely different hash, which is why a password check or a signature treats them as different.\n\nON THE COMMAND LINE\nprintf '%s' 'olеg' | xxd"
+kh_txt[:fn12] = "FIELD NOTE 12: MOJIBAKE\n(from Dr Illiashenko)\n\nWHAT IT IS\nText is stored as bytes, and a character encoding is the table that turns bytes back into letters. UTF-8 stores each Cyrillic letter as two bytes. Read those bytes with a one-byte table such as Windows-1251 (Cyrillic) or Windows-1252 (Western), and every letter turns into two wrong ones. The bytes are fine. Only the table is wrong.\nWorked: the Cyrillic letter \"О\" is the bytes D0 9E in UTF-8. Windows-1251 reads D0 as \"Р\" and 9E as \"ћ\", so \"О\" shows as \"Рћ\".\n\nHOW TO SPOT IT\nText that should read normally but is full of repeating pairs: Р and С in front of nearly every letter (UTF-8 read as Windows-1251), or Ã and Ð (UTF-8 read as Windows-1252).\n\nIN CYBERCHEF\nUndo the wrong reading, then do the right one:\n1. Encode text, Encoding: Windows-1251 Cyrillic (1251). This turns the wrong letters back into the original bytes.\n2. Decode text, Encoding: UTF-8 (65001).\nNo key and no secret: this is an encoding problem, not encryption.\n\nON THE COMMAND LINE\nprintf '%s' 'РћР»РµРі' | iconv -f UTF-8 -t CP1251"
+kh_txt[:fn11] = "FIELD NOTE 11: NOT EVERYTHING IS ASCII\n\nWHAT IT IS\nIBM mainframes used EBCDIC, where \"A\" is 0xC1, not 0x41. Same letters, a different table, so the bytes look like nonsense if you assume ASCII.\n\nIN CYBERCHEF\nFrom Hex, then Decode text (IBM EBCDIC US-Canada (37)).\n\nON THE COMMAND LINE\nxxd -r -p tape.hex | iconv -f IBM037 -t UTF-8"
+kh_txt[:readme] = "README\n\nYour lab account has a key pair: two keys made together.\nA .pem file is the key's bytes in Base64 between two header lines.\nYour public key goes in the department directory, so anyone can use it to send you something. That's the point.\nThe private key stays private. Don't email it to anyone, including me.\n\n- T. Shaw"
+kh_txt[:assessments] = "CANDIDATE ASSESSMENTS (Keyholder Studentship)\n\nC1. Strong on encodings, weak on patience. Retain for now.\nC2. Asked Magic for everything. Release.\nC3. Megan Oyelaran. Overdraft eleven thousand four hundred pounds; mother's care-home fees two months behind. Quick, proud, short of options. Highly retainable.\nC4. Copied C1's answers. Release both.\nC5. Has not yet opened the lockbox. Unlikely.\nC6. Strong, careful, and asks the wrong questions for a student.\nC7. See separate file."
+kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds the data \"genesis-0\" (prev 0000, hash 7c1e).\nBlock 2 holds the data \"alice->bob\" (prev 7c1e, hash 9b04).\nBlock 3 holds the data \"bob->carol\" (prev 9b04, hash e21d).\nBlock 4, the last entry, holds the data \"%s\" (prev e21d, hash 51a8).\nChange one letter in block 2 and every hash after it changes."
+%>
+{
+  "scenario_brief": <%= kh_txt[:brief].to_json %>,
+  "show_scenario_brief": "once",
+  "disableAttacks": true,
+  "startRoom": "foyer",
+
+  "narrator": {
+    "id": "narrator",
+    "skipTextValidation": true,
+    "voice": { "name": "Algenib", "style": "Cinematic narrator for a spy thriller set at a British university. Calm, low, unhurried. Consistent British Received Pronunciation throughout.", "language": "en-GB" }
+  },
+
+  "validSprites": ["male_hacker_hood", "male_hacker_hood_down", "female_hacker_hood", "female_hacker_hood_down"],
+
+  "player": {
+    "id": "player",
+    "displayName": "Agent 0x00",
+    "spriteSheet": "female_hacker_hood_v2",
+    "spriteTalk": "assets/characters/female_hacker_hood_talk.png",
+    "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 12 }
+  },
+
+  "startItemsInInventory": [
+    {
+      "type": "phone",
+      "name": "Your Phone",
+      "takeable": true,
+      "phoneId": "player_phone",
+      "npcIds": ["agent_0x99"],
+      "observations": "Your secure phone, with a line to Agent HaX."
+    }
+  ],
+
+  "globalVariables": {
+    "player_name": "Agent 0x00",
+    "briefing_played": false,
+    "comms_had": false,
+    "lockbox_open": false,
+    "locker_open": false,
+    "guest_terminal_open": false,
+    "corridor_open": false,
+    "library_open": false,
+    "special_collections_open": false,
+    "pigeonholes_open": false,
+    "drop_box_open": false,
+    "workshop_open": false,
+    "relay_opened": false,
+    "ghost_greeted": false,
+    "ghost_offer_made": false,
+    "decision_made": false,
+    "ending": "",
+    "warned_out_of_band": false,
+    "late_warning": false,
+    "ghost_offer_heard": false,
+    "report_read_claimed": "",
+    "refusal_reported": false,
+    "megan_file_read": false,
+    "megan_choice": "",
+    "megan_choice_made": false,
+    "ebcdic_seen": false,
+    "staff_list_read": false,
+    "lookalike_seen": false,
+    "fn04_offered": false,
+    "fn05_offered": false,
+    "fn06_offered": false,
+    "fn07_offered": false,
+    "fn08_offered": false,
+    "fn09_offered": false,
+    "fn10_offered": false,
+    "fn11_offered": false,
+    "fn07_had": false,
+    "fn10_had": false,
+    "start_debrief_cutscene": false
+  },
+
+  "objectives": [
+    {
+      "aimId": "freshers_week",
+      "title": "Freshers' Week",
+      "description": "Get set up as a first-year, and get noticed by CryptoSecure.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "get_lab_laptop", "title": "Get a lab laptop from Dr Shaw", "type": "npc_conversation", "targetNPC": "tom_shaw", "status": "active" },
+        { "taskId": "visit_stand", "title": "Visit the CryptoSecure stand", "type": "npc_conversation", "targetNPC": "jordan_pike", "status": "active" },
+        { "taskId": "read_byte_wall", "title": "Look at the Byte Wall", "type": "manual", "status": "active", "optional": true }
+      ]
+    },
+    {
+      "aimId": "trials_bits",
+      "title": "The Trials: Bits and Bytes",
+      "description": "Each Trial hides the way into the next.",
+      "status": "locked",
+      "order": 1,
+      "unlockCondition": { "aimCompleted": "freshers_week" },
+      "tasks": [
+        { "taskId": "open_lockbox", "title": "Open the CryptoSecure lockbox", "type": "unlock_object", "targetObject": "cryptosecure_lockbox", "status": "active", "onComplete": { "setGlobal": { "lockbox_open": true } } },
+        { "taskId": "open_locker", "title": "Open candidate locker 4", "type": "unlock_object", "targetObject": "candidate_locker_4", "status": "active", "onComplete": { "setGlobal": { "locker_open": true } } },
+        { "taskId": "open_guest_terminal", "title": "Get into the guest terminal in the teaching lab", "type": "unlock_object", "targetObject": "keyholder_guest_terminal", "status": "active", "onComplete": { "setGlobal": { "guest_terminal_open": true } } },
+        { "taskId": "open_corridor", "title": "Open the Computing corridor door", "type": "unlock_room", "targetRoom": "corridor", "status": "active", "onComplete": { "setGlobal": { "corridor_open": true } } }
+      ]
+    },
+    {
+      "aimId": "trials_keys",
+      "title": "The Trials: Secrets and Keys",
+      "description": "The Trials move from encodings to ciphers with keys.",
+      "status": "locked",
+      "order": 2,
+      "unlockCondition": { "aimCompleted": "trials_bits" },
+      "tasks": [
+        { "taskId": "open_library", "title": "Get into the library", "type": "unlock_room", "targetRoom": "library", "status": "active", "onComplete": { "setGlobal": { "library_open": true } } },
+        { "taskId": "open_special_collections", "title": "Open the Special Collections safe", "type": "unlock_object", "targetObject": "special_collections_safe", "status": "active", "onComplete": { "setGlobal": { "special_collections_open": true } } },
+        { "taskId": "consult_sidhu", "title": "Talk to Dr Selvarajan", "type": "npc_conversation", "targetNPC": "sidhu_selvarajan", "status": "active", "optional": true },
+        { "taskId": "open_pigeonholes", "title": "Open the pigeonholes", "type": "unlock_object", "targetObject": "pigeonholes", "status": "active", "onComplete": { "setGlobal": { "pigeonholes_open": true } } },
+        { "taskId": "open_drop_box", "title": "Open the CryptoSecure drop box", "type": "unlock_object", "targetObject": "cryptosecure_drop_box", "status": "active", "onComplete": { "setGlobal": { "drop_box_open": true } } }
+      ]
+    },
+    {
+      "aimId": "the_keyholder",
+      "title": "The Keyholder",
+      "description": "The last Trial is behind a locked door.",
+      "status": "locked",
+      "order": 3,
+      "unlockCondition": { "aimCompleted": "trials_keys" },
+      "tasks": [
+        { "taskId": "open_workshop", "title": "Get into the workshop", "type": "unlock_room", "targetRoom": "workshop", "status": "active", "onComplete": { "setGlobal": { "workshop_open": true } } },
+        { "taskId": "open_relay_terminal", "title": "Open the relay terminal", "type": "unlock_object", "targetObject": "relay_terminal", "status": "active", "onComplete": { "setGlobal": { "relay_opened": true } } }
+      ]
+    },
+    {
+      "aimId": "the_offer",
+      "title": "The Offer",
+      "description": "Decide what to do with the Keyholder's report.",
+      "status": "locked",
+      "order": 4,
+      "unlockCondition": { "aimCompleted": "the_keyholder" },
+      "missionConclusion": true,
+      <%# The relay terminal's answer depends on every earlier Trial, so its task is the
+          technical work the ending must not skip. Story tasks are deliberately absent. %>
+      "concludeRequires": { "tasksCompleted": ["open_relay_terminal"] },
+      "conclusionScreen": { "type": "bond_visualiser" },
+      "tasks": [
+        { "taskId": "answer_the_keyholder", "title": "Answer the Keyholder", "type": "manual", "status": "active" },
+        { "taskId": "warn_handler", "title": "Use the fallback channel (optional)", "type": "unlock_object", "targetObject": "hacktivity_scoreboard", "status": "active", "optional": true, "onComplete": { "setGlobal": { "warned_out_of_band": true } } },
+        { "taskId": "hear_debrief", "title": "Report back to Agent HaX", "type": "custom", "status": "active" }
+      ]
+    },
+    {
+      "aimId": "loose_threads",
+      "title": "Loose Threads",
+      "description": "Someone else is on the Keyholder's list.",
+      "status": "locked",
+      "order": 5,
+      "unlockCondition": { "globalVariable": "megan_file_read" },
+      "tasks": [
+        { "taskId": "decide_about_megan", "title": "Decide what to do about Megan", "type": "manual", "status": "active", "optional": true }
+      ]
+    }
+  ],
+
+  "music": {
+    "events": [
+      { "trigger": "game_loaded", "condition": "!globalVars.briefing_played", "playlist": "cutscene", "fade": false },
+      { "trigger": "game_loaded", "condition": "globalVars.briefing_played === true", "playlist": "noir", "fade": false },
+      { "trigger": "conversation_closed:briefing_cutscene", "playlist": "noir", "fade": true },
+      { "trigger": "global_variable_changed:relay_opened", "condition": "value === true && !globalVars.decision_made", "playlist": "spy-action", "track": "Cold Bond Circuit", "fade": true },
+      <%# U3: back to noir for the walk-out after a refusal or a blown line %>
+      { "trigger": "global_variable_changed:decision_made", "condition": "value === true && globalVars.ending === 'refused'", "playlist": "noir", "fade": true },
+      { "trigger": "global_variable_changed:decision_made", "condition": "value === true && globalVars.ending === 'blown'", "playlist": "noir", "fade": true },
+      { "trigger": "global_variable_changed:start_debrief_cutscene", "condition": "value === true", "playlist": "cutscene", "fade": true },
+      {
+        "trigger": "conversation_closed:closing_debrief_person",
+        "playlist": "victory",
+        "track": "Hacktivity Neon",
+        "autoStop": true,
+        "disableClose": true,
+        "fade": true,
+        "credits": [
+          { "text": "KEYHOLDER: OFFER WITHDRAWN", "style": "title", "condition": "globalVars.ending === 'sent'" },
+          { "text": "KEYHOLDER: OFFER WITHDRAWN", "style": "title", "condition": "globalVars.ending === 'double'" },
+          { "text": "KEYHOLDER: DECLINED", "style": "title", "condition": "globalVars.ending === 'refused'" },
+          { "text": "KEYHOLDER: DECLINED", "style": "title", "condition": "globalVars.ending === 'blown'" },
+          { "text": "THE KEYHOLDER TRIALS", "style": "subtitle" },
+          { "text": "" },
+          { "text": "── HANDLER ──", "style": "section-header" },
+          { "text": "THE FIELD HQ: Burned at four. Kit and cover lost. Nobody hurt.", "style": "entry", "condition": "globalVars.ending === 'sent'" },
+          { "text": "AGENT HaX: Working from the fallback site.", "style": "entry", "condition": "globalVars.ending === 'sent'" },
+          { "text": "REPORT: Read, and sent.", "style": "entry", "condition": "globalVars.ending === 'sent' && globalVars.report_read_claimed === 'read' && globalVars.late_warning !== true" },
+          { "text": "REPORT: Sent unread.", "style": "entry", "condition": "globalVars.ending === 'sent' && globalVars.report_read_claimed === 'unread'" },
+          { "text": "REPORT: Read, sent, then flagged. Too late.", "style": "entry", "condition": "globalVars.ending === 'sent' && globalVars.late_warning === true" },
+          { "text": "DECOY FLAT, LEEDS: One visitor at four. Photographed.", "style": "entry", "condition": "globalVars.ending === 'double'" },
+          { "text": "AGENT HaX: Unharmed.", "style": "entry", "condition": "globalVars.ending === 'refused'" },
+          { "text": "AGENT HaX: Unharmed.", "style": "entry", "condition": "globalVars.ending === 'blown'" },
+          { "text": "AGENT HaX: Still your handler.", "style": "entry" },
+          { "text": "THE KEYHOLDER STUDENTSHIP: Never awarded.", "style": "entry" },
+          { "text": "" },
+          { "text": "── CAMPUS ──", "style": "section-header" },
+          { "text": "MEGAN OYELARAN: Walked away from CryptoSecure.", "style": "entry", "condition": "globalVars.megan_choice === 'warned'" },
+          { "text": "MEGAN OYELARAN: A bursary from a donor she'll never meet.", "style": "entry", "condition": "globalVars.megan_choice === 'protected'" },
+          { "text": "MEGAN OYELARAN: Took the CryptoSecure placement.", "style": "entry", "condition": "globalVars.megan_choice === '' && globalVars.ending === 'sent'" },
+          { "text": "MEGAN OYELARAN: Took the CryptoSecure placement.", "style": "entry", "condition": "globalVars.megan_choice === '' && globalVars.ending === 'double'" },
+          { "text": "MEGAN OYELARAN: Still looking for the money.", "style": "entry", "condition": "globalVars.megan_choice === '' && globalVars.ending === 'refused'" },
+          { "text": "MEGAN OYELARAN: Still looking for the money.", "style": "entry", "condition": "globalVars.megan_choice === '' && globalVars.ending === 'blown'" },
+          { "text": "JORDAN PIKE: Referral bonus paid.", "style": "entry", "condition": "globalVars.ending === 'sent'" },
+          { "text": "JORDAN PIKE: Referral bonus paid.", "style": "entry", "condition": "globalVars.ending === 'double'" },
+          { "text": "JORDAN PIKE: Email bounces.", "style": "entry", "condition": "globalVars.ending === 'refused'" },
+          { "text": "JORDAN PIKE: Email bounces.", "style": "entry", "condition": "globalVars.ending === 'blown'" },
+          { "text": "DR TOM SHAW: Reported the stand to the department.", "style": "entry" },
+          { "text": "DR SIDHU SELVARAJAN: Still checks everything twice.", "style": "entry" },
+          { "text": "MISKATONIC UNIVERSITY: Term starts Monday.", "style": "entry" },
+          { "text": "" },
+          { "text": "On the map, a room you haven't been in has a light on.", "style": "entry" },
+          { "text": "Ghost remains at large.", "style": "warning" }
+        ]
+      }
+    ]
+  },
+
+  "rooms": {
+    "foyer": {
+      "type": "room_uni_foyer",
+      "door_sign": "Computing Building Foyer",
+      "connections": { "north": "corridor", "west": "teaching_lab", "east": "common_room", "south": "lecture_theatre" },
+      "npcs": [
+        {
+          "id": "briefing_cutscene",
+          "displayName": "Agent HaX",
+          "npcType": "person",
+          "position": { "x": 500, "y": 500 },
+          "spriteSheet": "female_spy_v2",
+          "spriteTalk": "assets/characters/female_spy_talk.png",
+          "spriteVisemes": "assets/characters/female_spy_visemes.png",
+          "avatar": "assets/characters/female_spy_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/lab_tesseract_trials/ink/opening_briefing.json",
+          "currentKnot": "start",
+          "voice": { "name": "Aoede", "style": "Professional intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Brisk, dry, short sentences.", "language": "en-GB" },
+          "timedConversation": {
+            "delay": 0,
+            "targetKnot": "start",
+            "background": "assets/backgrounds/hq4.png",
+            "waitForEvent": "game_loaded",
+            "skipIfGlobal": "briefing_played",
+            "setGlobalOnStart": "briefing_played"
+          },
+          "itemsHeld": [
+            { "type": "notes", "id": "comms_discipline", "name": "Comms Discipline", "takeable": true, "readable": true, "important": true, "text": <%= kh_txt[:comms].to_json %>, "observations": "From HaX. The fallback channel.", "onPickup": { "setVariable": { "comms_had": true } } }
+          ]
+        },
+        {
+          "id": "agent_0x99",
+          "displayName": "Agent HaX",
+          "npcType": "phone",
+          "storyPath": "scenarios/lab_tesseract_trials/ink/phone_agent_0x99.json",
+          "avatar": "assets/characters/female_spy_headshot.png",
+          "phoneId": "player_phone",
+          "currentKnot": "start",
+          "voice": { "name": "Aoede", "style": "Intelligence handler speaking over a secure phone line. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Brisk, dry, short sentences.", "language": "en-GB" },
+          "itemsHeld": [
+            { "type": "notes", "id": "fn04_base64", "name": "Field Note 4: Base64", "takeable": true, "readable": true, "text": <%= kh_txt[:fn04].to_json %>, "observations": "SAFETYNET field note." },
+            { "type": "notes", "id": "fn05_layers_caesar", "name": "Field Note 5: Layers and Caesar", "takeable": true, "readable": true, "text": <%= kh_txt[:fn05].to_json %>, "observations": "SAFETYNET field note." },
+            { "type": "notes", "id": "fn06_vigenere", "name": "Field Note 6: Vigenère", "takeable": true, "readable": true, "text": <%= kh_txt[:fn06].to_json %>, "observations": "SAFETYNET field note." },
+            { "type": "notes", "id": "fn07_hax", "name": "Field Note 7: Hashes", "takeable": true, "readable": true, "text": <%= kh_txt[:fn07].to_json %>, "observations": "SAFETYNET field note.", "onPickup": { "setVariable": { "fn07_had": true } } },
+            { "type": "notes", "id": "fn08_aes", "name": "Field Note 8: AES", "takeable": true, "readable": true, "text": <%= kh_txt[:fn08].to_json %>, "observations": "SAFETYNET field note." },
+            { "type": "notes", "id": "fn09_public_key", "name": "Field Note 9: Public Keys", "takeable": true, "readable": true, "text": <%= kh_txt[:fn09].to_json %>, "observations": "SAFETYNET field note." },
+            { "type": "notes", "id": "fn10_hax", "name": "Field Note 10: Signatures", "takeable": true, "readable": true, "text": <%= kh_txt[:fn10].to_json %>, "observations": "SAFETYNET field note.", "onPickup": { "setVariable": { "fn10_had": true } } },
+            { "type": "notes", "id": "fn11_text_encodings", "name": "Field Note 11: EBCDIC", "takeable": true, "readable": true, "text": <%= kh_txt[:fn11].to_json %>, "observations": "SAFETYNET field note." },
+            { "type": "notes", "id": "comms_discipline_hax", "name": "Comms Discipline", "takeable": true, "readable": true, "important": true, "text": <%= kh_txt[:comms].to_json %>, "observations": "From HaX. The fallback channel.", "onPickup": { "setVariable": { "comms_had": true } } }
+          ],
+          "timedMessages": [
+            { "delay": 3000, "message": "I'm on this line if you need me. Field notes and hints on request. Start with Dr Shaw.", "type": "text", "waitForEvent": "conversation_closed:briefing_cutscene" }
+          ],
+          "eventMappings": [
+            { "eventPattern": "object_interacted", "condition": "data.objectType === 'alarm_panel'", "onceOnly": true, "completeTask": "read_byte_wall" },
+            { "eventPattern": "objective_task_completed:get_lab_laptop", "condition": "!globalVars.comms_had", "onceOnly": true, "sendTimedMessage": { "delay": 3000, "message": "You left before I'd finished. Ask me about the fallback channel when you've a minute." } },
+            { "eventPattern": "item_picked_up:notes", "condition": "data.itemId === 'keyholder_leaflet'", "onceOnly": true, "sendTimedMessage": { "delay": 1500, "message": "Jordan's leaflet is in your notepad. Each number on it is one letter of the lockbox word. Look them up on your ASCII chart, or let CyberChef do it." } },
+            { "eventPattern": "objective_task_completed:open_lockbox", "onceOnly": true, "sendTimedMessage": { "delay": 1500, "message": "Eight digits for a four-digit keypad. Odd. Bring the black box too; I want to know who's on the other end." } },
+            { "eventPattern": "objective_task_completed:open_locker", "onceOnly": true, "sendTimedMessage": { "delay": 8000, "message": "That phrasing. I've read this voice before. Keep going, and keep your eyes open." } },
+            { "eventPattern": "room_entered:corridor", "onceOnly": true, "setGlobal": { "fn04_offered": true }, "sendTimedMessage": { "delay": 6000, "message": "Not decimal, not hex, not binary. Something new on that wall. Field note on request." } },
+            { "eventPattern": "room_entered:library", "onceOnly": true, "setGlobal": { "fn05_offered": true }, "sendTimedMessage": { "delay": 2000, "message": "Two layers on that slip, and the first real key of the night. Field note on request." } },
+            { "eventPattern": "objective_task_completed:open_special_collections", "onceOnly": true, "setGlobal": { "fn06_offered": true } },
+            { "eventPattern": "global_variable_changed:megan_file_read", "condition": "value === true", "onceOnly": true, "unlockAim": "loose_threads" },
+            { "eventPattern": "global_variable_changed:megan_choice_made", "condition": "value === true", "onceOnly": true, "completeTask": "decide_about_megan" },
+            { "eventPattern": "objective_task_completed:open_pigeonholes", "onceOnly": true, "setGlobal": { "fn09_offered": true }, "sendTimedMessage": { "delay": 2000, "message": "Got the IV from Trial VII? Paste it onto the drop box tag in your notepad, with the pencil. Public-key field note on request." } },
+            { "eventPattern": "objective_task_completed:open_pigeonholes", "onceOnly": true, "setGlobal": { "fn08_offered": true }, "sendTimedMessage": { "delay": 8000, "message": "And one on AES for the drop box, when you want it." } },
+            { "eventPattern": "objective_task_completed:open_drop_box", "onceOnly": true, "sendTimedMessage": { "delay": 1500, "message": "Brass. Old-fashioned. The workshop's north. Schreuders' door." } },
+            { "eventPattern": "item_picked_up:notes", "condition": "data.itemId === 'final_trial_card' && !globalVars.fn07_had", "onceOnly": true, "setGlobal": { "fn07_offered": true }, "sendTimedMessage": { "delay": 12000, "message": "Fingerprints, not passwords. I've a field note on hashes if you haven't seen Dr Selvarajan's." } },
+            { "eventPattern": "room_entered:workshop", "onceOnly": true, "sendTimedMessage": { "delay": 2000, "message": "The Keyholder's last Trial is in Schreuders' workshop. I'm not going to comment on that. It wants a fingerprint, not a password." } },
+            { "eventPattern": "conversation_closed:ghost", "condition": "globalVars.ghost_offer_made === true && !globalVars.fn10_had && globalVars.decision_made !== true", "onceOnly": true, "setGlobal": { "fn10_offered": true }, "sendTimedMessage": { "delay": 6000, "message": "If you want to check a signature, I have a field note." } },
+            { "eventPattern": "global_variable_changed:ebcdic_seen", "condition": "value === true", "onceOnly": true, "setGlobal": { "fn11_offered": true }, "sendTimedMessage": { "delay": 2000, "message": "That tape isn't ASCII. Field note on request, if you're curious." } },
+            { "eventPattern": "objective_task_completed:warn_handler", "condition": "globalVars.decision_made === true && globalVars.ending === 'sent'", "onceOnly": true, "setGlobal": { "late_warning": true } },
+            { "eventPattern": "global_variable_changed:decision_made", "condition": "value === true && globalVars.ending === 'sent'", "onceOnly": true, "completeTask": "answer_the_keyholder", "sendTimedMessage": { "delay": 1500, "message": "Received. Opening it now." } },
+            { "eventPattern": "global_variable_changed:decision_made", "condition": "value === true && globalVars.ending === 'sent'", "onceOnly": true, "sendTimedMessage": { "delay": 7500, "message": "My phone just did something it shouldn't. Get out of the building. Call me when you're clear." } },
+            { "eventPattern": "global_variable_changed:decision_made", "condition": "value === true && globalVars.ending === 'double'", "onceOnly": true, "completeTask": "answer_the_keyholder", "sendTimedMessage": { "delay": 1500, "message": "Received. Opening it now." } },
+            { "eventPattern": "global_variable_changed:decision_made", "condition": "value === true && globalVars.ending === 'double'", "onceOnly": true, "sendTimedMessage": { "delay": 7500, "message": "The phone just did exactly what your flag said it would. Get out of the building anyway. Call me when you're clear." } },
+            { "eventPattern": "global_variable_changed:decision_made", "condition": "value === true && globalVars.ending === 'refused'", "onceOnly": true, "completeTask": "answer_the_keyholder", "sendTimedMessage": { "delay": 3000, "message": "Your end's gone quiet. Talk to me." } },
+            { "eventPattern": "global_variable_changed:decision_made", "condition": "value === true && globalVars.ending === 'blown'", "onceOnly": true, "completeTask": "answer_the_keyholder", "sendTimedMessage": { "delay": 6000, "message": "Copy. Leave by the front. Don't run. Call me when you're clear." } }
+          ]
+        },
+        {
+          "id": "ghost",
+          "displayName": "Keyholder",
+          "npcType": "phone",
+          "phoneTheme": "terminal",
+          "storyPath": "scenarios/lab_tesseract_trials/ink/phone_ghost.json",
+          "avatar": "assets/npc/avatars/npc_hacker.png",
+          "spriteTalk": "assets/characters/male_hacker_hood_talk.png",
+          "phoneId": "keyholder_device",
+          "voice": {
+            "name": "Iapetus",
+            "style": "ENTROPY field operative. Deliberately unplaceable -- an educated English base with every regional marker sanded off, the way someone sounds when they have consciously trained their own accent out. Unhurried, precise, never raises the pitch. Speaks as though reading a conclusion they reached months ago and have no further doubts about.",
+            "language": "en-GB",
+            "fx": "voice-distortion"
+          },
+          "eventMappings": [
+            <%# Build rule 5 / R3-1: no targetKnot here, and no auto-open after the call. %>
+            { "eventPattern": "item_picked_up:phone", "condition": "data.itemId === 'keyholder_device' && !globalVars.relay_opened", "onceOnly": true, "conversationMode": "phone-chat" },
+            { "eventPattern": "objective_task_completed:open_locker", "onceOnly": true, "sendTimedMessage": { "delay": 2000, "message": "Trial II. Two hundred and twelve candidates picked up a card. Forty opened the locker. Most of them guessed." } },
+            { "eventPattern": "objective_task_completed:open_corridor", "onceOnly": true, "sendTimedMessage": { "delay": 2000, "message": "Trial IV. Thirty-one candidates left. Most of them asked the Magic button. I can tell which." } },
+            { "eventPattern": "objective_task_completed:open_special_collections", "onceOnly": true, "sendTimedMessage": { "delay": 2000, "message": "Special Collections. Fourteen left. The key to the next one is somewhere a careful man keeps his accounts." } },
+            { "eventPattern": "global_variable_changed:megan_file_read", "condition": "value === true", "onceOnly": true, "sendTimedMessage": { "delay": 14000, "message": "You read the other candidates' files. So did I. Candidate 7 is the interesting one." } },
+            { "eventPattern": "global_variable_changed:megan_choice", "condition": "value === 'protected'", "onceOnly": true, "sendTimedMessage": { "delay": 2000, "message": "Your handler's about to get generous with bursaries." } },
+            { "eventPattern": "objective_task_completed:open_drop_box", "onceOnly": true, "sendTimedMessage": { "delay": 7000, "message": "Hybrid encryption. Nine candidates got this far. It's how we locked forty companies. Hospitals pay fastest." } },
+            { "eventPattern": "global_variable_changed:relay_opened", "condition": "value === true && !globalVars.ghost_offer_made", "onceOnly": true, "conversationMode": "video-call", "targetKnot": "the_offer_call" },
+            <%# Fix round 1 (PLAYTEST_P3 M1): a call closed before the offer's last line leaves ghost_offer_heard false; the device then delivers the offer. This text sends the player there. %>
+            { "eventPattern": "conversation_closed:ghost", "condition": "globalVars.ghost_offer_made === true && globalVars.ghost_offer_heard !== true && globalVars.decision_made !== true", "onceOnly": true, "sendTimedMessage": { "delay": 1500, "message": "You closed the call. I'll say it here instead." } },
+            <%# D7: on every route ENTROPY never takes the player on. Sent and double: Ghost withdraws once the report is opened. %>
+            { "eventPattern": "global_variable_changed:decision_made", "condition": "value === true && globalVars.ending === 'sent'", "onceOnly": true, "sendTimedMessage": { "delay": 14000, "message": "Opened. Thank you, Candidate. That was the last Trial. The studentship is withdrawn: anyone a handler can send, a handler can recall." } },
+            { "eventPattern": "global_variable_changed:decision_made", "condition": "value === true && globalVars.ending === 'double'", "onceOnly": true, "sendTimedMessage": { "delay": 14000, "message": "Opened. Thank you, Candidate. That was the last Trial. The studentship is withdrawn: anyone a handler can send, a handler can recall." } },
+            { "eventPattern": "global_variable_changed:decision_made", "condition": "value === true && globalVars.ending === 'blown'", "onceOnly": true, "sendTimedMessage": { "delay": 2000, "message": "I did say it listens. The studentship is withdrawn." } }
+          ]
+        },
+        {
+          "id": "closing_debrief_person",
+          "displayName": "Agent HaX",
+          "npcType": "person",
+          "position": { "x": 500, "y": 500 },
+          "spriteSheet": "female_spy_v2",
+          "spriteTalk": "assets/characters/female_spy_talk.png",
+          "spriteVisemes": "assets/characters/female_spy_visemes.png",
+          "avatar": "assets/characters/female_spy_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/lab_tesseract_trials/ink/closing_debrief.json",
+          "currentKnot": "start",
+          "voice": { "name": "Aoede", "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.", "language": "en-GB" },
+          "behavior": { "initiallyHidden": true },
+          "eventMappings": [
+            <%# D9: the field HQ (hq4) is burned on the sent ending, so that debrief runs at the fallback site (hq5). hq1-hq3 belong to other missions. %>
+            { "eventPattern": "global_variable_changed:start_debrief_cutscene", "condition": "value === true && globalVars.ending !== 'sent'", "conversationMode": "person-chat", "targetKnot": "start", "background": "assets/backgrounds/hq4.png", "disableClose": true },
+            { "eventPattern": "global_variable_changed:start_debrief_cutscene", "condition": "value === true && globalVars.ending === 'sent'", "conversationMode": "person-chat", "targetKnot": "start", "background": "assets/backgrounds/hq5.png", "disableClose": true }
+          ]
+        },
+        {
+          "id": "jordan_pike",
+          "displayName": "Jordan Pike",
+          "npcType": "person",
+          "position": { "x": 3.6, "y": 5.3 },
+          "spriteSheet": "male_hacker_hood_down_v2",
+          "spriteTalk": "assets/characters/male_hacker_hood_down_v2_talk.png",
+          "spriteVisemes": "assets/characters/male_hacker_hood_down_v2_visemes.png",
+          "avatar": "assets/characters/male_hacker_hood_down_v2_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/lab_tesseract_trials/ink/npc_jordan.json",
+          "currentKnot": "start",
+          "voice": { "name": "Puck", "style": "Third-year student working a careers-fair stand for a referral bonus. Consistent Estuary English accent throughout. Upbeat, fast, salesy, laughs at his own lines.", "language": "en-GB" },
+          "itemsHeld": [
+            { "type": "notes", "id": "keyholder_leaflet", "puzzle_graph_unlocks": "cryptosecure_lockbox", "name": "Keyholder Leaflet", "takeable": true, "readable": true, "text": <%= kh_leaflet_text.to_json %>, "observations": <%= "Trial I. The lockbox on this stand opens for those who can read it. Verify everything we send you. Key fingerprint: #{kh_fingerprint}".to_json %> }
+          ],
+          "eventMappings": [
+            { "eventPattern": "global_variable_changed:decision_made", "condition": "value === true && globalVars.ending === 'refused'", "onceOnly": true, "setVisible": false },
+            { "eventPattern": "global_variable_changed:decision_made", "condition": "value === true && globalVars.ending === 'blown'", "onceOnly": true, "setVisible": false }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "alarm_panel",
+          "id": "byte_wall",
+          "name": "The Byte Wall (1979 front panel)",
+          "takeable": false,
+          "observations": "A restored 1979 computer front panel. A row of lamps, some lit.",
+          "minigameData": {
+            <%# PLAYTEST_FINAL F3: the footer is styled as a faint label (alarm-panel CSS, 7px dark blue), so the teaching line lives in the amber title %>
+            "panelTitle": "MISKATONIC COMPUTING SERVICE, 1979<br>ONE LAMP = ONE BIT. LIT = 1.<br>THIS BYTE: 01001101",
+            "footer": "8 BITS = 1 BYTE",
+            "lamps": [
+<% [['128',0],['64',1],['32',0],['16',0],['8',1],['4',1],['2',0],['1',1]].each_with_index do |(label, bit), i| %>
+              { "label": "<%= label %>", "multiState": true, "variables": [], "states": [ { "cssClass": "<%= bit == 1 ? 'ap-green' : 'ap-off' %>", "statusText": "<%= bit %>" } ] }<%= i < 7 ? ',' : '' %>
+<% end %>
+            ]
+          }
+        },
+        { "type": "plaque1", "id": "display_plaque", "name": "Display Plaque", "takeable": false, "position": "as-type:plaque", "observations": "THE BYTE WALL. Add up the place values of the lit lamps: 64 + 8 + 4 + 1 = 77. Now find 77 on an ASCII chart: it's \"M\", for Miskatonic. That's all text is underneath: numbers, agreed in a table." },
+        { "type": "chart", "id": "powers_of_two_poster", "name": "Poster: Powers of Two", "takeable": false, "observations": "1, 2, 4, 8, 16, 32, 64, 128. Each one is double the last. 8 bits = 1 byte = 256 possible values (0-255)." },
+        { "type": "notes4", "id": "ascii_chart", "name": "ASCII Chart Handout", "takeable": true, "readable": true, "position": "as-type:notes", "text": <%= kh_txt[:ascii].to_json %>, "observations": "A character encoding is an agreed table from numbers to characters. ASCII is the oldest one still everywhere." },
+        { "type": "notes2", "id": "paper_tape", "name": "Punched Paper Tape (1979)", "takeable": true, "readable": true, "position": "as-type:notes", "text": <%= kh_txt[:tape].to_json %>, "observations": "From the heritage display. A worked example." },
+        {
+          "type": "briefcase",
+          "id": "cryptosecure_lockbox",
+          "puzzle_graph_unlocks": "candidate_locker_4",
+          "name": "CryptoSecure Lockbox",
+          "takeable": false,
+          "locked": true,
+          "lockType": "password",
+          "requires": <%= kh_l1.to_json %>,
+          "showKeyboard": true,
+          "maxAttempts": 5,
+          "observations": "A branded lockbox on the CryptoSecure stand, with a password pad. The word that opens it is spelled out in numbers on the leaflet Jordan gave you: open the Notepad in your inventory, page to \"Keyholder Leaflet\" and decode them.",
+          "contents": [
+            { "type": "phone", "id": "keyholder_device", "name": "Keyholder Device", "takeable": true, "phoneId": "keyholder_device", "npcIds": ["ghost"], "observations": "A small matte-black terminal with a CryptoSecure logo. Something is waiting on the screen." },
+            { "type": "notes", "id": "trial_ii_card", "name": "Trial II Card", "takeable": true, "readable": true, "text": <%= kh_card2_text.to_json %>, "observations": "Trial II. Locker 4, common room. The keypad takes four digits." }
+          ]
+        },
+        { "type": "laptop", "id": "signup_laptop", "name": "CryptoSecure Sign-up Laptop", "takeable": false, "observations": "\"Applications are not accepted. Candidates are found.\" A second tab shows a sales page: \"CryptoSecure Mailer: know the moment your email is opened, and where!\"" }
+      ]
+    },
+
+    "teaching_lab": {
+      "type": "room_uni_lab",
+      "door_sign": "Teaching Lab 1",
+      "connections": { "east": "foyer" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "lab_account_pc",
+          "name": "Your Lab Account",
+          "takeable": false,
+          "locked": false,
+          "observations": "A lab PC logged in to your student account. Dr Shaw's README is on it.",
+          "contents": [
+            { "type": "text_file", "id": "private_key_pem", "puzzle_graph_unlocks": "cryptosecure_drop_box", "puzzle_graph_and_with": "Pigeonholes", "name": "private_key.pem", "takeable": false, "readable": true, "text": <%= kh_player_priv.to_json %>, "observations": "Your private key. Keep it private. For the code itself, use the file's Copy button: a hand selection, on screen or in your notepad, can pick up stray text." },
+            { "type": "text_file", "id": "public_key_pem", "name": "public_key.pem", "takeable": false, "readable": true, "text": <%= kh_player_pub.to_json %>, "observations": "Your public key. It's in the department directory. For the code itself, use the file's Copy button: a hand selection, on screen or in your notepad, can pick up stray text." },
+            { "type": "text_file", "id": "lab_readme", "name": "README.txt", "takeable": false, "readable": true, "text": <%= kh_txt[:readme].to_json %>, "observations": "From Dr Shaw." }
+          ]
+        },
+        {
+          "type": "pc",
+          "id": "keyholder_guest_terminal",
+          "puzzle_graph_unlocks": "corridor",
+          "name": "Keyholder Guest Terminal",
+          "takeable": false,
+          "locked": true,
+          "lockType": "password",
+          "requires": <%= kh_l3.to_json %>,
+          "showKeyboard": true,
+          "maxAttempts": 5,
+          "observations": "A terminal with a CryptoSecure sticker. Nobody ordered it, according to Dr Shaw.",
+          "contents": [
+            { "type": "text_file", "id": "trial_iv_hex", "name": "trial_iv.hex", "takeable": false, "readable": true, "text": <%= kh_trial4_hex.to_json %>, "observations": "Trial IV. The corridor door is listening. For the code itself, use the file's Copy button: a hand selection, on screen or in your notepad, can pick up stray text." }
+          ]
+        }
+      ]
+    },
+
+    "lecture_theatre": {
+      "type": "room_uni_lecture",
+      "door_sign": "Lecture Theatre 1",
+      "connections": { "north": "foyer" },
+      "npcs": [
+        {
+          "id": "tom_shaw",
+          "displayName": "Dr Tom Shaw",
+          "npcType": "person",
+          "position": { "x": 6.6, "y": 3.9 },
+          "spriteSheet": "tom_shaw",
+          "spriteTalk": "assets/characters/tom_shaw_talk.png",
+          "spriteVisemes": "assets/characters/tom_shaw_visemes.png",
+          "avatar": "assets/characters/tom_shaw_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/lab_tesseract_trials/ink/npc_tom.json",
+          "currentKnot": "start",
+          "voice": { "name": "Fenrir", "style": "University lecturer running first-year induction, keen on practical hacking challenges. Consistent West Yorkshire (Huddersfield) accent throughout. Warm, encouraging, quick, a bit dry.", "language": "en-GB" },
+          "itemsHeld": [
+            { "type": "workstation", "id": "lab_laptop", "puzzle_graph_role": "tool", "name": "Lab Laptop (CyberChef)", "takeable": true, "observations": "A department laptop with CyberChef on it. The arrow by the cross pops it into its own tab." },
+            { "type": "notes", "id": "fn01_bits_bytes_bases", "name": "Field Note 1: Bits, Bytes, Bases, CyberChef", "takeable": true, "readable": true, "text": <%= kh_txt[:fn01].to_json %>, "observations": "Induction handout." },
+            { "type": "notes", "id": "fn02_ascii_encodings", "name": "Field Note 2: Characters Are Numbers", "takeable": true, "readable": true, "text": <%= kh_txt[:fn02].to_json %>, "observations": "Induction handout." },
+            { "type": "notes", "id": "fn03_hex", "name": "Field Note 3: Hex and Binary", "takeable": true, "readable": true, "text": <%= kh_txt[:fn03].to_json %>, "observations": "Induction handout." }
+          ]
+        }
+      ],
+      "objects": [
+        { "type": "whiteboard2", "id": "tom_board", "name": "Dr Shaw's Whiteboard", "takeable": false, "position": "as-type:whiteboard", "observations": "\"Hi\" written three ways. Decimal: 72 105. Binary: 01001000 01101001, with 128 64 32 16 8 4 2 1 written under each bit. Hex: 48 69, with \"one hex digit = four bits\" underlined twice." }
+      ]
+    },
+
+    "common_room": {
+      "type": "room_uni_common",
+      "door_sign": "Student Common Room",
+      "connections": { "west": "foyer", "east": "staff_office" },
+      "npcs": [
+        {
+          "id": "megan_oyelaran",
+          "displayName": "Megan Oyelaran",
+          "npcType": "person",
+          "position": { "x": 3.1, "y": 5.7 },
+          "spriteSheet": "female_hacker_hood_down_v2",
+          "spriteTalk": "assets/characters/female_hacker_hood_down_v2_talk.png",
+          "spriteVisemes": "assets/characters/female_hacker_hood_down_v2_visemes.png",
+          "avatar": "assets/characters/female_hacker_hood_down_v2_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/lab_tesseract_trials/ink/npc_megan.json",
+          "currentKnot": "start",
+          "voice": { "name": "Leda", "style": "First-year student, bright, skint and competitive. Consistent Manchester accent throughout. Quick, wry, proud.", "language": "en-GB" }
+        },
+        {
+          "id": "cliffe_schreuders",
+          "displayName": "Dr Z. Cliffe Schreuders",
+          "npcType": "person",
+          "position": { "x": 5.3, "y": 7.4 },
+          "spriteSheet": "cliffe_schreuders",
+          "spriteTalk": "assets/characters/cliffe_schreuders_talk.png",
+          "spriteVisemes": "assets/characters/cliffe_schreuders_visemes.png",
+          "avatar": "assets/characters/cliffe_schreuders_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/lab_tesseract_trials/ink/npc_cliffe.json",
+          "currentKnot": "common_room",
+          "voice": { "name": "Orus", "style": "Academic who builds learning tools and capture-the-flag games. Consistent Australian accent throughout. Relaxed, dry, quick, amused, sentences that stop a beat early.", "language": "en-GB" },
+          "eventMappings": [
+            { "eventPattern": "room_entered:common_room", "condition": "globalVars.workshop_open === true", "setVisible": false }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "safe",
+          "id": "candidate_locker_4",
+          "puzzle_graph_unlocks": "keyholder_guest_terminal",
+          "name": "Candidate Locker 4",
+          "takeable": false,
+          "position": "as-type:student_locker",
+          "locked": true,
+          "lockType": "pin",
+          "requires": <%= kh_l2.to_json %>,
+          "observations": "A small locker with a four-digit keypad and a CryptoSecure sticker.",
+          "contents": [
+            { "type": "notes", "id": "trial_iii_card", "name": "Trial III Card", "takeable": true, "readable": true, "text": <%= kh_card3_text.to_json %>, "observations": "Trial III, styled as a punched card. The guest terminal in the teaching lab takes a word." }
+          ]
+        },
+        { "type": "notice_board1", "id": "common_noticeboard", "name": "Common Room Noticeboard", "takeable": false, "position": "as-type:notice_board", "observations": "Flat-share ads, a chess society poster, and a CryptoSecure flyer: \"Trial II stuck? So was everyone. Read it as characters, not as a number.\"" },
+        { "type": "vending_machine1", "id": "common_vending_machine", "name": "Snack Machine", "takeable": false, "position": "as-type:vending_machine", "observations": "Crisps, chocolate and one sad sandwich. A handwritten sign: \"Takes cards. Does not take hints.\"" },
+        { "type": "coffee_station1", "id": "coffee_station", "name": "Coffee Station", "takeable": false, "position": "as-type:coffee_station", "observations": "Instant coffee and a sign: \"Wash your mug. The sink is not a cupboard.\"" },
+        { "type": "laptop", "sprite": "laptop1", "id": "cliffe_laptop", "name": "Dr Schreuders' Laptop", "takeable": false, "observations": "A top-down map of this building, room by room, with small figures walking about. One of them is wearing your hoodie, standing exactly where you're standing." }
+      ]
+    },
+
+    "corridor": {
+      "type": "room_uni_corridor",
+      "door_sign": "Computing Corridor",
+      "locked": true,
+      "lockType": "password",
+      "requires": <%= kh_l4.to_json %>,
+      "connections": { "south": "foyer", "north": "workshop", "west": "library", "east": "sidhu_office" },
+      "objects": [
+        { "type": "notes", "sprite": "notes6", "id": "trial_v_poster", "puzzle_graph_unlocks": "library", "name": "Trial V Poster", "takeable": true, "readable": true, "text": <%= kh_poster5.to_json %>, "observations": "Trial V. Worked example: \"Hi!\" = 01001000 01101001 00100001 -> 010010 000110 100100 100001 -> 18 6 36 33 -> S G k h. Three bytes become four symbols." },
+        {
+          "type": "pigeonholes1",
+          "id": "pigeonholes",
+          "puzzle_graph_unlocks": "cryptosecure_drop_box",
+          "name": "Pigeonholes",
+          "takeable": false,
+          "position": "as-type:pigeonholes",
+          "locked": true,
+          "lockType": "password",
+          "requires": <%= kh_l7.to_json %>,
+          "showKeyboard": true,
+          "maxAttempts": 5,
+          "observations": "Porter's pigeonholes behind a coded door. A sign: \"Porter's code required. Ask whoever sent you post.\"",
+          "contents": [
+<% (2..5).each do |n| %>
+            { "type": "text_file", "id": "pigeonhole_<%= n %>", "name": "Pigeonhole <%= n %>", "takeable": false, "readable": true, "text": <%= kh_pigeon[n].to_json %>, "observations": "A sealed envelope's contents, in Base64. Sealed to someone's public key. For the code itself, use the file's Copy button: a hand selection, on screen or in your notepad, can pick up stray text." }<%= n < 5 ? ',' : '' %>
+<% end %>
+          ]
+        },
+        {
+          "type": "briefcase",
+          "id": "cryptosecure_drop_box",
+          "puzzle_graph_unlocks": ["workshop", "relay_terminal"],
+          "name": "CryptoSecure Drop Box",
+          "takeable": false,
+          "position": "as-type:drop_box",
+          "locked": true,
+          "lockType": "password",
+          "requires": <%= kh_l8.to_json %>,
+          "showKeyboard": true,
+          "maxAttempts": 5,
+          "observations": "A CryptoSecure drop box with a password pad and a tag tied to the handle.",
+          "contents": [
+            { "type": "key", "id": "brass_key", "puzzle_graph_unlocks": "workshop", "name": "Brass Key", "takeable": true, "opens_lock": "workshop_door", "keyPins": [40, 30, 55, 25], "observations": "An old brass key on a CryptoSecure fob." },
+            { "type": "notes", "id": "final_trial_card", "name": "Final Trial Card", "takeable": true, "readable": true, "text": "This terminal stores no passwords, only fingerprints. Enter the first eight characters of the SHA-256 of the passphrase that opened this box. In CyberChef: SHA2, and set Size to 256 (it starts on 512). No spaces, no new line.", "observations": "Easiest way: add SHA2 under AES Decrypt in the recipe you've already got. Leave Rounds alone. 256 bits is 64 hex digits, four bits each." }
+          ]
+        },
+        { "type": "notes3", "id": "drop_box_tag", "puzzle_graph_unlocks": "cryptosecure_drop_box", "puzzle_graph_and_with": "Pigeonholes", "name": "Tag on the Drop Box", "takeable": true, "readable": true, "position": "as-type:notes", "text": <%= kh_tag_hex.to_json %>, "observations": "AES-128-CBC. The key and the IV travel separately. Key: ____ IV: ____" },
+        { "type": "directory_sign1", "id": "floor_directory", "name": "Floor Directory", "takeable": false, "position": "as-type:uni_directory", "observations": "West: Library, Special Collections beyond. East: Dr S. Selvarajan, Seminar Room 2 beyond. North: Z. C. Schreuders, Workshop (knock). South: Foyer, Lecture Theatre 1 beyond." }
+      ]
+    },
+
+    "library": {
+      "type": "room_uni_library",
+      "door_sign": "Library",
+      "locked": true,
+      "lockType": "pin",
+      "requires": <%= kh_l5.to_json %>,
+      "connections": { "east": "corridor", "north": "special_collections" },
+      "objects": [
+        { "type": "notes4", "id": "returns_slip", "puzzle_graph_unlocks": "special_collections_safe", "name": "Returns Slip", "takeable": true, "readable": true, "position": "as-type:notes", "text": <%= kh_slip6.to_json %>, "observations": "Left on the returns counter, beside a returned copy of The Codebreakers. Trial VI. Shift: the number of this Trial." },
+        { "type": "book1", "sprite": "book", "id": "codebreakers_book", "name": "The Codebreakers (returned)", "takeable": false, "observations": "David Kahn's history of secret writing, just returned. A slip of paper lies further along the counter." }
+      ]
+    },
+
+    "special_collections": {
+      "type": "room_uni_special",
+      "door_sign": "Special Collections",
+      "connections": { "south": "library" },
+      "objects": [
+        {
+          "type": "safe",
+          "id": "special_collections_safe",
+          "puzzle_graph_unlocks": "pigeonholes",
+          "name": "Special Collections Safe",
+          "takeable": false,
+          "locked": true,
+          "lockType": "password",
+          "requires": <%= kh_l6.to_json %>,
+          "showKeyboard": true,
+          "maxAttempts": 5,
+          "observations": "The Special Collections safe, with a password pad on the door.",
+          "contents": [
+            { "type": "text_file", "id": "trial_vii_txt", "name": "trial_vii.txt", "takeable": false, "readable": true, "text": <%= kh_trial7.to_json %>, "observations": "Trial VII. Key: the last entry in the ledger of the man who checks everything twice. Copy the ciphertext with this file's Copy button: any extra letters picked up with it knock the key out of step. Write down what it tells you with your notepad's pencil. An IV is a starting value for a cipher: not secret, but you'll need it." },
+            { "type": "notes5", "id": "candidate_assessments", "name": "Candidate Assessments", "takeable": true, "readable": true, "text": <%= kh_txt[:assessments].to_json %>, "observations": "The Keyholder's notes on this year's candidates.", "onRead": { "setVariable": { "megan_file_read": true } } },
+            { "type": "text_file", "id": "job_tape_hex", "name": "job_0412.hex", "takeable": false, "readable": true, "text": <%= kh_ebcdic.to_json %>, "observations": "A 1979 job tape, dumped to hex. It doesn't look like ASCII. For the code itself, use the file's Copy button: a hand selection, on screen or in your notepad, can pick up stray text.", "onRead": { "setVariable": { "ebcdic_seen": true } } }
+          ]
+        }
+      ]
+    },
+
+    "sidhu_office": {
+      "type": "room_uni_office",
+      "door_sign": "Dr S. Selvarajan",
+      "connections": { "west": "corridor", "north": "seminar_room" },
+      "objects": [
+        { "type": "uni_doorcard1", "id": "sidhu_door_card", "name": "Door Card", "takeable": false, "position": "as-type:uni_doorcard", "readable": true, "readDisplay": "gameDisplay", "addToNotes": false, "text": "DR S. SELVARAJAN\nReader in Cyber Security\n\nOffice hours: Tuesday 2-4.\nSeminar room through the back.", "observations": "A name card on the office wall, with an office-hours slip taped under it." },
+        { "type": "notes", "id": "fn07_desk_copy", "name": "Handout: Hashes", "takeable": true, "readable": true, "text": <%= kh_txt[:fn07].to_json %>, "observations": "A spare copy of Dr Selvarajan's handout.", "onPickup": { "setVariable": { "fn07_had": true } } }
+      ]
+    },
+
+    "seminar_room": {
+      "type": "room_uni_seminar",
+      "door_sign": "Seminar Room 2",
+      "connections": { "south": "sidhu_office" },
+      "npcs": [
+        {
+          "id": "sidhu_selvarajan",
+          "displayName": "Dr Sidhu Selvarajan",
+          "npcType": "person",
+          "position": { "x": 6.75, "y": 3.7 },
+          "spriteSheet": "sidhu_selvarajan",
+          "spriteTalk": "assets/characters/sidhu_selvarajan_talk.png",
+          "spriteVisemes": "assets/characters/sidhu_selvarajan_visemes.png",
+          "avatar": "assets/characters/sidhu_selvarajan_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/lab_tesseract_trials/ink/npc_sidhu.json",
+          "currentKnot": "start",
+          "voice": { "name": "Enceladus", "style": "Cyber security researcher, blockchain developer and journal editor. Consistent Indian English accent throughout. Calm, precise, courteous, warm.", "language": "en-GB" },
+          "itemsHeld": [
+            { "type": "notes", "id": "fn07_hashing", "name": "Field Note 7: Hashes", "takeable": true, "readable": true, "text": <%= kh_txt[:fn07].to_json %>, "observations": "Dr Selvarajan's handout.", "onPickup": { "setVariable": { "fn07_had": true } } },
+            { "type": "notes", "id": "fn10_signatures", "name": "Field Note 10: Signatures", "takeable": true, "readable": true, "text": <%= kh_txt[:fn10].to_json %>, "observations": "Dr Selvarajan's handout.", "onPickup": { "setVariable": { "fn10_had": true } } }
+          ]
+        }
+      ],
+      "objects": [
+        { "type": "whiteboard1", "id": "ledger_whiteboard", "puzzle_graph_unlocks": "pigeonholes", "puzzle_graph_and_with": "Special Collections Safe", "name": "Dr Selvarajan's Ledger Whiteboard", "takeable": false, "position": "as-type:whiteboard", "observations": <%= format(kh_txt[:whiteboard], kh_vkey).to_json %> }
+      ]
+    },
+
+    "workshop": {
+      "type": "room_uni_workshop",
+      "door_sign": "Workshop (knock)",
+      "locked": true,
+      "lockType": "key",
+      "requires": "workshop_door",
+      "keyPins": [40, 30, 55, 25],
+      "difficulty": "easy",
+      "connections": { "south": "corridor" },
+      "npcs": [
+        {
+          "id": "cliffe_workshop",
+          "displayName": "Dr Z. Cliffe Schreuders",
+          "npcType": "person",
+          "position": { "x": 2.8, "y": 7.0 },
+          "spriteSheet": "cliffe_schreuders",
+          "spriteTalk": "assets/characters/cliffe_schreuders_talk.png",
+          "spriteVisemes": "assets/characters/cliffe_schreuders_visemes.png",
+          "avatar": "assets/characters/cliffe_schreuders_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/lab_tesseract_trials/ink/npc_cliffe.json",
+          "currentKnot": "workshop",
+          "voice": { "name": "Orus", "style": "Academic who builds learning tools and capture-the-flag games. Consistent Australian accent throughout. Relaxed, dry, quick, amused, sentences that stop a beat early.", "language": "en-GB" }
+        }
+      ],
+      "objects": [
+        {
+          "type": "pc",
+          "id": "relay_terminal",
+          "puzzle_graph_unlocks": "hacktivity_scoreboard",
+          "name": "Relay Terminal",
+          "takeable": false,
+          "locked": true,
+          "lockType": "password",
+          "requires": <%= kh_l10.to_json %>,
+          "showKeyboard": true,
+          "maxAttempts": 5,
+          "observations": "A CryptoSecure terminal. The prompt says: FINGERPRINT?",
+          "contents": [
+            { "type": "text_file", "id": "report_b64", "name": "report.b64", "takeable": false, "readable": true, "text": <%= kh_report_b64.to_json %>, "observations": "The Keyholder's field report, for your handler. Signed. For the code itself, use the file's Copy button: a hand selection, on screen or in your notepad, can pick up stray text.", "onRead": { "setVariable": { "relay_opened": true } } },
+            { "type": "text_file", "id": "report_sha256", "name": "report.sha256", "takeable": false, "readable": true, "text": <%= kh_report_sha.to_json %>, "observations": "SHA-256 of report.b64 exactly as it is: the Base64 text, not what it decodes to. For the code itself, use the file's Copy button: a hand selection, on screen or in your notepad, can pick up stray text." },
+            { "type": "text_file", "id": "report_sig", "name": "report.sig", "takeable": false, "readable": true, "text": <%= kh_report_sig.to_json %>, "observations": "Signs report.b64 exactly as it is. In RSA Verify: Message = the contents of report.b64; Message format Raw; Message Digest Algorithm SHA-256. Dr Selvarajan would want to see this. For the code itself, use the file's Copy button: a hand selection, on screen or in your notepad, can pick up stray text." },
+            { "type": "text_file", "id": "keyholder_public_pem", "name": "keyholder_public.pem", "takeable": false, "readable": true, "text": <%= kh_ghost_pub.to_json %>, "observations": "The Keyholder's public key. Compare its fingerprint with the leaflet's. For the code itself, use the file's Copy button: a hand selection, on screen or in your notepad, can pick up stray text." }
+          ]
+        },
+        {
+          "type": "pc",
+          "id": "hacktivity_scoreboard",
+          "name": "Hacktivity Scoreboard",
+          "takeable": false,
+          "position": "as-type:conference_screen",
+          "locked": true,
+          "lockType": "password",
+          "requires": <%= kh_token.to_json %>,
+          "showKeyboard": true,
+          "maxAttempts": 10,
+          "postitNote": "HACKTIVITY // SUBMIT FLAG. Flags are lower case, exactly as found.",
+          "showPostit": true,
+          "observations": "A Hacktivity leaderboard. Top team this week: \"null_pointers\". A box at the bottom: Submit flag.",
+          "contents": [
+            { "type": "text_file", "id": "submission_accepted", "name": "submission_accepted.txt", "takeable": false, "readable": true, "text": "Submission accepted. +50 points.\n\nAdmin note: Got it. If that report reaches me, we'll be the ones who open it. H.", "observations": "The scoreboard's reply.", "onRead": { "setVariable": { "warned_out_of_band": true } } }
+          ]
+        },
+        {
+          "type": "info_screen1",
+          "id": "cliffe_build_screen",
+          "name": "Dr Schreuders' Build",
+          "takeable": false,
+          "position": "as-type:smartscreen",
+          "observations": "A map of this building. One of the little figures is wearing your hoodie. Beside it, a soldering iron, still warm.",
+          "observationVariants": [
+            { "condition": "globalVars.decision_made === true", "value": "On the map, the small figure in your hoodie walks out of the workshop. A second figure you don't recognise stays by the scoreboard." },
+            { "condition": "globalVars.ghost_offer_made === true", "value": "On the map, the small figure in your hoodie is standing near the scoreboard." }
+          ]
+        }
+      ]
+    },
+
+    <%# Optional side room off the common room (ROOMS_PLAN.md section 13). No objects; the
+        story builder adds Dr Oleg Illiashenko (desk P1-B, stand at tile 7.31, 7.06) and
+        later staff at the listed staff slots. %>
+    "staff_office": {
+      "type": "room_uni_staff",
+      "door_sign": "Computing: Staff Only",
+      "connections": { "west": "common_room" },
+      "npcs": [
+        {
+          "id": "oleg_illiashenko",
+          "displayName": "Dr Oleg Illiashenko",
+          "npcType": "person",
+          "position": { "x": 7.31, "y": 7.06 },
+          "spriteSheet": "oleg_illiashenko",
+          "spriteTalk": "assets/characters/oleg_illiashenko_talk.png",
+          "spriteVisemes": "assets/characters/oleg_illiashenko_visemes.png",
+          "avatar": "assets/characters/oleg_illiashenko_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/lab_tesseract_trials/ink/npc_oleg.json",
+          "currentKnot": "start",
+          "voice": { "name": "Algieba", "style": "Ukrainian computer science lecturer, softly spoken, with a mild Ukrainian accent in his English, consistent throughout. Quiet, gentle, unhurried, warm, a little wry. Never loud.", "language": "en-GB" },
+          "itemsHeld": [
+            { "type": "notes", "id": "fn13_lookalikes", "name": "Field Note 13: Lookalike Letters", "takeable": true, "readable": true, "text": <%= kh_txt[:fn13].to_json %>, "observations": "Dr Illiashenko's note, on the back of the duplicate-accounts printout." },
+            { "type": "notes", "id": "fn12_mojibake", "name": "Field Note 12: Mojibake", "takeable": true, "readable": true, "text": <%= kh_txt[:fn12].to_json %>, "observations": "Dr Illiashenko's note, written on the back of a staff list." }
+          ]
+        }
+      ],
+      "objects": [
+        <%# Oleg's optional beat. Type photocopier (the base type of the map's photocopier1 prop) matches the map's own photocopier, so the scenario object takes over that prop in place (no new sprite). %>
+        {
+          "type": "photocopier",
+          "id": "staff_photocopier",
+          "name": "Staff Photocopier",
+          "takeable": false,
+          "locked": false,
+          "observations": "The staff photocopier. Two jobs are held for Dr Illiashenko: a staff list, and a warning from the new staff system.",
+          "contents": [
+            { "type": "text_file", "id": "staff_list_txt", "name": "staff_list.txt", "takeable": false, "readable": true, "text": "SCHOOL OF COMPUTING: STAFF LIST\nExported from the new staff system. Held at the printer for: Illiashenko\n\nDr Z. Cliffe Schreuders\nDr Tom Shaw\nDr Sidhu Selvarajan\nDr РћР»РµРі Р†Р»Р»СЏС€РµРЅРєРѕ\n\nIf any name above looks wrong, please contact the system team.", "observations": "The new staff system's export. One name hasn't survived the trip. For anything you paste into CyberChef, use the file's Copy button.", "onRead": { "setVariable": { "staff_list_read": true } } },
+            { "type": "text_file", "id": "duplicate_accounts_txt", "name": "duplicate_accounts.txt", "takeable": false, "readable": true, "text": "NEW STAFF SYSTEM: POSSIBLE DUPLICATE ACCOUNTS\nHeld at the printer for: Illiashenko\n\nThe system has found two staff accounts. It says they belong to two different people:\n\nolеg.illiashenko\noleg.illiashenko\n\nPlease confirm which account is yours.", "observations": "Two usernames that look the same to you. Not, apparently, to the system. Use the file's Copy button, then look at each name's bytes.", "onRead": { "setVariable": { "lookalike_seen": true } } }
+          ]
+        }
+      ]
+    }
+  }
+}

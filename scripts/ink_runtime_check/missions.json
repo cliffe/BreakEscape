@@ -1235,5 +1235,119 @@
         "room": "break_room"
       }
     ]
+  },
+  "lab_tesseract_trials": {
+    "globals": {
+      "player_name": "Agent 0x00",
+      "briefing_played": false,
+      "comms_had": false,
+      "lockbox_open": false,
+      "locker_open": false,
+      "guest_terminal_open": false,
+      "corridor_open": false,
+      "library_open": false,
+      "special_collections_open": false,
+      "pigeonholes_open": false,
+      "drop_box_open": false,
+      "workshop_open": false,
+      "relay_opened": false,
+      "ghost_greeted": false,
+      "ghost_offer_made": false,
+      "ghost_offer_heard": false,
+      "decision_made": false,
+      "ending": "",
+      "warned_out_of_band": false,
+      "late_warning": false,
+      "report_read_claimed": "",
+      "refusal_reported": false,
+      "megan_file_read": false,
+      "megan_choice": "",
+      "megan_choice_made": false,
+      "ebcdic_seen": false,
+      "staff_list_read": false,
+      "lookalike_seen": false,
+      "fn04_offered": false,
+      "fn05_offered": false,
+      "fn06_offered": false,
+      "fn07_offered": false,
+      "fn08_offered": false,
+      "fn09_offered": false,
+      "fn10_offered": false,
+      "fn11_offered": false,
+      "fn07_had": false,
+      "fn10_had": false,
+      "start_debrief_cutscene": false
+    },
+    "npcs": [
+      {
+        "id": "briefing_cutscene",
+        "npcType": "person",
+        "storyPath": "scenarios/lab_tesseract_trials/ink/opening_briefing.json",
+        "room": "foyer",
+        "currentKnot": "start"
+      },
+      {
+        "id": "agent_0x99",
+        "npcType": "phone",
+        "storyPath": "scenarios/lab_tesseract_trials/ink/phone_agent_0x99.json",
+        "room": "foyer",
+        "currentKnot": "start"
+      },
+      {
+        "id": "ghost",
+        "npcType": "phone",
+        "storyPath": "scenarios/lab_tesseract_trials/ink/phone_ghost.json",
+        "room": "foyer"
+      },
+      {
+        "id": "closing_debrief_person",
+        "npcType": "person",
+        "storyPath": "scenarios/lab_tesseract_trials/ink/closing_debrief.json",
+        "room": "foyer",
+        "currentKnot": "start"
+      },
+      {
+        "id": "jordan_pike",
+        "npcType": "person",
+        "storyPath": "scenarios/lab_tesseract_trials/ink/npc_jordan.json",
+        "room": "foyer",
+        "currentKnot": "start"
+      },
+      {
+        "id": "tom_shaw",
+        "npcType": "person",
+        "storyPath": "scenarios/lab_tesseract_trials/ink/npc_tom.json",
+        "room": "teaching_lab",
+        "currentKnot": "start"
+      },
+      {
+        "id": "megan_oyelaran",
+        "npcType": "person",
+        "storyPath": "scenarios/lab_tesseract_trials/ink/npc_megan.json",
+        "room": "common_room",
+        "currentKnot": "start"
+      },
+      {
+        "id": "cliffe_schreuders",
+        "npcType": "person",
+        "storyPath": "scenarios/lab_tesseract_trials/ink/npc_cliffe.json",
+        "room": "common_room",
+        "currentKnot": "common_room"
+      },
+      {
+        "id": "sidhu_selvarajan",
+        "npcType": "person",
+        "storyPath": "scenarios/lab_tesseract_trials/ink/npc_sidhu.json",
+        "room": "sidhu_office",
+        "currentKnot": "start"
+      },
+      {
+        "id": "cliffe_workshop",
+        "npcType": "person",
+        "storyPath": "scenarios/lab_tesseract_trials/ink/npc_cliffe.json",
+        "room": "workshop",
+        "currentKnot": "workshop"
+      }
+    ]
   }
 }

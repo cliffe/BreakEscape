@@ -351,3 +351,54 @@
 .notes-minigame-cancel-btn:hover {
     background: #7f8c8d;
 }
+
+/* Markdown in note text (utils/note-markdown.js) */
+.notes-minigame-text .note-md-h1,
+.notes-minigame-text .note-md-h2,
+.notes-minigame-text .note-md-h3 {
+    font-weight: bold;
+    white-space: normal;
+    margin: 0.6em 0 0.3em;
+}
+
+.notes-minigame-text .note-md-h1 { font-size: 1.3em; }
+.notes-minigame-text .note-md-h2 { font-size: 1.15em; }
+.notes-minigame-text .note-md-h3 { font-size: 1em; text-decoration: underline; }
+
+.notes-minigame-text code,
+.notes-minigame-text .note-md-code {
+    font-family: 'VT323', monospace;
+    font-size: 1.1em;
+    background: #f0efe8;
+    padding: 0 3px;
+}
+
+.notes-minigame-text .note-md-code {
+    display: block;
+    margin: 0.4em 0;
+    padding: 4px 6px;
+    white-space: pre-wrap;
+}
+
+.notes-minigame-text .note-md-table {
+    border-collapse: collapse;
+    margin: 0.5em 0;
+    white-space: normal;
+    /* VT323 is narrower than the page font, so a 9-column chart fits the page,
+       and its * and ` are easier to tell apart. */
+    font-family: 'VT323', monospace;
+    font-size: 1.15em;
+    max-width: 100%;
+}
+
+.notes-minigame-text .note-md-table th,
+.notes-minigame-text .note-md-table td {
+    border: 2px solid #ccc;
+    padding: 0 4px;
+    text-align: left;
+}
+
+.notes-minigame-text .note-md-table th {
+    background: #eeeeea;
+    font-weight: bold;
+}

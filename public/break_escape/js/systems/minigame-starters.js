@@ -530,7 +530,8 @@ export function startPinMinigame(lockable, type, correctPin, callback) {
     window.MinigameFramework.startMinigame('pin', null, {
         title: `Enter PIN for ${type}`,
         correctPin: correctPin,
-        maxAttempts: 3,
+        // Scenario option (doors keep it on doorProperties), default 3
+        maxAttempts: lockable?.maxAttempts || lockable?.scenarioData?.maxAttempts || lockable?.doorProperties?.maxAttempts || 3,
         pinLength: correctPin ? correctPin.length : 4, // Default to 4 if null (server-side validation)
         hasPinCracker: hasPinCracker,
         allowBackspace: true,

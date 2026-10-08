@@ -1,0 +1,14 @@
+game            1626  (mission 79)
+created         2026-10-06 13:44:58 UTC
+last write      2026-10-06 13:56:21 UTC
+played for      683s of wall clock
+current room    "foyer"
+unlocked rooms  9: foyer, lecture_theatre, common_room, staff_office, teaching_lab, corridor, library, workshop, special_collections
+unlocked objs   0: 
+inventory       6: Your Phone, Notepad, Comms Discipline, Trial V Poster, Tag on the Drop Box, Returns Slip
+NPCs met        10: briefing_cutscene, agent_0x99, ghost, closing_debrief_person, jordan_pike, tom_shaw, megan_oyelaran, cliffe_schreuders, oleg_illiashenko, cliffe_workshop
+flags submitted 0: 
+globals set     12: briefing_played, comms_had, corridor_open, ending, engine_tutorial_declined, fn04_offered, fn05_offered, library_open, megan_choice, player_name, report_read_claimed, workshop_open
+
+VERDICT: progress recorded — 8 rooms beyond the first, 0 objects unlocked, 0 flags submitted.
+Cross-check the specifics above against the report.

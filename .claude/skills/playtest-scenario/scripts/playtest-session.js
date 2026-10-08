@@ -595,62 +595,24 @@ function substituteFlags(node, at) {
 
     /** Everything interactable in a room, at any distance — for finding things. */
     room: async (c) => {
-      const r = await page.evaluate(id => window.__test.roomContents(id || null), c.id || null);
-      rememberDoors(r);
-      return r;
+      return page.evaluate(id => window.__test.roomContents(id || null), c.id || null);
     },
 
     /**
-     * Walk into an adjacent room.
+     * Walk into an adjacent room: {"cmd":"enter","room":"<room id>"}.
      *
-     * Two things make this awkward by hand, and both have cost runs: rooms load
-     * lazily, so the destination does not exist in `window.rooms` until you are
-     * in it; and a door that has been unlocked is removed from the scene, so
-     * `moveToNear("door:...")` then fails with `unknown-entity`. The session
-     * therefore remembers every doorway it has seen and walks through the
-     * remembered gap.
+     * The work is done by window.__test.enterRoom (test-bridge/index.js), which
+     * takes the doorway from the engine's own door placement, so it works in
+     * both directions and after the door sprite has gone (opening a door
+     * removes it on both sides). It opens a shut door, lines the feet up on the
+     * gap and walks straight through, and reports each attempt's feet position
+     * against the gap. A locked door comes back as `door-locked`: solve it
+     * (moveToNear the door, interact, lock) and enter again.
      */
     enter: async (c) => {
       const target = c.room || c.id;
       if (!target) return { ok: false, reason: 'no-room-given' };
-      const before = await page.evaluate(() => window.__test.getState().room);
-      const door = doorCache[`${before}->${target}`];
-      if (!door) {
-        return { ok: false, reason: `no-known-doorway:${before}->${target}`,
-                 known: Object.keys(doorCache),
-                 hint: 'Send {"cmd":"room"} in this room first so the doorway is recorded, or the '
-                     + 'rooms may not be adjacent.' };
-      }
-      // Aim past the doorway, along the line from the player through it, so the
-      // player crosses the threshold rather than stopping in it.
-      const p = await page.evaluate(() => ({ x: window.player.x, y: window.player.y }));
-      const len = Math.hypot(door.x - p.x, door.y - p.y) || 1;
-      const overshoot = 40;
-      const tx = door.x + ((door.x - p.x) / len) * overshoot;
-      const ty = door.y + ((door.y - p.y) / len) * overshoot;
-
-      // An unlocked door can still be shut. If it is still in the scene, open
-      // it before walking at it — otherwise the player just bumps the frame.
-      const stillThere = await page.evaluate(id => {
-        const e = window.__test.getState().nearby.find(n => n.id === id);
-        return e ? { inRange: e.inRange, locked: e.state && e.state.locked } : null;
-      }, door.id);
-      if (stillThere) {
-        await handlers.moveToNear({ id: door.id });
-        await page.evaluate(id => window.__test.interact(id), door.id);
-        await page.waitForTimeout(400);
-      }
-      await handlers.moveTo({ x: Math.round(door.x), y: Math.round(door.y) });
-      const moved = await handlers.moveTo({ x: Math.round(tx), y: Math.round(ty) });
-      const after = await page.evaluate(() => window.__test.getState().room);
-      return {
-        ok: after === target, from: before, to: after, wanted: target,
-        doorway: door, arrivedAt: moved.arrivedAt,
-        reason: after === target ? undefined : 'did-not-cross',
-        hint: after === target ? undefined
-          : 'Still in the same room. The door may still be locked — interact with it and solve '
-          + 'the lock with {"cmd":"lock"} first.'
-      };
+      return page.evaluate(t => window.__test.enterRoom(t), target);
     },
 
     drain: async () => ({ log: await page.evaluate(() => window.__test.drainLog()),
@@ -684,20 +646,6 @@ function substituteFlags(node, at) {
       return { ok, synced: ok };
     }
   };
-
-  /**
-   * Doorways seen so far, keyed "fromRoom->toRoom". Unlocking a door removes
-   * its sprite, so the only reliable record of where the gap is, is the one we
-   * took while it was still there.
-   */
-  const doorCache = {};
-  function rememberDoors(roomResult) {
-    if (!roomResult || !roomResult.ok) return;
-    for (const d of roomResult.doors || []) {
-      const m = /^door:([^-]+(?:-[^>]+)*)->(.+)$/.exec(d.id || '');
-      if (m) doorCache[`${m[1]}->${m[2]}`] = { x: d.x, y: d.y, id: d.id };
-    }
-  }
 
   const rl = readline.createInterface({ input: process.stdin });
   for await (const line of rl) {

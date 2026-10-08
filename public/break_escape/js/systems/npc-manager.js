@@ -105,7 +105,7 @@ export default class NPCManager {
   // Fields the chat minigames write onto an NPC entry at runtime (phone-chat keeps
   // its story position in storyState). Carried over a re-registration, and the
   // phone ones are saved to the server (exportPhoneState).
-  static CONVERSATION_RUNTIME_FIELDS = ['storyState', 'currentKnot', 'lastEnteredKnot', 'deferredTags', 'deferredGlobals'];
+  static CONVERSATION_RUNTIME_FIELDS = ['storyState', 'currentKnot', 'lastEnteredKnot', 'preloadedKnot', 'deferredTags', 'deferredGlobals'];
 
   // Limits on what a phone thread saves (exportPhoneState)
   static PHONE_HISTORY_MAX_MESSAGES = 150;
@@ -1770,6 +1770,7 @@ export default class NPCManager {
     }
     if (npc.currentKnot) entry.currentKnot = npc.currentKnot;
     if (npc.lastEnteredKnot) entry.lastEnteredKnot = npc.lastEnteredKnot;
+    if (npc.preloadedKnot) entry.preloadedKnot = npc.preloadedKnot;
     // A preload's deferred tags and globals run when the thread is first opened;
     // if the player reloads before that, they still have to run
     if (Array.isArray(npc.deferredTags) && npc.deferredTags.length > 0) {
@@ -1833,6 +1834,7 @@ export default class NPCManager {
       npc.storyState = saved.storyState;
       if (typeof saved.currentKnot === 'string') npc.currentKnot = saved.currentKnot;
       if (typeof saved.lastEnteredKnot === 'string') npc.lastEnteredKnot = saved.lastEnteredKnot;
+      if (typeof saved.preloadedKnot === 'string') npc.preloadedKnot = saved.preloadedKnot;
     }
     if (Array.isArray(saved.deferredTags) && saved.deferredTags.length > 0) {
       npc.deferredTags = saved.deferredTags.filter(t => typeof t === 'string');

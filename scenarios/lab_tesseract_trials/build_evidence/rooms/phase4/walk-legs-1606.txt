@@ -1,0 +1,15 @@
+foyer spawn -> Jordan (foyer)                             0.4 s
+foyer -> lecture theatre -> Tom                           5.2 s
+lecture theatre -> foyer -> lockbox (stand)               2.4 s
+foyer -> common room -> Locker 4                          6.4 s
+common room -> foyer -> teaching lab -> guest terminal    9.2 s
+teaching lab -> foyer -> corridor door                    2.6 s
+corridor (S door) -> library door (W)                     0.7 s
+library door -> issue desk (slip)                         3.0 s
+library -> Special Collections -> safe                    4.3 s
+Special Collections -> library -> corridor -> office -> seminar room -> ledger  13.7 s
+seminar room -> office -> corridor -> pigeonholes         6.1 s
+corridor -> foyer -> teaching lab -> lab account PC       5.3 s
+teaching lab -> foyer -> corridor -> drop box             6.1 s
+drop box -> workshop door (corridor N)                    0.9 s
+workshop door -> relay terminal                           3.6 s

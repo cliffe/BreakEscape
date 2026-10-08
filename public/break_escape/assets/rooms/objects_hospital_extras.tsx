@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="122" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="185" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../objects/iv_stand1.png" width="25" height="60"/>
@@ -366,5 +366,194 @@
  </tile>
  <tile id="121">
   <image source="../objects/checkin_kiosk_locked1.png" width="24" height="43"/>
+ </tile>
+ <tile id="122">
+  <image source="../objects/uni_crest_sign1.png" width="44" height="22"/>
+ </tile>
+ <tile id="123">
+  <image source="../objects/projector_screen1.png" width="88" height="42"/>
+ </tile>
+ <tile id="124">
+  <image source="../objects/drop_box1.png" width="20" height="24"/>
+ </tile>
+ <tile id="125">
+  <image source="../objects/uni_directory1.png" width="16" height="15"/>
+ </tile>
+ <tile id="126">
+  <image source="../objects/uni_doorcard1.png" width="20" height="24"/>
+ </tile>
+ <tile id="127">
+  <image source="../objects/uni_sign_library1.png" width="44" height="14"/>
+ </tile>
+ <tile id="128">
+  <image source="../objects/uni_sign_special1.png" width="64" height="14"/>
+ </tile>
+ <tile id="129">
+  <image source="../objects/uni_timetable1.png" width="16" height="22"/>
+ </tile>
+ <tile id="130">
+  <image source="../objects/uni_poster1.png" width="16" height="21"/>
+ </tile>
+ <tile id="131">
+  <image source="../objects/uni_poster2.png" width="16" height="21"/>
+ </tile>
+ <tile id="132">
+  <image source="../objects/uni_poster3.png" width="16" height="21"/>
+ </tile>
+ <tile id="133">
+  <image source="../objects/uni_poster4.png" width="16" height="21"/>
+ </tile>
+ <tile id="134">
+  <image source="../objects/uni_poster6.png" width="16" height="21"/>
+ </tile>
+ <tile id="135">
+  <image source="../objects/uni_poster7.png" width="16" height="21"/>
+ </tile>
+ <tile id="136">
+  <image source="../objects/cryptosecure_banner1.png" width="22" height="58"/>
+ </tile>
+ <tile id="137">
+  <image source="../objects/student_lockers1.png" width="50" height="62"/>
+ </tile>
+ <tile id="138">
+  <image source="../objects/student_locker1.png" width="16" height="62"/>
+ </tile>
+ <tile id="139">
+  <image source="../objects/lecture_ledge1.png" width="198" height="12"/>
+ </tile>
+ <tile id="140">
+  <image source="../objects/lecture_ledge2.png" width="252" height="12"/>
+ </tile>
+ <tile id="141">
+  <image source="../objects/alarm_panel2.png" width="33" height="21"/>
+ </tile>
+ <tile id="142">
+  <image source="../objects/pegboard_tools1.png" width="56" height="44"/>
+ </tile>
+ <tile id="143">
+  <image source="../objects/lectern1.png" width="30" height="46"/>
+ </tile>
+ <tile id="144">
+  <image source="../objects/book_trolley1.png" width="38" height="43"/>
+ </tile>
+ <tile id="151">
+  <image source="../objects/scope_cart1.png" width="48" height="57"/>
+ </tile>
+ <tile id="152">
+  <image source="../objects/lecture_seat_row1.png" width="61" height="32"/>
+ </tile>
+ <tile id="154">
+  <image source="../objects/component_drawers1.png" width="37" height="41"/>
+ </tile>
+ <tile id="155">
+  <image source="../objects/robot_arm1.png" width="31" height="41"/>
+ </tile>
+ <tile id="156">
+  <image source="../objects/beanbag1.png" width="44" height="41"/>
+ </tile>
+ <tile id="157">
+  <image source="../objects/stanchions1.png" width="41" height="35"/>
+ </tile>
+ <tile id="159">
+  <image source="../objects/bankers_lamp1.png" width="23" height="25"/>
+ </tile>
+ <tile id="160">
+  <image source="../objects/pi_cluster1.png" width="27" height="25"/>
+ </tile>
+ <tile id="161">
+  <image source="../objects/journal_stack1.png" width="26" height="27"/>
+ </tile>
+ <tile id="162">
+  <image source="../objects/soldering_iron1.png" width="26" height="26"/>
+ </tile>
+ <tile id="163">
+  <image source="../objects/beanbag_orange1.png" width="29" height="27"/>
+ </tile>
+ <tile id="164">
+  <image source="../objects/beanbag_teal1.png" width="29" height="27"/>
+ </tile>
+ <tile id="165">
+  <image source="../objects/uni_sign_staff1.png" width="64" height="14"/>
+ </tile>
+ <tile id="166">
+  <image source="../objects/uni_tv1.png" width="40" height="26"/>
+ </tile>
+ <tile id="167">
+  <image source="../objects/uni_certificate1.png" width="18" height="14"/>
+ </tile>
+ <tile id="168">
+  <image source="../objects/uni_portrait1.png" width="22" height="28"/>
+ </tile>
+ <tile id="170">
+  <image source="../objects/uni_bunting1.png" width="104" height="10"/>
+ </tile>
+ <tile id="171">
+  <image source="../objects/uni_bunting2.png" width="64" height="10"/>
+ </tile>
+ <tile id="172">
+  <image source="../objects/smartscreen2.png" width="48" height="34"/>
+ </tile>
+ <tile id="173">
+  <image source="../objects/uni_fountain1.png" width="14" height="22"/>
+ </tile>
+ <tile id="174">
+  <image source="../objects/uni_radiator1.png" width="26" height="10"/>
+ </tile>
+ <tile id="175">
+  <image source="../objects/uni_firedoor_sign1.png" width="11" height="11"/>
+ </tile>
+ <tile id="176">
+  <image source="../objects/uni_dartboard1.png" width="16" height="16"/>
+ </tile>
+ <tile id="177">
+  <image source="../objects/uni_sign_returns1.png" width="32" height="11"/>
+ </tile>
+ <tile id="178">
+  <image source="../objects/uni_sign_study1.png" width="44" height="11"/>
+ </tile>
+ <tile id="179">
+  <image source="../objects/uni_banner_soc1.png" width="22" height="58"/>
+ </tile>
+ <tile id="181">
+  <image source="../objects/study_carrels1.png" width="57" height="58"/>
+ </tile>
+ <tile id="182">
+  <image source="../objects/periodicals_rack1.png" width="48" height="52"/>
+ </tile>
+ <tile id="183">
+  <image source="../objects/balloons1.png" width="32" height="59"/>
+ </tile>
+ <tile id="184">
+  <image source="../objects/freshers_stall2.png" width="62" height="47"/>
+ </tile>
+ <tile id="185">
+  <image source="../objects/display_case3.png" width="56" height="45"/>
+ </tile>
+ <tile id="186">
+  <image source="../objects/plan_chest2.png" width="52" height="46"/>
+ </tile>
+ <tile id="187">
+  <image source="../objects/printer_3d2.png" width="38" height="57"/>
+ </tile>
+ <tile id="188">
+  <image source="../objects/foosball_table2.png" width="48" height="57"/>
+ </tile>
+ <tile id="189">
+  <image source="../objects/laser_cutter2.png" width="46" height="60"/>
+ </tile>
+ <tile id="190">
+  <image source="../objects/it_workbench2.png" width="52" height="60"/>
+ </tile>
+ <tile id="191">
+  <image source="../objects/electronics_bench2.png" width="42" height="55"/>
+ </tile>
+ <tile id="192">
+  <image source="../objects/cnc_mill2.png" width="41" height="57"/>
+ </tile>
+ <tile id="193">
+  <image source="../objects/uni_sofa2.png" width="62" height="38"/>
+ </tile>
+ <tile id="194">
+  <image source="../objects/uni_poster8.png" width="16" height="21"/>
  </tile>
 </tileset>

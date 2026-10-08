@@ -634,6 +634,8 @@ export default class PhoneChatUI {
             // Regular text message
             const messageText = document.createElement('div');
             messageText.className = 'message-text';
+            // Terminal theme adds its own "> " prompt in CSS; skip it when the line already starts with one
+            if (/^\s*>/.test(trimmedText)) messageText.classList.add('has-own-prompt');
             messageText.textContent = displayDashes(trimmedText);
             
             messageBubble.appendChild(messageText);
@@ -665,6 +667,7 @@ export default class PhoneChatUI {
 
         const messageText = document.createElement('span');
         messageText.className = 'message-text terminal-typing';
+        if (/^\s*>/.test(text)) messageText.classList.add('has-own-prompt');
 
         const cursor = document.createElement('span');
         cursor.className = 'terminal-cursor';

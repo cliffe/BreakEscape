@@ -16,6 +16,22 @@ The orchestrator plans, tasks, reviews and decides. It does small, mechanical ed
 
 Keep these in the repo, not the session scratchpad: scratchpad files are lost when the session ends.
 
+## Kinds of game and what each aims for
+
+Break Escape hosts more than one kind of game. Settle which kind you're working on first, because it sets the standard that reviews, fixes and judgements aim at. Put the kind and its aim in every reviewer's and writer's prompt. Without it, agents drift into the wrong voice: sis01's first reviewers fell back on the spy campaign.
+
+- **SAFETYNET campaign missions (m01–m08):** a spy thriller.
+  - The aim is a fun game with well-written dialogue in the style of a TV spy thriller: tension, secrets, characters with their own agendas, sharp exchanges and reveals that land. Agent HaX is the handler, ENTROPY the enemy.
+  - The VM flags are required to complete each mission. They are woven into the story, and what the game says about the VMs must match SecGen (`scenarios/break_escape/safetynet/<mission>.xml` in the SecGen repo).
+  - Kit is cumulative across missions. Combat is allowed.
+  - Teaching comes through the hands-on VM work and the field guides. Don't lecture in the dialogue.
+- **Security-Informed Safety serious games (sis01–sis03):** education first.
+  - They are CyBOK games on risk management, safety cases, incident response and the sector's regulation, played standalone, sometimes by student teams.
+  - The aim is decisions that are genuinely arguable, professional voices that sound like the real job, facts that match the scenario's `information_pack.md`, and a debrief and lab sheet that give students something to reflect on.
+  - There are no VMs, no spy framing and no combat (`"disableAttacks": true`).
+  - See `docs/agents/SIS_IMPROVEMENT_PLAYBOOK.md`.
+- **Lab, demo and test scenarios** (`lab_*`, `crypto*`, `test*`, demos): small scenarios built around one lab topic or one engine feature. Keep them short and focused on that one thing. If a task needs their aims settled, ask the user, because they aren't written down yet.
+
 Subagent reports are not shown to the user. The orchestrator reads each one, checks the claims that matter (often by reading the code or a screenshot itself), and tells the user what happened in plain terms.
 
 ## The mission loop
@@ -61,7 +77,15 @@ Calibrate first: put the first mission that's ready through the dialogue stage a
 
 ## Making judgements without asking
 
-The orchestrator decides these itself and records them in the log:
+**In an iterative review-and-fix process** (the mission loop, an editorial pass, a playtest improvement loop), make most of the design and writing judgements yourself. Use the aim for the kind of game (above) as the test. Settle these without asking:
+- pacing, and where each clue goes;
+- how a scene plays, and a character's voice;
+- line rewrites, and cutting what drags;
+- the choice between workable options a reviewer raises.
+
+Log each one in a line with its reason, so the user can overrule it later. This keeps the rounds moving. It does not cover one-off requests: when the user asks for a specific change, do what they asked, and check with them before going beyond it.
+
+In any task, the orchestrator decides these itself and records them in the log:
 
 - **Mission-local changes** (a mission's own scenario file, ink and docs) that make it better to play and keep it solvable and validator-clean.
 - **Open design questions** left in a plan, where a sensible default exists. Pick one, say why in one line, and let the user overrule.
@@ -72,7 +96,13 @@ Everything else goes into the approval log for the user: engine or server change
 
 ## Asking the user for input
 
-- Batch decisions and ask through the question tool with **checkbox options**: a short label, a one-line description of the trade-off, and the recommended option first. The user often answers in the free-text field, so read the answer carefully rather than assuming one of the boxes.
+- Ask about the items in the approval list above. Also ask when two options would change the story or the teaching in ways the user would clearly care about.
+- **When a question does need to come to the user, do these in order:**
+  1. Write the full context to a pending-decisions file in the mission or pass folder (e.g. `scenarios/<mission>/DECISIONS_PENDING.md`): each question's background, the options with their trade-offs, your recommendation and the evidence (file:line). The user can then read it later, away from the session.
+  2. Print a short form of the same on screen.
+  3. Ask through the question tool with **checkbox options**: a short label, a one-line trade-off, the recommended option first, related questions batched into one call. The user often answers in the free-text field, so read the answer carefully rather than assuming one of the boxes.
+  4. Carry on with independent work while waiting.
+  5. When the user answers, move the item from the pending file into the log with their choice.
 - Ask only when the answer changes what happens next. Otherwise pick the conventional default and mention it.
 - When the user says "use your best judgement", decide, act, and say what you chose.
 - Report outcomes plainly: what passed, what failed with evidence, what was skipped. A static check isn't a browser test, so say which one you ran.

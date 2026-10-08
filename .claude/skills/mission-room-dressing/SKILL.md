@@ -142,7 +142,7 @@ This does catalog.json, tilesets_ref.json, `objects_hospital_extras.tsx` (the ge
 
    Earlier prompts are in the scratchpad history; the useful pattern is a numbered checklist with pass/fail and evidence per item.
 
-   Harness quirks seen in the hospital rounds: the first `enter` through a north or east door often stops short, so retry (or `moveTo` level with the gap); `interact` clicks the sprite's top-left, so it can raise a menu a player tapping the middle would not; a gameDisplay modal can open after `interact` reports `no-effect-confirmed`, so check `blockingUi`; reading a note removes it from that saved game, so re-check a desk layout in a fresh game; the maps are loaded when the page opens, so restart the session after a map edit. For a layout check, unlock every room server-side and say so in the report.
+   Harness quirks seen in the hospital rounds: `interact` clicks the sprite's top-left, so it can raise a menu a player tapping the middle would not; a gameDisplay modal can open after `interact` reports `no-effect-confirmed`, so check `blockingUi`; reading a note removes it from that saved game, so re-check a desk layout in a fresh game; the maps are loaded when the page opens, so restart the session after a map edit. For a layout check, unlock every room server-side and say so in the report.
 
 ## 5. Report
 

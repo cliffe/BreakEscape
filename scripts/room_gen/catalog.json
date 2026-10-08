@@ -3001,6 +3001,384 @@
       "w": 24,
       "h": 43,
       "gid": 922
+    },
+    "uni_crest_sign1": {
+      "id": 122,
+      "w": 44,
+      "h": 22,
+      "gid": 923
+    },
+    "projector_screen1": {
+      "id": 123,
+      "w": 88,
+      "h": 42,
+      "gid": 924
+    },
+    "drop_box1": {
+      "id": 124,
+      "w": 20,
+      "h": 24,
+      "gid": 925
+    },
+    "uni_directory1": {
+      "id": 125,
+      "w": 16,
+      "h": 15,
+      "gid": 926
+    },
+    "uni_doorcard1": {
+      "id": 126,
+      "w": 20,
+      "h": 24,
+      "gid": 927
+    },
+    "uni_sign_library1": {
+      "id": 127,
+      "w": 44,
+      "h": 14,
+      "gid": 928
+    },
+    "uni_sign_special1": {
+      "id": 128,
+      "w": 64,
+      "h": 14,
+      "gid": 929
+    },
+    "uni_timetable1": {
+      "id": 129,
+      "w": 16,
+      "h": 22,
+      "gid": 930
+    },
+    "uni_poster1": {
+      "id": 130,
+      "w": 16,
+      "h": 21,
+      "gid": 931
+    },
+    "uni_poster2": {
+      "id": 131,
+      "w": 16,
+      "h": 21,
+      "gid": 932
+    },
+    "uni_poster3": {
+      "id": 132,
+      "w": 16,
+      "h": 21,
+      "gid": 933
+    },
+    "uni_poster4": {
+      "id": 133,
+      "w": 16,
+      "h": 21,
+      "gid": 934
+    },
+    "uni_poster6": {
+      "id": 134,
+      "w": 16,
+      "h": 21,
+      "gid": 935
+    },
+    "uni_poster7": {
+      "id": 135,
+      "w": 16,
+      "h": 21,
+      "gid": 936
+    },
+    "cryptosecure_banner1": {
+      "id": 136,
+      "w": 22,
+      "h": 58,
+      "gid": 937
+    },
+    "student_lockers1": {
+      "id": 137,
+      "w": 50,
+      "h": 62,
+      "gid": 938
+    },
+    "student_locker1": {
+      "id": 138,
+      "w": 16,
+      "h": 62,
+      "gid": 939
+    },
+    "lecture_ledge1": {
+      "id": 139,
+      "w": 198,
+      "h": 12,
+      "gid": 940
+    },
+    "lecture_ledge2": {
+      "id": 140,
+      "w": 252,
+      "h": 12,
+      "gid": 941
+    },
+    "alarm_panel2": {
+      "id": 141,
+      "w": 33,
+      "h": 21,
+      "gid": 942
+    },
+    "pegboard_tools1": {
+      "id": 142,
+      "w": 56,
+      "h": 44,
+      "gid": 943
+    },
+    "lectern1": {
+      "id": 143,
+      "w": 30,
+      "h": 46,
+      "gid": 944
+    },
+    "book_trolley1": {
+      "id": 144,
+      "w": 38,
+      "h": 43,
+      "gid": 945
+    },
+    "scope_cart1": {
+      "id": 151,
+      "w": 48,
+      "h": 57,
+      "gid": 952
+    },
+    "lecture_seat_row1": {
+      "id": 152,
+      "w": 61,
+      "h": 32,
+      "gid": 953
+    },
+    "component_drawers1": {
+      "id": 154,
+      "w": 37,
+      "h": 41,
+      "gid": 955
+    },
+    "robot_arm1": {
+      "id": 155,
+      "w": 31,
+      "h": 41,
+      "gid": 956
+    },
+    "beanbag1": {
+      "id": 156,
+      "w": 44,
+      "h": 41,
+      "gid": 957
+    },
+    "stanchions1": {
+      "id": 157,
+      "w": 41,
+      "h": 35,
+      "gid": 958
+    },
+    "bankers_lamp1": {
+      "id": 159,
+      "w": 23,
+      "h": 25,
+      "gid": 960
+    },
+    "pi_cluster1": {
+      "id": 160,
+      "w": 27,
+      "h": 25,
+      "gid": 961
+    },
+    "journal_stack1": {
+      "id": 161,
+      "w": 26,
+      "h": 27,
+      "gid": 962
+    },
+    "soldering_iron1": {
+      "id": 162,
+      "w": 26,
+      "h": 26,
+      "gid": 963
+    },
+    "beanbag_orange1": {
+      "id": 163,
+      "w": 29,
+      "h": 27,
+      "gid": 964
+    },
+    "beanbag_teal1": {
+      "id": 164,
+      "w": 29,
+      "h": 27,
+      "gid": 965
+    },
+    "uni_sign_staff1": {
+      "id": 165,
+      "w": 64,
+      "h": 14,
+      "gid": 966
+    },
+    "uni_tv1": {
+      "id": 166,
+      "w": 40,
+      "h": 26,
+      "gid": 967
+    },
+    "uni_certificate1": {
+      "id": 167,
+      "w": 18,
+      "h": 14,
+      "gid": 968
+    },
+    "uni_portrait1": {
+      "id": 168,
+      "w": 22,
+      "h": 28,
+      "gid": 969
+    },
+    "uni_bunting1": {
+      "id": 170,
+      "w": 104,
+      "h": 10,
+      "gid": 971
+    },
+    "uni_bunting2": {
+      "id": 171,
+      "w": 64,
+      "h": 10,
+      "gid": 972
+    },
+    "smartscreen2": {
+      "id": 172,
+      "w": 48,
+      "h": 34,
+      "gid": 973
+    },
+    "uni_fountain1": {
+      "id": 173,
+      "w": 14,
+      "h": 22,
+      "gid": 974
+    },
+    "uni_radiator1": {
+      "id": 174,
+      "w": 26,
+      "h": 10,
+      "gid": 975
+    },
+    "uni_firedoor_sign1": {
+      "id": 175,
+      "w": 11,
+      "h": 11,
+      "gid": 976
+    },
+    "uni_dartboard1": {
+      "id": 176,
+      "w": 16,
+      "h": 16,
+      "gid": 977
+    },
+    "uni_sign_returns1": {
+      "id": 177,
+      "w": 32,
+      "h": 11,
+      "gid": 978
+    },
+    "uni_sign_study1": {
+      "id": 178,
+      "w": 44,
+      "h": 11,
+      "gid": 979
+    },
+    "uni_banner_soc1": {
+      "id": 179,
+      "w": 22,
+      "h": 58,
+      "gid": 980
+    },
+    "study_carrels1": {
+      "id": 181,
+      "w": 57,
+      "h": 58,
+      "gid": 982
+    },
+    "periodicals_rack1": {
+      "id": 182,
+      "w": 48,
+      "h": 52,
+      "gid": 983
+    },
+    "balloons1": {
+      "id": 183,
+      "w": 32,
+      "h": 59,
+      "gid": 984
+    },
+    "freshers_stall2": {
+      "id": 184,
+      "w": 62,
+      "h": 47,
+      "gid": 985
+    },
+    "display_case3": {
+      "id": 185,
+      "w": 56,
+      "h": 45,
+      "gid": 986
+    },
+    "plan_chest2": {
+      "id": 186,
+      "w": 52,
+      "h": 46,
+      "gid": 987
+    },
+    "printer_3d2": {
+      "id": 187,
+      "w": 38,
+      "h": 57,
+      "gid": 988
+    },
+    "foosball_table2": {
+      "id": 188,
+      "w": 48,
+      "h": 57,
+      "gid": 989
+    },
+    "laser_cutter2": {
+      "id": 189,
+      "w": 46,
+      "h": 60,
+      "gid": 990
+    },
+    "it_workbench2": {
+      "id": 190,
+      "w": 52,
+      "h": 60,
+      "gid": 991
+    },
+    "electronics_bench2": {
+      "id": 191,
+      "w": 42,
+      "h": 55,
+      "gid": 992
+    },
+    "cnc_mill2": {
+      "id": 192,
+      "w": 41,
+      "h": 57,
+      "gid": 993
+    },
+    "uni_sofa2": {
+      "id": 193,
+      "w": 62,
+      "h": 38,
+      "gid": 994
+    },
+    "uni_poster8": {
+      "id": 194,
+      "w": 16,
+      "h": 21,
+      "gid": 995
     }
   }
 }

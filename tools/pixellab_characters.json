@@ -17,6 +17,15 @@
     },
     "imported": "2026-09-26"
   },
+  "cliffe_schreuders": {
+    "character_id": "6006155e-74f3-487c-847e-aec2dfa41512",
+    "name": "Man in his early forties, light skin tone, univers...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-06"
+  },
   "david_osei": {
     "character_id": "ca153084-c850-42c8-85fc-8ec685ec6bdb",
     "name": "Make portrait for Hospital Clinical Engineer\nA Bla...",
@@ -235,6 +244,15 @@
     },
     "imported": "2026-09-30"
   },
+  "oleg_illiashenko": {
+    "character_id": "6bddfcaa-7589-4411-88b1-b2aaee551c0c",
+    "name": "Make portrait for a university lecturer character\n...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-06"
+  },
   "priya_s": {
     "character_id": "eb263472-5d6d-43c9-9aa3-bf613f2983b3",
     "name": "Make portrait for Priya S.\nA British Indian woman ...",
@@ -270,5 +288,23 @@
       "height": 60
     },
     "imported": "2026-10-03"
+  },
+  "sidhu_selvarajan": {
+    "character_id": "683d2a03-378d-4e03-acf2-3f97b07741b5",
+    "name": "Make portrait for a university lecturer character\n...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-06"
+  },
+  "tom_shaw": {
+    "character_id": "e0906801-40c7-4260-a098-c95dac9cdddc",
+    "name": "Make portrait for Dr Tom Shaw\nMan in his late twen...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-06"
   }
 }

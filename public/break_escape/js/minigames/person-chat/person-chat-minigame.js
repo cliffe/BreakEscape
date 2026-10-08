@@ -755,6 +755,11 @@ export class PersonChatMinigame extends MinigameScene {
                 return null;
             }
             
+            // Narrator[none]: no character, the background alone
+            if (characterId.toLowerCase() === 'none') {
+                return { speaker: 'narrator', text, isNarrator: true, narratorCharacter: 'none' };
+            }
+
             // If character ID is provided, validate it exists
             if (characterId && !this.characters[characterId]) {
                 console.warn(`⚠️ parseDialogueLine: Unknown character in Narrator[${characterId}], treating as unprefixed`);
@@ -1318,12 +1323,17 @@ export class PersonChatMinigame extends MinigameScene {
         if (block.backgroundChange) {
             console.log(`🎨 Background change block detected: ${block.backgroundChange}`);
             
-            // Change background and move to next block
+            // Change background and go straight on to the next block. Waiting for a click
+            // left the previous speaker's caption up over the new scene with nobody in
+            // frame. Deferred, not called directly: this runs inside
+            // displayAccumulatedDialogue, and if the background was the last block the
+            // next ink line would be fetched while isProcessingDialogue is still set and
+            // dropped (the conversation then stuck on the bare background).
             this.changeBackground(block.backgroundChange);
-            
-            this.scheduleDialogueAdvance(() => {
+            setTimeout(() => {
+                if (!this.ui) return;
                 this.displayDialogueBlocksSequentially(blocks, originalResult, blockIndex + 1, 0, '');
-            }, DIALOGUE_AUTO_ADVANCE_DELAY);
+            }, 0);
             return;
         }
         
@@ -1677,6 +1687,9 @@ export class PersonChatMinigame extends MinigameScene {
         try {
             console.log(`🎨 Changing background to: ${backgroundFilename}`);
             
+            // A new background is a scene shot: the old speaker leaves with the old
+            // scene, and the next speaker (or Narrator[character]) brings a portrait back
+            this.ui.portraitRenderer.setCharacterHidden(true);
             // Call setBackground to load and render the new background
             this.ui.portraitRenderer.setBackground(backgroundFilename);
             

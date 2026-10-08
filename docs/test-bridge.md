@@ -312,7 +312,10 @@ the entity you asked for, reporting `mode: 'via-interaction-menu'`. Use
 
 | Method | Notes |
 |---|---|
-| `moveTo(x, y, { timeoutMs?, wait? })` | Walk to a world point. See the exception above. Returns `{ ok, via, target, arrivedAt, distanceToTarget, reachedTarget, elapsedMs }`. `ok` means the move completed; `reachedTarget` says whether it actually got there (pathfinding legitimately stops short when the exact point is unwalkable). |
+| `moveTo(x, y, { timeoutMs?, wait? })` | Walk to a world point. See the exception above. **(x, y) is where the feet go**: the engine steers the feet collider (body centre, 31px below the sprite centre) to a click. Returns `{ ok, via, target, arrivedAt, feetAt, distanceToTarget, reachedTarget, elapsedMs }`; `arrivedAt` is the sprite centre, `feetAt` and `distanceToTarget` are the feet. `ok` means the move completed; `reachedTarget` says whether it actually got there (pathfinding legitimately stops short when the exact point is unwalkable). `reason: "stuck"` (with `blocked` sides) means the player walked into a collider and stopped making progress. |
+| `moveToNear(id, { timeoutMs? })` | Walk to a spot the engine will accept an interaction with `id` from. The standing point is solved in sprite-centre terms (the engine measures range from `player.x/y`), then the click goes to the feet position that puts the sprite centre there (`clickedFeetTarget`). |
+| `doorways(roomId?)` | Every doorway out of a room from the engine's own door placement (`calculateDoorPositionsForRoom`), whether or not the door sprite still exists (opening a door removes it on both sides). Each has `gap` (where the feet must pass) and `sprite` (`present`, `open`, `locked`). |
+| `enterRoom(roomId, { timeoutMs?, maxAttempts? })` | Walk through the doorway into an adjacent room: opens a shut door, clicks a point square in front of the opening, then one past it. Works in both directions without a prior `room` call. Returns `trace[]` with the feet position after aligning and after crossing for each attempt; `door-locked` means solve the lock first. The session's `enter` command calls this. |
 | `interact(id, { approach?, timeoutMs? })` | Real click at the entity's world position, landing in the game's own pointerdown router. If out of range the game walks the player over (stopping ¾ tile short) and the bridge then clicks again. `mode` is `direct` or `approached-then-interacted`. |
 | `interactNearest()` | Presses **E**; the game picks the target itself, weighted by facing direction. |
 | `walk(direction, ms?, { run? })` | Raw arrow-key movement. Secondary to click-to-move — use only when a scenario needs directional input (nudging out of a corner, testing collision). |
@@ -331,7 +334,7 @@ the entity you asked for, reporting `mode: 'via-interaction-menu'`. Use
 | `waitForGlobal(name, expected?, opts?)` | a story variable is set (or equals `expected`) |
 | `waitForTask(taskId, opts?)` | an objectives task reaches `completed` |
 | `waitForEvent(name, opts?)` | the game emits that event on its dispatcher |
-| `waitForMovementEnd(opts?)` | the player's body is still for several consecutive frames |
+| `waitForMovementEnd(opts?)` | the player's body is still for several consecutive frames, or (`ok:false, reason:"stuck"`) it has been "moving" for 800 ms without changing position, i.e. walking into a collider |
 | `waitForMinigame(id?, opts?)` / `waitForMinigameClosed(opts?)` | an overlay opens / closes |
 | `waitForDialogue(opts?)` | the dialogue is actionable again — awaiting a choice, continuable, or closed. **Use this between dialogue advances**: person-chat types text out a character at a time, and during that gap the dialogue is neither awaiting a choice nor continuable, which a naive loop misreads as "conversation over" and stops halfway through. |
 | `waitFrames(n)` | n rendered frames have passed (for settling animation) |

@@ -13,6 +13,7 @@ import {
     SPRITE_PADDING_BOTTOM_ATLAS
 } from '../utils/constants.js';
 import { ensureCharacterTexture } from '../systems/character-textures.js';
+import { insertDoorwayWaypoints } from '../systems/path-doorways.js';
 
 export let player = null;
 export let targetPoint = null;
@@ -74,6 +75,7 @@ function updateFootstepSound(isPlayerMoving) {
 }
 let playerFollowingPath = false; // True when actively following an EasyStar route (skip physics collision-stop)
 let playerFinalGoal = null;    // Original click destination (world coords); cleared when we go direct or arrive
+let waypointApproach = { target: null, distSq: Infinity }; // last frame's distance to targetPoint
 let pathDebugGraphics = null;  // Phaser Graphics object used to draw the path overlay
 
 /**
@@ -759,6 +761,10 @@ export function movePlayerToPoint(x, y) {
             // point used for the LOS shortcut once on the last leg.
             const applyPath = (path, goal) => {
                 const { x: cx, y: cy } = playerBodyPos();
+                // Pin the centre line of every doorway the route passes through,
+                // so the feet go through the opening square instead of clipping
+                // its frame on a diagonal (path-doorways.js).
+                path = insertDoorwayWaypoints({ x: cx, y: cy }, path, pathfindingManager.openDoorways);
                 const smoothed = pathfindingManager.smoothWorldPathForPlayer(cx, cy, path);
                 console.log(`  → Smoothed to ${smoothed.length} waypoints:`,
                     smoothed.map((p, i) => `[${i}](${p.x.toFixed(0)},${p.y.toFixed(0)})`).join(' → '));
@@ -1219,7 +1225,11 @@ function updatePlayerMouseMovement() {
     // While following a computed route, check every frame whether there is already
     // a clear physics LOS to the FINAL destination.  The moment there is, we ditch
     // the remaining waypoints and head straight there, giving smooth arrival.
-    if (playerFollowingPath && playerFinalGoal) {
+    // ...unless a pinned doorway waypoint is still ahead: those must be walked
+    // through, or the shortcut cuts the doorway corner the pin exists to avoid.
+    const pinnedAhead = playerFollowingPath && (targetPoint?.pinned
+        || playerPath.slice(playerPathIndex).some(p => p.pinned));
+    if (playerFollowingPath && playerFinalGoal && !pinnedAhead) {
         const pm  = window.pathfindingManager;
         if (pm && pm.hasWorldPhysicsLineOfSight(px, py, playerFinalGoal.x, playerFinalGoal.y)) {
             targetPoint = playerFinalGoal;
@@ -1235,8 +1245,32 @@ function updatePlayerMouseMovement() {
     const dy = targetPoint.y - py;
     const distanceSq = dx * dx + dy * dy;
 
-    // Reached current waypoint / final target
-    if (distanceSq < ARRIVAL_THRESHOLD * ARRIVAL_THRESHOLD) {
+    // Reached current waypoint / final target.
+    // An intermediate waypoint is a corner of the route, and only the straight
+    // line FROM it was checked for clearance. Turning for the next one while
+    // still ARRIVAL_THRESHOLD (8px, one grid cell) short of it cuts the corner
+    // and catches the feet on whatever the corner was routing round. So:
+    // pinned (doorway) waypoints must be reached within WAYPOINT_TIGHT, and any
+    // other waypoint is left early only if the next one is clear from here.
+    const WAYPOINT_TIGHT = 3;
+    let arrived = distanceSq < ARRIVAL_THRESHOLD * ARRIVAL_THRESHOLD;
+    // Only hold out for the tight radius while still closing in. Once the
+    // player stops getting closer (a big frame step overshooting it, or the
+    // body touching something) move on as before, so it can never jitter
+    // round a point or push at one it can't reach.
+    const closing = waypointApproach.target !== targetPoint || distanceSq < waypointApproach.distSq;
+    waypointApproach = { target: targetPoint, distSq: distanceSq };
+    if (arrived && playerFollowingPath && playerPathIndex < playerPath.length
+        && distanceSq >= WAYPOINT_TIGHT * WAYPOINT_TIGHT && closing && player.body.blocked.none) {
+        const next = playerPath[playerPathIndex];
+        const pm = window.pathfindingManager;
+        if (targetPoint.pinned) {
+            arrived = false;
+        } else if (pm && !pm.hasWorldPhysicsLineOfSight(px, py, next.x, next.y)) {
+            arrived = false;
+        }
+    }
+    if (arrived) {
         // If there are more path waypoints, advance to the next one without stopping
         if (playerPathIndex < playerPath.length) {
             targetPoint = playerPath[playerPathIndex++];

@@ -1,0 +1,13 @@
+  Dr Oleg Illiashenko / The sign on that door says staff only. You read it and came in anyway. That's a good instinct for this department.
+  Dr Oleg Illiashenko / Oleg Illiashenko. I'm one of the lecturers here. Sit anywhere that isn't covered in marking.
+  Dr Oleg Illiashenko / Oleg Illiashenko. I'm one of the lecturers here. Sit anywhere that isn't covered in marking. / 6. I'll leave you to it.
+  CHOICES(1): You look annoyed. Is something wrong?;The system thinks you're two people. Two usernames that look the same.;What do you make of CryptoSecure?;What are the others like? Dr Shaw, Dr Selvarajan, Dr Schreuders?;Busy week?;I'll leave you to it.
+  > two people
+  Dr Oleg Illiashenko / Look at the bytes, not the letters. One of those has a Cyrillic letter that looks exactly like an English e.
+  Dr Oleg Illiashenko / Same shape, different number. The computer is right: those are two different names.
+  Dr Oleg Illiashenko / Two names that look the same aren't the same bytes. Ask anyone who has clicked a link to a bank that wasn't quite their bank.
+  Dr Oleg Illiashenko / Either the system imported me twice, or someone wants a staff login with my name on it. Today I'm not sure which is worse.
+  CHOICES(2): You look annoyed. Is something wrong?;What do you make of CryptoSecure?;What are the others like? Dr Shaw, Dr Selvarajan, Dr Schreuders?;Busy week?;I'll leave you to it.
+  > leave you to it
+  Dr Oleg Illiashenko / Close the door properly on your way out. It sticks.
+[closed: None]

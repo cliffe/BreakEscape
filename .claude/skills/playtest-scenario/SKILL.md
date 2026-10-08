@@ -105,7 +105,7 @@ Never reconstruct a trace from what you expected to happen. If a command was not
 - `mg type(i, text, {submit:true})` sends Enter **and** clicks a submit button if Enter changed nothing. Flag stations ignore Enter entirely; before this, a submitted flag silently never arrived. Check `submittedVia` in the result.
 - `mg clickControl` takes an index **or** a label substring — `clickControl("submit")`. Prefer the label: indices shift as a minigame re-renders. A failure lists the controls that were available.
 - A container shows "Loading contents..." for a beat after opening. `mg getState` now waits that out; a state read during it reports an empty safe.
-- An unlocked door can still be shut, and `enter` opens it before walking through. An unlocked door that has *vanished* is normal — see above.
+- An unlocked door can still be shut, and `enter` opens it before walking through. An unlocked door that has *vanished* is normal: opening a door removes its sprite on both sides. `enter` doesn't need the sprite.
 - `converse` stops once the conversation stops saying anything new, so hub NPCs no longer burn the whole turn budget. Pass `choices` when you need a branch.
 
 ### Harness gotchas from pass 4 (October 2026)
@@ -118,9 +118,10 @@ Each of these cost at least one pass-4 run (reports in `tools/playtest/m0*-pass4
 - **Read the credits while they play.** They are one `#bv-cr-label` element (inside `#bv-credits-overlay`) that changes about every 3.5 s, and they don't replay after a reload. Attach a MutationObserver to `#bv-cr-label` before the last debrief line, and read the lines from it; `.bv-stage` is the visualiser panel, not the credits.
 - **Use a private scratch subfolder** of the session scratchpad named for your run (`<mission>-<role>/`), never a generic name at the root (`lint.txt`, `matrix.sh`, `session.jsonl`): parallel agents overwrite each other's files.
 - **Go headless when the machine is loaded.** The headed default is for the user to watch, but with other playtests running a headed browser has hung at "ready", and a backgrounded Wayland window throttled the game to a few px per second (m02, m03, m04). Check `uptime`; above a load of about 10, or with other playtests running, pass `--headless` and say so in the report. Timings from a loaded machine aren't representative.
-- **`enter` may need a second call, or a pointer move first.** Under load a door can need repeated `enter`; after a door is unlocked and its sprite has gone, `enter` can fail with `no-known-doorway` until a `room` call lists it, and walking through with `moveTo` + `walk` works.
+- **`enter` crosses in one call, both ways (fixed October 2026).** It used to need 2-3 calls on side doors and failed with `no-known-doorway` on every return trip. It now takes the doorway from the engine's own door placement, so no `room` call is needed first, opens a shut door at any distance, lines the feet up on the gap and walks straight through. If it ever reports `did-not-cross`, its `trace` gives the feet position after aligning and after crossing against `doorway.gap`; report those numbers, don't just retry. `door-locked` means solve the lock first.
+- **`moveTo` coordinates are where the feet go**, about 31px below the sprite centre that `arrivedAt` reports. Compare `feetAt` with your target, not `arrivedAt`. A move that walks into something now returns `reason: "stuck"` within a second instead of hanging for 20s.
 - **`mg choose` is unreliable on long hubs and number-only choices.** A regex on a choice whose text is just a number ("5093.") reads as a list number and fails with `choice-no-match`; on long menus pick with `{"cmd":"mg","action":"clickText","args":["<exact choice text>"]}` instead.
-- **Interaction range is 32 px (24 px for some objects).** `interact` from 36 px reports `no-effect-confirmed`. Walk closer, and if a spot can't be reached from the side you approach, report it: that is a layout finding for the scenario (m02 Bed 4, m06 rack sheet and Satoshi, m08 locker).
+- **Interaction range is 32 px (24 px for some objects), measured from the sprite centre (`player.x/y`), not the feet.** `interact` from 36 px reports `no-effect-confirmed`. `moveToNear` used to stop 37-62 px short on the far side of desks (it clicked the sprite-centre spot as if it were a feet target); since October 2026 it clicks the feet position that puts the sprite centre on the spot, and then closes the last few px on the arrow keys. If it still reports `arrived-but-outside-plain-range`, its `nudges` show whether something blocked the way: report that as a layout finding for the scenario (m02 Bed 4, m06 rack sheet and Satoshi, m08 locker, m01 encrypted archive).
 
 ## Token discipline
 
@@ -327,7 +328,7 @@ Speed changes pacing only. Waits stay deterministic in both, so `fast` is not le
 `{"cmd":"enter","room":"main_office_area"}` walks through to an adjacent room. Use it rather than `moveTo` coordinates. Two things make doors awkward and both have ended runs:
 
 - Rooms load lazily, so the destination does not exist until you are in it.
-- **An unlocked door is removed from the scene.** `moveToNear("door:...")` then fails with `unknown-entity`, which reads like a broken door and is not one. The session remembers doorways from earlier `room` calls and walks through the remembered gap — so send `{"cmd":"room"}` in a room before trying to leave it.
+- **An unlocked door is removed from the scene once opened, on both sides.** `moveToNear("door:...")` then fails with `unknown-entity`, which reads like a broken door and is not one. `enter` doesn't depend on the sprite: it works out the doorway from the room's connections, in either direction, with no `room` call needed first. `window.__test.doorways()` lists them.
 
 The normal sequence for a locked door is: `room` → `moveToNear` the door → `interact` → `lock` → `enter`.
 
@@ -553,9 +554,12 @@ at fault.
   before reporting a suspected engine or scenario fault; the failure you are
   looking at is probably in there.
 
-Two m01 findings are open and may recur elsewhere: a collider short-stops
-`moveToNear` on three server-room objects (up to 59.7px), and the final
-abort/launch confirmation was never completed, so the debrief path is untested.
+Two m01 findings are open and may recur elsewhere. `moveToNear` used to stop
+short (up to 59.7px) on three server-room objects; after the October 2026
+harness fix the VM launcher and the flag station are reached, but the
+encrypted archive can't be approached closer than about 31px, and from there
+the flag station takes the click. The final abort/launch confirmation was never
+completed, so the debrief path is untested.
 
 **Drive with Sonnet.** Five Haiku runs failed at the same point — not reacting to
 `ok:false` — including one on the fully fixed harness with the route in hand.

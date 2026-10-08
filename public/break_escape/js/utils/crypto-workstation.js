@@ -10,13 +10,18 @@ export function createCryptoWorkstation(objectData) {
     return workstationSprite;
 }
 
+const CYBERCHEF_PATH = '/break_escape/assets/cyberchef/CyberChef_v10.19.4.html';
+
 // Open the crypto workstation
 export function openCryptoWorkstation() {
     const laptopPopup = document.getElementById('laptop-popup');
     const cyberchefFrame = document.getElementById('cyberchef-frame');
     
-    // Set the iframe source to the CyberChef HTML file
-    cyberchefFrame.src = '/break_escape/assets/cyberchef/CyberChef_v10.19.4.html';
+    // Load CyberChef only the first time. Closing the laptop keeps the frame
+    // loaded, so the player's recipe and input survive close and reopen.
+    if (cyberchefFrame.getAttribute('src') !== CYBERCHEF_PATH) {
+        cyberchefFrame.src = CYBERCHEF_PATH;
+    }
     
     // Show the laptop popup
     laptopPopup.style.display = 'block';
@@ -31,13 +36,10 @@ export function openCryptoWorkstation() {
 // Close the crypto workstation
 export function closeLaptop() {
     const laptopPopup = document.getElementById('laptop-popup');
-    const cyberchefFrame = document.getElementById('cyberchef-frame');
-    
     // Hide the laptop popup
     laptopPopup.style.display = 'none';
     
-    // Clear the iframe source
-    cyberchefFrame.src = '';
+    // Leave the iframe loaded (do not clear src) so the recipe and input persist.
     
     // Re-enable game input
     if (window.game && window.game.input) {
@@ -46,11 +48,18 @@ export function closeLaptop() {
     }
 }
 
-// Open the crypto workstation iframe in a new tab
+// Open the crypto workstation iframe in a new tab. CyberChef keeps the recipe
+// and input in the URL hash, so opening the frame's live location carries them over.
 export function openCryptoWorkstationInNewTab() {
     const cyberchefFrame = document.getElementById('cyberchef-frame');
-    
-    if (cyberchefFrame && cyberchefFrame.src) {
-        window.open(cyberchefFrame.src, '_blank');
+    if (!cyberchefFrame) return;
+
+    let url = CYBERCHEF_PATH;
+    try {
+        const live = cyberchefFrame.contentWindow && cyberchefFrame.contentWindow.location.href;
+        if (live && live.indexOf(CYBERCHEF_PATH) !== -1) url = live;
+    } catch (e) {
+        // Cross-origin or not loaded: fall back to the base URL.
     }
-} 
+    window.open(url, '_blank');
+}

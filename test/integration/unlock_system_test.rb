@@ -57,7 +57,7 @@ module BreakEscape
                   "name" => "Lockpickable Box",
                   "type" => "box",
                   "locked" => true,
-                  "lockType" => "lockpick",
+                  "lockType" => "key",
                   "difficulty" => 3,
                   "contents" => [{ "type" => "coin", "name" => "Gold Coin" }]
                 },
@@ -363,7 +363,10 @@ module BreakEscape
     # CONTAINER/OBJECT UNLOCK TESTS - CLIENT-VALIDATED METHODS
     # =============================================================================
 
-    test "container with key lock: should trust client validation" do
+    test "container with key lock: should unlock with the key in inventory" do
+      @game.player_state['inventory'] << { 'type' => 'key', 'opens_lock' => 'drawer_key', 'name' => 'Drawer Key' }
+      @game.save!
+
       post unlock_game_url(@game), params: {
         targetType: 'object',
         targetId: 'drawer_key',
@@ -374,10 +377,24 @@ module BreakEscape
       assert_response :success
       json = JSON.parse(@response.body)
       assert json['success'],
-        "Server should trust client validation for key unlocks"
+        "Server should accept a key unlock when the key is in inventory"
     end
 
-    test "container with lockpick: should trust client validation" do
+    test "container with key lock: should reject a key claim without the key" do
+      post unlock_game_url(@game), params: {
+        targetType: 'object',
+        targetId: 'drawer_key',
+        attempt: nil,
+        method: 'key'
+      }
+
+      assert_response :unprocessable_entity
+    end
+
+    test "container with key lock: lockpick should unlock with a lockpick in inventory" do
+      @game.player_state['inventory'] << { 'type' => 'lockpick', 'name' => 'Lock Pick Kit' }
+      @game.save!
+
       post unlock_game_url(@game), params: {
         targetType: 'object',
         targetId: 'box_lockpick',
@@ -388,7 +405,7 @@ module BreakEscape
       assert_response :success
       json = JSON.parse(@response.body)
       assert json['success'],
-        "Server should trust client validation for lockpick unlocks"
+        "Server should accept a lockpick on a key lock when the player holds one"
     end
 
     test "container with biometric lock: should trust client validation" do

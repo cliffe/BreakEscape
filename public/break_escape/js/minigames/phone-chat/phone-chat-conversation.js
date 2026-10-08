@@ -9,6 +9,11 @@
 
 import { phoneStepLines } from './phone-chat-speaker.js';
 
+// A preload in progress, per NPC entry. The inventory (on pickup) and the phone-chat
+// minigame (on open) both preload; a second caller waits for the first instead of
+// running its own copy and adding the opening twice (E1).
+const openingPreloads = new WeakMap();
+
 export default class PhoneChatConversation {
     /**
      * Create a PhoneChatConversation instance
@@ -675,14 +680,56 @@ export default class PhoneChatConversation {
      * game-action tags are kept on the NPC (deferredGlobals / deferredTags) to apply
      * when the player first opens the thread. Runs the whole opening up to its choices
      * (or end), adds every line as a preloaded message, and saves the story position.
-     * Only for a contact with no thread yet.
+     * Only for a contact with no thread yet. Records the knot it ran in
+     * npc.preloadedKnot, so phone-chat can tell an explicit start at that same knot
+     * (a pickup mapping's targetKnot) from a new one, and not play it a second time.
      * @param {Object} npc - the NPC entry
      * @param {Object} npcManager
      * @param {Object} inkEngine - an InkEngine to run it in (its story is replaced)
      * @returns {Promise<number>} lines preloaded
      */
     static async preloadOpening(npc, npcManager, inkEngine) {
-        if (!npc || npcManager.getConversationHistory(npc.id).length > 0) return 0;
+        if (!npc) return 0;
+        const inFlight = openingPreloads.get(npc);
+        if (inFlight) {
+            await inFlight.catch(() => 0);
+            return 0;
+        }
+        const run = PhoneChatConversation._preloadOpeningOnce(npc, npcManager, inkEngine);
+        openingPreloads.set(npc, run);
+        try {
+            return await run;
+        } finally {
+            openingPreloads.delete(npc);
+        }
+    }
+
+    /**
+     * Wait for any preload of this NPC's opening that is still running.
+     * @param {Object} npc - the NPC entry
+     */
+    static async waitForPreload(npc) {
+        const inFlight = npc && openingPreloads.get(npc);
+        if (inFlight) await inFlight.catch(() => 0);
+    }
+
+    /**
+     * True when opening this NPC at `knot` would replay the opening a preload has
+     * already put in the thread: the knot is the one the preload ran, the thread holds
+     * only preloaded lines (the player hasn't answered yet), and the preload's story
+     * position is there to resume from.
+     * @param {Object} npc - the NPC entry
+     * @param {string|null} knot - the explicit start knot
+     * @param {Array} conversationHistory - the thread, without barks and timed texts
+     */
+    static isPreloadedOpening(npc, knot, conversationHistory) {
+        return !!(npc && knot && npc.storyState && npc.preloadedKnot === knot &&
+            conversationHistory.length > 0 &&
+            conversationHistory.every(msg => msg.preloaded));
+    }
+
+    static async _preloadOpeningOnce(npc, npcManager, inkEngine) {
+        if (npcManager.getConversationHistory(npc.id).length > 0) return 0;
         if (!npc.storyPath && !npc.storyJSON) return 0;
 
         const tempConversation = new PhoneChatConversation(npc.id, npcManager, inkEngine);
@@ -700,7 +747,8 @@ export default class PhoneChatConversation {
         // so its start knot skips an intro the player already read
         window.npcConversationStateManager?.applySavedInkVariables?.(npc.id, tempConversation.engine?.story);
 
-        tempConversation.goToEntryKnot(npc.currentKnot || 'start');
+        const entryKnot = npc.currentKnot || 'start';
+        tempConversation.goToEntryKnot(entryKnot);
 
         // Accumulate all intro messages and game action tags until we hit choices or end
         const allMessages = [];
@@ -712,6 +760,9 @@ export default class PhoneChatConversation {
             if (result.hasEnded || (result.choices && result.choices.length > 0) || !result.canContinue) break;
         }
         if (allMessages.length === 0) return 0;
+        // The story loaded asynchronously; if the thread gained lines meanwhile (the
+        // player opened it), that run already showed the opening
+        if (npcManager.getConversationHistory(npc.id).length > 0) return 0;
 
         allMessages.forEach(message => {
             npcManager.addMessage(npc.id, 'npc', message.trim(), {
@@ -722,6 +773,7 @@ export default class PhoneChatConversation {
 
         // Save the story state after preloading, so the intro doesn't replay when opened
         npc.storyState = tempConversation.saveState();
+        npc.preloadedKnot = entryKnot;
 
         // The observer was off, so synced globals the intro assigned (~ x = true) were
         // not written. Keep them, and the tags, for when the player first opens the chat.
