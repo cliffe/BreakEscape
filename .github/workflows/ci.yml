@@ -65,5 +65,5 @@ jobs:
           BE_DB_PASSWORD: postgres
           BE_DB_HOST: localhost
         run: |
-          bin/rails db:prepare
+          bin/rails app:db:prepare
           bin/rails test

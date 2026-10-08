@@ -1020,7 +1020,8 @@ module BreakEscape
 
     test "a repeat completion is a no-op and does not reapply the globals" do
       @game.complete_task!("open_relay")
-      @game.update_global_variables!("relay_opened" => false)   # the story moved on
+      @game.merge_global_variables!("relay_opened" => false)   # the story moved on
+      @game.save!
       @game.complete_task!("open_relay")
       assert_equal false, @game.reload.player_state["globalVariables"]["relay_opened"]
     end
