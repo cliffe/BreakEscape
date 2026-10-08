@@ -153,3 +153,9 @@ Brief: `docs/agents/LIGHTING_PASS_BRIEF.md`. Plans in each mission's `LIGHTING_P
 - Tesseract visual round 2: nothing above minor (front lab row now 67 vs 62–63). Improvement round 2: lecture theatre ambient `#c0bab4` (`#b8bfce` read as a cold grey room beside the warm ones; same brightness, warm hue); the decoration laptop beside Tom at 0.4, because the first objective is "get a lab laptop from Dr Shaw" and a glowing laptop beside him invites the wrong click. Skipped: staff-office PC brighter than its neighbours (lit room, not a puzzle object).
 - Tesseract visual round 3: nothing above minor, so rounds stop (two improvement rounds run). Polish: no glow on the decoration laptop beside Tom, lab decoration lamp 0.4 (the first lit-looking thing through the lab door was a desk where nothing happens).
 - Tesseract browser check: no failures (game 1867, `tools/playtest/tess-lighting-check-session.jsonl`); staff office, common room, workshop and the Byte Wall's contents weren't reached in 10 minutes (covered by three tours). Committed 96fd31ec.
+
+### User feedback (2026-10-08)
+
+- "Main area rooms a little more brightly lit": Tesseract foyer ambient `#eeebe4` (mean 165 → 176 against 183 with lighting off); m01 main office lit ambient `#e4e8ee` (105 → 109, lighting off 108).
+- Tesseract staff room has windows along the top wall: ambient `#e8e4dc` plus daylight pools under the three windows (tiles x 5.3, 9.5, 13.8). The room now matches its lighting-off brightness (103), so the pools can't show as patches: a lit room can't go brighter than its art. Visible window pools would need the rest of the room darker.
+- Rule of thumb for the skill: a room's busiest public space (a foyer, an open-plan office) sits near full brightness; moodier settings belong in side rooms and corridors.
