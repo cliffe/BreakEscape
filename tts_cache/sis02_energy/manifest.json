@@ -1,0 +1,2135 @@
+{
+  "0112ac4f1cbd18d2b73f17d340bd0322": {
+    "npc": "dr_nalini_bashir",
+    "text": "The compensating control that was recorded — enhanced network monitoring — was never actually implemented for the OT zone. The CastleTech contract explicitly excluded it.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "01835d7de530bf679b1551d0d9908da1": {
+    "npc": "priya_chandra",
+    "text": "If you change the firmware, you've changed the subject of the certification. So you have to certify it all over again.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "039095f05e730cac9b4bda4d8f014c5e": {
+    "npc": "priya_chandra",
+    "text": "The patch itself is maybe two hours of work. The recertification is the burden. We have to prove to a third-party auditor that the patched firmware still meets all the safety requirements of the original design.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "0609ea300f922976739288cafda7b4cc": {
+    "npc": "dr_nalini_bashir",
+    "text": "The governance requirement exists because in OT environments, the right person to consult before physical intervention is the person who understands what that hardware is doing to the physical process.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "062f59234a6f1aa4d77b99a586040c9b": {
+    "npc": "priya_chandra",
+    "text": "Open the historian trend on HMI-OPS-01 — look at Rack A1 temperature for the last three hours.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "07c1731d869aee92fc325f79effc090d": {
+    "npc": "priya_chandra",
+    "text": "Also look at the rate-of-change overlay. If the real temperature was climbing before the flat-line started, you will see a clear break. That break tells us exactly when the falsification began.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "0844bd1e807584a20c7d55b50f4f18aa": {
+    "npc": "priya_chandra",
+    "text": "IEC 61511 requires SIS logical isolation from the control system for exactly this reason.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "09a09a14f3b5e24e5d19a7c5128a1304": {
+    "npc": "priya_chandra",
+    "text": "Because you can't just patch the firmware in a SIL 2 system without independent verification.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "0ba012ed094344401a08ff618aea4095": {
+    "npc": "priya_chandra",
+    "text": "If the SIS fails, we need a safety function that cannot fail in the same way. That means it has to be fundamentally independent — a different kind of thing.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "0c6709c6e560933ddfa7a2958bf01648": {
+    "npc": "priya_chandra",
+    "text": "I haven't been here long — I came early for a maintenance window, wasn't expecting this. I called it in as soon as I saw the handover notes.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "0d98346a60e0d6c14e3162bf8d7c338a": {
+    "npc": "dr_nalini_bashir",
+    "text": "In this case, that would mean: OT-inclusive monitoring that covers the SCADA zone, network segmentation that isolates the SIS engineering port from the SCADA network, and regular review of the risk assessment.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "0e1a46255e881faf4b720447a4c581e0": {
+    "npc": "dr_nalini_bashir",
+    "text": "The remediation plan will need to detail timelines for the SIS firmware patch and recertification, architecture changes to the jump server and historian, and contract amendments to the SOC scope.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "0ef86e7d10bf5881399276da9668ea81": {
+    "npc": "priya_chandra",
+    "text": "There is a SIS certification document in the filing cabinet in that room. Find it and compare the numbers against what the panel shows.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "0f1acf3b3d7a445f305b60d2e2aebaa0": {
+    "npc": "priya_chandra",
+    "text": "The question is: who was authorised to make that change? The answer is: nobody who actually has that access level.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "1085fe1ce36f3f618dc539e89d069c55": {
+    "npc": "priya_chandra",
+    "text": "If the thermometer reads significantly higher than the HMI says — like if HMI says 28 and the thermometer says 40-plus — that's a red flag.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "114ff0fecffc8908fafd4c2ba058aafd": {
+    "npc": "dr_nalini_bashir",
+    "text": "Marcus Webb is exactly that engineer. His risk assessments show he understands the exposure. He should have been the first person you consulted about the jump server.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "135227eb3c917f31b434b7e0ba93239d": {
+    "npc": "priya_chandra",
+    "text": "Lithium cells can undergo thermal runaway above about 55 degrees. The SIS should trip them offline before that happens. But if the SIS has been compromised or isn't working...",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "13df06fdb56febd6c4a1f9da60f805d1": {
+    "npc": "priya_chandra",
+    "text": "Apply the patch and do the recertification. I would have recommended that six months ago.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "1416835c201ed32fa83b9fc8538a669e": {
+    "npc": "priya_chandra",
+    "text": "Eighty-five degrees. The SIS thermal runaway threshold has been raised from fifty-five to eighty-five.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "15404f6ead839c97bb776a45945af2b6": {
+    "npc": "priya_chandra",
+    "text": "Engineering access to the SIS should happen at a physical console — an air-gapped terminal in a restricted room. You plug in a portable device, make your changes, verify them, then disconnect.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "15d8bd06304733c6e835e9a2a34af1d1": {
+    "npc": "dr_nalini_bashir",
+    "text": "If the attacker had been mid-command on a SIS engineering session when you pulled that cable, the abrupt termination could have left the SIS in an undefined state. You were fortunate.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "17b2ac79b554303794117cb5e7ac29a1": {
+    "npc": "dr_nalini_bashir",
+    "text": "Any one of those alone would be manageable. All three together created the conditions for what happened this morning.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "191e149e6e1a36231d7b2d53a757a19f": {
+    "npc": "priya_chandra",
+    "text": "That means the automated safety function won't trip until the cells are already in irreversible failure. The protection we thought was there — isn't.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "19b0d60e09ae348028d11226556dc416": {
+    "npc": "priya_chandra",
+    "text": "But if the cells are at fifty-one degrees and rising with a compromised SIS, the answer may well be yes.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "1af7e0605df0a17cd2c3c20e915af584": {
+    "npc": "dr_nalini_bashir",
+    "text": "Invest in the people who understand the physical systems as well as the digital ones. They are your last line of defence.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "1b2131231c2c38b4fdc39b574285452f": {
+    "npc": "priya_chandra",
+    "text": "That way, even if the entire SCADA network is compromised, the SIS stays clean.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "1bc69c928cf15c744c2979ccf6653caa": {
+    "npc": "dr_nalini_bashir",
+    "text": "Of course. I'll be here. Take the time you need.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "1c2e2f54393b975436ef2cf43dc109f2": {
+    "npc": "priya_chandra",
+    "text": "The battery management systems go into a safe state — no charging, no discharging, just cooling until the cells stabilise.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "1cd300643ff431543d8d786e67ff7032": {
+    "npc": "dr_nalini_bashir",
+    "text": "Everything else failed — not because the safety engineering was wrong in principle, but because the security architecture that was supposed to protect it was never properly maintained. A temporary commissioning configuration became a permanent attack pathway. A risk assessment accepted compensating controls that were never actually implemented.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "1dc366e7b8fb0c8c180d34753bb55dde": {
+    "npc": "dr_nalini_bashir",
+    "text": "Dr Priya Sharma — NCSC. The 72-hour notification window has now passed. I can't wait any longer — we need to begin the post-incident review now.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "1eb476a34258f549aa1681fd5dc3e370": {
+    "npc": "priya_chandra",
+    "text": "Which is why that analog thermometer in Battery Hall 1 is now the most important instrument in this facility.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "1fe9cd6d8cf53242abbc1bd6dadfacb7": {
+    "npc": "priya_chandra",
+    "text": "That's not bureaucracy — it's actually important. You don't want to patch a safety system and accidentally break some critical function.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "20c2d5071df766c728782c66ae7c713d": {
+    "npc": "priya_chandra",
+    "text": "I've got the plant room badge here. Battery Hall 1 is through the north door.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "22c0b625b1730cf3190bdbb0de7abe94": {
+    "npc": "priya_chandra",
+    "text": "Real sensor data has noise. Electrical interference, measurement jitter, thermal fluctuation. A perfectly flat line for three hours means the data is synthetic.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "2649b78893e536e1fd0a1cc7c5df5847": {
+    "npc": "priya_chandra",
+    "text": "If the physical thermometer is correct, then yes. Something is feeding the SCADA system false data.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "269e4a9a4e773ba721ec1518c77de331": {
+    "npc": "priya_chandra",
+    "text": "Could be nothing. But I want to know.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "27aef0cb106ed6aeeb0c138b8cc6c030": {
+    "npc": "priya_chandra",
+    "text": "Once it starts, it's very hard to stop. The temperature ramps exponentially. The cell catches fire, or releases hydrogen gas.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "280711847bd64754d19d31854ab5996e": {
+    "npc": "narrator",
+    "text": "There's one car in the car park. Helen Marsh rang before it was light and asked you to come in early.",
+    "voice": "Charon",
+    "style": "Calm, precise narrator; measured industrial tone; unhurried",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "2831fecf7f35db5ecf22068dad352864": {
+    "npc": "priya_chandra",
+    "text": "Now, anyone on the SCADA network who knows the access point can reach the SIS and potentially modify setpoints. Marcus flagged this eighteen months ago. The board decided to accept the risk rather than pay for a reconfiguration.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "28c36a06d7d00acbf17b662e5dc98d16": {
+    "npc": "dr_nalini_bashir",
+    "text": "Dr Priya Sharma — NCSC. I've been through the incident timeline. Take whatever time you need before we start.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "28d56280e01f962c6f4006dc90b3525c": {
+    "npc": "priya_chandra",
+    "text": "Fifty-one degrees. The HMI says twenty-eight.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "28df43eff48b6dc50dde6733bbb11a82": {
+    "npc": "priya_chandra",
+    "text": "The flat-line starts at 23:12 last night. That's when the real reading was replaced.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "28e015ce009a903081a524dd813c84a2": {
+    "npc": "priya_chandra",
+    "text": "It's expensive and time-consuming because the safety function has to be proven to work correctly before we go live. You can't just patch and hope.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "299724af65193e46fc79e1fc8120c59f": {
+    "npc": "priya_chandra",
+    "text": "The beauty of a hardwired circuit is that there's no attack surface. No firmware to patch, no network port to access, no credentials to steal.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "2ae27743b88dcb8a9daf82e1a71790e8": {
+    "npc": "priya_chandra",
+    "text": "The night shift technician — Jay Patel — his handover notes just say 'uneventful.' Jay's been here three years. He never writes that when it actually was.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "2cfd35188a6dcad6359a59d2b72dedbd": {
+    "npc": "dr_nalini_bashir",
+    "text": "The compensating controls must actually be implemented and verified. OT-inclusive monitoring — not a SOC contract that excludes the OT zone. Firewall rules that actually isolate the SIS engineering port. Network monitoring that would have detected the c.ellison session at 01:47 rather than at 06:28.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "2e818122e9ece811d1493b7ee7274657": {
+    "npc": "dr_nalini_bashir",
+    "text": "IEC 61511 requires the SIS to be logically — and ideally physically — isolated from the basic process control system. The principle is: the safety system should function correctly even when the control system is completely compromised.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "2e9004f8806d6181b8618543c38a3459": {
+    "npc": "dr_nalini_bashir",
+    "text": "Yes — twice. The historian Modbus proxy traffic that Marcus Webb flagged three weeks ago. And the c.ellison RDP session that had been active since 01:47.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "32a0291392c84f7dd28c9ec2c9153605": {
+    "npc": "priya_chandra",
+    "text": "Priority one is the ESD. Those cells are at fifty-one degrees with a compromised SIS — we need to disconnect them from the charging circuit now.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "3405d05302e5f7779f1e43fea771448b": {
+    "npc": "priya_chandra",
+    "text": "It's deliberate. You can't accidentally recover from an ESD just by power-cycling the system. The reset requires physical presence and commitment.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "34798464f90ca77ed081d2fa27597bcc": {
+    "npc": "priya_chandra",
+    "text": "Which means Battery Hall 1 has been operating without meaningful temperature monitoring for over seven hours.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "34aada466156aafb5205a1d126b24e55": {
+    "npc": "priya_chandra",
+    "text": "And which is why, if I think the SIS might not be working, I want to verify the real temperature before trusting what the SCADA tells me.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "396a9fcc7dcfad91f69e601c2079e5dd": {
+    "npc": "priya_chandra",
+    "text": "Should. That's the word I keep getting stuck on this morning.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "3b5f0ba6ff9bbee18c5e4ddde61aa1dd": {
+    "npc": "priya_chandra",
+    "text": "Two things still need to happen. The attacker is still in the network — pull the jump server Ethernet cable if you have not already, then message Tom Hadley at CastleTech to block the enterprise-side connections.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "3bed981da9c3ee69cca36c8c26aa8840": {
+    "npc": "dr_nalini_bashir",
+    "text": "The jump server that bridged IT and OT also had access to the SIS engineering subnet. It was documented in the network architecture, but the safety implications weren't evaluated.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "3e677445af8019ddc330ada73bce0002": {
+    "npc": "priya_chandra",
+    "text": "If it reads anything higher — especially anything near eighty-five degrees — the safety system has been tampered with. That setpoint is the temperature at which the SIS is supposed to trip the racks offline automatically.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "3ee1458127425ddf3f095764f9c351fd": {
+    "npc": "priya_chandra",
+    "text": "It would close the authentication bypass on the SIS engineering port. An attacker on the SCADA network could no longer modify SIS setpoints without proper credentials.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "42429ec6bcf3db214da9bb0f6b52f02f": {
+    "npc": "dr_nalini_bashir",
+    "text": "In a COMAH facility, uncoordinated physical intervention on an IT/OT boundary device is exactly the kind of action that can turn a contained incident into a safety event.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "4465a3149cb83faedc64a9426ad43551": {
+    "npc": "dr_nalini_bashir",
+    "text": "Two options. First: recommend applying the patch and accepting the recertification cost. Second: recommend continued deferral with genuinely effective compensating controls. Which do you recommend?",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "45127f295cafaaec108e06a17ae1e4c9": {
+    "npc": "dr_nalini_bashir",
+    "text": "From there: domain controller access, then the dual-homed historian and the jump server — both of which bridged the IT/OT boundary in ways that weren't supposed to be possible.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "46899e9eb8a64023c9bc0f8232289936": {
+    "npc": "priya_chandra",
+    "text": "During commissioning, the SIS vendor needed remote access to configure the safety settings. So we connected the engineering port to the SCADA network with a temporary firewall rule.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "4748a04ac949eaabcb5585c5d51e05b6": {
+    "npc": "priya_chandra",
+    "text": "The SIS configuration panel is in the engineering workshop — it shows all the current setpoints for the protective functions.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "4a445c083018b6c2176cb95a7b1ab4e9": {
+    "npc": "priya_chandra",
+    "text": "It has to be done manually — someone walks into Battery Hall 1, finds the button housing, pops out the mechanical reset pin, and reinstalls the button.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "4ef07dd8dd87804e4929eea5702a4d80": {
+    "npc": "priya_chandra",
+    "text": "We didn't do that because it's operationally inconvenient and it costs money. So we left the engineering port on the SCADA network and hoped nobody would exploit it.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "4f7e251dc88de680269a7b6db5976e10": {
+    "npc": "priya_chandra",
+    "text": "You already have the plant room badge. Battery Hall 1 is through the north door.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "4f9fa0efdacee7b8de1e778bdfcb6214": {
+    "npc": "priya_chandra",
+    "text": "We should do a walkdown of Battery Hall 1 before the maintenance window opens. Check the temperature manually.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "5084f1eacc35bbf12974ff7ca5967e87": {
+    "npc": "priya_chandra",
+    "text": "Good. Head north through the door — I'll catch up with you there.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "519d13a315be78ef796883649f90ad78": {
+    "npc": "priya_chandra",
+    "text": "HMI-OPS-01 shows everything you'd expect — Battery Hall 1 sitting at a steady 28 degrees, state of charge at 72 percent, all alarms green.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "539ff5ccaaddecf10011f1a7f3b3fcfc": {
+    "npc": "dr_nalini_bashir",
+    "text": "In safety-critical engineering, we don't evaluate decisions purely by outcome. We evaluate process. A good outcome from a poor process is luck, not competence — and luck is not a safety control.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "569991603596b5ca1af7cfd41b2dd662": {
+    "npc": "dr_nalini_bashir",
+    "text": "A bidirectional RDP capability that was supposed to be temporary. It was enabled during commissioning and never reverted.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "57175d1a650b8bee04b38d5131226a77": {
+    "npc": "priya_chandra",
+    "text": "It is a physical electrical interlock. When you press it, it breaks the charging circuit for Racks A1 through A4. Immediately. No SCADA involved, no SIS firmware, no network command.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "58e5259a54d8f006444f546b35665fba": {
+    "npc": "priya_chandra",
+    "text": "And we need to file the NIS notification. We are inside the seventy-two hour window but it needs to go in now. The form is on the wall in the control room.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "5d352a44cb7534a268a48be95ec19e11": {
+    "npc": "dr_nalini_bashir",
+    "text": "The NIS notification was made. Good. I want to note that timely notification matters — both as a regulatory obligation and as a practical matter, because the NCSC can provide active support during an OT incident.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "5d8444ed7f7a3f9b454405c586b7c940": {
+    "npc": "dr_nalini_bashir",
+    "text": "The entry point was a supply chain compromise — a printer firmware update pushed to Albion's enterprise network approximately four months ago. That gave the attacker a persistent foothold.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "5ddee2ea7c3cf6811aae6f54d2e375e4": {
+    "npc": "priya_chandra",
+    "text": "Which is why we have the SIS — to trip the system and isolate the affected cells before thermal runaway develops.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "5ffb3b5fc0704c41410bf05e650a8877": {
+    "npc": "dr_nalini_bashir",
+    "text": "The defence existed. It was just outside the contract.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "60f31326e560ece31e463251bf1a0a9f": {
+    "npc": "priya_chandra",
+    "text": "It can fail — the mercury can break or get stuck — but if it's physically intact, it shows the truth. That's why I use it as a cross-reference. When digital and analog readings disagree, the analog wins.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "63fbdb03e7f8ffea3a5dab7af9f53c1a": {
+    "npc": "dr_nalini_bashir",
+    "text": "I note that the NIS Regulations notification has not yet been submitted.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "64299e40fe92d4c36bb64e72840cc87e": {
+    "npc": "priya_chandra",
+    "text": "That is serious. One percent LEL means the hydrogen concentration is measurable and rising. Lithium cells release hydrogen gas as they overheat.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "67fe851793db5ea1be530ad7c48860df": {
+    "npc": "priya_chandra",
+    "text": "That's actually part of what concerns me. These readings show almost no variance overnight. Normally we'd see at least a degree of fluctuation as the cells cycle.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "689066cdcf14a25765585d7ba4e7ce4b": {
+    "npc": "narrator",
+    "text": "Two hundred megawatt-hours of lithium-ion cells in rows of white containers, feeding the grid while most of the county is still asleep.",
+    "voice": "Charon",
+    "style": "Calm, precise narrator; measured industrial tone; unhurried",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "69a461698d936e7fe1f2bf1efda76da3": {
+    "npc": "dr_nalini_bashir",
+    "text": "Let's start with the attack pathway.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "6a8a67ec2596a210beec1110f5eef871": {
+    "npc": "priya_chandra",
+    "text": "Good — ESD is done. The racks are cooling.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "6ddb4f34923c35005e643bb8e8451669": {
+    "npc": "priya_chandra",
+    "text": "There's an old analog thermometer on the wall near A2. Not networked. I want to compare it against the digital reading.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "6f438058e5fa50adb1d2c6309f536241": {
+    "npc": "priya_chandra",
+    "text": "The SIS should be on its own isolated network. Not connected to SCADA. Not connected to enterprise IT. No network at all, ideally.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "6f7b1bfeedf19b3a8bd1a7550578ae28": {
+    "npc": "dr_nalini_bashir",
+    "text": "So do I — and until you can show me exactly what was modified, I can't assess the safety case. The SIS configuration panel is in the Engineering Workshop. Compare the current setpoints against the IEC 61511 certification document in the filing cabinet. Once you have confirmed the tamper, we can continue.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "6fceb8ce5d48e0b51ec7298f50fd27f2": {
+    "npc": "dr_nalini_bashir",
+    "text": "Let me summarise what this incident tells us.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "71c2c1b40a3a5e69375c3315efd39b11": {
+    "npc": "priya_chandra",
+    "text": "Three hours of exactly twenty-eight point zero. Not twenty-seven point nine, not twenty-eight point one. Exactly twenty-eight.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "72cb1af18d406d20be67a1d0dcef6f47": {
+    "npc": "priya_chandra",
+    "text": "Someone did.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "72d6970630d98fffff086a51e3f2db68": {
+    "npc": "priya_chandra",
+    "text": "It's dumb and simple. Which in safety engineering is actually a feature, not a limitation.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "7393f70901a9b71260d6e5390096ef78": {
+    "npc": "priya_chandra",
+    "text": "The historian trend would show that more clearly. Have a look if you want.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "7482c985ab9d9303e17e192d0a39e99e": {
+    "npc": "priya_chandra",
+    "text": "If the cells do start to go into thermal runaway, there's no automated protection. It's all on the ESD button.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "752986ca7bcc208d3e5f1c078befc20b": {
+    "npc": "priya_chandra",
+    "text": "The analog thermometer was calibrated six months ago. It has no network connection. It cannot be falsified remotely.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "75400d7109bad6f4b75f5d5ca7fef9f6": {
+    "npc": "priya_chandra",
+    "text": "That's a design choice. It forces deliberation. If you press the ESD, you know exactly what you've done and you take responsibility for the consequences.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "76d0df251cf62ed98fed46743743c02d": {
+    "npc": "priya_chandra",
+    "text": "I'm Helen Marsh. Something about this morning handover isn't sitting right with me.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "777cf2b0266f16ea2365955e16b680eb": {
+    "npc": "priya_chandra",
+    "text": "Here's the plant room badge for Battery Hall 1 — through the north door when you're ready.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "7a09bbc36a10a6e95a54a604ebbe47fe": {
+    "npc": "dr_nalini_bashir",
+    "text": "The contractor account c.ellison was probably established during commissioning. When the contractor left, the account should have been deleted. Instead, it sat dormant with a valid password for eight months.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "7a375a53898c6d4298a04a4fa1d0ad8d": {
+    "npc": "priya_chandra",
+    "text": "Yes — Marcus's risk assessment. The vulnerability, the mitigation options, the compensating controls. All documented. All reviewed. And then all filed away.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "7b8d2bd34bdae61e91e263912a829868": {
+    "npc": "dr_nalini_bashir",
+    "text": "This is not a blame exercise. But it requires honesty about both the system and the organisation.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "7be809ea0f7cf0aa5847581bec8b4cd0": {
+    "npc": "priya_chandra",
+    "text": "The SIS has an engineering port for configuration and maintenance. That port should be isolated — but it's reachable from the SCADA network.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "7c4018745ee0765afb5d864395d6cd50": {
+    "npc": "priya_chandra",
+    "text": "That's one theory. Another is that they wanted to keep the system running — raise the threshold to prevent any automated shutdowns that would interrupt their access.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "7d20ab3a73c2f1cabf7867682bb87640": {
+    "npc": "priya_chandra",
+    "text": "If you have not pressed the ESD yet — that is the only thing that matters right now. Go to Battery Hall 1. Press the button. Do not wait.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "7efdad87683c0616d1b48c0f240c54f1": {
+    "npc": "priya_chandra",
+    "text": "Dr Priya Sharma from NCSC and HSE has arrived for the post-incident review. I'd suggest talking to her.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "7f24d7baebac395c144c33b3330728c3": {
+    "npc": "priya_chandra",
+    "text": "Check the analog thermometer on Rack A2 when you arrive — that's the one I'm worried about.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "80e668fe1ca981a5d05a475b6a3b3d29": {
+    "npc": "priya_chandra",
+    "text": "But Jay Patel never writes 'uneventful.' And the historian trend shows absolutely no variance — exactly the same reading for hours. That's not normal.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "81e5c32129257270f482798d87761f28": {
+    "npc": "dr_nalini_bashir",
+    "text": "Correct. Which is why deferral was not a defensible position in this case, even if the principle can be defensible in others.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "82326067a4cdfa2837d0e3532a9badb8": {
+    "npc": "narrator",
+    "text": "Albion Energy Storage, East Midlands. 06:28.",
+    "voice": "Charon",
+    "style": "Calm, precise narrator; measured industrial tone; unhurried",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "825d2f89a7e0df005947bce32ac317ff": {
+    "npc": "priya_chandra",
+    "text": "If they disagree, that tells us something important.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "83af807f5f97153d8d6f0456dd3c38ca": {
+    "npc": "priya_chandra",
+    "text": "It's a direct relay. Power flows through a normally-closed switch. Press the button — circuit opens — racks disconnect. The software doesn't get a vote.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "8409f3bbe5b3c856e8b3c2e103e9a14e": {
+    "npc": "priya_chandra",
+    "text": "I'm trained to notice when everything looks too perfect. And this morning, everything looked too perfect.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "8608ef2c26a84198e5995630b0dab3a6": {
+    "npc": "priya_chandra",
+    "text": "The compensating control was OT-inclusive network monitoring. We tried to implement it through the CastleTech contract. But their contract explicitly excluded OT. So the compensating control was never there.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "88e6cfa045488057d073624e5e262314": {
+    "npc": "priya_chandra",
+    "text": "Under normal charge cycle at this state-of-charge, the cells should be running between 28 and 32 degrees Celsius. Slight variance — not huge swings.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "893d228d36b945aa8914a4feddb664e7": {
+    "npc": "priya_chandra",
+    "text": "Now we're paying the cost of that gap. The recertification cost looks small in comparison.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "8afa767adb03d7a96c43a52a3cab9045": {
+    "npc": "priya_chandra",
+    "text": "It's possible. But if I had to choose between trusting a networked digital system and a certified analog gauge, and those readings disagree by twenty-three degrees — I trust the gauge.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "8b1d348651aded633f3fd9e8eae927bb": {
+    "npc": "dr_nalini_bashir",
+    "text": "The outcome was correct. The process was not.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "8c6ff6d1d97996c71710def571ad8b43": {
+    "npc": "priya_chandra",
+    "text": "I've been in this industry long enough to know what that means. One of those readings is a lie.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "8c8ea57a2b56a261118adb191a48acb3": {
+    "npc": "dr_nalini_bashir",
+    "text": "So we have three failures here: (1) the architecture allows connectivity that shouldn't exist; (2) the risk assessment doesn't fully articulate the implications; (3) the compensating controls that would have mitigated the risk were never implemented.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "8cf3965cf47036a4f7fecd52022d61d5": {
+    "npc": "priya_chandra",
+    "text": "That's the point. The hardwired ESD exists precisely because we cannot trust that the programmable safety layers will always work.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "8e880e5871f1aa648815863d10163160": {
+    "npc": "priya_chandra",
+    "text": "That's what Marcus needs to confirm. The ESD is irreversible without a manual reset — pressing it without proper authority creates its own complications.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "90e670df0f5da44c3f4a1b48b277c822": {
+    "npc": "dr_nalini_bashir",
+    "text": "A hardwired relay circuit doesn't have firmware. It doesn't have a network interface. It cannot be accessed remotely. That's why it was the last remaining effective safety function when everything else was compromised.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "90ef03cfffe16f0d9ebc19cefc7cac5a": {
+    "npc": "priya_chandra",
+    "text": "The log shows that the threshold was modified at 03:22 this morning by an administrative account. Account name is in the engineering workstation logs if you look.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "9138449ad8e56d7fd44c0a9a6439fefa": {
+    "npc": "dr_nalini_bashir",
+    "text": "A safety case is not a compliance artefact. It is a living document. When the risks documented in that safety case are accepted, the compensating controls must actually exist, must actually work, and must actually be reviewed.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "91cee8fbb55ff18be049f8986817eaeb": {
+    "npc": "priya_chandra",
+    "text": "That decision was made on the assumption that the SCADA network couldn't be compromised. Which turned out to be a bad assumption.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "92088528b23772ceb5dc9856530d050c": {
+    "npc": "priya_chandra",
+    "text": "We deferred it because applying it requires recertification under IEC 61511. Eight weeks offline. £180,000. The board said no.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "926669a47025d521769f7693733a31bf": {
+    "npc": "dr_nalini_bashir",
+    "text": "The cost of recertification is real. But so is the cost of a thermal runaway event in a 220 MWh battery hall.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "92bc8f07ea72b116b0d8e04fdf70544b": {
+    "npc": "priya_chandra",
+    "text": "We have 220 megawatt-hours in two battery halls. If a thermal runaway propagates across Rack A1, that's kilograms of lithium burning in a confined space.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "9320b98f3d6bb16d33a70ee32ea0b9ad": {
+    "npc": "dr_nalini_bashir",
+    "text": "Neither was acted upon in time. The first because OT monitoring was out of scope. The second because the SOC contract excluded the jump server session logs.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "937cc0d2a6af8645202d0ff399284cb1": {
+    "npc": "dr_nalini_bashir",
+    "text": "The form is in your Incident Response folder. This needs to be done.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "9501680abd59377cacaa32a2f9cf5b4b": {
+    "npc": "priya_chandra",
+    "text": "Yes. Marcus is OT Security. He's been trying to get the IT/OT boundary sorted for eighteen months. He'll know what to do.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "9563c85c45fc0fb34629b1c774aec78d": {
+    "npc": "priya_chandra",
+    "text": "The cells enter a self-sustaining exothermic reaction — they generate heat faster than the cooling system can remove it.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "969ea64913cc4f478298a674eb611901": {
+    "npc": "dr_nalini_bashir",
+    "text": "The SIS should have been on a physically separate network with no connection to the SCADA zone except the hardwired process connections — the sensors and actuators.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "96caf033cae05b63c108b1cb5e1ae559": {
+    "npc": "dr_nalini_bashir",
+    "text": "By the time they modified the SIS setpoints at 03:22, they'd been in the SCADA network for hours.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "97a72e9a4c2935f593dcccff3f228bfd": {
+    "npc": "dr_nalini_bashir",
+    "text": "But here's the crucial point: the attacker made these detectable things. They left IoCs — indicators of compromise — that a monitoring system with the right scope would have caught.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "97b32fd2f31a8a6a0756818417b5cdfe": {
+    "npc": "priya_chandra",
+    "text": "Real sensor data always has noise — small jitter up and down. If you see a perfectly flat line, that data is synthetic. Someone wrote a fixed value to the sensor feed.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "985cc3f11c502f716b5f6d2739a482bd": {
+    "npc": "priya_chandra",
+    "text": "Go to Battery Hall 1 and check the analog thermometer on Rack A2 — it's not networked, so it can't be falsified. Compare it against what HMI-OPS-01 shows.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "9b7f91e747fdf1b76a829a99cc64a9df": {
+    "npc": "priya_chandra",
+    "text": "Everything else — the BMS overcharge protection, the cell temperature alarm, the thermal runaway trip — all of those are compromised.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "9c19024a88932b9c704be7a0c626d189": {
+    "npc": "priya_chandra",
+    "text": "It wasn't defensible. We accepted a documented risk with a compensating control that wasn't actually in place. That's the mistake.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "9d3026c61fb4ecbdf10dffe9248bed6a": {
+    "npc": "priya_chandra",
+    "text": "It cannot be disabled remotely. It cannot be falsified. A cyber attack cannot prevent a hardwired circuit from opening.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "9dd876207f47259b66adb9d9fd073fa6": {
+    "npc": "priya_chandra",
+    "text": "The digital system has more failure modes. Including deliberate manipulation.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "9e7c91a9a9923abe2ff2e6960a5f0321": {
+    "npc": "priya_chandra",
+    "text": "The patch was available eighteen months ago. It fixes the authentication bypass on the SIS engineering port — the exact vulnerability that was used to change those setpoints.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "a3147c4cfb69620cfd1b4c298f567faa": {
+    "npc": "priya_chandra",
+    "text": "The overnight shift technician — Jay Patel — never writes 'uneventful' when it actually was. Today he did.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "a3c65813ac1352297ab7291a6c4dbd63": {
+    "npc": "dr_nalini_bashir",
+    "text": "That gap needs to be addressed at sector level, not just at Albion's level.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "a445bbb47728a6f4a6d29dbaeabc5fd8": {
+    "npc": "dr_nalini_bashir",
+    "text": "The jump server carried live RDP sessions from the enterprise network into the OT zone. Physically severing that link without knowing what was on the other end of those sessions was a unilateral decision with real consequences.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "a5e412a8d3e041d612041b7621e618e9": {
+    "npc": "priya_chandra",
+    "text": "That's a business decision that looked okay on a spreadsheet but created a real safety gap.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "a634ce026217a591e737065e93e608d7": {
+    "npc": "priya_chandra",
+    "text": "But a lost contract penalty is better than a battery hall fire.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "a7dcee20ea91a79d1e8b8f0c09733982": {
+    "npc": "priya_chandra",
+    "text": "So either the credentials were stolen, or the account is compromised. Either way, it's unauthorised access.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "aa2ffa87f8be97c7c353242151ee4457": {
+    "npc": "priya_chandra",
+    "text": "That was supposed to be temporary — removed once commissioning was finished. But 'temporary' became permanent.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "aa3cda60b9693288343a8001e6d9487d": {
+    "npc": "priya_chandra",
+    "text": "A hardwired circuit is about as far from software as you can get. No firmware, no networking, no complexity. Just relay contacts and wiring.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "ab4f615c16d50dc9322c54d82b59b5b4": {
+    "npc": "dr_nalini_bashir",
+    "text": "Marcus Webb's risk assessment eighteen months ago identified the SIS patch vulnerability but didn't explicitly note that the SIS engineering port was reachable from SCADA. That gap in the risk assessment was consequential.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "ab6ef822de321ce57a1afee5dbfd5a7a": {
+    "npc": "dr_nalini_bashir",
+    "text": "The IT/OT boundary is a safety boundary. No one should be able to take unilateral action on hardware that bridges those zones without involving the OT engineer responsible for that segment.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "acb27cb10ff09577afbcbd04bff18c32": {
+    "npc": "priya_chandra",
+    "text": "That means hiring a third-party SIL 2 auditor, running through all the verification tests, doing a full safety analysis on the patched code, getting sign-off.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "acb9a1fde169d99647b68fd93cb1efc8": {
+    "npc": "priya_chandra",
+    "text": "The facility loses about 100 megawatts of stored energy in those four racks. There are contract penalties for an unplanned shutdown.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "ad2c2f99b685860fa12b0869885df13d": {
+    "npc": "priya_chandra",
+    "text": "At four percent LEL it becomes flammable. We have a short window.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "ae318b8c773e1806cf808203895f43a3": {
+    "npc": "priya_chandra",
+    "text": "The overnight shift left no incident reports. Every reading looks entirely normal — and that's the problem.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "af0cea38ee7a222c3305e4880b7be681": {
+    "npc": "dr_nalini_bashir",
+    "text": "Albion will be required to submit a remediation plan addressing the SIS independence failure, the IT/OT boundary configuration, and the OT monitoring gap. Marcus Webb's risk assessments were directionally correct — the organisation needs to act on them.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "b1e112f81922822dd7a637a1bdb0d879": {
+    "npc": "priya_chandra",
+    "text": "Oh good — you're here. Let me brief you quickly.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "b299a97da9ede7b94c9117691d99ba46": {
+    "npc": "priya_chandra",
+    "text": "Our historian data is showing almost zero variance across all racks. Temperature, state of charge, charge rate — everything flat. Too flat. Real battery systems don't behave like that.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "b302565c0982168a30bbb5c505b47148": {
+    "npc": "priya_chandra",
+    "text": "Here's the plant room badge — Battery Hall 1 is through the north door.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "b3490195eae1fca343e53b471b50ab29": {
+    "npc": "priya_chandra",
+    "text": "The hardwired ESD is a red mushroom-head button on the wall in Battery Hall 1, near Rack A2.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "b38f4702caed345da4cedccf82ef3f38": {
+    "npc": "priya_chandra",
+    "text": "Because the SIS is software. It has firmware, processors, firmware updates. And all of that — in principle — can be compromised.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "b4a1781e3bbd38cacd4d23f6e8910a63": {
+    "npc": "dr_nalini_bashir",
+    "text": "The hardwired ESD worked. It worked because it was designed to be independent of every system that could be compromised. That's defence in depth functioning exactly as intended.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "b85dbc498998d9a8cb315c31c7a18305": {
+    "npc": "priya_chandra",
+    "text": "The SIS was our last automated safety backstop. Without it, the only safety function remaining is the hardwired ESD — which is independent, but requires someone to physically go and press it.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "b93c941a76afd2352ae61beec5aa5bc9": {
+    "npc": "priya_chandra",
+    "text": "The Engineering Workshop is east of us. Key's in the duty officer desk drawer. That room has the engineering workstation and the jump server rack.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "b97894e39892630f0f0d307acacb92b7": {
+    "npc": "dr_nalini_bashir",
+    "text": "Albion will be required to submit a remediation plan addressing: (1) the SIS independence failure, (2) the IT/OT boundary configuration, and (3) the OT monitoring gap.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "ba52f2c83b003f977eaffdf70d72f669": {
+    "npc": "priya_chandra",
+    "text": "Because the digital reading is part of the SCADA system — if someone has compromised the system, they can falsify that data.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "bb7b918747856a8ca15cb07be74bfc3b": {
+    "npc": "priya_chandra",
+    "text": "Then come back and look at the historian trend for Rack A1 on HMI-OPS-01. Three hours of data should tell us whether those readings are real.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "bc85adee6d3984f5743c92a1e91718ff": {
+    "npc": "priya_chandra",
+    "text": "In theory, yes. The alarm panel in the control room should show something — high temperature warning, SIS deviation alert, something.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "bcf08423ef8ef1869c63dd6878f2fbd2": {
+    "npc": "dr_nalini_bashir",
+    "text": "The lesson: accepting a risk with compensating controls is only as good as those controls actually are.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "bebd50452ff36624bbc957f4cfc3c74b": {
+    "npc": "dr_nalini_bashir",
+    "text": "The deepest lesson here is what I call normalisation of deviance. The known risks — the jump server configuration, the SIS patch deferral, the historian proxy — became the normal operating state. They were documented, accepted, and forgotten. Until they were exploited.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "c04d34c6a419a66df200ae7e9608b3cb": {
+    "npc": "priya_chandra",
+    "text": "Good — the racks are disconnecting from the charging circuit now. The cooling system will run at maximum until the cells stabilise.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "c0f5f74bf7f4909d9ff9c7abe5cc2712": {
+    "npc": "dr_nalini_bashir",
+    "text": "You are an Operator of Essential Services. The 72-hour clock began when you detected this incident. Given the physical consequences, NCSC will expect to hear from you today.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "c2418b2048ab5e2372fa23d5bed9e448": {
+    "npc": "priya_chandra",
+    "text": "The main thing I want to check is the temperature at Rack A2. The SCADA reading is fine — but that rack ran warmer than the others last month.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "c26a5d7fac3559cf68c9d3978cb9f47c": {
+    "npc": "priya_chandra",
+    "text": "Someone wrote a value to the sensor feed and held it there. This is not a sensor failure. This is deliberate falsification.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "c2a9068b4c185a83532e408affde0f53": {
+    "npc": "priya_chandra",
+    "text": "Start with the manual readouts. The HMI readings look clean, but I don't trust them.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "c35e4b2a305115437b7e4f59d9483659": {
+    "npc": "dr_nalini_bashir",
+    "text": "I'm going to ask you to make a recommendation. Not what Albion chose — what you would recommend.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "c367a713d6f7c1d2b832d43986e0bf06": {
+    "npc": "priya_chandra",
+    "text": "We need to verify it — check the historian trend data, look at the access logs. And we need to seriously consider pressing the ESD before this escalates further.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "c5da9fdf40ab1f4502de412b637f4817": {
+    "npc": "priya_chandra",
+    "text": "But we'd need to re-run the full SIL 2 safety case — verify that the patched firmware meets the functional safety requirements. That's the eight weeks and £180,000.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "c747025ba7070eb97af78565b5efeecf": {
+    "npc": "dr_nalini_bashir",
+    "text": "Applying it requires SIL 2 recertification under IEC 61511. Eight weeks offline, approximately £180,000.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "c7b0354ea2861a68efba11316313a830": {
+    "npc": "priya_chandra",
+    "text": "That's sensible. I'll be here when you're ready.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "c8a75452f07c9e1bd306162df7bcdbe6": {
+    "npc": "dr_nalini_bashir",
+    "text": "I'm here representing both NCSC and the HSE's ICS security inspection programme — jointly, because this incident involves a notifiable NIS breach and a near-miss under COMAH Regulations 2015.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "c8c678dffaf6bc1f71390585f9510490": {
+    "npc": "dr_nalini_bashir",
+    "text": "That's a configuration management failure. The 'temporary' setting became a permanent attack pathway because no one was responsible for reviewing it.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "c8fef643aa431aa0418efdb120e56ee4": {
+    "npc": "dr_nalini_bashir",
+    "text": "If you are going to defer a safety system patch, the compensating controls must actually provide the mitigation they claim to provide. In this case, they did not.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "cadec72dc4fee638e51f5e3286008906": {
+    "npc": "dr_nalini_bashir",
+    "text": "This is exactly the kind of cross-sector dependency that nobody formally risk-assessed. A shared enterprise file server between an energy storage operator and a water utility. Both OES. No formal agreement covering cyber incident notification or shared infrastructure responsibilities.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "cafa89d072d2b04d4024107553441171": {
+    "npc": "dr_nalini_bashir",
+    "text": "Is that what Albion had in place?",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "cc04140f7199d4343b925db005ca0d39": {
+    "npc": "dr_nalini_bashir",
+    "text": "You pressed it at the right time. And it worked exactly as designed.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "cd3b4434bff1591daa72c9e32b9d990a": {
+    "npc": "priya_chandra",
+    "text": "It's not elegant. But it's the reason we can still survive even if every digital system in this building has been compromised.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "d0c78bdec36849b9b2d044cf184ab46f": {
+    "npc": "priya_chandra",
+    "text": "The question for the debrief is: what's the right approach going forward? Apply the patch and accept the recertification cost? Or maintain deferral with genuinely effective compensating controls that actually exist and actually work?",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "d17720e5434f94990f5b0ce1a5b2390c": {
+    "npc": "dr_nalini_bashir",
+    "text": "That is my recommendation too. And I'll tell you why.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "d1d04cfca877d775ca50aa0dded08d0d": {
+    "npc": "dr_nalini_bashir",
+    "text": "The compensating control that was in place — OT-inclusive monitoring — was never actually implemented. The risk assessment accepted a compensating control that didn't exist.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "d3c41d5b18d4f3329a42c8655f84cc2d": {
+    "npc": "priya_chandra",
+    "text": "The SCADA system monitors and controls everything — temperature, state of charge, charge rate. The SIS sits underneath that and should trip the system if any safety parameter is breached.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "d43a6dc52bd6e624416fc46266d618a5": {
+    "npc": "priya_chandra",
+    "text": "I'll be here. Don't take too long — if my instincts are right, time matters.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "d452d5a1ef219dc129c8385907382bdf": {
+    "npc": "dr_nalini_bashir",
+    "text": "Exactly right. The decision framework wasn't wrong. The execution of the decision was.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "d4f4a6bfcbad7d9f87e91960ad614a99": {
+    "npc": "priya_chandra",
+    "text": "We're in a safe state now. The immediate hazard is contained.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "d6e8e24a0287909021da466eca5b20d4": {
+    "npc": "priya_chandra",
+    "text": "That thermometer is the most important object in this building right now, because it is the only reading that cannot be compromised.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "d71a479d177f785489f02ed9ed4efdcb": {
+    "npc": "priya_chandra",
+    "text": "Now? With a battery hall approaching thermal runaway because someone exploited exactly that vulnerability?",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "d76307437003621c7414233aff7547ab": {
+    "npc": "dr_nalini_bashir",
+    "text": "And those controls must be subject to independent verification. Not accepted in a risk assessment and then forgotten.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "d7635485f46954252164d024348bfa47": {
+    "npc": "priya_chandra",
+    "text": "An analog thermometer is just a tube of mercury in a glass case. It doesn't have firmware, it doesn't have a network connection. It cannot be hacked remotely.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "d7f515b2d66a2c081d013b91d112d381": {
+    "npc": "priya_chandra",
+    "text": "That's defence in depth. You don't put all your safety eggs in one digital basket.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "d83a868ff0abd25b2453c13b7f5d2524": {
+    "npc": "dr_nalini_bashir",
+    "text": "I need to ask directly — the ethernet cable on the jump server. Was that removal coordinated with Marcus Webb before you pulled it?",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "dad321dfdab15dd064c6964dd01d3152": {
+    "npc": "priya_chandra",
+    "text": "We have two battery halls — Hall 1 and Hall 2. 220 MWh total. Four racks in each hall.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "db3b2c101909bfbb3c56d71b241f0c64": {
+    "npc": "priya_chandra",
+    "text": "Probably not. This facility has been running smoothly for two years. Overnight shift was uneventful — no alarms, no anomalies.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "dbf1e02ffef3897d7a004ca95c145a07": {
+    "npc": "priya_chandra",
+    "text": "Either way, the result is the same. The safety system that's supposed to protect the facility is no longer protecting it.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "dee9f800b8398a8d3c8caa9a3be51bfc": {
+    "npc": "dr_nalini_bashir",
+    "text": "I understand the pressure. But Marcus was available. He had the OT context you needed before touching that hardware.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "df071c7fd13ed134285d44d75a2f7313": {
+    "npc": "priya_chandra",
+    "text": "The key thing to look for is the thermal runaway trip threshold for Battery Hall 1. It should read fifty-five degrees Celsius — that is the certified setpoint under the IEC 61511 safety case.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "e124a9d6b0505227487b13de80ea12d3": {
+    "npc": "dr_nalini_bashir",
+    "text": "The jump server is the hinge between IT and OT. Once an attacker owns that, they own both zones. Which is exactly what happened here.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "e1bb3973a640e4a17a519e9f0aacaa0a": {
+    "npc": "priya_chandra",
+    "text": "The charging circuit to Racks A1 through A4 breaks. They're instantly disconnected from the main power feed.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "e1e357ab84544a500b69c5dc02ba0d13": {
+    "npc": "priya_chandra",
+    "text": "It's not elegant, but it's how you design systems that remain safe even when the digital parts are compromised.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "e2a888d7189470fa2ab7eede875e667f": {
+    "npc": "priya_chandra",
+    "text": "Marcus has the authority to direct that. Have you called him yet?",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "e2fed42f2f428ba95625a64aa675f751": {
+    "npc": "priya_chandra",
+    "text": "Now we need to isolate the attacker, understand the full scope of what they changed, and get the notification to NCSC.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "e37399be8f9a8e08cb77b2183ce02fa2": {
+    "npc": "dr_nalini_bashir",
+    "text": "The SIS should speak to the process via hardwired signals only — temperature sensor feeds, alarm outputs, valve control wires. No Ethernet, no TCP/IP, no possibility of remote compromise.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "e37b484ac884a2a8124385bbd108bec5": {
+    "npc": "priya_chandra",
+    "text": "I've learned to trust my gut when the data is too clean. Perfect readings usually mean something is hiding underneath.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "e462e2502807d03427e537e24200f85d": {
+    "npc": "dr_nalini_bashir",
+    "text": "You notified Trent Water — that was the right call, and it was made quickly. Their OT security team has confirmed there was no active intrusion on their ICS network, but they did find a suspicious file on a workstation that accessed the shared file server.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "e76d4388c829a26ae1fa8c045e87a14c": {
+    "npc": "dr_nalini_bashir",
+    "text": "That's what IEC 61511 calls for in principle. Albion's design — with the engineering port reachable from SCADA — was a compromise that traded safety for operational convenience.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "ea76d48ccf90fe2c7ff4c70954375541": {
+    "npc": "priya_chandra",
+    "text": "Battery Hall 1 requires the plant room RFID badge — I have it here.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "ea83dc6a9d2b55f0b7ff0e98e0f4a9f8": {
+    "npc": "priya_chandra",
+    "text": "The SIS has an audit log. Every configuration change is recorded — who made it, when, what was changed.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "eaed090062fea76c40b975a081076f9a": {
+    "npc": "dr_nalini_bashir",
+    "text": "And that's why I kept asking about it during the incident — because a hardwired ESD is the penultimate safety layer. If that had also been compromised, there would have been no remaining protection.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "ebab6efa105899770492c23d49d94b23": {
+    "npc": "priya_chandra",
+    "text": "I think about that. The risk was real — documented in Marcus's risk assessment. But it felt manageable at the time.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "ec06f22a205fc69393cee3c7f77d4663": {
+    "npc": "priya_chandra",
+    "text": "The SIS has a certified safety case — a formal document that says \"this configuration of hardware and firmware will reliably prevent thermal runaway within this operational envelope.\"",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "ecb3afa994d66f184fe1d9d3a8b79ca1": {
+    "npc": "dr_nalini_bashir",
+    "text": "That position is defensible — under very specific conditions.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "eeb579651c13b2c24b99c5c25c56f6ab": {
+    "npc": "dr_nalini_bashir",
+    "text": "I've been through the incident timeline. I want to hear your account of what happened — what held, and what didn't.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "eeb8d877eef6b4f87c421baa9a1d25f8": {
+    "npc": "priya_chandra",
+    "text": "Eighteen months. Long enough that the board should have made a decision one way or the other. Instead we just kept deferring.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "eed7b29f298ff86788dc3b019ec350f7": {
+    "npc": "priya_chandra",
+    "text": "I'm Helen Marsh — I run the PLC and SCADA systems here. And you're the incident response team they sent?",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "ef302c792651d071ba87fcebe01db4cb": {
+    "npc": "priya_chandra",
+    "text": "But if the HMI is also compromised — if they're feeding the alarm system false data the same way they're feeding false temperature readings — then the alarm system will also look normal.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "ef854c20ac5615eeda910a65805dcacf": {
+    "npc": "dr_nalini_bashir",
+    "text": "I also note that the SIS configuration tamper was not formally confirmed during your response. Before we can fully assess the safety case I'll need that on record — the SIS configuration panel is in the Engineering Workshop. Compare the current setpoints against the IEC 61511 certification document in the filing cabinet.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "f005f87a155df3235d6516c603dd6b5c": {
+    "npc": "dr_nalini_bashir",
+    "text": "The SCADA engineer who arrived early for a maintenance window and trusted an old analog thermometer over a sophisticated digital system — she's the reason this didn't become a catastrophe.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "f06f0bcec1a8404cc1521e71852fe098": {
+    "npc": "dr_nalini_bashir",
+    "text": "The NIS investigation will take approximately three months. We'll publish a de-identified version of the findings to support sector-wide learning.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "f072401a9ea1625b12442270af26ff03": {
+    "npc": "priya_chandra",
+    "text": "The alternative — deferral with compensating controls — only works if the compensating controls actually exist and actually work. At Albion, they don't.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "f376e970b8bd9b168e1989d02acb7df0": {
+    "npc": "dr_nalini_bashir",
+    "text": "The SIS firmware patch has been available for eighteen months. It closes the authentication bypass on the engineering port — the exact vulnerability that was exploited.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "f3c32c00212c0108898dd60b9e2f3970": {
+    "npc": "dr_nalini_bashir",
+    "text": "That's a training gap that needs to go into your post-incident report.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "f45ebf4aef20bf2c60a7a1e881fb29f3": {
+    "npc": "dr_nalini_bashir",
+    "text": "At Albion, the SIS engineering port was reachable from the SCADA network. That violated the independence requirement.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "f67fab9abcf79ab79836775667080787": {
+    "npc": "priya_chandra",
+    "text": "If someone can get onto the SCADA network, they can reach the SIS engineering interface. Which means the SIS isn't independent. It's connected.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "f761455949a4315dde71606a34cb5bf7": {
+    "npc": "dr_nalini_bashir",
+    "text": "Of course. Come back when you're ready.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "f968065d2543e359cb56628b104c7aab": {
+    "npc": "priya_chandra",
+    "text": "This is why we don't rely only on digital alarms. We have the physical thermometer, we have the hydrogen detector, we have trained operators who know what normal looks like.",
+    "voice": "Aoede",
+    "style": "Precise, methodical British engineer; calm under pressure",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "fc873343eb54e3f6943477b46500ccd3": {
+    "npc": "dr_nalini_bashir",
+    "text": "Someone obtained that password — possibly from a credential dump, possibly from a compromised contractor system — and used it to enter through the jump server.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "fc93e4803b04cfa97672f73791b1d5c4": {
+    "npc": "dr_nalini_bashir",
+    "text": "For deferral to be defensible under IEC 61511 clause 4.2.14 — the risk assessment must identify specific, implementable compensating controls that reduce the risk to an acceptable level.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "fd273c1459ec48d350992db12c80362d": {
+    "npc": "dr_nalini_bashir",
+    "text": "Engineering access to the SIS should have required physical presence at a dedicated, air-gapped configuration terminal. Not a network connection.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "fd718c6111877de848a89c4f2d7b2742": {
+    "npc": "dr_nalini_bashir",
+    "text": "Because it was designed to be independent of every software and network system in the facility.",
+    "voice": "Leda",
+    "style": "NCSC lead investigator, calm, forensic, unhurried. Speak with a consistent Received Pronunciation accent throughout — do not shift to any other accent.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  }
+}
