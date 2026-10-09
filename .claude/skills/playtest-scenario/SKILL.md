@@ -164,7 +164,7 @@ Two servers share one database, so a game made by `new-game.rb` plays on either 
 | 3001 | keyless (`tools/playtest/start-keyless-server.sh`) | none: no `GEMINI_API_KEY` | **Default.** Any mission still in draft |
 | 3000 | the user's `./start_server.sh`, has the Gemini key | live | Only when audio is wanted: a final confirmation run of a finished mission, or checking voice lines |
 
-The TTS cache is keyed on line text, voice and scenario. Audio generated for draft lines is paid for and then orphaned the moment the text changes, so draft runs go to :3001.
+The TTS cache is keyed on line text, voice, style, language and model (see the tts-audio skill). Audio generated for draft lines is paid for and then orphaned the moment the text changes, so draft runs go to :3001.
 
 ```bash
 ss -ltn | grep -E ':300[01]'                  # which are up

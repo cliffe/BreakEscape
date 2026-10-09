@@ -1,3 +1,5 @@
+> **Historical (2025 implementation plan).** The model, API, cache key and batch described here are out of date. Current behaviour and rules: `.claude/skills/tts-audio/SKILL.md`; decisions and history: `docs/agents/TTS_38_MIGRATION.md`.
+
 # TTS System - Server-Side Text-to-Speech for NPC Dialog
 
 ## Context
