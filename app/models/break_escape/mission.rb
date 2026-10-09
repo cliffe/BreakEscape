@@ -131,8 +131,20 @@ module BreakEscape
       cached = self.class.voice_config_cache[name]
       return cached[:configs] if cached && cached[:mtime] == mtime
 
+      configs = self.class.voice_configs_from(generate_scenario_data({}))
+      self.class.voice_config_cache[name] = { mtime: mtime, configs: configs.freeze }
+      configs
+    rescue => e
+      Rails.logger.warn "[BreakEscape] Could not read current voice configs for #{name}: #{e.message}"
+      # Cache the failure too, so a broken template logs once rather than per request
+      self.class.voice_config_cache[name] = { mtime: mtime, configs: {}.freeze } if mtime
+      {}
+    end
+
+    # Voice configs by speaker id from rendered scenario data (see current_voice_configs).
+    # Shared with TtsLineExtractor, so the batch voices each line as the endpoint will.
+    def self.voice_configs_from(data)
       configs = {}
-      data = generate_scenario_data({})
       configs['narrator'] = data['narrator']['voice'] if data.dig('narrator', 'voice').is_a?(Hash)
       (data['rooms'] || {}).each_value do |room|
         Array(room['npcs']).each do |npc|
@@ -142,13 +154,7 @@ module BreakEscape
           configs[obj['id']] ||= obj['ttsVoice'] if obj['ttsVoice'].is_a?(Hash)
         end
       end
-      self.class.voice_config_cache[name] = { mtime: mtime, configs: configs.freeze }
       configs
-    rescue => e
-      Rails.logger.warn "[BreakEscape] Could not read current voice configs for #{name}: #{e.message}"
-      # Cache the failure too, so a broken template logs once rather than per request
-      self.class.voice_config_cache[name] = { mtime: mtime, configs: {}.freeze } if mtime
-      {}
     end
 
     def self.voice_config_cache

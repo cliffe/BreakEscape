@@ -152,33 +152,35 @@ module BreakEscape
       log_info "Processing scenario: #{scenario_name}"
 
       begin
-        # Render via Mission::ScenarioBinding so ERB helpers (vm_context, vm_object,
-        # flags_for_vm, random_password, etc.) are all available. Pass an empty
-        # vm_context since batch generation runs outside of a Hacktivity VM session.
-        mission = Mission.find_by(name: scenario_name)
-        scenario_data = if mission
-          mission.generate_scenario_data({})
+        # Rendered via Mission::ScenarioBinding (empty vm_context, since batch
+        # generation runs outside a Hacktivity VM session). The extractor reads
+        # each ink story the way the client does and gives every line the
+        # npc_id and voice the TTS endpoint will use for it.
+        extractor = TtsLineExtractor.for_scenario(scenario_name)
+        entries = extractor.entries
+        @stats[:npcs_found] += extractor.hosts.length
+        @stats[:dialogue_lines_extracted] += entries.length
+
+        if entries.empty?
+          log_info "  No voiced lines found"
         else
-          # No DB record — render the template directly using ScenarioBinding
-          template_path = scenario_path.join('scenario.json.erb')
-          erb = ERB.new(File.read(template_path))
-          binding_context = Mission::ScenarioBinding.new({})
-          JSON.parse(erb.result(binding_context.get_binding))
+          by_speaker = entries.group_by(&:npc_id)
+          log_info "  #{entries.length} voiced lines from #{extractor.hosts.length} conversations, #{by_speaker.length} speakers"
+          by_speaker.each do |npc_id, lines|
+            voice = lines.first.voice
+            log_info "    #{npc_id} (voice: #{voice['name']}): #{lines.length} lines"
+          end
         end
 
-        # Extract NPCs from all rooms
-        npcs = extract_npcs_from_scenario(scenario_data)
-        @stats[:npcs_found] += npcs.length
-
-        if npcs.empty?
-          log_info "  No NPCs with voice config found"
-          return
+        if extractor.notes.any?
+          log_info "  Not voiced by the batch (#{extractor.notes.length}): lines the walker can't reconstruct or the endpoint won't serve"
+          extractor.notes.each do |note|
+            log_info "    - #{note.source} #{note.path}: #{note.reason}#{note.text ? " | #{note.text.truncate(90)}" : ''}"
+          end
         end
 
-        log_info "  Found #{npcs.length} NPCs with voice configuration"
-
-        npcs.each do |npc|
-          process_npc(npc, scenario_path, scenario_name)
+        entries.each do |entry|
+          generate_audio_for_line(entry.text, entry.voice, scenario_name, entry.npc_id)
         end
 
         log_info ""
@@ -186,155 +188,6 @@ module BreakEscape
         log_error "Error processing scenario #{scenario_path.basename}: #{e.message}"
         @stats[:errors] += 1
       end
-    end
-
-    def extract_npcs_from_scenario(scenario_data)
-      npcs = []
-
-      # Extract from rooms
-      rooms = scenario_data['rooms'] || {}
-      rooms.each do |room_id, room_data|
-        # Room NPCs
-        room_npcs = room_data['npcs'] || []
-        room_npcs.each do |npc|
-          if npc['voice'].is_a?(Hash) && npc['storyPath'] && npc['npcType'] != 'phone'
-            npcs << npc.merge('room_id' => room_id)
-          end
-        end
-
-        # Room objects with voice (like intercoms)
-        room_objects = room_data['objects'] || []
-        room_objects.each do |obj|
-          if obj['ttsVoice'].is_a?(Hash) && obj['voice'].is_a?(String)
-            npcs << {
-              'id' => obj['id'],
-              'voice' => obj['ttsVoice'],
-              'fixed_text' => obj['voice'],
-              'room_id' => room_id
-            }
-          end
-        end
-      end
-
-      # Extract from startRoomObjects
-      start_objects = scenario_data['startRoomObjects'] || []
-      start_objects.each do |obj|
-        if obj['voice'].is_a?(Hash) && obj['storyPath'] && obj['npcType'] != 'phone'
-          npcs << obj.merge('room_id' => 'start')
-        end
-      end
-
-      npcs
-    end
-
-    def process_npc(npc, scenario_path, scenario_name)
-      npc_id = npc['id']
-      voice_config = npc['voice']
-
-      log_info "    NPC: #{npc_id} (voice: #{voice_config['name']})"
-
-      # Handle fixed text (room objects like intercoms)
-      if npc['fixed_text']
-        process_fixed_text(npc['fixed_text'], voice_config, scenario_name, npc_id)
-        return
-      end
-
-      # Handle Ink story NPCs
-      return unless npc['storyPath']
-
-      # Resolve ink path relative to engine root
-      ink_path = resolve_ink_path(npc['storyPath'], scenario_path)
-      unless ink_path
-        log_error "      Story file not found: #{npc['storyPath']}"
-        @stats[:errors] += 1
-        return
-      end
-
-      # Extract dialogue lines
-      dialogue_lines = extract_dialogue_from_ink(ink_path)
-      @stats[:dialogue_lines_extracted] += dialogue_lines.length
-
-      log_info "      Extracted #{dialogue_lines.length} dialogue lines"
-
-      dialogue_lines.each do |line|
-        generate_audio_for_line(line, voice_config, scenario_name, npc_id)
-      end
-    end
-
-    def process_fixed_text(text, voice_config, scenario_name, npc_id)
-      @stats[:dialogue_lines_extracted] += 1
-      log_info "      Fixed text (1 line)"
-      generate_audio_for_line(text, voice_config, scenario_name, npc_id)
-    end
-
-    def resolve_ink_path(story_path, scenario_path)
-      # Try multiple resolution strategies
-
-      # Strategy 1: Relative to engine root (as stored in scenario)
-      full_path = BreakEscape::Engine.root.join(story_path)
-      return full_path if File.exist?(full_path)
-
-      # Strategy 2: Relative to scenario directory
-      relative_path = scenario_path.join(File.basename(story_path))
-      return relative_path if File.exist?(relative_path)
-
-      # Strategy 3: Look in scenario's ink subdirectory
-      ink_dir = scenario_path.join('ink')
-      if Dir.exist?(ink_dir)
-        basename = File.basename(story_path, '.*')
-        json_path = ink_dir.join("#{basename}.json")
-        return json_path if File.exist?(json_path)
-      end
-
-      nil
-    end
-
-    # Ink command tag prefixes (with or without a colon).
-    # Compiled Ink stores these as bare strings like "^exit_conversation" or
-    # "^give_item:lockpick" — we must match both forms.
-    INK_COMMAND_PATTERN = /\A(set_variable|complete_task|unlock_task|unlock_aim|unlock_room|give_item|exit_conversation|hostile|npc_behaviour|complete_objective|set_background)(:|\z)/
-
-    def extract_dialogue_from_ink(ink_json_path)
-      ink_data = File.read(ink_json_path)
-      npc_lines = []
-
-      # Compiled Ink stores all text as ^-prefixed strings inside JSON string literals.
-      # Player choice options appear inside "str"/"str" wrapper tokens, so we can detect
-      # them by checking that the preceding token is NOT "str".
-      #
-      # Strategy: scan for ^-prefixed strings and retain only lines that:
-      #   1. Have a "Speaker: " prefix (NPC dialogue)
-      #   2. Are NOT from a "Player" speaker
-      #   3. Are NOT Ink command tags
-      ink_data.scan(/"(\^[^"]*)"/).flatten.each do |ink_text|
-        clean_text = ink_text[1..]
-
-        next if clean_text.strip.empty?
-
-        # Skip Ink command tags (e.g., exit_conversation, set_variable:x=y, give_item:lockpick)
-        next if clean_text =~ INK_COMMAND_PATTERN
-
-        # Only keep lines that have a "Speaker: " prefix — these are NPC dialogue lines.
-        # Player choice options have no speaker prefix (e.g., "Happy to help.") and will
-        # therefore be skipped. Narrator lines (rare in these stories) are also skipped.
-        next unless clean_text =~ /\A[^:]+:\s+\S/
-
-        # Skip player-spoken lines (e.g., "Player: I've been observing...")
-        next if clean_text =~ /\APlayer:\s/i
-
-        # Strip the "Speaker: " prefix — this is what the TTS endpoint and cache key use
-        # (the client sends clean dialogue text with the speaker already stripped).
-        dialogue_only = clean_text.sub(/\A[^:]+:\s*/, "").strip
-        next if dialogue_only.empty?
-
-        # Skip very short fragments — these are typically Ink variable-substitution
-        # artefacts (e.g., "And " or ", thanks" left over when a variable splits a line).
-        next if dialogue_only.length < 10
-
-        npc_lines << dialogue_only
-      end
-
-      npc_lines.uniq
     end
 
     def generate_audio_for_line(text, voice_config, scenario_name, npc_id)

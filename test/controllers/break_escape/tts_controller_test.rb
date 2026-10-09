@@ -272,6 +272,40 @@ module BreakEscape
       FileUtils.rm_rf(tmp_dir) if tmp_dir
     end
 
+    # ─── Ink NPC — line with escaped quotes ──────────────────────────────────
+
+    test "tts accepts an ink line containing escaped quotes" do
+      tmp_dir    = BreakEscape::Engine.root.join("tmp", "tts_quote_#{Process.pid}")
+      FileUtils.mkdir_p(tmp_dir)
+      story_path = "tmp/tts_quote_#{Process.pid}/story.json"
+      line       = 'Fired. "Performance issues," they said.'
+      File.write(tmp_dir.join("story.json"),
+                 { "inkVersion" => 21, "root" => [["^Sarah: #{line}", "\n", "done"], "done", nil] }.to_json)
+
+      @game.scenario_data["rooms"]["lobby"]["npcs"] = [
+        { "id" => "ink_npc", "voice" => { "name" => "Kore", "style" => "Speak formally.", "language" => "en-GB" },
+          "storyPath" => story_path }
+      ]
+      @game.save!
+
+      # A 500 (generation failed) after a mock proves we passed the 403 validation gate.
+      with_env("GEMINI_API_KEY" => "dummy_key_for_test") do
+        mock_service = Minitest::Mock.new
+        mock_service.expect(:cache_key_for, "missing", [String, String, String, String])
+        mock_service.expect(:cache_path, Pathname.new("/nonexistent/missing.mp3"), [String, String])
+        mock_service.expect(:generate, nil, [String, String, String, String], scenario_name: String, npc_id: String)
+        mock_service.expect(:legacy_cached_path, nil, [String, String, String, String], scenario_name: String)
+
+        TtsService.stub(:new, mock_service) do
+          post tts_game_url(@game), params: { npc_id: "ink_npc", text: line }
+        end
+
+        assert_response :internal_server_error
+      end
+    ensure
+      FileUtils.rm_rf(tmp_dir) if tmp_dir
+    end
+
     # ─── Ink NPC — bark text valid even when not in Ink story ────────────────
     #
     # An NPC can have both a storyPath AND scenario-defined barks.  The bark text
