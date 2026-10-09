@@ -63,6 +63,10 @@ export default class PersonChatUI {
         // Notification stack container (created on first use)
         this._notificationContainer = null;
         this.charactersWithParallax = new Set(); // Track which characters have already had parallax animation
+        // The portrait opens hidden while the story loads, so a conversation that
+        // opens on a scene shot (Background[...] / Narrator[none]) doesn't flash the
+        // NPC first. The first line or choices bring the character in (revealPortrait).
+        this.awaitingFirstContent = true;
         
         console.log('📱 PersonChatUI created');
     }
@@ -217,6 +221,9 @@ export default class PersonChatUI {
                 this.elements.portraitContainer,
                 this.background // Optional background image path
             );
+            // Hidden until the first content (see awaitingFirstContent). Set before
+            // init() so its first deferred render draws the background only.
+            this.portraitRenderer._characterHidden = true;
             this.portraitRenderer.init();
             
             console.log('✅ Portrait initialized');
@@ -316,6 +323,13 @@ export default class PersonChatUI {
      */
     showDialogue(text, characterId = 'npc', preserveChoices = false, isNarrator = false, narratorCharacter = null) {
         this.currentSpeaker = characterId;
+
+        // An opening Narrator[none] keeps the scene shot; anything else brings the NPC in
+        if (!(isNarrator && narratorCharacter === 'none')) {
+            this.revealPortrait();
+        } else {
+            this.awaitingFirstContent = false;
+        }
         
         console.log(`📝 showDialogue called with character: ${characterId}, text length: ${text?.length || 0}, narrator: ${isNarrator}`);
         
@@ -403,6 +417,16 @@ export default class PersonChatUI {
     }
     
     /**
+     * Show the character held back while the conversation loaded. Only acts
+     * once, on the first content; after that scene shots are driven by the ink.
+     */
+    revealPortrait() {
+        if (!this.awaitingFirstContent) return;
+        this.awaitingFirstContent = false;
+        this.portraitRenderer?.setCharacterHidden(false);
+    }
+
+    /**
      * Update portrait for the current speaker
      * @param {string} characterId - Character ID
      * @param {Object} character - Character data
@@ -461,6 +485,9 @@ export default class PersonChatUI {
         if (!this.elements.choicesContainer || !this.elements.continueButton) {
             return;
         }
+
+        // A conversation that opens straight on choices still shows the NPC
+        this.revealPortrait();
         
         // Clear existing choices
         this.elements.choicesContainer.innerHTML = '';
