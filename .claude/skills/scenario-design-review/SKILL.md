@@ -45,6 +45,7 @@ Walk the critical path from `startRoom` to the final objective:
 - For every locked room or object, confirm the key/code/tool that unlocks it is reachable *before* the player needs it (i.e., not locked behind the same target).
 - Flag any **circular dependencies** (key A inside box requiring key B, which requires key A).
 - Flag any **soft locks** — situations where the player can reach a state with no forward progress.
+- Check every gating global and required task against `docs/agents/SOFTLOCK_PATTERNS.md` (burnt first-call gates, order dependence, "said but not set", premature `#complete_task`, sticky options over exhausted once-only content, unreachable setters, events that cannot recur, and lab-sheet warnings that hide bugs). Any hit is **Must fix**.
 - **VM flag wiring (two silent killers).** Both compile, pass the schema and look right in the dungeon graph, but strand the mission at the end:
   - a `submit_flags` task with no `targetFlags` / `targetCount` can never complete, so its aim never completes and anything gated behind it is dead (the validator now reports this as ❌ INVALID);
   - `flagRewards` using `emit_event` does **not** set a global. Only `sudo_flag_submitted` is hard-bridged in `systems/interactions.js`, so Ink gated on `flag_<x>_submitted` never opens. Confirm every such global is explicitly `setGlobal`-ed, normally from an `objective_task_completed:<task>` mapping on the handler.

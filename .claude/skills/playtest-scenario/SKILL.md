@@ -78,6 +78,10 @@ Don't run every puzzle blind every time: one blind run after a puzzle changes is
 
 **Flags are the case where earning may be impossible.** Standalone has no VMs, so a `<flag:N>` value cannot be earned by any route; mark those rows "no" and say the mission's solvability is unproven past that point. Where VMs do exist and the run is about solvability, use the `pause` policy and let a human do the VM work — that is the only way that row becomes a "yes".
 
+### Off-path runs for softlocks
+
+A happy-path run does not find softlocks. After the critical path passes, run the ordinary wrong orders listed in `docs/agents/SOFTLOCK_PATTERNS.md`: call the handler or an NPC before you have anything to report, then come back with each kind of evidence; reach a later room or item before the earlier one (loose keys, open doors); open a conversation and close it without choosing; take a decision branch, then check every later gate still opens. A run that strands the player is a **blocker**.
+
 ## Evidence: a report is not a run
 
 The harness writes a session log — one JSON line per command and per result — to `tools/playtest/session-<timestamp>.jsonl`, or wherever `--log` points. You do not write it and cannot edit it.

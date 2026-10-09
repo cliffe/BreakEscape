@@ -109,6 +109,10 @@ If the reconciliation is clean (all nodes covered, no orphan steps), say so in o
 
 ---
 
+## Step 5b — softlock sweep
+
+For each gate on the critical path, note what else the player could already hold or have done when they reach it, and check the gate still opens (`docs/agents/SOFTLOCK_PATTERNS.md`, S1 and S2). For each `#complete_task` and gating `#set_global`, note which knot fires it and whether every route the player can take reaches that knot. List any gap as **Must fix** in the summary.
+
 ## Step 6 — summary
 
 After the walkthrough and reconciliation table, give a one-paragraph summary covering:

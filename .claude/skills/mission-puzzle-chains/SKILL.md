@@ -141,7 +141,7 @@ Write `scenarios/<mission>/PUZZLE_CHAINS_PLAN.md`:
 3. **Boss-key audit table** (Step 2).
 4. **Findings** — one per defect, cited.
 5. **Proposals** — each with story logic, cost, dependencies, and a ✅ keep / ⚠️ rework / ❌ dropped marker.
-6. **What could break** — solvability, layout, KO routes, soft-locks.
+6. **What could break** — solvability, layout, KO routes, soft-locks. Check each gate against `docs/agents/SOFTLOCK_PATTERNS.md`, especially S1 (burnt first-call gate) and S2 (order dependence: what else could the player already hold when they arrive?).
 7. **Dialogue implications** — new objects need lines; apply `README_ink_best_practices.md`.
 8. **Pacing.**
 9. **Capability arc** — what this mission grants, what the next should.
