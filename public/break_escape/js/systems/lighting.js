@@ -993,6 +993,9 @@ export function initLighting(scene, scenario) {
   // The Canvas renderer can't tint, so the light map would do nothing and the glows
   // would be white blobs: lighting is WebGL only.
   const webgl = scene.sys.game.renderer?.type === Phaser.WEBGL;
+  if (cfg && cfg.enabled !== false && !webgl) {
+    console.warn('💡 Lighting disabled: the browser fell back to the Canvas renderer (no WebGL). Check hardware acceleration / chrome://gpu.');
+  }
   if (!cfg || cfg.enabled === false || !webgl || lightingDisabledByPlayer()) {
     window.lightingSystem = null;
     return null;
