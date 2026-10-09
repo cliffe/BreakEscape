@@ -107,11 +107,11 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-09"
   },
-  "062cda5136da16858a71c4fc76ae8fbe": {
-    "npc": "kevin_park",
-    "text": "He's been meeting with external people—calls them \\",
-    "voice": "Charon",
-    "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+  "06438192ef16e7cd4b8d225beb3f797a": {
+    "npc": "derek_lawson",
+    "text": "Prison. How quaint.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-09"
@@ -121,15 +121,6 @@
     "text": "Maya wasn't ENTROPY. She was our informant. She trusted SAFETYNET enough to reach out, and that cost her.",
     "voice": "Aoede",
     "style": "Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
-    "language": "en-GB",
-    "model": "gemini-3.8-flash-tts",
-    "generated": "2026-10-08"
-  },
-  "075a0cefdc68bab98aed66441639ea80": {
-    "npc": "derek_lawson",
-    "text": "You call in SAFETYNET backup. Derek doesn't resist—he's too confident that he's already won something.",
-    "voice": "Algieba",
-    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
@@ -170,15 +161,6 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-09"
   },
-  "093727c2167d546621016c4616bea85b": {
-    "npc": "kevin_park",
-    "text": "The report has a \\",
-    "voice": "Charon",
-    "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
-    "language": "en-GB",
-    "model": "gemini-3.8-flash-tts",
-    "generated": "2026-10-09"
-  },
   "09e5b08523e2d7cfdc391b319145f030": {
     "npc": "closing_debrief_person",
     "text": "Public disclosure. Full transparency.",
@@ -188,20 +170,20 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
+  "0a2e35ad1bf4910a0a33f4575e997104": {
+    "npc": "kevin_park",
+    "text": "And nobody will tell me why. Just \"performance issues.\"",
+    "voice": "Charon",
+    "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
   "0ace9f84dee08a5e9b238634ce9dfeb0": {
     "npc": "closing_debrief_person",
     "text": "Understandable reaction. Derek's narrative now is that SAFETYNET attacked him, but that's lawyer talk.",
     "voice": "Aoede",
     "style": "Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
-    "language": "en-GB",
-    "model": "gemini-3.8-flash-tts",
-    "generated": "2026-10-08"
-  },
-  "0b7a0be0c7e5849237c680861e93d51a": {
-    "npc": "derek_lawson",
-    "text": "Backup arrives within minutes. Derek Lawson is in custody.",
-    "voice": "Algieba",
-    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
@@ -215,15 +197,6 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
-  "0caefd1ce76e759d530ad01f0f61cbe6": {
-    "npc": "briefing_cutscene",
-    "text": "You go in with them, laptop bag on your shoulder. Nobody looks twice at the IT auditor.",
-    "voice": "Aoede",
-    "style": "Professional intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
-    "language": "en-GB",
-    "model": "gemini-3.8-flash-tts",
-    "generated": "2026-10-08"
-  },
   "0cb89a90e72ee24333001418ba53d131": {
     "npc": "closing_debrief_person",
     "text": "You had the authority. The operation succeeded. I'm noting the loss.",
@@ -232,6 +205,15 @@
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
+  },
+  "0cc17f323955e4a666ae02c07473ff20": {
+    "npc": "derek_lawson",
+    "text": "You found the files. The targeting lists. The message templates.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
   },
   "0d597474ab7f666c7f8701a2b85f254b": {
     "npc": "closing_debrief_person",
@@ -278,6 +260,15 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
+  "0f5792fd98d9f96c90f2f48e888a6324": {
+    "npc": "derek_lawson",
+    "text": "We just accelerate the lesson. Make it unavoidable. Make it hurt enough that people remember.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
   "0ff7242864bb6a92b596130102fed415": {
     "npc": "sarah_martinez",
     "text": "Sure thing. Let me get you set up first.",
@@ -293,15 +284,6 @@
     "voice": "Leda",
     "style": "Content analyst in her late twenties. Speak with a consistent Chinese-American (California) accent throughout — do not shift to any other accent. Soft, mid-to-high pitch; quiet, hesitant pace. Nervous and concerned.",
     "language": "en-US",
-    "model": "gemini-3.8-flash-tts",
-    "generated": "2026-10-09"
-  },
-  "1053f81873bc0ab0f8a9e05b663044fb": {
-    "npc": "kevin_park",
-    "text": "At first he seemed normal. Then he started requesting \\",
-    "voice": "Charon",
-    "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
-    "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-09"
   },
@@ -332,6 +314,15 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
+  "144f6e56805b1719e5a1c3319302bde1": {
+    "npc": "narrator",
+    "text": "Derek's hands are empty. SAFETYNET backup is called. The launch device is yours.",
+    "voice": "Algenib",
+    "style": "Cinematic noir detective voice over narrator.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
   "1541b755e8a574333684bae87efed061": {
     "npc": "closing_debrief_person",
     "text": "You had the authority to make those calls. The mission succeeded. But I'm noting it: two civilians removed, one of them our asset.",
@@ -340,6 +331,15 @@
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
+  },
+  "1586963562dce7c395f1bc34f1f9aef9": {
+    "npc": "derek_lawson",
+    "text": "I have here a launch device to remotely activate Operation Shatter. One confirmation code is all it takes. And I have it memorised.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
   },
   "15d374ed6df9c944a1bb253b084a1372": {
     "npc": "closing_debrief_person",
@@ -458,15 +458,6 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
-  "1a7b69f129dbf53f60b9d6805a51831f": {
-    "npc": "derek_lawson",
-    "text": "Derek's hands are empty. SAFETYNET backup is called. The launch device is yours.",
-    "voice": "Algieba",
-    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
-    "language": "en-GB",
-    "model": "gemini-3.8-flash-tts",
-    "generated": "2026-10-08"
-  },
   "1acfa11dcb1e963496565e87918fa513": {
     "npc": "sarah_martinez",
     "text": "Oh, that was Patricia's office. She was our department manager.",
@@ -511,6 +502,15 @@
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
+  },
+  "1d3e423c56c0359d4fe619b69fec8a51": {
+    "npc": "closing_debrief_person",
+    "text": "I see.",
+    "voice": "Aoede",
+    "style": "Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
   },
   "1e0647779ffb03e89af4a7a4eb9063fd": {
     "npc": "kevin_park",
@@ -575,6 +575,15 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
+  "20b6bbab549eee3c620f77d252963c35": {
+    "npc": "derek_lawson",
+    "text": "But I'm the only honest person in this industry. Every security researcher KNOWS trust is broken. They just profit from pretending it can be fixed.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
   "2117a0adea093a3dc693bcd072756278": {
     "npc": "kevin_park",
     "text": "I flagged it to management three times. Nothing happened.",
@@ -611,6 +620,24 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
+  "235518457bd7d2a15531dc02301e5624": {
+    "npc": "derek_lawson",
+    "text": "\"Planning.\" Such a neutral word for what we're doing.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "235d33565df4f3bd403edbb890feddaa": {
+    "npc": "derek_lawson",
+    "text": "Entropy is inevitable. Trust is a lie. Security through obscurity fails.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
   "23ae289702f89709a1c4a911ed2b863b": {
     "npc": "closing_debrief_person",
     "text": "I noticed you didn't provide Kevin with a security assessment during your cover operation.",
@@ -625,6 +652,15 @@
     "text": "*quietly* Patricia.",
     "voice": "Charon",
     "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "24488d9ee04689a252491976061b79c6": {
+    "npc": "derek_lawson",
+    "text": "Good idea. I'm sure the server room has plenty to keep you busy.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-09"
@@ -661,15 +697,6 @@
     "text": "You had the authority. The operation succeeded. I'm logging it as an operational casualty, not a failure of judgment.",
     "voice": "Aoede",
     "style": "Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
-    "language": "en-GB",
-    "model": "gemini-3.8-flash-tts",
-    "generated": "2026-10-08"
-  },
-  "259facd6fbcdef97c0646ad74a4ae206": {
-    "npc": "derek_lawson",
-    "text": "The evidence upload completes. SAFETYNET backup arrives. Derek Lawson is in custody.",
-    "voice": "Algieba",
-    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
@@ -727,6 +754,15 @@
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
+  },
+  "280519b6bca7390af91351407fbbafd1": {
+    "npc": "derek_lawson",
+    "text": "But hear me — ENTROPY doesn't end with me. The Architect planned for this.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
   },
   "291fc0b3b3690794b1ec8c021d121144": {
     "npc": "kevin_park",
@@ -799,6 +835,15 @@
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
+  },
+  "2d9d4641a43384d3bc9c54720095c25d": {
+    "npc": "derek_lawson",
+    "text": "Come on then!",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
   },
   "2dd430beeacc1b357071c46b94309a7e": {
     "npc": "kevin_park",
@@ -881,15 +926,6 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-09"
   },
-  "308dae5f4282406568c4626a5a0bc326": {
-    "npc": "closing_debrief_person",
-    "text": "Fanatics don't turn,",
-    "voice": "Aoede",
-    "style": "Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
-    "language": "en-GB",
-    "model": "gemini-3.8-flash-tts",
-    "generated": "2026-10-08"
-  },
   "3162d0222b3c3fa870a547be4d8718bd": {
     "npc": "kevin_park",
     "text": "We have encryption where we need it...",
@@ -920,6 +956,15 @@
   "32193ebadb9a6aeeb28026fed9417610": {
     "npc": "kevin_park",
     "text": "Also, here's my server room keycard. You'll need it to access the main servers.",
+    "voice": "Charon",
+    "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "32ccf3e207ba813c59c2c1c995a56153": {
+    "npc": "kevin_park",
+    "text": "I don't know exactly. Something about Derek's \"external partners.\"",
     "voice": "Charon",
     "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
     "language": "en-GB",
@@ -1016,14 +1061,23 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
-  "34cffb9f542e43929998114d23777172": {
+  "3670714d6b0b5f271f3f00f29b6c60b3": {
     "npc": "derek_lawson",
-    "text": "You begin compiling the evidence for public release while calling in backup.",
+    "text": "SAFETYNET. The organization that thinks surveillance protects people.",
     "voice": "Algieba",
     "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
-    "generated": "2026-10-08"
+    "generated": "2026-10-09"
+  },
+  "36bc5c93b52fde2c7f19c4f369b56893": {
+    "npc": "kevin_park",
+    "text": "He's been meeting with external people—calls them \"partners.\"",
+    "voice": "Charon",
+    "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
   },
   "376eea337f62623c4948f22f82b6d670": {
     "npc": "closing_debrief_person",
@@ -1178,14 +1232,32 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-09"
   },
-  "3f58a43e835a2c8da51add1f025a617c": {
-    "npc": "closing_debrief_person",
-    "text": "People who think killing people is \\",
-    "voice": "Aoede",
-    "style": "Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
+  "3ebc8bee37f2ec2e8e204613b1045359": {
+    "npc": "derek_lawson",
+    "text": "Yes. Between 42 and 85 people will die in the first 24 hours.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
-    "generated": "2026-10-08"
+    "generated": "2026-10-09"
+  },
+  "3f44be3d2ed1b97eb5cb626cf8e6f004": {
+    "npc": "derek_lawson",
+    "text": "You're not an IT contractor. And you've found Operation Shatter.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "3f9332032a96339ed751c2c13395eff0": {
+    "npc": "derek_lawson",
+    "text": "Good. Then you understand what's coming.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
   },
   "3fdcd7993f5aba54218a800203e684da": {
     "npc": "closing_debrief_person",
@@ -1214,14 +1286,14 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
-  "40cd5b6e72185fde1dd4c828674da309": {
-    "npc": "closing_debrief_person",
-    "text": "He'll spend decades in prison explaining why 85 dead people would have been \\",
-    "voice": "Aoede",
-    "style": "Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
+  "40fd45535a02a373eecf89583d90e85f": {
+    "npc": "derek_lawson",
+    "text": "But no one actually DEMONSTRATES it. No one shows what happens when you target human psychology at scale.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
-    "generated": "2026-10-08"
+    "generated": "2026-10-09"
   },
   "422506b4563530fe58ded060760923b2": {
     "npc": "maya_chen",
@@ -1274,6 +1346,15 @@
     "voice": "Leda",
     "style": "Content analyst in her late twenties. Speak with a consistent Chinese-American (California) accent throughout — do not shift to any other accent. Soft, mid-to-high pitch; quiet, hesitant pace. Nervous and concerned.",
     "language": "en-US",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "45a7299a5349bf460f789beff98e8608": {
+    "npc": "derek_lawson",
+    "text": "Arrest me. Expose me. I don't care. But I will never betray ENTROPY.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-09"
   },
@@ -1402,6 +1483,24 @@
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
+  },
+  "4acab96a0b8c761fc927f57ea57d2ab6": {
+    "npc": "kevin_park",
+    "text": "The access logs show his credentials being used at 2 AM. But he says it's for \"campaign servers.\"",
+    "voice": "Charon",
+    "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "4b0f0498f097d8f2debebdfa6052c4b9": {
+    "npc": "closing_debrief_person",
+    "text": "Fanatics don't turn, Agent. They'd rather go to prison as martyrs.",
+    "voice": "Aoede",
+    "style": "Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
   },
   "4b9923c4d18a5d3e502b10c781a96376": {
     "npc": "kevin_park",
@@ -1547,6 +1646,15 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
+  "5254824b16ee8160bbd0453a606fbadb": {
+    "npc": "closing_debrief_person",
+    "text": "Agent. I'm going to assume Derek triggered a failsafe before you reached him.",
+    "voice": "Aoede",
+    "style": "Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
   "535e37fe505209eb39baf4a74a383593": {
     "npc": "closing_debrief_person",
     "text": "Clean tactical response to a perceived threat.",
@@ -1556,12 +1664,12 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
-  "5443850715a8a768264bf40620814ce6": {
-    "npc": "maya_chen",
-    "text": "One day HR called her in. \\",
-    "voice": "Leda",
-    "style": "Content analyst in her late twenties. Speak with a consistent Chinese-American (California) accent throughout — do not shift to any other accent. Soft, mid-to-high pitch; quiet, hesitant pace. Nervous and concerned.",
-    "language": "en-US",
+  "53c2f2ee70f021ffee1367994a39f35e": {
+    "npc": "derek_lawson",
+    "text": "You look at me like I'm a monster.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-09"
   },
@@ -1573,6 +1681,24 @@
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
+  },
+  "5552f7bfb20e7cf32a756d1665e75f82": {
+    "npc": "narrator",
+    "text": "Backup arrives within minutes. Derek Lawson is in custody.",
+    "voice": "Algenib",
+    "style": "Cinematic noir detective voice over narrator.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "5562ef45d32c5af7c089c12191d5f571": {
+    "npc": "narrator",
+    "text": "SAFETYNET backup arrives and restrains Derek Lawson.",
+    "voice": "Algenib",
+    "style": "Cinematic noir detective voice over narrator.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
   },
   "557f81b574d7eb1c269aba5e4e85e91c": {
     "npc": "sarah_martinez",
@@ -1619,6 +1745,15 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
+  "577d8c8c0f17b718b6a3b006377d5ef3": {
+    "npc": "narrator",
+    "text": "You begin compiling the evidence for public release while calling in backup.",
+    "voice": "Algenib",
+    "style": "Cinematic noir detective voice over narrator.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
   "57ee82c4d76ad0c01e8f3dd6449030f0": {
     "npc": "closing_debrief_person",
     "text": "Director Netherton is... not happy. We don't usually expose methods.",
@@ -1627,6 +1762,24 @@
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
+  },
+  "58cadebd5421a1d5ec37a107120db127": {
+    "npc": "derek_lawson",
+    "text": "Become a double agent? Betray The Architect?",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "58d77016bca20da64734334f5375d3f8": {
+    "npc": "derek_lawson",
+    "text": "Working late on the security audit?",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
   },
   "59666ff4bf06eed6ac4430033403ce24": {
     "npc": "kevin_park",
@@ -1637,11 +1790,20 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-09"
   },
-  "59d651353051c15f0b9c2b4dc56a3dbb": {
-    "npc": "kevin_park",
-    "text": "Management keeps telling me he's just \\",
-    "voice": "Charon",
-    "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+  "59692600cf4f13222098bfecfb84735a": {
+    "npc": "derek_lawson",
+    "text": "Sixty deaths to save tens of thousands per year. That's not murder. That's optimization.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "5a5de850d68dfcdc6ae7f87c1cf6a76b": {
+    "npc": "derek_lawson",
+    "text": "And in ten years, when no one falls for phishing because Operation Shatter taught them to verify everything, you'll understand.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-09"
@@ -1664,6 +1826,15 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
+  "5b73da4ffa433fad68479ca7ebc4ac92": {
+    "npc": "derek_lawson",
+    "text": "They're not innocent. They're negligent. They've outsourced their critical thinking to systems that can be manipulated.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
   "5bc80d61e518a2177793be5f9a66c03a": {
     "npc": "maya_chen",
     "text": "Patricia Wells. She was our department manager.",
@@ -1672,15 +1843,6 @@
     "language": "en-US",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-09"
-  },
-  "5bced5c5105b56c2490ac328144ed036": {
-    "npc": "closing_debrief_person",
-    "text": "He'll be cleared. The forged email had a \\",
-    "voice": "Aoede",
-    "style": "Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
-    "language": "en-GB",
-    "model": "gemini-3.8-flash-tts",
-    "generated": "2026-10-08"
   },
   "5beea4245983f2c57b58130d4df84e43": {
     "npc": "kevin_park",
@@ -1705,6 +1867,15 @@
     "text": "Maybe I'm reading too much into it.",
     "voice": "Charon",
     "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "5caf3d2899ef986d25648a7b79efb939": {
+    "npc": "narrator",
+    "text": "Derek sets down the launch device.",
+    "voice": "Algenib",
+    "style": "Cinematic noir detective voice over narrator.",
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-09"
@@ -1735,6 +1906,15 @@
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
+  },
+  "5efbf6140019e5cccd907c8cdfec1adf": {
+    "npc": "derek_lawson",
+    "text": "Every security professional in the world says \"humans are the weakest link.\" They write papers about it. Give talks at conferences. Collect consulting fees.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
   },
   "5f2613106ecc6166b723b9de4d17f545": {
     "npc": "kevin_park",
@@ -1772,6 +1952,15 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-09"
   },
+  "600af1c59145c965b742a5ee88ae9316": {
+    "npc": "kevin_park",
+    "text": "The report has a \"HEADER MISMATCH DETECTED\" flag. That's not me questioning it — that's the mail server's own forensic system flagging a forgery.",
+    "voice": "Charon",
+    "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
   "6020709ddc2a38cec65098b42460de44": {
     "npc": "sarah_martinez",
     "text": "Kevin should be in the IT room. It's through the main office, on the east side.",
@@ -1781,27 +1970,9 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
-  "602eef925adc4bb7e0c0a8245b83de8b": {
-    "npc": "kevin_park",
-    "text": "The access logs show his credentials being used at 2 AM. But he says it's for \\",
-    "voice": "Charon",
-    "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
-    "language": "en-GB",
-    "model": "gemini-3.8-flash-tts",
-    "generated": "2026-10-08"
-  },
   "609f8a3b1d20e451293c9a9327c51660": {
     "npc": "closing_debrief_person",
     "text": "We'll find out. Either way — he's in custody. Operation Shatter is stopped.",
-    "voice": "Aoede",
-    "style": "Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
-    "language": "en-GB",
-    "model": "gemini-3.8-flash-tts",
-    "generated": "2026-10-08"
-  },
-  "60dc2e7befb3df50d6e0673e780fbe09": {
-    "npc": "closing_debrief_person",
-    "text": "You know what Derek would have said? \\",
     "voice": "Aoede",
     "style": "Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
     "language": "en-GB",
@@ -1835,6 +2006,15 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
+  "62731bfb73ae1187180f5cc0b2d55782": {
+    "npc": "derek_lawson",
+    "text": "A temporary setback. Entropy always wins eventually.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
   "629bd82226189a5443509d37a3060ba6": {
     "npc": "closing_debrief_person",
     "text": "Maybe. But now ENTROPY knows we're onto Operation Shatter methodology.",
@@ -1862,6 +2042,15 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-09"
   },
+  "646f30a16b62c0a7b30bffc7e1bf9f33": {
+    "npc": "derek_lawson",
+    "text": "Murder? No. Think of it as... forced education.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
   "657f5975479e873a3a36ba60631148d3": {
     "npc": "closing_debrief_person",
     "text": "In a twisted way, you taught the lesson Derek wanted—just without the deaths.",
@@ -1870,6 +2059,15 @@
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
+  },
+  "65cf36c5be579acee7f72eb781eb7fd4": {
+    "npc": "derek_lawson",
+    "text": "Then you don't need a fight to end this.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
   },
   "661fdb25673c452b8b1cc8268de418b1": {
     "npc": "narrator",
@@ -1933,6 +2131,15 @@
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
+  },
+  "69fe6544c186df437e8594c6af0694dc": {
+    "npc": "derek_lawson",
+    "text": "The Architect opened my eyes. But I chose this path myself.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
   },
   "6a2fb3f64cf469c67a42396a3fcca255": {
     "npc": "closing_debrief_person",
@@ -2087,6 +2294,15 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-09"
   },
+  "6ff2eb84c7e7e0bd2836cb59f42f16ce": {
+    "npc": "maya_chen",
+    "text": "They're planning to kill people. On purpose. They call it \"Operation Shatter.\"",
+    "voice": "Leda",
+    "style": "Content analyst in her late twenties. Speak with a consistent Chinese-American (California) accent throughout — do not shift to any other accent. Soft, mid-to-high pitch; quiet, hesitant pace. Nervous and concerned.",
+    "language": "en-US",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
   "70afe4165e9d5ac17690889801d6e62e": {
     "npc": "kevin_park",
     "text": "You're back. Something's wrong — I can see it on your face. What did you find?",
@@ -2105,6 +2321,24 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
+  "719ccc2f008065acd80d49a27a75a61a": {
+    "npc": "derek_lawson",
+    "text": "What happens now is up to you.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "733b199cdaca5dcd090891ce016cbfd1": {
+    "npc": "derek_lawson",
+    "text": "We're going to end that. One bad weekend. Sixty deaths. And then NO ONE will ever trust a digital message again without verification.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
   "736882b6365278afe829d676300540e2": {
     "npc": "closing_debrief_person",
     "text": "They're going to live. Because of you.",
@@ -2122,6 +2356,15 @@
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
+  },
+  "738501c975cbba67269f498c6dfd5e0b": {
+    "npc": "derek_lawson",
+    "text": "We're going to prove—conclusively, undeniably—that digital trust is a lie. That every message you receive could be fake. That nothing is secure.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
   },
   "73c9f28ed8bca8bc711e279e9bc470fc": {
     "npc": "closing_debrief_person",
@@ -2210,6 +2453,15 @@
     "voice": "Leda",
     "style": "Content analyst in her late twenties. Speak with a consistent Chinese-American (California) accent throughout — do not shift to any other accent. Soft, mid-to-high pitch; quiet, hesitant pace. Nervous and concerned.",
     "language": "en-US",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "790ec6448832800c116607049a37c1f8": {
+    "npc": "derek_lawson",
+    "text": "I'm not a villain. I'm a prophet.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-09"
   },
@@ -2339,6 +2591,15 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
+  "7dca6896ee8aa9083e88ecf7afb93537": {
+    "npc": "maya_chen",
+    "text": "One day HR called her in. \"Performance issues.\" She was gone within an hour.",
+    "voice": "Leda",
+    "style": "Content analyst in her late twenties. Speak with a consistent Chinese-American (California) accent throughout — do not shift to any other accent. Soft, mid-to-high pitch; quiet, hesitant pace. Nervous and concerned.",
+    "language": "en-US",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
   "7de28879caca0e29fb98bed6cbb54504": {
     "npc": "kevin_park",
     "text": "Someone's been accessing the server room without authorization. Late at night. Multiple times.",
@@ -2356,6 +2617,15 @@
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
+  },
+  "7e12a106dee06f4fd3d712ff7006c712": {
+    "npc": "derek_lawson",
+    "text": "The cohorts we're profiling? Vulnerable demographics—statistical slices where coordinated misinformation moves fastest and verification breaks down first. High leverage. Predictable panic.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
   },
   "7e2398729dd2a103bd58175cf7c05156": {
     "npc": "kevin_park",
@@ -2411,6 +2681,15 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
+  "7fd0b465dc6118838e29765adfe8b284": {
+    "npc": "derek_lawson",
+    "text": "I'm a martyr now. ENTROPY will remember this. The Architect will remember.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
   "80202a0e1fdaab453000edb235be2e9f": {
     "npc": "closing_debrief_person",
     "text": "When the follow-up team found them, they immediately flagged Kevin as a victim, not a suspect.",
@@ -2429,6 +2708,24 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
+  "80762ac2200400aeab4dbc44818aa35a": {
+    "npc": "derek_lawson",
+    "text": "We're not planning an attack. We're planning an education.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "80d6a7590150eabc23e0f0338243513a": {
+    "npc": "derek_lawson",
+    "text": "Ah. The casualty projections.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
   "80f3a86358c0514af44825b43f6203af": {
     "npc": "kevin_park",
     "text": "Just... thank you. I thought I was going to be the next Patricia.",
@@ -2443,6 +2740,15 @@
     "text": "What? No — please. I can prove it. The header on that email, the simultaneous session flag—",
     "voice": "Charon",
     "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "8188b5998282165923c1bcb313ff87a9": {
+    "npc": "derek_lawson",
+    "text": "We're teaching them—all of them—that trust is dangerous. Verify everything. Question everything. Or die.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-09"
@@ -2528,15 +2834,6 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
-  "8664cb6de4fc1a1f2be2fe466881761d": {
-    "npc": "briefing_cutscene",
-    "text": "Viral Dynamics Media. A weekday morning in the city centre.",
-    "voice": "Aoede",
-    "style": "Professional intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
-    "language": "en-GB",
-    "model": "gemini-3.8-flash-tts",
-    "generated": "2026-10-08"
-  },
   "8676b05eed16754e244f1856e42dc6a5": {
     "npc": "closing_debrief_person",
     "text": "You found the casualty projections—the smoking gun. Derek's death calculations, The Architect's approval.",
@@ -2569,6 +2866,15 @@
     "text": "Though I guess more couldn't hurt?",
     "voice": "Charon",
     "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "88f65669f0171169b8917ea38553788f": {
+    "npc": "closing_debrief_person",
+    "text": "They're seeing. \"Acceptable losses.\" \"Educational deaths.\"",
+    "voice": "Aoede",
+    "style": "Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-09"
@@ -2618,6 +2924,15 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
+  "8c24e6450a254b2e19d0adb7e365f865": {
+    "npc": "derek_lawson",
+    "text": "\"Innocent.\" That's an interesting word.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
   "8ce7e4e30b9b0c125fbe8a1de841dc24": {
     "npc": "kevin_park",
     "text": "It's such a relief to have a professional validate what I've been seeing.",
@@ -2644,6 +2959,15 @@
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
+  },
+  "8d9c5b0bc902a5d342a933d59028e999": {
+    "npc": "derek_lawson",
+    "text": "Thousands. Tens of thousands. Deaths from delayed emergency response. Medical errors from compromised records. Violence incited by disinformation.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
   },
   "8e3294563f6d38aa3946d062949d45da": {
     "npc": "closing_debrief_person",
@@ -2726,6 +3050,15 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
+  "91453cbc827d2ce81fe255a59bd24e37": {
+    "npc": "kevin_park",
+    "text": "At first he seemed normal. Then he started requesting \"enhanced privacy\" for his systems.",
+    "voice": "Charon",
+    "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
   "91fe9630b24084c9e86ecb098b596db7": {
     "npc": "closing_debrief_person",
     "text": "Response was controlled. Minimal injury. Threat neutralized.",
@@ -2743,15 +3076,6 @@
     "language": "en-US",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-09"
-  },
-  "93033cfa14be0cc76b7f992f19487360": {
-    "npc": "closing_debrief_person",
-    "text": "I heard his answer. \\",
-    "voice": "Aoede",
-    "style": "Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
-    "language": "en-GB",
-    "model": "gemini-3.8-flash-tts",
-    "generated": "2026-10-08"
   },
   "9316a42c58a679f68d87feb10517c49a": {
     "npc": "sarah_martinez",
@@ -2807,11 +3131,11 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
-  "95c2bb51d4082b2a0ec5e2bc7001d276": {
-    "npc": "kevin_park",
-    "text": "I requested modern electronic locks six months ago. Budget was \\",
-    "voice": "Charon",
-    "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+  "9568886e24cd2d283cf1b4f602db1c07": {
+    "npc": "sarah_martinez",
+    "text": "Go through the main office, then look for the door marked \"IT\" on the east wall.",
+    "voice": "Kore",
+    "style": "Friendly, warm receptionist in her early thirties. Speak with a consistent Irish (Dublin) accent throughout — do not shift to any other accent. Use a warm, mid-range pitch. Speak naturally and helpfully.",
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-09"
@@ -2861,11 +3185,11 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
-  "98c3d53ee96273134a165c425ec5259a": {
-    "npc": "kevin_park",
-    "text": "And nobody will tell me why. Just \\",
-    "voice": "Charon",
-    "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+  "982bdf2dac32205dac0e9c28cb2b79bb": {
+    "npc": "derek_lawson",
+    "text": "I know the truth. And after Sunday, so will everyone else.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-09"
@@ -2896,6 +3220,24 @@
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
+  },
+  "9a17efefce14926098f2980842f6d991": {
+    "npc": "kevin_park",
+    "text": "Said it was for \"client confidentiality\" but... marketing doesn't need that level of security.",
+    "voice": "Charon",
+    "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "9a63a9c9fb646a4092f70e8d5836aa6c": {
+    "npc": "kevin_park",
+    "text": "\"Viral2023\" \"Viral2024\" - I've warned people but they keep doing it.",
+    "voice": "Charon",
+    "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
   },
   "9ae9210cbdc999144d2e97139181f2f3": {
     "npc": "closing_debrief_person",
@@ -2987,6 +3329,15 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-09"
   },
+  "a09ba46b8ae1f7de6146b90c5d1da859": {
+    "npc": "closing_debrief_person",
+    "text": "You know what Derek would have said? \"Kevin is acceptable collateral damage.\"",
+    "voice": "Aoede",
+    "style": "Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
   "a0e1011e7ea7e374b679f9c77ec30f92": {
     "npc": "closing_debrief_person",
     "text": "Kevin's kids watched him get arrested. That happened because of a choice you made.",
@@ -2996,18 +3347,18 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
-  "a16e1721a5cd9d0ff6fe81800ed963ee": {
-    "npc": "maya_chen",
-    "text": "Sunday. 6 AM. That's when the messages go out.",
-    "voice": "Leda",
-    "style": "Content analyst in her late twenties. Speak with a consistent Chinese-American (California) accent throughout — do not shift to any other accent. Soft, mid-to-high pitch; quiet, hesitant pace. Nervous and concerned.",
-    "language": "en-US",
+  "a1436da902cbbeb15a8ddd32128a32c6": {
+    "npc": "derek_lawson",
+    "text": "Those sixty people? Their deaths will save millions.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-09"
   },
-  "a1b259a487368e44855757f95e30a1fd": {
+  "a16e1721a5cd9d0ff6fe81800ed963ee": {
     "npc": "maya_chen",
-    "text": "They're planning to kill people. On purpose. They call it \\",
+    "text": "Sunday. 6 AM. That's when the messages go out.",
     "voice": "Leda",
     "style": "Content analyst in her late twenties. Speak with a consistent Chinese-American (California) accent throughout — do not shift to any other accent. Soft, mid-to-high pitch; quiet, hesitant pace. Nervous and concerned.",
     "language": "en-US",
@@ -3067,6 +3418,15 @@
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
+  },
+  "a59cdca813da022ec138017d76ddaf93": {
+    "npc": "maya_chen",
+    "text": "Derek—he's the one running it—I've overhead him call it \"education.\"",
+    "voice": "Leda",
+    "style": "Content analyst in her late twenties. Speak with a consistent Chinese-American (California) accent throughout — do not shift to any other accent. Soft, mid-to-high pitch; quiet, hesitant pace. Nervous and concerned.",
+    "language": "en-US",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
   },
   "a5e93373cea10c05e0b6f8f469e76226": {
     "npc": "briefing_cutscene",
@@ -3158,6 +3518,15 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-09"
   },
+  "a7e01a5eeb1dcd1ab49e0d70c1651535": {
+    "npc": "derek_lawson",
+    "text": "You think concrete walls stop ideas? I'll become a martyr. People will study my philosophy. Question why I was silenced.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
   "a7e9653e30d10e4284aca66ba804373f": {
     "npc": "briefing_cutscene",
     "text": "Derek Lawson. Senior Marketing Manager at Viral Dynamics.",
@@ -3221,6 +3590,15 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
+  "aa2954591c9f38f9ca39f0ac3f36c2cd": {
+    "npc": "derek_lawson",
+    "text": "Insane? I'm the sanest person in this building.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
   "aa62a107876fd9d5ec07bf5e5fb17008": {
     "npc": "closing_debrief_person",
     "text": "Either the evidence genuinely broke something in him, or he's calculating. Weighing martyrdom against cooperation.",
@@ -3275,15 +3653,6 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-09"
   },
-  "adc13f8403b16d84e1d4b4c4a014cb82": {
-    "npc": "derek_lawson",
-    "text": "SAFETYNET backup arrives and restrains Derek Lawson.",
-    "voice": "Algieba",
-    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
-    "language": "en-GB",
-    "model": "gemini-3.8-flash-tts",
-    "generated": "2026-10-08"
-  },
   "af337d91e722a0e1be1f7dded6825485": {
     "npc": "maya_chen",
     "text": "Derek's office, the server room—that's where the real answers are. Figure out how to get in.",
@@ -3319,15 +3688,6 @@
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
-  },
-  "afdc53ee392b6616078f6ae9cd5aadb1": {
-    "npc": "maya_chen",
-    "text": "He's ENTROPY. Part of a cell called \\",
-    "voice": "Leda",
-    "style": "Content analyst in her late twenties. Speak with a consistent Chinese-American (California) accent throughout — do not shift to any other accent. Soft, mid-to-high pitch; quiet, hesitant pace. Nervous and concerned.",
-    "language": "en-US",
-    "model": "gemini-3.8-flash-tts",
-    "generated": "2026-10-09"
   },
   "aff08c090dd0c15a0168e7e8e719a6db": {
     "npc": "closing_debrief_person",
@@ -3518,6 +3878,24 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
+  "ba8e84e9eb888eb1a6ab2cb4c56484a5": {
+    "npc": "closing_debrief_person",
+    "text": "He'll be cleared. The forged email had a \"HEADER MISMATCH DETECTED\" flag — the mail server's own forensic system flagged it as a forgery. The anomaly report showed his workstation running a simultaneous session, which means someone else was using his credentials.",
+    "voice": "Aoede",
+    "style": "Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "babc7c476fa528083f0fc6a2dd0cc73b": {
+    "npc": "maya_chen",
+    "text": "He's ENTROPY. Part of a cell called \"Social Fabric.\"",
+    "voice": "Leda",
+    "style": "Content analyst in her late twenties. Speak with a consistent Chinese-American (California) accent throughout — do not shift to any other accent. Soft, mid-to-high pitch; quiet, hesitant pace. Nervous and concerned.",
+    "language": "en-US",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
   "bafe69af4a294fb63f70c7c75c880242": {
     "npc": "closing_debrief_person",
     "text": "Those casualty projections—42 to 85 people. Populations they'd profiled and hit with tailored lies—and everyone else caught when hoaxes swamped real emergency capacity.",
@@ -3526,6 +3904,24 @@
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
+  },
+  "bb155d9149db1d37726764a084520ece": {
+    "npc": "narrator",
+    "text": "You call in SAFETYNET backup. Derek doesn't resist—he's too confident that he's already won something.",
+    "voice": "Algenib",
+    "style": "Cinematic noir detective voice over narrator.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "bb8f1ba26a1b021dd20f04558a1f4727": {
+    "npc": "derek_lawson",
+    "text": "But know this—even if you stop Operation Shatter here, the idea doesn't die. There are other cells. Other believers. Other architects of the inevitable.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
   },
   "bbdc29ceebac3d56a4f035c098a86a05": {
     "npc": "kevin_park",
@@ -3545,6 +3941,15 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-09"
   },
+  "bd2df16da28fe85913a8e5bc1e76c53e": {
+    "npc": "derek_lawson",
+    "text": "Hospitals overwhelmed by false closure alerts. Emergency lines jammed with spoofed calls—people who can't reach real help in time. Crowd crush and secondary crashes as everyone reacts at once. Heart attacks from sheer panic. It compounds.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
   "bd7c6dd89fb47a8ffa1e3db0074f1267": {
     "npc": "closing_debrief_person",
     "text": "Then you and I have very different ideas about what this job is for.",
@@ -3553,6 +3958,15 @@
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
+  },
+  "bda1d5674b49d7698ed4ba1056f2f7f4": {
+    "npc": "kevin_park",
+    "text": "He claims it's for \"client confidentiality\" but I've never seen documentation justifying the architecture.",
+    "voice": "Charon",
+    "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
   },
   "be137d9a202b3bbb7c69cf673d26636b": {
     "npc": "closing_debrief_person",
@@ -3572,15 +3986,6 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-09"
   },
-  "bf093fc7e249cf11201182586ce43cc7": {
-    "npc": "derek_lawson",
-    "text": "Derek sets down the launch device.",
-    "voice": "Algieba",
-    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
-    "language": "en-GB",
-    "model": "gemini-3.8-flash-tts",
-    "generated": "2026-10-08"
-  },
   "bf6ad3f3e342c1c39c5a9fa1095fc2f6": {
     "npc": "kevin_park",
     "text": "I want to believe that, I really do.",
@@ -3599,14 +4004,14 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
-  "c2b93080b4ccfa1fef5dc5ab3dfc558a": {
-    "npc": "sarah_martinez",
-    "text": "She got fired about a month ago. Really sudden. \\",
-    "voice": "Kore",
-    "style": "Friendly, warm receptionist in her early thirties. Speak with a consistent Irish (Dublin) accent throughout — do not shift to any other accent. Use a warm, mid-range pitch. Speak naturally and helpfully.",
+  "c2c074b6332c16ca38071142fb910519": {
+    "npc": "derek_lawson",
+    "text": "Everyone else pretends the systems work. Pretends their data is secure. Pretends that trust is deserved.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
-    "generated": "2026-10-08"
+    "generated": "2026-10-09"
   },
   "c37941b933fd4454c31273899966ee7b": {
     "npc": "closing_debrief_person",
@@ -3650,15 +4055,6 @@
     "voice": "Leda",
     "style": "Content analyst in her late twenties. Speak with a consistent Chinese-American (California) accent throughout — do not shift to any other accent. Soft, mid-to-high pitch; quiet, hesitant pace. Nervous and concerned.",
     "language": "en-US",
-    "model": "gemini-3.8-flash-tts",
-    "generated": "2026-10-09"
-  },
-  "c6017df201cf32c8bd5f42424bd6ab5c": {
-    "npc": "kevin_park",
-    "text": "I don't know exactly. Something about Derek's \\",
-    "voice": "Charon",
-    "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
-    "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-09"
   },
@@ -3743,15 +4139,6 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
-  "c9f2a6fa7c977922fb2b0f2756311770": {
-    "npc": "sarah_martinez",
-    "text": "Go through the main office, then look for the door marked \\",
-    "voice": "Kore",
-    "style": "Friendly, warm receptionist in her early thirties. Speak with a consistent Irish (Dublin) accent throughout — do not shift to any other accent. Use a warm, mid-range pitch. Speak naturally and helpfully.",
-    "language": "en-GB",
-    "model": "gemini-3.8-flash-tts",
-    "generated": "2026-10-08"
-  },
   "ca4915d5e4107b4197a41bd4d17654fa": {
     "npc": "kevin_park",
     "text": "I don't know who you are or why you're really here — but whatever you're doing, it's the right thing.",
@@ -3793,6 +4180,15 @@
     "text": "Yes! That's exactly what I've been saying!",
     "voice": "Charon",
     "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "cccc4b772d97f632b9fed8f94ea31976": {
+    "npc": "derek_lawson",
+    "text": "It's not random noise. We've segmented the population—demographic cohorts where tailored lies land hardest, multiplied by everyone else caught when the system buckles.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-09"
@@ -3851,29 +4247,29 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-09"
   },
+  "cfb6079de0b02ba32cca0397bf3f08fe": {
+    "npc": "derek_lawson",
+    "text": "If you want a fight, you'll get one. But you won't stop ENTROPY. You'll just prove we're right about the system.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "cfcddff48c192e2f96736185853c18f7": {
+    "npc": "derek_lawson",
+    "text": "I was wondering if you'd find those. They're the most honest part of the whole operation.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
   "d035c9dd165176dff5419a919d5e27fb": {
     "npc": "closing_debrief_person",
     "text": "You identified most of the key vulnerabilities—enough to maintain credibility with Kevin.",
     "voice": "Aoede",
     "style": "Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
-    "language": "en-GB",
-    "model": "gemini-3.8-flash-tts",
-    "generated": "2026-10-08"
-  },
-  "d1195be18cb62af4d0fa95c3370f1730": {
-    "npc": "maya_chen",
-    "text": "Derek—he's the one running it—I've overhead him call it \\",
-    "voice": "Leda",
-    "style": "Content analyst in her late twenties. Speak with a consistent Chinese-American (California) accent throughout — do not shift to any other accent. Soft, mid-to-high pitch; quiet, hesitant pace. Nervous and concerned.",
-    "language": "en-US",
-    "model": "gemini-3.8-flash-tts",
-    "generated": "2026-10-09"
-  },
-  "d1d1ecfd14ded1e3661817026ffd1066": {
-    "npc": "derek_lawson",
-    "text": "SAFETYNET backup arrives. Derek Lawson is taken into custody.",
-    "voice": "Algieba",
-    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
@@ -3914,6 +4310,24 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
+  "d2bcbfdd80b1ea1c94af81d48a4ee3ad": {
+    "npc": "derek_lawson",
+    "text": "I'm the one willing to actually fix it. To burn the comfortable lies so something real can grow from the ashes.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "d4b034d485c66da062617b1b7a912b5b": {
+    "npc": "closing_debrief_person",
+    "text": "People who think killing people is \"education.\" Who see deaths as \"acceptable losses.\"",
+    "voice": "Aoede",
+    "style": "Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
   "d5e05c099c56df25770666205764bf45": {
     "npc": "kevin_park",
     "text": "Actually, don't answer that. I think I'm better off not knowing.",
@@ -3923,11 +4337,11 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-09"
   },
-  "d77358fa2bee4009e40f8230de4b6c38": {
-    "npc": "kevin_park",
-    "text": "Said it was for \\",
-    "voice": "Charon",
-    "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+  "d735a4d962de5e196a107b643c886455": {
+    "npc": "derek_lawson",
+    "text": "Terrorist. That's what they call educators who make people uncomfortable.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-09"
@@ -3959,6 +4373,15 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-09"
   },
+  "da02b948b1abfb6624ef3eaf58cf299b": {
+    "npc": "derek_lawson",
+    "text": "If you don't have specifics, I've got work to do. Come back when you have real evidence — not speculation.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
   "da2d58b5686c9e808df7b79068ec0476": {
     "npc": "sarah_martinez",
     "text": "Between us? Patricia was asking questions about Derek's projects.",
@@ -3986,6 +4409,15 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
+  "db5031524eed80edee513122afe7bcf2": {
+    "npc": "narrator",
+    "text": "SAFETYNET backup arrives. Derek Lawson is taken into custody.",
+    "voice": "Algenib",
+    "style": "Cinematic noir detective voice over narrator.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
   "dbcf263e12ac07b430889bf10dc2aedb": {
     "npc": "briefing_cutscene",
     "text": "Server room, computers, network infrastructure—all fair game under your cover.",
@@ -3994,6 +4426,15 @@
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
+  },
+  "dc3be243cb5bd08f9a42d5e83c2b83a5": {
+    "npc": "derek_lawson",
+    "text": "Public disclosure means the philosophy spreads. People will read those casualty projections and think—what if it happened? What if next time we're not stopped?",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
   },
   "dc3ec9d45873b56930d3110d3df08abf": {
     "npc": "briefing_cutscene",
@@ -4103,6 +4544,15 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
+  "e07364699f38d579763df94704114792": {
+    "npc": "narrator",
+    "text": "The evidence upload completes. SAFETYNET backup arrives. Derek Lawson is in custody.",
+    "voice": "Algenib",
+    "style": "Cinematic noir detective voice over narrator.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
   "e0b9c1fbf54b537d61f8596be1f12f71": {
     "npc": "briefing_cutscene",
     "text": "Three weeks ago, we flagged suspicious activity at Viral Dynamics—far beyond typical disinformation work.",
@@ -4138,6 +4588,15 @@
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
+  },
+  "e2b7a8ac64a032e46555b5dda4583518": {
+    "npc": "kevin_park",
+    "text": "Management keeps telling me he's just \"dedicated\" and \"works odd hours.\"",
+    "voice": "Charon",
+    "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
   },
   "e3053717312c0fd02d2c23db59a46ef4": {
     "npc": "derek_lawson",
@@ -4211,15 +4670,6 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
-  "e93a5221fcb9de46432f7b4e2bda31cc": {
-    "npc": "closing_debrief_person",
-    "text": "They're seeing. \\",
-    "voice": "Aoede",
-    "style": "Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
-    "language": "en-GB",
-    "model": "gemini-3.8-flash-tts",
-    "generated": "2026-10-08"
-  },
   "eb5aab22e20258265e7f324adbca48cb": {
     "npc": "closing_debrief_person",
     "text": "Maya was taking a risk talking to you. I hope you appreciated that.",
@@ -4234,6 +4684,24 @@
     "text": "Just... be careful, okay? Something's not right here.",
     "voice": "Charon",
     "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "ebd5ffc0f6b46467dcfa776a1ae58352": {
+    "npc": "derek_lawson",
+    "text": "So. Here we are. You've heard my reasoning. You've seen the evidence.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "ec2d71f83f544b7dad7ceb8402b3952e": {
+    "npc": "derek_lawson",
+    "text": "Forty-two to eighty-five deaths. Let's call it sixty.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-09"
@@ -4256,15 +4724,6 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
-  "ed1af5fdd7f24ba7f60caa2751ea932d": {
-    "npc": "kevin_park",
-    "text": "He claims it's for \\",
-    "voice": "Charon",
-    "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
-    "language": "en-GB",
-    "model": "gemini-3.8-flash-tts",
-    "generated": "2026-10-09"
-  },
   "edc077c71c5b9e99fbc54c45b60336e6": {
     "npc": "sarah_martinez",
     "text": "Kevin's our IT manager. Really nice guy, kind of overworked.",
@@ -4274,14 +4733,14 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
-  "ee1e518a1a70f8f879b772157e720d84": {
-    "npc": "briefing_cutscene",
-    "text": "Eight floors of glass, and a mural over the door that somebody was paid a lot for. Staff drift in with coffee and lanyards.",
-    "voice": "Aoede",
-    "style": "Professional intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
+  "ee2bae0c5ebfd031c93d45926157abbb": {
+    "npc": "sarah_martinez",
+    "text": "She got fired about a month ago. Really sudden. \"Performance issues\" they said.",
+    "voice": "Kore",
+    "style": "Friendly, warm receptionist in her early thirties. Speak with a consistent Irish (Dublin) accent throughout — do not shift to any other accent. Use a warm, mid-range pitch. Speak naturally and helpfully.",
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
-    "generated": "2026-10-08"
+    "generated": "2026-10-09"
   },
   "ef3d328143e98cc92d4175b1d8160991": {
     "npc": "kevin_park",
@@ -4327,6 +4786,24 @@
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
+  },
+  "f10b1fdee6908f83ceb97702f9f75616": {
+    "npc": "derek_lawson",
+    "text": "No. I'm not like you, willing to compromise principles for convenience.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "f117d01f8bfbc6e6033acef88e51765d": {
+    "npc": "narrator",
+    "text": "You go in with them, laptop bag on your shoulder. Nobody looks twice at the IT auditor.",
+    "voice": "Algenib",
+    "style": "Cinematic noir detective voice over narrator.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
   },
   "f1437055c658593f656a8ad75f8d9c19": {
     "npc": "kevin_park",
@@ -4400,6 +4877,15 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
+  "f4c56f2de5fa014d3d84abd564707efa": {
+    "npc": "kevin_park",
+    "text": "I requested modern electronic locks six months ago. Budget was \"under review.\"",
+    "voice": "Charon",
+    "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
   "f4d59dac3ebc28c6f24a81d56567f903": {
     "npc": "closing_debrief_person",
     "text": "You ran this mostly solo.",
@@ -4408,6 +4894,15 @@
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
+  },
+  "f506915ab1ecd749c95eabae67788aa6": {
+    "npc": "derek_lawson",
+    "text": "The model isn't uniform—lies don't land on everyone with the same weight—but once capacity collapses, geography and timing decide who pays. That's engineered, not accidental.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
   },
   "f53cc8775334ed4c0616631d0d0e9e77": {
     "npc": "closing_debrief_person",
@@ -4426,6 +4921,15 @@
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
+  },
+  "f5893028f53a7fb6123d16a33ae8b36b": {
+    "npc": "derek_lawson",
+    "text": "You think that hurts me? I WANT people to see this.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
   },
   "f58aee6dfb5b4fd38926ebb2fcfcff44": {
     "npc": "closing_debrief_person",
@@ -4463,6 +4967,24 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-09"
   },
+  "f70d181179fbd41b713aa83412c8ea7b": {
+    "npc": "derek_lawson",
+    "text": "Do you know how many people die every year because they trusted the wrong email? Clicked the wrong link? Gave credentials to the wrong person?",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "f76b03e01a7757cd23edb998f39c8894": {
+    "npc": "derek_lawson",
+    "text": "I calculated every one of them.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
   "f799919f5e5ad068ced246498e828cd0": {
     "npc": "kevin_park",
     "text": "Honestly? I'm worried.",
@@ -4481,6 +5003,15 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
+  "f89b49d68da203c38daeb3063c3c22fc": {
+    "npc": "derek_lawson",
+    "text": "Violence? How disappointing. I expected better from SAFETYNET.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
   "f8e3955079dc7e592f185de765f69c66": {
     "npc": "closing_debrief_person",
     "text": "His career is intact. His life isn't ruined. Because you took five minutes to be decent.",
@@ -4489,6 +5020,15 @@
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
+  },
+  "f8e9d612289215334acbc219e26ae7ec": {
+    "npc": "derek_lawson",
+    "text": "Fear is the first step to wisdom. You're doing my work for me.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
   },
   "f92ef2fed4340d3bd6f2df19cd7d13cd": {
     "npc": "closing_debrief_person",
@@ -4535,6 +5075,15 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
+  "f9be6fed69535cc86600c2b881c9ca77": {
+    "npc": "closing_debrief_person",
+    "text": "Agent. First, I need you to understand what you accomplished today.",
+    "voice": "Aoede",
+    "style": "Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
   "fa531b36b814db5dbfe4e0b7730442f1": {
     "npc": "kevin_park",
     "text": "Please — if you find anything that clears me, tell me immediately. I'm not the one who did this.",
@@ -4580,6 +5129,15 @@
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
   },
+  "fb189dfe7f6809ebbd7bb6d6de40c842": {
+    "npc": "derek_lawson",
+    "text": "And they're not some narrow fringe case. They trust hospital alerts without verification. They forward emergency broadcasts without checking the source.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
   "fbaa9072972176a62245f048e6b03d59": {
     "npc": "closing_debrief_person",
     "text": "I saw the footage. The way he talked about those casualties like statistics...",
@@ -4588,6 +5146,15 @@
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-08"
+  },
+  "fbd2091614a9141fd0e98e5743ba9be5": {
+    "npc": "derek_lawson",
+    "text": "Irregularities? Like what exactly?",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
   },
   "fc0a4d582bf508de087efd1c3ca55531": {
     "npc": "kevin_park",
@@ -4603,6 +5170,33 @@
     "text": "I mean, we do background checks for sensitive positions...",
     "voice": "Charon",
     "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "fd841e8808c1698c7555cc2bb093df93": {
+    "npc": "closing_debrief_person",
+    "text": "I heard his answer. \"I will never betray ENTROPY.\"",
+    "voice": "Aoede",
+    "style": "Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "fda686c39cff64b877eae000e67dc0c3": {
+    "npc": "closing_debrief_person",
+    "text": "He'll spend decades in prison explaining why 85 dead people would have been \"educational.\"",
+    "voice": "Aoede",
+    "style": "Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "fdf0bda22f17621d35e0635d008feee9": {
+    "npc": "derek_lawson",
+    "text": "I've been watching you, you know. The lockpicking. The server access. The files you've been copying.",
+    "voice": "Algieba",
+    "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
     "language": "en-GB",
     "model": "gemini-3.8-flash-tts",
     "generated": "2026-10-09"
