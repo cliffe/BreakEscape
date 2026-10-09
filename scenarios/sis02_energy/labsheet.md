@@ -942,7 +942,7 @@ Work through these after you have finished the scenario. Use your own run: Priya
 
 > Tip: In a group of four to six, split the questions the way you split the roles in play: SCADA engineers (the dial, the historian, the ESD, the SIS panel), IT/OT security (the jump server, isolation, CastleTech) and one or two incident commanders (the shutdown call, the notification, Trent Water). Compare answers at the end, especially where the tracks disagree.
 
-Each section opens with questions to discuss, then exercises that produce something you can hand in or present.
+Each section opens with questions to discuss, then exercises to work through.
 
 ### 1. Risk Management {#1-risk-management}
 
