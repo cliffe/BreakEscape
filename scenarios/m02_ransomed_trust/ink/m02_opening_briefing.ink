@@ -32,7 +32,7 @@ Director Magnus Netherton: Agent 0x00. Magnus Netherton -- I run this shop. I wo
 
 Director Magnus Netherton: I have a handler who knows this one cold, and a hospital running out of time while I make introductions. HaX -- it's yours.
 
-Agent HaX: {player_name()}. I'll be quick. The hospital can't afford slow.
+Agent HaX: Agent. I'll be quick. The hospital can't afford slow.
 
 Agent HaX: St. Catherine's Regional went dark at 02:47 this morning. Every clinical system encrypted in the same minute.
 
@@ -219,7 +219,7 @@ Agent HaX: Or get hold of a physical credential that already exists.
 
 Agent HaX: Or open it yourself. You're equipped for that, and it's a confession if anyone sees you do it.
 
-Agent HaX: This is a mission about people, {player_name()}. The picks are for when you've failed at the actual job.
+Agent HaX: This is a mission about people, Agent. The picks are for when you've failed at the actual job.
 
 + [Who's worth working on?]
     Agent HaX: The night coordinator on reception has the override keys and eleven years of memory. Dr. Kim has guilt, which is a lever whether you like it or not.
@@ -252,7 +252,7 @@ Agent HaX: You don't find that with a scanner. Somebody tells you.
     Agent HaX: Whatever the ward looks like in there, those numbers are on ENTROPY. Do the work and get the keys.
 }
 
-Agent HaX: Good luck, {player_name()}. Forty-seven lives, twelve hours. Go.
+Agent HaX: Good luck, Agent. Forty-seven lives, twelve hours. Go.
 
 #unlock_aim:infiltrate_hospital
 #start_gameplay

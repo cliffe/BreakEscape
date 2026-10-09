@@ -83,7 +83,7 @@ EXTERNAL player_name()
 Narrator: SAFETYNET headquarters. Forty-eight hours after St. Catherine's.
 
 #speaker:agent_0x99
-Agent HaX: {player_name()}. Sit down. You've earned the chair.
+Agent HaX: Agent. Sit down. You've earned the chair.
 
 Agent HaX: Systems are back. Patients are stable. But I've read your field notes twice and I keep landing on the same thing.
 
@@ -861,7 +861,7 @@ Agent HaX: One last section, and then I'll let you go. The people.
 === final_reflection ===
 #speaker:agent_0x99
 
-Agent HaX: Here's what I'll say, {player_name()}.
+Agent HaX: Here's what I'll say, Agent.
 
 {player_cold:
     Agent HaX: You named Derek the moment I raised it. Cold. Focused. Useful, in this work.
@@ -968,7 +968,7 @@ Agent HaX: Eventually we'll have enough to identify them. Then we end this.
 === debrief_close ===
 #speaker:agent_0x99
 
-Agent HaX: Get some rest, {player_name()}.
+Agent HaX: Get some rest, Agent.
 
 Agent HaX: We'll brief the next operation when you're ready.
 
