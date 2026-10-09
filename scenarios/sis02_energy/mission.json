@@ -2,8 +2,9 @@
   "display_name": "Albion Battery Hall: Code Red",
   "description": "Saturday morning at a 200 MWh battery storage site on the Trent. Overnight, an attacker falsified sensor data and quietly raised the safety system's trip points. Players arrive to find a normal-looking SCADA display hiding a battery hall heading for thermal runaway. They must trust an old dial over a perfect screen, decide when to press a hardwired emergency shutdown, choose how far to cut the attacker off, and decide what to tell the regulator and a neighbour, then talk it through with the NCSC.",
   "difficulty_level": 4,
-  "secgen_scenario": "albion_battery_hall",
+  "secgen_scenario": null,
   "collection": "cybok_sis",
+  "lab_sheet_url": "https://cliffe.github.io/HacktivityLabSheets/labs/security_informed_safety/sis02-energy/",
   "branching": true,
   "branches": [
     "esd_on_the_dial_before_the_historian",

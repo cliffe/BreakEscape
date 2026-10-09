@@ -9,7 +9,7 @@
 //
 // GLOBALS READ: anomaly_detected, historian_flatline_found, jump_server_confirmed,
 //   sis_tamper_confirmed, esd_activated, hydrogen_alarm, facility_evacuated, network_isolated,
-//   nis_notified, nis_form_read, nis_initial_choice, priya_s_visible, battery_hall_badge_collected,
+//   nis_notified, nis_form_read, nis_initial_choice, priya_s_visible, battery_hall_badge_collected, esd_before_dial,
 //   marcus_webb_contacted
 // GLOBALS WRITTEN: helen_briefed, gauge_verdict, shutdown_argument, helen_patch_view_heard;
 //   esd_activated and priya_s_visible in evacuation_scene
@@ -19,7 +19,7 @@ VAR anomaly_detected = false
 VAR historian_flatline_found = false
 VAR jump_server_confirmed = false
 VAR sis_tamper_confirmed = false
-VAR esd_activated = false
+VAR esd_activated = false  // Synced scenario global: set in evacuation_scene and by the SL4 mapping
 VAR jump_server_isolated = false
 VAR hydrogen_alarm = false
 VAR facility_evacuated = false
@@ -34,6 +34,7 @@ VAR helen_briefed = false
 VAR gauge_verdict = ""
 VAR shutdown_argument = ""  // Synced scenario global, also set by Marcus (last argument wins)
 VAR helen_patch_view_heard = false
+VAR esd_before_dial = false  // Synced scenario global (read only): the ESD went in before the dial was read
 
 // Local state
 VAR topic_dial_asked = false
@@ -58,6 +59,13 @@ VAR hub_quiet = false
 // ===========================================
 
 === arrival_briefing ===
+// Opens on the site exterior with the narrator alone (m01/m02 pattern), then
+// Background[none] brings Helen in on a plain frame.
+Background[assets/backgrounds/albion_energy.png]:
+Narrator[none]: Albion Energy Storage, on the Trent near Newark. Saturday, half past six.
+Narrator: Two battery halls holding two hundred megawatt-hours of lithium-ion cells, charging off the grid overnight while the county sleeps.
+Narrator: The site's SCADA engineer got in at quarter past six. She hasn't taken her eyes off the control room screens since.
+Background[none]:
 Helen Marsh: Morning. Helen Marsh, SCADA. You're the lot booked for the seven o'clock window on the grid PLC?
 Helen Marsh: Before anybody touches that, I want a look in Hall 1. Every reading on that screen's normal. Too normal for a night on charge.
 Helen Marsh: Jay was on nights. His handover says "uneventful". He's not wrong. Look at that screen. Nothing moved all night.
@@ -110,13 +118,16 @@ Helen Marsh: I'm staying on this desk while that screen's telling us fairy stori
     Helen Marsh: The dial gauge at Rack A2. It's old, it's mechanical, and nothing on any network can touch it.
     Helen Marsh: On a charge like last night's, that rack sits about thirty. Tell me what it says. Touch nothing else.
     -> hub
-// M3: once the hall has burned, nobody asks about the dial as if it were live.
-+ { anomaly_detected and gauge_verdict == "" and not facility_evacuated } [That dial in the hall. Which do we believe?]
+// M3: once the hall has burned, nobody asks about the dial as if it were live. D3-2: nor once
+// the gas is up (facility_evacuated implies hydrogen_alarm). P7 (round 1b): nor once the ESD went
+// in before the dial was read: the hall is already off, so "bet the hall on" no longer fits.
++ { anomaly_detected and gauge_verdict == "" and not hydrogen_alarm and not esd_before_dial } [That dial in the hall. Which do we believe?]
     -> gauge_decision
 + { anomaly_detected and gauge_verdict != "" and not historian_flatline_found and not facility_evacuated } [About that dial again.]
     Helen Marsh: You've told me what you think. Now let's see the historian.
     -> hub
-+ { anomaly_detected and not esd_activated and shutdown_argument == "" } [Should we shut Hall 1 down now?]
+// D3-2: no "five minutes with the historian" once the gas alarm is up.
++ { anomaly_detected and not esd_activated and not hydrogen_alarm and shutdown_argument == "" } [Should we shut Hall 1 down now?]
     -> shutdown_decision
 + { anomaly_detected and not esd_activated and shutdown_argument != "" } [About shutting down.]
     Helen Marsh: You know where the stations are. By the hall door, or on my console.
@@ -149,7 +160,8 @@ Helen Marsh: I'm staying on this desk while that screen's telling us fairy stori
 // ===========================================
 
 === gauge_decision ===
-Helen Marsh: Fifty-one on the dial. Twenty-eight on my screen. One of them's lying to us. Which would you bet the hall on?
+// R2-2 (round 2): once the ESD is in, the question is which reading they went on.
+Helen Marsh: Fifty-one on the dial. Twenty-eight on my screen. {esd_activated: The ESD's in, but one of them was lying to us. Which did you go on?|One of them's lying to us. Which would you bet the hall on?}
 + [The dial. Nothing on a network can reach it.]
     ~ gauge_verdict = "dial"
     #set_global:gauge_verdict:dial
@@ -161,12 +173,12 @@ Helen Marsh: Fifty-one on the dial. Twenty-eight on my screen. One of them's lyi
     Helen Marsh: Dials stick. They don't climb twenty-three degrees by themselves, though.
     Helen Marsh: Have a look at the historian. See if my numbers have moved at all.
     -> hub
-+ [Neither yet. I want the historian first.]
++ [{esd_activated:Neither. The ESD was a precaution. Now I want the historian.|Neither yet. I want the historian first.}]
     ~ gauge_verdict = "historian"
     #set_global:gauge_verdict:historian
-    Helen Marsh: Fair enough. Be quick, mind. If the dial's right, every minute counts.
+    Helen Marsh: {esd_activated: Fair enough. It's off charge, so take your time.|Fair enough. Be quick, mind. If the dial's right, every minute counts.}
     -> hub
-+ [Let me think about it.]
++ { not esd_activated } [Let me think about it.]
     Helen Marsh: Don't think too long.
     -> hub
 
@@ -220,7 +232,8 @@ Helen Marsh: There's a station by the hall door, one on my console and one insid
 -> esd_more
 
 === esd_more ===
-+ { not topic_esd_cost } [What does pressing it cost us?]
+// P7: the player's question follows whether the ESD is already in (Helen's answer fits both).
++ { not topic_esd_cost } [What {esd_activated:has|does} pressing it cost us?]
     ~ topic_esd_cost = true
     Helen Marsh: Half the site. Fifty megawatts off the grid, and a penalty for every hour we can't deliver.
     Helen Marsh: Against a hall fire, that's cheap. It doesn't feel cheap at six in the morning.
@@ -309,7 +322,7 @@ Helen Marsh: At two per cent we evacuate. Nobody goes into that hall now. Fire s
 - facility_evacuated:
     Helen Marsh: Hall 1's the fire service's now. Everybody's out. {priya_s_visible: Priya from the NCSC is here when you're ready.}
 - hydrogen_alarm and not esd_activated:
-    Helen Marsh: Not the hall, not now. Press the station by the door. The dial can wait.
+    Helen Marsh: Not the hall, not now. Press the station by the door.{ not anomaly_detected: The dial can wait.}
 - hydrogen_alarm and not anomaly_detected and not historian_flatline_found:
     Helen Marsh: Leave the dial. Nobody goes in that hall till the gas is down. Get on the historian instead.
 - not anomaly_detected and not hydrogen_alarm:

@@ -27,6 +27,7 @@ VAR trent_water_notified = false
 // Local state
 VAR tom_called = false
 VAR topic_ot_scope_raised = false
+VAR topic_ot_caught_heard = false  // N2: Tom's post-session answer on OT monitoring has been heard
 VAR topic_svc_asked = false
 VAR topic_sayso_tried = false
 
@@ -40,10 +41,12 @@ VAR topic_sayso_tried = false
 === start ===
 { not tom_called:
     ~ tom_called = true
-    Tom, CastleTech SOC.
+    // D3-11: one sign-in only. The opening is normally preloaded at game start (this branch);
+    // his shared-server text (scenario mapping) no longer signs in, so it reads under it.
     { jump_server_confirmed:
         Apart from that shared server file, quiet from our end. What can I do for you?
     - else:
+        Tom, CastleTech SOC.
         Quiet from our end. No alerts in twelve hours. What can I do for you?
     }
     -> first_call
@@ -51,6 +54,9 @@ VAR topic_sayso_tried = false
 -> hub
 
 === first_call ===
+// D3-12: a player who opens Tom because of his Trent Water text can answer it.
++ { jump_server_confirmed } [Your message about the shared server and Trent Water.]
+    -> trent_water_topic
 + [We think something's wrong at Albion. Possibly the control systems.]
     Nothing on my side. No IDS alerts, nothing on the endpoints, and the domain controller looks normal.
     Which is either good news, or it's somewhere I can't see.
@@ -70,6 +76,10 @@ VAR topic_sayso_tried = false
 === hub ===
 + { not topic_ot_scope_raised } [What exactly do you monitor for us?]
     -> ot_scope
+// N2 (round 2): asked before the session was found, the scope topic is used up; offer the
+// post-session answer once, after the session is found.
++ { topic_ot_scope_raised and jump_server_confirmed and not topic_ot_caught_heard } [Now we've found that session. Would OT monitoring have caught it?]
+    -> ot_caught_after
 + { jump_server_confirmed and not trent_water_raised } [Your message about the shared server and Trent Water.]
     -> trent_water_topic
 + { trent_water_raised and not trent_water_notified } [About Trent Water: send that advisory now.]
@@ -104,11 +114,22 @@ I've never seen your jump server sessions, your historian traffic or your batter
     You can contract out the watching. You can't contract out knowing what we're not watching.
     -> hub
 + [What would OT monitoring have caught?]
-    A contractor who left over a year ago, logged in at quarter to two from a print server. We'd have rung you by two.
-    Instead nobody saw it till Helen read a dial.
+    // MJ2/D3-6: Tom only knows the session once Albion have found it and told him.
+    { jump_server_confirmed:
+        -> ot_caught_after
+    - else:
+        Anyone on your jump server who shouldn't be, at an hour nobody works. I'd see that. As it is, I can't.
+    }
     -> hub
 + [Fair enough.]
     -> hub
+
+
+=== ot_caught_after ===
+~ topic_ot_caught_heard = true
+That session you found. A contractor who left over a year ago, logged in at quarter to two from a print server.
+We'd have rung you by two. Instead it took Helen not trusting a screen.
+-> hub
 
 
 // ===========================================
@@ -154,10 +175,11 @@ Rang Marcus. He hasn't heard about it, so I can't act yet. Get him to message me
 #set_global:castletech_contacted:true
 Enterprise to SCADA is blocked at the firewall, and the jump server's enterprise side is shut.
 {
+// P3 (round 1b): the player chose the scope; Marcus passes it on when Tom rings him.
 - isolation_scope == "historian":
-    The historian's enterprise leg too, as Marcus asked.
+    Marcus says the historian's enterprise leg goes too. That's cut as well.
 - isolation_scope == "watch":
-    The historian's left connected, as Marcus asked. I'll flag anything that comes off it.
+    Marcus says the historian's left connected and you're watching it. I'll flag anything that comes off it.
 - isolation_scope == "scada":
     Marcus says you're taking SCADA down your side as well. Ours is closed.
 }

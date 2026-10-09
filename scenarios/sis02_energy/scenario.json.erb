@@ -49,6 +49,13 @@ require 'base64'
 
   "startRoom": "scada_control_room",
 
+<%# R2-1 (round 2): an ESD before the dial (esd_before_dial) cancels both hydrogen timers, and a
+    press in a gas alarm clears esd_before_dial, so the two are never true together. Lets the
+    validator see that the three dial radios (anomaly_detected) can't co-fire. %>
+  "mutuallyExclusiveGlobals": [
+    ["esd_before_dial", "hydrogen_alarm"]
+  ],
+
   "globalVariables": {
     "briefing_played": false,
     "helen_briefed": false,
@@ -109,7 +116,11 @@ require 'base64'
 <%# NIS (decisions 5 and 6). nis_notified = Marcus sent the initial notification to Ofgem (competent
     authority, with DESNZ) with the NCSC copied. nis_deadline is an abstract game clock: when it runs
     out it sets nis_deadline_missed (Helen's bark, the debrief and the credits) and nothing else; it
-    no longer opens the debrief. nis_initial_choice is Marcus's MAR-3 scene ("now" / "wait"). %>
+    no longer opens the debrief. nis_initial_choice is Marcus's MAR-3 scene ("now" / "wait").
+    incident_aware = the team knows of the incident by any route (historian flat-line, jump server
+    session, SIS change, evacuation or CastleTech's isolation; set by Helen's mappings). It starts
+    the NIS clock, and Marcus's NIS option opens on the same sources (SL3/MF1). %>
+    "incident_aware": false,
     "nis_form_read": false,
     "nis_notified": false,
     "nis_initial_choice": "",
@@ -118,6 +129,12 @@ require 'base64'
     "trent_water_raised": false,
     "trent_water_verify_first": false,
     "trent_lateral_ioc_viewed": false,
+
+<%# NETWORK STATUS lamp (mn3): scada_manual_mode once Marcus's isolation scope is 'scada';
+    historian_leg_cut once CastleTech have isolated with the scope 'historian'. Set by Helen's
+    mappings on isolation_scope and network_isolated. %>
+    "scada_manual_mode": false,
+    "historian_leg_cut": false,
 
     "facility_safe_state": false,
     "priya_s_visible": false,
@@ -378,10 +395,13 @@ require 'base64'
       "aimId": "post_incident_debrief",
       "title": "Post-Incident Debrief",
       "missionConclusion": true,
-      "concludeRequires": { "globals": ["debrief_complete"] },
-<%# Mission conclusion (2026-10-05). As in sis01: no VM flags, so the only gate is the end of the
-    debrief itself. debrief_complete is set on the last beat of npc_priya_s.ink closing_end; the
-    music event on it rolls the credits and POSTs /conclude. Nothing optional (Trent Water, NIS
+      "concludeRequires": {},
+<%# Mission conclusion (SL5, sis03 pattern). No VM or flag work, so there is nothing the server must
+    hold the ending for: the empty gate trusts the client. debrief_complete is set on the last beat
+    of npc_priya_s.ink closing_end, and talk_to_priya_s completes straight after it; the music event
+    on debrief_complete rolls the credits and POSTs /conclude. A globals gate on debrief_complete
+    raced that task's POST against the state sync and showed "Not Yet…" over the end of the
+    debrief. Nothing optional (Trent Water, NIS
     form, SIS tamper, cable pull) is required: the credits report those instead. The aim unlocks
     when Priya S. appears (priya_s_visible): on the safe state, or after the Hall 1 evacuation. %>
       "description": "Priya S. from the NCSC is in the control room. Go through the incident with her when you are ready.",
@@ -404,13 +424,15 @@ require 'base64'
   "timers": [
 <%# [MG-05] NIS notification clock (decision 6). An abstract game clock, not 72 real hours: the
     countdown widget shows it so players feel "without undue delay". It starts when the team
-    becomes aware of the incident (the historian flat-line is found), as the 72 hours do. When it
+    becomes aware of the incident, as the 72 hours do: incident_aware, set by the first of the
+    historian flat-line, the jump server session, the SIS change, the evacuation or CastleTech's
+    isolation (SL3/MF1; the historian can be skipped). When it
     runs out it sets nis_deadline_missed, which only drives Helen's bark, a debrief line and a
     credits line. It never opens or forces the debrief (the old forced-debrief mapping is gone). %>
     {
       "id": "nis_deadline",
       "label": "NIS notification clock (game time)",
-      "startOnGlobal": "historian_flatline_found",
+      "startOnGlobal": "incident_aware",
       "delayMs": 2700000,
       "condition": "!globalVars.nis_notified",
       "setGlobal": { "nis_deadline_missed": true },
@@ -476,8 +498,11 @@ require 'base64'
         "fade": true
       },
       {
+<%# R2-3 (round 2): switch once. The evacuation sets esd_activated by mapping (SL4) and then the
+    cutscene's #set_global re-sets it; without the oldValue guard the second emit skipped a track
+    mid-scene. A station press sends no oldValue (apply-actions), so it still switches. %>
         "trigger": "global_variable_changed:esd_activated",
-        "condition": "value === true",
+        "condition": "value === true && (typeof oldValue === 'undefined' || oldValue !== true)",
         "playlist": "cutscene",
         "fade": true
       },
@@ -494,19 +519,20 @@ require 'base64'
         "autoStop": true,
         "disableClose": true,
         "fade": true,
+<%# Two titles only (mn1): the credits need Priya's debrief, and she appears only on the safe
+    state (ESD plus isolation) or after the evacuation, so "cells safe, attacker still connected"
+    and "the dial was never read" could never print. %>
         "credits": [
           { "text": "INCIDENT CONTAINED",             "style": "title",    "condition": "globalVars.esd_activated && globalVars.network_isolated && !globalVars.facility_evacuated" },
           { "text": "HALL 1 LOST, EVERYONE OUT",      "style": "title",    "condition": "globalVars.facility_evacuated" },
-          { "text": "CELLS SAFE, ATTACKER STILL CONNECTED", "style": "title", "condition": "!globalVars.facility_evacuated && !(globalVars.esd_activated && globalVars.network_isolated)" },
           { "text": "ALBION ENERGY STORAGE, SATURDAY 21 MARCH 2026", "style": "subtitle" },
 
           { "text": "── PHYSICAL SAFETY ──", "style": "section-header" },
           { "text": "Dial or screen: you backed the dial", "style": "entry", "condition": "globalVars.gauge_verdict === 'dial'" },
           { "text": "Dial or screen: you backed the screen", "style": "entry", "condition": "globalVars.gauge_verdict === 'screen'" },
           { "text": "Dial or screen: you wanted the historian first", "style": "entry", "condition": "globalVars.gauge_verdict === 'historian'" },
-          { "text": "Dial or screen: you read the dial but never said which you believed", "style": "entry", "condition": "globalVars.anomaly_detected && globalVars.gauge_verdict === ''" },
-          { "text": "Gas alarm before the dial was read: the hall was rightly left alone", "style": "entry", "condition": "!globalVars.anomaly_detected && !globalVars.esd_before_dial && globalVars.hydrogen_alarm" },
-          { "text": "The dial at Rack A2 was never read", "style": "entry", "condition": "!globalVars.anomaly_detected && !globalVars.esd_before_dial && !globalVars.hydrogen_alarm" },
+          { "text": "Dial or screen: you read the dial but never said which you believed", "style": "entry", "condition": "globalVars.anomaly_detected && globalVars.gauge_verdict === '' && !globalVars.esd_before_dial" },
+          { "text": "Gas alarm before the dial was read: the hall was rightly left alone", "style": "entry", "condition": "!globalVars.anomaly_detected && !globalVars.esd_before_dial && globalVars.hydrogen_alarm && !globalVars.entered_hall_in_gas_alarm" },
           { "text": "Shutdown argued on the hazard, before the cause was known", "style": "entry", "condition": "globalVars.shutdown_argument === 'hazard'" },
           { "text": "Shutdown held back for evidence first", "style": "entry", "condition": "globalVars.shutdown_argument === 'evidence'" },
           { "text": "ESD pressed before anyone had read the dial: a precaution that happened to be right", "style": "entry", "condition": "globalVars.esd_before_dial && globalVars.early_esd_activation && !globalVars.hydrogen_alarm" },
@@ -657,41 +683,88 @@ require 'base64'
               // The dial has been read: the historian and the ESD aims open. Helen asks a question
               // instead of deciding for the player (HEL-1); her hub then holds the gauge decision.
               "eventPattern": "global_variable_changed:anomaly_detected",
-              "condition": "value === true",
+              // R2-1 (round 2): not in a gas alarm, where Helen offers no gauge debate (D3-2).
+              "condition": "value === true && globalVars.esd_before_dial !== true && globalVars.hydrogen_alarm !== true",
               "onceOnly": true,
               "unlockAim": ["verify_anomaly", "initiate_esd"],
               "completeTask": "check_thermometer",
               "sendTimedMessage": { "delay": 3000, "message": "Fifty-one on that dial? Come and tell me which one you believe." }
             },
             {
-              // MJ3: the ESD is never gated on Marcus. Two radios, disjoint on esd_activated.
+              // P7 (round 1b): the ESD went in before anyone read the dial ("Go and see if we needed
+              // it"), so Helen closes that loop instead of opening the dial-or-screen debate.
+              "eventPattern": "global_variable_changed:anomaly_detected",
+              "condition": "value === true && globalVars.esd_before_dial === true",
+              "onceOnly": true,
+              "unlockAim": ["verify_anomaly", "initiate_esd"],
+              "completeTask": "check_thermometer",
+              "sendTimedMessage": { "delay": 3000, "message": "Fifty-one on that dial? Then we needed that ESD." }
+            },
+            {
+              // R2-1 (round 2): dial read in a gas alarm or after the evacuation. The entry bark has
+              // already said "Out of that hall", and there is no gauge debate (D3-2), so no radio.
+              // esd_before_dial is never true in a gas alarm, so the three dial mappings are disjoint.
+              "eventPattern": "global_variable_changed:anomaly_detected",
+              "condition": "value === true && globalVars.hydrogen_alarm === true",
+              "onceOnly": true,
+              "unlockAim": ["verify_anomaly", "initiate_esd"],
+              "completeTask": "check_thermometer"
+            },
+            {
+              // MJ3: the ESD is never gated on Marcus. Four radios (P4), disjoint on esd_activated and marcus_webb_contacted.
+              // mn11: the validator's "onceOnly handlers can fire together" warning on this group is
+              // intended: this unlockAim mapping fires alongside exactly one of the four radios below.
+              // SL3/MF1: incident_aware (the team knows of the incident; starts the NIS clock) is set
+              // by the first of the historian flat-line, the jump server session, the SIS change, the
+              // evacuation or CastleTech's isolation, whichever order the player takes.
               "eventPattern": "global_variable_changed:historian_flatline_found",
               "condition": "value === true",
               "onceOnly": true,
+              "setGlobal": { "incident_aware": true },
               "unlockAim": "contact_marcus_investigate"
             },
             {
+              // P4 (round 1b): "message Marcus" only if nobody has yet. Four radios, disjoint on
+              // esd_activated and marcus_webb_contacted.
               "eventPattern": "global_variable_changed:historian_flatline_found",
-              "condition": "value === true && globalVars.esd_activated !== true",
+              "condition": "value === true && globalVars.esd_activated !== true && globalVars.marcus_webb_contacted !== true",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 2500, "message": "Dead flat since twelve minutes past eleven. Somebody's writing it. Get that ESD in, then message Marcus." }
             },
             {
               "eventPattern": "global_variable_changed:historian_flatline_found",
-              "condition": "value === true && globalVars.esd_activated === true",
+              "condition": "value === true && globalVars.esd_activated !== true && globalVars.marcus_webb_contacted === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2500, "message": "Dead flat since twelve minutes past eleven. Somebody's writing it. Get that ESD in." }
+            },
+            {
+              "eventPattern": "global_variable_changed:historian_flatline_found",
+              "condition": "value === true && globalVars.esd_activated === true && globalVars.marcus_webb_contacted !== true",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 2500, "message": "Dead flat since twelve minutes past eleven. Somebody's writing it. Message Marcus." }
             },
             {
+              "eventPattern": "global_variable_changed:historian_flatline_found",
+              "condition": "value === true && globalVars.esd_activated === true && globalVars.marcus_webb_contacted === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2500, "message": "Dead flat since twelve minutes past eleven. Somebody's writing it." }
+            },
+            {
+              // SL2: "Isolate the Attacker" opens here, once the session is found, not on the
+              // first message to Marcus.
               "eventPattern": "global_variable_changed:jump_server_confirmed",
               "condition": "value === true",
               "onceOnly": true,
-              "unlockAim": "investigate_sis",
+              "setGlobal": { "incident_aware": true },
+              "unlockAim": ["investigate_sis", "isolate_network"],
               "sendTimedMessage": { "delay": 2000, "message": "The Ellison account? He left over a year ago. And the engineering workstation can reach the safety controller. Have a look at that SIS panel." }
             },
             {
               // ESD pressed on the dial, before the historian (HEL-5): "good call" only when the press
               // followed evidence. A press before anyone read the dial gets a wry line instead.
+              // mn11: the esd_activated radios below are disjoint (early_esd_activation, esd_before_dial,
+              // esd_pressed_inside_in_alarm, network_isolated, jump_server_confirmed); the overlap
+              // warning comes from the safe-state setGlobal mapping, which is meant to fire with them.
               "eventPattern": "global_variable_changed:esd_activated",
               "condition": "value === true && globalVars.early_esd_activation === true && globalVars.esd_before_dial !== true && globalVars.hydrogen_alarm !== true && globalVars.facility_evacuated !== true",
               "onceOnly": true,
@@ -725,23 +798,39 @@ require 'base64'
             },
             {
               // Hydrogen at 1.0% by volume (S1, S2): stay out, use a station outside, fire service called.
+              // mn11: fires with the N1 skipTask/unlockAim mapping further down; intended.
               "eventPattern": "global_variable_changed:hydrogen_alarm",
               "condition": "value === true",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 1000, "message": "Hydrogen alarm in Hall 1. One per cent and rising. Stay out of the hall and use the station by the door. I'm ringing the fire service." }
             },
             {
+              // SL4: the evacuation scene's outcomes, set with facility_evacuated so a reload mid-scene
+              // keeps them. The cutscene mapping is only persisted when its conversation closes, and
+              // nothing re-emits facility_evacuated on load. The ink lines that set them stay (no-ops).
+              // mn11: fires together with the cutscene mapping below by design. incident_aware: SL3.
+              "eventPattern": "global_variable_changed:facility_evacuated",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": { "incident_aware": true, "esd_activated": true, "priya_s_visible": true },
+              "skipTask": "press_esd_button"
+            },
+            {
               // Hydrogen at 2.0% by volume (decision 7): one cutscene. Helen evacuates, presses the
-              // console ESD on the way out, and Hall 1 is lost. Her knot then reveals Priya S.
+              // console ESD on the way out, and Hall 1 is lost. Shown over the site exterior (mn10),
+              // where everyone has gathered.
               "eventPattern": "global_variable_changed:facility_evacuated",
               "condition": "value === true",
               "onceOnly": true,
               "conversationMode": "person-chat",
               "targetKnot": "evacuation_scene",
+              "background": "assets/backgrounds/albion_energy.png",
               "disableClose": true
             },
             {
               // Safe state from the scenario, not from dialogue (M3): ESD and isolation, either order.
+              // mn11: the facility_safe_state group below (Priya, then one of four disjoint radios)
+              // fires together by design.
               "eventPattern": "global_variable_changed:esd_activated",
               "condition": "value === true && globalVars.network_isolated === true",
               "onceOnly": true,
@@ -859,6 +948,7 @@ require 'base64'
               "eventPattern": "global_variable_changed:sis_tamper_confirmed",
               "condition": "value === true",
               "onceOnly": true,
+              "setGlobal": { "incident_aware": true },
               "completeTask": "confirm_sis_tamper"
             },
             {
@@ -872,6 +962,28 @@ require 'base64'
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "read_incident_folder"
+            },
+            {
+              // mn3: the NETWORK STATUS lamp follows the isolation scope. 'scada': Marcus has the
+              // shift take SCADA down as soon as it is chosen.
+              "eventPattern": "global_variable_changed:isolation_scope",
+              "condition": "value === 'scada'",
+              "onceOnly": true,
+              "setGlobal": { "scada_manual_mode": true }
+            },
+            {
+              // 'historian': CastleTech cut the historian's enterprise leg when they isolate, or
+              // add it afterwards if the scope is chosen once they have acted (mn15).
+              "eventPattern": "global_variable_changed:isolation_scope",
+              "condition": "value === 'historian' && globalVars.network_isolated === true",
+              "onceOnly": true,
+              "setGlobal": { "historian_leg_cut": true }
+            },
+            {
+              "eventPattern": "global_variable_changed:network_isolated",
+              "condition": "value === true && globalVars.isolation_scope === 'historian'",
+              "onceOnly": true,
+              "setGlobal": { "historian_leg_cut": true }
             }
           ]
         },
@@ -937,22 +1049,43 @@ require 'base64'
             "language": "en-GB"
           },
           "puzzle_graph_actions": [
-            { "id": "call_marcus_initial", "label": "Message Marcus Webb", "unlocks_aim": "isolate_network" }
+            { "id": "call_marcus_initial", "label": "Message Marcus Webb" }
           ],
           "eventMappings": [
             {
               // Set on the first message whatever it says (M2): nothing is ever locked behind it.
+              // SL2: it no longer opens "Isolate the Attacker" (Helen's jump_server_confirmed mapping
+              // does), so the aim isn't shown before the dial, the historian or the session.
               "eventPattern": "global_variable_changed:marcus_webb_contacted",
               "condition": "value === true",
               "onceOnly": true,
-              "completeTask": "call_marcus_initial",
-              "unlockAim": "isolate_network"
+              "completeTask": "call_marcus_initial"
+            },
+            {
+              // P5 (round 1b): the go-ahead text follows the isolation scope and whether CastleTech
+              // have already acted. Before any scope is chosen (or 'watch') the original text stands.
+              "eventPattern": "global_variable_changed:jump_server_isolated",
+              "condition": "value === true && globalVars.cable_pull_agreed === true && globalVars.network_isolated !== true && globalVars.isolation_scope !== 'historian' && globalVars.isolation_scope !== 'scada'",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "Good. That's his RDP session gone. Not the historian, mind. Message Tom and get the enterprise side shut." }
             },
             {
               "eventPattern": "global_variable_changed:jump_server_isolated",
-              "condition": "value === true && globalVars.cable_pull_agreed === true",
+              "condition": "value === true && globalVars.cable_pull_agreed === true && globalVars.network_isolated !== true && globalVars.isolation_scope === 'historian'",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "Good. That's his RDP session gone. Not the historian, mind. Message Tom and get the enterprise side shut." }
+              "sendTimedMessage": { "delay": 1500, "message": "Good. That's his RDP session gone. Message Tom and get the enterprise side shut, historian leg and all." }
+            },
+            {
+              "eventPattern": "global_variable_changed:jump_server_isolated",
+              "condition": "value === true && globalVars.cable_pull_agreed === true && globalVars.network_isolated !== true && globalVars.isolation_scope === 'scada'",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "Good. That's his RDP session gone. Message Tom for the enterprise side. The shift's taking SCADA down our end." }
+            },
+            {
+              "eventPattern": "global_variable_changed:jump_server_isolated",
+              "condition": "value === true && globalVars.cable_pull_agreed === true && globalVars.network_isolated === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "Good. That's his RDP session gone, and CastleTech already have the enterprise side shut." }
             },
             {
               // PRI-8: Marcus's view, then Priya's arguable view in the debrief.
@@ -980,11 +1113,26 @@ require 'base64'
               "sendTimedMessage": { "delay": 1000, "message": "CastleTech have the enterprise side shut. You're still holding the notification. Say when." }
             },
             {
-              // MJ4: Marcus hears about the evacuation.
+              // MJ4: Marcus hears about the evacuation. P2 (round 1b): "Cable first" is his go-ahead,
+              // so it sets cable_pull_agreed (now, with the text 20 s behind it); the text follows
+              // what is already done. Three texts, disjoint.
               "eventPattern": "global_variable_changed:facility_evacuated",
-              "condition": "value === true",
+              "condition": "value === true && globalVars.jump_server_isolated !== true && globalVars.network_isolated !== true",
               "onceOnly": true,
+              "setGlobal": { "cable_pull_agreed": true },
               "sendTimedMessage": { "delay": 20000, "message": "Everyone out and counted? Good. Now the network. Cable first, then Tom." }
+            },
+            {
+              "eventPattern": "global_variable_changed:facility_evacuated",
+              "condition": "value === true && globalVars.jump_server_isolated === true && globalVars.network_isolated !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 20000, "message": "Everyone out and counted? Good. Now the network. Tom, for the enterprise side." }
+            },
+            {
+              "eventPattern": "global_variable_changed:facility_evacuated",
+              "condition": "value === true && globalVars.network_isolated === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 20000, "message": "Everyone out and counted? Good. At least the enterprise side's cut off." }
             },
             {
               "eventPattern": "global_variable_changed:bms_registers_saved",
@@ -1024,18 +1172,21 @@ require 'base64'
           "eventMappings": [
             {
               // Trent Water (F5): Albion to Trent. Sent once the jump server session is found.
+              // D3-11: no sign-in here. Tom's opening ("Tom, CastleTech SOC.") is preloaded into the
+              // thread at game start, so this text always arrives under it.
               "eventPattern": "global_variable_changed:jump_server_confirmed",
               "condition": "value === true",
               "onceOnly": true,
               "unlockAim": "trent_water_notification",
-              "sendTimedMessage": { "delay": 9000, "message": "Tom at CastleTech. Something wrote a file to the server you share with Trent Water at half two. One of their PCs opened it this morning." }
+              "sendTimedMessage": { "delay": 9000, "message": "Something wrote a file to the server you share with Trent Water at half two. One of their PCs opened it this morning. Message me when you can." }
             },
             {
+              // incident_aware (SL3/MF1): an isolation means the team is treating it as an incident.
               "eventPattern": "global_variable_changed:castletech_contacted",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "contact_castletech",
-              "setGlobal": { "network_isolated": true }
+              "setGlobal": { "incident_aware": true, "network_isolated": true }
             }
           ]
         }
@@ -1240,11 +1391,17 @@ require 'base64'
               "flash": false
             },
             {
+              // mn3: CastleTech's isolation blocks enterprise traffic at the firewall; only the
+              // 'scada' scope takes SCADA to manual.
               "label": "NETWORK STATUS",
-              "variable": "network_isolated",
-              "offClass": "ap-green", "offStatus": "NORMAL",
-              "onClass":  "ap-red",   "onStatus":  "SCADA MANUAL MODE",
-              "flash": false
+              "multiState": true,
+              "variables": ["scada_manual_mode", "historian_leg_cut", "network_isolated"],
+              "states": [
+                { "variable": "scada_manual_mode", "cssClass": "ap-red",   "statusText": "SCADA MANUAL MODE",  "flash": false },
+                { "variable": "historian_leg_cut", "cssClass": "ap-red",   "statusText": "HISTORIAN ALSO CUT", "flash": false },
+                { "variable": "network_isolated",  "cssClass": "ap-red",   "statusText": "ENTERPRISE CUT OFF", "flash": false },
+                {                                  "cssClass": "ap-green", "statusText": "NORMAL",             "flash": false }
+              ]
             },
             {
               "label": "H₂ GAS",
@@ -1944,8 +2101,8 @@ require 'base64'
                 "currentValue": "45C",
                 "certifiedValue": "45C",
                 "status": "GREEN",
-                "lastModified": "At commissioning",
-                "modifiedBy": "Fosse Controls (commissioning)",
+                "lastModified": "No change in HMI-ENG-02 history",
+                "modifiedBy": "—",
                 "detailText": "Matches the certified value."
               }
             ]

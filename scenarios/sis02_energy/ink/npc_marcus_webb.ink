@@ -29,8 +29,9 @@ VAR bms_registers_saved = false
 VAR network_isolated = false
 VAR network_isolation_requested = false
 VAR network_isolation_authorised = false
+VAR priya_s_visible = false  // Synced scenario global (read only): Priya is on site (N4)
 VAR marcus_webb_contacted = false
-VAR cable_pull_agreed = false
+VAR cable_pull_agreed = false  // Synced scenario global: also set by the evacuation text mapping (P2)
 VAR shutdown_argument = ""  // Synced scenario global, also set by Helen (last argument wins)
 VAR evidence_before_esd = ""  // "save" (said they'd export the registers first) / "press"
 VAR isolation_scope = ""
@@ -56,8 +57,10 @@ VAR topic_patch_view = false
 // ===========================================
 
 === start ===
-#complete_task:call_marcus_initial
+// SL2: the task tag sits inside the first-message block, so it no longer re-fires on every
+// later call (the marcus_webb_contacted mapping completes it too; the validator wants the tag).
 { not marcus_called:
+    #complete_task:call_marcus_initial
     ~ marcus_called = true
     ~ marcus_webb_contacted = true
     #set_global:marcus_webb_contacted:true
@@ -82,12 +85,21 @@ VAR topic_patch_view = false
 + { esd_activated and not facility_evacuated and not anomaly_detected and not historian_flatline_found } [We've pressed the ESD on Hall 1 already.]
     Helen told me. Good, if it needed it. Now I want to know why it needed it.
     -> first_call_next
-+ { not facility_evacuated and not anomaly_detected and not historian_flatline_found and not esd_activated } [Nothing solid yet. Helen doesn't like the look of the screens.]
+// D3-4: in a gas alarm nobody is sent to the dial (N1).
++ { hydrogen_alarm and not facility_evacuated and not anomaly_detected and not historian_flatline_found and not esd_activated } [Hall 1's in gas alarm. Nobody's read the dial yet.]
+    Then leave the dial. Door station, now. We'll find the cause after.
+    -> first_call_next
++ { not hydrogen_alarm and not facility_evacuated and not anomaly_detected and not historian_flatline_found and not esd_activated } [Nothing solid yet. Helen doesn't like the look of the screens.]
     Helen's gut has a better record than our monitoring. Get me something I can look at. The dial, the historian, anything.
     If it comes to the jump server log, the workshop key's in the duty desk drawer.
     -> hub
 
 === first_call_next ===
+// G1 (round 2): evidence reported in a gas alarm still puts the door station first. The
+// gas-alarm first option already said it, and needs no dial or historian, so this is disjoint.
+{ hydrogen_alarm and not esd_activated and not facility_evacuated and (anomaly_detected or historian_flatline_found):
+    Hall 1's in gas alarm, though. Door station first, now. Then the rest.
+}
 { esd_activated and not facility_evacuated and (anomaly_detected or historian_flatline_found):
     Helen says Hall 1's already off. Good.
 }
@@ -105,20 +117,33 @@ VAR topic_patch_view = false
 // ===========================================
 
 === hub ===
-+ { anomaly_detected and not esd_activated and not topic_shutdown_argued } [I think Hall 1 should come off now.]
++ { anomaly_detected and not esd_activated and not hydrogen_alarm and not topic_shutdown_argued } [I think Hall 1 should come off now.]
     -> shutdown_argument_scene
-+ { anomaly_detected and not esd_activated and topic_shutdown_argued and evidence_before_esd == "" } [We're pressing the ESD now.]
++ { anomaly_detected and not esd_activated and topic_shutdown_argued and evidence_before_esd == "" and not bms_registers_saved } [We're pressing the ESD now.]
     -> evidence_scene
 + { jump_server_confirmed and not marcus_rdp_briefed } [ENG-02 shows c.ellison on the jump server since 01:47.]
     -> rdp_session_confirmed
+// MJ1: sticky, but no sign-off on no evidence at all. It signs once there is some.
 + { network_isolation_requested and not network_isolation_authorised } [Tom at CastleTech needs your sign-off to isolate.]
+    { not (anomaly_detected or historian_flatline_found or jump_server_confirmed or sis_tamper_confirmed or facility_evacuated):
+        Isolate on what? I'm not cutting the enterprise side off on a hunch.
+        { hydrogen_alarm:
+            Get me the historian or the jump server log, then I'll sign it.
+        - else:
+            Get me the dial, the historian or the jump server log, then I'll sign it.
+        }
+        -> hub
+    }
     ~ network_isolation_authorised = true
     #set_global:network_isolation_authorised:true
     Signed off. Tell Tom to ring me and I'll confirm.
     -> hub
 + { marcus_rdp_briefed and isolation_scope == "" } [How far do we cut them off?]
     -> isolation_scope_scene
-+ { historian_flatline_found and not nis_notified } [About the NIS notification.]
+// SL3/MF1: open once the team knows of the incident by any route, not only the historian.
+// Same sources as the scenario's incident_aware global (the NIS clock); marcus_rdp_briefed
+// implies jump_server_confirmed.
++ { (historian_flatline_found or jump_server_confirmed or sis_tamper_confirmed or facility_evacuated or network_isolated or marcus_rdp_briefed) and not nis_notified } [About the NIS notification.]
     -> nis_scene
 + { marcus_webb_contacted and not topic_claim001_discussed } [Has anyone ever written up that jump server?]
     -> claim_en001
@@ -132,7 +157,12 @@ VAR topic_patch_view = false
 + [Where are we?]
     -> current_status
 + [That's all for now.]
-    Don't be long.
+    // Round 2 (a): once it is contained and notified there is nothing to hurry back for.
+    { network_isolated and nis_notified:
+        Right. If Ofgem ring, I'll deal with them.
+    - else:
+        Don't be long.
+    }
     #exit_conversation
     -> hub
 
@@ -171,6 +201,9 @@ I'd want the jump server logs before we drop half the site. If it's a sensor fau
 }
 One thing before you press it. The ESD makes the BMS run its shutdown routine. That overwrites whatever they've written into its registers.
 The historian only has what the screen showed. Got ten seconds? Export the BMS register table on OPS-01 first. If not, press it anyway.
+{ hydrogen_alarm:
+    With the gas up, only if you're already at OPS-01.
+}
 + [I'll save the registers, then press it.]
     ~ evidence_before_esd = "save"
     #set_global:evidence_before_esd:save
@@ -203,17 +236,32 @@ Locked on the domain when he left. Still alive on the jump server, with its defa
 { not esd_activated:
     If the ESD's not in, get it in. Don't wait on me.
 }
+// Round 2 (b): a pull he hadn't agreed already drew his "Who pulled...?" text; don't scold twice.
 { jump_server_isolated:
-    You've already pulled the jump server cable. Next time, tell me first.
+    { cable_pull_agreed:
+        And the jump server cable's out. Good.
+    - else:
+        The jump server cable's already out, I know.
+    }
 - else:
     Pull the jump server's network cable. JS-SCADA-LAN, right-hand panel. The physical cable, mind. A firewall rule won't do.
     ~ cable_pull_agreed = true
     #set_global:cable_pull_agreed:true
 }
-Then message Tom at CastleTech for the enterprise side. I'll tell him it's coming from me.
+// P6 (round 1b): out of order, CastleTech may already have acted on his sign-off.
+{ network_isolated:
+    And CastleTech have the enterprise side shut already. Good.
+- else:
+    Then message Tom at CastleTech for the enterprise side. I'll tell him it's coming from me.
+}
 ~ network_isolation_authorised = true
 #set_global:network_isolation_authorised:true
-I'm ringing the NCSC too. They'll send someone to help.
+// N4 (round 2): after the evacuation Priya from the NCSC is already on site.
+{ priya_s_visible:
+    The NCSC are with you already. Priya. Use her.
+- else:
+    I'm ringing the NCSC too. They'll send someone to help.
+}
 -> hub
 
 
@@ -228,12 +276,15 @@ Shut SCADA down and Hall 2 runs on local BMS only. Somebody walks it every hour 
 + [Cut the historian's enterprise leg too. We can live without the feed.]
     ~ isolation_scope = "historian"
     #set_global:isolation_scope:historian
-    Agreed. I'll tell Tom it's in scope. Ops go to phone dispatch with NESO.
+    Agreed. {network_isolated: I'll ring Tom and get him to add it.|I'll tell Tom it's in scope.} Ops go to phone dispatch with NESO.
     -> hub
 + [Leave the historian. Watch it, and cut it if it moves.]
     ~ isolation_scope = "watch"
     #set_global:isolation_scope:watch
     Your call. If it's their second way in, we'll see it late.
+    { network_isolated:
+        I'll ask Tom to flag anything that comes off it.
+    }
     -> hub
 + [Shut SCADA down. Hall 2 gets manual rounds.]
     ~ isolation_scope = "scada"
@@ -241,7 +292,7 @@ Shut SCADA down and Hall 2 runs on local BMS only. Somebody walks it every hour 
     That stops everything. It also puts someone in Hall 2 every hour. I'll ring the shift in.
     -> hub
 + [Let me think.]
-    Not too long. Those cells won't wait.
+    Not too long. {esd_activated: They're still in our network.|Those cells won't wait.}
     -> hub
 
 
@@ -277,16 +328,27 @@ Before I sign it. Do we send what we've got, or wait till we know more?
 }
 ~ nis_notified = true
 #set_global:nis_notified:true
+// Each branch claims only what the player has seen or Marcus has said (SL3): "since 23:12"
+// only once the historian was opened.
 {
 - sis_tamper_confirmed:
     Right. Initial notification: an intrusion, safety setpoints changed at 03:22, the rest unknown.
 - jump_server_confirmed:
     Right. Initial notification: someone on our control network since 01:47, safety system not yet checked.
-- else:
+- historian_flatline_found:
     Right. Initial notification: falsified data on SCADA since 23:12, cause unknown.
+- anomaly_detected:
+    Right. Initial notification: SCADA showing false temperatures for Hall 1, suspected interference, cause unknown.
+- facility_evacuated:
+    Right. Initial notification: Hall 1 lost to fire after a hydrogen release, cause unknown, an attack not ruled out.
+- else:
+    Right. Initial notification: suspected interference with our control systems, cause unknown.
 }
-{ facility_evacuated:
+{
+- facility_evacuated and (sis_tamper_confirmed or jump_server_confirmed or historian_flatline_found or anomaly_detected):
     And Hall 1 lost to fire, everyone out, nobody hurt.
+- facility_evacuated:
+    Everyone out, nobody hurt.
 }
 It goes to Ofgem, NCSC copied. We update it when we know more.
 { hydrogen_alarm:
@@ -347,10 +409,19 @@ A risk accepted with a control that isn't there? That's risk pretence.
 {
 - hydrogen_alarm and not esd_activated and not facility_evacuated:
     Hall 1's in gas alarm. Door station, now. Never mind the dial.
+// P2 (round 1b): whenever Marcus says "cable", that is his go-ahead (cable_pull_agreed), so
+// the pull isn't later called "before telling Marcus".
 - facility_evacuated and not network_isolated:
-    Hall 1's gone and everyone's out. Now get them off our network. Cable, then Tom.
+    { jump_server_isolated:
+        Hall 1's gone and everyone's out. Now get them off our network. Tom, for the enterprise side.
+    - else:
+        ~ cable_pull_agreed = true
+        #set_global:cable_pull_agreed:true
+        Hall 1's gone and everyone's out. Now get them off our network. Cable, then Tom.
+    }
+// N4 (round 2): "off our network" overclaimed while the historian stays connected.
 - facility_evacuated and not nis_notified:
-    Hall 1's gone, everyone's out, and they're off our network. Now the notification.
+    Hall 1's gone and everyone's out, and the enterprise side's cut off. Now the notification.
 - facility_evacuated:
     Hall 1's gone, but everyone's out and it's reported. The NCSC are with you. Talk to them.
 - not anomaly_detected and not esd_activated and not hydrogen_alarm and not historian_flatline_found:
@@ -366,7 +437,13 @@ A risk accepted with a control that isn't there? That's risk pretence.
 - not esd_activated:
     Hall 1's still on charge. What are we waiting for?
 - not network_isolated:
-    Hall's safe. Now get them out. Cable, then Tom.
+    { jump_server_isolated:
+        Hall's safe. Now get them out. Tom, for the enterprise side.
+    - else:
+        ~ cable_pull_agreed = true
+        #set_global:cable_pull_agreed:true
+        Hall's safe. Now get them out. Cable, then Tom.
+    }
 - not nis_notified and nis_initial_choice == "wait":
     Contained. You're holding the notification. Say when.
 - not nis_notified and nis_form_read:
@@ -378,5 +455,9 @@ A risk accepted with a control that isn't there? That's risk pretence.
 }
 { esd_activated and network_isolated and isolation_scope == "watch" and not facility_evacuated:
     Helen's calling it contained. With the historian still connected, I'd call it watched.
+}
+// N4: no scope chosen leaves the historian connected by default; say so once isolated.
+{ network_isolated and isolation_scope == "" and marcus_rdp_briefed:
+    The historian's still connected, mind. We never decided on it.
 }
 -> hub

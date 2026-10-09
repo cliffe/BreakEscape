@@ -337,7 +337,6 @@ flowchart TD
   door_engineering_workshop -.-> aim_contact_marcus_investigate
   action_talk_to_helen -.-> aim_conduct_walkdown
   action_talk_to_priya_s -.-> aim_post_incident_debrief
-  action_call_marcus_initial -.-> aim_isolate_network
   action_contact_castletech -.-> aim_nis_notification
   incident_response_folder -.-> aim_assess_control_room
   nis_notification_form -.-> aim_nis_notification

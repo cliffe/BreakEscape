@@ -129,7 +129,8 @@ Priya S.: Nobody's being blamed here. What we learn goes out to other sites like
     Priya S.: You wanted the historian before you'd back the dial. Fair, as long as it's quick.
 // Gas alarm before the dial: leaving it was right (round 4). The early press before the dial is
 // already covered above, so the dial isn't mentioned twice.
-- not anomaly_detected and hydrogen_alarm:
+// mn2: not after someone went into the hall in the alarm (said just above).
+- not anomaly_detected and hydrogen_alarm and not entered_hall_in_gas_alarm:
     Priya S.: The gas came up before anyone read the dial. Leaving it was right by then.
 }
 {
@@ -251,7 +252,7 @@ Priya S.: The dial claim only half held. The dial was independent, but the claim
 
 // Priya's arguable view (decision 4d), with one push-back for the player.
 === cable_question ===
-Priya S.: One thing I'd push you on. You pulled the jump server cable before talking to Marcus. My view is he should have known first.
+Priya S.: One thing I'd push you on. You pulled the jump server cable before Marcus knew about the session. My view is he should have been told first.
 Priya S.: Cut someone mid-write to a safety controller and you can leave it half-configured.
 * [The session was the attacker's. Every minute it stayed up was worse.]
     Priya S.: That's fair, and you may be right. I'd still want ten seconds on the phone first, not after.
@@ -369,7 +370,6 @@ Priya S.: Marcus's risk assessment from September 2024 named the exact safety-sy
 // ===========================================
 
 === closing_summary ===
-#complete_task:talk_to_priya_s
 Priya S.: Nothing that failed today was new. A commissioning link nobody closed, a dead account nobody removed, a patch nobody rescheduled.
 Priya S.: Each one was written down, accepted, and never looked at again.
 -> closing_questions
@@ -396,6 +396,8 @@ Priya S.: Each one was written down, accepted, and never looked at again.
 ~ debrief_closed = true
 Priya S.: Then thank you, all of you. My notes go to Marcus this week.
 #set_global:debrief_complete:true
+// SL5: the task completes after debrief_complete, so the server never answers "Not Yet…".
+#complete_task:talk_to_priya_s
 ~ debrief_quiet = true
 #exit_conversation
 -> debrief_over
