@@ -59,10 +59,12 @@ VAR hub_quiet = false
 // ===========================================
 
 === arrival_briefing ===
-// Opens on the site exterior with the narrator alone (m01/m02 pattern), then
-// Background[none] brings Helen in on a plain frame.
+// Opens on the site exterior with the narrator alone (m01/m02 pattern), cuts
+// inside Hall 1 for the second line, then Background[none] brings Helen in on
+// a plain frame.
 Background[assets/backgrounds/albion_energy.png]:
 Narrator[none]: Albion Energy Storage, on the Trent near Newark. Saturday, half past six.
+Background[assets/backgrounds/albion_battery_hall.png]:
 Narrator: Two battery halls holding two hundred megawatt-hours of lithium-ion cells, charging off the grid overnight while the county sleeps.
 Narrator: The site's SCADA engineer got in at quarter past six. She hasn't taken her eyes off the control room screens since.
 Background[none]:

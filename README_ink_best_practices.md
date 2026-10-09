@@ -78,6 +78,8 @@ Narrator: Miskatonic University. Freshers' week.
 Narrator[player]: You join them. Nobody looks at you twice.
 ```
 
+**Making a background.** Backgrounds are 400×400 pixel art (older ones are 320×320). Paint a 1024×1024 concept (Gemini), keep it as `assets/backgrounds/<name>_nonpixelart.png`, then convert it with `python3 tools/pixelate_background.py <concept> <out_dir> "pixel art, <scene>"` (PixelLab pixflux, init strength 500 by default; try 600 if signs or labels must stay legible). The person-chat canvas is 16:9: with nobody in frame it shows almost the full width but only the middle ~55% of the height (the top and bottom ~22% are always cut off), and with a portrait on screen it draws at the portrait's pixel scale, showing only about the central 57% × 32%. Keep anything the scene needs (signs, a door, a key object) in the middle band.
+
 ### Emotes vs. Narration: describe actions with the Narrator, keep flavour on dialogue
 
 Two related rules — a real bug in the m01 Derek confrontation taught us why they matter (emote lines that began with `*` compiled into phantom player-choice buttons and dead-ended the surrender branch):
