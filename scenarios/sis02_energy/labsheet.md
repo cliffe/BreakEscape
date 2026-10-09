@@ -705,8 +705,8 @@ Flagging the session is half of it. The workstation also has an **ENG TOOL HISTO
 2. \==action: Add a filter, or scan the list, and click the row that fails the three questions==.
 3. \==action: Press **[LOOK UP IP]** and **[INVESTIGATE ACCOUNT]**== and read both.
 4. \==action: Press **[FLAG SESSION]**, read **CONFIRM SESSION FLAG**, and press **[CONFIRM: FLAG ACTIVE SESSION]**==.
-5. The terminal says "Session flagged. Switch to the SIS Engineering Audit tab to complete your investigation." \==action: Press **[VIEW SIS ENGINEERING AUDIT →]**== (or the **ENG TOOL HISTORY** tab) and read it.
-6. The log shows "✓ INVESTIGATION COMPLETE: Session flagged. SIS audit reviewed."
+5. The terminal says "Session flagged. Open the ENG TOOL HISTORY tab to see what that session did to the safety system." \==action: Press **[VIEW ENG TOOL HISTORY →]**== (or the **ENG TOOL HISTORY** tab) and read it.
+6. The log shows "✓ INVESTIGATION COMPLETE: Session flagged. Engineering tool history reviewed."
 
 </details>
 
@@ -864,7 +864,7 @@ The closing credits list what you decided at each point. ==action: Note them dow
 | "Still moving like a real sensor reading. Keep looking." | The historian reading you clicked is real. Look further along, where the lines go flat |
 | "Inspect the chart to find something to annotate." and **[ANNOTATE FINDING]** greyed out | You have not yet pointed at a flat reading for three seconds, or clicked one |
 | "NOT THIS ONE" on HMI-ENG-02 | The row you flagged is a normal session. Use **[LOOK UP IP]** and **[INVESTIGATE ACCOUNT]** |
-| "Session flagged. Switch to the SIS Engineering Audit tab to complete your investigation." | Half done. Open the **ENG TOOL HISTORY** tab |
+| "Session flagged. Open the ENG TOOL HISTORY tab to see what that session did to the safety system." | Half done. Open the **ENG TOOL HISTORY** tab |
 | "Retrieve the SIS certification document to unlock side-by-side comparison." | Read the **SIS Safety Requirements Specification (extract)** from the filing cabinet, then reopen the panel |
 | The register export says "Controller state: SHUTDOWN (ESD trip)." | The ESD went in before anyone read the export, and the shutdown routine has overwritten the registers. The historian still has what the screens showed |
 | Marcus: "Isolate on what? I'm not cutting the enterprise side off on a hunch." | You have no evidence yet. He tells you what he needs before he will sign |

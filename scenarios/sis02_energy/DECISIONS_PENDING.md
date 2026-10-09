@@ -64,6 +64,8 @@ This is outside lighting (timer dispatcher or the tint action), so it isn't in t
 
 ### D8. The log-filter minigame still calls the tab "SIS Engineering Audit"
 
+**Resolved 2026-10-09 (user agreed):** the log-filter minigame takes `completeBanner`, `nextTabPrompt`, `nextTabButton` and `completedGlobal` from the scenario, and works out reopen state from the scenario's own completion and `tab_viewed` actions, so no sis02 names remain in the engine. sis02 and sis01 (the other user) set their own wording; the sis02 lab sheet quotes the new text. Test: `test/js/log-filter-wording.test.mjs`.
+
 **Background.** The audit-log disagreement is settled in the scenario: the tab is "ENG TOOL HISTORY", HMI-ENG-02's own record, because the safety controller keeps no change log (`scenario.json.erb`, sis_audit tab). But the shared log-filter minigame hard-codes three strings the player sees after flagging the session: "► Session flagged. Switch to the SIS Engineering Audit tab to complete your investigation.", the button "[VIEW SIS ENGINEERING AUDIT →]", and the banners "…SIS audit reviewed." (`public/break_escape/js/minigames/log-filter/log-filter-minigame.js:836`, `:839`, `:363`, `:1315`). "SIS audit" suggests the SIS logged the change, which is the point the lab sheet's Q16 and the pack make it did not. Only sis02 uses `additionalTabs` with this minigame (sis01 uses the minigame without them).
 
 **Options.**

@@ -12,6 +12,15 @@
  *   flagActionLabel, flagConfirmTitle, flagConfirmBody, flagRejectedBody (optional),
  *   additionalTabs[], requireAllTabs, completionActions[], progressActions[]
  *
+ * Optional wording (defaults are built from the scenario's own labels):
+ *   completeBanner  — shown once the investigation is complete
+ *   nextTabPrompt   — shown after flagging when requireAllTabs still needs a tab
+ *   nextTabButton   — the button that opens that tab
+ *   completedGlobal — global that marks the investigation done on reopen
+ *                     (default: the first set_global true in completionActions)
+ * A tab counts as visited on reopen when the progressActions entry with
+ * trigger "tab_viewed" for its tabId has already set its global.
+ *
  * Lookups follow the SELECTED row. threatIntel / accountHistory may each be one
  * object or an array; a record is used when its `ip` / `account` matches the row.
  * A row with no record gets a "no match" result built from the log itself.
@@ -176,6 +185,19 @@ export class LogFilterMinigame extends MinigameScene {
         this._progressActions   = sd.progressActions  || [];
         this._stateOverrides    = sd.stateOverrides   || [];  // [{ whenGlobal, whenValue, matchEntry, setFields, setAnomaly }]
 
+        // Wording and reopen state come from the scenario, so nothing here is
+        // specific to one mission
+        const firstTab = this._additionalTabs[0];
+        const firstTabLabel = firstTab ? (firstTab.label || firstTab.title || firstTab.id) : '';
+        const reviewed = this._requireAllTabs && this._additionalTabs.length > 0
+            ? ` ${this._additionalTabs.map(t => t.label || t.title || t.id).join(', ')} reviewed.`
+            : '';
+        this._completeBanner = sd.completeBanner || `✓ INVESTIGATION COMPLETE: Session flagged.${reviewed}`;
+        this._nextTabPrompt  = sd.nextTabPrompt  || `► Session flagged. Open the ${firstTabLabel} tab to complete your investigation.`;
+        this._nextTabButton  = sd.nextTabButton  || `[VIEW ${firstTabLabel} →]`;
+        const completionGlobal = this._completionActions.find(a => a && a.type === 'set_global' && a.value === true);
+        this._completedGlobal = sd.completedGlobal || completionGlobal?.key || null;
+
         // Synthetic VPN log generation — activates when logType is 'vpn' and no explicit logEntries provided
         if (this._logType === 'vpn' && this._logEntries.length === 0) {
             this._logEntries = LogFilterMinigame._buildSyntheticVpnLog(sd);
@@ -233,16 +255,15 @@ export class LogFilterMinigame extends MinigameScene {
             }
         }
 
-        if (this._anomaly) {
-            const confirmKey = 'jump_server_confirmed';
-            if (globals[confirmKey] === true) {
-                this._sessionFlagged = true;
-                this._completionFired = true;
-            }
+        if (this._anomaly && this._completedGlobal && globals[this._completedGlobal] === true) {
+            this._sessionFlagged = true;
+            this._completionFired = true;
         }
-        // Mark SIS audit as visited if already reviewed
-        if (globals['sis_audit_reviewed'] === true) {
-            this._tabsVisited.add('sis_audit');
+        // Tabs whose "tab_viewed" progress action has already fired count as visited
+        for (const a of this._progressActions) {
+            if (a && a.trigger === 'tab_viewed' && a.tabId && a.key && globals[a.key] === true) {
+                this._tabsVisited.add(a.tabId);
+            }
         }
     }
 
@@ -360,7 +381,7 @@ export class LogFilterMinigame extends MinigameScene {
         // Session detail (rendered below log table inside logPane)
         if (this._sessionFlagged && this._completionFired) {
             const banner = this._el('div', 'lf-complete-banner');
-            banner.textContent = '✓ INVESTIGATION COMPLETE: Jump server session flagged and SIS audit reviewed.';
+            banner.textContent = displayDashes(this._completeBanner);
             logPane.appendChild(banner);
         } else if (this._selectedEntry) {
             this._renderSessionDetail(logPane);
@@ -832,11 +853,9 @@ export class LogFilterMinigame extends MinigameScene {
 
     _renderTab2Prompt(panel) {
         const prompt = this._el('div', 'lf-tab2-prompt');
-        const text = document.createTextNode(
-            '► Session flagged. Switch to the SIS Engineering Audit tab to complete your investigation.'
-        );
+        const text = document.createTextNode(displayDashes(this._nextTabPrompt));
         const goBtn = this._el('button', 'lf-tab2-prompt-btn');
-        goBtn.textContent = '[VIEW SIS ENGINEERING AUDIT →]';
+        goBtn.textContent = displayDashes(this._nextTabButton);
         goBtn.addEventListener('click', () => {
             if (this._additionalTabs.length > 0) {
                 this._switchTab(this._additionalTabs[0].id);
@@ -1312,7 +1331,7 @@ export class LogFilterMinigame extends MinigameScene {
             const existing = this._dom.logPane.querySelectorAll('.lf-complete-banner, .lf-session-detail');
             existing.forEach(el => el.remove());
             const banner = this._el('div', 'lf-complete-banner');
-            banner.textContent = '✓ INVESTIGATION COMPLETE: Session flagged. SIS audit reviewed.';
+            banner.textContent = displayDashes(this._completeBanner);
             this._dom.logPane.appendChild(banner);
         }
 
