@@ -1,10 +1,13 @@
 {
   "key": "f117d01f8bfbc6e6033acef88e51765d",
+  "npc": "narrator",
   "text": "You go in with them, laptop bag on your shoulder. Nobody looks twice at the IT auditor.",
   "voice": "Algenib",
   "style": "Cinematic noir detective voice over narrator.",
   "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
   "scenario": "m01_first_contact",
   "source": "batch",
+  "generated": "2026-10-09",
   "recorded_at": "2026-10-09T12:09:57Z"
 }

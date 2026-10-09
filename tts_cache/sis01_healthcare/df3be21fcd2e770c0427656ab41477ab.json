@@ -1,0 +1,13 @@
+{
+  "key": "df3be21fcd2e770c0427656ab41477ab",
+  "npc": "dr_sharma",
+  "text": "Nobody asked the NCSC directly; NHS England brought us in. Next time, ask. It costs you nothing.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

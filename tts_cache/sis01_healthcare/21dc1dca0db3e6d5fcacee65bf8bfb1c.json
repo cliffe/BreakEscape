@@ -1,0 +1,13 @@
+{
+  "key": "21dc1dca0db3e6d5fcacee65bf8bfb1c",
+  "npc": "helen_carver",
+  "text": "A fallback that funds the next attack, and buys a promise from a criminal. Even a key that works takes days to decrypt everything.",
+  "voice": "Pulcherrima",
+  "style": "NHS chief information officer in her mid-fifties, decisive and under pressure, clipped and authoritative. Speak with a consistent well-spoken North Yorkshire (Harrogate) accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

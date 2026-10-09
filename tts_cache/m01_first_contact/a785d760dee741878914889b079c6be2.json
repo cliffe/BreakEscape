@@ -1,10 +1,13 @@
 {
   "key": "a785d760dee741878914889b079c6be2",
+  "npc": "kevin_park",
   "text": "So I'm stuck with just passwords for now. Wish we could implement MFA.",
   "voice": "Charon",
   "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
   "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
   "scenario": "m01_first_contact",
   "source": "batch",
+  "generated": "2026-10-09",
   "recorded_at": "2026-10-09T12:10:01Z"
 }

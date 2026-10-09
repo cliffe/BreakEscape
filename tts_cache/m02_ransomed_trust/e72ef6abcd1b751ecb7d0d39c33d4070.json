@@ -1,0 +1,13 @@
+{
+  "key": "e72ef6abcd1b751ecb7d0d39c33d4070",
+  "npc": "ward_nurse",
+  "text": "*not turning round* You want a hospital identity from me, an hour after we met, when security say you don't exist.",
+  "voice": "Kore",
+  "style": "Ward sister, twenty years on the wards. Consistent Belfast / Northern Irish accent throughout. Exhausted, dry, absolutely unsentimental about everything except her patients. Quiet controlled urgency, never raises her voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

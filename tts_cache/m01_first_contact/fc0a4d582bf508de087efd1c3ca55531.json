@@ -1,10 +1,13 @@
 {
   "key": "fc0a4d582bf508de087efd1c3ca55531",
+  "npc": "kevin_park",
   "text": "Maybe. But I don't think so. I've seen him leaving the office at weird hours.",
   "voice": "Charon",
   "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
   "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
   "scenario": "m01_first_contact",
   "source": "batch",
+  "generated": "2026-10-09",
   "recorded_at": "2026-10-09T12:10:01Z"
 }

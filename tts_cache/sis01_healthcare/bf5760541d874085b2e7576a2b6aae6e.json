@@ -1,0 +1,13 @@
+{
+  "key": "bf5760541d874085b2e7576a2b6aae6e",
+  "npc": "david_osei",
+  "text": "Best case, someone catches it at the bedside. Worst case, a patient gets a dose that kills them, and the pump calls it normal.",
+  "voice": "Iapetus",
+  "style": "Ghanaian-British head of clinical engineering in his mid-fifties, methodical, serious and deliberate. Speak with a consistent London-raised, settled in Leeds, with a slight Ghanaian lilt, accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

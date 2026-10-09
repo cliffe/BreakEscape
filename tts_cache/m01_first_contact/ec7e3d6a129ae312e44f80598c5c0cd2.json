@@ -1,10 +1,13 @@
 {
   "key": "ec7e3d6a129ae312e44f80598c5c0cd2",
+  "npc": "derek_lawson",
   "text": "*laughs* You think I'd sell out the only people who understand the truth? For what—reduced sentence?",
   "voice": "Algieba",
   "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
   "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
   "scenario": "m01_first_contact",
   "source": "batch",
+  "generated": "2026-10-08",
   "recorded_at": "2026-10-09T12:10:01Z"
 }

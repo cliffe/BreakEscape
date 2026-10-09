@@ -1,10 +1,13 @@
 {
   "key": "e886dc96de5e8de2f4f7812597543e5f",
+  "npc": "priya_s",
   "text": "When you isolated them, how far to cut was never decided. The historian stayed connected by default.",
   "voice": "Leda",
   "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
   "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
   "scenario": "sis02_energy",
   "source": "generate",
+  "generated": "2026-10-09",
   "recorded_at": "2026-10-09T12:20:48Z"
 }

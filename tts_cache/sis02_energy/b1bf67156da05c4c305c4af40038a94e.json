@@ -1,10 +1,13 @@
 {
   "key": "b1bf67156da05c4c305c4af40038a94e",
+  "npc": "helen_marsh",
   "text": "You know where the stations are. By the hall door, or on my console.",
   "voice": "Aoede",
   "style": "Senior SCADA engineer in her late forties from Nottinghamshire; warm, plain-spoken and calm under pressure. Speak with a consistent East Midlands (Nottingham) accent throughout. Do not shift to any other accent.",
   "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
   "scenario": "sis02_energy",
   "source": "generate",
+  "generated": "2026-10-09",
   "recorded_at": "2026-10-09T12:11:27Z"
 }

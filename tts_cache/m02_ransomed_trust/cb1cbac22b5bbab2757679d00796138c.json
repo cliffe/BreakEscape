@@ -1,0 +1,13 @@
+{
+  "key": "cb1cbac22b5bbab2757679d00796138c",
+  "npc": "narrator",
+  "text": "She turns back to her forms.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

@@ -203,7 +203,8 @@ module BreakEscape
       if File.exist?(mp3_path)
         # Backfill provenance for audio cached before sidecars existed
         unless File.exist?(@tts_service.sidecar_path(mp3_path))
-          @tts_service.write_sidecar(mp3_path, text, voice_name, style_prompt, language_code, scenario_name, source: "batch")
+          @tts_service.write_sidecar(mp3_path, text, voice_name, style_prompt, language_code, scenario_name,
+                                     source: "batch", npc_id: npc_id)
         end
         @stats[:cache_hits] += 1
         @consecutive_failures = 0  # Reset on cache hit

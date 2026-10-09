@@ -1,10 +1,13 @@
 {
   "key": "38f1649837ff841b16b53ce0d911f2c3",
+  "npc": "priya_s",
   "text": "You pressed the one inside the hall, in a gas alarm. The one by the door does the same job from outside.",
   "voice": "Leda",
   "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
   "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
   "scenario": "sis02_energy",
   "source": "generate",
+  "generated": "2026-10-09",
   "recorded_at": "2026-10-09T12:17:37Z"
 }

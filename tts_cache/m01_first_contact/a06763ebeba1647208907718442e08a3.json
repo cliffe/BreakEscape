@@ -1,10 +1,13 @@
 {
   "key": "a06763ebeba1647208907718442e08a3",
+  "npc": "sarah_martinez",
   "text": "I guess. Her office has been empty since. It's kind of creepy.",
   "voice": "Kore",
   "style": "Friendly, warm receptionist in her early thirties. Speak with a consistent Irish (Dublin) accent throughout — do not shift to any other accent. Use a warm, mid-range pitch. Speak naturally and helpfully.",
   "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
   "scenario": "m01_first_contact",
   "source": "batch",
+  "generated": "2026-10-08",
   "recorded_at": "2026-10-09T12:09:57Z"
 }

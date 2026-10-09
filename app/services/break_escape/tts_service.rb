@@ -40,8 +40,9 @@ module BreakEscape
     GEMINI_TTS_MODEL = "gemini-3.8-flash-tts"
     GEMINI_INTERACTIONS_URL = "https://generativelanguage.googleapis.com/v1beta/interactions"
     # Clips made with gemini-2.5-flash-preview-tts were keyed without a model;
-    # legacy_cached_path finds them for missions not yet regenerated.
-    MANIFEST_FILENAME = "manifest.json"
+    # legacy_cached_path finds them for missions not yet regenerated. A sidecar
+    # names this model only when its file is on such a legacy key.
+    LEGACY_TTS_MODEL = "gemini-2.5-flash-preview-tts"
     # Engine-root cache so pre-generated MP3s can be committed to git and are
     # found in both standalone and mounted (Hacktivity) mode without relying on
     # the host app's Rails.root.
@@ -102,7 +103,7 @@ module BreakEscape
     # @param style_prompt [String, nil] Optional style instructions
     # @param language_code [String, nil] BCP-47 language code (e.g., "en-GB")
     # @param scenario_name [String, nil] Scenario directory name (e.g., "m01_first_contact")
-    # @param npc_id [String, nil] Speaker, recorded in the manifest only (not part of the key)
+    # @param npc_id [String, nil] Speaker, recorded in the sidecar only (not part of the key)
     # @return [Pathname, nil] Path to cached MP3 file, or nil on failure
     def generate(text, voice_name, style_prompt = nil, language_code = nil, scenario_name: nil, npc_id: nil)
       return nil if text.blank?
@@ -117,7 +118,10 @@ module BreakEscape
       # for so the cache pruner knows exactly which line the file holds.
       if File.exist?(mp3_path)
         Rails.logger.debug "[TTS] Cache hit: #{scenario_name}/#{cache_key}"
-        write_sidecar(mp3_path, text, voice_name, style_prompt, language_code, scenario_name, source: "cache_hit") unless File.exist?(sidecar_path(mp3_path))
+        unless File.exist?(sidecar_path(mp3_path))
+          write_sidecar(mp3_path, text, voice_name, style_prompt, language_code, scenario_name,
+                        source: "cache_hit", npc_id: npc_id)
+        end
         return mp3_path
       end
 
@@ -148,9 +152,8 @@ module BreakEscape
 
       if success
         Rails.logger.info "[TTS] Generated: #{scenario_name}/#{cache_key}.mp3 (#{(File.size(mp3_path) / 1024.0).round(1)} KB)"
-        record_in_manifest(mp3_path, text: text, npc_id: npc_id, voice_name: voice_name,
-                                     style_prompt: style_prompt, language_code: language_code)
-        write_sidecar(mp3_path, text, voice_name, style_prompt, language_code, scenario_name, source: "generate")
+        write_sidecar(mp3_path, text, voice_name, style_prompt, language_code, scenario_name,
+                      source: "generate", npc_id: npc_id, generated: Date.today.iso8601)
         mp3_path
       else
         nil
@@ -195,60 +198,78 @@ module BreakEscape
       Pathname.new(mp3_path.to_s).sub_ext(".json")
     end
 
-    # Write a small JSON sidecar recording exactly what a cached MP3 says and in
-    # which voice, so the cache pruner can tell for certain whether a file still
-    # matches a line of dialogue. Best effort: a failure never affects the audio.
+    # Write the provenance sidecar <key>.json beside <key>.mp3: exactly what the
+    # clip says, in which voice, who says it and on which model. It is the only
+    # record of a clip's provenance (one file per clip, so two branches that
+    # generate audio for the same mission never conflict). The cache pruner and
+    # `rake break_escape:tts:wasted` read it. Best effort: a failure never affects
+    # the audio. Written to a temp file and renamed, so a crash can't leave a
+    # truncated sidecar.
+    #
     # source: "generate" (new audio), "cache_hit" (backfilled on a request for an
-    # existing file) or "batch" (backfilled by the batch processor).
-    def write_sidecar(mp3_path, text, voice_name, style_prompt, language_code, scenario_name, source: "generate")
+    # existing file), "batch" (backfilled by the batch processor) or "manifest"
+    # (converted from the retired per-scenario manifest.json).
+    # model: GEMINI_TTS_MODEL when the file's key is the current-model key for
+    # these fields, LEGACY_TTS_MODEL when it is the pre-model key, else omitted.
+    # generated: the date the audio was made; known only for "generate" (and
+    # converted manifest entries), so backfills omit it.
+    def write_sidecar(mp3_path, text, voice_name, style_prompt, language_code, scenario_name,
+                      source: "generate", npc_id: nil, generated: nil)
+      key = File.basename(mp3_path.to_s, ".mp3")
       data = {
-        "key"          => File.basename(mp3_path.to_s, ".mp3"),
+        "key"          => key,
+        "npc"          => npc_id,
         "text"         => text.to_s,
         "voice"        => voice_name,
         "style"        => style_prompt,
         "language"     => language_code,
+        "model"        => self.class.model_for_key(key, text, voice_name, style_prompt, language_code),
         "scenario"     => scenario_name,
         "source"       => source,
+        "generated"    => generated,
         "recorded_at"  => Time.now.utc.iso8601
       }
-      File.write(sidecar_path(mp3_path), JSON.pretty_generate(data) + "\n")
+      # npc, model and generated are left out when unknown; style and language
+      # stay (null is a real value there, and part of the key).
+      data.delete_if { |k, v| v.nil? && %w[npc model generated].include?(k) }
+      self.class.write_sidecar_file(sidecar_path(mp3_path), data)
     rescue => e
       Rails.logger.warn "[TTS] Could not write sidecar for #{mp3_path}: #{e.message}"
       nil
     end
 
-    private
-
-    # Per-scenario manifest.json maps each clip's key to what it says and who
-    # says it, so a clip can be found by its line and stale clips can be pruned.
-    # Locked (the endpoint's threads and the batch can generate at once) and
-    # replaced by rename, so a crash mid-write can't truncate it. A manifest
-    # that won't parse is set aside rather than overwritten.
-    def record_in_manifest(mp3_path, text:, npc_id:, voice_name:, style_prompt:, language_code:)
-      manifest_path = mp3_path.dirname.join(MANIFEST_FILENAME)
-      File.open("#{manifest_path}.lock", File::RDWR | File::CREAT, 0o644) do |lock|
-        lock.flock(File::LOCK_EX)
-        manifest = {}
-        if File.exist?(manifest_path)
-          begin
-            manifest = JSON.parse(File.read(manifest_path))
-          rescue JSON::ParserError => e
-            corrupt_path = "#{manifest_path}.corrupt-#{Time.now.strftime('%Y%m%d%H%M%S')}"
-            FileUtils.mv(manifest_path, corrupt_path)
-            Rails.logger.error "[TTS] Unreadable manifest moved to #{corrupt_path}: #{e.message}"
-          end
-        end
-        manifest[mp3_path.basename(".mp3").to_s] = {
-          "npc" => npc_id, "text" => text, "voice" => voice_name, "style" => style_prompt,
-          "language" => language_code, "model" => GEMINI_TTS_MODEL, "generated" => Date.today.iso8601
-        }.compact
-        tmp_path = "#{manifest_path}.#{SecureRandom.hex(4)}.tmp"
-        File.write(tmp_path, JSON.pretty_generate(manifest.sort.to_h))
-        File.rename(tmp_path, manifest_path)
+    # The model a clip on this key was made with, judged from the key alone.
+    def self.model_for_key(key, text, voice_name, style_prompt, language_code)
+      if key == cache_key(text, voice_name, style_prompt, language_code)
+        GEMINI_TTS_MODEL
+      elsif key == legacy_cache_key(text, voice_name, style_prompt, language_code)
+        LEGACY_TTS_MODEL
       end
-    rescue => e
-      Rails.logger.warn "[TTS] Could not update manifest #{manifest_path}: #{e.message}"
     end
+
+    # Atomic JSON write: unique dot-prefixed temp file (matched by .gitignore's
+    # *.tmp pattern) renamed over the target.
+    def self.write_sidecar_file(path, data)
+      path = Pathname.new(path.to_s)
+      tmp = path.dirname.join(".#{path.basename('.json')}.#{SecureRandom.hex(4)}.json.tmp")
+      File.write(tmp, JSON.pretty_generate(data) + "\n")
+      File.rename(tmp, path)
+      path
+    ensure
+      File.delete(tmp) if tmp && File.exist?(tmp)
+    end
+
+    # Parsed sidecars in one cache directory, as { key => data }. Unreadable
+    # sidecars and temp files are skipped.
+    def self.read_sidecars(dir)
+      Dir.glob(Pathname.new(dir.to_s).join("*.json").to_s).sort.each_with_object({}) do |path, out|
+        data = JSON.parse(File.read(path)) rescue nil
+        next unless data.is_a?(Hash) && data["text"].is_a?(String)
+        out[File.basename(path, ".json")] = data
+      end
+    end
+
+    private
 
     # Parse rate limit info from Gemini API response headers or error details
     # The API may include X-Goog-* headers or rate limit details in error responses

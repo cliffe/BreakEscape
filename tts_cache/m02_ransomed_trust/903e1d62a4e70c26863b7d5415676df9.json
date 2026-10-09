@@ -1,0 +1,13 @@
+{
+  "key": "903e1d62a4e70c26863b7d5415676df9",
+  "npc": "gary_whitlock",
+  "text": "Shared admin credential on the backup box, never rotated. Emma2018, Hospital1987, StCatherines.",
+  "voice": "Charon",
+  "style": "Hospital IT systems administrator, mid-thirties, running on vending machine coffee. Consistent Birmingham / Black Country accent throughout. Flat, tired, self-deprecating -- a man who has been right for six months and got nothing for it. Anger sits under the surface, not on top of it.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

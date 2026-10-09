@@ -1,0 +1,13 @@
+{
+  "key": "f74db32bb95f78d8c09183abc22eccbb",
+  "npc": "narrator",
+  "text": "You hear her before you see her. The torch beam arrives about a second before she does.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

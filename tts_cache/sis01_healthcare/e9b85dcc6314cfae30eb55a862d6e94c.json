@@ -1,0 +1,13 @@
+{
+  "key": "e9b85dcc6314cfae30eb55a862d6e94c",
+  "npc": "ravi_anand",
+  "text": "You're looking for anything that only makes sense if someone is moving through the network on purpose.",
+  "voice": "Puck",
+  "style": "British Indian IT security manager in his mid-thirties, exhausted after a night shift, matter-of-fact. Speak with a consistent Leeds, with a light British Indian lilt, accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

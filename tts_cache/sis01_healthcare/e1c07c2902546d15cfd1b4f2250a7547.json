@@ -1,0 +1,13 @@
+{
+  "key": "e1c07c2902546d15cfd1b4f2250a7547",
+  "npc": "dr_sharma",
+  "text": "That habit is what they turned against you. A warning everyone clears has stopped being a warning.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

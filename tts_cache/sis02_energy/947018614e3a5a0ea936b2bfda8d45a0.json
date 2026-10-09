@@ -1,10 +1,13 @@
 {
   "key": "947018614e3a5a0ea936b2bfda8d45a0",
+  "npc": "helen_marsh",
   "text": "Before anybody touches that, I want a look in Hall 1. Every reading on that screen's normal. Too normal for a night on charge.",
   "voice": "Aoede",
   "style": "Senior SCADA engineer in her late forties from Nottinghamshire; warm, plain-spoken and calm under pressure. Speak with a consistent East Midlands (Nottingham) accent throughout. Do not shift to any other accent.",
   "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
   "scenario": "sis02_energy",
   "source": "generate",
+  "generated": "2026-10-09",
   "recorded_at": "2026-10-09T12:10:27Z"
 }

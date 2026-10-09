@@ -1,0 +1,13 @@
+{
+  "key": "b4bd7baf158f624ef1a71f48d14fdafa",
+  "npc": "security_guard_patrol",
+  "text": "You've been polite, you've stopped when I asked, and you've spent your night running towards the fire.",
+  "voice": "Leda",
+  "style": "Hospital security officer on nights. Consistent Liverpool / Scouse accent throughout. Warm and quick with a joke until the moment she isn't -- then completely immovable. Not stupid, not a jobsworth, genuinely believes the corridor is her responsibility.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

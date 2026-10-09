@@ -1,10 +1,13 @@
 {
   "key": "dc67c63534c64ab6374c42cd60cc97ce",
+  "npc": "sarah_martinez",
   "text": "Main office is through that door—open plan with desks for the team.",
   "voice": "Kore",
   "style": "Friendly, warm receptionist in her early thirties. Speak with a consistent Irish (Dublin) accent throughout — do not shift to any other accent. Use a warm, mid-range pitch. Speak naturally and helpfully.",
   "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
   "scenario": "m01_first_contact",
   "source": "batch",
+  "generated": "2026-10-08",
   "recorded_at": "2026-10-09T12:09:57Z"
 }

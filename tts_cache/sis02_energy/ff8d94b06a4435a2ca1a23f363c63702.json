@@ -1,10 +1,13 @@
 {
   "key": "ff8d94b06a4435a2ca1a23f363c63702",
+  "npc": "helen_marsh",
   "text": "ESD's in and the fans are on full. Now we watch it fall.",
   "voice": "Aoede",
   "style": "Senior SCADA engineer in her late forties from Nottinghamshire; warm, plain-spoken and calm under pressure. Speak with a consistent East Midlands (Nottingham) accent throughout. Do not shift to any other accent.",
   "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
   "scenario": "sis02_energy",
   "source": "generate",
+  "generated": "2026-10-09",
   "recorded_at": "2026-10-09T12:14:42Z"
 }

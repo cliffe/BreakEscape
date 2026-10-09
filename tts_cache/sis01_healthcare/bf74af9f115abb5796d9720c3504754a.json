@@ -1,0 +1,13 @@
+{
+  "key": "bf74af9f115abb5796d9720c3504754a",
+  "npc": "sarah_mitchell",
+  "text": "Ravi's in the IT office. Your pass opens the door. And keep half an eye on Bed 4 for me.",
+  "voice": "Kore",
+  "style": "Black British charge nurse in her mid-40s, calm, tired but professional. Speak with a consistent Leeds, West Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

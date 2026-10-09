@@ -1,10 +1,13 @@
 {
   "key": "b71e6bc669e61cde28107baf80066b6d",
+  "npc": "helen_marsh",
   "text": "I'm staying on this desk while that screen's telling us fairy stories. Read the dial and come straight back.",
   "voice": "Aoede",
   "style": "Senior SCADA engineer in her late forties from Nottinghamshire; warm, plain-spoken and calm under pressure. Speak with a consistent East Midlands (Nottingham) accent throughout. Do not shift to any other accent.",
   "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
   "scenario": "sis02_energy",
   "source": "generate",
+  "generated": "2026-10-09",
   "recorded_at": "2026-10-09T12:10:46Z"
 }

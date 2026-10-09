@@ -43,54 +43,54 @@ namespace :break_escape do
     end
 
     desc <<~DESC
-      List clips nothing will request (dry run; deletes nothing).
+      List current-model clips nothing will request (dry run; deletes nothing).
 
-      Prints each manifest entry whose key is not one the client can ask for
-      now: every line TtsLineExtractor finds in the scenario, voiced as the
-      endpoint voices it. Lines generated live by the endpoint are in that set,
-      so whatever is left is waste. The text is printed so a person can judge.
+      Reads each clip's sidecar (<key>.json) and prints every clip on the
+      current model whose key is not one the client can ask for now: every
+      line TtsLineExtractor finds in the scenario, voiced as the endpoint
+      voices it. Lines generated live by the endpoint are in that set, so
+      whatever is left is waste. The text is printed so a person can judge.
+      Stricter than prune_cache, which keeps a clip whose text matches a line
+      in any of the scenario's voices; use prune_cache to move or delete files.
         bundle exec rake app:break_escape:tts:wasted[m01_first_contact]
-        bundle exec rake app:break_escape:tts:wasted          # every scenario with a manifest
+        bundle exec rake app:break_escape:tts:wasted          # every scenario with sidecars
     DESC
     task :wasted, [:scenario] => :environment do |_task, args|
       cache_dir = BreakEscape::TtsService::CACHE_DIR
+      root = BreakEscape::Engine.root
       filter = args[:scenario].presence || ENV['SCENARIO'].presence
       scenarios = if filter
         [filter]
       else
-        Dir.glob(cache_dir.join('*', BreakEscape::TtsService::MANIFEST_FILENAME)).map { |p| File.basename(File.dirname(p)) }.sort
+        Dir.glob(cache_dir.join('*', '*.json')).map { |p| File.basename(File.dirname(p)) }.uniq.sort
       end
 
       totals = Hash.new(0)
       scenarios.each do |scenario|
-        manifest_path = cache_dir.join(scenario, BreakEscape::TtsService::MANIFEST_FILENAME)
-        unless File.exist?(manifest_path)
-          puts "#{scenario}: no manifest"
-          next
-        end
-        unless File.exist?(BreakEscape::Engine.root.join('scenarios', scenario, 'scenario.json.erb'))
+        unless File.exist?(root.join('scenarios', scenario, 'scenario.json.erb'))
           puts "#{scenario}: no scenario.json.erb, so every clip is unrequested; skipped"
           next
         end
 
-        manifest = JSON.parse(File.read(manifest_path))
         expected = BreakEscape::TtsLineExtractor.for_scenario(scenario).keys
-        wasted = manifest.reject { |key, _| expected.include?(key) }
+        r = BreakEscape::TtsWastedClips.scan(scenario, expected_keys: expected, cache_dir: cache_dir)
 
         puts ""
-        puts "#{scenario}: #{wasted.size} of #{manifest.size} manifest clips are not requested (#{expected.size} lines expected)"
-        wasted.sort_by { |_, e| [e['npc'].to_s, e['text'].to_s] }.each do |key, entry|
-          mp3 = cache_dir.join(scenario, "#{key}.mp3")
-          state = File.exist?(mp3) ? '' : ' (mp3 missing)'
-          puts "  #{mp3.relative_path_from(BreakEscape::Engine.root)}#{state}"
-          puts "    #{entry['npc']} [#{entry['voice']}]: #{entry['text']}"
+        puts "#{scenario}: #{r.wasted.size} of #{r.current} current-model clips are not requested " \
+             "(#{r.expected} lines expected; #{r.older_sidecars} sidecar(s) on older keys, " \
+             "#{r.without_sidecar} MP3(s) without a sidecar not checked)"
+        r.wasted.each do |clip|
+          mp3 = cache_dir.join(scenario, "#{clip.key}.mp3")
+          state = clip.mp3_exists ? '' : ' (mp3 missing)'
+          puts "  #{mp3.relative_path_from(root)}#{state}"
+          puts "    #{clip.sidecar['npc'] || '?'} [#{clip.sidecar['voice']}]: #{clip.sidecar['text']}"
         end
-        totals[:manifest] += manifest.size
-        totals[:wasted] += wasted.size
+        totals[:current] += r.current
+        totals[:wasted] += r.wasted.size
       end
 
       puts ""
-      puts "Total: #{totals[:wasted]} unrequested of #{totals[:manifest]} manifest clips. Nothing was deleted."
+      puts "Total: #{totals[:wasted]} unrequested of #{totals[:current]} current-model clips. Nothing was deleted."
     end
 
     desc <<~DESC

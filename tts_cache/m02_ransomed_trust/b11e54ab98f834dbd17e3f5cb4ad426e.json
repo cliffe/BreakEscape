@@ -1,0 +1,13 @@
+{
+  "key": "b11e54ab98f834dbd17e3f5cb4ad426e",
+  "npc": "receptionist",
+  "text": "...I've said that out loud now. I can't unsay it.",
+  "voice": "Despina",
+  "style": "Night reception coordinator, eleven years on this desk. South London / Multicultural London English accent throughout -- warm, quick, dry. Unflappable on the surface, running on fumes underneath.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

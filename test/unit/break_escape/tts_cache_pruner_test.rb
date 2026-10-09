@@ -248,6 +248,8 @@ module BreakEscape
                    sidecar.values_at("voice", "style", "language", "scenario", "source")
       assert_equal File.basename(path, ".mp3"), sidecar["key"]
       assert_equal TtsService.cache_key("Halt! Who goes there?", "Charon", "Bored.", "en-GB"), sidecar["key"]
+      assert_equal TtsService::GEMINI_TTS_MODEL, sidecar["model"]
+      refute sidecar.key?("npc"), "no speaker given, so none recorded"
       # Anything that globs the cache for audio still sees one file
       assert_equal 1, Dir.glob(dir.join("*.mp3")).size
 

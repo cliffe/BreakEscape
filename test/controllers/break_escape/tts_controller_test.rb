@@ -605,7 +605,7 @@ module BreakEscape
 
     # ─── TtsService#generate ─────────────────────────────────────────────────
 
-    test "generate writes the mp3 and a manifest entry, leaving no temp files" do
+    test "generate writes the mp3 and a sidecar naming speaker and model, leaving no temp files" do
       service = stubbed_gemini_service
       with_env("GEMINI_API_KEY" => "dummy_key_for_test") do
         path = service.generate("Hello there, agent.", "Kore", "Speak formally.", "en-GB",
@@ -614,37 +614,63 @@ module BreakEscape
         assert_equal @cache_root.join("gen_test", "#{service.cache_key_for('Hello there, agent.', 'Kore', 'Speak formally.', 'en-GB')}.mp3"), path
         assert File.size(path) > 0
 
-        manifest = JSON.parse(File.read(@cache_root.join("gen_test", "manifest.json")))
-        entry = manifest.fetch(path.basename(".mp3").to_s)
-        assert_equal "agent_x", entry["npc"]
-        assert_equal "Hello there, agent.", entry["text"]
-        assert_equal "Kore", entry["voice"]
-        assert_equal "Speak formally.", entry["style"]
-        assert_equal "en-GB", entry["language"]
-        assert_equal TtsService::GEMINI_TTS_MODEL, entry["model"]
+        sidecar = JSON.parse(File.read(path.sub_ext(".json")))
+        assert_equal path.basename(".mp3").to_s, sidecar["key"]
+        assert_equal "agent_x", sidecar["npc"]
+        assert_equal "Hello there, agent.", sidecar["text"]
+        assert_equal "Kore", sidecar["voice"]
+        assert_equal "Speak formally.", sidecar["style"]
+        assert_equal "en-GB", sidecar["language"]
+        assert_equal TtsService::GEMINI_TTS_MODEL, sidecar["model"]
+        assert_equal "gen_test", sidecar["scenario"]
+        assert_equal "generate", sidecar["source"]
+        assert_equal Date.today.iso8601, sidecar["generated"]
 
+        # The sidecar is the only provenance record
+        refute File.exist?(@cache_root.join("gen_test", "manifest.json"))
         leftovers = Dir.children(@cache_root.join("gen_test")).select do |f|
-          f.start_with?(".") || f.end_with?(".pcm", ".tmp")
+          f.start_with?(".") || f.end_with?(".pcm", ".tmp", ".lock")
         end
         assert_empty leftovers
       end
     end
 
-    test "generate sets a corrupt manifest aside rather than losing it" do
-      dir = @cache_root.join("gen_test")
-      FileUtils.mkdir_p(dir)
-      File.write(dir.join("manifest.json"), "{ this is not json")
-
+    test "a cache hit backfills a missing sidecar with speaker and model, and keeps an existing one" do
       service = stubbed_gemini_service
-      with_env("GEMINI_API_KEY" => "dummy_key_for_test") do
-        path = service.generate("A fresh line.", "Kore", nil, nil, scenario_name: "gen_test", npc_id: "agent_x")
-        assert path && File.exist?(path)
-      end
+      key = service.cache_key_for("A fresh line.", "Kore", nil, nil)
+      mp3 = write_clip(key, "gen_test")
+      sidecar_path = mp3.sub_ext(".json")
 
-      corrupt = Dir.glob(dir.join("manifest.json.corrupt-*").to_s)
-      assert_equal 1, corrupt.size
-      assert_equal "{ this is not json", File.read(corrupt.first)
-      assert_equal 1, JSON.parse(File.read(dir.join("manifest.json"))).size
+      service.generate("A fresh line.", "Kore", nil, nil, scenario_name: "gen_test", npc_id: "agent_x")
+      sidecar = JSON.parse(File.read(sidecar_path))
+      assert_equal "cache_hit", sidecar["source"]
+      assert_equal "agent_x", sidecar["npc"]
+      assert_equal TtsService::GEMINI_TTS_MODEL, sidecar["model"]
+      assert_nil sidecar["style"]
+      assert sidecar.key?("style"), "a nil style is part of the key, so it is written"
+      refute sidecar.key?("generated"), "a backfill doesn't know when the audio was made"
+
+      File.write(sidecar_path, { text: "A fresh line.", voice: "Kore", npc: "first_speaker" }.to_json)
+      service.generate("A fresh line.", "Kore", nil, nil, scenario_name: "gen_test", npc_id: "someone_else")
+      assert_equal "first_speaker", JSON.parse(File.read(sidecar_path))["npc"]
+    end
+
+    test "a sidecar names the previous model only for a file on the pre-model key" do
+      text, voice = "An old take.", ["Kore", nil, "en-GB"]
+      current = TtsService.cache_key(text, *voice)
+      legacy = TtsService.legacy_cache_key(text, *voice)
+
+      assert_equal TtsService::GEMINI_TTS_MODEL, TtsService.model_for_key(current, text, *voice)
+      assert_equal TtsService::LEGACY_TTS_MODEL, TtsService.model_for_key(legacy, text, *voice)
+      assert_nil TtsService.model_for_key("0" * 32, text, *voice)
+
+      mp3 = write_clip(legacy, "gen_test")
+      TtsService.new.write_sidecar(mp3, text, *voice, "gen_test", source: "batch")
+      assert_equal TtsService::LEGACY_TTS_MODEL, JSON.parse(File.read(mp3.sub_ext(".json")))["model"]
+
+      odd = write_clip("0" * 32, "gen_test")
+      TtsService.new.write_sidecar(odd, text, *voice, "gen_test", source: "batch")
+      refute JSON.parse(File.read(odd.sub_ext(".json"))).key?("model")
     end
 
     # ─── Gemini request and response ─────────────────────────────────────────
@@ -769,10 +795,12 @@ module BreakEscape
     FAKE_MP3 = ("\xFF\xFB\x90\x00" + ("\x00" * 128)).b.freeze
 
     # Put a fake clip where the controller looks: <cache>/<mission name>/<key>.mp3
-    def write_clip(key)
-      dir = @cache_root.join(@mission.name)
+    def write_clip(key, scenario = @mission.name)
+      dir = @cache_root.join(scenario)
       FileUtils.mkdir_p(dir)
-      File.binwrite(dir.join("#{key}.mp3"), FAKE_MP3)
+      path = dir.join("#{key}.mp3")
+      File.binwrite(path, FAKE_MP3)
+      path
     end
 
     # Key used by the previous (2.5) model, which did not include the model name.

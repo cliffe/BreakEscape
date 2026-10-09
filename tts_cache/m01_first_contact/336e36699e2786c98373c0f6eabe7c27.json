@@ -1,10 +1,13 @@
 {
   "key": "336e36699e2786c98373c0f6eabe7c27",
+  "npc": "maya_chen",
   "text": "Operation Shatter launches Sunday. We don't have much time.",
   "voice": "Leda",
   "style": "Content analyst in her late twenties. Speak with a consistent Chinese-American (California) accent throughout — do not shift to any other accent. Soft, mid-to-high pitch; quiet, hesitant pace. Nervous and concerned.",
   "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
   "scenario": "m01_first_contact",
   "source": "batch",
+  "generated": "2026-10-09",
   "recorded_at": "2026-10-09T12:10:01Z"
 }

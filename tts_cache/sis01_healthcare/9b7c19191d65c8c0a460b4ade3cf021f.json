@@ -1,0 +1,13 @@
+{
+  "key": "9b7c19191d65c8c0a460b4ade3cf021f",
+  "npc": "dr_sharma",
+  "text": "HC-007 also promised a rehearsal every year. The last one was nineteen months ago. Today was the first test since.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

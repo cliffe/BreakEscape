@@ -46,9 +46,7 @@ package-lock.json
 # (generation isn't deterministic). Ignore only in-flight and test files.
 tts_cache/**/.*.pcm
 tts_cache/**/.*.mp3
-tts_cache/**/*.lock
 tts_cache/**/*.tmp
-tts_cache/**/*.corrupt-*
 tts_cache/quota_test/
 tts_cache/test_debug/
 tts_cache/test_event_cascade/

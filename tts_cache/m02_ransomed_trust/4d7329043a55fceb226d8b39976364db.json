@@ -1,0 +1,13 @@
+{
+  "key": "4d7329043a55fceb226d8b39976364db",
+  "npc": "night_security_supervisor",
+  "text": "Less than the catering for the meeting where they cut Gary Whitlock's budget. I carried the trays out afterwards.",
+  "voice": "Enceladus",
+  "style": "Night security supervisor, fifties, eleven years on the same post. Consistent Estuary English -- flat Home Counties, quiet, unhurried. Courteous to the point of being soothing. When cornered the warmth switches off completely and what is underneath is calm, articulate and entirely unrepentant.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

@@ -1,10 +1,13 @@
 {
   "key": "ba45ad8e146ee4549d9db02e85e30e05",
+  "npc": "priya_s",
   "text": "You took ten seconds to save the BMS registers. The ESD wiped them. That export's the only record of what they wrote into the controller.",
   "voice": "Leda",
   "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
   "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
   "scenario": "sis02_energy",
   "source": "generate",
+  "generated": "2026-10-09",
   "recorded_at": "2026-10-09T12:18:32Z"
 }

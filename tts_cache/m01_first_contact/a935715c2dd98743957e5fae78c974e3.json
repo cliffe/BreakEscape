@@ -1,10 +1,13 @@
 {
   "key": "a935715c2dd98743957e5fae78c974e3",
+  "npc": "narrator",
   "text": "Viral Dynamics Media. A weekday morning in the city centre.",
   "voice": "Algenib",
   "style": "Cinematic noir detective voice over narrator.",
   "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
   "scenario": "m01_first_contact",
   "source": "batch",
+  "generated": "2026-10-08",
   "recorded_at": "2026-10-09T12:09:57Z"
 }

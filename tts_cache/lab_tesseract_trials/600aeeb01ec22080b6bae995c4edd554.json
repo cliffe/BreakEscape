@@ -1,0 +1,13 @@
+{
+  "key": "600aeeb01ec22080b6bae995c4edd554",
+  "npc": "briefing_cutscene",
+  "text": "Two earlier Keyholders now work for CryptoSecure. CryptoSecure is Ransomware Incorporated with a logo.",
+  "voice": "Aoede",
+  "style": "Professional intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Brisk, dry, short sentences.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

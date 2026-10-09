@@ -1,0 +1,13 @@
+{
+  "key": "6a81c8011e490f7107cdc28a0d78bef0",
+  "npc": "patient_bed4",
+  "text": "...never trusted a thing with no gauge on it.",
+  "voice": "Rasalgethi",
+  "style": "Retired London bus engineer in his late sixties, on a ventilator. White working-class south Londoner -- dry, flat, unhurried vowels. Very weak, very short of breath, four or five words at a time with long gaps. Dignified, not frightened.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

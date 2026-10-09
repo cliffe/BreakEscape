@@ -1,0 +1,13 @@
+{
+  "key": "2164bc6d2a19b8376e1066325d4789f2",
+  "npc": "narrator",
+  "text": "St. Catherine's Regional, in the small hours. It's raining.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

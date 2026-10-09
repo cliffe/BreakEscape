@@ -1,0 +1,13 @@
+{
+  "key": "e4ea33140df94143ab4ef98029e2b4ea",
+  "npc": "jordan_pike",
+  "text": "See the numbers on it? They spell a word. Type the word into the lockbox and you're in the Trials.",
+  "voice": "Puck",
+  "style": "Third-year student working a careers-fair stand for a referral bonus. Consistent Estuary English accent throughout. Upbeat, fast, salesy, laughs at his own lines.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

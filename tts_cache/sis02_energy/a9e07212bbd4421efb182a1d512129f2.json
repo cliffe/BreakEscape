@@ -1,10 +1,13 @@
 {
   "key": "a9e07212bbd4421efb182a1d512129f2",
+  "npc": "helen_marsh",
   "text": "The safety controller keeps no log of changes. We only know three twenty-two because the engineering workstation kept its own history.",
   "voice": "Aoede",
   "style": "Senior SCADA engineer in her late forties from Nottinghamshire; warm, plain-spoken and calm under pressure. Speak with a consistent East Midlands (Nottingham) accent throughout. Do not shift to any other accent.",
   "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
   "scenario": "sis02_energy",
   "source": "generate",
+  "generated": "2026-10-09",
   "recorded_at": "2026-10-09T12:13:56Z"
 }

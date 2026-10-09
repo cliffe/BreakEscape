@@ -1,0 +1,13 @@
+{
+  "key": "376d9399fd6c99d60be5593b291a5417",
+  "npc": "sarah_mitchell",
+  "text": "Her pump was running at twenty. Her chart says two.",
+  "voice": "Kore",
+  "style": "Black British charge nurse in her mid-40s, calm, tired but professional. Speak with a consistent Leeds, West Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

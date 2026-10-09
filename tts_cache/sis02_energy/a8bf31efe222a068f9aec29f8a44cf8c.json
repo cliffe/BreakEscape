@@ -1,10 +1,13 @@
 {
   "key": "a8bf31efe222a068f9aec29f8a44cf8c",
+  "npc": "helen_marsh",
   "text": "I've hit the ESD on my console. Too late for the A racks. They're going.",
   "voice": "Aoede",
   "style": "Senior SCADA engineer in her late forties from Nottinghamshire; warm, plain-spoken and calm under pressure. Speak with a consistent East Midlands (Nottingham) accent throughout. Do not shift to any other accent.",
   "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
   "scenario": "sis02_energy",
   "source": "generate",
+  "generated": "2026-10-09",
   "recorded_at": "2026-10-09T12:16:21Z"
 }

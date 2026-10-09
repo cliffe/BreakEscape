@@ -1,10 +1,13 @@
 {
   "key": "826d572f4e29dbc515e282b2e21f8d82",
+  "npc": "helen_marsh",
   "text": "What else, duck?",
   "voice": "Aoede",
   "style": "Senior SCADA engineer in her late forties from Nottinghamshire; warm, plain-spoken and calm under pressure. Speak with a consistent East Midlands (Nottingham) accent throughout. Do not shift to any other accent.",
   "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
   "scenario": "sis02_energy",
   "source": "generate",
+  "generated": "2026-10-09",
   "recorded_at": "2026-10-09T12:11:01Z"
 }

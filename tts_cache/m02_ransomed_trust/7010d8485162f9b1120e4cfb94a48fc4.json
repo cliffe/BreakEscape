@@ -1,0 +1,13 @@
+{
+  "key": "7010d8485162f9b1120e4cfb94a48fc4",
+  "npc": "ward_nurse",
+  "text": "No. But there's a woman in bed two, so.",
+  "voice": "Kore",
+  "style": "Ward sister, twenty years on the wards. Consistent Belfast / Northern Irish accent throughout. Exhausted, dry, absolutely unsentimental about everything except her patients. Quiet controlled urgency, never raises her voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

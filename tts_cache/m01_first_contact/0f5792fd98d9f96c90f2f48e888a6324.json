@@ -1,10 +1,13 @@
 {
   "key": "0f5792fd98d9f96c90f2f48e888a6324",
+  "npc": "derek_lawson",
   "text": "We just accelerate the lesson. Make it unavoidable. Make it hurt enough that people remember.",
   "voice": "Algieba",
   "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
   "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
   "scenario": "m01_first_contact",
   "source": "batch",
+  "generated": "2026-10-09",
   "recorded_at": "2026-10-09T12:10:01Z"
 }

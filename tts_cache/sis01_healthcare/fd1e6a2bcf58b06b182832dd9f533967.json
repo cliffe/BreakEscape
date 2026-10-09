@@ -1,0 +1,13 @@
+{
+  "key": "fd1e6a2bcf58b06b182832dd9f533967",
+  "npc": "narrator",
+  "text": "Northgate General Hospital. Tuesday, half past seven in the morning.",
+  "voice": "Schedar",
+  "style": "Calm, clinical narrator with a neutral southern English accent; measured, even pace. Keep the same accent throughout.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

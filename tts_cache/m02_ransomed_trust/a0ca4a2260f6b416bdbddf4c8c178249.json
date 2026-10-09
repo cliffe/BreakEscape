@@ -1,0 +1,13 @@
+{
+  "key": "a0ca4a2260f6b416bdbddf4c8c178249",
+  "npc": "narrator",
+  "text": "For the first time, something crosses his face that he hasn't chosen.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

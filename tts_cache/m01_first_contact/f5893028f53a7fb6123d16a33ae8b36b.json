@@ -1,10 +1,13 @@
 {
   "key": "f5893028f53a7fb6123d16a33ae8b36b",
+  "npc": "derek_lawson",
   "text": "You think that hurts me? I WANT people to see this.",
   "voice": "Algieba",
   "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
   "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
   "scenario": "m01_first_contact",
   "source": "batch",
+  "generated": "2026-10-09",
   "recorded_at": "2026-10-09T12:10:01Z"
 }

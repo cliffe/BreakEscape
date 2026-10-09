@@ -1,10 +1,13 @@
 {
   "key": "ee221019dfac88f2fc89fd7cdd6a3846",
+  "npc": "priya_s",
   "text": "You waited to be sure before telling Trent Water. Defensible for a day. Not for a week.",
   "voice": "Leda",
   "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
   "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
   "scenario": "sis02_energy",
   "source": "generate",
+  "generated": "2026-10-09",
   "recorded_at": "2026-10-09T12:23:39Z"
 }

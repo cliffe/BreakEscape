@@ -1,10 +1,13 @@
 {
   "key": "ab70b891743c4e129b3e32c3b78d5700",
+  "npc": "helen_marsh",
   "text": "Eighty-five. It was certified at fifty-five. And the hydrogen alarm's at three point eight per cent, not one.",
   "voice": "Aoede",
   "style": "Senior SCADA engineer in her late forties from Nottinghamshire; warm, plain-spoken and calm under pressure. Speak with a consistent East Midlands (Nottingham) accent throughout. Do not shift to any other accent.",
   "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
   "scenario": "sis02_energy",
   "source": "generate",
+  "generated": "2026-10-09",
   "recorded_at": "2026-10-09T12:13:30Z"
 }

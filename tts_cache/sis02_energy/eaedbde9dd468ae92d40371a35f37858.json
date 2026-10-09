@@ -1,10 +1,13 @@
 {
   "key": "eaedbde9dd468ae92d40371a35f37858",
+  "npc": "helen_marsh",
   "text": "That's the urgent stuff done. Have a breather.",
   "voice": "Aoede",
   "style": "Senior SCADA engineer in her late forties from Nottinghamshire; warm, plain-spoken and calm under pressure. Speak with a consistent East Midlands (Nottingham) accent throughout. Do not shift to any other accent.",
   "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
   "scenario": "sis02_energy",
   "source": "generate",
+  "generated": "2026-10-09",
   "recorded_at": "2026-10-09T12:16:08Z"
 }

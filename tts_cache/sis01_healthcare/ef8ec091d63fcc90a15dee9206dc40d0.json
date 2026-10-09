@@ -1,0 +1,13 @@
+{
+  "key": "ef8ec091d63fcc90a15dee9206dc40d0",
+  "npc": "dr_sharma",
+  "text": "A family will want to know why. Some of the answers are about things this Trust knew last year.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

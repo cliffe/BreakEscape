@@ -1,0 +1,13 @@
+{
+  "key": "bd2b6297812fe82121353044eaeada5a",
+  "npc": "briefing_cutscene",
+  "text": "Nobody applies. You're found, by solving a trail of puzzles around the building. They call it the Trials.",
+  "voice": "Aoede",
+  "style": "Professional intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Brisk, dry, short sentences.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

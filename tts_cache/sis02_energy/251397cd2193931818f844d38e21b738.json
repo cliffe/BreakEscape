@@ -1,10 +1,13 @@
 {
   "key": "251397cd2193931818f844d38e21b738",
+  "npc": "helen_marsh",
   "text": "Priya from the NCSC is here. She'll want to go through it with you.",
   "voice": "Aoede",
   "style": "Senior SCADA engineer in her late forties from Nottinghamshire; warm, plain-spoken and calm under pressure. Speak with a consistent East Midlands (Nottingham) accent throughout. Do not shift to any other accent.",
   "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
   "scenario": "sis02_energy",
   "source": "generate",
+  "generated": "2026-10-09",
   "recorded_at": "2026-10-09T12:16:05Z"
 }

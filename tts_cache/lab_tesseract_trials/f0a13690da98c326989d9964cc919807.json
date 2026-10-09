@@ -1,0 +1,13 @@
+{
+  "key": "f0a13690da98c326989d9964cc919807",
+  "npc": "tom_shaw",
+  "text": "I've put the induction handouts in your notepad. It's got a pencil on every page. Write down owt you'll need later in there.",
+  "voice": "Fenrir",
+  "style": "University lecturer running first-year induction, keen on practical hacking challenges. Consistent West Yorkshire (Huddersfield) accent throughout. Warm, encouraging, quick, a bit dry.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

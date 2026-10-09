@@ -1,10 +1,13 @@
 {
   "key": "5caf3d2899ef986d25648a7b79efb939",
+  "npc": "narrator",
   "text": "Derek sets down the launch device.",
   "voice": "Algenib",
   "style": "Cinematic noir detective voice over narrator.",
   "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
   "scenario": "m01_first_contact",
   "source": "batch",
+  "generated": "2026-10-09",
   "recorded_at": "2026-10-09T12:10:01Z"
 }

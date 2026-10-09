@@ -1,0 +1,13 @@
+{
+  "key": "9534a151720c834c5d6e4184e5a106d0",
+  "npc": "dr_sharma",
+  "text": "Mr Ahmed had a nurse sitting with him till outreach got there. That's because Sarah got a straight answer about her monitors.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

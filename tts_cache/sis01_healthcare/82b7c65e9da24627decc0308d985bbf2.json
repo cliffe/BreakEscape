@@ -1,0 +1,13 @@
+{
+  "key": "82b7c65e9da24627decc0308d985bbf2",
+  "npc": "dr_sharma",
+  "text": "When the two disagree, yes. But the exec needs both views in front of them, and HC-007 is how they get them.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

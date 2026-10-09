@@ -1,0 +1,13 @@
+{
+  "key": "024fc8ed569b3c2daea4ad299f5d655b",
+  "npc": "sarah_mitchell",
+  "text": "That screen behind me's been showing a ransom note since half ten last night. It should be showing six patients' hearts.",
+  "voice": "Kore",
+  "style": "Black British charge nurse in her mid-40s, calm, tired but professional. Speak with a consistent Leeds, West Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

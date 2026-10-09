@@ -1,0 +1,13 @@
+{
+  "key": "184c571459c5b12c7061714b9b38e0b3",
+  "npc": "tom_shaw",
+  "text": "You got into it, then. Good. I'm still not ordering one.",
+  "voice": "Fenrir",
+  "style": "University lecturer running first-year induction, keen on practical hacking challenges. Consistent West Yorkshire (Huddersfield) accent throughout. Warm, encouraging, quick, a bit dry.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}
