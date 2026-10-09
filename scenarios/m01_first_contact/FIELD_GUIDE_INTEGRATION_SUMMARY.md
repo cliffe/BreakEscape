@@ -18,12 +18,10 @@ A comprehensive in-universe field guide for Linux commands and SSH bruteforce ta
    - 300+ lines of tactical operational guidance
    - Sections: Environment, Commands, Hydra, SSH, Sudo, Files, Attack Sequence, Troubleshooting
    - Written in-universe as Agent 0x99 briefing
-
 2. **INK_COMPILATION_REQUIRED.md** (Build Instructions)
    - Instructions for recompiling Ink to JSON
    - Testing checklist
    - Compiler installation guide
-
 3. **FIELD_GUIDE_INTEGRATION_SUMMARY.md** (This File)
    - Overview of what was integrated
 
@@ -34,7 +32,6 @@ A comprehensive in-universe field guide for Linux commands and SSH bruteforce ta
    - Added event mapping for when password list is picked up
    - Added event mapping to offer field guide
    - Added global variables: `password_list_found`, `field_guide_offered`, `field_guide_requested`, `field_guide_received`
-
 2. **m01_phone_agent0x99.ink** (Agent 0x99 Dialogue)
    - Added `field_guide_hint_given` variable
    - Added dialogue choice to support_hub
@@ -75,6 +72,7 @@ Field guide displays: Full Linux commands, Hydra usage, SSH, sudo, attack sequen
 ### Scenario (scenario.json.erb)
 
 **Event 1: Password list found**
+
 ```json
 {
   "eventPattern": "item_picked_up:notes",
@@ -85,6 +83,7 @@ Field guide displays: Full Linux commands, Hydra usage, SSH, sudo, attack sequen
 ```
 
 **Event 2: Offer field guide**
+
 ```json
 {
   "eventPattern": "global_variable_changed:password_list_found",
@@ -97,12 +96,14 @@ Field guide displays: Full Linux commands, Hydra usage, SSH, sudo, attack sequen
 ### Ink Dialogue (m01_phone_agent0x99.ink)
 
 **Dialogue Choice**
+
 ```ink
 + {field_guide_offered and not field_guide_hint_given} [I'd like that ops manual you mentioned]
     -> request_field_guide
 ```
 
 **Item Delivery**
+
 ```ink
 === request_field_guide ===
 ~ field_guide_hint_given = true
@@ -143,23 +144,27 @@ See `INK_COMPILATION_REQUIRED.md` for detailed instructions.
 ## Design Decisions
 
 ### Direct Item Delivery (via Ink #give-item)
+
 - **Why**: Cleaner UX than requiring player to navigate to server room
 - **Effect**: Player gets guide immediately when they request it
 - **Alternative**: Could still keep item in server room for physical discovery
 
 ### Three-part Messaging Sequence
+
 - **Password list found** → Confirmation message
 - **3-second delay** → Field guide offer
 - **Player requests** → Dialogue choice + item delivery
 - **Why**: Gives player time to process before offering help; doesn't force guide on them
 
 ### In-Universe Framing
+
 - Written as Agent 0x99 brief (SAFETYNET operational manual)
 - Not educational; fully tactical and mission-focused
 - References in-game terminology (derek, shatter, ENTROPY, Kali, etc.)
 - Maintains game narrative integrity
 
 ### Content Organization
+
 - Main 6 game hints (delivery-point focused) in main directory
 - 12 comprehensive learning materials in archive_reference/
 - Keeps game context separate from academic learning
@@ -183,11 +188,13 @@ Total: ~300 lines of focused operational guidance.
 ## Impact on Player Experience
 
 ### Before Integration
+
 - Players see hints gradually (6 fragmented dialog options)
 - Field guide not available
 - Player must figure things out or repeatedly ask for help
 
 ### After Integration
+
 - Natural story moment when password list triggers offer
 - Player can request comprehensive guide via phone
 - Guide delivered directly to inventory

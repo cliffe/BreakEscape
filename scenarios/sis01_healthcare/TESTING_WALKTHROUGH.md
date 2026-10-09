@@ -46,11 +46,12 @@ completes the task; the playtest reaches them by playing, not by setting them.
 | 2 | `meet_ravi` | Talk to Ravi → `siem_briefing` knot → `#complete_task:meet_ravi`; also `#unlock_task:access_siem` + `#unlock_task:vpn_anomaly` simultaneously |
 | 2 | `access_siem` | `siem_escalated=true` → Ravi eventMapping → `completeTask`; either order vs `vpn_anomaly` |
 | 2 | `vpn_anomaly` | VPN log viewer minigame `completionActions`: `vpn_anomaly_identified=true` + `complete_task:vpn_anomaly`; either order vs `access_siem` |
-| 2 | `brief_ravi` | `vpn_anomaly_identified=true` → Ravi sets `ravi_vpn_briefed=true` → second eventMapping → `completeTask` |
-| 2 side-fx | David's gate + MIR door | `network_rules_reviewed=true` (gates David's PIN dialogue) + MIR in `unlockedRooms` |
-| 3 | `david_safety_case` | `safety_claim_hc001_assessed=true` → David eventMapping → `completeTask` |
+| 2 | `brief_ravi` | When both `siem_escalated=true` AND `vpn_anomaly_identified=true` → Ravi eventMapping unlocks task; completed via #complete_task in npc_ravi.ink:give_itsec_code |
+| 2 side-fx | David's gate + MIR door | `network_rules_reviewed=true` (gates David's safety case dialogue) + MIR in `unlockedRooms` |
+| 3 | `ravi_signoff` | Ravi's Ink (npc_ravi.ink) → #set_global:itsec_authorised:true + #complete_task:ravi_signoff |
+| 3 | `david_safety_case` | David's Ink (npc_david.ink:safety_case_hc001) → #set_global:clinical_eng_authorised:true + #complete_task:david_safety_case |
 | 3 (SEVER without forms) | `ravi_signoff`, `david_safety_case` | `network_isolated=true` with `network_isolation_authorised` false → Sarah `skipTask` mapping → shown as skipped, not counted; the aim completes |
-| 3 | `authorise_isolation_panel` | Sets `itsec_authorised`, `clinical_eng_authorised`, `network_isolation_authorised`, `network_isolated=true` → Ravi eventMapping → `completeTask` (dual-auth minigame bypassed) |
+| 3 | `authorise_isolation_panel` | `network_isolated=true` → Ravi eventMapping → `completeTask` (network map SEVER button pressed) |
 | 4 | `initiate_backup` | `backup_restore_initiated=true` → Helen eventMapping → `completeTask` |
 | 4 | `verify_drug_library` | `drug_library_verified=true` → David eventMapping → `completeTask`; also triggers Sharma `debrief_started=true` |
 | 4 (optional) | `warn_sarah` | locked until `drug_library_compromised=true` (Sarah `unlockTask`); `#complete_task:warn_sarah` in `post_drug_tamper` |
@@ -64,7 +65,7 @@ playtest must drive them through their minigames:
 
 | Area | What to actually do |
 |---|---|
-| Dual-auth isolation panel | Play the `dual-auth` minigame; do not assume the four authorisation globals |
+| Network isolation authorisation | Obtain both signed forms from Ravi (via give_itsec_code) and David (via safety_case_hc001 dialogue); play through network map SEVER button to confirm isolation |
 | VPN log viewer (`vpn_anomaly`) | Play the `log-filter` minigame to its `completionActions` |
 | Drug library integrity (`verify_drug_library`) | Play the `drug-library-integrity` minigame |
 | NPC cascade on `network_isolated` | Four person-chat windows can open at once — check they queue rather than overlap |
@@ -80,11 +81,9 @@ No blocking gaps. All P1 minigames are implemented and the scenario can be playe
 - ✅ MG-06 VPN Log Viewer — `vpn_terminal` (`type: vpn_log_terminal`) replaces VM path; no flag station needed
 - ✅ MG-09 Drug Library Integrity Checker — `drug_library_checker` (`type: drug_library_terminal`) replaces VM path; no flag station needed
 - ✅ All 11 NPC Ink files compiled — full dialogue trees available in all rooms
-- ✅ `ravi_rfid_card` implemented — Ravi holds it; gives it in his opening conversation; unlocks Ward 7 RFID door
-- ✅ `dual_auth_panel` — `lockType:dual_auth` with both PINs in `scenarioData`
+- ✅ `ravi_rfid_card` implemented — Sarah holds it; gives it during her `arrival_briefing` conversation; unlocks Ward 7 RFID door
+- ✅ Network isolation via NSM SEVER button — requires both signed forms from Ravi and David, obtained through dialogue
 - ✅ ENG-02 timed escalation engine implemented (`startOnGlobal`/`cancelOnGlobal` in `scenario-timer-dispatcher.js`)
-
-**To find the PIN values for dual_auth testing** (when testing without playing through Ravi/David dialogue): render the scenario JSON and look for `scenarioData.itsec_pin` and `scenarioData.clinical_pin` on the `dual_auth_panel` object. These are randomised per session by `@random_pin`.
 
 ---
 
@@ -117,7 +116,7 @@ No blocking gaps. All P1 minigames are implemented and the scenario can be playe
 - [ ] `collect_mar_charts` task progress updates
 
 ### Interact: Ward Monitoring Station (x:5,y:2) — ransomware_display
-- [ ] DarkVault ransom note: £1,200,000, 71hrs, skull icon
+- [ ] DarkVault ransom note: £1,200,000, 62 hrs, skull icon
 - [ ] Northgate Trust details visible (encryptedSystems, walletAddress, supportPortal)
 - [ ] Three action buttons present; no crash on click
 
@@ -128,10 +127,11 @@ No blocking gaps. All P1 minigames are implemented and the scenario can be playe
 ### Interact: Bed 2 Pump Terminal (x:5,y:5) — infusion_pump (MG-08)
 - [ ] Postit note: _"Collect paper MAR charts before using this terminal"_
 - [ ] **Without MAR charts:** shows "PAPER MAR CHARTS REQUIRED" screen; minigame closes; `paper_charts_collected` must be `true` before dose entry
-- [ ] **With MAR charts:** Phaser.js pump UI renders; prescription panel shows `MORPHINE SULPHATE 10.0 mg/hr`
-- [ ] Enter `10` (correct): `pump_dose_correct` → `true`; success animation
-- [ ] Enter `100` (decimal misread): double-check modal shows large red dose; confirm → `pump_dose_error` → `true` → `patient_bed2_state` → `"sedated"`
-- [ ] **If `drug_library_compromised=true`:** entering wrong dose accepted silently (no modal); `pump_dose_error` → `true` directly → `patient_bed2_state` → `"sedated"`, then 2 s later `patient_bed2_state` → `"critical"` + `patient_bed2_deceased` → `true` → `state_deceased` knots on Ms Okafor and Mrs Kowalski; Mrs Kowalski barks _"She's gone. She stopped breathing."_ (3 s delay)
+- [ ] **With MAR charts:** Phaser.js pump UI renders; prescription panel shows `MORPHINE SULPHATE 2.0 mg/hr`
+- [ ] **Library still tampered (range 20–40):** enter `2` → "DOSE BELOW LIBRARY MINIMUM" conflict modal → **KEEP PRESCRIBED RATE — QUERY PHARMACY** → `drug_library_override` and `pump_dose_correct` → `true`
+- [ ] **Library still tampered:** enter `20` (decimal misread) → accepted silently (inside 20–40) → `pump_dose_error` → `true` → `patient_bed2_state` → `"sedated"`; 90 s later `"critical"`, 180 s later `"deceased"` and `patient_bed2_deceased` → `true` → `state_deceased` knots on Ms Okafor and Mrs Kowalski; Mrs Kowalski barks _"She's gone. She stopped breathing."_ (3 s delay)
+- [ ] **Raise the alarm in time:** Mrs Kowalski's "I'll get the nurse now", or telling Sarah, sets `bed2_alarm_raised`, which cancels both timers (naloxone; she survives)
+- [ ] **Library restored (`drug_library_restored`, range 0.5–4):** enter `2` → `pump_dose_correct` → `true`; enter `20` → double-check modal with large red dose → confirm → `pump_dose_error` → `true` → `"sedated"` only (no timers)
 
 ### Read: Nursing Handover Notes (x:7,y:3)
 - [ ] Bed 4 and Bed 2 clinical details visible; decimal-point ambiguity on morphine dose noted
@@ -169,16 +169,16 @@ These fire automatically with no player input.
 
 ### Prerequisite: Leave Ward 7
 
-- [ ] Talk to Ravi before heading north — Ravi gives `ravi_rfid_card` in his `start` knot
+- [ ] Sarah gives `ravi_rfid_card` in her `arrival_briefing` knot (opening cutscene)
 - [ ] Card appears in inventory
 - [ ] North exit (RFID door) now unlocks with the card
 
 ### Interact: Ravi Anand (x:4,y:5) — first visit
-- [ ] `start` knot: exhausted; explains overnight timeline; hands over RFID card
+- [ ] `start` knot: exhausted; explains overnight timeline
 - [ ] All three opening choices lead to `siem_briefing` knot
 - [ ] `siem_briefing`: sets `topic_siem=true`; fires `#complete_task:meet_ravi`; unlocks `access_siem` AND `vpn_anomaly` simultaneously
 - [ ] `meet_ravi` task completes; `access_siem` and `vpn_anomaly` tasks become active (either order)
-- [ ] `give_itsec_code` knot gated — only accessible after `siem_escalated=true` AND `vpn_anomaly_identified=true`
+- [ ] When both `siem_escalated=true` AND `vpn_anomaly_identified=true`: `brief_ravi` task unlocks; `give_itsec_code` knot becomes accessible
 
 _`access_siem` and `vpn_anomaly` can be completed in either order after this briefing._
 
@@ -207,16 +207,17 @@ _`access_siem` and `vpn_anomaly` can be completed in either order after this bri
 - [ ] `ravi_vpn_briefed` → `true`; `brief_ravi` task completes
 
 ### Return to Ravi — give_itsec_code
-- [ ] With both `siem_escalated` and `vpn_anomaly_identified` true, `give_itsec_code` knot now reachable
-- [ ] Ravi gives `itsec_pin` in dialogue (4-digit code — note it for dual_auth_panel)
+- [ ] With both `siem_escalated` and `vpn_anomaly_identified` true, `brief_ravi` task unlocks
+- [ ] Ravi's `give_itsec_code` knot reachable through dialogue
+- [ ] Ravi gives signed IT Network Change Authorisation Form with his signature
+- [ ] `itsec_authorised` → `true`; `ravi_signoff` task completes
 
 ### Interact: Network Segmentation Map (x:5,y:2) — network-segmentation-map
 - [ ] Four-zone topology renders (External / Enterprise IT / Clinical / Legacy flat)
-- [ ] Three legacy exception rule toggles interactive
-- [ ] First rule toggle: `network_rules_reviewed` → `true`
-- [ ] SEVER button activates after first interaction
-- [ ] _For governance test path:_ do NOT press SEVER here — proceed to dual_auth_panel instead
-- [ ] _For shortcut test:_ pressing SEVER confirm → `network_isolated` → `true` → full NPC cascade fires
+- [ ] Three legacy exception rule toggles interactive (orange dashed lines with ! markers)
+- [ ] First rule toggle: `network_rules_reviewed` → `true`; `severReadyHint` now visible
+- [ ] SEVER button text: "Risk paths reviewed. Before it cuts the link, SEVER checks for both signed forms: Ravi Anand's and David Osei's."
+- [ ] Pressing SEVER confirm (after both forms obtained): `network_isolated` → `true`; `network_isolation_authorised` → `true`; full NPC cascade fires (Sarah, Ravi, David, Helen bark)
 
 ---
 
@@ -236,32 +237,27 @@ _`access_siem` and `vpn_anomaly` can be completed in either order after this bri
 ### Interact: David Osei (x:4,y:3)
 - [ ] `start` knot: explains pump network exposure; references safety case document on table
 - [ ] `safety_case_hc001` knot: CLAIM-HC-001 review; player advises on network segmentation
-- [ ] Player choice sets `safety_claim_hc001_assessed` → `true`
-- [ ] `give_clinical_code` knot: David gives `clinical_pin` (note it for dual_auth_panel)  
-  _Gates on `network_rules_reviewed=true` — player must have reviewed the NSM first_
+- [ ] Player choice sets `safety_claim_hc001_assessed` → `true`; `david_safety_case` task completes
+- [ ] Conversation continues to clinical sign-off: David gives signed Clinical Safety Sign-Off (Network Isolation) form
+- [ ] `clinical_eng_authorised` → `true`
 
 ### Interact: Safety Case Extract (x:5,y:4) — readable
 - [ ] CLAIM-HC-001, HC-003, HC-007 text visible with evidence statements
 - [ ] Cross-reference with what David and Helen say in dialogue
 
-### Interact: Dual Auth Panel (x:5,y:3) — dual_auth
-- [ ] Two-panel UI: IT SECURITY MANAGER (left) + CLINICAL ENGINEERING (right)
-- [ ] 5-minute countdown timer starts
-- [ ] Left keypad: enter `itsec_pin` (from Ravi's dialogue)
-  - [ ] Correct → left panel AUTHORISED; `itsec_authorised` → `true`
-  - [ ] Wrong → ACCESS DENIED flash, input cleared
-- [ ] Right keypad: enter `clinical_pin` (from David's dialogue)
-  - [ ] Correct → right panel AUTHORISED; `clinical_eng_authorised` → `true`
-- [ ] AUTHORISE button activates only when both confirmed
-- [ ] Pressing AUTHORISE:
+### Return to Network Segmentation Map — Confirm Isolation
+- [ ] Both `itsec_authorised` and `clinical_eng_authorised` are now true (from Ravi and David conversations)
+- [ ] SEVER button on network map is fully active and ready
+- [ ] Pressing SEVER with both forms present:
   - [ ] `network_isolation_authorised` → `true`
   - [ ] `network_isolated` → `true`
   - [ ] NPC cascade fires: Sarah, Ravi, David, Helen all react via person-chat eventMappings
   - [ ] Music → cutscene
   - [ ] Command board logs isolation entry
-- [ ] Timeout test (5 min without completing):
-  - [ ] `dual_auth_failed` → `true`
-  - [ ] "AUTHORISATION TIMED OUT" banner; minigame closes with `complete(false)`
+- [ ] If SEVER pressed without both forms (bypass path):
+  - [ ] `network_isolated` → `true` but `network_isolation_authorised` stays `false`
+  - [ ] NPC cascade still fires, but NPCs react differently to the governance gap
+  - [ ] This is logged as a compliance violation (CLAIM-HC-007)
 
 ### Interact: Helen Carver (x:7,y:3)
 - [ ] `start` knot: explains no ransom payment; asks for backup assessment

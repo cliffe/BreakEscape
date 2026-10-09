@@ -71,10 +71,10 @@ Phase 4: CAPTURE TECHNICAL EVIDENCE  [unlocks on entering Derek's Office]
   → Access server room (Kevin's RFID keycard)
   → Connect to VM terminal
   → Capture SSH, filesystem, and privilege escalation flags (3 flags total)
-  [The sudo challenge reveals passphrase: 7331]
+  [The SSH brute force flag (shatter_server:flag_1) is the DECRYPTION_KEY needed for the archive]
 
 Phase 5: DECRYPT ENTROPY INTELLIGENCE  [unlocks when Phase 4 complete]
-  → Open ENTROPY Encrypted Archive in server room (PIN: 7331)
+  → Open ENTROPY Encrypted Archive in server room (requires SSH flag: shatter_server:flag_1)
   → Secure 2 top-secret ENTROPY documents (notes5 tier)
   [THE ARCHITECT REVEAL — the network is bigger than one cell]
 
@@ -133,18 +133,18 @@ Phase 6: CLOSE THE CASE  [unlocks when Phase 5 complete]
 |------|--------|--------|
 | 20 | Go to Server Room (Kevin's RFID keycard) | Task: Access Server Room ✓ |
 | 21 | Access VM Terminal | Connect to Social Fabric infrastructure |
-| 22 | Complete SSH Brute Force | Flag: `flag{ssh_brute_force_success}` |
-| 23 | Complete Linux Navigation | Flag: `flag{linux_navigation_complete}` |
-| 24 | Complete Privilege Escalation (sudo) | Flag: `flag{privilege_escalation_success}` |
+| 22 | Complete SSH Brute Force | Flag from derek's account: DECRYPTION_KEY (shatter_server:flag_1, value generated per build) |
+| 23 | Complete Linux Navigation | Flag from operation_shatter directory (shatter_server:flag_2, value generated per build) |
+| 24 | Complete Privilege Escalation (sudo) | Flag from shatter account (shatter_server:flag_3, value generated per build) |
 | 25 | Submit all 3 flags at Drop-Site Terminal | **Phase 4 complete → Phase 5 unlocks** |
-| — | *[Agent 0x99 sends a phone message: passphrase **7331** found in root partition]* | *(Check your phone — you'll need this for the archive)* |
+| — | *[Agent 0x99 texts once the other flags are in: "One thing left: open the ENTROPY archive with the DECRYPTION_KEY from derek's account."]* | *(The DECRYPTION_KEY is flag_1; submit it at the archive)* |
 
 ### Phase 5: Decrypt ENTROPY Intelligence
 
 | Step | Action | Result |
 |------|--------|--------|
 | 26 | Return to server room | Find **ENTROPY Encrypted Archive** |
-| 27 | Open archive (PIN **7331**) | Archive unlocks |
+| 27 | Open archive (submit SSH flag: shatter_server:flag_1) | Archive unlocks |
 | 28 | Collect both notes5 documents | **The Architect's Authorization** + **ENTROPY Network Architecture** |
 | 29 | Read ENTROPY Network Architecture | THE REVEAL: ENTROPY has multiple cells. The Architect is unknown. This is bigger than Viral Dynamics. |
 | — | **Phase 5 complete → Phase 6 unlocks** | |
@@ -171,7 +171,7 @@ Phase 6: CLOSE THE CASE  [unlocks when Phase 5 complete]
 | Main Filing Cabinet | **2024** | Sticky Note (Main Office) | "Election year = access code" |
 | Patricia's Safe | **0419** | Birthday Card (Break Room) | "April 19th" |
 | Derek's Cabinet | **0419** | Whiteboard (Base64 decoded) | "FILING_CABINET_PIN: 0419" |
-| ENTROPY Encrypted Archive | **7331** | VM root challenge | Passphrase embedded in sudo lab |
+| ENTROPY Encrypted Archive | shatter_server:flag_1 | SSH brute force into derek's account | Decryption key (value generated per build) |
 
 ### Keys and Keycards
 
@@ -242,9 +242,9 @@ Phase 4: CAPTURE TECHNICAL EVIDENCE (server room + 3 VM flags) ← parallel with
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   IT Room [PIN 2468] ─► Server Room south [RFID - Kevin's Keycard]
       │
-      ├─► VM Terminal ─┬─► SSH flag
+      ├─► VM Terminal ─┬─► SSH flag (shatter_server:flag_1 — DECRYPTION_KEY)
       │                ├─► Linux navigation flag
-      │                └─► Privilege escalation flag [reveals passphrase: 7331]
+      │                └─► Privilege escalation flag
       │
       └─► Drop-Site ─► Submit ALL 3 flags
                                             │
@@ -253,7 +253,7 @@ Phase 4: CAPTURE TECHNICAL EVIDENCE (server room + 3 VM flags) ← parallel with
 
 Phase 5: DECRYPT ENTROPY INTEL (open archive + 2 notes5)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Server Room ─► ENTROPY Encrypted Archive [PIN: 7331]
+  Server Room ─► ENTROPY Encrypted Archive [Flag: shatter_server:flag_1]
       │
       └─► Architect's Authorization [notes5]
       └─► ENTROPY Network Architecture [notes5]  ← THE REVEAL
@@ -298,7 +298,7 @@ Phase 6: CLOSE THE CASE
 | Skip Phase 1 | Phase 2 only unlocks when Phase 1 (4 notes + IT code) is complete |
 | Rush to Derek's Office | Phase 3 only unlocks after Phase 2 (Kevin + Maya + notes2 + key) |
 | Skip VM challenges | Phase 5 only unlocks after all 3 flags submitted |
-| Skip server room | ENTROPY archive requires VM passphrase (7331) |
+| Skip server room | ENTROPY archive requires SSH flag (shatter_server:flag_1) from the VM |
 | Confront Derek early (dialogue) | Phase 6 only unlocks after decrypting ENTROPY archive; KO still possible at any time but reduces debrief options |
 
 ---
@@ -360,8 +360,8 @@ After entering Derek's office, reading this file reveals the full frame-up plan.
 | ENTROPY Infiltration Timeline | Patricia's Briefcase | **Lockpick only** | notes2 |
 | Social Fabric Manifesto | Derek's Filing Cabinet | PIN 0419 (whiteboard decode) | notes4 |
 | Network Backdoor Analysis | Server Room | Enter room | notes |
-| Operation Shatter: Architect's Authorization | ENTROPY Encrypted Archive | PIN 7331 (from VM) | notes5 |
-| ENTROPY Network Architecture | ENTROPY Encrypted Archive | PIN 7331 (from VM) | notes5 |
+| Operation Shatter: Architect's Authorization | ENTROPY Encrypted Archive | Flag shatter_server:flag_1 (from SSH brute force) | notes5 |
+| ENTROPY Network Architecture | ENTROPY Encrypted Archive | Flag shatter_server:flag_1 (from SSH brute force) | notes5 |
 | Server Access Log (Kevin's Copy) | Kevin's Workstation | Visit Kevin's Office | text_file (planted) |
 | Draft Email (Unsent) | Kevin's Workstation | Visit Kevin's Office | text_file (planted) |
 
@@ -384,7 +384,7 @@ After entering Derek's office, reading this file reveals the full frame-up plan.
 | Collect 3 operational docs (notes4) | ✅ Yes | Gates Phase 6 (via Phase 5) |
 | Access Server Room | ✅ Yes | Need Kevin's RFID keycard |
 | Submit all 3 VM flags | ✅ Yes | Gates Phase 5 (decrypt) |
-| Open ENTROPY Encrypted Archive (PIN 7331) | ✅ Yes | Gates Phase 6 |
+| Open ENTROPY Encrypted Archive (flag shatter_server:flag_1) | ✅ Yes | Gates Phase 6 |
 | Collect 2 top-secret docs (notes5) | ✅ Yes | Gates Phase 6 |
 | Report to SAFETYNET | ✅ Yes | Part of Phase 6 |
 | Confront Derek | ✅ Yes | Triggers mission end |
