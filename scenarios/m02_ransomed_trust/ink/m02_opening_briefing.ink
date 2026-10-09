@@ -253,9 +253,19 @@ Agent HaX: You don't find that with a scanner. Somebody tells you.
 }
 
 Agent HaX: Good luck, Agent. Forty-seven lives, twelve hours. Go.
+-> arrival
 
+// ===========================================
+// ARRIVAL: cut from HQ to the hospital, narrator only
+// ===========================================
+
+=== arrival ===
+Background[assets/backgrounds/st_catherines_hospital.png]:
+Narrator[none]: St. Catherine's Regional, in the small hours. It's raining.
+Narrator: Most of the windows are dark. A few glow red where the emergency lighting has come on, and a generator thuds in the car park, feeding the wards on diesel.
 #unlock_aim:infiltrate_hospital
 #start_gameplay
 #exit_conversation
+Narrator: Your name is on the visitor log. Nobody inside can open a door for you.
 
 -> END

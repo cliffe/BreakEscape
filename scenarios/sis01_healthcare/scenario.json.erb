@@ -70,7 +70,7 @@
 #   INK: all 11 NPC story files compiled — npc_sarah, npc_patrol_nurse, npc_ravi, npc_david,
 #        npc_helen, npc_hartley, npc_sharma, npc_bed4_patient, npc_bed2_patient,
 #        npc_bed5_patient, npc_pharmacist; see inline comments on each NPC for knot list
-#   ITEM: ravi_rfid_card — added to Ravi's itemsHeld; given to player in npc_ravi.ink:start
+#   ITEM: ravi_rfid_card — held by Sarah; given to the player in npc_sarah.ink:arrival_briefing (#give_item:keycard)
 #
 # GLOBAL VARIABLES — wiring status
 #   [WIRED via minigames]
@@ -783,6 +783,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "timedConversation": {
             "delay": 0,
             "targetKnot": "arrival_briefing",
+            "background": "assets/backgrounds/northgate_hospital.png",
             "waitForEvent": "game_loaded",
             "skipIfGlobal": "briefing_played",
             "setGlobalOnStart": "briefing_played",
@@ -1449,10 +1450,10 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
       MAR). An entry inside 20–40 (e.g. reading "2.0" as 20) is accepted silently → pump_dose_error.
     - Library restored: correct entry → pump_dose_correct; wrong + double-check confirm → pump_dose_error.
     - pump_dose_error eventMapping → patient_bed2_state="sedated".
-    - Double-jeopardy: if drug_library_compromised=true at pump_dose_error, bed2_double_jeopardy timer fires
-      2 s later → patient_bed2_state="critical", patient_bed2_deceased=true → state_deceased knots on both patients.
+    - Wrong rate under the tampered library: bed2_respiratory_arrest (90 s, critical) and bed2_double_jeopardy
+      (180 s, deceased) fire unless bed2_alarm_raised cancels them (see the timers, M-8).
     TEST: collect MAR charts first; enter 2 → conflict modal (library min 20); KEEP PRESCRIBED RATE → stable.
-    TEST: enter 20 (misread decimal) before the library is restored → accepted silently → state_deceased 2 s later. %>
+    TEST: enter 20 (misread decimal) before the library is restored → accepted silently → critical at 90 s, deceased at 180 s unless the alarm is raised. %>
           "minigameData": {
             "drug_name": "MORPHINE SULPHATE",
             "correct_dose": "2",
@@ -1524,7 +1525,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
             "style": "British Indian IT security manager in his mid-thirties, exhausted after a night shift, matter-of-fact. Speak with a consistent Leeds, with a light British Indian lilt, accent throughout — do not shift to any other accent.",
             "language": "en-GB"
           },
-          "avatar": "assets/characters/gary_whitlock_headshot.png",
+          "avatar": "assets/characters/ravi_anand_headshot.png",
           "sender": "Ravi Anand (IT Security)",
           "timestamp": "Yesterday, 10:47 PM",
           "observations": "The ward desk phone. The message light is blinking — one unheard voicemail."

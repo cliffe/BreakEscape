@@ -220,6 +220,16 @@ Agent HaX: Talk to Maya. She's your best lead. Whatever Derek's building, she'll
 Agent HaX: Once you know what we're dealing with, contact me. We'll figure out how to stop it.
 
 ~ mission_accepted = true
+-> arrival
 
+// ================================================
+// ARRIVAL: cut from HQ to the office block, narrator only
+// ================================================
+
+=== arrival ===
+Background[assets/backgrounds/viral_dynamics_office.png]:
+Narrator[none]: Viral Dynamics Media. A weekday morning in the city centre.
+Narrator: Eight floors of glass, and a mural over the door that somebody was paid a lot for. Staff drift in with coffee and lanyards.
 #exit_conversation
+Narrator: You go in with them, laptop bag on your shoulder. Nobody looks twice at the IT auditor.
 -> END

@@ -614,7 +614,16 @@ export default class PersonChatPortraits {
             console.warn('⚠️ setBackground: No background path provided');
             return;
         }
-        
+
+        // Background[none]: back to a plain black frame (e.g. after an exterior
+        // scene-setter, when the conversation itself has no background)
+        if (newBackgroundPath.trim().toLowerCase() === 'none') {
+            this.backgroundPath = null;
+            this.backgroundImage = null;
+            this.render();
+            return;
+        }
+
         this.backgroundPath = newBackgroundPath;
         this.backgroundImage = null; // Clear old image
         console.log(`🎨 Setting new background: ${newBackgroundPath}`);
@@ -722,7 +731,14 @@ export default class PersonChatPortraits {
 
             // Scene shot (after a Background[...] line, or Narrator[none]): no character
             if (this._characterHidden) {
-                if (this.backgroundImage) this.drawBackground(this.calculateSpriteTalkScale() || 1);
+                if (this.backgroundImage) {
+                    // Establishing shots: cover the frame rather than zoom to the
+                    // character's pixel scale, so the whole width of the scene shows
+                    // (the small margin hides the parallax drift at the edge)
+                    const img = this.backgroundImage;
+                    const cover = Math.max(this.canvas.width / img.width, this.canvas.height / img.height);
+                    this.drawBackground((cover * img.width + 24) / img.width);
+                }
                 return;
             }
             
