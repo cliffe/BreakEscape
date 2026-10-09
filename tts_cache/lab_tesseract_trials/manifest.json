@@ -1,0 +1,1577 @@
+{
+  "022887827a54e505ef3ce4662252d816": {
+    "npc": "closing_debrief_person",
+    "text": "Megan Oyelaran walked away from CryptoSecure. Still skint. Still free.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "03c789d838a2a4d880cfd42eba7bd2ac": {
+    "npc": "closing_debrief_person",
+    "text": "Then you'll have your reasons, and one day you'll tell me them. Not today.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "04ce891ec60016d41c99031ea3d049b3": {
+    "npc": "megan_oyelaran",
+    "text": "Right. Glad I know. Doesn't pay the care home, does it.",
+    "voice": "Leda",
+    "style": "First-year student, bright, skint and competitive. Consistent Manchester accent throughout. Quick, wry, proud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "050b5d6d26311eab3e81c655d2ee812a": {
+    "npc": "cliffe_schreuders",
+    "text": "G'day. Don't mind me, I'm hiding from a committee.",
+    "voice": "Orus",
+    "style": "Academic who builds learning tools and capture-the-flag games. Consistent Australian accent throughout. Relaxed, dry, quick, amused, sentences that stop a beat early.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "09890f93041313cc5e2e4fd9004ff113": {
+    "npc": "closing_debrief_person",
+    "text": "I sent you in as a clean first-year. Ghost knew what you were from the start, and wanted you because of it.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "0a4961fe5525b00ba9d7036f2744c48a": {
+    "npc": "sidhu_selvarajan",
+    "text": "What can I do for you?",
+    "voice": "Enceladus",
+    "style": "Cyber security researcher, blockchain developer and journal editor. Consistent Indian English accent throughout. Calm, precise, courteous, warm.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "0afc4055332ac55b8c7f232930b75a8b": {
+    "npc": "megan_oyelaran",
+    "text": "Alright?",
+    "voice": "Leda",
+    "style": "First-year student, bright, skint and competitive. Consistent Manchester accent throughout. Quick, wry, proud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "0b3252fa8e8297376a1cba3dca19d3de": {
+    "npc": "closing_debrief_person",
+    "text": "Megan Oyelaran took a CryptoSecure summer placement. We'll keep an eye on her. You could have warned her.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "0be045c54470db5bb9d765570cf5aea5": {
+    "npc": "oleg_illiashenko",
+    "text": "They'll tell me it works on their machine.",
+    "voice": "Algieba",
+    "style": "Ukrainian computer science lecturer, softly spoken, with a mild Ukrainian accent in his English, consistent throughout. Quiet, gentle, unhurried, warm, a little wry. Never loud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "0def14668eaed5a8164bdeaf54e39d23": {
+    "npc": "oleg_illiashenko",
+    "text": "The list is in the photocopier, if you want to see.",
+    "voice": "Algieba",
+    "style": "Ukrainian computer science lecturer, softly spoken, with a mild Ukrainian accent in his English, consistent throughout. Quiet, gentle, unhurried, warm, a little wry. Never loud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "0ff269046532c662e34d6661fa99a897": {
+    "npc": "oleg_illiashenko",
+    "text": "Look at the bytes, not the letters. One of those has a Cyrillic letter that looks exactly like an English e.",
+    "voice": "Algieba",
+    "style": "Ukrainian computer science lecturer, softly spoken, with a mild Ukrainian accent in his English, consistent throughout. Quiet, gentle, unhurried, warm, a little wry. Never loud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "157e3688b9e3397a334154542019eb0d": {
+    "npc": "briefing_cutscene",
+    "text": "Good luck.",
+    "voice": "Aoede",
+    "style": "Professional intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Brisk, dry, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "184c571459c5b12c7061714b9b38e0b3": {
+    "npc": "tom_shaw",
+    "text": "You got into it, then. Good. I'm still not ordering one.",
+    "voice": "Fenrir",
+    "style": "University lecturer running first-year induction, keen on practical hacking challenges. Consistent West Yorkshire (Huddersfield) accent throughout. Warm, encouraging, quick, a bit dry.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "193abd856dc83ef72e7da1192ccd9ad5": {
+    "npc": "oleg_illiashenko",
+    "text": "Same shape, different number. The computer is right: those are two different names.",
+    "voice": "Algieba",
+    "style": "Ukrainian computer science lecturer, softly spoken, with a mild Ukrainian accent in his English, consistent throughout. Quiet, gentle, unhurried, warm, a little wry. Never loud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "1a6997267c77f3243ef16d569d071b74": {
+    "npc": "megan_oyelaran",
+    "text": "Locker four's done my head in.",
+    "voice": "Leda",
+    "style": "First-year student, bright, skint and competitive. Consistent Manchester accent throughout. Quick, wry, proud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "1af398c8e16510ecb95583227f98f548": {
+    "npc": "closing_debrief_person",
+    "text": "Term starts Monday. Go to your lectures. Dr Shaw takes a register.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "1af76175854d4831af274b887e785f37": {
+    "npc": "oleg_illiashenko",
+    "text": "Show me.",
+    "voice": "Algieba",
+    "style": "Ukrainian computer science lecturer, softly spoken, with a mild Ukrainian accent in his English, consistent throughout. Quiet, gentle, unhurried, warm, a little wry. Never loud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "1c2bfee65ab5bbeb75fa2494ed5ed989": {
+    "npc": "briefing_cutscene",
+    "text": "Every Trial opens with something you decode. You'll do it in CyberChef.",
+    "voice": "Aoede",
+    "style": "Professional intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Brisk, dry, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "1c5d4dfaf24dad48c072885dc331255c": {
+    "npc": "tom_shaw",
+    "text": "I've put a key pair on it. Have a read of the README; you'll want the private one before the week's out.",
+    "voice": "Fenrir",
+    "style": "University lecturer running first-year induction, keen on practical hacking challenges. Consistent West Yorkshire (Huddersfield) accent throughout. Warm, encouraging, quick, a bit dry.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "1ccd61464e31d617f816462819021cec": {
+    "npc": "cliffe_schreuders",
+    "text": "Mind the cable.",
+    "voice": "Orus",
+    "style": "Academic who builds learning tools and capture-the-flag games. Consistent Australian accent throughout. Relaxed, dry, quick, amused, sentences that stop a beat early.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "1e511ea0b6b6bc796f7ab4ab5ecb0f71": {
+    "npc": "closing_debrief_person",
+    "text": "Assume they were. That's all the answer you get.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "1e6f5ee1dd0e78d6bd4e52c813764bbd": {
+    "npc": "cliffe_schreuders",
+    "text": "Interesting choice of channel.",
+    "voice": "Orus",
+    "style": "Academic who builds learning tools and capture-the-flag games. Consistent Australian accent throughout. Relaxed, dry, quick, amused, sentences that stop a beat early.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "1f5ee131660dbb66eaa102c0f99a9937": {
+    "npc": "closing_debrief_person",
+    "text": "I'm meant to wonder whose side you're on. I'm trying not to.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "1ff340515b71a69ea9049ef2a4418bb5": {
+    "npc": "closing_debrief_person",
+    "text": "We were all out before midnight. Nobody's hurt.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "232abea2b5d6dc57be6392edf75bafba": {
+    "npc": "narrator",
+    "text": "She's quiet for a long moment.",
+    "voice": "Algenib",
+    "style": "Cinematic narrator for a spy thriller set at a British university. Calm, low, unhurried. Consistent British Received Pronunciation throughout.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "24467c4990e76b9ccf93aa1d0f1d4eff": {
+    "npc": "tom_shaw",
+    "text": "That's yours for the year. CyberChef's on it. No rocket science, just base two.",
+    "voice": "Fenrir",
+    "style": "University lecturer running first-year induction, keen on practical hacking challenges. Consistent West Yorkshire (Huddersfield) accent throughout. Warm, encouraging, quick, a bit dry.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "24b5fd0dbb7b5a18684bece8ec194d89": {
+    "npc": "narrator",
+    "text": "He slides a battered department laptop across the desk.",
+    "voice": "Algenib",
+    "style": "Cinematic narrator for a spy thriller set at a British university. Calm, low, unhurried. Consistent British Received Pronunciation throughout.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "25a65a3785172af9650f14b64d6ec921": {
+    "npc": "closing_debrief_person",
+    "text": "My phone did exactly what Ghost wanted, in a flat in Leeds we rent for the purpose.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "2a2634d977db2c2595c8079287b67063": {
+    "npc": "narrator",
+    "text": "On the screen, the small figure in your hoodie is standing near the scoreboard.",
+    "voice": "Algenib",
+    "style": "Cinematic narrator for a spy thriller set at a British university. Calm, low, unhurried. Consistent British Received Pronunciation throughout.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "32550f7a642b74606be17698e7927114": {
+    "npc": "oleg_illiashenko",
+    "text": "Either the system imported me twice, or someone wants a staff login with my name on it. Today I'm not sure which is worse.",
+    "voice": "Algieba",
+    "style": "Ukrainian computer science lecturer, softly spoken, with a mild Ukrainian accent in his English, consistent throughout. Quiet, gentle, unhurried, warm, a little wry. Never loud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "36c31d18f587462e2cc4408129e67c31": {
+    "npc": "megan_oyelaran",
+    "text": "They wrote that down? About my mam?",
+    "voice": "Leda",
+    "style": "First-year student, bright, skint and competitive. Consistent Manchester accent throughout. Quick, wry, proud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "39daf3e83bb2ce3c9a1b183d70664486": {
+    "npc": "closing_debrief_person",
+    "text": "Ghost withdrew the studentship last night anyway. They don't keep anyone a handler sent. Today, take that as a compliment.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "3a7da95c3634b5e16f7ba4b90aa29477": {
+    "npc": "megan_oyelaran",
+    "text": "Binned the leaflet. Still skint, mind. Worth it.",
+    "voice": "Leda",
+    "style": "First-year student, bright, skint and competitive. Consistent Manchester accent throughout. Quick, wry, proud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "402655ba401947634d66e61f9e2b918b": {
+    "npc": "oleg_illiashenko",
+    "text": "A recovery company that recruits first-years with puzzles. I have seen better business models. Not many more interesting ones.",
+    "voice": "Algieba",
+    "style": "Ukrainian computer science lecturer, softly spoken, with a mild Ukrainian accent in his English, consistent throughout. Quiet, gentle, unhurried, warm, a little wry. Never loud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "40398c847132b8ded55bb35c6c3f0268": {
+    "npc": "sidhu_selvarajan",
+    "text": "It does not tell you whether you should send it.",
+    "voice": "Enceladus",
+    "style": "Cyber security researcher, blockchain developer and journal editor. Consistent Indian English accent throughout. Calm, precise, courteous, warm.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "404790c88ead7cfbc50be0d438575bbf": {
+    "npc": "oleg_illiashenko",
+    "text": "Two names that look the same aren't the same bytes. Ask anyone who has clicked a link to a bank that wasn't quite their bank.",
+    "voice": "Algieba",
+    "style": "Ukrainian computer science lecturer, softly spoken, with a mild Ukrainian accent in his English, consistent throughout. Quiet, gentle, unhurried, warm, a little wry. Never loud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "41095049be179768244aa19ab3f3b7c9": {
+    "npc": "oleg_illiashenko",
+    "text": "Oleg Illiashenko. I'm one of the lecturers here. Sit anywhere that isn't covered in marking.",
+    "voice": "Algieba",
+    "style": "Ukrainian computer science lecturer, softly spoken, with a mild Ukrainian accent in his English, consistent throughout. Quiet, gentle, unhurried, warm, a little wry. Never loud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "4237d0c0466f9acef9536ccb17338161": {
+    "npc": "sidhu_selvarajan",
+    "text": "For noticing change. Any input, a short fingerprint out, and you cannot run it backwards.",
+    "voice": "Enceladus",
+    "style": "Cyber security researcher, blockchain developer and journal editor. Consistent Indian English accent throughout. Calm, precise, courteous, warm.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "44e5e547645cfa68786dd2bbb4425429": {
+    "npc": "narrator",
+    "text": "You join them. New lanyard, new tote bag, a timetable you haven't read. Nobody looks at you twice.",
+    "voice": "Algenib",
+    "style": "Cinematic narrator for a spy thriller set at a British university. Calm, low, unhurried. Consistent British Received Pronunciation throughout.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "49cf5b87d456ef6edad0201892456861": {
+    "npc": "sidhu_selvarajan",
+    "text": "And yes, the data in block four is a word. Somebody has been reading my board very closely this week.",
+    "voice": "Enceladus",
+    "style": "Cyber security researcher, blockchain developer and journal editor. Consistent Indian English accent throughout. Calm, precise, courteous, warm.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "4bfade59aabf2d59cd4e0501a25ce779": {
+    "npc": "jordan_pike",
+    "text": "Hey! Honestly, no pressure, but you look like a Keyholder. Here, leaflet. It's in your notepad now. Nobody applies, you get found.",
+    "voice": "Puck",
+    "style": "Third-year student working a careers-fair stand for a referral bonus. Consistent Estuary English accent throughout. Upbeat, fast, salesy, laughs at his own lines.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "4f40a3ffaec487ba3470d8606597ab90": {
+    "npc": "closing_debrief_person",
+    "text": "Jordan Pike got his referral bonus. He'll never know what for.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "4ff7ab6537f9ab949eb29f0b1f5872e1": {
+    "npc": "briefing_cutscene",
+    "text": "That's classified. Next.",
+    "voice": "Aoede",
+    "style": "Professional intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Brisk, dry, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "504556298bb7bf981766760338f90545": {
+    "npc": "tom_shaw",
+    "text": "In binary every bit's a power of two: a hundred and twenty-eight down to one. Add up the ones that are lit.",
+    "voice": "Fenrir",
+    "style": "University lecturer running first-year induction, keen on practical hacking challenges. Consistent West Yorkshire (Huddersfield) accent throughout. Warm, encouraging, quick, a bit dry.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "5137914e9b2afaa447191bebcfb7349d": {
+    "npc": "sidhu_selvarajan",
+    "text": "Take these. One on hashes, one on signatures. Let us be exact about the difference, because people confuse them.",
+    "voice": "Enceladus",
+    "style": "Cyber security researcher, blockchain developer and journal editor. Consistent Indian English accent throughout. Calm, precise, courteous, warm.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "5392cad375efde4bb915ee8006e6ad2a": {
+    "npc": "megan_oyelaran",
+    "text": "Student Services left me a voicemail. About my fees. Can't face it yet.",
+    "voice": "Leda",
+    "style": "First-year student, bright, skint and competitive. Consistent Manchester accent throughout. Quick, wry, proud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "542012fdebad3ed7f23d9cfda8a92cd0": {
+    "npc": "closing_debrief_person",
+    "text": "We're replacing your phone anyway. Ghost had the building's network all week.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "5477a67bfb6f283f3be39625e40aafc9": {
+    "npc": "narrator",
+    "text": "He turns the laptop a little towards you. A map of this building. Small figures walking about. One of them is wearing your hoodie.",
+    "voice": "Algenib",
+    "style": "Cinematic narrator for a spy thriller set at a British university. Calm, low, unhurried. Consistent British Received Pronunciation throughout.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "54c958d816bb74444c4b7079a8b8304d": {
+    "npc": "jordan_pike",
+    "text": "Nice one. Tell your mates.",
+    "voice": "Puck",
+    "style": "Third-year student working a careers-fair stand for a referral bonus. Consistent Estuary English accent throughout. Upbeat, fast, salesy, laughs at his own lines.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "55a6ce571c986e6935f0aebb93887bfe": {
+    "npc": "megan_oyelaran",
+    "text": "I'm out. They can find another charity case.",
+    "voice": "Leda",
+    "style": "First-year student, bright, skint and competitive. Consistent Manchester accent throughout. Quick, wry, proud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "581d81346eaf359b24f863de9a9010bc": {
+    "npc": "tom_shaw",
+    "text": "Right. Off you go.",
+    "voice": "Fenrir",
+    "style": "University lecturer running first-year induction, keen on practical hacking challenges. Consistent West Yorkshire (Huddersfield) accent throughout. Warm, encouraging, quick, a bit dry.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "58bac2509dee53e1a87ba8035aee9f6c": {
+    "npc": "closing_debrief_person",
+    "text": "No. Most people wouldn't have. That's why it works.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "5b8298a87f6ae40f1b0544a17ecd53fb": {
+    "npc": "jordan_pike",
+    "text": "Two of us work for them now. Placements, then jobs. They ask some odd questions, though. I don't ask back.",
+    "voice": "Puck",
+    "style": "Third-year student working a careers-fair stand for a referral bonus. Consistent Estuary English accent throughout. Upbeat, fast, salesy, laughs at his own lines.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "5df50d46f4db2bbcd76c7ad28f5a2dc1": {
+    "npc": "closing_debrief_person",
+    "text": "I opened your report at the field HQ at eleven minutes past six. At twelve minutes past, my phone told a server in Rotterdam where it was.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "5e1a67fea8302ca1ac86e06d3a71432e": {
+    "npc": "cliffe_schreuders",
+    "text": "Door was locked for a reason, mate. Though I suppose you had the key. Interesting, that.",
+    "voice": "Orus",
+    "style": "Academic who builds learning tools and capture-the-flag games. Consistent Australian accent throughout. Relaxed, dry, quick, amused, sentences that stop a beat early.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "5e1ef0426bc4030a663892d737a0b328": {
+    "npc": "jordan_pike",
+    "text": "Data recovery. Companies get hit by ransomware, CryptoSecure gets them back up. Very busy, apparently.",
+    "voice": "Puck",
+    "style": "Third-year student working a careers-fair stand for a referral bonus. Consistent Estuary English accent throughout. Upbeat, fast, salesy, laughs at his own lines.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "5e51135626a62fec7951e917d275c061": {
+    "npc": "tom_shaw",
+    "text": "There's a button called Magic. It'll do the first few for you. It'll do nowt once there's a key. That's the bit they're paying for.",
+    "voice": "Fenrir",
+    "style": "University lecturer running first-year induction, keen on practical hacking challenges. Consistent West Yorkshire (Huddersfield) accent throughout. Warm, encouraging, quick, a bit dry.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "5f033fd514099b82f4fef1b5072030f5": {
+    "npc": "jordan_pike",
+    "text": "Nine grand a year and fees paid. It's literally free money.",
+    "voice": "Puck",
+    "style": "Third-year student working a careers-fair stand for a referral bonus. Consistent Estuary English accent throughout. Upbeat, fast, salesy, laughs at his own lines.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "5f1880ece7848a28fceecc5130934017": {
+    "npc": "oleg_illiashenko",
+    "text": "If they offer you money for your password, the answer is no. If they offer you money for theirs, also no.",
+    "voice": "Algieba",
+    "style": "Ukrainian computer science lecturer, softly spoken, with a mild Ukrainian accent in his English, consistent throughout. Quiet, gentle, unhurried, warm, a little wry. Never loud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "600aeeb01ec22080b6bae995c4edd554": {
+    "npc": "briefing_cutscene",
+    "text": "Two earlier Keyholders now work for CryptoSecure. CryptoSecure is Ransomware Incorporated with a logo.",
+    "voice": "Aoede",
+    "style": "Professional intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Brisk, dry, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "60c24bd186cfdfa2ec3c409527057f44": {
+    "npc": "narrator",
+    "text": "On the screen, the small figure in your hoodie is standing in his workshop.",
+    "voice": "Algenib",
+    "style": "Cinematic narrator for a spy thriller set at a British university. Calm, low, unhurried. Consistent British Received Pronunciation throughout.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "60e0842330a53f237a674226c9bae798": {
+    "npc": "tom_shaw",
+    "text": "Same two letters, three ways. \"Hi\" is seventy-two, a hundred and five in decimal.",
+    "voice": "Fenrir",
+    "style": "University lecturer running first-year induction, keen on practical hacking challenges. Consistent West Yorkshire (Huddersfield) accent throughout. Warm, encouraging, quick, a bit dry.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "620122e22ac2b3f9b0e881873f5731d2": {
+    "npc": "closing_debrief_person",
+    "text": "The scoreboard was enough. The message on your phone was one too many.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "6321aff1e48b76bdb32bd2f88914b85a": {
+    "npc": "closing_debrief_person",
+    "text": "The stand was gone by morning. Jordan Pike's student email bounces.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "6a3e08de815d4e888581736ae7c38c60": {
+    "npc": "sidhu_selvarajan",
+    "text": "Good systems store passwords that way too, with salt and a slow hash. But that is another lecture.",
+    "voice": "Enceladus",
+    "style": "Cyber security researcher, blockchain developer and journal editor. Consistent Indian English accent throughout. Calm, precise, courteous, warm.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "6a5347622122d6091d04ac5b1a9b3acc": {
+    "npc": "tom_shaw",
+    "text": "Pop it out into its own tab with the little arrow by the cross, top of the laptop. Then you can have the clue and the recipe side by side.",
+    "voice": "Fenrir",
+    "style": "University lecturer running first-year induction, keen on practical hacking challenges. Consistent West Yorkshire (Huddersfield) accent throughout. Warm, encouraging, quick, a bit dry.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "6e1a97c6fa818de135a52c83b4ebbf44": {
+    "npc": "closing_debrief_person",
+    "text": "Next time, the scoreboard. It's why it's there.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "737422f67300b4af5cfbf4c6dbfedcf2": {
+    "npc": "closing_debrief_person",
+    "text": "A clean no is worth something. It's also the last time they'll talk to you.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "75104a14bfb91d1d14715e9140a4e605": {
+    "npc": "closing_debrief_person",
+    "text": "You said no to Ghost on their own terms. That's rarer than you'd think.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "7605d4f44e3b12d017a7f098c8437361": {
+    "npc": "sidhu_selvarajan",
+    "text": "That's my whiteboard. It's from my blockchain lecture. A toy ledger, four blocks.",
+    "voice": "Enceladus",
+    "style": "Cyber security researcher, blockchain developer and journal editor. Consistent Indian English accent throughout. Calm, precise, courteous, warm.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "7755591f6fb034adb756939b22fcde2d": {
+    "npc": "oleg_illiashenko",
+    "text": "Same bytes, wrong table. My name is saved as UTF-8, two bytes for every Cyrillic letter.",
+    "voice": "Algieba",
+    "style": "Ukrainian computer science lecturer, softly spoken, with a mild Ukrainian accent in his English, consistent throughout. Quiet, gentle, unhurried, warm, a little wry. Never loud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "77dc68e742f50f30eb778997381f5089": {
+    "npc": "sidhu_selvarajan",
+    "text": "Come in, come in. I'm Sidhu. You must be one of the new first-years.",
+    "voice": "Enceladus",
+    "style": "Cyber security researcher, blockchain developer and journal editor. Consistent Indian English accent throughout. Calm, precise, courteous, warm.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "78d14c96eae6de9236916f904ef737d4": {
+    "npc": "cliffe_schreuders",
+    "text": "Yeah?",
+    "voice": "Orus",
+    "style": "Academic who builds learning tools and capture-the-flag games. Consistent Australian accent throughout. Relaxed, dry, quick, amused, sentences that stop a beat early.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "78e89cef96fd00b361c7bd3d885ca243": {
+    "npc": "oleg_illiashenko",
+    "text": "Tom has three hundred first-years this week and still remembers their names. I don't know how. I suspect a spreadsheet.",
+    "voice": "Algieba",
+    "style": "Ukrainian computer science lecturer, softly spoken, with a mild Ukrainian accent in his English, consistent throughout. Quiet, gentle, unhurried, warm, a little wry. Never loud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "799c70c6083ed04f3f85569757bbe912": {
+    "npc": "briefing_cutscene",
+    "text": "No name, no face. A voice on a console, and a hood on a screen.",
+    "voice": "Aoede",
+    "style": "Professional intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Brisk, dry, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "79f511f0c7af4852c879f1449dd41a4e": {
+    "npc": "closing_debrief_person",
+    "text": "Go home, Agent.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "7bf49297b629ee03ee7b2653f60f5edf": {
+    "npc": "narrator",
+    "text": "You tell her what you read in the candidate assessments.",
+    "voice": "Algenib",
+    "style": "Cinematic narrator for a spy thriller set at a British university. Calm, low, unhurried. Consistent British Received Pronunciation throughout.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "7ca1a0c5c51f010b5e25db43f9f214fc": {
+    "npc": "narrator",
+    "text": "He reads the report, the hash and the signature, and checks them on his own screen.",
+    "voice": "Algenib",
+    "style": "Cinematic narrator for a spy thriller set at a British university. Calm, low, unhurried. Consistent British Received Pronunciation throughout.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "7fcb67f7ffa4db96da077e0272e837fc": {
+    "npc": "tom_shaw",
+    "text": "Your mail app fetches it, and their server learns when you opened it and roughly where.",
+    "voice": "Fenrir",
+    "style": "University lecturer running first-year induction, keen on practical hacking challenges. Consistent West Yorkshire (Huddersfield) accent throughout. Warm, encouraging, quick, a bit dry.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "8349fdd6e417058e886a3dee4d79c1d7": {
+    "npc": "closing_debrief_person",
+    "text": "Thank you for the flag.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "867e94f47cd03023a84dab6f8b98ed4d": {
+    "npc": "closing_debrief_person",
+    "text": "Sit down, Agent. Anywhere. This is the fallback site, and nothing in it is ours yet.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "8a8115544dd500a35d11ebc1b2e2358f": {
+    "npc": "closing_debrief_person",
+    "text": "Hand in the device. We're replacing your phone too. It sat next to theirs all day.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "8ad70363eea5d46fb1ec5b3fbf5c78aa": {
+    "npc": "sidhu_selvarajan",
+    "text": "It verifies against the Keyholder's key. So the Keyholder signed it, whatever the FROM line says, and nobody has touched it since.",
+    "voice": "Enceladus",
+    "style": "Cyber security researcher, blockchain developer and journal editor. Consistent Indian English accent throughout. Calm, precise, courteous, warm.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "8aefc60a2e82d605fe5bb6a8dfa9effc": {
+    "npc": "jordan_pike",
+    "text": "Any questions? I get a referral bonus, so ask away.",
+    "voice": "Puck",
+    "style": "Third-year student working a careers-fair stand for a referral bonus. Consistent Estuary English accent throughout. Upbeat, fast, salesy, laughs at his own lines.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "8b241c7e30ab7b78c1c0e63b2957d299": {
+    "npc": "cliffe_schreuders",
+    "text": "Phones. Never trusted them.",
+    "voice": "Orus",
+    "style": "Academic who builds learning tools and capture-the-flag games. Consistent Australian accent throughout. Relaxed, dry, quick, amused, sentences that stop a beat early.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "8b7026309da7b3fab342bbce5e274827": {
+    "npc": "oleg_illiashenko",
+    "text": "The sign on that door says staff only. You read it and came in anyway. That's a good instinct for this department.",
+    "voice": "Algieba",
+    "style": "Ukrainian computer science lecturer, softly spoken, with a mild Ukrainian accent in his English, consistent throughout. Quiet, gentle, unhurried, warm, a little wry. Never loud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "8caefc765e7bf90c4e7b6991413cd904": {
+    "npc": "oleg_illiashenko",
+    "text": "Then some program reads those bytes with a one-byte table, Windows-1251, and every letter becomes two wrong ones.",
+    "voice": "Algieba",
+    "style": "Ukrainian computer science lecturer, softly spoken, with a mild Ukrainian accent in his English, consistent throughout. Quiet, gentle, unhurried, warm, a little wry. Never loud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "8cf0d0cd90aabc864f71b7f1edb2139c": {
+    "npc": "cliffe_schreuders",
+    "text": "No worries.",
+    "voice": "Orus",
+    "style": "Academic who builds learning tools and capture-the-flag games. Consistent Australian accent throughout. Relaxed, dry, quick, amused, sentences that stop a beat early.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "8d140093754235b11ae6426de041cfcd": {
+    "npc": "cliffe_schreuders",
+    "text": "Busy. Don't touch the iron, it's hot.",
+    "voice": "Orus",
+    "style": "Academic who builds learning tools and capture-the-flag games. Consistent Australian accent throughout. Relaxed, dry, quick, amused, sentences that stop a beat early.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "8e591e3299b489d5509b2ab1c6e4a8cc": {
+    "npc": "sidhu_selvarajan",
+    "text": "You have the look of someone holding a document.",
+    "voice": "Enceladus",
+    "style": "Cyber security researcher, blockchain developer and journal editor. Consistent Indian English accent throughout. Calm, precise, courteous, warm.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "9113c368c9fb9d89f52b8f3b3f5abb6e": {
+    "npc": "closing_debrief_person",
+    "text": "You told me on the line Ghost said was listening. They heard. That was the end of it.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "914f50285aa90511d0c2a40c660d9771": {
+    "npc": "closing_debrief_person",
+    "text": "Good.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "9396d4b5a140b803ba24dc964de48ac9": {
+    "npc": "tom_shaw",
+    "text": "And see that Mailer they're flogging on the stand? It hides a one-pixel picture in the email.",
+    "voice": "Fenrir",
+    "style": "University lecturer running first-year induction, keen on practical hacking challenges. Consistent West Yorkshire (Huddersfield) accent throughout. Warm, encouraging, quick, a bit dry.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "95111a688648e3e949a0f828e2530c87": {
+    "npc": "sidhu_selvarajan",
+    "text": "Change one byte, even a new line you can't see, and you get a different fingerprint entirely. That's all my ledger is doing.",
+    "voice": "Enceladus",
+    "style": "Cyber security researcher, blockchain developer and journal editor. Consistent Indian English accent throughout. Calm, precise, courteous, warm.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "95f8bca186191c2ee12ed897ae36a3d9": {
+    "npc": "tom_shaw",
+    "text": "In hex each digit is four bits, so a byte's always two digits: four-eight, six-nine.",
+    "voice": "Fenrir",
+    "style": "University lecturer running first-year induction, keen on practical hacking challenges. Consistent West Yorkshire (Huddersfield) accent throughout. Warm, encouraging, quick, a bit dry.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "98a1fa43781b68ad01541c9745959440": {
+    "npc": "closing_debrief_person",
+    "text": "Your mail app does the same thing every day, unless you turn remote images off.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "9968b21b355c02a9922b97b496bbf487": {
+    "npc": "oleg_illiashenko",
+    "text": "There it is. Thank you. I'll send your recipe to the people who built the system.",
+    "voice": "Algieba",
+    "style": "Ukrainian computer science lecturer, softly spoken, with a mild Ukrainian accent in his English, consistent throughout. Quiet, gentle, unhurried, warm, a little wry. Never loud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "9bf03c100ccb49cdc810b2e37e44e054": {
+    "npc": "megan_oyelaran",
+    "text": "Someone said the card's not a number, it's characters. And I tried that hex thing and got four capital letters, so that's not it either.",
+    "voice": "Leda",
+    "style": "First-year student, bright, skint and competitive. Consistent Manchester accent throughout. Quick, wry, proud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "9ca0e29efd35bab4b3cff475841957e9": {
+    "npc": "closing_debrief_person",
+    "text": "Classified isn't the same as \"I don't know\", Agent. Leave it there.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "9cffe6534363c562fcb9d6f04b5c958b": {
+    "npc": "cliffe_schreuders",
+    "text": "Still here. Coffee's still terrible.",
+    "voice": "Orus",
+    "style": "Academic who builds learning tools and capture-the-flag games. Consistent Australian accent throughout. Relaxed, dry, quick, amused, sentences that stop a beat early.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "9e9eb0cb18128f0112dcab17b4ae9f10": {
+    "npc": "megan_oyelaran",
+    "text": "Megan. First year. Our mam thinks I'm doing something sensible.",
+    "voice": "Leda",
+    "style": "First-year student, bright, skint and competitive. Consistent Manchester accent throughout. Quick, wry, proud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "a2249a2e3d45249f25478d8716835102": {
+    "npc": "megan_oyelaran",
+    "text": "You after the Keyholder money as well? Get in the queue.",
+    "voice": "Leda",
+    "style": "First-year student, bright, skint and competitive. Consistent Manchester accent throughout. Quick, wry, proud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "a2537d3ca77d3d1187b5d8f106bb6550": {
+    "npc": "narrator",
+    "text": "The Computing building is through the columns. Someone has put a CryptoSecure stand right inside the door.",
+    "voice": "Algenib",
+    "style": "Cinematic narrator for a spy thriller set at a British university. Calm, low, unhurried. Consistent British Received Pronunciation throughout.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "a2d32af24ba9e0f594991277195998b6": {
+    "npc": "jordan_pike",
+    "text": "Anything else?",
+    "voice": "Puck",
+    "style": "Third-year student working a careers-fair stand for a referral bonus. Consistent Estuary English accent throughout. Upbeat, fast, salesy, laughs at his own lines.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "a31cf01d30778f02f3a7fe02be6c1b50": {
+    "npc": "closing_debrief_person",
+    "text": "Someone came to look at four. We have their photograph. The field HQ never showed up on anyone's screen.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "a47a635cb7bc33f44b08ac3b7f58fc89": {
+    "npc": "cliffe_schreuders",
+    "text": "Saw them. Reckon whoever wrote them has marked a lot of exams.",
+    "voice": "Orus",
+    "style": "Academic who builds learning tools and capture-the-flag games. Consistent Australian accent throughout. Relaxed, dry, quick, amused, sentences that stop a beat early.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "a4c95bb74454ee35691964f749897eb5": {
+    "npc": "briefing_cutscene",
+    "text": "Get a lab laptop from Dr Shaw in the lecture theatre, south of the foyer. Then go and be found.",
+    "voice": "Aoede",
+    "style": "Professional intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Brisk, dry, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "a4e518fa7ca9a6cc12894f8d4d8a9c9a": {
+    "npc": "sidhu_selvarajan",
+    "text": "If anyone hands you something signed, bring it to me. I like to watch a signature check out.",
+    "voice": "Enceladus",
+    "style": "Cyber security researcher, blockchain developer and journal editor. Consistent Indian English accent throughout. Calm, precise, courteous, warm.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "a566b00f4fbc703064b3d50df2d646aa": {
+    "npc": "megan_oyelaran",
+    "text": "You got past the locker? Dead good. I'm still on it.",
+    "voice": "Leda",
+    "style": "First-year student, bright, skint and competitive. Consistent Manchester accent throughout. Quick, wry, proud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "a85f62ce898a34d096b6500ec4ae8285": {
+    "npc": "tom_shaw",
+    "text": "Go on then. You first.",
+    "voice": "Fenrir",
+    "style": "University lecturer running first-year induction, keen on practical hacking challenges. Consistent West Yorkshire (Huddersfield) accent throughout. Warm, encouraging, quick, a bit dry.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "aa2634b3b752de8bb1b28d26b7571633": {
+    "npc": "narrator",
+    "text": "He reads it off your screen and, for once today, smiles at a computer.",
+    "voice": "Algenib",
+    "style": "Cinematic narrator for a spy thriller set at a British university. Calm, low, unhurried. Consistent British Received Pronunciation throughout.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "aa61ad3c48511e79414c8596d7db0cc0": {
+    "npc": "megan_oyelaran",
+    "text": "It resets if you walk off and come back, though.",
+    "voice": "Leda",
+    "style": "First-year student, bright, skint and competitive. Consistent Manchester accent throughout. Quick, wry, proud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "ab026265e3135731d3703700fa3620d6": {
+    "npc": "oleg_illiashenko",
+    "text": "Something else?",
+    "voice": "Algieba",
+    "style": "Ukrainian computer science lecturer, softly spoken, with a mild Ukrainian accent in his English, consistent throughout. Quiet, gentle, unhurried, warm, a little wry. Never loud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "abff3bf05938b5cd29a2c28011f04063": {
+    "npc": "oleg_illiashenko",
+    "text": "Only the new staff system. It printed the staff list, and my name came out as nonsense.",
+    "voice": "Algieba",
+    "style": "Ukrainian computer science lecturer, softly spoken, with a mild Ukrainian accent in his English, consistent throughout. Quiet, gentle, unhurried, warm, a little wry. Never loud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "af05574c98ab37c25a1d7d5174a84489": {
+    "npc": "tom_shaw",
+    "text": "You give it some input, you stack up operations, it shows you the output. That's all.",
+    "voice": "Fenrir",
+    "style": "University lecturer running first-year induction, keen on practical hacking challenges. Consistent West Yorkshire (Huddersfield) accent throughout. Warm, encouraging, quick, a bit dry.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "b0375368a9902e9b559a1d541bf3acba": {
+    "npc": "oleg_illiashenko",
+    "text": "Yes?",
+    "voice": "Algieba",
+    "style": "Ukrainian computer science lecturer, softly spoken, with a mild Ukrainian accent in his English, consistent throughout. Quiet, gentle, unhurried, warm, a little wry. Never loud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "b1aa9af1ff09ee29e61772981ef56e39": {
+    "npc": "cliffe_schreuders",
+    "text": "Scoreboard's been quiet today. Takes flags from anyone. Never asked who reads them.",
+    "voice": "Orus",
+    "style": "Academic who builds learning tools and capture-the-flag games. Consistent Australian accent throughout. Relaxed, dry, quick, amused, sentences that stop a beat early.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "b27d430c8c040a4e1750a0bb1c8069f2": {
+    "npc": "closing_debrief_person",
+    "text": "That's classified.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "b7dff7c5099283f0fe59314db1afa553": {
+    "npc": "tom_shaw",
+    "text": "Well? Got into that terminal yet?",
+    "voice": "Fenrir",
+    "style": "University lecturer running first-year induction, keen on practical hacking challenges. Consistent West Yorkshire (Huddersfield) accent throughout. Warm, encouraging, quick, a bit dry.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "b86b4d3d3aece796af584eaaf71144f5": {
+    "npc": "closing_debrief_person",
+    "text": "You can read Base64 now. Most people who'd have opened that report can't.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "b95f568d7fc50cb7841e77f18db7f144": {
+    "npc": "sidhu_selvarajan",
+    "text": "Each block keeps the hash of the block before it. That's the chain.",
+    "voice": "Enceladus",
+    "style": "Cyber security researcher, blockchain developer and journal editor. Consistent Indian English accent throughout. Calm, precise, courteous, warm.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "bb7afb488f56313e152d464190efcbae": {
+    "npc": "closing_debrief_person",
+    "text": "Ghost withdrew the studentship last night. They had what they wanted, and it was never you.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "bd2b6297812fe82121353044eaeada5a": {
+    "npc": "briefing_cutscene",
+    "text": "Nobody applies. You're found, by solving a trail of puzzles around the building. They call it the Trials.",
+    "voice": "Aoede",
+    "style": "Professional intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Brisk, dry, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "bdd57aaada32ec52ea59e6f41ade8b1a": {
+    "npc": "megan_oyelaran",
+    "text": "Nine grand a year sorts both. So yeah. I want it.",
+    "voice": "Leda",
+    "style": "First-year student, bright, skint and competitive. Consistent Manchester accent throughout. Quick, wry, proud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "bf399b24f0e53d1b21064f32cd2ad2b3": {
+    "npc": "sidhu_selvarajan",
+    "text": "Change one letter in block two and its hash changes, so block three no longer points at it, and so on to the end. Tampering shows.",
+    "voice": "Enceladus",
+    "style": "Cyber security researcher, blockchain developer and journal editor. Consistent Indian English accent throughout. Calm, precise, courteous, warm.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "bfc25bd202e530f0430119d0ab5bcfe7": {
+    "npc": "narrator",
+    "text": "Bunting on the portico, music from the lawn, and a thousand new students trying to look as if they know where they're going.",
+    "voice": "Algenib",
+    "style": "Cinematic narrator for a spy thriller set at a British university. Calm, low, unhurried. Consistent British Received Pronunciation throughout.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "c170bb26842c66c940133a393b9f06dc": {
+    "npc": "tom_shaw",
+    "text": "Right then. You'll be one of mine. Tom Shaw. I look after the first-years this week.",
+    "voice": "Fenrir",
+    "style": "University lecturer running first-year induction, keen on practical hacking challenges. Consistent West Yorkshire (Huddersfield) accent throughout. Warm, encouraging, quick, a bit dry.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "c20b7f4d034e770fdfc1db63087d521d": {
+    "npc": "jordan_pike",
+    "text": "Go on, ask. It's all commission.",
+    "voice": "Puck",
+    "style": "Third-year student working a careers-fair stand for a referral bonus. Consistent Estuary English accent throughout. Upbeat, fast, salesy, laughs at his own lines.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "c4d34706d364b88a6e49244fc8c728bd": {
+    "npc": "briefing_cutscene",
+    "text": "Before anything else, read the note I've just sent you. If your phone is ever compromised, that's how you reach me.",
+    "voice": "Aoede",
+    "style": "Professional intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Brisk, dry, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "c656f2f59c1b629e3a36c77386aec865": {
+    "npc": "closing_debrief_person",
+    "text": "Your flag reached me after the report did. You tried. It was already open.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "c65f975b947597fa64e770da8ccf5c12": {
+    "npc": "closing_debrief_person",
+    "text": "Megan Oyelaran has a bursary from a donor she'll never meet. Don't tell her.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "c97f009ef0ee0a01d2f228a84c90db32": {
+    "npc": "briefing_cutscene",
+    "text": "You're going undercover as a university student. A first-year in Computing at Miskatonic University, in freshers' week.",
+    "voice": "Aoede",
+    "style": "Professional intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Brisk, dry, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "cb7fb0117e5e7c366491e6263f3b834c": {
+    "npc": "oleg_illiashenko",
+    "text": "Nothing is lost. You only have to read the bytes the way they were written. Here, I wrote it down.",
+    "voice": "Algieba",
+    "style": "Ukrainian computer science lecturer, softly spoken, with a mild Ukrainian accent in his English, consistent throughout. Quiet, gentle, unhurried, warm, a little wry. Never loud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "cbf7ecb3a177e04a464c1e736a6865a5": {
+    "npc": "narrator",
+    "text": "A beat.",
+    "voice": "Algenib",
+    "style": "Cinematic narrator for a spy thriller set at a British university. Calm, low, unhurried. Consistent British Received Pronunciation throughout.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "cc28589bfca044f5e4a03faa0c8271f0": {
+    "npc": "megan_oyelaran",
+    "text": "Eight digits, four-digit keypad. I typed the first four straight in and it locked me out. Three goes and you're done.",
+    "voice": "Leda",
+    "style": "First-year student, bright, skint and competitive. Consistent Manchester accent throughout. Quick, wry, proud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "cd5b48abe985ab32a47b8056d57a97d5": {
+    "npc": "cliffe_schreuders",
+    "text": "Committee's still looking for me.",
+    "voice": "Orus",
+    "style": "Academic who builds learning tools and capture-the-flag games. Consistent Australian accent throughout. Relaxed, dry, quick, amused, sentences that stop a beat early.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "cdb88bd063381e9a77126bd1cbcf522d": {
+    "npc": "narrator",
+    "text": "He closes the lid.",
+    "voice": "Algenib",
+    "style": "Cinematic narrator for a spy thriller set at a British university. Calm, low, unhurried. Consistent British Received Pronunciation throughout.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "ce6f028e8db807891875aabb7c39b85a": {
+    "npc": "closing_debrief_person",
+    "text": "That's worth knowing. I didn't enjoy learning it.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "d035dcee747726b07c2b2e41abe094c7": {
+    "npc": "megan_oyelaran",
+    "text": "My mam's care-home fees are two months behind. I'm on an overdraft I'm not telling you the size of.",
+    "voice": "Leda",
+    "style": "First-year student, bright, skint and competitive. Consistent Manchester accent throughout. Quick, wry, proud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "d28c0ee3a1bb39da44a3c63ad1c876c5": {
+    "npc": "closing_debrief_person",
+    "text": "At four, someone went through the field HQ. Everything we couldn't carry is theirs now. We won't be going back.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "d378611cacdf3079e1f42f30c26cdd39": {
+    "npc": "cliffe_schreuders",
+    "text": "Hope that was worth it.",
+    "voice": "Orus",
+    "style": "Academic who builds learning tools and capture-the-flag games. Consistent Australian accent throughout. Relaxed, dry, quick, amused, sentences that stop a beat early.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "d5279a75be8af0ca7299bc9dd46b1bbc": {
+    "npc": "closing_debrief_person",
+    "text": "You were right about the report. Nobody opened it.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "d8258d0ced33b3369d6ae9f2adfe4610": {
+    "npc": "closing_debrief_person",
+    "text": "One pixel. A picture too small to see, fetched from Ghost's server the moment anyone opens the report. That's all a location costs.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "d86079b5a97d4a1b1b0c3083e9291623": {
+    "npc": "closing_debrief_person",
+    "text": "Megan Oyelaran's placement vanished with CryptoSecure. She's still eleven thousand down and still looking.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "d983c2736487876204daacf439f10966": {
+    "npc": "oleg_illiashenko",
+    "text": "Close the door properly on your way out. It sticks.",
+    "voice": "Algieba",
+    "style": "Ukrainian computer science lecturer, softly spoken, with a mild Ukrainian accent in his English, consistent throughout. Quiet, gentle, unhurried, warm, a little wry. Never loud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "d99570da1f9f67041f04fbe5c2ebfcd0": {
+    "npc": "closing_debrief_person",
+    "text": "Did you read it before you sent it?",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "dde23ea65b48b0ab15aecf86211acade": {
+    "npc": "sidhu_selvarajan",
+    "text": "Take this. It is on signatures. Let us be exact about them, because people confuse them with hashes.",
+    "voice": "Enceladus",
+    "style": "Cyber security researcher, blockchain developer and journal editor. Consistent Indian English accent throughout. Calm, precise, courteous, warm.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "df30bb0f7b2e2704eb7e1ed6d6c8b0e7": {
+    "npc": "closing_debrief_person",
+    "text": "And you sent me the token. We're watching that server now.",
+    "voice": "Aoede",
+    "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "df59bcd15466557f5a4587bf68aa2a78": {
+    "npc": "cliffe_schreuders",
+    "text": "Good. Some offers you hear out and still say no to.",
+    "voice": "Orus",
+    "style": "Academic who builds learning tools and capture-the-flag games. Consistent Australian accent throughout. Relaxed, dry, quick, amused, sentences that stop a beat early.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "e04dd16f698c14070d9c28f287cc36af": {
+    "npc": "cliffe_schreuders",
+    "text": "Reckon that's enough of a preview.",
+    "voice": "Orus",
+    "style": "Academic who builds learning tools and capture-the-flag games. Consistent Australian accent throughout. Relaxed, dry, quick, amused, sentences that stop a beat early.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "e14e587c7abec6a1e066a8a19cad3510": {
+    "npc": "narrator",
+    "text": "Miskatonic University. Freshers' week.",
+    "voice": "Algenib",
+    "style": "Cinematic narrator for a spy thriller set at a British university. Calm, low, unhurried. Consistent British Received Pronunciation throughout.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "e1ae8007c1028979719d692bcda1031c": {
+    "npc": "cliffe_schreuders",
+    "text": "A teaching tool. Sort of. A game where you learn by breaking things.",
+    "voice": "Orus",
+    "style": "Academic who builds learning tools and capture-the-flag games. Consistent Australian accent throughout. Relaxed, dry, quick, amused, sentences that stop a beat early.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "e26154fc4152d4e739998a97e67dedd2": {
+    "npc": "oleg_illiashenko",
+    "text": "Freshers' week. Lost students, free pizza, and one laptop that won't join the Wi-Fi.",
+    "voice": "Algieba",
+    "style": "Ukrainian computer science lecturer, softly spoken, with a mild Ukrainian accent in his English, consistent throughout. Quiet, gentle, unhurried, warm, a little wry. Never loud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "e296bdf4cb6ec9345279209318526ee7": {
+    "npc": "oleg_illiashenko",
+    "text": "Sidhu checks everything twice, which is why I give him my exam papers to check once.",
+    "voice": "Algieba",
+    "style": "Ukrainian computer science lecturer, softly spoken, with a mild Ukrainian accent in his English, consistent throughout. Quiet, gentle, unhurried, warm, a little wry. Never loud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "e4ea33140df94143ab4ef98029e2b4ea": {
+    "npc": "jordan_pike",
+    "text": "See the numbers on it? They spell a word. Type the word into the lockbox and you're in the Trials.",
+    "voice": "Puck",
+    "style": "Third-year student working a careers-fair stand for a referral bonus. Consistent Estuary English accent throughout. Upbeat, fast, salesy, laughs at his own lines.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "e59e5555f1c47f3c1c6eb6cd0428b80b": {
+    "npc": "oleg_illiashenko",
+    "text": "This time the laptop is mine. Please don't tell my students.",
+    "voice": "Algieba",
+    "style": "Ukrainian computer science lecturer, softly spoken, with a mild Ukrainian accent in his English, consistent throughout. Quiet, gentle, unhurried, warm, a little wry. Never loud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "e7f4d68e5433a1f4fcf943ac53fd1e1a": {
+    "npc": "oleg_illiashenko",
+    "text": "Cliffe I mostly see in corridors, walking quickly away from a committee.",
+    "voice": "Algieba",
+    "style": "Ukrainian computer science lecturer, softly spoken, with a mild Ukrainian accent in his English, consistent throughout. Quiet, gentle, unhurried, warm, a little wry. Never loud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "e95df3def01b7702dab473b6639de206": {
+    "npc": "cliffe_schreuders",
+    "text": "The building. Bit further along than this morning.",
+    "voice": "Orus",
+    "style": "Academic who builds learning tools and capture-the-flag games. Consistent Australian accent throughout. Relaxed, dry, quick, amused, sentences that stop a beat early.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "e9ab9072ba5c8e529c70c1249672c0a7": {
+    "npc": "megan_oyelaran",
+    "text": "Not if I see you first.",
+    "voice": "Leda",
+    "style": "First-year student, bright, skint and competitive. Consistent Manchester accent throughout. Quick, wry, proud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "ec8a33ef70a7015beceb19504eb4c83f": {
+    "npc": "briefing_cutscene",
+    "text": "Ransomware Incorporated is run by someone who calls themselves Ghost. They lock up a company's files and sell them back.",
+    "voice": "Aoede",
+    "style": "Professional intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Brisk, dry, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "edf500025b37da7b77be9f87fe970b9d": {
+    "npc": "cliffe_schreuders",
+    "text": "Student. Sorry. Long week.",
+    "voice": "Orus",
+    "style": "Academic who builds learning tools and capture-the-flag games. Consistent Australian accent throughout. Relaxed, dry, quick, amused, sentences that stop a beat early.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "ee433529a1fb976914a1c1b7351d9a5c": {
+    "npc": "oleg_illiashenko",
+    "text": "Still here? Good.",
+    "voice": "Algieba",
+    "style": "Ukrainian computer science lecturer, softly spoken, with a mild Ukrainian accent in his English, consistent throughout. Quiet, gentle, unhurried, warm, a little wry. Never loud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "ee9255b8c20059cdc66db85367f32380": {
+    "npc": "sidhu_selvarajan",
+    "text": "It verified, I expect. That was never the question.",
+    "voice": "Enceladus",
+    "style": "Cyber security researcher, blockchain developer and journal editor. Consistent Indian English accent throughout. Calm, precise, courteous, warm.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "ef06d892dcd2583d4cbed9ed3ef723ab": {
+    "npc": "tom_shaw",
+    "text": "Your lab account's on a PC in the teaching lab, west of the foyer.",
+    "voice": "Fenrir",
+    "style": "University lecturer running first-year induction, keen on practical hacking challenges. Consistent West Yorkshire (Huddersfield) accent throughout. Warm, encouraging, quick, a bit dry.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "ef72ab38ebf34d6b04b53167fc3a9503": {
+    "npc": "briefing_cutscene",
+    "text": "Get picked. I want someone inside their recruitment.",
+    "voice": "Aoede",
+    "style": "Professional intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Brisk, dry, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "f01b28c8d8738ee2f69a2b92f0bdb84a": {
+    "npc": "jordan_pike",
+    "text": "Some email thing they sell. Tells you when people open stuff? No idea how. I just do the stand.",
+    "voice": "Puck",
+    "style": "Third-year student working a careers-fair stand for a referral bonus. Consistent Estuary English accent throughout. Upbeat, fast, salesy, laughs at his own lines.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "f0a13690da98c326989d9964cc919807": {
+    "npc": "tom_shaw",
+    "text": "I've put the induction handouts in your notepad. It's got a pencil on every page. Write down owt you'll need later in there.",
+    "voice": "Fenrir",
+    "style": "University lecturer running first-year induction, keen on practical hacking challenges. Consistent West Yorkshire (Huddersfield) accent throughout. Warm, encouraging, quick, a bit dry.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "f1fadd08b7867328f52fb3c43c297233": {
+    "npc": "briefing_cutscene",
+    "text": "CryptoSecure Recovery has a stand in the Computing foyer. They're funding something called the Keyholder Studentship. Nine thousand a year, fees paid.",
+    "voice": "Aoede",
+    "style": "Professional intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Brisk, dry, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "f40546ab4ec1acad8279524156e662ae": {
+    "npc": "tom_shaw",
+    "text": "Turned up without asking the department, for one.",
+    "voice": "Fenrir",
+    "style": "University lecturer running first-year induction, keen on practical hacking challenges. Consistent West Yorkshire (Huddersfield) accent throughout. Warm, encouraging, quick, a bit dry.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "f41d2a590e2d680172912b1650a085b6": {
+    "npc": "briefing_cutscene",
+    "text": "Dr Shaw first. Then the stand.",
+    "voice": "Aoede",
+    "style": "Professional intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Brisk, dry, short sentences.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "f6b4532cbaf92396e6b934e0d2a2b8d1": {
+    "npc": "tom_shaw",
+    "text": "Owt else?",
+    "voice": "Fenrir",
+    "style": "University lecturer running first-year induction, keen on practical hacking challenges. Consistent West Yorkshire (Huddersfield) accent throughout. Warm, encouraging, quick, a bit dry.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "f7421c7872f94a44077fc2f701e607e7": {
+    "npc": "sidhu_selvarajan",
+    "text": "Do check everything twice.",
+    "voice": "Enceladus",
+    "style": "Cyber security researcher, blockchain developer and journal editor. Consistent Indian English accent throughout. Calm, precise, courteous, warm.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "f89a2cd36bfc46a712adc0e50257db48": {
+    "npc": "cliffe_schreuders",
+    "text": "Good luck with it, Agent.",
+    "voice": "Orus",
+    "style": "Academic who builds learning tools and capture-the-flag games. Consistent Australian accent throughout. Relaxed, dry, quick, amused, sentences that stop a beat early.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "ff2fc3d9eb8f9d22b346d3db1c62f3ca": {
+    "npc": "tom_shaw",
+    "text": "Someone's put a terminal in my lab I never ordered. Half a mind to break into it myself.",
+    "voice": "Fenrir",
+    "style": "University lecturer running first-year induction, keen on practical hacking challenges. Consistent West Yorkshire (Huddersfield) accent throughout. Warm, encouraging, quick, a bit dry.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  },
+  "ff9c0de6a7a31ecbd510009fe4eb6a02": {
+    "npc": "megan_oyelaran",
+    "text": "Still on the third one. Don't tell me how. I want to get it myself.",
+    "voice": "Leda",
+    "style": "First-year student, bright, skint and competitive. Consistent Manchester accent throughout. Quick, wry, proud.",
+    "language": "en-GB",
+    "model": "gemini-3.8-flash-tts",
+    "generated": "2026-10-09"
+  }
+}
