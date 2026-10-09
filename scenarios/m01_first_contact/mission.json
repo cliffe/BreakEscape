@@ -4,6 +4,7 @@
   "difficulty_level": 1,
   "secgen_scenario": "intro_to_linux_security_lab",
   "collection": "season_1",
+  "lab_sheet_url": "https://cliffe.github.io/HacktivityLabSheets/labs/introducing_attacks/m01-first-contact/",
   "cybok": [
     {
       "ka": "NS",

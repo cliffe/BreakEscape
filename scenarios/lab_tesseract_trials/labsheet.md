@@ -52,9 +52,9 @@ The game teaches by doing. The questions are in this sheet, after the game.
 
 You play Agent 0x00, a SAFETYNET agent who has gone undercover as a first-year student at Miskatonic University UK. A company called CryptoSecure Recovery has been spotting students through a "Keyholder Studentship", and a trail of puzzles around the Computing building is how it picks them. Your handler, Agent HaX, wants you inside. You do not need to know anything about cryptography before you start. The game builds up from what a bit is, and Agent HaX and the lecturers you meet give you short field notes on each scheme as you reach it.
 
-Everything you need is in the browser. There are no virtual machines and nothing to submit on the Hacktivity website: everything happens inside the game. There is nothing to copy from a neighbour, but sharing ideas and recipes is fine.
+Everything you need is in the browser. There are no virtual machines: everything happens inside the game. There is nothing to copy from a neighbour, but sharing ideas and recipes is fine.
 
-1. \==action: Launch **The Keyholder Trials** from the BreakEscape scenario selection screen==. It is in the escape room collection.
+1. \==action: Start the Break Escape mission **The Keyholder Trials**==.
 2. \==action: Watch the briefing from Agent HaX==, then ==action: explore the foyer and talk to the people in it==.
 3. \==action: Find the lecturer who has the lab laptop, and take it==. It holds CyberChef.
 4. \==action: Open the notepad and the field notes you collect==. You can reopen any of them at any time.
@@ -939,9 +939,9 @@ GNUPGHOME=~/bob gpg --verify message.txt.asc message.txt
 
 ## After the Game: Questions and Exercises {#after-the-game}
 
-Work through these after you have finished the game. Use your own run: the values in your game were generated for you, and the ending you reached may differ from other students'. Each section has questions to think about, then an exercise that produces something you can hand in. Your tutor will say which to submit.
+Work through these after you have finished the game. Use your own run: the values in your game were generated for you, and the ending you reached may differ from other students'. Each section has questions to think about, then an exercise to try.
 
-> Tip: Keep your CyberChef recipes and your notepad pages from the game. Screenshots of them make good evidence for the exercises.
+> Tip: Keep your CyberChef recipes and your notepad pages from the game. You will need them for some of the exercises.
 
 ### 1. Encoding Is Not Security {#q-encoding}
 
@@ -953,7 +953,7 @@ Work through these after you have finished the game. Use your own run: the value
 
 > Question: A message is encoded in hex, then Base64, then hex again. Does that make it more secure? What would you do first when you meet unknown data like this?
 
-> Action: Write a one-page note for a non-technical colleague, headed "Encoding, encryption and hashing: what is the difference?". Include one example of each from the game, what you would need to reverse it, and one real-world mistake that comes from confusing them. Hand it in.
+> Action: Write a one-page note for a non-technical colleague, headed "Encoding, encryption and hashing: what is the difference?". Include one example of each from the game, what you would need to reverse it, and one real-world mistake that comes from confusing them.
 
 ### 2. Keys, IVs and Key Distribution {#q-keys}
 
@@ -967,7 +967,7 @@ Work through these after you have finished the game. Use your own run: the value
 
 > Question: Why did the envelope contain an AES key rather than the message itself? What would be slow, or impossible, about using RSA for everything?
 
-> Action: Draw a diagram of hybrid encryption using what you did in the game. Label what is sent, which key is public, which is private, which is symmetric, and what an eavesdropper sees. Then write four sentences explaining why ransomware uses the same design, and what this means for victims who have no backup. Hand in the diagram and your four sentences.
+> Action: Draw a diagram of hybrid encryption using what you did in the game. Label what is sent, which key is public, which is private, which is symmetric, and what an eavesdropper sees. Then write four sentences explaining why ransomware uses the same design, and what this means for victims who have no backup.
 
 ### 3. Hashes and Signatures {#q-hashes}
 
@@ -983,7 +983,7 @@ Work through these after you have finished the game. Use your own run: the value
 
 > Question: Why did it matter that you decoded the report before sending it? What do you do in real life when you are asked to forward something you cannot read?
 
-> Action: Pick any file on your computer. Write a short procedure for publishing it so that a reader can check it has not been altered, using a hash only, then using a signature. State what each method can and cannot detect, and what the reader must already have, or trust, for each to work. Hand in your procedure, with the commands you used and their output.
+> Action: Pick any file on your computer. Write a short procedure for publishing it so that a reader can check it has not been altered, using a hash only, then using a signature. State what each method can and cannot detect, and what the reader must already have, or trust, for each to work. Note the commands you used and their output.
 
 ### 4. Choices and Consequences {#q-choices}
 
@@ -995,17 +995,17 @@ Work through these after you have finished the game. Use your own run: the value
 
 ### 5. Break Things Yourself {#exercises}
 
-> Action: Without CyberChef, decode this by hand and show your working: `01000011 01111001 01100010 01100101 01110010`. Then write the same word in decimal, in hex, and in Base64 (use the worked `Cat` example as a guide), and check all three in CyberChef. Hand in your working.
+> Action: Without CyberChef, decode this by hand and show your working: `01000011 01111001 01100010 01100101 01110010`. Then write the same word in decimal, in hex, and in Base64 (use the worked `Cat` example as a guide), and check all three in CyberChef.
 
-> Action: Write a short script, in any language, that decrypts a Vigenère ciphertext given the key. Test it on a message you encrypt yourself. Then try to break your own cipher without the key, using only a longer message and letter frequencies, and report how long a message you needed. Hand in the script, an example run, and a paragraph on what you found.
+> Action: Write a short script, in any language, that decrypts a Vigenère ciphertext given the key. Test it on a message you encrypt yourself. Then try to break your own cipher without the key, using only a longer message and letter frequencies, and note how long a message you needed.
 
-> Action: In CyberChef, build a recipe with at least three layers of encoding on a message of your choice, and swap it with a classmate. Time how long it takes each of you to peel it, with and without Magic. Hand in the recipe, the times, and a paragraph on what Magic could not do.
+> Action: In CyberChef, build a recipe with at least three layers of encoding on a message of your choice, and swap it with a classmate. Time how long it takes each of you to peel it, with and without Magic. What could Magic not do?
 
-> Action: Use the command-line section to encrypt a file with AES-256 and a password, and then with an explicit key and IV. Decrypt both in CyberChef. Hand in the commands, the CyberChef recipes (a screenshot of each), and a paragraph explaining why one needed an IV supplied and the other did not.
+> Action: Use the command-line section to encrypt a file with AES-256 and a password, and then with an explicit key and IV. Decrypt both in CyberChef. Why did one need an IV supplied and the other did not?
 
-> Action: Using the GPG exercises, set up two key rings and have each person send the other a message, with the fingerprints checked. Then change one character in the ciphertext. Hand in your terminal log and a sentence on what changed, and what that shows.
+> Action: Using the GPG exercises, set up two key rings and have each person send the other a message, with the fingerprints checked. Then change one character in the ciphertext. What changed, and what does that show?
 
-> Action: Write a worked estimate: how long would it take to try every key of a cipher with a 56-bit key, and with a 128-bit key, if a machine could test one billion keys a second? State your assumptions. Hand in the arithmetic and one sentence on what it means for choosing key sizes.
+> Action: Write a worked estimate: how long would it take to try every key of a cipher with a 56-bit key, and with a 128-bit key, if a machine could test one billion keys a second? State your assumptions. What does the result mean for choosing key sizes?
 
 ## Further Reading {#further-reading}
 

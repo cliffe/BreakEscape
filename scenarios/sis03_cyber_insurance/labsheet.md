@@ -115,7 +115,7 @@ By the end you should be able to explain:
 ### Getting Started {#getting-started}
 
 1. ==action: Read the [Information Pack](/HacktivityLabSheets/labs/security_informed_safety/sis03-cyber-insurance-information-pack/)== for the policy, the warranty schedule, the insurer's systems, the regulatory frameworks and the response timeline. The [SIS02 Information Pack](/HacktivityLabSheets/labs/security_informed_safety/sis02-energy-information-pack/) is the source for what happened at Albion.
-2. ==action: Launch **SIS03 Cyber Insurance**== from the BreakEscape scenario selection screen
+2. ==action: Start the Break Escape mission **SIS03 Cyber Insurance**==
 3. ==action: Listen to Eleanor's briefing==, then read the policy binder and Albion's incident notification on the desk
 
 ## Reflection and Exercises {#reflection-and-exercises}
