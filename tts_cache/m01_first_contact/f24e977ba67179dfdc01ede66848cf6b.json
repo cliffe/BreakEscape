@@ -1,0 +1,10 @@
+{
+  "key": "f24e977ba67179dfdc01ede66848cf6b",
+  "text": "Someone used my credentials remotely. That's exactly the kind of thing I've been reporting.",
+  "voice": "Charon",
+  "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+  "language": "en-GB",
+  "scenario": "m01_first_contact",
+  "source": "batch",
+  "recorded_at": "2026-10-09T12:10:01Z"
+}

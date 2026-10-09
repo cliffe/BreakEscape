@@ -1,0 +1,10 @@
+{
+  "key": "6960ae0e73fed63f95cb19fa70cb6513",
+  "text": "Right. They're under the thresholds, so NIS doesn't apply. They share your file server, though, so they need to know.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "scenario": "sis02_energy",
+  "source": "generate",
+  "recorded_at": "2026-10-09T12:24:00Z"
+}

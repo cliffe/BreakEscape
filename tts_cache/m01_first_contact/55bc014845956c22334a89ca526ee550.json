@@ -1,0 +1,10 @@
+{
+  "key": "55bc014845956c22334a89ca526ee550",
+  "text": "Can I ask — who are you, really? You're not just a security auditor, are you.",
+  "voice": "Charon",
+  "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+  "language": "en-GB",
+  "scenario": "m01_first_contact",
+  "source": "batch",
+  "recorded_at": "2026-10-09T12:10:01Z"
+}

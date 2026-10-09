@@ -1,0 +1,10 @@
+{
+  "key": "600af1c59145c965b742a5ee88ae9316",
+  "text": "The report has a \"HEADER MISMATCH DETECTED\" flag. That's not me questioning it — that's the mail server's own forensic system flagging a forgery.",
+  "voice": "Charon",
+  "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+  "language": "en-GB",
+  "scenario": "m01_first_contact",
+  "source": "batch",
+  "recorded_at": "2026-10-09T12:10:01Z"
+}

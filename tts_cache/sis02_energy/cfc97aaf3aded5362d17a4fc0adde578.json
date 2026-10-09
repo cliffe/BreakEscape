@@ -1,0 +1,10 @@
+{
+  "key": "cfc97aaf3aded5362d17a4fc0adde578",
+  "text": "A test showing the port couldn't be reached from SCADA. There hasn't been one since commissioning.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "scenario": "sis02_energy",
+  "source": "generate",
+  "recorded_at": "2026-10-09T12:20:02Z"
+}

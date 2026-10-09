@@ -1,0 +1,10 @@
+{
+  "key": "a9e15a0c290ac82f05fb292d670352b0",
+  "text": "Your NIS notification went in after your own clock ran out. Ofgem will ask why. Waiting for the full picture won't satisfy them.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "scenario": "sis02_energy",
+  "source": "generate",
+  "recorded_at": "2026-10-09T12:22:44Z"
+}

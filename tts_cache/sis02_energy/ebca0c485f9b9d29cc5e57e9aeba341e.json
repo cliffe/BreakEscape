@@ -1,0 +1,10 @@
+{
+  "key": "ebca0c485f9b9d29cc5e57e9aeba341e",
+  "text": "You pressed it without saving the registers. Its shutdown routine wrote over them. The historian kept the screen values, so forensics will cope.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "scenario": "sis02_energy",
+  "source": "generate",
+  "recorded_at": "2026-10-09T12:18:45Z"
+}
