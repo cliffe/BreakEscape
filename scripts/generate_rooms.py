@@ -1481,7 +1481,12 @@ def room_hospital_servers():
     # Side table for the backup/recovery console (m02 backup_recovery object)
     console_table = make_obj("tables", "smalldesk2", 210.0, 204.0, oid)
     oid += 1
-    tables = [desk, console_table]
+    # Analysis desk in the open south-east corner for m02's CyberChef laptop, so
+    # the admin desk holds only the attack terminal and the drop-site (three
+    # terminals on one 62px desk overlapped)
+    analysis_table = make_obj("tables", "smalldesk1", 214.0, 290.0, oid)
+    oid += 1
+    tables = [desk, console_table, analysis_table]
 
     items = []
     # Back row of racks along the clear mid back wall (x 72-254; both back-wall
@@ -1545,12 +1550,8 @@ def room_hospital_servers():
         oid += 1
 
     table_items = [
-        place_on_table(desk, "office-misc-fan2", x_frac=0.12, surface_frac=0.20, obj_id=oid),
+        place_on_table(analysis_table, "office-misc-fan2", x_frac=0.80, surface_frac=0.30, obj_id=oid),
     ]
-    oid += 1
-    table_items.append(
-        place_on_table(desk, "office-misc-hdd3", x_frac=0.88, surface_frac=0.28, obj_id=oid)
-    )
     oid += 1
 
     conditional_items = [
@@ -1561,22 +1562,29 @@ def room_hospital_servers():
     # from the slot's top-left and a taller texture would hang below the floor line)
     conditional_items.append(make_obj("objects", "safe3", 96.0, 200.0, oid))
     oid += 1
+    # m02's operator note is "taped inside the rack door": on the open network
+    # rack, feet 1px below the rack's so it draws in front of it, and well away
+    # from the desk terminals so a tap on one never asks which you meant
+    conditional_items.append(make_obj("objects", "notes1", 117.0, 143.0, oid))
+    oid += 1
 
+    # Admin desk: the attack terminal on the left, the drop-site on the right,
+    # nothing else (both sprites side by side fill 54 of the desk's 62px)
     conditional_table_items = []
     for name, xf, sf in [
-        ("workstation", 0.45, 0.32),
         # slot names must match the scenario type once trailing digits are
         # stripped (core/rooms.js), so "vm-launcher", not "vm-launcher-kali"
-        ("vm-launcher", 0.70, 0.35),
-        ("pin-cracker", 0.10, 0.46),
-        ("notes1", 0.25, 0.48),
-        ("notes3", 0.85, 0.45),
-        ("flag-station", 0.55, 0.28),
+        ("vm-launcher", 0.24, 0.36),
+        ("flag-station", 0.77, 0.32),
     ]:
         conditional_table_items.append(
             place_on_table(desk, name, x_frac=xf, surface_frac=sf, obj_id=oid)
         )
         oid += 1
+    conditional_table_items.append(
+        place_on_table(analysis_table, "workstation", x_frac=0.30, surface_frac=0.35, obj_id=oid)
+    )
+    oid += 1
     conditional_table_items.append(
         place_on_table(console_table, "backup_recovery", x_frac=0.5, surface_frac=0.45, obj_id=oid)
     )

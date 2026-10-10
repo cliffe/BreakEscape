@@ -712,6 +712,7 @@ ENTROPY uses encoding for obfuscation and encryption for actual security. When y
 #speaker:agent_0x99
 ~ hint_pin_given = true
 
+#set_global:escrow_safe_known:true
 Gary's backup procedures say the offline keys are in a physical PIN safe. Emergency equipment store, far end of the ward.
 
 Four-digit code. Hospitals use institutional dates -- founding years, significant administrative anniversaries.

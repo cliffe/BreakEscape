@@ -295,15 +295,20 @@ boardroom_pin = "0417"
           "status": "active"
         },
         {
+          <%# Hidden until the player hears Gary will carry the blame (Gary's open_blame
+              "the write-up" / email_reaction, Kim's discuss_gary, or the board email
+              mapping). The title names no board: open_blame never mentions one. %>
           "taskId": "learn_about_scapegoating",
-          "title": "Learn the board's plan to scapegoat Gary",
+          "title": "Make sure Gary doesn't take the blame for this",
           "type": "manual",
-          "status": "active",
+          "status": "locked",
           "optional": true
         },
         {
+          <%# Neutral title: it shows from Bernie's sign-in, before anyone says Gary
+              warned the board. The completion text (HaX, on the email) names the proof. %>
           "taskId": "investigate_gary_office",
-          "title": "Open Gary's filing cabinet for proof he warned them",
+          "title": "Get into the IT filing cabinet",
           "type": "manual",
           "status": "active",
           "optional": true
@@ -316,7 +321,10 @@ boardroom_pin = "0417"
       "description": "Security has been told no consultant was booked tonight. Your name is off the visitor system, and Val Okonkwo is standing between you and the server room. Get past her -- and start asking who made that call.",
       "status": "locked",
       "order": 2,
-      "unlockCondition": { "aimCompleted": "access_it_systems" },
+      <%# Story gate: hidden until the burn (the talk_to_gary mapping sets cover_burned
+          and unlocks this aim). An aimCompleted condition let the server-room task
+          reveal it early on a route that reaches the server room without the burn. %>
+      "unlockCondition": { "globalVariable": "cover_burned" },
       "tasks": [
         {
           "taskId": "cover_burned_notified",
@@ -342,11 +350,29 @@ boardroom_pin = "0417"
     {
       "aimId": "exploit_entropy_backdoor",
       "title": "Turn Their Backdoor Around",
-      "description": "ENTROPY came in through a fourteen-year-old ProFTPD backdoor on the backup server. Go in the same way and take everything they left behind.",
+      "description": "ENTROPY came in through the neglected backup server. Go in the same way and take everything they left behind.",
       "status": "locked",
       "order": 3,
       "unlockCondition": { "aimCompleted": "cover_compromised" },
+      <%# Objectives follow what the player knows (playtest 1956-1958). On entry the list
+          shows only HaX's own instructions: map the server (flag 3 is the anonymous-FTP
+          notice, readable before any login) and the SSH foothold (flag 1). The ProFTPD
+          task and the Ghost-log task stay hidden until flag 1 (the backup procedures
+          point at /root/.ghost_ops/, and HaX offers the ProFTPD guide) or flag 3 (the
+          banner names ProFTPD 1.3.3c and /root/.ghost_ops/) is in: unlockTask on both
+          flag mappings. A flag submitted while its task is hidden still completes it. %>
       "tasks": [
+        {
+          "taskId": "submit_database_flag",
+          "title": "Map the backup server and submit the flag left in its public files",
+          "type": "submit_flags",
+          "targetFlags": ["flag_station_dropsite:hospital_backup_server-flag3"],
+          "targetCount": 1,
+          "currentCount": 0,
+          "showProgress": true,
+          "status": "active",
+          "puzzle_graph_unlocks": "emergency_storage_safe"
+        },
         {
           "taskId": "submit_ssh_flag",
           "title": "Get a foothold on the backup server and submit the SSH flag",
@@ -366,20 +392,11 @@ boardroom_pin = "0417"
           "targetCount": 1,
           "currentCount": 0,
           "showProgress": true,
-          "status": "active",
+          "status": "locked",
           "puzzle_graph_unlocks": "database_backup_accessible"
         },
-        {
-          "taskId": "submit_database_flag",
-          "title": "Locate the encrypted database backup and submit the flag",
-          "type": "submit_flags",
-          "targetFlags": ["flag_station_dropsite:hospital_backup_server-flag3"],
-          "targetCount": 1,
-          "currentCount": 0,
-          "showProgress": true,
-          "status": "active",
-          "puzzle_graph_unlocks": "emergency_storage_safe"
-        },
+        <%# Hidden until flag 1 or flag 3 points at /root/.ghost_ops/ (see above). The
+            server and handleFlagTasksUpdated ignore 'locked', so an early flag 4 counts. %>
         {
           "taskId": "submit_ghost_log_flag",
           "title": "Recover Ghost's operational log and submit the flag",
@@ -388,28 +405,32 @@ boardroom_pin = "0417"
           "targetCount": 1,
           "currentCount": 0,
           "showProgress": true,
-          "status": "active",
+          "status": "locked",
           "puzzle_graph_unlocks": ["ghost_lore_unlocked", "entropy_staging_cache"]
         }
       ]
     },
     {
       "aimId": "unmask_inside_asset",
-      "title": "Somebody Held The Door",
-      "description": "Your cover did not burn by accident. Someone inside St. Catherine's made that call, and the same person has been feeding ENTROPY from the start. Start pulling the thread.",
+      <%# Story gate: opens on the first evidence of an insider (any of the seven
+          insider_evidence_partial setters) or on flag 2's deployment log, both of which
+          unlock it in their handler mappings. It used to open after the server room and
+          tie the insider to the cover burn, which nothing in the game tells the player. %>
+      "title": "Someone On The Inside",
+      "description": "Ghost had help. Somebody on St. Catherine's staff has been working for ENTROPY, with the run of the building at night. Find out how they let Ghost in.",
       "status": "locked",
       "order": 4,
-      "unlockCondition": { "aimCompleted": "cover_compromised" },
+      "unlockCondition": { "globalVariable": "insider_evidence_partial" },
       "tasks": [
         {
           "taskId": "unmask_gather_evidence",
-          "title": "Find proof an ENTROPY affiliate is embedded in the staff",
+          "title": "Find evidence that someone on staff is working for ENTROPY",
           "type": "manual",
           "status": "active"
         },
         {
           "taskId": "unmask_db_window",
-          "title": "Find out how the insider let ENTROPY in",
+          "title": "Find out how they let ENTROPY in",
           "type": "manual",
           "status": "active"
         }
@@ -421,7 +442,10 @@ boardroom_pin = "0417"
       "description": "Ghost's own log names a single badge inside St. Catherine's. Work out who carries it.",
       "status": "locked",
       "order": 5,
-      "unlockCondition": { "aimCompleted": "exploit_entropy_backdoor" },
+      <%# Story gate: opens when Ghost's log gives up the badge (the submit_ghost_log_flag
+          mapping sets insider_badge_id_found and unlocks it). An aimCompleted condition
+          let a Reeves confrontation reveal it before the log was found. %>
+      "unlockCondition": { "globalVariable": "insider_badge_id_found" },
       "tasks": [
         {
           "taskId": "unmask_ghost_badge",
@@ -439,11 +463,16 @@ boardroom_pin = "0417"
     },
     {
       "aimId": "recover_offline_keys",
-      "title": "The Keys In The Safe",
-      "description": "There is an offline key set in the emergency storage safe. Recover it and the ransom stops being the only way to bring the wards back.",
+      "title": "The Emergency Store Safe",
+      "description": "There's a keypad safe in the emergency equipment store, still on a code nobody ever changed. Open it and see what the hospital kept in there.",
       "status": "locked",
       "order": 6,
-      "unlockCondition": { "aimCompleted": "cover_compromised" },
+      <%# Story gate: opens once the player has learnt of the storage safe -- flag 1's
+          backup procedures, the snag list or Kim's escrow answer (found_safe_pin_clue),
+          HaX's PIN-safe hint, or opening the safe. Each sets escrow_safe_known, whose
+          mapping unlocks this aim. Title and description say only what the snag list
+          says (a keypad safe, never reset): only some of those sources mention keys. %>
+      "unlockCondition": { "globalVariable": "escrow_safe_known" },
       "tasks": [
         {
           "taskId": "locate_safe",
@@ -470,7 +499,7 @@ boardroom_pin = "0417"
     {
       "aimId": "restore_hospital_systems",
       "title": "Bring The Wards Back",
-      "description": "Choose how St. Catherine's recovers, and choose what the world is told about how it happened.",
+      "description": "Choose how St. Catherine's recovers, and live with what it costs.",
       "status": "locked",
       "order": 7,
       "unlockCondition": { "aimCompleted": "exploit_entropy_backdoor" },
@@ -502,11 +531,14 @@ boardroom_pin = "0417"
           "type": "manual",
           "status": "active"
         },
+        <%# Hidden until HaX points at the boardroom terminal: after the ransom decision,
+            or on the slow path once Bed 4 is stabilised or lost (unlockTask mappings on
+            the handler). The terminal still completes it if the player gets there first. %>
         {
           "taskId": "decide_hospital_exposure",
           "title": "Decide what goes public at the comms terminal",
           "type": "manual",
-          "status": "active"
+          "status": "locked"
         },
         <%# The aim used to complete on the last story decision, so the bond_visualiser
             credits opened ~1s after the terminal confirm and covered the debrief. This
@@ -948,19 +980,30 @@ boardroom_pin = "0417"
               "eventPattern": "global_variable_changed:found_safe_pin_clue",
               "condition": "value === true && !globalVars.escrow_safe_opened",
               "onceOnly": true,
+              "setGlobal": { "escrow_safe_known": true },
               "completeTask": "gather_pin_clues",
               "sendTimedMessage": { "delay": 1400, "message": "The escrow safe's PIN is the founding year. Flagged at three audits, never changed.\n\nThe plaque's in the lobby. You walked past it on the way in." }
             },
 <%# The safe opening IS the code worked out, however the player got there -- the
     lobby plaque, the pin-cracker, a lucky guess. Without this, solving it from the
-    plaque alone left gather_pin_clues open and "The Keys In The Safe" unfinishable.
+    plaque alone left gather_pin_clues open and "The Emergency Store Safe" (then "The Keys In The Safe") unfinishable.
     escrow_safe_opened also silences the snag-list "the plaque's in the lobby" nudge
     for a player who has already been in the safe. %>
             {
               "eventPattern": "objective_task_completed:crack_safe_pin",
               "onceOnly": true,
-              "setGlobal": { "escrow_safe_opened": true },
+              "setGlobal": { "escrow_safe_opened": true, "escrow_safe_known": true },
               "completeTask": "gather_pin_clues"
+            },
+<%# "The Emergency Store Safe" is story-gated on escrow_safe_known, so the objectives never
+    name the safe's contents before the player has read about them. Set by flag 1 (the
+    backup procedures name the escrow safe), found_safe_pin_clue (snag list, Kim),
+    HaX's hint_pin_safe knot and opening the safe. %>
+            {
+              "eventPattern": "global_variable_changed:escrow_safe_known",
+              "condition": "value === true",
+              "onceOnly": true,
+              "unlockAim": "recover_offline_keys"
             },
             {
               "eventPattern": "global_variable_changed:read_operator_note",
@@ -1034,7 +1077,8 @@ boardroom_pin = "0417"
             {
               "eventPattern": "objective_task_completed:submit_ssh_flag",
               "onceOnly": true,
-              "setGlobal": { "flag_ssh_submitted": true, "vulnerability_guide_offered": true, "exploitation_guide_offered": true, "privesc_guide_offered": true },
+              "setGlobal": { "flag_ssh_submitted": true, "vulnerability_guide_offered": true, "exploitation_guide_offered": true, "privesc_guide_offered": true, "escrow_safe_known": true },
+              "unlockTask": ["submit_proftpd_flag", "submit_ghost_log_flag"],
               "sendTimedMessage": { "delay": 1800, "message": "SSH foothold confirmed. Not root yet. Three guides for the next stretch: vulnerability analysis, ProFTPD exploitation, and privilege escalation. Ask for whichever you need." }
             },
             {
@@ -1087,6 +1131,7 @@ boardroom_pin = "0417"
               "eventPattern": "global_variable_changed:insider_evidence_partial",
               "condition": "value === true",
               "onceOnly": true,
+              "unlockAim": "unmask_inside_asset",
               "completeTask": "unmask_gather_evidence"
             },
             {
@@ -1098,7 +1143,8 @@ boardroom_pin = "0417"
             {
               "eventPattern": "objective_task_completed:submit_database_flag",
               "onceOnly": true,
-              "setGlobal": { "flag_database_submitted": true }
+              "setGlobal": { "flag_database_submitted": true },
+              "unlockTask": ["submit_proftpd_flag", "submit_ghost_log_flag"]
             },
             {
               <%# Was chained through global_variable_changed:flag_database_submitted purely to
@@ -1114,7 +1160,10 @@ boardroom_pin = "0417"
                   not in flag_3's server notice. %>
               "eventPattern": "objective_task_completed:submit_proftpd_flag",
               "onceOnly": true,
-              "completeTask": "unmask_db_window",
+              <%# The deployment log is itself proof of a paid-off insider, so it opens
+                  "Someone On The Inside" and closes its evidence task too. %>
+              "unlockAim": "unmask_inside_asset",
+              "completeTask": ["unmask_db_window", "unmask_gather_evidence"],
               "sendTimedMessage": { "delay": 2000, "message": "Ghost's deployment log. The inside contact is unpaid, with a grievance. Their override badge ran the drill six weeks ago, and held the doors again on Friday. No number yet." }
             },
             {
@@ -1124,6 +1173,7 @@ boardroom_pin = "0417"
               "eventPattern": "objective_task_completed:submit_ghost_log_flag",
               "onceOnly": true,
               "setGlobal": { "insider_badge_id_found": true },
+              "unlockAim": "identify_inside_asset",
               "completeTask": "unmask_ghost_badge",
               "sendTimedMessage": { "delay": 9000, "message": "Ghost's log names the badge that held the doors: SC-4471. 'A post, not a payroll,' it says. Find out whose before you name anybody." }
             },
@@ -1162,6 +1212,7 @@ boardroom_pin = "0417"
               "eventPattern": "global_variable_changed:board_coverup_email_found",
               "condition": "value === true",
               "onceOnly": true,
+              "unlockTask": "learn_about_scapegoating",
               "sendTimedMessage": { "delay": 2000, "message": "That email is damning. The board meant to scapegoat Gary before the ink was dry. Talk to Dr. Kim. She needs to know what her board has decided." }
             },
             {
@@ -1216,6 +1267,40 @@ boardroom_pin = "0417"
               "condition": "!globalVars.slow_path_window_open",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 12000, "message": "Restore's running. One more thing before this is over -- the boardroom has the hospital communications terminal, and you're carrying tonight's evidence. What goes out on it is your call." }
+            },
+<%# decide_hospital_exposure is hidden until the press terminal is the next thing to do:
+    with HaX's pointer above, or on the slow path once Bed 4 is stabilised or lost
+    (whichever comes last of that and the ransom decision). The safe evaluator has no
+    ||, hence one mapping per case; unlockTask on an open task does nothing. %>
+            {
+              "eventPattern": "objective_task_completed:make_ransom_decision",
+              "condition": "!globalVars.slow_path_window_open",
+              "onceOnly": true,
+              "unlockTask": "decide_hospital_exposure"
+            },
+            {
+              "eventPattern": "objective_task_completed:make_ransom_decision",
+              "condition": "globalVars.bed4_manually_stabilised === true",
+              "onceOnly": true,
+              "unlockTask": "decide_hospital_exposure"
+            },
+            {
+              "eventPattern": "objective_task_completed:make_ransom_decision",
+              "condition": "globalVars.patient_bed4_deceased === true",
+              "onceOnly": true,
+              "unlockTask": "decide_hospital_exposure"
+            },
+            {
+              "eventPattern": "global_variable_changed:bed4_manually_stabilised",
+              "condition": "value === true && globalVars.ransom_decision_made === true",
+              "onceOnly": true,
+              "unlockTask": "decide_hospital_exposure"
+            },
+            {
+              "eventPattern": "global_variable_changed:patient_bed4_deceased",
+              "condition": "value === true && globalVars.ransom_decision_made === true",
+              "onceOnly": true,
+              "unlockTask": "decide_hospital_exposure"
             },
             {
               "eventPattern": "global_variable_changed:slow_path_window_open",
@@ -1426,7 +1511,7 @@ boardroom_pin = "0417"
           "type": "pc",
           "id": "reception_terminal",
           "name": "Reception Workstation (Encrypted)",
-          "sprite": "pc",
+          "sprite": "pc_ransomware",
           "takeable": false,
           "locked": true,
           "lockType": "ransomware_display",
@@ -1456,6 +1541,7 @@ boardroom_pin = "0417"
           "type": "pc",
           "id": "<%= kiosk_id %>",
           "name": "Self Check-in Kiosk",
+          "sprite": "checkin_kiosk_ransomware",
           "position": "as-type:checkin_kiosk_locked",
           "takeable": false,
           "locked": true,
@@ -1771,6 +1857,10 @@ boardroom_pin = "0417"
           "type": "pc",
           "id": "ehr_terminal_ward",
           "name": "EHR Terminal (Offline)",
+          "sprite": "pc_ransomware",
+          "spriteVariants": [
+            { "condition": "globalVars.ward_recovering", "value": "pc" }
+          ],
           "takeable": false,
           "locked": true,
           "lockType": "ransomware_display",
@@ -1974,6 +2064,7 @@ boardroom_pin = "0417"
           "type": "pc",
           "id": "infected_terminal",
           "name": "Infected Terminal",
+          "sprite": "pc5_ransomware",
           "takeable": false,
           "locked": true,
           "lockType": "ransomware_display",
@@ -2479,7 +2570,7 @@ boardroom_pin = "0417"
               "id": "pin_cracker",
               "name": "PIN Cracker",
               "takeable": true,
-              "observations": "Not SAFETYNET kit -- the matte casing is ENTROPY's, the same moulding as the network bridge someone planted in IT. It clamps over a four-digit keypad and turns the lock against itself: every wrong code you try, it reads the response and tells you how many digits were right in place, and how many were right but in the wrong slot. You get three goes before it locks you out, so think between them. Whoever stashed it was sent to reach the offline keys before you did, and had not got round to it. Take it back through the hospital and turn their own tool on the locks they were saving it for.",
+              "observations": "Not SAFETYNET kit -- the matte casing is ENTROPY's, the same moulding as the network bridge someone planted in IT. It clamps over a four-digit keypad and turns the lock against itself: every wrong code you try, it reads the response and tells you how many digits were right in place, and how many were right but in the wrong slot. While it is clamped on, the keypad cannot lock you out, and every guess stays on its log with its lights, so read them and close in. Whoever stashed it was sent to reach the offline keys before you did, and had not got round to it. Take it back through the hospital and turn their own tool on the locks they were saving it for.",
               "onPickup": { "setVariable": { "pin_cracker_found": true } },
               "puzzle_graph_role": "tool",
               "puzzle_graph_unlocks": "emergency_storage_safe",
@@ -2689,7 +2780,7 @@ boardroom_pin = "0417"
           "type": "pc",
           "id": "kim_office_terminal",
           "name": "CTO Workstation (Encrypted)",
-          "sprite": "pc",
+          "sprite": "pc_ransomware",
           "takeable": false,
           "locked": true,
           "lockType": "ransomware_display",
@@ -2985,7 +3076,7 @@ boardroom_pin = "0417"
           "type": "pc",
           "id": "security_desk_terminal",
           "name": "Security Desk Terminal (Encrypted)",
-          "sprite": "pc",
+          "sprite": "pc_ransomware",
           "takeable": false,
           "locked": true,
           "lockType": "ransomware_display",
@@ -3477,6 +3568,7 @@ boardroom_pin = "0417"
 
     "offline_keys_recovered": false,
     "escrow_safe_opened": false,
+    "escrow_safe_known": false,
     "restore_manifest_obtained": false,
     "ghost_key_material_obtained": false,
     "password_hints_found": false,

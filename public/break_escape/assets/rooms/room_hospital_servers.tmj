@@ -376,6 +376,18 @@
      "width": 32,
      "x": 210.0,
      "y": 204.0
+    },
+    {
+     "gid": 109,
+     "height": 41,
+     "id": 36,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 50,
+     "x": 214.0,
+     "y": 290.0
     }
    ],
    "opacity": 1,
@@ -688,6 +700,18 @@
      "width": 24,
      "x": 96.0,
      "y": 200.0
+    },
+    {
+     "gid": 304,
+     "height": 16,
+     "id": 32,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 16,
+     "x": 117.0,
+     "y": 143.0
     }
    ],
    "opacity": 1,
@@ -710,8 +734,8 @@
      "type": "",
      "visible": true,
      "width": 24,
-     "x": 155.9,
-     "y": 167.36
+     "x": 217.0,
+     "y": 263.35
     },
     {
      "gid": 382,
@@ -722,44 +746,8 @@
      "type": "",
      "visible": true,
      "width": 28,
-     "x": 169.4,
-     "y": 168.8
-    },
-    {
-     "gid": 405,
-     "height": 13,
-     "id": 31,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 12,
-     "x": 140.2,
-     "y": 174.08
-    },
-    {
-     "gid": 304,
-     "height": 16,
-     "id": 32,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 16,
-     "x": 147.5,
-     "y": 175.04
-    },
-    {
-     "gid": 212,
-     "height": 11,
-     "id": 33,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 14,
-     "x": 185.7,
-     "y": 173.6
+     "x": 140.88,
+     "y": 169.28
     },
     {
      "gid": 387,
@@ -770,8 +758,8 @@
      "type": "",
      "visible": true,
      "width": 26,
-     "x": 161.1,
-     "y": 165.44
+     "x": 174.74,
+     "y": 167.36
     },
     {
      "gid": 492,
@@ -806,20 +794,8 @@
      "type": "",
      "visible": true,
      "width": 16,
-     "x": 139.44,
-     "y": 161.6
-    },
-    {
-     "gid": 206,
-     "height": 12,
-     "id": 26,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 16,
-     "x": 186.56,
-     "y": 165.44
+     "x": 246.0,
+     "y": 261.3
     }
    ],
    "opacity": 1,
@@ -841,7 +817,7 @@
   }
  ],
  "nextlayerid": 14,
- "nextobjectid": 36,
+ "nextobjectid": 37,
  "orientation": "orthogonal",
  "renderorder": "right-down",
  "tiledversion": "1.11.2",

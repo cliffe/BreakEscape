@@ -194,6 +194,7 @@ Narrator: He puts the keycard down in front of you, hard enough that it skids.
 #give_item:keycard:server_room_keycard
 Gary Whitlock: Server room. Take it. That's what you came for.
 
+#unlock_task:learn_about_scapegoating
 Gary Whitlock: And when the write-up says the administrator failed to maintain his estate, you'll have known. And said nothing. Same as the rest of them.
 
 ~ gave_keycard = true
@@ -344,6 +345,7 @@ Gary Whitlock: Where'd you get that.
 === email_reaction ===
 Gary Whitlock: Know what I've been doing tonight, between restores? Printing those. All seven.
 
+#unlock_task:learn_about_scapegoating
 Gary Whitlock: I've been working out how long it takes a hospital board to decide it was one man's fault. About a day and a half.
 
 Gary Whitlock: So I thought: at least when they come for me, it'll be on paper.

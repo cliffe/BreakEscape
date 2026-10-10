@@ -40,6 +40,7 @@ VAR cover_burned = false
 VAR cover_restored = false
 VAR board_coverup_email_found = false
 VAR offline_keys_recovered = false
+VAR escrow_safe_known = false // Synced scenario global: the player has learnt of the emergency-store safe (flag 1, snag list, Kim, HaX, or opening it)
 // Playtest loop round 1: B11 retires the IT escape hatch once IT is open; R7 retires
 // the boardroom-code question once her diary has been read.
 VAR it_door_open = false
@@ -211,8 +212,13 @@ Dr. Sarah Kim: Gary has one. I don't.
 + {topic_gary and not player_warned_kim} [Gary doesn't carry this alone. I want that on the record.]
     -> protect_gary
 
-+ {not topic_escrow and not offline_keys_recovered} [There's an offline key escrow in the emergency store. What's on that safe?]
+// The escrow ask names the safe, so it waits until the player has learnt of it;
+// before that a neutral ask reaches the same PIN clue through escrow_lead_in.
++ {escrow_safe_known and not topic_escrow and not offline_keys_recovered} [There's an offline key escrow in the emergency store. What's on that safe?]
     -> escrow_safe
+
++ {not escrow_safe_known and not topic_escrow and not offline_keys_recovered} [Is anything in this building still offline? Anything they couldn't reach?]
+    -> escrow_lead_in
 
 + {topic_ransom_vote and not advised_on_vote} [You asked what to tell the board. I'll answer properly now.]
     -> ransom_decision_input
@@ -256,6 +262,7 @@ Dr. Sarah Kim: Gary has one. I don't.
 
 Dr. Sarah Kim: Gary is the best administrator this hospital has, and I've spent six months teaching him that being right is worthless here.
 
+#unlock_task:learn_about_scapegoating
 Dr. Sarah Kim: He's going to be sacked. I don't think I get to make that decision any more. The paperwork will say "implementation failure".
 
 Dr. Sarah Kim: And what will finish me, when I'm old, is that he'll believe it was my idea.
@@ -357,6 +364,10 @@ Dr. Sarah Kim: We put it down to a fault on the panel and moved on. We had a sca
 
 // F3: the safe hint as an admission rather than assistance. Redundant with the estates
 // snag list, Sister Doyle and the lobby plaque -- so this is characterisation, not a gate.
+=== escrow_lead_in ===
+Dr. Sarah Kim: One thing. The offline key escrow. It's in a safe in the emergency equipment store, and the safe is the problem.
+-> escrow_safe
+
 === escrow_safe ===
 ~ topic_escrow = true
 #set_global:found_safe_pin_clue:true

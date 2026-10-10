@@ -67,7 +67,7 @@ Narrator: Ten past four in the morning. Every screen behind the desk is black, a
 
 Narrator: Bernie Nwosu is holding the front of this hospital together with a clipboard, a landline and a dying biro.
 
-Bernie Nwosu: *not looking up* If it's the computers, I know. If it's your appointment, it's cancelled.
+Bernie Nwosu: *rattling it off* If it's the computers, I know. If it's your appointment, it's cancelled.
 
 Bernie Nwosu: If it's the vending machine, that's been broken since March. And if you're press, there's a car park you can stand in.
 
@@ -331,7 +331,7 @@ Bernie Nwosu: I signed you in. That's on the page. That's what I've got.
     -> hub
 
 + [Eleven years, and you'd rather be right on paper than right.]
-    Narrator: She turns back to her forms.
+    Narrator: Her face closes.
     ~ bernie_influence -= 2
     # influence_decreased
     Bernie Nwosu: Off you go.
