@@ -9,7 +9,7 @@ Freshers' week at Miskatonic University UK. CryptoSecure Recovery, the front for
 | Metric | Value |
 |---|---|
 | Story aims | 6 |
-| Total tasks | 18 (4 optional) |
+| Total tasks | 19 (4 optional) |
 | VM flag challenges | 0 |
 | Physical locks | 11 |
 | AND-gate convergences | 2 |

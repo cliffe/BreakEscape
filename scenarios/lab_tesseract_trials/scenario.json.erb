@@ -205,6 +205,7 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
     "corridor_open": false,
     "library_open": false,
     "special_collections_open": false,
+    "ledger_read": false,
     "pigeonholes_open": false,
     "drop_box_open": false,
     "workshop_open": false,
@@ -273,8 +274,10 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
       "unlockCondition": { "aimCompleted": "trials_bits" },
       "tasks": [
         { "taskId": "open_library", "title": "Get into the library (Computing Corridor)", "type": "unlock_room", "targetRoom": "library", "status": "active", "onComplete": { "unlockTask": "open_special_collections", "setGlobal": { "library_open": true } } },
-        { "taskId": "open_special_collections", "title": "Open the Special Collections safe (Special Collections, through the Library)", "type": "unlock_object", "targetObject": "special_collections_safe", "status": "locked", "onComplete": { "unlockTask": "open_pigeonholes", "setGlobal": { "special_collections_open": true } } },
+        { "taskId": "open_special_collections", "title": "Open the Special Collections safe (Special Collections, through the Library)", "type": "unlock_object", "targetObject": "special_collections_safe", "status": "locked", "onComplete": { "unlockTask": "find_trial_vii_key", "setGlobal": { "special_collections_open": true } } },
         { "taskId": "consult_sidhu", "title": "Talk to Dr Selvarajan (Seminar Room 2, through his office)", "type": "npc_conversation", "targetNPC": "sidhu_selvarajan", "status": "active", "optional": true },
+        <%# Wayfinding (human playtest): names the search for the Vigenère key without solving the riddle. Completed by the HaX mappings on the ledger whiteboard. %>
+        { "taskId": "find_trial_vii_key", "title": "Find the Trial VII key: the last entry in the ledger of the man who checks everything twice", "type": "manual", "status": "locked", "onComplete": { "unlockTask": "open_pigeonholes" } },
         { "taskId": "open_pigeonholes", "title": "Open the pigeonholes (Computing Corridor)", "type": "unlock_object", "targetObject": "pigeonholes", "status": "locked", "onComplete": { "unlockTask": "open_drop_box", "setGlobal": { "pigeonholes_open": true } } },
         { "taskId": "open_drop_box", "title": "Open the CryptoSecure drop box (Computing Corridor)", "type": "unlock_object", "targetObject": "cryptosecure_drop_box", "status": "locked", "onComplete": { "setGlobal": { "drop_box_open": true } } }
       ]
@@ -438,6 +441,10 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
           ],
           "eventMappings": [
             { "eventPattern": "object_interacted", "condition": "data.objectType === 'alarm_panel'", "onceOnly": true, "completeTask": "read_byte_wall" },
+            <%# The Trial VII key task completes on reading the ledger whiteboard once the safe is open, or as the safe opens if it was read first, so the chain stays in order. %>
+            { "eventPattern": "object_interacted", "condition": "data.objectType === 'whiteboard1' && data.roomId === 'seminar_room'", "onceOnly": true, "setGlobal": { "ledger_read": true } },
+            { "eventPattern": "object_interacted", "condition": "data.objectType === 'whiteboard1' && data.roomId === 'seminar_room' && globalVars.special_collections_open === true", "onceOnly": true, "completeTask": "find_trial_vii_key" },
+            { "eventPattern": "objective_task_completed:open_special_collections", "condition": "globalVars.ledger_read === true", "onceOnly": true, "completeTask": "find_trial_vii_key" },
             { "eventPattern": "objective_task_completed:get_lab_laptop", "condition": "!globalVars.comms_had", "onceOnly": true, "sendTimedMessage": { "delay": 3000, "message": "You left before I'd finished. Ask me about the fallback channel when you've a minute." } },
             { "eventPattern": "item_picked_up:notes", "condition": "data.itemId === 'keyholder_leaflet'", "onceOnly": true, "sendTimedMessage": { "delay": 1500, "message": "Jordan's leaflet is in your notepad. Each number on it is one letter of the lockbox word. Look them up on your ASCII chart, or let CyberChef do it." } },
             { "eventPattern": "objective_task_completed:open_lockbox", "onceOnly": true, "sendTimedMessage": { "delay": 1500, "message": "Eight digits for a four-digit keypad. Odd. Bring the black box too; I want to know who's on the other end." } },
