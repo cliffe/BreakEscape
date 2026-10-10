@@ -67,6 +67,10 @@ VAR parked = false
     DEVICE ACTIVE. Candidate. You opened a box most of your year walked past. The rest get harder.
 }
 I'll be watching. You won't see me do it.
+// Wayfinding (human playtest): say where the next Trial is, unless it's already behind them
+{ not locker_open:
+    Trial II is in the student common room. Locker 4.
+}
 ~ parked = true
 -> waiting
 
