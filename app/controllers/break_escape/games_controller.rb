@@ -831,10 +831,14 @@ module BreakEscape
       is_valid = @game.validate_unlock(target_type, target_id, attempt, method)
 
       unless is_valid
-        return render json: {
-          success: false,
-          message: 'Invalid attempt'
-        }, status: :unprocessable_entity
+        body = { success: false, message: 'Invalid attempt' }
+        # A carried PIN cracker reads the keypad's response: send its pips,
+        # worked out against the real PIN, which the client never holds.
+        if method == 'pin'
+          feedback = @game.pin_cracker_feedback(target_type, target_id, attempt)
+          body[:feedback] = feedback if feedback
+        end
+        return render json: body, status: :unprocessable_entity
       end
 
       # Use transaction to ensure atomic update

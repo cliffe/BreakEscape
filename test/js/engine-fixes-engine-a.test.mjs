@@ -45,7 +45,9 @@ test('E10: unlock-system reads door options for password and PIN pads', () => {
         assert.match(u, new RegExp(`pwDoor\\.${f}`), f);
     }
     const m = read('js/systems/minigame-starters.js');
-    assert.match(m, /maxAttempts: lockable\?\.maxAttempts \|\| lockable\?\.scenarioData\?\.maxAttempts \|\| lockable\?\.doorProperties\?\.maxAttempts \|\| 3/);
+    // No hard-coded 3 here any more: unset means the minigame's own default
+    // (5), or no limit with a PIN cracker (pin-cracker-feedback.test.mjs).
+    assert.match(m, /maxAttempts: lockable\?\.maxAttempts \|\| lockable\?\.scenarioData\?\.maxAttempts \|\| lockable\?\.doorProperties\?\.maxAttempts \|\| undefined/);
 });
 
 test('E8: the player registry uses the configured spriteTalk when it matches the played sprite', () => {

@@ -1,4 +1,5 @@
 import { displayDashes } from '../utils/display-dashes.js';
+import { registerModal } from '../ui/modal-stack.js';
 // Notification System
 // Handles showing and managing notifications in the game
 
@@ -87,6 +88,7 @@ export function gameDisplay(message, title = '') {
         overlay.className = 'game-confirm-overlay';
         overlay.innerHTML = `
             <div class="game-confirm-dialog game-display-dialog">
+                <button class="game-modal-close" aria-label="Close">&times;</button>
                 ${title ? `<div class="game-display-title">${displayDashes(title)}</div>` : ''}
                 <div class="game-display-body">${displayDashes(message).replace(/\n/g, '<br>')}</div>
                 <div class="game-confirm-buttons">
@@ -94,8 +96,10 @@ export function gameDisplay(message, title = '') {
                 </div>
             </div>`;
 
-        const finish = () => { overlay.remove(); resolve(); };
+        const unregister = registerModal(() => finish());
+        const finish = () => { unregister(); overlay.remove(); resolve(); };
         overlay.querySelector('.game-confirm-ok').addEventListener('click', finish);
+        overlay.querySelector('.game-modal-close').addEventListener('click', finish);
         document.body.appendChild(overlay);
     });
 }
@@ -107,6 +111,7 @@ export function gameConfirm(message, confirmLabel = 'Confirm', cancelLabel = 'Ca
         overlay.className = 'game-confirm-overlay';
         overlay.innerHTML = `
             <div class="game-confirm-dialog">
+                <button class="game-modal-close" aria-label="Cancel">&times;</button>
                 <div class="game-confirm-message">${displayDashes(message).replace(/\n/g, '<br>')}</div>
                 <div class="game-confirm-buttons">
                     <button class="game-confirm-btn game-confirm-ok">${confirmLabel}</button>
@@ -114,13 +119,17 @@ export function gameConfirm(message, confirmLabel = 'Confirm', cancelLabel = 'Ca
                 </div>
             </div>`;
 
+        // Esc and the X both cancel (resolve false), same as the Cancel button.
+        const unregister = registerModal(() => finish(false));
         const finish = (result) => {
+            unregister();
             overlay.remove();
             resolve(result);
         };
 
         overlay.querySelector('.game-confirm-ok').addEventListener('click', () => finish(true));
         overlay.querySelector('.game-confirm-cancel').addEventListener('click', () => finish(false));
+        overlay.querySelector('.game-modal-close').addEventListener('click', () => finish(false));
 
         document.body.appendChild(overlay);
     });

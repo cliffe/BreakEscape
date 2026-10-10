@@ -219,6 +219,40 @@ module BreakEscape
       assert_equal 'Invalid attempt', json['message']
     end
 
+    # m02 playtest: the cracker lit four green pips for 1234 at a lock whose PIN
+    # was 0417, because the client scored guesses against a default '1234'. The
+    # server, which holds the PIN, now scores them.
+    test 'a wrong PIN returns PIN cracker pips scored against the real PIN when the player carries one' do
+      @game.scenario_data['rooms']['office']['requires'] = '0417'
+      @game.player_state['inventory'] = [{ 'type' => 'pin-cracker', 'name' => 'PIN Cracker', 'id' => 'pin_cracker' }]
+      @game.save!
+
+      post unlock_game_url(@game), params: { targetType: 'door', targetId: 'office', attempt: '1234', method: 'pin' }
+
+      assert_response :unprocessable_entity
+      json = JSON.parse(@response.body)
+      assert_equal false, json['success']
+      assert_equal({ 'rightPlace' => 0, 'rightNumber' => 2 }, json['feedback'])
+    end
+
+    test 'a wrong PIN returns no pips without a PIN cracker' do
+      post unlock_game_url(@game), params: { targetType: 'door', targetId: 'office', attempt: '1243', method: 'pin' }
+
+      assert_response :unprocessable_entity
+      assert_nil JSON.parse(@response.body)['feedback']
+    end
+
+    test 'mastermind scoring counts each PIN digit once' do
+      score = ->(secret, guess) { Game.mastermind_feedback(secret, guess) }
+      assert_equal({ rightPlace: 0, rightNumber: 2 }, score.('0417', '1234'))
+      assert_equal({ rightPlace: 4, rightNumber: 0 }, score.('0417', '0417'))
+      assert_equal({ rightPlace: 2, rightNumber: 2 }, score.('0417', '0471'))
+      assert_equal({ rightPlace: 1, rightNumber: 0 }, score.('1987', '1111'))
+      assert_equal({ rightPlace: 0, rightNumber: 4 }, score.('9090', '0909'))
+      assert_equal({ rightPlace: 0, rightNumber: 2 }, score.('1123', '4511'))
+      assert_equal({ rightPlace: 1, rightNumber: 1 }, score.('1123', '1415'))
+    end
+
     test 'game setup has correct scenario data' do
       # Verify the test setup is correct before running unlock tests
       assert @game.scenario_data['rooms']['office'].present?

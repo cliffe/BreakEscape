@@ -99,6 +99,40 @@
     max-width: 460px;
     width: 90%;
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.7);
+    position: relative;
+}
+
+/* Close X for overlay dialogs; matches .minigame-close-button */
+.game-modal-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    background: #e74c3c;
+    color: white;
+    border: 4px solid #c0392b;
+    cursor: pointer;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease;
+}
+
+.game-modal-close:hover {
+    background: #c0392b;
+}
+
+.game-modal-close:active {
+    background: #a93226;
+}
+
+.game-confirm-dialog .game-confirm-message,
+.game-display-dialog .game-display-title {
+    padding-right: 40px;
 }
 
 .game-confirm-message {

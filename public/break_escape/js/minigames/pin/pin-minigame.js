@@ -1,5 +1,16 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 
+// Attempts allowed per opening of the pad when the scenario doesn't set
+// maxAttempts and the player has no PIN cracker. With a cracker there is no
+// limit: the point is to read its lights and close in on the code.
+export const DEFAULT_PIN_MAX_ATTEMPTS = 5;
+
+// Guesses (and their pips) per lock, kept for the page session so closing and
+// reopening a pad, or being locked out of it, doesn't wipe what the player has
+// already learnt. Keyed by `${type}:${targetId}`.
+const pinAttemptHistory = new Map();
+export function clearPinAttemptHistory() { pinAttemptHistory.clear(); }
+
 // PIN Minigame Scene implementation
 export class PinMinigame extends MinigameScene {
     constructor(container, params) {
@@ -18,16 +29,31 @@ export class PinMinigame extends MinigameScene {
         super(container, params);
         
         // PIN game configuration
-        this.correctPin = params.correctPin || '1234';
-        this.maxAttempts = params.maxAttempts || 3;
+        // Usually null: real locks are checked on the server and the PIN never
+        // reaches the client. It used to default to '1234', and the cracker's
+        // pips were worked out against that default, so every lock lit four
+        // green pips for 1234 while the server said "incorrect". Pips now come
+        // from the server (see validatePinWithServer); a local PIN is only used
+        // for them when a caller passes one explicitly.
+        this.correctPin = params.correctPin || null;
         this.pinLength = params.pinLength || 4;
         this.infoLeakMode = params.infoLeakMode || false;
         this.allowBackspace = params.allowBackspace !== false;
         this.hasPinCracker = params.hasPinCracker || false;
-        
+        this.maxAttempts = this.hasPinCracker
+            ? Infinity
+            : (params.maxAttempts || DEFAULT_PIN_MAX_ATTEMPTS);
+
         // Game state
         this.currentInput = '';
-        this.attempts = [];
+        this.historyKey = this.getHistoryKey();
+        // Shared with pinAttemptHistory, so earlier guesses at this lock show
+        // straight away and new ones are kept after the pad closes.
+        this.attempts = this.historyKey
+            ? (pinAttemptHistory.get(this.historyKey) || [])
+            : [];
+        if (this.historyKey) pinAttemptHistory.set(this.historyKey, this.attempts);
+        this.lastServerFeedback = null;
         this.attemptCount = 0;
         this.lastAttemptWasNetworkError = false;
         this.isLocked = false;
@@ -46,8 +72,12 @@ export class PinMinigame extends MinigameScene {
             pinLength: this.pinLength,
             entered: this.currentInput || '',
             enteredLength: (this.currentInput || '').length,
-            attemptsUsed: (this.attempts || []).length,
-            maxAttempts: this.maxAttempts,
+            attemptsUsed: this.attemptCount || 0,
+            historyLength: (this.attempts || []).length,
+            // null when unlimited (PIN cracker held): Infinity doesn't survive JSON
+            maxAttempts: Number.isFinite(this.maxAttempts) ? this.maxAttempts : null,
+            hasPinCracker: !!this.hasPinCracker,
+            lastFeedback: (this.attempts || []).at(-1)?.feedback || null,
             isLocked: !!this.isLocked
             // Drive this with clickText('1')..clickText('9') on the keypad,
             // exactly as a player taps it.
@@ -182,7 +212,7 @@ export class PinMinigame extends MinigameScene {
             this.pinCrackerIconElement.style.display = 'inline-block'; // Show by default when pin-cracker is available
             
             const toggleText = document.createElement('span');
-            toggleText.textContent = 'Pin-Cracker Info Leak:';
+            toggleText.textContent = 'PIN cracker lights:';
             
             this.infoLeakToggleElement = document.createElement('input');
             this.infoLeakToggleElement.type = 'checkbox';
@@ -197,6 +227,15 @@ export class PinMinigame extends MinigameScene {
             toggleLabel.appendChild(toggleText);
             toggleLabel.appendChild(this.infoLeakToggleElement);
             toggleContainer.appendChild(toggleLabel);
+
+            // How to read the lights, shown while the cracker is switched on.
+            this.pinCrackerHelpElement = document.createElement('div');
+            this.pinCrackerHelpElement.className = 'pin-minigame-cracker-help';
+            this.pinCrackerHelpElement.innerHTML =
+                '<span class="pin-minigame-light pin-minigame-light-green"></span> right digit, right place ' +
+                '<span class="pin-minigame-light pin-minigame-light-amber"></span> right digit, wrong place' +
+                '<br>The lights are counts, not positions. No limit on guesses while the cracker is fitted.';
+            toggleContainer.appendChild(this.pinCrackerHelpElement);
             interfaceContainer.appendChild(toggleContainer);
         }
         
@@ -295,7 +334,7 @@ export class PinMinigame extends MinigameScene {
             input: this.currentInput,
             isCorrect: isCorrect,
             timestamp: new Date(),
-            feedback: (this.infoLeakToggleElement?.checked || this.infoLeakMode) && this.correctPin ? this.calculateFeedback(this.currentInput) : null
+            feedback: this.feedbackFor(this.currentInput, isCorrect)
         };
 
         // A request that never reached the server is not an attempt: it did not
@@ -315,19 +354,45 @@ export class PinMinigame extends MinigameScene {
         }
     }
 
-    async validatePinWithServer(enteredPin) {
-        try {
-            // Get lockable object and type from params
-            const lockable = this.params.lockable || this.params.sprite;
-            const targetType = this.params.type || 'object'; // 'door' or 'object'
+    // Pips for an attempt. A right answer is all green. A wrong one uses the
+    // server's pips (the server holds the PIN; it sends them only while the
+    // player carries a cracker). A PIN passed in explicitly is the fallback,
+    // for callers that check locally. No PIN and no server pips: no lights.
+    feedbackFor(input, isCorrect) {
+        if (!(this.hasPinCracker || this.infoLeakMode)) return null;
+        if (isCorrect) return { rightPlace: input.length, rightNumber: 0 };
+        if (this.lastServerFeedback) {
+            const fb = this.lastServerFeedback;
+            this.lastServerFeedback = null;
+            return { rightPlace: Number(fb.rightPlace) || 0, rightNumber: Number(fb.rightNumber) || 0 };
+        }
+        return this.correctPin ? this.calculateFeedback(input) : null;
+    }
 
-            // Get target ID from lockable
-            let targetId;
-            if (targetType === 'door') {
-                targetId = lockable.doorProperties?.connectedRoom || lockable.doorProperties?.roomId;
-            } else {
-                targetId = lockable.scenarioData?.id || lockable.scenarioData?.name || lockable.objectId;
-            }
+    getTargetType() {
+        return this.params?.type || 'object'; // 'door' or 'object'
+    }
+
+    getTargetId() {
+        const lockable = this.params?.lockable || this.params?.sprite;
+        if (!lockable) return null;
+        if (this.getTargetType() === 'door') {
+            return lockable.doorProperties?.connectedRoom || lockable.doorProperties?.roomId || null;
+        }
+        return lockable.scenarioData?.id || lockable.scenarioData?.name || lockable.objectId || null;
+    }
+
+    getHistoryKey() {
+        const id = this.getTargetId();
+        return id ? `${this.getTargetType()}:${id}` : null;
+    }
+
+    async validatePinWithServer(enteredPin) {
+        this.lastServerFeedback = null;
+        try {
+            const lockable = this.params.lockable || this.params.sprite;
+            const targetType = this.getTargetType();
+            const targetId = this.getTargetId();
 
             if (!targetId) {
                 console.error('Could not determine targetId for unlock validation');
@@ -357,6 +422,7 @@ export class PinMinigame extends MinigameScene {
             // network. Only a genuinely failed request is refunded.
             if (error?.status) {
                 console.log('Server rejected PIN attempt:', error.status);
+                this.lastServerFeedback = error.body?.feedback || null;
                 return false;
             }
 
@@ -487,11 +553,17 @@ export class PinMinigame extends MinigameScene {
             
             this.attemptsLogElement.appendChild(attemptElement);
         });
+
+        // The log scrolls; keep the newest guess in view.
+        this.attemptsLogElement.scrollTop = this.attemptsLogElement.scrollHeight;
     }
     
     updatePinCrackerIcon() {
         if (this.pinCrackerIconElement) {
             this.pinCrackerIconElement.style.display = this.infoLeakToggleElement?.checked ? 'inline-block' : 'none';
+        }
+        if (this.pinCrackerHelpElement) {
+            this.pinCrackerHelpElement.style.display = this.infoLeakToggleElement?.checked ? 'block' : 'none';
         }
     }
     
@@ -523,7 +595,7 @@ export class PinMinigame extends MinigameScene {
             this.displayElement.classList.add('locked');
             this.displayElement.textContent = 'LOCKED';
 
-            this.showFailure('Maximum attempts reached. System locked.', true, 3000);
+            this.showFailure('Maximum attempts reached. System locked. Your guesses so far are kept.', true, 3000);
             
             // Set game result
             this.gameResult = {
@@ -534,7 +606,10 @@ export class PinMinigame extends MinigameScene {
         } else {
             // Show temporary failure message
             const remainingAttempts = this.maxAttempts - this.attemptCount;
-            this.showFailure(`Incorrect PIN. ${remainingAttempts} attempt${remainingAttempts > 1 ? 's' : ''} remaining.`, false, 1500);
+            const message = Number.isFinite(remainingAttempts)
+                ? `Incorrect PIN. ${remainingAttempts} attempt${remainingAttempts > 1 ? 's' : ''} remaining.`
+                : 'Incorrect PIN. Read the cracker\'s lights and try again.';
+            this.showFailure(message, false, 1500);
             
             // Clear the failure message after delay
             setTimeout(() => {
@@ -591,7 +666,7 @@ export function startPinMinigame(correctPin = '1234', options = {}) {
     const params = {
         title: options.title || 'PIN Entry',
         correctPin: correctPin,
-        maxAttempts: options.maxAttempts || 3,
+        maxAttempts: options.maxAttempts,
         pinLength: options.pinLength || 4,
         infoLeakMode: options.infoLeakMode || false,
         allowBackspace: options.allowBackspace !== false,

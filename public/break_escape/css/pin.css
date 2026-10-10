@@ -9,6 +9,8 @@
 .pin-minigame-game-container {
     background: #55616e !important;
     padding: 20px;
+    /* room for the Cancel button, which sits over the bottom of the panel */
+    padding-bottom: 56px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -16,14 +18,14 @@
     gap: 20px;
 
     max-width: 600px;
-    margin: 20px auto;
+    margin: 12px auto;
 }
 
 .pin-minigame-interface {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 25px;
+    gap: 16px;
     width: 100%;
     max-width: 400px;
 }
@@ -356,9 +358,10 @@
 /* Pin-Cracker Info Leak Mode Toggle */
 .pin-minigame-toggle-container {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 10px;
-    padding: 10px;
+    gap: 6px 10px;
+    padding: 6px 10px;
     background: rgba(0, 0, 0, 0.2);
     /* border-radius: 8px; */
     border: 2px solid #0f3460;
@@ -375,8 +378,9 @@
 }
 
 .pin-minigame-cracker-icon {
-    width: 64px;
-    height: 64px;
+    /* the art is 12x13: an exact 4x */
+    width: 48px;
+    height: 52px;
     margin-right: 8px;
     filter: drop-shadow(0 0 5px rgba(0, 255, 65, 0.5));
     transition: all 0.3s ease;
@@ -517,4 +521,25 @@
 
 .pin-minigame-attempts-log::-webkit-scrollbar-thumb:hover {
     background: #00ff41;
+}
+
+/* How to read the PIN cracker's lights (shown while the cracker is on) */
+.pin-minigame-cracker-help {
+    flex-basis: 100%;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #e0e0e0;
+}
+
+.pin-minigame-cracker-help .pin-minigame-light {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    vertical-align: middle;
+    margin: 0 2px 0 6px;
+    animation: none;
+}
+
+.pin-minigame-cracker-help .pin-minigame-light:first-child {
+    margin-left: 0;
 }

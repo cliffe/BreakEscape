@@ -1103,6 +1103,68 @@ module BreakEscape
       end
     end
 
+    # PIN cracker feedback for a wrong PIN: how many digits are right and in the
+    # right place, and how many are right but in the wrong place (Mastermind
+    # scoring, each digit of the PIN matched at most once).
+    #
+    # The real PIN never reaches the client, so the pips have to be worked out
+    # here. Working them out on the client against a missing PIN made the pad
+    # light four green pips for 1234 on every lock (m02 boardroom, PIN 0417).
+    # Returns nil unless the target is a PIN lock and the player is carrying a
+    # PIN cracker, so the leak only exists when the device does.
+    def pin_cracker_feedback(target_type, target_id, attempt)
+      return nil unless has_pin_cracker_in_inventory?
+
+      lock = target_type == 'door' ? room_data(target_id) : find_scenario_object(target_id)
+      return nil unless lock && lock['lockType'] == 'pin' && lock['requires'].present?
+
+      self.class.mastermind_feedback(lock['requires'].to_s, attempt.to_s)
+    end
+
+    def self.mastermind_feedback(secret, guess)
+      secret_digits = secret.chars
+      guess_digits = guess.chars
+      right_place = 0
+      spare_secret = []
+      spare_guess = []
+      guess_digits.each_with_index do |digit, i|
+        if digit == secret_digits[i]
+          right_place += 1
+        else
+          spare_guess << digit
+          spare_secret << secret_digits[i] if i < secret_digits.length
+        end
+      end
+      spare_secret.concat(secret_digits[guess_digits.length..] || [])
+      right_number = 0
+      spare_guess.each do |digit|
+        idx = spare_secret.index(digit)
+        next unless idx
+
+        right_number += 1
+        spare_secret.delete_at(idx)
+      end
+      { rightPlace: right_place, rightNumber: right_number }
+    end
+
+    def has_pin_cracker_in_inventory?
+      (player_state['inventory'] || []).any? do |item|
+        item['scenarioData']&.dig('type') == 'pin-cracker' || item['type'] == 'pin-cracker'
+      end
+    end
+
+    # The scenario object an unlock targets: matched on id, name or the client's
+    # generated id (roomId_type_index), as validate_unlock does.
+    def find_scenario_object(target_id)
+      scenario_data['rooms']&.each do |room_id, room|
+        room['objects']&.each_with_index do |obj, index|
+          return obj if obj['id'] == target_id || obj['name'] == target_id ||
+                        "#{room_id}_#{obj['type']}_#{index}" == target_id
+        end
+      end
+      nil
+    end
+
     # Validate NPC unlock permission
     def validate_npc_unlock(npc_id, target_id)
       Rails.logger.info "[BreakEscape] Validating NPC unlock: npc=#{npc_id}, target=#{target_id}"

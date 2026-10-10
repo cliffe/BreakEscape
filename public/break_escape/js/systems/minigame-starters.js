@@ -531,7 +531,7 @@ export function startPinMinigame(lockable, type, correctPin, callback) {
         title: `Enter PIN for ${type}`,
         correctPin: correctPin,
         // Scenario option (doors keep it on doorProperties), default 3
-        maxAttempts: lockable?.maxAttempts || lockable?.scenarioData?.maxAttempts || lockable?.doorProperties?.maxAttempts || 3,
+        maxAttempts: lockable?.maxAttempts || lockable?.scenarioData?.maxAttempts || lockable?.doorProperties?.maxAttempts || undefined, // undefined: the minigame default (5), or no limit with a PIN cracker
         pinLength: correctPin ? correctPin.length : 4, // Default to 4 if null (server-side validation)
         hasPinCracker: hasPinCracker,
         allowBackspace: true,
