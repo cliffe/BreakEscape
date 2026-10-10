@@ -606,8 +606,8 @@ module BreakEscape
     # ─── TtsService#generate ─────────────────────────────────────────────────
 
     test "generate writes the mp3 and a sidecar naming speaker and model, leaving no temp files" do
-      service = stubbed_gemini_service
       with_env("GEMINI_API_KEY" => "dummy_key_for_test") do
+        service = stubbed_gemini_service   # reads the key when it is built
         path = service.generate("Hello there, agent.", "Kore", "Speak formally.", "en-GB",
                                 scenario_name: "gen_test", npc_id: "agent_x")
 
