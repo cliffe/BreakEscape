@@ -133,7 +133,3 @@ This takes frame 0 as the canonical base, auto-detects the face box, picks the t
 ## Step (final) — wire it up (only if asked)
 
 The sheet is picked up automatically by filename convention wherever the NPC's `spriteTalk` points at it. If the user wants it used, set `spriteTalk` in the relevant scenario NPC definition to `assets/characters/<name>_talk.png`. Do not edit scenarios unless asked.
-
-## Cost
-
-Step 1 (this skill) costs a handful of Gemini generations, no PixelLab spend. The user's manual PixelLab pass costs PixelLab credits/generations on their own account — mention that up front but don't try to estimate it, since it depends on the website tool's own pricing, not the MCP generation costs quoted for `create_portrait_character` etc.
