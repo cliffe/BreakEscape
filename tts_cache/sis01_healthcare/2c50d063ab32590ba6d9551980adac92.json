@@ -1,0 +1,13 @@
+{
+  "key": "2c50d063ab32590ba6d9551980adac92",
+  "npc": "helen_carver",
+  "text": "The NAS, before we're isolated? If the attacker's still in, he gets it back as fast as we do.",
+  "voice": "Pulcherrima",
+  "style": "NHS chief information officer in her mid-fifties, decisive and under pressure, clipped and authoritative. Speak with a consistent well-spoken North Yorkshire (Harrogate) accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

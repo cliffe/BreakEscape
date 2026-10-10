@@ -1,0 +1,13 @@
+{
+  "key": "785ebb79510e2b43f6351130eb9b74c3",
+  "npc": "helen_carver",
+  "text": "That's the government's line for the NHS, and mine. So the restore is our only way back, and we live with its timings.",
+  "voice": "Pulcherrima",
+  "style": "NHS chief information officer in her mid-fifties, decisive and under pressure, clipped and authoritative. Speak with a consistent well-spoken North Yorkshire (Harrogate) accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

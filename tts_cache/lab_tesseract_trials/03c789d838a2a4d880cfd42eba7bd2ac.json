@@ -1,0 +1,13 @@
+{
+  "key": "03c789d838a2a4d880cfd42eba7bd2ac",
+  "npc": "closing_debrief_person",
+  "text": "Then you'll have your reasons, and one day you'll tell me them. Not today.",
+  "voice": "Aoede",
+  "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

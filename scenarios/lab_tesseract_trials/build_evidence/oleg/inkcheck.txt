@@ -1,0 +1,36 @@
+== opening_briefing start 
+✅ opening_briefing.json @ start  paths=0 clean=0 runaway=0 failing=0  states=9 memo-hits=8 0.0s
+exit 0
+== closing_debrief start 
+✅ closing_debrief.json @ start  paths=0 clean=0 runaway=0 failing=0  states=18 memo-hits=8 0.0s
+exit 0
+== phone_agent_0x99 start 
+✅ phone_agent_0x99.json @ start  paths=0 clean=0 runaway=0 failing=0  states=4 memo-hits=9 0.0s
+exit 0
+== phone_ghost start 
+✅ phone_ghost.json @ start  paths=0 clean=0 runaway=0 failing=0  states=2 memo-hits=2 0.0s
+exit 0
+== phone_ghost the_offer_call 
+✅ phone_ghost.json @ the_offer_call  paths=0 clean=0 runaway=0 failing=0  states=3 memo-hits=6 0.0s
+exit 0
+== npc_tom start 
+✅ npc_tom.json @ start  paths=0 clean=0 runaway=0 failing=0  states=3 memo-hits=5 0.0s
+exit 0
+== npc_sidhu start 
+✅ npc_sidhu.json @ start  paths=0 clean=0 runaway=0 failing=0  states=2 memo-hits=4 0.0s
+exit 0
+== npc_cliffe common_room 
+✅ npc_cliffe.json @ common_room  paths=0 clean=0 runaway=0 failing=0  states=12 memo-hits=19 0.0s
+exit 0
+== npc_cliffe workshop 
+✅ npc_cliffe.json @ workshop  paths=0 clean=0 runaway=0 failing=0  states=2 memo-hits=2 0.0s
+exit 0
+== npc_jordan start 
+✅ npc_jordan.json @ start  paths=0 clean=0 runaway=0 failing=0  states=3 memo-hits=9 0.0s
+exit 0
+== npc_megan start 
+✅ npc_megan.json @ start  paths=0 clean=0 runaway=0 failing=0  states=1 memo-hits=2 0.0s
+exit 0
+== npc_oleg start 
+✅ npc_oleg.json @ start  paths=0 clean=0 runaway=0 failing=0  states=48 memo-hits=97 0.1s
+exit 0

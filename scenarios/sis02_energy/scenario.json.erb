@@ -1,0 +1,2222 @@
+<%
+# ========================================================================
+# ALBION ENERGY STORAGE — BATTERY HALL CRISIS SCENARIO
+# Case 2: Energy (CyBOK Phase 7 SIS Project)
+# Version: Draft 1 — April 2026
+# ========================================================================
+#
+# SCENARIO PREMISE (fix pass, 2026-10-05; facts per DIALOGUE_REVIEW.md "Decisions")
+#   Saturday 21 March 2026. Albion Energy Storage, on the Trent near Newark (designated OES).
+#   Friday 23:12 the historian proxy starts writing a flat 28.0°C; Saturday 01:47 the dormant
+#   c.ellison account (a commissioning integrator's contractor, left 14 months ago, default
+#   password on the jump server's local accounts) opens RDP from an internal enterprise host;
+#   03:22 the SIS thermal trip goes 55→85°C and the hydrogen alarm 1.0→3.8% by volume.
+#   06:15 Helen Marsh arrives; 06:30 she briefs the response and engineering team booked for
+#   the 07:00 PLC-GRID maintenance window (the players).
+#
+# ROOM LAYOUT
+#   scada_control_room (start) → north → battery_hall_1  [rfid: battery_hall_badge]
+#                              → east  → engineering_workshop [rfid: workshop_rfid_key]
+#
+# ESD: never gated. Stations by the Battery Hall 1 door (control room side), on the control
+#   room console, and a local one inside the hall. Anyone may press one on a credible hazard.
+#   The one inside is labelled for use outside a gas alarm; walking into the hall, or pressing it,
+#   in a gas alarm sets entered_hall_in_gas_alarm / esd_pressed_inside_in_alarm (Helen bark, debrief).
+#
+# DECISION SCENES (each gated in Priya S.'s debrief and the credits)
+#   gauge_verdict        Helen: dial or screen            (HEL-1)
+#   shutdown_argument    Helen / Marcus: shut down now     (HEL-5, MAR-1, R1)
+#   evidence_before_esd  Marcus: save the PLC-BMS registers first (R2); bms_registers_saved = it was done
+#   isolation_scope      Marcus: how far to cut            (MAR-2, R5)
+#   tom_refused_unverified  Tom rings back to verify       (TOM-2)
+#   nis_initial_choice   Marcus: send now or wait          (MAR-3)
+#   en002_verdict        Priya: does CLAIM-EN-002 hold     (PRI-6, R9)
+#   patch_decision       Priya: risk owner today           (PRI-5, R3)
+#
+# ========================================================================
+# ERB VARIABLES
+# ========================================================================
+
+require 'base64'
+
+%>
+{
+  "scenario_brief": "Saturday 21 March 2026, 06:30. Albion Energy Storage, on the Trent near Newark: 100 MW and 200 MWh of lithium-ion batteries, designated an operator of essential services. You are the response and engineering team booked for the 07:00 maintenance window on the grid interface PLC. Helen Marsh, the site's SCADA engineer, got in at 06:15. Every screen in the control room said the night had been normal, and Helen didn't believe them.",
+  "show_scenario_brief": "on_resume",
+  "disableAttacks": true,
+  "creditsTheme": "cyber",
+  "lighting": { "enabled": true, "defaultMode": "on", "ambient": "#b8bfce" },
+
+  "startRoom": "scada_control_room",
+
+<%# R2-1 (round 2): an ESD before the dial (esd_before_dial) cancels both hydrogen timers, and a
+    press in a gas alarm clears esd_before_dial, so the two are never true together. Lets the
+    validator see that the three dial radios (anomaly_detected) can't co-fire. %>
+  "mutuallyExclusiveGlobals": [
+    ["esd_before_dial", "hydrogen_alarm"]
+  ],
+
+  "globalVariables": {
+    "briefing_played": false,
+    "helen_briefed": false,
+    "hmi_reviewed": false,
+    "incident_folder_read": false,
+    "battery_hall_badge_collected": false,
+
+    "anomaly_detected": false,
+    "historian_flatline_found": false,
+    "rate_of_change_viewed": false,
+    "compare_racks_viewed": false,
+    "gauge_verdict": "",
+    "shutdown_argument": "",
+
+    "jump_server_confirmed": false,
+    "jump_server_isolated": false,
+    "jump_server_threat_intel_viewed": false,
+    "sis_audit_reviewed": false,
+    "castletech_contacted": false,
+    "network_isolated": false,
+    "network_isolation_authorised": false,
+    "cable_pull_agreed": false,
+    "isolation_scope": "",
+    "tom_refused_unverified": false,
+    "tom_told_false_authority": false,
+
+    "sis_config_seen": false,
+    "sis_certification_seen": false,
+    "sis_tamper_confirmed": false,
+    "helen_patch_view_heard": false,
+    "marcus_airgap_view_heard": false,
+
+<%# ESD (decision 3): esd_stations_live is the minigame's authVar and is always true, so no station
+    is ever gated on a conversation. early_esd_activation = pressed before the historian was read;
+    esd_before_dial = pressed before anyone read the dial. evidence_before_esd is Marcus's R2 scene
+    ("save" / "press"); bms_registers_exported is set by reading the register export on HMI-OPS-01,
+    and Helen's mapping turns it into bms_registers_saved only if the ESD had not yet been pressed
+    (the trip's shutdown routine overwrites the registers). entered_hall_in_gas_alarm and
+    esd_pressed_inside_in_alarm record going into Hall 1, or using its inside station, in a gas alarm.
+    facility_evacuated = the gas reached 2.0% by volume before any ESD: Helen
+    presses the console station on the way out and Hall 1 is lost (decision 7); the debrief still runs. %>
+    "esd_stations_live": true,
+    "early_esd_activation": false,
+    "esd_before_dial": false,
+    "esd_activated": false,
+    "evidence_before_esd": "",
+    "bms_registers_exported": false,
+    "bms_registers_saved": false,
+    "entered_hall_in_gas_alarm": false,
+    "esd_pressed_inside_in_alarm": false,
+    "hydrogen_alarm": false,
+    "facility_evacuated": false,
+
+    "marcus_webb_contacted": false,
+    "network_isolation_requested": false,
+    "en001_claim_assessed": false,
+
+<%# NIS (decisions 5 and 6). nis_notified = Marcus sent the initial notification to Ofgem (competent
+    authority, with DESNZ) with the NCSC copied. nis_deadline is an abstract game clock: when it runs
+    out it sets nis_deadline_missed (Helen's bark, the debrief and the credits) and nothing else; it
+    no longer opens the debrief. nis_initial_choice is Marcus's MAR-3 scene ("now" / "wait").
+    incident_aware = the team knows of the incident by any route (historian flat-line, jump server
+    session, SIS change, evacuation or CastleTech's isolation; set by Helen's mappings). It starts
+    the NIS clock, and Marcus's NIS option opens on the same sources (SL3/MF1). %>
+    "incident_aware": false,
+    "nis_form_read": false,
+    "nis_notified": false,
+    "nis_initial_choice": "",
+    "nis_deadline_missed": false,
+    "trent_water_notified": false,
+    "trent_water_raised": false,
+    "trent_water_verify_first": false,
+    "trent_lateral_ioc_viewed": false,
+
+<%# NETWORK STATUS lamp (mn3): scada_manual_mode once Marcus's isolation scope is 'scada';
+    historian_leg_cut once CastleTech have isolated with the scope 'historian'. Set by Helen's
+    mappings on isolation_scope and network_isolated. %>
+    "scada_manual_mode": false,
+    "historian_leg_cut": false,
+
+    "facility_safe_state": false,
+    "priya_s_visible": false,
+    "en002_verdict": "",
+    "patch_decision": "",
+    "debrief_complete": false,
+    "network_architecture_reviewed": false
+  },
+
+  "narrator": {
+    "id": "narrator",
+    "skipTextValidation": true,
+    "voice": {
+      "name": "Charon",
+      "style": "Calm, precise narrator; measured industrial tone; unhurried",
+      "language": "en-GB"
+    }
+  },
+
+  "player": {
+    "sprite": "male_nerd"
+  },
+
+  "startItemsInInventory": [
+    {
+      "type": "phone",
+      "name": "Albion Site Phone",
+      "takeable": true,
+      "phoneId": "site_phone",
+      "npcIds": ["marcus_webb", "tom_hadley"],
+      "observations": "The facility duty phone. Contacts: Marcus Webb (OT Security Manager) and CastleTech SOC."
+    }
+  ],
+
+  "objectives": [
+
+    {
+      "aimId": "assess_control_room",
+      "title": "Understand the Facility State",
+      "description": "Get a briefing from Helen Marsh. Review the SCADA HMI. Read the Incident Response folder on the duty desk.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "talk_to_helen",
+          "title": "Get a briefing from Helen Marsh",
+          "type": "npc_conversation",
+          "targetNPC": "helen_marsh",
+          "status": "active"
+        },
+        {
+          "taskId": "check_hmi_readings",
+          "title": "Review the SCADA HMI readings on HMI-OPS-01",
+          "type": "manual",
+          "status": "active"
+        },
+        {
+          "taskId": "read_incident_folder",
+          "title": "Read the Incident Response folder",
+          "type": "manual",
+          "status": "active"
+        }
+      ]
+    },
+
+    {
+      "aimId": "conduct_walkdown",
+      "title": "Battery Hall 1 Walkdown",
+      "description": "Go into Battery Hall 1 and read the local dial gauge at Rack A2. Compare it with what HMI-OPS-01 says.",
+      "status": "locked",
+      "order": 1,
+      "unlockCondition": { "aimCompleted": "assess_control_room" },
+      "tasks": [
+        {
+          "taskId": "enter_battery_hall",
+          "title": "Enter Battery Hall 1",
+          "type": "enter_room",
+          "targetRoom": "battery_hall_1",
+          "status": "active"
+        },
+        {
+          "taskId": "check_thermometer",
+          "title": "Read the local dial gauge at Rack A2",
+          "type": "manual",
+          "status": "active"
+        }
+      ]
+    },
+
+    {
+      "aimId": "verify_anomaly",
+      "title": "Check the Historian",
+      "description": "Back on HMI-OPS-01, open the historian trend for the Hall 1 racks. Find out how long the screen has been showing the same number.",
+      "status": "locked",
+      "order": 2,
+      "unlockCondition": { "aimCompleted": "conduct_walkdown" },
+      "tasks": [
+        {
+          // MG-VM01: ScadaHistorianMinigame — sets historian_flatline_found + completes task
+          "taskId": "review_historian",
+          "title": "Identify and annotate the historian anomaly on HMI-OPS-01",
+          "type": "manual",
+          "status": "active"
+        }
+      ]
+    },
+
+    {
+      "aimId": "contact_marcus_investigate",
+      "title": "Call Marcus Webb and Investigate",
+      "description": "Message Marcus Webb, the OT Security Manager. Get into the Engineering Workshop and find out who is on the jump server.",
+      "status": "locked",
+      "order": 3,
+      "unlockCondition": { "aimCompleted": "verify_anomaly" },
+      "tasks": [
+        {
+          "taskId": "call_marcus_initial",
+          "title": "Message Marcus Webb (OT Security Manager)",
+          "type": "npc_conversation",
+          "targetNPC": "marcus_webb",
+          "status": "active"
+        },
+        {
+          "taskId": "find_workshop_key",
+          "title": "Locate the Engineering Workshop RFID key",
+          "type": "collect_items",
+          "targetGroup": "workshop_key_group",
+          "targetCount": 1,
+          "showProgress": true,
+          "status": "active"
+        },
+        {
+          "taskId": "unlock_workshop",
+          "title": "Unlock the Engineering Workshop",
+          "type": "unlock_room",
+          "targetRoom": "engineering_workshop",
+          "status": "active"
+        },
+        {
+          // MG-VM02: hmi_eng_02 — LogFilterMinigame (log-filter), IMPLEMENTED
+          "taskId": "identify_rdp_session",
+          "title": "Find the session on the jump server that shouldn't be there",
+          "type": "manual",
+          "status": "active"
+        }
+      ]
+    },
+
+    {
+      "aimId": "investigate_sis",
+      "title": "Investigate the SIS",
+      "description": "Read the SIS configuration panel in the workshop. Find the certified setpoints in the filing cabinet and compare them. Then report what you find.",
+      "status": "locked",
+      "order": 4,
+      "unlockCondition": { "aimCompleted": "contact_marcus_investigate" },
+      "tasks": [
+        {
+          // IMPLEMENTED: sis_config_panel — custom SIS threshold viewer MG-03
+          "taskId": "read_sis_config",
+          "title": "Read the SIS configuration panel",
+          "type": "manual",
+          "status": "active"
+        },
+        {
+          "taskId": "find_certification_doc",
+          "title": "Find the SIS safety requirements extract in the filing cabinet",
+          "type": "manual",
+          "status": "active"
+        },
+        {
+          "taskId": "confirm_sis_tamper",
+          "title": "Report the SIS setpoint changes",
+          "type": "manual",
+          "status": "active"
+        }
+      ]
+    },
+
+<%# Decision 3: the ESD is never gated. The aim unlocks once the dial has been read (Helen's
+    anomaly_detected mapping) or the walkdown is done, but every station works from the start. %>
+    {
+      "aimId": "initiate_esd",
+      "title": "Shut Down Hall 1 (ESD)",
+      "description": "Press an emergency shutdown station: by the Battery Hall 1 door, or on the control room console. Anyone may press one on a credible hazard. Nobody needs permission.",
+      "status": "locked",
+      "order": 5,
+      "unlockCondition": { "aimCompleted": "conduct_walkdown" },
+      "tasks": [
+        {
+          "taskId": "press_esd_button",
+          "title": "Press an ESD station for Battery Hall 1",
+          "type": "manual",
+          "status": "active"
+        }
+      ]
+    },
+
+    {
+      "aimId": "isolate_network",
+      "title": "Isolate the Attacker",
+      "description": "Pull the jump server's network cable. Get CastleTech to shut the enterprise side off from SCADA: they will check with Marcus before they change anything.",
+      "status": "locked",
+      "order": 6,
+      "unlockCondition": { "aimCompleted": "contact_marcus_investigate" },
+      "tasks": [
+        {
+          "taskId": "pull_ethernet_cable",
+          "title": "Pull the jump server's network cable",
+          "type": "manual",
+          "status": "active"
+        },
+        {
+          "taskId": "contact_castletech",
+          "title": "Get Tom Hadley (CastleTech SOC) to isolate the enterprise side",
+          "type": "npc_conversation",
+          "targetNPC": "tom_hadley",
+          "status": "active"
+        }
+      ]
+    },
+
+    {
+      "aimId": "nis_notification",
+      "title": "Send the NIS Notification",
+      "description": "Read the NIS form on the clipboard by the workshop door. Then message Marcus Webb: he signs it off and sends it to Ofgem, with the NCSC copied. Send what you know now; it can be updated later.",
+      "status": "locked",
+      "order": 7,
+      "unlockCondition": { "aimCompleted": "contact_marcus_investigate" },
+      "tasks": [
+        {
+          "taskId": "complete_nis_form",
+          "title": "Read the NIS form, then message Marcus Webb to send it",
+          "type": "manual",
+          "status": "active"
+        }
+      ]
+    },
+
+    {
+      "aimId": "trent_water_notification",
+      "title": "(Optional) Warn Trent Water",
+      "description": "Trent Water shares Albion's file server. Decide whether CastleTech should warn them, and when.",
+      "status": "locked",
+      "order": 8,
+      "unlockCondition": { "aimCompleted": "verify_anomaly" },
+      "tasks": [
+        {
+          "taskId": "call_trent_water",
+          "title": "Let Tom Hadley warn Trent Water Services",
+          "type": "manual",
+          "status": "active",
+          "optional": true
+        }
+      ]
+    },
+
+    {
+      "aimId": "post_incident_debrief",
+      "title": "Post-Incident Debrief",
+      "missionConclusion": true,
+      "concludeRequires": {},
+<%# Mission conclusion (SL5, sis03 pattern). No VM or flag work, so there is nothing the server must
+    hold the ending for: the empty gate trusts the client. debrief_complete is set on the last beat
+    of npc_priya_s.ink closing_end, and talk_to_priya_s completes straight after it; the music event
+    on debrief_complete rolls the credits and POSTs /conclude. A globals gate on debrief_complete
+    raced that task's POST against the state sync and showed "Not Yet…" over the end of the
+    debrief. Nothing optional (Trent Water, NIS
+    form, SIS tamper, cable pull) is required: the credits report those instead. The aim unlocks
+    when Priya S. appears (priya_s_visible): on the safe state, or after the Hall 1 evacuation. %>
+      "description": "Priya S. from the NCSC is in the control room. Go through the incident with her when you are ready.",
+      "status": "locked",
+      "order": 9,
+      "unlockCondition": { "aimsCompleted": ["initiate_esd", "isolate_network"] },
+      "tasks": [
+        {
+          "taskId": "talk_to_priya_s",
+          "title": "Go through the debrief with Priya S. (NCSC)",
+          "type": "npc_conversation",
+          "targetNPC": "priya_s",
+          "status": "active"
+        }
+      ]
+    }
+
+  ],
+
+  "timers": [
+<%# [MG-05] NIS notification clock (decision 6). An abstract game clock, not 72 real hours: the
+    countdown widget shows it so players feel "without undue delay". It starts when the team
+    becomes aware of the incident, as the 72 hours do: incident_aware, set by the first of the
+    historian flat-line, the jump server session, the SIS change, the evacuation or CastleTech's
+    isolation (SL3/MF1; the historian can be skipped). When it
+    runs out it sets nis_deadline_missed, which only drives Helen's bark, a debrief line and a
+    credits line. It never opens or forces the debrief (the old forced-debrief mapping is gone). %>
+    {
+      "id": "nis_deadline",
+      "label": "NIS notification clock (game time)",
+      "startOnGlobal": "incident_aware",
+      "delayMs": 2700000,
+      "condition": "!globalVars.nis_notified",
+      "setGlobal": { "nis_deadline_missed": true },
+      "showCountdown": true,
+      "onceOnly": true
+    },
+<%# [MG-04] Hydrogen progression (decisions 6 and 7). Both timers start when Helen's briefing ends
+    (helen_briefed), not when the dial is read, and both are cancelled by any ESD station.
+    T+25m: hydrogen at 1.0% by volume (25% LEL): alarm and ventilate; Helen rings the fire service.
+    T+43m: hydrogen at 2.0% by volume (50% LEL): evacuate. Helen's evacuation scene presses the
+    console ESD on the way out (esd_activated) and Hall 1 is lost to fire, everyone out, fire
+    service attending. That is the correct response, not a failure: the debrief still runs. %>
+    {
+      "id": "h2_advisory",
+      "label": "Hydrogen alarm (1.0% by volume)",
+      "startOnGlobal": "helen_briefed",
+      "delayMs": 1500000,
+      "cancelOnGlobal": "esd_activated",
+      "setGlobal": { "hydrogen_alarm": true },
+      "showCountdown": false,
+      "onceOnly": true,
+      "actions": [
+        {
+          "type": "tint_objects",
+          "roomId": "battery_hall_1",
+          "textureKey": "batrack",
+          "color": 16729122,
+          "pulse": true
+        }
+      ]
+    },
+    {
+      "id": "h2_evacuation",
+      "label": "Hydrogen evacuation (2.0% by volume)",
+      "startOnGlobal": "helen_briefed",
+      "delayMs": 2580000,
+      "cancelOnGlobal": "esd_activated",
+      "condition": "!globalVars.esd_activated",
+      "setGlobal": { "facility_evacuated": true },
+      "showCountdown": false,
+      "onceOnly": true
+    }
+  ],
+
+  "music": {
+    "events": [
+      {
+        "trigger": "game_loaded",
+        "condition": "!globalVars.briefing_played",
+        "playlist": "cutscene",
+        "fade": false
+      },
+      {
+        "trigger": "game_loaded",
+        "condition": "globalVars.briefing_played === true",
+        "playlist": "noir",
+        "fade": false
+      },
+      {
+        "trigger": "conversation_closed:helen_marsh",
+        "condition": "globalVars.briefing_played === true",
+        "playlist": "noir",
+        "fade": true
+      },
+      {
+<%# R2-3 (round 2): switch once. The evacuation sets esd_activated by mapping (SL4) and then the
+    cutscene's #set_global re-sets it; without the oldValue guard the second emit skipped a track
+    mid-scene. A station press sends no oldValue (apply-actions), so it still switches. %>
+        "trigger": "global_variable_changed:esd_activated",
+        "condition": "value === true && (typeof oldValue === 'undefined' || oldValue !== true)",
+        "playlist": "cutscene",
+        "fade": true
+      },
+      {
+<%# Credits roll once (2026-10-05). The #set_global tag emits global_variable_changed every time it
+    runs, even when the value is already true, so a replayed tag would roll the credits and POST
+    /conclude a second time. The ink no longer replays it (npc_priya_s.ink start guard), and this
+    condition ignores a re-set of a value that was already true. typeof guards the ink-observer path,
+    whose payload carries no oldValue. %>
+        "trigger": "global_variable_changed:debrief_complete",
+        "condition": "value === true && (typeof oldValue === 'undefined' || oldValue !== true)",
+        "playlist": "victory",
+        "track": "Ghost in the Wire",
+        "autoStop": true,
+        "disableClose": true,
+        "fade": true,
+<%# Two titles only (mn1): the credits need Priya's debrief, and she appears only on the safe
+    state (ESD plus isolation) or after the evacuation, so "cells safe, attacker still connected"
+    and "the dial was never read" could never print. %>
+        "credits": [
+          { "text": "INCIDENT CONTAINED",             "style": "title",    "condition": "globalVars.esd_activated && globalVars.network_isolated && !globalVars.facility_evacuated" },
+          { "text": "HALL 1 LOST, EVERYONE OUT",      "style": "title",    "condition": "globalVars.facility_evacuated" },
+          { "text": "ALBION ENERGY STORAGE, SATURDAY 21 MARCH 2026", "style": "subtitle" },
+
+          { "text": "── PHYSICAL SAFETY ──", "style": "section-header" },
+          { "text": "Dial or screen: you backed the dial", "style": "entry", "condition": "globalVars.gauge_verdict === 'dial'" },
+          { "text": "Dial or screen: you backed the screen", "style": "entry", "condition": "globalVars.gauge_verdict === 'screen'" },
+          { "text": "Dial or screen: you wanted the historian first", "style": "entry", "condition": "globalVars.gauge_verdict === 'historian'" },
+          { "text": "Dial or screen: you read the dial but never said which you believed", "style": "entry", "condition": "globalVars.anomaly_detected && globalVars.gauge_verdict === '' && !globalVars.esd_before_dial" },
+          { "text": "Gas alarm before the dial was read: the hall was rightly left alone", "style": "entry", "condition": "!globalVars.anomaly_detected && !globalVars.esd_before_dial && globalVars.hydrogen_alarm && !globalVars.entered_hall_in_gas_alarm" },
+          { "text": "Shutdown argued on the hazard, before the cause was known", "style": "entry", "condition": "globalVars.shutdown_argument === 'hazard'" },
+          { "text": "Shutdown held back for evidence first", "style": "entry", "condition": "globalVars.shutdown_argument === 'evidence'" },
+          { "text": "ESD pressed before anyone had read the dial: a precaution that happened to be right", "style": "entry", "condition": "globalVars.esd_before_dial && globalVars.early_esd_activation && !globalVars.hydrogen_alarm" },
+          { "text": "ESD pressed on the dial reading, before the historian was checked", "style": "entry", "condition": "globalVars.early_esd_activation && !globalVars.esd_before_dial && !globalVars.hydrogen_alarm" },
+          { "text": "ESD pressed before the hydrogen alarm: Racks A1 to A4 off charge and cooling", "style": "entry", "condition": "globalVars.esd_activated && !globalVars.hydrogen_alarm" },
+          { "text": "ESD pressed after the hydrogen alarm (1.0% by volume): Hall 1 saved, margin spent", "style": "entry", "condition": "globalVars.esd_activated && globalVars.hydrogen_alarm && !globalVars.facility_evacuated" },
+          { "text": "Hydrogen reached 2.0% by volume: everyone out, Helen pressed the ESD on the way, Hall 1 lost to fire, fire service attending", "style": "entry", "condition": "globalVars.facility_evacuated" },
+          { "text": "Went into Hall 1 during the gas alarm", "style": "entry", "condition": "globalVars.entered_hall_in_gas_alarm && !globalVars.esd_pressed_inside_in_alarm" },
+          { "text": "Pressed the ESD station inside Hall 1 during the gas alarm, not the one by the door", "style": "entry", "condition": "globalVars.esd_pressed_inside_in_alarm" },
+          { "text": "PLC-BMS registers saved before the ESD trip overwrote them", "style": "entry", "condition": "globalVars.bms_registers_saved" },
+          { "text": "Register export planned, but the ESD went in first: what the attacker wrote was lost (the historian kept the screen values)", "style": "entry", "condition": "!globalVars.bms_registers_saved && globalVars.evidence_before_esd === 'save' && !globalVars.facility_evacuated" },
+          { "text": "ESD pressed without saving the registers: what the attacker wrote was lost (the historian kept the screen values)", "style": "entry", "condition": "!globalVars.bms_registers_saved && globalVars.evidence_before_esd === 'press' && !globalVars.facility_evacuated" },
+
+          { "text": "── NETWORK CONTAINMENT ──", "style": "section-header" },
+          { "text": "Jump server cable pulled on Marcus Webb's word: attacker's RDP session cut", "style": "entry", "condition": "globalVars.jump_server_isolated && globalVars.cable_pull_agreed" },
+          { "text": "Jump server cable pulled before telling Marcus Webb: attacker's RDP session cut", "style": "entry", "condition": "globalVars.jump_server_isolated && !globalVars.cable_pull_agreed" },
+          { "text": "Jump server cable not pulled", "style": "entry", "condition": "!globalVars.jump_server_isolated" },
+          { "text": "Isolation scope: historian's enterprise leg cut too; dispatch feed lost for a day", "style": "entry", "condition": "globalVars.isolation_scope === 'historian'" },
+          { "text": "Isolation scope: historian left connected and watched", "style": "entry", "condition": "globalVars.isolation_scope === 'watch'" },
+          { "text": "Isolation scope: SCADA shut down; Hall 2 on hourly manual rounds", "style": "entry", "condition": "globalVars.isolation_scope === 'scada'" },
+          { "text": "Enterprise side isolated by CastleTech, after they rang Marcus Webb back", "style": "entry", "condition": "globalVars.network_isolated" },
+          { "text": "CastleTech refused a boundary change until it was verified", "style": "entry", "condition": "globalVars.tom_refused_unverified && !globalVars.tom_told_false_authority" },
+          { "text": "Told CastleTech that Marcus had signed off before he had: they rang him and refused", "style": "entry", "condition": "globalVars.tom_told_false_authority" },
+          { "text": "Enterprise side not isolated", "style": "entry", "condition": "!globalVars.network_isolated" },
+
+          { "text": "── SIS INVESTIGATION ──", "style": "section-header" },
+          { "text": "Jump server session found: c.ellison, a commissioning contractor's account, left live for 14 months", "style": "entry", "condition": "globalVars.jump_server_confirmed" },
+          { "text": "Jump server logs not reviewed", "style": "entry", "condition": "!globalVars.jump_server_confirmed" },
+          { "text": "SIS changes confirmed: thermal trip 55°C → 85°C, hydrogen alarm 1.0% → 3.8% by volume", "style": "entry", "condition": "globalVars.sis_tamper_confirmed" },
+          { "text": "SIS changes not confirmed during the response", "style": "entry", "condition": "!globalVars.sis_tamper_confirmed" },
+
+          { "text": "── NOTIFICATIONS ──", "style": "section-header" },
+          { "text": "NIS initial notification sent to Ofgem, NCSC copied, inside the clock", "style": "entry", "condition": "globalVars.nis_notified && !globalVars.nis_deadline_missed" },
+          { "text": "NIS notification sent after the clock ran out", "style": "entry", "condition": "globalVars.nis_notified && globalVars.nis_deadline_missed" },
+          { "text": "NIS notification held back to wait for the full picture", "style": "entry", "condition": "!globalVars.nis_notified && globalVars.nis_initial_choice === 'wait'" },
+          { "text": "NIS notification not sent", "style": "entry", "condition": "!globalVars.nis_notified && globalVars.nis_initial_choice !== 'wait'" },
+          { "text": "Trent Water warned straight away, with Albion's consent", "style": "entry", "condition": "globalVars.trent_water_notified && !globalVars.trent_water_verify_first" },
+          { "text": "Trent Water warned after checking the evidence first", "style": "entry", "condition": "globalVars.trent_water_notified && globalVars.trent_water_verify_first" },
+          { "text": "Trent Water not yet warned: still verifying", "style": "entry", "condition": "!globalVars.trent_water_notified && globalVars.trent_water_verify_first" },
+          { "text": "Trent Water not warned", "style": "entry", "condition": "!globalVars.trent_water_notified && !globalVars.trent_water_verify_first" },
+
+          { "text": "── SAFETY CASE ──", "style": "section-header" },
+          { "text": "CLAIM-EN-002 (SIS isolation): judged broken before the attack", "style": "entry", "condition": "globalVars.en002_verdict === 'broken'" },
+          { "text": "CLAIM-EN-002 (SIS isolation): you judged it held; its isolation argument had been false since commissioning", "style": "entry", "condition": "globalVars.en002_verdict === 'held'" },
+          { "text": "SIS patch, as risk owner: patch, and own eight weeks of manual rounds", "style": "entry", "condition": "globalVars.patch_decision === 'active_management'" },
+          { "text": "SIS patch, as risk owner: defer, with controls someone checks", "style": "entry", "condition": "globalVars.patch_decision === 'deferral'" },
+
+          { "text": "── EXTRA EVIDENCE YOU READ ──", "style": "section-header" },
+          { "text": "Historian rate-of-change overlay", "style": "entry", "condition": "globalVars.rate_of_change_viewed" },
+          { "text": "Historian rack-by-rack comparison", "style": "entry", "condition": "globalVars.compare_racks_viewed" },
+          { "text": "Network architecture diagram", "style": "entry", "condition": "globalVars.network_architecture_reviewed" },
+          { "text": "Source lookup on the c.ellison session", "style": "entry", "condition": "globalVars.jump_server_threat_intel_viewed" },
+          { "text": "HMI-ENG-02 engineering tool history", "style": "entry", "condition": "globalVars.sis_audit_reviewed" },
+          { "text": "Shared file server extract (Albion and Trent Water)", "style": "entry", "condition": "globalVars.trent_lateral_ioc_viewed" },
+          { "text": "Nothing beyond the main path", "style": "entry", "condition": "!globalVars.rate_of_change_viewed && !globalVars.compare_racks_viewed && !globalVars.network_architecture_reviewed && !globalVars.jump_server_threat_intel_viewed && !globalVars.sis_audit_reviewed && !globalVars.trent_lateral_ioc_viewed" }
+        ]
+      }
+    ]
+  },
+
+  "rooms": {
+
+    "scada_control_room": {
+      "type": "room_control_1x2gu",
+      "door_sign": "SCADA Control Room",
+      "lighting": {
+        "mode": "on",
+        "ambient": "#aeb6c8",
+        "panels": false,
+        "emitters": {
+          "screens": { "radius": 140, "intensity": 0.7, "offsetY": 40, "floorTint": 0.35 },
+          "alarm_panel": [
+            { "condition": "globalVars.facility_evacuated",       "color": "#ff5050", "radius": 32, "intensity": 0.8,  "effect": "pulse", "floorTint": 0.5 },
+            { "condition": "globalVars.sis_tamper_confirmed",     "color": "#ff5050", "radius": 32, "intensity": 0.8,  "effect": "pulse", "floorTint": 0.5 },
+            { "condition": "globalVars.network_isolated",         "color": "#ff5050", "radius": 40, "intensity": 0.8, "effect": null, "floorTint": 0.5 },
+            { "condition": "globalVars.hydrogen_alarm",           "color": "#ffb347", "radius": 40, "intensity": 0.8,  "effect": null, "floorTint": 0.5 },
+            { "condition": "globalVars.historian_flatline_found", "color": "#ffb347", "radius": 40, "intensity": 0.8,  "effect": null, "floorTint": 0.5 },
+            { "condition": "globalVars.jump_server_isolated",     "color": "#ffb347", "radius": 40, "intensity": 0.8,  "effect": null, "floorTint": 0.5 },
+            {                                                     "color": "#7dffa0", "radius": 22, "intensity": 0.35, "effect": null }
+          ]
+        }
+      },
+      "connections": {
+        "north": "battery_hall_1",
+        "east": "engineering_workshop"
+      },
+
+      "npcs": [
+
+        {
+          // npc_helen_marsh.ink: arrival_briefing (cutscene), hub with the dial (HEL-1) and shutdown
+          // (HEL-5) decisions, ESD (HEL-2), SIS, patch (HEL-6), hydrogen, next steps; evacuation_scene.
+          // Id renamed priya_chandra → helen_marsh (decision 10).
+          "id": "helen_marsh",
+          "displayName": "Helen Marsh",
+          "npcType": "person",
+          "position": { "x": 6, "y": 4 },
+          "spriteSheet": "female_telecom_v2",
+          "spriteTalk": "assets/characters/female_telecom_talk.png",
+          "spriteVisemes": "assets/characters/female_telecom_visemes.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/sis02_energy/ink/npc_helen_marsh.json",
+          "currentKnot": "start",
+          "voice": {
+            "name": "Aoede",
+            "style": "Senior SCADA engineer in her late forties from Nottinghamshire; warm, plain-spoken and calm under pressure. Speak with a consistent East Midlands (Nottingham) accent throughout. Do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "puzzle_graph_actions": [
+            { "id": "talk_to_helen", "label": "Get briefing from Helen Marsh", "unlocks_aim": "conduct_walkdown" }
+          ],
+          "itemsHeld": [
+            {
+              "type": "keycard",
+              "name": "Battery Hall Access Badge",
+              "opens_lock": "battery_hall_badge",
+              "takeable": true,
+              "important": true,
+              "puzzle_graph_unlocks": "battery_hall_1",
+              "puzzle_graph_role": "key",
+              "observations": "Helen's RFID access badge for Battery Hall 1. Albion Energy Storage: Restricted Area, Battery Halls.",
+              "onPickup": { "setVariable": { "battery_hall_badge_collected": true } }
+            }
+<%# Badge handed over by #give_item:keycard in npc_helen_marsh.ink (arrival_briefing, or start /
+    hub if the cutscene was missed). %>
+          ],
+          "timedConversation": {
+            "delay": 0,
+            "targetKnot": "arrival_briefing",
+            "waitForEvent": "game_loaded",
+            "skipIfGlobal": "briefing_played",
+            "setGlobalOnStart": "briefing_played"
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:helen_briefed",
+              "condition": "value === true",
+              "onceOnly": true,
+              "unlockAim": "conduct_walkdown"
+            },
+            {
+              "eventPattern": "global_variable_changed:hmi_reviewed",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "check_hmi_readings"
+            },
+            {
+              // The dial has been read: the historian and the ESD aims open. Helen asks a question
+              // instead of deciding for the player (HEL-1); her hub then holds the gauge decision.
+              "eventPattern": "global_variable_changed:anomaly_detected",
+              // R2-1 (round 2): not in a gas alarm, where Helen offers no gauge debate (D3-2).
+              "condition": "value === true && globalVars.esd_before_dial !== true && globalVars.hydrogen_alarm !== true",
+              "onceOnly": true,
+              "unlockAim": ["verify_anomaly", "initiate_esd"],
+              "completeTask": "check_thermometer",
+              "sendTimedMessage": { "delay": 3000, "message": "Fifty-one on that dial? Come and tell me which one you believe." }
+            },
+            {
+              // P7 (round 1b): the ESD went in before anyone read the dial ("Go and see if we needed
+              // it"), so Helen closes that loop instead of opening the dial-or-screen debate.
+              "eventPattern": "global_variable_changed:anomaly_detected",
+              "condition": "value === true && globalVars.esd_before_dial === true",
+              "onceOnly": true,
+              "unlockAim": ["verify_anomaly", "initiate_esd"],
+              "completeTask": "check_thermometer",
+              "sendTimedMessage": { "delay": 3000, "message": "Fifty-one on that dial? Then we needed that ESD." }
+            },
+            {
+              // R2-1 (round 2): dial read in a gas alarm or after the evacuation. The entry bark has
+              // already said "Out of that hall", and there is no gauge debate (D3-2), so no radio.
+              // esd_before_dial is never true in a gas alarm, so the three dial mappings are disjoint.
+              "eventPattern": "global_variable_changed:anomaly_detected",
+              "condition": "value === true && globalVars.hydrogen_alarm === true",
+              "onceOnly": true,
+              "unlockAim": ["verify_anomaly", "initiate_esd"],
+              "completeTask": "check_thermometer"
+            },
+            {
+              // MJ3: the ESD is never gated on Marcus. Four radios (P4), disjoint on esd_activated and marcus_webb_contacted.
+              // mn11: the validator's "onceOnly handlers can fire together" warning on this group is
+              // intended: this unlockAim mapping fires alongside exactly one of the four radios below.
+              // SL3/MF1: incident_aware (the team knows of the incident; starts the NIS clock) is set
+              // by the first of the historian flat-line, the jump server session, the SIS change, the
+              // evacuation or CastleTech's isolation, whichever order the player takes.
+              "eventPattern": "global_variable_changed:historian_flatline_found",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": { "incident_aware": true },
+              "unlockAim": "contact_marcus_investigate"
+            },
+            {
+              // P4 (round 1b): "message Marcus" only if nobody has yet. Four radios, disjoint on
+              // esd_activated and marcus_webb_contacted.
+              "eventPattern": "global_variable_changed:historian_flatline_found",
+              "condition": "value === true && globalVars.esd_activated !== true && globalVars.marcus_webb_contacted !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2500, "message": "Dead flat since twelve minutes past eleven. Somebody's writing it. Get that ESD in, then message Marcus." }
+            },
+            {
+              "eventPattern": "global_variable_changed:historian_flatline_found",
+              "condition": "value === true && globalVars.esd_activated !== true && globalVars.marcus_webb_contacted === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2500, "message": "Dead flat since twelve minutes past eleven. Somebody's writing it. Get that ESD in." }
+            },
+            {
+              "eventPattern": "global_variable_changed:historian_flatline_found",
+              "condition": "value === true && globalVars.esd_activated === true && globalVars.marcus_webb_contacted !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2500, "message": "Dead flat since twelve minutes past eleven. Somebody's writing it. Message Marcus." }
+            },
+            {
+              "eventPattern": "global_variable_changed:historian_flatline_found",
+              "condition": "value === true && globalVars.esd_activated === true && globalVars.marcus_webb_contacted === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2500, "message": "Dead flat since twelve minutes past eleven. Somebody's writing it." }
+            },
+            {
+              // SL2: "Isolate the Attacker" opens here, once the session is found, not on the
+              // first message to Marcus.
+              "eventPattern": "global_variable_changed:jump_server_confirmed",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": { "incident_aware": true },
+              "unlockAim": ["investigate_sis", "isolate_network"],
+              "sendTimedMessage": { "delay": 2000, "message": "The Ellison account? He left over a year ago. And the engineering workstation can reach the safety controller. Have a look at that SIS panel." }
+            },
+            {
+              // ESD pressed on the dial, before the historian (HEL-5): "good call" only when the press
+              // followed evidence. A press before anyone read the dial gets a wry line instead.
+              // mn11: the esd_activated radios below are disjoint (early_esd_activation, esd_before_dial,
+              // esd_pressed_inside_in_alarm, network_isolated, jump_server_confirmed); the overlap
+              // warning comes from the safe-state setGlobal mapping, which is meant to fire with them.
+              "eventPattern": "global_variable_changed:esd_activated",
+              "condition": "value === true && globalVars.early_esd_activation === true && globalVars.esd_before_dial !== true && globalVars.hydrogen_alarm !== true && globalVars.facility_evacuated !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2000, "message": "ESD's in. Good call. We'll find out why later." }
+            },
+            {
+              "eventPattern": "global_variable_changed:esd_activated",
+              "condition": "value === true && globalVars.esd_before_dial === true && globalVars.early_esd_activation === true && globalVars.hydrogen_alarm !== true && globalVars.facility_evacuated !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2000, "message": "ESD's in, and nobody's read the dial yet. Well. Go and see if we needed it." }
+            },
+            {
+              // Later ESD (N10, m3): the radio follows what is known. Inside-station press in a gas
+              // alarm gets no praise; once the network is already isolated the safe-state radio speaks.
+              "eventPattern": "global_variable_changed:esd_activated",
+              "condition": "value === true && globalVars.early_esd_activation !== true && globalVars.facility_evacuated !== true && globalVars.esd_pressed_inside_in_alarm !== true && globalVars.network_isolated !== true && globalVars.jump_server_confirmed !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2000, "message": "ESD's in. The A racks are off charge and the fans are on full. Now let's find out who did this." }
+            },
+            {
+              "eventPattern": "global_variable_changed:esd_activated",
+              "condition": "value === true && globalVars.early_esd_activation !== true && globalVars.facility_evacuated !== true && globalVars.esd_pressed_inside_in_alarm !== true && globalVars.network_isolated !== true && globalVars.jump_server_confirmed === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2000, "message": "ESD's in. The A racks are off charge and the fans are on full. Now get them off our network." }
+            },
+            {
+              "eventPattern": "global_variable_changed:esd_activated",
+              "condition": "value === true && globalVars.esd_pressed_inside_in_alarm === true && globalVars.hydrogen_alarm === true && globalVars.facility_evacuated !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2500, "message": "ESD's in. Now come out of that hall, and use the door station next time." }
+            },
+            {
+              // Hydrogen at 1.0% by volume (S1, S2): stay out, use a station outside, fire service called.
+              // mn11: fires with the N1 skipTask/unlockAim mapping further down; intended.
+              "eventPattern": "global_variable_changed:hydrogen_alarm",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1000, "message": "Hydrogen alarm in Hall 1. One per cent and rising. Stay out of the hall and use the station by the door. I'm ringing the fire service." }
+            },
+            {
+              // SL4: the evacuation scene's outcomes, set with facility_evacuated so a reload mid-scene
+              // keeps them. The cutscene mapping is only persisted when its conversation closes, and
+              // nothing re-emits facility_evacuated on load. The ink lines that set them stay (no-ops).
+              // mn11: fires together with the cutscene mapping below by design. incident_aware: SL3.
+              "eventPattern": "global_variable_changed:facility_evacuated",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": { "incident_aware": true, "esd_activated": true, "priya_s_visible": true },
+              "skipTask": "press_esd_button"
+            },
+            {
+              // Hydrogen at 2.0% by volume (decision 7): one cutscene. Helen evacuates, presses the
+              // console ESD on the way out, and Hall 1 is lost. Shown over the site exterior (mn10),
+              // where everyone has gathered.
+              "eventPattern": "global_variable_changed:facility_evacuated",
+              "condition": "value === true",
+              "onceOnly": true,
+              "conversationMode": "person-chat",
+              "targetKnot": "evacuation_scene",
+              "background": "assets/backgrounds/albion_energy.png",
+              "disableClose": true
+            },
+            {
+              // Safe state from the scenario, not from dialogue (M3): ESD and isolation, either order.
+              // mn11: the facility_safe_state group below (Priya, then one of four disjoint radios)
+              // fires together by design.
+              "eventPattern": "global_variable_changed:esd_activated",
+              "condition": "value === true && globalVars.network_isolated === true",
+              "onceOnly": true,
+              "setGlobal": { "facility_safe_state": true }
+            },
+            {
+              "eventPattern": "global_variable_changed:network_isolated",
+              "condition": "value === true && globalVars.esd_activated === true",
+              "onceOnly": true,
+              "setGlobal": { "facility_safe_state": true }
+            },
+            {
+              "eventPattern": "global_variable_changed:facility_safe_state",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": { "priya_s_visible": true }
+            },
+            {
+              // Safe-state radio follows where the notification stands (playtest B m2).
+              "eventPattern": "global_variable_changed:facility_safe_state",
+              "condition": "value === true && globalVars.facility_evacuated !== true && globalVars.nis_notified !== true && globalVars.nis_form_read !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 5000, "message": "That's the hall safe and them out of our network. Now the NIS notification. The form's on the clipboard by the workshop door." }
+            },
+            {
+              "eventPattern": "global_variable_changed:facility_safe_state",
+              "condition": "value === true && globalVars.facility_evacuated !== true && globalVars.nis_notified !== true && globalVars.nis_form_read === true && globalVars.nis_initial_choice !== 'wait'",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 5000, "message": "That's the hall safe and them out of our network. Now the notification. Message Marcus and he'll sign it." }
+            },
+            {
+              "eventPattern": "global_variable_changed:facility_safe_state",
+              "condition": "value === true && globalVars.facility_evacuated !== true && globalVars.nis_notified !== true && globalVars.nis_form_read === true && globalVars.nis_initial_choice === 'wait'",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 5000, "message": "That's the hall safe and them out of our network. You're holding the notification. Your call, but the clock's running." }
+            },
+            {
+              "eventPattern": "global_variable_changed:facility_safe_state",
+              "condition": "value === true && globalVars.facility_evacuated !== true && globalVars.nis_notified === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 5000, "message": "That's the hall safe and them out of our network. Good work, all of you." }
+            },
+            {
+              "eventPattern": "global_variable_changed:nis_notified",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "complete_nis_form"
+            },
+            {
+              // The abstract notification clock ran out (decision 6). No forced debrief.
+              "eventPattern": "global_variable_changed:nis_deadline_missed",
+              "condition": "value === true",
+              "onceOnly": true,
+              "bark": "That's our notification clock run out. Ofgem should have heard from us by now. Get it to Marcus.",
+              "barkDelay": 0
+            },
+            {
+              // MJ4: nobody goes into a hall in gas alarm. The start room is always loaded, so Helen
+              // hears it wherever the player is.
+              // m4: the hall's bottom edge overlaps the workshop's north wall, so standing at the SIS
+              // panel or noticeboard can register as Hall 1. Only an entry from the control room counts.
+              "eventPattern": "room_entered:battery_hall_1",
+              "condition": "globalVars.hydrogen_alarm && !globalVars.esd_activated && !globalVars.facility_evacuated && data.previousRoom !== 'engineering_workshop'",
+              "onceOnly": true,
+              "setGlobal": { "entered_hall_in_gas_alarm": true },
+              "bark": "Out of that hall. Now. Use the station by the door.",
+              "barkDelay": 0
+            },
+            {
+              "eventPattern": "room_entered:battery_hall_1",
+              "condition": "globalVars.hydrogen_alarm && globalVars.esd_activated && !globalVars.facility_evacuated && data.previousRoom !== 'engineering_workshop'",
+              "onceOnly": true,
+              "setGlobal": { "entered_hall_in_gas_alarm": true },
+              "bark": "Out of that hall. It's still full of gas.",
+              "barkDelay": 0
+            },
+            {
+              "eventPattern": "room_entered:battery_hall_1",
+              "condition": "globalVars.facility_evacuated && data.previousRoom !== 'engineering_workshop'",
+              "onceOnly": true,
+              "setGlobal": { "entered_hall_in_gas_alarm": true },
+              "bark": "Out of that hall. It's alight.",
+              "barkDelay": 0
+            },
+            {
+              // N1: the gas alarm went off before anyone read the dial. Nobody is sent into the hall:
+              // the walkdown tasks are skipped and the aims the dial would have opened open now.
+              "eventPattern": "global_variable_changed:hydrogen_alarm",
+              "condition": "value === true && globalVars.anomaly_detected !== true",
+              "onceOnly": true,
+              "skipTask": ["enter_battery_hall", "check_thermometer"],
+              "unlockAim": ["verify_anomaly", "initiate_esd"]
+            },
+            {
+              // R2 (MJ2): reading the register export counts only before the ESD trip, whose
+              // shutdown routine overwrites the registers. After it, the export shows reset values.
+              "eventPattern": "global_variable_changed:bms_registers_exported",
+              "condition": "value === true && globalVars.esd_activated !== true",
+              "onceOnly": true,
+              "setGlobal": { "bms_registers_saved": true }
+            },
+            {
+              "eventPattern": "global_variable_changed:sis_config_seen",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "read_sis_config"
+            },
+            {
+              "eventPattern": "global_variable_changed:sis_certification_seen",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "find_certification_doc"
+            },
+            {
+              "eventPattern": "global_variable_changed:sis_tamper_confirmed",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": { "incident_aware": true },
+              "completeTask": "confirm_sis_tamper"
+            },
+            {
+              "eventPattern": "global_variable_changed:jump_server_isolated",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "pull_ethernet_cable"
+            },
+            {
+              "eventPattern": "global_variable_changed:incident_folder_read",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "read_incident_folder"
+            },
+            {
+              // mn3: the NETWORK STATUS lamp follows the isolation scope. 'scada': Marcus has the
+              // shift take SCADA down as soon as it is chosen.
+              "eventPattern": "global_variable_changed:isolation_scope",
+              "condition": "value === 'scada'",
+              "onceOnly": true,
+              "setGlobal": { "scada_manual_mode": true }
+            },
+            {
+              // 'historian': CastleTech cut the historian's enterprise leg when they isolate, or
+              // add it afterwards if the scope is chosen once they have acted (mn15).
+              "eventPattern": "global_variable_changed:isolation_scope",
+              "condition": "value === 'historian' && globalVars.network_isolated === true",
+              "onceOnly": true,
+              "setGlobal": { "historian_leg_cut": true }
+            },
+            {
+              "eventPattern": "global_variable_changed:network_isolated",
+              "condition": "value === true && globalVars.isolation_scope === 'historian'",
+              "onceOnly": true,
+              "setGlobal": { "historian_leg_cut": true }
+            }
+          ]
+        },
+
+        {
+          // npc_priya_s.ink: Priya S., the NCSC incident manager from sis01 (decision 10), with sis01's
+          // sprite, talk sheet, visemes and voice style. Id renamed dr_nalini_bashir → priya_s.
+          // A linear debrief like sis01's: each section gives verdicts gated on what the player did
+          // and heard, then asks one question. Never forced: the NIS clock no longer opens it.
+          "id": "priya_s",
+          "displayName": "Priya S.",
+          "npcType": "person",
+          "observations": "Priya S., NCSC. She's waiting to go through the incident with you.",
+          "position": { "x": 8, "y": 5 },
+          "spriteSheet": "priya_s",
+          "spriteTalk": "assets/characters/priya_s_talk.png",
+          "spriteVisemes": "assets/characters/priya_s_visemes.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/sis02_energy/ink/npc_priya_s.json",
+          "currentKnot": "start",
+          "voice": {
+            "name": "Leda",
+            "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "puzzle_graph_actions": [
+            { "id": "talk_to_priya_s", "label": "Post-incident debrief — Priya S. (NCSC)", "unlocks_aim": "post_incident_debrief" }
+          ],
+          "disableClose": true,
+          "taskOnKO": "talk_to_priya_s",
+          "behavior": {
+            "initiallyHidden": true
+          },
+          "eventMappings": [
+            {
+              // Set on the safe state (Helen's mapping) or at the end of Helen's evacuation scene.
+              // Reloads keep her visible (saved npcVisibility); the control room is the start room.
+              "eventPattern": "global_variable_changed:priya_s_visible",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setVisible": true,
+              "unlockAim": "post_incident_debrief",
+              "bark": "Priya, from the NCSC. I was the nearest when this came in. Finish what you're doing, then come and find me.",
+              "barkDelay": 1500
+            }
+          ]
+        },
+
+        {
+          // npc_marcus_webb.ink (phone, unvoiced): the shutdown argument (MAR-1), evidence before the
+          // ESD (R2), the session briefing, how far to isolate (MAR-2), the initial NIS notification
+          // (MAR-3), the boundary history and his air-gap view (L4), NESO and Whitworth lines.
+          "id": "marcus_webb",
+          "displayName": "Marcus Webb",
+          "npcType": "phone",
+          "phoneId": "site_phone",
+          "storyPath": "scenarios/sis02_energy/ink/npc_marcus_webb.json",
+          "currentKnot": "start",
+          "avatar": "assets/characters/male_telecom_v2_headshot.png",
+          "voice": {
+            "name": "Charon",
+            "style": "Frustrated but controlled OT security manager; speaks with precision",
+            "language": "en-GB"
+          },
+          "puzzle_graph_actions": [
+            { "id": "call_marcus_initial", "label": "Message Marcus Webb" }
+          ],
+          "eventMappings": [
+            {
+              // Set on the first message whatever it says (M2): nothing is ever locked behind it.
+              // SL2: it no longer opens "Isolate the Attacker" (Helen's jump_server_confirmed mapping
+              // does), so the aim isn't shown before the dial, the historian or the session.
+              "eventPattern": "global_variable_changed:marcus_webb_contacted",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "call_marcus_initial"
+            },
+            {
+              // P5 (round 1b): the go-ahead text follows the isolation scope and whether CastleTech
+              // have already acted. Before any scope is chosen (or 'watch') the original text stands.
+              "eventPattern": "global_variable_changed:jump_server_isolated",
+              "condition": "value === true && globalVars.cable_pull_agreed === true && globalVars.network_isolated !== true && globalVars.isolation_scope !== 'historian' && globalVars.isolation_scope !== 'scada'",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "Good. That's his RDP session gone. Not the historian, mind. Message Tom and get the enterprise side shut." }
+            },
+            {
+              "eventPattern": "global_variable_changed:jump_server_isolated",
+              "condition": "value === true && globalVars.cable_pull_agreed === true && globalVars.network_isolated !== true && globalVars.isolation_scope === 'historian'",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "Good. That's his RDP session gone. Message Tom and get the enterprise side shut, historian leg and all." }
+            },
+            {
+              "eventPattern": "global_variable_changed:jump_server_isolated",
+              "condition": "value === true && globalVars.cable_pull_agreed === true && globalVars.network_isolated !== true && globalVars.isolation_scope === 'scada'",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "Good. That's his RDP session gone. Message Tom for the enterprise side. The shift's taking SCADA down our end." }
+            },
+            {
+              "eventPattern": "global_variable_changed:jump_server_isolated",
+              "condition": "value === true && globalVars.cable_pull_agreed === true && globalVars.network_isolated === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "Good. That's his RDP session gone, and CastleTech already have the enterprise side shut." }
+            },
+            {
+              // PRI-8: Marcus's view, then Priya's arguable view in the debrief.
+              "eventPattern": "global_variable_changed:jump_server_isolated",
+              "condition": "value === true && globalVars.cable_pull_agreed !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1200, "message": "Who pulled the jump server cable? It needed doing. Tell me next time." }
+            },
+            {
+              "eventPattern": "global_variable_changed:network_isolated",
+              "condition": "value === true && globalVars.esd_activated !== true && globalVars.nis_notified !== true && globalVars.nis_form_read !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1000, "message": "CastleTech have the enterprise side shut. Now the notification. The form's on the clipboard by the workshop door. Read it and message me." }
+            },
+            {
+              "eventPattern": "global_variable_changed:network_isolated",
+              "condition": "value === true && globalVars.esd_activated !== true && globalVars.nis_notified !== true && globalVars.nis_form_read === true && globalVars.nis_initial_choice !== 'wait'",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1000, "message": "CastleTech have the enterprise side shut. Now the notification. Message me when you're ready to send." }
+            },
+            {
+              "eventPattern": "global_variable_changed:network_isolated",
+              "condition": "value === true && globalVars.esd_activated !== true && globalVars.nis_notified !== true && globalVars.nis_form_read === true && globalVars.nis_initial_choice === 'wait'",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1000, "message": "CastleTech have the enterprise side shut. You're still holding the notification. Say when." }
+            },
+            {
+              // MJ4: Marcus hears about the evacuation. P2 (round 1b): "Cable first" is his go-ahead,
+              // so it sets cable_pull_agreed (now, with the text 20 s behind it); the text follows
+              // what is already done. Three texts, disjoint.
+              "eventPattern": "global_variable_changed:facility_evacuated",
+              "condition": "value === true && globalVars.jump_server_isolated !== true && globalVars.network_isolated !== true",
+              "onceOnly": true,
+              "setGlobal": { "cable_pull_agreed": true },
+              "sendTimedMessage": { "delay": 20000, "message": "Everyone out and counted? Good. Now the network. Cable first, then Tom." }
+            },
+            {
+              "eventPattern": "global_variable_changed:facility_evacuated",
+              "condition": "value === true && globalVars.jump_server_isolated === true && globalVars.network_isolated !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 20000, "message": "Everyone out and counted? Good. Now the network. Tom, for the enterprise side." }
+            },
+            {
+              "eventPattern": "global_variable_changed:facility_evacuated",
+              "condition": "value === true && globalVars.network_isolated === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 20000, "message": "Everyone out and counted? Good. At least the enterprise side's cut off." }
+            },
+            {
+              "eventPattern": "global_variable_changed:bms_registers_saved",
+              "condition": "value === true && globalVars.evidence_before_esd === 'save'",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "Got the registers? Good. Now press it." }
+            }
+          ]
+        },
+
+        {
+          // npc_tom_hadley.ink (phone, unvoiced): SOC scope (R6), out-of-band verification before any
+          // boundary change (TOM-2), Trent Water with Albion's consent and a route back (M4, F5, R7).
+          "id": "tom_hadley",
+          "displayName": "Tom Hadley",
+          "npcType": "phone",
+          "phoneId": "site_phone",
+          "storyPath": "scenarios/sis02_energy/ink/npc_tom_hadley.json",
+          "currentKnot": "start",
+          "avatar": "assets/characters/male_office_worker_v2_headshot.png",
+          "voice": {
+            "name": "Charon",
+            "style": "Competent SOC analyst; helpful but aware of scope limitations",
+            "language": "en-GB"
+          },
+          "timedMessages": [
+            {
+              "delay": 420000,
+              "waitForEvent": "global_variable_changed:jump_server_confirmed",
+              "skipIfGlobal": "castletech_contacted",
+              "message": "Still here if you want the enterprise side shut off from SCADA. I'll ring Marcus to confirm before I touch anything."
+            }
+          ],
+          "puzzle_graph_actions": [
+            { "id": "contact_castletech", "label": "Message CastleTech SOC: isolate the enterprise side", "unlocks_aim": "nis_notification" }
+          ],
+          "eventMappings": [
+            {
+              // Trent Water (F5): Albion to Trent. Sent once the jump server session is found.
+              // D3-11: no sign-in here. Tom's opening ("Tom, CastleTech SOC.") is preloaded into the
+              // thread at game start, so this text always arrives under it.
+              "eventPattern": "global_variable_changed:jump_server_confirmed",
+              "condition": "value === true",
+              "onceOnly": true,
+              "unlockAim": "trent_water_notification",
+              "sendTimedMessage": { "delay": 9000, "message": "Something wrote a file to the server you share with Trent Water at half two. One of their PCs opened it this morning. Message me when you can." }
+            },
+            {
+              // incident_aware (SL3/MF1): an isolation means the team is treating it as an incident.
+              "eventPattern": "global_variable_changed:castletech_contacted",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "contact_castletech",
+              "setGlobal": { "incident_aware": true, "network_isolated": true }
+            }
+          ]
+        }
+
+      ],
+
+      "objects": [
+
+        // MG-VM01: hmi_ops_01 — ScadaHistorianMinigame (scada-historian), IMPLEMENTED
+        {
+          "type": "pc",
+          "id": "hmi_ops_01",
+          "name": "HMI-OPS-01 Workstation",
+          "takeable": false,
+          "locked": false,
+          "observations": "The SCADA operator workstation. Battery Hall 1 temperature: 28°C. State of charge: 72%. All alarms green. Nothing unusual.",
+          "contents": [
+            {
+              "type": "text_file",
+              "name": "SCADA Live Status",
+              "readable": true,
+              "puzzle_graph_role": "clue",
+              "puzzle_graph_aim": "assess_control_room",
+              "puzzle_graph_reveals": "All SCADA readings normal (falsified) — no alarm state visible from digital system",
+              "text": "ALBION ENERGY STORAGE: BATTERY MANAGEMENT SYSTEM\nLive Status, Sat 21 Mar 2026 06:30\n\nBattery Hall 1:\n  Rack A1: 28.0°C | SoC: 72% | Charge rate: 0.5C | Status: NORMAL\n  Rack A2: 28.0°C | SoC: 72% | Charge rate: 0.5C | Status: NORMAL\n  Rack A3: 28.0°C | SoC: 72% | Charge rate: 0.5C | Status: NORMAL\n  Rack A4: 28.0°C | SoC: 72% | Charge rate: 0.5C | Status: NORMAL\n\nAll SIS setpoints: WITHIN CERTIFIED RANGE (per SCADA)\nAlarm status: ALL CLEAR\nGrid connection: ACTIVE, importing 48 MW (overnight charge schedule)",
+              "onRead": { "setVariable": { "hmi_reviewed": true } }
+            },
+<%# R2 (MJ2, pack decision on evidence before the ESD): the ESD trip makes PLC-BMS run its shutdown
+    routine, which overwrites the holding registers the attacker wrote. Opening this export saves
+    them (bms_registers_exported); Helen's mapping counts it as bms_registers_saved only before the
+    ESD. After the trip the export shows the reset values. Values per the pack: temperatures held at
+    28.0, state of charge 72% (actual 94%), charge command 95% of rated. %>
+            {
+              "type": "text_file",
+              "name": "Export PLC-BMS Register Table",
+              "readable": true,
+              "puzzle_graph_role": "item",
+              "puzzle_graph_aim": "initiate_esd",
+              "puzzle_graph_optional": true,
+              "puzzle_graph_reveals": "The PLC-BMS holding registers as the attacker left them, saved before the ESD trip overwrites them",
+              "text": "PLC-BMS HOLDING REGISTER EXPORT\nBattery Hall 1, Racks A1 to A4. Saved to the incident share on HMI-OPS-01.\n\nREGISTER  NAME                   VALUE\n40101     A1_CELL_TEMP_MAX       28.0 C\n40102     A2_CELL_TEMP_MAX       28.0 C\n40103     A3_CELL_TEMP_MAX       28.0 C\n40104     A4_CELL_TEMP_MAX       28.0 C\n40111     A1_SOC                 72 %\n40112     A2_SOC                 72 %\n40113     A3_SOC                 72 %\n40114     A4_SOC                 72 %\n40201     CHARGE_RATE_CMD        95 % of rated\n40202     CHARGE_CUTOFF_SOC      90 %\n\nEvery temperature register holds exactly 28.0 and every state of charge exactly 72.\nThe charge command is near maximum, on cells the BMS believes are at 72%.\n\nExport saved. The ESD trip will overwrite these registers; this file keeps what was in them.",
+              "textVariants": [
+                {
+                  "condition": "globalVars.esd_activated && !globalVars.bms_registers_saved",
+                  "value": "PLC-BMS HOLDING REGISTER EXPORT\nBattery Hall 1, Racks A1 to A4.\n\nController state: SHUTDOWN (ESD trip).\nThe shutdown routine has written safe-state values over the holding registers: charge command 0%, temperature and state of charge read fresh from the rack sensors.\n\nNothing written before the trip is left in the controller. The historian still holds the values the screens showed."
+                },
+                {
+                  "condition": "globalVars.bms_registers_saved && globalVars.esd_activated",
+                  "value": "PLC-BMS HOLDING REGISTER EXPORT (saved before the ESD trip)\nBattery Hall 1, Racks A1 to A4.\n\nREGISTER  NAME                   VALUE\n40101-40104  CELL_TEMP_MAX A1-A4  28.0 C (all four)\n40111-40114  SOC A1-A4            72 % (all four)\n40201     CHARGE_RATE_CMD        95 % of rated\n40202     CHARGE_CUTOFF_SOC      90 %\n\nThe controller has since reset these registers. This saved copy is the only record of what was written into them."
+                }
+              ],
+              "onRead": { "setVariable": { "bms_registers_exported": true } }
+            },
+            {
+              "type": "scada_historian",
+              "id": "historian_trend_viewer",
+              "name": "Historian Trend Viewer",
+              "takeable": false,
+              "puzzle_graph_role": "vm",
+              "puzzle_graph_aim": "verify_anomaly",
+              "observations": "The SCADA historian: temperature trends for each Hall 1 rack. Real sensors wobble a little; look for anything that doesn't.",
+              "minigameData": {
+                "minigameId": "scada-historian",
+                "title": "ALBION ENERGY STORAGE: SCADA HISTORIAN",
+                "subtitle": "Battery Hall 1: Temperature (°C)",
+                "racks": [
+                  { "id": "A1", "label": "Rack A1", "normalBase": 30.2, "noisePeriodMinutes": 3, "noiseAmplitude": 0.4 },
+                  { "id": "A2", "label": "Rack A2", "normalBase": 29.9, "noisePeriodMinutes": 4, "noiseAmplitude": 0.3 },
+                  { "id": "A3", "label": "Rack A3", "normalBase": 30.5, "noisePeriodMinutes": 5, "noiseAmplitude": 0.5 },
+                  { "id": "A4", "label": "Rack A4", "normalBase": 30.1, "noisePeriodMinutes": 3, "noiseAmplitude": 0.35 }
+                ],
+                "injectionTimestamp": "2026-03-20T23:12:07",
+                "injectedValue": 28.0,
+                "lastRealTimestamp": "2026-03-20T23:12:06",
+                "lastRealValue": 36.5,
+<%# Real trend (F6, engine c62cb71): from 20:00 Friday at 0.03 °C/min, so the last real reading at
+    23:12:06 is Rack A1 36.5°C (Δ −8.5°C to the injected 28.0; the pack says about 36°C), rising to
+    about 49 to 50°C on the racks' averaged sensors by 06:30, the dial at the hottest point reading 51.
+    defaultTimeRangeHours is left out so the viewer auto-picks 12 hours, which shows the injection. %>
+                "thermalTrendStartTime": "2026-03-20T20:00:00",
+                "thermalTrendRate": 0.03,
+                "historianStartTime": "2026-03-20T18:00:00",
+                "historianEndTime": "2026-03-21T06:30:00",
+                "sampleIntervalMinutes": 1,
+                "reportVariable": "Cell temperature, Battery Hall 1, Racks A1 to A4",
+                "completionActions": [
+                  { "type": "set_global", "key": "historian_flatline_found", "value": true },
+                  { "type": "complete_task", "taskId": "review_historian" }
+                ],
+                "progressActions": [
+                  { "type": "set_global", "key": "rate_of_change_viewed",  "value": true, "trigger": "overlay_enabled" },
+                  { "type": "set_global", "key": "compare_racks_viewed",   "value": true, "trigger": "compare_racks_opened" }
+                ]
+              }
+            }
+          ]
+        },
+
+
+        // Incident Response folder: NIS (Ofgem with DESNZ, NCSC alongside), OES designation, fire and
+        // rescue, HSE, NESO, who may instruct CastleTech, and the ESD rule (decisions 3 and 5). No COMAH.
+        {
+          "type": "notes",
+          "id": "incident_response_folder",
+          "name": "Incident Response Folder",
+          "takeable": false,
+          "readable": true,
+          "puzzle_graph_role": "clue",
+          "puzzle_graph_aim": "assess_control_room",
+          "puzzle_graph_reveals": "ESD rule (anyone, on a credible hazard); NIS initial notification to Ofgem without undue delay, NCSC alongside; who may instruct CastleTech; Trent Water shares the file server",
+          // Moved down the duty desk so it is not one tap with HMI-OPS-01 (top-lefts were 31.8px apart)
+          "position": { "x": 4.75, "y": 2.75 },
+          "observations": "From the ring binder on the duty desk: Albion's incident response quick reference.",
+          "text": "ALBION ENERGY STORAGE: INCIDENT RESPONSE QUICK REFERENCE\n\nEMERGENCY SHUTDOWN (ESD)\nAnyone may press an ESD station on a credible hazard. You do not need permission.\nStations: Battery Hall 1 door (control room side), control room console, and inside the hall.\nNever go into a hall that is in gas alarm.\n\nHYDROGEN (by volume in air)\n1.0% (25% of the lower explosive limit): alarm, ventilate, stay out.\n2.0% (50% LEL): evacuate the hall and shut it down.\nHydrogen burns at 4.0%.\nFire and rescue: call 999 as soon as a hall is off-gassing.\n\nNIS REGULATIONS 2018\nAlbion Energy Storage Ltd was designated an Operator of Essential Services by the competent authority in 2023.\nCompetent authority: DESNZ and Ofgem jointly. Ofgem handles incident reports.\nNotify without undue delay, and no later than 72 hours after becoming aware.\nAn initial notification with what you know is fine. Mark unknowns as unknown and update later.\nTell the NCSC alongside. They help; they don't regulate.\n\nOTHER CALLS\nHSE: health and safety regulator, after any dangerous occurrence.\nNESO: any event that affected the grid connection or frequency.\n\nWHO MAY INSTRUCT CASTLETECH (boundary and firewall changes)\nMarcus Webb (OT Security Manager) or James Whitworth (General Manager).\nCastleTech ring back on the number they hold before changing anything.\nNOTE: James Whitworth is on annual leave until 30 March.\n\nTRENT WATER SERVICES\nShares the enterprise file server (FS-ALBION-01) and printers. A separate company and a CastleTech client. Telling them about an Albion incident needs Albion's consent.",
+          "onRead": { "setVariable": { "incident_folder_read": true } }
+        },
+
+        // IMPLEMENTED: Duty officer desk — contains Engineering Workshop RFID key
+        {
+          "type": "filing_cabinet",
+          "id": "duty_officer_desk",
+          "name": "Duty Officer Desk",
+          "takeable": false,
+          "locked": false,
+          "puzzle_graph_unlocks": "engineering_workshop",
+          "puzzle_graph_role": "key",
+          "puzzle_graph_note": "Container for Engineering Workshop RFID Key (see contents) — the key itself carries the graph metadata",
+          "observations": "The duty officer's desk drawers. Jay Patel's handover sheet is on top: 'Shift uneventful. Workshop key in the top drawer. J. Patel.'",
+          "contents": [
+            {
+              "type": "keycard",
+              "name": "Engineering Workshop RFID Key",
+              "takeable": true,
+              "opens_lock": "workshop_rfid_key",
+              "collection_group": "workshop_key_group",
+              "puzzle_graph_unlocks": "engineering_workshop",
+              "puzzle_graph_role": "key",
+              "observations": "An RFID access card for the Engineering Workshop. Albion Energy Storage, Engineering Access Only."
+            }
+          ]
+        },
+
+        // NIS notification form on the wall clipboard: the player reads it, then Marcus decides with
+        // them what goes in and sends it (MAR-3). Reading it sets nis_form_read.
+        {
+          "type": "notes",
+          "id": "nis_notification_form",
+          "name": "NIS Notification Form",
+          "takeable": false,
+          "readable": true,
+          "minigameData": { "timerRef": "nis_deadline" },
+          // On a clipboard on the east wall below the workshop door
+          "position": "as-type:clipboard_chart",
+          "readDisplay": "gameDisplay",
+          "puzzle_graph_role": "item",
+          "puzzle_graph_aim": "nis_notification",
+          "puzzle_graph_reveals": "What an initial NIS notification asks for; Marcus Webb signs it off and sends it",
+          "observations": "A printed form on a wall clipboard by the workshop door: NIS Regulations 2018, Operator of Essential Services incident notification. Blank. Marcus Webb signs these off.",
+          "text": "NIS REGULATIONS 2018: INCIDENT NOTIFICATION\nOperator of Essential Services, Electricity\n\nOperator: Albion Energy Storage Ltd (designated OES)\nOES reference: OES-EN-0471\nSend to: Ofgem, for the competent authority (DESNZ and Ofgem jointly)\nCopy to: NCSC\n\nType: [INITIAL / UPDATE / FINAL]\nWhen did you become aware? [TO COMPLETE]\nWhen did it start, if known? [TO COMPLETE]\n\nWhat happened, what is affected, how they got in (if known):\n[TO COMPLETE]\n\nSafety systems affected? [YES / NO / NOT YET KNOWN]\nEffect on the essential service (grid services, capacity lost): [TO COMPLETE]\nActions taken so far: [TO COMPLETE]\nWhat you don't know yet: [TO COMPLETE]\n\nAlso told: Fire and rescue [ ]  HSE [ ]  NESO [ ]  Others sharing your systems [ ]\n\nSigned off by: ______________ (OT Security Manager)",
+          "onRead": { "setVariable": { "nis_form_read": true } }
+        },
+
+        {
+          "type": "alarm_panel",
+          "id": "alarm_panel",
+          "name": "Facility Alarm Panel",
+          // Moved from the map slot in the NW corner (left of the Battery Hall door), where the
+          // player could get no nearer than 33px and a click never offered it, onto the west wall
+          "position": { "x": 0.40625, "y": 2.1875 },
+          "takeable": false,
+          "observations": "The facility alarm panel by the Battery Hall door. Seven lamps, mostly green.",
+          "minigameData": {
+            "panelTitle": "ALBION ENERGY STORAGE<br>FACILITY ALARM PANEL",
+            "footer": "STATE-REACTIVE LAMP DISPLAY. READ ONLY",
+            "lamps": [
+            {
+              "label": "BATTERY HALL 1",
+              "variable": "historian_flatline_found",
+              "offClass": "ap-green", "offStatus": "NORMAL",
+              "onClass":  "ap-amber", "onStatus":  "ANOMALY DETECTED",
+              "flash": false
+            },
+            {
+              "label": "RACKS ISOLATED",
+              "variable": "esd_activated",
+              "offClass": "ap-off",   "offStatus": "—",
+              "onClass":  "ap-green", "onStatus":  "ESD ACTIVATED",
+              "flash": false
+            },
+            {
+              "label": "SIS STATUS",
+              "variable": "sis_tamper_confirmed",
+              "offClass": "ap-green", "offStatus": "WITHIN SETPOINTS",
+              "onClass":  "ap-red",   "onStatus":  "SETPOINT DEVIATION",
+              "flash": true
+            },
+            {
+              "label": "JUMP SERVER",
+              "variable": "jump_server_isolated",
+              "offClass": "ap-green", "offStatus": "CONNECTED",
+              "onClass":  "ap-amber", "onStatus":  "ISOLATED",
+              "flash": false
+            },
+            {
+              // mn3: CastleTech's isolation blocks enterprise traffic at the firewall; only the
+              // 'scada' scope takes SCADA to manual.
+              "label": "NETWORK STATUS",
+              "multiState": true,
+              "variables": ["scada_manual_mode", "historian_leg_cut", "network_isolated"],
+              "states": [
+                { "variable": "scada_manual_mode", "cssClass": "ap-red",   "statusText": "SCADA MANUAL MODE",  "flash": false },
+                { "variable": "historian_leg_cut", "cssClass": "ap-red",   "statusText": "HISTORIAN ALSO CUT", "flash": false },
+                { "variable": "network_isolated",  "cssClass": "ap-red",   "statusText": "ENTERPRISE CUT OFF", "flash": false },
+                {                                  "cssClass": "ap-green", "statusText": "NORMAL",             "flash": false }
+              ]
+            },
+            {
+              "label": "H₂ GAS",
+              "multiState": true,
+              "variables": ["facility_evacuated", "hydrogen_alarm"],
+              "states": [
+                { "variable": "facility_evacuated", "cssClass": "ap-red",   "statusText": "EVACUATE", "flash": true  },
+                { "variable": "hydrogen_alarm",     "cssClass": "ap-amber", "statusText": "ADVISORY", "flash": false },
+                {                                   "cssClass": "ap-green", "statusText": "NORMAL",   "flash": false }
+              ]
+            },
+            {
+              "label": "SAFE STATE",
+              "variable": "facility_safe_state",
+              "offClass": "ap-off",   "offStatus": "—",
+              "onClass":  "ap-green", "onStatus":  "SAFE STATE ACHIEVED",
+              "flash": false
+            }
+            ]
+          }
+        },
+
+<%# M1 (round 3): conditionalActions run in order, so the last entry clears early_esd_activation
+    and esd_before_dial when the gas alarm has already gone off: a press after hydrogen_alarm is
+    never "early" or "on the dial reading" (debrief, credits, Helen's radio). %>
+<%# ESD stations (decision 3). Two in the control room, on sis02-only conditional slots: one on the
+    west wall by the Battery Hall 1 door (outside the hall), one on the operator console. Neither is
+    gated: esd_stations_live is always true. early_esd_activation and esd_before_dial record when
+    it was pressed; the debrief and credits read them. %>
+        {
+          "type": "emergency-button",
+          "id": "esd_station_hall_door",
+          "name": "ESD Station: Battery Hall 1 (Hall Door)",
+          "takeable": false,
+          "locked": false,
+          "puzzle_graph_role": "item",
+          "puzzle_graph_aim": "initiate_esd",
+          "observations": "A red mushroom-head button in a yellow housing on the wall by the Battery Hall 1 door, outside the hall. Labelled: EMERGENCY SHUTDOWN, BATTERY HALL 1. A hinged guard covers it.",
+          "minigameData": {
+            "interactionType": "esd_button",
+            "label": "EMERGENCY SHUTDOWN - BATTERY HALL 1 (HALL DOOR)",
+            "confirmDesc": "Takes Racks A1 to A4 off charge, opens the DC contactors and starts forced cooling. Undoing it needs a manual reset at the hall panel.",
+            "authVar": "esd_stations_live",
+            "activatedVar": "esd_activated",
+            "unauthorizedText": "Flip the guard to arm the station.",
+            "alreadyActiveText": "Emergency shutdown already active. Racks A1 to A4 are isolated.",
+            "confirmedText": "ISOLATED - COOLING ACTIVE",
+            "conditionalActions": [
+              { "ifGlobalFalse": "historian_flatline_found", "actions": [{ "type": "set_global", "key": "early_esd_activation", "value": true }] },
+              { "ifGlobalFalse": "anomaly_detected", "actions": [{ "type": "set_global", "key": "esd_before_dial", "value": true }] },
+              { "ifGlobalTrue": "hydrogen_alarm", "actions": [{ "type": "set_global", "key": "early_esd_activation", "value": false }, { "type": "set_global", "key": "esd_before_dial", "value": false }] }
+            ],
+            "completionActions": [
+              { "type": "set_global",   "key": "esd_activated",    "value": true },
+              { "type": "complete_task", "taskId": "press_esd_button" }
+            ]
+          }
+        },
+        {
+          "type": "emergency-button",
+          "id": "esd_station_console",
+          "name": "ESD Station: Control Room Console",
+          "takeable": false,
+          "locked": false,
+          "puzzle_graph_role": "item",
+          "puzzle_graph_aim": "initiate_esd",
+          "observations": "A guarded red ESD button on the operator console. Labelled: EMERGENCY SHUTDOWN, BATTERY HALL 1. Hardwired to the same relays as the station by the hall door.",
+          "minigameData": {
+            "interactionType": "esd_button",
+            "label": "EMERGENCY SHUTDOWN - BATTERY HALL 1 (CONTROL ROOM)",
+            "confirmDesc": "Takes Racks A1 to A4 off charge, opens the DC contactors and starts forced cooling. Undoing it needs a manual reset at the hall panel.",
+            "authVar": "esd_stations_live",
+            "activatedVar": "esd_activated",
+            "unauthorizedText": "Flip the guard to arm the station.",
+            "alreadyActiveText": "Emergency shutdown already active. Racks A1 to A4 are isolated.",
+            "confirmedText": "ISOLATED - COOLING ACTIVE",
+            "conditionalActions": [
+              { "ifGlobalFalse": "historian_flatline_found", "actions": [{ "type": "set_global", "key": "early_esd_activation", "value": true }] },
+              { "ifGlobalFalse": "anomaly_detected", "actions": [{ "type": "set_global", "key": "esd_before_dial", "value": true }] },
+              { "ifGlobalTrue": "hydrogen_alarm", "actions": [{ "type": "set_global", "key": "early_esd_activation", "value": false }, { "type": "set_global", "key": "esd_before_dial", "value": false }] }
+            ],
+            "completionActions": [
+              { "type": "set_global",   "key": "esd_activated",    "value": true },
+              { "type": "complete_task", "taskId": "press_esd_button" }
+            ]
+          }
+        },
+
+        {
+          "type": "screens",
+          "name": "Facility Status Board",
+          "takeable": false,
+          "observations": "A large wall-mounted display mirroring the SCADA HMI. All battery halls showing green. Temperature: 28°C. Status: NORMAL.",
+          "observationDisplay": "gameDisplay"
+        },
+
+        // Flavour: claims a conditional_items sprite in room_control_1x2gu that only sis02 shows
+        {
+          "type": "fire_extinguisher",
+          "id": "control_room_extinguisher",
+          "name": "CO2 Fire Extinguisher",
+          "takeable": false,
+          "observations": "A CO2 extinguisher for electrical fires, mounted by the workshop door. The inspection tag is in date."
+        },
+
+        // IMPLEMENTED: MG-06 — Network Architecture Diagram (Purdue Model SVG minigame)
+        // SVG interactive diagram with 6 Purdue levels, 25 nodes, 5 attack paths (EN-001, EN-002, EN-011)
+        // Marching-ant animation on active attack paths; Trent Water shared infrastructure sidebar
+        // Sets network_architecture_reviewed=true on first open via reviewedVar in scenarioData
+        {
+          "type": "network_architecture",
+          "id": "network_architecture_diagram",
+          "name": "Network Architecture Diagram",
+          "takeable": false,
+          "puzzle_graph_role": "clue",
+          "puzzle_graph_aim": "assess_control_room",
+          "puzzle_graph_reveals": "Albion facility Purdue Model architecture — IT/OT boundary weaknesses EN-001, SIS network isolation failure EN-002, cross-sector Trent Water dependency EN-011",
+          "observations": "The site network on a wall display, by Purdue level: enterprise at the top, field devices at the bottom. Weak points are marked in amber.",
+          "postitNote": "Click any node to see vulnerability details and attack paths",
+          "showPostit": false,
+          "minigameData": {
+            "title": "ALBION ENERGY STORAGE: NETWORK ARCHITECTURE (PURDUE MODEL)",
+            "reviewedVar": "network_architecture_reviewed",
+            "viewBox": "0 0 900 572",
+            "zones": [
+              { "id": "0", "label": "LEVEL 4-5: ENTERPRISE IT NETWORK",      "y": 18,  "h": 64, "fill": "#2a0808", "stroke": "#7f1d1d", "nodeClass": "it" },
+              { "id": "1", "label": "DMZ / IT-OT BOUNDARY",                   "y": 130, "h": 68, "fill": "#2a1800", "stroke": "#92400e", "nodeClass": "it" },
+              { "id": "2", "label": "LEVEL 3: OPERATIONS / SCADA NETWORK",   "y": 236, "h": 68, "fill": "#1a1500", "stroke": "#78650a", "nodeClass": "ot" },
+              { "id": "3", "label": "LEVEL 1-2: CONTROL NETWORK",            "y": 344, "h": 64, "fill": "#08082a", "stroke": "#1e3a8a", "nodeClass": "ot" },
+              { "id": "4", "label": "LEVEL 0: FIELD DEVICES",                "y": 442, "h": 60, "fill": "#111111", "stroke": "#374151", "nodeClass": "ot" },
+              { "id": "5", "label": "HARDWIRED SAFETY LAYER (NO NETWORK)",   "y": 514, "h": 54, "fill": "#061a0a", "stroke": "#14532d", "nodeClass": "safe" }
+            ],
+            "nodes": [
+              { "id": "INET",      "label": "Internet",     "sublabel": "Gateway",               "warn": false, "zone": "0", "x": 30,  "y": 38,  "w": 90,  "h": 34, "paths": ["1","2","3","5"], "desc": "Managed enterprise firewall. The attacker's command-and-control traffic left through here to Tor exit 198.51.100.45.", "vuln": "Outbound C2 from the enterprise network went unnoticed for weeks." },
+              { "id": "CORP",      "label": "Corporate IT", "sublabel": "Enterprise VLAN",        "warn": false, "zone": "0", "x": 145, "y": 38,  "w": 100, "h": 34, "paths": ["1","2","3","5"], "desc": "Enterprise network VLAN. Connects all IT systems and provides path to DMZ.", "vuln": null },
+              { "id": "AD",        "label": "Active",       "sublabel": "Directory / DC",         "warn": false, "zone": "0", "x": 265, "y": 38,  "w": 90,  "h": 34, "paths": ["1","2","3"],     "desc": "Domain Controller. An implant was planted here after the printer firmware foothold, using svc.deploy. Controls authentication across the enterprise.", "vuln": "Compromised AD exposes every enterprise credential. It does not hold the jump server's local accounts." },
+              { "id": "EMAIL",     "label": "Email",        "sublabel": "Server",                 "warn": false, "zone": "0", "x": 372, "y": 38,  "w": 75,  "h": 34, "paths": [],                "desc": "Corporate email server. Not directly in attack path but connected to enterprise VLAN.", "vuln": null },
+              { "id": "ERP",       "label": "ERP",          "sublabel": "Business Systems",       "warn": false, "zone": "0", "x": 462, "y": 38,  "w": 90,  "h": 34, "paths": [],                "desc": "Enterprise resource planning system. Business data. Connected to corporate VLAN.", "vuln": null },
+              { "id": "PRINT",     "label": "Shared",       "sublabel": "Printers ⚠",            "warn": true,  "zone": "0", "x": 572, "y": 38,  "w": 88,  "h": 34, "paths": ["1","2","5"],     "desc": "Multi-function printers shared between Albion and Trent Water Services.", "vuln": "First foothold: tampered printer firmware, installed from a USB stick a fake vendor sent. A keylogger on the printers harvested CastleTech's svc.deploy account. Shared with Trent Water and never risk-assessed." },
+              { "id": "FILESHARE", "label": "File Server",  "sublabel": "Albion + Trent Water",   "warn": true,  "zone": "0", "x": 674, "y": 38,  "w": 110, "h": 34, "paths": ["5"],             "desc": "Shared file server, used by both Albion Energy and Trent Water Services on the same enterprise VLAN.", "vuln": "Cross-sector data sharing without formal risk assessment. A file written here from Albion's side was opened on a Trent Water workstation." },
+              { "id": "JUMP",      "label": "Jump Server",  "sublabel": "Bidirectional RDP ⚠",    "warn": true,  "zone": "1", "x": 120, "y": 148, "w": 150, "h": 36, "paths": ["1"],             "desc": "DMZ access server. Configured with bidirectional RDP, intended for engineering remote access.", "vuln": "ACTIVE SESSION: c.ellison (a commissioning contractor who left 14 months ago) from internal host ALB-SRV-02 since 01:47. The leaver process missed this server's local accounts; the default password still worked." },
+              { "id": "CASTLETECH","label": "CastleTech",   "sublabel": "SOC (VPN)",              "warn": false, "zone": "1", "x": 330, "y": 148, "w": 100, "h": 36, "paths": [],                "desc": "Remote security monitoring SOC. Connected via VPN. Contract explicitly excludes OT system monitoring: a blind spot.", "vuln": "Monitoring scope explicitly excludes OT systems. The anomaly was not detected by CastleTech." },
+              { "id": "BMS_IT",    "label": "Building Mgmt","sublabel": "System",                 "warn": false, "zone": "1", "x": 450, "y": 148, "w": 90,  "h": 36, "paths": [],                "desc": "Building Management System covering HVAC, fire suppression, and physical access control.", "vuln": null },
+              { "id": "HISTORIAN", "label": "Historian",    "sublabel": "Dual-Homed ⚠",          "warn": true,  "zone": "2", "x": 30,  "y": 254, "w": 110, "h": 36, "paths": ["2"],             "desc": "Process historian server. Records all SCADA sensor values over time. Has network interfaces on BOTH enterprise and SCADA networks.", "vuln": "Dual-homed: one interface on enterprise VLAN, one on SCADA network. Provides passive data relay path that can be repurposed as active OT pivot." },
+              { "id": "HMI_OPS",  "label": "HMI-OPS-01",   "sublabel": "Operator WS",            "warn": false, "zone": "2", "x": 165, "y": 254, "w": 100, "h": 36, "paths": [],                "desc": "SCADA operator workstation. Used by control room staff to monitor battery hall status. Password-protected.", "vuln": null },
+              { "id": "HMI_ENG",  "label": "HMI-ENG-02",   "sublabel": "Engineering WS",         "warn": false, "zone": "2", "x": 285, "y": 254, "w": 100, "h": 36, "paths": ["1","4"],          "desc": "Engineering workstation. Accessible from jump server via bidirectional RDP. Also has access to SIS engineering port.", "vuln": "Reachable from Jump Server via RDP. c.ellison session terminates here. Used to modify SIS setpoints at 03:22." },
+              { "id": "SCADA",    "label": "SCADA",         "sublabel": "Server",                 "warn": false, "zone": "2", "x": 410, "y": 254, "w": 90,  "h": 36, "paths": ["1","2","3","4"],  "desc": "Central SCADA server. Polls PLCs every 1–5 seconds. Communicates via Modbus/TCP (no auth, no encryption).", "vuln": "Reachable via Jump Server, Historian dual-home, and legacy Modbus/TCP firewall rules. Three separate attack paths converge here." },
+              { "id": "PLC_BMS",  "label": "PLC-BMS",       "sublabel": "Battery Mgmt",          "warn": false, "zone": "3", "x": 60,  "y": 362, "w": 90,  "h": 34, "paths": ["1"],             "desc": "Battery Management System PLC. Controls charging/discharging of Racks A1–A4. Communicates via unauthenticated Modbus/TCP.", "vuln": "No authentication on Modbus/TCP. Any device with SCADA network access can write register values." },
+              { "id": "PLC_GRID", "label": "PLC-GRID",      "sublabel": "Grid Interface",        "warn": false, "zone": "3", "x": 170, "y": 362, "w": 90,  "h": 34, "paths": [],                "desc": "Grid interface PLC. Manages bidirectional power flow to national grid.", "vuln": null },
+              { "id": "RTU",      "label": "RTUs",           "sublabel": "Ancillary Systems",     "warn": false, "zone": "3", "x": 280, "y": 362, "w": 90,  "h": 34, "paths": [],                "desc": "Remote Terminal Units for ancillary systems. Use DNP3 protocol (basic challenge-response auth, not encrypted).", "vuln": null },
+              { "id": "SIS",      "label": "SIS",            "sublabel": "SIL 2 ⚠",              "warn": true,  "zone": "3", "x": 390, "y": 362, "w": 100, "h": 34, "paths": ["4"],             "desc": "Safety Instrumented System. Certified SIL 2 under IEC 61511. Has its own sensor inputs and actuator outputs, designed to operate independently of SCADA.", "vuln": "Engineering port reachable from the SCADA network (HMI-ENG-02). The engineering protocol needs no authentication and keeps no log. At 03:22 the thermal trip went from 55°C to 85°C and the hydrogen alarm from 1.0% to 3.8% by volume. Firmware fix available since September 2024, deferred." },
+              { "id": "TEMP",    "label": "Temp",            "sublabel": "Sensors",               "warn": false, "zone": "4", "x": 30,  "y": 460, "w": 75,  "h": 30, "paths": [], "desc": "Cell thermocouples on each battery rack. Digital readings falsified from 23:12.", "vuln": null },
+              { "id": "VOLT",    "label": "Voltage",         "sublabel": "/ Current",             "warn": false, "zone": "4", "x": 120, "y": 460, "w": 75,  "h": 30, "paths": [], "desc": "Voltage and current sensors per rack.", "vuln": null },
+              { "id": "GAS",     "label": "H₂ Gas",          "sublabel": "Detectors",             "warn": false, "zone": "4", "x": 210, "y": 460, "w": 75,  "h": 30, "paths": [], "desc": "Hydrogen gas detectors. Hardwired to the SIS and the ventilation controls; not on SCADA.", "vuln": null },
+              { "id": "CONTACT", "label": "Contactors",      "sublabel": "/ Breakers",            "warn": false, "zone": "4", "x": 300, "y": 460, "w": 80,  "h": 30, "paths": [], "desc": "DC contactors and AC breakers. Controlled by both PLC-BMS and SIS.", "vuln": null },
+              { "id": "COOL",    "label": "Cooling",         "sublabel": "Fans / Vents",          "warn": false, "zone": "4", "x": 395, "y": 460, "w": 75,  "h": 30, "paths": [], "desc": "Cooling fans and ventilation dampers. Also hardwired to ESD interlock.", "vuln": null },
+              { "id": "INV",     "label": "Inverters",       "sublabel": "Bidirectional",         "warn": false, "zone": "4", "x": 485, "y": 460, "w": 80,  "h": 30, "paths": [], "desc": "Bidirectional inverters. Controlled by PLC-GRID and RTUs.", "vuln": null },
+              { "id": "ESD",     "label": "Hardwired ESD",   "sublabel": "Pushbutton",            "warn": false, "zone": "5", "x": 60,  "y": 530, "w": 110, "h": 30, "paths": [], "desc": "Hardwired Emergency Shutdown. Electrically interlocked, completely independent of all networked and programmable systems.", "vuln": null },
+              { "id": "ANALOG",  "label": "Analog",          "sublabel": "Thermometers",          "warn": false, "zone": "5", "x": 200, "y": 530, "w": 100, "h": 30, "paths": [], "desc": "The local analogue dial gauge at Rack A2. A legacy instrument on no network. Read 51°C while SCADA reported 28°C.", "vuln": null }
+            ],
+            "externalOrgs": [
+              {
+                "id": "trent_water",
+                "label": "TRENT WATER",
+                "label2": "SERVICES",
+                "x": 786, "y": 18, "w": 102, "h": 110,
+                "nodes": [
+                  { "id": "TW_WS",    "label": "Trent Water", "sublabel": "Workstations", "warn": false, "x": 798, "y": 38, "w": 90, "h": 34, "paths": ["5"], "desc": "Trent Water Services workstations on Albion enterprise VLAN. Share file server and printers with Albion.", "vuln": null },
+                  { "id": "TW_SCADA", "label": "Trent Water", "sublabel": "SCADA System", "warn": false, "x": 798, "y": 88, "w": 90, "h": 34, "paths": ["5"], "desc": "Trent Water's control system for its small pumping station on the estate. Separate from Albion OT, but its workstations share Albion's file server.", "vuln": null }
+                ]
+              }
+            ],
+            "attackPaths": [
+              { "id": "1", "label": "Path 1: Main Pivot",          "desc": "Printer firmware → svc.deploy → AD implant → Jump Server (dormant c.ellison account) → HMI-ENG-02 → SCADA → PLCs, run over C2", "claim": "EN-001", "nodes": ["INET","PRINT","CORP","AD","JUMP","HMI_ENG","SCADA","PLC_BMS"] },
+              { "id": "2", "label": "Path 2: Historian Bridge",    "desc": "Printer firmware → svc.deploy → AD implant → Historian dual-home (Modbus proxy) → SCADA",        "claim": "EN-001", "nodes": ["INET","PRINT","CORP","AD","HISTORIAN","SCADA"] },
+              { "id": "3", "label": "Path 3: Legacy Modbus Rules", "desc": "Enterprise VLAN → Legacy firewall Modbus/TCP exceptions → SCADA Server",               "claim": "EN-001", "nodes": ["CORP","SCADA"] },
+              { "id": "4", "label": "Path 4: SIS Reachability",   "desc": "SCADA network → SIS engineering port (unauthenticated)",                                "claim": "EN-002", "nodes": ["SCADA","HMI_ENG","SIS"] },
+              { "id": "5", "label": "Path 5: Cross-Sector",        "desc": "Shared file server / printers → Trent Water workstation (opened print_driver_update.pkg) → Trent Water's pump controls (checks pending)", "claim": "EN-011", "nodes": ["FILESHARE","PRINT","TW_WS","TW_SCADA"] }
+            ],
+            "lines": [
+              { "from": "INET",      "to": "CORP",      "type": "normal",    "paths": ["1","2","3","5"] },
+              { "from": "CORP",      "to": "AD",        "type": "normal",    "paths": ["1","2","3"] },
+              { "from": "CORP",      "to": "EMAIL",     "type": "normal",    "paths": [] },
+              { "from": "CORP",      "to": "ERP",       "type": "normal",    "paths": [] },
+              { "from": "CORP",      "to": "PRINT",     "type": "normal",    "paths": ["1","2","5"] },
+              { "from": "CORP",      "to": "FILESHARE", "type": "normal",    "paths": ["5"] },
+              { "from": "CORP",      "to": "BMS_IT",    "type": "normal",    "paths": [] },
+              { "from": "CORP",      "to": "JUMP",      "type": "boundary",  "paths": ["1"],   "label": "RDP" },
+              { "from": "CORP",      "to": "SCADA",     "type": "legacy",    "paths": ["3"],   "label": "Modbus/TCP" },
+              { "from": "CASTLETECH","to": "CORP",      "type": "normal",    "paths": [],      "label": "VPN" },
+              { "from": "HISTORIAN", "to": "CORP",      "type": "legacy",    "paths": ["2"],   "label": "dual-home" },
+              { "from": "HISTORIAN", "to": "SCADA",     "type": "normal",    "paths": ["2"],   "label": "OPC-UA" },
+              { "from": "JUMP",      "to": "HMI_ENG",   "type": "boundary",  "paths": ["1"],   "label": "RDP⚠" },
+              { "from": "JUMP",      "to": "SCADA",     "type": "boundary",  "paths": [] },
+              { "from": "HMI_OPS",   "to": "SCADA",     "type": "normal",    "paths": [] },
+              { "from": "HMI_ENG",   "to": "SCADA",     "type": "normal",    "paths": ["1"] },
+              { "from": "HMI_ENG",   "to": "SIS",       "type": "legacy",    "paths": ["4"],   "label": "SIS eng port⚠" },
+              { "from": "SCADA",     "to": "PLC_BMS",   "type": "normal",    "paths": ["1"],   "label": "Modbus/TCP" },
+              { "from": "SCADA",     "to": "PLC_GRID",  "type": "normal",    "paths": [] },
+              { "from": "SCADA",     "to": "RTU",       "type": "normal",    "paths": [],      "label": "DNP3" },
+              { "from": "PLC_BMS",   "to": "TEMP",      "type": "normal",    "paths": [] },
+              { "from": "PLC_BMS",   "to": "VOLT",      "type": "normal",    "paths": [] },
+              { "from": "PLC_BMS",   "to": "CONTACT",   "type": "normal",    "paths": [] },
+              { "from": "PLC_BMS",   "to": "COOL",      "type": "normal",    "paths": [] },
+              { "from": "PLC_GRID",  "to": "INV",       "type": "normal",    "paths": [] },
+              { "from": "SIS",       "to": "TEMP",      "type": "normal",    "paths": [] },
+              { "from": "SIS",       "to": "GAS",       "type": "normal",    "paths": [] },
+              { "from": "SIS",       "to": "CONTACT",   "type": "normal",    "paths": ["4"] },
+              { "from": "SIS",       "to": "COOL",      "type": "normal",    "paths": ["4"] },
+              { "from": "RTU",       "to": "INV",       "type": "normal",    "paths": [] },
+              { "from": "ESD",       "to": "CONTACT",   "type": "hardwired", "paths": [],      "label": "hardwired" },
+              { "from": "ESD",       "to": "COOL",      "type": "hardwired", "paths": [],      "label": "hardwired" },
+              { "from": "FILESHARE", "to": "TW_WS",     "type": "normal",    "paths": ["5"] },
+              { "from": "PRINT",     "to": "TW_WS",     "type": "normal",    "paths": ["5"] },
+              { "from": "TW_WS",     "to": "TW_SCADA",  "type": "normal",    "paths": ["5"] }
+            ]
+          }
+        }
+
+      ]
+    },
+
+    "battery_hall_1": {
+      "type": "room_battery_hall",
+      "locked": true,
+      "lockType": "rfid",
+      "requires": "battery_hall_badge",
+      "door_sign": "BATTERY HALL 1. RESTRICTED ACCESS. PPE REQUIRED",
+      "ambientSound": "server_room_ventilation",
+      "ambientVolume": 0.7,
+      "lighting": {
+        "mode": "motion",
+        "ambient": "#c4cad8",
+        "darkAmbient": "#0a0f1c",
+        "emitters": {
+          "batrack": [
+            { "condition": "globalVars.hydrogen_alarm", "color": "#ff5a3c", "radius": 30, "intensity": 0.3, "effect": null, "ledColor": "#ff7a3c", "ledAlpha": 0.5 },
+            { "ledColor": "#4dff7a" }
+          ]
+        }
+      },
+      "connections": {
+        "south": "scada_control_room"
+      },
+      "npcs": [],
+      "objects": [
+
+        // The local analogue dial gauge at Rack A2 (pack fact): the scenario's physical detection clue.
+        // Reading it sets anomaly_detected; Helen's mapping asks which reading the player believes.
+        {
+          "type": "thermometer",
+          "id": "analog_thermometer",
+          "name": "Local Dial Gauge: Rack A2",
+          "takeable": false,
+          "readable": true,
+          "important": true,
+          "puzzle_graph_role": "clue",
+          "puzzle_graph_aim": "conduct_walkdown",
+          "puzzle_graph_unlocks": "historian_trend_viewer",
+          "puzzle_graph_reveals": "51°C on an instrument no network can reach, against 28°C on SCADA",
+          "observations": "The dial reads: 51°C\n\nThe local analogue temperature gauge for Rack A2, at the end of the first rack row. A legacy mechanical dial. No wiring to anything, no network.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.facility_evacuated",
+              "value": "The needle is hard against the stop. Smoke is building at the far end of the hall and the alarm won't stop. You shouldn't be in here."
+            },
+            {
+              "condition": "globalVars.hydrogen_alarm && !globalVars.esd_activated",
+              "value": "The dial reads 51°C and the needle's still creeping. The gas alarm is sounding over the racks. You shouldn't be in here."
+            },
+            {
+              "condition": "globalVars.esd_activated",
+              "value": "The dial now reads 46°C, falling since the shutdown. Its red drag needle has stuck at 51, the peak."
+            },
+            {
+              "condition": "globalVars.anomaly_detected",
+              "value": "The dial reads: 51°C\n\nThe local analogue gauge for Rack A2. Twenty-three degrees above what SCADA says."
+            }
+          ],
+          "spriteVariants": [
+            {
+              "condition": "globalVars.facility_evacuated",
+              "value": "thermometer_high"
+            },
+            {
+              "condition": "globalVars.esd_activated",
+              "value": "thermometer_low"
+            },
+            {
+              "condition": "globalVars.anomaly_detected",
+              "value": "thermometer_high"
+            }
+          ],
+          "triggerOnInteract": [
+            { "type": "set_global", "key": "anomaly_detected", "value": true }
+          ]
+        },
+
+        // A local ESD station inside the hall (west wall, away from the racks), wired to the same relays
+        // as the two stations in the control room. Not gated (decision 3). Labelled for use outside a
+        // gas alarm; pressing it in one sets esd_pressed_inside_in_alarm (MJ4, one Priya line).
+        {
+          "type": "emergency-button",
+          "id": "esd_pushbutton",
+          "name": "ESD Station: Inside Battery Hall 1",
+          "takeable": false,
+          "locked": false,
+          "puzzle_graph_role": "item",
+          "puzzle_graph_aim": "initiate_esd",
+          "observations": "A red ESD button on the west wall, away from the racks. Label: EMERGENCY SHUTDOWN, BATTERY HALL 1. IN A GAS ALARM, USE THE STATION BY THE HALL DOOR.",
+          "minigameData": {
+            "interactionType": "esd_button",
+            "label": "EMERGENCY SHUTDOWN - BATTERY HALL 1 (LOCAL)",
+            "confirmDesc": "Takes Racks A1 to A4 off charge, opens the DC contactors and starts forced cooling. Undoing it needs a manual reset at the hall panel.",
+            "authVar": "esd_stations_live",
+            "activatedVar": "esd_activated",
+            "unauthorizedText": "Flip the guard to arm the station.",
+            "alreadyActiveText": "Emergency shutdown already active. Racks A1 to A4 are isolated.",
+            "confirmedText": "ISOLATED - COOLING ACTIVE",
+            "conditionalActions": [
+              { "ifGlobalTrue": "hydrogen_alarm", "actions": [{ "type": "set_global", "key": "esd_pressed_inside_in_alarm", "value": true }] },
+              { "ifGlobalFalse": "historian_flatline_found", "actions": [{ "type": "set_global", "key": "early_esd_activation", "value": true }] },
+              { "ifGlobalFalse": "anomaly_detected", "actions": [{ "type": "set_global", "key": "esd_before_dial", "value": true }] },
+              { "ifGlobalTrue": "hydrogen_alarm", "actions": [{ "type": "set_global", "key": "early_esd_activation", "value": false }, { "type": "set_global", "key": "esd_before_dial", "value": false }] }
+            ],
+            "completionActions": [
+              { "type": "set_global",   "key": "esd_activated",    "value": true },
+              { "type": "complete_task", "taskId": "press_esd_button" }
+            ]
+          }
+        },
+
+        // IMPLEMENTED: Battery rack digital status panels (showing falsified readings)
+        {
+          "type": "tablet",
+          "id": "rack_status_panel",
+          "name": "Battery Rack Status Panels (Digital)",
+          "takeable": false,
+          "readable": true,
+          "observations": "Digital status display panels on each battery rack. All showing green indicator lights. Readings look normal.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.facility_evacuated",
+              "value": "The rack panels have gone dark. Smoke is building at the far end of the hall. You shouldn't be in here."
+            },
+            {
+              "condition": "globalVars.esd_activated",
+              "value": "Digital status panels on each rack, now showing ESD TRIP in red."
+            }
+          ],
+          "textVariants": [
+            {
+              "condition": "globalVars.facility_evacuated",
+              "value": "BATTERY RACK STATUS: HALL 1 (DIGITAL DISPLAY)\n\nNO DATA. Panels unpowered.\n\nThe hall is in evacuation. Fire and rescue have it."
+            },
+            {
+              "condition": "globalVars.esd_activated",
+              "value": "BATTERY RACK STATUS: HALL 1 (DIGITAL DISPLAY)\n\nESD TRIP: Racks A1 to A4 isolated, DC contactors open, forced cooling on.\nThe BMS shutdown routine has reset its registers. These are the rack sensors now:\n\nRack A1: 47°C, falling\nRack A2: 46°C, falling\nRack A3: 49°C, falling\nRack A4: 47°C, falling"
+            }
+          ],
+          "text": "BATTERY RACK STATUS: HALL 1 (DIGITAL DISPLAY)\n\nRack A1: 28.0°C | SoC: 72% | Status: NORMAL | Charge: 0.5C\nRack A2: 28.0°C | SoC: 72% | Status: NORMAL | Charge: 0.5C\nRack A3: 28.0°C | SoC: 72% | Status: NORMAL | Charge: 0.5C\nRack A4: 28.0°C | SoC: 72% | Status: NORMAL | Charge: 0.5C\n\nAll values within certified operating parameters.\nAll alarm setpoints: SATISFIED\n\n[These panels show the same BMS register values that SCADA reads.]",
+          "observationDisplay": "gameDisplay",
+          "readDisplay": "gameDisplay",
+          "addToNotes": false
+        },
+
+        // Runtime detector readout variants keyed to hydrogen state globals.
+        {
+          "type": "tablet",
+          "id": "hydrogen_detector",
+          "name": "H₂ Gas Detector Panel",
+          // Gas controller sprite on the back wall right of the racks (sis02-only conditional slot);
+          // the second glass "tablet" slot is then hidden because the rack panel claims the first
+          "position": "as-type:power_panel",
+          "takeable": false,
+          "readable": true,
+          "observations": "A wall-mounted hydrogen gas detection panel near the ventilation outlet. Readings are per cent hydrogen by volume in air.",
+          "observationDisplay": "gameDisplay",
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "observationVariants": [
+            {
+              "condition": "globalVars.facility_evacuated",
+              "value": "The hydrogen panel is in full alarm. Red evacuation lights are flashing and the tone is continuous. You shouldn't be in here."
+            },
+            {
+              "condition": "globalVars.hydrogen_alarm",
+              "value": "The hydrogen panel is in alarm. Amber lights pulse and the tone is intermittent. Ventilation is on full."
+            },
+            {
+              "condition": "globalVars.esd_activated",
+              "value": "The hydrogen panel shows a small reading, falling since the shutdown."
+            }
+          ],
+<%# Hydrogen in per cent by volume (decision 7): alarm 1.0% (25% LEL), evacuate 2.0% (50% LEL),
+    burns at 4.0%. A healthy hall reads close to zero. %>
+          "text": "HYDROGEN GAS MONITOR: BATTERY HALL 1\nHardwired to the SIS and the ventilation controls. Not on SCADA.\n\nCurrent reading: 0.4% H₂ by volume (10% of the lower explosive limit)\nAlarm and ventilate: 1.0% by volume (25% LEL)\nEvacuate and shut down: 2.0% by volume (50% LEL)\nHydrogen burns at 4.0% by volume.\n\nStatus: RISING. Normal for this hall: 0.0%.\nHydrogen in a battery hall means cells are venting.",
+          "textVariants": [
+            {
+              "condition": "globalVars.facility_evacuated",
+              "value": "HYDROGEN GAS MONITOR: BATTERY HALL 1\n\nCurrent reading: 2.1% H₂ by volume (52% LEL)\nAlarm: 1.0% | Evacuate: 2.0% | Burns at: 4.0%\n\nSTATUS: EVACUATE\nHall evacuated. Fire and rescue attending. You shouldn't be in here."
+            },
+            {
+              "condition": "globalVars.hydrogen_alarm",
+              "value": "HYDROGEN GAS MONITOR: BATTERY HALL 1\n\nCurrent reading: 1.1% H₂ by volume (27% LEL)\nAlarm: 1.0% | Evacuate: 2.0% | Burns at: 4.0%\n\nSTATUS: ALARM\nVentilation on full. Keep out of the hall. Shut down from a station outside."
+            },
+            {
+              "condition": "globalVars.esd_activated",
+              "value": "HYDROGEN GAS MONITOR: BATTERY HALL 1\n\nCurrent reading: 0.2% H₂ by volume, falling\nAlarm: 1.0% | Evacuate: 2.0% | Burns at: 4.0%\n\nSTATUS: FALLING AFTER SHUTDOWN\nKeep ventilating until it reads zero."
+            }
+          ]
+        },
+
+        // Flavour: these claim conditional_items sprites in room_battery_hall that only sis02 shows
+        {
+          "type": "suppression_panel",
+          "id": "hall1_suppression_panel",
+          "name": "Fire Suppression Control Panel",
+          "takeable": false,
+          "observations": "The fire suppression control panel for Battery Hall 1, by the door. Status: HEALTHY. The manual release sits behind a break-glass cover.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.facility_evacuated",
+              "value": "The fire suppression panel for Battery Hall 1. Status: RELEASED. The hall is the fire service's now."
+            }
+          ]
+        },
+        {
+          "type": "no_smoking_sign",
+          "id": "hall1_safety_sign",
+          "name": "Battery Hall Safety Sign",
+          "takeable": false,
+          "observations": "NO SMOKING OR NAKED FLAMES. Battery hall: authorised personnel only. PPE required beyond this point."
+        }
+
+      ]
+    },
+
+    "engineering_workshop": {
+      "type": "room_it",
+      "locked": true,
+      "lockType": "rfid",
+      "requires": "workshop_rfid_key",
+      "door_sign": "Engineering Workshop. Authorised Access Only",
+      "ambientSound": "server_room_ventilation",
+      "ambientVolume": 0.4,
+      "lighting": { "mode": "motion", "emitters": { "servers": [ { "ledColor": "#4dff7a" } ] } },
+      "connections": {
+        "west": "scada_control_room"
+      },
+      "npcs": [],
+      "objects": [
+
+        // MG-VM02: hmi_eng_02 — LogFilterMinigame (log-filter), IMPLEMENTED
+        {
+          "type": "log_filter_terminal",
+          "id": "hmi_eng_02",
+          "name": "HMI-ENG-02 Engineering Workstation",
+          "position": "as-type:pc",
+          "takeable": false,
+          "puzzle_graph_role": "vm",
+          "puzzle_graph_aim": "contact_marcus_investigate",
+          "observations": "The engineering workstation. Use it to review the jump server access logs. The screen shows an active RDP session indicator.",
+          "minigameData": {
+            "minigameId": "log-filter",
+            "title": "ALBION ENERGY: JUMP SERVER ACCESS LOG (JS-ALBION-01)",
+            "logType": "ics_rdp",
+            "logEntries": [
+              { "timestamp": "2026-03-12 08:14", "sessionId": "SID-7801-A", "account": "j.nakamura", "sourceIp": "10.4.22.8",    "duration": "00:47", "status": "CLOSED", "accessLevel": "ENGINEER"    },
+              { "timestamp": "2026-03-12 09:33", "sessionId": "SID-7802-B", "account": "m.patel",    "sourceIp": "10.4.22.11",   "duration": "01:15", "status": "CLOSED", "accessLevel": "ENGINEER"    },
+              { "timestamp": "2026-03-12 11:22", "sessionId": "SID-7817-Q", "account": "d.okonkwo",  "sourceIp": "10.4.22.14",   "duration": "00:34", "status": "CLOSED", "accessLevel": "ADMIN"       },
+              { "timestamp": "2026-03-12 14:22", "sessionId": "SID-7803-C", "account": "j.nakamura", "sourceIp": "10.4.22.8",    "duration": "00:32", "status": "CLOSED", "accessLevel": "ENGINEER"    },
+              { "timestamp": "2026-03-12 16:05", "sessionId": "SID-7818-R", "account": "j.nakamura", "sourceIp": "10.4.22.8",    "duration": "01:13", "status": "CLOSED", "accessLevel": "ENGINEER"    },
+              { "timestamp": "2026-03-13 08:33", "sessionId": "SID-7819-S", "account": "j.nakamura", "sourceIp": "10.4.22.8",    "duration": "00:48", "status": "CLOSED", "accessLevel": "ENGINEER"    },
+              { "timestamp": "2026-03-13 09:01", "sessionId": "SID-7804-D", "account": "d.okonkwo",  "sourceIp": "10.4.22.14",   "duration": "02:08", "status": "CLOSED", "accessLevel": "ADMIN"       },
+              { "timestamp": "2026-03-13 10:47", "sessionId": "SID-7805-E", "account": "m.patel",    "sourceIp": "10.4.22.11",   "duration": "00:58", "status": "CLOSED", "accessLevel": "ENGINEER"    },
+              { "timestamp": "2026-03-13 15:49", "sessionId": "SID-7820-T", "account": "m.patel",    "sourceIp": "10.4.22.11",   "duration": "01:22", "status": "CLOSED", "accessLevel": "ENGINEER"    },
+              { "timestamp": "2026-03-16 08:30", "sessionId": "SID-7806-F", "account": "j.nakamura", "sourceIp": "10.4.22.8",    "duration": "01:04", "status": "CLOSED", "accessLevel": "ENGINEER"    },
+              { "timestamp": "2026-03-16 10:07", "sessionId": "SID-7821-U", "account": "d.okonkwo",  "sourceIp": "10.4.22.14",   "duration": "00:45", "status": "CLOSED", "accessLevel": "ADMIN"       },
+              { "timestamp": "2026-03-16 13:15", "sessionId": "SID-7807-G", "account": "s.krishna",  "sourceIp": "10.4.22.21",   "duration": "00:43", "status": "CLOSED", "accessLevel": "CONTRACTOR"  },
+              { "timestamp": "2026-03-16 15:44", "sessionId": "SID-7822-V", "account": "m.patel",    "sourceIp": "10.4.22.11",   "duration": "00:37", "status": "CLOSED", "accessLevel": "ENGINEER"    },
+              { "timestamp": "2026-03-17 08:19", "sessionId": "SID-7808-H", "account": "j.nakamura", "sourceIp": "10.4.22.8",    "duration": "01:22", "status": "CLOSED", "accessLevel": "ENGINEER"    },
+              { "timestamp": "2026-03-17 11:55", "sessionId": "SID-7823-W", "account": "m.patel",    "sourceIp": "10.4.22.11",   "duration": "01:08", "status": "CLOSED", "accessLevel": "ENGINEER"    },
+              { "timestamp": "2026-03-17 14:31", "sessionId": "SID-7809-I", "account": "d.okonkwo",  "sourceIp": "10.4.22.14",   "duration": "00:27", "status": "CLOSED", "accessLevel": "ADMIN"       },
+              { "timestamp": "2026-03-17 16:20", "sessionId": "SID-7824-X", "account": "j.nakamura", "sourceIp": "10.4.22.8",    "duration": "00:55", "status": "CLOSED", "accessLevel": "ENGINEER"    },
+              { "timestamp": "2026-03-18 08:55", "sessionId": "SID-7810-J", "account": "m.patel",    "sourceIp": "10.4.22.11",   "duration": "01:37", "status": "CLOSED", "accessLevel": "ENGINEER"    },
+              { "timestamp": "2026-03-18 09:22", "sessionId": "SID-7825-Y", "account": "d.okonkwo",  "sourceIp": "10.4.22.14",   "duration": "00:52", "status": "CLOSED", "accessLevel": "ADMIN"       },
+              { "timestamp": "2026-03-18 11:43", "sessionId": "SID-7811-K", "account": "j.nakamura", "sourceIp": "10.4.22.8",    "duration": "00:51", "status": "CLOSED", "accessLevel": "ENGINEER"    },
+              { "timestamp": "2026-03-18 14:11", "sessionId": "SID-7826-Z", "account": "s.krishna",  "sourceIp": "10.4.22.21",   "duration": "01:26", "status": "CLOSED", "accessLevel": "CONTRACTOR"  },
+              { "timestamp": "2026-03-19 09:08", "sessionId": "SID-7812-L", "account": "s.krishna",  "sourceIp": "10.4.22.21",   "duration": "02:14", "status": "CLOSED", "accessLevel": "CONTRACTOR"  },
+              { "timestamp": "2026-03-19 11:03", "sessionId": "SID-7827-AA","account": "j.nakamura", "sourceIp": "10.4.22.8",    "duration": "00:44", "status": "CLOSED", "accessLevel": "ENGINEER"    },
+              { "timestamp": "2026-03-19 13:30", "sessionId": "SID-7828-AB","account": "d.okonkwo",  "sourceIp": "10.4.22.14",   "duration": "01:07", "status": "CLOSED", "accessLevel": "ADMIN"       },
+              { "timestamp": "2026-03-19 14:27", "sessionId": "SID-7813-M", "account": "m.patel",    "sourceIp": "10.4.22.11",   "duration": "01:03", "status": "CLOSED", "accessLevel": "ENGINEER"    },
+              { "timestamp": "2026-03-19 16:18", "sessionId": "SID-7814-N", "account": "d.okonkwo",  "sourceIp": "10.4.22.14",   "duration": "00:38", "status": "CLOSED", "accessLevel": "ADMIN"       },
+              { "timestamp": "2026-03-19 17:44", "sessionId": "SID-7815-O", "account": "j.nakamura", "sourceIp": "10.4.22.8",    "duration": "02:01", "status": "CLOSED", "accessLevel": "ENGINEER"    },
+              { "timestamp": "2026-03-20 08:10", "sessionId": "SID-7829-AC","account": "j.nakamura", "sourceIp": "10.4.22.8",    "duration": "01:14", "status": "CLOSED", "accessLevel": "ENGINEER"    },
+              { "timestamp": "2026-03-20 09:44", "sessionId": "SID-7830-AD","account": "m.patel",    "sourceIp": "10.4.22.11",   "duration": "00:49", "status": "CLOSED", "accessLevel": "ENGINEER"    },
+              { "timestamp": "2026-03-20 10:22", "sessionId": "SID-7831-AE","account": "j.nakamura", "sourceIp": "10.4.22.8",    "duration": "01:02", "status": "CLOSED", "accessLevel": "ENGINEER"    },
+              { "timestamp": "2026-03-20 11:08", "sessionId": "SID-7832-AF","account": "d.okonkwo",  "sourceIp": "10.4.22.14",   "duration": "01:33", "status": "CLOSED", "accessLevel": "ADMIN"       },
+              { "timestamp": "2026-03-20 11:55", "sessionId": "SID-7833-AG","account": "m.patel",    "sourceIp": "10.4.22.11",   "duration": "00:28", "status": "CLOSED", "accessLevel": "ENGINEER"    },
+              { "timestamp": "2026-03-20 13:17", "sessionId": "SID-7834-AH","account": "j.nakamura", "sourceIp": "10.4.22.8",    "duration": "01:45", "status": "CLOSED", "accessLevel": "ENGINEER"    },
+              { "timestamp": "2026-03-20 14:32", "sessionId": "SID-7835-AI","account": "m.patel",    "sourceIp": "10.4.22.11",   "duration": "00:56", "status": "CLOSED", "accessLevel": "ENGINEER"    },
+              { "timestamp": "2026-03-20 15:04", "sessionId": "SID-7836-AJ","account": "d.okonkwo",  "sourceIp": "10.4.22.14",   "duration": "00:43", "status": "CLOSED", "accessLevel": "ADMIN"       },
+              { "timestamp": "2026-03-20 15:49", "sessionId": "SID-7837-AK","account": "j.nakamura", "sourceIp": "10.4.22.8",    "duration": "01:11", "status": "CLOSED", "accessLevel": "ENGINEER"    },
+              { "timestamp": "2026-03-20 16:22", "sessionId": "SID-7838-AL","account": "m.patel",    "sourceIp": "10.4.22.11",   "duration": "00:34", "status": "CLOSED", "accessLevel": "ENGINEER"    },
+              { "timestamp": "2026-03-20 16:57", "sessionId": "SID-7839-AM","account": "j.nakamura", "sourceIp": "10.4.22.8",    "duration": "00:47", "status": "CLOSED", "accessLevel": "ENGINEER"    },
+              { "timestamp": "2026-03-20 17:08", "sessionId": "SID-7840-AN","account": "s.krishna",  "sourceIp": "10.4.22.21",   "duration": "01:19", "status": "CLOSED", "accessLevel": "CONTRACTOR"  }
+,
+              { "timestamp": "2026-03-21 01:47", "sessionId": "SID-7841-AO","account": "c.ellison",  "sourceIp": "10.2.4.12",    "duration": "04:43+","status": "ACTIVE", "accessLevel": "CONTRACTOR"  }
+            ],
+<%# F3 (decision 1): the session comes from inside. 10.2.4.12 is ALB-SRV-02, the enterprise print
+    management server the printer driver update landed on; the Tor exit 198.51.100.45 (the pack's
+    address) is only its C2 egress through the enterprise firewall. c.ellison worked for Fosse
+    Controls, the integrator that commissioned the smart grid upgrade, and left in January 2025
+    (14 months, as sis03). %>
+            "anomaly": {
+              "account": "c.ellison",
+              "sourceIp": "10.2.4.12",
+              "timestamp": "2026-03-21 01:47",
+              "status": "ACTIVE",
+              "accessLevel": "CONTRACTOR",
+              "durationDisplay": "04:43+"
+            },
+            "threatIntel": {
+              "ip": "10.2.4.12",
+              "asn": "None (internal address on Albion's enterprise VLAN)",
+              "type": "Print management server (ALB-SRV-02)",
+              "location": "Enterprise server room. Not the engineering subnet 10.4.22.x; nobody logs in from it.",
+              "lastFlagged": "Enterprise firewall: HTTPS to Tor exit 198.51.100.45 every 15 minutes since 3 March",
+              "knownBad": true
+            },
+            "accountHistory": {
+              "account": "c.ellison",
+              "fullName": "C. Ellison (ICS commissioning)",
+              "contractor": "Fosse Controls Ltd (commissioning integrator)",
+              "role": "Commissioning engineer, smart grid upgrade",
+              "accessLevel": "CONTRACTOR: OT network",
+              "status": "DEPROVISIONED 2025-01-17",
+              "deprovisionedDate": "2025-01-17",
+              "deprovisionNote": "Domain account locked when he left. JUMP SERVER LOCAL ACCOUNT: NOT REMOVED. Password never changed from the default.",
+              "lastLegitimateSession": "2025-01-10 09:15",
+              "currentSession": "2026-03-21 01:47, ACTIVE (04:43+)",
+              "anomalyBadge": "DEPROVISIONED ACCOUNT: ACTIVE SESSION"
+            },
+            "flagActionLabel": "FLAG SESSION",
+            "flagConfirmTitle": "CONFIRM SESSION FLAG",
+            "flagConfirmBody": "c.ellison left in January 2025. Active session since 01:47 from ALB-SRV-02, an enterprise print server. A dormant contractor account, live inside the SCADA network.",
+<%# F4: the SIS engineering protocol keeps no log. The 03:22 time comes from HMI-ENG-02's own
+    engineering tool history (tab id kept as sis_audit for the progress action). %>
+            "additionalTabs": [
+              {
+                "id": "sis_audit",
+                "label": "ENG TOOL HISTORY",
+                "type": "audit_log",
+                "title": "HMI-ENG-02 ENGINEERING TOOL HISTORY: SIS CONFIGURATOR",
+                "subtitle": "12 to 21 March 2026. The safety controller keeps no change log; this is the workstation's own record.",
+                "auditEntries": [
+                  { "timestamp": "2026-03-12 09:18", "operator": "j.nakamura", "command": "READ_CONFIG",   "parameter": "ALL_SETPOINTS",          "result": "OK" },
+                  { "timestamp": "2026-03-12 14:15", "operator": "m.patel",    "command": "READ_CONFIG",   "parameter": "ALL_SETPOINTS",          "result": "OK" },
+                  { "timestamp": "2026-03-13 14:30", "operator": "m.patel",    "command": "BACKUP_CONFIG", "parameter": "SIS_20260313",           "result": "OK" },
+                  { "timestamp": "2026-03-16 10:33", "operator": "d.okonkwo",  "command": "BACKUP_CONFIG", "parameter": "SIS_20260316",           "result": "OK" },
+                  { "timestamp": "2026-03-17 08:47", "operator": "j.nakamura", "command": "READ_CONFIG",   "parameter": "THERMAL_RUNAWAY_T",      "result": "OK" },
+                  { "timestamp": "2026-03-17 09:12", "operator": "j.nakamura", "command": "READ_CONFIG",   "parameter": "CHARGE_INHIBIT_TEMP",    "result": "OK" },
+                  { "timestamp": "2026-03-18 09:17", "operator": "m.patel",    "command": "READ_CONFIG",   "parameter": "SIS_SYSTEM_STATUS",      "result": "OK" },
+                  { "timestamp": "2026-03-18 11:05", "operator": "d.okonkwo",  "command": "EXPORT_CONFIG", "parameter": "SIS_BASELINE_REF",       "result": "OK" },
+                  { "timestamp": "2026-03-19 16:40", "operator": "j.nakamura", "command": "EXPORT_CONFIG", "parameter": "SAFETY_THRESHOLDS_REF",  "result": "OK" },
+                  { "timestamp": "2026-03-21 02:04", "operator": "c.ellison",  "command": "READ_CONFIG",   "parameter": "THERMAL_RUNAWAY_T",      "result": "OK", "sessionRef": "SID-7841-AO" },
+                  { "timestamp": "2026-03-21 02:17", "operator": "c.ellison",  "command": "READ_CONFIG",   "parameter": "H2_ALARM_THRESHOLD",     "result": "OK", "sessionRef": "SID-7841-AO" },
+                  {
+                    "timestamp": "2026-03-21 03:22",
+                    "operator": "c.ellison",
+                    "command": "WRITE_CONFIG",
+                    "parameter": "THERMAL_RUNAWAY_T: 55°C → 85°C",
+                    "oldValue": "55°C",
+                    "newValue": "85°C",
+                    "result": "OK",
+                    "sessionRef": "SID-7841-AO",
+                    "detail": "Thermal trip raised 30°C. Certified value 55°C. No change request. The controller accepted the write without asking for a password."
+                  },
+                  {
+                    "timestamp": "2026-03-21 03:22",
+                    "operator": "c.ellison",
+                    "command": "WRITE_CONFIG",
+                    "parameter": "H2_ALARM_THRESHOLD: 1.0% → 3.8% vol",
+                    "oldValue": "1.0% vol",
+                    "newValue": "3.8% vol",
+                    "result": "OK",
+                    "sessionRef": "SID-7841-AO",
+                    "detail": "Hydrogen alarm raised to 3.8% by volume, just under the 4.0% at which hydrogen burns. Certified value 1.0%. No change request."
+                  },
+                  { "timestamp": "2026-03-21 06:00", "operator": "[SYSTEM]",   "command": "BACKUP_FAILED", "parameter": "SIS_CONFIG_NOW",         "result": "ERR", "errorClass": true }
+                ],
+                "onView": {
+                  "setVariable": { "sis_audit_reviewed": true }
+                }
+              }
+            ],
+            "requireAllTabs": true,
+            "nextTabPrompt": "► Session flagged. Open the ENG TOOL HISTORY tab to see what that session did to the safety system.",
+            "nextTabButton": "[VIEW ENG TOOL HISTORY →]",
+            "completeBanner": "✓ INVESTIGATION COMPLETE: Session flagged. Engineering tool history reviewed.",
+            "stateOverrides": [
+              {
+                "whenGlobal": "jump_server_isolated",
+                "whenValue": true,
+                "matchEntry": { "account": "c.ellison" },
+                "setFields": { "status": "CLOSED", "duration": "04:43" },
+                "setAnomaly": { "status": "CLOSED", "durationDisplay": "04:43 (CUT: cable pulled)" }
+              }
+            ],
+            "flagActions": [
+              { "type": "complete_task", "taskId": "identify_rdp_session" }
+            ],
+            "completionActions": [
+              { "type": "set_global", "key": "jump_server_confirmed", "value": true }
+            ],
+            "progressActions": [
+              { "type": "set_global", "key": "sis_audit_reviewed",             "value": true, "trigger": "tab_viewed",         "tabId": "sis_audit" },
+              { "type": "set_global", "key": "jump_server_threat_intel_viewed","value": true, "trigger": "threat_intel_opened"                       }
+            ]
+          }
+        },
+
+        // IMPLEMENTED: Jump server rack — visual prop with readable session info
+        {
+          "type": "servers",
+          "id": "jump_server_rack",
+          "name": "Jump Server Rack (JS-ALBION-01)",
+          "takeable": false,
+          "readable": true,
+          "puzzle_graph_role": "clue",
+          "puzzle_graph_reveals": "Active RDP session from c.ellison (left 14 months ago) from an enterprise print server: attacker inside the SCADA network",
+          "observations": "JS-ALBION-01, the jump server. An amber LED is blinking: a remote session is open. Its logs are on HMI-ENG-02.",
+          "text": "JUMP SERVER: JS-ALBION-01\nRole: IT/OT boundary access server\nNetwork position: enterprise DMZ / SCADA subnet, dual-homed\n\nACTIVE SESSION:\n  User: c.ellison (RDP, local account)\n  Session start: 01:47\n  Source: 10.2.4.12 (ALB-SRV-02, enterprise)\n  Duration: 4h 43m at 06:30\n\nc.ellison left 14 months ago. This session should not exist.\n\nCable to the SCADA switch: right-side panel, labelled JS-SCADA-LAN"
+        },
+
+        // IMPLEMENTED: Jump server Ethernet cable — physical disconnection action
+        // onRead sets jump_server_isolated; Helen eventMapping completes pull_ethernet_cable task
+        {
+          "type": "cable",
+          "id": "jump_server_cable",
+          "name": "Jump Server Ethernet Cable",
+          "takeable": false,
+          "readable": true,
+          "puzzle_graph_role": "item",
+          "puzzle_graph_aim": "isolate_network",
+          "puzzle_graph_reveals": "Physically severs the jump server SCADA network connection — terminates attacker RDP pathway",
+          "observations": "The Ethernet cable connecting the jump server to the SCADA network switch. Labelled: JS-SCADA-LAN.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.cable_pull_agreed",
+              "value": "The Ethernet cable connecting the jump server (JS-ALBION-01) to the SCADA network switch. Labelled: JS-SCADA-LAN.\n\nMarcus Webb wants it pulled. That cuts the RDP session into the SCADA zone."
+            }
+          ],
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "text": "Disconnect cable JS-SCADA-LAN?",
+              "onConfirm": [
+                { "type": "set_global", "key": "jump_server_isolated", "value": true }
+              ]
+            }
+          ]
+        },
+
+        // IMPLEMENTED: sis_config_panel — interactive SIS threshold display (MG-03), type: sis_config_panel triggers SisConfigThresholdMinigame
+        {
+          "type": "sis_config_panel",
+          "id": "sis_config_panel",
+          "name": "SIS Configuration Panel",
+          "takeable": false,
+          "position": "as-type:smartscreen",
+          "sprite": "siem_dashboard",
+
+          "minigameData": {
+            "title": "SIS CONFIGURATION - BATTERY HALL SIS",
+            "compareTitle": "Compare with Certification Document",
+            "confirmLabel": "Confirm SIS Tamper - Report to Security",
+            "rows": [
+              {
+                "parameter": "THERMAL_RUNAWAY_THRESHOLD",
+                "currentValue": "85C",
+                "certifiedValue": "55C",
+                "status": "AMBER",
+                "lastModified": "03:22 (today, per HMI-ENG-02)",
+                "modifiedBy": "engineering protocol (no login recorded)",
+                "detailText": "This value differs from the certified safety requirements. A legitimate change would have a change request and an impact analysis under the modification procedure. There is neither."
+              },
+              {
+                "parameter": "H2_ALARM_THRESHOLD",
+                "currentValue": "3.8% vol",
+                "certifiedValue": "1.0% vol",
+                "status": "AMBER",
+                "lastModified": "03:22 (today, per HMI-ENG-02)",
+                "modifiedBy": "engineering protocol (no login recorded)",
+                "detailText": "Hydrogen alarm raised to 3.8% by volume, just under the 4.0% at which hydrogen burns. Certified at 1.0% (25% of the lower explosive limit)."
+              },
+              {
+                "parameter": "CHARGE_INHIBIT_TEMP",
+                "currentValue": "45C",
+                "certifiedValue": "45C",
+                "status": "GREEN",
+                "lastModified": "No change in HMI-ENG-02 history",
+                "modifiedBy": "—",
+                "detailText": "Matches the certified value."
+              }
+            ]
+          },
+          "puzzle_graph_role": "clue",
+          "puzzle_graph_aim": "investigate_sis",
+          "puzzle_graph_note": "Motivates opening the filing cabinet to retrieve the SIS cert doc for comparison; the cabinet is mechanically unlocked by the filing_cabinet_key on the desk, not by this panel",
+          "puzzle_graph_reveals": "Thermal trip changed to 85°C (certified 55°C) and hydrogen alarm to 3.8% by volume (certified 1.0%) at 03:22",
+          "observations": "A dedicated display showing the Safety Instrumented System (SIS) setpoints. Two rows are highlighted in amber."
+        },
+
+        // IMPLEMENTED: Filing cabinet with SIS certification documents
+        {
+          "type": "filing_cabinet",
+          "id": "engineering_filing_cabinet",
+          "name": "Filing Cabinet: ICS Documentation",
+          // Grey lockable steel cabinet in the SE corner (sis02-only conditional slot); the wooden
+          // drawer unit in the SW corner was hard to reach and is the control room's duty desk look
+          "position": "as-type:filing_cabinet_locked",
+          "takeable": false,
+          "locked": true,
+          "lockType": "key",
+          "requires": "filing_cabinet_key",
+          "keyPins": [35, 55, 45, 25],
+          "observations": "A locked filing cabinet labelled: ICS Documentation, Restricted. A keyring labelled ICS Docs sits on the desk by the electronics benches.",
+          "contents": [
+            {
+              "type": "notes",
+              "name": "SIS Safety Requirements Specification (extract)",
+              "readable": true,
+              "takeable": true,
+              "puzzle_graph_role": "clue",
+              "puzzle_graph_aim": "investigate_sis",
+              "puzzle_graph_reveals": "Certified setpoints: thermal trip 55°C, hydrogen alarm 1.0% by volume; firmware fix deferred since September 2024 (eight weeks, £180,000)",
+              "puzzle_graph_unlocks": "sis_config_panel",
+              "text": "SIS SAFETY REQUIREMENTS SPECIFICATION (EXTRACT)\nAlbion Energy Storage Ltd: Battery Hall SIS, SIL 2 (IEC 61511)\nLast functional safety assessment: September 2024\n\nCERTIFIED SETPOINTS:\n  THERMAL_RUNAWAY_THRESHOLD: 55°C (trip; cells normally held below 45°C)\n  H2_ALARM_THRESHOLD: 1.0% by volume (25% LEL)\n  CHARGE_INHIBIT_TEMP: 45°C\n\nChanges to any setpoint go through the site modification procedure: impact analysis, re-verification and sign-off before return to service.\n\nFIRMWARE:\n  Vendor advisory SA-2024-09 (September 2024): the engineering protocol accepts configuration writes with no authentication and keeps no change log. Fixed in firmware 2.4.1.\n  Status: DEFERRED. Estimate: eight weeks with the automatic trip out of service, £180,000.\n  Risk assessment: Accepted, 'maintain compensating controls'.",
+              "onRead": { "setVariable": { "sis_certification_seen": true } }
+            },
+            {
+              "type": "notes",
+              "name": "Deferred Patch Risk Assessment",
+              "readable": true,
+              "takeable": true,
+              "puzzle_graph_role": "clue",
+              "puzzle_graph_aim": "post_incident_debrief",
+              "puzzle_graph_optional": true,
+              "puzzle_graph_reveals": "Deferral accepted by the General Manager in September 2024 with SOC monitoring as the control; review date March 2025 never met",
+              "text": "RISK ASSESSMENT: SIS FIRMWARE PATCH DEFERRAL\nAuthor: Marcus Webb (OT Security Manager)\nDate: September 2024\n\nVULNERABILITY: Vendor advisory SA-2024-09. The SIS engineering protocol accepts configuration writes with no authentication and keeps no record of them.\nRisk if exploited: an attacker with access to the SCADA network could change SIS setpoints remotely, without authentication and without trace.\n\nRECOMMENDATION: Apply firmware 2.4.1 at the next planned maintenance window.\nACCEPTED RISK: Deferral approved by J. Whitworth, General Manager.\nCOMPENSATING CONTROL: Network monitoring to detect lateral movement (managed SOC).\n\nREVIEW DATE: March 2025 [NOT REVIEWED]"
+            }
+          ]
+        },
+
+        // IMPLEMENTED: Filing cabinet key — on the engineering workstation desk
+        {
+          "type": "key",
+          "name": "Filing Cabinet Key",
+          // Keyring on the lower desk (sis02-only conditional_table_items slot) instead of the
+          // large key sprite that stood on the floor by the back wall
+          "position": "as-type:key-ring",
+          "takeable": true,
+          "opens_lock": "filing_cabinet_key",
+          "keyPins": [35, 55, 45, 25],
+          "puzzle_graph_unlocks": "lock_engineering_filing_cabinet",
+          "puzzle_graph_role": "key",
+          "observations": "A small metal key on an Albion Energy keyring. Labelled: ICS Docs."
+        },
+
+        // IMPLEMENTED: Decorative atmosphere
+        {
+          "type": "laptop",
+          "name": "Engineering Laptop",
+          // Moved to the lower desk: on the top desk it was one tap with HMI-ENG-02 (25px apart)
+          "position": { "x": 5.375, "y": 5.25 },
+          "takeable": false,
+          "observations": "An open laptop showing PLC vendor software. A post-it on the bezel: 'PLC-GRID firmware review, 07:00. Do not interrupt during operation.'"
+        },
+        {
+          "type": "notes",
+          "name": "IT/OT Boundary Rules Document",
+          // Pinned on the workshop noticeboard (sis02-only conditional slot), read in place
+          "position": "as-type:notice_board",
+          "readDisplay": "gameDisplay",
+          "takeable": false,
+          "readable": true,
+          "puzzle_graph_role": "clue",
+          "puzzle_graph_aim": "contact_marcus_investigate",
+          "puzzle_graph_optional": true,
+          "puzzle_graph_reveals": "IT/OT boundary rules issued for the grid upgrade, never reviewed; jump server permits bidirectional RDP, historian has Modbus proxy enabled; Marcus flagged for remediation 18 months ago",
+          "observations": "A printed document pinned to the workshop noticeboard. Slightly yellowed with age.",
+          "text": "IT/OT BOUNDARY RULES: ALBION ENERGY STORAGE\nIssued for the smart grid upgrade (Fosse Controls), September 2024\n\nAPPROVED CONNECTIONS:\n  Jump server (JS-ALBION-01): Enterprise → SCADA, one-way data pull only.\n  Historian (HIST-01): SCADA → Enterprise, read-only from the enterprise side.\n\nSTATUS: These rules have not been reviewed since they were issued.\nACTUAL STATE: Jump server permits bidirectional RDP (needed for commissioning, never reverted).\nACTUAL STATE: Historian has its Modbus proxy enabled (vendor support requirement, never removed).\n\nNOTE: Marcus Webb flagged this in two quarterly risk reports. Not yet actioned."
+        },
+        {
+          "type": "notes",
+          "id": "trent_shared_server_access_extract",
+          "name": "Shared File Server Access Extract (Albion / Trent Water)",
+          "takeable": false,
+          "readable": true,
+          "puzzle_graph_role": "clue",
+          "puzzle_graph_aim": "trent_water_notification",
+          "puzzle_graph_optional": true,
+          "puzzle_graph_reveals": "CastleTech's svc.deploy account wrote print_driver_update.pkg to the shared server at 02:31; a Trent Water workstation opened it at 05:52",
+          "observations": "A printed SOC extract on the engineering desk. Two lines are circled in red.",
+<%# F5 (decision 8): Albion to Trent. The attacker wrote a file to the shared server; a Trent Water
+    workstation opened it. Trent Water is a separate company and a separate CastleTech client. %>
+          "text": "CASTLETECH SOC: SHARED FILE SERVER ACCESS EXTRACT\nServer: FS-ALBION-01 (used by Albion Energy Storage and Trent Water Services)\nWindow: Sat 21 Mar 2026, 01:30 to 06:10\n\n02:16  user=alb.ops.jpatel  host=ALB-OPS-03  path=/site-admin/rotas/shift_handover.docx           action=READ\n02:31  user=svc.deploy      host=ALB-SRV-02  path=/shared/it/drivers/print_driver_update.pkg   action=WRITE\n04:05  user=alb.ops.jpatel  host=ALB-OPS-03  path=/site-admin/rotas/shift_handover.docx           action=WRITE\n05:52  user=tw.ops.jward    host=TW-WS-07    path=/shared/it/drivers/print_driver_update.pkg   action=OPEN\n\nAnalyst note:\n- svc.deploy is CastleTech's endpoint-management account. No change ticket covers this package, and nothing is deployed on a Saturday night.\n- TW-WS-07 is a Trent Water workstation. It opened the package at 05:52.\n- Trent Water are a separate CastleTech client. Telling them needs Albion's consent.",
+          "onRead": { "setVariable": { "trent_lateral_ioc_viewed": true } }
+        }
+
+      ]
+    }
+
+  }
+
+}

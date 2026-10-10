@@ -1,0 +1,13 @@
+{
+  "key": "2a470f61cec2809cf4ab756ad1d7038a",
+  "npc": "dr_sharma",
+  "text": "Ward 7's exceptions were written up as \"as low as reasonably practicable\". They weren't. Finishing the VLAN move was reasonable, and it sat stalled for a year.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "7c0cf5bf8bc33b62ea4700c860472d30",
+  "npc": "ward_nurse",
+  "text": "It's not your name or your face, and I've just earned myself about three disciplinaries.",
+  "voice": "Kore",
+  "style": "Ward sister, twenty years on the wards. Consistent Belfast / Northern Irish accent throughout. Exhausted, dry, absolutely unsentimental about everything except her patients. Quiet controlled urgency, never raises her voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

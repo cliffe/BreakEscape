@@ -1,0 +1,310 @@
+{
+  "amy_clarke": {
+    "character_id": "32c736ae-0ffa-48eb-b493-3fd0d71c19d0",
+    "name": "Make portrait for Amy Clarke\nA white British woman...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-03"
+  },
+  "bernie_nwosu": {
+    "character_id": "923f3e6c-10c0-4f2e-afe9-4d65cbc9c55e",
+    "name": "A Black British woman of Nigerian heritage in her ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-26"
+  },
+  "cliffe_schreuders": {
+    "character_id": "6006155e-74f3-487c-847e-aec2dfa41512",
+    "name": "Man in his early forties, light skin tone, univers...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-06"
+  },
+  "david_osei": {
+    "character_id": "ca153084-c850-42c8-85fc-8ec685ec6bdb",
+    "name": "Make portrait for Hospital Clinical Engineer\nA Bla...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-02"
+  },
+  "female_blowse_v2": {
+    "character_id": "df960bf2-20c6-4600-b725-44846cb0337f",
+    "name": "A woman with long wavy black hair, light skin, a r...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-30"
+  },
+  "female_hacker_hood_down_v2": {
+    "character_id": "41542288-ce3e-4823-8c10-51c1586622ed",
+    "name": "A young woman hacker with dark brown hair tied up ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-29",
+    "idle_from": "9b005e8f-8923-41eb-b2dd-c70f963f68e9"
+  },
+  "female_hacker_hood_v2": {
+    "character_id": "c14d8060-5196-4812-adb8-5efff2d3b67b",
+    "name": "Woman, light skin tone, hacker. Wearing an all-bla...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-26"
+  },
+  "female_nurse1_v2": {
+    "character_id": "ac1ee7cd-57c9-4780-bee1-c740f289a33a",
+    "name": "Female curves. Nurse RN. A professional and friend...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-27"
+  },
+  "female_nurse2_v2": {
+    "character_id": "78997eba-8b6e-42bd-8502-35144cfac60f",
+    "name": "Nurse RN. A professional and friendly female healt...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-27"
+  },
+  "female_office_worker_v2": {
+    "character_id": "c7f54eae-f3cc-4358-980d-35d076247969",
+    "name": "A young woman office worker with shoulder-length w...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-29"
+  },
+  "female_scientist_v2": {
+    "character_id": "9179b19e-bd42-427d-b0ba-b27ea874ce16",
+    "name": "A young East Asian woman scientist with long strai...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-29"
+  },
+  "female_security_guard_v2": {
+    "character_id": "a394dbab-dc0e-4c6e-b74a-85a5e4c7b568",
+    "name": "Security Guard\nWoman, light skin tone, security gu...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-26"
+  },
+  "female_spy_v2": {
+    "character_id": "52c4d2cc-aca3-4ee0-bfa6-20b526b6db6f",
+    "name": "A woman spy with long dark brown hair under a brow...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-29"
+  },
+  "female_telecom_v2": {
+    "character_id": "c9ae81c0-04c7-4d6f-af99-437fd3ecd4b0",
+    "name": "A young woman telecoms engineer with brown hair ti...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-29"
+  },
+  "fiona_hartley": {
+    "character_id": "21604761-bfe3-464c-b091-1deeb4842758",
+    "name": "Make portrait for Dr Fiona Hartley\nA white Scottis...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-03"
+  },
+  "gary_whitlock": {
+    "character_id": "2b2d5800-1695-4dcd-bdc4-593bc34e4b43",
+    "name": "Gary Whitlock A white British man in his late thir...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-26"
+  },
+  "graham_reeves": {
+    "character_id": "4909ebbd-79c1-47fb-99be-7889d50af44b",
+    "name": "A white British man in his early fifties, a plain-...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-26"
+  },
+  "hamza_iqbal": {
+    "character_id": "2298578f-deaa-49d9-b40a-d7f8b4e31886",
+    "name": "Make portrait for Hamza Iqbal\nA British Pakistani ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-03"
+  },
+  "helen_carver": {
+    "character_id": "588ca268-fa48-4c24-84a8-54772f85dc83",
+    "name": "Make portrait for Helen Carver\nA white British wom...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-03"
+  },
+  "male_hacker_hood_down_v2": {
+    "character_id": "fa5a8818-00da-475c-87fb-4b21d84e39b2",
+    "name": "Make portrait for Hacker\nMan, light skin tone, hac...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-27"
+  },
+  "male_hacker_hood_v2": {
+    "character_id": "e50525a5-0139-439f-83a5-31461054c3ac",
+    "name": "Hacker in a hoodie. Hood up, black obscured face s...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-29",
+    "idle_from": "b57e62b8-2e5a-4eff-982b-303a4b7f576f"
+  },
+  "male_nerd_v2": {
+    "character_id": "ae175532-182f-435a-8f0a-d7408d88eb2f",
+    "name": "A young man with short dark hair, a full dark bear...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-30"
+  },
+  "male_office_worker_v2": {
+    "character_id": "f9fdf0ce-34a5-424e-a4c1-af43aaaa8f37",
+    "name": "A man office worker in his forties with short dark...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-30"
+  },
+  "male_scientist_v2": {
+    "character_id": "d363cc74-5990-4eb9-b65f-95483c28c1e9",
+    "name": "An older man scientist with swept-back white hair,...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-30"
+  },
+  "male_security_guard_v2": {
+    "character_id": "7f4b98d0-6ef6-4064-8f01-c032e0cd8050",
+    "name": "Man, light skin tone, security guard. Wearing a da...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-26"
+  },
+  "male_spy_v2": {
+    "character_id": "7f1e42c3-a32c-49b3-ba27-f9190b4c6a93",
+    "name": "A man spy with light skin, a brown fedora pulled l...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-30"
+  },
+  "male_telecom_v2": {
+    "character_id": "7295d940-3676-431e-8a55-b3124508f56f",
+    "name": "A man telecoms engineer with short brown hair unde...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-30"
+  },
+  "oleg_illiashenko": {
+    "character_id": "6bddfcaa-7589-4411-88b1-b2aaee551c0c",
+    "name": "Make portrait for a university lecturer character\n...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-06"
+  },
+  "priya_s": {
+    "character_id": "eb263472-5d6d-43c9-9aa3-bf613f2983b3",
+    "name": "Make portrait for Priya S.\nA British Indian woman ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-02"
+  },
+  "ravi_anand": {
+    "character_id": "3b22a014-0abc-4519-9484-2364693cd02b",
+    "name": "Make portrait for Ravi Anand\nA British Indian man ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-02"
+  },
+  "sarah_kim": {
+    "character_id": "1792c7b7-4189-4a22-857e-4a0a738bd83d",
+    "name": "An East Asian (Korean) woman in her forties, the C...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-26"
+  },
+  "sarah_mitchell": {
+    "character_id": "7bb85b6b-36bb-41be-a1f1-2974b37ffd15",
+    "name": "Make portrait for Sarah Mitchell\nA Black British w...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-03"
+  },
+  "sidhu_selvarajan": {
+    "character_id": "683d2a03-378d-4e03-acf2-3f97b07741b5",
+    "name": "Make portrait for a university lecturer character\n...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-06"
+  },
+  "tom_shaw": {
+    "character_id": "e0906801-40c7-4260-a098-c95dac9cdddc",
+    "name": "Make portrait for Dr Tom Shaw\nMan in his late twen...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-06"
+  }
+}

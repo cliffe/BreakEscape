@@ -1,0 +1,13 @@
+{
+  "key": "fc228f7fd21040e02ab5f5529f37f058",
+  "npc": "helen_marsh",
+  "text": "Since twelve minutes past eleven last night, exactly twenty-eight point nought. Not a flicker.",
+  "voice": "Aoede",
+  "style": "Senior SCADA engineer in her late forties from Nottinghamshire; warm, plain-spoken and calm under pressure. Speak with a consistent East Midlands (Nottingham) accent throughout. Do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis02_energy",
+  "source": "generate",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:12:34Z"
+}

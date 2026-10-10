@@ -1,0 +1,13 @@
+{
+  "key": "4367ddd66ee43eea7ba3de637806fbea",
+  "npc": "narrator",
+  "text": "Bed 4's monitor is alarming, a low two-tone at the bedside. Mr Ahmed is drowsy and clammy. From the desk, the alarm is lost under the ward noise.",
+  "voice": "Schedar",
+  "style": "Calm, clinical narrator with a neutral southern English accent; measured, even pace. Keep the same accent throughout.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

@@ -1,0 +1,613 @@
+{
+  "scenario": "m01_first_contact",
+  "start_room": "reception_area",
+  "nodes": [
+    {
+      "id": "door_main_office_area",
+      "label": "Main Office<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "main_office_area",
+      "label": "Main Office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_it_room",
+      "label": "IT Department<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "it_room",
+      "label": "IT Department",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_derek_office",
+      "label": "Derek Lawson — Operations<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "derek_office",
+      "label": "Derek Lawson — Operations",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_server_room",
+      "label": "Server Room — Authorised Access Only<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "server_room",
+      "label": "Server Room — Authorised Access Only",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "reception_area",
+      "label": "Reception Area",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "reception_desk_phone",
+      "label": "Reception Desk Phone",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "npc_sarah_o_brien",
+      "label": "Sarah O'Brien",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "main_office_key",
+      "label": "Main Office Key",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "lock_main_filing_cabinet",
+      "label": "Main Filing Cabinet<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "maintenance_checklist",
+      "label": "Maintenance Checklist",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "storage_closet",
+      "label": "Storage",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lock_derek_storage_safe",
+      "label": "Derek's Safe<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "my_passwords",
+      "label": "My Passwords",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_vm_launcher_intro_linux",
+      "label": "Vm Launcher Intro Linux",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "maintenance_log_backup",
+      "label": "Maintenance Log (Backup)",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "break_room",
+      "label": "Break Room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "anniversary_card",
+      "label": "Anniversary Card",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "lock_derek_computer",
+      "label": "Derek Computer",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_derek_cabinet",
+      "label": "Derek Cabinet",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "npc_kevin_park",
+      "label": "Kevin Park",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "lock_pick_kit",
+      "label": "Lock Pick Kit",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "lock_patricia_briefcase",
+      "label": "Patricia Briefcase",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "server_room_keycard",
+      "label": "Server Room Keycard",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "manager_office",
+      "label": "Patricia Wells — Manager",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "derek_s_office_key",
+      "label": "Derek's Office Key",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cyberchef_workstation",
+      "label": "CyberChef Workstation",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "kevin_office",
+      "label": "Kevin Park — IT",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lock_kevin_s_workstation",
+      "label": "Kevin's Workstation<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "out_of_office_note",
+      "label": "Out of Office Note",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "personal_notes_safe",
+      "label": "Personal Notes - Safe",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_derek_personal_safe",
+      "label": "Derek Personal Safe",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "encoded_note_1",
+      "label": "Encoded Note (1)",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "encoded_note_2",
+      "label": "Encoded Note (2)",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_entropy_encrypted_archive",
+      "label": "ENTROPY Encrypted Archive<br/>Flag lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "andgate1",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    },
+    {
+      "id": "andgate2",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    },
+    {
+      "id": "vmch_submit_ssh_flag",
+      "label": "Unlock the ENTROPY encrypted archive",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_ssh_flag",
+      "label": "Ssh Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "vmch_submit_linux_flag",
+      "label": "Submit directory traversal evidence",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_linux_flag",
+      "label": "Linux Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "vmch_submit_sudo_flag",
+      "label": "Submit encoded deployment intelligence",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_sudo_flag",
+      "label": "Sudo Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "hallway_east",
+      "label": "Hallway East",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "conference_room",
+      "label": "Conference Room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "hallway_west",
+      "label": "Hallway West",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "maya_office",
+      "label": "Maya Chen — Research",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_main_office_area",
+      "to": "main_office_area",
+      "soft": false
+    },
+    {
+      "from": "door_it_room",
+      "to": "it_room",
+      "soft": false
+    },
+    {
+      "from": "door_derek_office",
+      "to": "derek_office",
+      "soft": false
+    },
+    {
+      "from": "door_server_room",
+      "to": "server_room",
+      "soft": false
+    },
+    {
+      "from": "reception_area",
+      "to": "reception_desk_phone",
+      "soft": false
+    },
+    {
+      "from": "reception_desk_phone",
+      "to": "door_it_room",
+      "soft": false
+    },
+    {
+      "from": "reception_area",
+      "to": "npc_sarah_o_brien",
+      "soft": false
+    },
+    {
+      "from": "npc_sarah_o_brien",
+      "to": "main_office_key",
+      "soft": false
+    },
+    {
+      "from": "main_office_key",
+      "to": "door_main_office_area",
+      "soft": false
+    },
+    {
+      "from": "main_office_area",
+      "to": "lock_main_filing_cabinet",
+      "soft": false
+    },
+    {
+      "from": "main_office_area",
+      "to": "maintenance_checklist",
+      "soft": true
+    },
+    {
+      "from": "maintenance_checklist",
+      "to": "door_it_room",
+      "soft": true
+    },
+    {
+      "from": "storage_closet",
+      "to": "lock_derek_storage_safe",
+      "soft": false
+    },
+    {
+      "from": "lock_derek_storage_safe",
+      "to": "my_passwords",
+      "soft": false
+    },
+    {
+      "from": "my_passwords",
+      "to": "lock_vm_launcher_intro_linux",
+      "soft": false
+    },
+    {
+      "from": "storage_closet",
+      "to": "maintenance_log_backup",
+      "soft": true
+    },
+    {
+      "from": "maintenance_log_backup",
+      "to": "door_it_room",
+      "soft": true
+    },
+    {
+      "from": "break_room",
+      "to": "anniversary_card",
+      "soft": true
+    },
+    {
+      "from": "anniversary_card",
+      "to": "lock_derek_computer",
+      "soft": true
+    },
+    {
+      "from": "anniversary_card",
+      "to": "lock_derek_cabinet",
+      "soft": true
+    },
+    {
+      "from": "it_room",
+      "to": "npc_kevin_park",
+      "soft": false
+    },
+    {
+      "from": "npc_kevin_park",
+      "to": "lock_pick_kit",
+      "soft": false
+    },
+    {
+      "from": "lock_pick_kit",
+      "to": "lock_patricia_briefcase",
+      "soft": false
+    },
+    {
+      "from": "lock_pick_kit",
+      "to": "door_derek_office",
+      "soft": false
+    },
+    {
+      "from": "npc_kevin_park",
+      "to": "server_room_keycard",
+      "soft": false
+    },
+    {
+      "from": "server_room_keycard",
+      "to": "door_server_room",
+      "soft": false
+    },
+    {
+      "from": "manager_office",
+      "to": "lock_patricia_briefcase",
+      "soft": false
+    },
+    {
+      "from": "lock_patricia_briefcase",
+      "to": "derek_s_office_key",
+      "soft": false
+    },
+    {
+      "from": "derek_s_office_key",
+      "to": "door_derek_office",
+      "soft": false
+    },
+    {
+      "from": "lock_patricia_briefcase",
+      "to": "cyberchef_workstation",
+      "soft": false
+    },
+    {
+      "from": "kevin_office",
+      "to": "lock_kevin_s_workstation",
+      "soft": false
+    },
+    {
+      "from": "kevin_office",
+      "to": "out_of_office_note",
+      "soft": true
+    },
+    {
+      "from": "out_of_office_note",
+      "to": "door_it_room",
+      "soft": true
+    },
+    {
+      "from": "derek_office",
+      "to": "lock_derek_computer",
+      "soft": false
+    },
+    {
+      "from": "lock_derek_computer",
+      "to": "personal_notes_safe",
+      "soft": false
+    },
+    {
+      "from": "personal_notes_safe",
+      "to": "lock_derek_personal_safe",
+      "soft": false
+    },
+    {
+      "from": "derek_office",
+      "to": "encoded_note_1",
+      "soft": false
+    },
+    {
+      "from": "derek_office",
+      "to": "encoded_note_2",
+      "soft": false
+    },
+    {
+      "from": "derek_office",
+      "to": "lock_derek_personal_safe",
+      "soft": false
+    },
+    {
+      "from": "derek_office",
+      "to": "lock_derek_cabinet",
+      "soft": false
+    },
+    {
+      "from": "server_room",
+      "to": "lock_entropy_encrypted_archive",
+      "soft": false
+    },
+    {
+      "from": "cyberchef_workstation",
+      "to": "andgate1",
+      "soft": true
+    },
+    {
+      "from": "andgate1",
+      "to": "lock_derek_storage_safe",
+      "soft": false
+    },
+    {
+      "from": "encoded_note_1",
+      "to": "andgate1",
+      "soft": false
+    },
+    {
+      "from": "cyberchef_workstation",
+      "to": "andgate2",
+      "soft": true
+    },
+    {
+      "from": "andgate2",
+      "to": "lock_derek_computer",
+      "soft": false
+    },
+    {
+      "from": "andgate2",
+      "to": "lock_derek_cabinet",
+      "soft": false
+    },
+    {
+      "from": "encoded_note_2",
+      "to": "andgate2",
+      "soft": false
+    },
+    {
+      "from": "vmch_submit_ssh_flag",
+      "to": "vmfl_submit_ssh_flag",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_ssh_flag",
+      "to": "lock_entropy_encrypted_archive",
+      "soft": false
+    },
+    {
+      "from": "vmch_submit_linux_flag",
+      "to": "vmfl_submit_linux_flag",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_ssh_flag",
+      "to": "vmch_submit_linux_flag",
+      "soft": true
+    },
+    {
+      "from": "vmch_submit_sudo_flag",
+      "to": "vmfl_submit_sudo_flag",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_linux_flag",
+      "to": "vmch_submit_sudo_flag",
+      "soft": true
+    },
+    {
+      "from": "server_room",
+      "to": "lock_vm_launcher_intro_linux",
+      "soft": false
+    },
+    {
+      "from": "storage_closet",
+      "to": "hallway_east",
+      "soft": false
+    },
+    {
+      "from": "break_room",
+      "to": "conference_room",
+      "soft": false
+    },
+    {
+      "from": "hallway_west",
+      "to": "manager_office",
+      "soft": false
+    },
+    {
+      "from": "hallway_west",
+      "to": "kevin_office",
+      "soft": false
+    },
+    {
+      "from": "hallway_west",
+      "to": "hallway_east",
+      "soft": false
+    },
+    {
+      "from": "hallway_east",
+      "to": "maya_office",
+      "soft": false
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "key": "f89a2cd36bfc46a712adc0e50257db48",
+  "npc": "cliffe_schreuders",
+  "text": "Good luck with it, Agent.",
+  "voice": "Orus",
+  "style": "Academic who builds learning tools and capture-the-flag games. Consistent Australian accent throughout. Relaxed, dry, quick, amused, sentences that stop a beat early.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

@@ -1,0 +1,10 @@
+{
+  "scenario": "test-npc-personal-space",
+  "start_room": "test_personal_space",
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
+}

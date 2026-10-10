@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+
+<scenario xmlns="http://www.github//cliffe/BreakEscapeGame/blob/main/assets/scenarios"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="https://github.com/cliffe/BreakEscapeGame/blob/main/assets/scenarios/scenerio2.json">
+
+  <name>Asymmetric Encryption with RSA</name>
+  <author>Z. Cliffe Schreuders</author>
+  <description>
+   In this interactive escaape room, you will dive into the mystery of your beloved kitty sidekick, Captain Meow, who has vanished under suspicious circumstances. Your task is to navigate through various rooms, solving interconnected puzzles that utilize cryptographic concepts such as Morse code, AES encryption, and fingerprint analysis to uncover the truth.
+
+   In this adventure, you will decode messages, piece together fragmented notes, and utilize digital tools to gather clues about Captain Meow's whereabouts. These tasks will require a blend of teamwork, critical thinking, and creativity. With your skills, we can piece together the mystery and rescue Captain Meow!
+  </description>
+
+  <type>escape room</type>
+  <difficulty>intermediate</difficulty>
+
+  <CyBOK KA="AC" topic="Algorithms, Schemes and Protocols">
+    <keyword>CRYPTOGRAPHY - ASYMMETRIC - RSA</keyword>
+    <keyword>DIFFIE-HELLMAN ALGORITHM</keyword>
+  </CyBOK>
+  <CyBOK KA="AC" topic="Public-Key Cryptography">
+    <keyword>public-key encryption</keyword>
+    <keyword>public-key signatures</keyword>
+    <keyword>RSA MODULUS</keyword>
+    <keyword>RSA PROBLEM</keyword>
+    <keyword>RSA TRANSFORM</keyword>
+  </CyBOK>
+  <CyBOK KA="AC" topic="Key Management">
+    <keyword>key generation</keyword>
+  </CyBOK>
+  <CyBOK KA="AC" topic="Cryptographic Implementation">
+    <keyword>Cryptographic Libraries</keyword>
+    <keyword>ENCRYPTION - TOOLS</keyword>
+  </CyBOK>
+
+</scenario>

@@ -1,0 +1,13 @@
+{
+  "key": "d2ea11e7bd3040bf7f2938dbb47f08e0",
+  "npc": "priya_s",
+  "text": "You chose to wait for the full picture before notifying. It still hasn't gone. Ofgem should hear today, even if it's only what you know.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis02_energy",
+  "source": "generate",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:23:08Z"
+}

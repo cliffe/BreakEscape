@@ -1,0 +1,13 @@
+{
+  "key": "00adb9e4c8bbfe43dac0eb0383f1e1e2",
+  "npc": "dr_sharma",
+  "text": "That's it. Ravi sees the attacker. David sees what the wards lose. HC-007 exists so neither decides alone.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

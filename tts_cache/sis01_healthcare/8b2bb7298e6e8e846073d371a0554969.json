@@ -1,0 +1,13 @@
+{
+  "key": "8b2bb7298e6e8e846073d371a0554969",
+  "npc": "helen_carver",
+  "text": "Three ways back. Our NAS is quickest, if Ravi can vouch for it. The vendor's cloud copy is clean, but slow. Tape is clean and takes days.",
+  "voice": "Pulcherrima",
+  "style": "NHS chief information officer in her mid-fifties, decisive and under pressure, clipped and authoritative. Speak with a consistent well-spoken North Yorkshire (Harrogate) accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

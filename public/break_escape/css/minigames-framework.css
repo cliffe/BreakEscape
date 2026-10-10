@@ -1,0 +1,230 @@
+/* Minigame Framework Styles */
+
+.minigame-container {
+    position: fixed;
+    top: 0px;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.95);
+    /* Raised so minigames appear above other UI (inventory, NPC barks, HUD, etc.) */
+    z-index: 1500;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-family: 'GNF', monospace;
+    color: white;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+    font-size: 18px;
+}
+
+.minigame-container input, .minigame-container select, .minigame-container textarea, .minigame-container button, .minigame-game-container pre {
+    font-family: 'GNF', monospace;
+}
+
+.minigame-header {
+    width: 100%;
+    text-align: center;
+    font-size: 20px;
+    margin-bottom: 20px;
+    color: #3498db;
+}
+
+.minigame-header h3 {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 18px;
+    margin: 0 0 10px 0;
+}
+
+.minigame-header p {
+    font-family: 'GNF', monospace;
+    font-size: 18px;
+    margin: 0;
+}
+
+.minigame-game-container {
+    width: 100%;
+    height: 100%;
+    /* max-width: 600px; */
+    margin: 20px auto;
+    background: #1a1a1a;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5) inset;
+    position: relative;
+}
+
+.minigame-message-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.minigame-success-message {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(46, 204, 113, 0.9);
+    color: white;
+    padding: 20px;
+    border: 2px solid #27ae60;
+    text-align: center;
+    z-index: 10001;
+    font-size: 18px;
+    box-shadow: 0 0 20px rgba(46, 204, 113, 0.5);
+}
+
+.minigame-failure-message {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(231, 76, 60, 0.9);
+    color: white;
+    padding: 20px;
+    border: 2px solid #c0392b;
+    text-align: center;
+    z-index: 10001;
+    font-size: 18px;
+    box-shadow: 0 0 20px rgba(231, 76, 60, 0.5);
+}
+
+.minigame-controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.minigame-button {
+    background: #3498db;
+    color: white;
+    border: 4px solid #2980b9;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-family: 'GNF', monospace;
+    font-size: 18px;
+    transition: background 0.3s;
+}
+
+.minigame-button:hover {
+    background: #2980b9;
+}
+
+.minigame-button:active {
+    background: #21618c;
+}
+
+.minigame-progress-container {
+    width: 100%;
+    height: 20px;
+    background: #333;
+    border: 2px solid #333;
+    overflow: hidden;
+    margin: 10px 0;
+}
+
+.minigame-progress-bar {
+    height: 100%;
+    background: #2ecc71;
+    width: 0%;
+    transition: width 0.3s;
+}
+
+.instructions {
+    text-align: center;
+    margin-bottom: 10px;
+    font-size: 12px;
+    color: #ccc;
+}
+
+/* Minigame disabled state */
+.minigame-disabled {
+    pointer-events: none !important;
+}
+
+/* Biometric scanner visual feedback */
+.biometric-scanner-success {
+    border: 2px solid #00ff00 !important;
+}
+
+/* Close button for minigames */
+.minigame-close-button {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 30px;
+    height: 30px;
+    background: #e74c3c;
+    color: white;
+    border: 4px solid #c0392b;
+    cursor: pointer;
+    font-family: 'Press Start 2P', monospace !important;
+    font-size: 18px;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease;
+}
+
+.minigame-close-button:hover {
+    background: #c0392b;
+}
+
+.minigame-close-button:active {
+    background: #a93226;
+}
+
+/* Open in new tab button for workstations */
+.minigame-open-new-tab-button {
+    position: absolute;
+    top: 50%;
+    right: 50px;
+    transform: translateY(-50%);
+    width: 30px;
+    height: 30px;
+    background: #3498db;
+    color: white;
+    border: 4px solid #2980b9;
+    cursor: pointer;
+    font-family: 'Press Start 2P', monospace !important;
+    font-size: 18px;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease;
+}
+
+.minigame-open-new-tab-button:hover {
+    background: #2980b9;
+}
+
+.minigame-open-new-tab-button:active {
+    background: #21618c;
+}
+
+/* Progress bar styling for minigames */
+.minigame-progress-container {
+    width: 100%;
+    height: 10px;
+    background: #333;
+    border: 2px solid #333;
+    overflow: hidden;
+    margin-top: 5px;
+}
+
+.minigame-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #2ecc71, #27ae60);
+    transition: width 0.3s ease;
+    border: 2px solid #27ae60;
+}

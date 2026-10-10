@@ -1,0 +1,47 @@
+{
+  "scenario": "test-tesseract-probes",
+  "start_room": "probe_room",
+  "nodes": [
+    {
+      "id": "lock_lockbox",
+      "label": "Lockbox<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_relay_pc",
+      "label": "Relay Terminal<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_pin_safe",
+      "label": "PIN Safe<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "probe_room",
+      "label": "Probe Room",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "probe_room",
+      "to": "lock_lockbox",
+      "soft": false
+    },
+    {
+      "from": "probe_room",
+      "to": "lock_relay_pc",
+      "soft": false
+    },
+    {
+      "from": "probe_room",
+      "to": "lock_pin_safe",
+      "soft": false
+    }
+  ]
+}

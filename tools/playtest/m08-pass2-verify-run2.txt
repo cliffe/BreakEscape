@@ -1,0 +1,14 @@
+game            1182  (mission 52)
+created         2026-10-01 02:15:50 UTC
+last write      2026-10-01 02:20:28 UTC
+played for      277s of wall clock
+current room    "main_lobby"
+unlocked rooms  7: main_lobby, director_office, cryptography_lab, break_room, operations_floor, server_room, interrogation_room
+unlocked objs   1: badge_printer
+inventory       5: Your Phone, Lock Pick Kit, Notepad, Post-It On The Coffee Machine, Printed Server-Zone Badge
+NPCs met        11: opening_briefing_cutscene, receptionist_ai, agent_0x99, closing_debrief, director_netherton, agent_nightshade, agent_0x99_person, background_agent, agent_cipher, background_analyst, nightshade_confrontation
+flags submitted 4: flag{m08_the_mole_safetynet_gitlist_server_1_0384a8}, flag{m08_the_mole_safetynet_gitlist_server_2_be70c8}, flag{m08_the_mole_safetynet_gitlist_server_3_254b4c}, flag{m08_the_mole_safetynet_gitlist_server_4_517f20}
+globals set     31: all_flags_submitted, archives_password_found, badge_cloned, brief_taken, briefing_played, database_theft_understood, debrief_played, debrief_stance, fate_decided, flag1_submitted, flag2_submitted, flag3_submitted, flag4_submitted, found_access_logs, found_architect_comms, found_gitlist_vuln, found_leaked_creds, infoleak_guide_offered, mission_complete, mole_identified, netherton_ko, nightshade_confronted, nightshade_triple_agent, player_name, privesc_guide_offered, recon_guide_offered, server_room_entered, start_debrief_cutscene, suspect_theory, tomb_gamma_location_known, vulnanalysis_guide_offered
+
+VERDICT: progress recorded — 6 rooms beyond the first, 1 objects unlocked, 4 flags submitted.
+Cross-check the specifics above against the report.

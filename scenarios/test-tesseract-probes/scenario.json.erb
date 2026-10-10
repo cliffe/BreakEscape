@@ -1,0 +1,501 @@
+{
+  "scenario_brief": "Engine probes for the Keyholder Trials lab (folder lab_tesseract_trials). Not a mission. If your phone is compromised, use the fallback channel (probe text).",
+  "endGoal": "Run each probe and record the result.",
+  "startRoom": "probe_room",
+  "startItemsInInventory": [
+    {
+      "type": "phone",
+      "name": "Your Phone",
+      "takeable": true,
+      "phoneId": "player_phone",
+      "npcIds": [
+        "hax_probe"
+      ],
+      "observations": "Probe phone."
+    }
+  ],
+  "globalVariables": {
+    "laptop_given": false,
+    "relay_opened": false,
+    "call_seen": false,
+    "kh_picked": false,
+    "kh_greeted": false,
+    "pc_file_read": false,
+    "player_name": "Agent 0x00",
+    "file_read": false,
+    "hax_note_had": false,
+    "closed_after_call": false,
+    "r18_seen": false
+  },
+  "objectives": [
+    {
+      "aimId": "probe_aim",
+      "title": "Run the probes",
+      "description": "Open the locks",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "unlock_relay",
+          "title": "Unlock the relay PC",
+          "type": "unlock_object",
+          "targetObject": "relay_pc",
+          "status": "active",
+          "onComplete": {
+            "setGlobal": {
+              "relay_opened": true
+            }
+          }
+        },
+        {
+          "taskId": "unlock_lockbox",
+          "title": "Open the lockbox",
+          "type": "unlock_object",
+          "targetObject": "lockbox",
+          "status": "active"
+        },
+        {
+          "taskId": "unlock_pin_safe",
+          "title": "Open the PIN safe",
+          "type": "unlock_object",
+          "targetObject": "pin_safe",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "aimId": "side_aim",
+      "title": "Story-gated side aim",
+      "description": "Hidden until file_read",
+      "status": "locked",
+      "order": 1,
+      "unlockCondition": {
+        "globalVariable": "file_read"
+      },
+      "tasks": [
+        {
+          "taskId": "side_task",
+          "title": "Side task",
+          "type": "manual",
+          "status": "active",
+          "optional": true
+        }
+      ]
+    }
+  ],
+  "player": {
+    "id": "player",
+    "displayName": "Agent 0x00",
+    "spriteSheet": "hacker",
+    "spriteTalk": "assets/characters/hacker-talk.png",
+    "spriteConfig": {
+      "idleFrameStart": 20,
+      "idleFrameEnd": 23
+    }
+  },
+  "rooms": {
+    "probe_room": {
+      "type": "room_office",
+      "connections": {},
+      "npcs": [
+        {
+          "id": "tom",
+          "displayName": "Tom",
+          "npcType": "person",
+          "position": {
+            "x": 3.5,
+            "y": 3.5
+          },
+          "spriteSheet": "hacker-red",
+          "spriteTalk": "assets/characters/hacker-red-talk.png",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/test-tesseract-probes/ink/tom.json",
+          "currentKnot": "start",
+          "itemsHeld": [
+            {
+              "type": "workstation",
+              "id": "lab_laptop",
+              "name": "Lab Laptop",
+              "takeable": true,
+              "observations": "A laptop with CyberChef on it."
+            },
+            {
+              "type": "notes",
+              "id": "field_note",
+              "name": "Field Note 1",
+              "takeable": true,
+              "readable": true,
+              "text": "SGVsbG8gUHJvYmU=\nThis is a short field note. Copy me into CyberChef.",
+              "observations": "A field note from Tom."
+            }
+          ]
+        },
+        {
+          "id": "keyholder",
+          "displayName": "Keyholder",
+          "npcType": "phone",
+          "phoneTheme": "terminal",
+          "storyPath": "scenarios/test-tesseract-probes/ink/keyholder.json",
+          "avatar": "assets/npc/avatars/npc_hacker.png",
+          "spriteTalk": "assets/characters/male_hacker_hood_talk.png",
+          "phoneId": "kh_phone",
+          "eventMappings": [
+            {
+              "eventPattern": "item_picked_up:phone",
+              "condition": "data.itemId === 'keyholder_device'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kh_picked": true
+              },
+              "conversationMode": "phone-chat"
+            },
+            {
+              "eventPattern": "global_variable_changed:relay_opened",
+              "condition": "value === true",
+              "onceOnly": true,
+              "conversationMode": "video-call",
+              "targetKnot": "relay_call"
+            },
+            {
+              "eventPattern": "objective_task_completed:unlock_pin_safe",
+              "onceOnly": true,
+              "sendTimedMessage": {
+                "delay": 2000,
+                "message": "PROBE R18: timed text on the second device."
+              }
+            }
+          ]
+        },
+        {
+          "id": "hax_probe",
+          "displayName": "HaX Probe",
+          "npcType": "phone",
+          "storyPath": "scenarios/test-tesseract-probes/ink/hax_probe.json",
+          "avatar": "assets/characters/female_spy_headshot.png",
+          "phoneId": "player_phone",
+          "itemsHeld": [
+            {
+              "type": "notes",
+              "id": "hax_note",
+              "name": "HaX Probe Note",
+              "takeable": true,
+              "readable": true,
+              "text": "R19 phone NPC note text.",
+              "observations": "From HaX probe.",
+              "onPickup": {
+                "setVariable": {
+                  "hax_note_had": true
+                }
+              }
+            }
+          ],
+          "eventMappings": [
+            {
+              "eventPattern": "conversation_closed:keyholder",
+              "condition": "globalVars.call_seen === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "closed_after_call": true
+              }
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "pigeonholes1",
+          "id": "pigeonholes",
+          "name": "Pigeonholes",
+          "takeable": false,
+          "locked": false,
+          "observations": "A wall of pigeonholes with envelopes in them.",
+          "contents": [
+            {
+              "type": "text_file",
+              "id": "envelope_a",
+              "name": "Envelope A",
+              "takeable": false,
+              "readable": true,
+              "text": "ENVELOPE A\n\nLockbox password:\n9f86d081884c7d659a2feaa0c55ad015a3bf4f1b\n\nLong hex artefact:\n0b30557a9fc4e90e33587da2c7ec11365b80a5caef14395e83a8cdf2173c6186abd0f51a3f6489aed3f81d42678cb1d6fb20456a8fb4d9fe23486d92b7dc01264b7095badf04294e7398bde2072c51769bc0e50a2f54799ec3e80d32577ca1c6eb10355a7fa4c9ee13385d82a7ccf1163b6085aacff4193e6388add2f71c41668bb0d5fa1f44698eb3d8fd22476c91b6db00254a6f94b9de03284d7297bce106",
+              "observations": "A sealed envelope, opened."
+            },
+            {
+              "type": "notes",
+              "id": "envelope_b",
+              "name": "Envelope B",
+              "takeable": true,
+              "readable": true,
+              "text": "ZGVjb2RlZCBvaw==",
+              "observations": "A short slip."
+            }
+          ]
+        },
+        {
+          "type": "briefcase",
+          "id": "lockbox",
+          "name": "Lockbox",
+          "takeable": false,
+          "locked": true,
+          "lockType": "password",
+          "requires": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b",
+          "showKeyboard": true,
+          "observations": "A locked briefcase. 40-character password.",
+          "contents": [
+            {
+              "type": "phone",
+              "id": "keyholder_device",
+              "name": "Keyholder Device",
+              "takeable": true,
+              "phoneId": "kh_phone",
+              "npcIds": [
+                "keyholder"
+              ],
+              "observations": "A plain black device."
+            }
+          ]
+        },
+        {
+          "type": "pc",
+          "id": "lab_pc",
+          "name": "Lab Account PC",
+          "takeable": false,
+          "locked": false,
+          "observations": "An unlocked lab PC.",
+          "contents": [
+            {
+              "type": "text_file",
+              "id": "lab_account",
+              "name": "Your lab account",
+              "takeable": false,
+              "readable": true,
+              "onRead": {
+                "setVariable": {
+                  "pc_file_read": true
+                }
+              },
+              "text": "LAB ACCOUNT\nuser: student01\npass: orchard-landing-7",
+              "observations": "Account details."
+            },
+            {
+              "type": "text_file",
+              "id": "lab_readme",
+              "name": "README",
+              "takeable": false,
+              "readable": true,
+              "text": "Second file on the unlocked PC.",
+              "observations": "A readme."
+            }
+          ]
+        },
+        {
+          "type": "pc",
+          "id": "relay_pc",
+          "name": "Relay Terminal",
+          "takeable": false,
+          "locked": true,
+          "lockType": "password",
+          "requires": "relay",
+          "showKeyboard": true,
+          "observations": "A password-locked PC. Password: relay",
+          "contents": [
+            {
+              "type": "text_file",
+              "id": "relay_log",
+              "name": "Relay log",
+              "takeable": false,
+              "readable": true,
+              "text": "RELAY LOG\nopened ok",
+              "observations": "Log."
+            }
+          ]
+        },
+        {
+          "type": "safe",
+          "id": "pin_safe",
+          "name": "PIN Safe",
+          "takeable": false,
+          "locked": true,
+          "lockType": "pin",
+          "requires": "4821",
+          "observations": "A 4-digit PIN safe. PIN 4821.",
+          "contents": [
+            {
+              "type": "text_file",
+              "id": "safe_file",
+              "name": "Safe file",
+              "takeable": false,
+              "readable": true,
+              "text": "Inside the PIN safe.",
+              "observations": "A file."
+            }
+          ]
+        },
+        {
+          "type": "alarm_panel",
+          "id": "byte_wall",
+          "name": "Byte Wall",
+          "takeable": false,
+          "observations": "Eight lamps showing a fixed byte.",
+          "minigameData": {
+            "panelTitle": "BYTE WALL",
+            "footer": "FIXED STATES - READ ONLY",
+            "lamps": [
+              {
+                "label": "BIT 7",
+                "multiState": true,
+                "variables": [],
+                "states": [
+                  {
+                    "cssClass": "ap-off",
+                    "statusText": "0"
+                  }
+                ]
+              },
+              {
+                "label": "BIT 6",
+                "multiState": true,
+                "variables": [],
+                "states": [
+                  {
+                    "cssClass": "ap-green",
+                    "statusText": "1"
+                  }
+                ]
+              },
+              {
+                "label": "BIT 5",
+                "multiState": true,
+                "variables": [],
+                "states": [
+                  {
+                    "cssClass": "ap-off",
+                    "statusText": "0"
+                  }
+                ]
+              },
+              {
+                "label": "BIT 4",
+                "multiState": true,
+                "variables": [],
+                "states": [
+                  {
+                    "cssClass": "ap-off",
+                    "statusText": "0"
+                  }
+                ]
+              },
+              {
+                "label": "BIT 3",
+                "multiState": true,
+                "variables": [],
+                "states": [
+                  {
+                    "cssClass": "ap-green",
+                    "statusText": "1"
+                  }
+                ]
+              },
+              {
+                "label": "BIT 2",
+                "multiState": true,
+                "variables": [],
+                "states": [
+                  {
+                    "cssClass": "ap-green",
+                    "statusText": "1"
+                  }
+                ]
+              },
+              {
+                "label": "BIT 1",
+                "multiState": true,
+                "variables": [],
+                "states": [
+                  {
+                    "cssClass": "ap-off",
+                    "statusText": "0"
+                  }
+                ]
+              },
+              {
+                "label": "BIT 0",
+                "multiState": true,
+                "variables": [],
+                "states": [
+                  {
+                    "cssClass": "ap-green",
+                    "statusText": "1"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "type": "text_file",
+          "id": "loose_file",
+          "name": "Loose Text File",
+          "takeable": false,
+          "readable": true,
+          "text": "LOOSE FILE\n0b30557a9fc4e90e33587da2c7ec11365b80a5caef14395e83a8cdf2173c6186abd0f51a3f6489aed3f81d42678cb1d6fb20456a8fb4d9fe23486d92b7dc01264b7095badf04294e7398bde2072c51769bc0e50a2f54799ec3e80d32577ca1c6eb10355a7fa4c9ee13385d82a7ccf1163b6085aacff4193e6388add2f71c41668bb0d5fa1f44698eb3d8fd22476c91b6db00254a6f94b9de03284d7297bce106",
+          "observations": "A loose text file on a desk."
+        },
+        {
+          "type": "notes",
+          "id": "short_note",
+          "name": "Short Note",
+          "takeable": true,
+          "readable": true,
+          "text": "VGhpcyBpcyBhIG5vdGU=",
+          "observations": "A takeable note."
+        },
+        {
+          "type": "pigeonholes1",
+          "id": "pigeonholes_locked",
+          "name": "Locked Pigeonholes",
+          "takeable": false,
+          "locked": true,
+          "lockType": "password",
+          "requires": "porter-12",
+          "position": {
+            "x": 7,
+            "y": 7
+          },
+          "observations": "R17: password-locked pigeonholes. porter-12",
+          "contents": [
+            {
+              "type": "text_file",
+              "id": "locked_env",
+              "name": "Pigeonhole 4",
+              "takeable": false,
+              "readable": true,
+              "text": "UjE3IG9r",
+              "observations": "R17 envelope."
+            }
+          ]
+        },
+        {
+          "type": "notes2",
+          "id": "assess_note",
+          "name": "Assessment Note",
+          "takeable": true,
+          "readable": true,
+          "position": {
+            "x": 2,
+            "y": 7
+          },
+          "text": "R21: reading this sets file_read.",
+          "observations": "Key: ____ IV: ____",
+          "onRead": {
+            "setVariable": {
+              "file_read": true
+            }
+          }
+        }
+      ]
+    }
+  }
+}

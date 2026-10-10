@@ -1,0 +1,1744 @@
+<%
+# ============================================================================
+# MISSION 5: INSIDER TRADING - SCENARIO FILE
+# ============================================================================
+# Break Escape - Season 1: The Architect's Shadow
+#
+# This file defines the game world structure: rooms, NPCs, objects, items
+# For mission metadata (display name, CyBOK mappings, etc.), see mission.json
+#
+# ROOM LAYOUT (pass 2: single connections only, see PASS2_IMPROVEMENTS.md):
+#
+#   torres_office      data_center
+#        |                  |
+#   research_lab - open_office_area    server_room
+#                       |                  |
+#   break_room - main_corridor ------- server_hallway (RFID)
+#                       |
+#                reception_lobby ----- patricia_office
+#
+#   The old layout hung three 10-wide rooms off the 10-wide corridor's north
+#   wall. positionNorthMultiple (rooms.js:1253) cannot give all three the
+#   1 GU of overlap it needs, so at least one door opened onto nothing.
+#   Every connection is now a single E/W pair or an equal-width N/S pair,
+#   which always line up (see the m04 door-alignment rule).
+#
+# THE CASE (pass 2): evidence is a set of found_* booleans, not a counter.
+#   The engine assigns setVariable values literally, so the old
+#   "evidence_level + 1" strings never counted anything.
+#   Motive:  found_medical_bills | found_torres_journal | found_vetting_file
+#   Exfil:   flag3_submitted | found_manifest | found_upload_schedule
+#   Patricia will act on a name only when the player has one of each.
+#
+# THE LOCKS (pass 3, PUZZLE_CHAINS_PLAN.md):
+#   Start kit: phone, picks (m01), RFID cloner (m03), fingerprint kit (m04).
+#   server_hallway  rfid      clone Owen's lanyard (by design), or Dr
+#                             Halloran's spare, or HaX's relay
+#   server_room     password  Owen refuses by default; Patricia's incident
+#                             log (evidence) or her authority opens him up
+#   torres_office   rfid      Owen's spare, on Patricia's authority
+#   data_center     biometric the key vault, enrolled to Torres alone; his
+#                             print is on the mug in his office. Owen names
+#                             the reader when he hands over the password
+#   briefcase, Patricia's cabinet: picks (by design)
+#   Naming: Patricia in person, Patricia by phone (patricia_phone), or HaX.
+#
+# THE WHODUNNIT (pass 4, user decision on design-review fix 10):
+#   Nothing names Torres before the player has evidence. Red herring: Dr
+#   Halloran. Owen's badge-reader log (server_door_log) shows HER SPARE badge
+#   on the server hallway at night; Lisa and her vetting file add a row with
+#   the CEO and a TalentStack approach. All of it is fair and all of it clears
+#   her: the same log has Torres' badge on the front door six minutes before
+#   each entry, and she was in Zurich on the first night (the lanyard's
+#   dates, or her own answer). Round 2: her vetting file is untidy on purpose
+#   and the files come only after the log; no single early action sets
+#   torres_suspected; on the log alone the player must pick the reason. torres_suspected (set by
+#   evidence that points at him) opens the office-card asks and the "Find Out
+#   Why" aim. Naming offers the names the player has reasons for; naming
+#   Halloran with the log suspends her (halloran_accused): a trust, debrief
+#   and credits cost, a HaX nudge, and the mission stays completable.
+#
+# HYBRID ARCHITECTURE:
+#   - VM: Bludit CMS research portal (leaked credentials, authenticated
+#     image-upload RCE, then user and root on the box)
+#   - 4 VM flags; concludeRequires gates the ending on all four
+# ============================================================================
+
+# Narrative Content Variables
+server_room_password = "quantum2024"
+password_hint_sticky = "Server room temp password (expires Friday): #{server_room_password}\n\n- O"
+# PASS 4 (whodunnit): the badge log. Read quickly it says Halloran; read
+# properly, Torres comes through the front door six minutes before her spare
+# reaches the server hallway, every time, and her own badge never comes in.
+# Round 2: Ben Ashworth and Amara Okafor make it a narrowing-down. Round 3:
+# only Amara is explained on the sheet; Ben is cleared by checking his times
+# against the incident log (23:47, transfers 02:00-04:00).
+door_log_text = "QDC BADGE READERS - AFTER-HOURS SWIPES (19:00-07:00)\nWed 16 Sep to Tue 6 Oct. Pulled by O. Gallagher for Security.\n\nWed 23 Sep  23:41  Main entrance    #4408 D. TORRES\nWed 23 Sep  23:47  Server hallway   #4471 R. HALLORAN (spare)\nThu 24 Sep  20:05  Main entrance    #4419 B. ASHWORTH\nThu 24 Sep  20:11  Server hallway   #4419 B. ASHWORTH\nTue 29 Sep  19:20  Main entrance    #4412 A. OKAFOR\nTue 29 Sep  22:05  Main entrance    #4412 A. OKAFOR (exit)\nWed 30 Sep  01:52  Main entrance    #4408 D. TORRES\nWed 30 Sep  01:58  Server hallway   #4471 R. HALLORAN (spare)\nFri 02 Oct  01:59  Main entrance    #4408 D. TORRES\nFri 02 Oct  02:05  Server hallway   #4471 R. HALLORAN (spare)\nSun 04 Oct  22:10  Main entrance    #4430 O. GALLAGHER\nSun 04 Oct  23:55  Main entrance    #4430 O. GALLAGHER (exit)\nMon 05 Oct  01:46  Main entrance    #4408 D. TORRES\nMon 05 Oct  01:52  Server hallway   #4471 R. HALLORAN (spare)\n\n#4462 R. HALLORAN (primary): no after-hours swipes in this period.\n\n[Pencilled at the bottom: \"4471 is a visitor spare. Spares are meant to be signed out. Amara stayed in the lab. Sunday was me, patching the core switch. - O\"]"
+torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing retainer if I finish the upload tonight. Elena's first trial dose is Monday.\n\nI know what this costs. Thirty to forty-five people, by their own projections. Ambulances that don't arrive in time.\n\nI've talked myself round with their philosophy. The system is rotten. Collateral damage for the greater good.\n\nI read that back and I don't recognise the man who wrote it. What have I become?"
+%>
+{
+  "narrator": {
+    "id": "narrator",
+    "skipTextValidation": true,
+    "voice": {
+      "name": "Algenib",
+      "style": "Cinematic noir detective voice over narrator.",
+      "language": "en-GB"
+    }
+  },
+
+  "scenario_brief": "Infiltrate Quantum Dynamics Corporation to identify and stop an insider threat. ENTROPY's Insider Threat Initiative has recruited an employee to exfiltrate quantum-safe key material for the National Emergency-Services Dispatch Network. You have 4 hours to find the insider, build the case, and stop the final upload.",
+
+  "show_scenario_brief": "on_resume",
+
+  "music": {
+    "events": [
+      {
+        "trigger": "game_loaded",
+        "condition": "!globalVars.briefing_played",
+        "playlist": "cutscene",
+        "fade": false,
+        "comment": "Opening briefing cutscene — play immediately, no fade (first run only)"
+      },
+      {
+        "trigger": "game_loaded",
+        "condition": "globalVars.briefing_played === true",
+        "playlist": "noir",
+        "fade": false,
+        "comment": "Briefing already seen (resume) — skip straight to noir"
+      },
+      {
+        "trigger": "conversation_closed:opening_briefing",
+        "playlist": "noir",
+        "fade": true,
+        "comment": "Briefing ends → mission proper begins"
+      },
+      {
+        "trigger": "global_variable_changed:torres_identified",
+        "condition": "value === true",
+        "playlist": "spy-action",
+        "fade": true,
+        "comment": "Suspect named — the hunt narrows"
+      },
+      {
+        "trigger": "npc_hostile_state_changed",
+        "condition": "isHostile === true",
+        "playlist": "threat",
+        "fade": true,
+        "comment": "Any NPC turns hostile → switch to tension music"
+      },
+      {
+        "trigger": "all_hostiles_ko",
+        "playlist": "noir",
+        "fade": true,
+        "comment": "All hostile NPCs KO'd — back to noir"
+      },
+      {
+        "trigger": "conversation_closed:closing_debrief_trigger",
+        "playlist": "victory",
+        "autoStop": true,
+        "disableClose": true,
+        "fade": true,
+        "comment": "Debrief ends — play victory track with mission credits scroll",
+        "credits": [
+          { "text": "MISSION COMPLETE",                                    "style": "title" },
+          { "text": "INSIDER TRADING",                                     "style": "subtitle" },
+          { "text": "" },
+          { "text": "OPERATION SCHRÖDINGER: STOPPED",                       "style": "entry" },
+          { "text": "CIVILIAN LIVES SAVED: 30-45 (estimated, first rollout wave)", "style": "entry" },
+          { "text": "" },
+          { "text": "── THE CASE ──",                                      "style": "section-header" },
+          { "text": "MOTIVE, MEANS AND AUTHORISATION — all on file",       "style": "entry", "condition": "globalVars.flag4_submitted && (globalVars.found_medical_bills || globalVars.found_torres_journal || globalVars.found_vetting_file) && globalVars.found_pamphlet" },
+          { "text": "RECRUITMENT PIPELINE — TalentStack link not documented", "style": "entry", "condition": "!globalVars.found_pamphlet && !globalVars.found_pipeline_list" },
+          { "text": "BORROWED BADGE — Halloran's spare traced back to Torres", "style": "entry", "condition": "globalVars.door_log_reasoned && !globalVars.halloran_accused" },
+          { "text": "WRONG ACCUSATION — Dr Ruth Halloran suspended, then cleared", "style": "warning", "condition": "globalVars.halloran_accused" },
+          { "text": "INSIDER NAMED — David Torres, though not every piece of evidence was recovered", "style": "entry", "_comment": "PASS 4 newcheck: catch-all so THE CASE never prints empty (found_pamphlet false with the pipeline list found matched no other line).", "condition": "!(globalVars.flag4_submitted && (globalVars.found_medical_bills || globalVars.found_torres_journal || globalVars.found_vetting_file) && globalVars.found_pamphlet) && !(!globalVars.found_pamphlet && !globalVars.found_pipeline_list) && !(globalVars.door_log_reasoned && !globalVars.halloran_accused) && !(globalVars.halloran_accused)" },
+          { "text": "" },
+          { "text": "── DAVID TORRES ──",                                  "style": "section-header" },
+          { "text": "TURNED — working for SAFETYNET inside ENTROPY's network", "style": "entry", "condition": "globalVars.final_choice === 'turn_double_agent'" },
+          { "text": "HANDED TO THE POLICE — talked to SAFETYNET first",    "style": "entry", "condition": "globalVars.final_choice === 'arrest' && globalVars.elena_treatment_funded" },
+          { "text": "HANDED TO THE POLICE — said nothing",                 "style": "entry", "condition": "globalVars.final_choice === 'arrest' && !globalVars.elena_treatment_funded" },
+          { "text": "DETAINED AFTER A FIGHT — handed to the police",       "style": "entry", "condition": "globalVars.final_choice === 'combat_nonlethal'" },
+          { "text": "DEAD — left injured on the data-centre floor",        "style": "warning", "condition": "globalVars.final_choice === 'combat_lethal'" },
+          { "text": "EXPOSED — named publicly as \"The Quantum Traitor\"",  "style": "warning", "condition": "globalVars.final_choice === 'public_exposure'" },
+          { "text": "" },
+          { "text": "── ELENA TORRES ──",                                  "style": "section-header" },
+          { "text": "Treatment paid for by SAFETYNET — first dose Monday", "style": "entry", "condition": "globalVars.elena_treatment_funded" },
+          { "text": "Still fighting Stage 3 cancer — treatment unfunded",  "style": "entry", "condition": "!globalVars.elena_treatment_funded && globalVars.final_choice !== 'combat_lethal'" },
+          { "text": "Widowed — still fighting Stage 3 cancer, alone",       "style": "warning", "condition": "globalVars.final_choice === 'combat_lethal'" },
+          { "text": "" },
+          { "text": "── SOFIA (11) AND MIGUEL (8) TORRES ──",                "style": "section-header" },
+          { "text": "Father home, family intact",                          "style": "entry", "condition": "globalVars.final_choice === 'turn_double_agent'" },
+          { "text": "Father facing trial, mother in treatment",            "style": "entry", "condition": "globalVars.final_choice === 'arrest' && globalVars.elena_treatment_funded" },
+          { "text": "Father facing trial, mother untreated",               "style": "entry", "condition": "(globalVars.final_choice === 'arrest' && !globalVars.elena_treatment_funded) || globalVars.final_choice === 'combat_nonlethal'" },
+          { "text": "Father dead — and, without treatment, they may lose their mother too", "style": "warning", "condition": "globalVars.final_choice === 'combat_lethal'" },
+          { "text": "Classmates saw their father named a spy on the news",  "style": "warning", "condition": "globalVars.final_choice === 'public_exposure'" },
+          { "text": "" },
+          { "text": "── THE RECRUITER ──",                                 "style": "section-header" },
+          { "text": "OFFER REFUSED — the TalentStack list went to SAFETYNET", "style": "entry", "condition": "globalVars.recruiter_deal_decided && !globalVars.recruiter_deal_accepted && globalVars.found_pipeline_list" },
+          { "text": "OFFER REFUSED — but the TalentStack list was never recovered", "style": "entry", "condition": "globalVars.recruiter_deal_decided && !globalVars.recruiter_deal_accepted && !globalVars.found_pipeline_list" },
+          { "text": "OFFER LEFT UNANSWERED — she rang off without a yes", "style": "entry", "condition": "globalVars.recruiter_deal_offered && !globalVars.recruiter_deal_decided" },
+          { "text": "OFFER TAKEN — forty-seven names left in her pipeline", "style": "warning", "condition": "globalVars.recruiter_deal_accepted && !globalVars.recruiter_deal_confessed" },
+          { "text": "OFFER TAKEN, THEN CONFESSED — the list went in late",  "style": "warning", "condition": "globalVars.recruiter_deal_accepted && globalVars.recruiter_deal_confessed" },
+          { "text": "NEVER HEARD HER OFFER — the TalentStack list went to SAFETYNET", "style": "entry", "condition": "!globalVars.recruiter_deal_offered && globalVars.found_pipeline_list" },
+          { "text": "NEVER HEARD HER OFFER — the TalentStack list was never recovered", "style": "warning", "condition": "!globalVars.recruiter_deal_offered && !globalVars.found_pipeline_list" },
+          { "text": "" },
+          { "text": "── QUANTUM DYNAMICS ──",                              "style": "section-header" },
+          { "text": "CEO'S STAND-DOWN — on file with the Home Office review", "style": "entry", "condition": "globalVars.found_stand_down_email" },
+          { "text": "WHO STOPPED THE INTERVIEW — never asked",            "style": "warning", "condition": "!globalVars.found_stand_down_email" },
+          { "text": "" },
+          { "text": "The Architect remains at large...",                   "style": "warning" }
+        ]
+      }
+    ]
+  },
+
+  <%# PASS 2: every task is "active" (the m02 pattern). unlockAim activates only
+      an aim's FIRST task (objectives-manager.js:651-660) and handleItemPickup
+      ignores any task that isn't active (:324), so with "locked" tasks the
+      collect/enter tasks in later aims could never tick. Notes-type evidence
+      is matched with targetItemIds: targetItems matches the item TYPE, and
+      every one of these items is type "notes". %>
+  <%# PASS 2 review (lesson 27): a locked aim auto-reveals when any of its
+      tasks completes (objectives-manager.js:414-419). Tasks now sit in the aim
+      where the player meets them: the sticky note, the leaflet and the vetting
+      file are first-ring finds, so they live in aim 2. "Find Out Why" and
+      "Prove the Exfiltration" both open from aim 2 and run in parallel,
+      because nothing in the rooms orders them. The aims are a to-do list, not
+      a gate: doors, items and concludeRequires are what gate progress. %>
+  "objectives": [
+    {
+      "aimId": "establish_access",
+      "title": "Get Inside Quantum Dynamics",
+      "description": "Enter Quantum Dynamics and begin the investigation",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "receive_mission_briefing",
+          "title": "Receive mission briefing from Agent HaX",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "meet_handler",
+          "title": "Meet with Patricia Morgan (Security Chief)",
+          "type": "npc_conversation",
+          "targetNPC": "patricia_morgan",
+          "status": "active"
+        },
+        {
+          "taskId": "obtain_security_badge",
+          "title": "Obtain visitor access badge",
+          "type": "collect_items",
+          "targetCount": 1,
+          "targetItems": ["id_badge"],
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "aimId": "investigate_employees",
+      "title": "Work Out Who Has Been in the Servers",
+      "description": "Interview staff and get the access you need",
+      "status": "locked",
+      "order": 1,
+      "unlockCondition": { "aimCompleted": "establish_access" },
+      "tasks": [
+        {
+          "taskId": "talk_to_owen",
+          "title": "Interview Owen Gallagher (IT Admin)",
+          "type": "npc_conversation",
+          "targetNPC": "owen_gallagher",
+          "status": "active"
+        },
+        {
+          "taskId": "talk_to_lisa",
+          "title": "Interview Lisa Park (Marketing)",
+          "type": "npc_conversation",
+          "targetNPC": "lisa_park",
+          "status": "active",
+          "optional": true
+        },
+        {
+          "taskId": "talk_to_dr_halloran",
+          "title": "Interview Dr Halloran (Chief Scientist)",
+          "type": "npc_conversation",
+          "targetNPC": "dr_halloran",
+          "status": "active",
+          "optional": true
+        },
+        {
+          "taskId": "obtain_server_badge",
+          "title": "Get through the server-hallway reader",
+          "type": "enter_room",
+          "targetRoom": "server_hallway",
+          "status": "active"
+        },
+        {
+          "taskId": "find_server_password",
+          "title": "Find the server room password",
+          "type": "collect_items",
+          "targetCount": 1,
+          "targetItemIds": ["server_password_note", "relayed_server_password_note"],
+          "status": "active"
+        },
+        {
+          "taskId": "find_door_log",
+          "title": "Find out whose badge was in the server hallway at night",
+          "type": "collect_items",
+          "targetCount": 1,
+          "targetItemIds": ["server_door_log", "relayed_door_log"],
+          "status": "active",
+          "optional": true
+        },
+        {
+          "taskId": "find_vetting_file",
+          "title": "Find out who on the team is under pressure",
+          "type": "collect_items",
+          "targetCount": 1,
+          "targetItemIds": ["torres_vetting_file"],
+          "status": "active",
+          "optional": true
+        },
+        {
+          "taskId": "find_entropy_pamphlet",
+          "title": "Work out who has been recruiting in the building",
+          "type": "collect_items",
+          "targetCount": 1,
+          "targetItemIds": ["entropy_pamphlet"],
+          "status": "active",
+          "optional": true
+        }
+      ]
+    },
+    {
+      "aimId": "gather_evidence",
+      "title": "Find Out Why",
+      "description": "Build the personal side of the case",
+      "status": "locked",
+      "order": 2,
+      <%# PASS 4 (whodunnit): opens when the evidence first points at Torres, not
+          when aim 2 completes, so the to-do list never names him early. The
+          torres_suspected mapping on agent_0x99_handler calls unlockAim; the
+          server derives the same condition on load (game.rb:1174). %>
+      "unlockCondition": { "globalVariable": "torres_suspected", "equals": true },
+      "tasks": [
+        {
+          "taskId": "obtain_torres_keycard",
+          "title": "Get IT's spare card for his office",
+          "type": "collect_items",
+          "targetCount": 1,
+          "targetItemIds": ["torres_office_keycard", "relayed_torres_office_card"],
+          "status": "active"
+        },
+        {
+          "taskId": "access_torres_office",
+          "title": "Get into his office",
+          "type": "enter_room",
+          "targetRoom": "torres_office",
+          "status": "active"
+        },
+        {
+          "taskId": "find_journal",
+          "title": "Find whatever he has been writing",
+          "type": "collect_items",
+          "targetCount": 1,
+          "targetItemIds": ["personal_journal"],
+          "status": "active"
+        },
+        {
+          "taskId": "find_medical_bills",
+          "title": "Get into his briefcase",
+          "type": "collect_items",
+          "targetCount": 1,
+          "targetItemIds": ["medical_bills"],
+          "status": "active",
+          "optional": true
+        }
+      ]
+    },
+    {
+      "aimId": "exploit_infrastructure",
+      "title": "Prove the Exfiltration on the Server",
+      "description": "Get into the server room and prove what is leaving the building",
+      "status": "locked",
+      "order": 3,
+      "unlockCondition": { "aimCompleted": "investigate_employees" },
+      "tasks": [
+        {
+          "taskId": "access_server_room",
+          "title": "Get into the server room",
+          "type": "enter_room",
+          "targetRoom": "server_room",
+          "status": "active"
+        },
+        {
+          "taskId": "access_bludit_vm",
+          "title": "Get into the research portal",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "submit_flag1",
+          "title": "Submit Flag 1: Leaked Bludit admin credentials (recon)",
+          "type": "submit_flags",
+          "targetFlags": ["flag_station_evidence:qdc_research_server-flag1"],
+          "targetCount": 1,
+          "currentCount": 0,
+          "showProgress": true,
+          "status": "active"
+        },
+        {
+          "taskId": "submit_flag2",
+          "title": "Submit Flag 2: Authenticated Bludit image-upload RCE",
+          "type": "submit_flags",
+          "targetFlags": ["flag_station_evidence:qdc_research_server-flag2"],
+          "targetCount": 1,
+          "currentCount": 0,
+          "showProgress": true,
+          "status": "active"
+        },
+        {
+          "taskId": "submit_flag3",
+          "title": "Submit Flag 3: The insider's staging manifest (user access)",
+          "type": "submit_flags",
+          "targetFlags": ["flag_station_evidence:qdc_research_server-flag3"],
+          "targetCount": 1,
+          "currentCount": 0,
+          "showProgress": true,
+          "status": "active"
+        },
+        {
+          "taskId": "submit_flag4",
+          "title": "Submit Flag 4: The Architect's acquisition authorisation (root)",
+          "type": "submit_flags",
+          "targetFlags": ["flag_station_evidence:qdc_research_server-flag4"],
+          "targetCount": 1,
+          "currentCount": 0,
+          "showProgress": true,
+          "status": "active"
+        },
+        {
+          "taskId": "access_data_center",
+          "title": "Get past the key-vault reader",
+          "type": "enter_room",
+          "targetRoom": "data_center",
+          "status": "active"
+        },
+        {
+          "taskId": "find_upload_schedule",
+          "title": "Find out when the final upload runs",
+          "type": "collect_items",
+          "targetCount": 1,
+          "targetItemIds": ["upload_schedule"],
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "aimId": "confront_insider",
+      "title": "Decide What Happens to Him",
+      "description": "Name the insider, confront him and decide his fate",
+      "status": "locked",
+      "order": 4,
+      "unlockCondition": { "aimsCompleted": ["gather_evidence", "exploit_infrastructure"] },
+      "missionConclusion": true,
+      "conclusionScreen": { "type": "bond_visualiser" },
+      <%# Ending gate: the mandatory flag nodes from the dungeon graph -- the
+          technical work this mission is not allowed to skip. Story tasks are
+          not listed: they cost score if unfinished, they never withhold the
+          ending. See README_scenario_design.md#concluderequires. %>
+      "concludeRequires": {
+        "tasksCompleted": [
+          "submit_flag1",
+          "submit_flag2",
+          "submit_flag3",
+          "submit_flag4"
+        ]
+      },
+      "tasks": [
+        {
+          "taskId": "identify_torres",
+          "title": "Name your suspect to Patricia Morgan",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "confront_torres",
+          "title": "Confront your suspect",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "make_critical_choice",
+          "title": "Decide what happens to David Torres",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "hear_debrief",
+          "title": "Report back to Agent HaX",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+
+  "startRoom": "reception_lobby",
+
+  "startItemsInInventory": [
+    {
+      "type": "phone",
+      "name": "Your Phone",
+      "takeable": true,
+      "phoneId": "player_phone",
+      "npcIds": ["agent_0x99_handler", "patricia_phone"],
+      "observations": "Your secure phone with encrypted connection to SAFETYNET"
+    },
+    <%# PASS 3 P3: cumulative kit (PASS3_APPROVAL_LOG.md, user ruling). Picks from
+        m01, cloner from m03, fingerprint kit from m04. No PIN cracker. %>
+    {
+      "type": "lockpick",
+      "name": "Lock Pick Kit",
+      "takeable": true,
+      "observations": "Professional lock picking kit for bypassing physical locks",
+      "puzzle_graph_role": "tool",
+      "puzzle_graph_unlocks": ["torres_briefcase", "patricia_filing_cabinet"]
+    },
+    {
+      "type": "rfid_cloner",
+      "name": "RFID Cloner",
+      "takeable": true,
+      "observations": "Concealed RFID cloning device — get close to a keycard to copy it",
+      "puzzle_graph_role": "tool",
+      "puzzle_graph_unlocks": ["server_hallway"]
+    },
+    {
+      "type": "fingerprint_kit",
+      "name": "Fingerprint Kit",
+      "takeable": true,
+      "observations": "The kit you took off the OptiGrid crew at Albion. Powder, brush, lifting tape.",
+      "puzzle_graph_role": "tool",
+      "puzzle_graph_note": "Opens the key vault with Torres' print (the mug in his office)"
+    }
+  ],
+
+  "player": {
+    "id": "player",
+    "displayName": "Agent 0x00",
+    "spriteSheet": "male_hacker_hood_down_v2",
+    "spriteTalk": "assets/characters/male_hacker_hood_down_talk.png",
+    "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 }
+  },
+
+  "globalVariables": {
+    "briefing_played": false,
+    "player_name": "Agent 0x00",
+    "player_approach": "",
+    "knows_full_stakes": false,
+    "knows_insider_profile": false,
+    "handler_trust": 50,
+
+    "final_choice": "",
+    "confront_stance": "",
+    "torres_turned": false,
+    "torres_arrested": false,
+    "torres_identified": false,
+    "elena_treatment_funded": false,
+    "entropy_program_exposed": false,
+
+    "found_pamphlet": false,
+    "found_incident_log": false,
+    "found_vetting_file": false,
+    "found_medical_bills": false,
+    "found_torres_journal": false,
+    "found_upload_schedule": false,
+    "found_manifest": false,
+    "case_ready_notified": false,
+    "case_motive": false,
+    "case_exfil": false,
+    "found_pipeline_list": false,
+    "flags_nag_sent": false,
+    "debrief_played": false,
+    "torres_fate_by_phone": false,
+
+    "server_badge_obtained": false,
+    "office_card_obtained": false,
+    "patricia_authorised_office": false,
+    "patricia_authorised_server": false,
+    "server_door_seen": false,
+    "server_password_obtained": false,
+    "vault_reader_seen": false,
+    "torres_print_collected": false,
+    "patricia_phone_available": false,
+    "recruiter_texted": false,
+    "recruiter_deal_decided": false,
+    "found_stand_down_email": false,
+    "privesc_guide_offered": false,
+    "privesc_guide_hint_given": false,
+
+    "flag1_submitted": false,
+    "flag2_submitted": false,
+    "flag3_submitted": false,
+    "flag4_submitted": false,
+    "architect_approval_confirmed": false,
+    "recruiter_contacted_player": false,
+    "recruiter_deal_offered": false,
+    "recruiter_deal_accepted": false,
+    "recruiter_deal_confessed": false,
+
+    "patricia_ko": false,
+    "owen_ko": false,
+    "halloran_ko": false,
+    "lisa_ko": false,
+    "torres_ko": false,
+
+    "recruitment_method_discussed": false,
+    "leverage_discussed": false,
+    "journal_discussed": false,
+    "architect_discussed": false,
+    "recruiter_discussed": false,
+    "flag1_discussed": false,
+    "flag2_discussed": false,
+    "flag3_discussed": false,
+    "flag4_discussed": false,
+    "confrontation_advice_given": false,
+
+    "bludit_guide_offered": false,
+    "bludit_guide_hint_given": false,
+    "lockpicking_guide_offered": false,
+    "lockpicking_guide_hint_given": false,
+    "recon_guide_offered": false,
+    "recon_guide_hint_given": false,
+    "rfid_guide_offered": false,
+    "rfid_guide_hint_given": false,
+
+    "torres_suspected": false,
+    "found_door_log": false,
+    "found_halloran_alibi": false,
+    "halloran_questioned": false,
+    "halloran_accused": false,
+    "found_halloran_vetting": false,
+    "door_log_reasoned": false,
+    "it_notice_read": false
+  },
+
+  "endGoal": "Identify the insider with both halves of the case (motive and proof of exfiltration), stop the final upload, and decide David Torres' fate: turn him, hand him to the police, expose the programme, or fight.",
+
+  "rooms": {
+    "reception_lobby": {
+      "type": "room_reception",
+      "connections": {
+        "north": "main_corridor",
+        "east": "patricia_office"
+      },
+      "npcs": [
+        {
+          "id": "opening_briefing",
+          "displayName": "Agent HaX",
+          "npcType": "person",
+          "voice": {
+            "name": "Aoede",
+            "style": "Intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Speak quickly with a sense of urgency, as if time is short.",
+            "language": "en-GB"
+          },
+          "position": { "x": 500, "y": 500 },
+          "_comment": "PASS 4 fix 9: same v2 sheet as the debrief HaX (closing_debrief_trigger), so she looks the same at both ends of the mission.",
+          "spriteSheet": "female_spy_v2",
+          "spriteTalk": "assets/characters/female_spy_talk.png",
+          "spriteVisemes": "assets/characters/female_spy_visemes.png",
+          "avatar": "assets/characters/female_spy_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/m05_insider_trading/ink/m05_insider_trading_opening.json",
+          "currentKnot": "start",
+          "taskOnKO": "receive_mission_briefing",
+          "timedConversation": {
+            "delay": 0,
+            "targetKnot": "start",
+            "background": "assets/backgrounds/hq1.png",
+            "waitForEvent": "game_loaded",
+            "skipIfGlobal": "briefing_played",
+            "setGlobalOnStart": "briefing_played"
+          }
+        },
+        {
+          "_comment": "SEED NPC (continuity): Director Magnus Netherton, co-speaker in the opening briefing. Hidden, no task, no gating global.",
+          "id": "director_netherton",
+          "displayName": "Director Magnus Netherton",
+          "npcType": "person",
+          "position": { "x": 480, "y": 500 },
+          "spriteSheet": "male_spy_v2",
+          "spriteTalk": "assets/characters/male_spy_talk.png",
+          "spriteVisemes": "assets/characters/male_spy_visemes.png",
+          "avatar": "assets/characters/male_spy_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "behavior": { "initiallyHidden": true },
+          "voice": {
+            "name": "Charon",
+            "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried; sets the stakes then lets his people run the detail.",
+            "language": "en-GB"
+          }
+        },
+        {
+          "_comment": "SEED NPC (continuity): Agent 0x47 'Nightshade', trusted SAFETYNET technical analyst who chips in on the technical detail. Hidden, no task, no gating global. Subtle m08 foreshadowing only (user decision P1, 2026-10-02): at most one quiet line.",
+          "id": "agent_nightshade",
+          "displayName": "Agent 0x47 'Nightshade'",
+          "npcType": "person",
+          "position": { "x": 520, "y": 500 },
+          "spriteSheet": "male_scientist_v2",
+          "spriteTalk": "assets/characters/male_scientist_talk.png",
+          "spriteVisemes": "assets/characters/male_scientist_visemes.png",
+          "avatar": "assets/characters/male_scientist_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "behavior": { "initiallyHidden": true },
+          "voice": {
+            "name": "Enceladus",
+            "style": "SAFETYNET's technical analyst. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, precise, technically fluent; a colleague you trust.",
+            "language": "en-GB"
+          }
+        },
+        {
+          "id": "agent_0x99_handler",
+          "displayName": "Agent HaX",
+          "npcType": "phone",
+          "voice": {
+            "name": "Aoede",
+            "style": "Intelligence handler speaking over a secure phone line. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Speak quickly with urgency, as if time is short.",
+            "language": "en-GB"
+          },
+          "storyPath": "scenarios/m05_insider_trading/ink/m05_phone_agent_0x99.json",
+          "avatar": "assets/npc/avatars/npc_helper.png",
+          "phoneId": "player_phone",
+          "currentKnot": "start",
+          "itemsHeld": [
+            {
+              "type": "lab-workstation",
+              "id": "safetynet_field_guide_bludit_cms",
+              "name": "SAFETYNET Field Guide: Bludit CMS Exploitation",
+              "takeable": true,
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/bludit-cms-exploitation/",
+              "observations": "Field guide to leaked credentials and authenticated image-upload RCE against Bludit CMS"
+            },
+            {
+              "type": "lab-workstation",
+              "id": "safetynet_field_guide_lockpicking",
+              "name": "SAFETYNET Field Guide: Lockpicking",
+              "takeable": true,
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/lockpicking/",
+              "observations": "Field guide to pin tumbler locks and the two-tool technique"
+            },
+            {
+              "type": "lab-workstation",
+              "id": "safetynet_field_guide_recon_network_mapping",
+              "name": "SAFETYNET Field Guide: Reconnaissance and Network Mapping",
+              "takeable": true,
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/reconnaissance-and-network-mapping/",
+              "observations": "Field guide to discovering hosts and mapping an unfamiliar network with Nmap"
+            },
+            {
+              "_comment": "KO safety net (m03/m04 pattern). dropNPCItems now finds the sprite in later-loaded rooms (npc-hostile.js:256-261), so Owen's office card and password note drop on a KO; but his staff badge is an rfidCard (PASS 3 P4), not an item, so nothing drops for the hallway. On npc_ko:owen_gallagher HaX pushes working copies of all three. A duplicate is harmless; the RFID lock needs one match on opens_lock (unlock-system.js:511-513).",
+              "type": "keycard",
+              "id": "relayed_server_badge",
+              "name": "Staff Badge (relayed copy)",
+              "takeable": true,
+              "opens_lock": "employee_badge",
+              "observations": "A copy of Owen's staff badge, rebuilt by SAFETYNET from the badge-reader logs. Opens the server hallway."
+            },
+            {
+              "type": "keycard",
+              "id": "relayed_torres_office_card",
+              "name": "Spare Office Card (relayed copy)",
+              "takeable": true,
+              "opens_lock": "office_keycard",
+              "observations": "A copy of IT's spare card for the office beyond the open-plan, rebuilt by SAFETYNET from the reader logs."
+            },
+            {
+              "_comment": "PASS 2 review M3: Patricia-KO fallback for obtain_security_badge (a collect_items task needs the item).",
+              "type": "id_badge",
+              "id": "relayed_contractor_pass",
+              "name": "Contractor Pass",
+              "takeable": true,
+              "observations": "A contractor pass SAFETYNET printed against QDC's visitor system after Patricia went down."
+            },
+            {
+              "type": "notes",
+              "id": "relayed_server_password_note",
+              "name": "Server-Room Password (from IT's ticket queue)",
+              "takeable": true,
+              "readable": true,
+              "text": "IT TICKET #2291 - Server room door: temporary password reset\nNew password: <%= server_room_password %>\nExpires: Friday\nRaised by: O. Gallagher",
+              "observations": "SAFETYNET pulled this out of QDC's IT ticket queue after Owen went down.",
+              "onRead": { "setVariable": { "server_password_obtained": true } }
+            },
+            {
+              "_comment": "PASS 4 fix 13: offered on the hallway reader bark. The clone is a critical-path technique.",
+              "type": "lab-workstation",
+              "id": "safetynet_field_guide_rfid_cloning",
+              "name": "SAFETYNET Field Guide: RFID Cloning",
+              "takeable": true,
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/rfid-cloning/",
+              "observations": "Field guide to reading, cloning and emulating proximity access cards"
+            },
+            {
+              "_comment": "PASS 4 (whodunnit): Owen-KO copy of the badge-reader log. Distinct name from Owen's (E18).",
+              "type": "notes",
+              "id": "relayed_door_log",
+              "name": "Badge-Reader Log (from IT's archive)",
+              "takeable": true,
+              "readable": true,
+              "text": <%= door_log_text.to_json %>,
+              "observations": "SAFETYNET pulled the after-hours badge log out of QDC's IT archive after Owen went down.",
+              "onRead": { "setVariable": { "found_door_log": true } }
+            },
+            {
+              "type": "lab-workstation",
+              "id": "safetynet_field_guide_privilege_escalation",
+              "name": "SAFETYNET Field Guide: Privilege Escalation via Sudo",
+              "takeable": true,
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/privilege-escalation/",
+              "observations": "Field guide to enumerating sudo rights and escalating to root"
+            }
+          ],
+          "_comment": "PASS 2 review: eventMapping conditions go through safeEvaluateCondition (npc-manager.js:14-101), which supports only &&-joined terms. Any || or parenthesised condition evaluates to false, so every alternative below is its own mapping.",
+          "eventMappings": [
+            {
+              "_comment": "PASS 2 (lesson 20): was a 5 s timedMessage that could land over the opening briefing. Now fires once the briefing closes.",
+              "eventPattern": "conversation_closed:opening_briefing",
+              "onceOnly": true,
+              "completeTask": "receive_mission_briefing",
+              "sendTimedMessage": { "delay": 3000, "message": "You're in. Patricia Morgan's office is off reception, on the east side. Start with her. The clock's running." }
+            },
+            {
+              "_comment": "Playtest D4 backstop: the briefing was marked played (setGlobalOnStart) but never finished, e.g. a reload mid-cutscene. The task is custom, so this completes it without the server needing the NPC encountered.",
+              "eventPattern": "room_entered:reception_lobby",
+              "condition": "globalVars.briefing_played === true",
+              "onceOnly": true,
+              "completeTask": "receive_mission_briefing"
+            },
+            {
+              "_comment": "PASS 3 P4: Owen's badge is cloned, not handed over. card_cloned carries only cardName (rfid-minigame.js:245-249) and is emitted synchronously before the conversation resumes. No parentheses in the name: the validator rejects them in any condition.",
+              "eventPattern": "card_cloned",
+              "condition": "data.cardName === 'Staff Badge - O. Gallagher'",
+              "onceOnly": true,
+              "setGlobal": { "server_badge_obtained": true }
+            },
+<%# PASS 3 (implementation review minor 6): the CEO email counts when taken, not only when read. %>
+<% %w[ceo_stand_down_copy ceo_stand_down_email].each do |id| %>
+            {
+              "eventPattern": "item_picked_up:notes",
+              "condition": "data.itemId === '<%= id %>'",
+              "onceOnly": true,
+              "setGlobal": { "found_stand_down_email": true }
+            },
+<% end %>
+<% %w[server_password_note relayed_server_password_note].each do |id| %>
+            {
+              "eventPattern": "item_picked_up:notes",
+              "condition": "data.itemId === '<%= id %>'",
+              "onceOnly": true,
+              "setGlobal": { "server_password_obtained": true }
+            },
+<% end %>
+<% %w[research_lab_badge relayed_server_badge].each do |id| %>
+            {
+              "_comment": "PASS 2 (lesson 26): 'given' globals come from the pickup, not from ink before the tag.",
+              "eventPattern": "item_picked_up:keycard",
+              "condition": "data.itemId === '<%= id %>'",
+              "onceOnly": true,
+              "setGlobal": { "server_badge_obtained": true }
+            },
+<% end %>
+<% %w[torres_office_keycard relayed_torres_office_card].each do |id| %>
+            {
+              "eventPattern": "item_picked_up:keycard",
+              "condition": "data.itemId === '<%= id %>'",
+              "onceOnly": true,
+              "setGlobal": { "office_card_obtained": true }
+            },
+<% end %>
+            {
+              "eventPattern": "item_picked_up:notes",
+              "condition": "data.itemId === 'medical_bills'",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "Three hundred and eighty thousand dollars, and the insurer walked away. That's the trouble ENTROPY goes looking for. Call me if you want to talk it through." }
+            },
+            {
+              "eventPattern": "item_picked_up:notes",
+              "condition": "data.itemId === 'personal_journal'",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "A personal journal. Call me once you've read it." }
+            },
+            {
+              "eventPattern": "global_variable_changed:flag1_submitted",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "access_bludit_vm",
+              "sendTimedMessage": { "delay": 1500, "message": "First flag verified. Three to go. Call if you want a status check." }
+            },
+            {
+              "eventPattern": "global_variable_changed:flag2_submitted",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "Second flag in. You've got a shell. Call me for the next step." }
+            },
+            {
+              "eventPattern": "global_variable_changed:flag3_submitted",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": { "privesc_guide_offered": true },
+              "sendTimedMessage": { "delay": 1500, "message": "Third flag verified. His staging manifest, under his own name. Last one's the authorisation behind it, where only root can read. Sudo guide's yours if you want it." }
+            },
+            {
+              "_comment": "PASS 3 (E11 audit): with the fate already set, the debrief follows at once and this 'call me' would land after it.",
+              "eventPattern": "global_variable_changed:flag4_submitted",
+              "condition": "value === true && globalVars.final_choice === ''",
+              "onceOnly": true,
+              "setGlobal": { "architect_approval_confirmed": true },
+              "sendTimedMessage": { "delay": 1500, "message": "Final flag in. The Architect's authorisation, casualty projection and all. Call me. You need to hear this." }
+            },
+            <%# PASS 2: "enough to name him" = one motive item AND one exfil item.
+                Each piece of evidence latches case_motive or case_exfil; the
+                nudge fires when the second half lands. && only (see _comment). %>
+<%# Round 3 (F1): the vetting file is motive only. Its onRead fires on
+    hand-over (npc-game-bridge.js:17-30), so it must not decide the case
+    before the player has read it; naming him does that. %>
+            {
+              "eventPattern": "global_variable_changed:found_vetting_file",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": { "case_motive": true }
+            },
+<% %w[found_medical_bills found_torres_journal].each do |g| %>
+            {
+              "eventPattern": "global_variable_changed:<%= g %>",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": { "case_motive": true, "torres_suspected": true }
+            },
+<% end %>
+<% %w[flag3_submitted found_manifest found_upload_schedule].each do |g| %>
+            {
+              "eventPattern": "global_variable_changed:<%= g %>",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": { "case_exfil": true, "torres_suspected": true }
+            },
+<% end %>
+            {
+              "_comment": "PASS 4 (whodunnit): the first evidence that points at Torres opens 'Find Out Why' (its unlockCondition is this global). Set by the bills/journal and exfil latches above and by ink (a reasoned partial naming). Round 3: not by the vetting file or Halloran's answer.",
+              "eventPattern": "global_variable_changed:torres_suspected",
+              "condition": "value === true",
+              "onceOnly": true,
+              "unlockAim": "gather_evidence"
+            },
+            {
+              "_comment": "PASS 4 (whodunnit): a wrong accusation gets a nudge, so a stuck player can recover.",
+              "eventPattern": "global_variable_changed:halloran_accused",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 15000, "message": "Halloran's suspended on your word. Check it holds. Where was she on the twenty-third, and whose badge came through the front door just before hers?", "skipIfGlobal": "torres_identified" }
+            },
+<% [%w[case_motive case_exfil], %w[case_exfil case_motive]].each do |me, other| %>
+<% [["!== true", "Patricia will act on that. Call her."], ["=== true", "Patricia's out of it, so call me and give me the name."]].each do |ko, tail| %>
+            {
+              "eventPattern": "global_variable_changed:<%= me %>",
+              "condition": "value === true && globalVars.<%= other %> === true && globalVars.case_ready_notified !== true && globalVars.torres_identified !== true && globalVars.patricia_ko <%= ko %>",
+              "onceOnly": true,
+              "setGlobal": { "case_ready_notified": true },
+              "_comment": "Round 3: 8 s, so it doesn't stack with the vault and print texts; worded to read right after a partial naming too.",
+              "sendTimedMessage": { "delay": 8000, "message": "That's both halves: why he'd do it, and proof it's leaving the building. <%= tail %>" }
+            },
+<% end %>
+<% end %>
+            {
+              "_comment": "PASS 4 fix 4: the Recruiter's text lands while the player is being sent to the vault, so HaX flags it. Single-term condition (&&-only rule). Skipped if the player has already rung her back.",
+              "eventPattern": "global_variable_changed:recruiter_texted",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 12000, "message": "That TalentStack number is the Recruiter. Hear her out if you want. Just don't give her anything.", "skipIfGlobal": "recruiter_contacted_player" }
+            },
+            {
+              "_comment": "PASS 2 review M3: completing the collect task without the item is rejected server-side (game.rb:1179-1210). HaX hands over a real id_badge and authorises the office card on Patricia's behalf.",
+              "eventPattern": "npc_ko:patricia_morgan",
+              "onceOnly": true,
+              "conversationMode": "phone-chat",
+              "targetKnot": "on_patricia_ko_relay"
+            },
+            {
+              "eventPattern": "npc_ko:owen_gallagher",
+              "onceOnly": true,
+              "conversationMode": "phone-chat",
+              "targetKnot": "on_owen_ko_relay"
+            },
+            {
+              "eventPattern": "door_unlock_attempt",
+              "condition": "data.connectedRoom === 'server_hallway'",
+              "onceOnly": true,
+              "setGlobal": { "rfid_guide_offered": true },
+              "sendTimedMessage": { "delay": 1500, "message": "Staff prox reader. Your cloner will take a card off anyone who carries one. Owen's lanyard is the nearest. I've a cloning guide if you want it." }
+            },
+            {
+              "eventPattern": "door_unlock_attempt",
+              "condition": "data.connectedRoom === 'torres_office' && globalVars.torres_suspected === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "Torres' office. IT holds a spare for every office, and Owen won't part with it without a reason." }
+            },
+            {
+              "_comment": "Round 3 (F5): before suspicion there is no Owen ask yet, so the bark doesn't name him or promise one.",
+              "eventPattern": "door_unlock_attempt",
+              "condition": "data.connectedRoom === 'torres_office' && globalVars.torres_suspected !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "Office keycard. IT holds a spare for every office. You'd need a reason Owen can write in his log." }
+            },
+            {
+              "_comment": "PASS 3 P5/P7: door_unlock_attempt fires before the lock check (unlock-system.js:110-118), so the bark is worded to be true whether or not the player already has the password.",
+              "eventPattern": "door_unlock_attempt",
+              "condition": "data.connectedRoom === 'server_room'",
+              "onceOnly": true,
+              "setGlobal": { "server_door_seen": true },
+              "sendTimedMessage": { "delay": 1500, "message": "Password lock. IT sets these; the notice by the door says who." }
+            },
+            {
+              "_comment": "Playtest round: split on torres_print_collected, so the pointer never arrives after the print text.",
+              "eventPattern": "door_unlock_attempt",
+              "condition": "data.connectedRoom === 'data_center' && globalVars.torres_print_collected !== true",
+              "onceOnly": true,
+              "setGlobal": { "vault_reader_seen": true },
+              "sendTimedMessage": { "delay": 1500, "message": "Fingerprint reader on the key vault. It takes the cryptography lead's print, and you've got the kit." }
+            },
+            {
+              "eventPattern": "door_unlock_attempt",
+              "condition": "data.connectedRoom === 'data_center' && globalVars.torres_print_collected === true && globalVars.vault_reader_seen !== true",
+              "onceOnly": true,
+              "setGlobal": { "vault_reader_seen": true },
+              "sendTimedMessage": { "delay": 1500, "message": "That's the vault reader. You've already lifted his print. Use it." }
+            },
+            {
+              "_comment": "PASS 3 P6, re-keyed by the fingerprint redesign: fires on a lift of Torres' print. Lifted prints are saved with the game, so torres_print_collected is safe to read.",
+              "eventPattern": "fingerprint_collected:david_torres",
+              "onceOnly": true,
+              "setGlobal": { "torres_print_collected": true },
+              "sendTimedMessage": { "delay": 1500, "message": "That's Torres' print. The vault's north of the server room." }
+            },
+<% ["Locked Filing Cabinet", "Torres' Briefcase"].each do |nm| %>
+            {
+              "eventPattern": "object_interacted",
+              "condition": "data.objectName === <%= nm.to_json.gsub('"', '\\"') %> && globalVars.lockpicking_guide_offered !== true",
+              "onceOnly": true,
+              "setGlobal": { "lockpicking_guide_offered": true },
+              "sendTimedMessage": { "delay": 1500, "message": "Pin tumbler. Your picks will do it. Want the guide?" }
+            },
+<% end %>
+            {
+              "eventPattern": "object_interacted",
+              "_comment": "Round 2: no longer completes access_bludit_vm. The launcher emits no event on real use, so the task completes on flag 1 (below).",
+              "condition": "data.objectType === 'vm-launcher'",
+              "onceOnly": true,
+              "setGlobal": { "bludit_guide_offered": true, "recon_guide_offered": true },
+              "sendTimedMessage": { "delay": 1500, "message": "QDC's research portal runs Bludit. I've two guides: one for mapping the network, one for the CMS. Ask and they're yours." }
+            },
+<% (1..4).each do |n| %>
+            {
+              "eventPattern": "conversation_closed:david_torres",
+              "condition": "globalVars.final_choice !== '' && globalVars.flag<%= n %>_submitted !== true && globalVars.flags_nag_sent !== true",
+              "onceOnly": true,
+              "setGlobal": { "flags_nag_sent": true },
+              "sendTimedMessage": { "delay": 2000, "message": "The upload's dead. Good. Before I pull you out, finish that research server. All four flags in the drop-site, or the file on the Architect has holes." }
+            },
+<% end %>
+            {
+              "_comment": "PASS 2 review B1 safety net. post_ko_choice is disableClose, but if it is ever lost (a reload mid-choice), npc_ko won't re-fire and a KO'd NPC can't be talked to (interactions.js:1690). Re-entering the data centre with Torres down and no fate set offers the same two choices by phone.",
+              "eventPattern": "room_entered:data_center",
+              "condition": "globalVars.torres_ko === true && globalVars.final_choice === ''",
+              "onceOnly": false,
+              "conversationMode": "phone-chat",
+              "targetKnot": "post_ko_safety_net"
+            }
+          ]
+        },
+        {
+          "id": "recruiter",
+          "displayName": "The Recruiter",
+          "npcType": "phone",
+          "voice": {
+            "name": "Gacrux",
+            "style": "ENTROPY's recruiter, a former intelligence-agency talent spotter in her fifties, calling from somewhere comfortable. Speak with a consistent educated American (Washington DC, Mid-Atlantic) accent throughout — do not shift to any other accent. Low, warm pitch; slow, patient pace, never raised. Charming and empathetic on the surface, utterly ruthless underneath; talks about people as placements.",
+            "language": "en-US"
+          },
+          "storyPath": "scenarios/m05_insider_trading/ink/m05_phone_recruiter.json",
+          "avatar": "assets/npc/avatars/npc_hacker.png",
+          "phoneId": "player_phone",
+          "currentKnot": "start",
+          "_comment": "PASS 2 review B2: not in the phone's npcIds. Listed contacts get their start knot preloaded the first time the phone opens (phone-chat-minigame.js:283-380), which played her first call -- and set recruiter_contacted_player -- before Torres was named. She now appears only once a mapping gives her history (phone-chat-ui.js:373-384), and her start knot also guards on torres_identified.",
+          "eventMappings": [
+<% %w[patricia_morgan patricia_phone agent_0x99_handler].each_with_index do |src, i| %>
+            <%= i > 0 ? ',' : '' %>{
+              "eventPattern": "conversation_closed:<%= src %>",
+              "condition": "globalVars.torres_identified === true && globalVars.recruiter_contacted_player !== true && globalVars.recruiter_texted !== true",
+              "onceOnly": true,
+              "setGlobal": { "recruiter_texted": true },
+              "sendTimedMessage": { "delay": 7500, "message": "TalentStack Executive Recruiting. We should talk before you do anything you can't take back. - R." }
+            }
+<% end %>
+          ]
+        },
+        {
+          "_comment": "PASS 3 P11: Patricia's mobile. In npcIds, so her start knot is preloaded the first time the phone opens and a reopened chat re-navigates to the saved choice's knot (phone-chat-minigame.js:532-566). Every resting knot in m05_phone_patricia.ink re-checks patricia_ko and patricia_phone_available at its top, and nothing before the first choice prints or assigns.",
+          "id": "patricia_phone",
+          "displayName": "Patricia Morgan",
+          "npcType": "phone",
+          "voice": {
+            "name": "Kore",
+            "style": "Chief Security Officer, early fifties, ex-military. Speak with a consistent South Wales (Cardiff) accent throughout — do not shift to any other accent. Firm, low-to-mid pitch; brisk, economical pace. Direct, dry and steady under pressure; her warmth shows only in what she chooses to notice. On the phone.",
+            "language": "en-GB"
+          },
+          "storyPath": "scenarios/m05_insider_trading/ink/m05_phone_patricia.json",
+          "avatar": "assets/characters/female_security_guard_headshot.png",
+          "phoneId": "player_phone",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "conversation_closed:patricia_morgan",
+              "onceOnly": true,
+              "setGlobal": { "patricia_phone_available": true },
+              "sendTimedMessage": { "delay": 2500, "message": "Patricia. This is my mobile. Ring me if anything changes; don't walk it back through reception." }
+            }
+          ]
+        },
+        {
+          "_comment": "PASS 2: was a phone NPC. At the time phone chats did not emit conversation_closed (they do since 18237332), so the credits music trigger on conversation_closed:closing_debrief_trigger could never fire. Now a hidden person NPC played as a person-chat cutscene, the m02/m04 debrief pattern. debrief_played (set at the top of the debrief ink) stops a replay after a reload.",
+          "id": "closing_debrief_trigger",
+          "displayName": "Agent HaX",
+          "npcType": "person",
+          "position": { "x": 500, "y": 500 },
+          "spriteSheet": "female_spy_v2",
+          "avatar": "assets/characters/female_spy_headshot.png",
+          "spriteTalk": "assets/characters/female_spy_talk.png",
+          "spriteVisemes": "assets/characters/female_spy_visemes.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/m05_insider_trading/ink/m05_closing_debrief.json",
+          "currentKnot": "start",
+          "behavior": { "initiallyHidden": true },
+          "voice": {
+            "name": "Aoede",
+            "style": "Intelligence handler giving a mission debrief in person. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Unhurried; the night is over and she is choosing her words carefully.",
+            "language": "en-GB"
+          },
+          "eventMappings": [
+            {
+              "_comment": "Waits for the Torres conversation to close with a fate set AND all four flags in (the concludeRequires gate). If flags are still out, HaX sends the player back and the last flag fires the debrief.",
+              "eventPattern": "conversation_closed:david_torres",
+              "condition": "globalVars.final_choice !== '' && globalVars.flag1_submitted === true && globalVars.flag2_submitted === true && globalVars.flag3_submitted === true && globalVars.flag4_submitted === true && globalVars.debrief_played !== true",
+              "conversationMode": "person-chat",
+              "targetKnot": "start",
+              "background": "assets/backgrounds/hq1.png",
+              "onceOnly": true,
+              "disableClose": true
+            },
+            {
+              "_comment": "B1 safety-net path: the fate was decided by phone, so no person-chat closes.",
+              "eventPattern": "global_variable_changed:torres_fate_by_phone",
+              "condition": "value === true && globalVars.flag1_submitted === true && globalVars.flag2_submitted === true && globalVars.flag3_submitted === true && globalVars.flag4_submitted === true && globalVars.debrief_played !== true",
+              "conversationMode": "person-chat",
+              "targetKnot": "start",
+              "background": "assets/backgrounds/hq1.png",
+              "onceOnly": true,
+              "disableClose": true
+            },
+<% (1..4).each do |n| %>
+            {
+              "eventPattern": "global_variable_changed:flag<%= n %>_submitted",
+              "condition": "value === true && globalVars.final_choice !== '' && globalVars.flag1_submitted === true && globalVars.flag2_submitted === true && globalVars.flag3_submitted === true && globalVars.flag4_submitted === true && globalVars.debrief_played !== true",
+              "conversationMode": "person-chat",
+              "targetKnot": "start",
+              "background": "assets/backgrounds/hq1.png",
+              "onceOnly": true,
+              "disableClose": true
+            }<%= n < 4 ? ',' : '' %>
+<% end %>
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Building Directory",
+          "takeable": true,
+          "readable": true,
+          "_comment": "PASS 4 fix 16: the directory now lists the eight cleared cryptography staff behind Patricia's 'one of eight' (incident log), so the suspect pool is something the player can see. Halloran + five seniors (Torres among them) + two juniors, matching Patricia's suspects_overview.",
+          "text": "QUANTUM DYNAMICS CORPORATION - Staff Directory\n\nSECURITY:\nPatricia Morgan - Chief Security Officer (off reception)\n\nIT/OPERATIONS:\nOwen Gallagher - Systems Administrator, open-plan office\n\nMARKETING:\nLisa Park - Marketing Coordinator, break room end\n\nCRYPTOGRAPHY DIVISION (Project Heisenberg; developed vetting, 8 badges):\nDr Ruth Halloran - Chief Scientist, research lab\nDavid Torres - Cryptography Lead, office beyond the open-plan\nDr Amara Okafor - Senior Researcher\nDr Tomasz Wierzbicki - Senior Researcher\nDr Hannah Leigh - Senior Researcher\nDr Sanjay Rao - Senior Researcher\nBen Ashworth - Junior Engineer\nChloe Marsh - Junior Engineer\n\nServer hallway: staff badge only.",
+          "observations": "Building directory listing the staff, with the cryptography division in full"
+        }
+      ]
+    },
+
+    "main_corridor": {
+      "type": "hall_1x2gu",
+      "connections": {
+        "south": "reception_lobby",
+        "west": "break_room",
+        "east": "server_hallway",
+        "north": "open_office_area"
+      },
+      "npcs": [],
+      "objects": [
+        {
+          "type": "notes",
+          "id": "collection_flyer",
+          "name": "Noticeboard Flyer",
+          "takeable": true,
+          "readable": true,
+          "position": { "x": 7, "y": 4 },
+          "_comment": "PASS 4 (whodunnit): no names. Lisa says whose family it is if asked.",
+          "text": "COLLECTION FOR A COLLEAGUE'S FAMILY\n\nSome of you know that one of our colleagues has a family member who is very unwell. The treatment that might help isn't available here, and the insurer has said no.\n\nIf you'd like to chip in, the tin is in the break room. Every bit helps. Please be discreet.\n\nThank you - Lisa (Marketing)\n\n[Someone has written underneath in biro: \"Raised so far: £2,140. Target: don't ask.\"]",
+          "observations": "A handwritten flyer pinned to the corridor noticeboard"
+        }
+      ]
+    },
+
+    "break_room": {
+      "type": "room_break",
+      "connections": {
+        "east": "main_corridor"
+      },
+      "npcs": [
+        {
+          "id": "lisa_park",
+          "displayName": "Lisa Park",
+          "npcType": "person",
+          "voice": {
+            "name": "Laomedeia",
+            "style": "Marketing coordinator in her early thirties, British-Korean, raised in New Malden. Speak with a consistent south-west London accent throughout — do not shift to any other accent. Bright, mid-to-high pitch; quick, chatty pace. Warm and observant; she gossips because she cares about people.",
+            "language": "en-GB"
+          },
+          "position": { "x": 4, "y": 4 },
+          "spriteSheet": "female_office_worker_v2",
+          "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "avatar": "assets/characters/female_office_worker_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/m05_insider_trading/ink/m05_npc_lisa_park.json",
+          "currentKnot": "start",
+          "globalVarOnKO": "lisa_ko",
+          "taskOnKO": "talk_to_lisa"
+        }
+      ],
+      "objects": [
+        {
+          "type": "notes",
+          "id": "entropy_pamphlet",
+          "name": "TalentStack Leaflet",
+          "takeable": true,
+          "readable": true,
+          "text": "TALENTSTACK EXECUTIVE RECRUITING\n\"Every career has a turning point.\"\n\nFeeling undervalued? Carrying more than anyone knows?\nWe place exceptional people with partners who reward loyalty - and who look after their families.\n\nDiscreet. Confidential. Life-changing.\n\n[On the back, in small neat capitals and blue ink: \"R. CALLED AGAIN. RETAINER + THE DEBT, ALL OF IT. SAY YES BY THURS.\" Someone has scribbled over a pair of initials until the paper tore.]",
+          "observations": "A glossy recruitment leaflet, screwed up and dropped behind the coffee machine. Someone has written on the back.",
+          "onRead": { "setVariable": { "found_pamphlet": true } }
+        }
+      ]
+    },
+
+    "open_office_area": {
+      "type": "room_it",
+      "dimensions": { "width": 10, "height": 10 },
+      "connections": {
+        "south": "main_corridor",
+        "north": "torres_office",
+        "west": "research_lab"
+      },
+      "npcs": [
+        {
+          "id": "owen_gallagher",
+          "displayName": "Owen Gallagher",
+          "npcType": "person",
+          "voice": {
+            "name": "Puck",
+            "style": "Systems administrator in his late twenties. Speak with a consistent Manchester accent throughout — do not shift to any other accent. Mid-range pitch; quick, energetic pace. Friendly and a bit frazzled, sardonic about the state of the network, relieved someone competent has turned up.",
+            "language": "en-GB"
+          },
+          "position": { "x": 6, "y": 4 },
+          "spriteSheet": "male_telecom_v2",
+          "spriteTalk": "assets/characters/male_telecom_talk.png",
+          "spriteVisemes": "assets/characters/male_telecom_visemes.png",
+          "avatar": "assets/characters/male_telecom_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/m05_insider_trading/ink/m05_npc_owen_gallagher.json",
+          "currentKnot": "start",
+          "globalVarOnKO": "owen_ko",
+          "taskOnKO": "talk_to_owen",
+          "_comment": "PASS 3 P4: the server-hallway badge is cloned off his lanyard (rfidCard), not handed over. P5: the password note is his to give, after the player has seen the server-room door and brings Patricia's log or her authority.",
+          "rfidCard": {
+            "card_id": "employee_badge",
+            "rfid_protocol": "EM4100",
+            "name": "Staff Badge - O. Gallagher"
+          },
+          "itemsHeld": [
+            {
+              "type": "keycard",
+              "id": "torres_office_keycard",
+              "name": "IT Spare Office Card",
+              "opens_lock": "office_keycard",
+              "takeable": true,
+              "observations": "IT's spare card for the office beyond the open-plan",
+              "puzzle_graph_unlocks": "torres_office"
+            },
+            {
+              "_comment": "PASS 4 (whodunnit): the red herring and its answer in one document. Given from his hub once Patricia's incident log has been read.",
+              "type": "notes",
+              "id": "server_door_log",
+              "name": "Server Hallway Badge Log",
+              "takeable": true,
+              "readable": true,
+              "text": <%= door_log_text.to_json %>,
+              "observations": "A printout of every after-hours badge swipe for three weeks, pulled by Owen",
+              "onRead": { "setVariable": { "found_door_log": true } }
+            },
+            {
+              "type": "notes",
+              "id": "server_password_note",
+              "name": "Server Password Sticky Note",
+              "takeable": true,
+              "readable": true,
+              "text": <%= password_hint_sticky.to_json %>,
+              "observations": "A sticky note Owen peels off the edge of his monitor",
+              "puzzle_graph_unlocks": "server_room"
+            }
+          ]
+        }
+      ],
+      "objects": []
+    },
+
+    "server_hallway": {
+      "type": "hall_1x2gu",
+      "locked": true,
+      "lockType": "rfid",
+      "requires": "employee_badge",
+      "connections": {
+        "west": "main_corridor",
+        "north": "server_room"
+      },
+      "npcs": [],
+      "objects": [
+        {
+          "_comment": "PASS 3 P5: moved here from the open office. It is the hint at the password door and gives the hallway a job. Pinned on the visible floor (rows 2-3; row 4 renders on the wall line where the hallway overlaps Patricia's office, playtest 3a), clear of the west and north doors.",
+          "type": "notes",
+          "id": "it_access_notice",
+          "name": "IT Notice: Server Room Access",
+          "takeable": true,
+          "readable": true,
+          "position": { "x": 3, "y": 2.3 },
+          "text": "IT SECURITY NOTICE\n\nSERVER ROOM: password access.\nAfter-hours server access must be logged with IT in advance.\nThe temporary password is rotated by IT and expires Friday.\n\nForgotten it? Contact O. Gallagher (IT), open-plan office.\n\n- IT Department",
+          "observations": "A printed notice taped beside the server-room door",
+          "onRead": { "setVariable": { "it_notice_read": true } }
+        }
+      ]
+    },
+
+    "server_room": {
+      "type": "room_servers",
+      "locked": true,
+      "lockType": "password",
+      "requires": "<%= server_room_password %>",
+      "door_sign": "Server Room — Password Access. Contact IT.",
+      "connections": {
+        "south": "server_hallway",
+        "north": "data_center"
+      },
+      "npcs": [],
+      "objects": [
+        {
+          "type": "vm-launcher",
+          "id": "vm_launcher_bludit",
+          "name": "Bludit CMS Server Terminal",
+          "takeable": false,
+          "puzzle_graph_role": "vm",
+          "puzzle_graph_note": "PASS 4 fix 16: hangs the VM flag chain off the server room in the dungeon graph",
+          "position": { "x": 2, "y": 7 },
+          "observations": "A terminal on the research network. QDC's Bludit research portal is somewhere on this subnet.",
+          "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
+          "vm": <%= vm_object('attack_vm', {"id":5,"title":"kali","ip":"192.168.100.75","enable_console":true}) %>
+        },
+        {
+          "type": "flag-station",
+          "id": "flag_station_evidence",
+          "name": "SAFETYNET Drop-Site Terminal",
+          "takeable": false,
+          "observations": "Secure SAFETYNET terminal for submitting the flags you capture from the research portal. Each flag validates a stage of the exfiltration case.",
+          "acceptsVms": ["qdc_research_server"],
+          "flags": <%= flags_for_vm('qdc_research_server', ['flag{leaked_bludit_admin_credentials}', 'flag{bludit_authenticated_upload_rce}', 'flag{torres_staging_manifest}', 'flag{architect_acquisition_authorisation}']) %>,
+          "flagRewards": [
+            {
+              "type": "set_global",
+              "key": "flag1_submitted",
+              "value": true,
+              "description": "Flag 1: Leaked Bludit admin credentials found - recon complete"
+            },
+            {
+              "type": "set_global",
+              "key": "flag2_submitted",
+              "value": true,
+              "description": "Flag 2: Authenticated Bludit image-upload RCE - shell access confirmed"
+            },
+            {
+              "type": "set_global",
+              "key": "flag3_submitted",
+              "value": true,
+              "description": "Flag 3: Torres' exfiltration staging manifest recovered - user access confirmed"
+            },
+            {
+              "type": "set_global",
+              "key": "flag4_submitted",
+              "value": true,
+              "description": "Flag 4: The Architect's acquisition authorisation recovered - root access confirmed"
+            }
+          ]
+        }
+      ]
+    },
+
+    "torres_office": {
+      "type": "room_ceo",
+      "locked": true,
+      "lockType": "rfid",
+      "requires": "office_keycard",
+      "connections": {
+        "south": "open_office_area"
+      },
+      "npcs": [],
+      "objects": [
+        {
+          "type": "notes",
+          "id": "personal_journal",
+          "name": "Personal Journal",
+          "takeable": true,
+          "readable": true,
+          "text": <%= torres_journal_excerpt.to_json %>,
+          "observations": "A battered notebook in the desk tray, written in small neat capitals in blue ink. The last few pages are pressed hard enough to dent the paper.",
+          "onRead": { "setVariable": { "found_torres_journal": true } }
+        },
+        {
+          "_comment": "PASS 3 P6: the only Torres print surface. It carries no text and no readable of its own. (A print surface no longer hides its text: the kit panel offers Use normally.) Pinned on the front-right of the desk (desk x 118-196, y 86-147 in room px; the chair sprite covers y 64-128 and the plant x 67-131), so it is not hidden behind the plant (playtest 3a).",
+          "type": "office-misc-cup",
+          "id": "torres_mug",
+          "name": "Mug",
+          "takeable": false,
+          "position": { "x": 5.6, "y": 4.1, "elevation": 32 },
+          "hasFingerprint": true,
+          "fingerprintOwner": "David Torres",
+          "fingerprintCandidates": ["Lisa Park", "Owen Gallagher", "Patricia Morgan", "Dr Ruth Halloran"],
+          "fingerprintDifficulty": "easy",
+          "observations": "A mug printed with a child's drawing: four stick figures and a dog. 'WORLD'S BEST DAD — love Miguel'. Cold coffee, a thumbprint on the glaze.",
+          "puzzle_graph_unlocks": "data_center"
+        },
+        {
+          "type": "suitcase",
+          "id": "torres_briefcase",
+          "name": "Torres' Briefcase",
+          "takeable": false,
+          "locked": true,
+          "lockType": "key",
+          "keyPins": [35, 60, 45, 30],
+          "difficulty": "easy",
+          "observations": "A scuffed leather briefcase under the desk, locked. Pin tumbler.",
+          "contents": [
+            {
+              "type": "notes",
+              "id": "medical_bills",
+              "name": "Medical Bills",
+              "takeable": true,
+              "readable": true,
+              "text": "MOUNTAIN VIEW ONCOLOGY CENTER (California)\nInternational Patient Services\n\nPatient: Elena Torres (referred from the UK)\nDiagnosis: Stage 3 breast cancer\nProgramme: Phase II trial, first dose scheduled Monday\n\nTreatment plan: $380,000\nInsurer: QDC group medical policy\nClaim status: DECLINED (experimental-treatment exclusion)\nBalance due before first dose: $380,000\n\n[Clipped to the front, a loan statement: second charge on the family home, and a payday-loan reminder in red.]",
+              "observations": "Elena Torres' treatment invoice and the debts piling up behind it",
+              "onRead": { "setVariable": { "found_medical_bills": true } }
+            }
+          ]
+        }
+      ]
+    },
+
+    "research_lab": {
+      "type": "room_lab",
+      "connections": {
+        "east": "open_office_area"
+      },
+      "npcs": [
+        {
+          "id": "dr_halloran",
+          "displayName": "Dr Ruth Halloran",
+          "npcType": "person",
+          "voice": {
+            "name": "Erinome",
+            "style": "Cryptography research lead in her mid-forties. Speak with a consistent educated Irish (Dublin) accent throughout — do not shift to any other accent. Clear, mid-range pitch; measured, precise pace. Sharp, protective of her team and impatient with sloppy reasoning.",
+            "language": "en-GB"
+          },
+          "_comment": "Playtest round: moved one tile south, off the chair row, so the player can reach her from the open floor (was 6,5; 35 px against the 32 px reach). Not browser-checked.",
+          "position": { "x": 6, "y": 6 },
+          "spriteSheet": "female_scientist_v2",
+          "spriteTalk": "assets/characters/female_scientist_talk.png",
+          "spriteVisemes": "assets/characters/female_scientist_visemes.png",
+          "avatar": "assets/characters/female_scientist_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/m05_insider_trading/ink/m05_npc_dr_halloran.json",
+          "currentKnot": "start",
+          "globalVarOnKO": "halloran_ko",
+          "taskOnKO": "talk_to_dr_halloran",
+          "itemsHeld": [
+            {
+              "_comment": "PASS 2: the lab is unlocked, so the badge now opens the server hallway (a second route beside Owen's clone, lesson 8).",
+              "type": "keycard",
+              "name": "Research Badge",
+              "id": "research_lab_badge",
+              "opens_lock": "employee_badge",
+              "takeable": true,
+              "observations": "Dr Halloran's spare research badge. Senior staff badges open the server hallway.",
+              "puzzle_graph_unlocks": "server_hallway",
+              "puzzle_graph_optional": true
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "_comment": "PASS 4 (whodunnit): Halloran's alibi for the first night on the badge log (Wed 23 Sep).",
+          "type": "notes",
+          "id": "zurich_lanyard",
+          "name": "Conference Lanyard",
+          "takeable": true,
+          "readable": true,
+          "text": "ETH ZÜRICH - POST-QUANTUM CRYPTOGRAPHY WORKSHOP\nMon 21 - Fri 25 September\n\nDR RUTH HALLORAN\nSPEAKER\n\n[On the back, a boarding pass stub: LHR-ZRH, Sun 20 Sep. Return Sat 26 Sep.]",
+          "observations": "A conference lanyard hung over the corner of a monitor",
+          "onRead": { "setVariable": { "found_halloran_alibi": true } }
+        }
+      ]
+    },
+
+    "patricia_office": {
+      "type": "room_office",
+      "locked": false,
+      "connections": {
+        "west": "reception_lobby"
+      },
+      "npcs": [
+        {
+          "id": "patricia_morgan",
+          "displayName": "Patricia Morgan",
+          "npcType": "person",
+          "voice": {
+            "name": "Kore",
+            "style": "Chief Security Officer, early fifties, ex-military. Speak with a consistent South Wales (Cardiff) accent throughout — do not shift to any other accent. Firm, low-to-mid pitch; brisk, economical pace. Direct, dry and steady under pressure; her warmth shows only in what she chooses to notice.",
+            "language": "en-GB"
+          },
+          "position": { "x": 3, "y": 3 },
+          "spriteSheet": "female_security_guard_v2",
+          "spriteTalk": "assets/characters/female_security_guard_talk.png",
+          "spriteVisemes": "assets/characters/female_security_guard_visemes.png",
+          "avatar": "assets/characters/female_security_guard_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/m05_insider_trading/ink/m05_npc_patricia_morgan.json",
+          "currentKnot": "start",
+          "globalVarOnKO": "patricia_ko",
+          "taskOnKO": "meet_handler",
+          "itemsHeld": [
+            {
+              "type": "id_badge",
+              "id": "visitor_badge",
+              "name": "Visitor Badge",
+              "takeable": true,
+              "observations": "Temporary visitor access badge"
+            },
+            {
+              "type": "notes",
+              "id": "torres_vetting_file",
+              "name": "Vetting Aftercare File: D. Torres",
+              "takeable": true,
+              "readable": true,
+              "text": "QDC PERSONNEL SECURITY - VETTING AFTERCARE (RESTRICTED)\n\nSubject: David Torres, Cryptography Lead\nClearance: Developed Vetting\n\nChange of circumstances: NOT DECLARED\n\nQuarterly credit check: three new loans in six weeks. Second charge on the family home. One account in arrears.\nKnown context: spouse in treatment abroad, invoiced in US dollars. Company insurer declined cover.\n\nAction: aftercare interview requested three weeks ago.\nCancelled by the CEO's office: \"Classified project. Do not disturb the team.\"\n\n- P. Morgan",
+              "observations": "Patricia's vetting file on David Torres",
+              "onRead": { "setVariable": { "found_vetting_file": true } }
+            },
+            {
+              "_comment": "PASS 4 (whodunnit), round 2: the second flagged file, deliberately untidy (late report, no travel dates, its own cancelled interview). It clears her only alongside the lanyard's dates and the badge log. It does not set found_halloran_alibi.",
+              "type": "notes",
+              "id": "halloran_vetting_file",
+              "name": "Vetting Aftercare File: R. Halloran",
+              "takeable": true,
+              "readable": true,
+              "text": "QDC PERSONNEL SECURITY - VETTING AFTERCARE (RESTRICTED)\n\nSubject: Dr Ruth Halloran, Chief Scientist\nClearance: Developed Vetting\n\nChange of circumstances: DECLARED (late)\n\nForeign travel: conference, Switzerland, September. Dates to follow. [Not yet supplied.]\nContact report: approached at a conference dinner by an executive recruiter (TalentStack). Reported to Security by email eleven days later.\nKnown context: open dispute with the CEO's office over publishing Heisenberg results.\n\nAction: follow-up interview requested.\nCancelled by the CEO's office: \"Classified project. Do not disturb the team.\"\n\n- P. Morgan",
+              "observations": "Patricia's vetting file on Dr Halloran",
+              "onRead": { "setVariable": { "found_halloran_vetting": true } }
+            },
+            {
+              "_comment": "PASS 3 P8: Patricia's own copy, handed over from her confession knot. The cabinet holds the other copy for a player who picks it. Its NAME must differ from the cabinet copy: the server's item lookup matches id OR name and searches room containers before NPC itemsHeld (games_controller.rb:1543-1606), so a shared name resolved her give to the locked cabinet and was rejected (playtest 3b).",
+              "type": "notes",
+              "id": "ceo_stand_down_copy",
+              "name": "Patricia's Copy of the CEO's Email",
+              "takeable": true,
+              "readable": true,
+              "text": "From: Office of the CEO (J. Zhao)\nTo: Patricia Morgan\nSubject: RE: Aftercare interview - cryptography team\n\nPatricia,\n\nStand this down. The Home Office readiness review is in three weeks and we cannot have a personnel security incident on file for the Heisenberg team.\n\nIf there's a problem, we'll deal with it quietly afterwards.\n\nJ.\n\n[Patricia has written across the top in red: \"Kept a copy. If this goes wrong, it went wrong here.\"]",
+              "observations": "The email that stopped Patricia's investigation",
+              "onRead": { "setVariable": { "found_stand_down_email": true } }
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "notes",
+          "id": "security_incident_log",
+          "name": "Security Incident Log",
+          "takeable": true,
+          "readable": true,
+          "text": "QUANTUM DYNAMICS - SECURITY INCIDENT LOG\n\nRECENT FLAGGED ACTIVITY:\n\n[2 weeks ago] Cryptography badge: after-hours server hallway access (23:47)\n[1 week ago] Research share: unusual transfer volumes, 02:00-04:00\n[5 days ago] Cryptography badge: failed logins on the restricted portal\n[3 days ago] Research share: large downloads, key-material directory\n\nNOTE: Escalated to management. Awaiting response.\nManagement response: 'Cryptography team is on a classified project. Activity authorised.'\n\nThe badge is always one of eight. The hours are always the same. Something is wrong. -PM\n\n[Added in pencil: \"Owen keeps the reader logs. Ask him whose badge.\"]",
+          "observations": "Patricia's log of flagged activity from the cryptography team",
+          "onRead": { "setVariable": { "found_incident_log": true } }
+        },
+        {
+          "type": "safe",
+          "id": "patricia_filing_cabinet",
+          "name": "Locked Filing Cabinet",
+          "takeable": false,
+          "locked": true,
+          "lockType": "key",
+          "keyPins": [40, 55, 30, 50],
+          "difficulty": "easy",
+          "observations": "A locked filing cabinet behind Patricia's desk - pin tumbler lock",
+          "contents": [
+            {
+              "type": "notes",
+              "id": "ceo_stand_down_email",
+              "name": "Printed Email from the CEO's Office",
+              "takeable": true,
+              "readable": true,
+              "text": "From: Office of the CEO (J. Zhao)\nTo: Patricia Morgan\nSubject: RE: Aftercare interview - cryptography team\n\nPatricia,\n\nStand this down. The Home Office readiness review is in three weeks and we cannot have a personnel security incident on file for the Heisenberg team.\n\nIf there's a problem, we'll deal with it quietly afterwards.\n\nJ.\n\n[Patricia has written across the top in red: \"Kept a copy. If this goes wrong, it went wrong here.\"]",
+              "observations": "The email that stopped Patricia's investigation",
+              "onRead": { "setVariable": { "found_stand_down_email": true } }
+            }
+          ]
+        }
+      ]
+    },
+
+    "data_center": {
+      "type": "room_servers",
+      "locked": true,
+      "lockType": "biometric",
+      "requires": "David Torres",
+      "door_sign": "Key Vault — Fingerprint Access. Cryptography Lead Only.",
+      "connections": {
+        "south": "server_room"
+      },
+      "npcs": [
+        {
+          "_comment": "PASS 2: moved here from torres_office. His confrontation is written as 'alone at a terminal, the upload running', and the data centre holds the upload terminal. Hidden until he is named; the room_entered mapping re-shows him after a reload, because an initiallyHidden NPC is re-hidden on room load (npc-sprites.js:222). No pickable lock in this room (lesson 12).",
+          "id": "david_torres",
+          "displayName": "David Torres",
+          "npcType": "person",
+          "voice": {
+            "name": "Schedar",
+            "style": "Senior engineer in his late forties, born in Madrid and twenty years in England. Speak with a consistent light Castilian Spanish accent in fluent British English throughout — do not shift to any other accent. Low, soft pitch; slow, worn pace. Exhausted and grieving, past the point of lying; quietly desperate rather than angry.",
+            "language": "en-GB"
+          },
+          "position": { "x": 5, "y": 7 },
+          "_comment": "Round 2 recast: beard and glasses read as the cryptography lead (playtest: the cap and hi-vis read as maintenance).",
+          "spriteSheet": "male_nerd_v2",
+          "spriteTalk": "assets/characters/male_nerd_talk.png",
+          "spriteVisemes": "assets/characters/male_nerd_visemes.png",
+          "avatar": "assets/characters/male_nerd_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/m05_insider_trading/ink/m05_torres_confrontation.json",
+          "currentKnot": "start",
+          "globalVarOnKO": "torres_ko",
+          "taskOnKO": "confront_torres",
+          "puzzle_graph_actions": [
+            { "id": "confront_torres", "label": "Confront Torres and decide his fate" }
+          ],
+          "behavior": {
+            "initiallyHidden": true,
+            "hostile": {
+              "chaseSpeed": 140,
+              "attackDamage": 20,
+              "pauseToAttack": true
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:torres_identified",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setVisible": true
+            },
+            {
+              "eventPattern": "room_entered:data_center",
+              "condition": "globalVars.torres_identified === true",
+              "onceOnly": false,
+              "setVisible": true
+            },
+            {
+              "eventPattern": "npc_ko:david_torres",
+              "condition": "globalVars.final_choice === ''",
+              "onceOnly": true,
+              "conversationMode": "person-chat",
+              "targetKnot": "post_ko_choice",
+              "background": "assets/backgrounds/background1.png",
+              "disableClose": true
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "pc",
+          "name": "Exfiltration Upload Terminal",
+          "takeable": false,
+          "position": { "x": 6, "y": 7 },
+          "locked": false,
+          "observations": "A rack terminal with a USB drive in the front port. A transfer window is open.",
+          "contents": [
+            {
+              "type": "text_file",
+              "name": "transfer_queue.log",
+              "takeable": false,
+              "readable": true,
+              "text": "QUEUE: heisenberg_final.tar.gpg -> drop.talentstack-careers[.]net\nSTAGED: 73% (previous sessions)\nTHIS SESSION: resuming...\nOPERATOR: dtorres\nWINDOW: 20:30 tonight\n\nThe last line has been typed and deleted several times: \"cancel?\""
+            }
+          ]
+        },
+        {
+          "type": "notes",
+          "id": "talentstack_envelope",
+          "name": "Sealed TalentStack Envelope",
+          "puzzle_graph_role": "item",
+          "takeable": true,
+          "readable": true,
+          "text": "Inside a padded envelope addressed to a PO box in Reading, a printed spreadsheet:\n\nTALENTSTACK - CANDIDATE EVALUATION, NEXT COHORT\n\n47 rows. Initials, employer, role, clearance, and a column headed PRESSURE: 'mortgage arrears', 'custody case', 'gambling', 'carer, no respite', 'passed over x3'.\n\nEmployers include two water companies, a hospital trust, a council payroll office and a rail signalling contractor.\n\nA compliments slip is clipped to the top: \"D. - drop this at the usual place after tonight's upload. Last job, then you're clear. - R.\"",
+          "observations": "A padded envelope tucked under the terminal keyboard. Torres was carrying more than the key material.",
+          "onRead": { "setVariable": { "found_pipeline_list": true } }
+        },
+        {
+          "type": "notes",
+          "id": "upload_schedule",
+          "name": "Upload Schedule",
+          "puzzle_graph_role": "item",
+          "takeable": true,
+          "readable": true,
+          "text": "OPERATION SCHRÖDINGER - UPLOAD SCHEDULE\n\nSTATUS: FINAL APPROVAL GRANTED\n\nData package: Project Heisenberg key material + 999 dispatch rollout schedule\nDestination: ENTROPY drop-site (retained, not resold)\nUpload window: TONIGHT, 20:30\nOperator on site: D. Torres\n\nAcquisition budget released to the Initiative: $847,000 in cryptocurrency, via the TalentStack wallet.\nOperator compensation (from that budget): debt relief + standing consultancy retainer.\n\nApproved by: The Architect",
+          "observations": "Torres' upload schedule: the final window is tonight",
+          "onRead": { "setVariable": { "found_upload_schedule": true } }
+        },
+        {
+          "type": "notes",
+          "id": "data_package_manifest",
+          "name": "Data Package Manifest",
+          "puzzle_graph_role": "item",
+          "takeable": true,
+          "readable": true,
+          "text": "PROJECT HEISENBERG - PACKAGE CONTENTS\nStaged by: D. Torres\n\n- quantum-safe_key_material_v3.tar.gpg - lattice-based key exchange parameters, production candidate set\n- dispatch_network_rollout_schedule.xlsx - National Emergency-Services Dispatch Network (999 call routing), phased cutover dates by region including key-rotation windows\n- handover_note.txt - sloppy admin credential note from the research portal\n\nImpact assessment (ENTROPY copy):\n- Hold the dispatch network's key material through a rotation window\n- Force a degraded routing path for ambulance, fire and police dispatch\n- Retain the capability. Not for resale.\n\nProjected casualties: 30-45 excess civilian deaths, first rollout wave",
+          "observations": "Manifest showing what Torres is staging and the projected casualties",
+          "onRead": { "setVariable": { "found_manifest": true } }
+        }
+      ]
+    }
+  }
+}

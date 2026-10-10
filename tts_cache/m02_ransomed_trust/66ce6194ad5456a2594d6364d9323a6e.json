@@ -1,0 +1,13 @@
+{
+  "key": "66ce6194ad5456a2594d6364d9323a6e",
+  "npc": "receptionist",
+  "text": "Val has. Val on security. She walks the main corridor outside the security office, and she's had him in her notebook for weeks.",
+  "voice": "Despina",
+  "style": "Night reception coordinator, eleven years on this desk. South London / Multicultural London English accent throughout -- warm, quick, dry. Unflappable on the surface, running on fumes underneath.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

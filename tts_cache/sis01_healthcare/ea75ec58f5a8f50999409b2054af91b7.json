@@ -1,0 +1,13 @@
+{
+  "key": "ea75ec58f5a8f50999409b2054af91b7",
+  "npc": "sarah_mitchell",
+  "text": "Then I'll treat \"don't know\" as \"hours\". Thank you for not guessing.",
+  "voice": "Kore",
+  "style": "Black British charge nurse in her mid-40s, calm, tired but professional. Speak with a consistent Leeds, West Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

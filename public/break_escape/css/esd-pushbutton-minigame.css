@@ -1,0 +1,256 @@
+.esd-pushbutton-minigame-container {
+    background: rgba(0, 0, 0, 0.38);
+}
+
+.esd-pushbutton-game-container {
+    background: rgba(0, 0, 0, 0.48) !important;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    max-width: 600px;
+    min-height: 620px;
+    margin: 20px auto;
+}
+
+.esd-panel {
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+    min-height: 560px;
+    margin: 0 auto;
+    padding: 20px;
+    border: 2px solid #ffd12a;
+    background: rgba(16, 16, 16, 0.9);
+    color: #f2f2f2;
+    box-sizing: border-box;
+}
+
+.esd-label {
+    margin-bottom: 18px;
+    padding: 8px;
+    border: 2px solid #000;
+    background: #ffd12a;
+    color: #111;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    line-height: 1.5;
+    text-align: center;
+}
+
+.esd-housing {
+    position: relative;
+    margin: 0 auto 18px;
+    width: 360px;
+    height: 300px;
+    border: 2px solid #202020;
+    background: repeating-linear-gradient(
+        45deg,
+        #d8b321,
+        #d8b321 12px,
+        #121212 12px,
+        #121212 24px
+    );
+    overflow: hidden;
+    z-index: 1;
+}
+
+.esd-guard {
+    position: absolute;
+    top: 72px;
+    left: 88px;
+    width: 184px;
+    height: 144px;
+    border: 2px solid rgba(70, 76, 82, 0.95);
+    background: linear-gradient(
+        165deg,
+        rgba(230, 236, 242, 0.22),
+        rgba(108, 116, 126, 0.18) 52%,
+        rgba(52, 58, 66, 0.15)
+    );
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform-origin: 8% 8%;
+    transition: transform 220ms linear, opacity 220ms linear;
+    cursor: pointer;
+    z-index: 5;
+    backdrop-filter: blur(1px);
+}
+
+.esd-guard::before {
+    content: '';
+    position: absolute;
+    top: -9px;
+    left: 14px;
+    width: 62px;
+    height: 10px;
+    border: 2px solid #181a1d;
+    background: #2b2f36;
+}
+
+.esd-guard::after {
+    content: '';
+    position: absolute;
+    inset: 6px;
+    border: 1px solid rgba(230, 236, 242, 0.55);
+    opacity: 0.75;
+}
+
+.esd-guard.open {
+    transform: rotate(-77deg) translate(-14px, -38px);
+    opacity: 0.22;
+}
+
+.esd-guard.disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.esd-button {
+    position: absolute;
+    left: 112px;
+    top: 104px;
+    width: 136px;
+    height: 104px;
+    border: 2px solid #ffffff;
+    background: radial-gradient(circle at 50% 32%, #ff5959, #bf1d1d 60%, #861010);
+    cursor: pointer;
+    z-index: 2;
+}
+
+.esd-button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.esd-button.pressed {
+    transform: translateY(3px);
+    background: #8f1111;
+}
+
+.esd-led {
+    position: absolute;
+    right: 16px;
+    top: 14px;
+    width: 44px;
+    height: 24px;
+    border: 2px solid #101010;
+    background: #1f1f1f;
+}
+
+.esd-led.active {
+    background: #188833;
+    color: #e9ffe9;
+}
+
+.esd-status {
+    min-height: 26px;
+    padding: 8px 10px;
+    border: 2px solid #414141;
+    background: #14161d;
+    color: #ffc447;
+    font-family: 'GNF', monospace;
+    font-size: 24px;
+    letter-spacing: 0.5px;
+}
+
+.esd-confirm-modal {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.82);
+    z-index: 40;
+}
+
+.esd-confirm-modal.active {
+    display: flex;
+}
+
+.esd-confirm-card {
+    width: min(560px, 92%);
+    border: 2px solid #e7a621;
+    background: #121212;
+    color: #f2f2f2;
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+.esd-confirm-card h3 {
+    margin: 0 0 12px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    color: #ffd159;
+    line-height: 1.5;
+}
+
+.esd-confirm-card p {
+    margin: 0 0 8px;
+    font-family: 'GNF', monospace;
+    font-size: 24px;
+    line-height: 1.2;
+}
+
+.esd-confirm-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.esd-confirm,
+.esd-cancel {
+    border: 2px solid #4b4b4b;
+    background: #222;
+    color: #efefef;
+    padding: 8px 10px;
+    font-family: 'GNF', monospace;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.esd-confirm {
+    border-color: #b31c1c;
+    color: #ff5f5f;
+}
+
+.esd-confirm:hover,
+.esd-cancel:hover {
+    filter: brightness(1.12);
+}
+
+@media (max-width: 760px) {
+    .esd-pushbutton-minigame-container {
+        background: rgba(0, 0, 0, 0.45);
+    }
+
+    .esd-pushbutton-game-container {
+        min-height: 560px;
+    }
+
+    .esd-panel {
+        padding: 12px;
+        min-height: 520px;
+    }
+
+    .esd-housing {
+        width: 300px;
+        height: 270px;
+    }
+
+    .esd-guard {
+        top: 64px;
+        left: 70px;
+        width: 160px;
+        height: 130px;
+    }
+
+    .esd-button {
+        left: 84px;
+        top: 96px;
+        width: 124px;
+        height: 96px;
+    }
+}

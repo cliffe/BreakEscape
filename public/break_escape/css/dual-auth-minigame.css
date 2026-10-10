@@ -1,0 +1,389 @@
+/* ============================================================
+   MG-11: Dual Authorisation Panel — Clinical Pixel-Art UI
+   Matches SIEM dashboard aesthetic: dark navy base, pixel
+   borders, VT323 data display, Press Start 2P labels.
+   ============================================================ */
+
+/* ── Outer container (applied to this.container) ─────────── */
+
+.da-minigame-container {
+    background: #0a0f1e;
+    border: 2px solid #1e2d4a;
+}
+
+/* ── Game container (applied to this.gameContainer) ──────── */
+
+.da-minigame-game-container {
+    padding: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+/* ── Root panel wrap ─────────────────────────────────────── */
+
+.da-panel-wrap {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-height: 540px;
+    background: #0d1324;
+    border: 2px solid #2a3a5a;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+/* ── Result banner (timeout / success) ───────────────────── */
+
+.da-result-banner {
+    position: absolute;
+    top: -60px;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    height: 56px;
+    display: block;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: #ffffff;
+    transition: top 0.25s ease;
+    padding: 0 72px 0 16px;
+    box-sizing: border-box;
+    text-align: center;
+    line-height: 56px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.da-result-banner.show {
+    top: 0;
+}
+
+.da-result-banner.success {
+    background: #1f7a3b;
+    border-bottom: 2px solid #39c164;
+}
+
+.da-result-banner.failure {
+    background: #7a1f2e;
+    border-bottom: 2px solid #ff3a5a;
+    animation: da-blink 0.5s steps(1, end) infinite;
+}
+
+/* ── Top header bar ──────────────────────────────────────── */
+
+.da-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    border-bottom: 2px solid #2a3a5a;
+    background: #080e1b;
+    flex-shrink: 0;
+}
+
+.da-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    color: #c8d8ff;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+/* ── Countdown timer ─────────────────────────────────────── */
+
+.da-timer {
+    font-family: 'GNF', monospace;
+    font-size: 38px;
+    color: #ffd27f;
+    min-width: 90px;
+    text-align: right;
+    line-height: 1;
+    transition: color 0.3s;
+}
+
+.da-timer.warning {
+    color: #f59e0b;
+}
+
+.da-timer.critical {
+    color: #ef4444;
+    animation: da-blink 0.5s steps(1, end) infinite;
+}
+
+@keyframes da-blink {
+    50% { opacity: 0; }
+}
+
+/* ── Two-panel row ───────────────────────────────────────── */
+
+.da-panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    flex: 1;
+    min-height: 0;
+    padding: 12px;
+    gap: 12px;
+    box-sizing: border-box;
+}
+
+/* ── Individual auth panel ───────────────────────────────── */
+
+.da-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    background: #101829;
+    border: 2px solid #2a3a5a;
+    padding: 14px 12px;
+    box-sizing: border-box;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.da-panel.da-panel-authorised {
+    border-color: #00c853;
+    box-shadow: 0 0 18px 3px rgba(0, 200, 83, 0.25);
+    background: #071a0e;
+}
+
+.da-panel.da-panel-denied {
+    border-color: #d32f2f;
+    box-shadow: 0 0 14px 2px rgba(211, 47, 47, 0.3);
+}
+
+/* ── Panel header (role + name) ──────────────────────────── */
+
+.da-panel-header {
+    width: 100%;
+    border-bottom: 2px solid #1e2d4a;
+    padding-bottom: 10px;
+    text-align: center;
+}
+
+.da-panel-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    color: #6a82aa;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 5px;
+}
+
+.da-panel-name {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    color: #c8d8ff;
+    letter-spacing: 0.5px;
+}
+
+/* ── PIN dot display ─────────────────────────────────────── */
+
+.da-display {
+    font-family: 'GNF', monospace;
+    font-size: 32px;
+    color: #00e5ff;
+    background: #070d1a;
+    border: 2px solid #1e2d4a;
+    padding: 6px 16px;
+    letter-spacing: 10px;
+    min-width: 130px;
+    text-align: center;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.da-display.da-display-denied {
+    border-color: #d32f2f;
+    color: #ef4444;
+    background: #1a0707;
+}
+
+.da-display.da-display-authorised {
+    border-color: #00c853;
+    color: #00e676;
+    background: #071a0e;
+}
+
+/* ── Keypad grid ─────────────────────────────────────────── */
+
+.da-keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    width: 100%;
+}
+
+.da-key {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    background: #162035;
+    color: #c8d8ff;
+    border: 2px solid #2a3a5a;
+    padding: 10px 4px;
+    cursor: pointer;
+    text-align: center;
+    transition: background 0.1s, border-color 0.1s, color 0.1s;
+    line-height: 1;
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.da-key:hover:not(:disabled) {
+    background: #213050;
+    border-color: #4a6090;
+    color: #e8f0ff;
+}
+
+.da-key:active:not(:disabled) {
+    background: #2d4070;
+}
+
+.da-key:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.da-key-clear {
+    color: #f59e0b;
+    border-color: #4a3010;
+    font-size: 9px;
+}
+
+.da-key-clear:hover:not(:disabled) {
+    background: #2a1e0a;
+    border-color: #c28020;
+}
+
+.da-key-enter {
+    color: #34d399;
+    border-color: #0a3020;
+    font-size: 8px;
+}
+
+.da-key-enter:hover:not(:disabled) {
+    background: #0a2018;
+    border-color: #34d399;
+}
+
+/* ── Status badge ────────────────────────────────────────── */
+
+.da-status {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    padding: 5px 12px;
+    border: 2px solid transparent;
+    text-align: center;
+    letter-spacing: 1px;
+    width: 100%;
+    box-sizing: border-box;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.da-status.pending {
+    color: #4a6090;
+    border-color: #1e2d4a;
+    background: #0a0f1e;
+}
+
+.da-status.authorised {
+    color: #00e676;
+    border-color: #00c853;
+    background: #031008;
+}
+
+.da-status.denied {
+    color: #ef4444;
+    border-color: #d32f2f;
+    background: #1a0707;
+}
+
+/* ── Bottom status bar ───────────────────────────────────── */
+
+.da-status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 48px;
+    padding: 10px 14px;
+    border-top: 2px solid #1e2d4a;
+    background: #080e1b;
+    flex-shrink: 0;
+}
+
+.da-status-text {
+    font-family: 'GNF', monospace;
+    font-size: 22px;
+    color: #6a82aa;
+}
+
+.da-status-indicators {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.da-indicator {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    padding: 4px 8px;
+    border: 2px solid #1e2d4a;
+    color: #4a6090;
+}
+
+.da-indicator.lit {
+    border-color: #00c853;
+    color: #00e676;
+}
+
+/* ── AUTHORISE button ────────────────────────────────────── */
+
+.da-authorise-wrap {
+    padding: 12px 14px;
+    border-top: 2px solid #1e2d4a;
+    background: #080e1b;
+    flex-shrink: 0;
+}
+
+.da-authorise-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    background: #101829;
+    color: #2a3a5a;
+    border: 2px solid #1e2d4a;
+    padding: 14px 20px;
+    cursor: not-allowed;
+    opacity: 0.45;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    width: 100%;
+    box-sizing: border-box;
+    transition: background 0.2s, border-color 0.2s, color 0.2s,
+                opacity 0.2s, box-shadow 0.2s;
+    line-height: 1.4;
+}
+
+.da-authorise-btn:not(:disabled) {
+    cursor: pointer;
+    opacity: 1;
+    background: #071a0e;
+    border-color: #00c853;
+    color: #00e676;
+    box-shadow: 0 0 20px 4px rgba(0, 200, 83, 0.2);
+}
+
+.da-authorise-btn:not(:disabled):hover {
+    background: #0d2a18;
+    border-color: #00e676;
+    box-shadow: 0 0 28px 6px rgba(0, 230, 118, 0.3);
+}
+
+.da-authorise-btn:not(:disabled):active {
+    background: #041208;
+}

@@ -1,0 +1,13 @@
+{
+  "key": "03244c1211d50c3f8e6b373c3cbff47f",
+  "npc": "narrator",
+  "text": "The site's SCADA engineer got in at quarter past six. She hasn't taken her eyes off the control room screens since.",
+  "voice": "Charon",
+  "style": "Calm, precise narrator; measured industrial tone; unhurried",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis02_energy",
+  "source": "generate",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:10:16Z"
+}

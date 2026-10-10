@@ -1,0 +1,13 @@
+{
+  "key": "d1bcb87ef08fb58a1f76457c8f0f69b6",
+  "npc": "dr_sharma",
+  "text": "NHS England had your NIS report on Monday night. That one's statutory too, and it was on time.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

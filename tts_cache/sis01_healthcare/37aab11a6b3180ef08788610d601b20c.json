@@ -1,0 +1,13 @@
+{
+  "key": "37aab11a6b3180ef08788610d601b20c",
+  "npc": "pharmacist_npc",
+  "text": "I've been through Ms Okafor's pump log against her chart, too. Nothing goes back on that pump until I've seen her.",
+  "voice": "Enceladus",
+  "style": "British Pakistani clinical pharmacist in his early thirties, professional and brisk. Speak with a consistent Bradford, West Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

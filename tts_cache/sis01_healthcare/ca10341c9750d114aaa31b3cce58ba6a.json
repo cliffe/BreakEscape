@@ -1,0 +1,13 @@
+{
+  "key": "ca10341c9750d114aaa31b3cce58ba6a",
+  "npc": "dr_sharma",
+  "text": "That's Article 33 done properly, and I gather you argued for it. Good.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

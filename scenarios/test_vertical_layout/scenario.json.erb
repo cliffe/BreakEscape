@@ -1,0 +1,81 @@
+{
+  "scenario_brief": "Test Scenario: Vertical Layout\n\nThis scenario demonstrates vertical stacking of rooms using north/south connections with the new grid-based layout system.\n\nLayout:\n    [CEO Office - 2x2GU]\n           ↑\n  [Office1][Office2]\n      ↑       ↑\n    [Reception - 2x2GU]\n\nTests:\n- Single north connection (Reception → Offices)\n- Multiple north connections (Offices → CEO)\n- Door alignment between 2x2 GU rooms\n- Grid-based positioning",
+  "startRoom": "reception",
+  "rooms": {
+    "reception": {
+      "type": "room_reception",
+      "connections": {
+        "north": ["office1", "office2"]
+      },
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Welcome Note",
+          "takeable": true,
+          "readable": true,
+          "text": "Test Scenario: Vertical Layout\n\nThis tests north/south connections with multiple rooms.\n\nOffice 1 has a key to the CEO office.\nOffice 2 has important information."
+        },
+        {
+          "type": "key",
+          "name": "Office 1 Key",
+          "takeable": true,
+          "observations": "A key labeled 'Office 1'"
+        }
+      ]
+    },
+    "office1": {
+      "type": "room_office",
+      "locked": true,
+      "lockType": "key",
+      "requires": "office1_key",
+      "connections": {
+        "south": "reception",
+        "north": "ceo"
+      },
+      "objects": [
+        {
+          "type": "key",
+          "name": "CEO Office Key",
+          "takeable": true,
+          "observations": "A golden key for the CEO office"
+        }
+      ]
+    },
+    "office2": {
+      "type": "room_office",
+      "connections": {
+        "south": "reception",
+        "north": "ceo"
+      },
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Office 2 Info",
+          "takeable": true,
+          "readable": true,
+          "text": "This office demonstrates multiple connections.\n\nBoth Office 1 and Office 2 connect to the CEO office to the north.\n\nThe doors should align properly despite being a multi-connection setup."
+        }
+      ]
+    },
+    "ceo": {
+      "type": "room_ceo",
+      "locked": true,
+      "lockType": "key",
+      "requires": "ceo_key",
+      "connections": {
+        "south": ["office1", "office2"]
+      },
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Success Note",
+          "takeable": true,
+          "readable": true,
+          "text": "Congratulations! You've successfully navigated a vertical layout.\n\nThis demonstrates:\n- Multiple north connections from Reception\n- Multiple south connections to CEO office\n- Proper door alignment with grid-based positioning",
+          "important": true,
+          "isEndGoal": true
+        }
+      ]
+    }
+  }
+}

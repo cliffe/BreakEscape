@@ -1,0 +1,13 @@
+{
+  "key": "6020709ddc2a38cec65098b42460de44",
+  "npc": "sarah_martinez",
+  "text": "Kevin should be in the IT room. It's through the main office, on the east side.",
+  "voice": "Kore",
+  "style": "Friendly, warm receptionist in her early thirties. Speak with a consistent Irish (Dublin) accent throughout — do not shift to any other accent. Use a warm, mid-range pitch. Speak naturally and helpfully.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "batch",
+  "generated": "2026-10-08",
+  "recorded_at": "2026-10-09T12:09:57Z"
+}

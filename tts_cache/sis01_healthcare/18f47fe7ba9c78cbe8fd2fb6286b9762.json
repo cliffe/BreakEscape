@@ -1,0 +1,13 @@
+{
+  "key": "18f47fe7ba9c78cbe8fd2fb6286b9762",
+  "npc": "sarah_mitchell",
+  "text": "The ward PC can't reach the EHR, so drug charts and allergies are on paper. The printer's gone too.",
+  "voice": "Kore",
+  "style": "Black British charge nurse in her mid-40s, calm, tired but professional. Speak with a consistent Leeds, West Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

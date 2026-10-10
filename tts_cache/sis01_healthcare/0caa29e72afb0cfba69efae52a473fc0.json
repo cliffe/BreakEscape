@@ -1,0 +1,13 @@
+{
+  "key": "0caa29e72afb0cfba69efae52a473fc0",
+  "npc": "narrator",
+  "text": "Mr Ahmed's lips are dusky and his breathing is shallow. The monitor shows a slow, irregular rhythm.",
+  "voice": "Schedar",
+  "style": "Calm, clinical narrator with a neutral southern English accent; measured, even pace. Keep the same accent throughout.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

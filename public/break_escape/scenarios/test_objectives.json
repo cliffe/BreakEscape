@@ -1,0 +1,151 @@
+{
+  "scenario_brief": "Test scenario for the Objectives System. Demonstrates all task types: collect items, unlock rooms, unlock objects, enter rooms, and NPC conversations.",
+  "endGoal": "Complete all objectives to test the system",
+  "version": "1.0",
+  "startRoom": "reception",
+  "objectives": [
+    {
+      "aimId": "tutorial",
+      "title": "Complete the Tutorial",
+      "description": "Learn how to use the objectives system",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "explore_reception",
+          "title": "Explore the reception area",
+          "type": "enter_room",
+          "targetRoom": "reception",
+          "status": "active"
+        },
+        {
+          "taskId": "collect_documents",
+          "title": "Collect classified documents",
+          "type": "collect_items",
+          "targetItems": ["document"],
+          "targetCount": 2,
+          "currentCount": 0,
+          "status": "active",
+          "showProgress": true
+        }
+      ]
+    },
+    {
+      "aimId": "gain_access",
+      "title": "Gain Access to Secure Areas",
+      "description": "Unlock doors and access restricted zones",
+      "status": "active",
+      "order": 1,
+      "tasks": [
+        {
+          "taskId": "unlock_office",
+          "title": "Unlock the office door",
+          "type": "unlock_room",
+          "targetRoom": "office1",
+          "status": "active",
+          "onComplete": {
+            "unlockTask": "enter_office"
+          }
+        },
+        {
+          "taskId": "enter_office",
+          "title": "Enter the office",
+          "type": "enter_room",
+          "targetRoom": "office1",
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "aimId": "find_intel",
+      "title": "Find Hidden Intel",
+      "status": "locked",
+      "unlockCondition": { "aimCompleted": "gain_access" },
+      "order": 2,
+      "tasks": [
+        {
+          "taskId": "unlock_safe",
+          "title": "Crack the safe",
+          "type": "unlock_object",
+          "targetObject": "office_safe",
+          "status": "active"
+        },
+        {
+          "taskId": "collect_key",
+          "title": "Find the key",
+          "type": "collect_items",
+          "targetItems": ["key"],
+          "targetCount": 1,
+          "currentCount": 0,
+          "status": "active",
+          "showProgress": true
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "tutorial_complete": false
+  },
+  "rooms": {
+    "reception": {
+      "type": "office-reception",
+      "connections": {
+        "north": "office1"
+      },
+      "objects": [
+        {
+          "type": "document",
+          "name": "Classified Report A",
+          "x": 5,
+          "y": 5,
+          "takeable": true,
+          "interactable": true,
+          "active": true,
+          "observations": "A classified document marked TOP SECRET"
+        },
+        {
+          "type": "document",
+          "name": "Classified Report B",
+          "x": 7,
+          "y": 5,
+          "takeable": true,
+          "interactable": true,
+          "active": true,
+          "observations": "Another classified document"
+        }
+      ]
+    },
+    "office1": {
+      "type": "office-generic",
+      "locked": true,
+      "lockType": "pin",
+      "requires": "1234",
+      "connections": {
+        "south": "reception"
+      },
+      "objects": [
+        {
+          "type": "safe",
+          "name": "office_safe",
+          "x": 3,
+          "y": 3,
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": true,
+          "lockType": "pin",
+          "requires": "0000",
+          "observations": "A heavy duty safe",
+          "contents": [
+            {
+              "type": "key",
+              "name": "Master Key",
+              "takeable": true,
+              "observations": "An important key"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

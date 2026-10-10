@@ -1,0 +1,57 @@
+{
+  "display_name": "The Architect's Gambit",
+  "description": "Four ENTROPY operations go live inside the same sixty seconds. SAFETYNET has one agent in range and one tactical team, and you are the agent — sent to a grid control facility outside Portland where a cascade sequence is loaded on the control system, waiting for a host inside the building to start it and take the lights out across three states. The team can reach exactly one of the other three crises. You decide which, two go unanswered, and the debrief reads out what happened at both. Get past the badges and the locks, take the attack host apart, and stop the cascade before you find out what the night was actually measuring.",
+  "difficulty_level": 3,
+  "secgen_scenario": "m07_architects_gambit",
+  "collection": "season_1",
+  "estimated_duration_minutes": 90,
+  "cybok": [
+    {
+      "ka": "SOIM",
+      "topic": "PENETRATION TESTING",
+      "keywords": ["PENETRATION TESTING - NETWORK MAPPING - RECONNAISSANCE", "PENETRATION TESTING - SOFTWARE TOOLS", "Incident Response", "Crisis response", "Incident triage", "Resource allocation under time pressure"]
+    },
+    {
+      "ka": "NS",
+      "topic": "PENETRATION TESTING",
+      "keywords": ["PENETRATION TESTING - NETWORK MAPPING - FINGERPRINTING", "PENETRATION TESTING - NETWORK MAPPING - NMAP", "Network file systems (NFS)", "Service enumeration", "SECURE SHELL (SSH)"]
+    },
+    {
+      "ka": "MAT",
+      "topic": "Attacks and exploitation",
+      "keywords": ["EXPLOITATION", "Multi-stage attack chains", "Coordinated attacks", "Attack synchronization"]
+    },
+    {
+      "ka": "OSV",
+      "topic": "Primitives for Isolation and Mediation",
+      "keywords": ["Access controls and operating systems", "Linux security model", "Attacks against SUDO", "Privilege escalation"]
+    },
+    {
+      "ka": "AAA",
+      "topic": "Authentication",
+      "keywords": ["Access control bypass", "RFID authentication", "PIN and password authentication"]
+    },
+    {
+      "ka": "CPS",
+      "topic": "Cyber-Physical Systems",
+      "keywords": ["Critical infrastructure protection", "ICS/SCADA security", "Power grid security", "industrial control systems", "Physical access control", "Lock bypass"]
+    },
+    {
+      "ka": "HF",
+      "topic": "Human Factors",
+      "keywords": ["Professional judgment under pressure", "Ethical decision making", "Moral complexity in security", "Triage on incomplete information"]
+    }
+  ],
+  "prerequisites": ["m06_follow_the_money"],
+  "unlocks": ["m08_the_mole"],
+  "campaign_critical": true,
+  "narrative_weight": "high",
+  "consequences_persist": true,
+  "lore_reveals": [
+    "The Architect addresses the player directly for the first time, over comms only",
+    "The Architect's philosophy: 'Entropy is inevitable. Systems decay. I merely publish the schedule.'",
+    "The four operations run from a single schedule under a single authority",
+    "Tomb Gamma referenced as the Architect's workshop",
+    "SAFETYNET mole confirmed: the deployment was leaked before it was made"
+  ]
+}

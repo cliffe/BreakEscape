@@ -1,0 +1,177 @@
+{
+  "display_name": "Albion Battery Hall: Code Red",
+  "description": "Saturday morning at a 200 MWh battery storage site on the Trent. Overnight, an attacker falsified sensor data and quietly raised the safety system's trip points. Players arrive to find a normal-looking SCADA display hiding a battery hall heading for thermal runaway. They must trust an old dial over a perfect screen, decide when to press a hardwired emergency shutdown, choose how far to cut the attacker off, and decide what to tell the regulator and a neighbour, then talk it through with the NCSC.",
+  "difficulty_level": 4,
+  "secgen_scenario": null,
+  "collection": "cybok_sis",
+  "lab_sheet_url": "https://cliffe.github.io/HacktivityLabSheets/labs/security_informed_safety/sis02-energy/",
+  "branching": true,
+  "branches": [
+    "esd_on_the_dial_before_the_historian",
+    "esd_after_the_hydrogen_alarm",
+    "hall_1_evacuated_and_lost",
+    "network_isolated_before_esd",
+    "isolation_scope_historian_watch_or_scada",
+    "sis_tamper_discovered",
+    "patch_active_management",
+    "patch_deferral",
+    "nis_initial_notification_sent_or_held",
+    "trent_water_warned_or_verified_first"
+  ],
+  "estimated_duration_minutes": 70,
+  "cybok": [
+    {
+      "ka": "SIS",
+      "topic": "Security-Informed Safety: Language and Concepts",
+      "keywords": [
+        "security-informed safety",
+        "cyber-physical hazard",
+        "sensor data falsification",
+        "independent instrumentation",
+        "defence in depth",
+        "safety case invalidation",
+        "cyber-induced process hazard",
+        "SIL — Safety Integrity Level"
+      ]
+    },
+    {
+      "ka": "SIS",
+      "topic": "Architecture",
+      "keywords": [
+        "SIS independence",
+        "IEC 61511",
+        "SIL 2 certification",
+        "IT/OT boundary",
+        "Purdue model",
+        "network segmentation in ICS",
+        "hardwired ESD",
+        "engineering port isolation",
+        "defence in depth — OT"
+      ]
+    },
+    {
+      "ka": "SIS",
+      "topic": "Patching and Security Updates",
+      "keywords": [
+        "SIS firmware patching",
+        "recertification cost",
+        "IEC 61511-1 modification procedure (clause 17)",
+        "IEC 61511-1 clause 8.2.4 SIS security risk assessment",
+        "patch deferral risk",
+        "compensating controls",
+        "safety case maintenance",
+        "risk register review",
+        "active patch management vs deferral"
+      ]
+    },
+    {
+      "ka": "SIS",
+      "topic": "Incident Response in OT Environments",
+      "keywords": [
+        "OT incident response",
+        "ICS-specific containment",
+        "network isolation trade-off",
+        "SCADA availability vs security",
+        "historian anomaly detection",
+        "access log analysis — ICS",
+        "emergency shutdown activation",
+        "jump server compromise"
+      ]
+    },
+    {
+      "ka": "SIS",
+      "topic": "Requirements and Reconciliation",
+      "keywords": [
+        "safety requirements under cyber threat",
+        "cross-sector dependency",
+        "shared infrastructure risk",
+        "cascading failure pathways",
+        "Trent Water shared file server",
+        "CLAIM-EN-001 IT/OT boundary",
+        "CLAIM-EN-002 SIS network isolation",
+        "CLAIM-EN-008 hardwired ESD"
+      ]
+    },
+    {
+      "ka": "SIS",
+      "topic": "Organisational Culture and Safety Management",
+      "keywords": [
+        "normalisation of deviance",
+        "risk register inaction",
+        "compensating control effectiveness",
+        "safety case as living document",
+        "SOC monitoring scope governance",
+        "risk accepted vs risk mitigated",
+        "configuration management failure",
+        "temporary becoming permanent"
+      ]
+    },
+    {
+      "ka": "SOIM",
+      "topic": "Monitoring",
+      "keywords": [
+        "OT monitoring scope",
+        "historian trend analysis",
+        "flat-line sensor IoC",
+        "behavioural anomaly detection",
+        "SCADA blind spot",
+        "SOC contract limitations",
+        "ICS visibility gap",
+        "process parameter cross-validation"
+      ]
+    },
+    {
+      "ka": "NS",
+      "topic": "Network Architecture and Security",
+      "keywords": [
+        "jump server configuration",
+        "historian dual-home",
+        "bidirectional RDP risk",
+        "OT network segmentation",
+        "Modbus proxy exposure",
+        "data diode",
+        "SCADA DMZ",
+        "commissioning configuration debt"
+      ]
+    },
+    {
+      "ka": "AAA",
+      "topic": "Authentication",
+      "keywords": [
+        "dormant account exploitation",
+        "deprovisioning failure",
+        "contractor account lifecycle",
+        "RDP session detection",
+        "unauthenticated SIS engineering protocol",
+        "OT access control",
+        "privileged account management"
+      ]
+    },
+    {
+      "ka": "LR",
+      "topic": "Cyber and Privacy Law",
+      "keywords": [
+        "NIS Regulations 2018",
+        "Operator of Essential Services (designated, reg 8(3))",
+        "competent authority: DESNZ and Ofgem jointly",
+        "initial notification without undue delay, within 72 hours",
+        "NCSC as CSIRT: support, not regulation",
+        "HSE and fire and rescue after a dangerous occurrence",
+        "NESO and grid frequency events",
+        "duty of care to a non-OES neighbour"
+      ]
+    }
+  ],
+  "prerequisites": [],
+  "unlocks": ["sis03_cyber_insurance"],
+  "campaign_critical": true,
+  "narrative_weight": "high",
+  "consequences_persist": false,
+  "lore_reveals": [
+    "The GREYMANTLE APT used a printer firmware supply chain compromise as initial access — a technique that bypasses most endpoint monitoring",
+    "Battery Hall 1 reached 51°C with the SIS trip moved from 55°C to 85°C and the hydrogen alarm from 1.0% to 3.8% by volume: the safety margin was removed overnight",
+    "The compensating control accepted in lieu of the SIS patch (monitoring by the managed SOC) never existed for the safety system, because the SOC contract excluded OT: the risk register approved a control that did not exist",
+    "The local dial gauge at Rack A2 that exposed the attack was the one reading the attacker could not reach, because it was on no network at all"
+  ],
+  "facilitator_notes": "Designed for 4 to 6 players split across engineering and security roles. Suggested split: 2 players as SCADA engineers (the dial, the historian, the ESD, the SIS panel: Helen's questions), 2 as IT/OT security (the jump server log, isolation, CastleTech: Marcus's and Tom's questions), and one or two as incident commander (the shutdown call, the notification, Trent Water).\n\nStop-and-discuss points (each one is a choice in play, and Priya S. comes back to it in the debrief):\n1. THE DIAL OR THE SCREEN (Helen, after the walkdown). 51°C on a mechanical dial against 28°C on SCADA. Resist telling them which to trust. The best learning happens when players briefly doubt the dial.\n2. SHUT DOWN NOW? (Helen and Marcus). Helen sees half the site off the grid against a lost hall; Marcus would rather have the logs first. Anyone may press an ESD station, by the hall door or on the console, without asking. The third station is inside the hall: in a gas alarm, nobody should go in to use it, and the debrief says so if someone does. Ask: which mistake can you live with?\n3. EVIDENCE FIRST? (Marcus). The ESD trip makes PLC-BMS run its shutdown routine, which overwrites the registers holding what the attacker wrote; the historian keeps only what the screens showed. Exporting the register table on HMI-OPS-01 takes a few seconds; the game records whether it was actually done before the trip, not only promised. A few seconds for evidence, or none? This sets up the Meridian Insurance case, where the missing register image is Exhibit B's evidence gap.\n4. HOW FAR TO ISOLATE (Marcus). Cable only, the historian's enterprise leg too, or SCADA off with Hall 2 on manual rounds. Every option costs something.\n5. WHO MAY INSTRUCT A SUPPLIER (Tom). CastleTech ring Marcus back before touching the firewall. A player who claims Marcus's authority before he has given it is caught.\n6. THE INITIAL NIS NOTIFICATION (Marcus). Send what you know to Ofgem now, unknowns marked, or wait for the full picture. The countdown is an abstract game clock, not 72 real hours, and starts when the team finds the historian flat-line (when they became aware).\n7. TRENT WATER (Tom). Warn a neighbour now, with an uncertain picture, or verify first. It is a duty of care, not a NIS duty, and Tom needs Albion's consent.\n8. THE SAFETY CASE AND THE PATCH (Priya S.). Did CLAIM-EN-002 hold this morning? As risk owner today, patch (eight weeks without the automatic trip) or defer with controls someone checks? Neither patch answer is automatically wrong.\n\nIf nobody presses an ESD, hydrogen reaches 2.0% by volume about 43 minutes after the briefing: Helen evacuates Hall 1 and presses the console station on the way out, the hall is lost to fire, everyone gets out, and the debrief still runs. Evacuating is the right response, not a failure.\n\nPhysical prop setup:\n- Dial gauge: pre-set to 51°C, mounted at a battery rack prop. Do not label it: players should find and read it.\n- ESD stations: large red mushroom-head buttons in yellow housings, one by the battery hall door (outside) and one at the control desk. Connect to the game server via GPIO relay.\n- Alarm panel: custom multi-lamp panel with individually controllable LEDs. State driven by game server.\n- Incident Response folder: printed and kept on the duty desk.\n- SIS safety requirements extract: printed A4 in a locked filing cabinet prop.\n\nThis scenario is the recommended precursor to the Meridian Insurance case (Case 3), which picks up the same incident seven weeks later (Thursday 7 May 2026). Nothing carries over: the insurance case uses the reference timeline in the information pack (ESD at about 06:34 on the dial reading, no register image taken, initial NIS notification at 07:00, Hall 1 not lost). Use players' own choices here (the ESD timing, the evidence, the notification, the patch) as discussion material when you run it."
+}

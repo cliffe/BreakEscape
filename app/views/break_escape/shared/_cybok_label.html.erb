@@ -1,0 +1,25 @@
+<% if cyboks.any? %>
+  <% grouped_cyboks = cyboks.group_by(&:ka).sort.to_h %>
+
+  <% all_ka_values = [] %>
+  <% all_tippy_content = "<img src='#{be_asset_path('/break_escape/assets/logos/cybok_logo_white.svg')}' style='max-height: 20px'> "  %>
+
+  <% grouped_cyboks.each do |ka, ka_cyboks| %>
+    <% all_ka_values << ka %>
+    <% tippy_content = "" %>
+
+    <% ka_cyboks.group_by(&:topic).each do |topic, topic_cyboks| %>
+      <% unique_keywords = topic_cyboks.flat_map { |c| c.keywords_array }.uniq.map(&:downcase).join(', ') %>
+      <% tippy_content += "<i>#{topic.titlecase}:</i> #{unique_keywords}<br/>" %>
+    <% end %>
+
+    <% all_tippy_content += "<b>#{ka_cyboks.first.ka_full_name} (#{ka}):</b><br/> #{tippy_content}" %>
+  <% end %>
+
+  <%= render partial: 'break_escape/shared/label', locals: {
+    label_class: 'cybok',
+    tippy_content: all_tippy_content,
+    icon_class: defined?(icon_class) ? icon_class : nil,
+    label_text: "CyBOK: #{all_ka_values.uniq.join(', ')}"
+  } %>
+<% end %>

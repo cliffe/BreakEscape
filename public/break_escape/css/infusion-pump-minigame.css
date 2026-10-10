@@ -1,0 +1,406 @@
+/* =========================================================
+   INFUSION PUMP TERMINAL — MG-08
+   Dark clinical aesthetic: cream prescription panel + grey pump body
+   Pixel-art style: border-radius:0, 2px solid borders throughout
+   ========================================================= */
+
+/* ---- Container ---- */
+.ip-minigame-container {
+    background: #0d1324;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+.ip-game-container {
+    height: 100%;
+    box-sizing: border-box;
+    position: relative;
+}
+
+/* ---- Main layout ---- */
+.ip-panel-wrap {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    gap: 12px;
+    padding: 12px;
+    box-sizing: border-box;
+}
+
+/* ---- Prescription panel (left) ---- */
+.ip-prescription-panel {
+    width: 38%;
+    min-width: 200px;
+    background: #f5f0e8;
+    color: #1a1a1a;
+    border: 2px solid #c8b880;
+    padding: 14px 12px;
+    overflow-y: auto;
+    box-sizing: border-box;
+    font-family: monospace;
+    font-size: 10px;
+    line-height: 1.5;
+    flex-shrink: 0;
+}
+
+.ip-rx-header {
+    font-size: 8px;
+    font-weight: bold;
+    text-align: center;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+}
+
+.ip-rx-sub {
+    font-size: 7px;
+    text-align: center;
+    color: #444;
+    margin-bottom: 8px;
+}
+
+.ip-rx-divider {
+    border-top: 1px solid #c8b880;
+    margin: 8px 0;
+}
+
+.ip-rx-field {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.ip-rx-label {
+    color: #666;
+    font-size: 8px;
+    min-width: 60px;
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+
+.ip-rx-value {
+    color: #1a1a1a;
+    font-size: 9px;
+}
+
+/* The critical dose line — ambiguous decimal rendered in VT323 */
+.ip-rx-dose-line {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 4px;
+    background: #ede8d8;
+    border: 1px solid #c8b880;
+    padding: 4px 6px;
+}
+
+.ip-rx-dose-value {
+    font-family: 'GNF', monospace;
+    font-size: 30px;
+    color: #1a1a1a;
+    line-height: 1;
+    letter-spacing: -2px;  /* tight tracking makes the decimal very small */
+}
+
+.ip-rx-sig {
+    font-style: italic;
+    font-size: 12px;
+    color: #333;
+}
+
+.ip-rx-blank {
+    color: #aaa;
+    font-size: 9px;
+    letter-spacing: 1px;
+}
+
+/* ---- Pump device (right) ---- */
+.ip-pump-device {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+.ip-pump-bezel {
+    flex: 1;
+    background: #c0c5c8;
+    border: 3px solid #8a9199;
+    padding: 12px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    /* Corner screw aesthetic via box-shadow inset dots */
+    box-shadow:
+        inset 6px 6px 0 0 #a0a5a8,
+        inset -6px -6px 0 0 #a0a5a8,
+        inset 6px -6px 0 0 #a0a5a8,
+        inset -6px 6px 0 0 #a0a5a8;
+}
+
+/* ---- Pump screen ---- */
+.ip-pump-screen {
+    background: #0a1a0a;
+    color: #00e060;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 1.4;
+    border: 2px solid #1a3a1a;
+    padding: 8px 10px;
+    min-height: 100px;
+    box-sizing: border-box;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.ip-pump-screen.ip-screen-accepted {
+    border-color: #00c853;
+    box-shadow: 0 0 14px rgba(0, 200, 83, 0.4);
+}
+
+.ip-pump-screen-row {
+    font-size: 14px;
+}
+
+.ip-pump-screen-divider {
+    border-top: 1px solid #1a5a1a;
+    margin: 4px 0;
+}
+
+.ip-pump-display {
+    font-size: 28px;
+    color: #00ff88;
+    border-bottom: 1px solid #1a5a1a;
+    padding: 2px 0;
+    min-height: 36px;
+    letter-spacing: 1px;
+}
+
+.ip-accepted {
+    color: #00ff88;
+}
+
+/* Blinking cursor */
+.ip-cursor {
+    animation: ip-blink 1s step-end infinite;
+}
+
+@keyframes ip-blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0; }
+}
+
+/* ---- Keypad ---- */
+.ip-pump-keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+}
+
+.ip-key {
+    background: #d0d5d8;
+    border: 2px solid #8a9199;
+    border-bottom: 3px solid #6a7178;
+    color: #1a1a1a;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    padding: 10px 4px;
+    cursor: pointer;
+    border-radius: 0;
+    text-align: center;
+    transition: background 0.1s;
+    user-select: none;
+}
+
+.ip-key:hover {
+    background: #e0e5e8;
+}
+
+.ip-key:active {
+    background: #b0b5b8;
+    border-bottom-width: 2px;
+    transform: translateY(1px);
+}
+
+.ip-key:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.ip-key-back {
+    background: #d8c0b0;
+    border-color: #9a7060;
+    border-bottom-color: #7a5040;
+}
+
+.ip-key-back:hover {
+    background: #e8d0c0;
+}
+
+.ip-key-decimal {
+    background: #d8d8c0;
+    border-color: #9a9a70;
+    border-bottom-color: #7a7a50;
+    font-size: 14px;
+}
+
+/* ---- CONFIRM button ---- */
+.ip-confirm-btn {
+    width: 100%;
+    background: #1a4a1a;
+    color: #00ff88;
+    border: 2px solid #00c853;
+    padding: 14px 8px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    cursor: pointer;
+    border-radius: 0;
+    letter-spacing: 1px;
+    transition: background 0.15s, box-shadow 0.15s;
+    text-transform: uppercase;
+}
+
+.ip-confirm-btn:hover {
+    background: #2a5a2a;
+    box-shadow: 0 0 8px rgba(0, 200, 83, 0.3);
+}
+
+.ip-confirm-btn:active {
+    background: #0a3a0a;
+}
+
+.ip-confirm-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ---- Double-check modal ---- */
+.ip-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.72);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+.ip-modal {
+    background: #0d1117;
+    border: 2px solid #f59e0b;
+    padding: 24px 20px;
+    max-width: 360px;
+    width: 90%;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.ip-modal-title {
+    color: #f59e0b;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    margin-bottom: 16px;
+    line-height: 1.6;
+    letter-spacing: 0.5px;
+}
+
+.ip-modal-drug {
+    color: #cccccc;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    margin-bottom: 8px;
+}
+
+.ip-modal-dose {
+    color: #ff4444;
+    font-family: 'GNF', monospace;
+    font-size: 52px;
+    line-height: 1;
+    margin-bottom: 8px;
+}
+
+.ip-modal-prompt {
+    color: #aaaaaa;
+    font-family: monospace;
+    font-size: 11px;
+    margin-bottom: 20px;
+}
+
+.ip-modal-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ip-modal-btn {
+    padding: 12px 8px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    cursor: pointer;
+    border-radius: 0;
+    border: 2px solid;
+    letter-spacing: 0.5px;
+    line-height: 1.4;
+    transition: opacity 0.15s;
+}
+
+.ip-modal-btn:hover {
+    opacity: 0.85;
+}
+
+.ip-modal-correct {
+    background: #1a4a1a;
+    color: #00ff88;
+    border-color: #00c853;
+}
+
+.ip-modal-wrong {
+    background: #4a1a1a;
+    color: #ff6666;
+    border-color: #d32f2f;
+}
+
+/* ---- No-charts guard screen ---- */
+.ip-no-charts {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.ip-no-charts-icon {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 32px;
+    color: #f59e0b;
+    margin-bottom: 20px;
+    border: 2px solid #f59e0b;
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ip-no-charts-text {
+    color: #f59e0b;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    margin-bottom: 16px;
+    line-height: 1.6;
+}
+
+.ip-no-charts-sub {
+    color: #888;
+    font-family: monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    max-width: 320px;
+}

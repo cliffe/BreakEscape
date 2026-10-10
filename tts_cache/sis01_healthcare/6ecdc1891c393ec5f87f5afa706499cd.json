@@ -1,0 +1,13 @@
+{
+  "key": "6ecdc1891c393ec5f87f5afa706499cd",
+  "npc": "dr_sharma",
+  "text": "Ms Okafor died of a morphine overdose. The tampered library accepted the wrong rate without a warning, and nobody raised the alarm in time.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

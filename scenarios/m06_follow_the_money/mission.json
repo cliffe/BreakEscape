@@ -1,0 +1,64 @@
+{
+  "display_name": "Follow the Money",
+  "description": "Track cryptocurrency payments from previous ENTROPY operations to the Crypto Anarchists' HashChain Exchange. Infiltrate the exchange as a compliance auditor, access financial records, and map ENTROPY's funding network. Discover 'The Architect's Fund' and the financial infrastructure supporting all ENTROPY cells.",
+  "difficulty_level": 2,
+  "secgen_scenario": "m06_follow_the_money",
+  "collection": "season_1",
+  "cybok": [
+    {
+      "ka": "MAT",
+      "topic": "Attacks and exploitation",
+      "keywords": ["EXPLOITATION", "EXPLOITATION FRAMEWORKS", "Distcc exploitation", "Service vulnerabilities", "Remote code execution"]
+    },
+    {
+      "ka": "SS",
+      "topic": "Categories of Vulnerabilities",
+      "keywords": ["CVEs and CWEs", "Password cracking", "Credential reuse", "Shadow file exploitation"]
+    },
+    {
+      "ka": "SOIM",
+      "topic": "PENETRATION TESTING",
+      "keywords": ["PENETRATION TESTING - SOFTWARE TOOLS", "PENETRATION TESTING - ACTIVE PENETRATION", "Financial forensics", "Transaction analysis", "Follow-the-money investigation"]
+    },
+    {
+      "ka": "AAA",
+      "topic": "Authentication",
+      "keywords": ["BRUTEFORCE", "user authentication", "Password cracking"]
+    },
+    {
+      "ka": "AAA",
+      "topic": "Authorisation",
+      "keywords": ["Vulnerabilities and attacks on access control misconfigurations", "Access control bypass"]
+    },
+    {
+      "ka": "AB",
+      "topic": "Models",
+      "keywords": ["kill chains"]
+    },
+    {
+      "ka": "MAT",
+      "topic": "Malicious Activities by Malware",
+      "keywords": ["cyber kill chain"]
+    },
+    {
+      "ka": "AC",
+      "topic": "Applied Cryptography",
+      "keywords": ["Cryptocurrency", "Blockchain analysis", "Hash functions", "Password hashing", "Cryptographic wallets"]
+    },
+    {
+      "ka": "HF",
+      "topic": "Human Factors",
+      "keywords": ["Undercover operations", "Compliance auditor cover", "Social engineering", "Recruitment tactics"]
+    },
+    {
+      "ka": "CPS",
+      "topic": "Physical Security",
+      "keywords": ["Physical access control", "RFID access systems", "PIN code systems"]
+    },
+    {
+      "ka": "AAA",
+      "topic": "Authentication",
+      "keywords": ["RFID authentication", "PIN-based authentication", "Access control bypass"]
+    }
+  ]
+}

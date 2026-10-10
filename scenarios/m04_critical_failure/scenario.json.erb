@@ -1,0 +1,2179 @@
+<%
+# ============================================================================
+# MISSION 4: CRITICAL FAILURE - SCENARIO FILE
+# ============================================================================
+# Break Escape - Season 1: The Architect's Shadow
+#
+# Grid-scale battery energy storage attack. ENTROPY's Critical Mass cell has
+# infiltrated the Albion Energy Storage facility (200 MWh lithium-ion BESS) and
+# compromised the BMS/SCADA to falsify thermal sensors and disable the hydrogen
+# venting and Emergency Shutdown (ESD) interlocks — driving the battery racks
+# toward catastrophic thermal runaway. At 0800 the racks tip into a chain fire /
+# hydrogen explosion, taking the grid down for 240,000 people and levelling the
+# site. Cross-cell coordination with Social Fabric revealed.
+#
+# Setting/assets adapted from sis02_energy (battery hall, SCADA control room,
+# rack status panels, H2 detector, analog thermometer, ESD pushbutton).
+#
+# ENTROPY Cell: Critical Mass
+# Mission Type: Infrastructure Crisis / Tactical Response
+# Difficulty: Intermediate (Mission 4)
+#
+# NEW MECHANICS:
+# - Combat encounters with hostile NPCs
+# - Stage-based urgency system (no timer)
+# - SCADA / BMS investigation (falsified telemetry vs physical instrument)
+# - Multi-vector attack disabling + Emergency Shutdown (ESD) minigame
+# - Critical tactical choices
+#
+# ROOM LAYOUT (PASS 3 puzzle chains -- see PUZZLE_CHAINS_PLAN.md):
+#
+#   main_entrance (guard)
+#     +-- S -> operations_office (Vance: Level 1 card is CLONED off him -- m03 cloner)
+#                +-- S -> security_office            locker [key] spare Level 1; reader export (clue)
+#                +-- E -> scada_control_room
+#                           +-- E -> battery_hall_1 (Cipher, optional; Duty Round Panel = Vance's print)
+#                                      +-- S -> engineering_workshop  [rfid: Level 2]  VM, flag station,
+#                                      |                              OptiGrid tool case [key] -> fingerprint kit
+#                                      +-- E -> battery_hall_2 / inverter room  [rfid: Level 1]  (Relay: drops Level 2)
+#                                                 +-- S -> plant_room  [biometric: Robert Vance]  (Voltage + Static, ESD)
+#                                                            +-- E -> loading_dock  (go-bag [key]); Voltage's escape route
+#
+# Chain: the plant reader is met in Hall 2 before the workshop can open (its card is
+# Relay's), the kit is in the workshop, and the print is on the way back through Hall 1.
+#
+# Layout reworked 2026-08-21 (ALIGNMENT_PLAN Phase 1b) to clear four world-space
+# overlaps. Two structural changes, both of which also tightened the lock chain:
+#   * engineering_workshop had a SECOND door from scada_control_room that bypassed
+#     Cipher entirely; it now hangs only off battery_hall_1.
+#   * plant_room hung off battery_hall_1, so it sat next to the hall before the
+#     player had ever met Relay; it now hangs off battery_hall_2, which is what
+#     makes the Master keycard a genuine gate.
+# Verify with: ruby scripts/validate_scenario.rb (world-space overlap check).
+#
+# PASS 2 (playtest D1): scada -> battery_hall_1 was a SOUTH connection, and the
+# doorway opened onto the hall's solid north wall. The engine placed the 20-wide
+# hall under the 10-wide control room using the parity of the control room's
+# ORIGIN (rooms.js positionSouthSingle), but placed each door by the parity of
+# the SHARED WALL (doors.js placeSouthDoorSingle / placeNorthDoorSingle).
+# room_control_1x2gu is 10x6, a stacking height of 1 grid unit (odd), so the two
+# parities disagree and the doors land 320px apart. The validator checks overlap,
+# not door alignment. The hall now hangs EAST of the control room: E/W pairs are
+# top-aligned and both doors sit at top + 2.5 tiles, so they always line up.
+# Every connection was re-checked against a port of the engine's BFS and door
+# placement (all aligned, no overlaps).
+# ============================================================================
+
+# ERB Helper Methods
+require 'base64'
+
+def base64_encode(text)
+  Base64.strict_encode64(text)
+end
+
+# Narrative Content Variables
+vance_warning_email = "From: Robert Vance\nTo: OT Security\nDate: 12 January\nSubject: Unscheduled Maintenance Crew\n\nTeam,\n\nOptiGrid Solutions sent a maintenance crew on Thursday night (not on our schedule). They had proper RFID credentials but I have no work order on file. They were in the BMS cabinet and the SCADA control room for over three hours.\n\nCan someone verify their authorisation before I escalate?\n\n-Robert"
+
+voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS interlock-bypass modules installed on rack banks A, B and C.\nThermal sensors falsified at the SCADA layer. Hydrogen venting and ESD interlocks disabled.\nRemote overcharge trigger armed.\n\nCoordination with Social Fabric confirmed - simultaneous infrastructure strikes across the region.\n\nTrigger scheduled: 0800 local. The racks tip into thermal runaway. Grid drops for 240,000. The hall goes up with it.\nFail-safe disabled. No automatic shutdown.\n\nThe Architect sends regards. Phase 3 begins after successful execution.\n\n- Voltage"
+
+%>
+{
+  "scenario_brief": "Infiltrate the Albion Energy Storage facility — 200 MWh of grid-scale lithium-ion battery storage — to investigate a suspected ENTROPY operation. The Critical Mass cell has weaponised the BMS and SCADA systems to drive the battery racks into thermal runaway, threatening a catastrophic fire and a grid blackout for 240,000 people. Confirm the infiltration, expose the attack mechanism, and trigger Emergency Shutdown before the 0800 trigger time.",
+
+  "music": {
+    "events": [
+      {
+        "trigger": "game_loaded",
+        "condition": "!globalVars.briefing_played",
+        "playlist": "cutscene",
+        "fade": false
+      },
+      {
+        "trigger": "game_loaded",
+        "condition": "globalVars.briefing_played === true",
+        "playlist": "noir",
+        "fade": false
+      },
+      {
+        "trigger": "conversation_closed:opening_briefing_cutscene",
+        "playlist": "noir",
+        "fade": true
+      },
+      {
+        "comment": "The telemetry is confirmed false -- the mission turns here. (The clocks start later, on attack_mechanism_known; see timers.)",
+        "trigger": "global_variable_changed:anomaly_detected",
+        "condition": "value === true",
+        "playlist": "threat",
+        "fade": true
+      },
+      {
+        "comment": "Hydrogen advisory: bank B is venting. Escalate and stay escalated until the shutdown.",
+        "trigger": "global_variable_changed:hydrogen_alarm",
+        "condition": "value === true",
+        "playlist": "spy-action",
+        "fade": true
+      },
+      {
+        "trigger": "npc_hostile_state_changed",
+        "condition": "isHostile === true",
+        "playlist": "threat",
+        "fade": true
+      },
+      {
+        "trigger": "all_hostiles_ko",
+        "playlist": "noir",
+        "fade": true
+      },
+      {
+        "trigger": "global_variable_changed:attack_prevented",
+        "condition": "value === true",
+        "playlist": "spy-action",
+        "fade": true
+      },
+      {
+        "trigger": "conversation_closed:agent_0x99_debrief",
+        "playlist": "victory",
+        "track": "Ghost in the Wire",
+        "autoStop": true,
+        "disableClose": true,
+        "fade": true,
+        "credits": [
+          { "text": "MISSION COMPLETE", "style": "title", "condition": "globalVars.attack_prevented && !globalVars.racks_vented" },
+          { "text": "COSTLY SUCCESS", "style": "title", "condition": "globalVars.attack_prevented && globalVars.racks_vented" },
+          { "text": "CRITICAL FAILURE", "style": "subtitle" },
+          { "text": "" },
+          { "text": "ALBION ENERGY STORAGE: THERMAL RUNAWAY AVERTED — Emergency Shutdown engaged", "style": "entry", "condition": "globalVars.attack_prevented && !globalVars.racks_vented" },
+          { "text": "GRID HELD: 240,000 residents kept on supply", "style": "entry", "condition": "globalVars.attack_prevented && !globalVars.racks_vented" },
+          { "text": "ALL ELEVEN ON SITE WALKED OUT", "style": "entry", "condition": "globalVars.attack_prevented && !globalVars.racks_vented" },
+          { "text": "RACK BANK B LOST — banks A and C isolated in time", "style": "entry", "condition": "globalVars.racks_vented && !globalVars.vented_by_trigger" },
+          { "text": "RACK BANK B LOST — he reached the laptop", "style": "entry", "condition": "globalVars.vented_by_trigger" },
+          { "text": "CASUALTIES: the Hall 2 night crew, and the dropped feed", "style": "warning", "condition": "globalVars.casualties_occurred" },
+          { "text": "" },
+          { "text": "── DECISIONS ──", "style": "section-header" },
+          { "text": "VOLTAGE: CAPTURED — Critical Mass leadership in custody", "style": "entry", "condition": "globalVars.voltage_captured" },
+          { "text": "VOLTAGE: ESCAPED — you took the button and let him reach the dock", "style": "entry", "condition": "globalVars.voltage_escaped" },
+          { "text": "ROBERT VANCE: vindicated — his warning broke the case open", "style": "entry", "condition": "globalVars.vance_is_ally" },
+          { "text": "ROBERT VANCE: knocked down in his own office, by us", "style": "warning", "condition": "globalVars.robert_vance_ko" },
+          { "text": "CIPHER: walked off the job when you told him about the night crew", "style": "entry", "condition": "globalVars.cipher_walked" },
+          { "text": "RELAY: card copied mid-standoff", "style": "entry", "condition": "globalVars.relay_card_cloned" },
+          { "text": "EVIDENCE: Voltage's own print on the bypass module", "style": "entry", "condition": "globalVars.voltage_print_on_bypass" },
+          { "text": "SOCIAL FABRIC SAFEHOUSE: located", "style": "entry", "condition": "globalVars.lore_safehouse_address_found" },
+          { "text": "DISCLOSED IN FULL — the attack, the vulnerabilities, and how close it came", "style": "entry", "condition": "globalVars.disclosure_choice === 'full'" },
+          { "text": "CLASSIFIED — filed as a maintenance fault, patched quietly", "style": "entry", "condition": "globalVars.disclosure_choice === 'quiet'" },
+          { "text": "PARTIALLY DISCLOSED — an incident acknowledged, the details withheld", "style": "entry", "condition": "globalVars.disclosure_choice === 'partial'" },
+          { "text": "" },
+          { "text": "BLACKOUT: signed the casualty model. Still at large.", "style": "warning" },
+          { "text": "THE ARCHITECT: identity still unknown. Phase 3 looms.", "style": "warning" },
+          { "text": "ENTROPY: Still operational. Cross-cell strikes continue.", "style": "warning" }
+        ]
+      }
+    ]
+  },
+
+  "narrator": {
+    "id": "narrator",
+    "skipTextValidation": true,
+    "voice": {
+      "name": "Algenib",
+      "style": "Cinematic noir detective voice over narrator.",
+      "language": "en-GB"
+    }
+  },
+
+  "objectives": [
+    {
+      "aimId": "get_inside",
+      "title": "Get Inside Albion Energy Storage",
+      "description": "Talk your way past the checkpoint and find someone on shift who knows the plant",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "enter_facility",
+          "title": "Get past the checkpoint into the operations office",
+          "type": "enter_room",
+          "targetRoom": "operations_office",
+          "status": "active"
+        },
+        {
+          "taskId": "meet_robert_vance",
+          "title": "Find the OT engineer on shift",
+          "type": "npc_conversation",
+          "targetNPC": "robert_vance",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "aimId": "confirm_the_lie",
+      "title": "Confirm the Telemetry Is Lying",
+      "description": "The control room says the racks are nominal. Find out whether that is true",
+      "status": "locked",
+      "unlockCondition": { "aimCompleted": "get_inside" },
+      "order": 1,
+      "tasks": [
+        {
+          "taskId": "find_infiltration_evidence",
+          "title": "Search for evidence of unauthorised access",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "identify_scada_anomalies",
+          "title": "Verify the rack temperatures independently",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "aimId": "reach_the_workshop",
+      "title": "Reach the Engineering Workshop",
+      "description": "The workshop is the only place with a route onto the OT network — and it is behind a card you do not have",
+      "status": "locked",
+      "unlockCondition": { "aimCompleted": "confirm_the_lie" },
+      "order": 2,
+      "tasks": [
+        {
+          "taskId": "neutralize_operative_relay",
+          "title": "Take a workshop card off the cell",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "locate_compromised_systems",
+          "title": "Get into the engineering workshop",
+          "type": "enter_room",
+          "targetRoom": "engineering_workshop",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "aimId": "map_the_attack",
+      "title": "Map the Attack on the OT Network",
+      "description": "Work the BMS jump server from the workshop terminal and prove how they took control",
+      "status": "locked",
+      "unlockCondition": { "aimCompleted": "reach_the_workshop" },
+      "order": 3,
+      "tasks": [
+        {
+          "taskId": "scan_scada_network",
+          "title": "Map the OT network",
+          "type": "custom",
+          "status": "active",
+          "optional": true
+        },
+        {
+          "taskId": "submit_network_scan_flag",
+          "title": "Submit the flag from the fake rack status page",
+          "type": "submit_flags",
+          "targetFlags": ["flag_station_dropsite:bms_jump_server-flag1"],
+          "targetCount": 1,
+          "currentCount": 0,
+          "showProgress": true,
+          "status": "active"
+        },
+        {
+          "taskId": "investigate_compromised_services",
+          "title": "Enumerate what is listening",
+          "type": "custom",
+          "status": "active",
+          "optional": true
+        },
+        {
+          "taskId": "submit_ftp_intel_flag",
+          "title": "Submit the intelligence file from their FTP service",
+          "type": "submit_flags",
+          "targetFlags": ["flag_station_dropsite:bms_jump_server-flag2"],
+          "targetCount": 1,
+          "currentCount": 0,
+          "showProgress": true,
+          "status": "active"
+        },
+        {
+          "taskId": "exploit_distcc_vulnerability",
+          "title": "Get a foothold on the BMS jump server",
+          "type": "custom",
+          "status": "active",
+          "optional": true
+        },
+        {
+          "taskId": "submit_distcc_exploit_flag",
+          "title": "Submit proof of the distcc foothold",
+          "type": "submit_flags",
+          "targetFlags": ["flag_station_dropsite:bms_jump_server-flag4"],
+          "targetCount": 1,
+          "currentCount": 0,
+          "showProgress": true,
+          "status": "active"
+        },
+        {
+          "taskId": "submit_privesc_flag",
+          "title": "Submit proof you became root on the jump server",
+          "type": "submit_flags",
+          "targetFlags": ["flag_station_dropsite:bms_jump_server-flag3"],
+          "targetCount": 1,
+          "currentCount": 0,
+          "showProgress": true,
+          "status": "active"
+        }
+      ]
+    },
+    <%# PASS 2 (playtest D5), updated PASS 3. Voltage can be dealt with before any
+        flag is in: Hall 2 opens on the cloned Level 1 card, and the plant room
+        behind it opens on Vance's print, which can be taken before the VM. (Relay
+        now carries the workshop card, so her task lives in reach_the_workshop.) The engine auto-reveals a locked
+        aim the moment any of its tasks completes (objectives-manager.js:414-419,
+        573-578), so while these two tasks lived in stop_the_runaway, KO'ing Relay
+        early put "Stop the Thermal Runaway" on screen before the attack was even
+        mapped. They now have their own aim, revealed at the start of act two.
+        stop_the_runaway keeps only tasks that cannot complete before
+        map_the_attack (the ESD needs attack_mechanism_known; the debrief needs
+        the ESD), so its unlockCondition now holds in practice. %>
+    {
+      "aimId": "take_back_the_plant",
+      "title": "Take the Plant Back from the Cell",
+      "description": "The man holding the trigger is in the plant room, off Battery Hall 2",
+      "status": "locked",
+      "unlockCondition": { "aimCompleted": "confirm_the_lie" },
+      "order": 4,
+      "tasks": [
+        {
+          "taskId": "neutralize_operative_cipher",
+          "title": "Deal with the intruder in Battery Hall 1",
+          "type": "custom",
+          "status": "active",
+          "optional": true
+        },
+        {
+          "taskId": "get_past_plant_reader",
+          "title": "Get into the plant room",
+          "type": "enter_room",
+          "targetRoom": "plant_room",
+          "status": "active"
+        },
+        {
+          "taskId": "confront_voltage",
+          "title": "Confront the cell leader in the plant room",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "aimId": "stop_the_runaway",
+      "title": "Stop the Thermal Runaway",
+      "description": "The mechanism is proven and the clock is running. Get to the hardwired shutdown",
+      "status": "locked",
+      "unlockCondition": { "aimCompleted": "map_the_attack" },
+      "order": 5,
+      "missionConclusion": true,
+      <%# Ending gate: the mandatory flag nodes from the dungeon graph -- the
+          technical work this mission is not allowed to skip. Story tasks are
+          not listed: they cost score if unfinished, they never withhold the
+          ending. See README_scenario_design.md#concluderequires. %>
+      "concludeRequires": {
+        "tasksCompleted": [
+          "submit_network_scan_flag",
+          "submit_ftp_intel_flag",
+          "submit_privesc_flag",
+          "submit_distcc_exploit_flag"
+        ]
+      },
+      "conclusionScreen": { "type": "bond_visualiser" },
+      "tasks": [
+        {
+          "taskId": "disable_attack_vectors",
+          "title": "Force the shutdown before the racks go",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "report_to_0x99",
+          "title": "Report the outcome to SAFETYNET",
+          "type": "npc_conversation",
+          "targetNPC": "agent_0x99_debrief",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+
+  "startRoom": "main_entrance",
+
+  "startItemsInInventory": [
+    {
+      "type": "phone",
+      "name": "Your Phone",
+      "takeable": true,
+      "phoneId": "player_phone",
+      "npcIds": ["agent_0x99", "robert_vance_phone", "agent_0x99_debrief"],
+      "observations": "Your secure phone with encrypted connection to SAFETYNET"
+    },
+    {
+      "type": "rfid_cloner",
+      "name": "RFID Cloner",
+      "takeable": true,
+      "observations": "Concealed RFID cloning device — get close to a keycard to copy it",
+      "puzzle_graph_role": "tool",
+      "puzzle_graph_unlocks": ["battery_hall_2"]
+    },
+    {
+      "type": "lockpick",
+      "name": "Lock Pick Kit",
+      "takeable": true,
+      "observations": "Professional lock picking kit for bypassing physical locks",
+      "puzzle_graph_role": "tool",
+      "puzzle_graph_unlocks": ["security_equipment_locker", "optigrid_tool_case", "extraction_gobag"]
+    },
+    {
+      "type": "id_badge",
+      "name": "Grid Regulator Credentials",
+      "takeable": true,
+      "observations": "Forged credentials identifying you as an Ofgem / grid-safety regulator conducting an early audit"
+    }
+  ],
+
+  "player": {
+    "id": "player",
+    "displayName": "Agent 0x00",
+    "spriteSheet": "hacker",
+    "spriteTalk": "assets/characters/hacker-talk.png",
+    "spriteConfig": {
+      "idleFrameStart": 20,
+      "idleFrameEnd": 23
+    }
+  },
+
+  "rooms": {
+    "main_entrance": {
+      "type": "room_reception",
+      "dimensions": { "width": 10, "height": 8 },
+      "door_sign": "Albion Energy Storage — Reception",
+      "connections": {
+        "south": "operations_office"
+      },
+      "npcs": [
+        {
+          "id": "opening_briefing_cutscene",
+          "displayName": "Agent HaX",
+          "npcType": "person",
+          "voice": {
+            "name": "Aoede",
+            "style": "Intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Speak quickly with a sense of urgency, as if time is short.",
+            "language": "en-GB"
+          },
+          "position": { "x": 500, "y": 500 },
+          "spriteSheet": "hacker",
+          "spriteConfig": { "idleFrameStart": 20, "idleFrameEnd": 23 },
+          "storyPath": "scenarios/m04_critical_failure/ink/m04_opening_briefing.json",
+          "currentKnot": "start",
+          "behavior": { "initiallyHidden": true },
+          "timedConversation": {
+            "delay": 0,
+            "targetKnot": "start",
+            "background": "assets/backgrounds/hq1.png",
+            "waitForEvent": "game_loaded",
+            "skipIfGlobal": "briefing_played",
+            "setGlobalOnStart": "briefing_played"
+          }
+        },
+        {
+          "_comment": "SEED NPC (continuity): Director Magnus Netherton, co-speaker in the opening briefing. Hidden, no task, no gating global.",
+          "id": "director_netherton",
+          "displayName": "Director Magnus Netherton",
+          "npcType": "person",
+          "position": { "x": 480, "y": 500 },
+          "spriteSheet": "male_spy_v2",
+          "spriteTalk": "assets/characters/male_spy_talk.png",
+          "spriteVisemes": "assets/characters/male_spy_visemes.png",
+          "avatar": "assets/characters/male_spy_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "behavior": { "initiallyHidden": true },
+          "voice": {
+            "name": "Charon",
+            "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried; sets the stakes then lets his people run the detail.",
+            "language": "en-GB"
+          }
+        },
+        {
+          "_comment": "SEED NPC (continuity): Agent 0x47 'Nightshade', trusted SAFETYNET technical analyst who chips in on the technical detail. Hidden, no task, no gating global. NO hint of the m08 betrayal.",
+          "id": "agent_nightshade",
+          "displayName": "Agent 0x47 'Nightshade'",
+          "npcType": "person",
+          "position": { "x": 520, "y": 500 },
+          "spriteSheet": "male_scientist_v2",
+          "spriteTalk": "assets/characters/male_scientist_talk.png",
+          "spriteVisemes": "assets/characters/male_scientist_visemes.png",
+          "avatar": "assets/characters/male_scientist_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "behavior": { "initiallyHidden": true },
+          "voice": {
+            "name": "Enceladus",
+            "style": "SAFETYNET's technical analyst. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, precise, technically fluent; a colleague you trust.",
+            "language": "en-GB"
+          }
+        },
+        {
+          "id": "security_guard",
+          "displayName": "Security Guard",
+          "npcType": "person",
+          "voice": {
+            "name": "Schedar",
+            "style": "Site security guard on the early shift, mid-fifties. Speak with a consistent West Country (Bristol) accent throughout -- do not shift to any other accent. Low, even pitch; unhurried pace. Polite and a little grumpy about the hour, then firmly by-the-book once pushed.",
+            "language": "en-GB"
+          },
+          "position": { "x": 5, "y": 4 },
+          <%# Was hacker-red, the operatives' sprite, so the one bystander the debrief
+              scolds you for hitting looked like the enemy. Own guard set now. %>
+          "spriteSheet": "male_security_guard_v2",
+          "spriteTalk": "assets/characters/male_security_guard_talk.png",
+          "spriteVisemes": "assets/characters/male_security_guard_visemes.png",
+          "avatar": "assets/characters/male_security_guard_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/m04_critical_failure/ink/m04_npc_security_guard.json",
+          "currentKnot": "start",
+          "globalVarOnKO": "security_guard_ko"
+        },
+        {
+          "id": "agent_0x99",
+          "displayName": "Agent HaX",
+          "npcType": "phone",
+          "voice": {
+            "name": "Aoede",
+            "style": "Intelligence handler speaking over a secure phone line. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Speak quickly with urgency, as if time is short.",
+            "language": "en-GB"
+          },
+          "storyPath": "scenarios/m04_critical_failure/ink/m04_phone_agent0x99.json",
+          "avatar": "assets/npc/avatars/npc_helper.png",
+          "phoneId": "player_phone",
+          "currentKnot": "first_call",
+          "itemsHeld": [
+            {
+              "type": "lab-workstation",
+              "id": "safetynet_field_guide_rfid_cloning",
+              "name": "SAFETYNET Field Guide: RFID Cloning",
+              "takeable": true,
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/rfid-cloning/",
+              "observations": "Field guide to reading, cracking and emulating MIFARE access cards"
+            },
+            {
+              "type": "lab-workstation",
+              "id": "safetynet_field_guide_lockpicking",
+              "name": "SAFETYNET Field Guide: Lockpicking",
+              "takeable": true,
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/lockpicking/",
+              "observations": "Field guide to pin tumbler locks and the two-tool technique"
+            },
+            {
+              "type": "lab-workstation",
+              "id": "safetynet_field_guide_recon_network_mapping",
+              "name": "SAFETYNET Field Guide: Reconnaissance and Network Mapping",
+              "takeable": true,
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/reconnaissance-and-network-mapping/",
+              "observations": "Field guide to discovering hosts and mapping an unfamiliar network with Nmap"
+            },
+            {
+              "type": "lab-workstation",
+              "id": "safetynet_field_guide_vuln_analysis",
+              "name": "SAFETYNET Field Guide: Vulnerability Analysis and Attack Surface",
+              "takeable": true,
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/vulnerability-analysis-and-attack-surface/",
+              "observations": "Field guide to enumerating services and reasoning about attack surface"
+            },
+            {
+              "type": "lab-workstation",
+              "id": "safetynet_field_guide_distcc",
+              "name": "SAFETYNET Field Guide: distcc Exploitation",
+              "takeable": true,
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/distcc-exploitation/",
+              "observations": "Field guide to exploiting a legacy distccd service (CVE-2004-2687) for command execution"
+            },
+            {
+              "type": "lab-workstation",
+              "id": "safetynet_field_guide_cyberchef",
+              "name": "SAFETYNET Field Guide: Encoding and Decoding with CyberChef",
+              "takeable": true,
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/encoding-and-decoding-with-cyberchef/",
+              "observations": "Field guide to spotting Base64 and ROT13 and decoding them with CyberChef"
+            },
+            {
+              "type": "lab-workstation",
+              "id": "safetynet_field_guide_privesc",
+              "name": "SAFETYNET Field Guide: Privilege Escalation via Sudo",
+              "takeable": true,
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/privilege-escalation/",
+              "observations": "Field guide to enumerating sudo rights and escalating from a foothold"
+            },
+            {
+              "_comment": "PASS 4 fix 20: flag 2 is the same backdoored ProFTPD build m02 used. Offered on the scan-flag bark, for players who skipped m02.",
+              "type": "lab-workstation",
+              "id": "safetynet_field_guide_proftpd",
+              "name": "SAFETYNET Field Guide: ProFTPD Backdoor",
+              "takeable": true,
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/proftpd-exploitation-workflow/",
+              "observations": "Field guide to recognising and using a backdoored ProFTPD build"
+            },
+            {
+              "_comment": "B1 fallback, kept after 18237332 fixed KO drops in later-loaded rooms. Relay carries the only Level 2 card (PASS 3 P3); on her KO HaX hands over a working copy by phone. A duplicate card is harmless: the RFID lock needs one match (unlock-system.js:511-513).",
+              "type": "keycard",
+              "id": "relayed_workshop_keycard",
+              "name": "Workshop Keycard (relayed copy)",
+              "takeable": true,
+              "opens_lock": "server_room_keycard",
+              "observations": "A copy of the Level 2 workshop card, built by SAFETYNET from the reader logs after Relay went down. Opens the engineering workshop."
+            }
+          ],
+          "timedMessages": [
+            {
+              "delay": 3000,
+              "message": "Gate first. Regulator badge, routine audit, came early. Then find Vance in the operations office.",
+              "type": "text",
+              "waitForEvent": "conversation_closed:opening_briefing_cutscene"
+            }
+          ],
+          "eventMappings": [
+            <%# PASS 3 P9. The RFID guide is offered once Vance's card is actually in
+                the cloner. conversation_closed:robert_vance also fires mid-clone
+                (the RFID minigame tears the chat down, person-chat-minigame.js
+                cleanup), so this waits for vance_met (set only after the clone)
+                and for the card itself. 7 s lands 4.5 s after Vance's own 2.5 s text. %>
+            {
+              "eventPattern": "conversation_closed:robert_vance",
+              "condition": "globalVars.vance_met === true && globalVars.vance_provided_keycard === true",
+              "onceOnly": true,
+              "setGlobal": { "rfid_guide_offered": true },
+              "sendTimedMessage": { "delay": 7000, "message": "Vance's card is the old prox kind. If you want to know what the cloner just did, I'll send you the RFID guide." }
+            },
+            {
+              "eventPattern": "room_entered:battery_hall_1",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2500, "message": "The workshop wants a Level 2 card. Vance hasn't got one. Relay has, and it's old prox, like his. She walks the inverter room." }
+            },
+            <%# PASS 4 fix 1, round 2 (re-review M2): the mission's turn is a short
+                phone conversation, the same way Relay's KO opens one. HaX quotes
+                Nightshade's read (paying off his briefing line) and the player gets
+                one reply. The knot branches on server_room_reached, so a player who
+                reads the dial late (the aim cascade) hears a line that fits. %>
+            {
+              "eventPattern": "global_variable_changed:anomaly_detected",
+              "condition": "value === true",
+              "onceOnly": true,
+              "conversationMode": "phone-chat",
+              "targetKnot": "on_anomaly_confirmed"
+            },
+            <%# PASS 4 fix 6: Relay now challenges the player on entering Hall 2
+                (her own room_entered mapping), so these two texts wait for that
+                conversation to close instead of landing on top of it (lesson 20).
+                The room_entered fallbacks below cover a Hall 2 entry with Relay
+                already down. A player who got Level 1 from the locker or a KO drop
+                never closes a clone conversation, so the RFID guide is offered here. %>
+            {
+              "eventPattern": "conversation_closed:operative_relay",
+              "condition": "globalVars.rfid_guide_offered !== true",
+              "onceOnly": true,
+              "setGlobal": { "rfid_guide_offered": true },
+              "sendTimedMessage": { "delay": 2500, "message": "That door was RFID. If you want to know how those readers and the cloner work, ask me for the RFID guide." }
+            },
+            <%# PASS 3 P9: the wall the m04 grant answers. %>
+            {
+              "eventPattern": "conversation_closed:operative_relay",
+              "condition": "globalVars.plant_reader_seen !== true",
+              "onceOnly": true,
+              "setGlobal": { "plant_reader_seen": true },
+              "sendTimedMessage": { "delay": 7000, "message": "And that plant-room door is biometric. Picks and cloner won't touch it. Somebody got through it on the ninth, though." }
+            },
+            {
+              "eventPattern": "room_entered:battery_hall_2",
+              "condition": "globalVars.plant_reader_seen !== true && globalVars.operative_relay_defeated === true",
+              "onceOnly": true,
+              "setGlobal": { "plant_reader_seen": true, "rfid_guide_offered": true },
+              "sendTimedMessage": { "delay": 2500, "message": "That plant-room door is biometric. Picks and cloner won't touch it. Somebody got through it on the ninth, though." }
+            },
+            <%# PASS 4 fix 2: a VM-first player can reach the plant door with the
+                clock running and no kit. The reader's refusal (no lifted prints)
+                emits door_unlock_failed with the connected room
+                (unlock-system.js:125-131, fingerprint-reader-minigame.js:331-339). %>
+            {
+              "eventPattern": "door_unlock_failed:plant_room",
+              "condition": "globalVars.fingerprint_kit_found !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "Their crew got through that door on the ninth, and whatever they used came in with them. Check what they left in the workshop." }
+            },
+            <%# Round 2 (re-review m3): the text depends on whether the clock is running.
+                The global is set by the unconditional mapping. %>
+            {
+              "eventPattern": "item_picked_up:fingerprint_kit",
+              "onceOnly": true,
+              "setGlobal": { "fingerprint_kit_found": true }
+            },
+            {
+              "eventPattern": "item_picked_up:fingerprint_kit",
+              "condition": "globalVars.attack_mechanism_known !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "The crew's own fingerprint kit. It's how they beat the plant reader. Their reference cards are in the lid, with our file prints of the cell. Lift Vance's print now." }
+            },
+            {
+              "eventPattern": "item_picked_up:fingerprint_kit",
+              "condition": "globalVars.attack_mechanism_known === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "The crew's own fingerprint kit. It's how they beat the plant reader. Vance's print is on the Hall 1 duty panel. Hurry." }
+            },
+            <%# PASS 4 fix 6 (quiet route): Relay's Level 2 card is old prox too, so
+                the m03 cloner can copy it while she talks. Clone rule: the task and
+                the global come from the card_cloned event, never the ink tag. %>
+            {
+              "eventPattern": "card_cloned",
+              "condition": "data.cardName === 'Workshop Card Level 2'",
+              "onceOnly": true,
+              "setGlobal": { "relay_card_cloned": true },
+              "completeTask": "neutralize_operative_relay",
+              "sendTimedMessage": { "delay": 2500, "message": "Card's yours. She knows, and she'll walk that hall faster now. She won't chase far. Cross when she's at the far end.", "skipIfGlobal": "operative_relay_defeated" }
+            },
+            <%# PASS 4 fix 1 (optional beat): the people at risk are heard once. %>
+            {
+              "eventPattern": "global_variable_changed:hydrogen_alarm",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 5000, "message": "Hall 2's night foreman just rang the ops desk. Nine of them behind the inverter wall, and they can smell it. Get to that button.", "skipIfGlobal": "attack_prevented" }
+            },
+            <%# PASS 3 P9, re-keyed by the fingerprint redesign: fires on every lift of
+                Vance's print (dusting is now the only way to collect one), and lifted
+                prints are saved with the game. %>
+            {
+              "eventPattern": "fingerprint_collected:robert_vance",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1000, "message": "That's Vance's print. He leaves it on every panel he touches, and the reader in Hall 2 can't tell a lift from a living thumb." }
+            },
+            {
+              "eventPattern": "room_entered:security_office",
+              "onceOnly": true,
+              "setGlobal": { "lockpicking_guide_offered": true },
+              "sendTimedMessage": { "delay": 2000, "message": "That equipment locker is a pin tumbler. Say the word and I'll send you the lockpicking guide." }
+            },
+            {
+              "eventPattern": "room_entered:engineering_workshop",
+              "onceOnly": true,
+              "setGlobal": { "recon_guide_offered": true, "vuln_guide_offered": true, "server_room_reached": true },
+              "sendTimedMessage": { "delay": 3000, "message": "You're on the OT network. The BMS jump server is their way in; scan it from the terminal. Four flags make the case: status page, FTP drop, distcc foothold, root." }
+            },
+            <%# Round 2 (re-review m7): the 87-word workshop text split in two. The
+                guides offer and the tool-case pointer (fix 2a) follow it. %>
+            {
+              "eventPattern": "room_entered:engineering_workshop",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 9000, "message": "I've guides for mapping the network and reading its attack surface, if you want them. And that OptiGrid case under the bench is theirs. Open it." }
+            },
+            {
+              "eventPattern": "objective_task_completed:submit_ftp_intel_flag",
+              "onceOnly": true,
+              "completeTask": "investigate_compromised_services",
+              "setGlobal": { "distcc_guide_offered": true },
+              "sendTimedMessage": { "delay": 2000, "message": "There's a legacy distccd on that box too. The crew left it as a way back in. Prove it works. I've a guide if you want it." }
+            },
+            <%# PASS 3 P15 (review): the sudo offer on the FTP flag, only if the
+                distcc flag hasn't already made it. %>
+            {
+              "eventPattern": "objective_task_completed:submit_ftp_intel_flag",
+              "condition": "globalVars.privesc_guide_offered !== true",
+              "onceOnly": true,
+              "setGlobal": { "privesc_guide_offered": true },
+              "sendTimedMessage": { "delay": 7000, "message": "And once you're on the box, I've a sudo guide for getting to root." }
+            },
+            <%# PASS 3 P15: if the distcc flag lands first, offer the privesc guide then. %>
+            {
+              "eventPattern": "objective_task_completed:submit_distcc_exploit_flag",
+              "condition": "globalVars.privesc_guide_offered !== true",
+              "onceOnly": true,
+              "setGlobal": { "privesc_guide_offered": true },
+              "sendTimedMessage": { "delay": 2500, "message": "You're on the box. If you want the sudo guide for getting to root, ask." }
+            },
+            <%# PASS 3 P19: m02's exploit, m03's directive. %>
+            <%# PASS 4 fix 20: the same message offers the ProFTPD guide. %>
+            {
+              "eventPattern": "objective_task_completed:submit_network_scan_flag",
+              "onceOnly": true,
+              "setGlobal": { "proftpd_guide_offered": true },
+              "sendTimedMessage": { "delay": 1500, "message": "That FTP service. Same backdoored build you met at St Catherine's. Zero Day supplies, Critical Mass executes. I've the ProFTPD guide if you want a refresher." }
+            },
+            {
+              "eventPattern": "global_variable_changed:lore_safehouse_address_found",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": { "cyberchef_guide_offered": true },
+              "sendTimedMessage": { "delay": 2000, "message": "That card in the go-bag is Base64. I can send you the decoding guide if you'd rather not eyeball it." }
+            },
+            <%# operatives_defeated counter. globalVarOnKO writes
+                operative_*_defeated WITHOUT emitting global_variable_changed
+                (npc-hostile.js:159-166, lesson 18), so the old
+                global_variable_changed:operative_*_defeated mappings never fired
+                on a KO and the counter stuck at 0. React to npc_ko:<id>, which
+                the engine DOES emit (npc-hostile.js:151-153). The other
+                operative's _defeated flag is already written when this fires
+                (globalVarOnKO runs after npc_ko for the same NPC but the other
+                NPC was KO'd earlier), so the conditions give the right running
+                total in either order. %>
+            {
+              "eventPattern": "npc_ko:operative_cipher",
+              "condition": "globalVars.operative_relay_defeated !== true",
+              "onceOnly": true,
+              "setGlobal": { "operatives_defeated": 1 }
+            },
+            {
+              "eventPattern": "npc_ko:operative_cipher",
+              "condition": "globalVars.operative_relay_defeated === true",
+              "onceOnly": true,
+              "setGlobal": { "operatives_defeated": 2 }
+            },
+            {
+              "eventPattern": "npc_ko:operative_relay",
+              "condition": "globalVars.operative_cipher_defeated !== true",
+              "onceOnly": true,
+              "setGlobal": { "operatives_defeated": 1 }
+            },
+            {
+              "eventPattern": "npc_ko:operative_relay",
+              "condition": "globalVars.operative_cipher_defeated === true",
+              "onceOnly": true,
+              "setGlobal": { "operatives_defeated": 2 }
+            },
+            <%# B1 KO keycard fallback. On Relay's KO, HaX phones and hands over a
+                relayed copy of the workshop card she carried, in case the physical
+                drop failed. Cipher carries no card since PASS 3 P3. %>
+            {
+              "eventPattern": "npc_ko:operative_relay",
+              "onceOnly": true,
+              "conversationMode": "phone-chat",
+              "targetKnot": "on_relay_ko_card"
+            },
+            <%# Playtest D2: vance_provided_keycard used to be set by Vance's ink just
+                before #give_item, so when the give did not land the flag was already
+                true and the "I still need a facility keycard" safety net never
+                appeared. The flag is now set only when the card is actually in the
+                player's inventory (item_picked_up is emitted by type; the id rides in
+                data.itemId -- lesson 1). %>
+            {
+              "eventPattern": "item_picked_up:keycard",
+              "condition": "data.itemId === 'vance_level1_keycard'",
+              "onceOnly": true,
+              "setGlobal": { "vance_provided_keycard": true }
+            },
+            <%# PASS 3 P2: the normal route. Vance's card is cloned, not handed over.
+                card_cloned carries only cardName (rfid-minigame.js:245-249). %>
+            {
+              "eventPattern": "card_cloned",
+              "condition": "data.cardName === 'Level 1 Facility Card'",
+              "onceOnly": true,
+              "setGlobal": { "vance_provided_keycard": true, "vance_card_cloned": true }
+            },
+            <%# PASS 3 P7: the reader export is a fourth infiltration source. %>
+            {
+              "eventPattern": "global_variable_changed:evidence_reader_spoof_found",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "find_infiltration_evidence"
+            },
+            <%# PASS 3 P11b: the trigger race. Turning Voltage hostile -- the #hostile
+                stance or a first punch (player-combat.js:309-311) -- starts the
+                trigger_race timer. (a) sets the start global unconditionally; (b)
+                telegraphs it, unless the bank has already vented. %>
+            {
+              "eventPattern": "npc_hostile_state_changed",
+              "condition": "data.npcId === 'voltage' && data.isHostile === true",
+              "onceOnly": true,
+              "setGlobal": { "voltage_fight_started": true }
+            },
+            {
+              "eventPattern": "npc_hostile_state_changed",
+              "condition": "data.npcId === 'voltage' && data.isHostile === true && globalVars.racks_vented !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "He's going for the laptop. Drop him.", "skipIfGlobal": "voltage_neutralised" }
+            },
+            <%# Playtest D7: the three optional methodology tasks never ticked.
+                Each is completed by the flag its step produces: the scan finds the
+                exposed status page (flag 1), enumeration finds the FTP drop (flag
+                2, wired on the FTP handler above), and the distcc foothold is flag 4. %>
+            {
+              "eventPattern": "objective_task_completed:submit_network_scan_flag",
+              "onceOnly": true,
+              "completeTask": "scan_scada_network"
+            },
+            {
+              "eventPattern": "objective_task_completed:submit_distcc_exploit_flag",
+              "onceOnly": true,
+              "completeTask": "exploit_distcc_vulnerability"
+            },
+            <%# Voltage neutralised. The ARREST and ESCAPE paths set
+                voltage_captured / voltage_escaped from ink, which DOES emit
+                global_variable_changed, so those two mappings fire. The FIGHT
+                path KOs him via globalVarOnKO, which does NOT emit (lesson 18) --
+                so without the npc_ko:voltage mapping below, voltage_neutralised
+                (and therefore esd_authorized) never set on the combat ending and
+                the player could not press the ESD. That was a soft-lock on the
+                mission's primary climax. %>
+            {
+              "eventPattern": "npc_ko:voltage",
+              "condition": "globalVars.voltage_escaped !== true",
+              "onceOnly": true,
+              "setGlobal": { "voltage_neutralised": true, "voltage_captured": true }
+            },
+            {
+              "eventPattern": "global_variable_changed:voltage_captured",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": { "voltage_neutralised": true }
+            },
+            {
+              "eventPattern": "global_variable_changed:voltage_escaped",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": { "voltage_neutralised": true }
+            },
+            <%# attack_mechanism_known is set when the OT-network aim completes (all
+                four flags in), not on the last flag submission -- so the ESD gate
+                below is really "you have proved how they did it", whichever flag
+                the player happened to submit last. %>
+            <%# PASS 4 fix 13: one ESD, and no "the trigger is in the plant room" once
+                Voltage is dealt with. The text lives in two disjoint mappings; the
+                global is set by the first, unconditionally. %>
+            {
+              "eventPattern": "objective_aim_completed:map_the_attack",
+              "onceOnly": true,
+              "setGlobal": { "attack_mechanism_known": true }
+            },
+            <%# PLAYTEST ROUND (dead end): map_the_attack stays locked until confirm_the_lie
+                is done, so with all four flags in but no evidence document read,
+                attack_mechanism_known never sets and the ESD stays unarmed. The gate stays;
+                these mappings track the flags (the flag_*_submitted globals were declared
+                but never set) and name what is missing. Flag tasks still complete and emit
+                objective_task_completed:<id> while their aim is locked
+                (objectives-manager.js handleFlagTasksUpdated). %>
+            { "eventPattern": "objective_task_completed:submit_network_scan_flag", "onceOnly": true, "setGlobal": { "flag_network_scan_submitted": true } },
+            { "eventPattern": "objective_task_completed:submit_ftp_intel_flag", "onceOnly": true, "setGlobal": { "flag_ftp_intel_submitted": true } },
+            { "eventPattern": "objective_task_completed:submit_distcc_exploit_flag", "onceOnly": true, "setGlobal": { "flag_distcc_exploit_submitted": true } },
+            { "eventPattern": "objective_task_completed:submit_privesc_flag", "onceOnly": true, "setGlobal": { "flag_privesc_submitted": true } },
+            { "eventPattern": "objective_task_completed:submit_network_scan_flag", "condition": "globalVars.flag_ftp_intel_submitted === true && globalVars.flag_distcc_exploit_submitted === true && globalVars.flag_privesc_submitted === true", "onceOnly": true, "setGlobal": { "all_flags_in": true } },
+            { "eventPattern": "objective_task_completed:submit_ftp_intel_flag", "condition": "globalVars.flag_network_scan_submitted === true && globalVars.flag_distcc_exploit_submitted === true && globalVars.flag_privesc_submitted === true", "onceOnly": true, "setGlobal": { "all_flags_in": true } },
+            { "eventPattern": "objective_task_completed:submit_distcc_exploit_flag", "condition": "globalVars.flag_network_scan_submitted === true && globalVars.flag_ftp_intel_submitted === true && globalVars.flag_privesc_submitted === true", "onceOnly": true, "setGlobal": { "all_flags_in": true } },
+            { "eventPattern": "objective_task_completed:submit_privesc_flag", "condition": "globalVars.flag_network_scan_submitted === true && globalVars.flag_ftp_intel_submitted === true && globalVars.flag_distcc_exploit_submitted === true", "onceOnly": true, "setGlobal": { "all_flags_in": true } },
+            { "eventPattern": "global_variable_changed:all_flags_in", "condition": "value === true && globalVars.evidence_maintenance_logs_found !== true && globalVars.evidence_access_logs_found !== true && globalVars.evidence_camera_tampering_found !== true && globalVars.evidence_reader_spoof_found !== true", "onceOnly": true, "sendTimedMessage": { "delay": 2500, "message": "Flags are in, but grid control won't move without the break-in on paper. Work orders in the ops office, the workshop access log, or the camera log in security." } },
+            { "eventPattern": "global_variable_changed:all_flags_in", "condition": "value === true && globalVars.anomaly_detected !== true", "onceOnly": true, "sendTimedMessage": { "delay": 7000, "message": "And grid control wants a real reading. The dial thermometer on the Rack Bank C wall, Hall 1. It isn't on their network." } },
+            {
+              "eventPattern": "objective_aim_completed:map_the_attack",
+              "condition": "globalVars.voltage_neutralised !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "That's the attack mechanism confirmed — falsified thermals, ESD interlocks disabled, overcharge armed for 0800. The trigger is in the plant room. Get there, and get to the ESD." }
+            },
+
+            <%# ESD authorisation requires all THREE: the thermal hazard confirmed
+                (anomaly_detected), the man on the trigger dealt with
+                (voltage_neutralised), and the attack proven on the network
+                (attack_mechanism_known). M1: without the last condition the player
+                could reach battery_hall_2 on the Level 1 card, go straight to the
+                plant room and press the button with no VM work done, and the
+                mission-conclusion flags would never be required. Each mapping fires
+                on one prerequisite landing and checks the other two, so whichever
+                is last grants authorisation. %>
+            {
+              "eventPattern": "global_variable_changed:voltage_neutralised",
+              "condition": "value === true && globalVars.anomaly_detected === true && globalVars.attack_mechanism_known === true",
+              "onceOnly": true,
+              "setGlobal": { "esd_authorized": true },
+              "sendTimedMessage": { "delay": 1200, "message": "He's out of the way, the sixty-one degrees in Hall 1 is on record, and so is the attack. Grid control's standing by. The ESD is live. Press it." }
+            },
+            {
+              "eventPattern": "global_variable_changed:anomaly_detected",
+              "condition": "value === true && globalVars.voltage_neutralised === true && globalVars.attack_mechanism_known === true",
+              "onceOnly": true,
+              "setGlobal": { "esd_authorized": true },
+              "sendTimedMessage": { "delay": 1200, "message": "He's out of the way, the sixty-one degrees in Hall 1 is on record, and so is the attack. Grid control's standing by. The ESD is live. Press it." }
+            },
+            {
+              "eventPattern": "global_variable_changed:attack_mechanism_known",
+              "condition": "value === true && globalVars.anomaly_detected === true && globalVars.voltage_neutralised === true",
+              "onceOnly": true,
+              "setGlobal": { "esd_authorized": true },
+              "sendTimedMessage": { "delay": 2500, "message": "He's out of the way, the sixty-one degrees in Hall 1 is on record, and so is the attack. Grid control's standing by. The ESD is live. Press it." }
+            },
+            <%# find_infiltration_evidence has three sources, not one (lesson 8):
+                the unscheduled work order, the workshop access log, and the camera
+                tampering log. Any of them completes it; the first also delivers the
+                "don't trust the SCADA screens" nudge. completeTask is idempotent,
+                so later ones firing is harmless. %>
+            <%# Round 2: the "go and check the racks" text only while nobody has. %>
+            {
+              "eventPattern": "global_variable_changed:evidence_maintenance_logs_found",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "find_infiltration_evidence"
+            },
+            {
+              "eventPattern": "global_variable_changed:evidence_maintenance_logs_found",
+              "condition": "value === true && globalVars.anomaly_detected !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "That work order was never authorised — there's your evidence. Don't trust the SCADA screens; they're spoofed. Check the racks against the physical dial in Battery Hall 1." }
+            },
+            {
+              "eventPattern": "global_variable_changed:evidence_access_logs_found",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "find_infiltration_evidence"
+            },
+            {
+              "eventPattern": "global_variable_changed:evidence_camera_tampering_found",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "find_infiltration_evidence"
+            },
+            <%# PASS 4 fix 21: the optional second print. fingerprint_identified fires
+                only on a NEW identification (biometrics.js:96-98), so the compare step
+                is what earns it; a lift logged as unidentified does not. %>
+            {
+              "eventPattern": "fingerprint_identified:voltage",
+              "onceOnly": true,
+              "setGlobal": { "voltage_print_on_bypass": true },
+              "sendTimedMessage": { "delay": 1500, "message": "Voltage's own thumb, on the bypass module. Whatever else he says tonight, that puts his hand in the cabinet." }
+            }
+          ]
+        },
+        {
+          "id": "robert_vance_phone",
+          "displayName": "Robert Vance",
+          "npcType": "phone",
+          "voice": {
+            "name": "Orus",
+            "style": "Operations manager and OT engineer at a grid battery site, mid-fifties. Speak with a consistent North-East English (Teesside) accent throughout -- do not shift to any other accent. Firm, low-to-mid pitch; brisk, clipped pace. Conscientious and overworked; defensive at first, then alarmed and determined once he realises the threat is real. Speaking over a phone line from the control room.",
+            "language": "en-GB"
+          },
+          "storyPath": "scenarios/m04_critical_failure/ink/m04_phone_robert_vance.json",
+          "avatar": "assets/characters/male_telecom_headshot.png",
+          "phoneId": "player_phone",
+          "currentKnot": "start",
+          "timedMessages": [
+            {
+              "delay": 20000,
+              "message": "It's Vance. The historian has the cells far hotter than the SCADA admits. Get to the hardwired ESD in the plant room. The software won't save us.",
+              "type": "text",
+              "waitForEvent": "global_variable_changed:vance_phone_available",
+              "skipIfGlobal": "attack_prevented"
+            }
+          ],
+          "eventMappings": [
+            <%# Lesson 20: fire this when the in-person Vance conversation CLOSES
+                (and he turned ally), not on the vance_is_ally change itself -- that
+                change happens mid-conversation, so a 2s phone text would land on
+                top of the talk the player is still in. %>
+            {
+              "eventPattern": "conversation_closed:robert_vance",
+              "condition": "globalVars.vance_is_ally === true && globalVars.vance_met === true",
+              "onceOnly": true,
+              "setGlobal": { "vance_phone_available": true },
+              "sendTimedMessage": { "delay": 2500, "message": "It's Vance. I'm on the ops desk with the historian up, and on comms if you're moving. Call me for the engineering side — the BMS and the shutdown." }
+            }
+          ]
+        },
+        {
+          "id": "agent_0x99_debrief",
+          "displayName": "Agent HaX",
+          "npcType": "person",
+          "storyPath": "scenarios/m04_critical_failure/ink/m04_closing_debrief.json",
+          "avatar": "assets/npc/avatars/npc_helper.png",
+          "currentKnot": "start",
+          "position": { "x": 500, "y": 500 },
+          "spriteSheet": "female_spy_v2",
+          "spriteTalk": "assets/characters/female_spy_talk.png",
+          "spriteVisemes": "assets/characters/female_spy_visemes.png",
+          "spriteConfig": {
+            "idleFrameRate": 6,
+            "walkFrameRate": 10
+          },
+          "voice": {
+            "name": "Aoede",
+            "style": "Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Unhurried — the emergency is over and she is choosing her words carefully.",
+            "language": "en-GB"
+          },
+          "behavior": {
+            "initiallyHidden": true
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:mission_complete",
+              "condition": "value === true",
+              "conversationMode": "person-chat",
+              "targetKnot": "start",
+              "background": "assets/backgrounds/hq1.png",
+              "onceOnly": true,
+              "disableClose": true
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Visitor Sign-In Log",
+          "takeable": false,
+          "readable": true,
+          "text": "ALBION ENERGY STORAGE — VISITOR LOG\nJanuary\n\nRecent Entries:\nJan 9 (23:41) - OptiGrid Solutions Maintenance Crew (3 technicians)\nJan 12 - Grid Safety Auditor (scheduled today - YOU)\n\nNote: OptiGrid crew had valid RFID, work order #4782.",
+          "observations": "Sign-in log showing OptiGrid Solutions maintenance crew entry late on the 9th"
+        },
+        {
+          "type": "notes",
+          "name": "Security Desk Procedures",
+          "takeable": true,
+          "readable": true,
+          "text": "SECURITY CHECKPOINT PROCEDURES\n\n1. Verify visitor credentials\n2. Issue visitor badge\n3. Log entry time\n4. Notify the duty engineer\n5. Provide PPE / safety briefing (battery halls)\n\nAll contractors require duty-engineer authorisation.",
+          "observations": "Standard security procedures posted at the checkpoint"
+        }
+      ]
+    },
+
+    "operations_office": {
+      "type": "room_office",
+      "dimensions": { "width": 15, "height": 10 },
+      "door_sign": "Operations Office",
+      "connections": {
+        "north": "main_entrance",
+        "east": "scada_control_room",
+        "south": "security_office"
+      },
+      "npcs": [
+        {
+          "id": "robert_vance",
+          "displayName": "Robert Vance",
+          "npcType": "person",
+          "position": { "x": 5, "y": 7 },
+          <%# Dialogue portrait fix (m04 confirmation playtest): robert_vance was
+              on the "hacker" sheet with no talk/headshot/visemes, so his dialogue
+              bust fell back to the generic hooded silhouette. male_telecom_v2 is a
+              hi-vis field/plant engineer with a full talk+headshot+viseme set, and
+              it clashes with no one on screen in m04 (HaX; Netherton male_spy_v2;
+              Nightshade male_scientist_v2; the guard and the operatives hacker-red).
+              This also fixes his portrait in the debrief, where his lines resolve to
+              this NPC's displayName. %>
+          "spriteSheet": "male_telecom_v2",
+          "spriteTalk": "assets/characters/male_telecom_talk.png",
+          "spriteVisemes": "assets/characters/male_telecom_visemes.png",
+          "avatar": "assets/characters/male_telecom_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/m04_critical_failure/ink/m04_npc_robert_vance.json",
+          "currentKnot": "initial_meeting",
+          "voice": {
+            "name": "Orus",
+            "style": "Operations manager and OT engineer at a grid battery site, mid-fifties. Speak with a consistent North-East English (Teesside) accent throughout -- do not shift to any other accent. Firm, low-to-mid pitch; brisk, clipped pace. Conscientious and overworked; defensive at first, then alarmed and determined once he realises the threat is real.",
+            "language": "en-GB"
+          },
+          "globalVarOnKO": "robert_vance_ko",
+          "taskOnKO": "meet_robert_vance",
+          "rfidCard": {
+            "card_id": "facility_keycard_level1",
+            "rfid_protocol": "EM4100",
+            "name": "Level 1 Facility Card"
+          },
+          "puzzle_graph_actions": [
+            { "id": "meet_robert_vance", "label": "Win Vance's trust and gain facility access", "unlocks_aim": "confirm_the_lie" }
+          ],
+          "itemsHeld": [
+            {
+              "type": "keycard",
+              "id": "vance_level1_keycard",
+              "name": "Facility Access Keycard (Level 1)",
+              "takeable": true,
+              "opens_lock": "facility_keycard_level1",
+              "observations": "Standard RFID access keycard for most facility areas",
+              "puzzle_graph_role": "key",
+              "puzzle_graph_unlocks": "battery_hall_2",
+              "puzzle_graph_optional": true
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "pc",
+          "name": "Vance's BMS Monitoring Terminal",
+          "takeable": false,
+          "observations": "Vance's BMS terminal. Every rack bank green, 28°C, NORMAL: the same feed as the SCADA wall, so it agrees with it."
+        },
+        {
+          "type": "notes",
+          "name": "Maintenance Work Orders",
+          "takeable": true,
+          "readable": true,
+          "text": <%= vance_warning_email.to_json %>,
+          "observations": "Vance's email about the unscheduled OptiGrid maintenance crew",
+          "puzzle_graph_role": "clue",
+          "puzzle_graph_reveals": "optigrid_crew_unauthorised_three_hours_in_bms_cabinet",
+          "onPickup": { "setVariable": { "evidence_maintenance_logs_found": true } }
+        },
+        {
+          "type": "notes",
+          "name": "Facility Layout Map",
+          "takeable": true,
+          "readable": true,
+          "text": "ALBION ENERGY STORAGE — SITE LAYOUT\n\nMAIN SECTIONS:\n- SCADA Control Room: telemetry & HMI\n- Engineering Workshop: BMS jump server, network infrastructure\n- Battery Hall 1 & 2: lithium-ion rack banks A-C\n- Inverter / Plant Room: PCS, ESD interlocks, generators\n- Loading Dock: deliveries / east exit\n\nPPE required beyond the control room. Hydrogen monitors in every hall.\nDuty engineer's round: log at the Hall 1 panel every two hours (R. Vance).",
+          "observations": "The site layout, with the duty engineer's round marked on it"
+        },
+        {
+          "type": "notes",
+          "name": "Budget Cut Memo",
+          "takeable": true,
+          "readable": true,
+          "text": "MEMORANDUM\n\nFROM: Regional Infrastructure Budget Office\nTO: All Storage Sites\nRE: Budget Reductions\n\nAll sites must reduce operational budgets by 12%. Priority: keep export availability up. Deferrable: OT security upgrades, contractor oversight.\n\nVance's handwritten note: 'How am I supposed to keep the OT network safe with these cuts?'",
+          "observations": "Budget memo explaining the security gaps ENTROPY exploited"
+        }
+      ]
+    },
+
+    "scada_control_room": {
+      "type": "room_control_1x2gu",
+      "dimensions": { "width": 12, "height": 10 },
+      "door_sign": "SCADA Control Room",
+      "connections": {
+        "west": "operations_office",
+        "east": "battery_hall_1"
+      },
+      "npcs": [],
+      "objects": [
+        {
+          "type": "tablet",
+          "id": "scada_hmi_display",
+          "name": "SCADA HMI — Main Display",
+          "takeable": false,
+          "readable": true,
+          "observationDisplay": "gameDisplay",
+          "observations": "A large wall-mounted SCADA HMI mirroring the battery hall status. Every rack bank showing green, 28°C, NORMAL — all of it fed from the BMS sensor bus. If that feed is lying, only a standalone instrument in the hall would show it.",
+          "text": "ALBION ENERGY STORAGE — SCADA HMI (MAIN DISPLAY)\n\nRack Bank A: 28.0°C | SoC 72% | Status: NORMAL\nRack Bank B: 27.9°C | SoC 71% | Status: NORMAL\nRack Bank C: 28.1°C | SoC 73% | Status: NORMAL\n\nHydrogen vent fans: AUTO\nESD interlocks: ARMED\nAll alarm setpoints: SATISFIED\n\nFeed source: BMS sensor bus \u2192 SCADA historian. Last integrity check: PASSED.",
+          "puzzle_graph_role": "clue",
+          "puzzle_graph_reveals": "scada_shows_falsified_normal_readings"
+        },
+        {
+          "type": "notes",
+          "name": "Thermal & Charge Parameters Log",
+          "takeable": false,
+          "readable": true,
+          "text": "SCADA PARAMETER CHANGE LOG\n\nRack Bank A: charge ceiling RAISED (override)\nRack Bank B: charge ceiling RAISED (override)\nRack Bank C: charge ceiling RAISED (override) [WARNING]\n\nUnauthorised parameter modifications detected.\nLast modification: Jan 10, 02:14\nSource: Remote access (IP: 192.168.100.X)",
+          "observations": "SCADA log showing compromised charge-ceiling overrides on every rack bank"
+        },
+        {
+          "type": "notes",
+          "name": "Emergency Shutdown Procedure",
+          "takeable": true,
+          "readable": true,
+          "text": "EMERGENCY SHUTDOWN (ESD) PROTOCOL\n\nWARNING: Only use on authorised instruction or imminent hazard\n\n1. Isolate affected rack banks (hardwired ESD pushbutton)\n2. Force hydrogen vent fans to maximum\n3. Switch export to standby\n4. Notify grid control & emergency services\n5. Begin manual thermal monitoring\n\nNote: The ESD pushbutton in the plant room is HARDWIRED — independent of SCADA. It cannot be disabled remotely.\nThe shed of a full bank needs the grid-control permissive: the operator must have the hazard and the cause before 200 MWh leaves the network.",
+          "observations": "Emergency procedures — the plant-room ESD pushbutton is hardwired and independent of the compromised SCADA"
+        }
+      ]
+    },
+
+    "engineering_workshop": {
+      "type": "room_it",
+      "dimensions": { "width": 10, "height": 8 },
+      "locked": true,
+      "lockType": "rfid",
+      "requires": "server_room_keycard",
+      "difficulty": "medium",
+      "door_sign": "Engineering Workshop — Authorised Access Only",
+      "connections": {
+        "north": "battery_hall_1"
+      },
+      "npcs": [],
+      "objects": [
+        {
+          "type": "vm-launcher",
+          "id": "vm_launcher_bms_jump_server",
+          "name": "BMS Jump Server Terminal",
+          "takeable": false,
+          "observations": "Network terminal providing access to the BMS jump server for vulnerability analysis",
+          "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
+          "vm": <%= vm_object('bms_jump_server', {
+            "id": 1,
+            "title": "BMS Jump Server",
+            "ip": "192.168.100.10",
+            "enable_console": true
+          }) %>,
+          "puzzle_graph_role": "vm",
+          "puzzle_graph_aim": "map_the_attack"
+        },
+        {
+          "type": "flag-station",
+          "id": "flag_station_dropsite",
+          "name": "SAFETYNET Drop-Site Terminal",
+          "takeable": false,
+          "observations": "Secure terminal for submitting intercepted intelligence and VM flags",
+          "acceptsVms": ["bms_jump_server"],
+          "flags": <%= flags_for_vm('bms_jump_server', [
+            'flag{network_scan_complete}',
+            'flag{ftp_intel_gathered}',
+            'flag{privesc_complete}',
+            'flag{distcc_exploit_complete}'
+          ]) %>,
+          "flagRewards": [
+            {
+              "type": "emit_event",
+              "event_name": "network_scan_submitted",
+              "description": "Network scan evidence submitted"
+            },
+            {
+              "type": "emit_event",
+              "event_name": "ftp_intel_submitted",
+              "description": "FTP intelligence submitted - cross-cell coordination revealed"
+            },
+            {
+              "type": "emit_event",
+              "event_name": "privesc_submitted",
+              "description": "Root on the jump server - the calibration override that fakes the thermals"
+            },
+            {
+              "type": "emit_event",
+              "event_name": "distcc_exploit_submitted",
+              "description": "distcc foothold evidence submitted - remote command execution proven"
+            }
+          ]
+        },
+        {
+          "type": "notes",
+          "name": "Workshop Access Log",
+          "takeable": true,
+          "readable": true,
+          "text": "ENGINEERING WORKSHOP ACCESS LOG\n\nRecent Access:\nJan 9, 23:47 - OptiGrid Tech #1 (Badge: OG-4472)\nJan 9, 23:52 - OptiGrid Tech #2 (Badge: OG-4473)\nJan 10, 00:03 - OptiGrid Tech #3 (Badge: OG-4474)\n\nDuration: 3 hours 17 minutes\nPurpose: 'Network infrastructure maintenance'\n\nVance's note: 'No one told me about this work order.'",
+          "observations": "Access logs showing the ENTROPY operatives had 3+ hours on the OT network",
+          "onPickup": { "setVariable": { "evidence_access_logs_found": true } }
+        },
+        {
+          "type": "pc",
+          "name": "Network Monitoring Station",
+          "takeable": false,
+          "observations": "A live traffic monitor for the OT network. Steady SCADA polling, and a second stream into the BMS jump server at 192.168.100.10 from a host that isn't on Albion's asset list."
+        },
+        {
+          "type": "briefcase",
+          "id": "optigrid_tool_case",
+          "name": "OptiGrid Tool Case",
+          "takeable": false,
+          "locked": true,
+          "lockType": "key",
+          "keyPins": [35, 50, 30, 45],
+          "difficulty": "medium",
+          "position": { "x": 7, "y": 7 },
+          "observations": "A hard-shell tool case with OptiGrid stickers, shoved under the bench. Padlocked.",
+          "contents": [
+            {
+              "type": "fingerprint_kit",
+              "name": "Fingerprint Kit",
+              "takeable": true,
+              "observations": "The crew's own fingerprint kit. Whatever OptiGrid came to maintain, it wasn't the vents. Their reference cards for the site staff are still in the lid.",
+              "puzzle_graph_role": "tool",
+              "puzzle_graph_unlocks": ["plant_room"]
+            },
+            {
+              "type": "notes",
+              "name": "OptiGrid Job Card #4782 (back page)",
+              "takeable": true,
+              "readable": true,
+              "text": "JOB 4782 -- ALBION\n\nPLANT RM: FP reader, HV auth only. Use R.V. (duty eng).\nHis thumb's on the Hall 1 round panel every 2 hrs.\nTonight: same.",
+              "observations": "The crew's own job card. Somebody planned the plant-room door in advance.",
+              "puzzle_graph_role": "clue",
+              "puzzle_graph_reveals": "vance_print_on_hall1_round_panel"
+            }
+          ]
+        }
+      ]
+    },
+
+    "security_office": {
+      "type": "room_office",
+      "dimensions": { "width": 8, "height": 6 },
+      "door_sign": "Security Office",
+      "connections": {
+        "north": "operations_office"
+      },
+      "npcs": [],
+      "objects": [
+        {
+          "type": "pc",
+          "name": "Security Camera Monitors",
+          "takeable": false,
+          "observations": "The camera wall. Scrub back to the 9th and cameras 7, 8, 12 and 15 go black at 23:45 and come back at 03:00. Workshop corridor and the Hall 2 door."
+        },
+        {
+          "type": "notes",
+          "name": "Camera System Logs",
+          "takeable": true,
+          "readable": true,
+          "text": "SECURITY CAMERA SYSTEM LOG\n\nANOMALY DETECTED:\n\nJan 9, 23:45 - Jan 10, 03:00\nCameras 7, 8, 12, 15: RECORDING GAPS\nAffected areas: Workshop corridor, Battery Hall 2 access\n\nStatus: 'system glitch' reported to maintenance\n\nNote: the 'glitch' coincides exactly with the OptiGrid access window.",
+          "observations": "Evidence of camera tampering during the ENTROPY infiltration",
+          "onPickup": { "setVariable": { "evidence_camera_tampering_found": true } }
+        },
+        {
+          "type": "notes",
+          "name": "Access Control Export: HV Plant Room",
+          "takeable": true,
+          "readable": true,
+          "text": "ACCESS CONTROL EXPORT -- PLANT ROOM READER\n(Fingerprint. HV authorised persons only.)\n\n09 Jan 23:58  MATCH  R. VANCE\n10 Jan 00:41  MATCH  R. VANCE\n10 Jan 02:56  MATCH  R. VANCE\nDuty engineer 9-10 Jan: none rostered (contractor on site)\n\n12 Jan 03:58  MATCH  R. VANCE\n\nCard reads, R. VANCE, 12 Jan:\n03:35  OPS OFFICE  IN\n(no further reads)",
+          "observations": "A printout from the access-control head-end. Vance's print keeps opening the plant room when Vance isn't there.",
+          "puzzle_graph_role": "clue",
+          "puzzle_graph_reveals": "someone_is_using_vance_print_on_the_plant_reader",
+          "onPickup": { "setVariable": { "evidence_reader_spoof_found": true } }
+        },
+        {
+          "type": "safe",
+          "id": "security_equipment_locker",
+          "name": "Security Equipment Locker",
+          "takeable": false,
+          "locked": true,
+          "lockType": "key",
+          "keyPins": [30, 45, 35, 50],
+          "difficulty": "easy",
+          "observations": "Security equipment storage locker",
+          "contents": [
+            {
+              "type": "keycard",
+              "name": "Spare Keycard (Level 1)",
+              "takeable": true,
+              "opens_lock": "facility_keycard_level1",
+              "observations": "Backup facility access keycard"
+            },
+            {
+              "type": "notes",
+              "name": "Incident Response Guide",
+              "takeable": true,
+              "readable": true,
+              "text": "FACILITY INCIDENT RESPONSE PROCEDURES\n\nThermal / Fire Emergency:\n1. Notify Robert Vance immediately\n2. Evacuate if hydrogen alarm sounds\n\nSecurity Breach:\n1. Contact local law enforcement\n2. Secure critical systems\n3. Review camera footage",
+              "observations": "Emergency response procedures manual"
+            }
+          ]
+        }
+      ]
+    },
+
+    "battery_hall_1": {
+      "type": "room_battery_hall",
+      "dimensions": { "width": 18, "height": 12 },
+      "door_sign": "BATTERY HALL 1 — RESTRICTED ACCESS — PPE REQUIRED",
+      "ambientSound": "server_room_ventilation",
+      "ambientVolume": 0.7,
+      "connections": {
+        "west": "scada_control_room",
+        "south": "engineering_workshop",
+        "east": "battery_hall_2"
+      },
+      "npcs": [
+        {
+          "id": "operative_cipher",
+          "displayName": "ENTROPY Operative 'Cipher'",
+          "npcType": "person",
+          "voice": {
+            "name": "Fenrir",
+            "style": "ENTROPY operative posing as a maintenance contractor, late twenties. Speak with a consistent Dutch-accented English (Rotterdam) throughout, fluent with slightly clipped consonants -- do not shift to any other accent. Mid-to-high pitch; fast, sharp pace. Jumpy and aggressive, covering nerves with bluster.",
+            "language": "en-GB"
+          },
+          "position": { "x": 12, "y": 7 },
+          "spriteSheet": "hacker-red",
+          "spriteTalk": "assets/characters/hacker-red-talk.png",
+          "spriteConfig": { "idleFrameStart": 20, "idleFrameEnd": 23 },
+          "storyPath": "scenarios/m04_critical_failure/ink/m04_npc_operative_cipher.json",
+          "currentKnot": "start",
+          "behavior": {
+            "hostile": { "chaseSpeed": 110, "attackDamage": 4, "pauseToAttack": true }
+          },
+          "globalVarOnKO": "operative_cipher_defeated",
+          "taskOnKO": "neutralize_operative_cipher",
+          <%# PASS 4 fix 7: told about the night crew, Cipher goes to look and does
+              not come back. Same hide pattern as Voltage's escape: setVisible on the
+              global, plus a room_entered re-hide for a reload. His intel note goes
+              with him (no KO, no drop). %>
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:cipher_walked",
+              "condition": "value === true",
+              "setVisible": false
+            },
+            {
+              "eventPattern": "room_entered:battery_hall_1",
+              "condition": "globalVars.cipher_walked === true",
+              "setVisible": false
+            }
+          ],
+          "itemsHeld": [
+            {
+              "type": "notes",
+              "name": "Cipher's Intelligence Note",
+              "takeable": true,
+              "readable": true,
+              "text": "CRITICAL MASS - OPERATION STATUS\n\nPhase 2: COMPLETE\n- Rack Bank C: PRIMARY overcharge vector armed\n- Rack Banks A & B: REDUNDANCY backups armed\n- BMS / SCADA access: CONFIRMED\n\nVoltage coordinating with Social Fabric for simultaneous regional strikes.\n\nMy assignment: hold Battery Hall 1. Nobody reaches the workshop.",
+              "observations": "Intelligence revealing the multi-bank overcharge infrastructure"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "thermometer",
+          "id": "analog_thermometer",
+          "name": "Analogue Thermometer — Rack Bank C Wall",
+          "takeable": false,
+          "readable": true,
+          "important": true,
+          "puzzle_graph_role": "clue",
+          "puzzle_graph_aim": "confirm_the_lie",
+          "puzzle_graph_reveals": "61C_actual_vs_28C_scada_sensor_falsification_confirmed",
+          "observations": "Thermometer dial reads: 61°C\n\nAn old mechanical dial thermometer bolted to the wall by Rack Bank C. Not connected to any network. The SCADA HMI says 28°C.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.attack_prevented",
+              "value": "Thermometer dial now reads: 49°C and falling.\n\nThe analogue thermometer by Rack Bank C — the needle is dropping steadily since the Emergency Shutdown."
+            },
+            {
+              "condition": "globalVars.anomaly_detected",
+              "value": "The thermometer dial reads: 61°C\n\nThe analogue thermometer confirms a physical thermal anomaly that the SCADA readout (28°C) is hiding."
+            }
+          ],
+          "triggerOnInteract": [
+            { "type": "set_global", "key": "anomaly_detected", "value": true },
+            { "type": "complete_task", "taskId": "identify_scada_anomalies" }
+          ]
+        },
+        {
+          "type": "tablet",
+          "id": "rack_status_panel",
+          "name": "Battery Rack Status Panels (Digital)",
+          "takeable": false,
+          "readable": true,
+          "observationDisplay": "gameDisplay",
+          "observations": "Digital status panels on each rack. All showing green. Readings look normal.",
+          "text": "BATTERY RACK STATUS — HALL 1 (DIGITAL DISPLAY)\n\nRack C1: 28.0°C | SoC 72% | Status: NORMAL\nRack C2: 27.9°C | SoC 71% | Status: NORMAL\nRack C3: 28.1°C | SoC 73% | Status: NORMAL\n\nAll values within certified operating parameters.\nAll alarm setpoints: SATISFIED\n\nFeed source: BMS sensor bus. The mechanical dial on this same wall is not on the bus."
+        },
+        {
+          "type": "tablet",
+          "id": "hydrogen_detector",
+          "name": "H₂ Gas Detector Panel",
+          "takeable": false,
+          "readable": true,
+          "observationDisplay": "gameDisplay",
+          "observations": "A wall-mounted hydrogen gas detection panel near the ventilation outlet. An amber indicator is lit.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.attack_prevented",
+              "value": "The hydrogen panel is trending down after the Emergency Shutdown. Vent fans are running at maximum."
+            }
+          ],
+          "text": "HYDROGEN GAS MONITOR — BATTERY HALL 1\nThis sensor is hardwired to the ventilation control system. It is NOT connected to SCADA.\n\nCurrent reading: 1.1% H₂ by volume (28% of LEL; LEL = 4.0%)\nAdvisory threshold: 1.0% H₂ (25% LEL) [AMBER]\nEvacuation threshold: 2.0% H₂ (50% LEL) [RED — EVACUATE]\n\nStatus: ADVISORY [AMBER]\nNote: elevated H₂ is consistent with battery thermal stress. The SCADA HMI claims everything is nominal. It is not.",
+          "puzzle_graph_role": "clue",
+          "puzzle_graph_reveals": "hydrogen_elevated_independent_of_falsified_scada"
+        },
+        {
+          "type": "notes",
+          "name": "BESS Process Diagram",
+          "takeable": false,
+          "readable": true,
+          <%# PASS 2 (playtest D8): the battery-hall template has no notes slot, so this fell back to a random position and landed in the east doorway, blocking the walk to Hall 2. Pinned to the bottom-right corner of the service aisle, clear of the west (0.5,2.5), east (19.5,2.5) and south (1.5,9) doorways. %>
+          "position": { "x": 18, "y": 8 },
+          "text": "BATTERY ENERGY STORAGE — PROCESS OVERVIEW\n\n1. Grid import → rectifier / PCS\n2. Charge management (BMS per-rack)\n3. Lithium-ion rack banks A, B, C (cells, thermocouples, vent paths)\n4. Hydrogen detection + forced ventilation\n5. ESD interlocks (hardwired) → isolation\n6. Inverter / export to grid\n\nCapacity: 200 MWh\nServes: 240,000 residents at peak",
+          "observations": "Process overview showing the facility scale and the safety interlocks"
+        },
+        <%# PASS 3 P6: Vance's print. No readable text and no triggerOnInteract, so
+            the panel is only a print surface. (A print surface no longer hides its
+            own text: the kit panel offers "Use normally", and without a kit the
+            normal interaction runs.) West half of the hall, away from Cipher (12,7),
+            off the E/W door line (top + 2.5) and clear of the south door (1.5, 9).
+            Row 7, not 8: at row 8 the sprite drew over the workshop's top wall
+            (playtest m04-pass3a-roundpanel.png). %>
+        {
+          "type": "pc",
+          "id": "hall1_round_panel",
+          "name": "Duty Round Panel",
+          "takeable": false,
+          "position": { "x": 6, "y": 7 },
+          "hasFingerprint": true,
+          "fingerprintOwner": "Robert Vance",
+          "fingerprintCandidates": ["Security Guard", "Cipher", "Relay"],
+          "fingerprintDifficulty": "easy",
+          "observations": "A small wall terminal by the rack rows where the duty engineer logs each round.",
+          "puzzle_graph_role": "clue",
+          "puzzle_graph_reveals": "robert_vance_fingerprint",
+          "puzzle_graph_unlocks": "plant_room"
+        }
+      ]
+    },
+
+    "battery_hall_2": {
+      "type": "room_battery_hall",
+      "dimensions": { "width": 14, "height": 10 },
+      "locked": true,
+      "lockType": "rfid",
+      "requires": "facility_keycard_level1",
+      "difficulty": "easy",
+      "door_sign": "BATTERY HALL 2 / INVERTER ROOM — PPE REQUIRED",
+      "ambientSound": "server_room_ventilation",
+      "ambientVolume": 0.6,
+      "connections": {
+        "west": "battery_hall_1",
+        "south": "plant_room"
+      },
+      "npcs": [
+        {
+          "id": "operative_relay",
+          "displayName": "ENTROPY Operative 'Relay'",
+          "npcType": "person",
+          "voice": {
+            "name": "Pulcherrima",
+            "style": "ENTROPY operative, late thirties. Speak with a consistent Scottish (Edinburgh) accent throughout -- do not shift to any other accent. Cool, mid-range pitch; measured, unhurried pace. Confident and almost friendly; she costed this and came anyway, and nothing about it frightens her.",
+            "language": "en-GB"
+          },
+          "position": { "x": 7, "y": 7 },
+          "spriteSheet": "hacker-red",
+          "spriteTalk": "assets/characters/hacker-red-talk.png",
+          "spriteConfig": { "idleFrameStart": 20, "idleFrameEnd": 23 },
+          "storyPath": "scenarios/m04_critical_failure/ink/m04_npc_operative_relay.json",
+          "currentKnot": "start",
+          "behavior": {
+            <%# PASS 4 fix 6, round 2. The engine has no chase leash: a chasing NPC
+                follows the player into the next room (npc-behavior.js updateCurrentRoom)
+                until the gap passes aggroDistance. aggroDistance 96 and chaseSpeed 100
+                (player walks at 150) mean a player who backs off opens that gap in about
+                two seconds, one hit at most. The plant reader is about 123-133 px from her
+                west waypoint (5, 7), outside 96, so the slip-past window is the whole
+                loop except her west dwell. Damage 5 (was 15): see the round-2 notes in
+                DESIGN_REVIEW.md. %>
+            "hostile": { "chaseSpeed": 100, "attackDamage": 5, "pauseToAttack": true, "aggroDistance": 96 },
+            <%# PASS 2 (playtest D9): this used patrol.route, which the engine only reads for multiRoom {room, waypoints} segments (npc-behavior.js:321,353). With no waypoints or bounds the patrol fell back to a random walk, so Relay wandered into the gaps between the rack rows and dropped the Master card there. In-room patrols use waypoints (tiles, room-relative). These keep her on the clear service aisle (rows 7-8 of the 20x10 hall), clear of the west and south doorways, so a KO while patrolling drops the card on open floor. %>
+            "patrol": {
+              "enabled": true,
+              "waypoints": [
+                { "x": 5, "y": 7, "dwellTime": 2000 },
+                { "x": 10, "y": 7 },
+                { "x": 15, "y": 7, "dwellTime": 2000 },
+                { "x": 10, "y": 7 }
+              ],
+              "speed": 40
+            }
+          },
+          "globalVarOnKO": "operative_relay_defeated",
+          "taskOnKO": "neutralize_operative_relay",
+          <%# PASS 4 fix 6 (quiet route): her card is the same old prox as Vance's,
+              so the cloner can copy it mid-conversation (#clone_keycard in her ink).
+              card_id matches the workshop lock's requires. %>
+          "rfidCard": {
+            "card_id": "server_room_keycard",
+            "rfid_protocol": "EM4100",
+            "name": "Workshop Card Level 2"
+          },
+          <%# PASS 4 fix 6: Relay notices the player. Probed 2026-10-02 (game in
+              PASS4_PLAYTEST.md): the lazy loader registers a room's NPCs before the
+              room exists (rooms.js:803-811), so the listener is live before
+              room_entered fires. onceOnly is persisted only when the chat closes
+              (npc-manager.js _persistTriggerOnClose), so a reload mid-chat replays it. %>
+          "eventMappings": [
+            {
+              "eventPattern": "room_entered:battery_hall_2",
+              "condition": "globalVars.operative_relay_defeated !== true",
+              "onceOnly": true,
+              "conversationMode": "person-chat",
+              "targetKnot": "start",
+              "background": "assets/backgrounds/background1.png"
+            },
+            <%# Round 2 (re-review m2): once she knows, she sweeps the hall faster
+                (loop about 11 s instead of 20), so the danger is visible. %>
+            {
+              "eventPattern": "npc_hostile_state_changed",
+              "condition": "data.npcId === 'operative_relay' && data.isHostile === true",
+              "onceOnly": true,
+              "setPatrolSpeed": 70
+            }
+          ],
+          "itemsHeld": [
+            {
+              "type": "keycard",
+              "name": "Workshop Keycard (Level 2)",
+              "takeable": true,
+              "opens_lock": "server_room_keycard",
+              "observations": "High-level access keycard for the engineering workshop",
+              "puzzle_graph_role": "key",
+              "puzzle_graph_unlocks": "engineering_workshop"
+            },
+            {
+              "type": "notes",
+              "name": "OptiGrid Operations Log",
+              "takeable": true,
+              "readable": true,
+              "text": "OPTIGRID SOLUTIONS - REGIONAL OPERATIONS LOG\n\nFacilities Accessed (Phase 2):\n- Albion Energy Storage (THIS FACILITY) - STATUS: READY\n- Cascade Valley Power Station - STATUS: COMPROMISED\n- Metro Transit Control Centre - STATUS: IN PROGRESS\n\nCoordination: Critical Mass (infrastructure) + Social Fabric (public chaos)\n\nThe Architect approves Phase 3 advancement upon successful execution.",
+              "observations": "Intelligence revealing coordinated regional infrastructure attacks"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Rack Bank Maintenance Manifest",
+          "takeable": true,
+          "readable": true,
+          "text": "RACK BANK MAINTENANCE MANIFEST — HALL 2\n\nRack Bank A: 64 modules | NMC lithium-ion\nRack Bank B: 64 modules | NMC lithium-ion\nInverter / PCS: 4 MW string inverters\nHydrogen vent fans: 2 × redundant\nESD interlocks: hardwired to plant room\n\nNote: forcing charge beyond the certified ceiling drives cells into thermal runaway. The interlocks exist for exactly this reason.\n\nNight module-swap crew (9): bay 2B, behind the inverter wall, 22:00-06:00.\nContractor request to clear the halls from midnight: REFUSED -- R. Vance.",
+          "observations": "Inventory showing the rack banks and the safety systems ENTROPY disabled"
+        },
+        <%# PASS 4 fix 21: an optional second print surface, so the compare step has
+            a job. The print branch runs before the notes handler
+            (interactions.js:1231-1250), and "Use normally" still shows the text.
+            Easy difficulty, as the user rule asks; a matching identification sets
+            voltage_print_on_bypass (credit, debrief, arrest line). Nothing gates on it. %>
+        {
+          "type": "notes",
+          "id": "bms_bypass_module",
+          "name": "BMS Interlock-Bypass Module",
+          "takeable": false,
+          "readable": true,
+          "hasFingerprint": true,
+          "fingerprintOwner": "Voltage",
+          "fingerprintCandidates": ["Relay", "Cipher", "Static"],
+          "fingerprintDifficulty": "easy",
+          "text": "BMS CABINET — RACK BANK A/B\n\nSTATUS: COMPROMISED\n\nUnauthorised hardware bypass module fitted across the interlock terminals.\nSCADA thermal feed spoofed (reports 28°C; cells are far hotter).\nHydrogen vent fans forced to MANUAL-OFF.\n\nWARNING: Do not remove the bypass module without isolating the bank first.",
+          "observations": "The BMS cabinet showing ENTROPY's physical interlock-bypass hardware. Somebody fitted it by hand."
+        },
+        {
+          "type": "notes",
+          "name": "Emergency Procedures",
+          "takeable": false,
+          "readable": true,
+          "text": "THERMAL EVENT — EMERGENCY ACTIONS\n\n1. Press the hardwired ESD pushbutton (plant room)\n2. Confirm hydrogen vent fans to maximum\n3. Evacuate if H₂ reaches 2.0% by volume (50% of LEL)\n4. Notify grid control\n5. Do not approach a venting rack without SCBA\n\nThe ESD pushbutton is hardwired and cannot be disabled from SCADA.",
+          "observations": "Safety procedures for a battery thermal event"
+        }
+      ]
+    },
+
+    "plant_room": {
+      "type": "room_it",
+      "dimensions": { "width": 15, "height": 12 },
+      "locked": true,
+      "lockType": "biometric",
+      "requires": "Robert Vance",
+      "door_sign": "Inverter / Plant Room — HV. Authorised Persons Only. Fingerprint Access",
+      "connections": {
+        "north": "battery_hall_2",
+        "east": "loading_dock"
+      },
+      "npcs": [
+        {
+          "id": "voltage",
+          "displayName": "Voltage (Critical Mass Leader)",
+          "npcType": "person",
+          "voice": {
+            "name": "Alnilam",
+            "style": "Critical Mass field lieutenant, a former grid engineer in his mid-forties. Speak with a consistent South African English (Johannesburg) accent throughout -- do not shift to any other accent. Low, flat pitch; slow, clipped pace. Detached and contemptuous, barely looking up from his laptop; nothing anyone says is new to him.",
+            "language": "en-GB"
+          },
+          "position": { "x": 7, "y": 7 },
+          <%# PLAYTEST ROUND: was hacker-red (same as Static, faceless bust). The cell
+              leader gets a face: a former grid engineer in shirt and loose tie. Unused
+              elsewhere in m04 (Phantom has it in m08, a different mission). %>
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "avatar": "assets/characters/male_office_worker_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/m04_critical_failure/ink/m04_npc_voltage.json",
+          "currentKnot": "start",
+          "behavior": {
+            "hostile": { "chaseSpeed": 145, "attackDamage": 12, "pauseToAttack": true }
+          },
+          <%# Playtest D4: this was globalVarOnKO "voltage_captured". The engine writes
+              that global itself inside the KO routine (npc-hostile.js:159-166), so no
+              eventMapping condition could stop it -- a KO after the escape stance set
+              CAPTURED on top of ESCAPED, and the debrief said he was in custody. The
+              KO no longer sets a global of its own (voltage_ko had no readers);
+              voltage_captured is written only by the
+              npc_ko:voltage mapping (gated on voltage_escaped !== true) or by the
+              peaceful-arrest ink. %>
+          "taskOnKO": "confront_voltage",
+          <%# PASS 4 fix 16: a graph node for the third ESD condition (wired on the ESD's puzzle_graph_links). %>
+          "puzzle_graph_actions": [
+            { "id": "deal_with_voltage", "label": "Deal with Voltage: fight, arrest, or let him run" }
+          ],
+          <%# Playtest D4, confirmed live (game 1163): #remove_npc runs and returns
+              success, but removeNpcFromScene destroys npc._sprite, and that
+              reference is missing for NPCs in lazily loaded rooms (the registry
+              entry is rebuilt by registerNPC after the sprite exists -- engine
+              issue, logged). The behaviour manager keeps its own sprite, so
+              setVisible:false really hides him, disables his body, and takes him
+              out of the interact scan and the punch cone (player-combat.js:293).
+              The room_entered re-hide covers a reload; #remove_npc still persists
+              the removal server-side. %>
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:voltage_escaped",
+              "condition": "value === true",
+              "setVisible": false
+            },
+            {
+              "eventPattern": "room_entered:plant_room",
+              "condition": "globalVars.voltage_escaped === true",
+              "setVisible": false
+            }
+          ]
+        },
+        {
+          "id": "operative_static",
+          "displayName": "ENTROPY Operative 'Static'",
+          "npcType": "person",
+          "voice": {
+            "name": "Umbriel",
+            "style": "ENTROPY operative and Voltage's last line of defence, early thirties. Speak with a consistent Polish-accented English throughout, ten years in Britain -- do not shift to any other accent. Deep, low pitch; slow pace, very few words. Terse, loyal and immovable.",
+            "language": "en-GB"
+          },
+          "position": { "x": 4, "y": 7 },
+          "spriteSheet": "hacker-red",
+          "spriteTalk": "assets/characters/hacker-red-talk.png",
+          "spriteConfig": { "idleFrameStart": 20, "idleFrameEnd": 23 },
+          "storyPath": "scenarios/m04_critical_failure/ink/m04_npc_operative_static.json",
+          "currentKnot": "start",
+          "behavior": {
+            "hostile": { "chaseSpeed": 130, "attackDamage": 4, "pauseToAttack": false }
+          },
+          "globalVarOnKO": "operative_static_defeated",
+          "itemsHeld": [
+            {
+              "type": "notes",
+              "name": "Critical Mass Coordination Log",
+              "takeable": true,
+              "readable": true,
+              "text": "ENCRYPTED COMMUNICATION LOG\n\nFROM: Voltage (Critical Mass)\nTO: Loom (Social Fabric)\n\nPhase 2 synchronisation confirmed.\n\nCritical Mass targets: power storage, generation, transit infrastructure\nSocial Fabric targets: public panic amplification, emergency-response disruption\n\nSimultaneous execution: 0800 local, all cells\n\nThe Architect's Phase 3: multi-city expansion\n\nThis is bigger than any single operation. We're proving the grid's fragility.",
+              "observations": "Critical intelligence revealing cross-cell coordination and The Architect's larger plan",
+              "onPickup": { "setVariable": { "lore_cross_cell_coordination_found": true } }
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "emergency-button",
+          "id": "esd_pushbutton",
+          "name": "Emergency Shutdown Pushbutton — Rack Banks A-C",
+          "takeable": false,
+          "locked": false,
+          "puzzle_graph_role": "lock",
+          "puzzle_graph_aim": "stop_the_runaway",
+          <%# PASS 4 fix 16: the three-way gate (esd_authorized mappings on agent_0x99). %>
+          "puzzle_graph_links": [
+            { "from": "analogue_thermometer_rack_bank_c_wall", "to": "lock_esd_pushbutton" },
+            { "from": "vmfl_submit_network_scan_flag", "to": "lock_esd_pushbutton" },
+            { "from": "vmfl_submit_ftp_intel_flag", "to": "lock_esd_pushbutton" },
+            { "from": "vmfl_submit_distcc_exploit_flag", "to": "lock_esd_pushbutton" },
+            { "from": "vmfl_submit_privesc_flag", "to": "lock_esd_pushbutton" },
+            { "from": "action_deal_with_voltage", "to": "lock_esd_pushbutton" }
+          ],
+          "observations": "A large red mushroom-head button in a yellow housing on the plant-room wall. Labelled: EMERGENCY SHUTDOWN — RACK BANKS A-C. This is the hardwired kill switch ENTROPY couldn't disable from SCADA. Pressing it isolates the banks and forces ventilation — stopping the thermal runaway.",
+          "minigameData": {
+            "interactionType": "esd_button",
+            "label": "EMERGENCY SHUTDOWN - RACK BANKS A-C",
+            "confirmDesc": "Initiate hardwired shutdown for Rack Banks A-C. Isolates the banks, forces hydrogen ventilation to maximum, and aborts the 0800 overcharge trigger. Irreversible without manual reset.",
+            "authVar": "esd_authorized",
+            <%# PASS 4 fix 3: the gate is grid control's permissive, not the button's.
+                The button is still hardwired; what holds it is the operator, who will
+                not lose 200 MWh of supply without the hazard and the cause. Logic
+                unchanged (esd_authorized). %>
+            "unauthorizedText": "NOT ARMED. GRID PERMISSIVE NOT RECEIVED. Shedding 200 MWh with nobody at grid control ready trips the region. They need the hazard confirmed off the BMS bus, the attack proven, and nobody in reach of a trigger that fires first.",
+            "unauthorizedTextVariants": [
+              { "condition": "!globalVars.anomaly_detected", "text": "NOT ARMED. GRID PERMISSIVE NOT RECEIVED. Grid control won't drop supply on a screen that says everything is fine. Check the racks on an instrument that isn't on the bus." },
+              { "condition": "!globalVars.attack_mechanism_known && globalVars.all_flags_in && !globalVars.evidence_maintenance_logs_found && !globalVars.evidence_access_logs_found && !globalVars.evidence_camera_tampering_found && !globalVars.evidence_reader_spoof_found", "text": "NOT ARMED. GRID PERMISSIVE NOT RECEIVED. Grid control has the hazard and the attack, not the break-in. On paper: work orders (ops office), access log (workshop) or camera log (security office)." },
+              { "condition": "!globalVars.attack_mechanism_known", "text": "NOT ARMED. GRID PERMISSIVE NOT RECEIVED. Grid control has the hazard, not the cause. The proof is on the workshop jump server." },
+              { "condition": "!globalVars.voltage_neutralised", "text": "NOT ARMED. GRID PERMISSIVE NOT RECEIVED. The trigger holder is still within reach of the laptop." }
+            ],
+            "activatedVar": "attack_prevented",
+            "alreadyActiveText": "Emergency shutdown already active. Rack banks A-C isolated. Thermal runaway aborted.",
+            "confirmedText": "ISOLATED - COOLING ACTIVE - ATTACK ABORTED",
+            "completionActions": [
+              { "type": "set_global",    "key": "attack_prevented",       "value": true },
+              { "type": "set_global",    "key": "remote_trigger_disabled", "value": true },
+              { "type": "set_global",    "key": "mission_complete",        "value": true },
+              { "type": "complete_task", "taskId": "disable_attack_vectors" }
+            ]
+          }
+        },
+        {
+          "type": "pc",
+          "name": "ENTROPY Command Laptop",
+          "takeable": false,
+          "readable": true,
+          "text": "REMOTE OVERCHARGE CONTROLLER — ARMED\n\nTarget: Albion Rack Banks A / B / C\nTrigger: 0800 local (countdown running)\nSCADA thermal feed: SPOOFED (nominal)\nHydrogen vent fans: FORCED OFF\nESD interlocks (software): DISABLED\n\nSoftware abort: LOCKED until trigger. Hardwired ESD: OUT OF OUR REACH.",
+          "observations": "Critical Mass's command laptop — the overcharge is armed and counting down. The software won't stop it; the hardwired ESD will."
+        },
+        {
+          "type": "notes",
+          "name": "Facility Blueprints (Marked)",
+          "takeable": true,
+          "readable": true,
+          "text": "ALBION ENERGY STORAGE — MARKED LAYOUT\n\nCritical Mass tactical annotations:\n- Rack banks A, B, C: BYPASS MODULES INSTALLED\n- BMS / SCADA: COMPROMISED\n- Remote overcharge trigger: THIS ROOM\n- Escape route: loading dock (east exit)\n- Surveillance coverage: ALL AREAS\n\nVoltage's note: 'Night crew: 9 in Hall 2, 2 gatehouse. Feed casualties modelled at 40-60 (oxygen concentrators, dialysis, home ventilators). Acceptable. Signed off by Blackout, countersigned. Do not re-litigate this on site.'",
+          "observations": "Tactical planning documents showing the complete attack infrastructure"
+        },
+        {
+          "type": "notes",
+          "name": "The Architect's Directive",
+          "takeable": true,
+          "readable": true,
+          "text": <%= voltage_attack_note.to_json %>,
+          "observations": "Operation log confirming The Architect's coordination of the multi-cell attacks",
+          "onPickup": { "setVariable": { "lore_architect_directive_found": true } }
+        }
+      ]
+    },
+
+    "loading_dock": {
+      "type": "small_room_1x1gu",
+      "dimensions": { "width": 8, "height": 8 },
+      "door_sign": "Loading Dock",
+      "connections": {
+        "west": "plant_room"
+      },
+      "npcs": [],
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Loading Dock Schedule",
+          "takeable": false,
+          "readable": true,
+          "text": "DELIVERY SCHEDULE — JANUARY\n\nJan 10: Module delivery (scheduled)\nJan 12: Coolant delivery (scheduled)\nJan 15: General supplies (scheduled)\n\nNote: OptiGrid van parked here Jan 9-10 (unscheduled). Vance questioned this.",
+          "observations": "Delivery log showing ENTROPY's vehicle access point"
+        },
+        {
+          "type": "notes",
+          "name": "Voltage's Escape Plan",
+          "takeable": true,
+          "readable": true,
+          "text": "CONTINGENCY: SAFETYNET INTERFERENCE\n\nIf compromised:\n1. Confirm the overcharge trigger is armed (it self-completes at 0800)\n2. Escape via the loading dock\n3. Extraction vehicle: loading zone B\n4. Rendezvous: Social Fabric safehouse (address encoded — in the go-bag)\n\nPriority: mission success > personal capture\n\nNote: Static and I can hold them long enough.",
+          "observations": "Escape plan revealing Voltage's tactical priorities — it mentions an encoded address in a 'go-bag'"
+        },
+        {
+          "type": "suitcase",
+          "id": "extraction_gobag",
+          "name": "Abandoned Extraction Go-Bag",
+          "takeable": false,
+          "locked": true,
+          "lockType": "key",
+          "keyPins": [40, 30, 50, 35],
+          "difficulty": "easy",
+          "observations": "A grab-bag dumped by the loading-dock door — the cell's extraction kit, left in the rush. It's padlocked, but a lockpick will open it.",
+          "contents": [
+            {
+              "type": "notes",
+              "name": "Social Fabric Safehouse Card (Encoded)",
+              "takeable": true,
+              "readable": true,
+              "text": "<%= base64_encode('SOCIAL FABRIC — REGIONAL SAFEHOUSE\nUnit 14, Calder Wharf, Salford\nKnock pattern: 2-1-3\nAsk for \"Loom\". Burn this after reading.') %>",
+              "observations": "An encoded card from the go-bag — the next thread to pull on Social Fabric",
+              "puzzle_graph_role": "clue",
+              "puzzle_graph_reveals": "social_fabric_safehouse_address_lead",
+              "onPickup": { "setVariable": { "lore_safehouse_address_found": true } }
+            }
+          ]
+        }
+      ]
+    }
+  },
+
+  "timers": [
+<%# Thermal-runaway clock. Modelled on sis02_energy/scenario.json.erb:387-450, which is
+    the worked example for this engine feature (ScenarioTimerDispatcher + ScenarioTimerUI).
+
+    M2: both timers start on attack_mechanism_known -- the moment the player has
+    proved how the attack works (all four OT-network flags in) -- NOT on
+    anomaly_detected. Starting on anomaly_detected meant both clocks ran on
+    wall-time through the whole VM stage, so COSTLY SUCCESS was effectively the
+    default outcome. The countdown is now the final act: mechanism proven -> race
+    to the plant room and the hardwired ESD. Cancelled by the shutdown
+    (attack_prevented). Reload is lenient: if the start global is already set the
+    dispatcher restarts the clock from the reload moment
+    (scenario-timer-dispatcher.js:37-38), so a reload never strands the player.
+
+    DELIBERATE DIVERGENCE FROM sis02: its h2_evacuation timer fires a
+    `show_end_screen` action with outcome "failure" and a "Return to Missions" button,
+    which ends the run. m04 must NOT do that. Failure here is avoidable and
+    player-caused, but the mission still reaches an ending: the second timer sets
+    racks_vented / casualties_occurred and play continues to the debrief and the
+    bond_visualiser. See ALIGNMENT_PLAN.md "Decisions taken" #10.
+
+    m04's consequences are larger than sis02's single-facility evacuation: 240,000 on
+    the grid, the night crew in Hall 2, and the dropped feed. %>
+<%# PASS 3 P11b: the trigger race. FIRST in this array on purpose: the HUD shows
+    the first pending showCountdown timer in array order (scenario-timer.js:122-156),
+    so placed after h2_advisory it would be hidden. A reload or player KO during the
+    race respawns the player at the entrance while the race restarts, so it fires:
+    the race is forfeit by design, and Voltage's ink holds the after-state
+    (voltage_after_trigger). %>
+    {
+      "id": "trigger_race",
+      "label": "Voltage \u2014 the laptop",
+      "startOnGlobal": "voltage_fight_started",
+      "delayMs": 25000,
+      "cancelOnGlobal": "voltage_neutralised",
+      "condition": "!globalVars.voltage_neutralised && !globalVars.attack_prevented && !globalVars.racks_vented",
+      "setGlobal": { "racks_vented": true, "casualties_occurred": true, "vented_by_trigger": true, "urgency_stage": 4 },
+      "showCountdown": true,
+      "onceOnly": true,
+      "actions": [
+        {
+          "type": "tint_objects",
+          "roomId": "battery_hall_2",
+          "textureKey": "batrack",
+          "color": 16729122,
+          "pulse": true
+        },
+        {
+          "type": "hint",
+          "title": "HE REACHED THE LAPTOP",
+          "message": "Bank B is going. He's still in the plant room, and so is the button. A and C are still yours to save."
+        }
+      ]
+    },
+    {
+      "id": "h2_advisory",
+      "label": "H\u2082 Advisory \u2014 rack bank B",
+      "startOnGlobal": "attack_mechanism_known",
+      "delayMs": 480000,
+      "cancelOnGlobal": "attack_prevented",
+      "condition": "!globalVars.attack_prevented && !globalVars.racks_vented",
+      "setGlobal": { "hydrogen_alarm": true, "urgency_stage": 3 },
+      "showCountdown": true,
+      "onceOnly": true,
+      "actions": [
+        {
+          "type": "tint_objects",
+          "roomId": "battery_hall_2",
+          "textureKey": "batrack",
+          "color": 16729122,
+          "pulse": true
+        },
+        {
+          "type": "hint",
+          "title": "H\u2082 ADVISORY \u2014 RACK BANK B",
+          "message": "The hydrogen alarm in Battery Hall 2 has gone. Bank B is venting. The hardwired ESD pushbutton is in the plant room."
+        }
+      ]
+    },
+<%# Second stage: the racks vent for real. This does NOT end the mission -- it sets the
+    partial-failure state, which the debrief and the credits branch on. The player can
+    still reach the ESD and still reaches an ending. %>
+    {
+      "id": "racks_vent",
+      "label": "Thermal runaway \u2014 rack bank B",
+      "startOnGlobal": "attack_mechanism_known",
+      "delayMs": 840000,
+      "cancelOnGlobal": "attack_prevented",
+      "condition": "!globalVars.attack_prevented && !globalVars.racks_vented",
+      "setGlobal": { "racks_vented": true, "casualties_occurred": true, "urgency_stage": 4 },
+      "showCountdown": false,
+      "onceOnly": true,
+      "actions": [
+        {
+          "type": "hint",
+          "title": "THERMAL RUNAWAY \u2014 BANK B",
+          "message": "Bank B has gone. The hall is burning and the feed has dropped. It is not over \u2014 banks A and C are still holding, and the shutdown will still save them. Get to the button."
+        }
+      ]
+    }
+  ],
+
+  "globalVariables": {
+    "player_name": "Agent 0x00",
+    "briefing_played": false,
+    "mission_started": false,
+    "agent_0x99_contacted": false,
+
+    "vance_is_ally": false,
+    "vance_knows_truth": false,
+    "vance_trust_level": 0,
+    "vance_phone_available": false,
+    "facility_access_granted": false,
+    <%# vance_met / vance_provided_keycard are written from Vance's ink but declared
+        here as globals so they persist across a reload (ink-local VAR state is lost
+        on reload, m03 D5). vance_met routes re-talk to the hub; vance_provided_keycard
+        guards the one-time keycard grant so a reload can't hand out a duplicate. %>
+    "vance_met": false,
+    "vance_provided_keycard": false,
+
+    "anomaly_detected": false,
+    "scada_anomalies_identified": false,
+    "infiltration_confirmed": false,
+
+    "evidence_maintenance_logs_found": false,
+    "evidence_camera_tampering_found": false,
+    "evidence_access_logs_found": false,
+    "evidence_reader_spoof_found": false,
+
+    "plant_reader_seen": false,
+    "fingerprint_kit_found": false,
+
+    <%# PASS 4. vance_card_cloned / relay_card_cloned: set by the card_cloned
+        mappings (debrief "what failed" beat; Relay's quiet route).
+        cipher_walked: Cipher talked out of the hall (fix 7). cell_alerted: an
+        operative got a radio call out, so Relay is waiting (fixes 6-7).
+        voltage_print_on_bypass: the optional second print (fix 21). %>
+    "vance_card_cloned": false,
+    "relay_card_cloned": false,
+    "cipher_walked": false,
+    "cell_alerted": false,
+    "voltage_print_on_bypass": false,
+
+    "flag_network_scan_submitted": false,
+    "flag_ftp_intel_submitted": false,
+    "flag_privesc_submitted": false,
+    "flag_distcc_exploit_submitted": false,
+
+    "operative_cipher_defeated": false,
+    "operative_relay_defeated": false,
+    "operative_static_defeated": false,
+    "security_guard_ko": false,
+    "robert_vance_ko": false,
+    "voltage_captured": false,
+    "voltage_escaped": false,
+    "voltage_fight_started": false,
+    "vented_by_trigger": false,
+    "remote_trigger_disabled": false,
+
+    "esd_authorized": false,
+    "voltage_neutralised": false,
+    "esd_activated": false,
+    "mission_complete": false,
+    "attack_prevented": false,
+
+    "disclosure_choice": "",
+
+    "lore_architect_directive_found": false,
+    "lore_cross_cell_coordination_found": false,
+    "lore_safehouse_address_found": false,
+
+    "rfid_guide_offered": false,
+    "rfid_guide_hint_given": false,
+    "lockpicking_guide_offered": false,
+    "lockpicking_guide_hint_given": false,
+    "recon_guide_offered": false,
+    "recon_guide_hint_given": false,
+    "vuln_guide_offered": false,
+    "vuln_guide_hint_given": false,
+    "distcc_guide_offered": false,
+    "distcc_guide_hint_given": false,
+    "cyberchef_guide_offered": false,
+    "cyberchef_guide_hint_given": false,
+    "privesc_guide_offered": false,
+    "privesc_guide_hint_given": false,
+    "proftpd_guide_offered": false,
+    "proftpd_guide_hint_given": false,
+
+    "server_room_reached": false,
+    "attack_mechanism_known": false,
+    "voltage_priority_discussed": false,
+    "operatives_defeated": 0,
+
+    "urgency_stage": 1,
+    "hydrogen_alarm": false,
+    "racks_vented": false,
+    "casualties_occurred": false,
+
+    "objectives_completed": 0,
+    "optional_objectives_completed": 0,
+    "combat_encounters_won": 0,
+    "stealth_takedowns": 0,
+    "flags_submitted": 0,
+    "all_flags_in": false
+  }
+}

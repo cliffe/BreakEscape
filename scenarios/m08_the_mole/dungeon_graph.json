@@ -1,0 +1,618 @@
+{
+  "scenario": "m08_the_mole",
+  "start_room": "main_lobby",
+  "nodes": [
+    {
+      "id": "door_server_room",
+      "label": "Server Room -- Restricted<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "server_room",
+      "label": "Server Room -- Restricted",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_security_archives",
+      "label": "Security Archives -- Authorised Only<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "security_archives",
+      "label": "Security Archives -- Authorised Only",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_interrogation_room",
+      "label": "Interrogation -- Recording In Progress<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "interrogation_room",
+      "label": "Interrogation -- Recording In Progress",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "main_lobby",
+      "label": "SAFETYNET HQ -- The Citadel",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lock_pick_kit",
+      "label": "Lock Pick Kit",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "lock_nightshade_locker",
+      "label": "Nightshade Locker",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "rfid_cloner",
+      "label": "RFID Cloner",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "fingerprint_kit",
+      "label": "Fingerprint Kit",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_badge_printer",
+      "label": "Visitor Badge Printer<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "printed_server_zone_badge",
+      "label": "Printed Server-Zone Badge",
+      "kind": "key",
+      "optional": true
+    },
+    {
+      "id": "director_office",
+      "label": "Director M. Netherton",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lock_director_safe",
+      "label": "Director's Safe<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "interrogation_suite_code_card",
+      "label": "Interrogation Suite Code Card",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "sealed_psych_evaluation_agent_0x47",
+      "label": "Sealed Psych Evaluation -- Agent 0x47",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "director_s_safe",
+      "label": "Director's Safe",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "npc_director_magnus_netherton",
+      "label": "Director Magnus Netherton",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "director_s_access_keycard_all_zones",
+      "label": "Director's Access Keycard -- All Zones",
+      "kind": "key",
+      "optional": true
+    },
+    {
+      "id": "action_clone_the_director_card",
+      "label": "Clone the Director's card (after the three interviews)",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "action_read_the_door_audit_to_the_director",
+      "label": "Read the door audit to the Director (suite code aloud)",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "operations_floor",
+      "label": "Operations Floor",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "personnel_print_job_director_s_investigation_request",
+      "label": "Personnel Print Job -- Director's Investigation Request",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "intel_analysis",
+      "label": "Intelligence Analysis",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "four_site_night_tactical_board",
+      "label": "Four-Site Night Tactical Board",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "phantom_s_off_book_notes",
+      "label": "Phantom's Off-Book Notes",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "gitlist_repository_server",
+      "label": "GitList Repository Server",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "server_access_log_excerpt",
+      "label": "Server Access Log (excerpt)",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "global_threat_database_catalogue",
+      "label": "Global Threat Database Catalogue",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "badge_audit_printout_leak_window",
+      "label": "Badge Audit Printout -- Leak Window",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "npc_agent_0x47_nightshade",
+      "label": "Agent 0x47 'Nightshade'",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cryptography_lab",
+      "label": "Cryptography Lab",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "nightshade_s_locker_key",
+      "label": "Nightshade's Locker Key",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "detention_disposition_screen",
+      "label": "Detention Disposition Screen",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "break_room",
+      "label": "Break Room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "post_it_on_the_coffee_machine",
+      "label": "Post-It On The Coffee Machine",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "leak_timeline_someone_s_working_notes",
+      "label": "Leak Timeline (someone's working notes)",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "usb_stick_personal_backup_enc",
+      "label": "USB Stick -- PERSONAL_BACKUP.enc",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "insider_threat_initiative_deep_state_brief",
+      "label": "Insider Threat Initiative -- 'Deep State' Brief",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "go_bag_locker_0x47",
+      "label": "Go-Bag -- Locker 0x47",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "staff_locker_0x47",
+      "label": "Staff Locker -- 0x47",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "vmch_recover_gitlist_exposure",
+      "label": "Exploit the repository browser and submit the first flag",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_recover_gitlist_exposure",
+      "label": "Recover Gitlist Exposure Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "vmch_recover_stashed_credentials",
+      "label": "Recover the stashed credentials and submit the second flag",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_recover_stashed_credentials",
+      "label": "Recover Stashed Credentials Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "vmch_recover_home_flag",
+      "label": "Log in properly and submit the home-directory flag",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_recover_home_flag",
+      "label": "Recover Home Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "vmch_escalate_to_root",
+      "label": "Escalate to root and submit the final flag",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_escalate_to_root",
+      "label": "Escalate To Root Flag",
+      "kind": "flag",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_server_room",
+      "to": "server_room",
+      "soft": false
+    },
+    {
+      "from": "door_security_archives",
+      "to": "security_archives",
+      "soft": false
+    },
+    {
+      "from": "door_interrogation_room",
+      "to": "interrogation_room",
+      "soft": false
+    },
+    {
+      "from": "main_lobby",
+      "to": "lock_pick_kit",
+      "soft": true
+    },
+    {
+      "from": "lock_pick_kit",
+      "to": "lock_nightshade_locker",
+      "soft": true
+    },
+    {
+      "from": "main_lobby",
+      "to": "rfid_cloner",
+      "soft": false
+    },
+    {
+      "from": "main_lobby",
+      "to": "fingerprint_kit",
+      "soft": false
+    },
+    {
+      "from": "main_lobby",
+      "to": "lock_badge_printer",
+      "soft": false
+    },
+    {
+      "from": "lock_badge_printer",
+      "to": "printed_server_zone_badge",
+      "soft": true
+    },
+    {
+      "from": "printed_server_zone_badge",
+      "to": "door_server_room",
+      "soft": true
+    },
+    {
+      "from": "director_office",
+      "to": "lock_director_safe",
+      "soft": false
+    },
+    {
+      "from": "lock_director_safe",
+      "to": "interrogation_suite_code_card",
+      "soft": false
+    },
+    {
+      "from": "interrogation_suite_code_card",
+      "to": "door_interrogation_room",
+      "soft": false
+    },
+    {
+      "from": "lock_director_safe",
+      "to": "sealed_psych_evaluation_agent_0x47",
+      "soft": false
+    },
+    {
+      "from": "director_office",
+      "to": "director_s_safe",
+      "soft": true
+    },
+    {
+      "from": "director_s_safe",
+      "to": "door_interrogation_room",
+      "soft": true
+    },
+    {
+      "from": "director_office",
+      "to": "npc_director_magnus_netherton",
+      "soft": false
+    },
+    {
+      "from": "npc_director_magnus_netherton",
+      "to": "director_s_access_keycard_all_zones",
+      "soft": true
+    },
+    {
+      "from": "director_s_access_keycard_all_zones",
+      "to": "door_server_room",
+      "soft": true
+    },
+    {
+      "from": "npc_director_magnus_netherton",
+      "to": "action_clone_the_director_card",
+      "soft": false
+    },
+    {
+      "from": "npc_director_magnus_netherton",
+      "to": "action_read_the_door_audit_to_the_director",
+      "soft": false
+    },
+    {
+      "from": "operations_floor",
+      "to": "personnel_print_job_director_s_investigation_request",
+      "soft": false
+    },
+    {
+      "from": "personnel_print_job_director_s_investigation_request",
+      "to": "lock_director_safe",
+      "soft": false
+    },
+    {
+      "from": "intel_analysis",
+      "to": "four_site_night_tactical_board",
+      "soft": false
+    },
+    {
+      "from": "intel_analysis",
+      "to": "phantom_s_off_book_notes",
+      "soft": false
+    },
+    {
+      "from": "server_room",
+      "to": "gitlist_repository_server",
+      "soft": false
+    },
+    {
+      "from": "server_room",
+      "to": "server_access_log_excerpt",
+      "soft": false
+    },
+    {
+      "from": "security_archives",
+      "to": "global_threat_database_catalogue",
+      "soft": false
+    },
+    {
+      "from": "security_archives",
+      "to": "badge_audit_printout_leak_window",
+      "soft": false
+    },
+    {
+      "from": "cryptography_lab",
+      "to": "npc_agent_0x47_nightshade",
+      "soft": false
+    },
+    {
+      "from": "npc_agent_0x47_nightshade",
+      "to": "nightshade_s_locker_key",
+      "soft": false
+    },
+    {
+      "from": "nightshade_s_locker_key",
+      "to": "lock_nightshade_locker",
+      "soft": false
+    },
+    {
+      "from": "interrogation_room",
+      "to": "detention_disposition_screen",
+      "soft": false
+    },
+    {
+      "from": "break_room",
+      "to": "post_it_on_the_coffee_machine",
+      "soft": false
+    },
+    {
+      "from": "post_it_on_the_coffee_machine",
+      "to": "door_security_archives",
+      "soft": false
+    },
+    {
+      "from": "post_it_on_the_coffee_machine",
+      "to": "lock_badge_printer",
+      "soft": false
+    },
+    {
+      "from": "break_room",
+      "to": "leak_timeline_someone_s_working_notes",
+      "soft": false
+    },
+    {
+      "from": "break_room",
+      "to": "lock_nightshade_locker",
+      "soft": false
+    },
+    {
+      "from": "lock_nightshade_locker",
+      "to": "usb_stick_personal_backup_enc",
+      "soft": false
+    },
+    {
+      "from": "lock_nightshade_locker",
+      "to": "insider_threat_initiative_deep_state_brief",
+      "soft": false
+    },
+    {
+      "from": "lock_nightshade_locker",
+      "to": "go_bag_locker_0x47",
+      "soft": false
+    },
+    {
+      "from": "break_room",
+      "to": "staff_locker_0x47",
+      "soft": false
+    },
+    {
+      "from": "vmch_recover_gitlist_exposure",
+      "to": "vmfl_recover_gitlist_exposure",
+      "soft": false
+    },
+    {
+      "from": "vmch_recover_stashed_credentials",
+      "to": "vmfl_recover_stashed_credentials",
+      "soft": false
+    },
+    {
+      "from": "vmfl_recover_gitlist_exposure",
+      "to": "vmch_recover_stashed_credentials",
+      "soft": true
+    },
+    {
+      "from": "vmch_recover_home_flag",
+      "to": "vmfl_recover_home_flag",
+      "soft": false
+    },
+    {
+      "from": "vmfl_recover_stashed_credentials",
+      "to": "vmch_recover_home_flag",
+      "soft": true
+    },
+    {
+      "from": "vmch_escalate_to_root",
+      "to": "vmfl_escalate_to_root",
+      "soft": false
+    },
+    {
+      "from": "vmfl_recover_home_flag",
+      "to": "vmch_escalate_to_root",
+      "soft": true
+    },
+    {
+      "from": "gitlist_repository_server",
+      "to": "vmch_recover_gitlist_exposure",
+      "soft": false
+    },
+    {
+      "from": "main_lobby",
+      "to": "director_office",
+      "soft": false
+    },
+    {
+      "from": "main_lobby",
+      "to": "operations_floor",
+      "soft": false
+    },
+    {
+      "from": "main_lobby",
+      "to": "cryptography_lab",
+      "soft": false
+    },
+    {
+      "from": "operations_floor",
+      "to": "intel_analysis",
+      "soft": false
+    },
+    {
+      "from": "cryptography_lab",
+      "to": "break_room",
+      "soft": false
+    },
+    {
+      "from": "rfid_cloner",
+      "to": "action_clone_the_director_card",
+      "soft": false
+    },
+    {
+      "from": "action_clone_the_director_card",
+      "to": "door_server_room",
+      "soft": false
+    },
+    {
+      "from": "fingerprint_kit",
+      "to": "usb_stick_personal_backup_enc",
+      "soft": true
+    },
+    {
+      "from": "server_access_log_excerpt",
+      "to": "action_read_the_door_audit_to_the_director",
+      "soft": true
+    },
+    {
+      "from": "badge_audit_printout_leak_window",
+      "to": "action_read_the_door_audit_to_the_director",
+      "soft": true
+    },
+    {
+      "from": "action_read_the_door_audit_to_the_director",
+      "to": "door_interrogation_room",
+      "soft": true
+    },
+    {
+      "from": "leak_timeline_someone_s_working_notes",
+      "to": "action_read_the_door_audit_to_the_director",
+      "soft": true
+    }
+  ]
+}

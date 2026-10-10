@@ -1,0 +1,13 @@
+{
+  "key": "b370bcc5b624bee7241553381089c048",
+  "npc": "roaming_ward_nurse",
+  "text": "Now shift. You're stood where I need to be.",
+  "voice": "Erinome",
+  "style": "Staff nurse, late twenties, four hours into doing the work of a monitoring system by hand. Consistent West Yorkshire accent -- Bradford, flat and quick. Brisk to the point of curt, not unkind, genuinely has no time for you. Talks while walking.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

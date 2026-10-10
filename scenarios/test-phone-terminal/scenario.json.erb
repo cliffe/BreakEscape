@@ -1,0 +1,103 @@
+{
+  "scenario_brief": "Two phones have been left for you. One is your handler. The other is something else.",
+  "endGoal": "Test both phone themes",
+  "startRoom": "start_room",
+
+  "globalVariables": {
+    "system_accessed": false
+  },
+
+  "player": {
+    "id": "player",
+    "displayName": "Agent",
+    "spriteSheet": "hacker",
+    "spriteTalk": "assets/characters/hacker-talk.png",
+    "spriteConfig": {
+      "idleFrameStart": 20,
+      "idleFrameEnd": 23
+    }
+  },
+
+  "startItemsInInventory": [
+    {
+      "type": "phone",
+      "name": "Handler Comms",
+      "takeable": true,
+      "phoneId": "player_phone",
+      "npcIds": ["handler"],
+      "observations": "Standard encrypted comms phone. Your handler is on the line."
+    },
+    {
+      "type": "phone",
+      "name": "Unknown Signal",
+      "takeable": true,
+      "phoneId": "terminal_phone",
+      "npcIds": ["signal"],
+      "observations": "A plain black device. No branding. Someone left it for you."
+    }
+  ],
+
+  "rooms": {
+    "start_room": {
+      "type": "room_reception",
+      "connections": {},
+      "objects": [
+        {
+          "type": "text_file",
+          "name": "Workstation",
+          "takeable": false,
+          "text": "SYSTEM LOG — UNAUTHORIZED ACCESS DETECTED\n\nExternal connection established from unknown IP.\nEncrypted tunnel active. Origin: unresolvable.\n\nAccess timestamp: [REDACTED]",
+          "observations": "A workstation with an active connection log. Something got in.",
+          "onRead": {
+            "setVariable": {
+              "system_accessed": true
+            }
+          }
+        }
+      ],
+      "npcs": [
+        {
+          "id": "handler",
+          "displayName": "Handler",
+          "npcType": "phone",
+          "storyPath": "scenarios/test-phone-terminal/handler.json",
+          "avatar": "assets/characters/female_spy_headshot.png",
+          "phoneId": "player_phone",
+          "currentKnot": "start",
+          "timedMessages": [
+            {
+              "delay": 2000,
+              "message": "Agent, you're online. Message me when you're ready.",
+              "type": "text"
+            }
+          ]
+        },
+        {
+          "id": "signal",
+          "displayName": "UNKNOWN",
+          "npcType": "phone",
+          "phoneTheme": "terminal",
+          "storyPath": "scenarios/test-phone-terminal/signal.json",
+          "phoneId": "terminal_phone",
+          "currentKnot": "start",
+          "timedMessages": [
+            {
+              "delay": 8000,
+              "message": "YOU HAVE BEEN FOUND.",
+              "type": "text"
+            }
+          ],
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:system_accessed",
+              "condition": "value === true",
+              "onceOnly": true,
+              "conversationMode": "phone-chat",
+              "targetKnot": "attacker_contact"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

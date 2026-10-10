@@ -1,0 +1,13 @@
+{
+  "key": "02c64b38f52cc4e6d9f572ecd4360370",
+  "npc": "sarah_mitchell",
+  "text": "Ravi left you this pass for the IT office. Before you go up, look at Bed 4's monitor and come back to me.",
+  "voice": "Kore",
+  "style": "Black British charge nurse in her mid-40s, calm, tired but professional. Speak with a consistent Leeds, West Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

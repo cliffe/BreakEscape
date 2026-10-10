@@ -1,0 +1,396 @@
+{
+  "scenario": "sis01_healthcare",
+  "start_room": "ward_7",
+  "nodes": [
+    {
+      "id": "door_it_security_office",
+      "label": "IT Security<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "it_security_office",
+      "label": "IT Security",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "ward_7",
+      "label": "Ward 7",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lock_ward_monitoring_station",
+      "label": "Ward 7 — Central Monitoring Station<br/>Ransomware terminal",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_bed2_pump_terminal",
+      "label": "Bed 2 — Infusion Pump Terminal",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "mar_charts_paper_backup",
+      "label": "MAR Charts — Paper Backup",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "npc_sarah_mitchell",
+      "label": "Sarah Mitchell",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "northgate_it_security_visitor_access_card",
+      "label": "Northgate IT Security — Visitor Access Card",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "action_talk_to_sarah",
+      "label": "Receive incident briefing",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "npc_hamza_iqbal",
+      "label": "Hamza Iqbal",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "action_warn_sarah",
+      "label": "Drug library advisory (pharmacist)",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "siem_console_ravi_s_laptop",
+      "label": "SIEM Console — Ravi's Laptop",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vpn_authentication_log_terminal",
+      "label": "VPN Authentication Log Terminal",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "lock_network_map_screen",
+      "label": "Network Architecture Map",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_infected_workstation_it_office",
+      "label": "Infected Workstation (IT Office)<br/>Ransomware terminal",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "npc_ravi_anand",
+      "label": "Ravi Anand",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "it_network_change_authorisation_form",
+      "label": "IT Network Change Authorisation Form",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "action_brief_ravi",
+      "label": "Brief Ravi on findings",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "action_ravi_signoff",
+      "label": "Get IT Security sign-off",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "major_incident_room",
+      "label": "Major Incident Room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lock_backup_console",
+      "label": "Backup Recovery Console",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_drug_library_checker",
+      "label": "Drug Library Integrity Terminal",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "npc_david_osei",
+      "label": "David Osei",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "clinical_safety_sign_off_network_isolation",
+      "label": "Clinical Safety Sign-Off — Network Isolation",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "action_david_safety_case",
+      "label": "Safety case sign-off",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "npc_helen_carver",
+      "label": "Helen Carver",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "action_notify_ncsc",
+      "label": "Notify NCSC",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "action_helen_ico_advisory",
+      "label": "ICO notification advisory",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "npc_dr_fiona_hartley",
+      "label": "Dr Fiona Hartley",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "npc_priya_s",
+      "label": "Priya S.",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "action_attend_debrief",
+      "label": "NCSC debrief",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "andgate1",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    },
+    {
+      "id": "andgate2",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_it_security_office",
+      "to": "it_security_office",
+      "soft": false
+    },
+    {
+      "from": "ward_7",
+      "to": "lock_ward_monitoring_station",
+      "soft": false
+    },
+    {
+      "from": "ward_7",
+      "to": "lock_bed2_pump_terminal",
+      "soft": false
+    },
+    {
+      "from": "ward_7",
+      "to": "mar_charts_paper_backup",
+      "soft": true
+    },
+    {
+      "from": "mar_charts_paper_backup",
+      "to": "lock_bed2_pump_terminal",
+      "soft": true
+    },
+    {
+      "from": "ward_7",
+      "to": "npc_sarah_mitchell",
+      "soft": false
+    },
+    {
+      "from": "npc_sarah_mitchell",
+      "to": "northgate_it_security_visitor_access_card",
+      "soft": false
+    },
+    {
+      "from": "northgate_it_security_visitor_access_card",
+      "to": "door_it_security_office",
+      "soft": false
+    },
+    {
+      "from": "npc_sarah_mitchell",
+      "to": "action_talk_to_sarah",
+      "soft": false
+    },
+    {
+      "from": "ward_7",
+      "to": "npc_hamza_iqbal",
+      "soft": false
+    },
+    {
+      "from": "npc_hamza_iqbal",
+      "to": "action_warn_sarah",
+      "soft": false
+    },
+    {
+      "from": "it_security_office",
+      "to": "siem_console_ravi_s_laptop",
+      "soft": false
+    },
+    {
+      "from": "it_security_office",
+      "to": "vpn_authentication_log_terminal",
+      "soft": false
+    },
+    {
+      "from": "it_security_office",
+      "to": "lock_network_map_screen",
+      "soft": false
+    },
+    {
+      "from": "it_security_office",
+      "to": "lock_infected_workstation_it_office",
+      "soft": false
+    },
+    {
+      "from": "it_security_office",
+      "to": "npc_ravi_anand",
+      "soft": false
+    },
+    {
+      "from": "npc_ravi_anand",
+      "to": "it_network_change_authorisation_form",
+      "soft": true
+    },
+    {
+      "from": "npc_ravi_anand",
+      "to": "action_brief_ravi",
+      "soft": false
+    },
+    {
+      "from": "npc_ravi_anand",
+      "to": "action_ravi_signoff",
+      "soft": false
+    },
+    {
+      "from": "major_incident_room",
+      "to": "lock_backup_console",
+      "soft": false
+    },
+    {
+      "from": "major_incident_room",
+      "to": "lock_drug_library_checker",
+      "soft": false
+    },
+    {
+      "from": "major_incident_room",
+      "to": "npc_david_osei",
+      "soft": false
+    },
+    {
+      "from": "npc_david_osei",
+      "to": "clinical_safety_sign_off_network_isolation",
+      "soft": false
+    },
+    {
+      "from": "npc_david_osei",
+      "to": "action_david_safety_case",
+      "soft": false
+    },
+    {
+      "from": "major_incident_room",
+      "to": "npc_helen_carver",
+      "soft": false
+    },
+    {
+      "from": "npc_helen_carver",
+      "to": "action_notify_ncsc",
+      "soft": false
+    },
+    {
+      "from": "npc_helen_carver",
+      "to": "action_helen_ico_advisory",
+      "soft": false
+    },
+    {
+      "from": "major_incident_room",
+      "to": "npc_dr_fiona_hartley",
+      "soft": false
+    },
+    {
+      "from": "npc_dr_fiona_hartley",
+      "to": "action_helen_ico_advisory",
+      "soft": false
+    },
+    {
+      "from": "major_incident_room",
+      "to": "npc_priya_s",
+      "soft": false
+    },
+    {
+      "from": "npc_priya_s",
+      "to": "action_attend_debrief",
+      "soft": false
+    },
+    {
+      "from": "clinical_safety_sign_off_network_isolation",
+      "to": "andgate1",
+      "soft": true
+    },
+    {
+      "from": "andgate1",
+      "to": "lock_network_map_screen",
+      "soft": false
+    },
+    {
+      "from": "it_network_change_authorisation_form",
+      "to": "andgate1",
+      "soft": false
+    },
+    {
+      "from": "it_network_change_authorisation_form",
+      "to": "andgate2",
+      "soft": true
+    },
+    {
+      "from": "andgate2",
+      "to": "lock_network_map_screen",
+      "soft": false
+    },
+    {
+      "from": "clinical_safety_sign_off_network_isolation",
+      "to": "andgate2",
+      "soft": false
+    },
+    {
+      "from": "siem_console_ravi_s_laptop",
+      "to": "action_brief_ravi",
+      "soft": false
+    }
+  ]
+}

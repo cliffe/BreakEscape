@@ -1,0 +1,13 @@
+{
+  "key": "12261d3a323603d289fcefeea013d18a",
+  "npc": "receptionist",
+  "text": "Everybody signs this book. Contractors, engineers, the lot. He never has. Says he's \"posted\", like that's an answer.",
+  "voice": "Despina",
+  "style": "Night reception coordinator, eleven years on this desk. South London / Multicultural London English accent throughout -- warm, quick, dry. Unflappable on the surface, running on fumes underneath.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

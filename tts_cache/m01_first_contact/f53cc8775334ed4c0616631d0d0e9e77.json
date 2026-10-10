@@ -1,0 +1,13 @@
+{
+  "key": "f53cc8775334ed4c0616631d0d0e9e77",
+  "npc": "closing_debrief_person",
+  "text": "Every cell we disrupt, every operation we stop, brings us closer.",
+  "voice": "Aoede",
+  "style": "Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "batch",
+  "generated": "2026-10-08",
+  "recorded_at": "2026-10-09T12:09:57Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "abdccb70c7bcdb21bb6ab7db61cf9c04",
+  "npc": "narrator",
+  "text": "A secure operations room. On the wall screen, a hospital floor plan gone entirely red. At the head of the table, a tall man in a creased suit you know only by name.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

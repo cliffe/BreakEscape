@@ -1,0 +1,553 @@
+/* HUD (Heads-Up Display) System Styles */
+/* Combines Inventory, Health UI, Avatar, and Mode Toggle */
+
+/* ===== PLAYER HUD BUTTONS (inside inventory) ===== */
+
+#player-hud-buttons {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  margin-right: 16px;
+  align-items: center;
+}
+
+/* Remove old standalone container styles */
+#player-hud-container {
+  display: none; /* Hide if exists in HTML */
+}
+
+/* HUD Button Base Styling */
+.hud-button {
+  width: 64px;
+  height: 64px;
+  /* semi-transparent background to show avatar or hand canvas, but with a solid border for visibility */
+  background: rgba(34, 34, 34, 0.6);
+  border: 2px solid #666666;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: border-color 0.2s ease, transform 0.1s ease;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+.hud-button:hover {
+  border-color: #888888;
+}
+
+.hud-button:active {
+  transform: translateY(2px);
+}
+
+/* Avatar Button */
+#hud-avatar-button {
+  border-color: #000000; /* Green to indicate player settings */
+}
+
+#hud-avatar-button:hover {
+  border-color: #008800; /* Brighter green */
+  box-shadow: 0 0 8px rgba(0, 255, 0, 0.4);
+}
+
+#hud-avatar-img {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+/* Mode Toggle Button */
+#hud-mode-toggle-button {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+#hud-hand-canvas {
+  width: 64px;
+  height: 64px;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+#hud-mode-label {
+  font-family: 'GNF', 'Courier New', monospace;
+  font-size: 10px;
+  color: #ffffff;
+  text-align: center;
+  margin-top: 2px;
+  line-height: 1;
+  display: none; /* Hide label to make room for 64px hand icon */
+}
+
+/* Mode-specific border colors */
+#hud-mode-toggle-button.mode-interact {
+  border-color: rgba(0, 255, 0, 0.4); /* Green */
+}
+
+#hud-mode-toggle-button.mode-jab {
+  border-color: rgba(0, 204, 255, 0.4); /* Cyan */
+}
+
+#hud-mode-toggle-button.mode-cross {
+  border-color: rgba(255, 0, 0, 0.4); /* Red */
+}
+
+/* Hover colors */
+#hud-mode-toggle-button.mode-interact:hover {
+  border-color: rgba(0, 255, 136, 0.4); /* Brighter green */
+}
+
+#hud-mode-toggle-button.mode-jab:hover {
+  border-color: rgba(136, 238, 255, 0.4); /* Brighter cyan */
+}
+
+#hud-mode-toggle-button.mode-cross:hover {
+  border-color: rgba(255, 136, 0, 0.4); /* Orange */
+}
+
+/* Animation for mode transitions */
+@keyframes mode-change {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.9);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.hud-button.animating {
+  animation: mode-change 0.2s ease;
+}
+
+/* ===== HEALTH UI ===== */
+
+#health-ui-container {
+  position: fixed;
+  bottom: 70px;  /* Directly above inventory (which is 80px tall) */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1100;
+  pointer-events: none;
+  display: flex; /* Always show (changed from MVP requirement) */
+}
+
+.health-ui-display {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 16px;
+  /* background: rgba(0, 0, 0, 0.5); */
+  /* border: 2px solid #333; */
+  /* box-shadow: 0 0 10px rgba(0, 0, 0, 0.9), inset 0 0 5px rgba(0, 0, 0, 0.5); */
+}
+
+.health-heart {
+  width: 32px;
+  height: 32px;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  transition: opacity 0.2s ease-in-out;
+  display: block;
+}
+
+.health-heart:hover {
+  filter: drop-shadow(0 0 4px rgba(255, 0, 0, 0.6));
+}
+
+/* ===== INVENTORY UI ===== */
+
+#inventory-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    z-index: 1000;
+    font-family: 'GNF';
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+#inventory-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+#inventory-container::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+#inventory-container::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+}
+
+.inventory-slot {
+    min-width: 64px;
+    height: 64px;
+    margin: 0 5px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    background: rgb(149 157 216 / 80%);
+}
+
+/* Pulse animation for newly added items */
+@keyframes pulse-slot {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+    }
+    50% {
+        transform: scale(1.5);
+        box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+    }
+}
+
+.inventory-slot.pulse {
+    animation: pulse-slot 0.6s ease-out;
+}
+
+.inventory-item {
+    max-width: 48px;
+    max-height: 48px;
+    cursor: pointer;
+    transition: transform 0.2s;
+    transform: scale(2);
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+}
+
+.inventory-item:hover {
+    transform: scale(2.2);
+}
+
+/* Key ring specific styling */
+.inventory-item[data-type="key_ring"] {
+    position: relative;
+}
+
+.inventory-item[data-type="key_ring"]::after {
+    content: attr(data-key-count);
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #ff6b6b;
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+/* Hide count badge for single keys */
+.inventory-item[data-type="key_ring"][data-key-count="1"]::after {
+    display: none;
+}
+
+/* ===== HUD INFO LABEL ===== */
+
+#hud-info-label {
+    position: fixed;
+    bottom: 120px; /* above the 80px inventory and health strips */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1050;
+    pointer-events: none;
+
+    font-family: 'Press Start 2P', 'Courier New', monospace;
+    font-size: 10px;
+    color: #ffffff;
+    text-align: center;
+    white-space: nowrap;
+    max-width: calc(100vw - 32px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    background: rgba(0, 0, 0, 0.72);
+    border: 2px solid rgba(255, 255, 255, 0.18);
+    padding: 5px 12px;
+
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+#hud-info-label.visible {
+    opacity: 1;
+}
+
+/* Phone unread message badge */
+.inventory-slot {
+    position: relative;
+}
+
+.inventory-slot .phone-badge {
+    display: block;
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #5fcf69; /* Green to match phone LCD screen */
+    color: #000;
+    border: 2px solid #000;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 4px;
+    line-height: 16px; /* Center text vertically (20px - 2px border * 2 = 16px) */
+    text-align: center;
+    font-size: 12px;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.8);
+    z-index: 10;
+    border-radius: 0; /* Maintain pixel-art aesthetic */
+}
+
+/* =====================================================
+   Scenario Timer UI (Phase 5: Countdown widget)
+   ===================================================== */
+
+#scenario-timer-display {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1040;
+    pointer-events: none;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+
+    font-family: 'Press Start 2P', 'Courier New', monospace;
+    background: rgba(0, 0, 0, 0.85);
+    border: 2px solid #ffffff;
+    padding: 8px 12px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.8);
+
+    opacity: 1;
+    transition: opacity 0.2s ease;
+}
+
+#scenario-timer-display.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.scenario-timer-label {
+    font-size: 9px;
+    color: #ffffff;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 2px;
+}
+
+.scenario-timer-clock {
+    font-size: 18px;
+    color: #ffffff;
+    font-weight: bold;
+    font-variant-numeric: tabular-nums;  /* Monospace numbers for consistent width */
+    letter-spacing: 2px;
+}
+
+/* Urgency state: < 5 minutes (amber) */
+#scenario-timer-display.scenario-timer--amber {
+    background: rgba(255, 180, 0, 0.2);
+    border-color: #ffb400;
+}
+
+#scenario-timer-display.scenario-timer--amber .scenario-timer-label,
+#scenario-timer-display.scenario-timer--amber .scenario-timer-clock {
+    color: #ffb400;
+}
+
+/* Urgency state: < 1 minute (red/flash) */
+#scenario-timer-display.scenario-timer--red {
+    background: rgba(255, 0, 0, 0.2);
+    border-color: #ff0000;
+    animation: scenario-timer-pulse 0.5s ease-in-out infinite;
+}
+
+#scenario-timer-display.scenario-timer--red .scenario-timer-label,
+#scenario-timer-display.scenario-timer--red .scenario-timer-clock {
+    color: #ff0000;
+}
+
+@keyframes scenario-timer-pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
+}
+
+/* =====================================================
+   VM Controls Widget — HUD button + overlay iframe
+   ===================================================== */
+
+/* Make the music anchor a flex row so VM + music buttons sit side by side */
+#music-widget-btn-anchor {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    align-items: flex-start;
+}
+
+/* VM Controls HUD button — matches music button dimensions and style */
+.vm-controls-hud-btn {
+    width: 58px;
+    height: 58px;
+    background: rgba(20, 20, 20, 0.7);
+    border: 2px solid #444466;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
+    user-select: none;
+}
+
+.vm-controls-hud-btn:active {
+    transform: translateY(2px);
+}
+
+/* Activation state indicators */
+.vm-controls-hud-btn.vm-activated {
+    border-color: #00cc44;
+    box-shadow: 0 0 8px rgba(0, 200, 68, 0.5);
+}
+
+.vm-controls-hud-btn.vm-deactivated {
+    border-color: #cc2200;
+    box-shadow: 0 0 8px rgba(200, 34, 0, 0.4);
+}
+
+.vm-controls-hud-btn:hover,
+.vm-controls-hud-btn.panel-open {
+    filter: brightness(1.25);
+}
+
+/* vm-launcher.png is 28×23px — render at 2× for pixel-art crispness */
+.vm-controls-btn-icon {
+    display: block;
+    width: 56px;
+    height: 46px;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    pointer-events: none;
+}
+
+.vm-countdown {
+    position: absolute;
+    bottom: 3px;
+    left: 0;
+    right: 0;
+    font-family: 'GNF';
+    font-size: 14px;
+    line-height: 1;
+    color: #ffffff;
+    text-align: center;
+    letter-spacing: 0.05em;
+    pointer-events: none;
+    text-shadow: 0 0 3px rgba(0, 0, 0, 0.9), 0 0 6px rgba(0, 0, 0, 0.7);
+    display: none;
+}
+
+.vm-controls-hud-btn.has-countdown .vm-countdown {
+    display: block;
+}
+
+/* Overlay backdrop */
+#vm-controls-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+}
+
+#vm-controls-overlay.visible {
+    display: flex;
+}
+
+/* Modal container */
+#vm-controls-modal {
+    display: flex;
+    flex-direction: column;
+    width: 90%;
+    max-width: 900px;
+    height: 80vh;
+    max-height: 700px;
+    background: #1a1a2e;
+    border: 2px solid #444466;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+}
+
+/* Modal title bar */
+#vm-controls-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 14px;
+    background: #16213e;
+    border-bottom: 2px solid #444466;
+    color: #ccccdd;
+    font-family: 'Press Start 2P', 'Courier New', monospace;
+    font-size: 11px;
+    flex-shrink: 0;
+}
+
+#vm-controls-close-btn {
+    background: none;
+    border: none;
+    color: #ccccdd;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 2px 6px;
+}
+
+#vm-controls-close-btn:hover {
+    color: #ffffff;
+}
+
+/* Iframe fills remaining modal height */
+#vm-controls-iframe {
+    flex: 1;
+    width: 100%;
+    border: none;
+    background: #ffffff;
+}

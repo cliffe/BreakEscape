@@ -1,0 +1,3 @@
+seed 11: indep=ALL PASS cyberchef=ALL PASS
+seed 222: indep=ALL PASS cyberchef=ALL PASS
+seed 3333: indep=ALL PASS cyberchef=ALL PASS

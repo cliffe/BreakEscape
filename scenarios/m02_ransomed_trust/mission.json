@@ -1,0 +1,54 @@
+{
+  "display_name": "Ransomed Trust",
+  "description": "St. Catherine's Regional went dark at 02:47. Forty-seven patients are on backup generators and the board votes on paying ENTROPY's ransom in four hours. You are booked in as an emergency security consultant — which buys you a paper badge and nothing else, because the ransomware took the access control server too. Nobody in this building can grant you access. Talk, borrow or pick your way to the backup server, turn ENTROPY's own backdoor against them, and find out who inside the hospital held the door open.",
+  "difficulty_level": 1,
+  "secgen_scenario": "rooting_for_a_win",
+  "collection": "season_1",
+  "cybok": [
+    {
+      "ka": "MAT",
+      "topic": "Attacks and exploitation",
+      "keywords": ["EXPLOITATION", "EXPLOITATION FRAMEWORKS", "BACKDOOR TROJANS", "Ransomware behavior"]
+    },
+    {
+      "ka": "SS",
+      "topic": "Categories of Vulnerabilities",
+      "keywords": ["CVEs and CWEs", "Supply chain compromise", "ProFTPD 1.3.3c backdoored source release (OSVDB-69562)", "Backup systems", "File system security"]
+    },
+    {
+      "ka": "SOIM",
+      "topic": "PENETRATION TESTING",
+      "keywords": ["PENETRATION TESTING - SOFTWARE TOOLS", "PENETRATION TESTING - ACTIVE PENETRATION", "Incident Response", "Recovery procedures", "Ransomware response"]
+    },
+    {
+      "ka": "NS",
+      "topic": "PENETRATION TESTING",
+      "keywords": ["FILE-TRANSFER PROTOCOL (FTP)"]
+    },
+    {
+      "ka": "F",
+      "topic": "Artifact Analysis",
+      "keywords": ["Encoding and alternative data formats"]
+    },
+    {
+      "ka": "AC",
+      "topic": "Symmetric Cryptography",
+      "keywords": ["symmetric encryption and authentication", "Key recovery", "Base64", "ROT13"]
+    },
+    {
+      "ka": "HF",
+      "topic": "Human Factors",
+      "keywords": ["Social engineering"]
+    },
+    {
+      "ka": "CPS",
+      "topic": "Physical Security",
+      "keywords": ["Physical access control", "RFID access systems"]
+    },
+    {
+      "ka": "AAA",
+      "topic": "Authentication",
+      "keywords": ["Access control bypass", "RFID authentication"]
+    }
+  ]
+}

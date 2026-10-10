@@ -1,0 +1,20 @@
+{
+  "display_name": "SecGen VM Lab - Linux Introduction",
+  "description": "This mission demonstrates VM integration with BreakEscape. Launch the provided VMs (desktop and kali) and capture flags from the SecGen environment. Learn basic Linux attack techniques in a controlled lab setting.",
+  "difficulty_level": 2,
+  "secgen_scenario": "labs/introducing_attacks/1_intro_linux.xml",
+  "collection": "testing",
+  "cybok": [
+    {
+      "ka": "SS",
+      "topic": "System Security",
+      "keywords": ["Virtual machines", "Linux security", "Attack vectors"]
+    },
+    {
+      "ka": "F",
+      "topic": "Forensics",
+      "keywords": ["Evidence collection", "Log analysis"]
+    }
+  ]
+}
+

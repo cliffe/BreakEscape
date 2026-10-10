@@ -1,0 +1,29 @@
+{
+    "scenario_brief": "Welcome to BreakEscape! You are a cyber investigator tasked with uncovering evidence of corporate espionage. Anonymous tips suggest the CEO has been selling company secrets, but you need proof.",
+    "showTitleScreen": true,
+    "startRoom": "reception",
+    "startItemsInInventory": [
+        {
+            "type": "lockpick",
+            "name": "Lock Pick Kit",
+            "takeable": true,
+            "observations": "A professional lock picking kit with various picks and tension wrenches"
+        }
+    ],
+    "rooms": {
+        "reception": {
+            "type": "room_reception",
+            "connections": {
+                "north": "office1"
+            },
+            "objects": []
+        },
+        "office1": {
+            "type": "room_office",
+            "connections": {
+                "south": "reception"
+            },
+            "objects": []
+        }
+    }
+}

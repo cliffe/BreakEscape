@@ -1,0 +1,13 @@
+{
+  "frameSize": 128,
+  "visemes": [
+    "rest",
+    "teeth",
+    "round",
+    "small_open",
+    "medium_open",
+    "wide_open",
+    "blink"
+  ],
+  "source": "TEST ONLY, not used by any scenario (Agent HaX keeps the hand-edited female_spy_visemes.png). pixellab /animate-with-text-v3 talk frames (4 frames, bust as first and last), lower face pasted on the bust: teeth:teeth_t01_f1, round:round_t03_f1, small_open:small_open_t01_f1, medium_open:medium_open_t01_f1, wide_open:teeth_t01_f2 (each head +0,-1px), blink: the inpainted i01 blink"
+}

@@ -1,0 +1,474 @@
+{
+  "scenario_brief": "SAFETYNET Headquarters - Ghost in the Machine Mission Demo",
+  "description": "Demonstration of the three-tier NPC hub architecture with context-aware conversations. Features Director Netherton, Dr. Chen, and Agent 0x99 (Haxolottle) with personal relationship building mixed with mission-specific content.",
+
+  "globalVariables": {
+    "total_missions_completed": 3,
+    "professional_reputation": 15,
+    "current_mission_id": "ghost_in_machine",
+    "mission_phase": "planning",
+    "player_name": "Agent 0x00"
+  },
+
+  "startRoom": "hq_briefing_room",
+
+  "startItemsInInventory": [
+    {
+      "type": "notes",
+      "name": "Mission Briefing Notes",
+      "takeable": true,
+      "readable": true,
+      "text": "OPERATION: Ghost in the Machine\nTARGET: Midwest Regional Power Coordination Center\nOBJECTIVE: Neutralize ENTROPY backdoor in power grid control systems\nSTATUS: Planning Phase\n\nNext Steps:\n- Brief with Director Netherton\n- Equipment prep with Dr. Chen\n- Handler coordination with Haxolottle",
+      "observations": "Your mission briefing for Operation Ghost in the Machine"
+    }
+  ],
+
+  "player": {
+    "id": "player",
+    "displayName": "Agent 0x00",
+    "spriteSheet": "hacker",
+    "spriteTalk": "assets/characters/hacker-talk.png",
+    "spriteConfig": {
+      "idleFrameStart": 20,
+      "idleFrameEnd": 23
+    }
+  },
+
+  "rooms": {
+    "hq_briefing_room": {
+      "type": "room_office",
+      "name": "SAFETYNET Briefing Room",
+      "description": "A secure briefing room with tactical displays showing global ENTROPY activity. Director Netherton, Dr. Chen, and Haxolottle are all present for the Ghost Protocol mission briefing.",
+      "connections": {
+        "north": "netherton_office",
+        "east": "chen_lab",
+        "west": "handler_station"
+      },
+      "items": [
+        {
+          "type": "workstation",
+          "name": "Tactical Display",
+          "takeable": false,
+          "observations": "A large display showing ENTROPY threat activity across multiple regions. The Ghost in the Machine operation is highlighted in red."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "netherton",
+          "displayName": "Director Netherton",
+          "npcType": "person",
+          "position": { "x": 3, "y": 3 },
+          "spriteSheet": "hacker",
+          "spriteTalk": "assets/characters/hacker-talk.png",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/netherton_hub.json",
+          "currentKnot": "netherton_conversation_entry",
+          "externalVariables": {
+            "player_name": "Agent 0x00",
+            "current_mission_id": "ghost_in_machine",
+            "npc_location": "briefing_room",
+            "mission_phase": "planning"
+          },
+          "persistentVariables": {
+            "npc_netherton_respect": 65,
+            "npc_netherton_serious_conversations": 2,
+            "npc_netherton_personal_moments": 1,
+            "npc_netherton_discussed_handbook": true,
+            "npc_netherton_discussed_leadership": true,
+            "npc_netherton_discussed_safetynet_history": false,
+            "npc_netherton_discussed_expectations": false,
+            "npc_netherton_discussed_difficult_decisions": false,
+            "npc_netherton_discussed_agent_development": false,
+            "npc_netherton_discussed_bureau_politics": false,
+            "npc_netherton_discussed_field_vs_command": false,
+            "npc_netherton_discussed_weight_of_command": false,
+            "npc_netherton_discussed_agent_losses": false,
+            "npc_netherton_discussed_ethical_boundaries": false,
+            "npc_netherton_discussed_personal_cost": false,
+            "npc_netherton_discussed_legacy": false,
+            "npc_netherton_discussed_trust": false,
+            "npc_netherton_discussed_rare_praise": false,
+            "npc_netherton_discussed_beyond_protocol": false,
+            "npc_netherton_shared_vulnerability": false,
+            "npc_netherton_earned_personal_trust": false,
+            "npc_netherton_received_commendation": false
+          },
+          "itemsHeld": [
+            {
+              "type": "notes",
+              "name": "Ghost Protocol Mission Packet",
+              "takeable": true,
+              "readable": true,
+              "text": "CLASSIFIED: OPERATION GHOST IN THE MACHINE\n\nInfiltration Route: Service entrance, elevator shaft access\nTarget System: SCADA control servers, third floor\nBackdoor Signature: ENTROPY.Ghost.v3.2\nExtraction: Three waypoints prepared\n\nRisk Assessment: HIGH\nCritical Infrastructure Impact: SEVERE\n\n- Director Netherton",
+              "observations": "Detailed mission briefing from Director Netherton"
+            }
+          ]
+        },
+        {
+          "id": "dr_chen",
+          "displayName": "Dr. Chen",
+          "npcType": "person",
+          "position": { "x": 6, "y": 5 },
+          "spriteSheet": "hacker-red",
+          "spriteTalk": "assets/characters/hacker-red-talk.png",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/chen_hub.json",
+          "currentKnot": "chen_conversation_entry",
+          "externalVariables": {
+            "player_name": "Agent 0x00",
+            "current_mission_id": "ghost_in_machine",
+            "npc_location": "briefing_room",
+            "mission_phase": "planning",
+            "equipment_status": "needs_upgrade"
+          },
+          "persistentVariables": {
+            "npc_chen_rapport": 58,
+            "npc_chen_tech_collaboration": 3,
+            "npc_chen_shared_discoveries": 1,
+            "npc_chen_personal_conversations": 2,
+            "npc_chen_discussed_tech_philosophy": true,
+            "npc_chen_discussed_entropy_tech": true,
+            "npc_chen_discussed_chen_background": false,
+            "npc_chen_discussed_favorite_projects": false,
+            "npc_chen_discussed_experimental_tech": false,
+            "npc_chen_discussed_research_frustrations": false,
+            "npc_chen_discussed_field_vs_lab": false,
+            "npc_chen_discussed_ethical_tech": false,
+            "npc_chen_discussed_dream_projects": false,
+            "npc_chen_discussed_tech_risks": false,
+            "npc_chen_discussed_work_life_balance": false,
+            "npc_chen_discussed_mentorship": false,
+            "npc_chen_discussed_future_vision": false,
+            "npc_chen_discussed_friendship_value": false,
+            "npc_chen_discussed_collaborative_legacy": false,
+            "npc_chen_discussed_beyond_safetynet": false,
+            "npc_chen_shared_personal_story": false,
+            "npc_chen_breakthrough_together": false,
+            "npc_chen_earned_research_partner_status": false
+          },
+          "itemsHeld": [
+            {
+              "type": "workstation",
+              "name": "Active Network Camouflage Device",
+              "takeable": true,
+              "observations": "Experimental equipment that masks digital signatures. Dr. Chen's latest creation for Ghost Protocol."
+            },
+            {
+              "type": "keycard",
+              "name": "Quantum-Encrypted Comm Unit",
+              "takeable": true,
+              "observations": "Prototype quantum-encrypted communications device. Still experimental but highly secure."
+            }
+          ]
+        },
+        {
+          "id": "haxolottle",
+          "displayName": "Agent 0x99 (Haxolottle)",
+          "npcType": "person",
+          "position": { "x": 7, "y": 3 },
+          "spriteSheet": "hacker",
+          "spriteTalk": "assets/characters/hacker-talk.png",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/haxolottle_hub.json",
+          "currentKnot": "haxolottle_conversation_entry",
+          "externalVariables": {
+            "player_name": "Agent 0x00",
+            "current_mission_id": "ghost_in_machine",
+            "npc_location": "briefing_room",
+            "mission_phase": "planning",
+            "operational_stress_level": "moderate"
+          },
+          "persistentVariables": {
+            "npc_haxolottle_friendship_level": 35,
+            "npc_haxolottle_conversations_had": 4,
+            "npc_haxolottle_trust_moments": 2,
+            "npc_haxolottle_humor_shared": 3,
+            "npc_haxolottle_vulnerable_moments": 1,
+            "npc_haxolottle_player_shared_personal": 2,
+            "npc_haxolottle_talked_hobbies_general": true,
+            "npc_haxolottle_talked_axolotl_obsession": true,
+            "npc_haxolottle_talked_music_taste": true,
+            "npc_haxolottle_talked_coffee_preferences": false,
+            "npc_haxolottle_talked_stress_management": false,
+            "npc_haxolottle_talked_philosophy_change": false,
+            "npc_haxolottle_talked_handler_life": false,
+            "npc_haxolottle_talked_field_nostalgia": false,
+            "npc_haxolottle_talked_weird_habits": false,
+            "npc_haxolottle_talked_favorite_operations": false,
+            "npc_haxolottle_talked_fears_anxieties": false,
+            "npc_haxolottle_talked_what_if_different": false,
+            "npc_haxolottle_talked_meaning_work": false,
+            "npc_haxolottle_talked_friendship_boundaries": false,
+            "npc_haxolottle_talked_future_dreams": false,
+            "npc_haxolottle_talked_identity_burden": false,
+            "npc_haxolottle_talked_loneliness_secrecy": false,
+            "npc_haxolottle_talked_real_name_temptation": false,
+            "npc_haxolottle_talked_after_safetynet": false,
+            "npc_haxolottle_talked_genuine_friendship": false,
+            "npc_haxolottle_shared_loss": false,
+            "npc_haxolottle_shared_doubt": false,
+            "npc_haxolottle_shared_secret_hobby": false
+          },
+          "itemsHeld": [
+            {
+              "type": "notes",
+              "name": "Handler Support Plan",
+              "takeable": true,
+              "readable": true,
+              "text": "HANDLER SUPPORT PLAN: GHOST IN THE MACHINE\n\nPre-Infiltration:\n- Security feed access (85% confidence)\n- Patrol pattern analysis\n\nActive Operation:\n- Real-time guidance\n- Route adjustments\n- Emergency extraction ready\n\nRemember: Adapt and regenerate.\n- Haxolottle (0x99)",
+              "observations": "Handler support plan from Haxolottle"
+            }
+          ]
+        }
+      ]
+    },
+
+    "netherton_office": {
+      "type": "room_office",
+      "name": "Director Netherton's Office",
+      "description": "A meticulously organized office. Certificates and commendations line the walls. The desk is covered with mission reports and tactical assessments. Director Netherton stands reviewing classified documents.",
+      "connections": {
+        "south": "hq_briefing_room"
+      },
+      "npcs": [
+        {
+          "id": "netherton",
+          "displayName": "Director Netherton",
+          "npcType": "person",
+          "position": { "x": 5, "y": 4 },
+          "spriteSheet": "hacker",
+          "spriteTalk": "assets/characters/hacker-talk.png",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "story_design/ink/netherton_hub.json",
+          "currentKnot": "netherton_conversation_entry",
+          "externalVariables": {
+            "player_name": "Agent 0x00",
+            "current_mission_id": "ghost_in_machine",
+            "npc_location": "office",
+            "mission_phase": "planning"
+          },
+          "persistentVariables": {
+            "npc_netherton_respect": 65,
+            "npc_netherton_serious_conversations": 2,
+            "npc_netherton_personal_moments": 1,
+            "npc_netherton_discussed_handbook": true,
+            "npc_netherton_discussed_leadership": true,
+            "npc_netherton_discussed_safetynet_history": false,
+            "npc_netherton_discussed_expectations": false,
+            "npc_netherton_discussed_difficult_decisions": false,
+            "npc_netherton_discussed_agent_development": false,
+            "npc_netherton_discussed_bureau_politics": false,
+            "npc_netherton_discussed_field_vs_command": false,
+            "npc_netherton_discussed_weight_of_command": false,
+            "npc_netherton_discussed_agent_losses": false,
+            "npc_netherton_discussed_ethical_boundaries": false,
+            "npc_netherton_discussed_personal_cost": false,
+            "npc_netherton_discussed_legacy": false,
+            "npc_netherton_discussed_trust": false,
+            "npc_netherton_discussed_rare_praise": false,
+            "npc_netherton_discussed_beyond_protocol": false,
+            "npc_netherton_shared_vulnerability": false,
+            "npc_netherton_earned_personal_trust": false,
+            "npc_netherton_received_commendation": false
+          },
+          "itemsHeld": [
+            {
+              "type": "notes",
+              "name": "Ghost Protocol Mission Packet",
+              "takeable": true,
+              "readable": true,
+              "text": "CLASSIFIED: OPERATION GHOST IN THE MACHINE\n\nInfiltration Route: Service entrance, elevator shaft access\nTarget System: SCADA control servers, third floor\nBackdoor Signature: ENTROPY.Ghost.v3.2\nExtraction: Three waypoints prepared\n\nRisk Assessment: HIGH\nCritical Infrastructure Impact: SEVERE\n\n- Director Netherton",
+              "observations": "Detailed mission briefing from Director Netherton"
+            }
+          ]
+        }
+      ]
+    },
+
+    "chen_lab": {
+      "type": "room_office",
+      "name": "Dr. Chen's Technical Lab",
+      "description": "A state-of-the-art laboratory filled with experimental equipment, holographic displays, and partially disassembled electronics. Dr. Chen is enthusiastically working on what looks like network camouflage equipment.",
+      "connections": {
+        "west": "hq_briefing_room"
+      },
+      "npcs": [
+        {
+          "id": "dr_chen",
+          "displayName": "Dr. Chen",
+          "npcType": "person",
+          "position": { "x": 6, "y": 5 },
+          "spriteSheet": "hacker-red",
+          "spriteTalk": "assets/characters/hacker-red-talk.png",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "story_design/ink/chen_hub.json",
+          "currentKnot": "chen_conversation_entry",
+          "externalVariables": {
+            "player_name": "Agent 0x00",
+            "current_mission_id": "ghost_in_machine",
+            "npc_location": "lab",
+            "mission_phase": "planning",
+            "equipment_status": "needs_upgrade"
+          },
+          "persistentVariables": {
+            "npc_chen_rapport": 58,
+            "npc_chen_tech_collaboration": 3,
+            "npc_chen_shared_discoveries": 1,
+            "npc_chen_personal_conversations": 2,
+            "npc_chen_discussed_tech_philosophy": true,
+            "npc_chen_discussed_entropy_tech": true,
+            "npc_chen_discussed_chen_background": false,
+            "npc_chen_discussed_favorite_projects": false,
+            "npc_chen_discussed_experimental_tech": false,
+            "npc_chen_discussed_research_frustrations": false,
+            "npc_chen_discussed_field_vs_lab": false,
+            "npc_chen_discussed_ethical_tech": false,
+            "npc_chen_discussed_dream_projects": false,
+            "npc_chen_discussed_tech_risks": false,
+            "npc_chen_discussed_work_life_balance": false,
+            "npc_chen_discussed_mentorship": false,
+            "npc_chen_discussed_future_vision": false,
+            "npc_chen_discussed_friendship_value": false,
+            "npc_chen_discussed_collaborative_legacy": false,
+            "npc_chen_discussed_beyond_safetynet": false,
+            "npc_chen_shared_personal_story": false,
+            "npc_chen_breakthrough_together": false,
+            "npc_chen_earned_research_partner_status": false
+          },
+          "itemsHeld": [
+            {
+              "type": "workstation",
+              "name": "Active Network Camouflage Device",
+              "takeable": true,
+              "observations": "Experimental equipment that masks digital signatures. Dr. Chen's latest creation for Ghost Protocol."
+            },
+            {
+              "type": "keycard",
+              "name": "Quantum-Encrypted Comm Unit",
+              "takeable": true,
+              "observations": "Prototype quantum-encrypted communications device. Still experimental but highly secure."
+            },
+            {
+              "type": "lockpick",
+              "name": "Enhanced Data Exfiltration Tools",
+              "takeable": true,
+              "observations": "Specialized tools for faster data extraction with minimal traces."
+            },
+            {
+              "type": "notes",
+              "name": "Equipment Technical Specs",
+              "takeable": true,
+              "readable": true,
+              "text": "GHOST PROTOCOL EQUIPMENT PACKAGE\n\n1. Active Network Camouflage\n- Signature masking: 95% effectiveness\n- Duration: 4 hours continuous\n- Fallback: Standard encryption\n\n2. Quantum Comms\n- Encryption: Quantum-resistant\n- Range: 50km\n- Battery: 12 hours\n\n3. Data Exfiltration Suite\n- Speed: 3x standard\n- Compression: 8:1 ratio\n- Trace reduction: 85%\n\nAll equipment calibrated for Agent 0x00\n- Dr. Chen",
+              "observations": "Technical specifications for Ghost Protocol mission equipment"
+            }
+          ]
+        }
+      ]
+    },
+
+    "handler_station": {
+      "type": "room_office",
+      "name": "Handler Operations Station",
+      "description": "A sophisticated command center with multiple monitors showing security feeds, network traffic, and ENTROPY activity. Haxolottle sits at the central station, surrounded by tactical displays and communication systems. An axolotl mug sits prominently on the desk.",
+      "connections": {
+        "east": "hq_briefing_room"
+      },
+      "items": [
+        {
+          "type": "workstation",
+          "name": "Multi-Feed Monitoring System",
+          "takeable": false,
+          "observations": "Haxolottle's handler station showing real-time feeds from multiple operations. One display is dedicated to Ghost Protocol planning."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "haxolottle",
+          "displayName": "Agent 0x99 (Haxolottle)",
+          "npcType": "person",
+          "position": { "x": 4, "y": 5 },
+          "spriteSheet": "hacker",
+          "spriteTalk": "assets/characters/hacker-talk.png",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "story_design/ink/haxolottle_hub.json",
+          "currentKnot": "haxolottle_conversation_entry",
+          "externalVariables": {
+            "player_name": "Agent 0x00",
+            "current_mission_id": "ghost_in_machine",
+            "npc_location": "handler_station",
+            "mission_phase": "planning",
+            "operational_stress_level": "moderate"
+          },
+          "persistentVariables": {
+            "npc_haxolottle_friendship_level": 35,
+            "npc_haxolottle_conversations_had": 4,
+            "npc_haxolottle_trust_moments": 2,
+            "npc_haxolottle_humor_shared": 3,
+            "npc_haxolottle_vulnerable_moments": 1,
+            "npc_haxolottle_player_shared_personal": 2,
+            "npc_haxolottle_talked_hobbies_general": true,
+            "npc_haxolottle_talked_axolotl_obsession": true,
+            "npc_haxolottle_talked_music_taste": true,
+            "npc_haxolottle_talked_coffee_preferences": false,
+            "npc_haxolottle_talked_stress_management": false,
+            "npc_haxolottle_talked_philosophy_change": false,
+            "npc_haxolottle_talked_handler_life": false,
+            "npc_haxolottle_talked_field_nostalgia": false,
+            "npc_haxolottle_talked_weird_habits": false,
+            "npc_haxolottle_talked_favorite_operations": false,
+            "npc_haxolottle_talked_fears_anxieties": false,
+            "npc_haxolottle_talked_what_if_different": false,
+            "npc_haxolottle_talked_meaning_work": false,
+            "npc_haxolottle_talked_friendship_boundaries": false,
+            "npc_haxolottle_talked_future_dreams": false,
+            "npc_haxolottle_talked_identity_burden": false,
+            "npc_haxolottle_talked_loneliness_secrecy": false,
+            "npc_haxolottle_talked_real_name_temptation": false,
+            "npc_haxolottle_talked_after_safetynet": false,
+            "npc_haxolottle_talked_genuine_friendship": false,
+            "npc_haxolottle_shared_loss": false,
+            "npc_haxolottle_shared_doubt": false,
+            "npc_haxolottle_shared_secret_hobby": false
+          },
+          "itemsHeld": [
+            {
+              "type": "notes",
+              "name": "Handler Support Plan - Ghost Protocol",
+              "takeable": true,
+              "readable": true,
+              "text": "HANDLER SUPPORT PLAN: GHOST IN THE MACHINE\n\nPre-Infiltration:\n- Security feed access (85% confidence)\n- Patrol pattern analysis (12 guards, 4 hour rotation)\n- Network monitoring setup\n\nActive Operation:\n- Real-time guidance on guard positions\n- Route adjustment recommendations\n- Emergency extraction (3 waypoints prepared)\n\nCommunication:\n- Primary: Quantum-encrypted comms\n- Backup: Standard encrypted channel\n- Emergency: Dead drop protocol\n\nContingencies:\n- Compromise scenario: Immediate extraction\n- Comms failure: Pre-planned exfil route Alpha\n- Equipment failure: Contact Dr. Chen on secondary channel\n\nRemember: Adapt and regenerate.\n- Haxolottle (0x99)",
+              "observations": "Detailed handler support plan prepared by Haxolottle"
+            },
+            {
+              "type": "notes",
+              "name": "Personal Note from Haxolottle",
+              "takeable": true,
+              "readable": true,
+              "text": "Hey Agent 0x00,\n\nI know Ghost Protocol is high-stakes. Just wanted to say - I've got your back out there. Been doing handler work for eight years, and I've run ops way more chaotic than this.\n\nYou're good at what you do. Trust your training. Trust the equipment. Trust me to keep you informed.\n\nAnd remember the axolotl principle: if the plan fails, regenerate a new approach. Flexibility over rigidity.\n\nStay safe. Come back in one piece.\n\n- 0x99\n\nP.S. After the mission, we should grab tea and talk about something that isn't work for once. You mentioned liking [redacted per Protocol 47-Alpha] - we could discuss that.",
+              "observations": "A surprisingly personal note from your handler"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "key": "0306ffc6782ed600fb869b1558bef763",
+  "npc": "helen_marsh",
+  "text": "I've had the NCSC on the phone. Someone's coming to go through it with us.",
+  "voice": "Aoede",
+  "style": "Senior SCADA engineer in her late forties from Nottinghamshire; warm, plain-spoken and calm under pressure. Speak with a consistent East Midlands (Nottingham) accent throughout. Do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis02_energy",
+  "source": "generate",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:16:30Z"
+}

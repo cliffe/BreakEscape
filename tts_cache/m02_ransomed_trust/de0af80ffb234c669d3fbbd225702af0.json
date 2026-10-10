@@ -1,0 +1,13 @@
+{
+  "key": "de0af80ffb234c669d3fbbd225702af0",
+  "npc": "receptionist",
+  "text": "Except when I walked the police out to the car park. Five minutes, maybe.",
+  "voice": "Despina",
+  "style": "Night reception coordinator, eleven years on this desk. South London / Multicultural London English accent throughout -- warm, quick, dry. Unflappable on the surface, running on fumes underneath.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

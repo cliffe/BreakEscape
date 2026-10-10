@@ -1,0 +1,89 @@
+/* Examine minigame: an object's sprite at 2x with its name, observations and text */
+
+.examine-minigame .minigame-game-container {
+    width: auto;
+    height: auto;
+    max-width: min(640px, calc(100vw - 32px));
+    max-height: calc(100vh - 160px);
+    margin: 0 auto;
+    overflow-y: auto;
+    background: #1a1a1a;
+    border: 4px solid #444;
+}
+
+.examine-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.examine-image-box {
+    max-width: 100%;
+    overflow-x: auto; /* a sprite wider than the screen at 2x scrolls; it is never shrunk */
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    box-sizing: border-box;
+}
+
+.examine-sprite {
+    display: block;
+    max-width: none; /* keep the exact 2x size */
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+}
+
+.examine-name {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 16px;
+    line-height: 1.5;
+    margin: 0;
+    color: #3498db;
+    text-align: center;
+}
+
+.examine-observations {
+    margin: 0;
+    font-size: 20px;
+    line-height: 1.4;
+    color: #ecf0f1;
+    font-style: italic;
+    align-self: stretch;
+}
+
+.examine-text {
+    align-self: stretch;
+    padding: 10px 12px;
+    background: #0f0f0f;
+    border: 2px solid #333;
+    font-size: 20px;
+    line-height: 1.4;
+    color: #ecf0f1;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+/* The Close button sits under the panel, not over it */
+.examine-minigame .minigame-controls {
+    position: static;
+    transform: none;
+    margin-top: 16px;
+}
+
+@media (max-width: 480px) {
+    .examine-panel {
+        padding: 12px;
+        gap: 10px;
+    }
+    .examine-name {
+        font-size: 13px;
+    }
+    .examine-observations,
+    .examine-text {
+        font-size: 18px;
+    }
+}

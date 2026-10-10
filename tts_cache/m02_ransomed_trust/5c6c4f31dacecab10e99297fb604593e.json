@@ -1,0 +1,13 @@
+{
+  "key": "5c6c4f31dacecab10e99297fb604593e",
+  "npc": "narrator",
+  "text": "Six beds. A nurse working the far end with a clipboard, and Sister Doyle planted at bed two, eyes on the machine that is breathing for a woman.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

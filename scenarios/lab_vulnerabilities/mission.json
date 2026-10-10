@@ -1,0 +1,21 @@
+{
+  "display_name": "Vulnerabilities, Exploits, and Remote Access Payloads",
+  "description": "Explore software vulnerabilities, learn about exploits and payloads, and gain hands-on experience with the Metasploit framework. Practice both local and remote exploits in a controlled lab environment.",
+  "difficulty_level": 2,
+  "secgen_scenario": "labs/introducing_attacks/3_vulnerabilities.xml",
+  "collection": "vm_labs",
+  "cybok": [
+    {
+      "ka": "MAT",
+      "topic": "Attacks and exploitation",
+      "keywords": ["EXPLOITATION", "EXPLOITATION FRAMEWORKS"]
+    },
+    {
+      "ka": "SOIM",
+      "topic": "PENETRATION TESTING",
+      "keywords": ["PENETRATION TESTING - SOFTWARE TOOLS", "PENETRATION TESTING - ACTIVE PENETRATION"]
+    }
+  ]
+}
+
+

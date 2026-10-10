@@ -1,0 +1,10 @@
+{
+  "scenario": "test_simple_success",
+  "start_room": "test_room",
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
+}

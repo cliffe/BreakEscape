@@ -1,0 +1,520 @@
+/* PIN Minigame Styles */
+
+.pin-minigame-container {
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    border: 2px solid #0f3460;
+    box-shadow: 0 0 30px rgba(15, 52, 96, 0.3);
+}
+
+.pin-minigame-game-container {
+    background: #55616e !important;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+
+    max-width: 600px;
+    margin: 20px auto;
+}
+
+.pin-minigame-interface {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 25px;
+    width: 100%;
+    max-width: 400px;
+}
+
+/* Digital Display */
+.pin-minigame-display-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+.pin-minigame-display {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 48px;
+    font-weight: bold;
+    color: #00ff41;
+    background: #000;
+    border: 3px solid #00ff41;
+    /* border-radius: 8px; */
+    padding: 15px 25px;
+    text-align: center;
+    letter-spacing: 8px;
+    min-width: 200px;
+    box-shadow: 
+        0 0 20px rgba(0, 255, 65, 0.3),
+        inset 0 0 10px rgba(0, 0, 0, 0.8);
+    transition: all 0.3s ease;
+}
+
+.pin-minigame-display.has-input {
+    box-shadow: 
+        0 0 25px rgba(0, 255, 65, 0.5),
+        inset 0 0 15px rgba(0, 0, 0, 0.9);
+}
+
+.pin-minigame-display.success {
+    color: #00ff00;
+    border-color: #00ff00;
+    box-shadow: 
+        0 0 30px rgba(0, 255, 0, 0.7),
+        inset 0 0 20px rgba(0, 0, 0, 0.9);
+    animation: successPulse 0.5s ease-in-out;
+}
+
+.pin-minigame-display.locked {
+    color: #ff4444;
+    border-color: #ff4444;
+    box-shadow: 
+        0 0 30px rgba(255, 68, 68, 0.7),
+        inset 0 0 20px rgba(0, 0, 0, 0.9);
+    animation: errorShake 0.5s ease-in-out;
+}
+
+@keyframes successPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+@keyframes errorShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+/* Keypad */
+.pin-minigame-keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 12px;
+    width: 100%;
+    max-width: 300px;
+    padding: 20px;
+
+    background: slategray;
+
+    clip-path: polygon(
+      0px calc(100% - 10px),
+      2px calc(100% - 10px),
+      2px calc(100% - 6px),
+      4px calc(100% - 6px),
+      4px calc(100% - 4px),
+      6px calc(100% - 4px),
+      6px calc(100% - 2px),
+      10px calc(100% - 2px),
+      10px 100%,
+      calc(100% - 10px) 100%,
+      calc(100% - 10px) calc(100% - 2px),
+      calc(100% - 6px) calc(100% - 2px),
+      calc(100% - 6px) calc(100% - 4px),
+      calc(100% - 4px) calc(100% - 4px),
+      calc(100% - 4px) calc(100% - 6px),
+      calc(100% - 2px) calc(100% - 6px),
+      calc(100% - 2px) calc(100% - 10px),
+      100% calc(100% - 10px),
+      100% 10px,
+      calc(100% - 2px) 10px,
+      calc(100% - 2px) 6px,
+      calc(100% - 4px) 6px,
+      calc(100% - 4px) 4px,
+      calc(100% - 6px) 4px,
+      calc(100% - 6px) 2px,
+      calc(100% - 10px) 2px,
+      calc(100% - 10px) 0px,
+      10px 0px,
+      10px 2px,
+      6px 2px,
+      6px 4px,
+      4px 4px,
+      4px 6px,
+      2px 6px,
+      2px 10px,
+      0px 10px
+    );
+}
+
+/* Special positioning for zero button (centered in bottom row) */
+.pin-minigame-key:nth-child(10) {
+    grid-column: 2;
+    grid-row: 4;
+}
+
+/* Position backspace button in bottom left */
+.pin-minigame-backspace {
+    grid-column: 1;
+    grid-row: 4;
+}
+
+/* Position enter button in bottom right */
+.pin-minigame-enter {
+    grid-column: 3;
+    grid-row: 4;
+}
+
+.pin-minigame-key {
+    background: linear-gradient(145deg, #2c3e50, #34495e);
+    color: #ecf0f1;
+    border: 2px solid #0f3460;
+    /* border-radius: 8px; */
+    padding: 15px;
+    font-family: 'Press Start 2P', monospace !important;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 
+        0 4px 8px rgba(0, 0, 0, 0.3),
+        inset 0 2px 0 rgba(255, 255, 255, 0.1);
+}
+
+.pin-minigame-key:hover {
+    background: linear-gradient(145deg, #34495e, #2c3e50);
+    border-color: #00ff41;
+    box-shadow: 
+        0 6px 12px rgba(0, 0, 0, 0.4),
+        0 0 15px rgba(0, 255, 65, 0.3),
+        inset 0 2px 0 rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.pin-minigame-key:active {
+    transform: translateY(0);
+    box-shadow: 
+        0 2px 4px rgba(0, 0, 0, 0.3),
+        inset 0 2px 0 rgba(255, 255, 255, 0.1);
+}
+
+.pin-minigame-key:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.pin-minigame-key:disabled:hover {
+    background: linear-gradient(145deg, #2c3e50, #34495e);
+    border-color: #0f3460;
+    box-shadow: 
+        0 4px 8px rgba(0, 0, 0, 0.3),
+        inset 0 2px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Special key styles */
+.pin-minigame-backspace {
+    background: linear-gradient(145deg, #e74c3c, #c0392b);
+    border-color: #c0392b;
+    font-size: 20px;
+}
+
+.pin-minigame-backspace:hover {
+    background: linear-gradient(145deg, #c0392b, #a93226);
+    border-color: #ff4444;
+    box-shadow: 
+        0 6px 12px rgba(0, 0, 0, 0.4),
+        0 0 15px rgba(255, 68, 68, 0.3),
+        inset 0 2px 0 rgba(255, 255, 255, 0.2);
+}
+
+.pin-minigame-enter {
+    background: linear-gradient(145deg, #27ae60, #2ecc71);
+    border-color: #27ae60;
+    font-size: 12px;
+}
+
+.pin-minigame-enter:hover {
+    background: linear-gradient(145deg, #2ecc71, #27ae60);
+    border-color: #00ff41;
+    box-shadow: 
+        0 6px 12px rgba(0, 0, 0, 0.4),
+        0 0 15px rgba(0, 255, 65, 0.3),
+        inset 0 2px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* Attempts Log */
+.pin-minigame-attempts-container {
+    width: 100%;
+    max-width: 350px;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 15px;
+
+    background: slategray;
+
+    clip-path: polygon(
+      0px calc(100% - 10px),
+      2px calc(100% - 10px),
+      2px calc(100% - 6px),
+      4px calc(100% - 6px),
+      4px calc(100% - 4px),
+      6px calc(100% - 4px),
+      6px calc(100% - 2px),
+      10px calc(100% - 2px),
+      10px 100%,
+      calc(100% - 10px) 100%,
+      calc(100% - 10px) calc(100% - 2px),
+      calc(100% - 6px) calc(100% - 2px),
+      calc(100% - 6px) calc(100% - 4px),
+      calc(100% - 4px) calc(100% - 4px),
+      calc(100% - 4px) calc(100% - 6px),
+      calc(100% - 2px) calc(100% - 6px),
+      calc(100% - 2px) calc(100% - 10px),
+      100% calc(100% - 10px),
+      100% 10px,
+      calc(100% - 2px) 10px,
+      calc(100% - 2px) 6px,
+      calc(100% - 4px) 6px,
+      calc(100% - 4px) 4px,
+      calc(100% - 6px) 4px,
+      calc(100% - 6px) 2px,
+      calc(100% - 10px) 2px,
+      calc(100% - 10px) 0px,
+      10px 0px,
+      10px 2px,
+      6px 2px,
+      6px 4px,
+      4px 4px,
+      4px 6px,
+      2px 6px,
+      2px 10px,
+      0px 10px
+    );
+}
+
+.pin-minigame-attempts-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 12px;
+    color: #00ff41;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.pin-minigame-attempts-log {
+    max-height: 150px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.pin-minigame-attempt {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    /* border-radius: 6px; */
+    font-family: 'Press Start 2P', monospace;
+    font-size: 18px;
+    transition: all 0.3s ease;
+}
+
+.pin-minigame-attempt.correct {
+    background: rgba(0, 255, 0, 0.3);
+    border: 2px solid rgba(0, 255, 0, 0.3);
+    color: #00ff00;
+}
+
+.pin-minigame-attempt.incorrect {
+    background: rgba(255, 68, 68, 0.3);
+    border: 2px solid rgba(255, 68, 68, 0.3);
+    color: #ff4444;
+}
+
+.pin-minigame-attempt-number {
+    font-weight: bold;
+    min-width: 25px;
+}
+
+.pin-minigame-attempt-input {
+    font-weight: bold;
+    letter-spacing: 2px;
+    flex: 1;
+}
+
+.pin-minigame-attempt-feedback {
+    font-size: 12px;
+    opacity: 0.8;
+    font-style: italic;
+}
+
+.pin-minigame-attempt-empty {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+    padding: 20px;
+}
+
+/* Pin-Cracker Info Leak Mode Toggle */
+.pin-minigame-toggle-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    /* border-radius: 8px; */
+    border: 2px solid #0f3460;
+}
+
+.pin-minigame-toggle-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    color: #00ff41;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pin-minigame-cracker-icon {
+    width: 64px;
+    height: 64px;
+    margin-right: 8px;
+    filter: drop-shadow(0 0 5px rgba(0, 255, 65, 0.5));
+    transition: all 0.3s ease;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+}
+
+.pin-minigame-cracker-icon:hover {
+    filter: drop-shadow(0 0 10px rgba(0, 255, 65, 0.8));
+    transform: scale(1.1);
+}
+
+.pin-minigame-toggle {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: #00ff41;
+}
+
+/* Visual Feedback Lights */
+.pin-minigame-feedback-lights {
+    display: flex;
+    gap: 4px;
+    margin-left: 10px;
+    align-items: center;
+}
+
+.pin-minigame-light {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+}
+
+.pin-minigame-light-green {
+    background: #00ff00;
+    box-shadow: 
+        0 0 5px rgba(0, 0, 0, 0.5),
+        0 0 10px rgba(0, 255, 0, 0.6);
+    animation: lightPulse 2s ease-in-out infinite;
+}
+
+.pin-minigame-light-amber {
+    background: #ffaa00;
+    box-shadow: 
+        0 0 5px rgba(0, 0, 0, 0.5),
+        0 0 10px rgba(255, 170, 0, 0.6);
+    animation: lightPulse 2s ease-in-out infinite 0.5s;
+}
+
+@keyframes lightPulse {
+    0%, 100% { 
+        opacity: 0.7;
+        transform: scale(1);
+    }
+    50% { 
+        opacity: 1;
+        transform: scale(1.1);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+    .pin-minigame-display {
+        font-size: 36px;
+        letter-spacing: 6px;
+        padding: 12px 20px;
+        min-width: 160px;
+    }
+    
+    .pin-minigame-key {
+        font-size: 20px;
+        padding: 12px;
+        min-height: 45px;
+    }
+    
+    .pin-minigame-keypad {
+        gap: 10px;
+        padding: 15px;
+    }
+    
+    .pin-minigame-attempts-container {
+        padding: 12px;
+    }
+    
+    .pin-minigame-attempt {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+    
+    .pin-minigame-cracker-icon {
+        width: 48px;
+        height: 48px;
+    }
+}
+
+@media (max-width: 400px) {
+    .pin-minigame-display {
+        font-size: 28px;
+        letter-spacing: 4px;
+        padding: 10px 15px;
+        min-width: 140px;
+    }
+    
+    .pin-minigame-key {
+        font-size: 18px;
+        padding: 10px;
+        min-height: 40px;
+    }
+    
+    .pin-minigame-keypad {
+        gap: 8px;
+        padding: 12px;
+    }
+    
+    .pin-minigame-cracker-icon {
+        width: 40px;
+        height: 40px;
+    }
+}
+
+/* Scrollbar styling for attempts log */
+.pin-minigame-attempts-log::-webkit-scrollbar {
+    width: 6px;
+}
+
+.pin-minigame-attempts-log::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    /* border-radius: 3px; */
+}
+
+.pin-minigame-attempts-log::-webkit-scrollbar-thumb {
+    background: #0f3460;
+    /* border-radius: 3px; */
+}
+
+.pin-minigame-attempts-log::-webkit-scrollbar-thumb:hover {
+    background: #00ff41;
+}

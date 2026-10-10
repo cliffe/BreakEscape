@@ -1,0 +1,67 @@
+// ================================================
+// Mission 8: The Mole - Agent HaX, in person (break room, emotional beat)
+// Speaker: Agent HaX
+// Entry knot: start   No required task.
+// ================================================
+
+VAR mole_identified = false
+VAR nightshade_suspected = false
+VAR suspect_theory = ""
+VAR fate_decided = false
+VAR found_go_bag = false
+VAR asked_bag = false
+// PASS 3 (impl review m9): synced global, so the intro doesn't replay after a reload.
+VAR hax_person_met = false
+
+=== start ===
+{ hax_person_met: -> return_visit }
+~ hax_person_met = true
+Narrator: HaX is folded into the corner with a coffee she has let go stone cold. Off the wire, she is smaller than she sounds on it. #set_global:hax_person_met:true
+
+Agent HaX: Don't say anything kind, I'll come apart. Sit if you want. Don't, if you don't.
+-> hub
+
+=== return_visit ===
+Agent HaX: Still here. The coffee's still cold.
+-> hub
+
+=== hub ===
++ [How are you holding up?]
+    Agent HaX: I keep running the roster in my head. Cipher, Phantom, Nightshade. I've bled with all three.
+    Agent HaX: One of them stood at the Portland debrief and let me grieve people they'd helped kill.
+    Agent HaX: I can't work out which face it was. And I'm frightened of the second I can.
+    -> hub
++ [Who's your money on?]
+    { nightshade_suspected:
+        Agent HaX: Don't make me say a name.
+        Agent HaX: I used to envy one of them for how calm he is. Tonight I don't. Go and prove it, so I don't have to guess.
+    - else:
+        Agent HaX: Don't make me pick. The second I say a name out loud, one of my friends is a murderer.
+        Agent HaX: Get me evidence. Let the box say it.
+    }
+    -> hub
++ { found_go_bag and not asked_bag } [Nightshade had a bag packed.]
+    ~ asked_bag = true
+    Agent HaX: Of course he did. Yours has picks in it. His had a passport.
+    Agent HaX: And he's still here. Either he's very sure of himself or he's waiting for someone. I don't like either.
+    -> hub
++ { mole_identified } [It's Nightshade.]
+    Narrator: She doesn't answer for a long moment.
+    Agent HaX: Nightshade. Of course it's Nightshade.
+    Agent HaX: Go and do the job, 0x00. I'll sit here and un-know a friend. I'll manage.
+    -> hub
++ { not fate_decided } [Any advice for the room?]
+    Agent HaX: Yeah. When you're across that table, he'll explain. They always explain.
+    Agent HaX: Don't argue the philosophy. He's had fifteen years to polish it, and you'll lose.
+    Agent HaX: Hold the two dead agents up and make him look at them. That's the one thing in the room he can't out-talk.
+    -> hub
++ [Netherton send you down here?]
+    Narrator: A small, worn smile.
+    Agent HaX: Other way round. I told him I needed five minutes where I wasn't a handler. He gave me ten and pretended not to.
+    Agent HaX: He's harder hit than he lets on. It's his house the rot grew in.
+    Agent HaX: Go easy on the old man at the debrief. Or don't. He'd respect either.
+    -> hub
++ [I'll come back.]
+    Agent HaX: I know you will. Go.
+    #exit_conversation
+    -> hub

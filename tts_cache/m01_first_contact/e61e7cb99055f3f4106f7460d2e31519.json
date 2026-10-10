@@ -1,0 +1,13 @@
+{
+  "key": "e61e7cb99055f3f4106f7460d2e31519",
+  "npc": "closing_debrief_person",
+  "text": "Unfortunately, her identity was compromised. We're handling her protection.",
+  "voice": "Aoede",
+  "style": "Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "batch",
+  "generated": "2026-10-08",
+  "recorded_at": "2026-10-09T12:09:57Z"
+}

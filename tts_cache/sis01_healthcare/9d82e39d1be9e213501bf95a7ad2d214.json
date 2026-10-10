@@ -1,0 +1,13 @@
+{
+  "key": "9d82e39d1be9e213501bf95a7ad2d214",
+  "npc": "david_osei",
+  "text": "That's HC-007 in the safety case. If Ravi and I haven't both signed, nobody cuts anything. You confirm both at the network map.",
+  "voice": "Iapetus",
+  "style": "Ghanaian-British head of clinical engineering in his mid-fifties, methodical, serious and deliberate. Speak with a consistent London-raised, settled in Leeds, with a slight Ghanaian lilt, accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

@@ -1,0 +1,3384 @@
+{
+  "tables": {
+    "desk-ceo1": {
+      "id": 3,
+      "w": 78,
+      "h": 74,
+      "gid": 106
+    },
+    "desk1": {
+      "id": 4,
+      "w": 78,
+      "h": 39,
+      "gid": 107
+    },
+    "reception_table1": {
+      "id": 5,
+      "w": 174,
+      "h": 47,
+      "gid": 108
+    },
+    "smalldesk1": {
+      "id": 6,
+      "w": 50,
+      "h": 41,
+      "gid": 109
+    },
+    "smalldesk2": {
+      "id": 7,
+      "w": 32,
+      "h": 41,
+      "gid": 110
+    },
+    "desk-ceo2": {
+      "id": 9,
+      "w": 78,
+      "h": 61,
+      "gid": 112
+    },
+    "desk2": {
+      "id": 10,
+      "w": 44,
+      "h": 39,
+      "gid": 113
+    },
+    "desk3": {
+      "id": 11,
+      "w": 51,
+      "h": 39,
+      "gid": 114
+    },
+    "hospital_desk1": {
+      "id": 0,
+      "w": 62,
+      "h": 48,
+      "gid": 103
+    },
+    "hospital_desk2": {
+      "id": 1,
+      "w": 62,
+      "h": 48,
+      "gid": 104
+    },
+    "hospital_conference_table": {
+      "id": 2,
+      "w": 126,
+      "h": 55,
+      "gid": 105
+    }
+  },
+  "objects": {
+    "fingerprint-brush-red": {
+      "id": 0,
+      "w": 10,
+      "h": 24,
+      "gid": 115
+    },
+    "bin11": {
+      "id": 1,
+      "w": 13,
+      "h": 16,
+      "gid": 116
+    },
+    "bin10": {
+      "id": 2,
+      "w": 14,
+      "h": 21,
+      "gid": 117
+    },
+    "bin9": {
+      "id": 3,
+      "w": 17,
+      "h": 23,
+      "gid": 118
+    },
+    "bin8": {
+      "id": 4,
+      "w": 21,
+      "h": 25,
+      "gid": 119
+    },
+    "bin7": {
+      "id": 5,
+      "w": 17,
+      "h": 19,
+      "gid": 120
+    },
+    "bin6": {
+      "id": 6,
+      "w": 17,
+      "h": 21,
+      "gid": 121
+    },
+    "bin5": {
+      "id": 7,
+      "w": 16,
+      "h": 19,
+      "gid": 122
+    },
+    "bin4": {
+      "id": 8,
+      "w": 13,
+      "h": 19,
+      "gid": 123
+    },
+    "bin3": {
+      "id": 9,
+      "w": 18,
+      "h": 21,
+      "gid": 124
+    },
+    "bin2": {
+      "id": 10,
+      "w": 16,
+      "h": 21,
+      "gid": 125
+    },
+    "bin1": {
+      "id": 11,
+      "w": 18,
+      "h": 19,
+      "gid": 126
+    },
+    "suitcase21": {
+      "id": 12,
+      "w": 28,
+      "h": 31,
+      "gid": 127
+    },
+    "suitcase20": {
+      "id": 13,
+      "w": 19,
+      "h": 31,
+      "gid": 128
+    },
+    "suitcase19": {
+      "id": 14,
+      "w": 22,
+      "h": 39,
+      "gid": 129
+    },
+    "suitcase18": {
+      "id": 15,
+      "w": 22,
+      "h": 31,
+      "gid": 130
+    },
+    "suitcase17": {
+      "id": 16,
+      "w": 26,
+      "h": 32,
+      "gid": 131
+    },
+    "suitcase16": {
+      "id": 17,
+      "w": 22,
+      "h": 35,
+      "gid": 132
+    },
+    "suitcase15": {
+      "id": 18,
+      "w": 23,
+      "h": 38,
+      "gid": 133
+    },
+    "suitcase14": {
+      "id": 19,
+      "w": 23,
+      "h": 36,
+      "gid": 134
+    },
+    "suitcase13": {
+      "id": 20,
+      "w": 22,
+      "h": 37,
+      "gid": 135
+    },
+    "suitcase12": {
+      "id": 21,
+      "w": 36,
+      "h": 34,
+      "gid": 136
+    },
+    "suitcase11": {
+      "id": 22,
+      "w": 19,
+      "h": 32,
+      "gid": 137
+    },
+    "suitcase10": {
+      "id": 23,
+      "w": 34,
+      "h": 32,
+      "gid": 138
+    },
+    "plant-flat-pot7": {
+      "id": 24,
+      "w": 16,
+      "h": 19,
+      "gid": 139
+    },
+    "plant-flat-pot6": {
+      "id": 25,
+      "w": 15,
+      "h": 19,
+      "gid": 140
+    },
+    "plant-flat-pot5": {
+      "id": 26,
+      "w": 14,
+      "h": 10,
+      "gid": 141
+    },
+    "plant-flat-pot4": {
+      "id": 27,
+      "w": 15,
+      "h": 19,
+      "gid": 142
+    },
+    "plant-flat-pot3": {
+      "id": 28,
+      "w": 14,
+      "h": 10,
+      "gid": 143
+    },
+    "plant-flat-pot2": {
+      "id": 29,
+      "w": 15,
+      "h": 19,
+      "gid": 144
+    },
+    "plant-flat-pot1": {
+      "id": 30,
+      "w": 14,
+      "h": 10,
+      "gid": 145
+    },
+    "outdoor-lamp4": {
+      "id": 31,
+      "w": 6,
+      "h": 48,
+      "gid": 146
+    },
+    "outdoor-lamp3": {
+      "id": 32,
+      "w": 6,
+      "h": 40,
+      "gid": 147
+    },
+    "outdoor-lamp2": {
+      "id": 33,
+      "w": 6,
+      "h": 48,
+      "gid": 148
+    },
+    "outdoor-lamp1": {
+      "id": 34,
+      "w": 6,
+      "h": 41,
+      "gid": 149
+    },
+    "plant-large10": {
+      "id": 35,
+      "w": 19,
+      "h": 32,
+      "gid": 150
+    },
+    "lamp-stand5": {
+      "id": 36,
+      "w": 10,
+      "h": 34,
+      "gid": 151
+    },
+    "plant-large9": {
+      "id": 37,
+      "w": 14,
+      "h": 23,
+      "gid": 152
+    },
+    "plant-large8": {
+      "id": 38,
+      "w": 13,
+      "h": 30,
+      "gid": 153
+    },
+    "plant-large7": {
+      "id": 39,
+      "w": 13,
+      "h": 19,
+      "gid": 154
+    },
+    "plant-large6": {
+      "id": 40,
+      "w": 18,
+      "h": 23,
+      "gid": 155
+    },
+    "lamp-stand4": {
+      "id": 41,
+      "w": 9,
+      "h": 26,
+      "gid": 156
+    },
+    "plant-large5": {
+      "id": 42,
+      "w": 12,
+      "h": 16,
+      "gid": 157
+    },
+    "plant-large4": {
+      "id": 43,
+      "w": 17,
+      "h": 20,
+      "gid": 158
+    },
+    "plant-large3": {
+      "id": 44,
+      "w": 12,
+      "h": 17,
+      "gid": 159
+    },
+    "plant-large2": {
+      "id": 45,
+      "w": 17,
+      "h": 30,
+      "gid": 160
+    },
+    "lamp-stand3": {
+      "id": 46,
+      "w": 13,
+      "h": 34,
+      "gid": 161
+    },
+    "plant-large1": {
+      "id": 47,
+      "w": 19,
+      "h": 37,
+      "gid": 162
+    },
+    "lamp-stand2": {
+      "id": 48,
+      "w": 14,
+      "h": 29,
+      "gid": 163
+    },
+    "lamp-stand1": {
+      "id": 49,
+      "w": 12,
+      "h": 30,
+      "gid": 164
+    },
+    "picture14": {
+      "id": 50,
+      "w": 14,
+      "h": 17,
+      "gid": 165
+    },
+    "picture13": {
+      "id": 51,
+      "w": 14,
+      "h": 17,
+      "gid": 166
+    },
+    "picture12": {
+      "id": 52,
+      "w": 20,
+      "h": 16,
+      "gid": 167
+    },
+    "picture11": {
+      "id": 53,
+      "w": 29,
+      "h": 21,
+      "gid": 168
+    },
+    "picture10": {
+      "id": 54,
+      "w": 17,
+      "h": 21,
+      "gid": 169
+    },
+    "picture9": {
+      "id": 55,
+      "w": 21,
+      "h": 17,
+      "gid": 170
+    },
+    "picture8": {
+      "id": 56,
+      "w": 13,
+      "h": 17,
+      "gid": 171
+    },
+    "picture7": {
+      "id": 57,
+      "w": 14,
+      "h": 17,
+      "gid": 172
+    },
+    "picture6": {
+      "id": 58,
+      "w": 14,
+      "h": 17,
+      "gid": 173
+    },
+    "picture5": {
+      "id": 59,
+      "w": 13,
+      "h": 13,
+      "gid": 174
+    },
+    "picture4": {
+      "id": 60,
+      "w": 16,
+      "h": 21,
+      "gid": 175
+    },
+    "picture3": {
+      "id": 61,
+      "w": 13,
+      "h": 15,
+      "gid": 176
+    },
+    "picture2": {
+      "id": 62,
+      "w": 14,
+      "h": 14,
+      "gid": 177
+    },
+    "picture1": {
+      "id": 63,
+      "w": 16,
+      "h": 21,
+      "gid": 178
+    },
+    "phone5": {
+      "id": 64,
+      "w": 16,
+      "h": 18,
+      "gid": 179
+    },
+    "office-misc-smallplant2": {
+      "id": 65,
+      "w": 11,
+      "h": 16,
+      "gid": 180
+    },
+    "office-misc-box1": {
+      "id": 66,
+      "w": 14,
+      "h": 14,
+      "gid": 181
+    },
+    "office-misc-container": {
+      "id": 67,
+      "w": 8,
+      "h": 11,
+      "gid": 182
+    },
+    "office-misc-lamp3": {
+      "id": 68,
+      "w": 9,
+      "h": 14,
+      "gid": 183
+    },
+    "office-misc-hdd6": {
+      "id": 69,
+      "w": 12,
+      "h": 18,
+      "gid": 184
+    },
+    "office-misc-speakers6": {
+      "id": 70,
+      "w": 17,
+      "h": 18,
+      "gid": 185
+    },
+    "office-misc-pencils6": {
+      "id": 71,
+      "w": 13,
+      "h": 18,
+      "gid": 186
+    },
+    "office-misc-fan2": {
+      "id": 72,
+      "w": 16,
+      "h": 17,
+      "gid": 187
+    },
+    "office-misc-cup5": {
+      "id": 73,
+      "w": 14,
+      "h": 12,
+      "gid": 188
+    },
+    "office-misc-hdd5": {
+      "id": 74,
+      "w": 12,
+      "h": 11,
+      "gid": 189
+    },
+    "office-misc-speakers5": {
+      "id": 75,
+      "w": 8,
+      "h": 7,
+      "gid": 190
+    },
+    "office-misc-cup4": {
+      "id": 76,
+      "w": 8,
+      "h": 11,
+      "gid": 191
+    },
+    "office-misc-speakers4": {
+      "id": 77,
+      "w": 16,
+      "h": 8,
+      "gid": 192
+    },
+    "office-misc-pencils5": {
+      "id": 78,
+      "w": 14,
+      "h": 15,
+      "gid": 193
+    },
+    "notes4": {
+      "id": 79,
+      "w": 27,
+      "h": 14,
+      "gid": 194
+    },
+    "office-misc-clock": {
+      "id": 80,
+      "w": 11,
+      "h": 15,
+      "gid": 195
+    },
+    "office-misc-fan": {
+      "id": 81,
+      "w": 17,
+      "h": 20,
+      "gid": 196
+    },
+    "office-misc-speakers3": {
+      "id": 82,
+      "w": 8,
+      "h": 18,
+      "gid": 197
+    },
+    "office-misc-camera": {
+      "id": 83,
+      "w": 10,
+      "h": 18,
+      "gid": 198
+    },
+    "office-misc-headphones": {
+      "id": 84,
+      "w": 15,
+      "h": 11,
+      "gid": 199
+    },
+    "office-misc-hdd4": {
+      "id": 85,
+      "w": 12,
+      "h": 19,
+      "gid": 200
+    },
+    "office-misc-pencils4": {
+      "id": 86,
+      "w": 16,
+      "h": 20,
+      "gid": 201
+    },
+    "office-misc-cup3": {
+      "id": 87,
+      "w": 16,
+      "h": 14,
+      "gid": 202
+    },
+    "office-misc-cup2": {
+      "id": 88,
+      "w": 17,
+      "h": 14,
+      "gid": 203
+    },
+    "office-misc-speakers2": {
+      "id": 89,
+      "w": 21,
+      "h": 15,
+      "gid": 204
+    },
+    "office-misc-stapler": {
+      "id": 90,
+      "w": 16,
+      "h": 12,
+      "gid": 205
+    },
+    "office-misc-hdd3": {
+      "id": 91,
+      "w": 16,
+      "h": 12,
+      "gid": 206
+    },
+    "office-misc-hdd2": {
+      "id": 92,
+      "w": 17,
+      "h": 14,
+      "gid": 207
+    },
+    "office-misc-pencils3": {
+      "id": 93,
+      "w": 17,
+      "h": 20,
+      "gid": 208
+    },
+    "office-misc-pencils2": {
+      "id": 94,
+      "w": 15,
+      "h": 19,
+      "gid": 209
+    },
+    "office-misc-pens": {
+      "id": 95,
+      "w": 10,
+      "h": 15,
+      "gid": 210
+    },
+    "office-misc-lamp2": {
+      "id": 96,
+      "w": 12,
+      "h": 12,
+      "gid": 211
+    },
+    "notes3": {
+      "id": 97,
+      "w": 14,
+      "h": 11,
+      "gid": 212
+    },
+    "office-misc-hdd": {
+      "id": 98,
+      "w": 16,
+      "h": 13,
+      "gid": 213
+    },
+    "office-misc-smallplant": {
+      "id": 99,
+      "w": 8,
+      "h": 15,
+      "gid": 214
+    },
+    "office-misc-pencils": {
+      "id": 100,
+      "w": 9,
+      "h": 16,
+      "gid": 215
+    },
+    "office-misc-speakers": {
+      "id": 101,
+      "w": 13,
+      "h": 15,
+      "gid": 216
+    },
+    "office-misc-cup": {
+      "id": 102,
+      "w": 11,
+      "h": 11,
+      "gid": 217
+    },
+    "office-misc-lamp": {
+      "id": 103,
+      "w": 12,
+      "h": 15,
+      "gid": 218
+    },
+    "phone4": {
+      "id": 104,
+      "w": 14,
+      "h": 16,
+      "gid": 219
+    },
+    "phone3": {
+      "id": 105,
+      "w": 18,
+      "h": 16,
+      "gid": 220
+    },
+    "phone2": {
+      "id": 106,
+      "w": 19,
+      "h": 17,
+      "gid": 221
+    },
+    "phone1": {
+      "id": 107,
+      "w": 20,
+      "h": 17,
+      "gid": 222
+    },
+    "bag25": {
+      "id": 108,
+      "w": 19,
+      "h": 21,
+      "gid": 223
+    },
+    "bag24": {
+      "id": 109,
+      "w": 16,
+      "h": 21,
+      "gid": 224
+    },
+    "bag23": {
+      "id": 110,
+      "w": 26,
+      "h": 21,
+      "gid": 225
+    },
+    "bag22": {
+      "id": 111,
+      "w": 19,
+      "h": 19,
+      "gid": 226
+    },
+    "bag21": {
+      "id": 112,
+      "w": 17,
+      "h": 21,
+      "gid": 227
+    },
+    "bag20": {
+      "id": 113,
+      "w": 20,
+      "h": 20,
+      "gid": 228
+    },
+    "bag19": {
+      "id": 114,
+      "w": 19,
+      "h": 20,
+      "gid": 229
+    },
+    "bag18": {
+      "id": 115,
+      "w": 22,
+      "h": 21,
+      "gid": 230
+    },
+    "bag17": {
+      "id": 116,
+      "w": 18,
+      "h": 20,
+      "gid": 231
+    },
+    "bag16": {
+      "id": 117,
+      "w": 18,
+      "h": 19,
+      "gid": 232
+    },
+    "bag15": {
+      "id": 118,
+      "w": 18,
+      "h": 21,
+      "gid": 233
+    },
+    "bag14": {
+      "id": 119,
+      "w": 20,
+      "h": 21,
+      "gid": 234
+    },
+    "suitcase9": {
+      "id": 120,
+      "w": 29,
+      "h": 21,
+      "gid": 235
+    },
+    "suitcase8": {
+      "id": 121,
+      "w": 27,
+      "h": 21,
+      "gid": 236
+    },
+    "suitcase7": {
+      "id": 122,
+      "w": 40,
+      "h": 23,
+      "gid": 237
+    },
+    "suitcase6": {
+      "id": 123,
+      "w": 29,
+      "h": 20,
+      "gid": 238
+    },
+    "bag13": {
+      "id": 124,
+      "w": 19,
+      "h": 21,
+      "gid": 239
+    },
+    "suitcase5": {
+      "id": 125,
+      "w": 14,
+      "h": 24,
+      "gid": 240
+    },
+    "suitcase4": {
+      "id": 126,
+      "w": 17,
+      "h": 26,
+      "gid": 241
+    },
+    "suitcase3": {
+      "id": 127,
+      "w": 29,
+      "h": 21,
+      "gid": 242
+    },
+    "suitcase2": {
+      "id": 128,
+      "w": 33,
+      "h": 24,
+      "gid": 243
+    },
+    "suitcase-1": {
+      "id": 129,
+      "w": 42,
+      "h": 29,
+      "gid": 244
+    },
+    "briefcase-orange-1": {
+      "id": 130,
+      "w": 20,
+      "h": 16,
+      "gid": 245
+    },
+    "briefcase-yellow-1": {
+      "id": 131,
+      "w": 22,
+      "h": 17,
+      "gid": 246
+    },
+    "briefcase13": {
+      "id": 132,
+      "w": 24,
+      "h": 19,
+      "gid": 247
+    },
+    "briefcase-purple-1": {
+      "id": 133,
+      "w": 19,
+      "h": 16,
+      "gid": 248
+    },
+    "briefcase-green-1": {
+      "id": 134,
+      "w": 18,
+      "h": 15,
+      "gid": 249
+    },
+    "briefcase-blue-1": {
+      "id": 135,
+      "w": 19,
+      "h": 15,
+      "gid": 250
+    },
+    "briefcase-red-1": {
+      "id": 136,
+      "w": 23,
+      "h": 19,
+      "gid": 251
+    },
+    "briefcase12": {
+      "id": 137,
+      "w": 27,
+      "h": 17,
+      "gid": 252
+    },
+    "briefcase11": {
+      "id": 138,
+      "w": 23,
+      "h": 17,
+      "gid": 253
+    },
+    "briefcase10": {
+      "id": 139,
+      "w": 27,
+      "h": 17,
+      "gid": 254
+    },
+    "briefcase9": {
+      "id": 140,
+      "w": 24,
+      "h": 17,
+      "gid": 255
+    },
+    "briefcase8": {
+      "id": 141,
+      "w": 22,
+      "h": 17,
+      "gid": 256
+    },
+    "briefcase7": {
+      "id": 142,
+      "w": 25,
+      "h": 17,
+      "gid": 257
+    },
+    "briefcase6": {
+      "id": 143,
+      "w": 22,
+      "h": 17,
+      "gid": 258
+    },
+    "briefcase5": {
+      "id": 144,
+      "w": 24,
+      "h": 17,
+      "gid": 259
+    },
+    "briefcase4": {
+      "id": 145,
+      "w": 17,
+      "h": 16,
+      "gid": 260
+    },
+    "briefcase3": {
+      "id": 146,
+      "w": 18,
+      "h": 17,
+      "gid": 261
+    },
+    "briefcase2": {
+      "id": 147,
+      "w": 23,
+      "h": 17,
+      "gid": 262
+    },
+    "briefcase1": {
+      "id": 148,
+      "w": 24,
+      "h": 19,
+      "gid": 263
+    },
+    "chair-grey-4": {
+      "id": 149,
+      "w": 23,
+      "h": 36,
+      "gid": 264
+    },
+    "chair-grey-3": {
+      "id": 150,
+      "w": 25,
+      "h": 39,
+      "gid": 265
+    },
+    "chair-darkgreen-3": {
+      "id": 151,
+      "w": 23,
+      "h": 36,
+      "gid": 266
+    },
+    "chair-grey-2": {
+      "id": 152,
+      "w": 25,
+      "h": 37,
+      "gid": 267
+    },
+    "chair-darkgray-1": {
+      "id": 153,
+      "w": 24,
+      "h": 37,
+      "gid": 268
+    },
+    "chair-darkgreen-2": {
+      "id": 154,
+      "w": 27,
+      "h": 42,
+      "gid": 269
+    },
+    "chair-darkgreen-1": {
+      "id": 155,
+      "w": 24,
+      "h": 38,
+      "gid": 270
+    },
+    "chair-grey-1": {
+      "id": 156,
+      "w": 24,
+      "h": 38,
+      "gid": 271
+    },
+    "servers": {
+      "id": 157,
+      "w": 221,
+      "h": 50,
+      "gid": 272
+    },
+    "chair-red-4": {
+      "id": 158,
+      "w": 27,
+      "h": 50,
+      "gid": 273
+    },
+    "chair-red-3": {
+      "id": 159,
+      "w": 27,
+      "h": 48,
+      "gid": 274
+    },
+    "chair-green-2": {
+      "id": 160,
+      "w": 29,
+      "h": 49,
+      "gid": 275
+    },
+    "chair-green-1": {
+      "id": 161,
+      "w": 27,
+      "h": 49,
+      "gid": 276
+    },
+    "chair-red-2": {
+      "id": 162,
+      "w": 26,
+      "h": 48,
+      "gid": 277
+    },
+    "chair-red-1": {
+      "id": 163,
+      "w": 28,
+      "h": 50,
+      "gid": 278
+    },
+    "keyboard8": {
+      "id": 164,
+      "w": 47,
+      "h": 16,
+      "gid": 279
+    },
+    "keyboard7": {
+      "id": 165,
+      "w": 61,
+      "h": 17,
+      "gid": 280
+    },
+    "keyboard6": {
+      "id": 166,
+      "w": 46,
+      "h": 16,
+      "gid": 281
+    },
+    "keyboard5": {
+      "id": 167,
+      "w": 44,
+      "h": 16,
+      "gid": 282
+    },
+    "keyboard4": {
+      "id": 168,
+      "w": 41,
+      "h": 16,
+      "gid": 283
+    },
+    "keyboard3": {
+      "id": 169,
+      "w": 23,
+      "h": 13,
+      "gid": 284
+    },
+    "keyboard2": {
+      "id": 170,
+      "w": 40,
+      "h": 15,
+      "gid": 285
+    },
+    "keyboard1": {
+      "id": 171,
+      "w": 40,
+      "h": 16,
+      "gid": 286
+    },
+    "bag12": {
+      "id": 172,
+      "w": 26,
+      "h": 24,
+      "gid": 287
+    },
+    "bag11": {
+      "id": 173,
+      "w": 24,
+      "h": 24,
+      "gid": 288
+    },
+    "bag10": {
+      "id": 174,
+      "w": 27,
+      "h": 28,
+      "gid": 289
+    },
+    "bag9": {
+      "id": 175,
+      "w": 19,
+      "h": 27,
+      "gid": 290
+    },
+    "bag8": {
+      "id": 176,
+      "w": 14,
+      "h": 21,
+      "gid": 291
+    },
+    "bag7": {
+      "id": 177,
+      "w": 18,
+      "h": 23,
+      "gid": 292
+    },
+    "bag6": {
+      "id": 178,
+      "w": 20,
+      "h": 28,
+      "gid": 293
+    },
+    "bag5": {
+      "id": 179,
+      "w": 26,
+      "h": 21,
+      "gid": 294
+    },
+    "bag4": {
+      "id": 180,
+      "w": 23,
+      "h": 22,
+      "gid": 295
+    },
+    "bag3": {
+      "id": 181,
+      "w": 16,
+      "h": 23,
+      "gid": 296
+    },
+    "bag2": {
+      "id": 182,
+      "w": 19,
+      "h": 26,
+      "gid": 297
+    },
+    "bag1": {
+      "id": 183,
+      "w": 17,
+      "h": 20,
+      "gid": 298
+    },
+    "safe5": {
+      "id": 184,
+      "w": 25,
+      "h": 40,
+      "gid": 299
+    },
+    "safe4": {
+      "id": 185,
+      "w": 23,
+      "h": 26,
+      "gid": 300
+    },
+    "safe3": {
+      "id": 186,
+      "w": 24,
+      "h": 33,
+      "gid": 301
+    },
+    "safe2": {
+      "id": 187,
+      "w": 24,
+      "h": 30,
+      "gid": 302
+    },
+    "safe1": {
+      "id": 188,
+      "w": 32,
+      "h": 43,
+      "gid": 303
+    },
+    "notes1": {
+      "id": 189,
+      "w": 16,
+      "h": 16,
+      "gid": 304
+    },
+    "notes2": {
+      "id": 190,
+      "w": 16,
+      "h": 16,
+      "gid": 305
+    },
+    "chair-white-2": {
+      "id": 209,
+      "w": 20,
+      "h": 30,
+      "gid": 324
+    },
+    "chair-white-1": {
+      "id": 210,
+      "w": 25,
+      "h": 32,
+      "gid": 325
+    },
+    "office-misc-smallplant5": {
+      "id": 211,
+      "w": 16,
+      "h": 19,
+      "gid": 326
+    },
+    "office-misc-smallplant4": {
+      "id": 212,
+      "w": 18,
+      "h": 18,
+      "gid": 327
+    },
+    "office-misc-smallplant3": {
+      "id": 213,
+      "w": 10,
+      "h": 12,
+      "gid": 328
+    },
+    "laptop7": {
+      "id": 214,
+      "w": 22,
+      "h": 17,
+      "gid": 329
+    },
+    "laptop6": {
+      "id": 215,
+      "w": 17,
+      "h": 12,
+      "gid": 330
+    },
+    "laptop5": {
+      "id": 216,
+      "w": 17,
+      "h": 14,
+      "gid": 331
+    },
+    "laptop4": {
+      "id": 217,
+      "w": 16,
+      "h": 12,
+      "gid": 332
+    },
+    "laptop3": {
+      "id": 218,
+      "w": 24,
+      "h": 18,
+      "gid": 333
+    },
+    "laptop2": {
+      "id": 219,
+      "w": 24,
+      "h": 18,
+      "gid": 334
+    },
+    "laptop1": {
+      "id": 220,
+      "w": 24,
+      "h": 18,
+      "gid": 335
+    },
+    "chalkboard3": {
+      "id": 221,
+      "w": 40,
+      "h": 52,
+      "gid": 336
+    },
+    "chalkboard2": {
+      "id": 222,
+      "w": 44,
+      "h": 56,
+      "gid": 337
+    },
+    "chalkboard": {
+      "id": 223,
+      "w": 52,
+      "h": 54,
+      "gid": 338
+    },
+    "bookcase": {
+      "id": 224,
+      "w": 43,
+      "h": 50,
+      "gid": 339
+    },
+    "servers3": {
+      "id": 225,
+      "w": 54,
+      "h": 54,
+      "gid": 340
+    },
+    "spooky-splatter": {
+      "id": 226,
+      "w": 64,
+      "h": 66,
+      "gid": 341
+    },
+    "spooky-candles2": {
+      "id": 227,
+      "w": 46,
+      "h": 52,
+      "gid": 342
+    },
+    "spooky-candles": {
+      "id": 228,
+      "w": 48,
+      "h": 52,
+      "gid": 343
+    },
+    "torch-left": {
+      "id": 229,
+      "w": 11,
+      "h": 8,
+      "gid": 344
+    },
+    "torch-right": {
+      "id": 230,
+      "w": 17,
+      "h": 7,
+      "gid": 345
+    },
+    "torch-1": {
+      "id": 231,
+      "w": 5,
+      "h": 20,
+      "gid": 346
+    },
+    "servers2": {
+      "id": 232,
+      "w": 166,
+      "h": 58,
+      "gid": 347
+    },
+    "sofa1": {
+      "id": 233,
+      "w": 53,
+      "h": 59,
+      "gid": 348
+    },
+    "plant-large13": {
+      "id": 234,
+      "w": 42,
+      "h": 88,
+      "gid": 349
+    },
+    "office-misc-lamp4": {
+      "id": 235,
+      "w": 12,
+      "h": 23,
+      "gid": 350
+    },
+    "chair-waiting-right-1": {
+      "id": 236,
+      "w": 34,
+      "h": 37,
+      "gid": 351
+    },
+    "chair-waiting-left-1": {
+      "id": 237,
+      "w": 34,
+      "h": 37,
+      "gid": 352
+    },
+    "plant-large12": {
+      "id": 238,
+      "w": 44,
+      "h": 79,
+      "gid": 353
+    },
+    "plant-large11": {
+      "id": 239,
+      "w": 38,
+      "h": 76,
+      "gid": 354
+    },
+    "pc1": {
+      "id": 241,
+      "w": 28,
+      "h": 23,
+      "gid": 356
+    },
+    "tablet": {
+      "id": 242,
+      "w": 26,
+      "h": 16,
+      "gid": 357
+    },
+    "key": {
+      "id": 243,
+      "w": 12,
+      "h": 21,
+      "gid": 358
+    },
+    "lockpick": {
+      "id": 244,
+      "w": 26,
+      "h": 30,
+      "gid": 359
+    },
+    "fingerprint": {
+      "id": 245,
+      "w": 25,
+      "h": 35,
+      "gid": 360
+    },
+    "bluetooth": {
+      "id": 246,
+      "w": 11,
+      "h": 22,
+      "gid": 361
+    },
+    "bluetooth_scanner": {
+      "id": 247,
+      "w": 11,
+      "h": 22,
+      "gid": 362
+    },
+    "pc3": {
+      "id": 248,
+      "w": 26,
+      "h": 22,
+      "gid": 363
+    },
+    "pc4": {
+      "id": 249,
+      "w": 26,
+      "h": 19,
+      "gid": 364
+    },
+    "pc5": {
+      "id": 250,
+      "w": 34,
+      "h": 27,
+      "gid": 365
+    },
+    "pc6": {
+      "id": 251,
+      "w": 32,
+      "h": 30,
+      "gid": 366
+    },
+    "pc7": {
+      "id": 252,
+      "w": 32,
+      "h": 28,
+      "gid": 367
+    },
+    "pc8": {
+      "id": 253,
+      "w": 34,
+      "h": 22,
+      "gid": 368
+    },
+    "pc9": {
+      "id": 254,
+      "w": 38,
+      "h": 28,
+      "gid": 369
+    },
+    "pc10": {
+      "id": 255,
+      "w": 37,
+      "h": 28,
+      "gid": 370
+    },
+    "pc11": {
+      "id": 256,
+      "w": 31,
+      "h": 21,
+      "gid": 371
+    },
+    "pc12": {
+      "id": 257,
+      "w": 31,
+      "h": 24,
+      "gid": 372
+    },
+    "pc": {
+      "id": 258,
+      "w": 36,
+      "h": 24,
+      "gid": 373
+    },
+    "briefcase1.aseprite": {
+      "id": 261,
+      "w": 24,
+      "h": 19,
+      "gid": 376
+    },
+    "smartscreen": {
+      "id": 264,
+      "w": 48,
+      "h": 34,
+      "gid": 379
+    },
+    "filing_cabinet": {
+      "id": 265,
+      "w": 27,
+      "h": 54,
+      "gid": 380
+    },
+    "workstation": {
+      "id": 266,
+      "w": 24,
+      "h": 18,
+      "gid": 381
+    },
+    "vm-launcher": {
+      "id": 267,
+      "w": 28,
+      "h": 23,
+      "gid": 382
+    },
+    "vm-launcher-kali": {
+      "id": 268,
+      "w": 28,
+      "h": 23,
+      "gid": 383
+    },
+    "vm-launcher-desktop": {
+      "id": 269,
+      "w": 28,
+      "h": 23,
+      "gid": 384
+    },
+    "lab-workstation": {
+      "id": 270,
+      "w": 24,
+      "h": 18,
+      "gid": 385
+    },
+    "id_badge": {
+      "id": 271,
+      "w": 10,
+      "h": 16,
+      "gid": 386
+    },
+    "flag-station": {
+      "id": 272,
+      "w": 26,
+      "h": 19,
+      "gid": 387
+    },
+    "text_file": {
+      "id": 273,
+      "w": 16,
+      "h": 16,
+      "gid": 388
+    },
+    "servers4": {
+      "id": 274,
+      "w": 26,
+      "h": 47,
+      "gid": 389
+    },
+    "rfid_cloner": {
+      "id": 275,
+      "w": 11,
+      "h": 22,
+      "gid": 390
+    },
+    "plant-large13-top-ani4": {
+      "id": 276,
+      "w": 64,
+      "h": 88,
+      "gid": 391
+    },
+    "plant-large13-top-ani3": {
+      "id": 277,
+      "w": 64,
+      "h": 88,
+      "gid": 392
+    },
+    "plant-large13-top-ani2": {
+      "id": 278,
+      "w": 64,
+      "h": 88,
+      "gid": 393
+    },
+    "plant-large13-top-ani1": {
+      "id": 279,
+      "w": 64,
+      "h": 88,
+      "gid": 394
+    },
+    "plant-large12-top-ani5": {
+      "id": 280,
+      "w": 64,
+      "h": 75,
+      "gid": 395
+    },
+    "plant-large12-top-ani4": {
+      "id": 281,
+      "w": 64,
+      "h": 75,
+      "gid": 396
+    },
+    "plant-large12-top-ani3": {
+      "id": 282,
+      "w": 64,
+      "h": 75,
+      "gid": 397
+    },
+    "plant-large12-top-ani2": {
+      "id": 283,
+      "w": 64,
+      "h": 75,
+      "gid": 398
+    },
+    "plant-large12-top-ani1": {
+      "id": 284,
+      "w": 64,
+      "h": 75,
+      "gid": 399
+    },
+    "plant-large11-top-ani4": {
+      "id": 285,
+      "w": 64,
+      "h": 75,
+      "gid": 400
+    },
+    "plant-large11-top-ani3": {
+      "id": 286,
+      "w": 64,
+      "h": 75,
+      "gid": 401
+    },
+    "plant-large11-top-ani2": {
+      "id": 287,
+      "w": 64,
+      "h": 75,
+      "gid": 402
+    },
+    "plant-large11-top-ani1": {
+      "id": 288,
+      "w": 64,
+      "h": 75,
+      "gid": 403
+    },
+    "plant-large-displacement": {
+      "id": 289,
+      "w": 200,
+      "h": 359,
+      "gid": 404
+    },
+    "pin-cracker": {
+      "id": 290,
+      "w": 12,
+      "h": 13,
+      "gid": 405
+    },
+    "pin-cracker-large": {
+      "id": 291,
+      "w": 32,
+      "h": 32,
+      "gid": 406
+    },
+    "phone": {
+      "id": 292,
+      "w": 11,
+      "h": 22,
+      "gid": 407
+    },
+    "notes5": {
+      "id": 294,
+      "w": 25,
+      "h": 32,
+      "gid": 409
+    },
+    "notes": {
+      "id": 295,
+      "w": 27,
+      "h": 14,
+      "gid": 410
+    },
+    "keycard": {
+      "id": 296,
+      "w": 16,
+      "h": 10,
+      "gid": 411
+    },
+    "keycard-security": {
+      "id": 297,
+      "w": 12,
+      "h": 21,
+      "gid": 412
+    },
+    "keycard-maintenance": {
+      "id": 298,
+      "w": 12,
+      "h": 21,
+      "gid": 413
+    },
+    "keycard-ceo": {
+      "id": 299,
+      "w": 12,
+      "h": 21,
+      "gid": 414
+    },
+    "key-ring": {
+      "id": 300,
+      "w": 18,
+      "h": 27,
+      "gid": 415
+    },
+    "fingerprint_small": {
+      "id": 301,
+      "w": 18,
+      "h": 24,
+      "gid": 416
+    },
+    "fingerprint_kit": {
+      "id": 302,
+      "w": 10,
+      "h": 24,
+      "gid": 417
+    },
+    "chair-white-2.aseprite": {
+      "id": 303,
+      "w": 32,
+      "h": 32,
+      "gid": 418
+    },
+    "chair-white-2-sheet": {
+      "id": 304,
+      "w": 160,
+      "h": 32,
+      "gid": 419
+    },
+    "chair-white-2-rotate8": {
+      "id": 305,
+      "w": 32,
+      "h": 32,
+      "gid": 420
+    },
+    "chair-white-2-rotate7": {
+      "id": 306,
+      "w": 32,
+      "h": 32,
+      "gid": 421
+    },
+    "chair-white-2-rotate6": {
+      "id": 307,
+      "w": 32,
+      "h": 32,
+      "gid": 422
+    },
+    "chair-white-2-rotate5": {
+      "id": 308,
+      "w": 32,
+      "h": 32,
+      "gid": 423
+    },
+    "chair-white-2-rotate4": {
+      "id": 309,
+      "w": 32,
+      "h": 32,
+      "gid": 424
+    },
+    "chair-white-2-rotate3": {
+      "id": 310,
+      "w": 32,
+      "h": 32,
+      "gid": 425
+    },
+    "chair-white-2-rotate2": {
+      "id": 311,
+      "w": 32,
+      "h": 32,
+      "gid": 426
+    },
+    "chair-white-2-rotate1": {
+      "id": 312,
+      "w": 32,
+      "h": 32,
+      "gid": 427
+    },
+    "chair-white-1.aseprite": {
+      "id": 313,
+      "w": 32,
+      "h": 32,
+      "gid": 428
+    },
+    "chair-white-1-sheet": {
+      "id": 314,
+      "w": 75,
+      "h": 32,
+      "gid": 429
+    },
+    "chair-white-1-rotate8": {
+      "id": 315,
+      "w": 32,
+      "h": 32,
+      "gid": 430
+    },
+    "chair-white-1-rotate7": {
+      "id": 316,
+      "w": 32,
+      "h": 32,
+      "gid": 431
+    },
+    "chair-white-1-rotate6": {
+      "id": 317,
+      "w": 32,
+      "h": 32,
+      "gid": 432
+    },
+    "chair-white-1-rotate5": {
+      "id": 318,
+      "w": 32,
+      "h": 32,
+      "gid": 433
+    },
+    "chair-white-1-rotate4": {
+      "id": 319,
+      "w": 32,
+      "h": 32,
+      "gid": 434
+    },
+    "chair-white-1-rotate3": {
+      "id": 320,
+      "w": 32,
+      "h": 32,
+      "gid": 435
+    },
+    "chair-white-1-rotate2": {
+      "id": 321,
+      "w": 32,
+      "h": 32,
+      "gid": 436
+    },
+    "chair-white-1-rotate1": {
+      "id": 322,
+      "w": 32,
+      "h": 32,
+      "gid": 437
+    },
+    "chair-exec.aseprite": {
+      "id": 323,
+      "w": 38,
+      "h": 64,
+      "gid": 438
+    },
+    "chair-exec-sheet": {
+      "id": 324,
+      "w": 190,
+      "h": 64,
+      "gid": 439
+    },
+    "chair-exec-rotate8": {
+      "id": 325,
+      "w": 38,
+      "h": 64,
+      "gid": 440
+    },
+    "chair-exec-rotate7": {
+      "id": 326,
+      "w": 38,
+      "h": 64,
+      "gid": 441
+    },
+    "chair-exec-rotate6": {
+      "id": 327,
+      "w": 38,
+      "h": 64,
+      "gid": 442
+    },
+    "chair-exec-rotate5": {
+      "id": 328,
+      "w": 38,
+      "h": 64,
+      "gid": 443
+    },
+    "chair-exec-rotate4": {
+      "id": 329,
+      "w": 38,
+      "h": 64,
+      "gid": 444
+    },
+    "chair-exec-rotate3": {
+      "id": 330,
+      "w": 38,
+      "h": 64,
+      "gid": 445
+    },
+    "chair-exec-rotate2": {
+      "id": 331,
+      "w": 38,
+      "h": 64,
+      "gid": 446
+    },
+    "chair-exec-rotate1": {
+      "id": 332,
+      "w": 38,
+      "h": 64,
+      "gid": 447
+    },
+    "book1": {
+      "id": 333,
+      "w": 18,
+      "h": 20,
+      "gid": 448
+    },
+    "thermometer_low": {
+      "id": 334,
+      "w": 16,
+      "h": 16,
+      "gid": 449
+    },
+    "thermometer_high": {
+      "id": 335,
+      "w": 16,
+      "h": 16,
+      "gid": 450
+    },
+    "ehr-terminal": {
+      "id": 336,
+      "w": 36,
+      "h": 24,
+      "gid": 451
+    },
+    "siem_dashboard": {
+      "id": 337,
+      "w": 42,
+      "h": 31,
+      "gid": 452
+    },
+    "cable": {
+      "id": 338,
+      "w": 36,
+      "h": 12,
+      "gid": 453
+    },
+    "thermometer": {
+      "id": 339,
+      "w": 16,
+      "h": 16,
+      "gid": 454
+    },
+    "scada_historian": {
+      "id": 340,
+      "w": 48,
+      "h": 48,
+      "gid": 455
+    },
+    "network-segmentation-map": {
+      "id": 341,
+      "w": 48,
+      "h": 34,
+      "gid": 456
+    },
+    "network_architecture": {
+      "id": 342,
+      "w": 48,
+      "h": 34,
+      "gid": 457
+    },
+    "alarm_panel": {
+      "id": 343,
+      "w": 17,
+      "h": 23,
+      "gid": 458
+    },
+    "emergency-button": {
+      "id": 344,
+      "w": 16,
+      "h": 16,
+      "gid": 459
+    },
+    "sis_config_panel": {
+      "id": 345,
+      "w": 48,
+      "h": 34,
+      "gid": 460
+    },
+    "drug_library_terminal": {
+      "id": 346,
+      "w": 36,
+      "h": 24,
+      "gid": 461
+    },
+    "vpn_log_terminal": {
+      "id": 347,
+      "w": 36,
+      "h": 24,
+      "gid": 462
+    },
+    "log_filter_terminal": {
+      "id": 348,
+      "w": 36,
+      "h": 24,
+      "gid": 463
+    },
+    "screens": {
+      "id": 349,
+      "w": 184,
+      "h": 37,
+      "gid": 464
+    },
+    "batrack": {
+      "id": 350,
+      "w": 32,
+      "h": 72,
+      "gid": 465
+    },
+    "checklist": {
+      "id": 351,
+      "w": 27,
+      "h": 14,
+      "gid": 466
+    },
+    "coverage_decision_form": {
+      "id": 352,
+      "w": 14,
+      "h": 11,
+      "gid": 467
+    },
+    "ncsc_brief": {
+      "id": 353,
+      "w": 27,
+      "h": 14,
+      "gid": 468
+    },
+    "forensic_data_platform": {
+      "id": 354,
+      "w": 36,
+      "h": 24,
+      "gid": 469
+    },
+    "bed4": {
+      "id": 355,
+      "w": 35,
+      "h": 72,
+      "gid": 470
+    },
+    "bed2": {
+      "id": 356,
+      "w": 36,
+      "h": 72,
+      "gid": 471
+    },
+    "bed5": {
+      "id": 357,
+      "w": 38,
+      "h": 72,
+      "gid": 472
+    },
+    "bed_empty": {
+      "id": 358,
+      "w": 37,
+      "h": 63,
+      "gid": 473
+    },
+    "curtain-divider": {
+      "id": 359,
+      "w": 6,
+      "h": 124,
+      "gid": 474
+    },
+    "chart2": {
+      "id": 360,
+      "w": 19,
+      "h": 21,
+      "gid": 475
+    },
+    "chart": {
+      "id": 361,
+      "w": 12,
+      "h": 17,
+      "gid": 476
+    },
+    "vitals-monitor8": {
+      "id": 362,
+      "w": 32,
+      "h": 64,
+      "gid": 477
+    },
+    "vitals-monitor7": {
+      "id": 363,
+      "w": 32,
+      "h": 64,
+      "gid": 478
+    },
+    "vitals-monitor6": {
+      "id": 364,
+      "w": 32,
+      "h": 64,
+      "gid": 479
+    },
+    "vitals-monitor5": {
+      "id": 365,
+      "w": 32,
+      "h": 64,
+      "gid": 480
+    },
+    "vitals-monitor4": {
+      "id": 366,
+      "w": 32,
+      "h": 64,
+      "gid": 481
+    },
+    "vitals-monitor3": {
+      "id": 367,
+      "w": 32,
+      "h": 64,
+      "gid": 482
+    },
+    "vitals-monitor2": {
+      "id": 368,
+      "w": 32,
+      "h": 64,
+      "gid": 483
+    },
+    "vitals-monitor1": {
+      "id": 369,
+      "w": 32,
+      "h": 64,
+      "gid": 484
+    },
+    "vitals-monitor9": {
+      "id": 370,
+      "w": 32,
+      "h": 64,
+      "gid": 485
+    },
+    "infusion_pump": {
+      "id": 371,
+      "w": 22,
+      "h": 70,
+      "gid": 486
+    },
+    "bed3": {
+      "id": 372,
+      "w": 35,
+      "h": 78,
+      "gid": 487
+    },
+    "bed6": {
+      "id": 373,
+      "w": 46,
+      "h": 76,
+      "gid": 488
+    },
+    "bed1": {
+      "id": 374,
+      "w": 37,
+      "h": 72,
+      "gid": 489
+    },
+    "command_board": {
+      "id": 375,
+      "w": 36,
+      "h": 24,
+      "gid": 490
+    },
+    "dual_auth": {
+      "id": 376,
+      "w": 36,
+      "h": 24,
+      "gid": 491
+    },
+    "backup_recovery": {
+      "id": 377,
+      "w": 36,
+      "h": 24,
+      "gid": 492
+    },
+    "launch-device": {
+      "id": 378,
+      "w": 26,
+      "h": 16,
+      "gid": 493
+    },
+    "medical_cabinet1": {
+      "id": 191,
+      "w": 52,
+      "h": 63,
+      "gid": 306
+    },
+    "medical_cabinet2": {
+      "id": 192,
+      "w": 52,
+      "h": 63,
+      "gid": 307
+    },
+    "hospital_chair1": {
+      "id": 193,
+      "w": 17,
+      "h": 32,
+      "gid": 308
+    },
+    "hospital_chair2": {
+      "id": 194,
+      "w": 17,
+      "h": 32,
+      "gid": 309
+    },
+    "crash_cart1": {
+      "id": 195,
+      "w": 41,
+      "h": 51,
+      "gid": 310
+    },
+    "crash_cart2": {
+      "id": 196,
+      "w": 24,
+      "h": 56,
+      "gid": 311
+    },
+    "sanitizer_stand1": {
+      "id": 197,
+      "w": 18,
+      "h": 46,
+      "gid": 312
+    },
+    "sanitizer_stand2": {
+      "id": 198,
+      "w": 21,
+      "h": 46,
+      "gid": 313
+    },
+    "hospital_chart_board1": {
+      "id": 199,
+      "w": 45,
+      "h": 32,
+      "gid": 314
+    },
+    "hospital_chart_board2": {
+      "id": 200,
+      "w": 38,
+      "h": 39,
+      "gid": 315
+    },
+    "hospital_chair_north": {
+      "id": 201,
+      "w": 16,
+      "h": 26,
+      "gid": 316
+    },
+    "hospital_chair_south": {
+      "id": 202,
+      "w": 16,
+      "h": 32,
+      "gid": 317
+    },
+    "iv_stand1": {
+      "id": 0,
+      "w": 25,
+      "h": 60,
+      "gid": 801
+    },
+    "vending_machine1": {
+      "id": 1,
+      "w": 42,
+      "h": 60,
+      "gid": 802
+    },
+    "supply_shelves1": {
+      "id": 2,
+      "w": 50,
+      "h": 60,
+      "gid": 803
+    },
+    "privacy_screen1": {
+      "id": 3,
+      "w": 60,
+      "h": 57,
+      "gid": 804
+    },
+    "stretcher1": {
+      "id": 4,
+      "w": 58,
+      "h": 45,
+      "gid": 805
+    },
+    "water_cooler1": {
+      "id": 5,
+      "w": 24,
+      "h": 47,
+      "gid": 806
+    },
+    "wheelchair1": {
+      "id": 6,
+      "w": 38,
+      "h": 44,
+      "gid": 807
+    },
+    "oxygen_cylinder1": {
+      "id": 7,
+      "w": 23,
+      "h": 45,
+      "gid": 808
+    },
+    "linen_cart1": {
+      "id": 8,
+      "w": 42,
+      "h": 39,
+      "gid": 809
+    },
+    "chairs_stacked1": {
+      "id": 9,
+      "w": 20,
+      "h": 45,
+      "gid": 810
+    },
+    "monitor_stand1": {
+      "id": 10,
+      "w": 17,
+      "h": 45,
+      "gid": 811
+    },
+    "bedside_locker1": {
+      "id": 11,
+      "w": 24,
+      "h": 42,
+      "gid": 812
+    },
+    "coffee_station1": {
+      "id": 12,
+      "w": 26,
+      "h": 41,
+      "gid": 813
+    },
+    "first_aid_cabinet1": {
+      "id": 13,
+      "w": 28,
+      "h": 36,
+      "gid": 814
+    },
+    "instrument_trolley1": {
+      "id": 14,
+      "w": 37,
+      "h": 41,
+      "gid": 815
+    },
+    "step_stool1": {
+      "id": 15,
+      "w": 28,
+      "h": 35,
+      "gid": 816
+    },
+    "mop_bucket1": {
+      "id": 16,
+      "w": 29,
+      "h": 44,
+      "gid": 817
+    },
+    "fire_extinguisher1": {
+      "id": 17,
+      "w": 16,
+      "h": 28,
+      "gid": 818
+    },
+    "wet_floor_sign1": {
+      "id": 18,
+      "w": 21,
+      "h": 29,
+      "gid": 819
+    },
+    "sharps_bin1": {
+      "id": 19,
+      "w": 16,
+      "h": 26,
+      "gid": 820
+    },
+    "first_aid_kit1": {
+      "id": 20,
+      "w": 22,
+      "h": 20,
+      "gid": 821
+    },
+    "sanitiser_dispenser1": {
+      "id": 21,
+      "w": 14,
+      "h": 27,
+      "gid": 822
+    },
+    "pedal_bin1": {
+      "id": 22,
+      "w": 15,
+      "h": 22,
+      "gid": 823
+    },
+    "clinical_waste_bin1": {
+      "id": 23,
+      "w": 18,
+      "h": 25,
+      "gid": 824
+    },
+    "medicine_fridge1": {
+      "id": 24,
+      "w": 18,
+      "h": 31,
+      "gid": 825
+    },
+    "rota_board1": {
+      "id": 25,
+      "w": 30,
+      "h": 21,
+      "gid": 826
+    },
+    "xray_lightbox1": {
+      "id": 26,
+      "w": 22,
+      "h": 26,
+      "gid": 827
+    },
+    "fire_alarm_point1": {
+      "id": 27,
+      "w": 16,
+      "h": 20,
+      "gid": 828
+    },
+    "exit_sign1": {
+      "id": 28,
+      "w": 26,
+      "h": 15,
+      "gid": 829
+    },
+    "binders1": {
+      "id": 29,
+      "w": 20,
+      "h": 22,
+      "gid": 830
+    },
+    "gloves_box1": {
+      "id": 30,
+      "w": 18,
+      "h": 15,
+      "gid": 831
+    },
+    "clipboard_chart1": {
+      "id": 31,
+      "w": 15,
+      "h": 20,
+      "gid": 832
+    },
+    "stethoscope1": {
+      "id": 32,
+      "w": 18,
+      "h": 22,
+      "gid": 833
+    },
+    "kettle1": {
+      "id": 33,
+      "w": 15,
+      "h": 18,
+      "gid": 834
+    },
+    "mugs_tray1": {
+      "id": 34,
+      "w": 20,
+      "h": 15,
+      "gid": 835
+    },
+    "test_tube_rack1": {
+      "id": 35,
+      "w": 19,
+      "h": 22,
+      "gid": 836
+    },
+    "doctors_bag1": {
+      "id": 36,
+      "w": 20,
+      "h": 16,
+      "gid": 837
+    },
+    "bp_monitor1": {
+      "id": 37,
+      "w": 19,
+      "h": 17,
+      "gid": 838
+    },
+    "sanitiser_bottle1": {
+      "id": 38,
+      "w": 10,
+      "h": 20,
+      "gid": 839
+    },
+    "eye_chart1": {
+      "id": 39,
+      "w": 16,
+      "h": 24,
+      "gid": 840
+    },
+    "kitchen_counter_sink1": {
+      "id": 40,
+      "w": 47,
+      "h": 40,
+      "gid": 841
+    },
+    "undercounter_fridge1": {
+      "id": 41,
+      "w": 22,
+      "h": 29,
+      "gid": 842
+    },
+    "microwave1": {
+      "id": 42,
+      "w": 22,
+      "h": 18,
+      "gid": 843
+    },
+    "hot_water_boiler1": {
+      "id": 43,
+      "w": 20,
+      "h": 30,
+      "gid": 844
+    },
+    "soap_dispenser1": {
+      "id": 44,
+      "w": 12,
+      "h": 19,
+      "gid": 845
+    },
+    "notice_board1": {
+      "id": 45,
+      "w": 42,
+      "h": 31,
+      "gid": 846
+    },
+    "dirty_mugs1": {
+      "id": 46,
+      "w": 15,
+      "h": 14,
+      "gid": 847
+    },
+    "yellow_bin1": {
+      "id": 47,
+      "w": 22,
+      "h": 29,
+      "gid": 848
+    },
+    "notes6": {
+      "id": 48,
+      "w": 14,
+      "h": 18,
+      "gid": 849
+    },
+    "directory_sign1": {
+      "id": 49,
+      "w": 34,
+      "h": 26,
+      "gid": 850
+    },
+    "whiteboard1": {
+      "id": 50,
+      "w": 44,
+      "h": 28,
+      "gid": 851
+    },
+    "whiteboard2": {
+      "id": 51,
+      "w": 44,
+      "h": 28,
+      "gid": 852
+    },
+    "key_cabinet1": {
+      "id": 52,
+      "w": 20,
+      "h": 24,
+      "gid": 853
+    },
+    "plaque1": {
+      "id": 53,
+      "w": 24,
+      "h": 17,
+      "gid": 854
+    },
+    "power_panel1": {
+      "id": 54,
+      "w": 18,
+      "h": 22,
+      "gid": 855
+    },
+    "health_poster1": {
+      "id": 55,
+      "w": 16,
+      "h": 21,
+      "gid": 856
+    },
+    "health_poster2": {
+      "id": 56,
+      "w": 16,
+      "h": 21,
+      "gid": 857
+    },
+    "health_poster3": {
+      "id": 57,
+      "w": 16,
+      "h": 21,
+      "gid": 858
+    },
+    "health_poster4": {
+      "id": 58,
+      "w": 16,
+      "h": 21,
+      "gid": 859
+    },
+    "health_poster5": {
+      "id": 59,
+      "w": 16,
+      "h": 21,
+      "gid": 860
+    },
+    "health_poster6": {
+      "id": 60,
+      "w": 16,
+      "h": 21,
+      "gid": 861
+    },
+    "leaflet_holder1": {
+      "id": 61,
+      "w": 29,
+      "h": 33,
+      "gid": 862
+    },
+    "magazine_rack1": {
+      "id": 62,
+      "w": 38,
+      "h": 31,
+      "gid": 863
+    },
+    "magazine_rack2": {
+      "id": 63,
+      "w": 26,
+      "h": 42,
+      "gid": 864
+    },
+    "toy_box1": {
+      "id": 64,
+      "w": 30,
+      "h": 28,
+      "gid": 865
+    },
+    "wall_clock1": {
+      "id": 65,
+      "w": 25,
+      "h": 26,
+      "gid": 866
+    },
+    "server_rack1": {
+      "id": 66,
+      "w": 30,
+      "h": 55,
+      "gid": 867
+    },
+    "server_rack2": {
+      "id": 67,
+      "w": 30,
+      "h": 59,
+      "gid": 868
+    },
+    "ups_cabinet1": {
+      "id": 68,
+      "w": 31,
+      "h": 56,
+      "gid": 869
+    },
+    "aircon_unit1": {
+      "id": 69,
+      "w": 32,
+      "h": 63,
+      "gid": 870
+    },
+    "staff_lockers1": {
+      "id": 70,
+      "w": 50,
+      "h": 62,
+      "gid": 871
+    },
+    "clinical_sink1": {
+      "id": 71,
+      "w": 38,
+      "h": 60,
+      "gid": 872
+    },
+    "sideboard1": {
+      "id": 72,
+      "w": 44,
+      "h": 46,
+      "gid": 873
+    },
+    "bedhead_panel1": {
+      "id": 73,
+      "w": 28,
+      "h": 25,
+      "gid": 874
+    },
+    "bedhead_panel2": {
+      "id": 74,
+      "w": 28,
+      "h": 19,
+      "gid": 875
+    },
+    "ppe_dispenser1": {
+      "id": 75,
+      "w": 26,
+      "h": 28,
+      "gid": 876
+    },
+    "fire_action_notice1": {
+      "id": 76,
+      "w": 22,
+      "h": 28,
+      "gid": 877
+    },
+    "comms_cabinet1": {
+      "id": 77,
+      "w": 28,
+      "h": 29,
+      "gid": 878
+    },
+    "no_smoking_sign1": {
+      "id": 78,
+      "w": 22,
+      "h": 26,
+      "gid": 879
+    },
+    "bedhead_unit1": {
+      "id": 79,
+      "w": 26,
+      "h": 44,
+      "gid": 880
+    },
+    "cylinder_rack1": {
+      "id": 80,
+      "w": 43,
+      "h": 40,
+      "gid": 881
+    },
+    "suppression_cylinders1": {
+      "id": 81,
+      "w": 42,
+      "h": 44,
+      "gid": 882
+    },
+    "cleaning_trolley1": {
+      "id": 82,
+      "w": 41,
+      "h": 45,
+      "gid": 883
+    },
+    "suppression_panel1": {
+      "id": 83,
+      "w": 14,
+      "h": 19,
+      "gid": 884
+    },
+    "aed_cabinet1": {
+      "id": 84,
+      "w": 21,
+      "h": 24,
+      "gid": 885
+    },
+    "cctv_camera1": {
+      "id": 85,
+      "w": 23,
+      "h": 18,
+      "gid": 886
+    },
+    "nurse_call_display1": {
+      "id": 86,
+      "w": 25,
+      "h": 17,
+      "gid": 887
+    },
+    "filing_cabinet_steel1": {
+      "id": 87,
+      "w": 29,
+      "h": 61,
+      "gid": 888
+    },
+    "binder_shelves1": {
+      "id": 88,
+      "w": 48,
+      "h": 60,
+      "gid": 889
+    },
+    "kvm_cart1": {
+      "id": 89,
+      "w": 37,
+      "h": 61,
+      "gid": 890
+    },
+    "checkin_kiosk1": {
+      "id": 90,
+      "w": 27,
+      "h": 60,
+      "gid": 891
+    },
+    "drinks_vending1": {
+      "id": 91,
+      "w": 42,
+      "h": 61,
+      "gid": 892
+    },
+    "cctv_monitors1": {
+      "id": 92,
+      "w": 46,
+      "h": 34,
+      "gid": 893
+    },
+    "info_screen1": {
+      "id": 93,
+      "w": 40,
+      "h": 28,
+      "gid": 894
+    },
+    "handwash_poster1": {
+      "id": 94,
+      "w": 31,
+      "h": 38,
+      "gid": 895
+    },
+    "photocopier1": {
+      "id": 95,
+      "w": 35,
+      "h": 46,
+      "gid": 896
+    },
+    "coat_stand1": {
+      "id": 96,
+      "w": 21,
+      "h": 45,
+      "gid": 897
+    },
+    "dishwasher1": {
+      "id": 97,
+      "w": 22,
+      "h": 29,
+      "gid": 898
+    },
+    "shredder1": {
+      "id": 98,
+      "w": 18,
+      "h": 24,
+      "gid": 899
+    },
+    "filing_cabinet_locked1": {
+      "id": 99,
+      "w": 29,
+      "h": 61,
+      "gid": 900
+    },
+    "hospital_chair_north2": {
+      "id": 100,
+      "w": 16,
+      "h": 26,
+      "gid": 901
+    },
+    "pigeonholes1": {
+      "id": 101,
+      "w": 28,
+      "h": 27,
+      "gid": 902
+    },
+    "network_rack1": {
+      "id": 102,
+      "w": 34,
+      "h": 59,
+      "gid": 903
+    },
+    "storage_array1": {
+      "id": 103,
+      "w": 30,
+      "h": 59,
+      "gid": 904
+    },
+    "tape_library1": {
+      "id": 104,
+      "w": 30,
+      "h": 59,
+      "gid": 905
+    },
+    "patient_hoist1": {
+      "id": 105,
+      "w": 40,
+      "h": 51,
+      "gid": 906
+    },
+    "drug_trolley1": {
+      "id": 106,
+      "w": 34,
+      "h": 47,
+      "gid": 907
+    },
+    "bedside_cabinet_slim1": {
+      "id": 107,
+      "w": 16,
+      "h": 27,
+      "gid": 908
+    },
+    "security_monitor1": {
+      "id": 108,
+      "w": 24,
+      "h": 29,
+      "gid": 909
+    },
+    "cable_tray1": {
+      "id": 109,
+      "w": 150,
+      "h": 14,
+      "gid": 910
+    },
+    "year_planner1": {
+      "id": 110,
+      "w": 44,
+      "h": 31,
+      "gid": 911
+    },
+    "conference_screen1": {
+      "id": 111,
+      "w": 48,
+      "h": 36,
+      "gid": 912
+    },
+    "flip_chart1": {
+      "id": 112,
+      "w": 26,
+      "h": 45,
+      "gid": 913
+    },
+    "supply_boxes1": {
+      "id": 113,
+      "w": 29,
+      "h": 40,
+      "gid": 914
+    },
+    "wall_rail1": {
+      "id": 114,
+      "w": 192,
+      "h": 6,
+      "gid": 915
+    },
+    "it_workbench1": {
+      "id": 115,
+      "w": 60,
+      "h": 58,
+      "gid": 916
+    },
+    "exec_desk1": {
+      "id": 116,
+      "w": 80,
+      "h": 46,
+      "gid": 917
+    },
+    "radio_charger1": {
+      "id": 117,
+      "w": 26,
+      "h": 18,
+      "gid": 918
+    },
+    "window_blinds1": {
+      "id": 118,
+      "w": 40,
+      "h": 32,
+      "gid": 919
+    },
+    "cctv_monitors2": {
+      "id": 119,
+      "w": 46,
+      "h": 34,
+      "gid": 920
+    },
+    "wall_rail2": {
+      "id": 120,
+      "w": 128,
+      "h": 6,
+      "gid": 921
+    },
+    "checkin_kiosk_locked1": {
+      "id": 121,
+      "w": 24,
+      "h": 43,
+      "gid": 922
+    },
+    "uni_crest_sign1": {
+      "id": 122,
+      "w": 44,
+      "h": 22,
+      "gid": 923
+    },
+    "projector_screen1": {
+      "id": 123,
+      "w": 88,
+      "h": 42,
+      "gid": 924
+    },
+    "drop_box1": {
+      "id": 124,
+      "w": 20,
+      "h": 24,
+      "gid": 925
+    },
+    "uni_directory1": {
+      "id": 125,
+      "w": 16,
+      "h": 15,
+      "gid": 926
+    },
+    "uni_doorcard1": {
+      "id": 126,
+      "w": 20,
+      "h": 24,
+      "gid": 927
+    },
+    "uni_sign_library1": {
+      "id": 127,
+      "w": 44,
+      "h": 14,
+      "gid": 928
+    },
+    "uni_sign_special1": {
+      "id": 128,
+      "w": 64,
+      "h": 14,
+      "gid": 929
+    },
+    "uni_timetable1": {
+      "id": 129,
+      "w": 16,
+      "h": 22,
+      "gid": 930
+    },
+    "uni_poster1": {
+      "id": 130,
+      "w": 16,
+      "h": 21,
+      "gid": 931
+    },
+    "uni_poster2": {
+      "id": 131,
+      "w": 16,
+      "h": 21,
+      "gid": 932
+    },
+    "uni_poster3": {
+      "id": 132,
+      "w": 16,
+      "h": 21,
+      "gid": 933
+    },
+    "uni_poster4": {
+      "id": 133,
+      "w": 16,
+      "h": 21,
+      "gid": 934
+    },
+    "uni_poster6": {
+      "id": 134,
+      "w": 16,
+      "h": 21,
+      "gid": 935
+    },
+    "uni_poster7": {
+      "id": 135,
+      "w": 16,
+      "h": 21,
+      "gid": 936
+    },
+    "cryptosecure_banner1": {
+      "id": 136,
+      "w": 22,
+      "h": 58,
+      "gid": 937
+    },
+    "student_lockers1": {
+      "id": 137,
+      "w": 50,
+      "h": 62,
+      "gid": 938
+    },
+    "student_locker1": {
+      "id": 138,
+      "w": 16,
+      "h": 62,
+      "gid": 939
+    },
+    "lecture_ledge1": {
+      "id": 139,
+      "w": 198,
+      "h": 12,
+      "gid": 940
+    },
+    "lecture_ledge2": {
+      "id": 140,
+      "w": 252,
+      "h": 12,
+      "gid": 941
+    },
+    "alarm_panel2": {
+      "id": 141,
+      "w": 33,
+      "h": 21,
+      "gid": 942
+    },
+    "pegboard_tools1": {
+      "id": 142,
+      "w": 56,
+      "h": 44,
+      "gid": 943
+    },
+    "lectern1": {
+      "id": 143,
+      "w": 30,
+      "h": 46,
+      "gid": 944
+    },
+    "book_trolley1": {
+      "id": 144,
+      "w": 38,
+      "h": 43,
+      "gid": 945
+    },
+    "scope_cart1": {
+      "id": 151,
+      "w": 48,
+      "h": 57,
+      "gid": 952
+    },
+    "lecture_seat_row1": {
+      "id": 152,
+      "w": 61,
+      "h": 32,
+      "gid": 953
+    },
+    "component_drawers1": {
+      "id": 154,
+      "w": 37,
+      "h": 41,
+      "gid": 955
+    },
+    "robot_arm1": {
+      "id": 155,
+      "w": 31,
+      "h": 41,
+      "gid": 956
+    },
+    "beanbag1": {
+      "id": 156,
+      "w": 44,
+      "h": 41,
+      "gid": 957
+    },
+    "stanchions1": {
+      "id": 157,
+      "w": 41,
+      "h": 35,
+      "gid": 958
+    },
+    "bankers_lamp1": {
+      "id": 159,
+      "w": 23,
+      "h": 25,
+      "gid": 960
+    },
+    "pi_cluster1": {
+      "id": 160,
+      "w": 27,
+      "h": 25,
+      "gid": 961
+    },
+    "journal_stack1": {
+      "id": 161,
+      "w": 26,
+      "h": 27,
+      "gid": 962
+    },
+    "soldering_iron1": {
+      "id": 162,
+      "w": 26,
+      "h": 26,
+      "gid": 963
+    },
+    "beanbag_orange1": {
+      "id": 163,
+      "w": 29,
+      "h": 27,
+      "gid": 964
+    },
+    "beanbag_teal1": {
+      "id": 164,
+      "w": 29,
+      "h": 27,
+      "gid": 965
+    },
+    "uni_sign_staff1": {
+      "id": 165,
+      "w": 64,
+      "h": 14,
+      "gid": 966
+    },
+    "uni_tv1": {
+      "id": 166,
+      "w": 40,
+      "h": 26,
+      "gid": 967
+    },
+    "uni_certificate1": {
+      "id": 167,
+      "w": 18,
+      "h": 14,
+      "gid": 968
+    },
+    "uni_portrait1": {
+      "id": 168,
+      "w": 22,
+      "h": 28,
+      "gid": 969
+    },
+    "uni_bunting1": {
+      "id": 170,
+      "w": 104,
+      "h": 10,
+      "gid": 971
+    },
+    "uni_bunting2": {
+      "id": 171,
+      "w": 64,
+      "h": 10,
+      "gid": 972
+    },
+    "smartscreen2": {
+      "id": 172,
+      "w": 48,
+      "h": 34,
+      "gid": 973
+    },
+    "uni_fountain1": {
+      "id": 173,
+      "w": 14,
+      "h": 22,
+      "gid": 974
+    },
+    "uni_radiator1": {
+      "id": 174,
+      "w": 26,
+      "h": 10,
+      "gid": 975
+    },
+    "uni_firedoor_sign1": {
+      "id": 175,
+      "w": 11,
+      "h": 11,
+      "gid": 976
+    },
+    "uni_dartboard1": {
+      "id": 176,
+      "w": 16,
+      "h": 16,
+      "gid": 977
+    },
+    "uni_sign_returns1": {
+      "id": 177,
+      "w": 32,
+      "h": 11,
+      "gid": 978
+    },
+    "uni_sign_study1": {
+      "id": 178,
+      "w": 44,
+      "h": 11,
+      "gid": 979
+    },
+    "uni_banner_soc1": {
+      "id": 179,
+      "w": 22,
+      "h": 58,
+      "gid": 980
+    },
+    "study_carrels1": {
+      "id": 181,
+      "w": 57,
+      "h": 58,
+      "gid": 982
+    },
+    "periodicals_rack1": {
+      "id": 182,
+      "w": 48,
+      "h": 52,
+      "gid": 983
+    },
+    "balloons1": {
+      "id": 183,
+      "w": 32,
+      "h": 59,
+      "gid": 984
+    },
+    "freshers_stall2": {
+      "id": 184,
+      "w": 62,
+      "h": 47,
+      "gid": 985
+    },
+    "display_case3": {
+      "id": 185,
+      "w": 56,
+      "h": 45,
+      "gid": 986
+    },
+    "plan_chest2": {
+      "id": 186,
+      "w": 52,
+      "h": 46,
+      "gid": 987
+    },
+    "printer_3d2": {
+      "id": 187,
+      "w": 38,
+      "h": 57,
+      "gid": 988
+    },
+    "foosball_table2": {
+      "id": 188,
+      "w": 48,
+      "h": 57,
+      "gid": 989
+    },
+    "laser_cutter2": {
+      "id": 189,
+      "w": 46,
+      "h": 60,
+      "gid": 990
+    },
+    "it_workbench2": {
+      "id": 190,
+      "w": 52,
+      "h": 60,
+      "gid": 991
+    },
+    "electronics_bench2": {
+      "id": 191,
+      "w": 42,
+      "h": 55,
+      "gid": 992
+    },
+    "cnc_mill2": {
+      "id": 192,
+      "w": 41,
+      "h": 57,
+      "gid": 993
+    },
+    "uni_sofa2": {
+      "id": 193,
+      "w": 62,
+      "h": 38,
+      "gid": 994
+    },
+    "uni_poster8": {
+      "id": 194,
+      "w": 16,
+      "h": 21,
+      "gid": 995
+    }
+  }
+}

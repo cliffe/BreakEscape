@@ -1,0 +1,13 @@
+{
+  "key": "1c2bfee65ab5bbeb75fa2494ed5ed989",
+  "npc": "briefing_cutscene",
+  "text": "Every Trial opens with something you decode. You'll do it in CyberChef.",
+  "voice": "Aoede",
+  "style": "Professional intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Brisk, dry, short sentences.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

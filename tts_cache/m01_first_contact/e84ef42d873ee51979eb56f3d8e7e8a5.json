@@ -1,0 +1,13 @@
+{
+  "key": "e84ef42d873ee51979eb56f3d8e7e8a5",
+  "npc": "sarah_martinez",
+  "text": "Oh good! Kevin mentioned you'd be coming. He's been asking for a security review for months.",
+  "voice": "Kore",
+  "style": "Friendly, warm receptionist in her early thirties. Speak with a consistent Irish (Dublin) accent throughout — do not shift to any other accent. Use a warm, mid-range pitch. Speak naturally and helpfully.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "batch",
+  "generated": "2026-10-08",
+  "recorded_at": "2026-10-09T12:09:57Z"
+}

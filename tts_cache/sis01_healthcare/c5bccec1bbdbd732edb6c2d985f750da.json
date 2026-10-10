@@ -1,0 +1,13 @@
+{
+  "key": "c5bccec1bbdbd732edb6c2d985f750da",
+  "npc": "dr_sharma",
+  "text": "That's what most people say. Read its conditions: no dual-homed workstations, no exception rules. Both had been there for eighteen months.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}
