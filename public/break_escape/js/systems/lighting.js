@@ -962,20 +962,42 @@ export class LightingSystem {
     return pieces;
   }
 
-  /** Light from a brighter room falls through its open doors into a darker one. */
+  /**
+   * Light from a brighter room falls through an open door into a darker one.
+   * Opening a door removes the matching sprite in the room beyond, so only the room
+   * it was opened from keeps the open door: when that is the darker room, the
+   * brighter one's light is drawn back through it here.
+   */
   stampDoorSpill(state, stamp) {
     const room = window.rooms?.[state.roomId];
+    const myLevel = state.drawLevel ?? state.level;
     for (const door of room?.doorSprites || []) {
       const props = door.doorProperties;
       if (!props?.open) continue;
       const other = this.rooms.get(props.connectedRoom);
       const otherLevel = other ? (other.drawLevel ?? other.level) : 0;
-      const diff = (state.drawLevel ?? state.level) - otherLevel;
-      if (diff <= 0.05) continue;
       const push = { north: [0, -1], south: [0, 1], east: [1, 0], west: [-1, 0] }[props.direction] || [0, 0];
       const d = TILE_SIZE * 1.2;
-      stamp(door.x + push[0] * d, door.y + push[1] * d, TILE_SIZE * 2.2, state.panelColor, 0.55 * diff);
+      let diff = myLevel - otherLevel;
+      let source = state;
+      if (diff < -0.05 && other && !this.hasOpenDoorTo(props.connectedRoom, state.roomId)) {
+        diff = -diff;
+        source = other;
+        push[0] = -push[0];
+        push[1] = -push[1];
+      }
+      if (diff <= 0.05) continue;
+      stamp(door.x + push[0] * d, door.y + push[1] * d, TILE_SIZE * 2.2, source.panelColor, 0.55 * diff);
+      // A N/S doorway is two tiles tall through the back wall: light its frame and the
+      // wall either side up to the door's top, which the floor pool barely reaches.
+      if (push[0] === 0) stamp(door.x, door.y + 8, TILE_SIZE * 1.4, source.panelColor, 0.45 * diff);
     }
+  }
+
+  /** Whether a room still holds its own open door into another (it then spills through it itself). */
+  hasOpenDoorTo(roomId, toRoomId) {
+    return (window.rooms?.[roomId]?.doorSprites || [])
+      .some(d => d.doorProperties?.open && d.doorProperties.connectedRoom === toRoomId);
   }
 
   destroy() {
