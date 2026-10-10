@@ -132,3 +132,48 @@ I knew the answers, so I did not wander and cannot time a lost first-year. What 
 | 5 | note (setup, not a game bug) | A fresh keyless-server database has no sprite chosen for the demo player, so the game URL redirects to the character-select page and the harness reports `window.__test never appeared`. Submitting the configuration form fixes it. | first session start |
 
 Counts: 0 blockers, 0 majors, 4 minors, 1 setup note.
+
+## Trial VII key task
+
+Targeted check of the new manual task `find_trial_vii_key` ("Find the Trial VII key: the last entry in the ledger of the man who checks everything twice"), which sits between the Special Collections safe and the pigeonholes. Two fresh games (scenario data renders at creation): game 2 for run 1 and game 3 for run 2. Plumbing check on the objectives chain.
+
+- Logs: `tools/playtest/keyholder-wayfinding-key-session-game2.jsonl` (run 1), `tools/playtest/keyholder-wayfinding-key-session-game3.jsonl` (run 2).
+- Screenshots: `tools/playtest/keyholder-wayfinding-key-*.png`.
+- Shortcut used: the early Trials were driven by a script that reads each clue in-game and decodes it with Python (leaflet, cards, hex file, poster, slip), skipping Tom's laptop conversation and the optional exhibits. In run 1 the rest of the chain (key from the whiteboard, pigeonholes, lab PC private key, drop box) was also decoded this way. The earned/exercised distinction does not matter for this check.
+- Environment note: when I started this check, Postgres and the :3001 server were both down. I restarted the Postgres cluster (`pg_ctlcluster 16 main start`) and started the keyless server with `bin/rails server` and the same env vars, because `start-keyless-server.sh` fails with "bundler: command not found: rails" under these env settings. No repo files were changed.
+
+### Run 1, normal order (game 2): PASS
+
+| Step | Panel (Secrets and Keys aim) | Result |
+| --- | --- | --- |
+| Safe opened | ticks safe; shows "Talk to Dr Selvarajan (optional)" and "Find the Trial VII key: ..."; no pigeonholes task | PASS, and "Objective Updated: New Task: Find the Trial VII key" toast (`keyholder-wayfinding-key-run1-after-safe.png`) |
+| Reload (between safe and whiteboard) | same: safe ticked, key task open, pigeonholes not shown | PASS, key task survived the reload |
+| Read the ledger whiteboard in Seminar Room 2 | key task ticks, "Open the pigeonholes (Computing Corridor)" appears | PASS, "Task Complete" and "Objective Updated" toasts (`keyholder-wayfinding-key-run1-whiteboard.png`) |
+| Pigeonholes opened, then drop box opened | next task appeared each time; Secrets and Keys ticked once the drop box opened | PASS, chain carries on |
+
+Server record (`objectivesState`, game 2): `open_special_collections` completed 16:16:04, `find_trial_vii_key` completed 16:17:21, `open_pigeonholes` completed 16:18:25, `open_drop_box` completed 16:18:53, `ledger_read = true`. `verify-run.rb 2`: "progress recorded, 8 rooms beyond the first, 7 objects unlocked".
+
+### Run 2, whiteboard first (game 3): PASS
+
+| Step | Result |
+| --- | --- |
+| Read the whiteboard before opening the safe | No new task appeared early. Panel still showed library ticked, safe open, optional Selvarajan task. No page errors in the session log (`pageErrors` empty). |
+| Opened the safe | Key task completed by itself in the same moment: toasts "Task Complete: safe", "Objective Updated: New Task: Find the Trial VII key", "Task Complete: Find the Trial VII key", "Objective Updated: New Task: Open the pigeonholes (Computing Corridor)" (`keyholder-wayfinding-key-run2-after-safe.png`). The panel then showed the key task ticked and pigeonholes open. |
+| Re-read the whiteboard afterwards | No error, no duplicate toast, nothing changed (`keyholder-wayfinding-key-run2-reread.png`; the only toast still on screen is the older Keyholder one). |
+
+Server record (game 3): `open_special_collections` completed 16:22:10, `find_trial_vii_key` completed 16:22:10 (same second), `open_pigeonholes` active (unlocked, not yet opened, as expected because I stopped there), `ledger_read = true`.
+
+### Judgement on the task title
+
+It reads clearly as a riddle and is accurate: the ledger of the man who checks everything twice is Dr Selvarajan's whiteboard. In the panel it wraps to three lines (`keyholder-wayfinding-key-run2-panel.png`), the same height as the safe task, so the aim now takes about ten lines of a 300 px wide panel. It is readable but it is the longest title in the list. It is also the only chained Trial task without a room in brackets; the optional task directly above it ("Talk to Dr Selvarajan (Seminar Room 2, through his office)") supplies the room, which I think is enough. If the panel feels heavy, a shorter form such as "Find the Trial VII key (the ledger of the man who checks everything twice)" saves little; dropping "the last entry in" would save one line.
+
+Also seen: the Keyholder's Special Collections message is now "Fourteen left. The key to the next one is somewhere a careful man keeps his accounts.", which supports the new task well.
+
+### Findings
+
+| # | Severity | Finding |
+| --- | --- | --- |
+| K1 | minor | Task title wraps to three lines and has no room bracket (see above). |
+| K2 | note | Tool: `start-keyless-server.sh` fails here (`bundle exec rails` not found); `bin/rails server` works. |
+
+Counts: 0 blockers, 0 majors, 1 minor, 1 note.
