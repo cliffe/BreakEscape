@@ -1043,7 +1043,9 @@ def lower_face(bust, frame, mouth, eyes, below=4, feather=2, skin_tol=55):
     rows = (yy >= ey1) & (yy <= y1 + below)
     cols = (xx >= ex0 - 2) & (xx < ex1 + 2)
     mbox = (xx >= x0) & (xx < x1) & (yy >= y0) & (yy < y1 + 2)
-    region = rows & cols & ((skin(b) & skin(f)) | mbox)
+    # nothing outside the bust's own silhouette: a mouth box or blend edge reaching past the jaw
+    # would otherwise turn transparent background opaque (Graham Reeves, October 2026)
+    region = rows & cols & ((skin(b) & skin(f)) | mbox) & (b[..., 3] > 0) & (f[..., 3] > 0)
     keep = mbox & region
     for _ in range(60):  # grow from the mouth: no stray islands of cheek
         nxt = _dilate(keep) & region
@@ -1102,6 +1104,16 @@ def visemes_from_talk(run, bust, args):
     mouth = tuple(int(v) for v in args.mouth.split(","))
     eyes = tuple(int(v) for v in args.eyes.split(","))
     print(f"previews: {mouth_box_preview(run, bust, mouth)}, {mouth_box_preview(run, bust, eyes, 'eyes_box_preview.png')}")
+    if args.rebox:
+        # The runs never saw the boxes (they animate the whole bust); only the paste and the hints
+        # use them. So a wrong box is fixed by re-compositing, for free.
+        done = run.jobs("talkvisemes", "completed")
+        for j in done:
+            j["params"].update(mouth=list(mouth), eyes=list(eyes))
+        run.save()
+        print(f"{len(done)} runs now use mouth {mouth}, eyes {eyes}; contact sheets:\n  "
+              + "\n  ".join(map(str, talk_visemes_contact(run, mouth, eyes))))
+        return
     shapes = args.shapes.split(",") if args.shapes else list(TALK_VISEMES)
     unknown = [s for s in shapes if s not in TALK_VISEMES]
     if unknown:
@@ -1132,7 +1144,7 @@ def visemes_from_talk(run, bust, args):
                     params={"shape": shape, "mouth": list(mouth), "eyes": list(eyes)})
         print(f"submitted {vid}")
     collect(run, api, "talkvisemes")
-    print(f"contact sheet: {talk_visemes_contact(run, mouth, eyes)}\n"
+    print("contact sheets:\n  " + "\n  ".join(map(str, talk_visemes_contact(run, mouth, eyes))) + "\n"
           f"pick by eye, e.g.: pixellab_pipeline.py pick {run.name} visemes talk "
           f"--frames teeth=round_t01_f2,round=round_t02_f1,small_open=...,medium_open=...,wide_open=...")
 
@@ -1151,42 +1163,52 @@ def save_talk_viseme_frames(run, job, last):
 
 
 def talk_visemes_contact(run, mouth, eyes):
-    """One row per shape run; for each take its generated frames f1-f3 (f0 and the last are the
-    bust), the raw frame above its lower-face composite, hints underneath."""
+    """One contact sheet per shape run, visemes/talk_frames/contact_<shape>.png, small enough to
+    read without scaling: a row per take, and for each generated frame (f1-f3; f0 and f4 are the
+    model's copies of the bust) the raw face, its lower-face composite, and a 12x close-up of
+    the composite's mouth, with hints underneath. Returns the list of sheets."""
     bust = Image.open(run.dir / "bust" / f"{run.picked('bust')}.png").convert("RGBA")
     jobs = [j for j in run.jobs("talkvisemes", "completed") if j.get("outputs")]
     if not jobs:
-        return None
+        return []
     x0, y0, x1, y1 = mouth
-    box = (max(0, x0 - 12), max(0, eyes[1] - 2), min(bust.width, x1 + 12), min(bust.height, y1 + 9))
-    z = 6
-    cw, ch = (box[2] - box[0]) * z, (box[3] - box[1]) * z
-    shapes = [s for s in TALK_VISEMES if any(j["params"]["shape"] == s for j in jobs)]
-    takes = {s: [j for j in jobs if j["params"]["shape"] == s] for s in shapes}
-    per_row = max(len(t) for t in takes.values())
-    tile_w, tile_h, text_h = cw + 6, 2 * ch + 44, 0
-    sheet = Image.new("RGB", (120 + per_row * (3 * tile_w + 14), len(shapes) * (tile_h + 8)), (24, 24, 32))
-    d = ImageDraw.Draw(sheet)
-    for si, s in enumerate(shapes):
-        y = si * (tile_h + 8)
-        d.text((6, y + 6), f"{s} run" + ("\n\nraw (top)\n\nlower face\npasted\n(bottom)" if si == 0 else ""),
-               fill=(255, 255, 255))
-        for ti, j in enumerate(takes[s]):
+    face = (max(0, x0 - 12), max(0, eyes[1] - 2), min(bust.width, x1 + 12), min(bust.height, y1 + 9))
+    lips = (max(0, x0 - 4), max(0, y0 - 3), min(bust.width, x1 + 4), min(bust.height, y1 + 5))
+    fz, lz = 4, 12
+    fw, fh = (face[2] - face[0]) * fz, (face[3] - face[1]) * fz
+    lw, lh = (lips[2] - lips[0]) * lz, (lips[3] - lips[1]) * lz
+    cell_w = max(2 * fw + 4, lw) + 16
+    cell_h = fh + 4 + lh + 40
+
+    def tile(im, box, z):
+        c = im.crop(box)
+        bg = Image.new("RGBA", c.size, (24, 24, 32, 255))
+        bg.alpha_composite(c)
+        return bg.resize((c.width * z, c.height * z), Image.NEAREST).convert("RGB")
+    sheets = []
+    for shape in TALK_VISEMES:
+        takes = [j for j in jobs if j["params"]["shape"] == shape]
+        if not takes:
+            continue
+        sheet = Image.new("RGB", (3 * cell_w + 8, 22 + len(takes) * cell_h), (24, 24, 32))
+        d = ImageDraw.Draw(sheet)
+        d.text((6, 4), f"{shape} runs: raw | lower face pasted, then the pasted mouth at {lz}x. "
+                        "Judge the pasted mouth.", fill=(255, 255, 255))
+        for ti, j in enumerate(takes):
             for k, rel in enumerate(j["outputs"][1:4]):
                 f = Image.open(run.dir / rel).convert("RGBA")
                 comp, _ = lower_face(bust, f, mouth, eyes)
-                x = 120 + ti * (3 * tile_w + 14) + k * tile_w
-                for r, im in enumerate((f, comp)):
-                    c = im.crop(box)
-                    bg = Image.new("RGBA", c.size, (24, 24, 32, 255))
-                    bg.alpha_composite(c)
-                    sheet.paste(bg.resize((cw, ch), Image.NEAREST).convert("RGB"), (x, y + r * ch))
+                x, y = 4 + k * cell_w, 22 + ti * cell_h
+                sheet.paste(tile(f, face, fz), (x, y))
+                sheet.paste(tile(comp, face, fz), (x + fw + 4, y))
+                sheet.paste(tile(comp, lips, lz), (x, y + fh + 4))
                 hints = talk_frame_hints(bust, f, mouth, eyes)
-                d.multiline_text((x, y + 2 * ch + 2), f"{Path(rel).stem}\n" + ("\n".join(hints) or "ok"),
+                d.multiline_text((x, y + fh + lh + 6), f"{Path(rel).stem}\n" + ("; ".join(hints) or "ok"),
                                  fill=(230, 120, 120) if hints else (200, 230, 200), spacing=1)
-    path = run.dir / TALK_FRAMES_DIR / "contact.png"
-    sheet.save(path)
-    return path
+        path = run.dir / TALK_FRAMES_DIR / f"contact_{shape}.png"
+        sheet.save(path)
+        sheets.append(path)
+    return sheets
 
 
 def write_talk_viseme_sheet(run, assets, backup, frames_spec, blink=None, omit=None):
@@ -1212,7 +1234,19 @@ def write_talk_viseme_sheet(run, assets, backup, frames_spec, blink=None, omit=N
         mouth, eyes = tuple(j["params"]["mouth"]), tuple(j["params"]["eyes"])
         cells[shape], sh = lower_face(bust, Image.open(path).convert("RGBA"), mouth, eyes)
         sources[shape] = frame + (f" (head {sh[0]:+d},{sh[1]:+d}px)" if sh != (0, 0) else "")
+        a, bb = np.asarray(cells[shape]).astype(np.int32), np.asarray(bust).astype(np.int32)
+        alpha = int((a[..., 3] != bb[..., 3]).sum())
+        if alpha:
+            sys.exit(f"{shape}={frame}: {alpha} pixels changed transparency; the paste must stay inside "
+                     "the bust's silhouette (a bug in lower_face)")
+        print(f"  {shape:12s} {frame:22s} {int((np.abs(a - bb).sum(2) > 0).sum()):4d} px changed"
+              + (f", head {sh[0]:+d},{sh[1]:+d}px" if sh != (0, 0) else ""))
     installed = assets / f"{run.name}_visemes.png"
+    # The game's own sheet, even when --assets-dir is a scratch folder: a trial pick still keeps
+    # the real blink and is previewed against the real sheet, not an earlier trial.
+    live, live_meta = CHARACTERS_DIR / f"{run.name}_visemes.png", CHARACTERS_DIR / f"{run.name}_visemes.json"
+    live_order = json.loads(live_meta.read_text()).get("visemes") if live.exists() and live_meta.exists() else None
+    old = Image.open(live).convert("RGBA") if live_order else None
     blink_im = None
     if blink != "none":
         if blink and blink != "installed":
@@ -1220,13 +1254,12 @@ def write_talk_viseme_sheet(run, assets, backup, frames_spec, blink=None, omit=N
             if not p.exists():
                 sys.exit(f"--blink {blink}: no {p}")
             blink_im, sources["blink"] = Image.open(p).convert("RGBA"), f"inpaint {blink}"
-        elif installed.exists() and (assets / f"{run.name}_visemes.json").exists():
-            meta = json.loads((assets / f"{run.name}_visemes.json").read_text())
-            if "blink" in meta.get("visemes", []):
-                i = meta["visemes"].index("blink")
-                blink_im = Image.open(installed).convert("RGBA").crop((i * bust.width, 0, (i + 1) * bust.width, bust.height))
-                sources["blink"] = "kept from the previous sheet"
+        elif old is not None and "blink" in live_order:
+            i = live_order.index("blink")
+            blink_im = old.crop((i * bust.width, 0, (i + 1) * bust.width, bust.height))
+            sources["blink"] = "kept from the game's previous sheet"
         if blink_im is None and blink != "installed":
+            # newest inpaint run that made a blink (a re-roll of other shapes may have none)
             for j in reversed(run.jobs("visemes", "completed")):
                 p = run.dir / "visemes" / j["variant"] / "blink.png"
                 if p.exists():
@@ -1234,11 +1267,10 @@ def write_talk_viseme_sheet(run, assets, backup, frames_spec, blink=None, omit=N
                     break
         if blink_im is not None:
             cells["blink"] = blink_im
+        print(f"  blink        {sources.get('blink', 'none found')}")
     order = ["rest"] + [s for s in MOUTH_SHAPES if s in cells and s not in (omit or "").split(",")]
     size = bust.width
-    old = Image.open(installed).convert("RGBA") if installed.exists() else None
-    old_meta = assets / f"{run.name}_visemes.json"
-    old_order = json.loads(old_meta.read_text()).get("visemes") if old and old_meta.exists() else None
+    old_order = live_order
     sheet = Image.new("RGBA", (size * len(order), size), (0, 0, 0, 0))
     for i, name in enumerate(order):
         sheet.paste(cells[name], (i * size, 0))
@@ -2023,7 +2055,7 @@ def cmd_pick(args):
     if stage == "visemes" and vid == "talk":
         if not args.frames:
             sys.exit("pick ... visemes talk needs --frames shape=frame,..., e.g. "
-                     "teeth=round_t01_f2,wide_open=teeth_t02_f2 (names from visemes/talk_frames/contact.png)")
+                     "teeth=round_t01_f2,wide_open=teeth_t02_f2 (names from visemes/talk_frames/contact_<shape>.png)")
         job = {}
     if job is None:
         sys.exit(f"{vid} is not a completed {stage} variant. Completed: "
@@ -2034,8 +2066,9 @@ def cmd_pick(args):
     def backup(dest):
         """Never silently replace a game asset: keep the old one in the work dir."""
         if dest.exists():
-            keep = run.dir / "replaced" / f"{datetime.now():%Y%m%d-%H%M%S}-{dest.name}"
-            keep.parent.mkdir(exist_ok=True)
+            trial = assets.resolve() != CHARACTERS_DIR.resolve()  # keep trial sheets apart from real backups
+            keep = run.dir / "replaced" / ("trial" if trial else "") / f"{datetime.now():%Y%m%d-%H%M%S}-{dest.name}"
+            keep.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy(dest, keep)
             print(f"existing {dest.name} backed up to {keep}")
         return dest
@@ -2087,7 +2120,10 @@ def cmd_pick(args):
 
     elif stage == "visemes" and vid == "talk":
         write_talk_viseme_sheet(run, assets, backup, args.frames, args.blink, args.omit)
-        run.state["picks"]["visemes"] = f"talk {args.frames}" + (f" blink {args.blink}" if args.blink else "")
+        if assets.resolve() == CHARACTERS_DIR.resolve():  # a scratch --assets-dir is only a trial
+            run.state["picks"]["visemes"] = f"talk {args.frames}" + (f" blink {args.blink}" if args.blink else "")
+        else:
+            print("trial pick (--assets-dir is not the game's folder): state.json picks left unchanged")
 
     elif stage == "visemes":
         write_viseme_sheet(run, job, assets, backup, args.face, args.swap, args.omit)
@@ -2145,7 +2181,8 @@ def cmd_status(args):
 def cmd_balance(args):
     b = PixelLab().get("/balance")
     sub, cred = b.get("subscription") or {}, b.get("credits") or {}
-    print(f"generations: {sub.get('generations')}/{sub.get('total')} ({sub.get('plan')}), credits: ${cred.get('usd')}")
+    print(f"generations remaining: {sub.get('generations')} of {sub.get('total')} this period "
+          f"({sub.get('plan')}), credits: ${cred.get('usd')}")
 
 
 def dry_run(endpoint, body, n=1, note=None):
@@ -2170,7 +2207,10 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--workdir", help=f"parent of per-character work dirs (default {DEFAULT_WORKDIR})")
     ap.add_argument("--assets-dir", default=str(CHARACTERS_DIR),
-                    help="where `pick` installs <name>_talk_init.png and <name>_talk.png (default the game's characters dir)")
+                    help="where `pick` installs <name>_talk_init.png, <name>_talk.png and <name>_visemes.png "
+                         "(default the game's characters dir). A scratch folder gives a trial pick: state.json's "
+                         "picks are then left alone, and talk visemes still take the blink from, and preview "
+                         "against, the game's own sheet")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     def paid(p, variants):
@@ -2225,9 +2265,12 @@ def main():
     p.add_argument("--from-talk", action="store_true",
                    help="make the mouth shapes from short talk animations instead (1 generation per run, "
                         "bust as first and last frame); needs --mouth and --eyes. Then pick frames by eye "
-                        "from visemes/talk_frames/contact.png with `pick <name> visemes talk --frames ...`")
+                        "from visemes/talk_frames/contact_<shape>.png with `pick <name> visemes talk --frames ...`")
     p.add_argument("--takes", type=int, default=3, help="--from-talk: runs per shape (default 3)")
-    p.add_argument("--seed", type=int)
+    p.add_argument("--rebox", action="store_true",
+                   help="--from-talk: no new runs; store these --mouth/--eyes on the existing runs and rebuild "
+                        "the contact sheets (free: the boxes only steer the paste, not the generation)")
+    p.add_argument("--seed", type=int, help="fixed seed (default: random; --from-talk sends 0, the API's 'random')")
     p.add_argument("--dry-run", action="store_true")
     p.set_defaults(func=cmd_visemes)
 
@@ -2298,7 +2341,8 @@ def main():
     p.add_argument("--swap", help="visemes only: take single shapes from other variants, e.g. round=i02,teeth=i03")
     p.add_argument("--omit", help="visemes only: leave shapes out, e.g. closed (the game then uses rest)")
     p.add_argument("--blink", help="visemes talk only: where the blink frame comes from: an inpaint variant "
-                   "iNN, 'installed' (the current sheet's), or 'none' (default: installed, else newest inpaint)")
+                   "iNN, 'installed' (the game's current sheet, even with --assets-dir), or 'none'. Default: the "
+                   "game's sheet if it has a blink, else the newest inpaint run that made one, else none")
     p.set_defaults(func=cmd_pick)
 
     for name, fn, hlp in [("status", cmd_status, "show jobs, picks and the next stage"),
