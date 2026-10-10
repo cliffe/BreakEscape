@@ -9,5 +9,5 @@
     "wide_open",
     "blink"
   ],
-  "source": "pixellab /inpaint-image-pro-flash, mouth mask [58, 25, 71, 32]; teeth:i01, round:i01, small_open:i01, medium_open:i01 (chin -1px, jaw mask +5 rows), wide_open:i01 (chin -2px, jaw mask +5 rows), blink:i02"
+  "source": "pixellab /animate-with-text-v3 talk frames (4 frames, bust as first and last), lower face pasted on the bust: teeth:teeth_t03_f2 (head +0,-2px), round:round_t01_f3 (head +0,-1px), small_open:small_open_t02_f1, medium_open:small_open_t03_f2 (head -1,-1px), wide_open:wide_open_t03_f2 (head +0,-1px), blink:kept from the game's previous sheet"
 }
