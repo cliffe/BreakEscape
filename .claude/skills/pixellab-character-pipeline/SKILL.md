@@ -11,7 +11,7 @@ One script, [tools/pixellab_pipeline.py](../../../tools/pixellab_pipeline.py), d
 | ----------------- | ----------- | ---------------------------------------------------------------- | ---------------------------------------------------------- |
 | 1 bust            | `bust`      | `/create-image-pixflux` (init image = Gemini art, same prompt)   | `<name>_talk_init.png` 128×128                             |
 | 2a talk           | `talk`      | `/animate-with-text-v3` (bust as first *and* last frame)         | `<name>_talk.png` 2×2 sheet                                |
-| 2b lip sync       | `visemes`   | `/inpaint-image-pro-flash` on the mouth and eyes                 | `<name>_visemes.png` + `.json`                             |
+| 2b lip sync       | `visemes --from-talk` (`visemes` = inpaint) | `/animate-with-text-v3`, 4 frames per shape; inpaint for the blink | `<name>_visemes.png` + `.json`                             |
 | 3 walk character  | `character` | `/create-character-pro` (`create_from_concept`, style character) | a PixelLab character id                                    |
 | 4 animations      | `animate`   | `/characters/animations` (template mode)                         | the standard 6 × 8 directions on that character            |
 | 5 review / repair | `qa`, `fix` | `/edit-images-v2` only for `fix --use ai`                        | contact sheets; committed frame overrides                  |
@@ -66,9 +66,41 @@ python3 tools/pixellab_pipeline.py pick <name> talk t01 --frames 2,4,5     # or 
 
 The engine supports an NPC field `"spriteVisemes": "assets/characters/<key>_visemes.png"`, with `spriteTalk` kept as the fallback. While TTS plays, the TTS manager decodes the line's audio and fits a mouth shape to each stretch of the loudness curve (open vowels on loud parts, lips and f/v/s in the dips, `rest` in silences), so the mouth follows the voice in real time with no API calls. The portrait blinks while the mouth rests. Details: docs/SPRITE_SYSTEM.md and `js/minigames/person-chat/lip-sync.js`.
 
-Each shape is one `/inpaint-image-pro-flash` call on the picked bust, masked to the mouth (prompts in `MOUTH_SHAPES`, matched to the letter classes in lip-sync.js). Every pixel outside the mask is kept, so the nose, jaw and the mouth's off-centre position on a three-quarter head survive. PixelLab's `/vocal-animation` was tried first and removed from the tool in September 2026: it assumes a face looking straight at the camera, and on our busts it lost the nose and pulled the mouth up and to the centre (Bernie's old sheets are in `tmp/pixellab/bernie_nwosu/replaced/`).
+There are two ways to make the mouth shapes. **Use talk frames** (October 2026). Use inpainting only for the blink, and as a fallback.
 
-### Steps
+- **Talk frames** (`visemes --from-talk`). One short `/animate-with-text-v3` run per shape: 4 frames, the bust as first *and* last frame, 1 generation each. The talk model redraws the whole face, so its mouths come with the jaw, chin and lip shading moving together, which no inpaint take ever had. But it also shimmers every pixel, often bobs the head, sometimes blinks, and in about a third of frames doesn't move the mouth at all. So frames are chosen **by eye**, and only each frame's lower face (eye line to chin, ear to ear, skin and mouth only) is pasted onto the bust after aligning on the eyes, blended over a 2px edge. Hair, collar and background always stay the bust's. Expect 50–180 changed pixels per shape. On Agent HaX and Bernie it looked better than every inpaint sheet; the user still preferred a hand-edited HaX sheet slightly, so HaX keeps that (`female_spy_visemes.png`; the automatic one is `female_spy_visemes_test.png`).
+- **Inpaint** (`visemes` without `--from-talk`). One `/inpaint-image-pro-flash` call per shape on the mouth (prompts in `MOUTH_SHAPES`), about 6 generations each. The shapes are reasonable, but the mouth looks drawn on and the dropped chin leaves a step in the jaw line at the mask's corners. Still the way to make the **blink**. PixelLab's `/vocal-animation` was tried first and removed in September 2026: it assumes a face looking straight at the camera, and on our three-quarter busts it lost the nose and pulled the mouth to the centre.
+
+### Steps (talk frames)
+
+1. **Bust.** A character with no pipeline run yet: `init <name> --bust public/break_escape/assets/characters/<name>_talk.png` (the top-left cell of a 2×2 sheet is used as the bust).
+2. **Find the boxes by eye** (see the inpaint step 2 below for how). `--mouth` covers the lips, top edge just under the nostrils; `--eyes` covers both eyes and lids. The eye box matters more here than for inpainting: the frame is aligned on it, and its bottom edge is the top of the pasted lower face. Reuse the boxes from an earlier inpaint run if there is one (`status <name>`, or `state.json` → the `visemes` jobs' `params`).
+3. **Dry run (free).** `visemes <name> --from-talk --mouth … --eyes … --dry-run` prints the request and writes `visemes/mouth_box_preview.png` and `visemes/eyes_box_preview.png`.
+4. **Generate** (15 generations for 3 takes of 5 shapes; say so first): `visemes <name> --from-talk --mouth … --eyes …` → runs `teeth_t01` … `wide_open_t03` in `visemes/talk_frames/`. More takes later with `--shapes round --takes 3`: numbering continues, nothing is overwritten.
+5. **Choose by eye** from `visemes/talk_frames/contact.png`: one row per shape run, each take's three generated frames, the raw frame above its lower-face composite. Judge the **composite**. Look for: natural, conversational, not exaggerated; the right shape for the sound (table below); the upper lip and nose unchanged; teeth only where the shape wants them. Red notes under a frame are hints only (mouth didn't move, head moved against the collar, upper lip or nose redrawn). On HaX and Bernie they agreed with a human pick only about a third of the time. **A blink doesn't matter**, since the eyes are never pasted. **Any frame can fill any shape**: Bernie's best `teeth` came from a `round` run and both characters' best `wide_open` from a `teeth` run. If no frame fits a shape, run 2–3 more takes of it.
+6. **Pick**: `pick <name> visemes talk --frames teeth=round_t03_f3,round=round_t02_f2,small_open=…,medium_open=…,wide_open=…`. This pastes each frame's lower face onto the bust and writes `<name>_visemes.png` and `.json` (which frame each shape came from, and any head shift), backing up whatever it replaces. The blink is kept from the installed sheet; `--blink iNN` takes it from an inpaint run, and `--blink none` leaves it out. A new character with no blink needs `visemes <name> --shapes blink --eyes …` (inpaint, ~6 generations). Then read `visemes/talk_frames/preview.gif`, which plays a made-up line through the new sheet beside the replaced one, and show it to the user.
+7. **Wire it and check in game**: inpaint steps 8 and 9 below.
+
+| Shape         | Sounds (lip-sync.js)      | What it should look like                                                  |
+| ------------- | ------------------------- | ------------------------------------------------------------------------- |
+| `teeth`       | f v s z, soft c           | labiodental: a thin row of upper teeth on or just above the lower lip, jaw closed |
+| `round`       | o u w                     | lips pushed forward into a small rounded opening, narrower than rest, no teeth |
+| `small_open`  | t d n l k, i … (the rest) | lips just parted, a thin dark gap                                         |
+| `medium_open` | e                         | a small dark opening, the edge of the upper teeth, corners spread a little |
+| `wide_open`   | a                         | the chin drops, about twice the height of the closed lips, upper teeth visible; relaxed, not a shout |
+
+`closed` (m b p) isn't made: the game uses `rest`.
+
+**Tried for HaX in October 2026 and dropped**, so not worth retrying:
+- **An 8-frame talk run** with the old house prompt, then every pixel that changed near the mouth pasted in. The masks came out ragged, the lips moved oddly, and the collar flickered.
+- **Inpainting with a bigger lower-face mask.** The mouths were still drawn on, with a gap-toothed black bar for `wide_open`.
+- **Moving the chin down with a smooth warp before inpainting.** It widened the jaw and moved the collar. Dropping only the chin tip kept the jaw line clean, but a small oval mask then gave mostly dark holes.
+- **`drift_threshold: 0`**, the API's colour de-flicker. Even the copied first frame still differed from the bust in about 1,000 pixels.
+- **Very detailed prompts for the open shapes.** They made the model act the movement out with the whole face, blinking and raising the upper lip. A `teeth` prompt written for 's' gave a black square.
+
+### Steps (inpaint: the blink, or a fallback)
+
+Each shape is one `/inpaint-image-pro-flash` call on the picked bust, masked to the mouth (prompts in `MOUTH_SHAPES`, matched to the letter classes in lip-sync.js). Every pixel outside the mask is kept, so the nose, jaw and the mouth's off-centre position on a three-quarter head survive.
 
 1. **Bust.** A character with no pipeline run yet: `init <name> --bust public/break_escape/assets/characters/<name>_talk.png` (the top-left cell of a 2×2 sheet is used as the bust).
 2. **Find the boxes by eye.** The mouth box (`--mouth`) covers the lips with its top edge just under the nostrils. The eye box (`--eyes`) covers both eyes and lids, with the eyebrows outside. Without `--mouth` the tool guesses from red/pink lip pixels, but dark or skin-toned lips aren't found (six of the eight m02 busts), and in the September 2026 batch of 17 every heuristic (lip colour, eye whites, darkest row) was right only about half the time. Render the head at 9–12× with lines every 5px and labels (1px lines drown the pixels), read the coordinates, then draw the boxes on the bust with no grid and look again. 2px too low and the model redraws the chin instead of the mouth (it happened twice); 2px to one side and one corner of the mouth is left unchanged.
@@ -80,7 +112,7 @@ Each shape is one `/inpaint-image-pro-flash` call on the picked bust, masked to 
 8. **Wire it** (only if the user asked for scenario edits): add `"spriteVisemes"` after `spriteTalk` on every NPC using that portrait, in every scenario (`grep -rl '<name>_talk.png' scenarios/`). Leave player blocks alone, since the player's portrait doesn't animate. Run the validator (validate-scenario skill) and restore any unrelated files it rewrites, such as a regenerated `dungeon_graph`.
 9. **Check in game** (playtest-scenario, subagent on `model: "sonnet"`). Open a conversation with a voiced NPC and confirm the sheet loads (`window.MinigameFramework.currentMinigame.ui.portraitRenderer.visemeSheet`), `….portraitRenderer.ttsManager.lipSync.timeline` is set while a line plays, the mouth is at `rest` in pauses, and the blink appears. Tell the agent not to write files in the repo root and not to re-save assets.
 
-### Notes
+### Notes (inpaint)
 
 - **The jaw.** An open mouth needs the chin to drop, and the model won't move a jaw however it is asked: given a bigger mask, it stretched the mouth sideways off the face. So for `medium_open` and `wide_open` the tool moves everything below the lip line down first (1px and 2px at 128px; `--drop` scales it, 0 turns it off), then sends a larger jaw mask (3px wider each side, `--jaw 5` rows past the mouth box, not clipped to the silhouette) so the model draws the open mouth into the gap and blends the seams. Pro Flash paints transparent areas pure white; those are keyed back to transparent.
 - **Collar and hair below the chin stay put.** On a bust with a short neck, the chin drop used to carry the collar tips down 1–2px and let the model re-shade the hair beside the jaw (Agent HaX, September 2026). For the open shapes, every jaw-box pixel below the lowest row the chin can reach (mouth box bottom + drop) that isn't skin-coloured in the bust is now restored from the bust (`keep_clothing`).
@@ -164,6 +196,7 @@ After changing a scenario, run the validator (validate-scenario skill). If the u
 | -------------------------------- | ----------------------------- |
 | bust (pixflux)                   | 1 per variant                 |
 | talk (animate v3, 8 frames)      | 2 per variant                 |
+| visemes --from-talk              | 1 per take (15 for 3 × 5)     |
 | visemes (inpaint)                | 6 per shape (~36 for all six) |
 | character (Pro)                  | 20–40 per variant             |
 | animate (template)               | 1 per direction               |

@@ -21,6 +21,7 @@ Everything for one character lives in a work directory (default tmp/pixellab/<na
   bust/b01.png ...    stage 1 candidates, plus bust/contact.png
   talk/t01/f00.png .. stage 2 candidates (one folder per variant), plus talk/contact.png
   visemes/i01/*.png   optional stage 2 alternative: named mouth shapes, inpainted on the mouth
+  visemes/talk_frames lip-sync mouth shapes from short talk runs (visemes --from-talk), plus contact.png
   character/c01/*.png stage 3 candidates (8 rotations each), plus character/contact.png
 
 Typical run (see .claude/skills/pixellab-character-pipeline/SKILL.md for the full workflow):
@@ -58,6 +59,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+import numpy as np
 import requests
 from PIL import Image, ImageChops, ImageDraw
 
@@ -625,6 +627,8 @@ def cmd_visemes(args):
     """
     run = Run(args.name, args.workdir).require()
     bust = Image.open(run.dir / "bust" / f"{run.picked('bust')}.png").convert("RGBA")
+    if args.from_talk:
+        return visemes_from_talk(run, bust, args)
     return visemes_inpaint(run, bust, args)
 
 
@@ -948,6 +952,331 @@ def save_inpaint_visemes(run, api, job):
     if same:
         print(f"  WARNING {job['variant']}: {', '.join(same)} barely differ from rest; re-roll with "
               f"--shapes {','.join(same)}")
+
+
+# ------------------------------------------- stage 2b alternative: visemes from talk frames
+#
+# One short /animate-with-text-v3 run per shape (4 frames, the bust as first AND last frame,
+# 1 generation each). The talk model redraws the whole face, so its mouths come with natural
+# jaw, chin and lip shading, which inpainting never gave; but it also shimmers every pixel
+# and often bobs the head. So a frame is chosen by eye from a contact sheet, aligned on the
+# eyes, and only its lower face (eye line to chin) is pasted onto the bust, blended over a
+# 2px edge. Hair, collar and background always stay the bust's.
+
+TALK_LOCK = ("Static camera, static head: the head does not move, tilt or bob. The eyes stay open and "
+             "do not blink; eyebrows, nose, hair, collar and shoulders stay pixel-for-pixel identical "
+             "in every frame. ")
+TALK_NATURAL = " Subtle, natural conversational speech, not exaggerated, then the mouth returns to rest."
+# Prompts by viseme class (the letter classes in lip-sync.js), in phonetic terms. Any frame can
+# fill any shape at pick time: the 'round' run often has the best 'teeth' frame, and a 'teeth'
+# run the best 'wide_open'.
+TALK_VISEMES = {
+    # labiodental (f, v); also stands in for the sibilants s, z
+    "teeth": "Only the lips move. The character says the 'f' in 'five': the lower lip tucks up lightly "
+             "under the upper front teeth, so a short row of upper teeth shows above the lower lip; "
+             "the jaw stays closed and the upper lip stays where it is.",
+    # rounded back vowel / labiovelar approximant (o, u, w)
+    "round": "Only the lips move. The character says 'oo' as in 'who' and 'w' as in 'we': the lips "
+             "push forward and round into a small 'o', narrower than the resting mouth, with a small "
+             "dark opening and no teeth showing; the jaw barely moves.",
+    # alveolar/velar consonants and close vowels (t d n l k i ...)
+    "small_open": "Only the lower lip and jaw move; the upper lip stays where it is. The character says "
+                  "'n' and 't' as in 'it' and 'not': the jaw lowers very slightly and the lips part by "
+                  "a thin dark gap, teeth hidden or only just visible, mouth no wider than at rest.",
+    # open-mid front vowel (e)
+    "medium_open": "Only the lower lip and jaw move; the upper lip stays where it is. The character says "
+                   "'e' as in 'bed': the jaw lowers a little, the lips part into a small dark opening "
+                   "with the edge of the upper teeth visible, corners spread slightly.",
+    # open back vowel (a)
+    "wide_open": "Only the lower lip and jaw move; the upper lip stays where it is. The character says "
+                 "'ah' as in 'father': the jaw drops so the chin moves down, the mouth opens to about "
+                 "twice the height of the closed lips, upper teeth visible, tongue low and out of sight.",
+}
+TALK_FRAMES_DIR = "visemes/talk_frames"
+
+
+def _shift(a, dx, dy):
+    h, w = a.shape[:2]
+    o = np.zeros_like(a)
+    o[max(0, dy):h + min(0, dy), max(0, dx):w + min(0, dx)] = \
+        a[max(0, -dy):h + min(0, -dy), max(0, -dx):w + min(0, -dx)]
+    return o
+
+
+def _dilate(m, it=1):
+    for _ in range(it):
+        p = np.pad(m, 1)
+        m = np.zeros_like(m)
+        for dy in (-1, 0, 1):
+            for dx in (-1, 0, 1):
+                m |= p[1 + dy:p.shape[0] - 1 + dy, 1 + dx:p.shape[1] - 1 + dx]
+    return m
+
+
+def _align(frame, bust, box):
+    """The (dx, dy) within +-2px that best lines frame up with bust inside box."""
+    x0, y0, x1, y1 = box
+    reg = (slice(max(0, y0), y1), slice(max(0, x0), x1))
+    return min(((np.abs(_shift(frame, dx, dy) - bust)[reg][..., :3].sum(), dx, dy)
+                for dx in range(-2, 3) for dy in range(-2, 3)))[1:]
+
+
+def lower_face(bust, frame, mouth, eyes, below=4, feather=2, skin_tol=55):
+    """The bust with the lower face (eye line down to `below` rows under the mouth box, ear to
+    ear) taken from frame, aligned on the eyes first so a head that moved without tilting lines
+    up. Only skin (colours like the cheeks beside and above the mouth) and the mouth itself are
+    taken, joined to the mouth. Across a `feather`-px edge the two images are mixed and snapped
+    to a colour either already uses, so the seam adds no new colours and no hard line."""
+    b = np.asarray(bust.convert("RGBA")).astype(np.int32)
+    f = np.asarray(frame.convert("RGBA")).astype(np.int32)
+    h, w = b.shape[:2]
+    x0, y0, x1, y1 = mouth
+    ex0, ey0, ex1, ey1 = eyes
+    dx, dy = _align(f, b, eyes)
+    f = _shift(f, dx, dy)
+    smp = np.concatenate([b[y0 - 4:y0, x0:x1].reshape(-1, 4), b[y0:y1, max(0, x0 - 3):x0].reshape(-1, 4)])
+    smp = smp[smp[:, 3] > 0][:, :3]
+
+    def skin(a):
+        return (np.abs(a[..., None, :3] - smp[None, None]).sum(-1).min(-1) < skin_tol) & (a[..., 3] > 0)
+    yy, xx = np.mgrid[:h, :w]
+    rows = (yy >= ey1) & (yy <= y1 + below)
+    cols = (xx >= ex0 - 2) & (xx < ex1 + 2)
+    mbox = (xx >= x0) & (xx < x1) & (yy >= y0) & (yy < y1 + 2)
+    region = rows & cols & ((skin(b) & skin(f)) | mbox)
+    keep = mbox & region
+    for _ in range(60):  # grow from the mouth: no stray islands of cheek
+        nxt = _dilate(keep) & region
+        if (nxt == keep).all():
+            break
+        keep = nxt
+    core = keep & ~_dilate(~keep, feather)
+    band = keep & ~core
+    out = b.copy()
+    out[core] = f[core]
+    if band.any():
+        wt = np.zeros((h, w))
+        inner = core.copy()
+        for k in range(feather, 0, -1):
+            ring = band & _dilate(inner) & (wt == 0)
+            wt[ring] = k / (feather + 1)
+            inner |= ring
+        wt[band & (wt == 0)] = 1 / (feather + 1)
+        mix = b[..., :3] * (1 - wt[..., None]) + f[..., :3] * wt[..., None]
+        pal = np.unique(np.concatenate([b[_dilate(keep, 2)][:, :3], f[keep][:, :3]]), axis=0)
+        j = np.abs(mix[band][:, None, :] - pal[None]).sum(-1).argmin(1)
+        out[band, :3] = pal[j]
+        out[band, 3] = 255
+    return Image.fromarray(out.astype(np.uint8)), (dx, dy)
+
+
+def talk_frame_hints(bust, frame, mouth, eyes):
+    """Warnings to print under a frame on the contact sheet. Only hints: across HaX and Bernie
+    they matched a human pick about a third of the time, so frames are always chosen by eye.
+    Blinks don't matter (only the lower face is pasted)."""
+    b = np.asarray(bust.convert("RGBA")).astype(np.int32)
+    f = np.asarray(frame.convert("RGBA")).astype(np.int32)
+    x0, y0, x1, y1 = mouth
+    ex0, ey0, ex1, ey1 = eyes
+    eye_box = (ex0 - 2, ey0 - 1, ex1 + 2, ey1 + 1)
+    body_box = (max(0, x0 - 20), y1 + 8, min(b.shape[1], x1 + 20), min(b.shape[0], y1 + 32))
+    head, body = _align(f, b, eye_box), _align(f, b, body_box)
+    a = _shift(f, *head)
+    d = np.abs(a - b)[..., :3].sum(2)
+    out = []
+    if (d[y0:y1 + 2, x0:x1] > 60).sum() < 8:
+        out.append("mouth did not move")
+    if head != body:
+        out.append(f"head moved vs collar {head[0] - body[0]:+d},{head[1] - body[1]:+d}")
+    if d[y0 - 1:y0 + 1, x0:x1].mean() > 60:
+        out.append("upper lip moved")
+    if d[ey1:y0, x0:x1].mean() > 40:
+        out.append("nose redrawn")
+    return out
+
+
+def visemes_from_talk(run, bust, args):
+    if not (args.mouth and args.eyes):
+        sys.exit("--from-talk needs --mouth and --eyes (the eye box sets the alignment and the top of "
+                 "the pasted lower face); find them as for inpaint visemes and check the dry run previews")
+    mouth = tuple(int(v) for v in args.mouth.split(","))
+    eyes = tuple(int(v) for v in args.eyes.split(","))
+    print(f"previews: {mouth_box_preview(run, bust, mouth)}, {mouth_box_preview(run, bust, eyes, 'eyes_box_preview.png')}")
+    shapes = args.shapes.split(",") if args.shapes else list(TALK_VISEMES)
+    unknown = [s for s in shapes if s not in TALK_VISEMES]
+    if unknown:
+        sys.exit(f"unknown shape(s) {unknown}; --from-talk makes {list(TALK_VISEMES)}")
+    taken = {j["variant"] for j in run.jobs("talkvisemes")}
+    plan = []
+    for s in shapes:
+        n = 1
+        for _ in range(args.takes):
+            while f"{s}_t{n:02d}" in taken:
+                n += 1
+            plan.append((s, f"{s}_t{n:02d}"))
+            taken.add(plan[-1][1])
+
+    def body(shape):
+        return {"first_frame": b64_image(bust), "last_frame": b64_image(bust),
+                "action": TALK_LOCK + TALK_VISEMES[shape] + TALK_NATURAL,
+                "frame_count": 4, "no_background": True, "seed": args.seed or 0}
+    if args.dry_run:
+        return dry_run("/animate-with-text-v3", body(shapes[0]), n=len(plan),
+                       note=f"{len(plan)} runs ({args.takes} per shape), 1 generation each: "
+                            + ", ".join(v for _, v in plan))
+    api = PixelLab()
+    for shape, vid in plan:
+        resp = api.post("/animate-with-text-v3", body(shape))
+        run.add_job(stage="talkvisemes", variant=vid, endpoint="/animate-with-text-v3",
+                    job_id=resp["background_job_id"], usage=resp.get("usage"),
+                    params={"shape": shape, "mouth": list(mouth), "eyes": list(eyes)})
+        print(f"submitted {vid}")
+    collect(run, api, "talkvisemes")
+    print(f"contact sheet: {talk_visemes_contact(run, mouth, eyes)}\n"
+          f"pick by eye, e.g.: pixellab_pipeline.py pick {run.name} visemes talk "
+          f"--frames teeth=round_t01_f2,round=round_t02_f1,small_open=...,medium_open=...,wide_open=...")
+
+
+def save_talk_viseme_frames(run, job, last):
+    out = run.dir / TALK_FRAMES_DIR
+    out.mkdir(parents=True, exist_ok=True)
+    paths = []
+    for i, img in enumerate(find_images(last)):
+        p = out / f"{job['variant']}_f{i}.png"
+        decode_image(img).save(p)
+        paths.append(str(p.relative_to(run.dir)))
+    if not paths:
+        raise RuntimeError(f"job completed with no frames: {json.dumps(last)[:300]}")
+    job["outputs"] = paths
+
+
+def talk_visemes_contact(run, mouth, eyes):
+    """One row per shape run; for each take its generated frames f1-f3 (f0 and the last are the
+    bust), the raw frame above its lower-face composite, hints underneath."""
+    bust = Image.open(run.dir / "bust" / f"{run.picked('bust')}.png").convert("RGBA")
+    jobs = [j for j in run.jobs("talkvisemes", "completed") if j.get("outputs")]
+    if not jobs:
+        return None
+    x0, y0, x1, y1 = mouth
+    box = (max(0, x0 - 12), max(0, eyes[1] - 2), min(bust.width, x1 + 12), min(bust.height, y1 + 9))
+    z = 6
+    cw, ch = (box[2] - box[0]) * z, (box[3] - box[1]) * z
+    shapes = [s for s in TALK_VISEMES if any(j["params"]["shape"] == s for j in jobs)]
+    takes = {s: [j for j in jobs if j["params"]["shape"] == s] for s in shapes}
+    per_row = max(len(t) for t in takes.values())
+    tile_w, tile_h, text_h = cw + 6, 2 * ch + 44, 0
+    sheet = Image.new("RGB", (120 + per_row * (3 * tile_w + 14), len(shapes) * (tile_h + 8)), (24, 24, 32))
+    d = ImageDraw.Draw(sheet)
+    for si, s in enumerate(shapes):
+        y = si * (tile_h + 8)
+        d.text((6, y + 6), f"{s} run" + ("\n\nraw (top)\n\nlower face\npasted\n(bottom)" if si == 0 else ""),
+               fill=(255, 255, 255))
+        for ti, j in enumerate(takes[s]):
+            for k, rel in enumerate(j["outputs"][1:4]):
+                f = Image.open(run.dir / rel).convert("RGBA")
+                comp, _ = lower_face(bust, f, mouth, eyes)
+                x = 120 + ti * (3 * tile_w + 14) + k * tile_w
+                for r, im in enumerate((f, comp)):
+                    c = im.crop(box)
+                    bg = Image.new("RGBA", c.size, (24, 24, 32, 255))
+                    bg.alpha_composite(c)
+                    sheet.paste(bg.resize((cw, ch), Image.NEAREST).convert("RGB"), (x, y + r * ch))
+                hints = talk_frame_hints(bust, f, mouth, eyes)
+                d.multiline_text((x, y + 2 * ch + 2), f"{Path(rel).stem}\n" + ("\n".join(hints) or "ok"),
+                                 fill=(230, 120, 120) if hints else (200, 230, 200), spacing=1)
+    path = run.dir / TALK_FRAMES_DIR / "contact.png"
+    sheet.save(path)
+    return path
+
+
+def write_talk_viseme_sheet(run, assets, backup, frames_spec, blink=None, omit=None):
+    """Install <name>_visemes.png/.json from named talk frames: --frames shape=frame,...
+    Each frame's lower face goes onto the bust. The blink comes from --blink (an inpaint variant
+    iNN, or 'installed' for the current sheet's blink column); by default the installed sheet's,
+    else the newest inpaint variant that has one, else none."""
+    bust = Image.open(run.dir / "bust" / f"{run.picked('bust')}.png").convert("RGBA")
+    jobs = {j["variant"]: j for j in run.jobs("talkvisemes", "completed")}
+    if not jobs:
+        sys.exit(f"no talk viseme frames yet: run `visemes {run.name} --from-talk --mouth ... --eyes ...`")
+    picks = dict(spec.split("=", 1) for spec in frames_spec.split(","))
+    bad = [s for s in picks if s not in MOUTH_SHAPES]
+    if bad:
+        sys.exit(f"unknown shape(s) {bad}; choose from {[s for s in MOUTH_SHAPES if s != 'blink']}")
+    cells, sources = {"rest": bust}, {}
+    for shape, frame in picks.items():
+        vid, _, k = frame.rpartition("_f")
+        j = jobs.get(vid)
+        path = run.dir / TALK_FRAMES_DIR / f"{frame}.png"
+        if not j or not path.exists():
+            sys.exit(f"--frames {shape}={frame}: no such frame ({path})")
+        mouth, eyes = tuple(j["params"]["mouth"]), tuple(j["params"]["eyes"])
+        cells[shape], sh = lower_face(bust, Image.open(path).convert("RGBA"), mouth, eyes)
+        sources[shape] = frame + (f" (head {sh[0]:+d},{sh[1]:+d}px)" if sh != (0, 0) else "")
+    installed = assets / f"{run.name}_visemes.png"
+    blink_im = None
+    if blink != "none":
+        if blink and blink != "installed":
+            p = run.dir / "visemes" / blink / "blink.png"
+            if not p.exists():
+                sys.exit(f"--blink {blink}: no {p}")
+            blink_im, sources["blink"] = Image.open(p).convert("RGBA"), f"inpaint {blink}"
+        elif installed.exists() and (assets / f"{run.name}_visemes.json").exists():
+            meta = json.loads((assets / f"{run.name}_visemes.json").read_text())
+            if "blink" in meta.get("visemes", []):
+                i = meta["visemes"].index("blink")
+                blink_im = Image.open(installed).convert("RGBA").crop((i * bust.width, 0, (i + 1) * bust.width, bust.height))
+                sources["blink"] = "kept from the previous sheet"
+        if blink_im is None and blink != "installed":
+            for j in reversed(run.jobs("visemes", "completed")):
+                p = run.dir / "visemes" / j["variant"] / "blink.png"
+                if p.exists():
+                    blink_im, sources["blink"] = Image.open(p).convert("RGBA"), f"inpaint {j['variant']}"
+                    break
+        if blink_im is not None:
+            cells["blink"] = blink_im
+    order = ["rest"] + [s for s in MOUTH_SHAPES if s in cells and s not in (omit or "").split(",")]
+    size = bust.width
+    old = Image.open(installed).convert("RGBA") if installed.exists() else None
+    old_meta = assets / f"{run.name}_visemes.json"
+    old_order = json.loads(old_meta.read_text()).get("visemes") if old and old_meta.exists() else None
+    sheet = Image.new("RGBA", (size * len(order), size), (0, 0, 0, 0))
+    for i, name in enumerate(order):
+        sheet.paste(cells[name], (i * size, 0))
+    png = backup(installed)
+    sheet.save(png)
+    meta = backup(assets / f"{run.name}_visemes.json")
+    source = ("pixellab /animate-with-text-v3 talk frames (4 frames, bust as first and last), lower face "
+              "pasted on the bust: " + ", ".join(f"{s}:{sources[s]}" for s in order if s in sources))
+    meta.write_text(json.dumps({"frameSize": size, "visemes": order, "source": source}, indent=2) + "\n")
+    gif = talk_visemes_preview(run, sheet, order, old, old_order)
+    print(f"wrote {png} ({', '.join(order)}) and {meta.name}; preview {gif}")
+    if "blink" not in order:
+        print("no blink frame: add one with `visemes <name> --shapes blink --eyes ...` (inpaint, ~6 "
+              "generations), then pick again with --blink iNN")
+    print(f'scenario NPC: "spriteVisemes": "assets/characters/{run.name}_visemes.png"  (keep spriteTalk as the fallback)')
+    return picks
+
+
+def talk_visemes_preview(run, sheet, order, old=None, old_order=None):
+    """An animated GIF cycling a made-up line through the new sheet (beside the replaced one,
+    when there was one), for judging the shapes in motion."""
+    size = sheet.height
+    seq = ["rest", "small_open", "wide_open", "medium_open", "rest", "round", "teeth", "medium_open",
+           "small_open", "rest", "wide_open", "round", "rest"]
+    pairs = ([(old, old_order)] if old is not None and old_order else []) + [(sheet, order)]
+    frames = []
+    for name in seq:
+        row = Image.new("RGBA", (len(pairs) * (size * 3 + 4), size * 3), (30, 30, 40, 255))
+        for i, (s, names) in enumerate(pairs):
+            col = names.index(name) if name in names else 0  # a missing shape shows rest
+            cell = s.crop((col * size, 0, (col + 1) * size, size))
+            bg = Image.new("RGBA", cell.size, (30, 30, 40, 255))
+            bg.alpha_composite(cell)
+            row.paste(bg.resize((size * 3, size * 3), Image.NEAREST), (i * (size * 3 + 4), 0))
+        frames.append(row.convert("P", palette=Image.ADAPTIVE))
+    path = run.dir / TALK_FRAMES_DIR / "preview.gif"
+    frames[0].save(path, save_all=True, append_images=frames[1:], duration=140, loop=0)
+    return path
 
 
 def write_viseme_sheet(run, job, assets, backup, face=None, swaps=None, omit=None):
@@ -1651,6 +1980,8 @@ def collect(run, api, stage=None):
                 record_usage(job, usage)
                 if job["stage"] == "talk":
                     save_talk_frames(run, job, last)
+                elif job["stage"] == "talkvisemes":
+                    save_talk_viseme_frames(run, job, last)
                 elif job["stage"] == "character":
                     save_character(run, api, job)
             job["status"] = "completed"
@@ -1689,6 +2020,11 @@ def cmd_pick(args):
     run = Run(args.name, args.workdir).require()
     stage, vid = args.stage, args.variant
     job = next((j for j in run.jobs(stage, "completed") if j["variant"] == vid), None)
+    if stage == "visemes" and vid == "talk":
+        if not args.frames:
+            sys.exit("pick ... visemes talk needs --frames shape=frame,..., e.g. "
+                     "teeth=round_t01_f2,wide_open=teeth_t02_f2 (names from visemes/talk_frames/contact.png)")
+        job = {}
     if job is None:
         sys.exit(f"{vid} is not a completed {stage} variant. Completed: "
                  f"{[j['variant'] for j in run.jobs(stage, 'completed')]}")
@@ -1749,6 +2085,10 @@ def cmd_pick(args):
                   "invisible in game; otherwise re-pick other frames or pass a tighter --face box.")
         print(f"next: pixellab_pipeline.py character {run.name} --variants 1")
 
+    elif stage == "visemes" and vid == "talk":
+        write_talk_viseme_sheet(run, assets, backup, args.frames, args.blink, args.omit)
+        run.state["picks"]["visemes"] = f"talk {args.frames}" + (f" blink {args.blink}" if args.blink else "")
+
     elif stage == "visemes":
         write_viseme_sheet(run, job, assets, backup, args.face, args.swap, args.omit)
         run.state["picks"]["visemes"] = " ".join(filter(None, [vid, args.swap and f"swap {args.swap}",
@@ -1791,7 +2131,7 @@ def cmd_status(args):
     run = Run(args.name, args.workdir).require()
     s = run.state
     print(f"{run.name}  ({run.dir})\npicks: {json.dumps(s['picks'])}")
-    for stage in ("bust", "talk", "visemes", "character"):
+    for stage in ("bust", "talk", "visemes", "talkvisemes", "character"):
         js = run.jobs(stage)
         if js:
             print(f"  {stage}: " + ", ".join(f"{j['variant']}={j['status']}" for j in js))
@@ -1882,6 +2222,11 @@ def main():
                                     f"(default {','.join(DEFAULT_SHAPES)}, plus blink with --eyes)")
     p.add_argument("--subject", help="who is speaking, e.g. 'a woman in her fifties' "
                                      "(default 'the same character')")
+    p.add_argument("--from-talk", action="store_true",
+                   help="make the mouth shapes from short talk animations instead (1 generation per run, "
+                        "bust as first and last frame); needs --mouth and --eyes. Then pick frames by eye "
+                        "from visemes/talk_frames/contact.png with `pick <name> visemes talk --frames ...`")
+    p.add_argument("--takes", type=int, default=3, help="--from-talk: runs per shape (default 3)")
     p.add_argument("--seed", type=int)
     p.add_argument("--dry-run", action="store_true")
     p.set_defaults(func=cmd_visemes)
@@ -1943,14 +2288,17 @@ def main():
     p = sub.add_parser("pick", help="choose a variant and move it into the game assets")
     p.add_argument("name")
     p.add_argument("stage", choices=["bust", "talk", "visemes", "character"])
-    p.add_argument("variant", help="e.g. b03, t01, i01, c01")
-    p.add_argument("--frames", help="talk only: three open-mouth frames, e.g. 3,5,7 or t01:3,t02:6,i01:round (default auto)")
+    p.add_argument("variant", help="e.g. b03, t01, i01, c01, or 'talk' for visemes from talk frames")
+    p.add_argument("--frames", help="talk: three open-mouth frames, e.g. 3,5,7 or t01:3,t02:6,i01:round (default auto). "
+                   "visemes talk: shape=frame for each shape, e.g. teeth=round_t03_f3,round=round_t02_f2,...")
     p.add_argument("--face", help="talk/visemes: x0,y0,x1,y1 face box override (inpaint visemes default to the mouth mask)")
     p.add_argument("--mouth", help="talk only: cx,cy,rx,ry lips ellipse; paste only that instead of the face box. "
                    "Recommended: the talk model redraws the cheeks and chin a shade off, which shows in game "
                    "as a flickering rectangle round the lower face")
     p.add_argument("--swap", help="visemes only: take single shapes from other variants, e.g. round=i02,teeth=i03")
     p.add_argument("--omit", help="visemes only: leave shapes out, e.g. closed (the game then uses rest)")
+    p.add_argument("--blink", help="visemes talk only: where the blink frame comes from: an inpaint variant "
+                   "iNN, 'installed' (the current sheet's), or 'none' (default: installed, else newest inpaint)")
     p.set_defaults(func=cmd_pick)
 
     for name, fn, hlp in [("status", cmd_status, "show jobs, picks and the next stage"),
