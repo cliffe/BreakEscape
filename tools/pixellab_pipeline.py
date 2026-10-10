@@ -1023,12 +1023,18 @@ def _align(frame, bust, box):
                 for dx in range(-2, 3) for dy in range(-2, 3)))[1:]
 
 
-def lower_face(bust, frame, mouth, eyes, below=4, feather=2, skin_tol=55):
+def lower_face(bust, frame, mouth, eyes, below=4, feather=2, skin_tol=55, chin=0):
     """The bust with the lower face (eye line down to `below` rows under the mouth box, ear to
     ear) taken from frame, aligned on the eyes first so a head that moved without tilting lines
     up. Only skin (colours like the cheeks beside and above the mouth) and the mouth itself are
     taken, joined to the mouth. Across a `feather`-px edge the two images are mixed and snapped
-    to a colour either already uses, so the seam adds no new colours and no hard line."""
+    to a colour either already uses, so the seam adds no new colours and no hard line.
+
+    `chin` (rows, default 0) also takes the jaw: the paste reaches `chin` rows further down, and
+    from the mouth box bottom down, between the eye-box columns, it takes the frame's chin outline
+    and neck shadow as well as skin. Without it the bust's own jaw line (dark, so never "skin") is
+    always kept, and an open mouth whose frame drops the chin is pasted onto an unmoved chin
+    (female_nurse1, October 2026)."""
     b = np.asarray(bust.convert("RGBA")).astype(np.int32)
     f = np.asarray(frame.convert("RGBA")).astype(np.int32)
     h, w = b.shape[:2]
@@ -1042,12 +1048,18 @@ def lower_face(bust, frame, mouth, eyes, below=4, feather=2, skin_tol=55):
     def skin(a):
         return (np.abs(a[..., None, :3] - smp[None, None]).sum(-1).min(-1) < skin_tol) & (a[..., 3] > 0)
     yy, xx = np.mgrid[:h, :w]
-    rows = (yy >= ey1) & (yy <= y1 + below)
+    rows = (yy >= ey1) & (yy <= y1 + below + chin)
     cols = (xx >= ex0 - 2) & (xx < ex1 + 2)
     mbox = (xx >= x0) & (xx < x1) & (yy >= y0) & (yy < y1 + 2)
     # nothing outside the bust's own silhouette: a mouth box or blend edge reaching past the jaw
     # would otherwise turn transparent background opaque (Graham Reeves, October 2026)
     region = rows & cols & ((skin(b) & skin(f)) | mbox) & (b[..., 3] > 0) & (f[..., 3] > 0)
+    if chin:
+        def jawish(a):  # skin or its shadow (warm: r >= g >= b), or the dark jaw outline; not
+            r, g, bl = a[..., 0], a[..., 1], a[..., 2]  # a white coat or a blue collar
+            warm = (r >= g) & (g >= bl - 4) & (r - bl >= 12)
+            return (warm | (a[..., :3].max(-1) < 40)) & (a[..., 3] > 0)
+        region |= rows & cols & (yy >= y1) & jawish(b) & jawish(f)
     keep = mbox & region
     for _ in range(60):  # grow from the mouth: no stray islands of cheek
         nxt = _dilate(keep) & region
@@ -1213,7 +1225,7 @@ def talk_visemes_contact(run, mouth, eyes):
     return sheets
 
 
-def write_talk_viseme_sheet(run, assets, backup, frames_spec, blink=None, omit=None):
+def write_talk_viseme_sheet(run, assets, backup, frames_spec, blink=None, omit=None, chin=None):
     """Install <name>_visemes.png/.json from named talk frames: --frames shape=frame,...
     Each frame's lower face goes onto the bust. The blink comes from --blink (an inpaint variant
     iNN, or 'installed' for the current sheet's blink column); by default the installed sheet's,
@@ -1223,6 +1235,7 @@ def write_talk_viseme_sheet(run, assets, backup, frames_spec, blink=None, omit=N
     if not jobs:
         sys.exit(f"no talk viseme frames yet: run `visemes {run.name} --from-talk --mouth ... --eyes ...`")
     picks = dict(spec.split("=", 1) for spec in frames_spec.split(","))
+    chins = {k: int(v) for k, v in (c.split("=", 1) for c in chin.split(","))} if chin else {}
     bad = [s for s in picks if s not in MOUTH_SHAPES]
     if bad:
         sys.exit(f"unknown shape(s) {bad}; choose from {[s for s in MOUTH_SHAPES if s != 'blink']}")
@@ -1234,8 +1247,11 @@ def write_talk_viseme_sheet(run, assets, backup, frames_spec, blink=None, omit=N
         if not j or not path.exists():
             sys.exit(f"--frames {shape}={frame}: no such frame ({path})")
         mouth, eyes = tuple(j["params"]["mouth"]), tuple(j["params"]["eyes"])
-        cells[shape], sh = lower_face(bust, Image.open(path).convert("RGBA"), mouth, eyes)
-        sources[shape] = frame + (f" (head {sh[0]:+d},{sh[1]:+d}px)" if sh != (0, 0) else "")
+        cells[shape], sh = lower_face(bust, Image.open(path).convert("RGBA"), mouth, eyes,
+                                      chin=chins.get(shape, 0))
+        notes = ([f"head {sh[0]:+d},{sh[1]:+d}px"] if sh != (0, 0) else []) + \
+            ([f"jaw +{chins[shape]} rows"] if chins.get(shape) else [])
+        sources[shape] = frame + (f" ({', '.join(notes)})" if notes else "")
         a, bb = np.asarray(cells[shape]).astype(np.int32), np.asarray(bust).astype(np.int32)
         alpha = int((a[..., 3] != bb[..., 3]).sum())
         if alpha:
@@ -2121,9 +2137,10 @@ def cmd_pick(args):
         print(f"next: pixellab_pipeline.py character {run.name} --variants 1")
 
     elif stage == "visemes" and vid == "talk":
-        write_talk_viseme_sheet(run, assets, backup, args.frames, args.blink, args.omit)
+        write_talk_viseme_sheet(run, assets, backup, args.frames, args.blink, args.omit, args.chin)
         if assets.resolve() == CHARACTERS_DIR.resolve():  # a scratch --assets-dir is only a trial
-            run.state["picks"]["visemes"] = f"talk {args.frames}" + (f" blink {args.blink}" if args.blink else "")
+            run.state["picks"]["visemes"] = f"talk {args.frames}" + (f" blink {args.blink}" if args.blink else "") \
+                + (f" chin {args.chin}" if args.chin else "")
         else:
             print("trial pick (--assets-dir is not the game's folder): state.json picks left unchanged")
 
@@ -2345,6 +2362,8 @@ def main():
     p.add_argument("--blink", help="visemes talk only: where the blink frame comes from: an inpaint variant "
                    "iNN, 'installed' (the game's current sheet, even with --assets-dir), or 'none'. Default: the "
                    "game's sheet if it has a blink, else the newest inpaint run that made one, else none")
+    p.add_argument("--chin", help="visemes talk only: shape=rows, e.g. wide_open=3,round=2: also paste the "
+                   "frame's jaw line and that many rows below the usual lower face, for frames that drop the chin")
     p.set_defaults(func=cmd_pick)
 
     for name, fn, hlp in [("status", cmd_status, "show jobs, picks and the next stage"),

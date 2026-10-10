@@ -9,5 +9,5 @@
     "wide_open",
     "blink"
   ],
-  "source": "pixellab /animate-with-text-v3 talk frames (4 frames, bust as first and last), lower face pasted on the bust: teeth:medium_open_t02_f1, round:medium_open_t01_f2 (head -2,-1px), small_open:medium_open_t01_f3 (head -1,+0px), medium_open:medium_open_t02_f2 (head +0,-1px), wide_open:wide_open_t01_f2 (head -1,-2px), blink:kept from the game's previous sheet"
+  "source": "pixellab /animate-with-text-v3 talk frames (4 frames, bust as first and last), lower face pasted on the bust: teeth:medium_open_t02_f1, round:round_t03_f1 (head +0,-1px, jaw +3 rows), small_open:medium_open_t01_f3 (head -1,+0px), medium_open:medium_open_t02_f2 (head +0,-1px), wide_open:wide_open_t01_f2 (head -1,-2px, jaw +3 rows), blink:kept from the game's previous sheet"
 }

@@ -9,5 +9,5 @@
     "wide_open",
     "blink"
   ],
-  "source": "pixellab /animate-with-text-v3 talk frames (4 frames, bust as first and last), lower face pasted on the bust: teeth:small_open_t02_f1, round:round_t01_f3 (head +0,+1px), small_open:teeth_t01_f2 (head +0,-1px), medium_open:medium_open_t02_f2 (head -1,+0px), wide_open:wide_open_t01_f1 (head +0,-1px), blink:kept from the game's previous sheet"
+  "source": "pixellab /animate-with-text-v3 talk frames (4 frames, bust as first and last), lower face pasted on the bust: teeth:small_open_t02_f1, round:round_t01_f3 (head +0,+1px), small_open:teeth_t01_f2 (head +0,-1px), medium_open:medium_open_t02_f2 (head -1,+0px), wide_open:wide_open_t01_f1 (head +0,-1px), blink:kept from the game's previous sheet; then cleaned by hand (October 2026): the stray lipstick drip under the left corner of the lower lip (columns 66-67, inherited from the bust and stretched by the pastes) repainted with neighbouring skin colours in every cell, rest and blink included (16 px), plus one dark-red speck on the teeth cell's jaw edge; transparency unchanged. rest now differs from the bust (b00) and female_blowse_talk.png by 2 px"
 }
