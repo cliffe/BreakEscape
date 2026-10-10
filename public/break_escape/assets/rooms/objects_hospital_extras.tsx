@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="185" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="189" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../objects/iv_stand1.png" width="25" height="60"/>
@@ -555,5 +555,17 @@
  </tile>
  <tile id="194">
   <image source="../objects/uni_poster8.png" width="16" height="21"/>
+ </tile>
+ <tile id="195">
+  <image source="../objects/pc_ransomware.png" width="36" height="24"/>
+ </tile>
+ <tile id="196">
+  <image source="../objects/pc5_ransomware.png" width="34" height="27"/>
+ </tile>
+ <tile id="197">
+  <image source="../objects/kvm_cart_ransomware.png" width="37" height="61"/>
+ </tile>
+ <tile id="198">
+  <image source="../objects/checkin_kiosk_ransomware.png" width="24" height="43"/>
  </tile>
 </tileset>

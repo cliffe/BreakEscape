@@ -3379,6 +3379,30 @@
       "w": 16,
       "h": 21,
       "gid": 995
+    },
+    "pc_ransomware": {
+      "id": 195,
+      "w": 36,
+      "h": 24,
+      "gid": 996
+    },
+    "pc5_ransomware": {
+      "id": 196,
+      "w": 34,
+      "h": 27,
+      "gid": 997
+    },
+    "kvm_cart_ransomware": {
+      "id": 197,
+      "w": 37,
+      "h": 61,
+      "gid": 998
+    },
+    "checkin_kiosk_ransomware": {
+      "id": 198,
+      "w": 24,
+      "h": 43,
+      "gid": 999
     }
   }
 }
