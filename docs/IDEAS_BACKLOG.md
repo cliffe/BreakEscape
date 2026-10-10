@@ -20,6 +20,13 @@ Each entry: a short title, where it came from, the idea in two or three sentence
 
 ## Engine and UI
 
+From the PIN cracker fix (2026-10-10), found but not fixed:
+- **biometric_breach's 5-digit PIN can't be entered** (S). Its PIN is `72958` (`scenarios/biometric_breach/scenario.json.erb:290`) but the PIN starter assumes 4 digits when the server withholds the PIN (`systems/minigame-starters.js:535`). Send the length, not the PIN.
+- **Door PINs reach the client at startup** (S). `filtered_scenario_for_bootstrap` in `game.rb` keeps rooms' `requires`, so a player can read door PINs from the startup data.
+- **`window.startPinMinigame` name clash** (S). `minigames/index.js:202` overrides the starter from `minigame-starters.js:915` with the demo helper. The game imports the starter directly, so only callers of the global are affected.
+- **Unrouted `api/games_controller.rb#unlock`** (S). Dead code with its own unlock logic; remove it or route it.
+- **Cancelling the PIN pad shows "PIN Rejected"** (S). Cancel should close quietly.
+
 - **A "VM launched" event** (m05 fixer; S). Tasks like "Get into the research portal" could complete on real use instead of on flag 1.
 - **`object_unlock_failed` event** (m06 re-review; S). The engine emits nothing when a PIN or password is wrong, so a handler can't react to repeated wrong guesses.
 - **Combat tuning for missions** (m04 playtest; S–M). A heal item or slow regen missions can place; a room leash so a chasing NPC gives up at her own door; pass `maxHP` and `attackCooldown` through from a scenario's hostile config (`parseConfig` drops them today). Fights in sequence are currently hard to survive.
@@ -28,6 +35,9 @@ Each entry: a short title, where it came from, the idea in two or three sentence
 - **Non-combatant NPCs** (m02 fixer; S). A `nonCombatant` flag so bed-bound patients and similar can't be punched.
 - **Console source tiles hidden until available** (m02 fixer; S). The Ghost tile shows greyed before the offer.
 - **Auto-advance paced by line length when there's no audio** (m08 dialogue playtest; S). Without TTS every line holds ~5 s whatever its length; short replies drag in long hubs. With audio, pacing follows the speech.
+- **Planted devices speak their lines aloud** (user, 2026-10-10; S–M). A planted network device such as Ghost's phone could play its dialogue through TTS like an NPC, with a click on the line to skip it.
+- **"Prefer to route around" objects** (user, 2026-10-10; M). A per-object setting (e.g. a vending machine) so click-to-walk pathfinding tries a path around the object first, and only walks through it when there's no clean path; WASD movement stays unchanged.
+- **Unlock player avatars from completed missions** (user, 2026-10-10; M). A character becomes available as a player avatar once the player has met them in a mission they've completed.
 - **Progress in gated objectives** (m08 fixer; S). Tasks like "Interview the suspects" could show "Seen: Cipher, Phantom".
 - **Open person-chats hear global changes** (m08 fixer; M). Today a conversation that's open doesn't see a global change until the minigame returns.
 
@@ -53,9 +63,17 @@ Each entry: a short title, where it came from, the idea in two or three sentence
 
 - **m04: meet the wall before the fingerprint kit** (user, 2026-10-05, from m03's RFID cloner; S–M). A capability grant only feels earned if the player has first hit the lock it opens. Let the player reach the biometric reader (or a print they can't lift) and feel the lack of the kit before the OptiGrid tool case hands it over. This is the lesson from m03's RFID cloner.
 
+## New games
+
+- **Eldritch Hacker** (user, 2026-10-10; L). Summoned cultists interfere with your VM use: they walk into the room and cast a concentration spell that turns your screen upside down or remaps your keyboard, so you have to fight them off while you hack. Could be multiplayer, with players facing off against each other.
+- **Crypto Kid** (user, 2026-10-10; L). A child-friendly game.
+
 ## Art and audio
 
 - **Sprite variety across missions** (m04 script editor; M). `male_telecom_v2` is Vance (m04), Owen (m05) and Park (m07); the m04 gate guard shares `hacker-red` with the four operatives. More v2 character sets (PixelLab) would let recurring-looking extras differ.
+
+- **Open sprites and opening animations for every container** (user, 2026-10-10; M–L). Each container sprite gets an open version and a short transition that plays when the player opens it: the safe door swings open, the bin lid lifts. A per-object attribute says whether it closes again afterwards.
+- **Action frames in talk sprites** (user, 2026-10-10; M). Add action frames alongside the visemes, such as `action_give_item` showing the character handing something to the player. The ink names the action where the script needs it.
 
 - **Align voice style text when audio is generated** (style guide; S). m03–m06 Nightshade identity text and m06 HaX briefing/debrief text differ slightly from the canonical wording in the voice bible.
 
