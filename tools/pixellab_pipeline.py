@@ -118,11 +118,13 @@ class PixelLab:
         self.session.headers["Authorization"] = load_token()
 
     def _call(self, method, path, **kw):
-        for attempt in range(4):
+        for attempt in range(40):
             r = self.session.request(method, API + path, timeout=300, **kw)
             # 429 = rate limited or no free job slot; back off and retry rather than fail a batch.
-            if r.status_code in (429, 502, 503) and attempt < 3:
-                wait = 15 * (attempt + 1)
+            # Slots can stay full for a long time when several runs share the account (October 2026:
+            # six agents in parallel each had to wrap this), so 429 waits up to ~30 minutes.
+            if (r.status_code == 429 and attempt < 39) or (r.status_code in (502, 503) and attempt < 3):
+                wait = min(60, 15 * (attempt + 1))
                 print(f"  {r.status_code} on {path}, retrying in {wait}s: {r.text[:160]}")
                 time.sleep(wait)
                 continue
