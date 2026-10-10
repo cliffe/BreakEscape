@@ -253,6 +253,10 @@ const UNIT_ENERGY = {
     closed: 0.15, teeth: 0.4, small_open: 0.55, round: 0.7, medium_open: 0.75, wide_open: 0.9, rest: 0.35
 };
 const SILENT = 0.08; // normalised loudness below which a frame is silence
+// Every "a" is wide_open in the letter classes, but most are unstressed ("about", "a",
+// "that") and wide_open is the shape most likely to look overdone. So an "a" opens wide
+// only when its run is this loud on average (1 = the line's loud peaks), else medium_open.
+export const WIDE_OPEN_MIN = 0.9;
 
 /**
  * The line as alignment units, in order: 'sound' (letters, one viseme per run), 'gap'
@@ -389,7 +393,13 @@ export function alignToEnvelope(text, envelope, frameMs = ENVELOPE_FRAME_MS, opt
     for (const { unit, start, end } of runs) {
         let v = 'rest';
         if (unit.kind === 'sound') {
-            v = lastSound = unit.viseme;
+            v = unit.viseme;
+            if (v === 'wide_open') {
+                let sum = 0;
+                for (let i = start; i < end; i++) sum += e[i];
+                if (sum / (end - start) < WIDE_OPEN_MIN) v = 'medium_open';
+            }
+            lastSound = v;
         } else if (unit.kind === 'gap') {
             let sum = 0;
             for (let i = start; i < end; i++) sum += e[i];

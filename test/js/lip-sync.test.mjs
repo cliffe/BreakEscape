@@ -175,6 +175,14 @@ test('alignToEnvelope: silences rest, loud stretches talk', () => {
     assert.equal(alignToEnvelope('Hi there', new Array(50).fill(0), 20), null);
 });
 
+test('alignToEnvelope: an "a" opens wide only on a loud peak', () => {
+    // "Ah." loud, then "ah." at half the loudness: the quiet one is medium_open
+    const env = [...Array(10).fill(0), ...Array(15).fill(1), ...Array(20).fill(0), ...Array(15).fill(0.5), ...Array(10).fill(0)];
+    const tl = alignToEnvelope('Ah. Ah.', env, 20);
+    assert.equal(visemeAt(tl, 300), 'wide_open');
+    assert.equal(visemeAt(tl, 920), 'medium_open');
+});
+
 test('alignToEnvelope on a real TTS line: pauses land on silences', async () => {
     const fx = JSON.parse(readFileSync(join(here, 'fixtures/bernie_line_envelope.json'), 'utf8'));
     const env = fx.envelope;

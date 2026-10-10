@@ -153,7 +153,9 @@ closed mouth, and frames 1–3 cycle while TTS audio is playing.
 mouth shapes worked out from the line's text (see `js/minigames/person-chat/lip-sync.js`), and shows
 `rest` when silent. The TTS manager decodes each line's audio and `alignToEnvelope` fits the shapes
 to its loudness curve: open vowels on loud stretches, closed lips and f/v/s in the dips, punctuation
-on silences, and anything near-silent at rest. Until that is ready (a few ms), or if decoding fails,
+on silences, and anything near-silent at rest. An "a" shows `wide_open` only on the line's loudest
+peaks (`WIDE_OPEN_MIN`), otherwise `medium_open`: most are unstressed, and wide is the shape most
+likely to look overdone. Until that is ready (a few ms), or if decoding fails,
 the shapes are spread evenly over the line, held at least 100 ms, and closed whenever the live level
 drops. If the field is absent or either file
 fails to load, the portrait falls back to `spriteTalk` as above.
