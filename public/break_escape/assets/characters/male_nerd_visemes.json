@@ -3,10 +3,11 @@
   "visemes": [
     "rest",
     "teeth",
+    "round",
     "small_open",
     "medium_open",
     "wide_open",
     "blink"
   ],
-  "source": "pixellab /inpaint-image-pro-flash, mouth mask [62, 33, 74, 40]; teeth:i01, small_open:i01, medium_open:i01 (chin -1px, jaw mask +5 rows), wide_open:i01 (chin -2px, jaw mask +5 rows), blink:i01"
+  "source": "pixellab /animate-with-text-v3 talk frames (4 frames, bust as first and last), lower face pasted on the bust: teeth:wide_open_t02_f3, round:round_t01_f1 (head +0,-1px), small_open:small_open_t01_f1, medium_open:wide_open_t02_f2 (head +0,-1px), wide_open:wide_open_t03_f1 (head +0,+1px), blink:kept from the game's previous sheet"
 }
