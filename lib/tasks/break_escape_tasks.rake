@@ -123,9 +123,9 @@ namespace :break_escape do
       truthy = ->(v) { %w[1 true yes].include?(v.to_s.downcase) }
       scenario = args[:scenario].presence || ENV['SCENARIO'].presence
       mode = if truthy.(ENV['DELETE']) then :delete
-             elsif truthy.(ENV['APPLY']) then :trash
-             else :dry_run
-             end
+      elsif truthy.(ENV['APPLY']) then :trash
+      else :dry_run
+      end
       unknown = ENV['UNKNOWN'].to_s.split(',').map(&:strip).reject(&:empty?)
 
       pruner = BreakEscape::TtsCachePruner.new(

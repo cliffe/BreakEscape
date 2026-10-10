@@ -829,11 +829,11 @@ def longest_path_in_dag(nodes, edges)
   # story-gate action nodes only when nothing else is reachable.
   sink = if nodes.key?('aim_close_the_case')
            'aim_close_the_case'
-         else
+  else
            main = dist.keys.select { |id| nodes.dig(id, :klass) != 'action' && !nodes.dig(id, :bonus) }
            pool = main.any? ? main : dist.keys
            pool.max_by { |id| dist[id] }
-         end
+  end
   path = []
   n    = sink
   while n
