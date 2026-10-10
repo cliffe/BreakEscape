@@ -245,9 +245,9 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
       "status": "active",
       "order": 0,
       "tasks": [
-        { "taskId": "get_lab_laptop", "title": "Get a lab laptop from Dr Shaw", "type": "npc_conversation", "targetNPC": "tom_shaw", "status": "active" },
-        { "taskId": "visit_stand", "title": "Visit the CryptoSecure stand", "type": "npc_conversation", "targetNPC": "jordan_pike", "status": "active" },
-        { "taskId": "read_byte_wall", "title": "Look at the Byte Wall", "type": "manual", "status": "active", "optional": true }
+        { "taskId": "get_lab_laptop", "title": "Get a lab laptop from Dr Shaw (Lecture Theatre 1)", "type": "npc_conversation", "targetNPC": "tom_shaw", "status": "active" },
+        { "taskId": "visit_stand", "title": "Visit the CryptoSecure stand (Foyer)", "type": "npc_conversation", "targetNPC": "jordan_pike", "status": "active" },
+        { "taskId": "read_byte_wall", "title": "Look at the Byte Wall (Foyer)", "type": "manual", "status": "active", "optional": true }
       ]
     },
     {
@@ -258,10 +258,10 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
       "order": 1,
       "unlockCondition": { "aimCompleted": "freshers_week" },
       "tasks": [
-        { "taskId": "open_lockbox", "title": "Open the CryptoSecure lockbox", "type": "unlock_object", "targetObject": "cryptosecure_lockbox", "status": "active", "onComplete": { "setGlobal": { "lockbox_open": true } } },
-        { "taskId": "open_locker", "title": "Open candidate locker 4", "type": "unlock_object", "targetObject": "candidate_locker_4", "status": "active", "onComplete": { "setGlobal": { "locker_open": true } } },
-        { "taskId": "open_guest_terminal", "title": "Get into the guest terminal in the teaching lab", "type": "unlock_object", "targetObject": "keyholder_guest_terminal", "status": "active", "onComplete": { "setGlobal": { "guest_terminal_open": true } } },
-        { "taskId": "open_corridor", "title": "Open the Computing corridor door", "type": "unlock_room", "targetRoom": "corridor", "status": "active", "onComplete": { "setGlobal": { "corridor_open": true } } }
+        { "taskId": "open_lockbox", "title": "Open the CryptoSecure lockbox (Foyer)", "type": "unlock_object", "targetObject": "cryptosecure_lockbox", "status": "active", "onComplete": { "unlockTask": "open_locker", "setGlobal": { "lockbox_open": true } } },
+        { "taskId": "open_locker", "title": "Open candidate locker 4 (Student Common Room)", "type": "unlock_object", "targetObject": "candidate_locker_4", "status": "locked", "onComplete": { "unlockTask": "open_guest_terminal", "setGlobal": { "locker_open": true } } },
+        { "taskId": "open_guest_terminal", "title": "Get into the guest terminal (Teaching Lab 1)", "type": "unlock_object", "targetObject": "keyholder_guest_terminal", "status": "locked", "onComplete": { "unlockTask": "open_corridor", "setGlobal": { "guest_terminal_open": true } } },
+        { "taskId": "open_corridor", "title": "Open the Computing Corridor door (Foyer)", "type": "unlock_room", "targetRoom": "corridor", "status": "locked", "onComplete": { "setGlobal": { "corridor_open": true } } }
       ]
     },
     {
@@ -272,11 +272,11 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
       "order": 2,
       "unlockCondition": { "aimCompleted": "trials_bits" },
       "tasks": [
-        { "taskId": "open_library", "title": "Get into the library", "type": "unlock_room", "targetRoom": "library", "status": "active", "onComplete": { "setGlobal": { "library_open": true } } },
-        { "taskId": "open_special_collections", "title": "Open the Special Collections safe", "type": "unlock_object", "targetObject": "special_collections_safe", "status": "active", "onComplete": { "setGlobal": { "special_collections_open": true } } },
-        { "taskId": "consult_sidhu", "title": "Talk to Dr Selvarajan", "type": "npc_conversation", "targetNPC": "sidhu_selvarajan", "status": "active", "optional": true },
-        { "taskId": "open_pigeonholes", "title": "Open the pigeonholes", "type": "unlock_object", "targetObject": "pigeonholes", "status": "active", "onComplete": { "setGlobal": { "pigeonholes_open": true } } },
-        { "taskId": "open_drop_box", "title": "Open the CryptoSecure drop box", "type": "unlock_object", "targetObject": "cryptosecure_drop_box", "status": "active", "onComplete": { "setGlobal": { "drop_box_open": true } } }
+        { "taskId": "open_library", "title": "Get into the library (Computing Corridor)", "type": "unlock_room", "targetRoom": "library", "status": "active", "onComplete": { "unlockTask": "open_special_collections", "setGlobal": { "library_open": true } } },
+        { "taskId": "open_special_collections", "title": "Open the Special Collections safe (through the Library)", "type": "unlock_object", "targetObject": "special_collections_safe", "status": "locked", "onComplete": { "unlockTask": "open_pigeonholes", "setGlobal": { "special_collections_open": true } } },
+        { "taskId": "consult_sidhu", "title": "Talk to Dr Selvarajan (Seminar Room 2)", "type": "npc_conversation", "targetNPC": "sidhu_selvarajan", "status": "active", "optional": true },
+        { "taskId": "open_pigeonholes", "title": "Open the pigeonholes (Computing Corridor)", "type": "unlock_object", "targetObject": "pigeonholes", "status": "locked", "onComplete": { "unlockTask": "open_drop_box", "setGlobal": { "pigeonholes_open": true } } },
+        { "taskId": "open_drop_box", "title": "Open the CryptoSecure drop box (Computing Corridor)", "type": "unlock_object", "targetObject": "cryptosecure_drop_box", "status": "locked", "onComplete": { "setGlobal": { "drop_box_open": true } } }
       ]
     },
     {
@@ -287,8 +287,8 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
       "order": 3,
       "unlockCondition": { "aimCompleted": "trials_keys" },
       "tasks": [
-        { "taskId": "open_workshop", "title": "Get into the workshop", "type": "unlock_room", "targetRoom": "workshop", "status": "active", "onComplete": { "setGlobal": { "workshop_open": true } } },
-        { "taskId": "open_relay_terminal", "title": "Open the relay terminal", "type": "unlock_object", "targetObject": "relay_terminal", "status": "active", "onComplete": { "setGlobal": { "relay_opened": true } } }
+        { "taskId": "open_workshop", "title": "Get into the workshop (Computing Corridor)", "type": "unlock_room", "targetRoom": "workshop", "status": "active", "onComplete": { "unlockTask": "open_relay_terminal", "setGlobal": { "workshop_open": true } } },
+        { "taskId": "open_relay_terminal", "title": "Open the relay terminal (Workshop)", "type": "unlock_object", "targetObject": "relay_terminal", "status": "locked", "onComplete": { "setGlobal": { "relay_opened": true } } }
       ]
     },
     {
