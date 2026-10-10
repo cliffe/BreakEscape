@@ -273,8 +273,8 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
       "unlockCondition": { "aimCompleted": "trials_bits" },
       "tasks": [
         { "taskId": "open_library", "title": "Get into the library (Computing Corridor)", "type": "unlock_room", "targetRoom": "library", "status": "active", "onComplete": { "unlockTask": "open_special_collections", "setGlobal": { "library_open": true } } },
-        { "taskId": "open_special_collections", "title": "Open the Special Collections safe (through the Library)", "type": "unlock_object", "targetObject": "special_collections_safe", "status": "locked", "onComplete": { "unlockTask": "open_pigeonholes", "setGlobal": { "special_collections_open": true } } },
-        { "taskId": "consult_sidhu", "title": "Talk to Dr Selvarajan (Seminar Room 2)", "type": "npc_conversation", "targetNPC": "sidhu_selvarajan", "status": "active", "optional": true },
+        { "taskId": "open_special_collections", "title": "Open the Special Collections safe (Special Collections, through the Library)", "type": "unlock_object", "targetObject": "special_collections_safe", "status": "locked", "onComplete": { "unlockTask": "open_pigeonholes", "setGlobal": { "special_collections_open": true } } },
+        { "taskId": "consult_sidhu", "title": "Talk to Dr Selvarajan (Seminar Room 2, through his office)", "type": "npc_conversation", "targetNPC": "sidhu_selvarajan", "status": "active", "optional": true },
         { "taskId": "open_pigeonholes", "title": "Open the pigeonholes (Computing Corridor)", "type": "unlock_object", "targetObject": "pigeonholes", "status": "locked", "onComplete": { "unlockTask": "open_drop_box", "setGlobal": { "pigeonholes_open": true } } },
         { "taskId": "open_drop_box", "title": "Open the CryptoSecure drop box (Computing Corridor)", "type": "unlock_object", "targetObject": "cryptosecure_drop_box", "status": "locked", "onComplete": { "setGlobal": { "drop_box_open": true } } }
       ]

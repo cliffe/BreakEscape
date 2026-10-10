@@ -88,6 +88,8 @@ I'll be watching. You won't see me do it.
     Your envelope's waiting. Only one key opens it.
 - special_collections_open:
     A key word, then a key pair. Fourteen of you. Fewer will see the second.
+- library_open:
+    The library. Fewer of you every Trial.
 - corridor_open:
     The corridor. Fewer candidates every hour.
 - locker_open:
