@@ -1,10 +1,9 @@
 # Resume note — room POV chat backgrounds (2026-10-11)
 
-DONE, all uncommitted (commit when the user asks):
-- Engine: room `chatBackground` fallback for person-chat (`person-chat-background.js`, game.rb bootstrap, validator, README, tests 9/9, Rails 599/0).
-- Skill `.claude/skills/room-pov-background/` after three trial rounds; tools `scripts/room_gen/pov_prep.py`, `pov_chat_preview.py`, `pov_diff.py`, `tools/playtest/chat-background-shot.sh`; lighting-tour.sh hides the HUD.
-- m02: 8 rooms wired (reception_lobby, dr_kim_office, conference_room, hospital_ward, security_office, staff_room, it_department, server_room); assets in public/break_escape/assets/backgrounds/rooms/m02_*.
-For the user: m02 scripted scenes pin `hospital1.png` (conference room, Gary's cabinet scene, etc.), overriding the room backgrounds. Drop the pins? security_office, staff_room and server_room have no NPCs.
+Mission order (user, 2026-10-11): sis01 → lab_tesseract_trials → m01 → sis02. EVERY room gets a background (NPCs move). Keep updating the skill with every process improvement. Drop generic stand-in pins (hospital1.png) in rooms that get a background; keep establishing exteriors.
+DONE + committed: engine fallback; skill + tools (latest d24db9a8); m02 all 12 rooms (1b2c1528, all hospital1 pins gone); sis01 all 3 rooms (9fef9226).
+Waiting for user sign-off: Tesseract first concept (agent running), sis02 control room concept (scratchpad/sis02/scada_control_room/concept.png). sis02 decision: Helen's briefing ink uses Background[none].
+Then: rest of Tesseract (11 rooms), m01, sis02.
 
 # Resume note — TTS move to Gemini 3.8 (2026-10-08/09)
 
