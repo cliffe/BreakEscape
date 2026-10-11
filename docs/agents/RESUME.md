@@ -1,9 +1,10 @@
 # Resume note — room POV chat backgrounds (2026-10-11)
 
 Mission order (user, 2026-10-11): sis01 → lab_tesseract_trials → m01 → sis02. EVERY room gets a background (NPCs move). Keep updating the skill with every process improvement. Drop generic stand-in pins (hospital1.png) in rooms that get a background; keep establishing exteriors.
-DONE + committed: engine fallback; skill + tools (latest d24db9a8); m02 all 12 rooms (1b2c1528, all hospital1 pins gone); sis01 all 3 rooms (9fef9226).
-Waiting for user sign-off: Tesseract first concept (agent running), sis02 control room concept (scratchpad/sis02/scada_control_room/concept.png). sis02 decision: Helen's briefing ink uses Background[none].
-Then: rest of Tesseract (11 rooms), m01, sis02.
+DONE + committed: engine fallback; skill + tools (latest d1c2ff54: depth guidance, sprite-safe playtest tools); m02 all 12 rooms; sis01 all 3 rooms.
+Decisions (docs/agents/POV_BACKGROUNDS_PENDING.md): Tesseract and sis02 styles approved; Tesseract keeps hq4/hq5 pins; sis02 Helen's Background[none] → control room bg (do in the sis02 run).
+Running: Tesseract A (common_room redo per user feedback + staff_office, workshop, seminar_room, lecture_theatre, foyer) and B (corridor, teaching_lab, library, sidhu_office, special_collections); files lab_tesseract_trials_<room>.png.
+Then: fold lessons, commit Tesseract; m01; sis02 (control room concept approved in scratchpad/sis02/).
 
 # Resume note — TTS move to Gemini 3.8 (2026-10-08/09)
 
