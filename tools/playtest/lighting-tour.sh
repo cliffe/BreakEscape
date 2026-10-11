@@ -14,6 +14,9 @@
 # player on tile (tx,ty) of it facing up|down|left|right (or a diagonal), close any
 # conversation/minigame that opens, and save <room>-player-dark.png (torch and player
 # visible), then lights on and <room>-player-lit.png. Without it nothing changes.
+#
+# The HUD (objectives panel, toasts, barks, buttons, inventory) is hidden by CSS in the page
+# before each shot, so it does not cover the room.
 set -uo pipefail
 cd "$(dirname "$0")/../.."
 SCEN=${1:?usage: lighting-tour.sh <scenario> <out_dir> [room ...] [--player room:tx,ty:facing ...]}
@@ -40,6 +43,15 @@ tools/playtest/session-start.sh "${ARGS[@]}" >/dev/null || exit 1
 tools/playtest/cmd.sh "$GID" '{"cmd":"bootstrap","tutorial":"decline","resume":"new"}' >/dev/null
 echo "GAME_ID=$GID"
 
+# Hide the HUD so it does not cover the room in screenshots: objectives panel, toast/notification
+# popups (Agent HaX messages, "Task Complete"), NPC barks and prompts, health, timer, buttons,
+# inventory. A <style> in the page; no game code changes. display:none, so toasts that appear
+# later stay hidden too. Idempotent: called again before each room in case the page reloaded.
+hide_hud() {
+  tools/playtest/cmd.sh "$GID" '{"cmd":"eval","fn":"() => { if (!document.getElementById(\"shot-hide-hud\")) { const st = document.createElement(\"style\"); st.id = \"shot-hide-hud\"; st.textContent = \".objectives-panel, #notification-container, .notification, #npc-bark-container, .npc-interaction-prompt, .phone-access-button, #health-ui-container, #hud-info-label, #scenario-timer-display, #toggle-buttons-container, #music-widget-btn-anchor, #vm-controls-overlay, #inventory-container { display: none !important; }\"; document.head.appendChild(st); } return 1; }"}' >/dev/null
+}
+hide_hud
+
 if [ $# -eq 0 ]; then
   ROOMS=$(tools/playtest/cmd.sh "$GID" '{"cmd":"eval","fn":"() => Object.keys(window.gameScenario.rooms).join(\" \")"}' | grep -oP '"result":"\K[^"]*')
 else
@@ -50,6 +62,7 @@ LIT=$(tools/playtest/cmd.sh "$GID" '{"cmd":"eval","fn":"() => !!window.lightingS
 [ "$LIT" = "true" ] || echo "WARNING: lighting is not active (scenario not opted in, or Canvas renderer)"
 
 for R in $ROOMS; do
+  hide_hud
   RES=$(tools/playtest/cmd.sh "$GID" "{\"cmd\":\"eval\",\"fn\":\"async () => { if (!window.rooms['$R']) await window.loadRoom('$R'); const r = window.rooms['$R']; if (!r) return 'not-loaded'; const cam = (window.lightingSystem?.scene || window.game).cameras.main; cam.stopFollow(); cam.centerOn(r.position.x + r.map.widthInPixels / 2, r.position.y + r.map.heightInPixels / 2); await new Promise(res => setTimeout(res, 400)); const s = window.lightingSystem?.rooms.get('$R'); return s ? (s.on ? 'on' : 'off') : 'no-lighting'; }\"}" | grep -oP '"result":"\K[^"]*')
   tools/playtest/cmd.sh "$GID" "{\"cmd\":\"screenshot\",\"path\":\"$OUT/$R-a.png\"}" >/dev/null
   if [ "$RES" = "off" ]; then
@@ -66,6 +79,7 @@ done
 for P in ${PLAYERS[@]+"${PLAYERS[@]}"}; do
   IFS=':' read -r R TXY FACE <<< "$P"
   TX=${TXY%,*}; TY=${TXY#*,}
+  hide_hud
   RES=$(tools/playtest/cmd.sh "$GID" "{\"cmd\":\"eval\",\"fn\":\"async () => { const wait = ms => new Promise(res => setTimeout(res, ms)); if (!window.rooms['$R']) await window.loadRoom('$R'); const r = window.rooms['$R']; const pl = window.player; if (!r || !pl || !window.lightingSystem) return 'unavailable'; window.lightingSystem.switchOff('$R'); pl.body.setVelocity(0, 0); pl.setPosition(r.position.x + $TX * 32 + 16, r.position.y + $TY * 32 + 16); pl.direction = '$FACE'; pl.lastDirection = '$FACE'; try { const k = 'idle-' + ((!pl.scene.anims.exists('idle-left') && '$FACE'.endsWith('left')) ? '$FACE'.replace('left', 'right') : '$FACE'); if (pl.scene.anims.exists(k)) pl.anims.play(k, true); } catch (e) {} for (let i = 0; i < 6; i++) { await wait(250); if (window.MinigameFramework && window.MinigameFramework.currentMinigame) window.MinigameFramework.endMinigame(false); } window.lightingSystem.switchOff('$R'); const cam = window.lightingSystem.scene.cameras.main; cam.stopFollow(); cam.centerOn(r.position.x + r.map.widthInPixels / 2, r.position.y + r.map.heightInPixels / 2); await wait(600); return 'room=' + window.currentPlayerRoom + ' dir=' + pl.direction + ' on=' + window.lightingSystem.rooms.get('$R').on; }\"}" | grep -oP '"result":"\K[^"]*')
   tools/playtest/cmd.sh "$GID" "{\"cmd\":\"screenshot\",\"path\":\"$OUT/$R-player-dark.png\"}" >/dev/null
   tools/playtest/cmd.sh "$GID" "{\"cmd\":\"eval\",\"fn\":\"async () => { window.lightingSystem.switchOn('$R', { animate: false }); await new Promise(res => setTimeout(res, 400)); return 1; }\"}" >/dev/null

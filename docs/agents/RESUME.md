@@ -1,3 +1,11 @@
+# Resume note — room POV chat backgrounds (2026-10-11)
+
+DONE, all uncommitted (commit when the user asks):
+- Engine: room `chatBackground` fallback for person-chat (`person-chat-background.js`, game.rb bootstrap, validator, README, tests 9/9, Rails 599/0).
+- Skill `.claude/skills/room-pov-background/` after three trial rounds; tools `scripts/room_gen/pov_prep.py`, `pov_chat_preview.py`, `pov_diff.py`, `tools/playtest/chat-background-shot.sh`; lighting-tour.sh hides the HUD.
+- m02: 8 rooms wired (reception_lobby, dr_kim_office, conference_room, hospital_ward, security_office, staff_room, it_department, server_room); assets in public/break_escape/assets/backgrounds/rooms/m02_*.
+For the user: m02 scripted scenes pin `hospital1.png` (conference room, Gary's cabinet scene, etc.), overriding the room backgrounds. Drop the pins? security_office, staff_room and server_room have no NPCs.
+
 # Resume note — TTS move to Gemini 3.8 (2026-10-08/09)
 
 DONE for m01, m02, sis01, sis02, lab_tesseract_trials: every requestable line on gemini-3.8, committed (see the Log in `docs/agents/TTS_38_MIGRATION.md`). Engine eb0ff353 + 4d1f734c. Not pushed. Next missions use the brief's runbook; m03–m06 need the v2 HaX wording first, m05–m08 their `{player_name}` lines. Orphan and superseded 2.5 clips archived in `~/tts_orphans_2026-10/`.

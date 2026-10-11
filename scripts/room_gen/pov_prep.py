@@ -1,0 +1,211 @@
+#!/usr/bin/env python3
+"""Prepare the inputs for a room's eye-level conversation background (POV background).
+
+Writes into OUT_DIR:
+  <room>_topdown.png    the render_room_preview image of the map (scale 2)
+  <room>_backwall.png   the back (north) wall strip, cropped from the render and
+                        enlarged x2 (nearest neighbour; a Gemini reference, not an asset)
+  <room>_inventory.txt  every map sprite sorted into the zones of the camera view
+                        (back wall, against the back wall, left/right walls, mid-room,
+                        behind the camera), plus the doors from the scenario
+
+The camera stands near the south wall looking north, so the back wall strip, which
+the top-down render already draws face-on, is what Gemini copies. See
+.claude/skills/room-pov-background/SKILL.md.
+
+Usage:
+  python3 scripts/room_gen/pov_prep.py ROOM_TYPE OUT_DIR [--scenario scenarios/<m>/scenario.json.erb --room ROOM_ID]
+"""
+import argparse
+import json
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+from PIL import Image
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from room_edit import Room  # noqa: E402
+
+FLOOR_Y = 64          # floor starts here (room pixels); the back wall is above it
+STRIP_BOTTOM = 88     # crop a little floor so things standing against the wall show their feet
+WALL_FRAME = 12       # white/black frame round every room
+SIDE_WALL = 40        # side-wall fixtures sit within this many px of the frame
+
+
+def zone(x, top, w, bottom, W, H):
+    if bottom <= FLOOR_Y:
+        return "back wall (hung on it)"
+    if bottom <= FLOOR_Y + 50:
+        return "against the back wall (standing on the floor)"
+    if top < FLOOR_Y + 36:
+        return "second row (stands just in front of the back-wall row, partly hiding it)"
+    if bottom > H * 0.78:
+        return "behind the camera (leave out)"
+    if x + w <= SIDE_WALL and w <= 30:
+        return "left wall"
+    if x >= W - SIDE_WALL and w <= 30:
+        return "right wall"
+    depth = "far" if bottom < H * 0.45 else "mid" if bottom < H * 0.62 else "near"
+    cx = x + w / 2
+    side = "left" if cx < W / 3 else "right" if cx > 2 * W / 3 else "centre"
+    return f"floor, {depth} {side}"
+
+
+ORDER = ["back wall (hung on it)", "against the back wall (standing on the floor)",
+         "second row (stands just in front of the back-wall row, partly hiding it)", "left wall", "right wall"]
+
+
+def scenario_room(path, room_id):
+    """The text of one room's block in a .json or .json.erb scenario (brace-matched), or None."""
+    text = Path(path).read_text()
+    m = re.search(r'"%s"\s*:\s*\{' % re.escape(room_id), text)
+    if not m:
+        return None
+    depth, i = 1, m.end()
+    while depth and i < len(text):
+        depth += {"{": 1, "}": -1}.get(text[i], 0)
+        i += 1
+    return text[m.end() - 1:i]
+
+
+def scenario_doors(seg):
+    c = re.search(r'"connections"\s*:\s*(\{[^{}]*\})', seg)
+    if not c:
+        return {}
+    try:
+        return json.loads(re.sub(r"<%.*?%>", '""', c.group(1)))
+    except json.JSONDecodeError:
+        return {"raw": c.group(1)}
+
+
+def scenario_overrides(seg):
+    """(object name, sprite) for objects in the room that set their own sprite."""
+    out = []
+    for sp in re.finditer(r'"sprite"\s*:\s*"([^"]+)"', seg):
+        before = re.findall(r'"name"\s*:\s*"([^"]+)"', seg[max(0, sp.start() - 800):sp.start()])
+        out.append((before[-1] if before else "?", sp.group(1)))
+    return out
+
+
+def slot_audit_lines(scenario, room_id):
+    r = subprocess.run([sys.executable, str(ROOT / "scripts/room_gen/slot_audit.py"), "--verbose", scenario],
+                       capture_output=True, text=True)
+    lines, on = [], False
+    for ln in r.stdout.splitlines():
+        if not ln.startswith(" "):
+            on = ln.startswith(room_id + " ")
+            continue
+        if on:
+            lines.append(ln)
+    return lines
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("room")
+    ap.add_argument("out_dir", type=Path)
+    ap.add_argument("--scenario")
+    ap.add_argument("--room-id", "--room", dest="room_id")
+    a = ap.parse_args()
+    a.out_dir.mkdir(parents=True, exist_ok=True)
+
+    subprocess.run([sys.executable, str(ROOT / "scripts/render_room_preview.py"), a.room, "--scale", "2",
+                    "--out", str(a.out_dir)], check=True, stdout=subprocess.DEVNULL)
+    render = a.out_dir / f"{a.room}.png"
+    top = a.out_dir / f"{a.room}_topdown.png"
+    render.replace(top)
+
+    m = json.loads((ROOT / f"public/break_escape/assets/rooms/{a.room}.json").read_text())
+    W, H = m["width"] * m["tilewidth"], m["height"] * m["tileheight"]
+    im = Image.open(top)
+    s = im.width // W
+    strip = im.crop((WALL_FRAME * s, (WALL_FRAME - 1) * s, (W - WALL_FRAME) * s, STRIP_BOTTOM * s))
+    strip = strip.resize((strip.width * 2, strip.height * 2), Image.NEAREST)
+    strip.save(a.out_dir / f"{a.room}_backwall.png")
+
+    objs = list(Room(a.room).objects())
+    tables = [(o, n) for layer, o, n in objs if layer == "tables"]
+
+    def on_table(o):
+        cx, b = o["x"] + o["width"] / 2, o["y"]
+        for t, tn in tables:
+            if t["x"] <= cx <= t["x"] + t["width"] and t["y"] - t["height"] - 4 <= b <= t["y"]:
+                return t, tn
+        return None, None
+
+    zones = {}
+    for layer, o, name in objs:
+        w, h = o["width"], o["height"]
+        x, bottom = o["x"], o["y"]          # Tiled tile objects: y is the bottom edge
+        cond = " (conditional; see EMPTY below)" if layer.startswith("conditional") else ""
+        t, tn = on_table(o) if "table_item" in layer else (None, None)
+        if t:
+            z = zone(t["x"], t["y"] - t["height"], t["width"], t["y"], W, H)
+            text = f"  on {tn}: {name}  x={x:.0f}..{x + w:.0f}{cond}"
+            x = t["x"] + 0.5 + x / 10000      # sort under its table
+        else:
+            z = zone(x, bottom - h, w, bottom, W, H)
+            text = f"{name}  x={x:.0f}..{x + w:.0f} y={bottom - h:.0f}..{bottom:.0f}{cond}"
+        zones.setdefault(z, []).append((x, text))
+
+    lines = [f"Room {a.room}: {W}x{H} px ({m['width']}x{m['height']} tiles; about {W / 32 * 0.6:.0f} m wide). "
+             "Camera near the south wall looking north.",
+             "Items left to right within each zone; desk/counter contents are listed under their table.",
+             "Names are sprite names: look at the render to see what each one is.", ""]
+    for z in ORDER + sorted(k for k in zones if k not in ORDER):
+        if z in zones:
+            lines.append(f"## {z}")
+            lines += [f"  {t}" for _, t in sorted(zones[z])]
+            lines.append("")
+    if a.scenario and a.room_id:
+        seg = scenario_room(a.scenario, a.room_id)
+        if seg is None:
+            lines.append(f"!! room {a.room_id} not found in {a.scenario}")
+        else:
+            dm = re.search(r'"dimensions"\s*:\s*\{\s*"width"\s*:\s*(\d+)\s*,\s*"height"\s*:\s*(\d+)', seg)
+            if dm and (int(dm.group(1)), int(dm.group(2))) != (m["width"], m["height"]):
+                lines.append(f"!! scenario dimensions {dm.group(1)}x{dm.group(2)} differ from the map's "
+                             f"{m['width']}x{m['height']} tiles; the map is what is drawn.")
+                lines.append("")
+            lines.append("## doors (scenario connections; the render does not draw doors)")
+            lines.append(f"  {scenario_doors(seg)}")
+            lines.append("  north = a door in the back wall (a single one sits in a back-wall corner);")
+            lines.append("  east/west = doors in the side walls (position along the wall: see the in-game tour shot);")
+            lines.append("  south = behind the camera.")
+            lines.append("")
+            ov = scenario_overrides(seg)
+            lines.append("## scenario sprite overrides (the render shows the map sprite, the game shows these)")
+            lines += [f"  {n} -> {sp}" for n, sp in ov] or ["  none"]
+            lines.append("")
+            audit = slot_audit_lines(a.scenario, a.room_id)
+            filled = {(n, int(x)) for n, x in re.findall(r"-> (\S+) \(\w+\) at (-?\d+),", "\n".join(audit))}
+            empty = [(n, o) for layer, o, n in objs
+                     if layer.startswith("conditional") and (n, int(round(o["x"]))) not in filled]
+            lines.append("## EMPTY in this mission: conditional slots the render and strip draw but the game doesn't")
+            lines += [f"  {n}  x={o['x']:.0f} ({zone(o['x'], o['y'] - o['height'], o['width'], o['y'], W, H)})"
+                      for n, o in sorted(empty, key=lambda t: t[1]["x"])] or ["  none"]
+            lines.append("")
+            lines.append("## slot audit: which map slot each scenario object takes")
+            lines += audit or ["  (none)"]
+            lines.append("")
+            npcs = re.search(r'"npcs"\s*:\s*\[\s*\]', seg)
+            pinned = sorted(set(re.findall(r'"background"\s*:\s*"([^"]+)"', seg)))
+            lines.append("## where this background will show")
+            if npcs or '"npcs"' not in seg:
+                lines.append("  !! no NPCs in this room: the background shows only if an NPC from elsewhere talks here")
+            if pinned:
+                lines.append("  !! conversations in this room set their own background, which wins over chatBackground:")
+                lines += [f"     {bg}  (grep it in the scenario to see which scenes)" for bg in pinned]
+            if not (npcs or '"npcs"' not in seg or pinned):
+                lines.append("  every conversation with this room's NPCs that has no background of its own")
+    out = a.out_dir / f"{a.room}_inventory.txt"
+    out.write_text("\n".join(lines) + "\n")
+    print("\n".join(lines))
+    print(f"wrote {top}\nwrote {a.out_dir / (a.room + '_backwall.png')}\nwrote {out}")
+
+
+if __name__ == "__main__":
+    main()
