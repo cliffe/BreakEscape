@@ -126,11 +126,28 @@ def slot_audit_lines(scenario, room_id):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("room")
-    ap.add_argument("out_dir", type=Path)
+    ap.add_argument("room", nargs="?")
+    ap.add_argument("out_dir", type=Path, nargs="?")
     ap.add_argument("--scenario")
     ap.add_argument("--room-id", "--room", dest="room_id")
+    ap.add_argument("--list-rooms", action="store_true",
+                    help="with --scenario: list every room id and map type (slot_audit skips rooms with no objects)")
     a = ap.parse_args()
+    if a.list_rooms:
+        seg = scenario_room(a.scenario, "rooms")
+        for rid, typ in re.findall(r'\n {4}"([A-Za-z0-9_]+)"\s*:\s*\{\s*"type"\s*:\s*"([^"]+)"', seg or ""):
+            print(f"{rid}  ({typ})")
+        return
+    if not (a.room and a.out_dir):
+        ap.error("ROOM_TYPE and OUT_DIR are required")
+    # the game maps some room types to differently-cased files (room_it -> room_IT.json)
+    rooms_dir = ROOT / "public/break_escape/assets/rooms"
+    if not (rooms_dir / f"{a.room}.json").exists():
+        hit = [f.stem for f in rooms_dir.glob("*.json") if f.stem.lower() == a.room.lower()]
+        if not hit:
+            sys.exit(f"no map file for {a.room} in {rooms_dir}")
+        print(f"(map type {a.room} -> file {hit[0]}.json)")
+        a.room = hit[0]
     a.out_dir.mkdir(parents=True, exist_ok=True)
 
     subprocess.run([sys.executable, str(ROOT / "scripts/render_room_preview.py"), a.room, "--scale", "2",
@@ -209,13 +226,20 @@ def main():
                     i += 1
                 lt_text = re.sub(r"\s+", " ", seg[lt.end() - 1:i])
             lines.append("## lighting config (the mood to draw; compare it when reusing another mission's background)")
-            lines.append("  " + (lt_text[:600] if lt else "none in the room (mission default; see LIGHTING_PLAN.md if any)"))
+            lines.append("  " + (lt_text[:600] if lt else "none in the room (mission default)"))
+            plan = Path(a.scenario).parent / "LIGHTING_PLAN.md"
+            if plan.exists():
+                mood = [ln.strip() for ln in plan.read_text(errors="replace").splitlines()
+                        if re.search(r"mood|day|night|evening", ln, re.I)][:4]
+                lines.append(f"  mission mood ({plan.relative_to(ROOT) if plan.is_absolute() else plan}):")
+                lines += [f"    {m_[:160]}" for m_ in mood] or ["    (read the plan)"]
             lines.append("")
             lines.append("## doors (scenario connections; the render does not draw doors)")
             lines.append(f"  {scenario_doors(seg)}")
             lines.append("  north = a door in the back wall (a single one sits in a back-wall corner);")
             lines.append("  east/west = doors in the side walls (position along the wall: see the in-game tour shot);")
             lines.append("  south = behind the camera.")
+            lines.append("  Door art painted into the map's walls (render and strip) is not reliable: trust the connections and the tour shot.")
             lines.append("")
             ov = scenario_overrides(seg)
             lines.append("## scenario sprite overrides (the render shows the map sprite, the game shows these)")
@@ -227,7 +251,11 @@ def main():
                      if layer.startswith("conditional") and (n, int(round(o["x"]))) not in filled]
             lines.append("## EMPTY in this mission: conditional slots no scenario object claims")
             lines.append("  NPCs drawn as static props (e.g. patients in beds) can still fill these: check the NPC list and the tour shot.")
-            lines += [f"  {n}  x={o['x']:.0f} ({zone(o['x'], o['y'] - o['height'], o['width'], o['y'], W, H)})"
+            def empty_zone(o):
+                t, _ = on_table(o)
+                b = t or o
+                return zone(b["x"], b["y"] - b["height"], b["width"], b["y"], W, H)
+            lines += [f"  {n}  x={o['x']:.0f} ({empty_zone(o)})"
                       for n, o in sorted(empty, key=lambda t: t[1]["x"])] or ["  none"]
             lines.append("")
             lines.append("## NPCs in this room (spriteSheet; static ones are drawn as props, not people)")
