@@ -79,8 +79,8 @@
                  "type":"",
                  "visible":true,
                  "width":78,
-                 "x":206,
-                 "y":196
+                 "x":157,
+                 "y":104
                 }, 
                 {
                  "gid":107,
@@ -293,8 +293,8 @@
                  "type":"",
                  "visible":true,
                  "width":27,
-                 "x":205.76,
-                 "y":174.55
+                 "x":156.76,
+                 "y":82.55
                 }, 
                 {
                  "gid":305,
@@ -305,8 +305,8 @@
                  "type":"",
                  "visible":true,
                  "width":16,
-                 "x":265.08,
-                 "y":174.55
+                 "x":216.08,
+                 "y":82.55
                 }, 
                 {
                  "gid":253,
@@ -2833,7 +2833,7 @@
          "margin":0,
          "name":"objects\/hospital_extras",
          "spacing":0,
-         "tilecount":185,
+         "tilecount":189,
          "tileheight":63,
          "tiles":[
                 {
@@ -3963,6 +3963,30 @@
                  "image":"..\/objects\/uni_poster8.png",
                  "imageheight":21,
                  "imagewidth":16
+                }, 
+                {
+                 "id":195,
+                 "image":"..\/objects\/pc_ransomware.png",
+                 "imageheight":24,
+                 "imagewidth":36
+                }, 
+                {
+                 "id":196,
+                 "image":"..\/objects\/pc5_ransomware.png",
+                 "imageheight":27,
+                 "imagewidth":34
+                }, 
+                {
+                 "id":197,
+                 "image":"..\/objects\/kvm_cart_ransomware.png",
+                 "imageheight":61,
+                 "imagewidth":37
+                }, 
+                {
+                 "id":198,
+                 "image":"..\/objects\/checkin_kiosk_ransomware.png",
+                 "imageheight":43,
+                 "imagewidth":24
                 }],
          "tilewidth":252
         }],

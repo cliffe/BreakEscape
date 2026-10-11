@@ -2100,8 +2100,10 @@ def room_uni_foyer():
     society's freshers' fair stall. Freshers' fair dressing (round 2): bunting along
     the back wall either side of the crest, the Cyber Security Society's pull-up
     banner and a bunch of balloons in the west half, a second poster on the west wall.
-    The banner and balloons are walk-through items (no body), west of Jordan
-    (3.6, 5.3 = x 115, feet 170) and east of the x 32-64 column to the S door.
+    The banner and balloons are walk-through items (no body), east of the x 32-64
+    column to the S door. Jordan stands at (6.5, 3.6), towards the top right, in
+    front of the display table, which stands against the back wall under the crest
+    (2026-10-11; it was mid-room at x 206, feet 196).
 
     Doors: N (NW corner), W and E on row 2, S (SW corner, covered rows). The
     player spawns at (160, 144) on the brass "M" inlay in the floor sheet, so
@@ -2111,7 +2113,7 @@ def room_uni_foyer():
     notes2 on the display (as-type:notes), briefcase11 and laptop6 on the stand.
     """
     r = _Uni()
-    display = r.table("desk1", 206.0, 196.0)        # heritage display table
+    display = r.table("desk1", 157.0, 104.0)        # heritage display table, against the back wall under the crest (user, 2026-10-11)
     stand = r.table("desk1", 100.0, 240.0)          # recruiter's stand
     # back wall: plaque, Byte Wall, crest (decor), chart; >= 32px between interactables
     r.item("plaque1", 82.0, 52.0)
