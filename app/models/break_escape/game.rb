@@ -729,8 +729,9 @@ module BreakEscape
           # before the connected room is lazy-loaded. Without keyPins here, lockpicking uses random pins.
           kept_fields = {}
           # maxAttempts..showKeyboard are the password/PIN pad options (not secret): door pads read them from here.
+          # chatBackground: person-chat falls back to the room's image before the room is lazy-loaded.
           %w[type connections locked lockType requires difficulty door_sign keyPins ambientSound ambientVolume
-             maxAttempts passwordHint showHint postitNote showPostit showKeyboard].each do |field|
+             maxAttempts passwordHint showHint postitNote showPostit showKeyboard chatBackground].each do |field|
             kept_fields[field] = room_data[field] if room_data.key?(field)
           end
 

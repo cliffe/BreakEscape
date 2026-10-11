@@ -21,6 +21,7 @@ import npcConversationStateManager from '../../systems/npc-conversation-state.js
 import TTSManager from '../../systems/tts-manager.js';
 import { rememberNpcLine, getRememberedNpcLine, reopenContextLine } from './person-chat-reopen.js';
 import { startEventConversation } from './person-chat-event-start.js';
+import { personChatBackgroundFor } from './person-chat-background.js';
 
 // Configuration constants for dialogue auto-advance timing
 const DIALOGUE_AUTO_ADVANCE_DELAY = 5000; // Default delay in milliseconds for new dialogue text (5 seconds)
@@ -53,7 +54,8 @@ export class PersonChatMinigame extends MinigameScene {
         // Parameters
         this.npcId = params.npcId;
         this.title = params.title || 'Conversation';
-        this.background = params.background; // Optional background image path from timedConversation
+        // Explicit background (timed conversation, event mapping), else the room's chatBackground
+        this.background = personChatBackgroundFor(params);
         this.startKnot = params.startKnot; // Optional knot to jump to (used for event-triggered conversations)
         this.videoCall = params.videoCall || false; // Render as a framed video call with a player self-view PiP
         

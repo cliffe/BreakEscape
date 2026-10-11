@@ -274,6 +274,7 @@ The `type` field of each room must match a file in `public/break_escape/assets/r
   "door_sign": "Main Office",
   "ambientSound": "server_room_ventilation",
   "ambientVolume": 0.4,
+  "chatBackground": "assets/backgrounds/rooms/room_office.png",
   "connections": { "north": "next_room" },
   "npcs": [...],
   "objects": [...]
@@ -281,6 +282,8 @@ The `type` field of each room must match a file in `public/break_escape/assets/r
 ```
 
 All room lock properties are the same as object lock properties (see Lock Types below).
+
+`chatBackground` is the image behind person-chat conversations held in this room (400x400, see the room-pov-background skill). It applies only when nothing more specific is set. In order: a `Background[...]` line in the ink wins, then an explicit `background` on the timed conversation or event mapping (`"none"` there means no image), then the `chatBackground` of the NPC's current room (it follows the NPC if it walks elsewhere; the player's room if the NPC's isn't known), then the plain frame. Phone chats and video calls ignore it. The validator warns if the file doesn't exist.
 
 ### Starting Inventory
 

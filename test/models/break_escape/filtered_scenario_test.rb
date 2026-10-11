@@ -82,6 +82,20 @@ module BreakEscape
       assert_equal false, start_room["locked"]
     end
 
+    test 'filtered_scenario_for_bootstrap keeps a room chatBackground' do
+      mission = break_escape_missions(:ceo_exfil)
+      player = break_escape_demo_users(:test_user)
+      data = @scenario_data.deep_dup
+      data["rooms"]["next_room"]["chatBackground"] = "assets/backgrounds/rooms/server.png"
+
+      game = Game.new(mission: mission, player: player, scenario_data: data)
+      game.save(validate: false)
+
+      filtered = game.filtered_scenario_for_bootstrap
+      assert_equal "assets/backgrounds/rooms/server.png", filtered["rooms"]["next_room"]["chatBackground"]
+      assert_not filtered["rooms"]["start"].key?("chatBackground")
+    end
+
     test 'filtered_scenario_for_bootstrap removes objects and npcs' do
       mission = break_escape_missions(:ceo_exfil)
       player = break_escape_demo_users(:test_user)

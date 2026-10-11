@@ -261,6 +261,7 @@ def check_unknown_fields(json_data)
   known_room_fields = %w[
     type door_sign connections locked lockType requires keyPins difficulty
     ambientSound ambientVolume objects npcs _comment dimensions biometricMatchThreshold lighting
+    chatBackground
   ]
 
   # Known NPC fields
@@ -3380,6 +3381,19 @@ def check_recurring_bugs(json_data, repo_root)
   if player_sheet.is_a?(String) && !player_sheet.empty? && !sheet_loadable.call(player_sheet)
     issues << "❌ ERROR: 'player' uses spriteSheet '#{player_sheet}', but #{unloadable_sheet.call(player_sheet)}. " \
               "In standalone mode (and Rails games with no saved sprite) the player has no texture."
+  end
+
+  # Room chatBackground: person-chat's fallback background (person-chat-background.js). A missing
+  # file fails quietly in game (plain frame), so say so here.
+  rooms.each do |rid, room|
+    next unless room.is_a?(Hash) && room.key?('chatBackground')
+    val = room['chatBackground']
+    if !val.is_a?(String) || val.strip.empty?
+      issues << "⚠️ WARNING: 'rooms/#{rid}' chatBackground should be an image path such as 'assets/backgrounds/rooms/<name>.png'."
+    elsif !asset_exists.call(val)
+      issues << "⚠️ WARNING: 'rooms/#{rid}' chatBackground '#{val}' does not exist under public/break_escape/. " \
+                "Conversations in this room show the plain frame."
+    end
   end
 
   # --- 5. different characters sharing one sprite sheet (m04 guard/operatives, m08 Phantom/Netherton)
