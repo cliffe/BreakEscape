@@ -741,6 +741,7 @@ export function preload() {
     this.load.image('pc5_ransomware', 'objects/pc5_ransomware.png');
     this.load.image('kvm_cart_ransomware', 'objects/kvm_cart_ransomware.png');
     this.load.image('checkin_kiosk_ransomware', 'objects/checkin_kiosk_ransomware.png');
+    this.load.image('display_table1', 'objects/display_table1.png');
     this.load.image('backup_recovery',         'objects/backup_recovery.png');
     this.load.image('dual_auth',               'objects/dual_auth.png');
     this.load.image('ehr-terminal',            'objects/ehr-terminal.png');

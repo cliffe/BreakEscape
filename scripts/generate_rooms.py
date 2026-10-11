@@ -2113,8 +2113,8 @@ def room_uni_foyer():
     notes2 on the display (as-type:notes), briefcase11 and laptop6 on the stand.
     """
     r = _Uni()
-    display = r.table("desk1", 157.0, 104.0)        # heritage display table, against the back wall under the crest (user, 2026-10-11)
-    stand = r.table("desk1", 100.0, 240.0)          # recruiter's stand
+    display = r.table("display_table1", 157.0, 104.0, kind="objects")  # heritage display table (no PC towers), against the back wall under the crest (user, 2026-10-11)
+    stand = r.table("display_table1", 100.0, 240.0, kind="objects")  # recruiter's stand (no PC towers)
     # back wall: plaque, Byte Wall, crest (decor), chart; >= 32px between interactables
     r.item("plaque1", 82.0, 52.0)
     r.item("alarm_panel2", 138.0, 52.0)            # the 1979 front panel, lit 01001101 (base alarm_panel)

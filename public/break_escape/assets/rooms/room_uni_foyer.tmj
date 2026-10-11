@@ -354,7 +354,7 @@
    "name": "tables",
    "objects": [
     {
-     "gid": 107,
+     "gid": 1000,
      "height": 39,
      "id": 1,
      "name": "",
@@ -366,7 +366,7 @@
      "y": 104.0
     },
     {
-     "gid": 107,
+     "gid": 1000,
      "height": 39,
      "id": 2,
      "name": "",
@@ -3080,7 +3080,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 189,
+   "tilecount": 190,
    "tileheight": 60,
    "tiles": [
     {
@@ -4216,6 +4216,12 @@
      "image": "../objects/checkin_kiosk_ransomware.png",
      "imageheight": 43,
      "imagewidth": 24
+    },
+    {
+     "id": 199,
+     "image": "../objects/display_table1.png",
+     "imageheight": 39,
+     "imagewidth": 78
     }
    ],
    "tilewidth": 60
