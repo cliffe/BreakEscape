@@ -86,6 +86,8 @@ Rest of the room:
 - Standing out on the floor, NOT against the wall, about <m from the inventory> in front of it, with
   bare floor visible between them and the back wall: <the second row: vending machines, lockers, racks>.
 - <Mid-room, by left / centre / right, each with its distance out from the back wall.>
+- <The back wall is one flat plane that meets both side walls in plain corners: no pilasters, no
+  recesses, no alcoves, no panels.>
 - <Left side wall, back to front: fixtures, doors.> <Right side wall, back to front: fixtures, doors.>
 - Floor: <material and colour>. Ceiling: <plain suspended ceiling with recessed lights, unless the room says otherwise>.
 Nothing else: no plants, no extra furniture, <"no windows" — or, if the back wall has windows: "the
@@ -94,7 +96,9 @@ windows have closed blinds, dark behind">.
 Lighting: <from the mission's lighting/mood: say what is on and what is off>. Moody volumetric lighting:
 visible light shafts and soft haze in the beams from the <main light sources: ceiling panels, lamps,
 screens>, deep soft shadows in the corners.
-Realistic digital painting with natural materials and believable light, not cartoony or stylised; clear, readable shapes (it will be converted to pixel art).
+Realistic digital painting with natural materials, real textures (carpet pile, painted plaster, wood
+grain) and believable light, like a photograph of a real room; not cartoony, not stylised, not flat
+colours; clear, readable shapes (it will be converted to pixel art).
 No people, no readable text. Square frame, eye level: the back wall's fixtures and the tops of desks,
 counters and beds all sit in the middle third of the frame's height. The left half and the right half of
 the picture each show something recognisable from the room.
@@ -136,7 +140,7 @@ Points that matter:
   - Gemini places things where they sit in the strip. "In the centre of the picture" and shifting the camera moved a cabinet only a few percent, though asking for the camera "directly in front of" it did make it wider, which fills the band better.
   - Small rooms invent doors: an extra corner or near-end door appeared twice. **"Exactly N doors in view: …" works** (tested in m01's hallways): with the "just round the corner from …" wording it gave exactly four doors in one hallway and exactly three in the other, first time.
   - Props behind the camera are left out, so a small room can look bare. That is a room-dressing question, not a reason to break the rule.
-- **Corner doors in the back wall:** one survived when named **last** in the back-wall list ("then, last, a plain grey door in the back-right corner"), where naming it first had failed.
+- **Corner doors in the back wall:** anchoring the door between the corner and a named item worked in m01's reception: "a plain white door in the back wall itself, in the back-left corner between the corner and the left end of the counter, facing us". With two corner doors in one wall (m01's main office) both were dropped. One also survived when named **last** in the back-wall list ("then, last, a plain grey door in the back-right corner"), where naming it first had failed.
 - **Count repeated rows.** Gemini added a third, blank row of screens above a two-row video wall. Write "exactly two rows of screens, nothing above them".
 - **Switched-off ceiling panels** can render as black holes. Write "a switched-off pale panel".
 - **Moody volumetric lighting in every room** (user, 2026-10-11), in both the Gemini prompt and the PixelLab description. Name the sources the shafts come from, so the light matches the room's lighting config. Even a fully lit daytime room gets soft haze in the light from its panels.
@@ -147,6 +151,8 @@ Points that matter:
   - Write "pale, light haze, never dark smoke". Once, haze came out as a dark smoke cloud over a bookcase.
   - In a generation, the phrase often barely registers in bright rooms. **The fix is a lighting-only edit**, which worked three times out of three without moving anything: "Change only the lighting, to make it moodier. Moody volumetric lighting: visible slanting light shafts with soft haze falling from the <sources> down through the middle of the room onto <named items> … Dim the room overall to an evening feel, with deep soft shadows in the corners and along the side walls. The walls stay <colour> where the light falls on them." **Match the mission's time of day** (the inventory quotes the mission's LIGHTING_PLAN.md). For a day mission (m01's office), drop "Dim the room overall to an evening feel" and write "keep the room's daytime brightness and its colours: <walls, rack, carpet>. On top of that, add moody volumetric lighting: …" instead. The evening wording greyed m01's periwinkle walls and navy rack; the daytime wording gave strong shafts with the colours kept, and it converted best (user chose it, 2026-10-11). The rest of the edit is unchanged: Keep everything else exactly the same: every object, its position and colour, the camera angle, and the painted style." The same edit adds the look to backgrounds made before this rule. `pov_diff.py` reports about 99% changed for a relight, so judge it by eye.
   - A small cleanup can ride along with a relight ("clear the grey smoke under the ceiling" worked), but not a layout change.
+  - **Relight from the clean generation, not from an earlier relight.** Stacked relights drift into brown smoke and grey, evening-looking walls.
+  - **One-panel rooms** (small offices) barely change with the standard relight. "Much stronger … clearly visible slanting beams of light, like sunbeams through dusty air … a soft pool of light on the carpet under <item>" worked, but can overshoot. The middle ground that worked: the standard relight plus "pale, light, silvery haze, never dark or brown smoke, and nothing hazy in front of <item>". PixelLab can add round bokeh-like blobs inside a strong beam.
   - The relight's strength varies: strong in rooms with several panels, mild in a small office with one off-centre panel and a lot of bare wall, and one hard central shaft that dimmed the walls in a closet with a single panel. Every daylit room needed the relight edit; the volumetric wording in the generation alone gave weak shafts.
   - In the relight, say "every screen and monitor stays switched on, showing its own picture": one relight switched a monitor off.
   - In the relight, say "natural colours, not sepia" and name the real colours (cream walls, navy carpet), or it goes sepia and smoky. "Cool light" turned cream walls grey-green. Never ask for a "glow from the monitor": it blows the screen out to white. Keep the relight edit to lighting only; a second change in the same edit (removing a word) was ignored.
