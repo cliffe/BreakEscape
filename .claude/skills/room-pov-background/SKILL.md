@@ -87,7 +87,9 @@ Rest of the room:
 Nothing else: no plants, no extra furniture, <"no windows" — or, if the back wall has windows: "the
 windows have closed blinds, dark behind">.
 
-Lighting: <from the mission's lighting/mood: say what is on and what is off>, soft shadows, slightly moody.
+Lighting: <from the mission's lighting/mood: say what is on and what is off>. Moody volumetric lighting:
+visible light shafts and soft haze in the beams from the <main light sources: ceiling panels, lamps,
+screens>, deep soft shadows in the corners.
 Painted digital concept art, clean shapes and readable silhouettes (it will be converted to pixel art).
 No people, no readable text. Square frame, eye level: the back wall's fixtures and the tops of desks,
 counters and beds all sit in the middle third of the frame's height. The left half and the right half of
@@ -130,6 +132,7 @@ Points that matter:
 - **Corner doors in the back wall:** one survived when named **last** in the back-wall list ("then, last, a plain grey door in the back-right corner"), where naming it first had failed.
 - **Count repeated rows.** Gemini added a third, blank row of screens above a two-row video wall. Write "exactly two rows of screens, nothing above them".
 - **Switched-off ceiling panels** can render as black holes. Write "a switched-off pale panel".
+- **Moody volumetric lighting in every room** (user, 2026-10-11), in both the Gemini prompt and the PixelLab description. Name the sources the shafts come from, so the light matches the room's lighting config. Even a fully lit daytime room gets soft haze in the light from its panels.
 - **"Moody" gets ignored** in bright rooms. Say what is off and what is on ("half the panels off", "one panel on").
 - Use the `pro` model: call `set_model pro` with a fresh `conversation_id` per room **before** the first generation, and not in parallel with it, or the generation may run on flash. A fresh ID keeps history from another room from leaking in.
 
@@ -189,7 +192,7 @@ Re-run the step 3 checklist after each change. Stop after about three fix rounds
 Once the concept is approved:
 
 ```bash
-python3 tools/pixelate_background.py <scratch>/<room>/concept.png <scratch>/<room>/px "pixel art, <one-line scene>" --strengths 500
+python3 tools/pixelate_background.py <scratch>/<room>/concept.png <scratch>/<room>/px "pixel art, <one-line scene>, moody volumetric lighting" --strengths 500
 ```
 
 Look at the result. Use 600 if labels or screens turn to mush. Then save both files. Gemini writes JPEG data under the `.png` name it was given, so re-save the concept as a real PNG: `python3 -c "from PIL import Image as I; I.open('SRC').convert('RGB').save('DST', format='PNG')"`.
