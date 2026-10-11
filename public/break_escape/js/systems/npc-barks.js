@@ -524,10 +524,13 @@ export default class NPCBarkSystem {
     
     console.log('📱 Opening phone chat for NPC:', npcId, 'with payload:', payload);
     
-    // Get NPC data from manager if available
+    // Get NPC data from manager if available. main.js builds the bark system before the
+    // manager, so this.npcManager is unset in game; without the global fallback the NPC's
+    // phoneTheme and phoneId were lost and a terminal device opened as the player's phone.
     let npcData = null;
-    if (this.npcManager) {
-      npcData = this.npcManager.getNPC(npcId);
+    const manager = this.npcManager || (typeof window !== 'undefined' ? window.npcManager : null);
+    if (manager) {
+      npcData = manager.getNPC(npcId);
       console.log('📋 NPC data from manager:', npcData);
     }
 
@@ -542,6 +545,7 @@ export default class NPCBarkSystem {
       // phone-chat then cleared the thread and re-ran the last knot entered, instead of
       // reopening the saved conversation (E10/E13). Without a knot it reopens the thread.
       startKnot: startKnot || null,
+      phoneId: npcData?.phoneId,
       theme: npcData?.phoneTheme
     };
     
