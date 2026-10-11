@@ -285,6 +285,8 @@ All room lock properties are the same as object lock properties (see Lock Types 
 
 `chatBackground` is the image behind person-chat conversations held in this room (400x400, see the room-pov-background skill). It applies only when nothing more specific is set. In order: a `Background[...]` line in the ink wins, then an explicit `background` on the timed conversation or event mapping (`"none"` there means no image), then the `chatBackground` of the NPC's current room (it follows the NPC if it walks elsewhere; the player's room if the NPC's isn't known), then the plain frame. Phone chats and video calls ignore it. The validator warns if the file doesn't exist.
 
+An NPC can also have its own `chatBackground` (same path style), which wins over the room's: use it when the character is always seen in one place that the room view doesn't fit, such as a patient in a hospital bed (m02 and sis01 use a bedside view). An explicit `background` on a conversation and `Background[...]` in the ink still win over it.
+
 ### Starting Inventory
 
 Use the `startItemsInInventory` array at scenario root level. Players have these items automatically at game start:

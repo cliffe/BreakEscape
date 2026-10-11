@@ -270,7 +270,7 @@ def check_unknown_fields(json_data)
     voice behavior globalVarOnKO restartOnRetalk taskOnKO storyPath currentKnot avatar
     phoneId phoneTheme unlockable externalVariables persistentVariables
     timedMessages timedConversation eventMappings itemsHeld puzzle_graph_actions
-    observations disableClose los rfidCard _comment
+    observations disableClose los rfidCard chatBackground _comment
   ]
 
   # Known NPC los fields, and those of the opt-in los.challengeOnSight
@@ -3393,6 +3393,18 @@ def check_recurring_bugs(json_data, repo_root)
     elsif !asset_exists.call(val)
       issues << "⚠️ WARNING: 'rooms/#{rid}' chatBackground '#{val}' does not exist under public/break_escape/. " \
                 "Conversations in this room show the plain frame."
+    end
+  end
+
+  # NPC chatBackground: the NPC's own person-chat background (beats the room's), e.g. a bedside view.
+  rooms.each do |rid, room|
+    next unless room.is_a?(Hash) && room['npcs'].is_a?(Array)
+    room['npcs'].each_with_index do |npc, i|
+      next unless npc.is_a?(Hash) && npc.key?('chatBackground')
+      val = npc['chatBackground']
+      if !val.is_a?(String) || val.strip.empty? || !asset_exists.call(val)
+        issues << "⚠️ WARNING: 'rooms/#{rid}/npcs[#{i}]' (#{npc['id']}) chatBackground '#{val}' is not an existing image under public/break_escape/."
+      end
     end
   end
 

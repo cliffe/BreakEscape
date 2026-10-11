@@ -96,3 +96,19 @@ test('personChatBackgroundFor reads live state', () => {
     // No scenario loaded
     assert.equal(personChatBackgroundFor({ npcId: 'nurse' }, {}), null);
 });
+
+test("an NPC's own chatBackground beats the room, loses to explicit", () => {
+    const bed = 'assets/backgrounds/rooms/bedside.png';
+    assert.equal(resolvePersonChatBackground({ npcBackground: bed, roomIds: ['ward'], rooms }), bed);
+    assert.equal(resolvePersonChatBackground({ explicit: 'assets/backgrounds/hq1.png', npcBackground: bed, roomIds: ['ward'], rooms }),
+        'assets/backgrounds/hq1.png');
+    assert.equal(resolvePersonChatBackground({ explicit: 'none', npcBackground: bed, roomIds: ['ward'], rooms }), null);
+    assert.equal(resolvePersonChatBackground({ videoCall: true, npcBackground: bed }), null);
+    assert.equal(resolvePersonChatBackground({ npcBackground: '  ', roomIds: ['ward'], rooms }), 'assets/backgrounds/rooms/ward.png');
+});
+
+test('personChatBackgroundFor reads the NPC chatBackground', () => {
+    const w = fakeWindow({ npcRoom: 'ward' });
+    w.npcManager = { getNPC: id => (id === 'patient' ? { id, roomId: 'ward', chatBackground: 'assets/backgrounds/rooms/bedside.png' } : null) };
+    assert.equal(personChatBackgroundFor({ npcId: 'patient' }, w), 'assets/backgrounds/rooms/bedside.png');
+});
