@@ -254,7 +254,7 @@ Then make the blended version the game uses (user, 2026-10-11): the concept resi
 python3 tools/blend_backgrounds.py --only <name>      # writes <name>_blended.png; no --only does every pair
 ```
 
-Point `chatBackground` (and any `Background[...]` ink tag) at `<name>_blended.png`. Keep all three files.
+Point `chatBackground` at `<name>_blended.png`. Keep all three files. In ink, a briefing that opens on an exterior should cut back with `Background[room]:` (the conversation's own NPC or room background), never `Background[none]` (a plain black frame: sis01's Sarah stood on black until 2026-10-11). Check a briefing with `tools/playtest/cutscene-line-shot.sh <mission> <out> '<regex of a line>'`.
 
 `<name>` is `<mission>_<room_id>` (e.g. `m02_reception_lobby`) when the mission's overrides, empty slots or mood show in the image. That is usual: skull screens and night lighting are mission-specific. Use the room type (`room_hospital_staff`) only when the image would suit every mission that uses that map. Then set the room's field in the scenario:
 
