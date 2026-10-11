@@ -112,16 +112,16 @@ Encoding is not security. Anyone who recognises the scheme can undo it, and tool
 
 Most of the early locks come down to one question: what kind of data is this? Look at which characters it uses, and how long it is.
 
-| What you see                                                                          | Probably                                   | Try in CyberChef                |
-| ------------------------------------------------------------------------------------- | ------------------------------------------ | ------------------------------- |
-| Numbers, mostly 32 to 126, separated by spaces                                        | ASCII codes in decimal                     | From Decimal                    |
-| Only 0 and 1, in groups of eight                                                      | Binary                                     | From Binary                     |
-| Only 0 to 9 and a to f, an even number of characters, often run together             | Hex                                        | From Hex                        |
-| Upper and lower case letters, digits, maybe `+` and `/`, maybe `=` or `==` at the end | Base64                                     | From Base64                     |
+| What you see                                                                          | Probably                                   | Try in CyberChef                        |
+| ------------------------------------------------------------------------------------- | ------------------------------------------ | --------------------------------------- |
+| Numbers, mostly 32 to 126, separated by spaces                                        | ASCII codes in decimal                     | From Decimal                            |
+| Only 0 and 1, in groups of eight                                                      | Binary                                     | From Binary                             |
+| Only 0 to 9 and a to f, an even number of characters, often run together              | Hex                                        | From Hex                                |
+| Upper and lower case letters, digits, maybe `+` and `/`, maybe `=` or `==` at the end | Base64                                     | From Base64                             |
 | Text shaped like English (spaces, full stops, short words) but the words are nonsense | A letter-shifting cipher: Caesar, Vigenère | ROT13 (with an Amount), Vigenère Decode |
-| A block of Base64 between `-----BEGIN ...-----` and `-----END ...-----` lines         | A PEM key or certificate                   | Paste it into a key field       |
-| Exactly 64 hex characters                                                             | A SHA-256 hash                             | (cannot be reversed)            |
-| Exactly 32 hex characters                                                             | 16 bytes: an AES-128 key, or an IV         | A Key or IV field               |
+| A block of Base64 between `-----BEGIN ...-----` and `-----END ...-----` lines         | A PEM key or certificate                   | Paste it into a key field               |
+| Exactly 64 hex characters                                                             | A SHA-256 hash                             | (cannot be reversed)                    |
+| Exactly 32 hex characters                                                             | 16 bytes: an AES-128 key, or an IV         | A Key or IV field                       |
 
 If one layer comes off and you get another of these shapes, peel that one too. Encodings stack.
 
@@ -137,9 +137,9 @@ A **bit** is a 0 or a 1. A **byte** is eight bits, so it can hold 256 different 
 
 **Binary to decimal by hand.** In a byte the eight places are worth 128, 64, 32, 16, 8, 4, 2 and 1. Add up the places that hold a 1:
 
-| Place value | 128 | 64  | 32  | 16  | 8   | 4   | 2   | 1   |              |
-| ----------- | --- | --- | --- | --- | --- | --- | --- | --- | ------------ |
-| `01001101`  | 0   | 1   | 0   | 0   | 1   | 1   | 0   | 1   | 64+8+4+1 = 77 |
+| Place value | 128 | 64  | 32  | 16  | 8   | 4   | 2   | 1   |                 |
+| ----------- | --- | --- | --- | --- | --- | --- | --- | --- | --------------- |
+| `01001101`  | 0   | 1   | 0   | 0   | 1   | 1   | 0   | 1   | 64+8+4+1 = 77   |
 | `01101001`  | 0   | 1   | 1   | 0   | 1   | 0   | 0   | 1   | 64+32+8+1 = 105 |
 
 **Binary to hex by hand.** One hex digit is exactly four bits, so split the byte in half and convert each half (place values 8, 4, 2, 1):
@@ -157,12 +157,12 @@ That fixed width is why hex can run together without separators and still be rea
 
 A **character encoding** is an agreed table from numbers to characters. **ASCII** covers the English letters, digits, punctuation and some control codes, using the numbers 0 to 127. You do not need to memorise it, but these ranges are worth knowing because they tell you what you are looking at:
 
-| Characters  | Decimal    | Hex        | Binary starts |
-| ----------- | ---------- | ---------- | ------------- |
-| space       | 32         | 20         | `0010`        |
-| digits 0–9  | 48 to 57   | 30 to 39   | `0011`        |
-| A–Z         | 65 to 90   | 41 to 5a   | `010`         |
-| a–z         | 97 to 122  | 61 to 7a   | `011`         |
+| Characters | Decimal   | Hex      | Binary starts |
+| ---------- | --------- | -------- | ------------- |
+| space      | 32        | 20       | `0010`        |
+| digits 0–9 | 48 to 57  | 30 to 39 | `0011`        |
+| A–Z        | 65 to 90  | 41 to 5a | `010`         |
+| a–z        | 97 to 122 | 61 to 7a | `011`         |
 
 Some things this table tells you:
 
@@ -264,19 +264,9 @@ Find the lock you are on. Read the hint, then go back and try. If you are still 
 
 > Hint: If the briefing has finished and you do not know what to do, talk to the person at the CryptoSecure stand in the foyer, then look for a lecturer with a laptop.
 
-<details markdown="1">
-<summary>Nudge: "I can't find the clue for the lockbox"</summary>
-
 Jordan, at the CryptoSecure stand, gives you the Keyholder Leaflet. It goes into your **notepad**, not the inventory bar. Open the notepad and page through to it.
 
-</details>
-
-<details markdown="1">
-<summary>Nudge: "I don't have CyberChef"</summary>
-
 Dr Tom Shaw has the lab laptop. He is in the lecture theatre, through the foyer's south door, standing at the front by the demonstration bench. Walk along the front, not into the rows of seats. Talking to him also gives you Field Notes 1 to 3.
-
-</details>
 
 The exhibits in the foyer (the Byte Wall, the plaque, the ASCII chart and the paper tape) are optional, but each one teaches something the first few locks use. If bits and bytes are new to you, look at them.
 
@@ -286,23 +276,13 @@ The exhibits in the foyer (the Byte Wall, the plaque, the ASCII chart and the pa
 
 > Hint: Each number on the leaflet stands for one character. What is the smallest number, and what is the biggest? Compare them with the ASCII table above.
 
-<details markdown="1">
-<summary>Nudge</summary>
-
 The numbers are ASCII codes written in decimal. You can look each one up on the ASCII chart in the foyer, which works but is slow, or let CyberChef convert them all at once. Numbers from 97 to 122 are lower-case letters.
 
 **Learn it:** ==action: Before you use CyberChef, decode the first number by hand==. Subtract 96 from it and count along the alphabet (97 is `a`, 98 is `b`, and so on).
 
-</details>
-
-<details markdown="1">
-<summary>Recipe</summary>
-
 1. \==action: Copy the numbers from the notepad page into **Input**==.
 2. \==action: Add **From Decimal**==. Leave Delimiter on **Space**.
 3. \==action: Type the word that comes out into the lockbox==, exactly as it appears.
-
-</details>
 
 > Warning: Do not type the numbers into the lockbox, and do not guess. Each wrong try uses up an attempt.
 
@@ -314,9 +294,6 @@ This is the first real trap. Allow some time for it.
 
 > Hint: The keypad wants four digits. You have eight. What does that suggest?
 
-<details markdown="1">
-<summary>Nudge</summary>
-
 Eight digits, four characters: each character is two digits long. Now look at the ASCII table: which characters have codes that are two digits long and start with 4 or 5? The answer you want is made of digits, and **digits are characters too**.
 
 CyberChef cannot tell where one decimal code ends and the next begins, because decimal codes are not a fixed width. You have to tell it.
@@ -325,11 +302,6 @@ If you got **four capital letters**, something read your digits as hex (Magic do
 
 The noticeboard and Megan in the common room both have advice on this one.
 
-</details>
-
-<details markdown="1">
-<summary>Recipe</summary>
-
 1. \==action: Copy the eight digits into **Input**==.
 2. \==action: In the Input box itself, type a space after every second digit==, so a code like `12345678` becomes `12 34 56 78`.
 3. \==action: Add **From Decimal**== (Delimiter Space).
@@ -337,31 +309,19 @@ The noticeboard and Megan in the common room both have advice on this one.
 
 If the keypad says "System locked" after three wrong tries, close it and open it again.
 
-</details>
-
 ### Trial III: The Keyholder Guest Terminal {#hints-trial-3}
 
 **Clue:** the Trial III Card, from Locker 4. **Lock:** the black guest terminal at the aisle end of the back bench in the teaching lab (west of the foyer). **Lock wants:** a word.
 
 > Hint: Only noughts and ones, in groups of eight. What is a group of eight bits called?
 
-<details markdown="1">
-<summary>Nudge</summary>
-
 Each group of eight is one byte, so one character. It is the same idea as Trial I, written in base 2 instead of base 10.
 
 **Learn it:** ==action: Decode the first group by hand== with the place values 128, 64, 32, 16, 8, 4, 2, 1 (see "Bits, Bytes and Bases"). You should get a number between 97 and 122. Which letter is it? Then let CyberChef do the rest, and check your first letter matches.
 
-</details>
-
-<details markdown="1">
-<summary>Recipe</summary>
-
 1. \==action: Copy the whole card text into **Input**==. Make sure no group is missing.
 2. \==action: Add **From Binary**== (Delimiter Space, Byte Length 8).
 3. \==action: Type the word into the guest terminal==.
-
-</details>
 
 ### Trial IV: The Corridor Door {#hints-trial-4}
 
@@ -369,23 +329,13 @@ Each group of eight is one byte, so one character. It is the same idea as Trial 
 
 > Hint: Look at the alphabet: 0 to 9 and a to f, nothing else, all run together.
 
-<details markdown="1">
-<summary>Nudge</summary>
-
 It is hex: two hex digits per byte, so it does not need spaces. Read the whole output carefully before you type anything. Did the door ask for a sentence?
 
 **Learn it:** ==action: Take the first two hex digits and convert each one to four bits== (for example `6` is `0110` and `f` is `1111`), join them, and you have a byte you can look up in the ASCII table.
 
-</details>
-
-<details markdown="1">
-<summary>Recipe</summary>
-
 1. \==action: Paste the hex into **Input**==.
 2. \==action: Add **From Hex**== (Delimiter Auto).
 3. The output is a sentence. ==action: Type only the last word into the door==.
-
-</details>
 
 > Warning: Most students who give up here had already decoded it correctly and typed the whole sentence.
 
@@ -395,32 +345,19 @@ It is hex: two hex digits per byte, so it does not need spaces. Read the whole o
 
 > Hint: This one uses upper and lower case letters and digits, and it ends with `=`. Which of the shapes in "How to Tell What You Are Looking At" is that?
 
-<details markdown="1">
-<summary>Nudge</summary>
-
 It is Base64. The poster's description has a worked example: three letters become four Base64 symbols. The `=` at the end is padding, so copy it too.
 
 Copy and paste rather than retyping: in the game's font, a lower-case `l` and a capital `I` look almost the same, and Base64 uses both.
 
-</details>
-
-<details markdown="1">
-<summary>Recipe</summary>
-
 1. \==action: Paste the Base64 into **Input**==.
 2. \==action: Add **From Base64**== (leave the settings alone).
 3. The output is a sentence. ==action: Type the four digits after "keypad:" into the library keypad==.
-
-</details>
 
 ### Trial VI: The Special Collections Safe {#hints-trial-6}
 
 **Clue:** the Returns Slip, on the returns counter in the library. **Lock:** the safe in Special Collections, through the library's north door. **Lock wants:** a word.
 
 > Hint: There are two layers here. What does the outside layer look like? And read the slip's description: it tells you something about a shift.
-
-<details markdown="1">
-<summary>Nudge</summary>
 
 The outside layer is Base64 again. Take it off first. What you get underneath looks like English (spaces, short words, a colon) but the letters are wrong. That is a Caesar cipher.
 
@@ -430,17 +367,10 @@ To undo a shift you go **back** by that amount. In CyberChef, the Caesar shift i
 
 If you are not sure of the shift, add **ROT13 Brute Force** instead. It shows all 25 shifts at once, and you can pick out the line that reads as English. That is exactly why Caesar is weak: there are only 25 keys to try.
 
-</details>
-
-<details markdown="1">
-<summary>Recipe</summary>
-
 1. \==action: Paste the slip text into **Input**==.
 2. \==action: Add **From Base64**==.
 3. \==action: Add **ROT13** below it, and change **Amount** from 13 to -6== (20 also works). Leave "Rotate numbers" off.
 4. The output is a sentence. ==action: Type only the last word, in lower case==.
-
-</details>
 
 ### Trial VII: The Pigeonholes {#hints-trial-7}
 
@@ -450,26 +380,13 @@ This lock gives you **three** things, and you need all of them later. Write them
 
 > Hint: This is the first clue where you need a key that is somewhere else. Read the file's description: where does it say the key is?
 
-<details markdown="1">
-<summary>Nudge: finding the key</summary>
-
 "The man who checks everything twice" is Dr Selvarajan, who teaches hashes and blockchains. His office is east of the corridor, and the seminar room is through the back of it. Look at the ledger whiteboard there. You do not have to talk to him.
 
 The whiteboard shows a short chain of blocks. The key is the data word in the **last** block. Not the first block, and not a hash.
 
-</details>
-
-<details markdown="1">
-<summary>Nudge: "the output is all nonsense"</summary>
-
 The key in a Vigenère cipher is a word, so the shift changes from letter to letter. That means every extra letter in the input knocks the key out of step for everything after it.
 
 If your output is nonsense of about the right length and you are sure of the key, the usual cause is that you copied something extra with the ciphertext: the file name, a heading, a line of description. Copy it again with the file's **Copy** button. Also check the key for typos, and that it is in lower case.
-
-</details>
-
-<details markdown="1">
-<summary>Recipe</summary>
 
 1. \==action: Open `trial_vii.txt`, use its **Copy** button, and paste into **Input**==.
 2. \==action: Add **Vigenère Decode**, and set **Key** to the last block's data word==.
@@ -480,8 +397,6 @@ If your output is nonsense of about the right length and you are sure of the key
 4. \==action: Open the **Tag on the Drop Box** page in your notepad== (take the tag from the drop box in the corridor if you have not already). ==action: Use the pencil to write the IV and your pigeonhole number on it==.
 5. \==action: Type the password into the pigeonholes==, with nothing after it.
 
-</details>
-
 > Tip: If you are in a 60-minute class, this is a good place to stop. Write down the three values first.
 
 ### The Envelope in Your Pigeonhole {#hints-envelope}
@@ -489,9 +404,6 @@ If your output is nonsense of about the right length and you are sure of the key
 **Clue:** the envelope in **your** pigeonhole (the number from Trial VII). There is no lock on this step. It gives you a key for the next one.
 
 > Hint: The text said your envelope is sealed to your public key. Which key opens something sealed to a public key?
-
-<details markdown="1">
-<summary>Nudge</summary>
 
 Your **private** key opens it. It is on the "Your Lab Account" PC in the teaching lab, at the aisle end of the front bench, as `private_key.pem`.
 
@@ -501,11 +413,6 @@ Only one of the four pigeonholes is yours. The other envelopes are sealed to oth
 
 The answer is not a word. It is 32 hex characters, which is 16 bytes: an AES key. That is hybrid encryption (see the Concepts section).
 
-</details>
-
-<details markdown="1">
-<summary>Recipe</summary>
-
 1. \==action: Paste your envelope's text into **Input**==.
 2. \==action: Add **From Base64**==.
 3. \==action: Add **RSA Decrypt**==. Open `private_key.pem` on the lab PC and use its **Copy** button. Paste the whole thing, including the `-----BEGIN` and `-----END` lines, into **RSA Private Key (PEM)**.
@@ -514,27 +421,17 @@ The answer is not a word. It is 32 hex characters, which is 16 bytes: an AES key
 
 If you see "Invalid RSAES-OAEP padding" or "Encrypted message is invalid", check you used your own pigeonhole and the private key, not the public one.
 
-</details>
-
 ### The Drop Box {#hints-drop-box}
 
 **Clue:** the Tag on the Drop Box, in your notepad. **Lock:** the drop box in the corridor. **Lock wants:** a word, a hyphen and two digits.
 
 > Hint: The tag says what cipher it is, and that it needs two things. Where did each one come from?
 
-<details markdown="1">
-<summary>Nudge</summary>
-
 The tag says **AES-128-CBC**. AES is symmetric, so you need the key: the 32 hex characters from your envelope. CBC needs an IV: the 32 hex characters from Trial VII. The IV is not secret, but the cipher cannot start without it.
 
 Both are 32 hex characters, so it is easy to swap them. Check which is which.
 
 If CyberChef shows an error, read its first words: "Invalid IV length" means the IV is missing, and "Unable to decrypt" or garbage means one of the key, IV or ciphertext is wrong.
-
-</details>
-
-<details markdown="1">
-<summary>Recipe</summary>
 
 1. \==action: Paste the tag's hex into **Input**==.
 2. \==action: Add **AES Decrypt**==.
@@ -543,20 +440,13 @@ If CyberChef shows an error, read its first words: "Invalid IV length" means the
 5. Leave **Mode CBC**, **Input Hex** and **Output Raw** as they are.
 6. \==action: Type the passphrase that comes out into the drop box==.
 
-==warning: Do not clear this recipe==. You build on it for the next lock.
-
-</details>
+\==warning: Do not clear this recipe==. You build on it for the next lock.
 
 ### The Workshop Door {#hints-workshop}
 
 > Hint: Not every lock wants a password. What came out of the drop box?
 
-<details markdown="1">
-<summary>Nudge</summary>
-
 \==action: Select the Brass Key in your inventory, then click the workshop door== at the north end of the corridor.
-
-</details>
 
 ### The Relay Terminal {#hints-relay}
 
@@ -564,19 +454,11 @@ If CyberChef shows an error, read its first words: "Invalid IV length" means the
 
 > Hint: The terminal wants a fingerprint, not a password. Which of the ideas in this sheet is a fingerprint?
 
-<details markdown="1">
-<summary>Nudge</summary>
-
 It wants the first eight characters of the **SHA-256 hash** of the passphrase that opened the drop box.
 
 A hash covers every byte. If you type or paste the passphrase and an invisible new line or space comes with it, the hash is completely different. The safest input is the exact output of your AES recipe, so hash that directly.
 
 CyberChef's SHA2 operation starts on **512**, not 256. A SHA-256 hash is 64 hex characters. If yours is 128, the size is wrong.
-
-</details>
-
-<details markdown="1">
-<summary>Recipe</summary>
 
 1. Go back to your drop box recipe, still showing the passphrase.
 2. \==action: Add **SHA2** below AES Decrypt==.
@@ -585,23 +467,13 @@ CyberChef's SHA2 operation starts on **512**, not 256. A SHA-256 hash is 64 hex 
 
 If you reloaded and lost the recipe, rebuild AES Decrypt from the key, IV and tag on your notepad page first.
 
-</details>
-
 ### The Finale: The Call and the Report {#hints-finale}
 
 Once the relay terminal opens, someone calls you. After the call, open the relay terminal again: it holds a signed report. What you do with it is your decision, and there is no wrong ending. These hints help you understand what you have, not choose for you.
 
 > Hint: Whatever you have been handed, read it before you do anything with it.
 
-<details markdown="1">
-<summary>Nudge: reading the report</summary>
-
 `report_b64` is Base64. Decode it with **From Base64** and read every line, right to the end. The last line is HTML. Ask yourself what a web page or email client does when it shows that line, and who would find out.
-
-</details>
-
-<details markdown="1">
-<summary>Nudge: checking the hash and the signature (optional)</summary>
 
 These checks are optional, and they tell you who signed the report and that it has not changed. They do not tell you whether it is safe to send.
 
@@ -611,14 +483,7 @@ These checks are optional, and they tell you who signed the report and that it h
 
 "Verification Failure" usually means the Message was the decoded text, there was a trailing new line, or the digest was left on SHA-1.
 
-</details>
-
-<details markdown="1">
-<summary>Spoiler: other ways to reach HaX</summary>
-
 The caller claims the Keyholder device listens to what you say near it. The workshop has a Hacktivity scoreboard that takes flags. Its post-it says flags are lower case, exactly as found. Is there anything in the report that looks like a flag?
-
-</details>
 
 After you decide, ==action: open HaX's phone and choose **[I'm clear. Debrief me.]**==
 
@@ -626,47 +491,27 @@ After you decide, ==action: open HaX's phone and choose **[I'm clear. Debrief me
 
 None of these are needed to finish. Each one teaches something about character tables. Try them if you finish early.
 
-<details markdown="1">
-<summary>The job tape in the safe (EBCDIC)</summary>
-
 `job_0412.hex` is hex, but **From Hex** gives garbage. These bytes come from an IBM mainframe, which used a different character table. After From Hex, add **Decode text** and choose **IBM EBCDIC US-Canada (37)**.
-
-</details>
-
-<details markdown="1">
-<summary>The garbled name in the staff office (mojibake)</summary>
 
 The staff office is east of the common room. Dr Illiashenko's name has been mangled on a staff list in the photocopier. The bytes are UTF-8, but something read them with the Windows Cyrillic table. To reverse that: paste the garbled name, add **Encode text** with **Windows-1251 Cyrillic (1251)** to get the original bytes back, then **Decode text** with **UTF-8 (65001)**. Then tell him.
 
-</details>
-
-<details markdown="1">
-<summary>The duplicate accounts (homographs)</summary>
-
 `duplicate_accounts.txt`, also in the photocopier, lists two usernames that look the same. Run **To Hex** on each and compare. One letter is not what it looks like. This is how lookalike web addresses are used in phishing.
-
-</details>
-
-<details markdown="1">
-<summary>Megan's file in the safe</summary>
 
 The Candidate Assessments notes are readable as they are. What you do about what it says is up to you.
 
-</details>
-
 ### What CyberChef and the Locks Are Telling You {#error-messages}
 
-| You see                                                         | It usually means                                                                     |
-| --------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| "Incorrect password. N attempts remaining."                     | The answer is not exact: a capital letter, a full stop, a whole sentence, a space    |
-| "Data is not a valid byteArray"                                 | From Decimal was given digits with no spaces between the codes                       |
-| Four capital letters from a string of digits                    | The digits were read as hex. Read them as decimal codes instead                      |
-| Nonsense of the right length from Vigenère                      | Wrong key, a typo in the key, or extra text copied with the ciphertext               |
-| "Invalid RSAES-OAEP padding" or "Encrypted message is invalid"  | Wrong pigeonhole for your key, the public key pasted, or From Base64 missing         |
-| "Invalid IV length"                                             | AES Decrypt has no IV                                                                |
-| "Unable to decrypt input with these parameters", or garbage     | Wrong key or IV, the two swapped, or a toggle changed from Hex                       |
-| A SHA2 output 128 characters long                               | Size is still on 512                                                                 |
-| "Verification Failure"                                          | RSA Verify given the decoded text, a trailing new line, or the digest left on SHA-1  |
+| You see                                                        | It usually means                                                                    |
+| -------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| "Incorrect password. N attempts remaining."                    | The answer is not exact: a capital letter, a full stop, a whole sentence, a space   |
+| "Data is not a valid byteArray"                                | From Decimal was given digits with no spaces between the codes                      |
+| Four capital letters from a string of digits                   | The digits were read as hex. Read them as decimal codes instead                     |
+| Nonsense of the right length from Vigenère                     | Wrong key, a typo in the key, or extra text copied with the ciphertext              |
+| "Invalid RSAES-OAEP padding" or "Encrypted message is invalid" | Wrong pigeonhole for your key, the public key pasted, or From Base64 missing        |
+| "Invalid IV length"                                            | AES Decrypt has no IV                                                               |
+| "Unable to decrypt input with these parameters", or garbage    | Wrong key or IV, the two swapped, or a toggle changed from Hex                      |
+| A SHA2 output 128 characters long                              | Size is still on 512                                                                |
+| "Verification Failure"                                         | RSA Verify given the decoded text, a trailing new line, or the digest left on SHA-1 |
 
 ## Try It on the Command Line (Optional) {#command-line}
 
