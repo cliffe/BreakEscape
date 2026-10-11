@@ -60,14 +60,14 @@ VAR hub_quiet = false
 
 === arrival_briefing ===
 // Opens on the site exterior with the narrator alone (m01/m02 pattern), cuts
-// inside Hall 1 for the second line, then Background[none] brings Helen in on
-// a plain frame.
+// inside Hall 1 for the second line, then cuts to the control room, where Helen
+// is (the room's chatBackground image).
 Background[assets/backgrounds/albion_energy.png]:
 Narrator[none]: Albion Energy Storage, on the Trent near Newark. Saturday, half past six.
 Background[assets/backgrounds/albion_battery_hall.png]:
 Narrator: Two battery halls holding two hundred megawatt-hours of lithium-ion cells, charging off the grid overnight while the county sleeps.
 Narrator: The site's SCADA engineer got in at quarter past six. She hasn't taken her eyes off the control room screens since.
-Background[none]:
+Background[assets/backgrounds/rooms/sis02_scada_control_room.png]:
 Helen Marsh: Morning. Helen Marsh, SCADA. You're the lot booked for the seven o'clock window on the grid PLC?
 Helen Marsh: Before anybody touches that, I want a look in Hall 1. Every reading on that screen's normal. Too normal for a night on charge.
 Helen Marsh: Jay was on nights. His handover says "uneventful". He's not wrong. Look at that screen. Nothing moved all night.
