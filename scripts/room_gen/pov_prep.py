@@ -146,6 +146,10 @@ def main():
     strip = im.crop((WALL_FRAME * s, (WALL_FRAME - 1) * s, (W - WALL_FRAME) * s, STRIP_BOTTOM * s))
     strip = strip.resize((strip.width * 2, strip.height * 2), Image.NEAREST)
     strip.save(a.out_dir / f"{a.room}_backwall.png")
+    # wall only (down to the skirting): the floor band shows second-row sprites cut off under the
+    # skirting, which reads as "against the wall"; send this one when the room has free-standing rows
+    wall = im.crop((WALL_FRAME * s, (WALL_FRAME - 1) * s, (W - WALL_FRAME) * s, FLOOR_Y * s))
+    wall.resize((wall.width * 2, wall.height * 2), Image.NEAREST).save(a.out_dir / f"{a.room}_backwall_wall.png")
 
     objs = list(Room(a.room).objects())
     tables = [(o, n) for layer, o, n in objs if layer == "tables"]
@@ -254,7 +258,7 @@ def main():
     out = a.out_dir / f"{a.room}_inventory.txt"
     out.write_text("\n".join(lines) + "\n")
     print("\n".join(lines))
-    print(f"wrote {top}\nwrote {a.out_dir / (a.room + '_backwall.png')}\nwrote {out}")
+    print(f"wrote {top}\nwrote {a.out_dir / (a.room + '_backwall.png')}\nwrote {a.out_dir / (a.room + '_backwall_wall.png')}\nwrote {out}")
 
 
 if __name__ == "__main__":

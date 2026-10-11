@@ -13,6 +13,7 @@ Standing rules:
 
 - Gemini is metered. Generate one image at a time and look at each before the next. Ask the user before a batch of more than about 10 images across a mission, unless they have asked for the mission's backgrounds. Budget about 2–4 Gemini calls per room.
 - PixelLab conversion costs 1 generation each. Convert only once a concept is approved.
+- **Convert at the end.** Run all PixelLab conversions once a mission's concepts are settled, so a mid-run change of method doesn't waste generations.
 - **The first room of a new setting** (a new building or style) needs the user's sign-off on the concept before converting or making the rest. A delegated agent that can't ask stops after step 3 and returns the concept and its checklist.
 - Never downscale pixel art (memory: no-downscaling-pixel-art). The 400x400 output comes from `tools/pixelate_background.py`, not from a resize.
 - Don't commit unless asked. Use the user's assumptions-log format.
@@ -40,7 +41,8 @@ tools/playtest/lighting-tour.sh <mission> <scratch>/tour <room_id> [<room_id> ..
 
 `pov_prep.py` writes:
 - `<room>_topdown.png`: the map render. It is for you to look at and check against. **Don't send it to Gemini** (see "What doesn't work").
-- `<room>_backwall.png`: the back wall strip, already drawn face-on. **This is the reference image Gemini gets.**
+- `<room>_backwall.png`: the back wall strip, already drawn face-on, with a band of floor. **This is the reference image Gemini gets** for rooms where everything stands against the walls.
+- `<room>_backwall_wall.png`: the same strip cut at the skirting. **Use this one when the room has free-standing rows.** The floor band shows second-row sprites cut off under the skirting, which Gemini reads as "against the wall". Name the floor items in the text instead.
 - `<room>_inventory.txt`, which contains:
   - every map sprite sorted into camera zones: back wall, against the back wall, a second row standing just in front of it, left/right walls, floor far/mid/near and left/centre/right, and behind the camera;
   - desk and counter contents listed under their table;
@@ -108,6 +110,8 @@ Points that matter:
 - **Take orientation from the render, not from habit.** Compare each piece of furniture's width and height in the render: a foosball table taller than it is wide runs towards the camera. Don't write "long side towards the camera" unless the map shows it that way.
 - **Describe items by what they look like, not by sprite name** ("a stainless steel wall-mounted hot water boiler with a drip tray", not `hot_water_boiler1`).
 - **People as fixtures.** Where the map shows people as part of the room (patients in ward beds), write "patients asleep in the beds … no staff, no standing people" in place of "No people".
+- **Small wall items get shuffled** between bigger ones (a clock moved above a year planner in two of three images). Accept it unless it shows in the crop.
+- **Text on the map's own signs** ("WELCOME TO COMPUTING") comes through however the prompt hedges it. That's fine when the map shows the same text.
 - **Lettering.** "Ransomware warning" printed the word RANSOMWARE. Write "a red skull-and-crossbones (no words)". A stray floor rail went away with "no pipes or rails along the floor". An item cut off at the end of the wall came back with "last before the right-hand corner".
 - **Name only what is in view.** Leave out the bottom fifth or so of the map, because it is behind the camera. Don't mention anything behind the camera, even as a light source: "a faint glow from kiosks behind the camera" put kiosks in the picture.
 - **Say what the strip gets wrong.** For each empty slot and override, a plain negation or replacement worked every time ("NO laptop … even though the reference shows them").
@@ -137,6 +141,7 @@ Points that matter:
   - **Say where the shafts fall.** "From the ceiling panels" alone keeps them in the top third, which the crop removes. Write "falling down through the middle of the room / onto the table / across the bookcases".
   - Write "pale, light haze, never dark smoke". Once, haze came out as a dark smoke cloud over a bookcase.
   - In a generation, the phrase often barely registers in bright rooms. **The fix is a lighting-only edit**, which worked three times out of three without moving anything: "Change only the lighting, to make it moodier. Moody volumetric lighting: visible slanting light shafts with soft haze falling from the <sources> down through the middle of the room onto <named items> … Dim the room overall to an evening feel, with deep soft shadows in the corners and along the side walls. The walls stay <colour> where the light falls on them. Keep everything else exactly the same: every object, its position and colour, the camera angle, and the painted style." The same edit adds the look to backgrounds made before this rule. `pov_diff.py` reports about 99% changed for a relight, so judge it by eye.
+  - In the relight, say "natural colours, not sepia" and name the real colours (cream walls, navy carpet), or it goes sepia and smoky. "Cool light" turned cream walls grey-green. Never ask for a "glow from the monitor": it blows the screen out to white. Keep the relight edit to lighting only; a second change in the same edit (removing a word) was ignored.
   - Relight side effects seen: walls turned greyer (when "the walls stay cream" was missing), dark screens started glowing white, and a plaque got a smudge. Re-check the whole image.
   - PixelLab exaggerates it a step further: a strong spotlight cone and pool in the corridor, every room a little darker, colours lost on a small chart. Look at the 400px result. If it is too dark, the concept's haze plus a lighter phrase ("soft volumetric light") is the fallback.
 - **"Moody" gets ignored** in bright rooms. Say what is off and what is on ("half the panels off", "one panel on").
@@ -151,6 +156,8 @@ If the inventory has a "second row" or mid-room furniture that stands away from 
 1. **Shell.** Generate the room EMPTY with the step 2 template: "an EMPTY … room, before the furniture is brought in", the back wall from the strip, things standing against the back wall, side walls, doors, floor, ceiling, light, and "the floor completely empty: bare floor all the way from the camera to the back wall". Add "Ignore the <second-row items> in the reference: they are not in this picture". The shell also came out better on its own terms: plain walls as asked, and both side doors near the back corners first time.
 2. **Free-standing row (edit).** This wording put the row at its real depth: "Add an island of furniture standing out in the middle distance of the room, like a room divider, with enough space behind it for a person to walk between it and the back wall. It stands about one fifth of the way from the back wall towards us. Its base is on the carpet clearly below the skirting line … the back wall's skirting board continues visibly behind it on both sides. … It casts a soft shadow on the carpet behind it." Then list the items left to right, and name the back-wall items that must stay visible above it.
 3. **Mid-room and near items (edit).** Add them in one edit, each with its position ("in the left part of the room … about halfway between the lockers and us"; "near the bottom-right corner, partly cut off by the frame").
+
+Results so far: it worked first time on the common room and the workshop (a laser cutter out on the floor, benches in front of it). In the staff office, a wide shallow room, the row edit moved the furniture only slightly and the next edit dropped the centre desk island. It seems to need an open, deep floor in the shell. Single generations put tall free-standing items against the wall about 9 times in 11, whatever the wording. Short free-standing items (a flip chart, a desk and lectern on a stage) come out right in a single generation, so the layered build is for tall items.
 
 Cost: one generation plus two edits, about the same as a generation and a fix. Counts in edits are unreliable: "exactly four lockers" gave three twice, and asking for a fourth in the next edit was ignored. Volumetric haze needs asking for in every edit, and still comes out mild. Check each layer with `pov_diff.py` and look at it before adding the next.
 
