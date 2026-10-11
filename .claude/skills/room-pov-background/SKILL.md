@@ -248,10 +248,18 @@ Look at the result. Use 600 if labels or screens turn to mush. Then save both fi
 - `public/break_escape/assets/backgrounds/rooms/<name>_nonpixelart.png` (the concept)
 - `public/break_escape/assets/backgrounds/rooms/<name>.png` (the 400x400 pixel art)
 
+Then make the blended version the game uses (user, 2026-10-11): the concept resized to 400×400 and laid over the pixel art at 50% opacity. It keeps the pixel art's palette with the concept's smooth light, so the portrait's crisp pixels stand out against a softer room:
+
+```bash
+python3 tools/blend_backgrounds.py --only <name>      # writes <name>_blended.png; no --only does every pair
+```
+
+Point `chatBackground` (and any `Background[...]` ink tag) at `<name>_blended.png`. Keep all three files.
+
 `<name>` is `<mission>_<room_id>` (e.g. `m02_reception_lobby`) when the mission's overrides, empty slots or mood show in the image. That is usual: skull screens and night lighting are mission-specific. Use the room type (`room_hospital_staff`) only when the image would suit every mission that uses that map. Then set the room's field in the scenario:
 
 ```json
-"staff_room": { "type": "room_hospital_staff", "chatBackground": "assets/backgrounds/rooms/m02_staff_room.png", ... }
+"staff_room": { "type": "room_hospital_staff", "chatBackground": "assets/backgrounds/rooms/m02_staff_room_blended.png", ... }
 ```
 
 How the game picks a background:

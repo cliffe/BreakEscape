@@ -67,7 +67,7 @@ Narrator[none]: Albion Energy Storage, on the Trent near Newark. Saturday, half 
 Background[assets/backgrounds/albion_battery_hall.png]:
 Narrator: Two battery halls holding two hundred megawatt-hours of lithium-ion cells, charging off the grid overnight while the county sleeps.
 Narrator: The site's SCADA engineer got in at quarter past six. She hasn't taken her eyes off the control room screens since.
-Background[assets/backgrounds/rooms/sis02_scada_control_room.png]:
+Background[assets/backgrounds/rooms/sis02_scada_control_room_blended.png]:
 Helen Marsh: Morning. Helen Marsh, SCADA. You're the lot booked for the seven o'clock window on the grid PLC?
 Helen Marsh: Before anybody touches that, I want a look in Hall 1. Every reading on that screen's normal. Too normal for a night on charge.
 Helen Marsh: Jay was on nights. His handover says "uneventful". He's not wrong. Look at that screen. Nothing moved all night.
