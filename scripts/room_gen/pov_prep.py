@@ -46,9 +46,11 @@ def zone(x, top, w, bottom, W, H):
     if bottom <= FLOOR_Y + 50:
         return "against the back wall (standing on the floor)"
     if top < FLOOR_Y + 36:
-        return "second row (free-standing out on the floor in front of the back wall, NOT against it)"
-    if bottom > H * 0.78:
+        return "second row (may stand out on the floor in front of the back wall: check the render and tour shot for floor between it and the wall)"
+    if bottom > max(H * 0.78, H - 40):
         return "behind the camera (leave out)"
+    if bottom > H * 0.78:
+        return "near edge (bottom of the frame, mostly cropped; include only if it matters)"
     if x + w <= SIDE_WALL and w <= 30:
         return "left wall"
     if x >= W - SIDE_WALL and w <= 30:
@@ -60,7 +62,7 @@ def zone(x, top, w, bottom, W, H):
 
 
 ORDER = ["back wall (hung on it)", "against the back wall (standing on the floor)",
-         "second row (free-standing out on the floor in front of the back wall, NOT against it)", "left wall", "right wall"]
+         "second row (may stand out on the floor in front of the back wall: check the render and tour shot for floor between it and the wall)", "left wall", "right wall"]
 
 
 def scenario_room(path, room_id):
@@ -173,7 +175,7 @@ def main():
             if bottom > FLOOR_Y + 50 and not z.endswith("wall"):
                 # feet position: how far out from the back wall the item stands (0.6 m per 32 px tile)
                 gap = max(0.0, (bottom - 8 - FLOOR_Y) / 32 * 0.6)
-                text += f"  [stands ~{gap:.1f} m out from the back wall]"
+                text += f"  [feet ~{gap:.1f} m out from the back wall; a rough guide, confirm in the render]"
         zones.setdefault(z, []).append((x, text))
 
     lines = [f"Room {a.room}: {W}x{H} px ({m['width']}x{m['height']} tiles; about {W / 32 * 0.6:.0f} m wide, {H / 32 * 0.6:.0f} m deep). "
