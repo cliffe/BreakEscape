@@ -1,8 +1,8 @@
 # Resume note — room POV chat backgrounds (2026-10-11)
 
 EVERY room gets a background (NPCs move). Moody volumetric lighting in every prompt; haze must come from Gemini (PixelLab barely adds it); day missions use the daytime relight; screen-lit rooms get glow not beams; push realism. Keep updating the skill. Drop generic stand-in pins; keep exteriors and handler-HQ pins.
-DONE + committed: engine fallback; skill + tools (latest 81e2b632); m02 12; sis01 3; Tesseract 11; sis02 3 (665f80a1, Helen's briefing now opens on the control room).
-Running: m01 A (it_room = scratchpad/m01/it_room/v5_real.png, break_room, maya_office, reception_area, main_office_area, manager_office) and B (derek_office, kevin_office, server_room, conference_room, storage_closet, hallway_west, hallway_east); retrofit volumetric haze on m02 + sis01 (15 rooms, overwrite files only).
+DONE + committed: engine fallback; skill + tools (latest b5cfbe91); m02 12; sis01 3; Tesseract 11; sis02 3; m01 13 (fb5914d6). All missions in the user's list done.
+Running: retrofit volumetric haze on m02 + sis01 (15 rooms, overwrite files only). Then commit it.
 Then: check, fold lessons, commit m01 and the retrofit. All missions in the user's list then done.
 
 # Resume note — TTS move to Gemini 3.8 (2026-10-08/09)
