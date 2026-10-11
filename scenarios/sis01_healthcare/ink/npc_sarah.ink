@@ -52,11 +52,11 @@ VAR told_rate = false
 
 === arrival_briefing ===
 // Opens on the hospital exterior (timedConversation background) with the
-// narrator alone, then Background[none] brings Sarah in on a plain frame.
+// narrator alone, then Background[room] cuts to Ward 7 (Sarah's room background).
 Narrator[none]: Northgate General Hospital. Tuesday, half past seven in the morning.
 Narrator: The night shift should be going home by now. Nobody is. Two ambulances wait under the A&E canopy.
 Narrator: Ransomware went through the Trust's network at quarter past ten last night. Up on Ward 7, the charge nurse is waiting for you.
-Background[none]:
+Background[room]:
 Sarah Mitchell: You're the incident response team? Sarah Mitchell, charge nurse. Ravi Anand in IT security sent for you.
 Sarah Mitchell: That screen behind me's been showing a ransom note since half ten last night. It should be showing six patients' hearts.
 Sarah Mitchell: So we're on paper. Two nurses, six patients, and the only alarms are at the bedsides.
