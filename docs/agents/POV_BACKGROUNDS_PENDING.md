@@ -1,4 +1,4 @@
-# Room backgrounds: decisions (2026-10-11)
+# Room backgrounds: decisions (2026-10-11), all answered and done
 
 ANSWERED 2026-10-11: all four approved as recommended. Tesseract common room feedback: remove the green half-wall; the lockers stand out on the floor in front of the back wall, not against it; prompts should say which things hang on the back wall and which stand away from it, at what depth. sis02 Helen change is done in the sis02 run (last in order).
 
@@ -25,3 +25,5 @@ Concepts: `<session scratchpad>/m01/it_room/v3_vs_v4.png` (left v3: daytime, rig
 ## 6. Retrofit volumetric lighting on m02 and sis01 (15 rooms)
 
 One lighting-only edit plus one PixelLab conversion per room, using each mission's own time of day. Recommendation: yes, after sis02.
+
+ANSWERED 2026-10-11 (5, 6): m01 uses v3 + a daytime relight (PixelLab-only haze tested and too faint); retrofit approved and done. sis02 control room: screen glow only, no beams (done). Push realism (done, in the skill).

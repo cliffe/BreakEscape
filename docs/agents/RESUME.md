@@ -1,9 +1,7 @@
-# Resume note — room POV chat backgrounds (2026-10-11)
+# Resume note — room POV chat backgrounds (2026-10-11): COMPLETE
 
-EVERY room gets a background (NPCs move). Moody volumetric lighting in every prompt; haze must come from Gemini (PixelLab barely adds it); day missions use the daytime relight; screen-lit rooms get glow not beams; push realism. Keep updating the skill. Drop generic stand-in pins; keep exteriors and handler-HQ pins.
-DONE + committed: engine fallback; skill + tools (latest b5cfbe91); m02 12; sis01 3; Tesseract 11; sis02 3; m01 13 (fb5914d6). All missions in the user's list done.
-Running: retrofit volumetric haze on m02 + sis01 (15 rooms, overwrite files only). Then commit it.
-Then: check, fold lessons, commit m01 and the retrofit. All missions in the user's list then done.
+All committed. Engine: person-chat falls back to the room's `chatBackground`. Skill `.claude/skills/room-pov-background/` (+ pov_prep.py, pov_chat_preview.py, pov_diff.py, chat-background-shot.sh). Backgrounds with moody volumetric lighting for every room of m02 (12), sis01 (3), lab_tesseract_trials (11), sis02 (3), m01 (13): 42 rooms. Decisions in docs/agents/POV_BACKGROUNDS_PENDING.md (all answered).
+Rules for new missions: every room; run after room dressing and lighting; first room of a new setting needs the user's sign-off; haze from Gemini; day missions use the daytime relight; screen-lit rooms glow, no beams; realistic, not cartoony.
 
 # Resume note — TTS move to Gemini 3.8 (2026-10-08/09)
 
