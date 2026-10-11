@@ -1,10 +1,9 @@
 # Resume note — room POV chat backgrounds (2026-10-11)
 
-Mission order (user, 2026-10-11): sis01 → lab_tesseract_trials → m01 → sis02. EVERY room gets a background (NPCs move). Keep updating the skill with every process improvement. Drop generic stand-in pins (hospital1.png) in rooms that get a background; keep establishing exteriors.
-DONE + committed: engine fallback; skill + tools (latest d1c2ff54: depth guidance, sprite-safe playtest tools); m02 all 12 rooms; sis01 all 3 rooms.
-Decisions (docs/agents/POV_BACKGROUNDS_PENDING.md): Tesseract and sis02 styles approved; Tesseract keeps hq4/hq5 pins; sis02 Helen's Background[none] → control room bg (do in the sis02 run).
-Running: Tesseract A (common_room redo per user feedback + staff_office, workshop, seminar_room, lecture_theatre, foyer) and B (corridor, teaching_lab, library, sidhu_office, special_collections); files lab_tesseract_trials_<room>.png.
-Then: fold lessons, commit Tesseract; m01; sis02 (control room concept approved in scratchpad/sis02/).
+Mission order (user, 2026-10-11): sis01 → lab_tesseract_trials → m01 → sis02. EVERY room gets a background (NPCs move). Moody volumetric lighting in every prompt (Gemini and PixelLab). Keep updating the skill with every process improvement. Drop generic stand-in pins (hospital1.png); keep establishing exteriors and handler-HQ pins (hq1/hq4/hq5).
+DONE + committed: engine fallback; skill + tools (latest b66aa570); m02 12 rooms; sis01 3 rooms; Tesseract 11 rooms (e5810a02).
+Running: m01 step 0 + first-room concept (new corporate setting → user sign-off, then the rest); sis02 full run (style approved; control room = approved concept + relight; Helen's Background[none] → control room bg, ink recompile + tagdiff).
+Open question to the user: retrofit volumetric lighting on m02/sis01 (15 rooms) via the lighting-only edit, ~1 Gemini + 1 PixelLab each.
 
 # Resume note — TTS move to Gemini 3.8 (2026-10-08/09)
 
