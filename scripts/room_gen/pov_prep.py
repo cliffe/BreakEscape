@@ -32,10 +32,15 @@ from room_edit import Room  # noqa: E402
 FLOOR_Y = 64          # floor starts here (room pixels); the back wall is above it
 STRIP_BOTTOM = 88     # crop a little floor so things standing against the wall show their feet
 WALL_FRAME = 12       # white/black frame round every room
+SIDE_COLUMN = 34       # the side walls are about one tile wide
 SIDE_WALL = 40        # side-wall fixtures sit within this many px of the frame
 
 
 def zone(x, top, w, bottom, W, H):
+    if x + w <= SIDE_COLUMN:           # inside the left wall column (any height)
+        return "left wall"
+    if x >= W - SIDE_COLUMN:
+        return "right wall"
     if bottom <= FLOOR_Y:
         return "back wall (hung on it)"
     if bottom <= FLOOR_Y + 50:
@@ -68,7 +73,7 @@ def scenario_room(path, room_id):
     while depth and i < len(text):
         depth += {"{": 1, "}": -1}.get(text[i], 0)
         i += 1
-    return text[m.end() - 1:i]
+    return re.sub(r"<%#.*?%>", "", text[m.end() - 1:i], flags=re.S)   # drop ERB comments (disabled objects)
 
 
 def scenario_doors(seg):
@@ -85,8 +90,22 @@ def scenario_overrides(seg):
     """(object name, sprite) for objects in the room that set their own sprite."""
     out = []
     for sp in re.finditer(r'"sprite"\s*:\s*"([^"]+)"', seg):
-        before = re.findall(r'"name"\s*:\s*"([^"]+)"', seg[max(0, sp.start() - 800):sp.start()])
-        out.append((before[-1] if before else "?", sp.group(1)))
+        before = seg[max(0, sp.start() - 800):sp.start()]
+        after = seg[sp.end():sp.end() + 800]
+        nb = re.findall(r'"name"\s*:\s*"([^"]+)"', before.rsplit("{", 1)[-1])
+        na = re.search(r'"name"\s*:\s*"([^"]+)"', after.split("}", 1)[0])
+        out.append((nb[-1] if nb else na.group(1) if na else "?", sp.group(1)))
+    return out
+
+
+def scenario_npc_sprites(seg):
+    """(npc id, spriteSheet, static?) for NPCs in the room; static ones are drawn as props (patients in beds)."""
+    out = []
+    for m in re.finditer(r'"id"\s*:\s*"([^"]+)"', seg):
+        blk = seg[m.end():m.end() + 1500].split('"id"', 1)[0]
+        sh = re.search(r'"spriteSheet"\s*:\s*"([^"]+)"', blk)
+        if sh:
+            out.append((m.group(1), sh.group(1), "staticSprite" in blk))
     return out
 
 
@@ -138,6 +157,8 @@ def main():
 
     zones = {}
     for layer, o, name in objs:
+        if name == "?":
+            name = f"?({o.get('type') or o.get('name') or 'no sprite'}; look at the render)"
         w, h = o["width"], o["height"]
         x, bottom = o["x"], o["y"]          # Tiled tile objects: y is the bottom edge
         cond = " (conditional; see EMPTY below)" if layer.startswith("conditional") else ""
@@ -151,7 +172,7 @@ def main():
             text = f"{name}  x={x:.0f}..{x + w:.0f} y={bottom - h:.0f}..{bottom:.0f}{cond}"
         zones.setdefault(z, []).append((x, text))
 
-    lines = [f"Room {a.room}: {W}x{H} px ({m['width']}x{m['height']} tiles; about {W / 32 * 0.6:.0f} m wide). "
+    lines = [f"Room {a.room}: {W}x{H} px ({m['width']}x{m['height']} tiles; about {W / 32 * 0.6:.0f} m wide, {H / 32 * 0.6:.0f} m deep). "
              "Camera near the south wall looking north.",
              "Items left to right within each zone; desk/counter contents are listed under their table.",
              "Names are sprite names: look at the render to see what each one is.", ""]
@@ -170,6 +191,16 @@ def main():
                 lines.append(f"!! scenario dimensions {dm.group(1)}x{dm.group(2)} differ from the map's "
                              f"{m['width']}x{m['height']} tiles; the map is what is drawn.")
                 lines.append("")
+            lt = re.search(r'"lighting"\s*:\s*\{', seg)
+            if lt:
+                depth, i = 1, lt.end()
+                while depth and i < len(seg):
+                    depth += {"{": 1, "}": -1}.get(seg[i], 0)
+                    i += 1
+                lt_text = re.sub(r"\s+", " ", seg[lt.end() - 1:i])
+            lines.append("## lighting config (the mood to draw; compare it when reusing another mission's background)")
+            lines.append("  " + (lt_text[:600] if lt else "none in the room (mission default; see LIGHTING_PLAN.md if any)"))
+            lines.append("")
             lines.append("## doors (scenario connections; the render does not draw doors)")
             lines.append(f"  {scenario_doors(seg)}")
             lines.append("  north = a door in the back wall (a single one sits in a back-wall corner);")
@@ -184,9 +215,13 @@ def main():
             filled = {(n, int(x)) for n, x in re.findall(r"-> (\S+) \(\w+\) at (-?\d+),", "\n".join(audit))}
             empty = [(n, o) for layer, o, n in objs
                      if layer.startswith("conditional") and (n, int(round(o["x"]))) not in filled]
-            lines.append("## EMPTY in this mission: conditional slots the render and strip draw but the game doesn't")
+            lines.append("## EMPTY in this mission: conditional slots no scenario object claims")
+            lines.append("  NPCs drawn as static props (e.g. patients in beds) can still fill these: check the NPC list and the tour shot.")
             lines += [f"  {n}  x={o['x']:.0f} ({zone(o['x'], o['y'] - o['height'], o['width'], o['y'], W, H)})"
                       for n, o in sorted(empty, key=lambda t: t[1]["x"])] or ["  none"]
+            lines.append("")
+            lines.append("## NPCs in this room (spriteSheet; static ones are drawn as props, not people)")
+            lines += [f"  {i}: {sh}{'  (static)' if st else ''}" for i, sh, st in scenario_npc_sprites(seg)] or ["  none"]
             lines.append("")
             lines.append("## slot audit: which map slot each scenario object takes")
             lines += audit or ["  (none)"]
@@ -199,6 +234,15 @@ def main():
             if pinned:
                 lines.append("  !! conversations in this room set their own background, which wins over chatBackground:")
                 lines += [f"     {bg}  (grep it in the scenario to see which scenes)" for bg in pinned]
+            ink = []
+            for f in sorted((Path(a.scenario).parent / "ink").glob("*.ink")):
+                for n, ln in enumerate(f.read_text(errors="replace").splitlines(), 1):
+                    if "Background[" in ln:
+                        ink.append(f"     {f.relative_to(ROOT) if f.is_absolute() else f}:{n}: {ln.strip()[:90]}")
+            if ink:
+                lines.append("  !! the mission's ink sets backgrounds (Background[...] wins over chatBackground;")
+                lines.append("     Background[none] means a plain frame). Check which of these play in this room:")
+                lines += ink
             if not (npcs or '"npcs"' not in seg or pinned):
                 lines.append("  every conversation with this room's NPCs that has no background of its own")
     out = a.out_dir / f"{a.room}_inventory.txt"
