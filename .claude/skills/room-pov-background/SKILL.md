@@ -270,6 +270,16 @@ Then:
 
 If the run isn't allowed to write to `public/` or the scenario (a delegated review run), stop after the conversion. Return the paths and the scenario line to add.
 
+## Custom backgrounds for one NPC (e.g. patients in bed)
+
+An NPC's own `chatBackground` in the scenario wins over the room's (precedence: ink `Background[...]` > explicit `background` > NPC `chatBackground` > room `chatBackground`). Use it when a character is always seen in one spot the room view doesn't suit. m02 and sis01's bed patients share a bedside view per mission (`m02_ward_bedside.png` at night, `sis01_ward_bedside.png` in daylight), made 2026-10-11:
+- **Look at the NPC's talk portrait first.** The patients are head-and-shoulders, sitting up with their own pillows and blankets, so the background is the wall behind a bed head: services panel, nurse call, bed-light, monitor, curtains, drip stand, locker.
+- **Put the NPC's furniture where the portrait sits.** While the NPC speaks only the right 57% shows, with the portrait over it. With the bed centred, the patient looked as if they were beside an empty bed. "The bed's head stands against the wall about three quarters of the way across the picture … nothing of the bed in the left half" put it behind the portrait.
+- **Match the story.** m02's ink says the monitor above Mr Pryce is dark, so m02's monitor is switched off; sis01's monitors work.
+- **One concept, two missions.** Make the night version, then the day version as a relight edit of it (time of day, wall paint, monitor on). Don't pass a whole-room image as a reference in an edit: Gemini returned the reference ward instead of editing the bay. Describe the other ward's look in words.
+- **Realism can be restored by an edit.** When a generation came out illustrative, "Re-render this exact picture realistically, like a photograph … real textures … no outlines, no cartoon shading … Keep everything exactly where it is" kept the layout.
+- **Check every NPC that uses it** with `chat-background-shot.sh <mission> <out> <room> <npc_id>`.
+
 ## What doesn't work (tested 2026-10-11, m02 hospital rooms; the strip method also held on sis02's control room)
 
 | Input to Gemini | Result |
