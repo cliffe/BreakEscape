@@ -88,6 +88,24 @@ g = BreakEscape::Game.new(
 g.player_state = state
 g.save!
 
+# Sprite-restricted missions (validSprites) redirect the game page to the
+# configuration screen when the shared demo user's saved sprite is not allowed,
+# so window.__test never appears. Switch the preference to an allowed sprite for
+# the run and record the original in sprite-restore-<game>.txt; session-stop.sh
+# (or restore-sprite.rb) puts it back.
+pref = g.player.respond_to?(:ensure_break_escape_preference!) ? (g.player.ensure_break_escape_preference!; g.player.break_escape_preference) : g.player.preference
+if pref && !pref.sprite_valid_for_scenario?(g.scenario_data)
+  pick = BreakEscape::PlayerPreference::AVAILABLE_SPRITES.find do |sp|
+    BreakEscape::PlayerPreference.sprite_matches_pattern?(sp, '*') &&
+      Array(g.scenario_data['validSprites']).any? { |pat| BreakEscape::PlayerPreference.sprite_matches_pattern?(sp, pat) }
+  end
+  abort "No available sprite matches validSprites #{g.scenario_data['validSprites'].inspect}" unless pick
+  orig = pref.read_attribute(:selected_sprite)
+  File.write(File.join(__dir__, "sprite-restore-#{g.id}.txt"), "#{pref.id}\t#{pick}\t#{orig}\n")
+  pref.update_column(:selected_sprite, pick)
+  puts "SPRITE_SWITCHED=#{orig.inspect} -> #{pick} (restored by session-stop.sh / restore-sprite.rb #{g.id})"
+end
+
 valid = g.send(:extract_valid_flags_from_scenario)
 puts "MISSION=#{mission.name} (id #{mission.id})"
 puts "GAME_ID=#{g.id}"

@@ -26,7 +26,7 @@ FX=$(echo "$out" | grep -oP 'FLAGS_XML=\K.*')
 BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/unlock-all-rooms.rb "$GID" >/dev/null 2>&1
 ARGS=(--url "http://127.0.0.1:3001/break_escape/games/$GID" --headless --log "$OUT/session-$GID.jsonl")
 [ -n "$FX" ] && ARGS+=(--flags "$FX")
-tools/playtest/session-start.sh "${ARGS[@]}" >/dev/null || exit 1
+tools/playtest/session-start.sh "${ARGS[@]}" >/dev/null || { tools/playtest/session-stop.sh "$GID" >/dev/null 2>&1; exit 1; }
 trap 'tools/playtest/session-stop.sh "$GID" >/dev/null 2>&1' EXIT
 tools/playtest/cmd.sh "$GID" '{"cmd":"bootstrap","tutorial":"decline","resume":"new"}' >/dev/null
 echo "GAME_ID=$GID"

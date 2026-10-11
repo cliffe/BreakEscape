@@ -19,7 +19,7 @@ Standing rules:
 
 ## 0. Scope: which rooms, and can one be reused?
 
-For a whole mission, list its rooms with `python3 scripts/room_gen/slot_audit.py --verbose scenarios/<mission>/scenario.json.erb` (each line gives room id and map type). **Make a background for every room** (user, 2026-10-11): NPCs walk between rooms, and scenes can start anywhere, so a room with no NPCs today can still host a conversation. Do the rooms where conversations happen first (`pov_prep.py`'s "where this background will show" section). Corridors and small rooms get one too: their back wall is still the view behind the NPC.
+For a whole mission, list its rooms with `python3 scripts/room_gen/slot_audit.py --verbose scenarios/<mission>/scenario.json.erb` (each line gives room id and map type). **Make a background for every room** (user, 2026-10-11): NPCs walk between rooms, and scenes can start anywhere, so a room with no NPCs today can still host a conversation. Do the rooms where conversations happen first. Rank them roughly by how much person-chat their NPCs have: count the non-blank lines of each NPC's ink. Pinned scenes don't make a room's background rare when the room's other NPCs talk without pins; the foyer of The Tesseract Trials is an example. Corridors and small rooms get one too: their back wall is still the view behind the NPC.
 
 **Reuse first.** Several missions share map types (m02 and sis01 both use `room_hospital_ward`, `room_hospital_office_it` and `room_hospital_meeting`). Look for an existing background of the same map type: `grep -rn '"chatBackground"' scenarios/*/scenario.json.erb` together with each room's `"type"`. Reuse it (point this mission's `chatBackground` at the same file) when this mission's version of the room would look the same in the chat crop:
 - **same doors first.** Missions connect the same map differently, and edits can't add, move or remove side doors, so a door mismatch rules out both reuse and editing. sis01 reused none of m02's three shared rooms for this reason;
@@ -72,14 +72,16 @@ wide-angle lens so both side walls recede towards the back wall and the ceiling 
 
 The attached image is a pixel-art front view of the BACK WALL of this room. Reproduce that wall in the
 same left-to-right order, colours and proportions, rendered realistically: <each back-wall item, left to
-right, in plain words>. <Wall colour> walls, <skirting>.
+right, in plain words>. <Wall colour exactly as the map's tiles show it> walls, <skirting>. Plain walls, no
+dado band or two-tone paint unless the map has one.
 <If the strip shows things the mission leaves empty or overrides: "There is NO <laptop>, even though the
 reference shows one." / "The monitor's screen shows a red skull-and-crossbones ransomware warning.">
 
 Rest of the room:
-- <Against the back wall: counters, racks, cabinets, with what is on them.>
-- <Second row, if any: what stands on the floor just in front of the back row.>
-- <Mid-room, by left / centre / right, and how far back.>
+- Standing against the back wall, touching it: <counters, racks, cabinets, with what is on them>.
+- Standing out on the floor, NOT against the wall, about <m from the inventory> in front of it, with
+  bare floor visible between them and the back wall: <the second row: vending machines, lockers, racks>.
+- <Mid-room, by left / centre / right, each with its distance out from the back wall.>
 - <Left side wall, back to front: fixtures, doors.> <Right side wall, back to front: fixtures, doors.>
 - Floor: <material and colour>. Ceiling: <plain suspended ceiling with recessed lights, unless the room says otherwise>.
 Nothing else: no plants, no extra furniture, <"no windows" — or, if the back wall has windows: "the
@@ -99,6 +101,9 @@ Points that matter:
   - In both cases only the **middle third of the height** shows.
 
   The ceiling and the floor are almost entirely cut off, and each half of the picture must read as the room on its own. Wrong details low in the frame or at the far edges matter little.
+- **Give every free-standing item its depth.** `pov_prep.py` prints "[stands ~N m out from the back wall]" for floor items. Gemini pushes tall free-standing things (lockers, vending machines, racks) back against the wall unless told otherwise. In The Tesseract Trials' common room the lockers stand about 1.1 m out and came back flat against the wall. Say on its own line what hangs on the back wall, what stands against it, and what stands out on the floor, with the distance and "bare floor visible between them and the back wall" (user, 2026-10-11).
+- **Walls exactly as the map shows them.** The template's old "<colour> walls, <skirting>" led to "a teal dado stripe low on the wall", which Gemini drew as a green half-wall the map doesn't have. Describe only what the strip shows.
+- **Take orientation from the render, not from habit.** Compare each piece of furniture's width and height in the render: a foosball table taller than it is wide runs towards the camera. Don't write "long side towards the camera" unless the map shows it that way.
 - **Describe items by what they look like, not by sprite name** ("a stainless steel wall-mounted hot water boiler with a drip tray", not `hot_water_boiler1`).
 - **People as fixtures.** Where the map shows people as part of the room (patients in ward beds), write "patients asleep in the beds … no staff, no standing people" in place of "No people".
 - **Lettering.** "Ransomware warning" printed the word RANSOMWARE. Write "a red skull-and-crossbones (no words)". A stray floor rail went away with "no pipes or rails along the floor". An item cut off at the end of the wall came back with "last before the right-hand corner".
@@ -114,7 +119,7 @@ Points that matter:
   - Desks: a single desk "running left to right; we see its long near edge" came out right, but two desks joined end to end came out front-to-back in the IT office.
   - Side doors: "a plain grey door near the back corner" fails about half the time; the door lands at the near end of the side wall. This worked first time: anchor each door to the back-wall item round its corner, then say what the near part of the wall is. "The left door is just round the corner from the notice board: its far frame touches the back-left corner. … The near half of each side wall, closest to the camera, is plain wall with no door." For a door in the back wall itself, both "in the back-left corner" and "set INTO the back wall, facing the camera" ended up on the side wall in sis01's IT office.
   - A north door in a back corner was dropped even when named first in the back-wall list. Name it, and accept its absence if the corner sits outside the NPC crop.
-  - Two rows of equipment (m02's server room) came out as the back row hung on the wall above the second row. `pov_prep.py` lists a "second row" zone; say "the second row stands on the floor in front of the back row and hides its lower half" (untested).
+  - Two rows of equipment (m02's server room) came out as the back row hung on the wall above the second row. `pov_prep.py` lists a "second row" zone; use the template's "Standing out on the floor, NOT against the wall" line with its distance.
 - **Screen-lit rooms.** If the lighting config has no ceiling panels and the light comes from screens (sis02's control room), write "the ceiling lights are off; the room is lit mainly by the cool glow of the video wall spilling onto the console".
 - **Room shapes.**
   - Hospital "corridor" maps (`room_hospital_hall`, `room_hospital_hall_waiting`) are short, wide bays, not long corridors. Describe them as "a short, wide corridor bay (about 6 m wide and only about 3.5 m deep, wider than it is deep) … the back wall fills most of the frame width". Don't draw a vanishing-point corridor.
@@ -163,6 +168,7 @@ For a failure that shows, edit the concept with `mcp__nanobanana__gemini_edit_im
 - **Edits that don't work:**
   - rotating or re-laying-out a group of furniture: chairs and beds, eight wordings in all;
   - moving or removing a door in a side wall;
+  - removing something that touches a wall fixture: removing a stray pipe also deleted the fire alarm call point mounted on it. Name the neighbours to keep;
   - moving a tall item that stands against the wall ("slide the cabinet left" was a 0.0% no-op). These behave like wall-hung items;
   - moving a wall-hung item to the other side of another item: "move the left dispenser to the right of the boiler" deleted it, and "add a second one beside it" put it back on the left.
 
