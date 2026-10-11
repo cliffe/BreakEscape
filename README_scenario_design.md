@@ -830,6 +830,8 @@ NPCs are defined in `rooms[id].npcs[]` arrays. Two NPC types exist:
 
 In-world characters with sprites that the player can walk up to and interact with.
 
+**Where to stand a person NPC** (user, 2026-10-11): NPCs look best roughly centred in the room, towards the top right, on clear floor (in tiles: about two-thirds across and a third to a half of the way down). Keep a clear gap from furniture, so the sprite doesn't overlap a counter or fridge, and don't put them behind a desk or counter that the room's conversation background shows across them. `position` is the sprite's centre in tiles; the feet sit about a tile lower. Check with `tools/playtest/lighting-tour.sh <mission> <out> <room>`. Story moves (patrol targets, a nurse at a bedside) take priority.
+
 ```json
 {
   "id": "kevin_park",

@@ -278,6 +278,10 @@ Then:
 
 If the run isn't allowed to write to `public/` or the scenario (a delegated review run), stop after the conversion. Return the paths and the scenario line to add.
 
+## NPC placement and the background
+
+NPCs look best roughly centred in the room towards the top right, on clear floor (see "Where to stand a person NPC" in README_scenario_design.md). The background must not put furniture across a standing NPC: m01's reception counter made Sarah look as if she stood in front of it, so the counter was removed from her background by an edit ("Remove the long reception counter … together with everything standing on it … show the back wall continuing down to the skirting"). When a room's main furniture sits where its NPC stands in the chat crop, move the NPC (a scenario edit) or take the furniture out of the background.
+
 ## Custom backgrounds for one NPC (e.g. patients in bed)
 
 An NPC's own `chatBackground` in the scenario wins over the room's (precedence: ink `Background[...]` > explicit `background` > NPC `chatBackground` > room `chatBackground`). Use it when a character is always seen in one spot the room view doesn't suit. m02 and sis01's bed patients share a bedside view per mission (`m02_ward_bedside.png` at night, `sis01_ward_bedside.png` in daylight), made 2026-10-11:
