@@ -138,6 +138,16 @@ Points that matter:
 
 Call `mcp__nanobanana__gemini_generate_image` with `reference_images: [<room>_backwall.png]`, `aspect_ratio: "1:1"`, and an `output_path` in your scratch folder.
 
+### Layered build (use when furniture stands out on the floor)
+
+If the inventory has a "second row" or mid-room furniture that stands away from the walls, build the picture in layers instead of one generation (user's idea, 2026-10-11; tested on The Tesseract Trials' common room). One generation pushes free-standing tall items back against the wall. "1 m out", "a strip of carpet between them and the wall" and "their bases level with the front edge of the vinyl patch" all failed, as edits and in generation.
+
+1. **Shell.** Generate the room EMPTY with the step 2 template: "an EMPTY … room, before the furniture is brought in", the back wall from the strip, things standing against the back wall, side walls, doors, floor, ceiling, light, and "the floor completely empty: bare floor all the way from the camera to the back wall". Add "Ignore the <second-row items> in the reference: they are not in this picture". The shell also came out better on its own terms: plain walls as asked, and both side doors near the back corners first time.
+2. **Free-standing row (edit).** This wording put the row at its real depth: "Add an island of furniture standing out in the middle distance of the room, like a room divider, with enough space behind it for a person to walk between it and the back wall. It stands about one fifth of the way from the back wall towards us. Its base is on the carpet clearly below the skirting line … the back wall's skirting board continues visibly behind it on both sides. … It casts a soft shadow on the carpet behind it." Then list the items left to right, and name the back-wall items that must stay visible above it.
+3. **Mid-room and near items (edit).** Add them in one edit, each with its position ("in the left part of the room … about halfway between the lockers and us"; "near the bottom-right corner, partly cut off by the frame").
+
+Cost: one generation plus two edits, about the same as a generation and a fix. Counts in edits are unreliable: "exactly four lockers" gave three twice, and asking for a fourth in the next edit was ignored. Volumetric haze needs asking for in every edit, and still comes out mild. Check each layer with `pov_diff.py` and look at it before adding the next.
+
 ## 3. Review against the map
 
 Put the concept beside the top-down render and the tour shot, and check each item. Write the findings down before fixing:
