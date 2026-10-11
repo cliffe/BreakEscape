@@ -107,6 +107,7 @@ Points that matter:
 - **Orientation and side-door position are set by the generation, not by edits.** Edits can't rotate furniture or move doors (see step 4), so state them in the prompt, and accept small errors that the crop hides:
   - **Anchor orientation to something Gemini already draws correctly.** This is the wording that worked:
     - Waiting chairs: "a single wide teal bench unit of joined seats on one long beam … Like the reception counter, it runs left to right across the room; we see its long near edge face-on, parallel to the counter and to the bottom of the picture. The seats face us. Nothing turned or angled." Two other wordings failed: "one long single row of seats facing the camera", and back-to-back blocks however described.
+    - Seats seen from behind ("facing the back wall, so we see the backs of the seats") came out as a row against the back wall facing the camera. Accept it.
     - Ward beds: "These beds point exactly the same way as the back-row beds: headboard to the north, foot rail facing the camera, so we see each bed end-on, never side-on." "Head to the back wall" alone failed twice. Bed wording tends to raise the camera, so add the eye-height lines below.
   - Conference tables: "the long table runs left to right across the middle distance; we see its long near edge" worked in m02's conference room and failed in sis01's major incident room. Try anchoring it to the sideboard: "like the sideboard against the back wall".
   - **Eye height.** When the camera drifts upwards, write "photographed by a standing person: camera at standing eye height (1.6 m), held level, NOT looking down; the horizon line runs across the exact middle of the picture; the ceiling fills the top of the picture".
@@ -115,6 +116,13 @@ Points that matter:
   - A north door in a back corner was dropped even when named first in the back-wall list. Name it, and accept its absence if the corner sits outside the NPC crop.
   - Two rows of equipment (m02's server room) came out as the back row hung on the wall above the second row. `pov_prep.py` lists a "second row" zone; say "the second row stands on the floor in front of the back row and hides its lower half" (untested).
 - **Screen-lit rooms.** If the lighting config has no ceiling panels and the light comes from screens (sis02's control room), write "the ceiling lights are off; the room is lit mainly by the cool glow of the video wall spilling onto the console".
+- **Room shapes.**
+  - Hospital "corridor" maps (`room_hospital_hall`, `room_hospital_hall_waiting`) are short, wide bays, not long corridors. Describe them as "a short, wide corridor bay (about 6 m wide and only about 3.5 m deep, wider than it is deep) … the back wall fills most of the frame width". Don't draw a vanishing-point corridor.
+  - For small rooms (3 m or so), write "a moderate wide-angle lens; the back wall fills about the middle 60–70% of the frame width, with a side wall on each side".
+  - Gemini places things where they sit in the strip. "In the centre of the picture" and shifting the camera moved a cabinet only a few percent, though asking for the camera "directly in front of" it did make it wider, which fills the band better.
+  - Small rooms invent doors: an extra corner or near-end door appeared twice. Try "exactly two doors in the room: …" (untested).
+  - Props behind the camera are left out, so a small room can look bare. That is a room-dressing question, not a reason to break the rule.
+- **Corner doors in the back wall:** one survived when named **last** in the back-wall list ("then, last, a plain grey door in the back-right corner"), where naming it first had failed.
 - **Count repeated rows.** Gemini added a third, blank row of screens above a two-row video wall. Write "exactly two rows of screens, nothing above them".
 - **Switched-off ceiling panels** can render as black holes. Write "a switched-off pale panel".
 - **"Moody" gets ignored** in bright rooms. Say what is off and what is on ("half the panels off", "one panel on").
@@ -136,6 +144,8 @@ Put the concept beside the top-down render and the tour shot, and check each ite
 
 While the NPC speaks in game, the choice menu also covers the lower right of the frame, so a detail there (sis01's ward skull screen) is hidden whenever choices are up.
 
+**The band that carries the picture.** The speaker's portrait covers most of each 57% crop. What stays uncovered is roughly 33–57% of the width while the player speaks and 43–67% while the NPC speaks. A busy room fills that band anyway. In a small room, check that something recognisable sits between about 33% and 67% of the width. m02's store room first came out with only bare wall in the player's crop, because its one cabinet stands right of centre in the map.
+
 Judge each failure by whether it shows in that preview. A wrong detail that the crop or the NPC's portrait hides isn't worth a Gemini call.
 
 ## 4. Fix with a Gemini edit, or keep the best
@@ -153,6 +163,7 @@ For a failure that shows, edit the concept with `mcp__nanobanana__gemini_edit_im
 - **Edits that don't work:**
   - rotating or re-laying-out a group of furniture: chairs and beds, eight wordings in all;
   - moving or removing a door in a side wall;
+  - moving a tall item that stands against the wall ("slide the cabinet left" was a 0.0% no-op). These behave like wall-hung items;
   - moving a wall-hung item to the other side of another item: "move the left dispenser to the right of the boiler" deleted it, and "add a second one beside it" put it back on the left.
 
   Each came back unchanged or worse. Fix these by regenerating, or accept them (step 3).
@@ -196,7 +207,7 @@ How the game picks a background:
 
 Then:
 1. Run `ruby scripts/validate_scenario.rb scenarios/<mission>/scenario.json.erb --skip-ink --no-graph`. It warns if the file is missing. Without `--no-graph` it rewrites the mission's `dungeon_graph.*` files.
-2. Run `tools/playtest/chat-background-shot.sh <mission> <scratch>/shot <room_id> [npc_id]` and look at `<room_id>-chat.png`. It opens a conversation in the room with no background, so the room fallback shows. In a room with no NPCs it borrows one.
+2. Run `tools/playtest/chat-background-shot.sh <mission> <scratch>/shot <room_id> [npc_id]` and look at `<room_id>-chat.png`. It takes one room per run (a second room id would be read as an NPC id), so loop over rooms. It opens a conversation in the room with no background, so the room fallback shows. In a room with no NPCs it borrows one.
 
 If the run isn't allowed to write to `public/` or the scenario (a delegated review run), stop after the conversion. Return the paths and the scenario line to add.
 
