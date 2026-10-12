@@ -19,6 +19,7 @@ VAR relay_opened = false
 VAR ghost_offer_made = false
 VAR decision_made = false
 VAR ending = ""
+VAR lab_sheet_had = false
 
 // ------------------------------------------------
 // Common room
@@ -31,7 +32,7 @@ VAR ending = ""
     Dr Z. Cliffe Schreuders: {&Still here. Coffee's still terrible.|Yeah?|Committee's still looking for me.}
 - else:
     ~ met_cliffe = true
-    Dr Z. Cliffe Schreuders: G'day. Don't mind me, I'm hiding from a committee.
+    Dr Z. Cliffe Schreuders: G'day.
 }
 + [What are you working on?]
     -> build
@@ -47,6 +48,9 @@ VAR ending = ""
 Dr Z. Cliffe Schreuders: A teaching tool. Sort of. A game where you learn by breaking things.
 Narrator: He turns the laptop a little towards you. A map of this building. Small figures walking about. One of them is wearing your hoodie.
 Dr Z. Cliffe Schreuders: Reckon that's enough of a preview.
+{ not lab_sheet_had:
+    -> lab_sheet ->
+}
 Narrator: He closes the lid.
 ~ quiet = true
 -> common_room
@@ -103,5 +107,26 @@ Dr Z. Cliffe Schreuders: The building. Bit further along than this morning.
 - else:
     Narrator: On the screen, the small figure in your hoodie is standing in his workshop.
 }
+{ not lab_sheet_had:
+    -> lab_sheet ->
+}
 ~ quiet = true
 -> workshop_hub
+
+// ------------------------------------------------
+// The lab sheet: the student guide to this game, handed over in the game.
+// Tunnel, so both rooms return to their own hub. lab_sheet_had is a scenario
+// global, so whichever Cliffe hands it over, the other one doesn't.
+// ------------------------------------------------
+=== lab_sheet ===
+~ lab_sheet_had = true
+Narrator: The room tilts. For a moment the edges of everything go square, like pixels, and Cliffe looks past you, at whoever is really holding the controls.
+Narrator: He seems to know you are inside a game.
+-> handover
+
+= handover
+#give_item:lab-workstation:keyholder_lab_sheet
+Dr Z. Cliffe Schreuders: Here you go. The answers to life, the universe and everything.
+Narrator: A lab sheet for this very game, with the concepts explained, and hints and tips.
+Dr Z. Cliffe Schreuders: Don't mention it.
+->->

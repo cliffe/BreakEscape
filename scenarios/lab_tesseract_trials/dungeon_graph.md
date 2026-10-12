@@ -495,44 +495,46 @@ flowchart TD
   rc_cliffe_laptop_43{"Dr Schreuders' Laptop"}
   rc_npc_megan_oyelaran_44("Megan Oyelaran")
   rc_npc_dr_z_cliffe_schreuders_45("Dr Z. Cliffe Schreuders")
-  rc_trial_v_poster_46{"Trial V Poster"}
-  rc_pigeonholes_47[["Pigeonholes"]]
-  rc_pigeonhole_2_48{"Pigeonhole 2"}
-  rc_pigeonhole_3_49{"Pigeonhole 3"}
-  rc_pigeonhole_4_50{"Pigeonhole 4"}
-  rc_pigeonhole_5_51{"Pigeonhole 5"}
-  rc_cryptosecure_drop_box_52[["CryptoSecure Drop Box"]]
-  rc_brass_key_53{"Brass Key"}
-  rc_final_trial_card_54{"Final Trial Card"}
-  rc_drop_box_tag_55{"Tag on the Drop Box"}
-  rc_floor_directory_56{"Floor Directory"}
-  rc_returns_slip_57{"Returns Slip"}
-  rc_codebreakers_book_58{"The Codebreakers (returned)"}
-  rc_special_collections_safe_59[["Special Collections Safe"]]
-  rc_trial_vii_txt_60{"trial_vii.txt"}
-  rc_candidate_assessments_61{"Candidate Assessments"}
-  rc_job_tape_hex_62{"job_0412.hex"}
-  rc_sidhu_door_card_63{"Door Card"}
-  rc_fn07_desk_copy_64{"Handout: Hashes"}
-  rc_ledger_whiteboard_65{"Dr Selvarajan's Ledger Whiteboard"}
-  rc_npc_dr_sidhu_selvarajan_66("Dr Sidhu Selvarajan")
-  rc_fn07_hashing_67{"Field Note 7: Hashes"}
-  rc_fn10_signatures_68{"Field Note 10: Signatures"}
-  rc_relay_terminal_69[["Relay Terminal"]]
-  rc_report_b64_70{"report.b64"}
-  rc_report_sha256_71{"report.sha256"}
-  rc_report_sig_72{"report.sig"}
-  rc_keyholder_public_pem_73{"keyholder_public.pem"}
-  rc_hacktivity_scoreboard_74[["Hacktivity Scoreboard"]]
-  rc_submission_accepted_75{"submission_accepted.txt"}
-  rc_cliffe_build_screen_76{"Dr Schreuders' Build"}
-  rc_npc_dr_z_cliffe_schreuders_77("Dr Z. Cliffe Schreuders")
-  rc_staff_photocopier_78[["Staff Photocopier"]]
-  rc_staff_list_txt_79{"staff_list.txt"}
-  rc_duplicate_accounts_txt_80{"duplicate_accounts.txt"}
-  rc_npc_dr_oleg_illiashenko_81("Dr Oleg Illiashenko")
-  rc_fn13_lookalikes_82{"Field Note 13: Lookalike Letters"}
-  rc_fn12_mojibake_83{"Field Note 12: Mojibake"}
+  rc_keyholder_lab_sheet_46{"Lab Sheet: The Keyholder Trials"}
+  rc_trial_v_poster_47{"Trial V Poster"}
+  rc_pigeonholes_48[["Pigeonholes"]]
+  rc_pigeonhole_2_49{"Pigeonhole 2"}
+  rc_pigeonhole_3_50{"Pigeonhole 3"}
+  rc_pigeonhole_4_51{"Pigeonhole 4"}
+  rc_pigeonhole_5_52{"Pigeonhole 5"}
+  rc_cryptosecure_drop_box_53[["CryptoSecure Drop Box"]]
+  rc_brass_key_54{"Brass Key"}
+  rc_final_trial_card_55{"Final Trial Card"}
+  rc_drop_box_tag_56{"Tag on the Drop Box"}
+  rc_floor_directory_57{"Floor Directory"}
+  rc_returns_slip_58{"Returns Slip"}
+  rc_codebreakers_book_59{"The Codebreakers (returned)"}
+  rc_special_collections_safe_60[["Special Collections Safe"]]
+  rc_trial_vii_txt_61{"trial_vii.txt"}
+  rc_candidate_assessments_62{"Candidate Assessments"}
+  rc_job_tape_hex_63{"job_0412.hex"}
+  rc_sidhu_door_card_64{"Door Card"}
+  rc_fn07_desk_copy_65{"Handout: Hashes"}
+  rc_ledger_whiteboard_66{"Dr Selvarajan's Ledger Whiteboard"}
+  rc_npc_dr_sidhu_selvarajan_67("Dr Sidhu Selvarajan")
+  rc_fn07_hashing_68{"Field Note 7: Hashes"}
+  rc_fn10_signatures_69{"Field Note 10: Signatures"}
+  rc_relay_terminal_70[["Relay Terminal"]]
+  rc_report_b64_71{"report.b64"}
+  rc_report_sha256_72{"report.sha256"}
+  rc_report_sig_73{"report.sig"}
+  rc_keyholder_public_pem_74{"keyholder_public.pem"}
+  rc_hacktivity_scoreboard_75[["Hacktivity Scoreboard"]]
+  rc_submission_accepted_76{"submission_accepted.txt"}
+  rc_cliffe_build_screen_77{"Dr Schreuders' Build"}
+  rc_npc_dr_z_cliffe_schreuders_78("Dr Z. Cliffe Schreuders")
+  rc_keyholder_lab_sheet_79{"Lab Sheet: The Keyholder Trials"}
+  rc_staff_photocopier_80[["Staff Photocopier"]]
+  rc_staff_list_txt_81{"staff_list.txt"}
+  rc_duplicate_accounts_txt_82{"duplicate_accounts.txt"}
+  rc_npc_dr_oleg_illiashenko_83("Dr Oleg Illiashenko")
+  rc_fn13_lookalikes_84{"Field Note 13: Lookalike Letters"}
+  rc_fn12_mojibake_85{"Field Note 12: Mojibake"}
 
   foyer --> corridor
   foyer --> teaching_lab
@@ -589,49 +591,51 @@ flowchart TD
   common_room --> rc_cliffe_laptop_43
   common_room --> rc_npc_megan_oyelaran_44
   common_room --> rc_npc_dr_z_cliffe_schreuders_45
-  corridor --> rc_trial_v_poster_46
-  corridor --> rc_pigeonholes_47
-  rc_pigeonholes_47 --> rc_pigeonhole_2_48
-  rc_pigeonholes_47 --> rc_pigeonhole_3_49
-  rc_pigeonholes_47 --> rc_pigeonhole_4_50
-  rc_pigeonholes_47 --> rc_pigeonhole_5_51
-  corridor --> rc_cryptosecure_drop_box_52
-  rc_cryptosecure_drop_box_52 --> rc_brass_key_53
-  rc_cryptosecure_drop_box_52 --> rc_final_trial_card_54
-  corridor --> rc_drop_box_tag_55
-  corridor --> rc_floor_directory_56
-  library --> rc_returns_slip_57
-  library --> rc_codebreakers_book_58
-  special_collections --> rc_special_collections_safe_59
-  rc_special_collections_safe_59 --> rc_trial_vii_txt_60
-  rc_special_collections_safe_59 --> rc_candidate_assessments_61
-  rc_special_collections_safe_59 --> rc_job_tape_hex_62
-  sidhu_office --> rc_sidhu_door_card_63
-  sidhu_office --> rc_fn07_desk_copy_64
-  seminar_room --> rc_ledger_whiteboard_65
-  seminar_room --> rc_npc_dr_sidhu_selvarajan_66
-  rc_npc_dr_sidhu_selvarajan_66 --> rc_fn07_hashing_67
-  rc_npc_dr_sidhu_selvarajan_66 --> rc_fn10_signatures_68
-  workshop --> rc_relay_terminal_69
-  rc_relay_terminal_69 --> rc_report_b64_70
-  rc_relay_terminal_69 --> rc_report_sha256_71
-  rc_relay_terminal_69 --> rc_report_sig_72
-  rc_relay_terminal_69 --> rc_keyholder_public_pem_73
-  workshop --> rc_hacktivity_scoreboard_74
-  rc_hacktivity_scoreboard_74 --> rc_submission_accepted_75
-  workshop --> rc_cliffe_build_screen_76
-  workshop --> rc_npc_dr_z_cliffe_schreuders_77
-  staff_office --> rc_staff_photocopier_78
-  rc_staff_photocopier_78 --> rc_staff_list_txt_79
-  rc_staff_photocopier_78 --> rc_duplicate_accounts_txt_80
-  staff_office --> rc_npc_dr_oleg_illiashenko_81
-  rc_npc_dr_oleg_illiashenko_81 --> rc_fn13_lookalikes_82
-  rc_npc_dr_oleg_illiashenko_81 --> rc_fn12_mojibake_83
+  rc_npc_dr_z_cliffe_schreuders_45 --> rc_keyholder_lab_sheet_46
+  corridor --> rc_trial_v_poster_47
+  corridor --> rc_pigeonholes_48
+  rc_pigeonholes_48 --> rc_pigeonhole_2_49
+  rc_pigeonholes_48 --> rc_pigeonhole_3_50
+  rc_pigeonholes_48 --> rc_pigeonhole_4_51
+  rc_pigeonholes_48 --> rc_pigeonhole_5_52
+  corridor --> rc_cryptosecure_drop_box_53
+  rc_cryptosecure_drop_box_53 --> rc_brass_key_54
+  rc_cryptosecure_drop_box_53 --> rc_final_trial_card_55
+  corridor --> rc_drop_box_tag_56
+  corridor --> rc_floor_directory_57
+  library --> rc_returns_slip_58
+  library --> rc_codebreakers_book_59
+  special_collections --> rc_special_collections_safe_60
+  rc_special_collections_safe_60 --> rc_trial_vii_txt_61
+  rc_special_collections_safe_60 --> rc_candidate_assessments_62
+  rc_special_collections_safe_60 --> rc_job_tape_hex_63
+  sidhu_office --> rc_sidhu_door_card_64
+  sidhu_office --> rc_fn07_desk_copy_65
+  seminar_room --> rc_ledger_whiteboard_66
+  seminar_room --> rc_npc_dr_sidhu_selvarajan_67
+  rc_npc_dr_sidhu_selvarajan_67 --> rc_fn07_hashing_68
+  rc_npc_dr_sidhu_selvarajan_67 --> rc_fn10_signatures_69
+  workshop --> rc_relay_terminal_70
+  rc_relay_terminal_70 --> rc_report_b64_71
+  rc_relay_terminal_70 --> rc_report_sha256_72
+  rc_relay_terminal_70 --> rc_report_sig_73
+  rc_relay_terminal_70 --> rc_keyholder_public_pem_74
+  workshop --> rc_hacktivity_scoreboard_75
+  rc_hacktivity_scoreboard_75 --> rc_submission_accepted_76
+  workshop --> rc_cliffe_build_screen_77
+  workshop --> rc_npc_dr_z_cliffe_schreuders_78
+  rc_npc_dr_z_cliffe_schreuders_78 --> rc_keyholder_lab_sheet_79
+  staff_office --> rc_staff_photocopier_80
+  rc_staff_photocopier_80 --> rc_staff_list_txt_81
+  rc_staff_photocopier_80 --> rc_duplicate_accounts_txt_82
+  staff_office --> rc_npc_dr_oleg_illiashenko_83
+  rc_npc_dr_oleg_illiashenko_83 --> rc_fn13_lookalikes_84
+  rc_npc_dr_oleg_illiashenko_83 --> rc_fn12_mojibake_85
 
   class foyer,teaching_lab,lecture_theatre,common_room,special_collections,sidhu_office,seminar_room,staff_office room
   class corridor,library,workshop lock
-  class rc_byte_wall_1,rc_display_plaque_2,rc_powers_of_two_poster_3,rc_ascii_chart_4,rc_paper_tape_5,rc_keyholder_device_7,rc_trial_ii_card_8,rc_signup_laptop_9,rc_comms_discipline_11,rc_fn04_base64_13,rc_fn05_layers_caesar_14,rc_fn06_vigenere_15,rc_fn07_hax_16,rc_fn08_aes_17,rc_fn09_public_key_18,rc_fn10_hax_19,rc_fn11_text_encodings_20,rc_comms_discipline_hax_21,rc_keyholder_leaflet_25,rc_private_key_pem_27,rc_public_key_pem_28,rc_lab_readme_29,rc_trial_iv_hex_31,rc_tom_board_32,rc_lab_laptop_34,rc_fn01_bits_bytes_bases_35,rc_fn02_ascii_encodings_36,rc_fn03_hex_37,rc_trial_iii_card_39,rc_common_noticeboard_40,rc_common_vending_machine_41,rc_coffee_station_42,rc_cliffe_laptop_43,rc_trial_v_poster_46,rc_pigeonhole_2_48,rc_pigeonhole_3_49,rc_pigeonhole_4_50,rc_pigeonhole_5_51,rc_brass_key_53,rc_final_trial_card_54,rc_drop_box_tag_55,rc_floor_directory_56,rc_returns_slip_57,rc_codebreakers_book_58,rc_trial_vii_txt_60,rc_candidate_assessments_61,rc_job_tape_hex_62,rc_sidhu_door_card_63,rc_fn07_desk_copy_64,rc_ledger_whiteboard_65,rc_fn07_hashing_67,rc_fn10_signatures_68,rc_report_b64_70,rc_report_sha256_71,rc_report_sig_72,rc_keyholder_public_pem_73,rc_submission_accepted_75,rc_cliffe_build_screen_76,rc_staff_list_txt_79,rc_duplicate_accounts_txt_80,rc_fn13_lookalikes_82,rc_fn12_mojibake_83 item
-  class rc_cryptosecure_lockbox_6,rc_lab_account_pc_26,rc_keyholder_guest_terminal_30,rc_candidate_locker_4_38,rc_pigeonholes_47,rc_cryptosecure_drop_box_52,rc_special_collections_safe_59,rc_relay_terminal_69,rc_hacktivity_scoreboard_74,rc_staff_photocopier_78 container
-  class rc_npc_agent_hax_10,rc_npc_agent_hax_12,rc_npc_keyholder_22,rc_npc_agent_hax_23,rc_npc_jordan_pike_24,rc_npc_dr_tom_shaw_33,rc_npc_megan_oyelaran_44,rc_npc_dr_z_cliffe_schreuders_45,rc_npc_dr_sidhu_selvarajan_66,rc_npc_dr_z_cliffe_schreuders_77,rc_npc_dr_oleg_illiashenko_81 npc
+  class rc_byte_wall_1,rc_display_plaque_2,rc_powers_of_two_poster_3,rc_ascii_chart_4,rc_paper_tape_5,rc_keyholder_device_7,rc_trial_ii_card_8,rc_signup_laptop_9,rc_comms_discipline_11,rc_fn04_base64_13,rc_fn05_layers_caesar_14,rc_fn06_vigenere_15,rc_fn07_hax_16,rc_fn08_aes_17,rc_fn09_public_key_18,rc_fn10_hax_19,rc_fn11_text_encodings_20,rc_comms_discipline_hax_21,rc_keyholder_leaflet_25,rc_private_key_pem_27,rc_public_key_pem_28,rc_lab_readme_29,rc_trial_iv_hex_31,rc_tom_board_32,rc_lab_laptop_34,rc_fn01_bits_bytes_bases_35,rc_fn02_ascii_encodings_36,rc_fn03_hex_37,rc_trial_iii_card_39,rc_common_noticeboard_40,rc_common_vending_machine_41,rc_coffee_station_42,rc_cliffe_laptop_43,rc_keyholder_lab_sheet_46,rc_trial_v_poster_47,rc_pigeonhole_2_49,rc_pigeonhole_3_50,rc_pigeonhole_4_51,rc_pigeonhole_5_52,rc_brass_key_54,rc_final_trial_card_55,rc_drop_box_tag_56,rc_floor_directory_57,rc_returns_slip_58,rc_codebreakers_book_59,rc_trial_vii_txt_61,rc_candidate_assessments_62,rc_job_tape_hex_63,rc_sidhu_door_card_64,rc_fn07_desk_copy_65,rc_ledger_whiteboard_66,rc_fn07_hashing_68,rc_fn10_signatures_69,rc_report_b64_71,rc_report_sha256_72,rc_report_sig_73,rc_keyholder_public_pem_74,rc_submission_accepted_76,rc_cliffe_build_screen_77,rc_keyholder_lab_sheet_79,rc_staff_list_txt_81,rc_duplicate_accounts_txt_82,rc_fn13_lookalikes_84,rc_fn12_mojibake_85 item
+  class rc_cryptosecure_lockbox_6,rc_lab_account_pc_26,rc_keyholder_guest_terminal_30,rc_candidate_locker_4_38,rc_pigeonholes_48,rc_cryptosecure_drop_box_53,rc_special_collections_safe_60,rc_relay_terminal_70,rc_hacktivity_scoreboard_75,rc_staff_photocopier_80 container
+  class rc_npc_agent_hax_10,rc_npc_agent_hax_12,rc_npc_keyholder_22,rc_npc_agent_hax_23,rc_npc_jordan_pike_24,rc_npc_dr_tom_shaw_33,rc_npc_megan_oyelaran_44,rc_npc_dr_z_cliffe_schreuders_45,rc_npc_dr_sidhu_selvarajan_67,rc_npc_dr_z_cliffe_schreuders_78,rc_npc_dr_oleg_illiashenko_83 npc
   class node_start start
 ```

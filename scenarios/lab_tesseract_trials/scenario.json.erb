@@ -209,6 +209,7 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
     "pigeonholes_open": false,
     "drop_box_open": false,
     "workshop_open": false,
+    "lab_sheet_had": false,
     "relay_opened": false,
     "ghost_greeted": false,
     "ghost_offer_made": false,
@@ -701,6 +702,9 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/lab_tesseract_trials/ink/npc_cliffe.json",
           "currentKnot": "common_room",
+          "itemsHeld": [
+            { "type": "lab-workstation", "id": "keyholder_lab_sheet", "name": "Lab Sheet: The Keyholder Trials", "takeable": true, "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/cyber_security_landscape/4-encoding-encryption-v2/", "observations": "Dr Schreuders' lab sheet for the game he's building. Concepts, worked examples, and trial-by-trial hints folded away until you want them." }
+          ],
           "voice": { "name": "Orus", "style": "Academic who builds learning tools and capture-the-flag games. Consistent Australian accent throughout. Relaxed, dry, quick, amused, sentences that stop a beat early.", "language": "en-GB" },
           "eventMappings": [
             { "eventPattern": "room_entered:common_room", "condition": "globalVars.workshop_open === true", "setVisible": false }
@@ -894,6 +898,9 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/lab_tesseract_trials/ink/npc_cliffe.json",
           "currentKnot": "workshop",
+          "itemsHeld": [
+            { "type": "lab-workstation", "id": "keyholder_lab_sheet", "name": "Lab Sheet: The Keyholder Trials", "takeable": true, "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/cyber_security_landscape/4-encoding-encryption-v2/", "observations": "Dr Schreuders' lab sheet for the game he's building. Concepts, worked examples, and trial-by-trial hints folded away until you want them." }
+          ],
           "voice": { "name": "Orus", "style": "Academic who builds learning tools and capture-the-flag games. Consistent Australian accent throughout. Relaxed, dry, quick, amused, sentences that stop a beat early.", "language": "en-GB" }
         }
       ],
