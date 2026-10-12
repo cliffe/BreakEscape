@@ -718,7 +718,11 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
     curtain rails between beds, nursing station alcove at south end, with dimensions 18x10 tiles
     (2x wide compared to standard rooms). %>
       "type": "room_hospital_ward",
-      "chatBackground": "assets/backgrounds/rooms/sis01_ward_7_blended.png",
+      "chatBackground": [
+        { "x": [0.65, 1], "image": "assets/backgrounds/rooms/sis01_ward_7_right_blended.png" },
+        { "x": [0.35, 0.65], "image": "assets/backgrounds/rooms/sis01_ward_7_centre_blended.png" },
+        { "x": [0, 0.35], "image": "assets/backgrounds/rooms/sis01_ward_7_left_blended.png" }
+      ],
       "door_sign": "Ward 7",
       "ambientSound": "hospital_ambient",
 <%# TODO[SOUND]: Create hospital_ambient audio loop.

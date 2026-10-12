@@ -509,7 +509,10 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
   "rooms": {
     "reception_area": {
       "type": "room_reception",
-      "chatBackground": "assets/backgrounds/rooms/m01_reception_area_blended.png",
+      "chatBackground": [
+        { "x": [0, 0.6], "image": "assets/backgrounds/rooms/m01_reception_area_left_blended.png" },
+        { "x": [0.6, 1], "image": "assets/backgrounds/rooms/m01_reception_area_blended.png" }
+      ],
       "lighting": {
         "emitters": {
           "reception_desk_phone": [ { "color": "#ff2414", "radius": 10, "intensity": 1.0, "offsetX": 7, "offsetY": 3, "effect": "blink", "above": true } ]
@@ -1307,7 +1310,10 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
 
     "break_room": {
       "type": "room_break",
-      "chatBackground": "assets/backgrounds/rooms/m01_break_room_blended.png",
+      "chatBackground": [
+        { "x": [0, 0.6], "image": "assets/backgrounds/rooms/m01_break_room_left_blended.png" },
+        { "x": [0.6, 1], "image": "assets/backgrounds/rooms/m01_break_room_blended.png" }
+      ],
       "locked": false,
       "door_sign": "Break Room",
       "connections": {
@@ -1490,7 +1496,10 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
 
     "it_room": {
       "type": "room_it",
-      "chatBackground": "assets/backgrounds/rooms/m01_it_room_blended.png",
+      "chatBackground": [
+        { "x": [0, 0.6], "image": "assets/backgrounds/rooms/m01_it_room_left_blended.png" },
+        { "x": [0.6, 1], "image": "assets/backgrounds/rooms/m01_it_room_blended.png" }
+      ],
       "locked": true,
       "lockType": "pin",
       "requires": "2468",
@@ -1778,7 +1787,10 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
 
     "maya_office": {
       "type": "small_office_room3_1x1gu",
-      "chatBackground": "assets/backgrounds/rooms/m01_maya_office_blended.png",
+      "chatBackground": [
+        { "x": [0, 0.6], "image": "assets/backgrounds/rooms/m01_maya_office_left_blended.png" },
+        { "x": [0.6, 1], "image": "assets/backgrounds/rooms/m01_maya_office_blended.png" }
+      ],
       "locked": false,
       "door_sign": "Maya Chen — Research",
       "connections": {

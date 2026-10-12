@@ -632,7 +632,10 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
 
     "lecture_theatre": {
       "type": "room_uni_lecture",
-      "chatBackground": "assets/backgrounds/rooms/lab_tesseract_trials_lecture_theatre_blended.png",
+      "chatBackground": [
+        { "x": [0, 0.6], "image": "assets/backgrounds/rooms/lab_tesseract_trials_lecture_theatre_left_blended.png" },
+        { "x": [0.6, 1], "image": "assets/backgrounds/rooms/lab_tesseract_trials_lecture_theatre_blended.png" }
+      ],
       "lighting": { "ambient": "#c0bab4", "emitters": { "laptop": { "intensity": 0 } } },
       "door_sign": "Lecture Theatre 1",
       "connections": { "north": "foyer" },
@@ -665,7 +668,10 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
 
     "common_room": {
       "type": "room_uni_common",
-      "chatBackground": "assets/backgrounds/rooms/lab_tesseract_trials_common_room_blended.png",
+      "chatBackground": [
+        { "x": [0, 0.55], "image": "assets/backgrounds/rooms/lab_tesseract_trials_common_room_left_blended.png" },
+        { "x": [0.55, 1], "image": "assets/backgrounds/rooms/lab_tesseract_trials_common_room_blended.png" }
+      ],
       "door_sign": "Student Common Room",
       "connections": { "west": "foyer", "east": "staff_office" },
       "npcs": [
@@ -864,7 +870,10 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
 
     "workshop": {
       "type": "room_uni_workshop",
-      "chatBackground": "assets/backgrounds/rooms/lab_tesseract_trials_workshop_blended.png",
+      "chatBackground": [
+        { "x": [0, 0.6], "image": "assets/backgrounds/rooms/lab_tesseract_trials_workshop_left_blended.png" },
+        { "x": [0.6, 1], "image": "assets/backgrounds/rooms/lab_tesseract_trials_workshop_blended.png" }
+      ],
       "door_sign": "Workshop (knock)",
       "locked": true,
       "lockType": "key",
@@ -946,7 +955,10 @@ kh_txt[:whiteboard] = "BLOCKCHAIN 101: A TOY LEDGER, four blocks.\nBlock 1 holds
         later staff at the listed staff slots. %>
     "staff_office": {
       "type": "room_uni_staff",
-      "chatBackground": "assets/backgrounds/rooms/lab_tesseract_trials_staff_office_blended.png",
+      "chatBackground": [
+        { "x": [0.6, 1], "image": "assets/backgrounds/rooms/lab_tesseract_trials_staff_office_right_blended.png" },
+        { "x": [0, 0.6], "image": "assets/backgrounds/rooms/lab_tesseract_trials_staff_office_left_blended.png" }
+      ],
       "lighting": { "ambient": "#e8e4dc", "lights": [ { "x": 5.3, "y": 2.8, "color": "#fff3dc", "radius": 112, "intensity": 0.8 }, { "x": 9.5, "y": 2.8, "color": "#fff3dc", "radius": 112, "intensity": 0.8 }, { "x": 13.8, "y": 2.8, "color": "#fff3dc", "radius": 112, "intensity": 0.8 } ] },
       "door_sign": "Computing: Staff Only",
       "connections": { "west": "common_room" },

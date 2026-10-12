@@ -1568,7 +1568,11 @@ boardroom_pin = "0417"
 
     "hospital_ward": {
       "type": "room_hospital_ward",
-      "chatBackground": "assets/backgrounds/rooms/m02_hospital_ward_blended.png",
+      "chatBackground": [
+        { "x": [0.36, 0.7], "image": "assets/backgrounds/rooms/m02_hospital_ward_centre_blended.png" },
+        { "x": [0, 0.36], "image": "assets/backgrounds/rooms/m02_hospital_ward_left_blended.png" },
+        { "x": [0.7, 1], "image": "assets/backgrounds/rooms/m02_hospital_ward_right_blended.png" }
+      ],
 <%# Night ward: main lights down, pools at the nurses' station and at Bed 2 (Doyle's
     vigil); Bed 4 sits between them under its dead monitor. The EHR terminal glows red
     (ransom screen) until the ward starts recovering. LIGHTING_PLAN.md C3/C6. %>
@@ -3161,7 +3165,10 @@ boardroom_pin = "0417"
 
     "office_corridor": {
       "type": "room_hospital_hall",
-      "chatBackground": "assets/backgrounds/rooms/m02_office_corridor_blended.png",
+      "chatBackground": [
+        { "x": [0, 0.6], "image": "assets/backgrounds/rooms/m02_office_corridor_left_blended.png" },
+        { "x": [0.6, 1], "image": "assets/backgrounds/rooms/m02_office_corridor_blended.png" }
+      ],
       "dimensions": {
         "width": 20,
         "height": 6
