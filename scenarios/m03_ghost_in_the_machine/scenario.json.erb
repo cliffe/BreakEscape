@@ -863,7 +863,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "eventPattern": "global_variable_changed:victoria_card_cloned",
               "condition": "value === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 2500, "message": "Card's saved. Thank her. Once you step out into the hallway the day's over: you leave with the visitors, and we come back after dark." }
+              "sendTimedMessage": { "delay": 2500, "skipIfGlobal": "clone_call_done", "message": "Card's saved. Thank her. Once you step out into the hallway the day's over: you leave with the visitors, and we come back after dark." }
             },
             {
               "_comment": "P1-8/P1-18: reading the printed transaction log completes find_operational_logs (its own visible beat). onRead on the drop-site log item sets transaction_log_read.",
