@@ -28,6 +28,7 @@ One script, [tools/pixellab_pipeline.py](../../../tools/pixellab_pipeline.py), d
 - At every choice point, **Read the contact sheet image yourself**. Show it to the user with your assessment, then wait for their pick unless they said to choose.
 - **Every portrait faces right.** Busts, talk sheets and viseme sheets for NPCs and player alike face the viewer's right (judge by where the face and gaze point, and for a patient in bed not by which side of the pillow the head is on). Person-chat draws the player as stored on the left and mirrors NPCs on the right, so a left-facing file makes the NPC face away. Check this at the bust pick, before any sheet is built from it; flip frame by frame if it's wrong.
 - Never delete PixelLab characters, and never overwrite a game asset silently. `pick` and `import --force` back up whatever they replace.
+- **One pipeline command per character at a time.** `save()` rewrites the whole `state.json` without merging, so two commands running on the same character at once lose each other's job records and picks (m03, 2026-10-12: a blink chain alongside a talk run dropped Victoria's talk pick and two blink jobs). Different characters in parallel are fine.
 - A killed run leaves jobs `submitted`. `collect <name>` finishes them without paying again (for `animate`, just rerun it; it resumes from its in-flight log). Don't rerun a paid stage command to recover.
 
 ## Stage 0: init
