@@ -51,6 +51,8 @@ Rooms with people in them start lit automatically, even in `motion` mode. Phone 
 - **`flicker: true`**: one faulty panel. Use it in one or two rooms per mission, for atmosphere (a neglected store, a back corridor). Avoid it in rooms the player spends long in.
 - **`offAfter`** (seconds): only when relighting on return is part of the feel. It replays the strike every time.
 - **`lights`**: extra light in tile coordinates within the room, e.g. a window or a lamp the map lacks. `{ "x": 5, "y": 4, "color": "#ffd9a0", "radius": 80, "intensity": 0.8 }`.
+- **`variants`**: the room's lighting by game state, for a mission whose time of day or power changes (m03: an afternoon visit, then the same building at night). Each variant is a partial room block with a `condition` (globalVars syntax); the first that holds is merged over the block (`emitters` merge by key, everything else replaces). It is checked at load and as globals change, so a reload keeps it. A change applies at once with no strike, so key it on a global set behind a scene's fade (m03 uses `clone_call_done`, set when the night scene closes, not `mission_phase`, which flips mid-afternoon). Example: `"variants": [ { "condition": "globalVars.clone_call_done === true", "mode": "dark" } ]`.
+- **NPC torch** (on the NPC, not the room): `"behavior": { "torch": { "condition": "globalVars.night === true" } }` (or `true`). The NPC carries a beam the way they face, shown only when their room is dim (it scales with the room's current ambient, so it's invisible in a lit office). For guards on night patrol.
 
 ## Step 4 — light sources the engine doesn't know
 
@@ -64,6 +66,15 @@ tools/playtest/lighting-tour.sh <mission> <scratch>/<mission>-lighting
 ```
 
 The tour makes a fresh game on the keyless :3001 server and unlocks every room in that game. It writes `<room>-a.png` for every room, plus `<room>-b.png` with the lights on for rooms that start dark. It moves the camera from the console, so it's a visual check, not a playtest. Pass room ids after the out dir to shoot only those.
+
+Optional flags (the default behaviour is unchanged without them):
+
+- `--close-intro`: close an opening briefing and the tutorial prompt first. While either is open the scene is paused and the light map stops drawing, so every shot shows the briefing (m03 needs this).
+- `--globals k=v[,k=v]`: set scenario globals before shooting, for rooms with `variants` or conditional emitters. A night tour of m03: `--globals clone_call_done=true,mission_phase=act2_infiltration`.
+- `--show-npc id[,id]`: make hidden NPCs visible (night-only characters).
+- `--restore-off`: switch a motion room back off after its lit `-b` shot, so later shots of its neighbours show it dark, as the player would find it.
+- `--check`: print each room's mode, active variant, lit ambient and how recently the light map redrew. A redraw that never advances means the scene is paused and the shots are wrong.
+- `--player room:tx,ty:facing` (existing): torch and glows over the player.
 
 **Look at every image yourself.** Check:
 
