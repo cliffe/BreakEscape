@@ -196,7 +196,8 @@ Victoria Sterling: Systems fail. What matters is who knows first, and who pays t
 { hub_quiet:
     ~ hub_quiet = false
 - else:
-    Victoria Sterling: {&Go on.|What else?|Ask.}
+    // Pass 2 blind fixes: the old "Go on." / "What else?" / "Ask." read as filler.
+    Victoria Sterling: {&What else would you like to know?|You keep looking at that board. Ask about it, if you like.|Ask. I'll tell you if it's above your pay grade.}
 }
 + {not topic_zero_day_philosophy} [What is Zero Day actually for?]
     -> zero_day_philosophy
@@ -208,7 +209,11 @@ Victoria Sterling: Systems fail. What matters is who knows first, and who pays t
     -> clone_rfid_opportunity
 + {rfid_clone_started && not rfid_clone_complete && not read_dropped} [Keep her talking about the lab]
     -> clone_rfid_distraction
-+ {read_dropped && not rfid_clone_complete && (victoria_suspicious < 10 or eager_act_done)} [Drift back to the whiteboard]
+// Pass 2 blind fixes (B F2, user 2026-10-12): offered straight after a dropped read,
+// as the unsaved-card path already is. The walk-back below is still there for a
+// player who wants to repair the doubt; it no longer gates the retry. The retry
+// can't drop again (clone_check_1 checks not read_dropped).
++ {read_dropped && not rfid_clone_complete} [Drift back to the whiteboard]
     -> clone_retry
 + {(suspicion_warned or read_dropped) && not eager_act_done && not rfid_clone_complete} [{receptionist_ko:Nobody was at the desk, so I found my own way in.|Sorry about earlier. Freelance habit -- I test every client's story.}]
     -> eager_recruit
@@ -421,7 +426,7 @@ Narrator: Back at the board. The cloner finds her card again and starts a fresh 
     -> start
 }
 { not read_dropped:
-    Victoria Sterling: Everything on that board is real, and everything on it is broken. On purpose.
+    Victoria Sterling: Real kit, every box of it. We leave the holes in on purpose.
 }
 * {not asked_lab_services} [What kind of services do you run in the lab environment?]
     ~ asked_lab_services = true
@@ -480,6 +485,10 @@ Victoria Sterling: The lab's the easy part. The money is in knowing who'll pay, 
 #set_global:clone_read_dropped:true
 Victoria Sterling: Let's sit back down. I'd rather see your face than the back of your head.
 Narrator: She walks back to the table. The cloner's read stalls halfway, then drops. Out of range.
+// Pass 2 blind fixes (B F2): say how to get the read back, and skip the hub's
+// filler line straight after this.
+Narrator: You'll need her back at the whiteboard for a fresh read.
+~ hub_quiet = true
 -> hub
 
 === clone_check_2 ===
@@ -495,7 +504,8 @@ Victoria Sterling: You ask questions like someone taking notes. I like that in s
 { victoria_suspicious >= 5 and not read_dropped:
     Narrator: Her eyes drop to your pocket, where the cloner's light shows through the cloth. Then back to the board.
 }
-Narrator: Nearly there. Keep her talking.
+// Pass 2 blind fixes: "Nearly there. Keep her talking." read as a game prompt.
+Narrator: Against your leg, the cloner is still working. A few seconds more.
 * [Skills are cheap. Knowing where to sell them isn't.]
     ~ victoria_influence = victoria_influence + 10
     # influence_increased
@@ -754,7 +764,9 @@ Narrator: She's past you and gone before the lift doors settle.
 #speaker:victoria_sterling
 // Pass 5 (P1-26): synced so HaX's "she won't engage" hint shows only once seen.
 #set_global:sterling_on_call_seen:true
-Victoria Sterling: *low, into her phone, back to the door* No. Not tonight. I said I'd deal with it myself.
+// Pass 2 blind fixes: the long asterisk cue is narration now.
+Narrator: Sterling is on the phone by the window, her back to the door, voice low.
+Victoria Sterling: No. Not tonight. I said I'd deal with it myself.
 Narrator: She doesn't seem to have heard you come in. You ease back out before she turns round.
 ~ idle_quiet = true
 #exit_conversation

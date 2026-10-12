@@ -227,7 +227,7 @@ Agent HaX: Your call.
 === final_instructions ===
 #speaker:agent_0x99
 { knows_m2_connection:
-    Agent HaX: Listen. Whatever the count turns out to be at St. Catherine's, people died on the back of what Zero Day sold.
+    Agent HaX: Listen. Every life St. Catherine's lost, it lost to something Zero Day sold.
 }
 * [I'll get the evidence. Zero Day goes down.]
     ~ handler_trust = handler_trust + 10

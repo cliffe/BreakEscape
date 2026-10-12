@@ -1911,3 +1911,79 @@ E4 as its own change set (`public/break_escape/js/systems/npc-los.js` only), the
 
 - Conference trolley and flip chart, and the server room's VM terminal, read correctly day and night. No changes.
 - **Room dressing closed after seven cycles; the layout is final.** Shots `build_evidence/dressing_c7/`.
+
+## Blind-run fixes (2026-10-12)
+
+From `PASS2_BLIND_B.md` (struggling player, complete), `PASS2_BLIND_A.md` and `PASS2_BLIND_A2.md` (partial "do your best" runs). User decisions of 2026-10-12: allow a final sweep after a Victoria KO; offer the whiteboard again straight after a dropped clone read; the polish list; the executive PC lockout (B F3) declined. Mission-local edits only; ink snapshot taken first (session scratchpad `m03-blindfix/ink_snapshot/`), tagdiff run against HEAD.
+
+| Severity | Found | Fixed | Engine / by design | Declined |
+|---|---|---|---|---|
+| Blocker | 0 | 0 | 0 | 0 |
+| Major | 3 | 2 (B F1, B F2) | 0 | 1 (B F3, user) |
+| Minor | 11 (those in the brief) | 6 | 5 (B F5 partly fixed mission-side) | 0 |
+
+### Outcomes
+
+- **B F1 (major), Victoria KO ends the mission with tasks open: fixed.** A KO no longer sets `victoria_choice_made`. Night KO with all four flags in (HaX `npc_ko:victoria_sterling` mapping): her task ticks, the new optional task `call_in_after_sweep` ("Finish your sweep, then call HaX to bring you in", `scenario.json.erb:464`) opens, and HaX texts "She's down. Finish the sweep and get out. Call me when you want bringing in." (`:1048`). KO before the last flag: a `closing_debrief` mapping on `night_confrontation_ready` does the same (`:1159`); the four "all flags in" texts now say "call me" instead of "go and settle it"; the conference-room entry mapping that ended the mission is gone. The way out is a new first choice in HaX's hub, "I'm done in here. Bring me in." (`m03_phone_agent0x99.ink:112`), then `extract_offer` (warns that what's unread stays behind and names the safe if still shut), "Not yet" back to the hub, or "Bring me in." → "On my way." → `extract_go` sets `victoria_choice_made` and completes the task, and the existing `closing_debrief` mapping opens the debrief. Debrief KO lines unchanged. Reload: the existing `night_transition` backstops re-emit `victoria_choice_made` if the page reloads between the call and the debrief's first line; a reload during the sweep keeps the hub choice (gated on synced globals). "Where do I stand?" no longer says "see him before Sterling" or "Sterling's your last move" after a KO.
+- **B F2 (major), clone retry hidden behind the walk-back line: fixed.** "Drift back to the whiteboard" is offered whenever the read has dropped (`m03_npc_victoria.ink:216`); the walk-back line stays as an optional repair. The drop now ends on "You'll need her back at the whiteboard for a fresh read." and skips the hub filler. HaX's clone hint matches.
+- **B F3 (major), PC password has no lockout: declined by the user.**
+- **A/A2, the night turn isn't signalled as one-way: fixed.** Task `leave_until_dark` is now "Step out to the main hallway to end the day" with a description that says it happens at once (`scenario.json.erb:237`); HaX's "Card's saved" text, the KO-card call and "Where do I stand?" all say the hallway ends the day.
+- **A #4 / B, wrong card at a reader shows no denial: fixed mission-side, engine item noted.** The cloner does show "Access Denied" (`rfid-minigame.js:186-198`) but only for 1.5 s before returning to the list. HaX now texts once on a failed emulation of the reception badge ("That's the reception badge. The server room reader wants Sterling's executive card.", `scenario.json.erb:823`). The physical-card tap path emits no event, so it isn't covered.
+- **B F5, toast stack over the objectives and a stale day toast at 11 pm: engine.** Toasts live 60 s (`npc-barks.js:29`, `:381`) and nothing in a scenario can clear them. Mission-side, the "Card's saved" text now reads less wrong after the turn; the rest needs an engine change (below).
+- **B F8, transaction log task stays open after HaX reads it out: fixed.** Renamed "Find out what the transaction log says"; completes on reading the log or at the end of HaX's revelation call (`scenario.json.erb:307`, `:1152`).
+- **B F10, `decode_client_roster` completes with no decode: fixed.** Now "Take Sterling's client roster", described as raw hex that CyberChef will read (`scenario.json.erb:336`). Completion unchanged (`roster_seen`); id kept for save compatibility.
+- **A #5, `*shakily*` printed in Danny's line: fixed.** All asterisk cues checked: Danny had four in 26 lines; three cut (`*voice cracks*`, `*shakily*`, `*quietly*` on his re-entry line). Victoria's long `*low, into her phone, back to the door*` is now a narrator line. The other cues (Victoria `*curtly*`, `*coolly*`, `*drily*`, `*after a moment*`, `*quietly*`; Terry `*flatly*`, `*scoffs*`; Danny `*quietly*`; HaX `*quietly*`) are short and read as delivery, so kept (README_ink_best_practices rule 6).
+- **Weak lines (A, A2, B): fixed where agreed.** See the table below. "Guides on request" kept (each guide offer names a different guide). Ffion's "Sorry, I was miles away" kept (it plays only by day, straight after the lean-in, where it fits).
+- **B F6, guard warnings have no teeth: by design, not changed.** Terry catches a pick in his cone (`lockpick_used_in_view`), not presence; B walked up and knocked him out without picking in view. Giving him `los.challengeOnSight` would add presence detection but changes the stealth puzzle and Perfect Stealth, so it is a design question for the user, not a fix.
+- **B F7, KO'd body gone after a reload, items stay; respawn at reception: engine** (below).
+- **B F9, credits replay after a reload: by design.** `conclusionScreen` re-opens the visualiser on a reload after conclusion (README_scenario_design.md "conclusionScreen"); it is closable the second time.
+- **A2, Mission Brief panel and tutorial prompt straight after the briefing: engine/framework, not changed.**
+
+### Engine items for approval (not built)
+
+1. **Toast lifetime and placement** (`public/break_escape/js/systems/npc-barks.js:29`, `:381`, `:432-448`): toasts last 60 s and stack over the objectives panel. Proposal: a scenario-level `clearBarks: true` mapping action (or `#clear_barks` ink tag) used on `conversation_closed:night_transition`, and/or auto-dismiss a phone contact's older toasts when a newer one from the same contact arrives; keep the stack clear of the objectives panel.
+2. **Denial screen length** (`public/break_escape/js/minigames/rfid/rfid-minigame.js:186-198`, `:113-120`): "Access Denied" shows for 1.5 s, then the list returns. Proposal: hold it until the player taps (or 3 s), and emit `door_unlock_failed` with the door's room so scenarios can react to the physical-tap path too.
+3. **KO state after a reload for start-room NPCs** (`public/break_escape/js/systems/npc-lazy-loader.js:97-107` restores `isKO` for lazily loaded rooms; B saw Ffion, in the start room, vanish while her drops stayed). Needs a look at the start-room registration path.
+4. **Respawn at reception after a reload** (known backlog item).
+
+### Spoken lines changed (old → new)
+
+No audio exists for m03 yet.
+
+| File:line | Old | New |
+|---|---|---|
+| `m03_npc_victoria.ink:200` | "{&Go on.\|What else?\|Ask.}" | "{&What else would you like to know?\|You keep looking at that board. Ask about it, if you like.\|Ask. I'll tell you if it's above your pay grade.}" |
+| `m03_npc_victoria.ink:429` | "Everything on that board is real, and everything on it is broken. On purpose." | "Real kit, every box of it. We leave the holes in on purpose." |
+| `m03_npc_victoria.ink:490` | (new) | Narrator: "You'll need her back at the whiteboard for a fresh read." |
+| `m03_npc_victoria.ink:508` | Narrator: "Nearly there. Keep her talking." | Narrator: "Against your leg, the cloner is still working. A few seconds more." |
+| `m03_npc_victoria.ink:768-769` | "\*low, into her phone, back to the door\* No. Not tonight. I said I'd deal with it myself." | Narrator: "Sterling is on the phone by the window, her back to the door, voice low." / Victoria: "No. Not tonight. I said I'd deal with it myself." |
+| `m03_danny_choice.ink:48` | "\*voice cracks\* I know. I know what my map was for." | "I know. I know what my map was for." |
+| `m03_danny_choice.ink:64` | "A stranger in my office at night, and me trying to explain I'm not what the map makes me look like." | "And now there's a stranger in my office at night, and I'm trying to explain the map." |
+| `m03_danny_choice.ink:75` | "\*shakily\* You'd do that." | "You'd do that. For me." |
+| `m03_danny_choice.ink:119` | "\*quietly\* I've made the call." | "I've made the call." |
+| `m03_opening_briefing.ink:230` | "Listen. Whatever the count turns out to be at St. Catherine's, people died on the back of what Zero Day sold." | "Listen. Every life St. Catherine's lost, it lost to something Zero Day sold." (keeps m02's count open without reading as a placeholder) |
+| `m03_npc_ffion_rees.ink:161` | "{&Anything else, love?\|Anything else?\|Go on.}" | "{&Anything else, love?\|What else can I do for you?\|Still here? I don't mind.}" |
+| `m03_phone_agent0x99.ink:299` | "If the read drops, walk the suspicion back first, then drift to the board again." | "If the read drops, take her back to the board and start again." |
+| `m03_phone_agent0x99.ink:359` | "Sterling's card is saved. Walk out with the visitors and come back after dark." | "Sterling's card is saved. Step out into the main hallway when you're done: that ends the day, and we come back after dark." |
+| `m03_phone_agent0x99.ink:363` | "Nightshade's copy of her card is in your kit. Walk out and come back after dark." | "Nightshade's copy of her card is in your kit. Step out into the main hallway: that ends the day, and we come back after dark." |
+| `m03_phone_agent0x99.ink:376` | "The case is made. If Danny Foster matters to you, see him before Sterling." | "... see him {victoria_ko:before you leave\|before Sterling}." |
+| `m03_phone_agent0x99.ink:381-387` | "Network's stripped, ... Sterling's your last move." (four Danny variants) | same, with "Sterling's your last move." dropped after a KO |
+| `m03_phone_agent0x99.ink:390` | "Sterling's still in the conference room where you left her. Go and settle it." | "Sterling's still out cold. Finish your sweep, then call me and I'll bring you in." |
+| `m03_phone_agent0x99.ink:467` | "{player_name()}, I've got the distcc logs you just submitted." | "{player_name()}, your distcc flag just landed, and the logs came through with it." |
+| `m03_phone_agent0x99.ink:588` | "Walk out with the visitors before anyone finds her. Come back after dark." | "Step out into the main hallway before anyone finds her. That ends the day; come back after dark." |
+| `m03_phone_agent0x99.ink:595-621` | (new) | `extract_offer` / `extract_choices` / `extract_go`: "Once you're out, you don't go back in. Anything you haven't read stays for the search team." / "The server room safe's still shut, for one." / "Car's at the side door. Two minutes." / "Take your time. She isn't going anywhere." / "See you at HQ." |
+| `scenario.json.erb:823` (text) | (new) | "That's the reception badge. The server room reader wants Sterling's executive card." |
+| `scenario.json.erb:864` (text) | "Card's saved. Thank her, walk out with the visitors, and come back after dark." | "Card's saved. Thank her. Once you step out into the hallway the day's over: you leave with the visitors, and we come back after dark." |
+| `scenario.json.erb:1048` (text) | (new) | "She's down. Finish the sweep and get out. Call me when you want bringing in." |
+| `scenario.json.erb:1055`, `:1080` (texts) | "Everything's off their network. Sterling's still in the conference room where you left her. Want a say in what happens to Danny? His office first." | "Everything's off their network, and Sterling's still out cold. Want a say in Danny's fate? His office first. Then call me to come in." |
+| `scenario.json.erb:1061`, `:1086` (texts) | "Everything's off their network. Sterling's still in the conference room where you left her. Go and settle it." | "Everything's off their network, and Sterling's still out cold. Finish your sweep, then call me and I'll bring you in." |
+
+### Checks run
+
+- Ink compile: 8/8.
+- Validator (full): schema passes; objective wiring shows the one pre-existing warning (`npc_ko:victoria_sterling` handlers fire together on purpose). The two new task mappings sit on `closing_debrief` so they don't add shared-pattern warnings on HaX. Other issues unchanged from HEAD.
+- dialoguelint: 2 warnings, both on untouched lines that predate this round (`m03_npc_victoria.ink:645` not-x-but-y, `:708` choice length).
+- tagdiff vs HEAD: Victoria 3 differences (the retry condition, `hub_quiet` after the drop); phone 30 (new VAR `victoria_choice_made`, the hub choice and four extraction knots, five `victoria_ko` conditions in the recap); the rest prose only.
+- reopencheck: 0 problems (m03 HaX 523 reopens).
+- Route driver: new `r20_ko_sweep.json` (night KO, "Not yet", sweep, call in, KO debrief) and `r21_clone_retry.json` (dropped read, retry offered at once and after a close and reload, read completes). All 23 routes run with no missing picks; `r2_suspicious` now stops on a menu that offers "Drift back to the whiteboard" straight after the drop.
+- Browser (headless, keyless :3001, game 2190, session log `tools/playtest/m03-blindfix-check-session.jsonl`): rooms opened with `tools/playtest/unlock-all-rooms.rb` and the night/flag globals set by console, so the run is "exercised, not earned". After `debugKO victoria_sterling` in the conference room: no debrief, `victoria_choice_made` false, HaX's "She's down" toast shown, `victoria_choice_made` task completed, `call_in_after_sweep` active. Clicking the toast opened the phone at the hub with "I'm done in here. Bring me in." first; "Bring me in." → "On my way." closed the phone and opened the `closing_debrief` person-chat at once ("SAFETYNET headquarters. The morning after..."), with `victoria_choice_made` and `debrief_played` true and the call-in task completed. No errors in the bridge log.

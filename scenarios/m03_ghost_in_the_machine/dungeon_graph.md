@@ -9,7 +9,7 @@ Somebody sold Ghost the way into St. Catherine's. The trail leads to WhiteHat Se
 | Metric | Value |
 |---|---|
 | Story aims | 6 |
-| Total tasks | 21 (4 optional) |
+| Total tasks | 22 (5 optional) |
 | VM flag challenges | 4 |
 | Physical locks | 7 |
 | AND-gate convergences | 3 |
@@ -202,7 +202,7 @@ flowchart TD
   aim_act1_gain_access -.->|clone_call_done| aim_act2_breach_server_room
   aim_act1_gain_access -.->|exec_wing_night| aim_search_executive_office
   aim_act1_gain_access -.->|night_explored| aim_collect_lore
-  aim_act2_breach_server_room -.->|perfect_stealth_earned| aim_perfect_stealth
+  aim_act1_gain_access -.->|perfect_stealth_earned| aim_perfect_stealth
   aim_act2_breach_server_room -.->|night_confrontation_ready| aim_moral_choices
 
   class aim_act1_gain_access,aim_act2_breach_server_room,aim_moral_choices critical
@@ -329,7 +329,7 @@ flowchart TD
   aim_act1_gain_access -.->|clone_call_done| aim_act2_breach_server_room
   aim_act1_gain_access -.->|exec_wing_night| aim_search_executive_office
   aim_act1_gain_access -.->|night_explored| aim_collect_lore
-  aim_act2_breach_server_room -.->|perfect_stealth_earned| aim_perfect_stealth
+  aim_act1_gain_access -.->|perfect_stealth_earned| aim_perfect_stealth
   aim_act2_breach_server_room -.->|night_confrontation_ready| aim_moral_choices
   vmfl_submit_network_scan_flag -.-> aim_act2_breach_server_room
   vmfl_submit_ftp_flag -.-> aim_act2_breach_server_room

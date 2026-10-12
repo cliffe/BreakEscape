@@ -45,7 +45,7 @@ Danny Foster: And then I saw the news, and I knew exactly what I'd handed her.
 
 === guilt ===
 #speaker:danny_foster
-Danny Foster: *voice cracks* I know. I know what my map was for.
+Danny Foster: I know. I know what my map was for.
 Danny Foster: I read every article. I could tell you the ward layout from memory because I drew it. I keep thinking if I'd asked one more question --
 Danny Foster: But I didn't. I did good, thorough work, and I gave it to her, and she sold it.
 -> the_question
@@ -61,7 +61,7 @@ Danny Foster: I did the work. Careful work. And then the ransomware ran on the e
 ~ danny_evidence_seen = true
 Danny Foster: When I worked it out, I went to her. She told me I was paranoid. Then she gave me a raise and called me essential.
 Danny Foster: She was buying my silence and I was letting her. The alternative is this.
-Danny Foster: A stranger in my office at night, and me trying to explain I'm not what the map makes me look like.
+Danny Foster: And now there's a stranger in my office at night, and I'm trying to explain the map.
 Danny Foster: So. What happens now?
 + [Come in and testify. You were deceived. I'll put that in the report myself.]
     -> protect
@@ -72,7 +72,7 @@ Danny Foster: So. What happens now?
 
 === protect ===
 #speaker:danny_foster
-Danny Foster: *shakily* You'd do that.
+Danny Foster: You'd do that. For me.
 + [Sterling goes down for her part. You don't have to. But you tell them everything.]
     Danny Foster: Everything. Yes. God, yes.
     Narrator: He reaches for his phone with a hand that isn't quite steady, and for the first time all night he looks like a man who might sleep.
@@ -116,7 +116,7 @@ Danny Foster: That's almost worse. At least a decision made for me isn't mine.
     ~ rest_quiet = false
 - else:
     { danny_fate == "protected":
-        Danny Foster: *quietly* I've made the call.
+        Danny Foster: I've made the call.
     }
     { danny_fate == "exposed":
         Danny Foster: I'm still here. I said I would be.

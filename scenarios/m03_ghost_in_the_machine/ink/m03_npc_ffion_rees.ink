@@ -158,7 +158,7 @@ Ffion Rees: First time at a place like this, is it?
         // D2-15: she has found the charger, so she isn't searching and leaving at once.
         Ffion Rees: {Found it. Charger was in the biscuit tin, don't ask.|I'm going, I'm going.}
     - else:
-        Ffion Rees: {&Anything else, love?|Anything else?|Go on.}
+        Ffion Rees: {&Anything else, love?|What else can I do for you?|Still here? I don't mind.}
     }
 }
 + {mission_phase == "act2_infiltration"} [Night, Ffion.]

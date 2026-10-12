@@ -234,8 +234,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
         {
           "_comment": "Pass 5 (R1-1): after the card is saved (or Sterling is knocked out) the list used to go empty and players stood still. Unlocked by HaX's objective_task_completed:clone_rfid_card mapping (every route completes that task); completed by HaX's clone_call_done mapping when the night scene closes.",
           "taskId": "leave_until_dark",
-          "title": "Walk out with the visitors and come back after dark",
-          "description": "Step out of the conference room into the main hallway. You leave with the afternoon's visitors and come back once the building has shut.",
+          "title": "Step out to the main hallway to end the day",
+          "description": "Leaving the conference room ends the afternoon at once: you walk out with the visitors and come back once the building has shut. Finish anything you want to do by daylight first.",
           "type": "custom",
           "status": "locked"
         }
@@ -302,10 +302,10 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "status": "active"
         },
         {
-          "_comment": "P1-8: completes on READING the printed transaction log (its onRead sets transaction_log_read), not on the distcc flag submission, which removes the duplicate tick and gives the reveal its own visible beat.",
+          "_comment": "P1-8: completes on READING the printed transaction log (its onRead sets transaction_log_read), not on the distcc flag submission, which removes the duplicate tick and gives the reveal its own visible beat. Pass 2 blind fixes (B F8): HaX's revelation call reads the same log out, so the end of that call (revelation_heard) completes it too.",
           "taskId": "find_operational_logs",
-          "title": "Read the recovered transaction log",
-          "description": "The drop-site prints Zero Day's transaction log when the distcc flag lands. Read it. It names GHOST and St. Catherine's",
+          "title": "Find out what the transaction log says",
+          "description": "The drop-site prints Zero Day's transaction log when the distcc flag lands. Read it, or take HaX's call about it. It names GHOST and St. Catherine's",
           "type": "custom",
           "status": "active"
         }
@@ -333,8 +333,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
         },
         {
           "taskId": "decode_client_roster",
-          "title": "Recover Sterling's client roster",
-          "description": "Find the client roster export on Sterling's computer",
+          "title": "Take Sterling's client roster",
+          "description": "The client roster export is on Sterling's computer, as raw hex. Take it; the CyberChef workstation will read it if you want the names.",
           "type": "custom",
           "status": "active"
         },
@@ -458,6 +458,15 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "description": "Sterling is still in the conference room. Deal with her there.",
           "type": "custom",
           "status": "active"
+        },
+        {
+          "_comment": "Pass 2 blind fixes (B F1, user 2026-10-12): a KO no longer ends the mission on the spot. Unlocked once Sterling is down and all four flags are in (HaX's npc_ko and night_confrontation_ready mappings); completed by the phone ink (extract_go) when the player asks HaX to bring them in, which also sets victoria_choice_made and so opens the debrief. Optional, so it never gates the aim on the other routes.",
+          "taskId": "call_in_after_sweep",
+          "title": "Finish your sweep, then call HaX to bring you in",
+          "description": "Sterling's down. Anything you haven't read yet is still in the building. When you're ready to leave, call HaX.",
+          "type": "custom",
+          "status": "locked",
+          "optional": true
         },
         <%# The conclusion aim's LAST task. bond_visualiser opens the moment the
             server confirms this aim's last task (objectives-manager.js
@@ -807,6 +816,13 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "completeTask": "clone_rfid_card"
             },
             {
+              "_comment": "Pass 2 blind fixes (A #4, B): the cloner shows 'Access Denied' for only 1.5 s before dropping back to the saved list, which testers missed. A failed emulation of the reception badge can only happen at the server room reader (the conference door is open by then), so HaX names the right card. card_emulated carries cardName and success (rfid-minigame.js handleEmulate).",
+              "eventPattern": "card_emulated",
+              "condition": "data.success === false && data.cardName === 'Staff Access Badge'",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "That's the reception badge. The server room reader wants Sterling's executive card." }
+            },
+            {
               "_comment": "Pass 4: a receptionist KO also completes this task (taskOnKO), but then the badge is on the floor, not in the cloner. globalVarOnKO is written before taskOnKO fires (npc-hostile.js), so the condition holds.",
               "eventPattern": "objective_task_completed:clone_reception_badge",
               "condition": "globalVars.receptionist_ko !== true",
@@ -845,7 +861,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "eventPattern": "global_variable_changed:victoria_card_cloned",
               "condition": "value === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 2500, "message": "Card's saved. Thank her, walk out with the visitors, and come back after dark." }
+              "sendTimedMessage": { "delay": 2500, "message": "Card's saved. Thank her. Once you step out into the hallway the day's over: you leave with the visitors, and we come back after dark." }
             },
             {
               "_comment": "P1-8/P1-18: reading the printed transaction log completes find_operational_logs (its own visible beat). onRead on the drop-site log item sets transaction_log_read.",
@@ -1023,25 +1039,26 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "conversationMode": "phone-chat"
             },
             {
-              "_comment": "Night KO: all four flags already in, and she's in front of you. Settle it now.",
+              "_comment": "Night KO: all four flags already in. Her fate is settled (the task ticks), but the debrief no longer fires on the spot (pass 2 blind B F1, user 2026-10-12): the player finishes the sweep and asks HaX to bring them in from the phone hub (extract_offer), which sets victoria_choice_made.",
               "eventPattern": "npc_ko:victoria_sterling",
               "condition": "globalVars.night_confrontation_ready === true && globalVars.victoria_choice_made !== true",
               "onceOnly": true,
               "completeTask": "victoria_choice_made",
-              "setGlobal": { "victoria_choice_made": true }
+              "unlockTask": "call_in_after_sweep",
+              "sendTimedMessage": { "delay": 2500, "message": "She's down. Finish the sweep and get out. Call me when you want bringing in." }
             },
             {
-              "_comment": "Day-KO path. Settling her fate the instant the last flag lands would fire the debrief on top of the revelation call and the drop-site. Instead HaX sends the player back to her, and the fate settles on entering the conference room. P1-7: danny_fate variants.",
+              "_comment": "Day-KO path. Settling her fate the instant the last flag lands would fire the debrief on top of the revelation call and the drop-site, so the texts wait for the revelation call and the player calls in when ready. P1-7: danny_fate variants.",
               "eventPattern": "global_variable_changed:night_confrontation_ready",
               "condition": "value === true && globalVars.victoria_ko === true && globalVars.victoria_choice_made !== true && globalVars.revelation_heard === true && globalVars.danny_fate === ''",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 6000, "message": "Everything's off their network. Sterling's still in the conference room where you left her. Want a say in what happens to Danny? His office first." }
+              "sendTimedMessage": { "delay": 6000, "message": "Everything's off their network, and Sterling's still out cold. Want a say in Danny's fate? His office first. Then call me to come in." }
             },
             {
               "eventPattern": "global_variable_changed:night_confrontation_ready",
               "condition": "value === true && globalVars.victoria_ko === true && globalVars.victoria_choice_made !== true && globalVars.revelation_heard === true && globalVars.danny_fate !== ''",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 6000, "message": "Everything's off their network. Sterling's still in the conference room where you left her. Go and settle it." }
+              "sendTimedMessage": { "delay": 6000, "message": "Everything's off their network, and Sterling's still out cold. Finish your sweep, then call me and I'll bring you in." }
             },
             {
               "_comment": "Pass 4 round 2: distcc was the last flag, so night_confrontation_ready was set while the revelation call was still playing. Send the all-flags message once the call has ended. P1-7: danny_fate variants here too; keep each pair in step with the night_confrontation_ready copies above.",
@@ -1060,21 +1077,13 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "eventPattern": "global_variable_changed:revelation_heard",
               "condition": "value === true && globalVars.night_confrontation_ready === true && globalVars.victoria_ko === true && globalVars.victoria_choice_made !== true && globalVars.danny_fate === ''",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 2000, "message": "Everything's off their network. Sterling's still in the conference room where you left her. Want a say in what happens to Danny? His office first." }
+              "sendTimedMessage": { "delay": 2000, "message": "Everything's off their network, and Sterling's still out cold. Want a say in Danny's fate? His office first. Then call me to come in." }
             },
             {
               "eventPattern": "global_variable_changed:revelation_heard",
               "condition": "value === true && globalVars.night_confrontation_ready === true && globalVars.victoria_ko === true && globalVars.victoria_choice_made !== true && globalVars.danny_fate !== ''",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 2000, "message": "Everything's off their network. Sterling's still in the conference room where you left her. Go and settle it." }
-            },
-            {
-              "_comment": "P1-21: debrief_played guard makes this disjoint from the hear_debrief backstop on the same room_entered pattern.",
-              "eventPattern": "room_entered:conference_room_01",
-              "condition": "globalVars.victoria_ko === true && globalVars.night_confrontation_ready === true && globalVars.victoria_choice_made !== true && globalVars.debrief_played !== true",
-              "onceOnly": true,
-              "completeTask": "victoria_choice_made",
-              "setGlobal": { "victoria_choice_made": true }
+              "sendTimedMessage": { "delay": 2000, "message": "Everything's off their network, and Sterling's still out cold. Finish your sweep, then call me and I'll bring you in." }
             },
             {
               "eventPattern": "npc_ko:danny_foster",
@@ -1138,6 +1147,21 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "condition": "globalVars.conference_reader_tried === true",
               "onceOnly": true,
               "completeTask": "copy_staff_badge"
+            },
+            {
+              "_comment": "Pass 2 blind fixes (B F8): HaX's revelation call reads the log out, so its end ticks the task too. On this always-loaded NPC rather than HaX so it doesn't share HaX's revelation_heard pattern (those texts fire alongside). The task reads 'find out what the transaction log says'.",
+              "eventPattern": "global_variable_changed:revelation_heard",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "find_operational_logs"
+            },
+            {
+              "_comment": "Pass 2 blind fixes (B F1): Sterling was knocked out before the last flag. Her fate is settled now (the task ticks) and the call-in task opens; the debrief waits until the player asks HaX to bring them in (phone extract_offer). This used to settle on entering the conference room, which ended the mission on the spot. On this always-loaded NPC rather than HaX so it doesn't share HaX's night_confrontation_ready pattern.",
+              "eventPattern": "global_variable_changed:night_confrontation_ready",
+              "condition": "value === true && globalVars.victoria_ko === true && globalVars.victoria_choice_made !== true",
+              "onceOnly": true,
+              "completeTask": "victoria_choice_made",
+              "unlockTask": "call_in_after_sweep"
             },
             {
               "_comment": "Pass 3b: leaving the executive-wing corridor ends the guard's grace, so the next catch is a new strike.",

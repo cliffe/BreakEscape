@@ -54,6 +54,9 @@ VAR exec_office_entered = false
 VAR greeted = false
 // D5-7: synced (globalVarOnKO on Danny).
 VAR danny_ko = false
+// Pass 2 blind fixes (B F1): synced. After a KO of Sterling the player calls in
+// from the hub; setting this global opens the debrief (closing_debrief mapping).
+VAR victoria_choice_made = false
 
 // ---- Field-guide exposure flags (offered synced; given tracked locally) ----
 VAR lockpicking_guide_offered = false
@@ -103,6 +106,11 @@ VAR hint_guard_hostile_given = false
 // two fixed choices ("Where do I stand?", exit) sit last, so the hub is never
 // empty and a stuck player always has the contextual progress read to fall back on.
 === hub ===
+// Pass 2 blind fixes (B F1, user 2026-10-12): a KO'd Sterling no longer ends the
+// mission at once. With the case made, the player sweeps the building and calls in
+// here when ready to leave. First in the hub: it is the way out.
++ {victoria_ko and night_confrontation_ready and not victoria_choice_made} [I'm done in here. Bring me in.]
+    -> extract_offer
 // Pass 5 (P3-19): the four calls now arrive as texts the player clicks; a missed or
 // dismissed text would lose the call for good, so the hub offers it again (m02 pattern).
 + {flag_distcc_submitted and not revelation_heard} [You wanted to talk about the distcc logs.]
@@ -288,7 +296,7 @@ So it's on her office machine, an unsent message saved as raw source. Decode it 
 ~ hint_clone_given = true
 Her card's custom keys. It takes about half a minute to read, and she steps away when she's wary.
 Stand at the whiteboard, keep her talking about the lab, and don't ask the question that makes her suspicious.
-If the read drops, walk the suspicion back first, then drift to the board again.
+If the read drops, take her back to the board and start again.
 + [Got it]
     -> hub
 
@@ -348,11 +356,11 @@ distcc is the one that matters -- that's where the operational logs sit. Submit 
 // Playtest round: reads the player's actual state instead of a fixed status.
 { not clone_call_done:
     { victoria_card_cloned:
-        Sterling's card is saved. Walk out with the visitors and come back after dark.
+        Sterling's card is saved. Step out into the main hallway when you're done: that ends the day, and we come back after dark.
         -> report_end
     }
     { victoria_ko:
-        Nightshade's copy of her card is in your kit. Walk out and come back after dark.
+        Nightshade's copy of her card is in your kit. Step out into the main hallway: that ends the day, and we come back after dark.
         -> report_end
     }
     { reception_badge_cloned or receptionist_ko:
@@ -364,22 +372,23 @@ distcc is the one that matters -- that's where the operational logs sit. Submit 
 }
 { night_confrontation_ready:
     { danny_fate == "":
-        The case is made. If Danny Foster matters to you, see him before Sterling.
+        // Pass 2 blind fixes: after a KO of Sterling there is no "before Sterling".
+        The case is made. If Danny Foster matters to you, see him {victoria_ko:before you leave|before Sterling}.
     - else:
         // D5-7: true for each Danny outcome.
         {
         - danny_fate == "ko" or danny_ko:
-            Network's stripped, the case is made, and Danny's out cold in his office. Sterling's your last move.
+            Network's stripped, the case is made, and Danny's out cold in his office.{not victoria_ko: Sterling's your last move.}
         - danny_fate == "protected":
-            Network's stripped, the case is made, and Danny's on his way in. Sterling's your last move.
+            Network's stripped, the case is made, and Danny's on his way in.{not victoria_ko: Sterling's your last move.}
         - danny_fate == "exposed":
-            Network's stripped, the case is made, and Danny's on the record. Sterling's your last move.
+            Network's stripped, the case is made, and Danny's on the record.{not victoria_ko: Sterling's your last move.}
         - else:
-            Network's stripped, the case is made, and Danny's choice is his now. Sterling's your last move.
+            Network's stripped, the case is made, and Danny's choice is his now.{not victoria_ko: Sterling's your last move.}
         }
     }
     { victoria_ko:
-        Sterling's still in the conference room where you left her. Go and settle it.
+        Sterling's still out cold. Finish your sweep, then call me and I'll bring you in.
     - else:
         Sterling's in the conference room.
     }
@@ -455,7 +464,7 @@ Client roster, transaction records, anything to the Architect.
 { revelation_heard:
     -> hub
 }
-{player_name()}, I've got the distcc logs you just submitted.
+{player_name()}, your distcc flag just landed, and the logs came through with it.
 There it is. The ProFTPD backdoor, line item on invoice ZDS-2024-0847. Twenty-five thousand, part of a package to Ghost.
 And a line under it: "Target Selection Consultation", ten thousand. They chose the hospital for Ghost.
 Target line: St. Catherine's Regional. Sable's sign-off on the approval.
@@ -575,5 +584,38 @@ If her card's come loose, leave it where it fell -- it's evidence.
 Nightshade lifted its keys from the reader logs and built you a working copy.
 It's in your kit now. It opens what hers opens, which means the server room tonight.
 // Pass 5 (R1-1): say what to do next, not only what's in the kit.
-Walk out with the visitors before anyone finds her. Come back after dark.
+// Pass 2 blind fixes: say that the hallway ends the day (testers didn't know).
+Step out into the main hallway before anyone finds her. That ends the day; come back after dark.
+-> hub
+
+// Pass 2 blind fixes (B F1, user 2026-10-12): the way out after a KO of Sterling.
+// Text first, choices in a text-free knot (phone reopen rule, E13). Leaving sets
+// victoria_choice_made, which opens the debrief (closing_debrief mapping); the
+// call-in task completes in the same batch.
+=== extract_offer ===
+#speaker:agent_0x99
+Once you're out, you don't go back in. Anything you haven't read stays for the search team.
+{ not catalogue_seen:
+    The server room safe's still shut, for one.
+}
+-> extract_choices
+
+=== extract_choices ===
++ [Bring me in.]
+    Car's at the side door. Two minutes.
+    -> extract_confirm
++ [Not yet. I'm still looking.]
+    Take your time. She isn't going anywhere.
+    -> hub
+
+=== extract_confirm ===
++ [On my way.]
+    -> extract_go
+
+=== extract_go ===
+#speaker:agent_0x99
+#complete_task:call_in_after_sweep
+#set_global:victoria_choice_made:true
+~ victoria_choice_made = true
+See you at HQ.
 -> hub
