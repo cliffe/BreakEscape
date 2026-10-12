@@ -28,6 +28,8 @@ For a source sprite `<name>.png`:
 
 All go in `public/break_escape/assets/characters/`.
 
+**Keep the chosen concept with the character, committed** (user, 2026-10-12). Once the user picks a concept, save it as `<key>_nonpixelart.png` with its `<key>_nonpixelart_prompt.txt` next to the character's other files in `characters/` (not in `characters/wip/`, which is git-ignored), and commit it with the character. It's the reference for any later redo. Name it after the final sprite key, and rename it with the character if the key changes. Move candidates that weren't picked out of the folder rather than keeping them as `_b` files.
+
 ## Step 0 — study the existing sprite
 
 Read the character's walk sheet (`<name>.png`) and its headshot (`<name>_headshot.png`) with the Read tool before writing any prompt. Note, in order:

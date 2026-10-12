@@ -21,6 +21,7 @@ One script, [tools/pixellab_pipeline.py](../../../tools/pixellab_pipeline.py), d
 
 ## Rules
 
+- **Save the chosen Gemini concept with the character** (user, 2026-10-12): `<key>_nonpixelart.png` and `<key>_nonpixelart_prompt.txt` in `characters/`, committed with the character's other files, never only in git-ignored `characters/wip/` or `tmp/pixellab/`. If a concept only exists as `tmp/pixellab/<name>/concept.png`, copy it out. Rename it along with the sprite key.
 - **Always make lip-sync visemes from talk runs** (`visemes --from-talk`) for every NPC (user, 2026-10-12). They look better than inpaint visemes and are how the existing NPCs were improved. The 2×2 talk sheet is still made as the fallback.
 
 - Check `balance` first. Tell the user the planned spend before any paid command, and get a yes before anything costing about 20 generations or more (`character`, `fix --use ai`, a full inpaint `visemes` set). Every paid command takes `--dry-run`.
