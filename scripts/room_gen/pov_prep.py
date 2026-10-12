@@ -15,6 +15,9 @@ the top-down render already draws face-on, is what Gemini copies. See
 
 Usage:
   python3 scripts/room_gen/pov_prep.py ROOM_TYPE OUT_DIR [--scenario scenarios/<m>/scenario.json.erb --room ROOM_ID]
+                                                         [--span X0 X1]
+--span limits the view of a wide room to that stretch of the back wall (room px): the strips are cropped
+to it and items outside it are listed as out of sight. The inventory suggests a span for each NPC.
 """
 import argparse
 import json
@@ -34,9 +37,12 @@ STRIP_BOTTOM = 88     # crop a little floor so things standing against the wall 
 WALL_FRAME = 12       # white/black frame round every room
 SIDE_COLUMN = 34       # the side walls are about one tile wide
 SIDE_WALL = 40        # side-wall fixtures sit within this many px of the frame
+WIDE_ROOM_TILES = 12  # wider than this, Gemini shrinks the room: draw a stretch of it (--span)
+VIEW_TILES = 10       # the stretch of back wall to draw in a wide room
+NPC_AT = 0.75         # where across that stretch the speaking NPC should fall (portrait centre is ~83% of the image)
 
 
-def zone(x, top, w, bottom, W, H):
+def zone(x, top, w, bottom, W, H, view=None):
     if x + w <= SIDE_COLUMN:           # inside the left wall column (any height)
         return "left wall"
     if x >= W - SIDE_COLUMN:
@@ -57,7 +63,8 @@ def zone(x, top, w, bottom, W, H):
         return "right wall"
     depth = "far" if bottom < H * 0.45 else "mid" if bottom < H * 0.62 else "near"
     cx = x + w / 2
-    side = "left" if cx < W / 3 else "right" if cx > 2 * W / 3 else "centre"
+    v0, v1 = view or (0, W)            # left/centre/right of what the frame shows (--span), not of the room
+    side = "left" if cx < v0 + (v1 - v0) / 3 else "right" if cx > v0 + 2 * (v1 - v0) / 3 else "centre"
     return f"floor, {depth} {side}"
 
 
@@ -101,14 +108,28 @@ def scenario_overrides(seg):
 
 
 def scenario_npc_sprites(seg):
-    """(npc id, spriteSheet, static?) for NPCs in the room; static ones are drawn as props (patients in beds)."""
+    """(npc id, spriteSheet, static?, (x, y) position or None) for NPCs in the room; static ones are drawn as props (patients in beds)."""
     out = []
     for m in re.finditer(r'"id"\s*:\s*"([^"]+)"', seg):
         blk = seg[m.end():m.end() + 1500].split('"id"', 1)[0]
         sh = re.search(r'"spriteSheet"\s*:\s*"([^"]+)"', blk)
         if sh:
-            out.append((m.group(1), sh.group(1), "staticSprite" in blk))
+            pos = re.search(r'"position"\s*:\s*\{\s*"x"\s*:\s*(-?[\d.]+)\s*,\s*"y"\s*:\s*(-?[\d.]+)', blk)
+            out.append((m.group(1), sh.group(1), "staticSprite" in blk,
+                        (float(pos.group(1)), float(pos.group(2))) if pos else None))
     return out
+
+
+def npc_where(pos, W, H):
+    """Where an NPC stands, as shares of the room's width and depth (position is the sprite centre, in tiles)."""
+    if not pos:
+        return "  position not set"
+    x, y = pos
+    if x > W / 32 or y > H / 32:
+        return f"  at ({x:g}, {y:g}): outside the room's tiles (phone-only or placed elsewhere)"
+    fx, fy = x * 32 / W, (y + 1) * 32 / H
+    return (f"  at ({x:g}, {y:g}) tiles: {fx:.0%} across, feet {fy:.0%} of the way from the back wall."
+            f" Back-wall items behind them: x~{x * 32 - 32:.0f}..{x * 32 + 32:.0f}")
 
 
 def slot_audit_lines(scenario, room_id):
@@ -130,6 +151,8 @@ def main():
     ap.add_argument("out_dir", type=Path, nargs="?")
     ap.add_argument("--scenario")
     ap.add_argument("--room-id", "--room", dest="room_id")
+    ap.add_argument("--span", nargs=2, type=float, metavar=("X0", "X1"),
+                    help="wide rooms: draw only this stretch of the back wall (room px); the room runs on out of sight")
     ap.add_argument("--list-rooms", action="store_true",
                     help="with --scenario: list every room id and map type (slot_audit skips rooms with no objects)")
     a = ap.parse_args()
@@ -160,12 +183,15 @@ def main():
     W, H = m["width"] * m["tilewidth"], m["height"] * m["tileheight"]
     im = Image.open(top)
     s = im.width // W
-    strip = im.crop((WALL_FRAME * s, (WALL_FRAME - 1) * s, (W - WALL_FRAME) * s, STRIP_BOTTOM * s))
+    x0, x1 = WALL_FRAME, W - WALL_FRAME
+    if a.span:
+        x0, x1 = max(x0, int(a.span[0])), min(x1, int(a.span[1]))
+    strip = im.crop((x0 * s, (WALL_FRAME - 1) * s, x1 * s, STRIP_BOTTOM * s))
     strip = strip.resize((strip.width * 2, strip.height * 2), Image.NEAREST)
     strip.save(a.out_dir / f"{a.room}_backwall.png")
     # wall only (down to the skirting): the floor band shows second-row sprites cut off under the
     # skirting, which reads as "against the wall"; send this one when the room has free-standing rows
-    wall = im.crop((WALL_FRAME * s, (WALL_FRAME - 1) * s, (W - WALL_FRAME) * s, FLOOR_Y * s))
+    wall = im.crop((x0 * s, (WALL_FRAME - 1) * s, x1 * s, FLOOR_Y * s))
     wall.resize((wall.width * 2, wall.height * 2), Image.NEAREST).save(a.out_dir / f"{a.room}_backwall_wall.png")
 
     objs = list(Room(a.room).objects())
@@ -187,22 +213,37 @@ def main():
         cond = " (conditional; see EMPTY below)" if layer.startswith("conditional") else ""
         t, tn = on_table(o) if "table_item" in layer else (None, None)
         if t:
-            z = zone(t["x"], t["y"] - t["height"], t["width"], t["y"], W, H)
+            z = zone(t["x"], t["y"] - t["height"], t["width"], t["y"], W, H, a.span)
             text = f"  on {tn}: {name}  x={x:.0f}..{x + w:.0f}{cond}"
             x = t["x"] + 0.5 + x / 10000      # sort under its table
         else:
-            z = zone(x, bottom - h, w, bottom, W, H)
+            z = zone(x, bottom - h, w, bottom, W, H, a.span)
             text = f"{name}  x={x:.0f}..{x + w:.0f} y={bottom - h:.0f}..{bottom:.0f}{cond}"
             if bottom > FLOOR_Y + 50 and not z.endswith("wall"):
                 # feet position: how far out from the back wall the item stands (0.6 m per 32 px tile)
                 gap = max(0.0, (bottom - 8 - FLOOR_Y) / 32 * 0.6)
                 text += f"  [feet ~{gap:.1f} m out from the back wall; a rough guide, confirm in the render]"
+        if a.span:
+            b = t or o
+            cx = b["x"] + b["width"] / 2
+            if cx < a.span[0]:
+                z = "out of sight to the left (outside the span: leave out)"
+            elif cx > a.span[1]:
+                z = "out of sight to the right (outside the span: leave out)"
         zones.setdefault(z, []).append((x, text))
 
     lines = [f"Room {a.room}: {W}x{H} px ({m['width']}x{m['height']} tiles; about {W / 32 * 0.6:.0f} m wide, {H / 32 * 0.6:.0f} m deep). "
              "Camera near the south wall looking north.",
              "Items left to right within each zone; desk/counter contents are listed under their table.",
              "Names are sprite names: look at the render to see what each one is.", ""]
+    if a.span:
+        cut = [side for side, c in (("left", a.span[0] > WALL_FRAME + 8), ("right", a.span[1] < W - WALL_FRAME - 8)) if c]
+        lines += [f"VIEW: only x={a.span[0]:.0f}..{a.span[1]:.0f} of the back wall ({(a.span[1] - a.span[0]) / 32 * 0.6:.0f} m of it), as in the strips.",
+                  f"  The room runs on out of sight to the {' and '.join(cut) or '(neither: the span covers the room)'}:"
+                  " tell Gemini the back wall carries on past that edge of the frame, with no side wall or corner there.", ""]
+    elif m["width"] > WIDE_ROOM_TILES:
+        lines += [f"!! WIDE ROOM ({m['width']} tiles): drawn whole it comes out looking small. Re-run with --span for the"
+                  f" NPC who talks here (suggestions in the NPC list), so the frame shows about {VIEW_TILES} tiles of back wall.", ""]
     for z in ORDER + sorted(k for k in zones if k not in ORDER):
         if z in zones:
             lines.append(f"## {z}")
@@ -254,12 +295,21 @@ def main():
             def empty_zone(o):
                 t, _ = on_table(o)
                 b = t or o
-                return zone(b["x"], b["y"] - b["height"], b["width"], b["y"], W, H)
+                return zone(b["x"], b["y"] - b["height"], b["width"], b["y"], W, H, a.span)
             lines += [f"  {n}  x={o['x']:.0f} ({empty_zone(o)})"
                       for n, o in sorted(empty, key=lambda t: t[1]["x"])] or ["  none"]
             lines.append("")
             lines.append("## NPCs in this room (spriteSheet; static ones are drawn as props, not people)")
-            lines += [f"  {i}: {sh}{'  (static)' if st else ''}" for i, sh, st in scenario_npc_sprites(seg)] or ["  none"]
+            for i, sh, st, pos in scenario_npc_sprites(seg):
+                lines.append(f"  {i}: {sh}{'  (static)' if st else ''}{npc_where(pos, W, H)}")
+                if pos and not st and m["width"] > WIDE_ROOM_TILES and pos[0] <= m["width"]:
+                    span = VIEW_TILES * 32
+                    sx0 = min(max(0, pos[0] * 32 - NPC_AT * span), W - span)
+                    lines.append(f"      suggested --span {sx0:.0f} {sx0 + span:.0f} (puts them about {(pos[0] * 32 - sx0) / span:.0%} across the view)")
+            if not scenario_npc_sprites(seg):
+                lines.append("  none")
+            lines.append("  In the chat the speaking NPC stands at about 83% of the background's width, so what the map")
+            lines.append("  shows around them belongs at about 55-90% across (see 'Behind the NPC' in the skill).")
             lines.append("")
             lines.append("## slot audit: which map slot each scenario object takes")
             lines += audit or ["  (none)"]

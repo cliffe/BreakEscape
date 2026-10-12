@@ -52,7 +52,7 @@ tools/playtest/lighting-tour.sh <mission> <scratch>/tour <room_id> [<room_id> ..
   - the doors;
   - the scenario's sprite overrides;
   - **EMPTY in this mission:** conditional slots no scenario object claims. The game leaves them empty unless a static NPC fills them, so check against the tour shot;
-  - the room's NPCs and their sprite sheets. NPCs marked `(static)` are drawn as props, e.g. sis01's patients lying in beds, and they fill map slots the EMPTY list shows as unclaimed;
+  - the room's NPCs and their sprite sheets, with where each stands (share of the way across, distance from the back wall, the back-wall stretch behind them; see "Behind the NPC"). NPCs marked `(static)` are drawn as props, e.g. sis01's patients lying in beds, and they fill map slots the EMPTY list shows as unclaimed;
   - the room's lighting config;
   - the slot audit;
   - **where this background will show.** It flags a room with no NPCs, conversations in the room that set their own `background`, and every `Background[...]` tag in the mission's ink. All of these win over `chatBackground`, and `Background[none]` gives a plain frame. sis02's opening briefing uses `Background[none]` to bring Helen on, so the room's background never shows in that scene. Every room gets a background regardless, so this section is for ordering the work and for spotting pins. If scripted scenes pin an old background (m02 pinned `hospital1.png` on its conference room scenes), list them for the user to decide whether to drop the pin. Don't change them yourself.
@@ -62,6 +62,8 @@ The tour script starts its own keyless server on :3001 and hides the HUD. For ea
 - **Sprite overrides,** e.g. m02's PCs show a red skull ransomware screen (`pc_ransomware`).
 - **Empty conditional slots.** The render and the strip draw every conditional slot, so a laptop or phone the mission leaves out still appears in the reference.
 - **The mood.**
+
+**Wide rooms (more than 12 tiles across): draw a stretch, not the whole wall** (user, 2026-10-12). Given a whole 20-tile back wall, Gemini fits it all in one frame and the room comes out small and doll's-house-like. The Tesseract Trials' staff office is big in the game and looked tiny in its first background. The inventory flags a wide room and suggests a `--span X0 X1` for each NPC who talks there: about 10 tiles of back wall, placed so the NPC falls about 75% of the way across it, under the portrait. Re-run `pov_prep.py` with that span. The strips are then cropped to it, the items outside it are listed as out of sight, and floor items are sorted left/centre/right within the view. With two NPCs at opposite ends, make one background per span and give the second NPC an NPC-level `chatBackground` (see "Behind the NPC").
 
 Read the render, the strip, the inventory and the tour shot yourself before writing anything. Sprite names can mislead (m02's `health_poster6` is a teal question-mark sign), so look at each item in the render. If the inventory warns that the scenario's `dimensions` differ from the map, trust the map: it is what is drawn.
 
@@ -111,6 +113,7 @@ Points that matter:
   - In both cases only the **middle third of the height** shows.
 
   The ceiling and the floor are almost entirely cut off, and each half of the picture must read as the room on its own. Wrong details low in the frame or at the far edges matter little.
+- **Wide rooms with a span.** Replace the size in the first line with the room's real size, and say the frame shows only part of it: "Cinematic interior shot of a large open-plan staff office (about 12 m wide, 6 m deep). We see only the right-hand part of the room: the back wall runs on past the LEFT edge of the frame, out of sight, so there is no left side wall and no corner on that side." Name the cut side(s) from the inventory's VIEW line. Leave out everything listed as out of sight. Keep the furniture at its real size (desks about 1.5 m, doors about 2 m high) so the space reads as big.
 - **Give every free-standing item its depth.** `pov_prep.py` prints "[feet ~N m out from the back wall]" for floor items. That is only a rough guide: the common room's lockers (out in the room) and the special-collections bookcases (flush against the wall) have almost the same map geometry. Confirm each in the render and the tour shot (is there floor between it and the wall?). Gemini pushes tall free-standing things (lockers, vending machines, racks) back against the wall unless told otherwise. In The Tesseract Trials' common room the lockers stand about 1.1 m out and came back flat against the wall. Say on its own line what hangs on the back wall, what stands against it, and what stands out on the floor, with the distance and "bare floor visible between them and the back wall" (user, 2026-10-11).
 - **Walls exactly as the map shows them.** The template's old "<colour> walls, <skirting>" led to "a teal dado stripe low on the wall", which Gemini drew as a green half-wall the map doesn't have. Describe only what the strip shows.
 - **Take orientation from the render, not from habit.** Compare each piece of furniture's width and height in the render: a foosball table taller than it is wide runs towards the camera. Don't write "long side towards the camera" unless the map shows it that way.
@@ -203,6 +206,8 @@ While the NPC speaks in game, the choice menu also covers the lower right of the
 
 Judge each failure by whether it shows in that preview. A wrong detail that the crop or the NPC's portrait hides isn't worth a Gemini call.
 
+8. **Behind the NPC.** For every room with a talking NPC, check that what shows around the NPC in the chat matches where that NPC stands in the room. This check matters more than any other, because it is what the player looks at during every line. See "Behind the NPC" below.
+
 ## 4. Fix with a Gemini edit, or keep the best
 
 For a failure that shows, edit the concept with `mcp__nanobanana__gemini_edit_image`, in the same `conversation_id`:
@@ -281,6 +286,25 @@ If the run isn't allowed to write to `public/` or the scenario (a delegated revi
 ## NPC placement and the background
 
 NPCs look best roughly centred in the room towards the top right, on clear floor (see "Where to stand a person NPC" in README_scenario_design.md). The background must not put furniture across a standing NPC: m01's reception counter made Sarah look as if she stood in front of it, so the counter was removed from her background by an edit ("Remove the long reception counter … together with everything standing on it … show the back wall continuing down to the skirting"). When a room's main furniture sits where its NPC stands in the chat crop, move the NPC (a scenario edit) or take the furniture out of the background.
+
+### Behind the NPC (user, 2026-10-12)
+
+The player has just walked up to the NPC in the top-down room, so they know what stands around them: the desk beside them, the poster behind them, the door to their left. In the chat the NPC's portrait always sits on the right, centred at about 83% of the background's width and covering roughly 67–99%. The middle right of the background, about 55–90% across, is what the player reads as the NPC's surroundings. If it shows the vending machine from the far side of the room while the NPC stood by the bookshelves, the mismatch is distracting. Give these backgrounds more care than any other part of the image.
+
+The room-wide concept puts the room's own right side there. That only matches an NPC who stands right of centre, which is one reason NPCs are best placed towards the right (above). For each NPC who talks in the room:
+
+1. Read the NPC lines in `<room>_inventory.txt`. Each gives the NPC's share of the way across the room, how far out from the back wall their feet are, and the back-wall x range directly behind them.
+2. List what the map shows around the NPC: the back-wall items in that x range, the furniture within a tile or two of them (the desk they stand at, the shelf beside them), and what is to their left in the map, which should show to the left of the portrait.
+3. Run `pov_chat_preview.py` and look at the NPC-speaking frame. Check the band just left of the portrait and the edges around the portrait's head and shoulders against that list.
+4. Fix any mismatch the player would notice with a Gemini edit of the concept, describing it in words:
+   - an item from the far side of the room that shows beside the NPC: remove it or swap it for what is really there ("Replace the vending machine on the right with a tall bookcase full of books, standing against the back wall");
+   - the NPC's own furniture missing: add it in the middle right at the right depth ("Add a small wooden desk with an open laptop on it, standing out on the floor about a third of the way into the room, right of centre"). A desk the NPC stands at should sit low in the frame, its top just below the portrait's shoulders;
+   - an item hung behind the NPC (a sign, a poster, a screen) that sits elsewhere: move it towards the right. Moving wall-hung items is unreliable (step 4), so add the item at the right place and remove the old one in the same edit, then check with `pov_diff.py`.
+5. Re-run the preview and the step 3 checklist. The background still has to read as the room, so don't add things the map lacks.
+
+When two NPCs in one room stand in different places, one image can't suit both. Keep the room background for the NPC who talks most or whose spot it already matches, and give the other NPC an NPC-level `chatBackground` made by editing the room concept for their spot (see "Custom backgrounds for one NPC" below). An NPC who walks (patrols, follows the player) can't be matched; judge the room background by where they usually stand when the player talks to them.
+
+Prefer editing the background to moving the NPC: their position belongs to the room's layout and puzzles, and a background edit doesn't touch play. Move an NPC only when the user asks or when furniture would cut across them (above).
 
 ## Custom backgrounds for one NPC (e.g. patients in bed)
 
