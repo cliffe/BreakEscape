@@ -1,11 +1,13 @@
 # Resume note — m03 pass 2 (started 2026-10-12)
 
-Brief `docs/agents/M03_PASS2_BRIEF.md`; log `scenarios/m03_ghost_in_the_machine/IMPROVEMENT_LOOP_LOG.md` "Pass 2". Stages: regression playtest → dialogue R2 (~5 cycles) + room dressing (~5) → lighting (~5) → POV backgrounds → character pipeline → blind playtest. Later: lab sheet, audio, engine triage, SecGen.
-- Regression A passed (0 major); B partial (auto-mode refusal at step 5); B2 (night + new-map interaction walk) running.
-- Room dressing cycle 1 committed (125ef02e assets, 9df52107 m03): new room_zds_* maps. Cycle 2 running.
-- Dialogue review P2 C1: 0/5/21 (DIALOGUE_REVIEW_P2_C1.md). Fixer running; decisions: add Victoria's test scene, name receptionist + guard (rename ids), no Netherton debrief line.
-- Characters (user, 2026-10-12): new art for Victoria, Danny, Nightshade (no new art: male_scientist_v2 renamed to `nightshade`, committed; Mercer now male_office_worker_v2, sis03 Hartley male_spy headshot, retired from the player picker with a fallback), receptionist, night guard. Show the user each pick. Concepts running for the first three.
-- Reload respawns in reception (F2) = known engine backlog "Resume in the room you left"; F3 resume overlay inconsistency logged.
+Brief `docs/agents/M03_PASS2_BRIEF.md`; log `scenarios/m03_ghost_in_the_machine/IMPROVEMENT_LOOP_LOG.md` "Pass 2". Later (user): lab sheet, audio, engine triage, SecGen.
+- Regression: A, B2, re-walk all clean (no blockers). Reload respawns in reception = backlog "Resume in the room you left".
+- Room dressing: cycles 1-4 committed (room_zds_* maps, zds hall, exec hall). Cycle 5 (final polish + lit/night shots) running → then POV backgrounds.
+- Dialogue: cycles 1-4 committed (last fb3049cf). Route driver scripts/ink_runtime_check/m03_routes/ (18 routes). Cycle 5 confirmation read running (ship/revise).
+- Lighting: engine L2 2bea9a58, L1 variants 6e3ca578, L3 torch 33ecfbe7, tour flags 06deb13e (user-approved). m03 cycles 1-2 committed; cycle 3 polish running; Sonnet night-turn + reload check running (the lighting agent's own reload run was blocked by the permission classifier).
+- Characters: Nightshade = renamed male_scientist_v2 (cbc430a8); HaX = agent_hax (2ef7844f). New art for Victoria (A/b01), Danny (A/b03 + eye whites), Ffion (red hair, b04 blush removed), Terry (Black British, b03); portraits + visemes committed ae2fa13d. Viseme retakes, walk sprites (~272 gens approved), wiring and browser check running (fresh agent; old one stood down).
+- Rules added today: ~5 cycles for design stages; cast diversity; recurring characters own sprites; visemes from talk; save chosen concepts (30 committed 7d2159e3).
+- Next: POV backgrounds (after dressing + lighting final), blind playtest last.
 
 # Resume note — room POV chat backgrounds (2026-10-11): COMPLETE
 
