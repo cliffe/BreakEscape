@@ -287,6 +287,17 @@ All room lock properties are the same as object lock properties (see Lock Types 
 
 In ink, `Background[room]:` switches to the conversation's own background (the NPC's `chatBackground`, else its room's). Use it to cut back inside after an exterior establishing shot, rather than naming the file or using `Background[none]`, which gives a plain black frame.
 
+A room whose NPCs stand in different places can give a list of views instead of one path. Each view covers a range of the room's width (0 = left wall, 1 = right wall), and a conversation uses the view under the NPC when it starts:
+
+```json
+"chatBackground": [
+  { "x": [0, 0.5], "image": "assets/backgrounds/rooms/sis01_major_incident_room_left_blended.png" },
+  { "x": [0.5, 1], "image": "assets/backgrounds/rooms/sis01_major_incident_room_blended.png" }
+]
+```
+
+With no position known, the first view is used.
+
 An NPC can also have its own `chatBackground` (same path style), which wins over the room's: use it when the character is always seen in one place that the room view doesn't fit, such as a patient in a hospital bed (m02 and sis01 use a bedside view). An explicit `background` on a conversation and `Background[...]` in the ink still win over it.
 
 ### Starting Inventory

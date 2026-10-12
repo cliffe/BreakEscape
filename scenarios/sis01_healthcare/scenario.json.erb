@@ -2120,7 +2120,10 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
 
     "major_incident_room": {
       "type": "room_hospital_meeting",
-      "chatBackground": "assets/backgrounds/rooms/sis01_major_incident_room_blended.png",
+      "chatBackground": [
+        { "x": [0, 0.5], "image": "assets/backgrounds/rooms/sis01_major_incident_room_left_blended.png" },
+        { "x": [0.5, 1], "image": "assets/backgrounds/rooms/sis01_major_incident_room_blended.png" }
+      ],
       "lighting": { "ambient": "#d2cdc8" },
       "door_sign": "Major Incident Room",
       "ambientSound": "office_ambient",

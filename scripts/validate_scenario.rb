@@ -3388,11 +3388,28 @@ def check_recurring_bugs(json_data, repo_root)
   rooms.each do |rid, room|
     next unless room.is_a?(Hash) && room.key?('chatBackground')
     val = room['chatBackground']
-    if !val.is_a?(String) || val.strip.empty?
-      issues << "⚠️ WARNING: 'rooms/#{rid}' chatBackground should be an image path such as 'assets/backgrounds/rooms/<name>.png'."
-    elsif !asset_exists.call(val)
-      issues << "⚠️ WARNING: 'rooms/#{rid}' chatBackground '#{val}' does not exist under public/break_escape/. " \
-                "Conversations in this room show the plain frame."
+    # A path, or views by the NPC's x: [{ "x": [0, 0.5], "image": "..." }, ...] (x = share of the room's width)
+    entries = if val.is_a?(Array)
+                if val.empty?
+                  issues << "⚠️ WARNING: 'rooms/#{rid}' chatBackground is an empty list."
+                end
+                val.each_with_index.map do |v, i|
+                  x = v.is_a?(Hash) ? v['x'] : nil
+                  unless x.nil? || (x.is_a?(Array) && x.size == 2 && x.all? { |n| n.is_a?(Numeric) && n >= 0 && n <= 1 } && x[0] <= x[1])
+                    issues << "⚠️ WARNING: 'rooms/#{rid}' chatBackground[#{i}] x should be [from, to], shares of the room's width between 0 and 1."
+                  end
+                  [v.is_a?(Hash) ? v['image'] : nil, "chatBackground[#{i}] image"]
+                end
+              else
+                [[val, 'chatBackground']]
+              end
+    entries.each do |img, label|
+      if !img.is_a?(String) || img.strip.empty?
+        issues << "⚠️ WARNING: 'rooms/#{rid}' #{label} should be an image path such as 'assets/backgrounds/rooms/<name>.png'."
+      elsif !asset_exists.call(img)
+        issues << "⚠️ WARNING: 'rooms/#{rid}' #{label} '#{img}' does not exist under public/break_escape/. " \
+                  "Conversations in this room show the plain frame."
+      end
     end
   end
 

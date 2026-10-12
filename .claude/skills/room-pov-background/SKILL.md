@@ -63,7 +63,7 @@ The tour script starts its own keyless server on :3001 and hides the HUD. For ea
 - **Empty conditional slots.** The render and the strip draw every conditional slot, so a laptop or phone the mission leaves out still appears in the reference.
 - **The mood.**
 
-**Wide rooms (more than 12 tiles across): draw a stretch, not the whole wall** (user, 2026-10-12). Given a whole 20-tile back wall, Gemini fits it all in one frame and the room comes out small and doll's-house-like. The Tesseract Trials' staff office is big in the game and looked tiny in its first background. The inventory flags a wide room and suggests a `--span X0 X1` for each NPC who talks there: about 10 tiles of back wall, placed so the NPC falls about 75% of the way across it, under the portrait. Re-run `pov_prep.py` with that span. The strips are then cropped to it, the items outside it are listed as out of sight, and floor items are sorted left/centre/right within the view. With two NPCs at opposite ends, make one background per span and give the second NPC an NPC-level `chatBackground` (see "Behind the NPC").
+**Wide rooms (more than 12 tiles across): draw a stretch, not the whole wall** (user, 2026-10-12). Given a whole 20-tile back wall, Gemini fits it all in one frame and the room comes out small and doll's-house-like. The Tesseract Trials' staff office is big in the game and looked tiny in its first background. The inventory flags a wide room and suggests a `--span X0 X1` for each NPC who talks there: about 10 tiles of back wall, placed so the NPC falls about 75% of the way across it, under the portrait. Re-run `pov_prep.py` with that span. The strips are then cropped to it, the items outside it are listed as out of sight, and floor items are sorted left/centre/right within the view. Make one background per span where NPCs stand, and wire them as views by x ("Views by the NPC's position" below).
 
 Read the render, the strip, the inventory and the tour shot yourself before writing anything. Sprite names can mislead (m02's `health_poster6` is a teal question-mark sign), so look at each item in the render. If the inventory warns that the scenario's `dimensions` differ from the map, trust the map: it is what is drawn.
 
@@ -272,6 +272,7 @@ How the game picks a background:
 - `Background[...]` in the ink also wins.
 - `"background": "none"` means no background at all.
 - The room used is the NPC's live room (it may have walked), else its assigned room, else the player's.
+- A room's `chatBackground` can be a list of views by where the NPC stands (below); the view under the NPC when the chat starts is used.
 - Video calls never use it.
 - The resolver is `minigames/person-chat/person-chat-background.js`.
 
@@ -302,7 +303,32 @@ The room-wide concept puts the room's own right side there. That only matches an
    - an item hung behind the NPC (a sign, a poster, a screen) that sits elsewhere: move it towards the right. Moving wall-hung items is unreliable (step 4), so add the item at the right place and remove the old one in the same edit, then check with `pov_diff.py`.
 5. Re-run the preview and the step 3 checklist. The background still has to read as the room, so don't add things the map lacks.
 
-When two NPCs in one room stand in different places, one image can't suit both. Keep the room background for the NPC who talks most or whose spot it already matches, and give the other NPC an NPC-level `chatBackground` made by editing the room concept for their spot (see "Custom backgrounds for one NPC" below). An NPC who walks (patrols, follows the player) can't be matched; judge the room background by where they usually stand when the player talks to them.
+When NPCs stand in different parts of a room, or the room is wide, one image can't suit them all. Make a view for each part and list them as views by x (next section). An NPC-level `chatBackground` is for someone always seen in one special place (a patient in bed), not for this.
+
+### Views by the NPC's position (user, 2026-10-12)
+
+A room's `chatBackground` can be a list. Each view covers a range of the room's width, as shares from 0 (left wall) to 1 (right wall):
+
+```json
+"chatBackground": [
+  { "x": [0, 0.5], "image": "assets/backgrounds/rooms/sis01_major_incident_room_left_blended.png" },
+  { "x": [0.5, 1], "image": "assets/backgrounds/rooms/sis01_major_incident_room_blended.png" }
+]
+```
+
+When a chat starts, the game takes the NPC's x (its live sprite if the room is drawn, so a walking NPC gets the view where it is now, else its placed position) and uses the view whose range holds it. With no position known, or no range matching, the first view is used, so put the most-used view first. `Background[room]:` in ink resolves the same way. The validator checks each image and range.
+
+Use views when a room's NPCs stand in different thirds or halves of it, when an NPC stands left of centre (the room-wide view puts the right side of the room behind them), or for a wide room's spans. Split the ranges between the NPCs' positions; the split needn't be even. Most rooms need two views; three thirds is the most worth making.
+
+**Making a left-hand view** (tested 2026-10-12 on sis01's major incident room, for David Osei and Dr Sharma at 26% across):
+1. Run `pov_prep.py` with `--span 0 <about 6 tiles in px>` for a strip of the left part of the back wall.
+2. Generate with that strip as the first reference and the room's approved concept as the second, for style and colours only ("match its wall colour … painting style and light exactly. Do not copy its camera angle"). Ask for the camera turned towards the back-left corner, with the left wall on the left and the back wall running off the right edge, out of sight. Gemini put the corner at about 18% across when asked for 45%, so the wall items came out too far left: the NPC's neighbours sat outside the band beside the portrait.
+3. **Shift and outpaint** to put the NPC's surroundings at about 55–90% across. Paste the image shifted right by the gap (290 px of 1024 there), fill the strip on the left with flat magenta, and send it to `gemini_edit_image`: "Outpainting. Replace the solid magenta strip on the left of the picture with the continuation of the room, matching the rest exactly. The … LEFT side wall continues towards the camera and off the left edge of the frame, in the same perspective: its … dado rail and skirting keep running in the same lines … No new furniture, no doors, no windows, no people. Keep everything outside the magenta strip exactly the same". It came back seamless in one call. The right edge loses what was there (the screen and sideboard), which is fine when it's away from the NPC.
+4. Preview, convert, blend, and save it as `<name>_left` beside the room's other files.
+
+A right-hand view for an NPC on the right is the same with the sides swapped, but the room-wide view usually suits them already.
+
+An NPC who walks (patrols, follows the player) gets the view where it is when the chat starts, so cover the whole width with ranges.
 
 Prefer editing the background to moving the NPC: their position belongs to the room's layout and puzzles, and a background edit doesn't touch play. Move an NPC only when the user asks or when furniture would cut across them (above).
 

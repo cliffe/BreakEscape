@@ -112,3 +112,29 @@ test('personChatBackgroundFor reads the NPC chatBackground', () => {
     w.npcManager = { getNPC: id => (id === 'patient' ? { id, roomId: 'ward', chatBackground: 'assets/backgrounds/rooms/bedside.png' } : null) };
     assert.equal(personChatBackgroundFor({ npcId: 'patient' }, w), 'assets/backgrounds/rooms/bedside.png');
 });
+
+const L = 'assets/backgrounds/rooms/hall_left.png';
+const R = 'assets/backgrounds/rooms/hall_right.png';
+const views = [{ x: [0, 0.5], image: L }, { x: [0.5, 1], image: R }];
+
+test('a room with views by x picks the one under the NPC, else the first', () => {
+    const rooms2 = { hall: { chatBackground: views } };
+    assert.equal(resolvePersonChatBackground({ roomIds: ['hall'], rooms: rooms2, npcX: { hall: 0.2 } }), L);
+    assert.equal(resolvePersonChatBackground({ roomIds: ['hall'], rooms: rooms2, npcX: { hall: 0.8 } }), R);
+    assert.equal(resolvePersonChatBackground({ roomIds: ['hall'], rooms: rooms2 }), L);
+    assert.equal(resolvePersonChatBackground({ roomIds: ['hall'], rooms: { hall: { chatBackground: [{ x: [0.6, 1], image: R }, { image: L }] } }, npcX: { hall: 0.1 } }), R);
+    assert.equal(resolvePersonChatBackground({ roomIds: ['hall'], rooms: { hall: { chatBackground: [] } } }), null);
+});
+
+test('personChatBackgroundFor uses the live sprite, then the placed position', () => {
+    const w = {
+        gameScenario: { rooms: { hall: { chatBackground: views } } },
+        rooms: { hall: { position: { x: 1000 }, map: { widthInPixels: 320, tileWidth: 32 }, npcSprites: [] } },
+        npcManager: { getNPC: id => (id === 'guard' ? { id, roomId: 'hall', position: { x: 2, y: 3 } } : null) }
+    };
+    // not drawn yet: placed at tile 2 of 10 -> left
+    assert.equal(personChatBackgroundFor({ npcId: 'guard' }, w), L);
+    // drawn and walked to the right-hand side
+    w.rooms.hall.npcSprites.push({ npcId: 'guard', x: 1000 + 250, active: true });
+    assert.equal(personChatBackgroundFor({ npcId: 'guard' }, w), R);
+});
