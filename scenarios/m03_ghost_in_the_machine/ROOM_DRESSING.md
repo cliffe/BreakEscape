@@ -374,3 +374,20 @@ After shots (`build_evidence/dressing_c6/`): `day/` and `night/` for all seven r
 ### Next
 
 Cycle 6 found one major and one minor and fixed both, so by the coordinator's rule a cycle 7 is due. Candidates are all minor so far (Danny's centre floor, deliberately left), so I expect cycle 7 to confirm the layout as final unless the fresh pass finds something new.
+
+## Cycle 7 (2026-10-12): confirmation, layout final
+
+Scope set by the coordinator: reception, the CEO office, Danny's office and both halls are frozen (their POV backgrounds are being made); only the two rooms changed in cycle 6 were re-judged, day and night (`lighting-tour.sh --close-intro --check`, night with `--globals clone_call_done=true`).
+
+| Room | Question | Verdict |
+|---|---|---|
+| Conference | Do the drinks trolley and the flip chart read? | Yes. The trolley reads as a brass drinks cart under the AV panel, clear of the E door row; the flip chart at the table's east end reads as the pitch spot. Victoria stands clear between the whiteboard and the table. |
+| Server | Is the VM terminal clearly the thing to use? | Yes. A black monitor with a blue screen and a chair behind it on the operator desk, apart from the bench; at night it is one of the three cool screen glows (VM terminal, laptop, drop-site) against the green racks. |
+
+Minor, left: the KVM cart beside the bench carries a fourth (decor) screen, so the room shows four screens and three usable. It adds to the "real business" look, and only the three usable ones respond to hover and tap.
+
+Nothing above minor, so this closes room dressing. **The layout is final** for every m03 room. No changes were made this cycle (no files touched besides this record and the log).
+
+Shots (`build_evidence/dressing_c7/`): `day-conference_room_01.png`, `night-conference_room_01.png`, `day-server_room-lit.png`, `day-server_room-dark.png`, `night-server_room-lit.png`, `night-server_room-dark.png`, `sheet.png`.
+
+Still open, engine side only (no furniture moves): Server Room Whiteboard read-in-place (not approved); the "Enter PIN/password for item" dialog titles (F-4).
