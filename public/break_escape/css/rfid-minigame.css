@@ -386,6 +386,16 @@
     color: #FF0000;
 }
 
+/* Under a refusal (rfid-minigame.js _showDenial): it clears on a tap or after 3 s */
+.flipper-error-hint {
+    margin-top: 12px;
+    font-size: 14px;
+    font-family: 'GNF', monospace;
+    color: #FFA500;
+    text-align: center;
+    cursor: pointer;
+}
+
 /* Scrollbar */
 .flipper-screen::-webkit-scrollbar {
     width: 8px;

@@ -521,6 +521,9 @@ export function handleUnlock(lockable, type) {
                     acceptsUIDOnly: acceptsUIDOnly,
                     availableCards: keycards,  // Cards they can read in the minigame
                     hasCloner: hasCloner,
+                    // A refused card or clone at the reader: door_unlock_failed (reason
+                    // wrong_card or uid_only), same as a refused key or fingerprint
+                    onRefused: emitDoorUnlockFailed,
                     onComplete: async (success) => {
                         if (success) {
                             // Notify server and get room/container data
@@ -544,6 +547,7 @@ export function handleUnlock(lockable, type) {
             else {
                 console.log('NO RFID CARDS OR CLONER AVAILABLE');
                 window.gameAlert('Requires RFID keycard', 'error', 'Access Denied', 4000);
+                emitDoorUnlockFailed('no_card');
             }
             break;
 

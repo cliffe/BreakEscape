@@ -19,6 +19,9 @@ import { RFIDAnimations } from './rfid-animations.js';
 import { MIFAREAttackManager } from './rfid-attacks.js';
 import { detectProtocol } from './rfid-protocols.js';
 
+// A refused card stays on screen this long, or until the player taps the screen.
+export const DENIAL_HOLD_MS = 3000;
+
 export class RFIDMinigame extends MinigameScene {
     constructor(container, params) {
         // Set title based on mode
@@ -113,12 +116,53 @@ export class RFIDMinigame extends MinigameScene {
         } else {
             if (window.playUISound) window.playUISound('reject');
             this.animations.showTapFailure();
-            this.ui.showError('Access Denied');
-
-            setTimeout(() => {
-                this.ui.showTapInterface();
-            }, 1500);
+            this._showDenial('Access Denied', () => this.ui.showTapInterface(), 'wrong_card');
         }
+    }
+
+    /**
+     * Show a refusal until the player taps the screen or DENIAL_HOLD_MS passes, then go
+     * back(). On a door, also report it (params.onRefused: unlock-system's
+     * emitDoorUnlockFailed, which emits door_unlock_failed and door_unlock_failed:<room>).
+     */
+    _showDenial(message, back, reason) {
+        this._endDenial();
+        this.ui.showError(message);
+        const screen = this.ui.getScreen && this.ui.getScreen();
+        if (screen && typeof document !== 'undefined') {
+            const hint = document.createElement('div');
+            hint.className = 'flipper-error-hint';
+            hint.textContent = 'Tap to continue';
+            const box = (screen.querySelector && screen.querySelector('.flipper-error')) || screen;
+            box.appendChild(hint);
+        }
+        let done = false;
+        const onTap = (e) => { if (e && e.stopPropagation) e.stopPropagation(); finish(); };
+        const finish = () => {
+            if (done) return;
+            done = true;
+            this._endDenial();
+            back();
+        };
+        this._denial = {
+            screen, onTap,
+            timer: setTimeout(finish, DENIAL_HOLD_MS),
+            // Listen from the next tick, so the click that tapped the card doesn't count
+            armTimer: setTimeout(() => { if (!done && screen) screen.addEventListener('click', onTap); }, 0)
+        };
+        if (this.isLockingAttempt && typeof this.params.onRefused === 'function') {
+            try { this.params.onRefused(reason); } catch (e) { console.warn('onRefused failed:', e); }
+        }
+    }
+
+    /** Drop a pending denial (its timer and tap listener) without going back. */
+    _endDenial() {
+        const d = this._denial;
+        if (!d) return;
+        this._denial = null;
+        clearTimeout(d.timer);
+        clearTimeout(d.armTimer);
+        if (d.screen && d.screen.removeEventListener) d.screen.removeEventListener('click', d.onTap);
     }
 
     /**
@@ -141,7 +185,6 @@ export class RFIDMinigame extends MinigameScene {
         if (this.isLockingAttempt && isUIDOnly && !this.acceptsUIDOnly) {
             if (window.playUISound) window.playUISound('reject');
             this.animations.showEmulationFailure();
-            this.ui.showError('Reader requires full authentication');
 
             // Emit event
             if (window.eventDispatcher) {
@@ -156,9 +199,7 @@ export class RFIDMinigame extends MinigameScene {
                 });
             }
 
-            setTimeout(() => {
-                this.ui.showSavedCards();
-            }, 2000);
+            this._showDenial('Reader requires full authentication', () => this.ui.showSavedCards(), 'uid_only');
             return;
         }
 
@@ -186,7 +227,6 @@ export class RFIDMinigame extends MinigameScene {
             // Only show "Access Denied" when actually trying to unlock a door
             if (window.playUISound) window.playUISound('reject');
             this.animations.showEmulationFailure();
-            this.ui.showError('Access Denied');
 
             // Emit event
             if (window.eventDispatcher) {
@@ -199,9 +239,7 @@ export class RFIDMinigame extends MinigameScene {
                 });
             }
 
-            setTimeout(() => {
-                this.ui.showSavedCards();
-            }, 1500);
+            this._showDenial('Access Denied', () => this.ui.showSavedCards(), 'wrong_card');
         } else {
             // When just browsing, show card info instead of error
             this.ui.showSuccess(`Card Info: ${savedCard.name} (${protocol})`);
@@ -390,6 +428,8 @@ export class RFIDMinigame extends MinigameScene {
     }
 
     cleanup() {
+        this._endDenial();
+
         // Cleanup animations
         if (this.animations) {
             this.animations.cleanup();

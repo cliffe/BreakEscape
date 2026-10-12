@@ -1063,6 +1063,7 @@ Common event patterns:
 - `"npc_attacked:npc_id"` — fires when an NPC is attacked
 - `"item_picked_up:item_type"` — fires when an item is picked up
 - `"door_unlock_attempt"` — fires on any door unlock attempt (`condition: "data.connectedRoom === 'room_id'"`)
+- `"door_unlock_failed"` / `"door_unlock_failed:room_id"` — fires when a door refuses the player: no key (`reason: "no_key"`), a fingerprint reader refusal, an RFID reader refusing a card or clone (`"wrong_card"`, `"uid_only"`), or a card reader with no card or cloner at all (`"no_card"`). `data.lockType` says which kind of lock
 - `"object_interacted"` — fires when object interacted with (`condition: "data.objectType === 'vm-launcher'"`)
 - `"conversation_closed:npc_id"` — fires when a conversation closes
 - `"attack_aborted"` / `"attack_launched"` — fires from launch-device
