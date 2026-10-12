@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="206" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="224" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../objects/iv_stand1.png" width="25" height="60"/>
@@ -618,5 +618,59 @@
  </tile>
  <tile id="215">
   <image source="../objects/zds_conference_table1.png" width="126" height="55"/>
+ </tile>
+ <tile id="216">
+  <image source="../objects/magazine_cover1.png" width="18" height="21"/>
+ </tile>
+ <tile id="217">
+  <image source="../objects/reception_counter1.png" width="110" height="44"/>
+ </tile>
+ <tile id="218">
+  <image source="../objects/club_chair_e1.png" width="36" height="46"/>
+ </tile>
+ <tile id="219">
+  <image source="../objects/club_chair_w1.png" width="36" height="46"/>
+ </tile>
+ <tile id="220">
+  <image source="../objects/credenza1.png" width="62" height="51"/>
+ </tile>
+ <tile id="221">
+  <image source="../objects/floor_globe1.png" width="44" height="55"/>
+ </tile>
+ <tile id="222">
+  <image source="../objects/exec_chair_black1.png" width="32" height="56"/>
+ </tile>
+ <tile id="223">
+  <image source="../objects/planter_fig1.png" width="32" height="61"/>
+ </tile>
+ <tile id="224">
+  <image source="../objects/brochure_rack1.png" width="44" height="48"/>
+ </tile>
+ <tile id="225">
+  <image source="../objects/pizza_boxes1.png" width="23" height="22"/>
+ </tile>
+ <tile id="226">
+  <image source="../objects/energy_cans1.png" width="21" height="15"/>
+ </tile>
+ <tile id="227">
+  <image source="../objects/mini_fridge1.png" width="21" height="25"/>
+ </tile>
+ <tile id="228">
+  <image source="../objects/wilted_plant1.png" width="17" height="23"/>
+ </tile>
+ <tile id="229">
+  <image source="../objects/coffee_cups1.png" width="21" height="20"/>
+ </tile>
+ <tile id="230">
+  <image source="../objects/cable_tangle1.png" width="24" height="19"/>
+ </tile>
+ <tile id="231">
+  <image source="../objects/book_pile1.png" width="23" height="32"/>
+ </tile>
+ <tile id="232">
+  <image source="../objects/zds_desk1.png" width="78" height="39"/>
+ </tile>
+ <tile id="233">
+  <image source="../objects/zds_desk3.png" width="51" height="39"/>
  </tile>
 </tileset>

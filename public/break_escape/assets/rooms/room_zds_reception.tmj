@@ -354,28 +354,28 @@
    "name": "tables",
    "objects": [
     {
-     "gid": 1010,
+     "gid": 1018,
      "height": 44,
      "id": 1,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 63,
-     "x": 150.0,
+     "width": 110,
+     "x": 105.0,
      "y": 116.0
     },
     {
      "gid": 1006,
      "height": 30,
-     "id": 11,
+     "id": 12,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 52,
-     "x": 45.0,
-     "y": 266.0
+     "x": 134.0,
+     "y": 302.0
     }
    ],
    "opacity": 1,
@@ -390,69 +390,57 @@
    "name": "items",
    "objects": [
     {
-     "gid": 1007,
-     "height": 62,
+     "gid": 854,
+     "height": 17,
      "id": 2,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 44,
+     "width": 24,
      "x": 70.0,
-     "y": 84.0
+     "y": 52.0
     },
     {
-     "gid": 854,
+     "gid": 1001,
      "height": 17,
      "id": 3,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 24,
-     "x": 120.0,
-     "y": 50.0
+     "width": 65,
+     "x": 128.0,
+     "y": 40.0
     },
     {
-     "gid": 1001,
-     "height": 17,
+     "gid": 1007,
+     "height": 62,
      "id": 4,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 65,
-     "x": 149.0,
-     "y": 40.0
+     "width": 44,
+     "x": 232.0,
+     "y": 84.0
     },
     {
-     "gid": 1004,
-     "height": 35,
+     "gid": 886,
+     "height": 18,
      "id": 5,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 48,
-     "x": 234.0,
-     "y": 54.0
-    },
-    {
-     "gid": 886,
-     "height": 18,
-     "id": 6,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
      "width": 23,
-     "x": 284.0,
-     "y": 30.0
+     "x": 280.0,
+     "y": 32.0
     },
     {
      "gid": 926,
      "height": 15,
-     "id": 7,
+     "id": 6,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -460,6 +448,18 @@
      "width": 16,
      "x": 14.0,
      "y": 134.0
+    },
+    {
+     "gid": 1025,
+     "height": 48,
+     "id": 7,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 44,
+     "x": 36.0,
+     "y": 204.0
     },
     {
      "gid": 828,
@@ -486,50 +486,74 @@
      "y": 166.0
     },
     {
-     "gid": 1005,
-     "height": 38,
-     "id": 10,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 62,
-     "x": 40.0,
-     "y": 228.0
-    },
-    {
-     "gid": 1011,
-     "height": 59,
-     "id": 12,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 34,
-     "x": 104.0,
-     "y": 226.0
-    },
-    {
      "gid": 813,
      "height": 41,
-     "id": 13,
+     "id": 10,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 26,
      "x": 262.0,
-     "y": 228.0
+     "y": 230.0
     },
     {
-     "gid": 1011,
-     "height": 59,
+     "gid": 1005,
+     "height": 38,
+     "id": 11,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 62,
+     "x": 129.0,
+     "y": 266.0
+    },
+    {
+     "gid": 1019,
+     "height": 46,
+     "id": 13,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 36,
+     "x": 90.0,
+     "y": 300.0
+    },
+    {
+     "gid": 1020,
+     "height": 46,
      "id": 14,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 34,
+     "width": 36,
+     "x": 194.0,
+     "y": 300.0
+    },
+    {
+     "gid": 1024,
+     "height": 61,
+     "id": 15,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 32,
+     "x": 36.0,
+     "y": 300.0
+    },
+    {
+     "gid": 1024,
+     "height": 61,
+     "id": 16,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 32,
      "x": 262.0,
      "y": 300.0
     }
@@ -570,26 +594,26 @@
     {
      "gid": 219,
      "height": 16,
-     "id": 15,
+     "id": 17,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 14,
-     "x": 155.6,
-     "y": 89.6
+     "x": 115.6,
+     "y": 87.84
     },
     {
      "gid": 210,
      "height": 15,
-     "id": 16,
+     "id": 18,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 10,
-     "x": 184.06,
-     "y": 90.48
+     "x": 188.0,
+     "y": 87.84
     }
    ],
    "opacity": 1,
@@ -611,7 +635,7 @@
   }
  ],
  "nextlayerid": 14,
- "nextobjectid": 17,
+ "nextobjectid": 19,
  "orientation": "orthogonal",
  "renderorder": "right-down",
  "tiledversion": "1.11.2",
@@ -3044,7 +3068,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 206,
+   "tilecount": 224,
    "tileheight": 60,
    "tiles": [
     {
@@ -4269,7 +4293,7 @@
      "id": 213,
      "image": "../objects/exec_desk_drawer1.png",
      "imageheight": 15,
-     "imagewidth": 25
+     "imagewidth": 16
     },
     {
      "id": 214,
@@ -4282,6 +4306,114 @@
      "image": "../objects/zds_conference_table1.png",
      "imageheight": 55,
      "imagewidth": 126
+    },
+    {
+     "id": 216,
+     "image": "../objects/magazine_cover1.png",
+     "imageheight": 21,
+     "imagewidth": 18
+    },
+    {
+     "id": 217,
+     "image": "../objects/reception_counter1.png",
+     "imageheight": 44,
+     "imagewidth": 110
+    },
+    {
+     "id": 218,
+     "image": "../objects/club_chair_e1.png",
+     "imageheight": 46,
+     "imagewidth": 36
+    },
+    {
+     "id": 219,
+     "image": "../objects/club_chair_w1.png",
+     "imageheight": 46,
+     "imagewidth": 36
+    },
+    {
+     "id": 220,
+     "image": "../objects/credenza1.png",
+     "imageheight": 51,
+     "imagewidth": 62
+    },
+    {
+     "id": 221,
+     "image": "../objects/floor_globe1.png",
+     "imageheight": 55,
+     "imagewidth": 44
+    },
+    {
+     "id": 222,
+     "image": "../objects/exec_chair_black1.png",
+     "imageheight": 56,
+     "imagewidth": 32
+    },
+    {
+     "id": 223,
+     "image": "../objects/planter_fig1.png",
+     "imageheight": 61,
+     "imagewidth": 32
+    },
+    {
+     "id": 224,
+     "image": "../objects/brochure_rack1.png",
+     "imageheight": 48,
+     "imagewidth": 44
+    },
+    {
+     "id": 225,
+     "image": "../objects/pizza_boxes1.png",
+     "imageheight": 22,
+     "imagewidth": 23
+    },
+    {
+     "id": 226,
+     "image": "../objects/energy_cans1.png",
+     "imageheight": 15,
+     "imagewidth": 21
+    },
+    {
+     "id": 227,
+     "image": "../objects/mini_fridge1.png",
+     "imageheight": 25,
+     "imagewidth": 21
+    },
+    {
+     "id": 228,
+     "image": "../objects/wilted_plant1.png",
+     "imageheight": 23,
+     "imagewidth": 17
+    },
+    {
+     "id": 229,
+     "image": "../objects/coffee_cups1.png",
+     "imageheight": 23,
+     "imagewidth": 21
+    },
+    {
+     "id": 230,
+     "image": "../objects/cable_tangle1.png",
+     "imageheight": 19,
+     "imagewidth": 24
+    },
+    {
+     "id": 231,
+     "image": "../objects/book_pile1.png",
+     "imageheight": 32,
+     "imagewidth": 23
+    },
+    {
+     "id": 232,
+     "image": "../objects/zds_desk1.png",
+     "imageheight": 39,
+     "imagewidth": 78
+    },
+    {
+     "id": 233,
+     "image": "../objects/zds_desk3.png",
+     "imageheight": 39,
+     "imagewidth": 51
     }
    ],
    "tilewidth": 60

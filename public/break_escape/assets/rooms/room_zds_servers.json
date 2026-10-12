@@ -71,7 +71,7 @@
          "name":"tables",
          "objects":[
                 {
-                 "gid":114,
+                 "gid":1034,
                  "height":39,
                  "id":14,
                  "name":"",
@@ -83,7 +83,7 @@
                  "y":178
                 }, 
                 {
-                 "gid":107,
+                 "gid":1033,
                  "height":39,
                  "id":16,
                  "name":"",
@@ -283,13 +283,25 @@
                  "type":"",
                  "visible":true,
                  "width":37,
-                 "x":190,
+                 "x":180,
                  "y":252
+                }, 
+                {
+                 "gid":870,
+                 "height":63,
+                 "id":18,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":32,
+                 "x":220,
+                 "y":254
                 }, 
                 {
                  "gid":882,
                  "height":44,
-                 "id":18,
+                 "id":19,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -301,7 +313,7 @@
                 {
                  "gid":884,
                  "height":19,
-                 "id":19,
+                 "id":20,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -335,7 +347,7 @@
                 {
                  "gid":382,
                  "height":23,
-                 "id":20,
+                 "id":21,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -347,7 +359,7 @@
                 {
                  "gid":381,
                  "height":18,
-                 "id":21,
+                 "id":22,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -359,7 +371,7 @@
                 {
                  "gid":387,
                  "height":19,
-                 "id":22,
+                 "id":23,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -397,7 +409,7 @@
          "y":0
         }],
  "nextlayerid":14,
- "nextobjectid":23,
+ "nextobjectid":24,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.2",
@@ -2869,7 +2881,7 @@
          "margin":0,
          "name":"objects\/hospital_extras",
          "spacing":0,
-         "tilecount":206,
+         "tilecount":224,
          "tileheight":63,
          "tiles":[
                 {
@@ -4127,6 +4139,116 @@
                  "image":"..\/objects\/zds_conference_table1.png",
                  "imageheight":55,
                  "imagewidth":126
+                }, 
+                {
+                 "id":216,
+                 "image":"..\/objects\/magazine_cover1.png",
+                 "imageheight":21,
+                 "imagewidth":18
+                }, 
+                {
+                 "id":217,
+                 "image":"..\/objects\/reception_counter1.png",
+                 "imageheight":44,
+                 "imagewidth":110
+                }, 
+                {
+                 "id":218,
+                 "image":"..\/objects\/club_chair_e1.png",
+                 "imageheight":46,
+                 "imagewidth":36
+                }, 
+                {
+                 "id":219,
+                 "image":"..\/objects\/club_chair_w1.png",
+                 "imageheight":46,
+                 "imagewidth":36
+                },
+            
+                {
+                 "id":220,
+                 "image":"..\/objects\/credenza1.png",
+                 "imageheight":51,
+                 "imagewidth":62
+                }, 
+                {
+                 "id":221,
+                 "image":"..\/objects\/floor_globe1.png",
+                 "imageheight":55,
+                 "imagewidth":44
+                }, 
+                {
+                 "id":222,
+                 "image":"..\/objects\/exec_chair_black1.png",
+                 "imageheight":56,
+                 "imagewidth":32
+                }, 
+                {
+                 "id":223,
+                 "image":"..\/objects\/planter_fig1.png",
+                 "imageheight":61,
+                 "imagewidth":32
+                }, 
+                {
+                 "id":224,
+                 "image":"..\/objects\/brochure_rack1.png",
+                 "imageheight":48,
+                 "imagewidth":44
+                }, 
+                {
+                 "id":225,
+                 "image":"..\/objects\/pizza_boxes1.png",
+                 "imageheight":22,
+                 "imagewidth":23
+                }, 
+                {
+                 "id":226,
+                 "image":"..\/objects\/energy_cans1.png",
+                 "imageheight":15,
+                 "imagewidth":21
+                }, 
+                {
+                 "id":227,
+                 "image":"..\/objects\/mini_fridge1.png",
+                 "imageheight":25,
+                 "imagewidth":21
+                }, 
+                {
+                 "id":228,
+                 "image":"..\/objects\/wilted_plant1.png",
+                 "imageheight":23,
+                 "imagewidth":17
+                }, 
+                {
+                 "id":229,
+                 "image":"..\/objects\/coffee_cups1.png",
+                 "imageheight":23,
+                 "imagewidth":21
+                },
+            
+                {
+                 "id":230,
+                 "image":"..\/objects\/cable_tangle1.png",
+                 "imageheight":19,
+                 "imagewidth":24
+                }, 
+                {
+                 "id":231,
+                 "image":"..\/objects\/book_pile1.png",
+                 "imageheight":32,
+                 "imagewidth":23
+                }, 
+                {
+                 "id":232,
+                 "image":"..\/objects\/zds_desk1.png",
+                 "imageheight":39,
+                 "imagewidth":78
+                }, 
+                {
+                 "id":233,
+                 "image":"..\/objects\/zds_desk3.png",
+                 "imageheight":39,
+                 "imagewidth":51
                 }],
          "tilewidth":252
         }],

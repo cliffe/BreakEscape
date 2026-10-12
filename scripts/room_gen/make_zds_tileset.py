@@ -10,8 +10,12 @@ skirting with a thin cyan brand line); the server room, which is the real
 business, has dark slate walls. The floors tell the rooms apart:
 
   room_zds_lobby    pale polished stone in 2x2-tile slabs, a cyan and graphite
-                    ring with the firm's hat mark at the spawn point
-  room_zds_carpet   slate-blue carpet tiles (conference room, consultants' office)
+                    ring with the firm's hat mark at the spawn point, and a walnut
+                    slat feature wall behind the front desk
+  room_zds_carpet   slate-blue carpet tiles (consultants' office)
+  room_zds_boardroom  the same carpet with a charcoal rug, cyan inner line, under the
+                    boardroom table (conference room)
+  room_zds_hall     the lobby's stone floor for the corridors (no inlay in the rows a hall uses)
   room_zds_exec     walnut parquet (chevron) with a navy and gold rug under the
                     CEO's desk and visitor chairs
   room_zds_raised   dark raised access floor, perforated cold-aisle row, slate walls
@@ -204,16 +208,56 @@ def paint_rug(op, box):
             op[x, y] = (*c, 255)
 
 
+def paint_slat_wall(op, x0, x1, y0=12, y1=FLOOR_TOP - 6):
+    """Walnut slats on the back wall: 4px boards, a darker groove between them.
+    Every colour keeps some chroma, so check_room_walls never reads a groove as
+    the floor line."""
+    boards = [(110, 70, 44), (98, 62, 38), (118, 76, 48)]
+    groove = (62, 38, 22)
+    for y in range(y0, y1):
+        for x in range(x0, x1):
+            if x in (x0, x1 - 1):
+                c = (52, 32, 18)
+            elif (x - x0) % 5 == 0:
+                c = groove
+            else:
+                c = boards[((x - x0) // 5) % 3]
+                if y == y0:
+                    c = shade(c, 1.15)
+            op[x, y] = (*c, 255)
+
+
+def paint_rug_modern(op, box):
+    """Charcoal-blue rug, a thin cyan line inset from a dark edge."""
+    x0, y0, x1, y1 = box
+    edge, field, field2 = (30, 36, 48), (52, 60, 78), (56, 65, 84)
+    for y in range(y0, y1):
+        for x in range(x0, x1):
+            d = min(x - x0, y - y0, x1 - 1 - x, y1 - 1 - y)
+            if d <= 1:
+                c = edge
+            elif d == 5:
+                c = CYAN_DARK
+            else:
+                c = field2 if hashxy(x, y) % 7 == 0 else field
+            op[x, y] = (*c, 255)
+
+
 def main():
     front = base_walls(FRONT_WALLS)
     server = base_walls(SERVER_WALLS)
     sheets = {}
 
     lobby = paint_floor(front, stone_pixel)
+    sheets["room_zds_hall"] = lobby.copy()  # before the decals: halls use rows 0-4 and 9
     paint_inlay(lobby.load(), 160, 200, 22)
+    paint_slat_wall(lobby.load(), 98, 222)   # behind the front desk (room_zds_reception)
     sheets["room_zds_lobby"] = lobby
 
     sheets["room_zds_carpet"] = paint_floor(front, CARPET_SLATE)
+    board = paint_floor(front, CARPET_SLATE)
+    paint_rug_modern(board.load(), (52, 200, 214, 300))  # under the table and chairs (room_zds_conference)
+    sheets["room_zds_boardroom"] = board
 
     exec_ = paint_floor(front, parquet_pixel)
     # under the CEO's desk and the visitor chairs (room_zds_ceo)

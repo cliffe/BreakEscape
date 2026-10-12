@@ -438,9 +438,21 @@
      "y": 76.0
     },
     {
-     "gid": 919,
+     "gid": 1032,
      "height": 32,
      "id": 7,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 23,
+     "x": 122.0,
+     "y": 96.0
+    },
+    {
+     "gid": 919,
+     "height": 32,
+     "id": 8,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -452,7 +464,7 @@
     {
      "gid": 889,
      "height": 60,
-     "id": 8,
+     "id": 9,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -464,7 +476,7 @@
     {
      "gid": 271,
      "height": 38,
-     "id": 9,
+     "id": 10,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -474,9 +486,21 @@
      "y": 156.0
     },
     {
+     "gid": 1028,
+     "height": 25,
+     "id": 11,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 21,
+     "x": 168.0,
+     "y": 182.0
+    },
+    {
      "gid": 389,
      "height": 47,
-     "id": 10,
+     "id": 12,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -488,7 +512,7 @@
     {
      "gid": 1015,
      "height": 38,
-     "id": 11,
+     "id": 13,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -498,9 +522,45 @@
      "y": 272.0
     },
     {
+     "gid": 1026,
+     "height": 22,
+     "id": 14,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 23,
+     "x": 190.0,
+     "y": 290.0
+    },
+    {
+     "gid": 1027,
+     "height": 15,
+     "id": 15,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 21,
+     "x": 196.0,
+     "y": 252.0
+    },
+    {
+     "gid": 1031,
+     "height": 19,
+     "id": 16,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 24,
+     "x": 118.0,
+     "y": 204.0
+    },
+    {
      "gid": 119,
      "height": 25,
-     "id": 12,
+     "id": 17,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -512,7 +572,7 @@
     {
      "gid": 354,
      "height": 76,
-     "id": 13,
+     "id": 18,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -524,7 +584,7 @@
     {
      "gid": 897,
      "height": 45,
-     "id": 14,
+     "id": 19,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -536,7 +596,7 @@
     {
      "gid": 828,
      "height": 20,
-     "id": 15,
+     "id": 20,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -571,7 +631,7 @@
     {
      "gid": 304,
      "height": 16,
-     "id": 19,
+     "id": 24,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -595,7 +655,7 @@
     {
      "gid": 368,
      "height": 22,
-     "id": 16,
+     "id": 21,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -607,7 +667,7 @@
     {
      "gid": 174,
      "height": 13,
-     "id": 17,
+     "id": 22,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -617,16 +677,28 @@
      "y": 155.04
     },
     {
-     "gid": 217,
-     "height": 11,
-     "id": 18,
+     "gid": 1030,
+     "height": 20,
+     "id": 23,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 11,
-     "x": 78.86,
+     "width": 21,
+     "x": 73.86,
      "y": 157.38
+    },
+    {
+     "gid": 1029,
+     "height": 23,
+     "id": 25,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 17,
+     "x": 149.1,
+     "y": 150.02
     }
    ],
    "opacity": 1,
@@ -648,7 +720,7 @@
   }
  ],
  "nextlayerid": 14,
- "nextobjectid": 20,
+ "nextobjectid": 26,
  "orientation": "orthogonal",
  "renderorder": "right-down",
  "tiledversion": "1.11.2",
@@ -3081,7 +3153,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 206,
+   "tilecount": 224,
    "tileheight": 60,
    "tiles": [
     {
@@ -4319,6 +4391,114 @@
      "image": "../objects/zds_conference_table1.png",
      "imageheight": 55,
      "imagewidth": 126
+    },
+    {
+     "id": 216,
+     "image": "../objects/magazine_cover1.png",
+     "imageheight": 21,
+     "imagewidth": 18
+    },
+    {
+     "id": 217,
+     "image": "../objects/reception_counter1.png",
+     "imageheight": 44,
+     "imagewidth": 110
+    },
+    {
+     "id": 218,
+     "image": "../objects/club_chair_e1.png",
+     "imageheight": 46,
+     "imagewidth": 36
+    },
+    {
+     "id": 219,
+     "image": "../objects/club_chair_w1.png",
+     "imageheight": 46,
+     "imagewidth": 36
+    },
+    {
+     "id": 220,
+     "image": "../objects/credenza1.png",
+     "imageheight": 51,
+     "imagewidth": 62
+    },
+    {
+     "id": 221,
+     "image": "../objects/floor_globe1.png",
+     "imageheight": 55,
+     "imagewidth": 44
+    },
+    {
+     "id": 222,
+     "image": "../objects/exec_chair_black1.png",
+     "imageheight": 56,
+     "imagewidth": 32
+    },
+    {
+     "id": 223,
+     "image": "../objects/planter_fig1.png",
+     "imageheight": 61,
+     "imagewidth": 32
+    },
+    {
+     "id": 224,
+     "image": "../objects/brochure_rack1.png",
+     "imageheight": 48,
+     "imagewidth": 44
+    },
+    {
+     "id": 225,
+     "image": "../objects/pizza_boxes1.png",
+     "imageheight": 22,
+     "imagewidth": 23
+    },
+    {
+     "id": 226,
+     "image": "../objects/energy_cans1.png",
+     "imageheight": 15,
+     "imagewidth": 21
+    },
+    {
+     "id": 227,
+     "image": "../objects/mini_fridge1.png",
+     "imageheight": 25,
+     "imagewidth": 21
+    },
+    {
+     "id": 228,
+     "image": "../objects/wilted_plant1.png",
+     "imageheight": 23,
+     "imagewidth": 17
+    },
+    {
+     "id": 229,
+     "image": "../objects/coffee_cups1.png",
+     "imageheight": 20,
+     "imagewidth": 21
+    },
+    {
+     "id": 230,
+     "image": "../objects/cable_tangle1.png",
+     "imageheight": 19,
+     "imagewidth": 24
+    },
+    {
+     "id": 231,
+     "image": "../objects/book_pile1.png",
+     "imageheight": 32,
+     "imagewidth": 23
+    },
+    {
+     "id": 232,
+     "image": "../objects/zds_desk1.png",
+     "imageheight": 39,
+     "imagewidth": 78
+    },
+    {
+     "id": 233,
+     "image": "../objects/zds_desk3.png",
+     "imageheight": 39,
+     "imagewidth": 51
     }
    ],
    "tilewidth": 60

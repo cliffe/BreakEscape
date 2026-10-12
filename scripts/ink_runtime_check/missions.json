@@ -359,9 +359,6 @@
       "victoria_suspicious": 0,
       "victoria_trusts_player": false,
       "victoria_choice_made": false,
-      "victoria_recruited": false,
-      "victoria_arrested": false,
-      "victoria_escaped": false,
       "danny_evidence_seen": false,
       "handler_trust": 50,
       "guard_detection_count": 0,
@@ -417,7 +414,9 @@
       "vm_flag1_reward": false,
       "vm_flag2_reward": false,
       "vm_flag3_reward": false,
-      "danny_ko": false
+      "danny_ko": false,
+      "named_target_selection": false,
+      "ffion_night_story": ""
     },
     "npcs": [
       {
@@ -438,9 +437,9 @@
         "room": "reception_lobby"
       },
       {
-        "id": "receptionist_npc",
+        "id": "ffion_rees",
         "npcType": "person",
-        "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_npc_receptionist.json",
+        "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_npc_ffion_rees.json",
         "currentKnot": "start",
         "room": "reception_lobby"
       },
@@ -466,9 +465,9 @@
         "room": "conference_room_01"
       },
       {
-        "id": "night_guard",
+        "id": "terry_mott",
         "npcType": "person",
-        "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_npc_guard.json",
+        "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_npc_terry_mott.json",
         "currentKnot": "start",
         "room": "executive_wing_hallway"
       },

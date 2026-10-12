@@ -426,57 +426,69 @@
      "y": 50.0
     },
     {
-     "gid": 873,
-     "height": 46,
+     "gid": 1021,
+     "height": 51,
      "id": 6,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 44,
-     "x": 36.0,
-     "y": 110.0
+     "width": 62,
+     "x": 32.0,
+     "y": 112.0
     },
     {
-     "gid": 1012,
-     "height": 52,
+     "gid": 1024,
+     "height": 61,
      "id": 7,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 30,
-     "x": 80.0,
-     "y": 234.0
+     "width": 32,
+     "x": 36.0,
+     "y": 214.0
     },
     {
-     "gid": 1012,
-     "height": 52,
+     "gid": 1023,
+     "height": 56,
      "id": 8,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 30,
-     "x": 118.0,
-     "y": 234.0
+     "width": 32,
+     "x": 84.0,
+     "y": 238.0
     },
     {
-     "gid": 1012,
-     "height": 52,
+     "gid": 1023,
+     "height": 56,
      "id": 9,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 30,
-     "x": 156.0,
-     "y": 234.0
+     "width": 32,
+     "x": 117.0,
+     "y": 238.0
+    },
+    {
+     "gid": 1023,
+     "height": 56,
+     "id": 10,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 32,
+     "x": 150.0,
+     "y": 238.0
     },
     {
      "gid": 443,
      "height": 64,
-     "id": 10,
+     "id": 11,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -488,7 +500,7 @@
     {
      "gid": 443,
      "height": 64,
-     "id": 11,
+     "id": 12,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -500,7 +512,7 @@
     {
      "gid": 913,
      "height": 45,
-     "id": 12,
+     "id": 13,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -512,7 +524,7 @@
     {
      "gid": 1011,
      "height": 59,
-     "id": 13,
+     "id": 14,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -524,7 +536,7 @@
     {
      "gid": 828,
      "height": 20,
-     "id": 14,
+     "id": 15,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -559,7 +571,7 @@
     {
      "gid": 304,
      "height": 16,
-     "id": 15,
+     "id": 16,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -581,28 +593,40 @@
    "name": "table_items",
    "objects": [
     {
-     "gid": 203,
-     "height": 14,
-     "id": 16,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 17,
-     "x": 130.8,
-     "y": 241.9
-    },
-    {
-     "gid": 335,
-     "height": 18,
+     "gid": 219,
+     "height": 16,
      "id": 17,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 24,
-     "x": 158.8,
-     "y": 244.1
+     "width": 14,
+     "x": 115.92,
+     "y": 239.7
+    },
+    {
+     "gid": 203,
+     "height": 14,
+     "id": 18,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 17,
+     "x": 137.1,
+     "y": 243.0
+    },
+    {
+     "gid": 1013,
+     "height": 9,
+     "id": 19,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 16,
+     "x": 165.32,
+     "y": 243.0
     }
    ],
    "opacity": 1,
@@ -624,7 +648,7 @@
   }
  ],
  "nextlayerid": 14,
- "nextobjectid": 18,
+ "nextobjectid": 20,
  "orientation": "orthogonal",
  "renderorder": "right-down",
  "tiledversion": "1.11.2",
@@ -3036,11 +3060,11 @@
   {
    "columns": 10,
    "firstgid": 701,
-   "image": "../tiles/rooms/room_zds_carpet.png",
+   "image": "../tiles/rooms/room_zds_boardroom.png",
    "imageheight": 320,
    "imagewidth": 320,
    "margin": 0,
-   "name": "room_zds_carpet",
+   "name": "room_zds_boardroom",
    "spacing": 0,
    "tilecount": 100,
    "tileheight": 32,
@@ -3057,7 +3081,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 206,
+   "tilecount": 224,
    "tileheight": 60,
    "tiles": [
     {
@@ -4282,7 +4306,7 @@
      "id": 213,
      "image": "../objects/exec_desk_drawer1.png",
      "imageheight": 15,
-     "imagewidth": 25
+     "imagewidth": 16
     },
     {
      "id": 214,
@@ -4295,6 +4319,114 @@
      "image": "../objects/zds_conference_table1.png",
      "imageheight": 55,
      "imagewidth": 126
+    },
+    {
+     "id": 216,
+     "image": "../objects/magazine_cover1.png",
+     "imageheight": 21,
+     "imagewidth": 18
+    },
+    {
+     "id": 217,
+     "image": "../objects/reception_counter1.png",
+     "imageheight": 44,
+     "imagewidth": 110
+    },
+    {
+     "id": 218,
+     "image": "../objects/club_chair_e1.png",
+     "imageheight": 46,
+     "imagewidth": 36
+    },
+    {
+     "id": 219,
+     "image": "../objects/club_chair_w1.png",
+     "imageheight": 46,
+     "imagewidth": 36
+    },
+    {
+     "id": 220,
+     "image": "../objects/credenza1.png",
+     "imageheight": 51,
+     "imagewidth": 62
+    },
+    {
+     "id": 221,
+     "image": "../objects/floor_globe1.png",
+     "imageheight": 55,
+     "imagewidth": 44
+    },
+    {
+     "id": 222,
+     "image": "../objects/exec_chair_black1.png",
+     "imageheight": 56,
+     "imagewidth": 32
+    },
+    {
+     "id": 223,
+     "image": "../objects/planter_fig1.png",
+     "imageheight": 61,
+     "imagewidth": 32
+    },
+    {
+     "id": 224,
+     "image": "../objects/brochure_rack1.png",
+     "imageheight": 48,
+     "imagewidth": 44
+    },
+    {
+     "id": 225,
+     "image": "../objects/pizza_boxes1.png",
+     "imageheight": 22,
+     "imagewidth": 23
+    },
+    {
+     "id": 226,
+     "image": "../objects/energy_cans1.png",
+     "imageheight": 15,
+     "imagewidth": 21
+    },
+    {
+     "id": 227,
+     "image": "../objects/mini_fridge1.png",
+     "imageheight": 25,
+     "imagewidth": 21
+    },
+    {
+     "id": 228,
+     "image": "../objects/wilted_plant1.png",
+     "imageheight": 23,
+     "imagewidth": 17
+    },
+    {
+     "id": 229,
+     "image": "../objects/coffee_cups1.png",
+     "imageheight": 23,
+     "imagewidth": 21
+    },
+    {
+     "id": 230,
+     "image": "../objects/cable_tangle1.png",
+     "imageheight": 19,
+     "imagewidth": 24
+    },
+    {
+     "id": 231,
+     "image": "../objects/book_pile1.png",
+     "imageheight": 32,
+     "imagewidth": 23
+    },
+    {
+     "id": 232,
+     "image": "../objects/zds_desk1.png",
+     "imageheight": 39,
+     "imagewidth": 78
+    },
+    {
+     "id": 233,
+     "image": "../objects/zds_desk3.png",
+     "imageheight": 39,
+     "imagewidth": 51
     }
    ],
    "tilewidth": 60

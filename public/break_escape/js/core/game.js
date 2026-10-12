@@ -111,6 +111,7 @@ export function preload() {
     this.load.tilemapTiledJSON('room_zds_office', 'rooms/room_zds_office.json'); // m03 consultant's office: desk with PC and photo, review, camp bed (2x2 GU)
     this.load.tilemapTiledJSON('room_zds_ceo', 'rooms/room_zds_ceo.json'); // m03 CEO office: mahogany desk, portrait, filing cabinet, drinks cabinet, rug (2x2 GU)
     this.load.tilemapTiledJSON('room_zds_servers', 'rooms/room_zds_servers.json'); // m03 server room: two rack rows, marketplace board, wall safe, VM desk, ops bench (2x2 GU)
+    this.load.tilemapTiledJSON('room_zds_hall', 'rooms/room_zds_hall.json'); // m03 corridor: threat map, WHITEHAT sign, water cooler, planter (2x1 GU, 10x6)
 
     // Load room images (now using smaller 32px scale images)
     this.load.image('room_reception', 'tiles/rooms/room1.png');
@@ -134,6 +135,8 @@ export function preload() {
     this.load.image('room_zds_carpet', 'tiles/rooms/room_zds_carpet.png'); // m03: slate-blue carpet tiles
     this.load.image('room_zds_exec', 'tiles/rooms/room_zds_exec.png'); // m03: walnut parquet with a navy and gold rug
     this.load.image('room_zds_raised', 'tiles/rooms/room_zds_raised.png'); // m03: raised floor, slate walls
+    this.load.image('room_zds_boardroom', 'tiles/rooms/room_zds_boardroom.png'); // m03: carpet with a charcoal rug under the boardroom table
+    this.load.image('room_zds_hall', 'tiles/rooms/room_zds_hall.png'); // m03: the lobby stone without decals, for the corridors
     this.load.image('room14', 'tiles/rooms/room14.png');
     this.load.image('room19', 'tiles/rooms/room19.png');
     this.load.image('door_32', 'tiles/door_32.png');
@@ -767,6 +770,24 @@ export function preload() {
     this.load.image('exec_desk_drawer1', 'objects/exec_desk_drawer1.png');
     this.load.image('camp_bed1', 'objects/camp_bed1.png');
     this.load.image('zds_conference_table1', 'objects/zds_conference_table1.png');
+    this.load.image('magazine_cover1', 'objects/magazine_cover1.png');
+    this.load.image('reception_counter1', 'objects/reception_counter1.png');
+    this.load.image('club_chair_e1', 'objects/club_chair_e1.png');
+    this.load.image('club_chair_w1', 'objects/club_chair_w1.png');
+    this.load.image('credenza1', 'objects/credenza1.png');
+    this.load.image('floor_globe1', 'objects/floor_globe1.png');
+    this.load.image('exec_chair_black1', 'objects/exec_chair_black1.png');
+    this.load.image('planter_fig1', 'objects/planter_fig1.png');
+    this.load.image('brochure_rack1', 'objects/brochure_rack1.png');
+    this.load.image('pizza_boxes1', 'objects/pizza_boxes1.png');
+    this.load.image('energy_cans1', 'objects/energy_cans1.png');
+    this.load.image('mini_fridge1', 'objects/mini_fridge1.png');
+    this.load.image('wilted_plant1', 'objects/wilted_plant1.png');
+    this.load.image('coffee_cups1', 'objects/coffee_cups1.png');
+    this.load.image('cable_tangle1', 'objects/cable_tangle1.png');
+    this.load.image('book_pile1', 'objects/book_pile1.png');
+    this.load.image('zds_desk1', 'objects/zds_desk1.png');
+    this.load.image('zds_desk3', 'objects/zds_desk3.png');
     this.load.image('backup_recovery',         'objects/backup_recovery.png');
     this.load.image('dual_auth',               'objects/dual_auth.png');
     this.load.image('ehr-terminal',            'objects/ehr-terminal.png');
