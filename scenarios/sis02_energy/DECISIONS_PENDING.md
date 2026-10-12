@@ -37,6 +37,9 @@ This is outside lighting (timer dispatcher or the tint action), so it isn't in t
 
 ### D5. Opening background art shows outdoor containers; the pack and game have two battery halls
 
+**Resolved 2026-10-09:** the intro now opens on the site gate, then cuts inside Hall 1 (df2b8242).
+
+
 **Background.** Helen's new narrator intro opens on `public/break_escape/assets/backgrounds/albion_energy.png` (untracked, the user's). The picture shows rows of white outdoor battery containers, pylons, a brick control building and one car. The pack describes two battery halls (`information_pack.md:681`), Battery Hall 1 is an indoor room in the game, and the team is already on site at 06:15 (`:781`). The narration was rewritten so it no longer contradicts the pack ("Two battery halls holding two hundred megawatt-hours…"; the "one car in the car park" line was dropped), but the picture still shows containers. The same image is now also the background of Helen's evacuation cutscene.
 
 **Options.**
@@ -48,6 +51,9 @@ This is outside lighting (timer dispatcher or the tint action), so it isn't in t
 
 ### D6. Engine: globals reach the server only every 30 s (or on pagehide)
 
+**Resolved 2026-10-12 (user):** moved to `docs/IDEAS_BACKLOG.md` (Engine and UI, "Sync globals when a conversation closes").
+
+
 **Background.** In playtest game 1890 the harness closed the browser about 1.5 s after Helen's briefing. The task completion and the badge were saved (immediate POSTs), but `helen_briefed` and `battery_hall_badge_collected` were not, because globals sync on a 30 s timer or the pagehide flush (`public/break_escape/js/state-sync.js:11-24`, `:139-163`). On resume Helen ran her "briefing was cut" recovery and greeted the player again. A normal reload fires pagehide, so real players should rarely see this; a crash, a killed tab or a power cut within 30 s of a conversation would.
 
 **Options.** 1. Call `window.stateSync?.sync()` right after `conversation_closed` is emitted (`person-chat-minigame.js:1646`, `phone-chat-minigame.js:927`). Small engine change, all missions benefit; needs node tests, Rails suite, reopencheck and a browser regression. 2. Leave it.
@@ -55,6 +61,9 @@ This is outside lighting (timer dispatcher or the tint action), so it isn't in t
 **Recommendation:** option 1, in the next engine pass. Not fixed here (engine change, outside the approved scope). Round-2 playtest: real reloads at 0 s, 1.5 s and 40 s after the briefing did not reproduce it (the server row is written when the briefing ends), so only a crash or killed tab is exposed. Low priority.
 
 ### D7. Engine: the room tracker reports Battery Hall 1 in the top wall rows of the rooms below it
+
+**Resolved 2026-10-12 (user):** left as is (option 2); the round-2 playtest showed the wall band can't be reached.
+
 
 **Background.** `updatePlayerRoom` (`public/break_escape/js/core/rooms.js:2918-2944`) tests each room's floor in turn, and the hall's floor rectangle overlaps the top two (wall) rows of the control room and workshop. The test bridge reported `battery_hall_1` at the workshop SIS panel (game 1892). In a gas alarm, an entry event from the control room's north wall band could fire Helen's "Out of that hall" bark and set `entered_hall_in_gas_alarm`, which the debrief and credits criticise. Separately, `currentPlayerRoom` is set to null in gaps despite the comment saying the previous room is kept (`:2949-2955`).
 
@@ -76,11 +85,17 @@ This is outside lighting (timer dispatcher or the tint action), so it isn't in t
 
 ### D9. Commit order: the Helen intro needs your uncommitted engine change
 
+**Resolved:** the `Background[none]` handling in `person-chat-portraits.js` is committed.
+
+
 **Background.** Helen's narrator intro ends with `Background[none]:` (`npc_helen_marsh.ink`, top of `arrival_briefing`), which is handled only by your uncommitted change to `public/break_escape/js/minigames/person-chat/person-chat-portraits.js` (`setBackground`, `:618-625`). Committed without it, the exterior picture would stay behind Helen.
 
 **Recommendation:** commit that engine change with or before sis02. Nothing to decide unless you want the intro to work without it (the alternative is a plain-frame background image).
 
 ### D10. Audio to generate (not done; costs money)
+
+**Resolved 2026-10-09:** voiced on gemini-3.8 (b40f3798).
+
 
 Voiced lines new or changed in this loop (Helen, Priya, narrator; Marcus and Tom are unvoiced phone texts):
 - Narrator (new): "Albion Energy Storage, on the Trent near Newark. Saturday, half past six." / "Two battery halls holding two hundred megawatt-hours of lithium-ion cells, charging off the grid overnight while the county sleeps." / "The site's SCADA engineer got in at quarter past six. She hasn't taken her eyes off the control room screens since."

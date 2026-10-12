@@ -49,6 +49,7 @@ From the PIN cracker fix (2026-10-10), found but not fixed:
 - **Guard line-of-sight hooks** (m07 fixer; M). Some missions draw decorative LOS cones that mean nothing; a general "player spotted" event would let any guard react.
 
 - **Person-chat resume** (pass 3; M). When a face-to-face conversation reopens, the engine goes back to the knot of the first saved choice, so a resumed check can show its choices without the question that led to them (seen with Netherton in m08). Phone chat had the same problem and now replays nothing already seen (E10/E13); person-chat could get the same treatment.
+- **Sync globals when a conversation closes** (sis02 D6, 2026-10-09; S). Globals reach the server every 30 s or on pagehide (`state-sync.js`), so a crash or killed tab within 30 s of a conversation loses flags like `helen_briefed` and the NPC replays its scene. Call `window.stateSync?.sync()` after `conversation_closed` in person-chat and phone-chat. Normal reloads aren't affected.
 
 ## Story and missions
 
