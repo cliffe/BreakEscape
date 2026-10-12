@@ -13,8 +13,11 @@ import { tmpdir } from 'node:os';
 const here = dirname(fileURLToPath(import.meta.url));
 const src = join(here, '../../public/break_escape/js/minigames/person-chat/person-chat-background.js');
 const dir = mkdtempSync(join(tmpdir(), 'person-chat-background-'));
-writeFileSync(join(dir, 'background.mjs'), readFileSync(src, 'utf8'));
-const { resolvePersonChatBackground, conversationRoomIds, personChatBackgroundFor } =
+writeFileSync(join(dir, 'conditional-text.mjs'),
+    readFileSync(join(here, '../../public/break_escape/js/utils/conditional-text.js'), 'utf8'));
+writeFileSync(join(dir, 'background.mjs'), readFileSync(src, 'utf8')
+    .replace("'../../utils/conditional-text.js'", "'./conditional-text.mjs'"));
+const { resolvePersonChatBackground, conversationRoomIds, personChatBackgroundFor, pickRoomBackground } =
     await import(pathToFileURL(join(dir, 'background.mjs')).href);
 
 const rooms = {
@@ -137,4 +140,52 @@ test('personChatBackgroundFor uses the live sprite, then the placed position', (
     // drawn and walked to the right-hand side
     w.rooms.hall.npcSprites.push({ npcId: 'guard', x: 1000 + 250, active: true });
     assert.equal(personChatBackgroundFor({ npcId: 'guard' }, w), R);
+});
+
+// Views with a condition (m03's day/night rooms): skipped while the condition is false.
+const NIGHT = 'globalVars.clone_call_done === true';
+const dayNight = [
+    { condition: NIGHT, image: 'night.png' },
+    { image: 'day.png' }
+];
+
+test('a view whose condition holds wins; otherwise the next view', () => {
+    assert.equal(pickRoomBackground(dayNight, 0.5, { clone_call_done: true }), 'night.png');
+    assert.equal(pickRoomBackground(dayNight, 0.5, { clone_call_done: false }), 'day.png');
+    assert.equal(pickRoomBackground(dayNight, 0.5, {}), 'day.png');
+    assert.equal(pickRoomBackground(dayNight, undefined), 'day.png');
+});
+
+test('conditions combine with views by x', () => {
+    const views = [
+        { condition: NIGHT, x: [0, 0.5], image: 'night_left.png' },
+        { condition: NIGHT, x: [0.5, 1], image: 'night_right.png' },
+        { x: [0, 0.5], image: 'day_left.png' },
+        { x: [0.5, 1], image: 'day_right.png' }
+    ];
+    assert.equal(pickRoomBackground(views, 0.3, { clone_call_done: true }), 'night_left.png');
+    assert.equal(pickRoomBackground(views, 0.8, { clone_call_done: true }), 'night_right.png');
+    assert.equal(pickRoomBackground(views, 0.3, {}), 'day_left.png');
+    assert.equal(pickRoomBackground(views, 0.8, {}), 'day_right.png');
+    // No x known: the first view whose condition holds
+    assert.equal(pickRoomBackground(views, undefined, {}), 'day_left.png');
+});
+
+test('views without conditions behave as before', () => {
+    const views = [{ x: [0, 0.5], image: 'left.png' }, { x: [0.5, 1], image: 'right.png' }];
+    assert.equal(pickRoomBackground(views, 0.2, { anything: true }), 'left.png');
+    assert.equal(pickRoomBackground(views, 0.9), 'right.png');
+    assert.equal(pickRoomBackground('plain.png', 0.9, {}), 'plain.png');
+});
+
+test('every view false: no background from the room', () => {
+    assert.equal(pickRoomBackground([{ condition: NIGHT, image: 'night.png' }], 0.5, {}), null);
+});
+
+test('personChatBackgroundFor reads the live global variables', () => {
+    const scenarioRooms = { lobby: { chatBackground: dayNight } };
+    const w = fakeWindow({ npcRoom: 'lobby', scenarioRooms });
+    assert.equal(personChatBackgroundFor({ npcId: 'nurse' }, w), 'day.png');
+    w.gameState = { globalVariables: { clone_call_done: true } };
+    assert.equal(personChatBackgroundFor({ npcId: 'nurse' }, w), 'night.png');
 });

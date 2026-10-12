@@ -305,6 +305,17 @@ A room whose NPCs stand in different places can give a list of views instead of 
 
 With no position known, the first view is used.
 
+A view can also carry a `condition` (globalVars syntax, the same as lighting `variants`), so a room can change background with the story, e.g. at night. Views whose condition is false are skipped, so put the conditional views first and finish with the unconditional ones. A condition and an `x` range can be combined.
+
+```json
+"chatBackground": [
+  { "condition": "globalVars.clone_call_done === true", "image": "assets/backgrounds/rooms/m03_reception_lobby_night_blended.png" },
+  { "image": "assets/backgrounds/rooms/m03_reception_lobby_blended.png" }
+]
+```
+
+The validator warns when a condition names a global that isn't in `globalVariables`.
+
 An NPC can also have its own `chatBackground` (same path style), which wins over the room's: use it when the character is always seen in one place that the room view doesn't fit, such as a patient in a hospital bed (m02 and sis01 use a bedside view). An explicit `background` on a conversation and `Background[...]` in the ink still win over it.
 
 ### Starting Inventory

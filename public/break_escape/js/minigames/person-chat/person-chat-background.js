@@ -1,3 +1,5 @@
+import { evaluateGlobalCondition } from '../../utils/conditional-text.js';
+
 /**
  * Which background a person-chat conversation opens with.
  *
@@ -21,6 +23,15 @@
  *      x is the share of the room's width (0 = left wall, 1 = right wall). The
  *      view whose range holds the NPC's x when the chat starts wins; with no
  *      position known, or no range matching, the first entry is used.
+ *      A view can also carry a `condition` (globalVars syntax, as the lighting
+ *      `variants` use), e.g. a night view of a room:
+ *        "chatBackground": [
+ *          { "condition": "globalVars.clone_call_done === true", "image": "..._night_blended.png" },
+ *          { "image": "..._blended.png" }
+ *        ]
+ *      Views whose condition is false are skipped before x is matched, so the
+ *      first-entry fallback is the first view whose condition holds. A view with
+ *      no condition always holds.
  *   5. None: the plain frame.
  *
  * Video calls keep today's behaviour: the caller is somewhere else, so the
@@ -36,31 +47,40 @@
  * @param {Array<string|null|undefined>} [o.roomIds] - candidate rooms, best first
  * @param {Object} [o.rooms] - scenario rooms by id
  * @param {Object<string, number>} [o.npcX] - the NPC's x as a share of each candidate room's width (0-1), by room id
+ * @param {Object} [o.globalVars] - the game's global variables, for views with a condition
  * @returns {string|null} image path, or null for no background
  */
-export function resolvePersonChatBackground({ explicit = null, npcBackground = null, videoCall = false, roomIds = [], rooms = {}, npcX = {} } = {}) {
+export function resolvePersonChatBackground({ explicit = null, npcBackground = null, videoCall = false, roomIds = [], rooms = {}, npcX = {}, globalVars = {} } = {}) {
     if (typeof explicit === 'string' && explicit.trim()) {
         return explicit.trim().toLowerCase() === 'none' ? null : explicit.trim();
     }
     if (videoCall) return null;
     if (typeof npcBackground === 'string' && npcBackground.trim()) return npcBackground.trim();
     const roomId = roomIds.find(id => id && id !== 'unknown' && rooms && rooms[id]);
-    return roomId ? pickRoomBackground(rooms[roomId].chatBackground, npcX?.[roomId]) : null;
+    return roomId ? pickRoomBackground(rooms[roomId].chatBackground, npcX?.[roomId], globalVars) : null;
 }
 
 /**
- * A room's chatBackground: a path, or a list of views by the NPC's x (share of the room's width).
- * @param {string|Array<{x: number[], image: string}>} bg
+ * A room's chatBackground: a path, or a list of views by the NPC's x (share of the room's width),
+ * each optionally gated by a condition on the global variables.
+ * @param {string|Array<{x?: number[], image: string, condition?: string}>} bg
  * @param {number} [x] - the NPC's x as a share of the room's width
+ * @param {Object} [globalVars] - the game's global variables
  * @returns {string|null}
  */
-export function pickRoomBackground(bg, x) {
+export function pickRoomBackground(bg, x, globalVars = {}) {
     if (typeof bg === 'string') return bg.trim() || null;
     if (!Array.isArray(bg)) return null;
-    const views = bg.filter(v => v && typeof v.image === 'string' && v.image.trim());
+    const views = bg.filter(v => v && typeof v.image === 'string' && v.image.trim() && viewHolds(v, globalVars));
     if (!views.length) return null;
     const hit = Number.isFinite(x) && views.find(v => Array.isArray(v.x) && x >= v.x[0] && x <= v.x[1]);
     return (hit || views[0]).image.trim();
+}
+
+/** A view with no condition always holds; a condition that fails to evaluate does not. */
+function viewHolds(view, globalVars) {
+    if (!view.condition) return true;
+    try { return evaluateGlobalCondition(view.condition, globalVars || {}) === true; } catch (err) { return false; }
 }
 
 /**
@@ -120,6 +140,7 @@ export function personChatBackgroundFor(params, w = (typeof window !== 'undefine
         videoCall: !!params?.videoCall,
         roomIds,
         rooms: w.gameScenario?.rooms || {},
-        npcX
+        npcX,
+        globalVars: w.gameState?.globalVariables || {}
     });
 }

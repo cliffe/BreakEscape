@@ -3388,7 +3388,7 @@ def check_recurring_bugs(json_data, repo_root)
   rooms.each do |rid, room|
     next unless room.is_a?(Hash) && room.key?('chatBackground')
     val = room['chatBackground']
-    # A path, or views by the NPC's x: [{ "x": [0, 0.5], "image": "..." }, ...] (x = share of the room's width)
+    # A path, or views by the NPC's x and/or a condition: [{ "x": [0, 0.5], "condition": "globalVars.night === true", "image": "..." }, ...] (x = share of the room's width)
     entries = if val.is_a?(Array)
                 if val.empty?
                   issues << "⚠️ WARNING: 'rooms/#{rid}' chatBackground is an empty list."
@@ -3397,6 +3397,19 @@ def check_recurring_bugs(json_data, repo_root)
                   x = v.is_a?(Hash) ? v['x'] : nil
                   unless x.nil? || (x.is_a?(Array) && x.size == 2 && x.all? { |n| n.is_a?(Numeric) && n >= 0 && n <= 1 } && x[0] <= x[1])
                     issues << "⚠️ WARNING: 'rooms/#{rid}' chatBackground[#{i}] x should be [from, to], shares of the room's width between 0 and 1."
+                  end
+                  # Optional condition (globalVars syntax, as lighting variants), e.g. a night view.
+                  cond = v.is_a?(Hash) ? v['condition'] : nil
+                  unless cond.nil?
+                    if !cond.is_a?(String) || cond !~ /globalVars\.\w+/
+                      issues << "⚠️ WARNING: 'rooms/#{rid}' chatBackground[#{i}] condition should be a string such as \"globalVars.night === true\"."
+                    else
+                      declared = (json_data['globalVariables'] || {}).keys
+                      cond.scan(/globalVars\.(\w+)/).flatten.uniq.each do |gv|
+                        next if declared.include?(gv)
+                        issues << "⚠️ WARNING: 'rooms/#{rid}' chatBackground[#{i}] condition uses globalVars.#{gv}, which is not in globalVariables, so the view never shows."
+                      end
+                    end
                   end
                   [v.is_a?(Hash) ? v['image'] : nil, "chatBackground[#{i}] image"]
                 end
