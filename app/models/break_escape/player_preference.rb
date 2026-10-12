@@ -23,7 +23,6 @@ module BreakEscape
       male_security_guard_v2
       male_telecom_v2
       male_spy_v2
-      male_scientist_v2
       male_nerd_v2
     ].freeze
 
@@ -32,12 +31,22 @@ module BreakEscape
     # working without a data migration and the menu shows them as selected.
     LEGACY_SPRITES = AVAILABLE_SPRITES.to_h { |v2| [v2.delete_suffix('_v2'), v2] }.freeze
 
+    # Sprites taken out of the avatar menu because they now belong to one story
+    # character (male_scientist and male_scientist_v2 became Agent 0x47 "Nightshade",
+    # the m08 mole). A player whose saved selection names one of them is moved to
+    # RETIRED_FALLBACK_SPRITE on read, so their game still loads and the preferences
+    # page and updates still validate.
+    RETIRED_SPRITES = %w[male_scientist male_scientist_v2].freeze
+    RETIRED_FALLBACK_SPRITE = 'male_hacker_hood_v2'
+
     # Sprite the avatar menu previews before the player has chosen one. selected_sprite
     # itself stays NULL until the player picks (see set_defaults).
     DEFAULT_SPRITE = 'female_hacker_hood_v2'
 
     # Map a legacy sprite key to its v2 replacement; other keys pass through unchanged.
     def self.current_sprite(sprite_name)
+      return RETIRED_FALLBACK_SPRITE if RETIRED_SPRITES.include?(sprite_name)
+
       LEGACY_SPRITES.fetch(sprite_name, sprite_name)
     end
 

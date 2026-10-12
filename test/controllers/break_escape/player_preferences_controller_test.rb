@@ -62,12 +62,12 @@ module BreakEscape
 
     test 'update persists selected_sprite to database' do
       patch configuration_url,
-            params: { player_preference: { selected_sprite: 'male_scientist_v2', in_game_name: 'TestAgent' } },
+            params: { player_preference: { selected_sprite: 'male_nerd_v2', in_game_name: 'TestAgent' } },
             headers: { 'Accept' => 'application/json' }
 
       assert_response :success
       @preference.reload
-      assert_equal 'male_scientist_v2', @preference.selected_sprite
+      assert_equal 'male_nerd_v2', @preference.selected_sprite
     end
 
     test 'update persists in_game_name to database' do
@@ -246,10 +246,11 @@ module BreakEscape
       assert_includes sprites, 'female_hacker_hood_v2'
       assert_includes sprites, 'male_spy_v2'
       assert_includes sprites, 'male_hacker_hood_down_v2'
-      assert_equal 16, sprites.length
+      assert_equal 15, sprites.length
       assert sprites.all? { |s| s.end_with?('_v2') }, "Menu should only offer v2 sprites: #{sprites.inspect}"
       assert_not_includes sprites, 'female_hacker_hood'
       assert_not_includes sprites, 'male_spy'
+      assert_not_includes sprites, 'male_scientist_v2'
     end
 
     # Character atlases are loaded by key (systems/character-textures.js), so a menu
@@ -271,6 +272,17 @@ module BreakEscape
       assert_equal PlayerPreference::AVAILABLE_SPRITES.sort, PlayerPreference::LEGACY_SPRITES.values.sort
       assert_equal 'male_spy_v2', PlayerPreference.current_sprite('male_spy_v2')
       assert_nil PlayerPreference.current_sprite(nil)
+    end
+
+    test 'a saved selection of a retired sprite falls back to the default male sprite' do
+      %w[male_scientist_v2 male_scientist].each do |retired|
+        @preference.update_column(:selected_sprite, retired)
+        @preference.reload
+        assert_equal PlayerPreference::RETIRED_FALLBACK_SPRITE, @preference.selected_sprite
+        assert_includes PlayerPreference::AVAILABLE_SPRITES, @preference.selected_sprite
+        assert @preference.valid?, @preference.errors.full_messages.join(', ')
+      end
+      refute_includes PlayerPreference::AVAILABLE_SPRITES, 'male_scientist_v2'
     end
 
     test 'a saved legacy sprite reads back as its v2 key and stays valid' do

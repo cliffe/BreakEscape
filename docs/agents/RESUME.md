@@ -4,7 +4,7 @@ Brief `docs/agents/M03_PASS2_BRIEF.md`; log `scenarios/m03_ghost_in_the_machine/
 - Regression A passed (0 major); B partial (auto-mode refusal at step 5); B2 (night + new-map interaction walk) running.
 - Room dressing cycle 1 committed (125ef02e assets, 9df52107 m03): new room_zds_* maps. Cycle 2 running.
 - Dialogue review P2 C1: 0/5/21 (DIALOGUE_REVIEW_P2_C1.md). Fixer running; decisions: add Victoria's test scene, name receptionist + guard (rename ids), no Netherton debrief line.
-- Characters (user, 2026-10-12): new art for Victoria, Danny, Nightshade (key `nightshade`, all missions; Mercer keeps male_scientist_v2), receptionist, night guard. Show the user each pick. Concepts running for the first three.
+- Characters (user, 2026-10-12): new art for Victoria, Danny, Nightshade (no new art: male_scientist_v2 renamed to `nightshade`, committed; Mercer now male_office_worker_v2, sis03 Hartley male_spy headshot, retired from the player picker with a fallback), receptionist, night guard. Show the user each pick. Concepts running for the first three.
 - Reload respawns in reception (F2) = known engine backlog "Resume in the room you left"; F3 resume overlay inconsistency logged.
 
 # Resume note — room POV chat backgrounds (2026-10-11): COMPLETE
