@@ -34,9 +34,36 @@ Break Escape hosts more than one kind of game. Settle which kind you're working 
 
 Subagent reports are not shown to the user. The orchestrator reads each one, checks the claims that matter (often by reading the code or a screenshot itself), and tells the user what happened in plain terms.
 
+## Iterating: pick the loops for the work
+
+Most work here is iterative, and there is more than one loop. Decide which stages the task needs, run them in order, and loop on each stage until it's clean before moving on. A later stage can undo an earlier one (a dialogue fix can break a puzzle; a layout change means redoing a background), so order matters.
+
+**How a round works, whatever the stage.** A fresh reviewer (Opus, read-only) runs the stage's skill in full and tags each finding blocker, major or minor with file:line. A fixer acts on the findings; resume the same fixer between rounds so it keeps its context. Then a new reviewer checks again. Record each round in the log as a severity table with counts, and give every finding an outcome: fixed, withdrawn and why, or deferred and why. Round 3 at least confirms that the earlier findings are closed. Keep going while blockers or majors still turn up, stop at round 5, and list whatever is left as open.
+
+### The five-phase improvement loop (an existing mission)
+
+Use this to bring a playable mission up to standard. m03 was the first full run (`docs/agents/M03_IMPROVEMENT_PROMPT.md` is the reusable orchestrator prompt; `scenarios/m03_ghost_in_the_machine/IMPROVEMENT_LOOP_LOG.md` is the model log). m02 and sis02 went through the same stages.
+
+1. **Alignment** (`mission-alignment-plan`): music, aims and objective staging, HaX's progress-gated hub, stakes and moral choices, rooms, canon with the missions either side.
+2. **Puzzle chains** (`mission-puzzle-chains`): chain depth, lock order, cumulative kit, whether choices are required, the silent-failure engine bugs, VM flags woven in.
+3. **Scenario design** (`scenario-design-review`): solvability, clue distribution, CyBOK coverage, objective scaffolding, "does the player always know what to do next?".
+4. **Dialogue** (`npc-dialog-review`): the writing against the aim for the kind of game, and the ink structure. Snapshot the ink first so `tagdiff --old` proves what changed, and keep a list of spoken lines changed (old → new), because re-voicing costs money.
+5. **Playtests** (`playtest-scenario`, "The improvement loop"): Sonnet runs of 10–15 minutes with a reload, regression and struggling-player personas, at most 3 rounds, then a **blind playtest** with student materials only, one last fix pass and a targeted check.
+
+### Other loops, by kind of work
+
+- **A new mission or a planned change** (pass 3): plan → three adversarial review rounds → implement → implementation review → playtests → fix and confirm. See "The mission loop" below.
+- **An editorial pass over several finished missions** (pass 4): design review → fixer → re-review and playtest → dialogue writer → script editor → dialogue playtest. See "The editorial loop" below.
+- **A SIS game**: `docs/agents/SIS_IMPROVEMENT_PLAYBOOK.md` (rooms, dialogue review, the user's decisions batched, fix pass, review and playtest loop, lab sheet, cast, a second dialogue review, audio). Judge against the SIS aims above, not the spy campaign.
+- **Art and atmosphere, in this order:** `mission-room-dressing` (render → critique → fix → verify), then `mission-room-lighting` (design → review → implement → 2–4 visual review rounds, stopping after round two once nothing is above minor; `docs/agents/LIGHTING_PASS_BRIEF.md`), then `room-pov-background` last, because it copies the final layout and mood.
+- **Lab sheet** (`mission-lab-sheet`): once the game has settled, followed by an independent audit against the game files.
+- **Audio** (`tts-audio`): last of all, after the words have stopped changing, and only when the user agrees to the cost.
+
+A whole mission usually runs the five phases, then the art order, then the lab sheet, then audio. A narrower task runs only the stages it touches, plus a playtest of whatever changed.
+
 ## The mission loop
 
-Each mission goes through the same loop. Missions run in sequence, pipelined: one mission's playtests can run while the next mission is in planning.
+For a new mission or a planned change to one (the pass-3 puzzle plans), each mission goes through this loop. Missions run in sequence, pipelined: one mission's playtests can run while the next mission is in planning.
 
 1. **Plan** (Opus). A planner runs the relevant skill (e.g. `.claude/skills/mission-puzzle-chains/`) in full and writes the plan into the mission folder.
 2. **Adversarial review, three rounds** (Opus, read-only). Each round is a fresh reviewer that verifies every claim against the code, citing file:line, tags findings blocker / major / minor, and ends with a verdict. The planner (resumed, so it keeps its context) folds the findings in. Wrong findings are recorded as "withdrawn" with the reason, not silently dropped. The third round is a confirmation that the earlier findings are closed.
