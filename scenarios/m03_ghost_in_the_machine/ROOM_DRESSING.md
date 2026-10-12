@@ -249,3 +249,59 @@ After shots (`build_evidence/dressing_c3/`): `reception_lobby.png`, `conference_
 - Assumption: a pixel-identical copy of the swivel chair under a non-`-rotateN` name is the cleanest way to make it decor; changing `rooms.js` to skip swivel behaviour for certain placements would be an engine change.
 - Assumption: Ffion standing 13 px further east is still "at her desk" for the ink; nothing reads her position.
 - Assumption: a hazard line on the raised floor is a fair "restricted production row" marker in a server room and not too heavy; it can be dimmed by the lighting pass if it dominates.
+
+## Cycle 4 (2026-10-12)
+
+Inputs: the coordinator's notes on the cycle-3 contact sheet, my cycle-3 list (items 2-6) and a fresh look at the cycle-3 after shots. The re-walk (cycle-3 item 1) is with a Sonnet tester and feeds cycle 5.
+
+### Critique
+
+| # | Room | Sev | Finding | Source |
+|---|---|---|---|---|
+| D4 | Danny | major | The rug was a third of the room, flat and grey-green: it read as a gym mat or a hole in the floor. | coordinator |
+| H3 | Exec hall | major | Bare carpet: nothing said people walk through it. | coordinator |
+| S4 | Server | minor | The red "!" RESTRICTED sign looked cartoonish beside the realistic racks. | coordinator |
+| C4 | Conference | minor | East wall strip empty; nothing that runs the room's AV. | own |
+| E3 | CEO | minor | No light source of its own beyond the desk lamp, for the lighting pass. | own |
+| D5 | Danny | minor | No light of his own for the night "sitting in the dark" scene. | own |
+| R6 | Reception | minor | The counter-top props (phone, pens) were tiny and said nothing about the firm. | own |
+| M1 | Main hall | optional | A little sparse. | coordinator |
+
+Counts: 2 major, 5 minor, 1 optional.
+
+### Fixes
+
+- **D4:** a small warm kilim instead (`paint_rug_worn` in `make_zds_tileset.py`): 88×56 px under the camp bed only (x 182-270, y 230-286), terracotta field with a cream diamond row, a dark red border with cream ticks, a cream fringe on the short ends and a paler worn patch at the bed end. Pizza boxes and cans sit on it.
+- **H3:** new sheet `room_zds_hall_exec` with a burgundy runner (gold lines) down the corridor at y 82-114, wall to wall through the W and E doors; a black console table (`credenza1`) against the back wall; the clock, a print, the fire point, the planter and the PRIVATE plate rearranged around it. The night guard walks the runner, clear of the console (feet 78).
+- **S4:** `restricted_sign1` redrawn as a proper plate in the PRIVATE plate's style (45×9, white border, red field, white RESTRICTED lettering), now on the back wall under the marketplace board (x 163, feet 59) instead of on the west wall. Same asset name, so nothing is left over; its size was corrected in the catalogue, `objects_hospital_extras.tsx` and `tilesets_ref.json`.
+- **C4:** an AV and lighting control panel (`power_panel1`) on the east wall below the door row.
+- **E3:** tried a pair of `lamp-stand5` floor lamps either side of the desk; they read as garden or street lamps (the skill's theme-fit list bans those), so I took them out. The CEO's lit sources for the lighting pass are her desk lamp (on the desk sprite), the drinks cabinet and the trophy cabinet.
+- **D5:** a desk lamp (`office-misc-lamp4`) at the left end of Danny's desk, away from the PC and photo.
+- **R6:** the pens swapped for `usb_bowl1`, a hand-drawn bowl of branded USB sticks (cyan, black, white) on the counter: a security front handing out free USB sticks.
+- **M1:** left as is. Its floor is the main walking route (S, N, W and E doors), so anything free-standing would get in the way.
+
+No scenario edits this cycle.
+
+### Assets (cycle 4)
+
+No PixelLab calls. Hand-made: `usb_bowl1`; `restricted_sign1` redrawn; sheets `room_zds_hall_exec` (new) and `room_zds_office_floor` (repainted).
+
+### Verify
+
+- `generate_rooms.py`: OK for the six rooms changed. `slot_audit.py --notes`: 0 problems. `check_room_walls.py --scenario`: all 64. `validate_scenario.rb --skip-ink --no-graph`: schema passes, geometry and door alignment OK. `node --check` game.js: OK.
+- In game (fresh games of my own on :3001): exactly 16 interactable objects across the five rooms, all of them scenario objects on their intended sprites; no "No Tiled item found" logs.
+
+After shots (`build_evidence/dressing_c4/`): `reception_lobby.png`, `conference_room_01.png`, `server_room.png`, `executive_office.png`, `danny_office.png`, `main_hallway.png`, `executive_wing_hallway.png`; maps `grid-room_zds_*.png`, `grid-contact_sheet.png`.
+
+### Cycle 5 plan: polish and confirmation, after the lighting placements settle
+
+1. Fold in the cycle-3 re-walk findings (plaque at the lobby exit, CEO drawer, Presentation Materials).
+2. Wait for the lighting pass to name the light sources it wants (screens, desk lamps, the counter strip, rack LEDs) and add or move physical fixtures only where it asks; re-shoot every room lit and dark.
+3. Re-check NPC spots against the final dialogue (Ffion, Danny, Victoria) and the guard's patrol on the new runner.
+4. Small polish from the cycle-4 shots: the RESTRICTED plate's lettering is tight at game scale (try a 46×10 plate with one more pixel of padding); Danny's book pile floats mid-floor and could sit against the bookcase; the conference credenza and the exec-hall console use the same sprite, which is fine but could take a second item each.
+5. Final confirmation: slot audit, validator, door alignment, a short Sonnet walk of every door and object, then hand over to the POV-background stage with the final layout.
+
+### Assumptions (cycle 4)
+
+- Assumption: the burgundy runner and the kilim are warm enough to read as rugs at game scale without new PixelLab art; both are painted into the floor sheets, so they draw under every sprite.
+- Assumption: the CEO office has enough light sources for the lighting stage without floor lamps; the lighting brief can ask for one if it wants.

@@ -658,7 +658,7 @@ Review acted on: `DIALOGUE_REVIEW_P2_C1.md` (0 blockers, 5 majors, 21 minors, 20
 | D2-22 | Fixed: "had a packed bag under her desk since Tuesday". | `m03_npc_terry_mott.ink:275` |
 | D2-23 | Fixed: see Renames. | |
 | D2-24 | Fixed: idle choice "[Thanks again for your time.]"; reply varied with `{&...}`. "[Pick the conversation back up]" also made spoken ("[Sorry. One more question.]"). | `m03_npc_victoria.ink:114`, idle knot |
-| D2-25 | Fixed: "[Freelance. Small jobs, mostly. I'm told she's hard to impress.]", which also earns a tip that helps at the whiteboard ("Let her do the talking. She likes an audience."), so the choice set is no longer flat. | `m03_npc_ffion_rees.ink:110-116` |
+| D2-25 | Fixed: "[Freelance. Small jobs, mostly. I'm told she's hard to impress.]", which also earns a tip ("Let her do the talking. She likes an audience."). Corrected in cycle 2 (D3 Part 1): the tip is flavour and nothing reads it; the choice set is only mildly consequential, through the influence that opens `ask_building_layout` at 15. | `m03_npc_ffion_rees.ink:110-116` |
 | D2-26 | Fixed by cutting: the awards wall and coffee maker are gone from Ffion's lines (replaced with "she'd tell you it's barely started" and the 2 a.m. taxi). Nothing handed to room dressing. | `m03_npc_ffion_rees.ink:92`, `:180` |
 
 ### Line rewrites and scenes
@@ -946,3 +946,18 @@ Record: `ROOM_DRESSING.md` (cycle 3), screenshots `build_evidence/dressing_c3/`.
 - F-2/F-3 fixed: swivel chairs replaced by `exec_chair_back1`, a static copy, so decor never joins a pick-one menu; in game only the 16 scenario objects are interactable.
 - New map `room_zds_hall_exec` for the executive wing (no third WHITEHAT sign). Scenario edits: that `type`, and `ffion_rees` position (7.1, 4.9) → (7.5, 4.9).
 - No PixelLab spend this cycle.
+
+## Room dressing, cycle 4 (2026-10-12)
+
+Record: `ROOM_DRESSING.md` (cycle 4), screenshots `build_evidence/dressing_c4/`. Inputs: coordinator's notes on the cycle-3 sheet and a fresh critique.
+
+| Severity | Found | Fixed | Deferred |
+|---|---|---|---|
+| Blocker | 0 | 0 | 0 |
+| Major | 2 | 2 | 0 |
+| Minor | 5 | 5 | 0 |
+| Optional | 1 | 0 | 1 (main hall left sparse: it is the walking route) |
+
+- Danny's rug replaced by a small kilim under the camp bed; burgundy runner and console in the executive corridor; RESTRICTED redrawn as a plate on the back wall; AV panel, Danny's desk lamp, USB bowl on the reception counter.
+- Withdrawn by me: CEO floor lamps (read as garden lamps).
+- No scenario edits, no PixelLab spend.
