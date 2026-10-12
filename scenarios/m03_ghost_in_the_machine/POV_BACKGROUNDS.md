@@ -177,3 +177,32 @@ Validator: no chatBackground warnings.
 | conference_room_01 | 6 | 3 |
 | server_room | 2 | 1 |
 | **Total** | **31** | **20** |
+
+## 8. Round 3: the open items (2026-10-12, after commit 35d33ab0)
+
+Each new version was kept only where it beat the one before, item by item. Replaced files are in each room's `r1/` folder. File names didn't change, so the wiring is untouched. Before/after in-chat previews of every changed image: `build_evidence/pov/before_after_round3.png`.
+
+### 1. Server room: square-on camera and haze
+- Gemini 1: a square-on regeneration got the camera right but pushed the second rack row back against the wall, and the padlocked filing cabinet became a two-door cabinet. Rejected.
+- Gemini 2-4, the skill's layered build: an empty shell (square-on, back wall exact, padlocked cabinet, door near the camera on the right, clear shafts of haze), then the free-standing UPS and rack island as an edit (it stands out on the floor with an aisle and the hazard stripe), then the operator desk and blue monitor as an edit. The chair sits on our side of the desk (minor). **Kept.**
+- PixelLab s600: the sign reads RESTRICTED in the raw 400px file and in the blended one. The old "BESTRICTED" file is gone from `public/`; it is kept only in `r1/`. The monitor has a soft glow halo (minor).
+
+### 2. Exec hallway `_left` views: the player's half was bare wall
+- The only thing the map puts on that wall is the west door, and the concept had it as a sliver in the far corner. Edits can't move doors, so I masked the far door in magenta along with the outpaint strip and outpainted the left wall with the door halfway along it, where the map has it and in the player's band (Gemini 1 day, 2 night). The corner became plain wall.
+- The night outpaint dropped the red call point left of the sideboard (in Terry's band); Gemini 3 added it back. **Both kept.** PixelLab seed 7; the day file has some contour banding on the back wall, which the blend softens (minor).
+
+### 3. Conference room: the player-side crop
+- The door and trolley can't come back without un-shifting the view, and that would put the window, not the screen, behind Victoria. Instead Gemini 1 added two things true to the map to the clean shifted base: the backs of the three high-backed chairs at the far side of the boardroom table (left of centre, near the camera), and the left-wall call point, which now sits beside the player's head. Gemini 2-3 redid the day and night relights with the wording that worked before. **Kept.** In game the chair backs show either side of Victoria. PixelLab seed 7; the day file's call point lost some red (minor).
+
+### 4. Doors on side walls
+- **Danny's office (Gemini 1-3):** a regeneration worded "moderate wide-angle; the back wall fills about 70% of the frame … everything in the reference is on the back wall" put the door into the back wall's left corner and moved the whiteboard and certificates back onto the back wall, in map order. The night relight with the street-light wording put a man at the desk (from "someone is sitting in it"); an edit removed him. PixelLab seed 42 gave the lamp side a brown cast and lost the rack's LEDs; seed 7 stayed cool and kept them. **Kept:** Danny's crop now shows certificates, bookcase, window, rack and binder shelf, and the player's crop the door, whiteboard and lamp. There is one sliver of an invented door at the far right edge, under Danny's portrait.
+- **Reception (Gemini 1):** the same wording kept the door on the side wall, hung the trophy cabinet on the wall, and grew the counter across Ffion's spot. Rejected. That is the third failed regeneration for this door, so I'm stopping: the door sits behind the player's portrait, and round 2's fixes would be lost.
+
+### Browser check (keyless :3001, screenshots looked at)
+Day (game 2186): Ffion, Victoria, Terry at x 0.6 and x 0.3 each get the day view. Night after a reload (game 2187): all four get the night views, and Danny gets his office. Server room (borrowed NPC): `m03_server_room_blended.png`. Validator: no chatBackground warnings.
+
+### Calls this round
+Gemini 14 (server 4, exec hallway 3, conference 3, Danny 3, reception 1), PixelLab 7. **Stage total: Gemini 45, PixelLab 27.**
+
+### Stop
+Four improvement rounds so far in this stage (reception round 1, reception round 2, the six rooms, this round), within the 10 allowed. Nothing left is above minor: reception's door on the side wall, a small exit sign on its right wall, and no back-wall cyan line; the server room chair on our side of the desk and the monitor halo; contour banding in the exec-hallway day-left pixel file; the faded call point in the conference day pixel file; an invented door sliver at the right edge of Danny's office.
