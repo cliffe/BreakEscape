@@ -1,3 +1,12 @@
+# Resume note — m03 pass 2 (started 2026-10-12)
+
+Brief `docs/agents/M03_PASS2_BRIEF.md`; log `scenarios/m03_ghost_in_the_machine/IMPROVEMENT_LOOP_LOG.md` "Pass 2". Stages: regression playtest → dialogue R2 (~5 cycles) + room dressing (~5) → lighting (~5) → POV backgrounds → character pipeline → blind playtest. Later: lab sheet, audio, engine triage, SecGen.
+- Regression A passed (0 major); B partial (auto-mode refusal at step 5); B2 (night + new-map interaction walk) running.
+- Room dressing cycle 1 committed (125ef02e assets, 9df52107 m03): new room_zds_* maps. Cycle 2 running.
+- Dialogue review P2 C1: 0/5/21 (DIALOGUE_REVIEW_P2_C1.md). Fixer running; decisions: add Victoria's test scene, name receptionist + guard (rename ids), no Netherton debrief line.
+- Characters (user, 2026-10-12): new art for Victoria, Danny, Nightshade (key `nightshade`, all missions; Mercer keeps male_scientist_v2), receptionist, night guard. Show the user each pick. Concepts running for the first three.
+- Reload respawns in reception (F2) = known engine backlog "Resume in the room you left"; F3 resume overlay inconsistency logged.
+
 # Resume note — room POV chat backgrounds (2026-10-11): COMPLETE
 
 All committed. Engine: person-chat falls back to the room's `chatBackground`. Skill `.claude/skills/room-pov-background/` (+ pov_prep.py, pov_chat_preview.py, pov_diff.py, chat-background-shot.sh). Backgrounds with moody volumetric lighting for every room of m02 (12), sis01 (3), lab_tesseract_trials (11), sis02 (3), m01 (13): 42 rooms. Decisions in docs/agents/POV_BACKGROUNDS_PENDING.md (all answered).
