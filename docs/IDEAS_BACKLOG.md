@@ -81,6 +81,7 @@ From the PIN cracker fix (2026-10-10), found but not fixed:
 
 ## Tooling
 
+- **Catch scenes a hub-parked reopen never reaches** (m03 pass-2 dialogue review, 2026-10-12; S–M). A person-chat NPC that parks at a hub keeps that place for the session, and only its variables survive a reload, so a scene reached from `start` plays for players who reloaded and never for those who didn't (m03's Ffion night scene, D4-1). Other missions may have the same gap. A reopencheck or validator rule could flag it, and a general whole-route driver like `scripts/ink_runtime_check/m03_routes/route.js` would let every mission's reviews walk complete routes.
 - **PixelLab pipeline: check facing after the bust pick** (portrait facing audit, 2026-10-04; S). Every portrait source must face right (the engine mirrors NPCs, not the player), but five sets faced left until the audit: David Osei, Mr Ahmed, Mr Pryce, Ms Chen and the generic male office worker. `pick <name> bust` should show the bust beside its mirror and ask which way it faces, or warn on a left-facing guess, before talk and viseme sheets are built from it. Patients in bed count by where the face looks, not which side of the pillow the head is on.
 
 - **Stacked-text check should read `mutuallyExclusiveGlobals`, and credit coverage should accept complementary conditions** (new-check fixes; S). Both checks still flag cases the agents showed are fine (m02 make_ransom_decision; credit sections split on x / !x).
