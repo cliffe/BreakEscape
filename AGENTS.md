@@ -40,6 +40,8 @@ Most work here is iterative, and there is more than one loop. Decide which stage
 
 **How a round works, whatever the stage.** A fresh reviewer (Opus, read-only) runs the stage's skill in full and tags each finding blocker, major or minor with file:line. A fixer acts on the findings; resume the same fixer between rounds so it keeps its context. Then a new reviewer checks again. Record each round in the log as a severity table with counts, and give every finding an outcome: fixed, withdrawn and why, or deferred and why. Round 3 at least confirms that the earlier findings are closed. Keep going while blockers or majors still turn up, stop at round 5, and list whatever is left as open.
 
+**Design-heavy stages want more cycles** (user, 2026-10-12). Dialogue, puzzle chains, room dressing and lighting improve with each full design → implement → review cycle, so aim for about five cycles there, not the three-round minimum. Each cycle should be a real improvement pass, not only a confirmation. Mechanical stages (the character pipeline, audio, a pre-commit check) need only enough rounds to be correct.
+
 ### The five-phase improvement loop (an existing mission)
 
 Use this to bring a playable mission up to standard. m03 was the first full run (`docs/agents/M03_IMPROVEMENT_PROMPT.md` is the reusable orchestrator prompt; `scenarios/m03_ghost_in_the_machine/IMPROVEMENT_LOOP_LOG.md` is the model log). m02 and sis02 went through the same stages.
@@ -56,6 +58,7 @@ Use this to bring a playable mission up to standard. m03 was the first full run 
 - **An editorial pass over several finished missions** (pass 4): design review → fixer → re-review and playtest → dialogue writer → script editor → dialogue playtest. See "The editorial loop" below.
 - **A SIS game**: `docs/agents/SIS_IMPROVEMENT_PLAYBOOK.md` (rooms, dialogue review, the user's decisions batched, fix pass, review and playtest loop, lab sheet, cast, a second dialogue review, audio). Judge against the SIS aims above, not the spy campaign.
 - **Art and atmosphere, in this order:** `mission-room-dressing` (render → critique → fix → verify), then `mission-room-lighting` (design → review → implement → 2–4 visual review rounds, stopping after round two once nothing is above minor; `docs/agents/LIGHTING_PASS_BRIEF.md`), then `room-pov-background` last, because it copies the final layout and mood.
+- **Characters** (`pixellab-character-pipeline`): every NPC gets the v2 pipeline (dialogue bust, talk sheet and/or visemes, 8-direction walk with the standard animations, facing checked). It can run alongside the other art stages because it touches only character assets, and it needs fewer review iterations: check each character's frames and facing once, repair, move on.
 - **Lab sheet** (`mission-lab-sheet`): once the game has settled, followed by an independent audit against the game files.
 - **Audio** (`tts-audio`): last of all, after the words have stopped changing, and only when the user agrees to the cost.
 
