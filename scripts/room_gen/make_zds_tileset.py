@@ -18,7 +18,9 @@ business, has dark slate walls. The floors tell the rooms apart:
   room_zds_hall     the lobby's stone floor for the corridors (no inlay in the rows a hall uses)
   room_zds_exec     walnut parquet (chevron) with a navy and gold rug under the
                     CEO's desk and visitor chairs
-  room_zds_raised   dark raised access floor, perforated cold-aisle row, slate walls
+  room_zds_raised   dark raised access floor, perforated cold-aisle rows, a hazard line
+                    round the production rack row, slate walls
+  room_zds_office_floor  the carpet with a worn rug where Danny has been living
 
 Every sheet keeps room6's tile layout, so a map points its room6 tileset at one
 of these images and keeps ROOM6_FIRSTGID. The north wall is raised to the
@@ -243,6 +245,31 @@ def paint_rug_modern(op, box):
             op[x, y] = (*c, 255)
 
 
+def paint_hazard_border(op, box, width=2):
+    """Yellow and black diagonal hazard line round a box (x0, y0, x1, y1 exclusive)."""
+    x0, y0, x1, y1 = box
+    for y in range(y0, y1):
+        for x in range(x0, x1):
+            d = min(x - x0, y - y0, x1 - 1 - x, y1 - 1 - y)
+            if d < width and is_floor(x, y):
+                op[x, y] = (*((222, 186, 40) if ((x + y) // 4) % 2 == 0 else (40, 36, 30)), 255)
+
+
+def paint_rug_worn(op, box):
+    """A cheap oatmeal-grey rug, a darker border, scuffed."""
+    x0, y0, x1, y1 = box
+    edge, field, scuff = (70, 66, 60), (112, 106, 96), (124, 118, 108)
+    for y in range(y0, y1):
+        for x in range(x0, x1):
+            d = min(x - x0, y - y0, x1 - 1 - x, y1 - 1 - y)
+            if d <= 2:
+                c = edge
+            else:
+                h = hashxy(x, y)
+                c = scuff if h % 9 == 0 else ((98, 92, 84) if h % 23 == 0 else field)
+            op[x, y] = (*c, 255)
+
+
 def main():
     front = base_walls(FRONT_WALLS)
     server = base_walls(SERVER_WALLS)
@@ -251,7 +278,8 @@ def main():
     lobby = paint_floor(front, stone_pixel)
     sheets["room_zds_hall"] = lobby.copy()  # before the decals: halls use rows 0-4 and 9
     paint_inlay(lobby.load(), 160, 200, 22)
-    paint_slat_wall(lobby.load(), 98, 222)   # behind the front desk (room_zds_reception)
+    paint_slat_wall(lobby.load(), 110, 224)  # behind the front desk (room_zds_reception)
+    paint_rug_modern(lobby.load(), (82, 232, 238, 308))  # under the waiting area
     sheets["room_zds_lobby"] = lobby
 
     sheets["room_zds_carpet"] = paint_floor(front, CARPET_SLATE)
@@ -261,10 +289,16 @@ def main():
 
     exec_ = paint_floor(front, parquet_pixel)
     # under the CEO's desk and the visitor chairs (room_zds_ceo)
-    paint_rug(exec_.load(), (92, 100, 228, 214))
+    paint_rug(exec_.load(), (92, 92, 228, 206))
     sheets["room_zds_exec"] = exec_
 
-    sheets["room_zds_raised"] = paint_floor(server, raised_pixel)
+    raised = paint_floor(server, raised_pixel)
+    # restricted zone: a hazard line round the production row (room_zds_servers middle row)
+    paint_hazard_border(raised.load(), (28, 112, 194, 190))
+    sheets["room_zds_raised"] = raised
+    danny = paint_floor(front, CARPET_SLATE)
+    paint_rug_worn(danny.load(), (112, 208, 264, 296))  # the floor he lives on (room_zds_office)
+    sheets["room_zds_office_floor"] = danny
 
     for name, img in sheets.items():
         path = OUT_DIR / f"{name}.png"

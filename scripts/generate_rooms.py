@@ -341,10 +341,11 @@ UNI_FLOOR_SHEETS = {
 ZDS_FLOOR_SHEETS = {
     "room_zds_reception": "room_zds_lobby",      # polished stone, hat-mark inlay at the spawn
     "room_zds_conference": "room_zds_boardroom",  # carpet with a rug under the table
-    "room_zds_office": "room_zds_carpet",
+    "room_zds_office": "room_zds_office_floor",  # carpet with a worn rug
     "room_zds_ceo": "room_zds_exec",             # walnut parquet, navy and gold rug under the desk
     "room_zds_servers": "room_zds_raised",       # raised access floor, two cold aisles
     "room_zds_hall": "room_zds_hall",            # the lobby's stone, no decals
+    "room_zds_hall_exec": "room_zds_carpet",     # the executive wing is carpeted
 }
 
 
@@ -841,6 +842,8 @@ WALL_MOUNTED_EXTRAS = {
     "market_board",
     "threat_map",
     "magazine_cover",
+    "private_sign",
+    "restricted_sign",
 }
 
 
@@ -2597,16 +2600,17 @@ def room_uni_staff():
 
 def room_zds_reception():
     """
-    2×2 GU lobby. Back wall: the founding plaque by the N door, a walnut slat
-    feature wall (painted into room_zds_lobby, x 98-222) carrying the WHITEHAT
-    sign over a long black reception counter with a cyan light strip, a trophy
-    cabinet of industry awards under a CCTV camera. Floor: a brochure rack by
+    2×2 GU lobby. Back wall: a trophy cabinet of industry awards by the N door, a
+    walnut slat feature wall (painted into room_zds_lobby, x 110-224) carrying the
+    WHITEHAT sign over a long black reception counter with a cyan light strip, the
+    founding plaque east of it, a CCTV camera. A charcoal rug (in the sheet)
+    anchors the waiting area. Floor: a brochure rack by
     the west wall, the hat-mark inlay (160, 200) kept clear for the spawn, a
     waiting area along the south edge (black leather sofa facing a glass coffee
     table, a club chair either side facing in), a bean-to-cup coffee machine,
     concrete planters with fig trees in the south corners.
     Door: N (NW corner, kept clear to y 96). Nothing to the south. The
-    receptionist stands at (7.1, 4.9), clear floor right of the counter.
+    receptionist (ffion_rees) stands at (7.5, 4.9), clear floor right of the counter.
     Cycle 2 (2026-10-12): the counter grew from 63 to 110 px, the slat wall went
     behind it, the threat map moved to the corridor, the waiting area moved to the
     south edge and the plaque moved off the desk span so it stays in reach.
@@ -2614,10 +2618,13 @@ def room_zds_reception():
     wall below the door row (Building Directory).
     """
     r = _Uni()
-    desk = r.table("reception_counter1", 105.0, 116.0, kind="objects")  # x 105-215, top 72
-    r.item("plaque1", 70.0, 52.0)                    # founding plaque, beside the N door, in reach
-    r.item("whitehat_sign1", 128.0, 40.0)            # on the slat wall, over the counter
-    r.item("trophy_cabinet1", 232.0, 84.0)           # awards, against the back wall
+    desk = r.table("reception_counter1", 112.0, 116.0, kind="objects")  # x 112-222, top 72
+    r.item("trophy_cabinet1", 66.0, 84.0)            # awards, against the back wall by the N door (decor, no tap)
+    r.item("whitehat_sign1", 135.0, 40.0)            # on the slat wall, over the counter
+    # founding plaque east of the slat wall: 32px+ from the N door's tap point (cycle 3,
+    # regression B2 F-1: at x 70 it shared a pick-one menu with the door) and clear of
+    # the counter, so it is in reach from the floor in front of it (x 226-254, y 64-90)
+    r.item("plaque1", 230.0, 52.0)
     r.item("cctv_camera1", 280.0, 32.0)              # watching the lobby
     r.item("uni_directory1", 14.0, 134.0)            # west wall, below the N door's column
     r.item("brochure_rack1", 36.0, 204.0)            # "our services" brochures, under the directory
@@ -2662,7 +2669,10 @@ def room_zds_conference():
     for x in (84.0, 117.0, 150.0):
         r.item("exec_chair_black1", x, 238.0)        # north side, facing the viewer
     for x in (78.0, 152.0):
-        r.item("chair-exec-rotate5", x, 306.0)       # south side, seen from behind
+        # south side, seen from behind. exec_chair_back1 is a static copy of
+        # chair-exec-rotate5: swivel chair-* sprites are tappable and joined the
+        # Presentation Materials pick-one menu (regression B2 F-3)
+        r.item("exec_chair_back1", x, 306.0)
     r.item("flip_chart1", 258.0, 206.0)
     r.item("fig_plant1", 262.0, 300.0)
     r.item("fire_alarm_point1", 14.0, 140.0)         # west wall
@@ -2742,8 +2752,10 @@ def room_zds_ceo():
     r.item("floor_globe1", 212.0, 152.0)             # east of the desk, off the rug
     r.item("leather_sofa1", 40.0, 230.0)             # seating area, bottom left
     r.table("glass_coffee_table1", 110.0, 240.0, kind="objects")
-    r.item("chair-exec-rotate5", 124.0, 218.0)       # visitor chairs facing the desk (seen from behind)
-    r.item("chair-exec-rotate5", 160.0, 218.0)
+    # visitor chairs facing the desk, seen from behind: static copies, so neither joins
+    # the Desk Drawer's pick-one menu (regression B2 F-2/F-3)
+    r.item("exec_chair_back1", 124.0, 218.0)
+    r.item("exec_chair_back1", 160.0, 218.0)
     r.item("trophy_cabinet1", 214.0, 250.0)          # more awards, west of the door lane
     r.on(desk, "pc11", 0.25, 0.32)
     # the drawer overlay: the desk's own right pedestal (sprite x 43-58, y 35-49)
@@ -2791,6 +2803,8 @@ def room_zds_servers():
     r.item("aircon_unit1", 220.0, 254.0)             # precision cooling, west of the door lane
     r.item("suppression_cylinders1", 36.0, 252.0)
     r.item("suppression_panel1", 14.0, 230.0)        # west wall, by the cylinders
+    r.item("restricted_sign1", 14.0, 158.0)          # west wall at the production row's end
+    # the production row is fenced on the floor by a hazard line (room_zds_raised)
     r.on(op, "vm-launcher", 0.45, 0.32, layer="conditional_table_items")
     r.on(bench, "workstation", 0.18, 0.36, layer="conditional_table_items")
     r.on(bench, "flag-station", 0.85, 0.36, layer="conditional_table_items")
@@ -2817,6 +2831,28 @@ def room_zds_hall():
     r.item("water_cooler1", 192.0, 74.0)
     r.item("planter_fig1", 220.0, 76.0)
     return r.build("room_zds_hall", "10x6_hall")
+
+
+def room_zds_hall_exec():
+    """
+    2×1 GU (10×6) executive-wing corridor (m03 executive_wing_hallway): the quiet,
+    carpeted end of the building, no brand sign. Framed prints and a clock, a
+    fire point, a fig in a concrete planter, and a PRIVATE plate by the NE door
+    to the CEO's office. A 10×10 room to the south covers all but y 64-128, so
+    everything is on or against the back wall.
+    Doors: N (NE corner, x 256-288 clear), S (SW corner), W and E on row 2. The
+    night guard's patrol (tiles (6,3), (3,4), (5,3)) runs through y 96-128,
+    clear of the planter (feet 76).
+    No scenario slots.
+    """
+    r = _Uni()
+    r.item("picture12", 48.0, 44.0)
+    r.item("wall_clock1", 86.0, 46.0)
+    r.item("picture10", 128.0, 46.0)
+    r.item("fire_alarm_point1", 156.0, 52.0)
+    r.item("planter_fig1", 178.0, 76.0)
+    r.item("private_sign1", 216.0, 42.0)             # beside the CEO's door
+    return r.build("room_zds_hall_exec", "10x6_hall")
 
 
 def main():
@@ -2855,6 +2891,7 @@ def main():
         "room_zds_ceo": room_zds_ceo,
         "room_zds_servers": room_zds_servers,
         "room_zds_hall": room_zds_hall,
+        "room_zds_hall_exec": room_zds_hall_exec,
     }
     # Optionally restrict to specific rooms (argv) so already-updated rooms are
     # not clobbered, e.g.  python3 scripts/generate_rooms.py room_hospital_hall

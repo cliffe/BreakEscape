@@ -321,6 +321,18 @@
                  "width":14,
                  "x":14,
                  "y":230
+                }, 
+                {
+                 "gid":1036,
+                 "height":22,
+                 "id":21,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":14,
+                 "y":158
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -347,7 +359,7 @@
                 {
                  "gid":382,
                  "height":23,
-                 "id":21,
+                 "id":22,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -359,7 +371,7 @@
                 {
                  "gid":381,
                  "height":18,
-                 "id":22,
+                 "id":23,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -371,7 +383,7 @@
                 {
                  "gid":387,
                  "height":19,
-                 "id":23,
+                 "id":24,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -409,7 +421,7 @@
          "y":0
         }],
  "nextlayerid":14,
- "nextobjectid":24,
+ "nextobjectid":25,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.2",
@@ -2881,8 +2893,8 @@
          "margin":0,
          "name":"objects\/hospital_extras",
          "spacing":0,
-         "tilecount":224,
-         "tileheight":63,
+         "tilecount":227,
+         "tileheight":64,
          "tiles":[
                 {
                  "id":0,
@@ -4222,7 +4234,7 @@
                 {
                  "id":229,
                  "image":"..\/objects\/coffee_cups1.png",
-                 "imageheight":23,
+                 "imageheight":20,
                  "imagewidth":21
                 },
             
@@ -4249,6 +4261,24 @@
                  "image":"..\/objects\/zds_desk3.png",
                  "imageheight":39,
                  "imagewidth":51
+                }, 
+                {
+                 "id":234,
+                 "image":"..\/objects\/private_sign1.png",
+                 "imageheight":11,
+                 "imagewidth":35
+                }, 
+                {
+                 "id":235,
+                 "image":"..\/objects\/restricted_sign1.png",
+                 "imageheight":22,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":236,
+                 "image":"..\/objects\/exec_chair_back1.png",
+                 "imageheight":64,
+                 "imagewidth":38
                 }],
          "tilewidth":252
         }],

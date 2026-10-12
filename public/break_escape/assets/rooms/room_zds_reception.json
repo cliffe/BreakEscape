@@ -79,7 +79,7 @@
                  "type":"",
                  "visible":true,
                  "width":110,
-                 "x":105,
+                 "x":112,
                  "y":116
                 }, 
                 {
@@ -106,16 +106,16 @@
          "name":"items",
          "objects":[
                 {
-                 "gid":854,
-                 "height":17,
+                 "gid":1007,
+                 "height":62,
                  "id":2,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":24,
-                 "x":70,
-                 "y":52
+                 "width":44,
+                 "x":66,
+                 "y":84
                 }, 
                 {
                  "gid":1001,
@@ -126,20 +126,20 @@
                  "type":"",
                  "visible":true,
                  "width":65,
-                 "x":128,
+                 "x":135,
                  "y":40
                 }, 
                 {
-                 "gid":1007,
-                 "height":62,
+                 "gid":854,
+                 "height":17,
                  "id":4,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":44,
-                 "x":232,
-                 "y":84
+                 "width":24,
+                 "x":230,
+                 "y":52
                 }, 
                 {
                  "gid":886,
@@ -316,7 +316,7 @@
                  "type":"",
                  "visible":true,
                  "width":14,
-                 "x":115.6,
+                 "x":122.6,
                  "y":87.84
                 }, 
                 {
@@ -328,7 +328,7 @@
                  "type":"",
                  "visible":true,
                  "width":10,
-                 "x":188,
+                 "x":195,
                  "y":87.84
                 }],
          "opacity":1,
@@ -2821,8 +2821,8 @@
          "margin":0,
          "name":"objects\/hospital_extras",
          "spacing":0,
-         "tilecount":224,
-         "tileheight":63,
+         "tilecount":227,
+         "tileheight":64,
          "tiles":[
                 {
                  "id":0,
@@ -4162,7 +4162,7 @@
                 {
                  "id":229,
                  "image":"..\/objects\/coffee_cups1.png",
-                 "imageheight":23,
+                 "imageheight":20,
                  "imagewidth":21
                 },
             
@@ -4189,6 +4189,24 @@
                  "image":"..\/objects\/zds_desk3.png",
                  "imageheight":39,
                  "imagewidth":51
+                }, 
+                {
+                 "id":234,
+                 "image":"..\/objects\/private_sign1.png",
+                 "imageheight":11,
+                 "imagewidth":35
+                }, 
+                {
+                 "id":235,
+                 "image":"..\/objects\/restricted_sign1.png",
+                 "imageheight":22,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":236,
+                 "image":"..\/objects\/exec_chair_back1.png",
+                 "imageheight":64,
+                 "imagewidth":38
                 }],
          "tilewidth":252
         }],

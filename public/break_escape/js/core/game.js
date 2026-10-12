@@ -112,6 +112,7 @@ export function preload() {
     this.load.tilemapTiledJSON('room_zds_ceo', 'rooms/room_zds_ceo.json'); // m03 CEO office: mahogany desk, portrait, filing cabinet, drinks cabinet, rug (2x2 GU)
     this.load.tilemapTiledJSON('room_zds_servers', 'rooms/room_zds_servers.json'); // m03 server room: two rack rows, marketplace board, wall safe, VM desk, ops bench (2x2 GU)
     this.load.tilemapTiledJSON('room_zds_hall', 'rooms/room_zds_hall.json'); // m03 corridor: threat map, WHITEHAT sign, water cooler, planter (2x1 GU, 10x6)
+    this.load.tilemapTiledJSON('room_zds_hall_exec', 'rooms/room_zds_hall_exec.json'); // m03 executive-wing corridor: carpet, prints, clock, PRIVATE plate (2x1 GU, 10x6)
 
     // Load room images (now using smaller 32px scale images)
     this.load.image('room_reception', 'tiles/rooms/room1.png');
@@ -137,6 +138,7 @@ export function preload() {
     this.load.image('room_zds_raised', 'tiles/rooms/room_zds_raised.png'); // m03: raised floor, slate walls
     this.load.image('room_zds_boardroom', 'tiles/rooms/room_zds_boardroom.png'); // m03: carpet with a charcoal rug under the boardroom table
     this.load.image('room_zds_hall', 'tiles/rooms/room_zds_hall.png'); // m03: the lobby stone without decals, for the corridors
+    this.load.image('room_zds_office_floor', 'tiles/rooms/room_zds_office_floor.png'); // m03: carpet with a worn rug (Danny's office)
     this.load.image('room14', 'tiles/rooms/room14.png');
     this.load.image('room19', 'tiles/rooms/room19.png');
     this.load.image('door_32', 'tiles/door_32.png');
@@ -788,6 +790,9 @@ export function preload() {
     this.load.image('book_pile1', 'objects/book_pile1.png');
     this.load.image('zds_desk1', 'objects/zds_desk1.png');
     this.load.image('zds_desk3', 'objects/zds_desk3.png');
+    this.load.image('private_sign1', 'objects/private_sign1.png');
+    this.load.image('restricted_sign1', 'objects/restricted_sign1.png');
+    this.load.image('exec_chair_back1', 'objects/exec_chair_back1.png');
     this.load.image('backup_recovery',         'objects/backup_recovery.png');
     this.load.image('dual_auth',               'objects/dual_auth.png');
     this.load.image('ehr-terminal',            'objects/ehr-terminal.png');

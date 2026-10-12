@@ -3132,11 +3132,11 @@
   {
    "columns": 10,
    "firstgid": 701,
-   "image": "../tiles/rooms/room_zds_carpet.png",
+   "image": "../tiles/rooms/room_zds_office_floor.png",
    "imageheight": 320,
    "imagewidth": 320,
    "margin": 0,
-   "name": "room_zds_carpet",
+   "name": "room_zds_office_floor",
    "spacing": 0,
    "tilecount": 100,
    "tileheight": 32,
@@ -3153,7 +3153,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 224,
+   "tilecount": 227,
    "tileheight": 60,
    "tiles": [
     {
@@ -4499,6 +4499,24 @@
      "image": "../objects/zds_desk3.png",
      "imageheight": 39,
      "imagewidth": 51
+    },
+    {
+     "id": 234,
+     "image": "../objects/private_sign1.png",
+     "imageheight": 11,
+     "imagewidth": 35
+    },
+    {
+     "id": 235,
+     "image": "../objects/restricted_sign1.png",
+     "imageheight": 22,
+     "imagewidth": 16
+    },
+    {
+     "id": 236,
+     "image": "../objects/exec_chair_back1.png",
+     "imageheight": 64,
+     "imagewidth": 38
     }
    ],
    "tilewidth": 60

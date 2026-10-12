@@ -214,7 +214,7 @@
                  "y":230
                 }, 
                 {
-                 "gid":443,
+                 "gid":1037,
                  "height":64,
                  "id":12,
                  "name":"",
@@ -227,7 +227,7 @@
                 },
             
                 {
-                 "gid":443,
+                 "gid":1037,
                  "height":64,
                  "id":13,
                  "name":"",
@@ -2797,8 +2797,8 @@
          "margin":0,
          "name":"objects\/hospital_extras",
          "spacing":0,
-         "tilecount":224,
-         "tileheight":63,
+         "tilecount":227,
+         "tileheight":64,
          "tiles":[
                 {
                  "id":0,
@@ -4138,7 +4138,7 @@
                 {
                  "id":229,
                  "image":"..\/objects\/coffee_cups1.png",
-                 "imageheight":23,
+                 "imageheight":20,
                  "imagewidth":21
                 },
             
@@ -4165,6 +4165,24 @@
                  "image":"..\/objects\/zds_desk3.png",
                  "imageheight":39,
                  "imagewidth":51
+                }, 
+                {
+                 "id":234,
+                 "image":"..\/objects\/private_sign1.png",
+                 "imageheight":11,
+                 "imagewidth":35
+                }, 
+                {
+                 "id":235,
+                 "image":"..\/objects\/restricted_sign1.png",
+                 "imageheight":22,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":236,
+                 "image":"..\/objects\/exec_chair_back1.png",
+                 "imageheight":64,
+                 "imagewidth":38
                 }],
          "tilewidth":252
         }],

@@ -362,7 +362,7 @@
      "type": "",
      "visible": true,
      "width": 110,
-     "x": 105.0,
+     "x": 112.0,
      "y": 116.0
     },
     {
@@ -390,16 +390,16 @@
    "name": "items",
    "objects": [
     {
-     "gid": 854,
-     "height": 17,
+     "gid": 1007,
+     "height": 62,
      "id": 2,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 24,
-     "x": 70.0,
-     "y": 52.0
+     "width": 44,
+     "x": 66.0,
+     "y": 84.0
     },
     {
      "gid": 1001,
@@ -410,20 +410,20 @@
      "type": "",
      "visible": true,
      "width": 65,
-     "x": 128.0,
+     "x": 135.0,
      "y": 40.0
     },
     {
-     "gid": 1007,
-     "height": 62,
+     "gid": 854,
+     "height": 17,
      "id": 4,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 44,
-     "x": 232.0,
-     "y": 84.0
+     "width": 24,
+     "x": 230.0,
+     "y": 52.0
     },
     {
      "gid": 886,
@@ -600,7 +600,7 @@
      "type": "",
      "visible": true,
      "width": 14,
-     "x": 115.6,
+     "x": 122.6,
      "y": 87.84
     },
     {
@@ -612,7 +612,7 @@
      "type": "",
      "visible": true,
      "width": 10,
-     "x": 188.0,
+     "x": 195.0,
      "y": 87.84
     }
    ],
@@ -3068,7 +3068,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 224,
+   "tilecount": 227,
    "tileheight": 60,
    "tiles": [
     {
@@ -4388,7 +4388,7 @@
     {
      "id": 229,
      "image": "../objects/coffee_cups1.png",
-     "imageheight": 23,
+     "imageheight": 20,
      "imagewidth": 21
     },
     {
@@ -4414,6 +4414,24 @@
      "image": "../objects/zds_desk3.png",
      "imageheight": 39,
      "imagewidth": 51
+    },
+    {
+     "id": 234,
+     "image": "../objects/private_sign1.png",
+     "imageheight": 11,
+     "imagewidth": 35
+    },
+    {
+     "id": 235,
+     "image": "../objects/restricted_sign1.png",
+     "imageheight": 22,
+     "imagewidth": 16
+    },
+    {
+     "id": 236,
+     "image": "../objects/exec_chair_back1.png",
+     "imageheight": 64,
+     "imagewidth": 38
     }
    ],
    "tilewidth": 60
