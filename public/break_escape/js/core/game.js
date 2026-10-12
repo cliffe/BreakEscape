@@ -795,6 +795,7 @@ export function preload() {
     this.load.image('restricted_sign1', 'objects/restricted_sign1.png');
     this.load.image('exec_chair_back1', 'objects/exec_chair_back1.png');
     this.load.image('usb_bowl1', 'objects/usb_bowl1.png');
+    this.load.image('bar_cart1', 'objects/bar_cart1.png');
     this.load.image('backup_recovery',         'objects/backup_recovery.png');
     this.load.image('dual_auth',               'objects/dual_auth.png');
     this.load.image('ehr-terminal',            'objects/ehr-terminal.png');

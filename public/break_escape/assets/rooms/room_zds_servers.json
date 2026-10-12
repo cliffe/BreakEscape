@@ -357,16 +357,16 @@
          "name":"conditional_table_items",
          "objects":[
                 {
-                 "gid":382,
-                 "height":23,
+                 "gid":370,
+                 "height":28,
                  "id":22,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":28,
-                 "x":214.95,
-                 "y":151.48
+                 "width":37,
+                 "x":210.45,
+                 "y":156.55
                 }, 
                 {
                  "gid":381,
@@ -2893,7 +2893,7 @@
          "margin":0,
          "name":"objects\/hospital_extras",
          "spacing":0,
-         "tilecount":228,
+         "tilecount":229,
          "tileheight":64,
          "tiles":[
                 {
@@ -4285,6 +4285,12 @@
                  "image":"..\/objects\/usb_bowl1.png",
                  "imageheight":8,
                  "imagewidth":13
+                }, 
+                {
+                 "id":238,
+                 "image":"..\/objects\/bar_cart1.png",
+                 "imageheight":45,
+                 "imagewidth":42
                 }],
          "tilewidth":252
         }],

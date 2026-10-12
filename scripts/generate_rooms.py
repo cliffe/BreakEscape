@@ -2652,7 +2652,8 @@ def room_zds_conference():
     wall screen with the firm's deck. A black credenza with a phone and an orchid
     under the west blinds, a fig in a concrete planter, a long walnut table with
     black leather chairs on its north side and swivel chairs seen from behind on
-    its south, a flip chart. Door: E on row 2 (y 64-100 kept clear at x 256+).
+    its south, a flip chart at its east end, a drinks trolley below the E door
+    row. Door: E on row 2 (y 64-100 kept clear at x 256+).
     Nothing to the south. Victoria Sterling stands at (5, 4) (feet about y 116),
     between the whiteboard and the table, where the ink has her
     clone-at-the-whiteboard beat; the floor under the whiteboard (x 96-140,
@@ -2675,7 +2676,8 @@ def room_zds_conference():
         # chair-exec-rotate5: swivel chair-* sprites are tappable and joined the
         # Presentation Materials pick-one menu (regression B2 F-3)
         r.item("exec_chair_back1", x, 306.0)
-    r.item("flip_chart1", 258.0, 206.0)
+    r.item("bar_cart1", 246.0, 158.0)                # drinks trolley for client pitches, below the E door row
+    r.item("flip_chart1", 210.0, 238.0)              # at the table's east end, where a pitch is given
     r.item("fig_plant1", 262.0, 300.0)
     r.item("fire_alarm_point1", 14.0, 140.0)         # west wall
     r.item("power_panel1", 290.0, 152.0)             # east wall below the door row: AV and lighting control
@@ -2779,7 +2781,7 @@ def room_zds_servers():
     lane up from the door stays clear.
     Slots: filing_cabinet_locked1 (as-type, Filing Cabinet), safe4 on the back
     wall (base safe, Wall Safe), whiteboard2 (as-type:whiteboard, Server Room
-    Whiteboard), vm-launcher on the operator desk, workstation and flag-station
+    Whiteboard), pc10 on the operator desk (as-type:pc, VM Access Terminal), workstation and flag-station
     on the bench (top-lefts 32px+ from each other's centres).
     """
     r = _Uni()
@@ -2800,6 +2802,8 @@ def room_zds_servers():
     r.item("server_rack1", 158.0, 182.0)
     # operator desk, east, below the clear floor under the wall fixtures
     op = r.table("zds_desk3", 206.0, 178.0, kind="objects")   # x 206-257, top 139
+    # the VM terminal is a black-bezel monitor (pc10) claimed by as-type:pc, not the
+    # pink vm-launcher sprite, which looked like a toy in this room (cycle 6)
     r.item("chair-darkgray-1", 222.0, 152.0)
     # ops bench, south-west
     bench = r.table("zds_desk1", 96.0, 246.0, kind="objects")  # x 96-174, top 207
@@ -2809,7 +2813,7 @@ def room_zds_servers():
     r.item("suppression_panel1", 14.0, 230.0)        # west wall, by the cylinders
     r.item("restricted_sign1", 162.0, 59.0)          # RESTRICTED plate under the marketplace board
     # the production row is fenced on the floor by a hazard line (room_zds_raised)
-    r.on(op, "vm-launcher", 0.45, 0.32, layer="conditional_table_items")
+    r.on(op, "pc10", 0.45, 0.45, layer="conditional_table_items")   # top-left y 128, where the old terminal was reached
     r.on(bench, "workstation", 0.18, 0.36, layer="conditional_table_items")
     r.on(bench, "flag-station", 0.85, 0.36, layer="conditional_table_items")
     return r.build("room_zds_servers")

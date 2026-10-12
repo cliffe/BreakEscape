@@ -510,21 +510,33 @@
      "y": 306.0
     },
     {
-     "gid": 913,
+     "gid": 1039,
      "height": 45,
      "id": 13,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
+     "width": 42,
+     "x": 246.0,
+     "y": 158.0
+    },
+    {
+     "gid": 913,
+     "height": 45,
+     "id": 14,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
      "width": 26,
-     "x": 258.0,
-     "y": 206.0
+     "x": 210.0,
+     "y": 238.0
     },
     {
      "gid": 1011,
      "height": 59,
-     "id": 14,
+     "id": 15,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -536,7 +548,7 @@
     {
      "gid": 828,
      "height": 20,
-     "id": 15,
+     "id": 16,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -548,7 +560,7 @@
     {
      "gid": 855,
      "height": 22,
-     "id": 16,
+     "id": 17,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -583,7 +595,7 @@
     {
      "gid": 304,
      "height": 16,
-     "id": 17,
+     "id": 18,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -607,7 +619,7 @@
     {
      "gid": 219,
      "height": 16,
-     "id": 18,
+     "id": 19,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -619,7 +631,7 @@
     {
      "gid": 203,
      "height": 14,
-     "id": 19,
+     "id": 20,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -631,7 +643,7 @@
     {
      "gid": 1013,
      "height": 9,
-     "id": 20,
+     "id": 21,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -660,7 +672,7 @@
   }
  ],
  "nextlayerid": 14,
- "nextobjectid": 21,
+ "nextobjectid": 22,
  "orientation": "orthogonal",
  "renderorder": "right-down",
  "tiledversion": "1.11.2",
@@ -3093,7 +3105,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 228,
+   "tilecount": 229,
    "tileheight": 60,
    "tiles": [
     {
@@ -4449,8 +4461,8 @@
     {
      "id": 235,
      "image": "../objects/restricted_sign1.png",
-     "imageheight": 9,
-     "imagewidth": 45
+     "imageheight": 11,
+     "imagewidth": 47
     },
     {
      "id": 236,
@@ -4463,6 +4475,12 @@
      "image": "../objects/usb_bowl1.png",
      "imageheight": 8,
      "imagewidth": 13
+    },
+    {
+     "id": 238,
+     "image": "../objects/bar_cart1.png",
+     "imageheight": 45,
+     "imagewidth": 42
     }
    ],
    "tilewidth": 60
