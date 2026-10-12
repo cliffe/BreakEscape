@@ -1,5 +1,7 @@
 # m03 regression playtest (engine changes, uncommitted)
 
+> **Rename note (2026-10-12, m03 pass 2 dialogue round 2):** m03's receptionist is now Ffion Rees (id `ffion_rees`, ink `m03_npc_ffion_rees.ink`; was `receptionist_npc` / `m03_npc_receptionist.ink`) and the night guard is Terry Mott (id `terry_mott`, ink `m03_npc_terry_mott.ink`; was `night_guard` / `m03_npc_guard.ink`). Old ids below are historical.
+
 Questions answered: 1 (plumbing, with focused unexpected-behaviour probes). Source of steps: `scenarios/m03_ghost_in_the_machine/TESTING_WALKTHROUGH.md` plus the regression brief.
 Headless, `--speed fast`. Harness assisted actions: `debugKO` (guard, receptionist, Victoria) and `completeLockpick` are PASS (assisted).
 

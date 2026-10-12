@@ -1,5 +1,7 @@
 # m03 Ghost in the Machine, pass 2 playtest
 
+> **Rename note (2026-10-12, m03 pass 2 dialogue round 2):** m03's receptionist is now Ffion Rees (id `ffion_rees`, ink `m03_npc_ffion_rees.ink`; was `receptionist_npc` / `m03_npc_receptionist.ink`) and the night guard is Terry Mott (id `terry_mott`, ink `m03_npc_terry_mott.ink`; was `night_guard` / `m03_npc_guard.ink`). Old ids below are historical.
+
 **Questions answered:** plumbing (does the reworked route work), unexpected behaviour (reload, KO, out-of-order), and a partial solvability check. Not a full solvability pass: no VMs in standalone, so flags were handed over, not earned.
 
 **Walkthrough source:** `scenarios/m03_ghost_in_the_machine/TESTING_WALKTHROUGH.md` plus `PASS2_IMPROVEMENTS.md`.

@@ -1,5 +1,7 @@
 # m03 pass-4 playtest report
 
+> **Rename note (2026-10-12, m03 pass 2 dialogue round 2):** m03's receptionist is now Ffion Rees (id `ffion_rees`, ink `m03_npc_ffion_rees.ink`; was `receptionist_npc` / `m03_npc_receptionist.ink`) and the night guard is Terry Mott (id `terry_mott`, ink `m03_npc_terry_mott.ink`; was `night_guard` / `m03_npc_guard.ink`). Old ids below are historical.
+
 Question answered: plumbing (what pass 4 changed) plus some unexpected-behaviour probing. Not a solvability pass (flags are stand-ins).
 Script: scenarios/m03_ghost_in_the_machine/PASS4_PLAYTEST.md. Keyless server :3001.
 

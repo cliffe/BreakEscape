@@ -1,5 +1,7 @@
 # m03 pass-3e confirmation playtest (checks 1 to 6 of the 3c checklist)
 
+> **Rename note (2026-10-12, m03 pass 2 dialogue round 2):** m03's receptionist is now Ffion Rees (id `ffion_rees`, ink `m03_npc_ffion_rees.ink`; was `receptionist_npc` / `m03_npc_receptionist.ink`) and the night guard is Terry Mott (id `terry_mott`, ink `m03_npc_terry_mott.ink`; was `night_guard` / `m03_npc_guard.ink`). Old ids below are historical.
+
 Question answered: plumbing and unexpected-behaviour probing, not solvability. Game 1238, headless, `--speed fast`, one game start to finish.
 Session log: `tools/playtest/m03-pass3e-session.jsonl` (1306 lines). Flags XML: `tools/playtest/m03_ghost_in_the_machine-flags-game1238.xml`. Verify output: `tools/playtest/m03-pass3e-verify-game1238.txt`.
 Server record: status=completed, mission_concluded_at 2026-10-01 12:00:52 UTC (fate: escaped).

@@ -1,5 +1,7 @@
 # Pass 2 (m03–m08): items awaiting approval
 
+> **Rename note (2026-10-12, m03 pass 2 dialogue round 2):** m03's receptionist is now Ffion Rees (id `ffion_rees`, ink `m03_npc_ffion_rees.ink`; was `receptionist_npc` / `m03_npc_receptionist.ink`) and the night guard is Terry Mott (id `terry_mott`, ink `m03_npc_terry_mott.ink`; was `night_guard` / `m03_npc_guard.ink`). Old ids below are historical.
+
 Changes the pass-2 agents did **not** make on their own, because they touch shared engine code, other missions, canon, continuity, new art/VMs/lab sheets, or delete files. Each item gives what, why, evidence, the proposed change, and what happens if it's declined.
 
 Mission-local improvements that were safe to make are recorded in each mission's `PASS2_IMPROVEMENTS.md` instead.

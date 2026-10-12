@@ -1,5 +1,7 @@
 # m03 pass-4 final confirmation playtest
 
+> **Rename note (2026-10-12, m03 pass 2 dialogue round 2):** m03's receptionist is now Ffion Rees (id `ffion_rees`, ink `m03_npc_ffion_rees.ink`; was `receptionist_npc` / `m03_npc_receptionist.ink`) and the night guard is Terry Mott (id `terry_mott`, ink `m03_npc_terry_mott.ink`; was `night_guard` / `m03_npc_guard.ink`). Old ids below are historical.
+
 Question answered: (1) plumbing plus the words on screen, new-player route, after the dialogue round fixes. Not a solvability pass: flags come from the session flags XML (no VMs here).
 
 - Game 1427, keyless :3001, headless. Session log `tools/playtest/m03-final-session-1427.jsonl`. Flags `tools/playtest/m03_ghost_in_the_machine-flags-game1427.xml`. Scratch `scratchpad/m03-final/`. Player name in the harness is "Agent".
