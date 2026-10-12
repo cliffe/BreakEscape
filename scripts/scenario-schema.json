@@ -598,6 +598,20 @@
               "enum": ["bottom_half"],
               "description": "Shrinks the physics body for static-sprite NPCs. 'bottom_half' restricts collision to the lower half of the sprite -- useful for tall prop-style NPCs where only the base should be solid."
             },
+            "torch": {
+              "description": "Lighting: the NPC carries a torch beam the way they face, shown only in a dim room. true, or { condition (globalVars syntax), color }.",
+              "anyOf": [
+                { "type": "boolean" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "condition": { "type": "string" },
+                    "color": { "type": "string" }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
             "patrol": {
               "type": "object",
               "properties": {
