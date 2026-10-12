@@ -446,8 +446,8 @@
      "type": "",
      "visible": true,
      "width": 23,
-     "x": 122.0,
-     "y": 96.0
+     "x": 96.0,
+     "y": 82.0
     },
     {
      "gid": 919,
@@ -673,7 +673,7 @@
      "type": "",
      "visible": true,
      "width": 34,
-     "x": 46.3,
+     "x": 40.84,
      "y": 152.7
     },
     {
@@ -4521,8 +4521,8 @@
     {
      "id": 235,
      "image": "../objects/restricted_sign1.png",
-     "imageheight": 9,
-     "imagewidth": 45
+     "imageheight": 11,
+     "imagewidth": 47
     },
     {
      "id": 236,

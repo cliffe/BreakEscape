@@ -163,7 +163,7 @@
                  "visible":true,
                  "width":16,
                  "x":14,
-                 "y":134
+                 "y":146
                 }, 
                 {
                  "gid":1025,
@@ -4199,8 +4199,8 @@
                 {
                  "id":235,
                  "image":"..\/objects\/restricted_sign1.png",
-                 "imageheight":9,
-                 "imagewidth":45
+                 "imageheight":11,
+                 "imagewidth":47
                 }, 
                 {
                  "id":236,

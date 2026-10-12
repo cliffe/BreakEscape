@@ -2626,7 +2626,9 @@ def room_zds_reception():
     # the counter, so it is in reach from the floor in front of it (x 226-254, y 64-90)
     r.item("plaque1", 230.0, 52.0)
     r.item("cctv_camera1", 280.0, 32.0)              # watching the lobby
-    r.item("uni_directory1", 14.0, 134.0)            # west wall, below the N door's column
+    # west wall, centred on the line a player walks up to it (y 126-146): in range
+    # (13-24 px) from anywhere along it, not just at the edge (regression R-2)
+    r.item("uni_directory1", 14.0, 146.0)
     r.item("brochure_rack1", 36.0, 204.0)            # "our services" brochures, under the directory
     r.item("fire_alarm_point1", 292.0, 132.0)        # east wall
     r.item("fire_extinguisher1", 274.0, 166.0)       # under the call point
@@ -2705,7 +2707,7 @@ def room_zds_office():
     r.item("uni_certificate1", 126.0, 36.0)
     r.item("uni_certificate1", 126.0, 54.0)
     r.item("bookcase", 150.0, 76.0)
-    r.item("book_pile1", 122.0, 96.0)                # overflow from the bookcase
+    r.item("book_pile1", 96.0, 82.0)                 # overflow, stacked against the wall under the whiteboard
     r.item("window_blinds1", 200.0, 50.0)
     r.item("binder_shelves1", 244.0, 84.0)
     r.item("chair-grey-1", 62.0, 156.0)              # his chair, behind the desk
@@ -2720,7 +2722,7 @@ def room_zds_office():
     r.item("coat_stand1", 270.0, 220.0)
     r.item("fire_alarm_point1", 292.0, 132.0)        # east wall
     r.on(desk, "office-misc-lamp4", 0.07, 0.22)      # his desk lamp: the only light in the night scene
-    r.on(desk, "pc8", 0.35, 0.30)
+    r.on(desk, "pc8", 0.28, 0.30)                    # further from the photo (regression R-4)
     r.on(desk, "picture5", 0.88, 0.36)
     r.on(desk, "coffee_cups1", 0.62, 0.42)
     r.on(side, "notes1", 0.5, 0.40, layer="conditional_table_items")
@@ -2787,7 +2789,7 @@ def room_zds_servers():
     r.item("server_rack2", 98.0, 86.0)
     r.item("storage_array1", 128.0, 86.0)
     r.item("cable_tray1", 36.0, 26.0)                # over the back row
-    r.item("market_board1", 164.0, 50.0)             # the marketplace's live board
+    r.item("market_board1", 164.0, 48.0)             # the marketplace's live board
     r.item("safe4", 214.0, 56.0)                     # wall safe
     r.item("whiteboard2", 244.0, 54.0)
     # middle row, west half (racks face the second cold aisle)
@@ -2805,7 +2807,7 @@ def room_zds_servers():
     r.item("aircon_unit1", 220.0, 254.0)             # precision cooling, west of the door lane
     r.item("suppression_cylinders1", 36.0, 252.0)
     r.item("suppression_panel1", 14.0, 230.0)        # west wall, by the cylinders
-    r.item("restricted_sign1", 163.0, 59.0)          # RESTRICTED plate under the marketplace board
+    r.item("restricted_sign1", 162.0, 59.0)          # RESTRICTED plate under the marketplace board
     # the production row is fenced on the floor by a hazard line (room_zds_raised)
     r.on(op, "vm-launcher", 0.45, 0.32, layer="conditional_table_items")
     r.on(bench, "workstation", 0.18, 0.36, layer="conditional_table_items")
@@ -2839,22 +2841,22 @@ def room_zds_hall_exec():
     """
     2×1 GU (10×6) executive-wing corridor (m03 executive_wing_hallway): the quiet,
     carpeted end of the building, no brand sign. A burgundy runner down the
-    corridor (in the sheet, y 82-114), a black console table against the wall, a
-    clock and a framed print, a fire point, a fig in a concrete planter, and a
-    PRIVATE plate by the NE door to the CEO's office. A 10×10 room to the south covers all but y 64-128, so
+    corridor (in the sheet, y 82-114), a walnut sideboard against the wall, a
+    clock and a framed print, a fire point, and a PRIVATE plate by the NE door to
+    the CEO's office. A 10×10 room to the south covers all but y 64-128, so
     everything is on or against the back wall.
     Doors: N (NE corner, x 256-288 clear), S (SW corner), W and E on row 2. The
-    night guard's patrol (tiles (6,3), (3,4), (5,3)) runs through y 96-128,
-    clear of the planter (feet 76).
+    night guard (terry_mott) patrols tiles (6,3), (3,4), (5,3) along the runner,
+    in front of the wall pieces (he carries a torch at night).
     No scenario slots.
     """
     r = _Uni()
     r.item("fire_alarm_point1", 40.0, 52.0)
-    r.item("credenza1", 60.0, 78.0)                  # console against the wall: phone, orchid, books
-    r.item("wall_clock1", 130.0, 46.0)
-    r.item("picture10", 164.0, 46.0)
-    r.item("planter_fig1", 186.0, 76.0)
-    r.item("private_sign1", 220.0, 42.0)             # beside the CEO's door (NE, x 256+)
+    r.item("sideboard1", 58.0, 78.0)                 # walnut sideboard with water and glasses (the boardroom has the black credenza)
+    r.item("wall_clock1", 120.0, 46.0)
+    r.item("picture10", 160.0, 46.0)
+    r.item("private_sign1", 218.0, 42.0)             # beside the CEO's door (NE, x 256+)
+    # no floor planter: Terry's waypoints (x 80-208, feet 84-116) would stand him on it
     return r.build("room_zds_hall_exec", "10x6_hall")
 
 

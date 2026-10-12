@@ -82,15 +82,15 @@
                  "y":52
                 }, 
                 {
-                 "gid":1021,
-                 "height":51,
+                 "gid":873,
+                 "height":46,
                  "id":2,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":62,
-                 "x":60,
+                 "width":44,
+                 "x":58,
                  "y":78
                 }, 
                 {
@@ -102,7 +102,7 @@
                  "type":"",
                  "visible":true,
                  "width":25,
-                 "x":130,
+                 "x":120,
                  "y":46
                 }, 
                 {
@@ -114,31 +114,19 @@
                  "type":"",
                  "visible":true,
                  "width":17,
-                 "x":164,
+                 "x":160,
                  "y":46
                 }, 
                 {
-                 "gid":1024,
-                 "height":61,
+                 "gid":1035,
+                 "height":11,
                  "id":5,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":32,
-                 "x":186,
-                 "y":76
-                }, 
-                {
-                 "gid":1035,
-                 "height":11,
-                 "id":6,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
                  "width":35,
-                 "x":220,
+                 "x":218,
                  "y":42
                 }],
          "opacity":1,
@@ -192,7 +180,7 @@
          "y":0
         }],
  "nextlayerid":14,
- "nextobjectid":7,
+ "nextobjectid":6,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.2",
@@ -4042,8 +4030,8 @@
                 {
                  "id":235,
                  "image":"..\/objects\/restricted_sign1.png",
-                 "imageheight":9,
-                 "imagewidth":45
+                 "imageheight":11,
+                 "imagewidth":47
                 }, 
                 {
                  "id":236,

@@ -677,7 +677,7 @@
   <image source="../objects/private_sign1.png" width="35" height="11"/>
  </tile>
  <tile id="235">
-  <image source="../objects/restricted_sign1.png" width="45" height="9"/>
+  <image source="../objects/restricted_sign1.png" width="47" height="11"/>
  </tile>
  <tile id="236">
   <image source="../objects/exec_chair_back1.png" width="38" height="64"/>

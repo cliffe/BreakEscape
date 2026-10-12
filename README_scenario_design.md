@@ -256,7 +256,7 @@ The `type` field of each room must match a file in `public/break_escape/assets/r
 | `room_zds_ceo` | Zero Day CEO office, m03 (2×2 GU) — walnut parquet and rug, mahogany desk, her portrait between blinds, bookcase, locked filing cabinet, drinks cabinet, leather sofa; door S (SE corner). Slots: `filing_cabinet_locked` (as-type), `pc` on the desk, conditional `exec_desk_drawer` over the desk pedestal (as-type) |
 | `room_zds_servers` | Zero Day server room, m03 (2×2 GU) — slate walls, raised floor, two rack rows, cable tray, marketplace wall screen, operator desk, ops bench, KVM cart, gas suppression; door S (SE corner). Slots: `filing_cabinet_locked` (as-type), wall `safe`, wall `whiteboard` (as-type), conditional `vm-launcher`, `workstation`, `flag-station` |
 | `room_zds_hall` | Zero Day corridor, m03 (2×1 GU, 10×6) — stone floor, threat-map screen, WHITEHAT sign, water cooler, planter, all against the back wall; doors N (NE corner), S (SW corner), W and E on row 2. No scenario slots |
-| `room_zds_hall_exec` | Zero Day executive-wing corridor, m03 (2×1 GU, 10×6) — carpet with a runner, console table, print, clock, fire point, planter, PRIVATE plate by the NE door; doors N (NE corner), S (SW corner), W and E on row 2. No scenario slots |
+| `room_zds_hall_exec` | Zero Day executive-wing corridor, m03 (2×1 GU, 10×6) — carpet with a runner, walnut sideboard, print, clock, fire point, PRIVATE plate by the NE door; doors N (NE corner), S (SW corner), W and E on row 2. No scenario slots |
 | `small_office_room1_1x1gu` | Small private office (1×1 GU) |
 | `small_office_room2_1x1gu` | Small private office variant 2 |
 | `small_office_room3_1x1gu` | Small private office variant 3 |
