@@ -1900,3 +1900,14 @@ E4 as its own change set (`public/break_escape/js/systems/npc-los.js` only), the
 
 - VM Access Terminal: pink `vm-launcher` sprite replaced by a black monitor (`pc10`, `as-type:pc`, one scenario field). Conference: flip chart to the table's east end, drinks trolley by the E wall.
 - Reception untouched. Checks clean. Shots `build_evidence/dressing_c6/`.
+
+## Room dressing, cycle 7 (2026-10-12): confirmation
+
+| Severity | Found | Fixed | Deferred |
+|---|---|---|---|
+| Blocker | 0 | 0 | 0 |
+| Major | 0 | 0 | 0 |
+| Minor | 1 | 0 | 1 (KVM cart's decor screen beside the usable terminals; kept for realism) |
+
+- Conference trolley and flip chart, and the server room's VM terminal, read correctly day and night. No changes.
+- **Room dressing closed after seven cycles; the layout is final.** Shots `build_evidence/dressing_c7/`.

@@ -1260,6 +1260,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
 
     "main_hallway": {
       "type": "room_zds_hall",
+      "chatBackground": "assets/backgrounds/rooms/m03_main_hallway_blended.png",
       "lighting": {
         "mode": "motion", "offAfter": 75,
         "emitters": {
@@ -1287,6 +1288,10 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
 
     "conference_room_01": {
       "type": "room_zds_conference",
+      "chatBackground": [
+        { "condition": "globalVars.clone_call_done === true", "image": "assets/backgrounds/rooms/m03_conference_room_01_night_blended.png" },
+        { "image": "assets/backgrounds/rooms/m03_conference_room_01_blended.png" }
+      ],
       "lighting": {
         "emitters": {
           "power_panel": { "color": "#7dffa0", "radius": 14, "intensity": 0.4, "effect": null },
@@ -1382,6 +1387,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
 
     "server_room": {
       "type": "room_zds_servers",
+      "chatBackground": "assets/backgrounds/rooms/m03_server_room_blended.png",
       "lighting": {
         "mode": "motion", "darkAmbient": "#0a0f1c", "ambient": "#a0b0c0",
         "emitters": {
@@ -1519,6 +1525,12 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
 
     "executive_wing_hallway": {
       "type": "room_zds_hall_exec",
+      "chatBackground": [
+        { "condition": "globalVars.clone_call_done === true", "x": [0.45, 1], "image": "assets/backgrounds/rooms/m03_executive_wing_hallway_night_blended.png" },
+        { "condition": "globalVars.clone_call_done === true", "x": [0, 0.45], "image": "assets/backgrounds/rooms/m03_executive_wing_hallway_night_left_blended.png" },
+        { "x": [0.45, 1], "image": "assets/backgrounds/rooms/m03_executive_wing_hallway_blended.png" },
+        { "x": [0, 0.45], "image": "assets/backgrounds/rooms/m03_executive_wing_hallway_left_blended.png" }
+      ],
       "lighting": {
         "ambient": "#bcb6ae",
         "emitters": {
@@ -1599,6 +1611,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
 
     "executive_office": {
       "type": "room_zds_ceo",
+      "chatBackground": "assets/backgrounds/rooms/m03_executive_office_blended.png",
       "lighting": {
         "mode": "motion", "ambient": "#d2cdc8",
         "emitters": {
@@ -1699,6 +1712,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
 
     "danny_office": {
       "type": "room_zds_office",
+      "chatBackground": "assets/backgrounds/rooms/m03_danny_office_blended.png",
       "lighting": {
         "mode": "on", "darkAmbient": "#1e2740",
         "variants": [ { "condition": "globalVars.clone_call_done === true", "mode": "dark" } ],

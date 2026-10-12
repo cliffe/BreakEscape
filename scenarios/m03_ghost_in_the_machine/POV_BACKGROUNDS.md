@@ -63,8 +63,14 @@ Working files are kept in the repo at `build_evidence/pov/<room>/`; approved one
 
 | Room | Concept | 400px | Blended | Preview | Status |
 |---|---|---|---|---|---|
-| reception_lobby (day) | `m03_reception_lobby_nonpixelart.png` | `m03_reception_lobby.png` (s500, seed 42) | `m03_reception_lobby_blended.png` | `m03_reception_lobby_preview.png` | signed off by the user 2026-10-12; in `public/`, wired |
-| reception_lobby (night) | `m03_reception_lobby_night_nonpixelart.png` | `m03_reception_lobby_night.png` (s600, seed 42, one letter fixed by hand) | `m03_reception_lobby_night_blended.png` | `m03_reception_lobby_night_preview.png` | signed off 2026-10-12; in `public/`, wired (night view) |
+| reception_lobby (day) r2 | `m03_reception_lobby_nonpixelart.png` | s500 seed 42 | yes | yes | **round 2 installed** (replaces the signed-off round 1, same file names) |
+| reception_lobby (night) r2 | `m03_reception_lobby_night_nonpixelart.png` | s600 seed 42 | yes | yes | **round 2 installed** |
+| executive_wing_hallway: day, day `_left`, night, night `_left` | 4 files | s500 (night and day `_left` at seed 7) | yes | yes | wired: night views (condition) first, split at x 0.45 |
+| danny_office (night only) | yes | s500 | yes | yes | wired (single image) |
+| executive_office | yes | s500 | yes | yes | wired (single image) |
+| main_hallway (day) | yes | s600 | yes | yes | wired (single image) |
+| conference_room_01: day, night (one view shifted 0.25 so the screen sits behind Victoria) | 2 files | s500 (night seed 7) | yes | yes | wired: night view (condition) first |
+| server_room (night, lit) | yes | s600 | yes | yes | wired (single image) |
 
 Side-by-side with the tour shots: `build_evidence/pov/reception_lobby/reception_compare.png` (top row day, bottom row night: tour shot, concept, 400px, blended).
 
@@ -77,7 +83,18 @@ Side-by-side with the tour shots: `build_evidence/pov/reception_lobby/reception_
 - Behind Ffion (75% across, right of the counter): the NPC-speaking crop shows the WHITEHAT sign and the counter's right end to her left, the plaque, call point and extinguisher behind her, which is what stands round her in the map. No view by x needed. The night cove glow sits above the crop, so in the chat the night version reads as night through the dim walls and the glowing cyan strips.
 - PixelLab: day s500 clean. Night s500 and s600 turned the sign into "UNITCHAT"/"WAITEHAT", seed 7 into "WHITCHAT"; took s600 seed 42 and repainted two pixels of the second letter (the A's apex) so it reads WHITEHAT, matching the day file's letter shape. No haze blotches in either.
 
-Calls used: Gemini 4 (1 generation, 3 edits), PixelLab 4.
+**Round 2 (2026-10-12, after the user's sign-off; coordinator asked for the known faults to be fixed).** Each change was kept only where it beat round 1 item by item. Round 1 files are in `build_evidence/pov/reception_lobby/r1/`.
+- Gemini 5, fresh generation with "exactly 1 door … both side walls have no doors", a small A4 directory and only the call point on the right wall: the door still landed on the left side wall, and the counter turned into a desk with a chair and a front-facing monitor. Lost to round 1; not used.
+- Gemini 6, edit of round 1 to turn the side-wall door into wall and add one in the back corner: no change (the skill's known limit: edits can't move side doors). **Door accepted as it is**: it sits behind the player's portrait.
+- Gemini 7, edit of round 1: fire bell removed, directory board shrunk to A4 size, side-wall cyan line turned into plain grey skirting. All three worked; the back wall's cyan line also went (mostly hidden by the counter and Ffion's portrait) and the small exit sign stayed. **Kept** (`r2_fix1`).
+- Gemini 8, edit to remove the exit sign and restore the back-wall cyan line: added a slat panel on the right wall and deleted the call point. Rejected.
+- Gemini 9, daytime relight of `r2_fix1`: bright, thin shafts. **Day concept.**
+- Gemini 10, night relight of `r2_fix1` with the wash running further down the slats: only slightly further. Gemini 11, an edit for a stronger, longer wash: the slats glow down past the sign, but the white walls took a beige cast. Composited in PIL: the slat panel from 11 over 10 (a feathered rectangle on the panel's straight edges), so the slats glow and the walls stay cool. **Night concept.**
+- PixelLab: day s500, night s600, both seed 42; both signs read WHITEHAT with no hand fix.
+- In the chat (`r2_vs_r1_previews.png`, left round 1, right round 2): the night's warm slats now show beside Ffion and in the player's crop, and the directory no longer dominates the player's half. Installed over the same file names (wiring unchanged); browser re-check: day view by day, night view after a night reload (`shots/r2day`, `shots/r2night`).
+- Left as they are: the door on the side wall, a small exit sign on the right wall, no cyan line on the back wall.
+
+Calls used for reception: Gemini 11 (2 generations, 9 edits), PixelLab 6.
 
 ## 4. Engine: conditional chatBackground views (2026-10-12, user-approved)
 
@@ -102,3 +119,61 @@ Browser checks (keyless :3001, `chat-background-shot.sh` and `<scratch>/m03-pov/
 
 - `reception_lobby.chatBackground`: night view (`globalVars.clone_call_done === true`) first, then the day view.
 - Terry's lockpick-catch mapping: `background1.png` pin removed (orchestrator's decision), so the catch scene uses the executive-wing background. Until that background exists the scene shows the plain frame.
+
+## 6. The other six rooms (2026-10-12)
+
+Started after the coordinator cleared each room's layout (dressing cycle 6 for four rooms, cycle 7 for the conference and server rooms). Each room's working files are in `build_evidence/pov/<room>/`, with an in-chat preview per image.
+
+### executive_wing_hallway (Terry, day and night)
+- Gemini 1: generation from the strip, worded as a short, wide corridor bay with "exactly 2 doors". Back wall in order (call point, sideboard with jug and glasses, clock, landscape painting, PRIVATE plaque, door in the back-right corner), burgundy runner on navy carpet. The west door sits at the back of the left wall, not halfway; the call point is smaller than the map's. Accepted.
+- Gemini 2: daytime relight (shafts onto the runner; the runner went a little lighter). Gemini 3: night relight (panels off, cool blue dark, one downlight pool on the wall round the painting, in the band behind Terry).
+- Terry patrols 30-60% across. At his post (60%) the wide view puts the painting, PRIVATE plaque and door beside him, which matches the map. For his west dwell (30%) I made `_left` views: `pov_view.py --suggest` asked for a 0.46 shift; capped at 0.40 and outpainted (Gemini 4 day, 5 night), both seamless. The NPC crop then shows the door, call point, sideboard and clock round him. The player's crop in the left views is bare side wall (accepted; edits can't add a side door).
+- PixelLab: the night downlight came out as a ghost-like blob on the wall behind Terry, and the day `_left` wall had smears; seed 7 fixed both (the skill's fix).
+- Wiring: `[night x 0.45-1, night_left x 0-0.45, day x 0.45-1, day_left x 0-0.45]`, so with no position known the wide view is used.
+
+### danny_office (night only)
+- Gemini 1: lit generation from the wall strip (the room has a free-standing rack). The rack stands out on the floor as in the map; whiteboard and door drifted onto the left side wall (behind the player's portrait).
+- Gemini 2: night relight, lamp only: correct but flat in Danny's crop (the lamp pool is in the player's half). Gemini 3: relight from the clean generation adding cold street light through the closed blinds as slanting stripes in pale haze, plus a stronger lamp pool. Danny's crop now has the lit window, haze and striped floor. Mini fridge lost in the shadow (minor). **Kept 3.**
+- Single image: Danny is only ever there at night.
+
+### executive_office (no conversation)
+- Gemini 1: one generation, lit at night (panels just struck, brass lamp, decanter glint, trophy cabinet lit, windows dark). Matches the map: bookcase, window, gold-framed portrait, window, padlocked filing cabinet, desk with blue monitor on the navy rug, two chairs with their backs to us, drinks cabinet, globe, red-framed magazine cover, trophy cabinet cut off at the bottom right. One extra chair behind the desk. No relight needed; haze already present.
+
+### main_hallway (no conversation; day)
+- Gemini 1: back wall in order with exactly 3 doors (back-right corner, one on each side wall), but an invented navy feature panel behind the threat map, and the map's land drawn red. Gemini 2: an edit removed the panel and recoloured the map (navy and teal land, red arcs). Gemini 3: daytime relight, which also brought the walls back from blue-grey to near-white (the planter turned white; minor).
+
+### conference_room_01 (Victoria, day and night)
+- Gemini 1: the table ran front to back through the middle of the room (where Victoria stands), plus an invented navy half-wall, an extra side window and brown chairs. Rejected.
+- Gemini 2: regenerated leaving the table out (it sits at the near edge of the map, mostly behind the camera), with the middle floor open. Plain back wall, credenza with phone, binders and orchid, whiteboard, screen, right window, flip chart, AV panel, brass drinks trolley, door near the back-right corner. The left window moved onto the left side wall (behind the player's portrait; accepted).
+- Victoria stands in front of the screen at 50% across; the room-wide image would put the window and flip chart behind her. `--suggest` gave shift 0.25; outpainted (Gemini 3), seamless. The shift pushes the door and trolley off the right edge, but the screen now sits behind her shoulder with the whiteboard and credenza to her left. This one view is the room's only image.
+- Gemini 4, day relight with "warm-white daylight": dark, beige haze. Rejected. Gemini 5, re-worded (silvery, keep brightness): bright, shafts through the blinds, striped pools on the carpet. **Day.** Gemini 6, night relight: lights still on, black windows behind the blinds, haze. **Night.**
+- PixelLab: night seed 42 had round haze blotches; seed 7 clean.
+
+### server_room (night, no conversation)
+- Gemini 1: one generation; the second row of racks stands out on the floor with the aisle behind it (first time, without the layered build), back wall in order with the price board and RESTRICTED sign. The camera is turned slightly left of square-on, and the operator's monitor faces sideways. Accepted for a room with no conversations.
+- Gemini 2: relight for haze returned the image unchanged (pov_diff 0.0%); not repeated. PixelLab at s600 added some haze of its own. The sign reads "BESTRICTED" in the raw 400px file and RESTRICTED in the blended file the game uses.
+
+### Browser check (keyless :3001, `<scratch>/m03-pov/shots/all_rooms.sh`, screenshots looked at)
+
+| | Day (game 2181) | Night after a reload (game 2182) |
+|---|---|---|
+| Ffion | `m03_reception_lobby_blended` | `m03_reception_lobby_night_blended` |
+| Victoria | `m03_conference_room_01_blended` | `m03_conference_room_01_night_blended` |
+| Terry at his post (x 0.6) | `m03_executive_wing_hallway_blended` | `m03_executive_wing_hallway_night_blended` |
+| Terry at his west dwell (x 0.3) | `m03_executive_wing_hallway_left_blended` | `m03_executive_wing_hallway_night_left_blended` |
+| Danny | (not present) | `m03_danny_office_blended` |
+
+Validator: no chatBackground warnings.
+
+## 7. Calls used (whole stage so far)
+
+| Room | Gemini | PixelLab |
+|---|---|---|
+| reception_lobby (rounds 1 and 2) | 11 | 6 |
+| executive_wing_hallway | 5 | 6 |
+| danny_office | 3 | 2 |
+| executive_office | 1 | 1 |
+| main_hallway | 3 | 1 |
+| conference_room_01 | 6 | 3 |
+| server_room | 2 | 1 |
+| **Total** | **31** | **20** |
