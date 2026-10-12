@@ -8,6 +8,7 @@ import TTSManager from './tts-manager.js';
 import { phoneBarkText } from '../minigames/phone-chat/phone-chat-speaker.js';
 import { displayDashes } from '../utils/display-dashes.js';
 import { releaseHeldBarks } from './bark-release-policy.js';
+import { barkLifetimeMs, barksToTrim, BARK_RESUME_MIN_MS } from './bark-lifetime.js';
 
 export default class NPCBarkSystem {
   constructor(npcManager) {
@@ -25,8 +26,8 @@ export default class NPCBarkSystem {
     this.maxSimultaneousBarks = 5;
     this.activeBarkCount = 0;
 
-    // Popups close themselves after this long if the player ignores them
-    this.barkAutoCloseMs = 60000;
+    // Popups close themselves after a reading time that grows with their length
+    // (bark-lifetime.js: 3 s + 300 ms a word, 5 to 20 s). Hovering one pauses it.
     
     // OPTIMIZATION: Debounce rapid bark queuing
     this.barkQueue = [];
@@ -184,6 +185,7 @@ export default class NPCBarkSystem {
   }
 
   async drainDeferredBarks() {
+    if (!this._shouldDefer()) this._dropStaleVisibleBarks();
     if (this.isDrainingDeferred || this.deferredBarkQueue.length === 0) return;
     if (this._shouldDefer()) return;   // another minigame opened; drained when it closes
     this.isDrainingDeferred = true;
@@ -373,12 +375,16 @@ export default class NPCBarkSystem {
     // Swipe-to-dismiss (before click handlers so capture listener fires first)
     this._addSwipeGesture(el);
 
+    if (typeof payload.stillValid === 'function') el._stillValid = payload.stillValid;
+
     this.container.appendChild(el);
     this.activeBarkCount++;
     this._updateClearAllButton();
     this._trimBarkStackToFit();
 
-    el._autoCloseTimer = setTimeout(() => this._removeBark(el), this.barkAutoCloseMs);
+    this._startAutoClose(el, barkLifetimeMs(textSpan.textContent));
+    el.addEventListener('mouseenter', () => this._pauseAutoClose(el));
+    el.addEventListener('mouseleave', () => this._resumeAutoClose(el));
 
     // Handle clicks - either custom handler or auto-open phone
     if (typeof payload.onClick === 'function') {
@@ -392,6 +398,44 @@ export default class NPCBarkSystem {
     }
 
     return ttsPromise;
+  }
+
+  _startAutoClose(el, ms) {
+    clearTimeout(el._autoCloseTimer);
+    el._autoCloseRemaining = ms;
+    el._autoCloseStarted = Date.now();
+    el._autoCloseTimer = setTimeout(() => this._removeBark(el), ms);
+  }
+
+  _pauseAutoClose(el) {
+    if (el._removing || el._autoClosePaused) return;
+    clearTimeout(el._autoCloseTimer);
+    el._autoCloseRemaining = Math.max(0, el._autoCloseRemaining - (Date.now() - el._autoCloseStarted));
+    el._autoClosePaused = true;
+  }
+
+  _resumeAutoClose(el) {
+    if (el._removing || !el._autoClosePaused) return;
+    el._autoClosePaused = false;
+    this._startAutoClose(el, Math.max(BARK_RESUME_MIN_MS, el._autoCloseRemaining));
+  }
+
+  /**
+   * Close toasts already on screen whose conditions no longer hold (the same stillValid()
+   * the hold queue checks). Run when a conversation or minigame closes, so a toast that sat
+   * behind it doesn't come back out stale.
+   */
+  _dropStaleVisibleBarks() {
+    if (!this.container) return;
+    for (const el of this.container.querySelectorAll('.npc-bark')) {
+      if (typeof el._stillValid !== 'function') continue;
+      let valid = true;
+      try { valid = el._stillValid(); } catch (e) { valid = true; }
+      if (!valid) {
+        console.debug('[barks] closed stale toast:', el.textContent);
+        this._removeBark(el);
+      }
+    }
   }
 
   /**
@@ -429,22 +473,29 @@ export default class NPCBarkSystem {
     Array.from(this.container.querySelectorAll('.npc-bark')).forEach(el => this._removeBark(el));
   }
 
+  /**
+   * Keep the stack to MAX_VISIBLE_BARKS toasts and clear of the objectives panel: the oldest
+   * close early, the newest always stays (bark-lifetime.js barksToTrim).
+   */
   _trimBarkStackToFit() {
     requestAnimationFrame(() => {
-      // 80px bottom offset + 20px breathing room before the top of the screen
-      const maxHeight = window.innerHeight - 100;
-      const overflow = this.container.offsetHeight - maxHeight;
-      if (overflow <= 0) return;
-
-      // Oldest barks are first in DOM; always preserve at least the newest one
-      const barks = Array.from(this.container.querySelectorAll('.npc-bark'));
-      const candidates = barks.slice(0, -1);
-      let freed = 0;
-      for (const el of candidates) {
-        if (freed >= overflow) break;
-        freed += el.offsetHeight + 8; // 8px matches the container gap
-        this._removeBark(el);
+      const containerRect = this.container.getBoundingClientRect();
+      // The stack grows upward from its bottom edge (80px above the inventory bar)
+      let top = 20;
+      const panel = document.querySelector('.objectives-panel');
+      // (the panel is position: fixed, so offsetParent can't tell whether it shows)
+      if (panel && !document.body.classList.contains('minigame-active')) {
+        const r = panel.getBoundingClientRect();
+        const overlapsSideways = r.left < containerRect.right && r.right > containerRect.left;
+        if (r.height > 0 && overlapsSideways) top = Math.max(top, r.bottom + 8);
       }
+      const clearAll = (this.clearAllButton && this.clearAllButton.offsetHeight) ? this.clearAllButton.offsetHeight + 8 : 0;
+      const available = containerRect.bottom - top - clearAll;
+
+      // Oldest barks are first in the DOM. Skip any already on their way out.
+      const barks = Array.from(this.container.querySelectorAll('.npc-bark')).filter(el => !el._removing);
+      const drop = barksToTrim(barks.map(el => ({ height: el.offsetHeight })), available);
+      barks.slice(0, drop).forEach(el => this._removeBark(el));
     });
   }
 
